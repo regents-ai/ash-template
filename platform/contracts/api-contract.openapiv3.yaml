@@ -1,0 +1,311 @@
+openapi: 3.1.0
+info:
+  title: Regent API
+  version: 1.0.0
+paths:
+  /api/formation/v1/regents/{regent_id}/agent-links:
+    get:
+      operationId: listRegentAgentLinks
+      security: [{cookieSession: []}]
+      parameters:
+        - {$ref: "#/components/parameters/RegentId"}
+      responses:
+        "200":
+          description: Agent identities paired with the signed-in human's Regent
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AgentLinkListEnvelope"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/AgentPairingNotFound"}
+  /api/formation/v1/regents/{regent_id}/agent-links/claim:
+    post:
+      operationId: claimRegentAgentLink
+      security: []
+      parameters:
+        - {$ref: "#/components/parameters/RegentId"}
+        - {$ref: "#/components/parameters/SiwaReceipt"}
+        - {$ref: "#/components/parameters/SiwaKeyId"}
+        - {$ref: "#/components/parameters/SiwaTimestamp"}
+        - {$ref: "#/components/parameters/SiwaAgentWallet"}
+        - {$ref: "#/components/parameters/SiwaAgentChainId"}
+        - {$ref: "#/components/parameters/SiwaAgentRegistry"}
+        - {$ref: "#/components/parameters/SiwaAgentTokenId"}
+        - {$ref: "#/components/parameters/HttpSignatureInput"}
+        - {$ref: "#/components/parameters/HttpSignature"}
+        - {$ref: "#/components/parameters/ContentDigest"}
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema: {type: string, minLength: 1, maxLength: 128}
+      responses:
+        "201":
+          description: Agent identity paired with the Regent
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AgentLinkEnvelope"}
+        "400": {$ref: "#/components/responses/AgentPairingFailed"}
+        "401": {$ref: "#/components/responses/AgentVerificationFailed"}
+        "429": {$ref: "#/components/responses/AgentClaimRateLimited"}
+  /auth/csrf:
+    get:
+      operationId: getBrowserCsrf
+      responses:
+        "200":
+          description: CSRF token for browser session changes
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [csrf_token]
+                properties:
+                  csrf_token: {type: string, minLength: 1}
+        "429":
+          description: Too many new browser sessions were started from the client address
+          headers:
+            Retry-After: {schema: {type: string, const: "300"}}
+            Cache-Control: {schema: {type: string, const: no-store}}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [error]
+                properties:
+                  error: {type: string, const: rate_limited}
+  /auth/privy/failure:
+    post:
+      operationId: reportPrivyBrowserFailure
+      security: [{csrfToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  enum: [bridge_startup, flow_closed, invalid_message, provider_error, request_timeout, session_exchange, unable_to_sign]
+      responses:
+        "204": {description: Diagnostic accepted or safely ignored}
+        "403": {$ref: "#/components/responses/CsrfForbidden"}
+  /auth/privy/session:
+    post:
+      operationId: createPrivyBrowserSession
+      security: [{privyAccessToken: [], privyIdentityToken: [], csrfToken: []}]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {type: object, maxProperties: 0, additionalProperties: false}
+      responses:
+        "200": {$ref: "#/components/responses/Session"}
+        "403": {$ref: "#/components/responses/CsrfForbidden"}
+        "401": {$ref: "#/components/responses/PrivySessionUnauthorized"}
+    delete:
+      operationId: deletePrivyBrowserSession
+      security: [{csrfToken: []}]
+      responses:
+        "200": {$ref: "#/components/responses/Logout"}
+        "403": {$ref: "#/components/responses/CsrfForbidden"}
+  /auth/session:
+    get:
+      operationId: getBrowserSession
+      responses:
+        "200": {$ref: "#/components/responses/Session"}
+components:
+  parameters:
+    RegentId:
+      name: regent_id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    SiwaReceipt:
+      name: x-siwa-receipt
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+    SiwaKeyId:
+      name: x-key-id
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+    SiwaTimestamp:
+      name: x-timestamp
+      in: header
+      required: true
+      schema: {type: string, pattern: '^\d+$'}
+    SiwaAgentWallet:
+      name: x-agent-wallet-address
+      in: header
+      required: true
+      schema: {type: string, pattern: '^0x[0-9a-fA-F]{40}$'}
+    SiwaAgentChainId:
+      name: x-agent-chain-id
+      in: header
+      required: true
+      schema: {type: string, const: "8453"}
+    SiwaAgentRegistry:
+      name: x-agent-registry-address
+      in: header
+      required: true
+      schema: {type: string, pattern: '^0x[0-9a-fA-F]{40}$'}
+    SiwaAgentTokenId:
+      name: x-agent-token-id
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+    HttpSignatureInput:
+      name: signature-input
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+    HttpSignature:
+      name: signature
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+    ContentDigest:
+      name: content-digest
+      in: header
+      required: true
+      schema: {type: string, minLength: 1}
+  securitySchemes:
+    privyAccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: Privy access token
+    privyIdentityToken: {type: apiKey, in: header, name: privy-id-token}
+    cookieSession: {type: apiKey, in: cookie, name: _ash_platform_key}
+    csrfToken: {type: apiKey, in: header, name: x-csrf-token}
+  responses:
+    Session:
+      description: Current browser session
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Session"
+    Unauthorized:
+      description: The Privy access and identity tokens were not both present and valid for one signed-in session
+      content:
+        application/json:
+            schema: {$ref: "#/components/schemas/Error"}
+    PrivySessionUnauthorized:
+      description: The Privy access and identity tokens were not both present and valid for one signed-in session
+      headers:
+        x-ash-provider-relogin:
+          description: Present only when the access token itself could not be verified, which permits one fresh provider login
+          required: false
+          schema: {type: string, const: allowed}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    Logout:
+      description: Local browser session removed
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [ok]
+            properties: {ok: {type: boolean, const: true}}
+    CsrfForbidden:
+      description: CSRF token was absent or invalid
+    AgentPairingNotFound:
+      description: The Regent was not found for the signed-in human
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          examples:
+            notFound:
+              value: {error: {code: not_found, message: The Regent was not found.}}
+    AgentPairingFailed:
+      description: The pairing code could not be claimed
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          examples:
+            pairingFailed:
+              value: {error: {code: pairing_failed, message: The pairing code could not be used.}}
+    AgentVerificationFailed:
+      description: SIWA verification did not verify the signed agent request
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          examples:
+            verificationFailed:
+              value: {error: {code: verification_failed, message: The signed agent request could not be verified.}}
+    AgentClaimRateLimited:
+      description: Too many pairing claims were received from the client address
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          examples:
+            rateLimited:
+              value: {error: {code: rate_limited, message: Too many pairing attempts. Please wait and try again.}}
+  schemas:
+    AgentLinkListEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: array
+          items: {$ref: "#/components/schemas/AgentLink"}
+    AgentLinkEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data: {$ref: "#/components/schemas/AgentLink"}
+    AgentLink:
+      type: object
+      additionalProperties: false
+      required: [id, regent_id, agent_id, registry_address, token_id, wallet, paired_at]
+      properties:
+        id: {type: string, format: uuid}
+        regent_id: {type: string, format: uuid}
+        agent_id: {type: string, minLength: 1}
+        registry_address: {type: string, pattern: '^0x[0-9a-f]{40}$'}
+        token_id: {type: string, minLength: 1}
+        wallet: {type: string, pattern: '^0x[0-9a-f]{40}$'}
+        paired_at: {type: string, format: date-time}
+    AgentPairingError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code: {type: string, enum: [not_found, pairing_failed, verification_failed, rate_limited]}
+            message: {type: string}
+    Session:
+      type: object
+      additionalProperties: false
+      required: [authenticated, account_control]
+      properties:
+        authenticated: {type: boolean}
+        account_control:
+          type: object
+          additionalProperties: false
+          required: [kind, label, profile_path, avatar_src]
+          properties:
+            kind: {type: string, enum: [sign_in, signed_in]}
+            label: {type: string}
+            profile_path: {type: [string, "null"]}
+            avatar_src:
+              type: [string, "null"]
+              pattern: "^(https://|data:image/svg\\+xml;base64,)"
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error: {type: string, enum: [unauthorized]}

@@ -1,0 +1,7 @@
+local-only-*
+
+.DS_Store
+.env
+.env.*
+!.env.example
+.envrc

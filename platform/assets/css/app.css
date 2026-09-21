@@ -1,0 +1,163 @@
+@import "../vendor/regent_ui/design_system_tokens.css";
+@import "../vendor/regent_ui/primitives.css";
+@import "./tokens/material.css";
+@import "./tokens/root.css";
+@import "./components/shell.css";
+@import "./components/loading.css";
+@import "./pages/home.css";
+@import "./pages/legal.css";
+@import "./pages/formation.css";
+@import "./pages/stake.css";
+@import "./pages/redeem.css";
+@import "./pages/regent_ops.css";
+@import "./pages/product.css";
+@import "./pages/regent_profile.css";
+@import "./pages/account.css";
+@import "./components/account_auth_status.css";
+
+:root {
+  color-scheme: light dark;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-button: 0px;
+  font-family: var(--font-family-ui);
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-family-ui);
+  line-height: 1.5;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button, input, select, textarea {
+  font-family: var(--font-family-ui);
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-family-mono);
+}
+
+a {
+  color: currentColor;
+}
+
+/* Every title consumes the canonical upright Pixel Square face. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-family-title);
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+/* Native fallback controls; actual application actions use Regent.Primitives. */
+button:not(.rg-button),
+input {
+  border: 1px solid currentColor;
+  border-radius: 0;
+  background: var(--color-surface-elevated, Canvas);
+  color: var(--color-fg, CanvasText);
+}
+
+button:not(.rg-button) {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-focus-ring, Highlight);
+  outline-offset: 2px;
+}
+
+.shell-status[aria-busy="true"]::after {
+  content: "…";
+}
+
+/* A figure the last reading could not get. It is set in the page's quiet voice
+   so it reads as a missing figure rather than as a number. */
+.figure-unavailable {
+  color: var(--ash-muted);
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+/* Carries the exact figure behind a shortened one, for assistive technology. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Source and product discovery; disclosure links remain in the document. */
+.product-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 1.5rem;
+  padding: var(--rg-panel-padding);
+  margin: 0 auto;
+  width: min(calc(100% - 2 * var(--rg-page-gutter)), var(--rg-frame-max));
+  border-inline: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.875rem;
+}
+.product-links__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.metadata-page { display: grid; gap: var(--space-3); }
+.metadata-page dl { display: grid; gap: var(--space-2); }
+.metadata-page dd { margin: 0; overflow-wrap: anywhere; }
+.metadata-page pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.metadata-page header { border-bottom: 1px solid var(--hairline); padding-bottom: var(--space-3); }
+.rg-panel.rg-support-panel { --ash-ink: var(--support-panel-ink); --ash-muted: color-mix(in srgb, var(--support-panel-ink) 72%, var(--support-panel-surface)); --ash-panel: var(--support-panel-surface); --ash-line: color-mix(in srgb, var(--support-panel-ink) 22%, var(--support-panel-surface)); }
+@media (max-width: 74.99rem) { .product-links { --rg-page-gutter: var(--space-3); } }
+@media (max-width: 47.99rem) { .product-links { --rg-page-gutter: var(--space-2); } }

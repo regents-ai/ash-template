@@ -1,0 +1,35 @@
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  release_command = "/app/bin/migrate"
+
+[env]
+  PORT = "4000"
+  ASH_PLATFORM_DEPLOYMENT_ROLE = "production"
+
+[metrics]
+  port = 4000
+  path = "/metrics"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+
+# Keep one web instance until cross-instance long-poll resumption is fixed.
+# Machine count is managed by `fly scale count 1`; deploy with `--ha=false`.
+# BEAM release + migrations OOM at Fly's 256MB default.
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 2
+  memory_mb = 2048
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "10s"
+  method = "GET"
+  path = "/healthz"
+  protocol = "http"
+  timeout = "2s"

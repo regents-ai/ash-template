@@ -1,0 +1,335 @@
+defmodule AshPlatform.WalletActions.RpcTest do
+  use ExUnit.Case, async: false
+
+  import ExUnit.CaptureLog
+
+  alias AshPlatform.BaseRpcStub, as: Stub
+  alias AshPlatform.WalletActions.Rpc
+
+  @hash "0x" <> String.duplicate("ab", 32)
+  @signer "0x1111111111111111111111111111111111111111"
+  @target "0x2222222222222222222222222222222222222222"
+  @data "0xabcdef"
+
+  defmodule Client do
+    def post(_url, options) do
+      send(self(), {:wallet_http_client, options[:json]})
+      {:ok, %{status: 200, body: %{"result" => "0x2105"}}}
+    end
+  end
+
+  defmodule FailingClient do
+    def post(_url, _options), do: {:error, :offline}
+  end
+
+  defmodule SequenceClient do
+    def post(_url, _options) do
+      [reply | rest] = Process.get(:rpc_replies)
+      Process.put(:rpc_replies, rest)
+      {:ok, %{status: 200, body: %{"result" => reply}}}
+    end
+  end
+
+  defmodule RoutedClient do
+    def post(_url, options) do
+      method = options[:json][:method]
+      result = Process.get({:rpc_result, method})
+      {:ok, %{status: 200, body: %{"result" => result}}}
+    end
+  end
+
+  setup do
+    previous = Application.get_env(:ash_platform, :wallet_http_client)
+    Application.put_env(:ash_platform, :wallet_http_client, Client)
+    on_exit(fn -> restore(:wallet_http_client, previous) end)
+  end
+
+  test "ONE_EXACT_HASH_LANGUAGE: lowercase 0x and exactly 64 hexadecimal characters, nothing else" do
+    hex = String.duplicate("ab", 32)
+    truncated = "0x" <> String.duplicate("a", 63)
+
+    for canonical <- [@hash, "0x" <> String.upcase(hex), "0x" <> String.duplicate("aB", 32)],
+        do: assert(Rpc.valid_hash?(canonical), "#{inspect(canonical)} is canonical")
+
+    for malformed <- [
+          truncated <> "\n",
+          "0x" <> hex <> "\n",
+          truncated <> " ",
+          truncated <> "\t",
+          truncated,
+          "0x" <> hex <> "a",
+          "0x" <> String.duplicate("g", 64),
+          "0X" <> hex,
+          "",
+          nil,
+          :hash,
+          String.to_charlist(@hash)
+        ],
+        do: refute(Rpc.valid_hash?(malformed), "#{inspect(malformed)} is not canonical")
+  end
+
+  test "uses the generic wallet client by default" do
+    assert :ok = Rpc.verify_base_chain()
+    assert_received {:wallet_http_client, %{method: "eth_chainId"}}
+  end
+
+  test "uses the generic wallet log scope by default" do
+    Application.put_env(:ash_platform, :wallet_http_client, FailingClient)
+
+    log =
+      capture_log(fn -> assert {:error, :chain_unavailable} = Rpc.request("eth_chainId", []) end)
+
+    assert log =~ "wallet chain read failed"
+    refute log =~ "staking chain read failed"
+  end
+
+  test "requires successfully normalized signer and target before equality" do
+    valid = transaction()
+    zero = "0x" <> String.duplicate("0", 40)
+
+    assert_status(:success, valid, @signer, @target, @data)
+    mixed_case_signer = "0x" <> String.upcase(String.trim_leading(@signer, "0x"))
+    assert_status(:success, %{valid | "from" => mixed_case_signer}, @signer, @target, @data)
+
+    for {case_name, transaction, signer, target} <- [
+          {:invalid_actual_signer, %{valid | "from" => "bad"}, @signer, @target},
+          {:invalid_expected_signer, valid, "bad", @target},
+          {:both_signers_invalid, %{valid | "from" => "bad"}, "also-bad", @target},
+          {:zero_signers, %{valid | "from" => zero}, zero, @target},
+          {:wrong_signer, %{valid | "from" => @target}, @signer, @target},
+          {:wrong_target, %{valid | "to" => @signer}, @signer, @target},
+          {:both_targets_invalid, %{valid | "to" => "bad"}, @signer, "also-bad"}
+        ] do
+      assert_error(case_name, :transaction_mismatch, transaction, signer, target, @data)
+    end
+  end
+
+  test "STRICT_ABI_DECODING: malformed scalar evidence is unavailable" do
+    Stub.install(:wallet_http_client, fn _data, _state -> Process.get(:abi_result) end)
+    block = %{hash: Stub.safe_hash()}
+
+    Process.put(:abi_result, Stub.uint(7))
+    assert {:ok, 7} = Rpc.call_uint(@target, @data, block)
+
+    Process.put(:abi_result, Stub.uint(0))
+    assert {:ok, false} = Rpc.call_bool(@target, @data, block)
+    Process.put(:abi_result, Stub.uint(1))
+    assert {:ok, true} = Rpc.call_bool(@target, @data, block)
+
+    Process.put(:abi_result, Stub.uint(2))
+    assert {:error, :invalid_chain_response} = Rpc.call_bool(@target, @data, block)
+
+    address = "0x" <> String.duplicate("ab", 20)
+    Process.put(:abi_result, "0x" <> Stub.address_word(address))
+    assert {:ok, ^address} = Rpc.call_address(@target, @data, block)
+
+    for malformed <- [
+          "0x" <> String.duplicate("a", 63),
+          "0x" <> String.duplicate("a", 65),
+          "0x" <> String.duplicate("g", 64)
+        ] do
+      Process.put(:abi_result, malformed)
+      assert {:error, :invalid_chain_response} = Rpc.call_uint(@target, @data, block)
+      assert {:error, :invalid_chain_response} = Rpc.call_address(@target, @data, block)
+    end
+
+    Process.put(:abi_result, "0x" <> String.duplicate("1", 24) <> String.duplicate("a", 40))
+    assert {:error, :invalid_chain_response} = Rpc.call_address(@target, @data, block)
+
+    Process.put(:abi_result, "0x" <> Stub.hex_word(1) <> Stub.hex_word(2))
+    assert {:ok, [1, 2]} = Rpc.call_words(@target, @data, block, 2)
+
+    Process.put(:abi_result, "0x" <> Stub.hex_word(1) <> Stub.hex_word(2) <> Stub.hex_word(3))
+    assert {:error, :invalid_chain_response} = Rpc.call_words(@target, @data, block, 2)
+  end
+
+  test "rejects hash, calldata and value drift" do
+    valid = transaction()
+
+    assert_error(
+      :wrong_hash,
+      :transaction_mismatch,
+      %{valid | "hash" => "0x" <> String.duplicate("cd", 32)},
+      @signer,
+      @target,
+      @data
+    )
+
+    assert_error(
+      :wrong_calldata,
+      :transaction_mismatch,
+      %{valid | "input" => "0xdead"},
+      @signer,
+      @target,
+      @data
+    )
+
+    assert_error(
+      :nonzero_value,
+      :transaction_mismatch,
+      %{valid | "value" => "0x1"},
+      @signer,
+      @target,
+      @data
+    )
+  end
+
+  test "distinguishes successful, reverted, pending, mismatched and invalid receipts" do
+    assert_status(:success, transaction(), @signer, @target, @data)
+    assert_status(:reverted, transaction(), @signer, @target, @data, "0x0")
+
+    Process.put(:rpc_replies, ["0x2105", nil, transaction()])
+    Application.put_env(:ash_platform, :wallet_http_client, SequenceClient)
+    assert {:ok, :pending} = Rpc.submission_status(@hash, @signer, @target, @data)
+
+    assert_receipt_error(
+      %{
+        "status" => "0x1",
+        "blockNumber" => "0x1",
+        "transactionHash" => "0x" <> String.duplicate("cd", 32)
+      },
+      :receipt_mismatch
+    )
+
+    assert_receipt_error(
+      %{"status" => "0x2", "blockNumber" => "0x1", "transactionHash" => @hash},
+      :invalid_receipt
+    )
+  end
+
+  test "rejects a successful receipt when the injected provider is not Base" do
+    receipt = %{"status" => "0x1", "blockNumber" => "0x1", "transactionHash" => @hash}
+
+    for chain_result <- ["0x1", "not-hex", nil] do
+      Process.put({:rpc_result, "eth_chainId"}, chain_result)
+      Process.put({:rpc_result, "eth_getTransactionReceipt"}, receipt)
+      Process.put({:rpc_result, "eth_getTransactionByHash"}, transaction())
+      Application.put_env(:ash_platform, :wallet_http_client, RoutedClient)
+      refute match?({:ok, :success}, Rpc.submission_status(@hash, @signer, @target, @data))
+    end
+  end
+
+  # The Stake and Redeem paths judge a transaction against the head their own
+  # page reads, so this proves the same block identity and chain binding the
+  # safe and finalized reads already have.
+  test "ONE_LATEST_BLOCK: the latest head is one proved Base block, or nothing" do
+    Stub.install(:wallet_http_client, fn _data, _state -> Stub.uint(0) end)
+
+    assert Rpc.latest_block() == {:ok, %{number: 0x20, hash: Stub.latest_hash()}}
+    assert_received {:rpc, "eth_getBlockByNumber", ["latest", false]}
+
+    Stub.put(%{chain_id: "0x1"})
+    assert Rpc.latest_block() == {:error, :wrong_chain}
+
+    Stub.put(%{
+      chain_id: "0x2105",
+      latest_block: %{"number" => "later", "hash" => Stub.latest_hash()}
+    })
+
+    assert Rpc.latest_block() == {:error, :invalid_block_header}
+  end
+
+  # Canonical comes before status. A receipt above the caller's head, and one
+  # whose block is no longer the canonical block for its number, are both states
+  # this transaction may still leave, whether it says success or revert now.
+  test "CANONICAL_BEFORE_STATUS: only a canonical receipt at or below the head answers" do
+    Stub.install(:wallet_http_client, fn _data, _state -> Stub.uint(0) end)
+    Stub.put(%{transactions: %{@hash => transaction()}})
+    head = %{number: 0x20, hash: Stub.safe_hash()}
+    moved = %{"0x10" => %{"number" => "0x10", "hash" => "0x" <> String.duplicate("99", 32)}}
+    logs = [%{"address" => @target, "topics" => [], "data" => "0x"}]
+
+    for {name, receipt, blocks, expected} <- [
+          {"no receipt", nil, %{}, {:ok, :pending}},
+          {"above-head success", Stub.receipt(@hash, "0x21", logs), %{}, {:ok, :pending}},
+          {"above-head revert", Stub.receipt(@hash, "0x21", [], "0x0"), %{}, {:ok, :pending}},
+          {"reorged success", Stub.receipt(@hash, "0x10", logs), moved, {:ok, :pending}},
+          {"reorged revert", Stub.receipt(@hash, "0x10", [], "0x0"), moved, {:ok, :pending}},
+          {"canonical success", Stub.receipt(@hash, "0x10", logs), %{}, {:ok, {:success, logs}}},
+          {"canonical revert", Stub.receipt(@hash, "0x10", [], "0x0"), %{}, {:ok, :reverted}},
+          {"unreadable canonical check", Stub.receipt(@hash, "0x10", logs),
+           %{"0x10" => :unavailable}, {:error, :chain_unavailable}}
+        ] do
+      Stub.put(%{receipts: %{@hash => receipt}, blocks: blocks})
+
+      assert Rpc.canonical_outcome(@hash, @signer, @target, @data, head) == expected,
+             "#{name} was classified wrongly"
+    end
+  end
+
+  # A hash the wallet has just broadcast may not have reached this read RPC yet,
+  # and a load-balanced provider may answer with its receipt before its
+  # transaction. Identity that is merely unavailable waits on the same hash; only
+  # a transaction this RPC did return, drifted from the envelope, is refused.
+  test "PROPAGATION_LAG_IS_TRANSIENT: an unobserved transaction waits instead of failing" do
+    Stub.install(:wallet_http_client, fn _data, _state -> Stub.uint(0) end)
+    head = %{number: 0x20, hash: Stub.safe_hash()}
+    logs = [%{"address" => @target, "topics" => [], "data" => "0x"}]
+
+    Stub.put(%{transactions: %{}, receipts: %{}})
+    assert Rpc.submission_status(@hash, @signer, @target, @data) == {:ok, :pending}
+
+    for {name, state, expected} <- [
+          {"nothing observed", %{}, {:ok, :pending}},
+          {"receipt ahead of the transaction",
+           %{receipts: %{@hash => Stub.receipt(@hash, "0x10", logs)}},
+           {:error, :transaction_missing}},
+          {"drifted transaction",
+           %{transactions: %{@hash => %{transaction() | "input" => "0xdead"}}},
+           {:error, :transaction_mismatch}},
+          {"caught up", %{transactions: %{@hash => transaction()}}, {:ok, {:success, logs}}}
+        ] do
+      Stub.put(state)
+
+      assert Rpc.canonical_outcome(@hash, @signer, @target, @data, head) == expected,
+             "#{name} was classified wrongly"
+    end
+  end
+
+  # The head block already proved the chain identity, so an outcome judged
+  # against it never asks for that identity again.
+  test "CANONICAL_BEFORE_STATUS: the outcome read issues no second chain-id request" do
+    Stub.install(:wallet_http_client, fn _data, _state -> Stub.uint(0) end)
+
+    Stub.put(%{
+      transactions: %{@hash => transaction()},
+      receipts: %{@hash => Stub.receipt(@hash, "0x10", [])}
+    })
+
+    assert {:ok, {:success, []}} =
+             Rpc.canonical_outcome(@hash, @signer, @target, @data, %{
+               number: 0x20,
+               hash: Stub.safe_hash()
+             })
+
+    refute_received {:rpc, "eth_chainId", _params}
+  end
+
+  defp transaction do
+    %{"hash" => @hash, "from" => @signer, "to" => @target, "input" => @data, "value" => "0x0"}
+  end
+
+  defp assert_status(status, transaction, signer, target, data, receipt_status \\ "0x1") do
+    receipt = %{"status" => receipt_status, "blockNumber" => "0x1", "transactionHash" => @hash}
+    Process.put(:rpc_replies, ["0x2105", receipt, transaction])
+    Application.put_env(:ash_platform, :wallet_http_client, SequenceClient)
+    assert {:ok, ^status} = Rpc.submission_status(@hash, signer, target, data)
+  end
+
+  defp assert_error(case_name, reason, transaction, signer, target, data) do
+    receipt = %{"status" => "0x1", "blockNumber" => "0x1", "transactionHash" => @hash}
+    Process.put(:rpc_replies, ["0x2105", receipt, transaction])
+    Application.put_env(:ash_platform, :wallet_http_client, SequenceClient)
+    result = Rpc.submission_status(@hash, signer, target, data)
+    assert result == {:error, reason}, "#{case_name} unexpectedly returned #{inspect(result)}"
+  end
+
+  defp assert_receipt_error(receipt, reason) do
+    Process.put(:rpc_replies, ["0x2105", receipt, transaction()])
+    Application.put_env(:ash_platform, :wallet_http_client, SequenceClient)
+    assert {:error, ^reason} = Rpc.submission_status(@hash, @signer, @target, @data)
+  end
+
+  defp restore(key, nil), do: Application.delete_env(:ash_platform, key)
+  defp restore(key, value), do: Application.put_env(:ash_platform, key, value)
+end

@@ -1,0 +1,1198 @@
+@layer regents-product {
+/* Stake stands on the marketing page's grammar: one ground, hairline panels,
+   square corners, the display face for headings and a mono voice for kickers. */
+
+.stake-page {
+  display: grid;
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  min-width: 0;
+}
+
+.stake-heading,
+.stake-overview,
+.stake-actions,
+.stake-how-it-works,
+.stake-contract-details {
+  min-width: 0;
+  border: 1px solid var(--ash-line);
+  background: var(--ash-panel);
+}
+
+.stake-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(19rem, 0.85fr);
+  gap: clamp(1.5rem, 5vw, 4.5rem);
+  align-items: end;
+  padding: var(--rg-panel-padding);
+}
+
+.stake-heading-copy {
+  display: grid;
+  gap: 1rem;
+  align-content: end;
+}
+
+.stake-heading-copy > *,
+.stake-actions h2,
+.stake-actions h3,
+.stake-overview h2,
+.stake-how-it-works h2,
+.stake-how-it-works h3 {
+  margin: 0;
+}
+
+.stake-page h1,
+.stake-page h2,
+.stake-page h3,
+.stake-result-dialog h2,
+.stake-supply-dialog h2 {
+  font-family: var(--font-family-title);
+  font-weight: 400;
+}
+
+.stake-heading h1 {
+  max-width: 12ch;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  line-height: 0.93;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.stake-lede {
+  max-width: 58ch;
+  color: var(--ash-muted);
+  font-size: clamp(1rem, 1.7vw, 1.2rem);
+  text-wrap: pretty;
+}
+
+.stake-kicker,
+.stake-section-kicker,
+.stake-benefit-card dt,
+.stake-earned-label,
+.stake-supply-heading > span,
+.stake-supply-facts dt,
+.stake-contract-facts dt,
+.stake-metric dt,
+.stake-dialog-kicker,
+.stake-dialog-meta dt,
+.stake-preview dt {
+  color: var(--ash-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.stake-fine-print,
+.stake-snapshot-note,
+.stake-wallet-block {
+  color: var(--ash-muted);
+}
+
+.stake-footer,
+.stake-mode,
+.stake-amount-tools,
+.stake-amount-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.stake-contract-link,
+.stake-result-dialog a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.8rem;
+  color: var(--ash-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+.stake-fine-print {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+/* The contract reading is shared by every visitor, so the control that takes a
+   new one sits with the contract data rather than with a wallet position. */
+.stake-shared-refresh {
+  justify-self: start;
+}
+
+/* Wallet figures carry their own block, which is not the contract reading's. */
+.stake-wallet-block {
+  margin: 0;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hairline grid: the container draws two edges and each cell draws the rest. */
+.stake-benefit-grid {
+  display: grid;
+  margin: 0;
+  border-block-start: 1px solid var(--ash-line);
+  border-inline-start: 1px solid var(--ash-line);
+}
+
+.stake-benefit-card {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  padding: 1rem;
+  border-block-end: 1px solid var(--ash-line);
+  border-inline-end: 1px solid var(--ash-line);
+  background: var(--ash-panel-strong);
+}
+
+.stake-benefit-card-primary {
+  padding-block: 1.3rem;
+}
+
+.stake-benefit-card dd {
+  margin: 0;
+  color: var(--ash-accent-warm);
+  font-family: var(--font-family-title);
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.stake-earned-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.stake-earned-part {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.stake-earned-part + .stake-earned-part {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--ash-line);
+}
+
+.stake-earned-figure {
+  font-size: clamp(1.05rem, 2.4vw, 1.6rem);
+}
+
+/* The two supply lines are context for the figures above them rather than
+   headline figures of their own, so they read as one small line each. */
+.stake-benefit-supply {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+  padding-block: 0.6rem;
+}
+
+.stake-benefit-supply dt::after {
+  content: ":";
+}
+
+.stake-benefit-supply dd {
+  font-family: var(--font-family-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
+.stake-layout {
+  display: grid;
+  grid-template-columns: minmax(21rem, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  align-items: start;
+  min-width: 0;
+}
+
+.stake-actions,
+.stake-overview,
+.stake-how-it-works {
+  padding: var(--rg-panel-padding);
+}
+
+/* Each column stacks its panels: the actions above why to stake on the left,
+   where the USDC comes from above what the contract reports on the right. */
+.stake-column {
+  display: grid;
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  align-content: start;
+  min-width: 0;
+}
+
+.stake-revenue {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+}
+
+/* Hairline rows: the list draws its top edge and each source draws its own
+   bottom one, so open and closed sources keep the same rhythm. */
+.stake-revenue-list {
+  border-block-start: 1px solid var(--ash-line);
+}
+
+.stake-revenue-source {
+  border-block-end: 1px solid var(--ash-line);
+}
+
+.stake-revenue-source > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.8rem;
+  padding-block: 0.6rem;
+  color: var(--ash-ink);
+  font-family: var(--font-family-title);
+  font-weight: 400;
+  font-size: 0.9rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.stake-revenue-source > summary::-webkit-details-marker {
+  display: none;
+}
+
+.stake-revenue-caret {
+  color: var(--ash-muted);
+  transition: transform 120ms ease;
+}
+
+.stake-revenue-source[open] .stake-revenue-caret {
+  transform: rotate(180deg);
+}
+
+.stake-revenue-source ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0 0 0.9rem 1.1rem;
+  color: var(--ash-muted);
+  font-size: 0.85rem;
+}
+
+.stake-actions {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.stake-section-heading,
+.stake-overview-heading,
+
+.stake-section-heading h2,
+.stake-overview-heading h2 {
+  margin-top: 0.3rem;
+  font-size: clamp(1.3rem, 2.4vw, 1.85rem);
+  letter-spacing: -0.02em;
+}
+
+.stake-signer,
+.stake-network {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 0 0 auto;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--ash-line-strong);
+  color: var(--ash-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.stake-network { text-transform: uppercase; }
+
+/* A wallet address keeps its own case: it is an identifier, not a label. */
+.stake-signer {
+  font-family: var(--font-family-mono);
+  letter-spacing: 0;
+}
+
+.stake-signer > span {
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--ash-accent);
+}
+
+.stake-connect-flow,
+.stake-wallet-controls {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stake-wallet-controls {
+    animation: stake-wallet-enter 180ms ease-out;
+  }
+}
+
+@keyframes stake-wallet-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stake-connect-flow ol {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--ash-line);
+}
+
+.stake-connect-flow li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  padding-block: 0.8rem;
+  border-block-end: 1px solid var(--ash-line);
+}
+
+.stake-connect-flow li > span {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border: 1px solid var(--ash-line-strong);
+  color: var(--ash-muted);
+  font-family: var(--font-family-mono);
+  font-size: 0.74rem;
+}
+
+.stake-connect-flow li p,
+.stake-wallet-loading p {
+  margin: 0;
+}
+
+.stake-wallet-loading {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--ash-line-strong);
+  background: var(--ash-panel-strong);
+}
+
+.stake-progress-mark {
+  flex: 0 0 auto;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid color-mix(in oklch, var(--ash-accent) 35%, transparent);
+  border-top-color: var(--ash-accent);
+  animation: stake-spin 700ms linear infinite;
+}
+
+@keyframes stake-spin {
+  to { transform: rotate(1turn); }
+}
+
+.stake-wallet-summary,
+.stake-supply-facts,
+.stake-preview,
+.stake-contract-facts,
+.stake-dialog-meta {
+  margin: 0;
+}
+
+.stake-wallet-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block-start: 1px solid var(--ash-line);
+  border-inline-start: 1px solid var(--ash-line);
+}
+
+.stake-metric {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.9rem;
+  border-block-end: 1px solid var(--ash-line);
+  border-inline-end: 1px solid var(--ash-line);
+  background: var(--ash-panel-strong);
+}
+
+.stake-metric dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.stake-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--ash-line-strong);
+}
+
+.stake-mode button {
+  border: 0;
+  background: transparent;
+  color: var(--ash-muted);
+}
+
+.stake-mode button + button {
+  border-inline-start: 1px solid var(--ash-line-strong);
+}
+
+.stake-actions form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.stake-actions label {
+  color: var(--ash-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.stake-amount {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--ash-line-strong);
+  background: var(--ash-panel-strong);
+}
+
+.stake-amount:focus-within {
+  border-color: var(--ash-accent);
+}
+
+.stake-amount input {
+  min-width: 0;
+  min-height: 3.5rem;
+  padding: 0.65rem 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--ash-ink);
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.stake-amount input:focus {
+  outline: 0;
+}
+
+.stake-amount > span {
+  padding-inline: 0.9rem;
+  color: var(--ash-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
+
+.stake-amount-tools {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.stake-amount-action {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.stake-amount-shortcuts {
+  flex-wrap: nowrap;
+  margin-inline-start: auto;
+}
+
+.stake-amount-tools p {
+  margin: 0;
+  color: var(--ash-muted);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stake-amount-shortcuts button {
+  min-height: 2rem;
+  padding-inline: 0.65rem;
+}
+
+.stake-amount-notice {
+  min-height: 1.25rem;
+  margin: 0;
+  color: var(--ash-muted);
+  font-size: 0.82rem;
+}
+
+.stake-amount-notice[data-visible="false"] {
+  visibility: hidden;
+}
+
+.stake-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--ash-line);
+}
+
+.stake-preview div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.stake-preview dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.stake-approval-note {
+  margin: 0;
+  color: var(--ash-muted);
+  font-size: 0.82rem;
+}
+
+/* Every control is a square cell in the Sans UI voice; only the primary action
+   fills, as the marketing page's strong action does. */
+.stake-actions button,
+.stake-heading button,
+.stake-result-dialog button,
+.stake-shared-refresh {
+  min-height: 2.8rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--ash-line-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ash-ink);
+  font-family: var(--font-family-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    transform 140ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    opacity 180ms var(--ease-out);
+}
+
+/* The hero's one outward link: same square mono cell as every other control,
+   parked in the panel's bottom-right corner, with a light sweep on hover. */
+/* The two token links sit under the lede, where somebody deciding whether to
+   stake is already reading. */
+.stake-token-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.stake-buy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.8rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--ash-line-strong);
+  border-radius: 0;
+  color: var(--ash-ink);
+  font-family: var(--font-family-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stake-buy { text-decoration: none; }
+
+.stake-actions button.stake-primary,
+.stake-heading button.stake-primary,
+.stake-result-dialog button.stake-primary {
+  border-color: var(--ash-ink);
+  background: var(--ash-ink);
+  color: var(--ash-ground);
+}
+
+.stake-actions button.stake-submit {
+  width: 100%;
+  min-height: 3.25rem;
+}
+
+.stake-actions button.stake-primary:disabled,
+.stake-heading button.stake-primary:disabled,
+.stake-result-dialog button.stake-primary:disabled {
+  border-color: var(--ash-line-strong);
+  background: transparent;
+  color: var(--ash-muted);
+}
+
+.stake-actions button:not(:disabled):active,
+.stake-heading button:not(:disabled):active,
+.stake-result-dialog button:not(:disabled):active,
+.stake-shared-refresh:not(:disabled):active {
+  transform: scale(var(--active-scale));
+}
+
+.stake-actions button:disabled,
+.stake-shared-refresh:disabled {
+  color: var(--ash-muted);
+  cursor: not-allowed;
+}
+
+.stake-rewards {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ash-line);
+}
+
+.stake-rewards h3 {
+  font-size: 1.15rem;
+}
+
+/* The three reward actions share one row, each as wide as its own label so
+   none of them wraps; a row too narrow for all three drops one to the next line
+   whole rather than breaking its label. */
+.stake-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.stake-button-row button {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.6rem;
+  padding: 0.75rem;
+  white-space: nowrap;
+}
+
+/* A reward the last reading from Base actually found is lit in its own colour: the
+   palette's Accent Blue for the revenue share, the page ink for REGENT, and its Accent
+   Orange where the reward goes straight back to work. */
+.stake-button-row button.stake-claim-ready[data-staking-action="claim_usdc"] {
+}
+
+.stake-button-row button.stake-claim-ready[data-staking-action="claim_regent"] {
+}
+
+.stake-button-row button.stake-claim-ready[data-staking-action="claim_and_restake_regent"] {
+}
+
+.stake-footer {
+  justify-content: space-between;
+  padding-top: 0.25rem;
+}
+
+.stake-overview {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2.2rem);
+}
+
+.stake-contract-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--ash-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.stake-contract-status > span {
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--ash-accent);
+}
+
+.stake-contract-status[data-state="paused"] > span {
+  background: var(--ash-muted);
+}
+
+
+.stake-supply-heading strong {
+  font-family: var(--font-family-title);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* One track holds both proportions: its full width is the total supply, the
+   band inside it is the circulating supply, and the fill inside that band is
+   what is staked. */
+
+
+
+/* The list takes the card footer's whole width rather than its widest tile's. */
+.stake-supply-facts {
+  display: grid;
+  flex: 1 1 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stake-supply-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The card's header already shows the staked share as its headline figure. */
+.stake-overview .rg-ratio-card__header-badge {
+  display: none;
+}
+
+.stake-snapshot-note {
+  min-height: 1.3rem;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.stake-inline-loading::before {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.45rem;
+  background: var(--ash-accent);
+  content: "";
+  animation: stake-pulse 900ms ease-in-out infinite alternate;
+}
+
+@keyframes stake-pulse {
+  to { opacity: 0.35; }
+}
+
+/* The three reasons stack under their heading inside the left column, each
+   drawing its own top rule; only a single-column page wide enough for it puts
+   them side by side. */
+.stake-how-it-works {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.stake-how-it-works h2 {
+  font-size: clamp(1.3rem, 2.4vw, 1.85rem);
+  letter-spacing: -0.02em;
+}
+
+.stake-how-it-works article {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ash-line);
+}
+
+.stake-how-it-works article > span {
+  color: var(--ash-accent-warm);
+  font-family: var(--font-family-title);
+  font-size: 0.9rem;
+}
+
+.stake-how-it-works article h3 {
+  font-size: 1.05rem;
+}
+
+.stake-how-it-works article p {
+  margin: 0;
+  color: var(--ash-muted);
+  font-size: 0.88rem;
+}
+
+.stake-contract-details summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem clamp(1rem, 3vw, 2rem);
+  cursor: pointer;
+  list-style: none;
+}
+
+.stake-contract-details summary::-webkit-details-marker { display: none; }
+.stake-contract-details summary > span:first-child { display: grid; gap: 0.25rem; }
+.stake-contract-details[open] summary > span:last-child { transform: rotate(45deg); }
+
+.stake-contract-details summary > span:last-child {
+  color: var(--ash-muted);
+  font-family: var(--font-family-ui);
+  transition: transform 180ms var(--ease-out);
+}
+
+.stake-contract-details-body {
+  display: grid;
+  gap: 1rem;
+  padding: 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem);
+  border-top: 1px solid var(--ash-line);
+}
+
+.stake-contract-link {
+  justify-self: start;
+}
+
+.stake-contract-facts > div,
+.stake-dialog-meta > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.35fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding-block: 0.85rem;
+  border-top: 1px solid var(--ash-line);
+}
+
+.stake-contract-facts dd,
+.stake-dialog-meta dd {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.stake-contract-facts code {
+  max-width: 100%;
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.stake-amount-notice[data-visible="true"],
+.stake-notice,
+.stake-status {
+  padding: 0.75rem;
+  border-left: 3px solid var(--ash-accent);
+  background: var(--ash-panel-strong);
+}
+
+.stake-notice {
+  margin: 0;
+}
+
+.stake-status {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.stake-status p {
+  margin: 0;
+}
+
+.stake-result-dialog,
+.stake-supply-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  padding: clamp(1.1rem, 4vw, 1.75rem);
+  border: 1px solid var(--ash-line-strong);
+  background: var(--ash-panel);
+  color: var(--ash-ink);
+}
+
+.stake-supply-dialog {
+  width: min(38rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+.stake-result-dialog::backdrop,
+.stake-supply-dialog::backdrop { background: var(--ash-scrim); }
+.stake-result-dialog h2,
+.stake-supply-dialog h2 { margin: 0.25rem 0 0.75rem; }
+.stake-supply-dialog form { display: flex; justify-content: flex-end; }
+
+/* Each holding is one row: its name, the amount, how it comes back, and the
+   address that answers for it. */
+.stake-holdings {
+  display: grid;
+  margin: 0 0 1.25rem;
+  border-block-start: 1px solid var(--ash-line);
+}
+
+.stake-holdings > div {
+  display: grid;
+  gap: 0.3rem;
+  padding-block: 0.8rem;
+  border-block-end: 1px solid var(--ash-line);
+}
+
+.stake-holdings dt {
+  font-family: var(--font-family-title);
+  font-size: 1rem;
+}
+
+.stake-holdings dd {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--ash-muted);
+  font-size: 0.88rem;
+}
+
+.stake-holdings dd strong {
+  color: var(--ash-ink);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.stake-holdings a {
+  color: var(--ash-accent);
+  overflow-wrap: anywhere;
+}
+
+.stake-holdings code {
+  font-size: 0.78rem;
+}
+.stake-dialog-kicker,
+.stake-dialog-summary,
+.stake-dialog-detail { margin-block: 0 0.75rem; }
+.stake-dialog-summary { font-size: 1.05rem; }
+.stake-dialog-detail { color: var(--ash-muted); }
+.stake-result-dialog a { margin-block-end: 1rem; }
+.stake-result-dialog a[hidden] { display: none; }
+.stake-result-dialog form { display: flex; justify-content: flex-end; }
+
+@media (hover: hover) and (pointer: fine) {
+  .stake-actions button:not(:disabled):hover,
+  .stake-heading button:not(:disabled):hover,
+  .stake-result-dialog button:not(:disabled):hover,
+  .stake-shared-refresh:not(:disabled):hover {
+    border-color: var(--ash-accent);
+    color: var(--ash-accent);
+  }
+
+  .stake-actions button.stake-primary:not(:disabled):hover,
+  .stake-heading button.stake-primary:not(:disabled):hover,
+  .stake-result-dialog button.stake-primary:not(:disabled):hover {
+    border-color: var(--ash-ink);
+    background: var(--ash-ink);
+    color: var(--ash-ground);
+  }
+}
+
+@media (max-width: 64rem) {
+  .stake-heading { grid-template-columns: minmax(0, 1fr); }
+  .stake-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (min-width: 46.01rem) and (max-width: 64rem) {
+  .stake-how-it-works { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 2rem); }
+  .stake-how-it-works > div { grid-column: 1 / -1; }
+}
+
+@media (max-width: 46rem) {
+  .stake-wallet-summary { grid-template-columns: minmax(0, 1fr); }
+  .stake-section-heading { flex-direction: column; }
+}
+
+@media (max-width: 30rem) {
+  .stake-button-row button { flex-basis: 100%; }
+  .stake-heading,
+  .stake-actions,
+  .stake-overview,
+  .stake-how-it-works { padding: 1rem; }
+  .stake-preview { grid-template-columns: minmax(0, 1fr); }
+  .stake-benefit-supply { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
+  /* Available, then the 50% and Max shortcuts beside it, then the submit
+     across the whole row. */
+  .stake-amount-tools { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .stake-amount-action { display: contents; }
+  .stake-amount-action .stake-submit { grid-column: 1 / -1; }
+  .stake-amount-shortcuts { margin-inline-start: 0; }
+  .stake-earned-split { grid-template-columns: minmax(0, 1fr); }
+  .stake-earned-part + .stake-earned-part { padding-left: 0; border-left: 0; }
+  .stake-contract-facts > div,
+  .stake-dialog-meta > div { grid-template-columns: minmax(0, 1fr); gap: 0.3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stake-progress-mark,
+  .stake-inline-loading::before { animation: none; }
+  .stake-actions button,
+  .stake-heading button,
+  .stake-result-dialog button,
+  .stake-shared-refresh,
+  .stake-contract-details summary > span:last-child,
+  .stake-revenue-caret { transition: none; }
+}
+
+/* The complete destination remains readable at mobile widths. */
+.stake-recipient {
+  margin-block: 0.25rem 0.5rem;
+}
+
+.stake-recipient [hidden],
+.stake-recipient .stake-check[hidden],
+.stake-recipient[hidden],
+.stake-page[data-staking-mode="stake"]:has(#staking-for-other:checked) .stake-preview,
+.stake-dialog-meta [hidden] {
+  display: none;
+}
+
+.stake-actions .stake-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding-block: 0.6rem;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.stake-check input {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  accent-color: var(--ash-accent);
+}
+
+.stake-check span,
+[data-staking-result-receiver] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#staking-recipient-fields > label:first-child {
+  display: block;
+  margin-block: 0.5rem;
+}
+
+#staking-recipient {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--ash-line);
+  border-radius: 0;
+  background: var(--ash-panel);
+  color: inherit;
+  font: inherit;
+}
+
+.stake-recipient input:focus-visible {
+  outline: 2px solid var(--ash-accent);
+  outline-offset: 3px;
+}
+
+#staking-recipient-error {
+  font-size: 0.85rem;
+  margin-block: 0.5rem;
+}
+
+#staking-recipient-warning {
+  line-height: 1.5;
+}
+
+}
+
+/* The vendored controls paint their own surface and edge, and the native
+   button keeps its own size, so the chosen mode, the supply tiles and the
+   info mark are skinned outside the page layer to beat them. */
+.stake-mode button[aria-pressed="true"] {
+  background: var(--ash-ink);
+  color: var(--ash-ground);
+}
+
+/* The small mark beside a circulating figure that opens the account of what
+   is held back. It sits in the figure's own line and takes its colour. */
+.stake-page .stake-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ash-muted);
+  font-family: var(--font-family-title);
+  font-size: 0.72rem;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: 0;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.stake-page .stake-info:hover,
+.stake-page .stake-info:focus-visible {
+  color: var(--ash-ink);
+}
+
+.stake-page .stake-info:focus-visible {
+  outline: 2px solid var(--ash-accent);
+  outline-offset: 2px;
+}
+
+/* Each tile is one line: the label at the start, the figure at the end, and
+   neither of them broken mid-word. */
+.stake-supply-facts .rg-ratio-card__tile {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  text-align: start;
+  overflow-wrap: normal;
+}
+
+.stake-supply-facts .rg-ratio-card__tile dd {
+  white-space: nowrap;
+}
+
+/* Below the card's width for three side by side, the tiles stack. */
+@container rg-ratio (max-width: 40rem) {
+  .stake-supply-facts { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* A repeated mode selection points to the action; it never activates it.
+ * An entered amount holds the same lit edges for as long as it stands.
+ * Match the unlayered button skin. LiveView removes this transient class,
+ * restoring the normal 150ms edges without changing focus or wallet state. */
+@media (forced-colors: none) {
+  .stake-actions button.stake-submit:is(.is-mode-hinted, .is-armed)::after {
+    --rg-button-edge-ink: var(--rg-button-active-border);
+    --rg-button-cut-ink: var(--rg-button-active-border);
+    --rg-button-cut-gap: 0px;
+    background-size:
+      var(--rg-cut-control) var(--rg-cut-control), var(--rg-cut-control) var(--rg-cut-control),
+      calc(100% - var(--rg-cut-control) + 1px) 1px, 1px calc(100% - var(--rg-cut-control) + 1px),
+      calc(100% - var(--rg-cut-control) + 1px) 1px, 1px calc(100% - var(--rg-cut-control) + 1px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .stake-actions button.stake-submit.is-mode-hinted::before {
+    background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, color-mix(in srgb, var(--rg-shimmer-color, var(--palette-tangerine-tango, #ff5b19)) 75%, var(--palette-platinum, #e5e3d2)) 24%, transparent) 50%, transparent 70%);
+    background-size: 300% 100%;
+    background-repeat: no-repeat;
+    animation: rg-shimmer 650ms var(--ease-out) 1;
+  }
+
+  .stake-actions button.stake-submit.is-armed:not(.is-mode-hinted)::before {
+    background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, color-mix(in srgb, var(--rg-shimmer-color, var(--palette-tangerine-tango, #ff5b19)) 75%, var(--palette-platinum, #e5e3d2)) 24%, transparent) 50%, transparent 70%);
+    background-size: 300% 100%;
+    background-repeat: no-repeat;
+    animation: rg-shimmer var(--rg-shimmer-duration, 1.15s) var(--ease-out) infinite;
+  }
+}
+
+@media (forced-colors: active) {
+  .stake-actions button.stake-submit:is(.is-mode-hinted, .is-armed) {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+}

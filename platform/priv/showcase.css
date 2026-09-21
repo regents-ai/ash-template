@@ -1,0 +1,131 @@
+/* Workshop composition only. Shared Regent.Structure / Primitives own skins,
+   panel ink/fill pairing, control geometry, fonts and focus treatment. */
+/* The Privy page is a composition of the real Regents controls, not a fixture
+   skin. Keep its setup and hydration panels independent of the palette editor. */
+.privy-reference-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 24px; }
+.privy-reference-content > section { min-width: 0; padding: 24px; border: 1px solid var(--color-border); }
+.privy-reference-intro, .privy-reference-setup { grid-column: 1 / -1; }
+.privy-reference-header #account-control { margin-left: auto; }
+.privy-reference-facts { display: grid; gap: 16px; margin-block: 24px; }
+.privy-reference-facts > div { display: grid; gap: 8px; min-width: 0; }
+.privy-reference-facts dt { color: var(--color-fg-muted); }
+.privy-reference-facts dd { margin: 0; overflow-wrap: anywhere; }
+.privy-reference :where(p, li, code) { overflow-wrap: anywhere; }
+.privy-reference li + li { margin-top: 12px; }
+.privy-reference .account-auth-status { z-index: 20; }
+@media (max-width: 48rem) {
+  .privy-reference-content { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 16px; }
+  .privy-reference-content > section { padding: 16px; }
+}
+html:has(.sc) { scroll-behavior: auto; }
+body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); overflow: auto; }
+.sc { min-height: 100vh; font-family: var(--font-family-ui); font-size: 14px; background: var(--color-bg); }
+.sc a { text-decoration: none; }
+.sc a:hover { text-decoration: underline; }
+.sc :where(button, input, select, textarea) { font: inherit; font-family: var(--font-family-ui); }
+.sc button { cursor: pointer; }
+.sc button:disabled { cursor: not-allowed; }
+.sc :where(h1, h2, h3) { font-family: var(--font-family-title); font-weight: 400; font-synthesis: none; overflow-wrap: anywhere; }
+.sc h1 { font-size: clamp(2.5rem, 4.8vw, 4.5rem); line-height: 1.03; letter-spacing: -.045em; margin: 0; }
+.sc h1 span { color: var(--color-fg-muted); }
+.sc h2 { margin: 0; }
+.sc h3 { font-size: clamp(1.25rem, 2vw, 1.75rem); line-height: 1.15; margin: 0 0 24px; }
+.sc h3 small { display: block; margin-top: 8px; font: 400 11px var(--font-family-title); }
+.sc-header { min-height: 80px; padding: 16px 24px; display: flex; align-items: center; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--rg-page-rule); }
+.sc-wordmark { font: 400 24px var(--font-family-title); }
+.sc-wordmark span { margin-left: 12px; }
+.sc-local { font-size: 11px; border: 1px solid currentColor; padding: 4px 8px; }
+.sc-api { margin-left: auto; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
+.sc-layout { display: grid; grid-template-columns: var(--rg-rail-width) minmax(0, 1fr); gap: var(--rg-track-gap); }
+.sc-sidebar { align-self: start; position: sticky; top: 0; padding: 24px 16px; }
+.sc-sidebar nav { display: grid; }
+.sc-sidebar nav a { display: grid; grid-template-columns: 2.5ch minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 16px 0; min-height: 44px; border-bottom: 1px solid var(--rg-page-rule); font-size: 11px; overflow-wrap: anywhere; }
+.sc-sidebar nav span { font-size: 12px; }
+.sc-sidebar .sc-note { margin-top: 48px; }
+.sc-main { min-width: 0; border-left: 1px solid var(--rg-page-rule); padding: var(--rg-panel-padding); }
+.sc-intro { padding-block: 24px 48px; }
+.sc-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; margin: 0 0 24px; }
+.sc-palette { padding-block: 24px; border-block: 1px solid var(--rg-page-rule); margin-bottom: 48px; }
+.sc-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.sc-between { justify-content: space-between; }
+.sc-segment { display: flex; flex-wrap: wrap; gap: 8px; }
+.sc-segment button { background: transparent; color: inherit; border: 1px solid var(--rg-page-rule); border-radius: 0; padding: 8px 12px; min-height: 44px; }
+.sc-segment button[aria-pressed="true"] { background: var(--color-accent); color: var(--color-fg-on-accent); border-color: var(--color-accent); }
+.sc-theme-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+.sc-theme-options button { min-width: 0; padding: 8px; border: 1px solid var(--sc-card-fg, currentColor); border-radius: 0; color: var(--sc-card-fg, var(--color-fg)); background: var(--sc-card-bg, var(--color-bg)); text-align: left; }
+.sc-theme-options button[aria-pressed="true"] { outline: 2px solid var(--color-fg); outline-offset: 3px; }
+.sc-theme-options button > span:last-child { display: block; padding-top: 8px; font-size: 11px; overflow-wrap: anywhere; }
+.sc-theme-options small { display: block; font-size: 10px; text-transform: uppercase; }
+.sc-theme-sample { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 72px; padding: 12px; background: var(--sc-card-surface, var(--color-surface)); border-bottom: 1px solid currentColor; }
+.sc-theme-sample span { font: 400 32px var(--font-family-title); }
+.sc-theme-sample i { width: 24px; height: 24px; background: var(--sc-card-accent, var(--color-accent)); clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.sc-swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.sc-swatches label { display: grid; gap: 8px; font-size: 12px; }
+.sc-swatches input[type="color"] { width: 100%; height: 48px; padding: 0; border: 1px solid currentColor; border-radius: 0; background: transparent; cursor: pointer; }
+.sc-swatches input::-webkit-color-swatch-wrapper { padding: 0; }
+.sc-swatches input::-webkit-color-swatch { border: 0; border-radius: 0; }
+.sc-swatches output, .sc-mono { font: 11px var(--font-family-mono); }
+.sc-shimmer-control { margin-top: 16px; }
+.sc-shimmer-control input[type="color"] { width: 48px; height: 44px; padding: 0; border: 1px solid currentColor; background: transparent; cursor: pointer; }
+.sc-shimmer-control output { font: 11px var(--font-family-ui); }
+.sc-ratio-preview { max-width: 22rem; margin-bottom: 24px; }
+.sc-ratio-context { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.sc-ratio-context li { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; min-height: 48px; padding: 8px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); font: 11px var(--font-family-ui); }
+.sc-text-button { border: 0; background: none; color: inherit; padding: 8px 0; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; font-size: 12px; }
+.sc-section { scroll-margin-top: 24px; margin-bottom: var(--rg-section-gap); }
+.sc-heading { margin-bottom: 24px; }
+.sc-heading h2 { font-size: 20px; }
+.sc-heading p { margin: 0; font-size: 11px; }
+.sc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-bottom: 24px; }
+.sc-example.rg-feature { display: block; grid-row: auto; min-width: 0; }
+.sc-card { padding: var(--rg-panel-padding); height: 100%; }
+.sc-card > .rg-notice { margin-top: 12px; }
+.sc-card h3:not(:first-child) { margin-top: 24px; }
+.sc .rg-panel__heading h3 { margin: 0; }
+.sc .rg-field { margin-top: 12px; }
+.sc form > .rg-button { margin-top: 8px; }
+.sc label { font-size: 12px; }
+.sc .rg-disclosure { margin-top: 12px; }
+.sc pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow: auto; font: 12px/1.6 var(--font-family-mono); }
+.sc code { font: 12px/1.6 var(--font-family-mono); overflow-wrap: anywhere; }
+.sc-api-note { border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent); margin-top: 24px; padding-top: 8px; font-size: 11px; }
+.sc-api-note summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.sc-api-note[open] summary span { transform: rotate(90deg); }
+.sc-api-note code { display: block; padding-top: 8px; }
+.sc-type-display { font: 400 42px/1.2 var(--font-family-title); margin: 16px 0; }
+.sc-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sc-facts dd { margin: 0; text-align: right; }
+.sc-backgrounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.sc-backgrounds figure { margin: 0; padding: 16px; min-width: 0; border: 1px solid var(--rg-page-rule); }
+/* Keep compatibility components in the DOM without restoring retired page art. */
+.sc-backgrounds .shell-background { display: none; }
+.sc-backgrounds figcaption { font-size: 11px; }
+.sc iframe { width: 100%; height: 480px; border: 1px solid var(--rg-page-rule); border-radius: 0; }
+.sc-inventory-row { padding: 16px 0; border-bottom: 1px solid var(--rg-page-rule); }
+.sc-inventory-row small { display: block; margin-top: 8px; }
+.sc-note { font-size: 12px; color: var(--color-fg-muted); }
+.sc-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; border-top: 1px solid var(--rg-page-rule); padding-top: 24px; font-size: 11px; }
+.sc [data-demo-results] { padding-left: 24px; font: 12px/1.8 var(--font-family-ui); }
+.sc-token-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; font-size: 12px; }
+.sc-token-list div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.sc-token-list dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 1023px) {
+  .sc-layout { grid-template-columns: 1fr; gap: 0; }
+  .sc-sidebar { position: static; padding: 0 24px; border-bottom: 1px solid var(--rg-page-rule); }
+  .sc-sidebar nav { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
+  .sc-sidebar .sc-note { display: none; }
+  .sc-main { border-left: 0; }
+}
+@media (max-width: 767px) {
+  .sc-grid { grid-template-columns: 1fr; }
+  .sc-sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sc-theme-options, .sc-swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sc-heading p { flex-basis: 100%; }
+  .sc-header { padding: 16px; gap: 8px 16px; }
+  .sc-wordmark { font-size: 20px; }
+  .sc-local { font-size: 10px; }
+  .sc-token-list, .sc-backgrounds { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc *, .sc *::before, .sc *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
