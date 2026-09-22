@@ -24,6 +24,8 @@
 !elixir-utils/privy/**
 !elixir-utils/agent_access/mix.exs
 !elixir-utils/agent_access/lib/**
+!elixir-utils/format/mix.exs
+!elixir-utils/format/lib/**
 !mix-cache/**
 !npm-cache/**
 !rustler-precompiled/**

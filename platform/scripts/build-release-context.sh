@@ -7,6 +7,7 @@
 #     design-system/regent_ui/ the sibling source mix.exs resolves by path
 #     elixir-utils/privy/      the sibling source mix.exs resolves by path
 #     elixir-utils/agent_access/ the sibling source mix.exs resolves by path
+#     elixir-utils/format/     the sibling source mix.exs resolves by path
 #     regents/identity/        the sibling source mix.exs resolves by path
 #     mix-cache/               Mix, Hex and rebar3, extracted from the sealed archive
 #     npm-cache/_cacache/      the npm content cache
@@ -59,6 +60,7 @@ privy_source="${REGENT_PRIVY_PATH:-$siblings/elixir-utils/privy}"
 identity_source="${REGENT_IDENTITY_PATH:-$siblings/regents/identity}"
 regent_ui_source="${REGENT_UI_PATH:-$siblings/design-system/regent_ui}"
 agent_access_source="$siblings/elixir-utils/agent_access"
+format_source="$siblings/elixir-utils/format"
 
 # The arm64 native artifact is part of the base supply; the amd64 one arrived
 # in its own sealed directory. Both declare it under the same manifest keys.
@@ -94,7 +96,7 @@ esbuild_addendum="$esbuild_supply/SUPPLY-ADDENDUM.txt"
 native_manifest="$native_supply/$native_manifest_name"
 
 for required in "$manifest" "$mix_addendum" "$esbuild_addendum" "$native_manifest" \
-  "$privy_source" "$identity_source" "$regent_ui_source" "$agent_access_source"; do
+  "$privy_source" "$identity_source" "$regent_ui_source" "$agent_access_source" "$format_source"; do
   [ -e "$required" ] || die "missing supply input: $required"
 done
 
@@ -193,6 +195,10 @@ rsync -a "${env_filters[@]}" --exclude '.git' --exclude '_build/' \
 mkdir -p "$staging/elixir-utils/agent_access"
 rsync -a --no-links "${env_filters[@]}" --exclude '.git' --exclude '_build/' --exclude 'deps/' \
   "$agent_access_source/" "$staging/elixir-utils/agent_access/"
+
+mkdir -p "$staging/elixir-utils/format"
+rsync -a --no-links "${env_filters[@]}" --exclude '.git' --exclude '_build/' --exclude 'deps/' \
+  "$format_source/" "$staging/elixir-utils/format/"
 
 # The sealed npm directory is the cache payload itself, so it lands one level
 # down: npm resolves its content under <cache>/_cacache.
