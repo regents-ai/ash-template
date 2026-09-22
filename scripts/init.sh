@@ -8,9 +8,11 @@
 # Rewrites every spelling of the placeholder across the monorepo:
 #   ash_template  -> keyfleet     (OTP app, Mix tasks, databases, schema, session key)
 #   AshTemplate   -> KeyFleet     (Elixir modules)
+#   ashTemplate   -> keyFleet     (JavaScript names)
 #   ASH_TEMPLATE  -> KEYFLEET     (environment variables)
 #   ash-template  -> keyfleet     (package and Fly names)
 #   Ash Template  -> KeyFleet     (public copy; the display name, "KeyFleet" by default)
+#   ASH TEMPLATE  -> KEYFLEET     (capitalised legal copy; the display name in capitals)
 # renames the files and directories that carry the app name, drops the Markdown
 # passages fenced by <!-- template-only --> and <!-- /template-only --> that
 # describe the template itself, and records the rename at the end of
@@ -38,6 +40,8 @@ fi
 
 kebab="${snake//_/-}"
 upper="$(printf '%s' "$snake" | tr '[:lower:]' '[:upper:]')"
+camel="$(printf '%s' "${module:0:1}" | tr '[:upper:]' '[:lower:]')${module:1}"
+display_upper="$(printf '%s' "$display" | tr '[:lower:]' '[:upper:]')"
 # Mix names a task after its module, so `Mix.Tasks.KeyFleet.RouteHandoff` is
 # `mix key_fleet.route_handoff` whatever the OTP app is called.
 task_prefix="$(printf '%s' "$module" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' | tr '[:upper:]' '[:lower:]')"
@@ -86,8 +90,8 @@ done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -
 git ls-files -z | while IFS= read -r -d '' path; do
   [[ -f "$path" && "$path" != scripts/init.sh && "$path" != CHANGELOG.md ]] || continue
   grep -Iq . "$path" || continue
-  if grep -q 'ash_template\|AshTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template' "$path"; then
-    perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g; s/Ash Template/$display/g" "$path"
+  if grep -q 'ash_template\|AshTemplate\|ashTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template\|ASH TEMPLATE' "$path"; then
+    perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g; s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g" "$path"
   fi
 done
 

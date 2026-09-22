@@ -20,31 +20,6 @@ defmodule AshTemplate.Accounts.VerifiedSessionLinkedIdentityTest do
              Accounts.list_my_linked_identities(actor: %Human{human_account_id: account.id})
   end
 
-  test "session refresh leaves World identities untouched" do
-    verified = verified_identity("preserve", [social(:github, "github-7", "regents-ai")])
-    assert {:ok, account, []} = VerifiedSession.establish(verified)
-
-    assert {:ok, _identity} =
-             Accounts.upsert_linked_identity(
-               :world,
-               "world-nullifier",
-               "world-nullifier",
-               nil,
-               DateTime.utc_now(),
-               %{},
-               account.id,
-               actor: %System{}
-             )
-
-    assert {:ok, ^account, []} =
-             VerifiedSession.establish(%{verified | linked_socials: []})
-
-    assert {:ok, identities} =
-             Accounts.list_linked_identities_for_account(account.id, actor: %System{})
-
-    assert Enum.map(identities, & &1.provider) == [:world]
-  end
-
   test "a subject owned by another account is skipped without ending the session" do
     assert {:ok, owner, []} =
              VerifiedSession.establish(

@@ -110,12 +110,25 @@ rel/                    Release overlays, including the migrate command
 
 ## Checks
 
+From the monorepo root, `make check-platform` runs this component's gate and
+`make check` runs every component's:
+
 ```sh
 mix precommit
 npm run typecheck
 npm test
-npx playwright test
 ```
+
+These need `MIX_TEST_PARTITION` set, even to an empty value, and
+`REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout
+(see [Shared dependencies](#shared-dependencies)). For example, with the test
+database `ash_template_test`:
+
+```sh
+MIX_TEST_PARTITION= REGENT_DEPS_ROOT=<workspace> make check
+```
+
+The browser suite runs separately with `npm run test:browser`.
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
 locks and formatting, runs Credo in strict mode and Sobelow, holds the
@@ -126,15 +139,15 @@ warnings as errors, and verifies the Ash codegen and route handoff are current.
 | --- | --- |
 | `npm run typecheck` | Type-checks the TypeScript assets. |
 | `npm test` | Runs the Vitest unit suite. |
-| `npx playwright test` | Runs the browser suite against a test server. |
+| `npm run test:browser` | Builds the assets, then runs the browser suite against a test server. |
 | `npm run test:budgets` | Enforces the asset size budgets. |
 | `mix test.external` | Runs one Docker build-context test that needs tools outside the hermetic suite. |
 
 The test database name carries whatever `MIX_TEST_PARTITION` holds, just
-before its `_test` ending. Set it whenever more than one test run can happen on
-a machine: `MIX_TEST_PARTITION=_a1b` gives `ash_template_a1b_test`. Run
-`MIX_ENV=test mix ecto.create` once for a new value; the suite builds the
-schema itself on its first run.
+before its `_test` ending. Give each test run its own value whenever more
+than one can happen on a machine: `MIX_TEST_PARTITION=_a1b` gives
+`ash_template_a1b_test`. Run `MIX_ENV=test mix ecto.create` once for a new
+value; the suite builds the schema itself on its first run.
 
 ## Deployment
 

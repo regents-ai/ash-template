@@ -2,8 +2,9 @@
 
 <!-- template-only -->
 This monorepo is a product template. Keep the placeholder names (`ash_template`,
-`AshTemplate`, `ash-template`, `ASH_TEMPLATE_`, "Ash Template") exactly as they
-are; `scripts/init.sh` renames them for a real product.
+`AshTemplate`, `ashTemplate`, `ash-template`, `ASH_TEMPLATE_`, "Ash Template",
+"ASH TEMPLATE") exactly as they are; `scripts/init.sh` renames them for a real
+product.
 <!-- /template-only -->
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.
@@ -14,7 +15,11 @@ are; `scripts/init.sh` renames them for a real product.
 - There is no `identity/` folder. The shared profile domain comes from the
   sibling `regents/identity` package, resolved through `REGENT_DEPS_ROOT` with
   `design-system` and `elixir-utils`. Use `REGENT_DEPS_ROOT` for isolated builds.
-- Run checks from the owning component or use the root Make targets.
+- `make check` runs every gate: the platform's `mix precommit`, TypeScript
+  typecheck and unit tests, then the CLI's build, typecheck and tests.
+  `make check-platform`, `check-cli` and `check-contracts` run one component.
+  Set `MIX_TEST_PARTITION` (an empty value uses `ash_template_test`) and, for
+  isolated builds, `REGENT_DEPS_ROOT`.
 - Follow the workspace's `regent-workflow`; use one integrating owner for this
   repository. Scope verification to observable acceptance and preserve useful
   regression coverage.

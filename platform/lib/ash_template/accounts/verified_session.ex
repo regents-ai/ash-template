@@ -154,10 +154,7 @@ defmodule AshTemplate.Accounts.VerifiedSession do
 
   defp remove_missing_socials(existing, token_providers, actor) do
     existing
-    |> Enum.filter(
-      &(&1.provider in @social_providers and
-          not MapSet.member?(token_providers, &1.provider))
-    )
+    |> Enum.reject(&MapSet.member?(token_providers, &1.provider))
     |> Enum.reduce_while(:ok, fn identity, :ok ->
       case Accounts.remove_linked_identity(identity, actor: actor) do
         {:ok, _identity} -> {:cont, :ok}

@@ -32,7 +32,7 @@ const assertNoOverflow = async (page: import("@playwright/test").Page) => {
   ).toBe(true)
 }
 
-test("[U2] homepage is server-readable and lists all three highlights", async ({browser}) => {
+test("homepage is server-readable and lists all three highlights", async ({browser}) => {
   const context = await browser.newContext({javaScriptEnabled: false})
   const page = await context.newPage()
   await page.goto("/")
@@ -71,7 +71,7 @@ test("[U2] homepage is server-readable and lists all three highlights", async ({
 })
 
 // A tab is only useful if its section actually arrives in view.
-test("[U1] a navigation tab brings its section into view", async ({page}) => {
+test("a navigation tab brings its section into view", async ({page}) => {
   await page.goto("/")
   await waitForHomepage(page)
 
@@ -89,7 +89,7 @@ test("[U1] a navigation tab brings its section into view", async ({page}) => {
 })
 
 // Display titles and body copy keep their separate canonical typographic roles.
-test("[U1][U2] the tagline retains its sentence case", async ({page}) => {
+test("the tagline retains its sentence case", async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900})
   await page.goto("/")
   await waitForHomepage(page)
@@ -101,7 +101,7 @@ test("[U1][U2] the tagline retains its sentence case", async ({page}) => {
   )
 })
 
-test("[U2] homepage settles immediately for reduced motion", async ({browser}) => {
+test("homepage settles immediately for reduced motion", async ({browser}) => {
   const context = await browser.newContext({reducedMotion: "reduce"})
   const page = await context.newPage()
   await page.goto("/")
@@ -122,7 +122,7 @@ const stableRender = (html: string) =>
 
 // The landing is a dark-only composition: whatever palette the visitor saved, every render
 // is the same dark page, and only the per-request tokens differ.
-test("[U3] the public landing renders the same dark page for every saved palette", async ({browser}) => {
+test("the public landing renders the same dark page for every saved palette", async ({browser}) => {
   const landing = async (saved?: "light" | "dark") => {
     const context = await browser.newContext()
     if (saved) {
@@ -151,7 +151,7 @@ test("[U3] the public landing renders the same dark page for every saved palette
 
 // The lock is not a rewrite of the visitor's preference: a saved light theme still renders
 // the dark landing, offers no switch, and leaves the saved choice for the other pages.
-test("[U3] the landing stays dark and preserves the visitor's saved theme", async ({browser}) => {
+test("the landing stays dark and preserves the visitor's saved theme", async ({browser}) => {
   const context = await browser.newContext()
   await context.addCookies([
     {name: "regent_theme", value: "light", url: test.info().project.use.baseURL as string},
@@ -184,7 +184,7 @@ test("the landing keeps its opted-in display face for headings", async ({page}) 
 // The founder's hero: the words in the left half with the crown drawn across the whole stage
 // behind them and the highlights underneath where there is room, and the same things in reading
 // order, crown between words and highlights, where there is not.
-test("[U1][U2] the hero sets its words over the crown, and above it on a phone", async ({page}) => {
+test("the hero sets its words over the crown, and above it on a phone", async ({page}) => {
   const boxOf = (selector: string) =>
     page.locator(selector).evaluate(element => {
       const box = element.getBoundingClientRect()
@@ -252,7 +252,7 @@ for (const viewport of [
   {name: "tablet-768", width: 768, height: 1024},
   {name: "desktop", width: 1440, height: 1000},
 ]) {
-  test(`[U1][U2][U3] homepage fits ${viewport.name} with usable focus targets`, async ({page}, testInfo) => {
+  test(`homepage fits ${viewport.name} with usable focus targets`, async ({page}, testInfo) => {
     await page.setViewportSize({width: viewport.width, height: viewport.height})
     await page.goto("/")
     await waitForHomepage(page)
@@ -285,7 +285,7 @@ for (const viewport of [
   })
 }
 
-test("[U1][U2] the highlights read signin, account, agents at every viewport", async ({page}) => {
+test("the highlights read signin, account, agents at every viewport", async ({page}) => {
   for (const viewport of focusViewports) {
     await test.step(viewport.name, async () => {
       await page.setViewportSize({width: viewport.width, height: viewport.height})
@@ -329,7 +329,7 @@ test("[U1][U2] the highlights read signin, account, agents at every viewport", a
 })
 
 // Pointing at a highlight never recolours its heading.
-test("[U2] card hover leaves the heading ink alone", async ({page}) => {
+test("card hover leaves the heading ink alone", async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900})
   await page.goto("/")
   await waitForHomepage(page)
@@ -341,7 +341,7 @@ test("[U2] card hover leaves the heading ink alone", async ({page}) => {
   }
 })
 // Generous compartments stay in natural flow rather than shrinking to a viewport budget.
-test("[U1][U2] the complete hero grows in document flow on desktop", async ({page}) => {
+test("the complete hero grows in document flow on desktop", async ({page}) => {
   for (const viewport of [
     {name: "1280x640", width: 1280, height: 640},
     {name: "1280x720", width: 1280, height: 720},
@@ -377,7 +377,7 @@ test("[U1][U2] the complete hero grows in document flow on desktop", async ({pag
 // The picture behind the hero is a grey line drawing with no ground of its own, so it takes
 // whatever the page is painted and reads the same in a light theme as in a dark one. The file
 // itself has to be that, with nothing on the page correcting it after the fact.
-test("[U2] the picture behind the hero carries no colour and no ground of its own", async ({page}) => {
+test("the picture behind the hero carries no colour and no ground of its own", async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900})
   await page.goto("/")
   await waitForHomepage(page)
@@ -430,7 +430,7 @@ test("[U2] the picture behind the hero carries no colour and no ground of its ow
 
 // The Sign in chapter reads as an ink heading over one muted description, with its three
 // proofs in the grid below.
-test("[U1] the Sign in chapter keeps its proofs under muted body copy", async ({page}) => {
+test("the Sign in chapter keeps its proofs under muted body copy", async ({page}) => {
   await page.goto("/")
   await waitForHomepage(page)
 
@@ -463,7 +463,7 @@ test("[U1] the Sign in chapter keeps its proofs under muted body copy", async ({
 
 // The closing frame carries no chapter number, so its headline has to be placed on the chapter
 // headline edge explicitly at every width, or the page would read as two columns of sections.
-test("[U1][U3] the numberless closing shares the chapter headline column", async ({page}) => {
+test("the numberless closing shares the chapter headline column", async ({page}) => {
   for (const viewport of [
     {name: "desktop", width: 1440, height: 1000},
     {name: "review-1024x768", width: 1024, height: 768},
@@ -487,7 +487,7 @@ test("[U1][U3] the numberless closing shares the chapter headline column", async
   }
 })
 
-test("[U5] the Agents action stays contained and reachable at every tested viewport", async ({page}) => {
+test("the Agents action stays contained and reachable at every tested viewport", async ({page}) => {
   for (const viewport of focusViewports) {
     await test.step(viewport.name, async () => {
       await page.setViewportSize({width: viewport.width, height: viewport.height})
@@ -517,7 +517,7 @@ test("[U5] the Agents action stays contained and reachable at every tested viewp
   }
 })
 
-test("[U1][U2][U3] homepage remains usable at effective 200 percent zoom", async ({page}, testInfo) => {
+test("homepage remains usable at effective 200 percent zoom", async ({page}, testInfo) => {
   await page.setViewportSize({width: 640, height: 900})
   await page.goto("/")
   await waitForHomepage(page)
@@ -528,7 +528,7 @@ test("[U1][U2][U3] homepage remains usable at effective 200 percent zoom", async
   })
 })
 
-test("[U2][U3] homepage captures the accepted mobile and tablet states", async ({browser}, testInfo) => {
+test("homepage captures the accepted mobile and tablet states", async ({browser}, testInfo) => {
   for (const capture of [
     {height: 844, name: "final-mobile-390-dark.png", width: 390},
     {height: 1024, name: "final-tablet-768-dark.png", width: 768},
@@ -546,7 +546,7 @@ test("[U2][U3] homepage captures the accepted mobile and tablet states", async (
   }
 })
 
-test("[U2] the primary homepage action keeps its contrast on hover", async ({page}) => {
+test("the primary homepage action keeps its contrast on hover", async ({page}) => {
   await page.goto("/")
   await waitForHomepage(page)
   const action = page.locator(".rl-closing").getByRole("link", {name: "Open the app"})
@@ -561,7 +561,7 @@ test("[U2] the primary homepage action keeps its contrast on hover", async ({pag
   })).toEqual(before)
 })
 
-test("[U1] the block primary action has a square high-contrast keyboard focus ring", async ({page}, testInfo) => {
+test("the block primary action has a square high-contrast keyboard focus ring", async ({page}, testInfo) => {
   for (const viewport of focusViewports) {
     await page.setViewportSize({width: viewport.width, height: viewport.height})
     await page.goto("/")
@@ -684,7 +684,7 @@ test("[U1] the block primary action has a square high-contrast keyboard focus ri
 // colour here, so the ring is set in Text — the one colour the page wears whichever card
 // is being read — and it has to stay that same mark on every control, including the card
 // whose colour the page is currently wearing.
-test("[U1] every hero control retains visible paired keyboard focus", async ({page}) => {
+test("every hero control retains visible paired keyboard focus", async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900})
   await page.goto("/")
   await waitForHomepage(page)

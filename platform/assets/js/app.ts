@@ -21,12 +21,8 @@ import {
 } from "./shell_state"
 import {CopyText} from "./hooks/copy_text"
 import {HolographicCard} from "./hooks/holographic_card"
-import {HomeField} from "./hooks/home_field"
-import {HomeHero} from "./hooks/home_hero"
 import {HomePrism} from "./hooks/home_prism"
 import {ShellMotion} from "./hooks/motion"
-import {InfoDialog} from "./hooks/info_dialog"
-import {ModalDialog} from "./hooks/modal_dialog"
 import {VerifiedConnections} from "./hooks/verified_connections"
 
 type ShellHook = Hook & {
@@ -323,11 +319,7 @@ const hooks = {
   ...colocatedHooks,
   CopyText,
   HolographicCard,
-  HomeField,
-  HomeHero,
   HomePrism,
-  InfoDialog,
-  ModalDialog,
   ShellBehavior: composeHooks(shellBehavior, ShellMotion),
   VerifiedConnections,
 }
