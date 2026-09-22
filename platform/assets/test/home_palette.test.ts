@@ -30,9 +30,9 @@ const presented = (value: number) => encode(aces(value))
 // white; scaling, not clamping, is what keeps the hue when the colour lies outside what a
 // screen can show.
 const LASER_SOURCES = {
-  autolaunch: "#FF5B19",
-  techtree: "#AECACD",
-  patchbay: "#B9B7A6",
+  signin: "#FF5B19",
+  account: "#AECACD",
+  agents: "#B9B7A6",
 } as const satisfies Record<string, string>
 
 const decode = (channel: number) =>
@@ -54,7 +54,7 @@ describe("the hero palette", () => {
   })
 
   it("carries a colour for the resting page and for each product the hero shows", () => {
-    expect(names).toEqual(["rest", "autolaunch", "techtree", "patchbay"])
+    expect(names).toEqual(["rest", "signin", "account", "agents"])
   })
 
   it("hands the two canvases grounds that come out of the frame the same colour", () => {
@@ -128,8 +128,8 @@ describe("the hero palette", () => {
   it("keeps handing out the last palette the hero chose", () => {
     expect(heroPalette()).toBe(HERO_PALETTES.rest)
 
-    setHeroPalette("autolaunch")
-    expect(heroPalette()).toBe(HERO_PALETTES.autolaunch)
+    setHeroPalette("signin")
+    expect(heroPalette()).toBe(HERO_PALETTES.signin)
 
     setHeroPalette("rest")
     expect(heroPalette()).toBe(HERO_PALETTES.rest)

@@ -33,7 +33,6 @@ COPY esbuild-linux-* _build/
 COPY platform/deps deps
 COPY platform/mix.exs platform/mix.lock ./
 COPY elixir-utils/privy /workspace/elixir-utils/privy
-COPY elixir-utils/blog /workspace/elixir-utils/blog
 COPY elixir-utils/agent_access /workspace/elixir-utils/agent_access
 COPY regents/identity /workspace/regents/identity
 COPY design-system/regent_ui /workspace/design-system/regent_ui
@@ -41,7 +40,6 @@ COPY platform/config config
 RUN mix deps.compile
 
 COPY platform/lib lib
-COPY blog /workspace/blog
 COPY platform/priv priv
 COPY platform/rel rel
 COPY platform/assets assets
@@ -81,7 +79,7 @@ ENV HOME=/app
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends coreutils ffmpeg \
+  && apt-get install -y --no-install-recommends coreutils \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=runtime-support /runtime-support/libcrypto.so.3 /usr/lib/
@@ -90,10 +88,10 @@ COPY --from=runtime-support /runtime-support/ca-certificates.crt /etc/ssl/certs/
 RUN groupadd --system --gid 1001 app \
   && useradd --system --uid 1001 --gid app --home-dir /app app
 
-COPY --from=build --chown=app:app /workspace/platform/_build/prod/rel/ash_platform ./
+COPY --from=build --chown=app:app /workspace/platform/_build/prod/rel/ash_template ./
 
 USER app
 
 EXPOSE 4000
 
-CMD ["/app/bin/ash_platform", "start"]
+CMD ["/app/bin/ash_template", "start"]

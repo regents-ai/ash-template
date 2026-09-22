@@ -440,7 +440,7 @@ describe("owning the page field", () => {
     await flushPromises()
     expect(harness.frames.pending()).toBe(0)
 
-    setHeroPalette("autolaunch")
+    setHeroPalette("signin")
     const announce = vi
       .mocked(harness.page.addEventListener)
       .mock.calls.find(([type]) => type === HERO_PALETTE_EVENT)![1] as EventListener

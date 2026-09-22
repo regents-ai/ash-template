@@ -1,4 +1,4 @@
-defmodule AshPlatform.SandboxRace do
+defmodule AshTemplate.SandboxRace do
   @moduledoc """
   Sends several callers at one row at the same moment.
 

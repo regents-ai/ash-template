@@ -38,15 +38,15 @@ Camera, scene graph and the production shaders — `glass-common`, `environment`
 `copy-linear`, `bloom`, `bloom-upsample`, `present` — together with the shared
 `scene` uniform block and `@vgpu/wgsl-std/color`.
 
-The laser sheet and the field of squares behind the page arrived by way of the
-Techtree platform, which adapted them from the same prism background: the CPU beam
+The laser sheet and the field of squares behind the page arrived by way of a
+sibling product, which adapted them from the same prism background: the CPU beam
 tracer in `assets/js/home_prism/crown-light.ts`, its additive sheet shader
 `assets/js/home_prism/shaders/crown-light.ts`, and the field composition in
 `assets/js/home_field/shader.ts`. The camera in `assets/js/home_prism/camera.ts`
-came from Techtree whole, so that the crown can be framed to one side of the page
-copy.
+came from that product whole, so that the crown can be framed to one side of the
+page copy.
 
-The current visible solid is the Regents 3/5/5 crown. Its mesh and crown-specific
+The current visible solid is the placeholder 3/5/5 crown mark. Its mesh and crown-specific
 front/back/common glass shaders were supplied in the standalone
 `regents-vgpu-crown` source bundle, whose sorted source-bundle digest is
 `f1235c2f53db30addf70846bb4d4c8675277eeba0794c8c583de7bb63d6678ed`.

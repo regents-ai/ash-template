@@ -1,52 +1,52 @@
 openapi: 3.1.0
 info:
-  title: Regent API
+  title: Ash Template API
   version: 1.0.0
 paths:
-  /api/formation/v1/regents/{regent_id}/agent-links:
+  /api/v1/profile:
     get:
-      operationId: listRegentAgentLinks
-      security: [{cookieSession: []}]
+      operationId: getMyProfile
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
       parameters:
-        - {$ref: "#/components/parameters/RegentId"}
+        - {$ref: "#/components/parameters/ExpectedSubject"}
       responses:
-        "200":
-          description: Agent identities paired with the signed-in human's Regent
-          content:
-            application/json:
-              schema: {$ref: "#/components/schemas/AgentLinkListEnvelope"}
-        "401": {$ref: "#/components/responses/Unauthorized"}
-        "404": {$ref: "#/components/responses/AgentPairingNotFound"}
-  /api/formation/v1/regents/{regent_id}/agent-links/claim:
-    post:
-      operationId: claimRegentAgentLink
-      security: []
+        "200": {$ref: "#/components/responses/Profile"}
+        "401": {$ref: "#/components/responses/ProfileAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/ProfileForbidden"}
+        "404": {$ref: "#/components/responses/ProfileNotCreated"}
+        "503": {$ref: "#/components/responses/ProfileUnavailable"}
+    patch:
+      operationId: updateMyProfile
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
       parameters:
-        - {$ref: "#/components/parameters/RegentId"}
-        - {$ref: "#/components/parameters/SiwaReceipt"}
-        - {$ref: "#/components/parameters/SiwaKeyId"}
-        - {$ref: "#/components/parameters/SiwaTimestamp"}
-        - {$ref: "#/components/parameters/SiwaAgentWallet"}
-        - {$ref: "#/components/parameters/SiwaAgentChainId"}
-        - {$ref: "#/components/parameters/SiwaAgentRegistry"}
-        - {$ref: "#/components/parameters/SiwaAgentTokenId"}
-        - {$ref: "#/components/parameters/HttpSignatureInput"}
-        - {$ref: "#/components/parameters/HttpSignature"}
-        - {$ref: "#/components/parameters/ContentDigest"}
+        - {$ref: "#/components/parameters/ExpectedSubject"}
+        - {$ref: "#/components/parameters/ExpectedProfileId"}
       requestBody:
         required: true
         content:
-          text/plain:
-            schema: {type: string, minLength: 1, maxLength: 128}
+          application/json:
+            schema: {$ref: "#/components/schemas/ProfileUpdate"}
       responses:
-        "201":
-          description: Agent identity paired with the Regent
-          content:
-            application/json:
-              schema: {$ref: "#/components/schemas/AgentLinkEnvelope"}
-        "400": {$ref: "#/components/responses/AgentPairingFailed"}
-        "401": {$ref: "#/components/responses/AgentVerificationFailed"}
-        "429": {$ref: "#/components/responses/AgentClaimRateLimited"}
+        "200": {$ref: "#/components/responses/Profile"}
+        "400": {$ref: "#/components/responses/ProfileInvalidJson"}
+        "401": {$ref: "#/components/responses/ProfileAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/ProfileForbidden"}
+        "413": {$ref: "#/components/responses/ProfileRequestTooLarge"}
+        "415": {$ref: "#/components/responses/ProfileJsonRequired"}
+        "422": {$ref: "#/components/responses/ProfileInvalidUpdate"}
+        "503": {$ref: "#/components/responses/ProfileUnavailable"}
+  /api/v1/profile/sync:
+    post:
+      operationId: syncMyProfile
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
+      parameters:
+        - {$ref: "#/components/parameters/ExpectedSubject"}
+      responses:
+        "200": {$ref: "#/components/responses/Profile"}
+        "401": {$ref: "#/components/responses/ProfileAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/ProfileForbidden"}
+        "409": {$ref: "#/components/responses/ProfileEvidenceConflict"}
+        "503": {$ref: "#/components/responses/ProfileUnavailable"}
   /auth/csrf:
     get:
       operationId: getBrowserCsrf
@@ -119,60 +119,17 @@ paths:
         "200": {$ref: "#/components/responses/Session"}
 components:
   parameters:
-    RegentId:
-      name: regent_id
-      in: path
-      required: true
-      schema: {type: string, format: uuid}
-    SiwaReceipt:
-      name: x-siwa-receipt
+    ExpectedSubject:
+      name: x-privy-user-id
       in: header
-      required: true
+      required: false
+      description: If supplied, must exactly match the verified account subject; it never selects another account
       schema: {type: string, minLength: 1}
-    SiwaKeyId:
-      name: x-key-id
+    ExpectedProfileId:
+      name: x-regent-profile-id
       in: header
-      required: true
-      schema: {type: string, minLength: 1}
-    SiwaTimestamp:
-      name: x-timestamp
-      in: header
-      required: true
-      schema: {type: string, pattern: '^\d+$'}
-    SiwaAgentWallet:
-      name: x-agent-wallet-address
-      in: header
-      required: true
-      schema: {type: string, pattern: '^0x[0-9a-fA-F]{40}$'}
-    SiwaAgentChainId:
-      name: x-agent-chain-id
-      in: header
-      required: true
-      schema: {type: string, const: "8453"}
-    SiwaAgentRegistry:
-      name: x-agent-registry-address
-      in: header
-      required: true
-      schema: {type: string, pattern: '^0x[0-9a-fA-F]{40}$'}
-    SiwaAgentTokenId:
-      name: x-agent-token-id
-      in: header
-      required: true
-      schema: {type: string, minLength: 1}
-    HttpSignatureInput:
-      name: signature-input
-      in: header
-      required: true
-      schema: {type: string, minLength: 1}
-    HttpSignature:
-      name: signature
-      in: header
-      required: true
-      schema: {type: string, minLength: 1}
-    ContentDigest:
-      name: content-digest
-      in: header
-      required: true
+      required: false
+      description: If supplied, must match the id of the profile being updated
       schema: {type: string, minLength: 1}
   securitySchemes:
     privyAccessToken:
@@ -180,7 +137,7 @@ components:
       scheme: bearer
       bearerFormat: Privy access token
     privyIdentityToken: {type: apiKey, in: header, name: privy-id-token}
-    cookieSession: {type: apiKey, in: cookie, name: _ash_platform_key}
+    cookieSession: {type: apiKey, in: cookie, name: _ash_template_key}
     csrfToken: {type: apiKey, in: header, name: x-csrf-token}
   responses:
     Session:
@@ -215,66 +172,128 @@ components:
             properties: {ok: {type: boolean, const: true}}
     CsrfForbidden:
       description: CSRF token was absent or invalid
-    AgentPairingNotFound:
-      description: The Regent was not found for the signed-in human
+    Profile:
+      description: The verified account's profile
       content:
         application/json:
-          schema: {$ref: "#/components/schemas/AgentPairingError"}
-          examples:
-            notFound:
-              value: {error: {code: not_found, message: The Regent was not found.}}
-    AgentPairingFailed:
-      description: The pairing code could not be claimed
+          schema: {$ref: "#/components/schemas/ProfileEnvelope"}
+    ProfileAuthenticationRequired:
+      description: Both Privy credentials were not present and valid
       content:
         application/json:
-          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
-            pairingFailed:
-              value: {error: {code: pairing_failed, message: The pairing code could not be used.}}
-    AgentVerificationFailed:
-      description: SIWA verification did not verify the signed agent request
+            authenticationRequired:
+              value: {error: {code: authentication_required}}
+    ProfileForbidden:
+      description: The credentials do not own this profile
       content:
         application/json:
-          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
-            verificationFailed:
-              value: {error: {code: verification_failed, message: The signed agent request could not be verified.}}
-    AgentClaimRateLimited:
-      description: Too many pairing claims were received from the client address
+            forbidden:
+              value: {error: {code: profile_forbidden}}
+    ProfileNotCreated:
+      description: The profile has not been created yet; POST /api/v1/profile/sync creates it
       content:
         application/json:
-          schema: {$ref: "#/components/schemas/AgentPairingError"}
+          schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
-            rateLimited:
-              value: {error: {code: rate_limited, message: Too many pairing attempts. Please wait and try again.}}
+            notCreated:
+              value: {error: {code: profile_not_created}}
+    ProfileInvalidJson:
+      description: The request body is not valid JSON
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ProfileError"}
+          examples:
+            invalidJson:
+              value: {error: {code: invalid_profile_json}}
+    ProfileRequestTooLarge:
+      description: The request body is larger than 8192 bytes
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ProfileError"}
+          examples:
+            tooLarge:
+              value: {error: {code: profile_request_too_large}}
+    ProfileJsonRequired:
+      description: The request body is not application/json
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ProfileError"}
+          examples:
+            jsonRequired:
+              value: {error: {code: json_required}}
+    ProfileInvalidUpdate:
+      description: The update is invalid or the profile has not been created yet
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ProfileError"}
+          examples:
+            invalidUpdate:
+              value: {error: {code: invalid_profile_update}}
+    ProfileEvidenceConflict:
+      description: The presented sign-in evidence conflicts with the stored profile
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ProfileError"}
+          examples:
+            conflict:
+              value: {error: {code: identity_evidence_conflict}}
+    ProfileUnavailable:
+      description: Sign-in is not configured or the profile service is unavailable
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ProfileError"}
+          examples:
+            unconfigured:
+              value: {error: {code: profile_unconfigured}}
+            unavailable:
+              value: {error: {code: profile_unavailable}}
   schemas:
-    AgentLinkListEnvelope:
+    ProfileEnvelope:
       type: object
       additionalProperties: false
-      required: [data]
+      required: [profile]
       properties:
-        data:
+        profile: {$ref: "#/components/schemas/Profile"}
+    Profile:
+      type: object
+      additionalProperties: false
+      required: [profile_id, verification_basis, evidence_issued_at, display_name, linked_wallets, wallet, x]
+      properties:
+        profile_id: {type: string, minLength: 1}
+        verification_basis: {type: string, const: last_synchronized_privy_proof}
+        evidence_issued_at: {type: [string, "null"], format: date-time}
+        display_name: {type: [string, "null"], maxLength: 80}
+        linked_wallets:
           type: array
-          items: {$ref: "#/components/schemas/AgentLink"}
-    AgentLinkEnvelope:
+          items: {type: string, pattern: '^0x[0-9a-fA-F]{40}$'}
+        wallet:
+          type: object
+          additionalProperties: false
+          required: [address, verified]
+          properties:
+            address: {type: [string, "null"], pattern: '^0x[0-9a-fA-F]{40}$'}
+            verified: {type: boolean}
+        x:
+          type: [object, "null"]
+          additionalProperties: false
+          required: [username, display_name, verified, source]
+          properties:
+            username: {type: [string, "null"]}
+            display_name: {type: [string, "null"]}
+            verified: {type: boolean, const: true}
+            source: {type: string, const: privy}
+    ProfileUpdate:
       type: object
       additionalProperties: false
-      required: [data]
+      minProperties: 1
       properties:
-        data: {$ref: "#/components/schemas/AgentLink"}
-    AgentLink:
-      type: object
-      additionalProperties: false
-      required: [id, regent_id, agent_id, registry_address, token_id, wallet, paired_at]
-      properties:
-        id: {type: string, format: uuid}
-        regent_id: {type: string, format: uuid}
-        agent_id: {type: string, minLength: 1}
-        registry_address: {type: string, pattern: '^0x[0-9a-f]{40}$'}
-        token_id: {type: string, minLength: 1}
-        wallet: {type: string, pattern: '^0x[0-9a-f]{40}$'}
-        paired_at: {type: string, format: date-time}
-    AgentPairingError:
+        display_name: {type: [string, "null"], maxLength: 80}
+        wallet_address: {type: [string, "null"], pattern: '^0x[0-9a-fA-F]{40}$'}
+    ProfileError:
       type: object
       additionalProperties: false
       required: [error]
@@ -282,10 +301,11 @@ components:
         error:
           type: object
           additionalProperties: false
-          required: [code, message]
+          required: [code]
           properties:
-            code: {type: string, enum: [not_found, pairing_failed, verification_failed, rate_limited]}
-            message: {type: string}
+            code:
+              type: string
+              enum: [authentication_required, profile_unconfigured, profile_unavailable, profile_not_created, profile_forbidden, invalid_profile_update, invalid_profile_json, profile_request_too_large, json_required, identity_evidence_conflict, method_not_allowed, not_found]
     Session:
       type: object
       additionalProperties: false
@@ -295,14 +315,13 @@ components:
         account_control:
           type: object
           additionalProperties: false
-          required: [kind, label, profile_path, avatar_src]
+          required: [kind, label, avatar_src]
           properties:
             kind: {type: string, enum: [sign_in, signed_in]}
             label: {type: string}
-            profile_path: {type: [string, "null"]}
             avatar_src:
               type: [string, "null"]
-              pattern: "^(https://|data:image/svg\\+xml;base64,)"
+              pattern: "^data:image/svg\\+xml;base64,"
     Error:
       type: object
       additionalProperties: false

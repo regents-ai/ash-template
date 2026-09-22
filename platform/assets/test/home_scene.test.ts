@@ -50,7 +50,7 @@ describe("the crown scene's ground", () => {
     const scene = createScene({} as never, OUTPUT.size, "ground-test")
     await prepareScene(scene, OUTPUT as never)
 
-    for (const name of ["rest", "autolaunch", "techtree", "patchbay"] as HeroPaletteName[]) {
+    for (const name of ["rest", "signin", "account", "agents"] as HeroPaletteName[]) {
       recorded.passes.length = 0
       setHeroPalette(name)
       presentScene(scene, OUTPUT as never)

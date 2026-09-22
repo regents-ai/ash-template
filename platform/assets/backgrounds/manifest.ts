@@ -1,8 +1,6 @@
 export const backgroundManifest = {
   home: "/images/backgrounds/home.svg",
-  regents_labs: "/images/backgrounds/regents_labs.svg",
-  formation: "/images/backgrounds/formation.svg",
-  regent_record: "/images/backgrounds/regent_record.svg",
+  product: "/images/backgrounds/product.svg",
 } as const
 
 export type BackgroundSlot = keyof typeof backgroundManifest

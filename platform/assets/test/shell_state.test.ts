@@ -16,8 +16,7 @@ const state = (overrides: Partial<ShellState> = {}): ShellState => ({
 
 describe("shell brand reconciliation", () => {
   it("[U2] maps shell applications to the canonical RegentUI brands", () => {
-    expect(brandForShellApp("regent_ops")).toBe("platform")
-    expect(brandForShellApp("formation")).toBe("platform")
+    expect(brandForShellApp("product")).toBe("platform")
     expect(brandForShellApp(undefined)).toBe("platform")
   })
 })
@@ -25,8 +24,8 @@ describe("shell brand reconciliation", () => {
 describe("shell state restoration", () => {
   it("closes the menu and resets local state outside its contexts", () => {
     const current = state({
-      routeId: "regent_profile",
-      destination: "/regents/one",
+      routeId: "account",
+      destination: "/account",
       menuOpen: true,
     })
 
@@ -34,13 +33,9 @@ describe("shell state restoration", () => {
   })
 
   it("requests top scroll only when the actual destination changes", () => {
-    const current = state({routeId: "regent_profile", destination: "/regents/one"})
+    const current = state({routeId: "account", destination: "/account"})
 
-    expect(
-      shellDestinationChanged(current, state({routeId: "regent_profile", destination: "/regents/two"})),
-    ).toBe(true)
-    expect(
-      shellDestinationChanged(current, state({routeId: "regent_profile", destination: "/regents/one"})),
-    ).toBe(false)
+    expect(shellDestinationChanged(current, state({routeId: "app", destination: "/app"}))).toBe(true)
+    expect(shellDestinationChanged(current, state({routeId: "account", destination: "/account"}))).toBe(false)
   })
 })

@@ -22,12 +22,8 @@
 !design-system/regent_ui/priv/static/images/**
 !design-system/regent_ui/priv/static/fonts/**
 !elixir-utils/privy/**
-!elixir-utils/blog/mix.exs
-!elixir-utils/blog/lib/**
-!elixir-utils/blog/priv/**
 !elixir-utils/agent_access/mix.exs
 !elixir-utils/agent_access/lib/**
-!blog/**
 !mix-cache/**
 !npm-cache/**
 !rustler-precompiled/**

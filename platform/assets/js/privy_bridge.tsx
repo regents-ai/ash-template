@@ -940,7 +940,7 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
     }
     const switchedAccount = selectedWallet || pendingSelection ? null : switchedAccountOf(selectedWalletRef.current, wallets)
 
-    // The wallet the customer just left stops being Stake's wallet here, before
+    // The wallet the customer just left stops being the active wallet here, before
     // any of the work below can await, so nothing can be prepared or sent for it
     // while the newly selected provider is still resolving.
     if (activeEthereumWallet() && !sameConnectedWallet(selectedWalletRef.current, selectedWallet)) {
@@ -970,7 +970,7 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
 
     // Each connected wallet's provider is resolved once, and the selection is
     // taken from those resolved entries. A wallet whose provider does not
-    // resolve is not a wallet here, so a failed selection leaves Stake with no
+    // resolve is not a wallet here, so a failed selection leaves the page with no
     // active wallet rather than with the previous one.
     const resolved = await Promise.allSettled(
       wallets.map(async wallet => ({
@@ -1045,7 +1045,7 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
       await Promise.resolve(
         connectWallet({
           walletChainType: "ethereum-only",
-          description: "Connect a wallet to stake or redeem on Base.",
+          description: "Connect the wallet you want to use here.",
         }),
       )
       return

@@ -1,23 +1,27 @@
-# Regents
+# Ash Template
 
-Own regents.sh, its API, CLI and Regents contracts in this monorepo.
+This monorepo is a product template. Keep the placeholder names (`ash_template`,
+`AshTemplate`, `ash-template`, `ASH_TEMPLATE_`, "Ash Template") exactly as they
+are; `scripts/init.sh` renames them for a real product.
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.
-- `cli/`: CLI workspace; its API/JSON contracts and generated bindings stay local.
-- `contracts/`: Solidity, staking/distribution and retained historical evidence.
-- `identity/`: shared Ash identity domain and `regent_identity` schema consumed by every
-  product. Read its README before changing sync, actor or ownership rules.
-- `plugins/`: home for standalone runtime plugin packages; none exist yet. Hermes,
-  OpenClaw, MCP and bundled-skill integrations are CLI code under `cli/` and stay there.
-- Shared UI and Elixir libraries other than `identity/` remain separate siblings. Use `REGENT_DEPS_ROOT`
-  for isolated builds. Run checks from the owning component or use root Make targets.
-- Follow the workspace's `regent-workflow`; use one integrating owner for this repository.
-  Scope verification to observable acceptance and preserve useful regression coverage.
-- Preserve uncommitted work, public command/API shapes and protected source evidence.
-  Every distinct wallet press reaches the wallet. No signing, production access,
-  deployment or publishing without applicable founder authority. Never read `.env`,
+- `cli/`: pnpm workspace for the `ash-template` command. Only `help` and
+  `version` exist.
+- `contracts/`: optional Foundry workspace, empty until contracts are needed.
+- `plugins/`: home for standalone runtime plugin packages; none exist yet.
+- There is no `identity/` folder. The shared profile domain comes from the
+  sibling `regents/identity` package, resolved through `REGENT_DEPS_ROOT` with
+  `design-system` and `elixir-utils`. Use `REGENT_DEPS_ROOT` for isolated builds.
+- Run checks from the owning component or use the root Make targets.
+- Follow the workspace's `regent-workflow`; use one integrating owner for this
+  repository. Scope verification to observable acceptance and preserve useful
+  regression coverage.
+- Preserve uncommitted work and public command/API shapes. Every distinct wallet
+  press reaches the wallet. No signing, production access, deployment or
+  publishing without applicable founder authority. Never read `.env`,
   `.env.local` or `.envrc`.
 
-For product orientation and related Regent products, see [README.md](README.md).
-The public agent entry point is [platform/priv/static/llms.txt](platform/priv/static/llms.txt);
-keep its advertised commands consistent with the owning CLI and HTTP contracts.
+The public agent entry point is served at `/llms.txt` from
+[platform/priv/public/llms.md](platform/priv/public/llms.md); keep it
+consistent with the routes in `platform/lib/ash_template_web/router.ex` and the
+HTTP contract in `platform/contracts/api-contract.openapiv3.yaml`.

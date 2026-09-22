@@ -1,9 +1,9 @@
-defmodule AshPlatform.MixProject do
+defmodule AshTemplate.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :ash_platform,
+      app: :ash_template,
       version: "0.1.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -20,7 +20,7 @@ defmodule AshPlatform.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {AshPlatform.Application, []},
+      mod: {AshTemplate.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -49,15 +49,12 @@ defmodule AshPlatform.MixProject do
       {:ash_postgres, "~> 2.13.0"},
       {:igniter, "== 0.8.4", only: [:dev, :test], runtime: false},
       {:mdex, "== 0.13.3"},
-      {:ens_elixir, "~> 0.1.1"},
       {:regent_privy,
        path: System.get_env("REGENT_PRIVY_PATH", Path.join(shared, "elixir-utils/privy"))},
       {:regent_identity,
        path: System.get_env("REGENT_IDENTITY_PATH", Path.join(shared, "regents/identity"))},
       {:regent_ui,
        path: System.get_env("REGENT_UI_PATH", Path.join(shared, "design-system/regent_ui"))},
-      {:regent_blog,
-       path: System.get_env("REGENT_BLOG_PATH", Path.join(shared, "elixir-utils/blog"))},
       {:regent_agent_access, path: Path.join(shared, "elixir-utils/agent_access")},
       {:picosat_elixir, "~> 0.2.3"},
       {:simple_sat, "~> 0.1"},
@@ -69,9 +66,6 @@ defmodule AshPlatform.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:sentry, "~> 13.0"},
       {:jason, "~> 1.2"},
-      # Ethereum Keccak-256 for EIP-55, which OTP's NIST `:sha3_256` is not.
-      {:jose, "~> 1.11.12"},
-      {:decimal, "== 3.1.1"},
       {:req, "== 0.6.2"},
       {:bandit, "~> 1.12.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -95,15 +89,13 @@ defmodule AshPlatform.MixProject do
       "assets.build": [
         "compile",
         "regent_ui.assets",
-        "regent_blog.assets",
         "regent_identity.assets",
-        "esbuild ash_platform"
+        "esbuild ash_template"
       ],
       "assets.deploy": [
         "regent_ui.assets",
-        "regent_blog.assets",
         "regent_identity.assets",
-        "esbuild ash_platform --minify",
+        "esbuild ash_template --minify",
         "phx.digest"
       ],
       "test.external": ["test --only external"],
@@ -113,13 +105,11 @@ defmodule AshPlatform.MixProject do
         "format --check-formatted",
         "credo --strict",
         "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",
-        # Baseline moved from 33 to 80 with Ash 3.32.1's retained policy-check compile dependencies (ash #2886),
-        # then to 82 for the account's ENS identity resource and its policy check,
-        # then down to 28 when the in-app Autolaunch and comments were removed.
+        # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
         "xref graph --label compile-connected --fail-above 28",
         "test --warnings-as-errors",
         "ash.codegen --check",
-        "ash_platform.route_handoff --check"
+        "ash_template.route_handoff --check"
       ]
     ]
   end

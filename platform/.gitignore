@@ -25,7 +25,7 @@ erl_crash.dump
 /tmp/
 
 # Ignore package tarball (built via "mix hex.build").
-ash_platform-*.tar
+ash_template-*.tar
 
 # Ignore assets that are produced by build tools.
 /priv/static/assets/
@@ -85,13 +85,6 @@ Thumbs.db
 /priv/static/images/regent-ui/
 
 /assets/vendor/regent_identity/
-
-# Generated blog assets and application-only release contexts.
-/priv/static/images/blog/
-/vendor/regent_blog/
-/vendor/regent_blog_content/
-/vendor/.regent-blog-history/
-/vendor/.regent-blog-stage-*/
 
 # Fonts staged by mix regent_ui.assets, served through the existing fonts allowlist.
 /priv/static/fonts/regent-ui/

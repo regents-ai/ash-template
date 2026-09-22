@@ -1,6 +1,6 @@
 /* Workshop composition only. Shared Regent.Structure / Primitives own skins,
    panel ink/fill pairing, control geometry, fonts and focus treatment. */
-/* The Privy page is a composition of the real Regents controls, not a fixture
+/* The Privy page is a composition of the real account controls, not a fixture
    skin. Keep its setup and hydration panels independent of the palette editor. */
 .privy-reference-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 24px; }
 .privy-reference-content > section { min-width: 0; padding: 24px; border: 1px solid var(--color-border); }

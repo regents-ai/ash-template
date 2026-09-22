@@ -4,7 +4,7 @@ import {
   HERO_PALETTE_EVENT,
   setHeroPalette,
   type HeroPaletteName,
-  type HeroProduct,
+  type HeroHighlight,
 } from "../home_field/palette"
 
 type RequestFrame = (callback: FrameRequestCallback) => number
@@ -81,11 +81,11 @@ export const createHomeHeroController = (
   // The hero and its card column, held from the moment hover is wired up so that
   // colouring and releasing never have to go looking for them again.
   let wired: {cards: HTMLElement; hero: HTMLElement} | undefined
-  // The pointer and the keyboard each keep their own product, so moving the mouse
+  // The pointer and the keyboard each keep their own highlight, so moving the mouse
   // never takes away the colour a keyboard reader is standing on. The pointer leads
-  // while it is on a card, and the keyboard's product comes back when it leaves.
-  let pointed: HeroProduct | undefined
-  let focused: HeroProduct | undefined
+  // while it is on a card, and the keyboard's highlight comes back when it leaves.
+  let pointed: HeroHighlight | undefined
+  let focused: HeroHighlight | undefined
   let shown: HeroPaletteName = "rest"
 
   // Reading a card colours the whole hero: the stylesheet reads the attribute, and
@@ -95,26 +95,26 @@ export const createHomeHeroController = (
     if (!wired || name === shown) return
     shown = name
     const {hero} = wired
-    if (name === "rest") delete hero.dataset.heroProduct
-    else hero.dataset.heroProduct = name
+    if (name === "rest") delete hero.dataset.heroHighlight
+    else hero.dataset.heroHighlight = name
     setHeroPalette(name)
     hero.dispatchEvent(new Event(HERO_PALETTE_EVENT, {bubbles: true}))
   }
 
-  const productAt = (node: EventTarget | null) =>
+  const highlightAt = (node: EventTarget | null) =>
     (node as Element | null)?.closest<HTMLElement>(CARD)?.dataset.homeHeroCard as
-      | HeroProduct
+      | HeroHighlight
       | undefined
 
   // The hairline between two cards belongs to the column, and so does the space
-  // around them: only leaving the column is leaving the products.
+  // around them: only leaving the column is leaving the highlights.
   const staysInColumn = (event: Event) =>
     Boolean(
       ((event as PointerEvent | FocusEvent).relatedTarget as Element | null)?.closest(CARD_COLUMN),
     )
 
   const onPointerEnter = (event: Event) => {
-    const product = productAt(event.target)
+    const product = highlightAt(event.target)
     if (!product) return
     pointed = product
     settle()
@@ -127,7 +127,7 @@ export const createHomeHeroController = (
   }
 
   const onFocusEnter = (event: Event) => {
-    const product = productAt(event.target)
+    const product = highlightAt(event.target)
     if (!product) return
     focused = product
     settle()

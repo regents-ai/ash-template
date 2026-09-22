@@ -263,28 +263,28 @@ describe("homepage hero palette", () => {
   it("colours the hero for the card being pointed at and clears it on the way out", () => {
     const page = start(true)
 
-    page.on("pointerover")!(pointAt(page.card("techtree")))
+    page.on("pointerover")!(pointAt(page.card("account")))
 
-    expect(page.hero.dataset.heroProduct).toBe("techtree")
-    expect(heroPalette()).toBe(HERO_PALETTES.techtree)
+    expect(page.hero.dataset.heroHighlight).toBe("account")
+    expect(heroPalette()).toBe(HERO_PALETTES.account)
 
     page.on("pointerout")!(leaveFor(null))
 
-    expect(page.hero.dataset.heroProduct).toBeUndefined()
+    expect(page.hero.dataset.heroHighlight).toBeUndefined()
     expect(heroPalette()).toBe(HERO_PALETTES.rest)
   })
 
   it("gives a keyboard reader the same colours as the pointer", () => {
     const page = start(true)
 
-    page.on("focusin")!(pointAt(page.card("autolaunch")))
+    page.on("focusin")!(pointAt(page.card("signin")))
 
-    expect(page.hero.dataset.heroProduct).toBe("autolaunch")
-    expect(heroPalette()).toBe(HERO_PALETTES.autolaunch)
+    expect(page.hero.dataset.heroHighlight).toBe("signin")
+    expect(heroPalette()).toBe(HERO_PALETTES.signin)
 
     page.on("focusout")!(leaveFor(null))
 
-    expect(page.hero.dataset.heroProduct).toBeUndefined()
+    expect(page.hero.dataset.heroHighlight).toBeUndefined()
   })
 
   // The hairline between two cards belongs to the column, so crossing it is not
@@ -292,25 +292,25 @@ describe("homepage hero palette", () => {
   it("changes colour once when the pointer crosses the gap between two cards", () => {
     const page = start(true)
 
-    page.on("pointerover")!(pointAt(page.card("autolaunch")))
+    page.on("pointerover")!(pointAt(page.card("signin")))
     page.on("pointerout")!(leaveFor(page.column))
-    page.on("pointerover")!(pointAt(page.card("techtree")))
+    page.on("pointerover")!(pointAt(page.card("account")))
 
-    expect(page.hero.dataset.heroProduct).toBe("techtree")
-    expect(heroPalette()).toBe(HERO_PALETTES.techtree)
+    expect(page.hero.dataset.heroHighlight).toBe("account")
+    expect(heroPalette()).toBe(HERO_PALETTES.account)
     expect(page.hero.dispatchEvent).toHaveBeenCalledTimes(2)
   })
 
   // Moving from a card's words to its own buttons is not leaving the card.
   it("holds the colour while the pointer stays inside one card", () => {
     const page = start(true)
-    const patchbay = page.card("patchbay")
+    const agents = page.card("agents")
 
-    page.on("pointerover")!(pointAt(patchbay))
-    page.on("pointerout")!(leaveFor(patchbay))
+    page.on("pointerover")!(pointAt(agents))
+    page.on("pointerout")!(leaveFor(agents))
 
-    expect(page.hero.dataset.heroProduct).toBe("patchbay")
-    expect(heroPalette()).toBe(HERO_PALETTES.patchbay)
+    expect(page.hero.dataset.heroHighlight).toBe("agents")
+    expect(heroPalette()).toBe(HERO_PALETTES.agents)
   })
 
   // The two ways in are held apart, so a pointer passing through cannot take the
@@ -318,19 +318,19 @@ describe("homepage hero palette", () => {
   it("gives the pointer the lead and hands the page back to the keyboard after it", () => {
     const page = start(true)
 
-    page.on("focusin")!(pointAt(page.card("techtree")))
-    expect(page.hero.dataset.heroProduct).toBe("techtree")
+    page.on("focusin")!(pointAt(page.card("account")))
+    expect(page.hero.dataset.heroHighlight).toBe("account")
 
-    page.on("pointerover")!(pointAt(page.card("autolaunch")))
-    expect(page.hero.dataset.heroProduct).toBe("autolaunch")
-    expect(heroPalette()).toBe(HERO_PALETTES.autolaunch)
+    page.on("pointerover")!(pointAt(page.card("signin")))
+    expect(page.hero.dataset.heroHighlight).toBe("signin")
+    expect(heroPalette()).toBe(HERO_PALETTES.signin)
 
     page.on("pointerout")!(leaveFor(null))
-    expect(page.hero.dataset.heroProduct).toBe("techtree")
-    expect(heroPalette()).toBe(HERO_PALETTES.techtree)
+    expect(page.hero.dataset.heroHighlight).toBe("account")
+    expect(heroPalette()).toBe(HERO_PALETTES.account)
 
     page.on("focusout")!(leaveFor(null))
-    expect(page.hero.dataset.heroProduct).toBeUndefined()
+    expect(page.hero.dataset.heroHighlight).toBeUndefined()
     expect(heroPalette()).toBe(HERO_PALETTES.rest)
   })
 
@@ -338,7 +338,7 @@ describe("homepage hero palette", () => {
   it("announces the change once, on the hero, for the whole page to hear", () => {
     const page = start(true)
 
-    page.on("pointerover")!(pointAt(page.card("techtree")))
+    page.on("pointerover")!(pointAt(page.card("account")))
 
     expect(page.hero.dispatchEvent).toHaveBeenCalledTimes(1)
     const announced = vi.mocked(page.hero.dispatchEvent).mock.calls[0]![0]
@@ -349,8 +349,8 @@ describe("homepage hero palette", () => {
   it("says nothing when the pointer has not really moved to another card", () => {
     const page = start(true)
 
-    page.on("pointerover")!(pointAt(page.card("techtree")))
-    page.on("pointerover")!(pointAt(page.card("techtree")))
+    page.on("pointerover")!(pointAt(page.card("account")))
+    page.on("pointerover")!(pointAt(page.card("account")))
 
     expect(page.hero.dispatchEvent).toHaveBeenCalledTimes(1)
   })
@@ -360,17 +360,17 @@ describe("homepage hero palette", () => {
     const page = start(false)
 
     expect(page.column.addEventListener).not.toHaveBeenCalled()
-    expect(page.hero.dataset.heroProduct).toBeUndefined()
+    expect(page.hero.dataset.heroHighlight).toBeUndefined()
     expect(heroPalette()).toBe(HERO_PALETTES.rest)
   })
 
   it("returns the page to rest and lets the card column go when the hook is destroyed", () => {
     const page = start(true)
-    page.on("pointerover")!(pointAt(page.card("autolaunch")))
+    page.on("pointerover")!(pointAt(page.card("signin")))
 
     page.controller.destroy()
 
-    expect(page.hero.dataset.heroProduct).toBeUndefined()
+    expect(page.hero.dataset.heroHighlight).toBeUndefined()
     expect(heroPalette()).toBe(HERO_PALETTES.rest)
     expect(vi.mocked(page.column.removeEventListener).mock.calls.map(([type]) => type)).toEqual([
       "pointerover",

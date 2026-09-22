@@ -57,8 +57,8 @@
            [
              files: %{
                excluded: [
-                 # This LiveView owns protected stake/redemption flows; changing its branching is not lint-only.
-                 "lib/ash_platform_web/live/shell_live.ex"
+                 # The signed-in shell branches on session state; changing that is not lint-only.
+                 "lib/ash_template_web/live/shell_live.ex"
                ]
              }
            ]},
@@ -66,32 +66,16 @@
            [
              files: %{
                excluded: [
-                 # Redemption runtime code is protected and cannot receive semantic refactors in this ticket.
-                 "lib/ash_platform/redemption/**/*.ex",
-                 # This LiveView owns protected wallet, stake, and redemption flows.
-                 "lib/ash_platform_web/live/shell_live.ex",
+                 # The signed-in shell branches on session state; changing that is not lint-only.
+                 "lib/ash_template_web/live/shell_live.ex",
                  # The reset task crosses the protected authentication boundary.
-                 "lib/mix/tasks/ash_platform.reset_browser_identity.ex",
-                 # Redemption tests are protected from semantic refactors and assertion changes.
-                 "test/ash_platform/redemption/**/*_test.exs",
-                 # The redemption chain stub models protected chain behavior.
-                 "test/support/test_redemption_chain_client.ex",
-                 # The staking chain stub models protected chain behavior.
-                 "test/support/test_staking_chain_client.ex"
+                 "lib/mix/tasks/ash_template.reset_browser_identity.ex"
                ]
              }
            ]},
           {Credo.Check.Refactor.FilterCount, []},
           {Credo.Check.Refactor.FilterFilter, []},
-          {Credo.Check.Refactor.FunctionArity,
-           [
-             files: %{
-               excluded: [
-                 # Changing the protected redemption RPC interface is not a lint-only edit.
-                 "lib/ash_platform/redemption/**/*.ex"
-               ]
-             }
-           ]},
+          {Credo.Check.Refactor.FunctionArity, []},
           {Credo.Check.Refactor.LongQuoteBlocks, []},
           {Credo.Check.Refactor.MapJoin, []},
           {Credo.Check.Refactor.MatchInCondition, []},
@@ -101,10 +85,10 @@
            [
              files: %{
                excluded: [
-                 # This LiveView owns protected wallet, stake, and redemption flows.
-                 "lib/ash_platform_web/live/shell_live.ex",
+                 # The signed-in shell branches on session state; changing that is not lint-only.
+                 "lib/ash_template_web/live/shell_live.ex",
                  # The reset task crosses the protected authentication boundary.
-                 "lib/mix/tasks/ash_platform.reset_browser_identity.ex"
+                 "lib/mix/tasks/ash_template.reset_browser_identity.ex"
                ]
              }
            ]},
@@ -150,7 +134,7 @@
                excluded: [
                  # This task intentionally syncs into the checked-out repository;
                  # Application.app_dir/2 would point at the build output instead.
-                 "lib/mix/tasks/ash_platform.sync_api_contract.ex"
+                 "lib/mix/tasks/ash_template.sync_api_contract.ex"
                ]
              }
            ]},
@@ -174,9 +158,7 @@
              files: %{
                excluded: [
                  # Exact-size assertions are clearer test failures than counting helpers.
-                 "test/**/*.exs",
-                 # These validations require an exact ABI/domain shape, not an emptiness test.
-                 "lib/ash_platform/autolaunch/indexer/chain.ex"
+                 "test/**/*.exs"
                ]
              }
            ]},

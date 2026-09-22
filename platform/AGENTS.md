@@ -1,10 +1,13 @@
-# Regents platform
+# Ash Template platform
 
-This is the Phoenix/Ash component of the Regents monorepo. Run Mix and npm here.
-`lib/ash_platform/` owns domains; `lib/ash_platform_web/` owns routes and LiveViews.
-`contracts/` here contains runtime API/ABI/manifests; Solidity lives in the monorepo's
-root `contracts/`. Keep internal OTP/release names stable during layout changes.
+This is the Phoenix/Ash component of the template monorepo. Run Mix and npm here.
+`lib/ash_template/` owns domains; `lib/ash_template_web/` owns routes and live
+pages. `contracts/` holds the OpenAPI contract, synced to `priv/static/` with
+`mix ash_template.sync_api_contract`. Keep the placeholder names until
+`scripts/init.sh` renames them.
 
 Follow the root instructions and the workspace's `regent-workflow`. Use the
 assignment's acceptance and applicable focused checks. Browser fixtures belong to
-the prepared local database. Shared dependencies resolve through `REGENT_DEPS_ROOT`.
+the prepared local database. Shared dependencies (`design-system/regent_ui`,
+`elixir-utils/privy`, `elixir-utils/agent_access`, `elixir-utils/credo_ash`,
+`regents/identity`) resolve through `REGENT_DEPS_ROOT`.

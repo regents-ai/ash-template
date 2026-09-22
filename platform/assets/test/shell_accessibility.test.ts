@@ -6,7 +6,7 @@ type Hook = Record<string, ((...args: unknown[]) => unknown) | undefined>
 const captured = vi.hoisted(() => ({hooks: {} as Record<string, Hook>}))
 
 vi.mock("phoenix", () => ({Socket: class Socket {}}))
-vi.mock("phoenix-colocated/ash_platform", () => ({hooks: {}}))
+vi.mock("phoenix-colocated/ash_template", () => ({hooks: {}}))
 vi.mock("../js/auth_lazy", () => ({
   browserCsrfToken: () => "csrf-token",
   holdSocketDuringCookieRotation: vi.fn(),
@@ -91,7 +91,7 @@ const fakeStorage = new Map<string, string>()
 const fakeWindow = {
   liveSocket: undefined as unknown,
   // The shell under test is a signed-in page, never the marketing landing.
-  location: {pathname: "/stake"},
+  location: {pathname: "/account"},
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
   matchMedia: () => ({
@@ -165,8 +165,8 @@ function shellFixture() {
     },
   })
 
-  shell.dataset.routeId = "stake"
-  shell.dataset.destination = "/stake"
+  shell.dataset.routeId = "account"
+  shell.dataset.destination = "/account"
   shell.dataset.menuOpen = "false"
 
   return {
@@ -290,7 +290,7 @@ describe("mobile shell navigation", () => {
     page.accountMenu.setAttribute("open", "")
     hook.beforeUpdate?.call(context)
     page.accountMenu.removeAttribute("open")
-    page.shell.dataset.destination = "/formation"
+    page.shell.dataset.destination = "/app"
     hook.updated?.call(context)
 
     expect(page.shell.dataset.menuOpen).toBe("false")

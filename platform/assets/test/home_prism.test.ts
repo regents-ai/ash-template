@@ -543,11 +543,11 @@ describe("responding to the pointer", () => {
     harness.frames.drain()
     const presentsBefore = vi.mocked(harness.renderer.present).mock.calls.length
 
-    setHeroPalette("patchbay")
+    setHeroPalette("account")
     heroListener(harness, HERO_PALETTE_EVENT)(new Event(HERO_PALETTE_EVENT))
     harness.frames.drain()
 
-    expect(harness.renderer.setBeamColor).toHaveBeenCalledWith(HERO_PALETTES.patchbay.beam)
+    expect(harness.renderer.setBeamColor).toHaveBeenCalledWith(HERO_PALETTES.account.beam)
     expect(
       vi.mocked(harness.renderer.present).mock.calls.length - presentsBefore,
     ).toBeGreaterThan(0)

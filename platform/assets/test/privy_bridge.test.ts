@@ -1419,7 +1419,7 @@ describe("Privy session bridge", () => {
     expect(connectWallet).toHaveBeenCalledOnce()
     expect(connectWallet).toHaveBeenCalledWith({
       walletChainType: "ethereum-only",
-      description: "Connect a wallet to stake or redeem on Base.",
+      description: "Connect the wallet you want to use here.",
     })
     expect(connectActiveWallet).not.toHaveBeenCalled()
     expect(login).not.toHaveBeenCalled()

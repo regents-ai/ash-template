@@ -1,8 +1,8 @@
-# Local founder acceptance
+# Local acceptance database
 
-This foundation creates one disposable PostgreSQL database on this Mac. It uses only `127.0.0.1`, the PostgreSQL role matching the current macOS user, and a database named `ash_platform_acceptance_<run_id>`. Choose a new lowercase run ID for every run.
+This foundation creates one disposable PostgreSQL database on this machine. It uses only `127.0.0.1`, the PostgreSQL role matching the current user, and a database named `ash_template_acceptance_<run_id>`. Choose a new lowercase run ID for every run.
 
-The supported tools are Erlang/OTP 28, Elixir 1.19.5, Node 25.8.0, npm 11.11.0, PostgreSQL 14.20 or newer, and Playwright 1.61.1. The checkout also requires an adjacent `elixir-utils` checkout at commit `cbb09857065069590671e2cbabdd5ae0885a65c4`, because the locked Privy dependency is loaded from `../elixir-utils/privy`.
+The supported tools are the Erlang, Elixir, Node and PostgreSQL versions pinned in `.tool-versions`, plus Playwright at the version in `package.json`. The checkout also requires the sibling `elixir-utils` checkout at the commit named at the top of `bin/setup-local-acceptance`, because the locked Privy dependency is loaded from `../elixir-utils/privy`.
 
 From a clean checkout, setup is one command:
 
@@ -10,7 +10,7 @@ From a clean checkout, setup is one command:
 bin/setup-local-acceptance founder_local_001
 ```
 
-The setup checks the adjacent dependency commit, local tools, and remote deployment or database settings before creating anything. It fetches locked backend dependencies, invokes the guarded setup task, installs locked browser packages, creates the unique database, runs the checked-in migrations, and builds the browser assets. Its initial baseline records every applied migration version and a zero comments count. It does not load `.env`, `.env.local`, or `.envrc`. The lower-level `MIX_ENV=test mix ash_platform.setup_local --run-id <run-id>` command is for debugging only.
+The setup checks the sibling dependency commit, local tools, and remote deployment or database settings before creating anything. It fetches locked backend dependencies, invokes the guarded setup task, installs locked browser packages, creates the unique database, runs the checked-in migrations, and builds the browser assets. It does not load `.env`, `.env.local`, or `.envrc`. The lower-level `MIX_ENV=test mix ash_template.setup_local --run-id <run-id>` command is for debugging only.
 
 Always remove the run database when finished. Running reset again is safe:
 
@@ -19,4 +19,4 @@ bin/reset-local-acceptance founder_local_001
 bin/reset-local-acceptance founder_local_001
 ```
 
-Reset verifies the immutable run, database, and local-role ownership marker while allowing ordinary disposable product activity. It requires every protected dataset mirror to be absent or empty before deleting only that run database. It also removes generated browser assets. If the target, marker, environment, host, role, name, or protected row count is unexpected, the command stops without deleting it.
+Reset verifies the immutable run, database, and local-role ownership marker before deleting only that run database. It also removes generated browser assets. If the target, marker, environment, host, role or name is unexpected, the command stops without deleting anything.

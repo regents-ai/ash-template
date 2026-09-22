@@ -1,9 +1,8 @@
 import "../css/app.css"
-import "../vendor/regent_ui/blog.mjs"
 
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
-import {hooks as colocatedHooks} from "phoenix-colocated/ash_platform"
+import {hooks as colocatedHooks} from "phoenix-colocated/ash_template"
 
 import {composeHooks, type Hook} from "./hook_composition"
 import {
@@ -25,14 +24,9 @@ import {HolographicCard} from "./hooks/holographic_card"
 import {HomeField} from "./hooks/home_field"
 import {HomeHero} from "./hooks/home_hero"
 import {HomePrism} from "./hooks/home_prism"
-import {HomeTokenMenu} from "./hooks/home_token_menu"
-import {InfiniteScroll} from "./hooks/infinite_scroll"
 import {ShellMotion} from "./hooks/motion"
 import {InfoDialog} from "./hooks/info_dialog"
 import {ModalDialog} from "./hooks/modal_dialog"
-import {StakeWallet} from "./hooks/stake_wallet"
-import {RedemptionWallet} from "./hooks/redemption_wallet"
-import {RegentsClubMetadataWallet} from "./hooks/regents_club_metadata_wallet"
 import {VerifiedConnections} from "./hooks/verified_connections"
 
 type ShellHook = Hook & {
@@ -332,14 +326,9 @@ const hooks = {
   HomeField,
   HomeHero,
   HomePrism,
-  HomeTokenMenu,
-  InfiniteScroll,
   InfoDialog,
   ModalDialog,
   ShellBehavior: composeHooks(shellBehavior, ShellMotion),
-  RedemptionWallet,
-  RegentsClubMetadataWallet,
-  StakeWallet,
   VerifiedConnections,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")

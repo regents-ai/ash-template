@@ -6,6 +6,8 @@
 #     platform/            this checkout
 #     design-system/regent_ui/ the sibling source mix.exs resolves by path
 #     elixir-utils/privy/      the sibling source mix.exs resolves by path
+#     elixir-utils/agent_access/ the sibling source mix.exs resolves by path
+#     regents/identity/        the sibling source mix.exs resolves by path
 #     mix-cache/               Mix, Hex and rebar3, extracted from the sealed archive
 #     npm-cache/_cacache/      the npm content cache
 #     rustler-precompiled/     the precompiled native artifact for the target
@@ -56,7 +58,6 @@ siblings="${REGENT_DEPS_ROOT:-$(cd -- "$repo_root/../.." && pwd)}"
 privy_source="${REGENT_PRIVY_PATH:-$siblings/elixir-utils/privy}"
 identity_source="${REGENT_IDENTITY_PATH:-$siblings/regents/identity}"
 regent_ui_source="${REGENT_UI_PATH:-$siblings/design-system/regent_ui}"
-blog_source="${REGENT_BLOG_PATH:-$siblings/elixir-utils/blog}"
 agent_access_source="$siblings/elixir-utils/agent_access"
 
 # The arm64 native artifact is part of the base supply; the amd64 one arrived
@@ -93,8 +94,7 @@ esbuild_addendum="$esbuild_supply/SUPPLY-ADDENDUM.txt"
 native_manifest="$native_supply/$native_manifest_name"
 
 for required in "$manifest" "$mix_addendum" "$esbuild_addendum" "$native_manifest" \
-  "$privy_source" "$identity_source" "$regent_ui_source" "$blog_source" "$agent_access_source" \
-  "$repo_root/../blog"; do
+  "$privy_source" "$identity_source" "$regent_ui_source" "$agent_access_source"; do
   [ -e "$required" ] || die "missing supply input: $required"
 done
 
@@ -189,11 +189,6 @@ rsync -a "${env_filters[@]}" --exclude '.git' --exclude '_build/' \
 rsync -a "${env_filters[@]}" --exclude '.git' --exclude '_build/' \
   --exclude 'deps/' --exclude 'node_modules/' \
   "$identity_source/" "$staging/regents/identity/"
-
-mkdir -p "$staging/elixir-utils/blog" "$staging/blog"
-rsync -a --no-links "${env_filters[@]}" --exclude '.git' --exclude '_build/' --exclude 'deps/' \
-  "$blog_source/" "$staging/elixir-utils/blog/"
-rsync -a --no-links "${env_filters[@]}" "$repo_root/../blog/" "$staging/blog/"
 
 mkdir -p "$staging/elixir-utils/agent_access"
 rsync -a --no-links "${env_filters[@]}" --exclude '.git' --exclude '_build/' --exclude 'deps/' \

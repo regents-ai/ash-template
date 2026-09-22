@@ -40,9 +40,9 @@ export const FIELD_PALETTE = {
   readonly intensity: number
 }
 
-/** The three products a visitor can point at, named as the page names them. */
-export type HeroProduct = "autolaunch" | "techtree" | "patchbay"
-export type HeroPaletteName = "rest" | HeroProduct
+/** The three highlights a visitor can point at, named as the page names them. */
+export type HeroHighlight = "signin" | "account" | "agents"
+export type HeroPaletteName = "rest" | HeroHighlight
 
 export interface HeroPalette {
   /** Page ground, for a canvas that presents what the shader writes. */
@@ -57,32 +57,32 @@ export interface HeroPalette {
 }
 
 /**
- * The product colours, kept in one place so a colour is a one-line change. Each
- * ground is the sRGB value of the stylesheet's `--rl-bg` for that product — the
- * product's own colour folded 8% into the palette's Background — with the
+ * The highlight colours, kept in one place so a colour is a one-line change. Each
+ * ground is the sRGB value of the stylesheet's `--rl-bg` for that highlight — the
+ * highlight's own colour folded 8% into the palette's Background — with the
  * composed value solved back through the crown's ACES curve and sRGB encode.
  */
 export const HERO_PALETTES = {
-  /** Background #0B0B0B, white lasers: the page at rest carries no product colour. */
+  /** Background #0B0B0B, white lasers: the page at rest carries no highlight colour. */
   rest: {
     displayedGround: [0.043137, 0.043137, 0.043137, 1],
     composedGround: [0.009185, 0.009185, 0.009185, 1],
     beam: [1, 1, 1],
   },
   /** Accent Orange #FF5B19. */
-  autolaunch: {
+  signin: {
     displayedGround: [0.106287, 0.069634, 0.057801, 1],
     composedGround: [0.020647, 0.013701, 0.011626, 1],
     beam: [1, 0.104616, 0.009721],
   },
   /** Accent Blue #AECACD. */
-  techtree: {
+  account: {
     displayedGround: [0.084286, 0.090331, 0.090966, 1],
     composedGround: [0.016388, 0.017532, 0.017653, 1],
     beam: [0.693318, 0.967442, 1],
   },
-  /** Patchbay Primary #B9B7A6. */
-  patchbay: {
+  /** Platinum #B9B7A6. */
+  agents: {
     displayedGround: [0.086512, 0.086094, 0.082325, 1],
     composedGround: [0.016807, 0.016728, 0.016021, 1],
     beam: [1, 0.976052, 0.785996],
@@ -97,7 +97,7 @@ let current: HeroPalette = HERO_PALETTES.rest
 /** The palette both canvases are drawing right now. */
 export const heroPalette = (): HeroPalette => current
 
-/** Hands both canvases one product's colours, or the resting page back. */
+/** Hands both canvases one highlight's colours, or the resting page back. */
 export const setHeroPalette = (name: HeroPaletteName): void => {
   current = HERO_PALETTES[name]
 }

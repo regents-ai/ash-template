@@ -1,4 +1,4 @@
-defmodule AshPlatform.TestLocalAcceptanceDatabaseAdapter do
+defmodule AshTemplate.TestLocalAcceptanceDatabaseAdapter do
   @moduledoc false
 
   def child_spec(initial) do

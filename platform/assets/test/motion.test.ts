@@ -279,8 +279,8 @@ describe("shell motion", () => {
     const appended: HTMLElement[] = []
     const root = element() as HTMLElement & {current: HTMLElement[]}
     root.current = current
-    root.dataset.motionApp = "formation"
-    root.dataset.destination = "/formation"
+    root.dataset.motionApp = "product"
+    root.dataset.destination = "/account"
     root.querySelectorAll = ((selector: string) => {
       if (selector.includes("surface")) return []
       const kind = selector.includes("background") ? "background" : "region"
@@ -300,7 +300,7 @@ describe("shell motion", () => {
     ShellMotion.beforeUpdate.call(state)
     current = [node("region", 80), node("background")]
     root.current = current
-    root.dataset.motionApp = "regent_ops"
+    root.dataset.motionApp = "product"
     root.dataset.destination = "/app"
     ShellMotion.updated.call(state)
     const firstCount = animations.length
@@ -311,8 +311,8 @@ describe("shell motion", () => {
 
     ShellMotion.beforeUpdate.call(state)
     root.current = [node("region", 20), node("background")]
-    root.dataset.motionApp = "formation"
-    root.dataset.destination = "/formation"
+    root.dataset.motionApp = "product"
+    root.dataset.destination = "/account"
     ShellMotion.updated.call(state)
     expect(animations.slice(0, firstCount).every((animation) => vi.mocked(animation.cancel).mock.calls.length === 1)).toBe(true)
     expect(removed.length).toBe(2)
@@ -339,8 +339,8 @@ describe("shell motion", () => {
     }
     const root = element() as HTMLElement & {current: HTMLElement[]}
     root.current = [node("region"), node("background")]
-    root.dataset.motionApp = "formation"
-    root.dataset.destination = "/formation"
+    root.dataset.motionApp = "product"
+    root.dataset.destination = "/account"
     root.querySelectorAll = ((selector: string) => {
       if (selector.includes("surface")) return []
       const kind = selector.includes("background") ? "background" : "region"

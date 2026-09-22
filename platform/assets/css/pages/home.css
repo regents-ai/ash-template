@@ -18,8 +18,6 @@
   .rl-product-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; order: 3; width: 100%; max-width: 44rem; margin-inline: auto; }
   .rl-header-bar > .rl-header-links { margin-inline-start: auto; }
   .rl-header-links, .rl-footer-links { display: flex; align-items: center; gap: var(--space-2); }
-  .rl-header--blog .rl-header-links { flex-wrap: wrap; min-width: 0; max-width: 100%; justify-content: flex-end; }
-  .rl-header--blog .rl-header-links > a:not(.rg-button) { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
   .rl-header-links > a:not(.rg-button), .rl-footer-links a { display: inline-flex; width: 1.25rem; height: 1.25rem; }
   .rl-header-links svg, .rl-footer-links svg, .rl-card-source svg { width: 1.25rem; height: 1.25rem; }
   .rl-token-menu { position: relative; z-index: 10; }
@@ -72,20 +70,14 @@
     display: grid; grid-template-rows: auto 1fr auto; gap: var(--space-2); min-width: 0;
     padding: var(--space-2); background: var(--rl-card-fill); color: var(--palette-charcoal);
   }
-  .rl-hero-card[data-home-hero-card="autolaunch"] { --rl-card-fill: var(--palette-tangerine-tango); }
-  .rl-hero-card[data-home-hero-card="techtree"] { --rl-card-fill: var(--palette-powder-blue); }
+  .rl-hero-card[data-home-hero-card="signin"] { --rl-card-fill: var(--palette-tangerine-tango); }
+  .rl-hero-card[data-home-hero-card="account"] { --rl-card-fill: var(--palette-powder-blue); }
   .rl-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-1); }
   .rl-card-heading h2 { font-size: 1.375rem; line-height: 1.15; }
 
   .rl-hero-card > p { font-size: .875rem; line-height: 1.45; }
   .rl-card-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
-  .rl-hero-stakers { margin: 0 var(--rg-panel-padding) var(--rg-panel-padding); padding: var(--rg-panel-padding); display: grid; gap: var(--space-3); }
-  .rl-regent-copy { width: fit-content; max-width: min(100%, 52ch); }
-  .rl-regent-copy h2 { margin-block: var(--space-1) var(--space-2); font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.1; font-weight: 400; }
-  .rl-regent-summary { max-width: 50ch; font-family: var(--font-family-sans); font-size: 1rem; line-height: 1.6; }
-  .rl-hero-stakers .rl-stakers-actions { width: fit-content; max-width: 100%; }
-  .rl-regent-edge { position: absolute; inset-block: var(--rg-cut-panel); inset-inline-start: 0; width: 3px; background: var(--palette-tangerine-tango); pointer-events: none; }
-  .rl-stakers-actions, .rl-chapter-actions, .rl-closing-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .rl-chapter-actions, .rl-closing-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .rl-chapter, .rl-closing { padding: var(--rg-panel-padding); }
   .rl-chapter-intro { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: var(--space-3); }
   .rl-chapter-intro > div:only-child { grid-column: 2; }
@@ -114,10 +106,6 @@
   .rl-chapter-actions, .rl-closing-actions { margin-block-start: var(--space-4); }
   .rl-closing { padding-inline-start: calc(var(--rg-panel-padding) + 4rem + var(--space-3)); }
   .rl-closing > p { max-width: 60ch; }
-  .rl-regent-economics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-4) 0 0; }
-  .rl-regent-economics > div { border-block-start: 1px solid var(--rl-line); padding-block-start: var(--space-2); }
-  .rl-regent-economics dt { margin-block-end: var(--space-2); font-family: var(--font-family-title); font-size: 1.25rem; line-height: 1.2; }
-  .rl-regent-economics dd { margin: 0; color: var(--rl-muted); line-height: 1.6; }
   .rl-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); padding: var(--rg-panel-padding); font-size: .8125rem; }
   .rl-footer-brand { display: flex; gap: var(--space-2); align-items: center; }
   .rl-document-links { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
@@ -141,7 +129,6 @@
     .rl-card-actions { flex-wrap: wrap; justify-content: end; max-width: 12rem; }
     .rl-hero-art { object-fit: contain; }
     .rl-closing { padding-inline-start: var(--rg-panel-padding); }
-    .rl-regent-economics { grid-template-columns: minmax(0, 1fr); }
     .rl-chapter-intro { grid-template-columns: minmax(0, 1fr); }
     .rl-chapter-intro > div:only-child { grid-column: 1; }
     .rl-hero-copy h1 { font-size: clamp(2.5rem, 10vw, 4.5rem); }
@@ -200,7 +187,6 @@
 .rl-card-actions .rl-card-source { flex: 0 0 2.75rem; width: 2.75rem; }
 /* The callout is a foil face, which brings its own graphite ground and ink. Its
    buttons keep their corner marks and let the foil show through their plates. */
-.rl-hero-stakers .rg-button::before { background-color: transparent; }
 /* Per-card stock/ink pairs use the shared panel's public color properties. */
 .rl-proof-card > .rg-panel { --rg-panel-fill: var(--rl-proof-fill); --rg-panel-ink: var(--palette-charcoal); }
 /* Compact desktop stock: 75% of the former card width with a 1ch gutter.

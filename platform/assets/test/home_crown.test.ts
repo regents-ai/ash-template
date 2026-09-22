@@ -315,7 +315,7 @@ describe("Regents crown lasers", () => {
   // Hovering a product changes the light going in. The glass is not touched, so every
   // colour it throws is the white-light colour filtered by the product's own.
   it("shoots the hovered product's colour through the glass", () => {
-    const {beam} = HERO_PALETTES.autolaunch
+    const {beam} = HERO_PALETTES.signin
     const white = beams()
     const tinted = beams([0, 0], 16 / 9, beam)
 

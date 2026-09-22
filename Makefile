@@ -5,6 +5,6 @@ help:
 check-platform:
 	cd platform && mix precommit
 check-cli:
-	cd cli && pnpm check:workspace && pnpm check:openapi && pnpm check:cli-contract && pnpm build && pnpm typecheck && pnpm test
+	cd cli && pnpm build && pnpm typecheck && pnpm test
 check-contracts:
-	cd contracts && bin/gate.sh
+	@echo "contracts/ is empty; add a Foundry project there and replace this target with its checks."

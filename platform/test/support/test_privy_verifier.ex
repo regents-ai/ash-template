@@ -1,4 +1,4 @@
-defmodule AshPlatform.TestPrivyVerifier do
+defmodule AshTemplate.TestPrivyVerifier do
   @moduledoc false
 
   @identity_suffix "-identity"
@@ -19,7 +19,7 @@ defmodule AshPlatform.TestPrivyVerifier do
   Only an access token names a session and only its own partner is that
   session's signed evidence, so a swapped, reused or unpaired token is no pair
   at all and never reaches the session boundary. Refusals carry the same tagged
-  classification `AshPlatform.Privy` returns.
+  classification `AshTemplate.Privy` returns.
   """
   def verify_session_pair(%{access: access, identity: identity})
       when is_binary(access) and is_binary(identity) do
@@ -32,7 +32,7 @@ defmodule AshPlatform.TestPrivyVerifier do
 
   def verify_access_token("valid") do
     {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
+     %AshTemplate.VerifiedPrivyIdentity{
        session_id: "browser-session",
        privy_user_id: "did:privy:verified",
        wallet_address: "0x1111111111111111111111111111111111111111",
@@ -42,7 +42,7 @@ defmodule AshPlatform.TestPrivyVerifier do
 
   def verify_access_token("no-wallet") do
     {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
+     %AshTemplate.VerifiedPrivyIdentity{
        session_id: "browser-session",
        privy_user_id: "did:privy:verified",
        wallet_address: nil,
@@ -52,7 +52,7 @@ defmodule AshPlatform.TestPrivyVerifier do
 
   def verify_access_token("changed-wallet") do
     {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
+     %AshTemplate.VerifiedPrivyIdentity{
        session_id: "browser-session",
        privy_user_id: "did:privy:verified",
        wallet_address: "0x2222222222222222222222222222222222222222",
@@ -62,7 +62,7 @@ defmodule AshPlatform.TestPrivyVerifier do
 
   def verify_access_token("other-account") do
     {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
+     %AshTemplate.VerifiedPrivyIdentity{
        session_id: "other-browser-session",
        privy_user_id: "did:privy:other",
        wallet_address: "0x3333333333333333333333333333333333333333",
@@ -70,49 +70,9 @@ defmodule AshPlatform.TestPrivyVerifier do
      }}
   end
 
-  def verify_access_token("valid-staking") do
-    {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
-       session_id: "staking-browser-session",
-       privy_user_id: "did:privy:staking-browser",
-       wallet_address: "0x1111111111111111111111111111111111111111",
-       wallet_addresses: ["0x1111111111111111111111111111111111111111"]
-     }}
-  end
-
-  def verify_access_token("valid-redemption") do
-    {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
-       session_id: "redemption-browser-session",
-       privy_user_id: "did:privy:redemption-browser",
-       wallet_address: "0x1111111111111111111111111111111111111111",
-       wallet_addresses: ["0x1111111111111111111111111111111111111111"]
-     }}
-  end
-
-  def verify_access_token("valid-regents-club") do
-    {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
-       session_id: "regents-club-browser-session",
-       privy_user_id: "did:privy:regents-club-owner",
-       wallet_address: "0x45C9a201e2937608905fEF17De9A67f25F9f98E0",
-       wallet_addresses: ["0x45C9a201e2937608905fEF17De9A67f25F9f98E0"]
-     }}
-  end
-
-  def verify_access_token("valid-formation-cloud") do
-    {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
-       session_id: "formation-cloud-browser-session",
-       privy_user_id: "did:privy:formation-cloud-browser",
-       wallet_address: "0x4444444444444444444444444444444444444444",
-       wallet_addresses: ["0x4444444444444444444444444444444444444444"]
-     }}
-  end
-
   def verify_access_token("conflicting-social") do
     {:ok,
-     %AshPlatform.VerifiedPrivyIdentity{
+     %AshTemplate.VerifiedPrivyIdentity{
        session_id: "conflicting-social-session",
        privy_user_id: "did:privy:conflicting-social",
        wallet_address: "0x5555555555555555555555555555555555555555",
