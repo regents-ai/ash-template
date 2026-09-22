@@ -17,3 +17,7 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   Formation, Regents Club, ENS, OpenSea, the blog, Regent Names and claims,
   public profiles, agent sign-in, sprites, the Base RPC reads, the Regents CLI
   commands and the Solidity contracts.
+
+## 2026-09-22 — PostgreSQL 17 pin
+
+- Pinned `postgres 17.7` in `platform/.tool-versions`, the server every environment runs.
