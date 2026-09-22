@@ -843,7 +843,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
     config = Application.get_env(:ash_template, :privy, [])
 
     cond do
-      Application.get_env(:ash_template, :privy_verifier, AshTemplate.Privy) != AshTemplate.Privy ->
+      Application.get_env(:ash_template, :privy_verifier, RegentPrivy.Session) !=
+          RegentPrivy.Session ->
         :fixture
 
       Enum.all?([:app_id, :verification_key], fn key ->
