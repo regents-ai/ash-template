@@ -5,6 +5,24 @@ This monorepo is a product template. Keep the placeholder names (`ash_template`,
 `AshTemplate`, `ashTemplate`, `ash-template`, `ASH_TEMPLATE_`, "Ash Template",
 "ASH TEMPLATE") exactly as they are; `scripts/init.sh` renames them for a real
 product.
+
+After renaming, a new site must still replace, by hand:
+
+1. Brand files in `platform/priv/static`: `favicon.svg`, `favicon.ico`,
+   `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`, `mark.png`,
+   `images/brand/mark-flat-dark.svg`, `images/brand/mark-flat-light.svg`, and
+   the homepage art `images/home/hero-bg-dark.svg`. Keep the file names.
+2. The legal operator named in `platform/priv/legal/terms.md` and
+   `privacy.md`.
+3. Every `example.com` contact address in `platform/priv/legal`,
+   `platform/priv/public/contact.md` and
+   `platform/lib/ash_template_web/public_documents.ex`.
+4. The `x.com/example` and `github.com/example` links in
+   `platform/lib/ash_template_web/components/regent_links.ex`.
+5. The Fly app names: `app` in `platform/fly.staging.toml`, and the production
+   app, which `platform/fly.toml` leaves to the deploy command.
+6. The database cluster, hosts and refused identities in
+   `platform/lib/ash_template/database_config.ex`.
 <!-- /template-only -->
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.

@@ -21,7 +21,6 @@ import {
 } from "./shell_state"
 import {CopyText} from "./hooks/copy_text"
 import {HolographicCard} from "./hooks/holographic_card"
-import {HomePrism} from "./hooks/home_prism"
 import {ShellMotion} from "./hooks/motion"
 import {VerifiedConnections} from "./hooks/verified_connections"
 
@@ -68,7 +67,7 @@ function writeThemeCookie(theme: Theme) {
 
 let savedTheme = readThemeCookie()
 
-// The public crown is a dark-only composition, not a change to visitor preference.
+// The homepage art is dark-only; this is not a change to visitor preference.
 const homeThemeLocked = () => window.location.pathname === "/"
 const pageTheme = (): Theme => homeThemeLocked() ? "dark" : savedTheme ?? "dark"
 
@@ -319,7 +318,6 @@ const hooks = {
   ...colocatedHooks,
   CopyText,
   HolographicCard,
-  HomePrism,
   ShellBehavior: composeHooks(shellBehavior, ShellMotion),
   VerifiedConnections,
 }

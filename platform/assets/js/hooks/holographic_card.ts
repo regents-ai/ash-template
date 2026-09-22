@@ -52,8 +52,8 @@ const browserLoadCard =
   }
 
 /**
- * The shared holographic foil, mounted the way the hero's crown is: the foil is
- * drawn on the island's canvas and the card itself turns with the pointer.
+ * The shared holographic foil: the foil is drawn on the island's canvas and the
+ * card itself turns with the pointer.
  *
  * The turn is the renderer's eased tilt written back to the card as CSS custom
  * properties, so the text on the face stays real DOM text and moves with the

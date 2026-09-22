@@ -117,7 +117,7 @@ test("the public homepage presents the hero and its chapters", async ({page}) =>
   await page.goto("/")
 
   await expect(page.locator("#public-home")).toBeVisible()
-  await expect(page.locator("#home-prism .rl-hero-art")).toHaveAttribute(
+  await expect(page.locator("#home-hero-art .rl-hero-art")).toHaveAttribute(
     "src",
     "/images/home/hero-bg-dark.svg",
   )
@@ -139,33 +139,18 @@ test("the public homepage presents the hero and its chapters", async ({page}) =>
   await expect(page.locator("#app-shell")).toHaveCount(0)
 })
 
-// The crown is decoration the server renders inside the hero: hidden from assistive
-// technology, taking no pointer events, and showing exactly one layer at a time —
-// the still art until the drawn crown is ready, then the drawn crown alone. Whether
-// headless Chromium brings a GPU decides which layer shows, never whether the copy
-// and actions stay reachable.
-test("the bounded technical crown never blocks the action", async ({page}) => {
-  const expectOneHeroLayer = async () => {
-    const layers = await page.locator("#home-prism").evaluate(element => ({
-      art: getComputedStyle(element.querySelector(".rl-hero-art")!).visibility,
-      crownReady: element.getAttribute("data-prism-ready") === "true",
-    }))
-    expect(layers.art).toBe(layers.crownReady ? "hidden" : "visible")
-  }
-
+// The hero art is decoration: hidden from assistive technology and taking no
+// pointer events, so the copy and actions stay reachable at every width.
+test("the hero art never blocks the action", async ({page}) => {
   for (const viewport of [{width: 1280, height: 800}, {width: 390, height: 844}]) {
     await page.setViewportSize(viewport)
     await page.goto("/")
-    const prism = page.locator("#home-prism")
-    await expect(prism).toHaveAttribute("aria-hidden", "true")
-    expect(await prism.evaluate(element => getComputedStyle(element).pointerEvents)).toBe("none")
-    await expectOneHeroLayer()
+    const art = page.locator("#home-hero-art")
+    await expect(art).toHaveAttribute("aria-hidden", "true")
+    expect(await art.evaluate(element => getComputedStyle(element).pointerEvents)).toBe("none")
     await expect(page.locator("#home-title")).toBeVisible()
     await page.locator(".rl-hero-actions").getByRole("link", {name: "Open the app"}).click({trial: true})
     await page.locator("#home-card-agents").getByRole("link", {name: "Read the docs"}).click({trial: true})
-    await page.emulateMedia({reducedMotion: "reduce"})
-    await expectOneHeroLayer()
-    await page.emulateMedia({reducedMotion: "no-preference"})
   }
 })
 test("the primary homepage action keeps its contrast on hover", async ({page}) => {

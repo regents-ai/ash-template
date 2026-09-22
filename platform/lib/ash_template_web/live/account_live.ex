@@ -42,6 +42,7 @@ defmodule AshTemplateWeb.AccountLive do
           id="account-identity"
           class="account-identity"
           phx-hook="HolographicCard"
+          data-holo-crown="false"
         >
           <p class="account-kicker">Your account</p>
           <div class="account-identity__who">

@@ -181,10 +181,10 @@ test("the landing keeps its opted-in display face for headings", async ({page}) 
   ).toContain("Geist Pixel Square")
 })
 
-// The founder's hero: the words in the left half with the crown drawn across the whole stage
-// behind them and the highlights underneath where there is room, and the same things in reading
-// order, crown between words and highlights, where there is not.
-test("the hero sets its words over the crown, and above it on a phone", async ({page}) => {
+// The hero: the words in the left half with the art across the whole stage behind them and
+// the highlights underneath where there is room, and the same things in reading order, art
+// between words and highlights, where there is not.
+test("the hero sets its words over the art, and above it on a phone", async ({page}) => {
   const boxOf = (selector: string) =>
     page.locator(selector).evaluate(element => {
       const box = element.getBoundingClientRect()
@@ -207,7 +207,7 @@ test("the hero sets its words over the crown, and above it on a phone", async ({
       const hero = await boxOf(".rl-hero")
       const copy = await boxOf("#home-title")
       const cards = await boxOf("#home-highlights")
-      const crown = await boxOf("#home-prism")
+      const art = await boxOf("#home-hero-art")
 
       expect(copy.left).toBeGreaterThanOrEqual(hero.left)
       expect(copy.right, "the words stay in the left half").toBeLessThanOrEqual(
@@ -218,11 +218,11 @@ test("the hero sets its words over the crown, and above it on a phone", async ({
         hero.left + hero.width / 2,
       )
       expect(cards.top, "the highlights come under the words").toBeGreaterThanOrEqual(copy.bottom)
-      expect(crown.left, "the crown stands behind the words").toBeLessThanOrEqual(copy.left)
-      expect(crown.top).toBeLessThanOrEqual(copy.top)
-      expect(crown.right, "and behind the highlights").toBeGreaterThanOrEqual(cards.right)
-      expect(crown.bottom).toBeGreaterThanOrEqual(cards.bottom)
-      expect(crown.right).toBeLessThanOrEqual(hero.right)
+      expect(art.left, "the art stands behind the words").toBeLessThanOrEqual(copy.left)
+      expect(art.top).toBeLessThanOrEqual(copy.top)
+      expect(art.right, "and behind the highlights").toBeGreaterThanOrEqual(cards.right)
+      expect(art.bottom).toBeGreaterThanOrEqual(cards.bottom)
+      expect(art.right).toBeLessThanOrEqual(hero.right)
     })
   }
 
@@ -233,15 +233,15 @@ test("the hero sets its words over the crown, and above it on a phone", async ({
       await waitForHomepage(page)
       await assertNoOverflow(page)
 
-      // On a phone the crown takes a row of its own between the words and the highlights.
+      // On a phone the art takes a row of its own between the words and the highlights.
       const title = await boxOf("#home-title")
       const tagline = await boxOf(".rl-hero-copy .rl-hero-description")
-      const crown = await boxOf("#home-prism")
+      const art = await boxOf("#home-hero-art")
       const cards = await boxOf("#home-highlights")
 
       expect(title.bottom, "the heading sits above the tagline").toBeLessThanOrEqual(tagline.top)
-      expect(tagline.bottom, "the tagline sits above the crown").toBeLessThanOrEqual(crown.top)
-      expect(crown.bottom, "the crown sits above the highlights").toBeLessThanOrEqual(cards.top)
+      expect(tagline.bottom, "the tagline sits above the art").toBeLessThanOrEqual(art.top)
+      expect(art.bottom, "the art sits above the highlights").toBeLessThanOrEqual(cards.top)
     })
   }
 })

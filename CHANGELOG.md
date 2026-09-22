@@ -47,3 +47,15 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   Node version from `platform/.tool-versions`.
 - `make check` runs every component's gate; the platform gate adds the
   TypeScript typecheck and unit tests.
+
+## 2026-09-22 — Placeholder brand, no local acceptance tooling
+
+- The homepage hero shows a still placeholder image; the animated crown, its
+  helpers and their tests are gone. The favicons, `mark.png` and the flat marks
+  are a neutral placeholder square under the same file names. `AGENTS.md` lists
+  what a new site must replace by hand.
+- Removed the local acceptance tooling: the setup and reset scripts, their mix
+  tasks and guide, and the acceptance branch of the local database fixture.
+- `PRIVY_VERIFICATION_KEY` is read as given: the PEM with real line breaks.
+- The minimum PostgreSQL version the repository declares stays at 14; at 17
+  AshPostgres writes upserts as MERGE statements that lose the schema prefix.

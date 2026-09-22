@@ -62,7 +62,7 @@ production.
 | Variable | Required | What it is for |
 | --- | --- | --- |
 | `PRIVY_APP_ID` | For sign-in | The Privy application that browser sign-in runs against. |
-| `PRIVY_VERIFICATION_KEY` | For sign-in | Privy's PEM-encoded ES256 verification **public** key, not the app secret. |
+| `PRIVY_VERIFICATION_KEY` | For sign-in | Privy's ES256 verification **public** key, not the app secret: the PEM with real line breaks, for example `fly secrets set PRIVY_VERIFICATION_KEY="$(cat privy-verification-key.pem)"`. |
 | `ASH_TEMPLATE_APP_SURFACES` | Yes in production | `on` opens the signed-in pages. Anything else keeps them closed, so a typo closes rather than opens. Boot fails in production if unset. |
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. |
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
@@ -97,14 +97,14 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ```text
 lib/ash_template/       Ash domains: accounts, sign-in, legal documents
 lib/ash_template_web/   Endpoint, router, live pages, controllers, components
-lib/mix/tasks/          Local setup, reset, contract sync and route-handoff checks
+lib/mix/tasks/          Local setup, contract sync and route-handoff checks
 contracts/              The OpenAPI contract
 config/                 Compile-time and runtime configuration
 assets/                 TypeScript and CSS, built with esbuild
 priv/                   Migrations, public and legal Markdown, static assets
 test/                   ExUnit suites, including browser and budget tests
 docs/                   Local setup guides
-bin/, scripts/          Local acceptance and release helpers
+scripts/                Release helpers
 rel/                    Release overlays, including the migrate command
 ```
 

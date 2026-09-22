@@ -8,7 +8,7 @@ defmodule AshTemplate.TestPrivyVerifier do
 
   Real Privy access and identity tokens are distinct strings with distinct
   roles, so the fixtures are too. `test/browser/support/authenticated_privy.ts`
-  builds the same partner for the acceptance browsers and has to stay in step
+  builds the same partner for the browser suite and has to stay in step
   with this.
   """
   def identity_token(access_token), do: access_token <> @identity_suffix

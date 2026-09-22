@@ -92,15 +92,8 @@ defmodule AshTemplateWeb.HomeLive do
     ~H"""
     <section class="rl-hero rl-hero--home" aria-labelledby="home-title">
       <div class="rl-hero-stage">
-        <%!-- Keep the real thirteen-cube renderer. Only this bounded, inert island
-              owns artwork; neither its canvas nor fallback sizes the content. --%>
-        <div
-          id="home-prism"
-          class="rl-hero-prism"
-          phx-hook="HomePrism"
-          phx-update="ignore"
-          aria-hidden="true"
-        >
+        <%!-- Placeholder art: replace this image with the product's own. --%>
+        <div id="home-hero-art" class="rl-hero-media" aria-hidden="true">
           <img
             class="rl-hero-art"
             src={~p"/images/home/hero-bg-dark.svg"}
@@ -109,7 +102,6 @@ defmodule AshTemplateWeb.HomeLive do
             alt=""
             fetchpriority="high"
           />
-          <canvas data-home-prism-canvas></canvas>
         </div>
 
         <div class="rl-hero-copy" data-home-hero-copy>
@@ -189,6 +181,7 @@ defmodule AshTemplateWeb.HomeLive do
         class="rl-proof-card"
         data-card-color={Enum.at(~w(orange blue platinum), index)}
         phx-hook="HolographicCard"
+        data-holo-crown="false"
         data-holo-ink
         data-holo-tilt="0"
       >
@@ -342,8 +335,7 @@ defmodule AshTemplateWeb.HomeLive do
       {"Start", "start"}
     ]
 
-  # The three highlights on the hero. Their names double as the chapter anchors
-  # and as the palette each card lends the artwork while it is pointed at.
+  # The three highlights on the hero. Their names double as the chapter anchors.
   @doc false
   def hero_cards do
     [

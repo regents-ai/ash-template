@@ -67,9 +67,7 @@
              files: %{
                excluded: [
                  # The signed-in shell branches on session state; changing that is not lint-only.
-                 "lib/ash_template_web/live/shell_live.ex",
-                 # The reset task crosses the protected authentication boundary.
-                 "lib/mix/tasks/ash_template.reset_browser_identity.ex"
+                 "lib/ash_template_web/live/shell_live.ex"
                ]
              }
            ]},
@@ -86,9 +84,7 @@
              files: %{
                excluded: [
                  # The signed-in shell branches on session state; changing that is not lint-only.
-                 "lib/ash_template_web/live/shell_live.ex",
-                 # The reset task crosses the protected authentication boundary.
-                 "lib/mix/tasks/ash_template.reset_browser_identity.ex"
+                 "lib/ash_template_web/live/shell_live.ex"
                ]
              }
            ]},
