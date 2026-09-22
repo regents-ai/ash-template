@@ -21,3 +21,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 ## 2026-09-22 — PostgreSQL 17 pin
 
 - Pinned `postgres 17.7` in `platform/.tool-versions`, the server every environment runs.
+
+## 2026-09-22 — mint 1.10.1
+
+- Moved the mint HTTP client to 1.10.1, which closes the medium-severity
+  EEF-CVE-2026-82672 (HTTP/1 response smuggling through an unvalidated
+  chunk-size line). Lockfile-only change.
