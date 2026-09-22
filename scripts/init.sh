@@ -11,8 +11,11 @@
 #   ASH_TEMPLATE  -> KEYFLEET     (environment variables)
 #   ash-template  -> keyfleet     (package and Fly names)
 #   Ash Template  -> KeyFleet     (public copy; the display name, "KeyFleet" by default)
-# and renames the files and directories that carry the app name. Run it once,
-# from a clean checkout, before the first commit of the new product.
+# renames the files and directories that carry the app name, drops the Markdown
+# passages fenced by <!-- template-only --> and <!-- /template-only --> that
+# describe the template itself, and records the rename at the end of
+# CHANGELOG.md, whose earlier entries stay as written. Run it once, from a clean
+# checkout, before the first commit of the new product.
 set -euo pipefail
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
@@ -78,15 +81,33 @@ while IFS= read -r dir; do
   git mv "$dir" "$(dirname "$dir")/$(renamed "$(basename "$dir")")"
 done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -not -path './.git/*' -not -path '*/_build/*' -not -path '*/deps/*' -not -path '*/node_modules/*' | deepest_first)
 
-# Contents: every tracked text file except this script, task names first, then
-# the longest spelling first.
+# Contents: every tracked text file except this script and the changelog's
+# history, task names first, then the longest spelling first.
 git ls-files -z | while IFS= read -r -d '' path; do
-  [[ -f "$path" && "$path" != scripts/init.sh ]] || continue
+  [[ -f "$path" && "$path" != scripts/init.sh && "$path" != CHANGELOG.md ]] || continue
   grep -Iq . "$path" || continue
   if grep -q 'ash_template\|AshTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template' "$path"; then
     perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g; s/Ash Template/$display/g" "$path"
   fi
 done
+
+# Passages that describe the template itself, fenced in Markdown comments.
+git ls-files -z -- '*.md' ':!CHANGELOG.md' | while IFS= read -r -d '' path; do
+  grep -q '<!-- template-only -->' "$path" || continue
+  perl -0777 -pi -e 's/<!-- template-only -->\n.*?<!-- \/template-only -->\n\n?//gs' "$path"
+done
+if git grep -q -e 'template-only' -- ':!scripts/init.sh'; then
+  echo "a template-only fence is still open; every passage needs both markers on their own lines" >&2
+  exit 70
+fi
+
+cat >> CHANGELOG.md <<EOF
+
+## $(date -u +%F) — Renamed to $display
+
+- Renamed the Ash Template placeholder to $display (\`$snake\`, \`$module\`,
+  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself.
+EOF
 
 git rm -q -- scripts/init.sh
 cat <<EOF

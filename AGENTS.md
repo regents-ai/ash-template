@@ -1,8 +1,10 @@
 # Ash Template
 
+<!-- template-only -->
 This monorepo is a product template. Keep the placeholder names (`ash_template`,
 `AshTemplate`, `ash-template`, `ASH_TEMPLATE_`, "Ash Template") exactly as they
 are; `scripts/init.sh` renames them for a real product.
+<!-- /template-only -->
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.
 - `cli/`: pnpm workspace for the `ash-template` command. Only `help` and

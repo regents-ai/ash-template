@@ -1,6 +1,6 @@
 # About Ash Template
 
-Ash Template is a starting point for a product where people sign in with a wallet, keep a small account, and read plain documentation. It is the placeholder name for a product that has not been named yet.
+Ash Template is a product where people sign in with a wallet, keep a small account, and read plain documentation.
 
 ## What you can do here
 

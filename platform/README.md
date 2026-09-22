@@ -5,7 +5,7 @@
 [![Phoenix 1.8](https://img.shields.io/badge/phoenix-1.8-lightgrey)](https://www.phoenixframework.org)
 [![Ash 3.33](https://img.shields.io/badge/ash-3.33-lightgrey)](https://ash-hq.org)
 
-The Phoenix/Ash web application of the template. It serves the public home
+The Phoenix/Ash web application of Ash Template. It serves the public home
 page, Privy wallet sign-in, the signed-in Overview (`/app`) and Account
 (`/account`) pages, the public pages, health and metrics, and the public HTTP
 API.
