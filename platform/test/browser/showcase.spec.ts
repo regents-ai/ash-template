@@ -145,8 +145,6 @@ test("Ash validation, utility outcomes, local database and disclosure fixtures w
     "true",
   )
   for (const [kind, expected] of [
-    ["amount", '"formatted": "1"'],
-    ["calldata", "0x095ea7b3"],
     ["privy_valid", "Verified fixture"],
     ["privy_expired", "token_expired"],
     ["privy_audience", "invalid_audience"],

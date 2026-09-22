@@ -206,7 +206,7 @@ for (const invalidHandoff of [
     })
 
     await page.goto("/app")
-    await expect(page.getByRole("button", {name: "Sign In"})).toBeVisible()
+    await expect(page.locator("#account-control").getByRole("button", {name: "Sign In"})).toBeVisible()
     await page.waitForLoadState("networkidle")
     expect(bridgeRequests).toBe(0)
     expect(
@@ -243,7 +243,7 @@ test("a production-like digested bridge source remains same-origin and callable"
   )
 
   await page.goto("/app")
-  await page.getByRole("button", {name: "Sign In"}).click()
+  await page.locator("#account-control").getByRole("button", {name: "Sign In"}).click()
   await expect
     .poll(() =>
       page.evaluate(
@@ -284,14 +284,14 @@ for (const viewport of retryViewports) {
     expect(headerHeight).toBeDefined()
     const status = page.locator("#account-auth-status")
 
-    await page.getByRole("button", {name: "Sign In"}).click()
+    await page.locator("#account-control").getByRole("button", {name: "Sign In"}).click()
     await expect.poll(() => bridgeRequests.length).toBe(1)
     await expect(status).toBeVisible()
     await expect(status).toContainText(
       "Sign-in is unavailable on this page. Reload it or contact support.",
     )
     await expectStatusAnchored(page, headerHeight ?? 0)
-    await expect(page.getByRole("button", {name: "Sign In"})).toBeDisabled()
+    await expect(page.locator("#account-control").getByRole("button", {name: "Sign In"})).toBeDisabled()
     await expect.poll(() => failureDiagnostics).toEqual([
       JSON.stringify({reason: "bridge_startup"}),
     ])
@@ -339,7 +339,7 @@ test("the bounded failure report survives the recommended immediate reload exact
 
   await page.goto("/app")
   await expect(page.locator("#app-shell")).toHaveAttribute("data-behavior-ready", "true")
-  await page.getByRole("button", {name: "Sign In"}).click()
+  await page.locator("#account-control").getByRole("button", {name: "Sign In"}).click()
   await expect(page.locator("#account-auth-status")).toContainText(
     "Sign-in is unavailable on this page. Reload it or contact support.",
   )

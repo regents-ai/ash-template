@@ -29,7 +29,8 @@ before building anything on it.
    OTP application `ash_template`, the Elixir modules `AshTemplate`, the
    kebab-case name `ash-template`, the environment prefix `ASH_TEMPLATE_` and
    the display name "Ash Template" everywhere they appear, including the CLI
-   package and command names.
+   package and command names. It prints the follow-up commands: format the
+   renamed code, regenerate the route catalog digest, run the gate.
 
 2. Follow the [platform quickstart](platform/README.md#quickstart) to create the
    local database, load Privy credentials and start the server.
