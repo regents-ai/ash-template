@@ -30,6 +30,8 @@ After renaming, a new site must still replace, by hand:
   `version` exist.
 - `contracts/`: optional Foundry workspace, empty until contracts are needed.
 - `plugins/`: home for standalone runtime plugin packages; none exist yet.
+- `skills/`: agent skills for this stack. `skills/animejs` covers Anime.js in
+  LiveView hooks; load `ash-stack` and `ash-frontend` before it.
 - There is no `identity/` folder. The shared profile domain comes from the
   sibling `regents/identity` package, resolved through `REGENT_DEPS_ROOT` with
   `design-system` and `elixir-utils`. Use `REGENT_DEPS_ROOT` for isolated builds.

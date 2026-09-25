@@ -59,3 +59,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `PRIVY_VERIFICATION_KEY` is read as given: the PEM with real line breaks.
 - The minimum PostgreSQL version the repository declares stays at 14; at 17
   AshPostgres writes upserts as MERGE statements that lose the schema prefix.
+
+## 2026-09-25 — Skills folder with the Anime.js skill
+
+- New `skills/` folder for agent skills that go with this stack. The first is
+  `skills/animejs`: Anime.js 4.5.0 inside LiveView hooks, with a docs lookup
+  script and hook rules checked in a browser against LiveView 1.2.11.
