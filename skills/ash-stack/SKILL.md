@@ -15,7 +15,7 @@ from the current task; this pack supplies Ash-specific judgment, not a delivery 
 | Schema changes, SQL and concurrency | [ash-data](../ash-data/SKILL.md) |
 | Policies, actors and data exposure | [ash-security](../ash-security/SKILL.md) |
 | Regression design or test cleanup | [ash-testing](../ash-testing/SKILL.md) |
-| Agent readiness, shared discovery metadata and verified WebMCP adoption | [ash-webmcp](../ash-webmcp/SKILL.md) |
+| Agent readiness, shared discovery metadata, and building or adopting WebMCP tools | [ash-webmcp](../ash-webmcp/SKILL.md) |
 
 For uncertain APIs, use the app's actual Mix root, lockfile and installed dependency
 usage rules. [Documentation lookup](references/docs-workflow.md) covers version

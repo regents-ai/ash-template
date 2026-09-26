@@ -1,6 +1,6 @@
 ---
 name: ash-webmcp
-description: Use when making Ash sites agent-ready with WebMCP.
+description: Use when making Ash sites agent-ready, or building WebMCP browser tools into an Ash/Phoenix site.
 ---
 
 # Ash agent readiness and WebMCP
@@ -11,6 +11,7 @@ public-document selection and release authority with their owners.
 
 ## When to use
 
+- Building WebMCP tools into an Ash/Phoenix site: follow [build](references/build.md).
 - Ash/Phoenix Markdown negotiation, agent documentation, OpenAPI, discovery metadata,
   recoverable errors, or a WebMCP integration/adoption review.
 - An agent-readiness report needs to be translated into verified product changes.
@@ -127,16 +128,18 @@ pages remain readable without document-wide overflow.
 
 ## WebMCP: verify the actual browser contract
 
-Inspect the installed registry and current specification before changing its API.
-The inspected Autolaunch registry uses `document.modelContext`; Patchbay owns its
-feature detection and legacy-browser handling. Do not invent a registry for a
-product that has none, or confuse native browser WebMCP with a remote MCP server.
+[Build](references/build.md) holds the current browser API, the manifest-first
+layout and the registration lifecycle. Re-read the WebMCP draft before changing the
+API: `document.modelContext` only, removal by aborting the registration signal, and
+only the draft's annotations. Do not invent a registry for a product that has none,
+or confuse native browser WebMCP with a remote MCP server.
 
 Keep schemas strict and descriptions explicit about scope, prerequisites and side
-effects. Derive docs/manifests from the registry where one exists. Respect async
-registration success, navigation/disposal, abort signals and current identity.
-Mark untrusted returned/user-authored content as data, never as new authority.
-Read-only annotations must reflect actual side effects, not merely HTTP methods.
+effects. One manifest is the source: registration, docs and machine lists derive
+from it, and it lists every tool a page registers. Respect async registration,
+navigation/disposal, abort signals and current identity. Mark untrusted
+returned/user-authored content as data, never as new authority. Read-only
+annotations must reflect actual side effects, not merely HTTP methods.
 
 Preserve server-owned actor/proof/payment admission and independent wallet-press
 rules. A refused signed operation must not retry anonymously. No automatic signing,

@@ -39,6 +39,7 @@ Observed entry points include `/api/v1/auctions`, `/api/v1/auctions/:id`,
 Trace controller semantics before classifying the POST quote as a write: HTTP method
 alone does not establish side effects. The public browser tools deliberately omit
 credentials and do not use wallet hooks; preserve that boundary and cancellation.
+The shared profile tools on the same pages do use the Privy session.
 
 Keep `Autolaunch.Prelaunch`, signed-in session authority, profile APIs, drafts,
 wallet interactions, chain/currency context and frozen `contracts/v1` gates intact.
@@ -53,7 +54,8 @@ Read:
 - `platform/lib/patchbay_web/controllers/pages_controller.ex`, blog Markdown views,
   sitemap controller, error views and existing OpenAPI files.
 - `platform/lib/patchbay_web/components/layouts/root.html.heex`.
-- `platform/assets/js/webmcp/webmcpify.js`, `room_hook.js` and the real tool registry.
+- `platform/priv/tool_manifest.json` with `Patchbay.Forum.Capabilities` (the tool
+  source), `platform/assets/js/webmcp/forum_tools.js`, `webmcpify.js` and `room_hook.js`.
 
 Patchbay already has Markdown/controller views, trust/developer routes, sitemap and
 WebMCP room infrastructure. Review and adopt the missing shared metadata rather than
@@ -82,8 +84,10 @@ behind the appropriate data/visibility checks. Describe actual public reads and
 signed publication separately. A Privy profile never grants publication-key authority;
 preserve publication rate limits, integrity checks and frozen proof bytes.
 
-No native registry was found in the inspected platform asset source. Do not claim
-one exists because the CLI/plugin is agent-oriented. The strict CSP and page-specific
+No native registry is in effect. Its assets import the shared profile tools, but
+they install only beside `[data-regent-profile]`, which the retired profile page
+was the only one to render. Do not claim tools exist because the CLI/plugin is
+agent-oriented. The strict CSP and page-specific
 provider permissions must remain intact; structured data is inert data, not an excuse
 to add executable inline scripts. Leave retired profile and development preview
 routes retired. No paid model runs or publication for readiness verification.
