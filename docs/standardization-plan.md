@@ -30,10 +30,16 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
 - Patchbay's scan fixes shipped as v98 (`08ab16c`): standard rate-limit headers, a
   published versions policy, Patchbay named on its developer pages (3a). No postal
   address (4a). The Patchbay command line is not published to npm yet (5b).
-- Command lines: each repository describes its own commands and how they reach its
-  server; one `regents-cli` repository publishes a single package holding every
-  platform's commands. Which repository that is, and what each site's `cli/` keeps, is
-  still open.
+- Command lines (founder "2 a 3 a 4 a"): the published `@regentslabs/cli` moves out of
+  Regents into its own `regents-cli` repository and becomes the one package, with every
+  platform's commands in it. Each site's `cli/` keeps only a description of its commands:
+  names, inputs, the server address each calls and what comes back; the code moves into
+  `regents-cli`. Techtree's Python `techtree` package retires once its commands work there.
+  This replaces the 2026-09-07 plan for the Python `regents-cli-v2` host.
+- API changes (founder "1 a"): a breaking change is listed on the changelog the day it
+  ships; no notice period.
+- Chrome's WebMCP trial (founder "5 a"): the founder registers a token for autolaunch.sh;
+  Patchbay's expires 2026-11-17 and needs renewing before then.
 
 ## Goal
 
@@ -58,7 +64,7 @@ Rules for every stage:
 
 | Area | The template's standard |
 | --- | --- |
-| Layout | `platform/`, `cli/`, `plugins/`, `contracts/`, `skills/`, a `Makefile` whose `make check` runs every gate |
+| Layout | `platform/`, `cli/` (the site's command descriptions; the code lives in `regents-cli`), `plugins/`, `contracts/`, `skills/`, a `Makefile` whose `make check` runs every gate |
 | Design | `regent_ui` components; product CSS in `@layer regents-product` with BEM names on the design-system tokens; page CSS in `assets/css/pages/`, parts in `assets/css/components/` |
 | Browser code | TypeScript, strict, typechecked; hooks in `assets/js/hooks/`, combined with `composeHooks`; page-only code lazy-loaded; size budgets (175 KiB script, 60 KiB style, compressed) |
 | Motion | The kit in `assets/js/hooks/motion/` and `assets/js/motion.ts`, versions in `Motion.standard/1`, the lab at `/animations` |
@@ -101,7 +107,7 @@ Order, closest first, so the checklist is proven on the easy sites:
 | Regents | Near | Delete the leftover `material.css` alias; add the missing ignore line for `priv/static/images/regent-ui/`; take the template's newer parts; rename the app from `ash_platform` (decision 5) |
 | Autolaunch | Medium | Adopt the template's sign-in; move `core_tests` into the standard layout; add a `Makefile` and `skills/`; read the theme instead of fixing it; one short-address helper instead of six copies |
 | Patchbay | Far | Move from Tailwind and daisyUI onto the design system (decision 3); JavaScript to TypeScript (decision 4); newer Privy session; the full precommit |
-| Techtree | Far | After its v0.3.0 release: JavaScript to TypeScript; a full `mix precommit`; remove the stale 365-line `platform/AGENTS.md` and the tracked `.beads/` folder; drop the alias token layer; keep its Python command line |
+| Techtree | Far | After its v0.3.0 release: JavaScript to TypeScript; a full `mix precommit`; remove the stale 365-line `platform/AGENTS.md` and the tracked `.beads/` folder; drop the alias token layer; its commands move into `regents-cli` |
 
 Each site's list goes into its `docs/backlogs/<site>.md` as small steps, each one
 shippable and checked in a browser.
