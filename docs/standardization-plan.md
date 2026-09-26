@@ -22,6 +22,19 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
 10. A short address shows `0x`, the first four and the last four characters, joined by
     two full stops: `0x1234..abcd`.
 
+## Later answers (2026-09-26)
+
+- WebMCP: the build guide is `skills/ash-webmcp/references/build.md`. Patchbay's and
+  Autolaunch's gaps against it are on their backlogs (1a). No WebMCP example page in the
+  template (2b).
+- Patchbay's scan fixes shipped as v98 (`08ab16c`): standard rate-limit headers, a
+  published versions policy, Patchbay named on its developer pages (3a). No postal
+  address (4a). The Patchbay command line is not published to npm yet (5b).
+- Command lines: each repository describes its own commands and how they reach its
+  server; one `regents-cli` repository publishes a single package holding every
+  platform's commands. Which repository that is, and what each site's `cli/` keeps, is
+  still open.
+
 ## Goal
 
 The template is the best example of three things: the Regent design system, the
