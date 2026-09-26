@@ -1,6 +1,26 @@
 # Five sites, one template
 
-Status: plan, awaiting founder decisions (numbered at the end). Written 2026-09-26.
+Status: decided 2026-09-26 (founder answers "1 a 2 c 3 a 4 a 5 a 6 a 7 a 8 a 9 a",
+and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
+
+## Decisions
+
+1. Fix the frozen-motion bug now in each site through its lane, Patchbay first.
+2. Shared packages for the parts that are identical everywhere (motion kit, short
+   address, relative time, copy button); copies for the app skeleton each site adapts.
+3. Patchbay moves onto the design system; Tailwind and daisyUI go.
+4. Patchbay and Techtree move from JavaScript to TypeScript, Techtree after v0.3.0.
+5. Regents' code is renamed from `ash_platform` to `regents`, in one cutover.
+6. Each site's own lane does its refactor from the checklist in its backlog; the
+   template lane checks each step against the template.
+7. The template lane reviews the four clean unmerged template branches and lands what
+   still fits; the owner of `codex/profile-cli` finishes its uncommitted edits.
+8. The stack skills (`ash-*`, `animejs`) live in the template's `skills/` with workspace
+   links; the workflow skills stay in the workspace.
+9. The template's `main` takes the motion work and is pushed to a private
+   `regents-ai/ash-template` repository.
+10. A short address shows `0x`, the first four and the last four characters, joined by
+    two full stops: `0x1234..abcd`.
 
 ## Goal
 
@@ -80,42 +100,4 @@ shippable and checked in a browser.
 - A short script in the template compares each site's copies of shared files with
   the template's and lists the differences, so drift is visible rather than guessed.
 
-## Open decisions
-
-1. **The frozen-motion bug on live sites.** Patchbay (live), Regents and KeyFleet can
-   leave a menu, tab panel or page half-faded when it is replayed mid-move, the bug
-   fixed in the template today.
-   (a) Fix it now in each site through its lane, Patchbay first; (b) wait for Stage 2.
-   Recommend (a): it is a one-file change per site and customers can hit it today.
-2. **Copies or shared packages.** (a) Each site keeps copies of template files, kept in
-   step by the drift script; (b) shared runtime code moves into the shared packages
-   (`design-system` for components, styles and the motion kit; `elixir-utils` for
-   server helpers) and sites import it; (c) both: shared packages for parts that are
-   identical everywhere (motion kit, short address, relative time, copy button),
-   copies for the app skeleton each site adapts (router, shell, session).
-   Recommend (c): three sites already hold diverged copies of the motion kit.
-3. **Patchbay's styling.** (a) Move it onto the design system and drop Tailwind and
-   daisyUI; (b) keep them for Patchbay only. Recommend (a): it is the only site on a
-   different styling system.
-4. **JavaScript to TypeScript** for Patchbay and Techtree. (a) Convert both, Techtree
-   after v0.3.0; (b) leave them in JavaScript. Recommend (a): the template's checks
-   and budgets assume TypeScript.
-5. **Regents' internal name.** Its code is still called `ash_platform`. (a) Rename to
-   `regents` during Stage 2; (b) keep it. Recommend (a), as a single hard cutover.
-6. **Who does the site refactors.** (a) Each site's own lane, from the checklist in
-   its backlog, with this lane checking each step against the template; (b) this lane
-   does all five in worktrees; (c) one new session per site. Recommend (a): the
-   lanes are writing in those repos today and know their releases.
-7. **The template's unmerged branches.** (a) I review the four clean ones and land what
-   still fits; the fifth (profile actions on the command line) has uncommitted edits
-   by another session, so its owner finishes or hands it over; (b) close them all.
-   Recommend (a).
-8. **Where skills live.** (a) The stack skills (`ash-*`, `animejs`) move into the
-   template's `skills/` with workspace links, as `animejs` already does; the workflow
-   skills (`regent-workflow`, `regent-notion`) stay in the workspace; (b) every skill
-   moves into the template; (c) leave them where they are. Recommend (a).
-9. **Publishing the template.** It has no remote. (a) Fast-forward its `main` to the
-   motion work, create a private `regents-ai/ash-template` repository and push;
-   (b) keep it local. Recommend (a), so every lane reads the same copy.
-10. **Short address style.** (a) `0x12…3f` with one ellipsis character; (b) `0x12...3f`.
-    Recommend (a): it matches the wallet mismatch note in the workflow rules.
+The options and recommendations behind each decision are in this file's history.
