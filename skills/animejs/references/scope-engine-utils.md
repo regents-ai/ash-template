@@ -349,6 +349,7 @@ Exported but undocumented and internal: `utils.forEachChildren`, `utils.addChild
 - `utils.set` **changes the params object you pass**. It adds `duration` (about 1e-11) and `composition`. Do not reuse that object for `animate`.
 - `utils.set` made inside a scope is registered and reverted with it, so the values you set are undone on `revert()` and on every refresh.
 - `utils.cleanInlineStyles` pauses the animation. Calling it mid-animation freezes the animation and removes its styles.
+- `utils.cleanInlineStyles` restores the inline values found **when the animation was created**. An animation created while another was mid-flight on the same element captures that half-way frame, and its clean-up puts it back (lab: cards stuck at `translateY(16px); opacity: 0`). A `{from: x}` value also takes its end from that frame. Revert the element's previous animation before starting the next; the template's `play()` does.
 - `utils.get` reads only the first target. For DOM elements, the unit-less form returns a string with its unit (`'10px'`).
 - `utils.round(x)` with one argument returns a **function** (x is taken as the decimal count). To round to a whole number, write `round(x, 0)`. The same rule applies to every chainable helper called with fewer arguments.
 - `utils.random()` returns 0 or 1. It is not `Math.random()`. Use `random(0, 1, 3)` for decimals.

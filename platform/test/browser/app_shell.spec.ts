@@ -351,7 +351,7 @@ test("navigation keeps brand, document, shell identity, and starts at the top", 
   expect(await page.locator("#app-shell-scroller").evaluate(element => element.scrollTop)).toBe(0)
 })
 
-test("rapid page switches settle only the latest scene and remove motion copies", async ({page}) => {
+test("rapid page switches settle on the latest view with no motion left behind", async ({page}) => {
   await page.goto("/app")
   await expect(page.locator("#app-shell")).toHaveAttribute("data-behavior-ready", "true")
 
@@ -360,19 +360,16 @@ test("rapid page switches settle only the latest scene and remove motion copies"
   await patchTo(page, "/app")
 
   await expect(page).toHaveURL(/\/app$/)
-  await expect(page.locator("#app-shell")).toHaveAttribute("data-motion-app", "product")
   await expect(page.getByRole("heading", {level: 1, name: "Welcome."})).toBeVisible()
-  await expect(page.locator("[data-motion-copy]"), "outgoing copies are disposable").toHaveCount(0)
+  await expect(page.locator("#route-content"), "the glide tidies up after itself").not.toHaveAttribute("style")
   await expect(page.locator("#route-content")).toHaveCSS("opacity", "1")
 })
 
-test("theme and reduced-motion preferences apply immediately", async ({browser}) => {
+test("the theme preference applies immediately under reduced motion", async ({browser}) => {
   const context = await browser.newContext({reducedMotion: "reduce"})
   const page = await context.newPage()
   await page.goto("/app")
   await expect(page.locator("#app-shell")).toHaveAttribute("data-behavior-ready", "true")
-
-  await expect(page.locator("html")).toHaveAttribute("data-reduced-motion", "true")
 
   // With nothing saved the server renders the dark theme, and the switch says so
   // before it is touched.

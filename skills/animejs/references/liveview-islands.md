@@ -26,10 +26,11 @@ How Anime.js runs inside a Phoenix LiveView hook in Regent's Ash apps. Everythin
 | --- | --- | --- | --- |
 | regents, keyfleet, the template | `platform/assets/js/hooks/*.ts`, named export, listed in `app.ts` `hooks` | TS, strict, `skipLibCheck` | pinned `4.5.0` in `platform/package.json` |
 | autolaunch | `platform/assets/js/hooks/*.ts` | TS | not installed |
-| techtree, patchbay | `app.js` / `assets/js/hooks/*.js` | JS; no TS gate | not installed |
+| patchbay | `platform/assets/js/hooks/motion/*.js` | JS; no TS gate | pinned `4.5.0` in `platform/assets/package.json` |
+| techtree | `app.js` / `assets/js/hooks/*.js` | JS; no TS gate | not installed |
 
 - Adding the dependency: exact pin `"animejs": "4.5.0"` in the app's `package.json`
-  (`platform/` for autolaunch, `platform/assets/` for techtree and patchbay), install with
+  (`platform/` for autolaunch, `platform/assets/` for techtree), install with
   `npm`, commit the lockfile. Adding TypeScript islands to techtree or patchbay changes
   their pipeline; ask first.
 - Import named functions from `"animejs"`; the esbuild `--bundle` build tree-shakes them.
@@ -39,10 +40,48 @@ How Anime.js runs inside a Phoenix LiveView hook in Regent's Ash apps. Everythin
   with `composeHooks` from `assets/js/hook_composition.ts`.
 - Colocated hooks (`<script :type={Phoenix.LiveView.ColocatedHook} name=".X">`) are plain
   JS inside HEEx. Keep Anime.js islands in `assets/js/hooks/*.ts`.
-- Existing reference: `repos/regents/platform/assets/js/hooks/motion.ts` (ShellMotion) and
-  `docs/design/founder-shell/motion-evidence.md`. Copy its cancellation and generation
-  counter. Do not copy its Scope: it calls `animate()` outside `scope.add()`, so its
-  `scope.revert()` does not cover those animations.
+- The reference is the template's motion kit, below. Build a site's motion from it rather
+  than from another site's copy.
+
+## The standard motion kit (template)
+
+Every Regent site moves the same way. The template holds the kit, the standard version of
+each kind of movement, and the lab where every version that was tried sits side by side.
+
+| File | Holds |
+| --- | --- |
+| `platform/assets/js/hooks/motion/shared.ts` | Timings, curves, `still(el)`, `byPointer(event)`, `lastInputByPointer()`, `play()` |
+| `platform/assets/js/hooks/motion/press.ts` | `squish`, `nope`, `deny` |
+| `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `backdrop` |
+| `platform/assets/js/hooks/motion/reveals.ts` | `ShellViews`, `MotionTabs` / `tabsHook`, `HEADLINES`, `GRIDS` |
+| `platform/assets/js/hooks/motion/moments.ts` | `MotionList` / `listHook`, `MotionCount` / `countHook` |
+| `platform/assets/js/motion.ts` | `mountMotion(document)`: presses, panels, headline and cards on every page |
+| `platform/assets/js/motion_lab.ts` | The lab's other versions; lazy-loaded on `/animations` only |
+| `platform/lib/ash_template_web/motion.ex` | `AshTemplateWeb.Motion.standard/1`: the version each part uses |
+
+Pages take part through markup, never through their own motion code:
+
+- Every button, `.rg-button` and `[role=button]` squishes on a pointer press; one marked
+  `aria-disabled="true"` shakes instead. A wallet button wraps its text in
+  `<span data-press-label>`, so only the label squishes and the button never shrinks
+  under a quick second press.
+- A button with `aria-expanded` and `aria-controls` pointing at `data-panel="drawer"`
+  slides the drawer out, with its sibling `data-backdrop` fading in.
+- A `<details>` whose panel is `data-panel="menu"` pops open; a `<dialog>` rises as a sheet.
+- On a page the server draws once (not live), the `h1` rises word by word, the first 12
+  children of each `data-cascade` settle in and each `role="alert"` shakes once.
+- Live parts use a hook with `data-variant={AshTemplateWeb.Motion.standard("list")}`
+  (`MotionList`, `MotionCount` with `data-count` figures, `MotionTabs`).
+- `/animations` is the lab: public once the site opens, linked from nowhere. A site
+  changes a standard version by comparing there first, then changing `motion.ex`, the
+  kit and every site together.
+
+Start every move that hands its element back to the stylesheet with `play()` from
+`shared.ts`, never `animate(..., {onComplete: utils.cleanInlineStyles})`. Anime.js's
+clean-up restores the inline style it found when the move began, so a move begun over
+another's half-way frame (a double press, a replay, a quick reopen) ends stuck on that
+frame (lab: cards left at `translateY(16px); opacity: 0`). `play()` first reverts the
+element's last move, so each one starts from rest and ends with no inline style.
 
 ## Canonical hook (lab)
 
@@ -121,7 +160,7 @@ show up intermittently.
 | Inline `style` (`animate`, `utils.set`, draggable, layout, animatable) | Removed (lab) | End animations on the natural state; or add `phx-mounted={JS.ignore_attributes(["style"])}` to keep it (lab); or animate inside a `phx-update="ignore"` island |
 | `data-layout-id` from `createLayout().record()` | Removed; Layout can't match old and new, marks the root as entering and nothing moves (lab) | Render `data-layout-id` from the server on the root and every child (lab) |
 | `splitText` spans | Server text replaces them | `split.revert()` in `beforeUpdate`, `splitText()` again in `updated` (lab); or `phx-update="ignore"` when the server never changes the text |
-| Elements appended by JS (clones, overlays) | Removed from a patched parent; kept in an ignored container (lab) | Remove them in `beforeUpdate` (ShellMotion does) or append into an ignored container |
+| Elements appended by JS (clones, overlays) | Removed from a patched parent; kept in an ignored container (lab) | Remove them in `beforeUpdate`, or append into an ignored container (the lab's `#motion-lab-fx` layer) |
 
 `phx-update="ignore"` (needs a unique `id`): children are never patched; on the ignored element
 itself only `data-*` attributes are updated, and `updated()` still runs (lab). That makes
@@ -196,9 +235,10 @@ stream DOM id as `data-layout-id`.
   `cubicBezier(0.23, 1, 0.32, 1)`, `--ease-in-out` = `cubicBezier(0.77, 0, 0.175, 1)`.
 - No idle or decorative loops, no card lift, nothing that follows the pointer (the
   holographic card is the one exception).
-- Keyboard-triggered UI does not animate.
+- Keyboard-triggered UI does not animate (`byPointer`, `lastInputByPointer`). The one
+  exception is `deny`: a refusal shakes however it was asked for, because it is the answer.
 - Reduced motion wins: no movement, layout swaps instantly, at most a short opacity fade.
-  Read it from a Scope media query, or from `data-reduced-motion` where the shell provides it.
+  Ask `still(el)`: the system setting, or a `[data-motion='reduced']` ancestor.
 - Content is visible by default. Only hide something after the script has taken over.
 - `splitText` keeps an accessible copy of the text by default; leave `accessible` on.
 - Error text, costs and transaction outcomes stay visible. Never fade them out.
@@ -206,12 +246,14 @@ stream DOM id as `data-layout-id`.
 ## Checks
 
 - `npm run typecheck` and `npm test` from `platform/` (budget test included where present).
-- Unit-test only real controller logic (cancellation, generation counters) through an
-  injected driver, as `test/motion.test.ts` does. No smoke tests.
+- Unit-test only the rules around motion, as `assets/test/motion.test.ts` does: a press is
+  never stopped, keyboard and reduced motion stay still, a wallet label squishes instead of
+  its button, a move begun over another starts from rest. No smoke tests.
 - LiveView tests do not run hooks. Check the route in a browser: the animation plays, a
   server patch afterwards leaves the right final state, the island's teardown leaves no
   stray styles, and reduced motion behaves.
 - If the browser preview is hidden, the page gets no animation frames and every Anime.js
-  animation stalls. For a console-only check, set `engine.pauseOnDocumentHidden = false`,
-  `engine.useDefaultMainLoop = false` and call `engine.update()` on a 16 ms interval.
-  Never ship that.
+  animation stalls. Check with headless Playwright from `platform/node_modules/playwright`
+  instead: it draws frames, so overlapping presses and end states read true.
+- End-state checks: after rapid repeated presses, replays and reopens, every moved element's
+  `style` attribute is gone (or back to what the server rendered).

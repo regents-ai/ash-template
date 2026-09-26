@@ -15,10 +15,7 @@ defmodule AshTemplateWeb.RouteCatalogTest do
       Router
       |> Phoenix.Router.routes()
       |> Enum.filter(&(&1.verb == :get and &1.plug == Phoenix.LiveView.Plug))
-      # Compile-disabled in production; the workshop has its own loopback gate.
-      |> Enum.reject(fn route ->
-        :local_showcase in Phoenix.Router.route_info(Router, "GET", route.path, "localhost").pipe_through
-      end)
+      |> Enum.reject(&outside_catalog?/1)
       |> Enum.map(&{&1.path, &1.plug_opts})
 
     catalog_routes = Enum.map(RouteCatalog.entries(), &{&1.path_pattern, &1.live_action})
@@ -149,5 +146,12 @@ defmodule AshTemplateWeb.RouteCatalogTest do
 
     assert %{"sidebar_model" => %{"targets" => []}} =
              Enum.find(decoded["routes"], &(&1["route_id"] == "home"))
+  end
+
+  # The workshop is compile-disabled in production and has its own loopback
+  # gate; the motion lab stands beside the product, not in its navigation.
+  defp outside_catalog?(route) do
+    :local_showcase in Phoenix.Router.route_info(Router, "GET", route.path, "localhost").pipe_through or
+      match?({_view, _action, _opts, %{name: :motion_lab}}, route.metadata.phoenix_live_view)
   end
 end

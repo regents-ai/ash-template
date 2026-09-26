@@ -17,8 +17,9 @@ exists; do not use it. v3 code (`anime({...})`, `easing: 'easeOutQuad'`,
 ## Start here
 
 1. Read [LiveView islands](references/liveview-islands.md) before writing a hook. It holds
-   the canonical hook, the rules for what survives a LiveView patch, the lifecycle map and
-   Regent's motion rules. Its claims were reproduced in a browser.
+   the standard motion kit every Regent site shares, the canonical hook, the rules for
+   what survives a LiveView patch, the lifecycle map and Regent's motion rules. Its claims
+   were reproduced in a browser. Reach for the kit first: most pages only need its markup.
 2. Open the reference for the API you need (below). Each section names its docs path.
 3. When exact wording, an edge case or a docs example matters, read the live page (run
    from this skill's folder):
@@ -55,6 +56,8 @@ exists; do not use it. v3 code (`anime({...})`, `easing: 'easeOutQuad'`,
   split spans, added nodes) is wiped by the next patch of that element. Design for it:
   end on the natural state, render layout ids from the server, revert-and-redo around
   patches, or isolate with `phx-update="ignore"` / `JS.ignore_attributes`.
+- A move that hands its element back to the stylesheet starts with the kit's `play()`,
+  so a move begun over another still ends at rest.
 - On-chain buttons are never gated, delayed or deduplicated by motion. Every press
   reaches the wallet.
 - Transform and opacity only, no idle loops, reduced motion wins, content visible

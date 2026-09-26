@@ -21,8 +21,10 @@ import {
 } from "./shell_state"
 import {CopyText} from "./hooks/copy_text"
 import {HolographicCard} from "./hooks/holographic_card"
-import {ShellMotion} from "./hooks/motion"
+import {MotionCount, MotionList} from "./hooks/motion/moments"
+import {MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {VerifiedConnections} from "./hooks/verified_connections"
+import {mountMotion} from "./motion"
 
 type ShellHook = Hook & {
   el: HTMLElement
@@ -120,7 +122,6 @@ const shellBehavior: Hook = {
   mounted(this: ShellHook) {
     const shell = this.el
     const root = document.documentElement
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)")
 
     const initialState: ShellState = {
       routeId: shell.dataset.routeId ?? "",
@@ -131,11 +132,6 @@ const shellBehavior: Hook = {
     this.shellState = cachedShellState
       ? reconcileShellState(cachedShellState, initialState)
       : initialState
-
-    const setMotion = () => {
-      root.dataset.reducedMotion = motionPreference.matches ? "true" : "false"
-      shell.dataset.reducedMotion = motionPreference.matches ? "true" : "false"
-    }
 
     const menuButton = () =>
       shell.querySelector<HTMLButtonElement>("#mobile-menu-button")
@@ -183,8 +179,6 @@ const shellBehavior: Hook = {
 
     const onClick = (event: Event) => {
       const target = event.target instanceof Element ? event.target : null
-      shell.dataset.motionSource =
-        event instanceof MouseEvent && event.detail === 0 ? "keyboard" : "pointer"
 
       if (target?.closest("#mobile-menu-button")) {
         if (this.shellState) this.shellState.menuOpen = !this.shellState.menuOpen
@@ -245,15 +239,12 @@ const shellBehavior: Hook = {
     }
 
     const onHistoryNavigation = () => {
-      shell.dataset.motionSource = "keyboard"
       scroller()?.scrollTo({top: 0})
     }
 
     shell.addEventListener("click", onClick)
     shell.addEventListener("keydown", onKeydown)
-    motionPreference.addEventListener("change", setMotion)
     window.addEventListener("popstate", onHistoryNavigation)
-    setMotion()
     this.restoreState()
     scroller()?.scrollTo({top: 0})
     shell.dataset.behaviorReady = "true"
@@ -262,7 +253,6 @@ const shellBehavior: Hook = {
       closeMenu(false)
       shell.removeEventListener("click", onClick)
       shell.removeEventListener("keydown", onKeydown)
-      motionPreference.removeEventListener("change", setMotion)
       window.removeEventListener("popstate", onHistoryNavigation)
     }
   },
@@ -313,12 +303,18 @@ const shellBehavior: Hook = {
 // Design composes presentation behavior here; the Ash-owned behavior remains first.
 const showcaseHooks = window.location.pathname.startsWith("/showcase")
   ? (await import("./showcase")).hooks : {}
+const labHooks = window.location.pathname === "/animations"
+  ? (await import("./motion_lab")).hooks : {}
 const hooks = {
   ...showcaseHooks,
+  ...labHooks,
   ...colocatedHooks,
   CopyText,
   HolographicCard,
-  ShellBehavior: composeHooks(shellBehavior, ShellMotion),
+  MotionCount,
+  MotionList,
+  MotionTabs,
+  ShellBehavior: composeHooks(shellBehavior, ShellViews),
   VerifiedConnections,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")
@@ -341,4 +337,5 @@ void retireRefusedSession()
 liveSocket.connect()
 installAccountAuthLazyLoader()
 installCrossTabCsrf()
+mountMotion(document)
 window.liveSocket = liveSocket

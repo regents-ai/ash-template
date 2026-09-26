@@ -100,5 +100,10 @@ defmodule AshTemplateWeb.Router do
       live "/app", ShellLive, :app
       live "/account", ShellLive, :account
     end
+
+    # The motion lab: public once the site opens, and linked from nowhere.
+    live_session :motion_lab, on_mount: [AshTemplateWeb.Live.LaunchGateHook] do
+      live "/animations", AnimationsLive, :index
+    end
   end
 end
