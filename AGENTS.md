@@ -30,8 +30,12 @@ After renaming, a new site must still replace, by hand:
   `version` exist.
 - `contracts/`: optional Foundry workspace, empty until contracts are needed.
 - `plugins/`: home for standalone runtime plugin packages; none exist yet.
-- `skills/`: agent skills for this stack. `skills/animejs` covers Anime.js in
-  LiveView hooks; load `ash-stack` and `ash-frontend` before it.
+- `skills/`: agent skills for this stack, linked into the Regent workspace's
+  `.agents/skills` and `.claude/skills`. Start with `ash-stack`, which routes to
+  `ash-backend`, `ash-frontend`, `ash-data`, `ash-security`, `ash-testing` and
+  `ash-webmcp` (agent readiness and WebMCP tools). `animejs` covers Anime.js in
+  LiveView hooks; load `ash-stack` and `ash-frontend` before it. Change a skill
+  here, never through a copy in another repository.
 - Motion: every Regent site shares the kit in `platform/assets/js/hooks/motion/`
   and `platform/assets/js/motion.ts`, with the standard version of each part in
   `AshTemplateWeb.Motion`. Pages join in through markup (`data-press-label` on
