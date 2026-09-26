@@ -81,7 +81,9 @@ Start every move that hands its element back to the stylesheet with `play()` fro
 clean-up restores the inline style it found when the move began, so a move begun over
 another's half-way frame (a double press, a replay, a quick reopen) ends stuck on that
 frame (lab: cards left at `translateY(16px); opacity: 0`). `play()` first reverts the
-element's last move, so each one starts from rest and ends with no inline style.
+element's last move, so each one starts from rest and ends with no inline style. A
+finished move is forgotten, so a later one never puts back its old snapshot over
+styles written since. `play()` owns `onComplete`; chain extra work with `.then()`.
 
 ## Canonical hook (lab)
 
