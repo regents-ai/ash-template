@@ -192,5 +192,10 @@ Patchbay, relative to `repos/patchbay/platform`:
 Patchbay predates parts of the current draft and of this guide: it still falls back
 to `navigator.modelContext`, sends MCP-only annotations, marks site-wide tools with
 `doors.page` instead of `scope`, and leaves its room and profile tools out of the
-manifest. Follow this guide where they differ. Autolaunch (`platform/assets/js/public_tools.ts`) is a smaller example
-with five read-only public tools.
+manifest. Follow this guide where they differ.
+
+Autolaunch, relative to `repos/autolaunch/platform`, is the smaller example that follows
+this guide: `priv/tool_manifest.json` lists all eight tools its pages register (five
+read-only public tools and the three shared profile tools, each with `scope`),
+`assets/js/public_tools.ts` imports it and registers the public five, and `/developers`
+and `/llms.txt` build their tool tables from it.
