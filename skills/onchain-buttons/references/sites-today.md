@@ -39,10 +39,11 @@ Each is a backlog item for that site, not something to copy.
 3. **Autolaunch's bid, launch and subject-wallet hooks** use the older
    `hooks/wallet_presses.ts`, which records presses on the server; a press made before its
    review arrives is dropped.
-4. **KeyFleet confirms in the browser** and sends the purchase from the same press once
+4. **Regents and KeyFleet build their steps in the browser** (`wallet_actions/staking.ts`,
+   `redemption.ts`, `buy_key.ts`, `fleet_action.ts`). Rule 4 has the server build them
+   and push a review, as Autolaunch does.
+5. **KeyFleet confirms in the browser** and sends the purchase from the same press once
    the approval's receipt arrives. Rule 8 has the server check the result, which makes the
    approval a step with its own button.
-5. **Not audited yet:** whether any site has an on-chain button with `phx-click`, or one
+6. **Not audited yet:** whether any site has an on-chain button with `phx-click`, or one
    inside a `phx-submit` form. Both silently swallow repeat presses (rule 2).
-
-Where each site builds its steps stays as it is until the founder picks one pattern.

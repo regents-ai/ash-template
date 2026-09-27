@@ -26,11 +26,10 @@ and are not repeated here. For chain events recorded in the database, use `chain
    tab has it connected. When it is not connected here, the press opens Privy's connect
    step and sends nothing. When the browser wallet is on another account, show a note
    beside the button naming both short addresses.
-4. **Where the transaction is built is not decided yet.** The founder is choosing between
-   the server building each step and pushing it to the page (Autolaunch) and the browser
-   encoding it from server-rendered figures (Regents staking, KeyFleet). Follow the site's
-   existing pattern and do not introduce either one to a site that has neither without
-   asking. [Hook pattern](references/hook-pattern.md) is written so either can feed it.
+4. **The server builds every step** (founder decision, 2026-09-27): it encodes the
+   calldata and pushes the review to the panel before the button is pressed. The
+   browser never encodes a transaction. See
+   [hook pattern](references/hook-pattern.md#the-server-builds-the-steps).
 5. **Before sending**, switch the wallet to the step's chain (add it when the wallet
    answers 4902), then check the account is the signed-in wallet and make `eth_chainId`
    the last read before `eth_sendTransaction`.

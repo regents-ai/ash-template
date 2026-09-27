@@ -35,12 +35,10 @@ element needs two). The hook element needs an `id`; LiveView skips a hook withou
 - `JS.ignore_attributes(["data-awaiting-wallet"])` keeps the hook's mark across patches.
 - One button per step. Show the next unsent step; a sent step moves the button on at once.
 
-## Feeding the steps
+## The server builds the steps
 
-The founder has not yet chosen between these. Use the one the site already has.
-
-**Server builds the steps (Autolaunch).** The server encodes each step, then pushes the
-review from the event that built it:
+The server encodes every step (founder decision, 2026-09-27), then pushes the review
+from the event that built it:
 
 ```elixir
 push_event(socket, "onchain-steps:review", %{
@@ -51,49 +49,11 @@ push_event(socket, "onchain-steps:review", %{
 })
 ```
 
-The hook keeps the latest review for its own `component_id` and sends the named step on a
-press. The server can check the sent transaction against exactly the calldata it built.
-
-**Browser builds the steps (Regents staking, KeyFleet).** The server renders the figures as
-data attributes (chain, signer, contract addresses, raw amounts as integer strings) and
-the hook encodes the step with viem at the press:
-
-```ts
-import {encodeFunctionData, getAddress, parseAbi} from "viem"
-
-import type {Review} from "./onchain_steps"
-
-const erc20 = parseAbi(["function approve(address spender, uint256 amount) returns (bool)"])
-
-// The page rendered the figures and the step is encoded at the press. A figure
-// that does not read (`getAddress` and `BigInt` throw) means the page is out of
-// date, which the press reports as `step_unknown`.
-export function reviewFromPage(panel: HTMLElement, button: HTMLElement): Review | undefined {
-  const {signer = "", chainId = "", chainName = "", rpcUrl = ""} = panel.dataset
-  const {token = "", spender = "", amount = ""} = button.dataset
-  try {
-    return {
-      component_id: panel.id,
-      signer: getAddress(signer),
-      chain: {chain_id: Number(chainId), name: chainName, rpc_url: rpcUrl},
-      steps: [{
-        step: "approve",
-        to: getAddress(token),
-        data: encodeFunctionData({abi: erc20, functionName: "approve", args: [getAddress(spender), BigInt(amount)]}),
-      }],
-    }
-  } catch {
-    return undefined
-  }
-}
-```
-
-The click handler then calls `press(this.el, reviewFromPage(this.el, button), name, push)`.
-The server check compares against the target and calldata it would have built from the
-same figures.
-
-Either way the step must exist the moment the button is on screen. A press never asks the
-server for the step first while the wallet waits.
+The hook keeps the latest review for its own `component_id` and sends the named step on
+a press; the browser never encodes calldata. Push the review as soon as the figures it
+needs are known and again whenever they change, so it is on the page before the button
+is pressed. A press never asks the server for its step while the wallet waits. The
+server's check compares the sent transaction with exactly the calldata it built.
 
 ## Sending one step
 
@@ -426,7 +386,7 @@ end
 
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |
-| `step_unknown` | The page had no such step, or its figures did not read | "This page is out of date. Refresh it and press again." |
+| `step_unknown` | The page holds no review with that step | "This page is out of date. Refresh it and press again." |
 | `wallet_unavailable` | The signed-in wallet is not connected here, or is on another account | "Nothing was sent. Check the wallet you signed in with is connected and open, then press again." |
 | `network_mismatch` | The wallet would not move to the chain, or moved away | "Your wallet is on a different network. Switch it to Base, then try again. Nothing was sent." |
 | `wallet_declined` | The person said no in the wallet (4001) | "Your wallet declined this. Nothing was sent." |

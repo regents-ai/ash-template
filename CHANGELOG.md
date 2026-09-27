@@ -88,3 +88,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `skills/chain-events`: watching a chain at the latest block, saving each event once
   with a cursor, and updating pages through Ash notifications after the save.
 - `regent-workflow` now says a press sends from the signed-in wallet.
+
+## 2026-09-27 — The server builds every on-chain step
+
+- `onchain-buttons` now has one way to build a step: the server encodes it and pushes
+  the review to the page. The browser-built example is gone; sites that still build
+  steps in the browser are listed in the skill's backlog.
