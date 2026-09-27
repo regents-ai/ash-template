@@ -202,3 +202,15 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   for each file the sites take from the template, whether the site's copy is the same
   after renaming, differs (with the difference saved under `platform/_build/drift/`) or
   is missing from the template's path. `scripts/init.sh` removes it from a new product.
+
+## 2026-09-27 — Local metrics on a free port; wallet guide brought to today
+
+- Locally the metrics listener takes a port the system picks, so two sites' local servers
+  run side by side; production keeps 9091, which `fly.toml` names (from Techtree's 2c).
+  Checked: two listeners started together on loopback, on two different ports.
+- `make drift` lists a shared file a site has no use for yet as "not used", with why
+  (Techtree: the launch gate, `Read`, hook composition), instead of missing.
+- `onchain-buttons` sites-today checked 2026-09-27: KeyFleet builds every step on the
+  server and is the closest site to the skill; Regents', Autolaunch's and Patchbay's held
+  branches are named; two gaps in `regent_chain` recorded (no zero address in a call, no
+  reader for return or log data). `chain-events` notes KeyFleet's 2 s check of sent steps.

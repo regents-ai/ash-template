@@ -9,7 +9,8 @@
 # the site's, the way scripts/init.sh renames them: the OTP app and module come
 # from the site's platform/mix.exs. `mix format` rewraps some lines after a rename,
 # so a few differing lines can be wrapping alone. Each difference is written to
-# platform/_build/drift/<site>/ for reading. Needs `gh auth login`.
+# platform/_build/drift/<site>/ for reading. A file a site has no use for yet is
+# listed as "not used", with why, from not_used below. Needs `gh auth login`.
 set -euo pipefail
 
 sites=(keyfleet regents autolaunch patchbay techtree)
@@ -38,6 +39,17 @@ shared=(
   platform/assets/js/wallet_actions/send_step.ts
   scripts/release.sh
 )
+
+# Shared files a site has no use for yet, with why. Such a file is listed as "not used"
+# rather than missing; the site takes it the day it needs it, and its line goes.
+not_used() {
+  case "$1:$2" in
+    techtree:platform/lib/ash_template_web/plugs/launch_gate.ex) echo "public, no sign-in: never closed" ;;
+    techtree:platform/lib/ash_template_web/read.ex) echo "no page reads in the background" ;;
+    techtree:platform/assets/js/hook_composition.ts) echo "no element carries two hooks" ;;
+    *) return 1 ;;
+  esac
+}
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -69,9 +81,14 @@ for site in "${@:-${sites[@]}}"; do
   echo "$site  ($repo main ${rev:0:7}; app $app, $module)"
   mkdir -p "$out/$site"
   find "$out/$site" -name '*.diff' -delete
-  same=0 differ=0 missing=0
+  same=0 differ=0 missing=0 unused=0
   for path in "${shared[@]}"; do
     site_path="${path//ash_template/$app}"
+    if why="$(not_used "$site" "$path")"; then
+      printf '  not used %s  (%s)\n' "$site_path" "$why"
+      unused=$((unused + 1))
+      continue
+    fi
     if ! theirs="$(site_file "$repo" "$rev" "$site_path")"; then
       printf '  missing  %s\n' "$site_path"
       missing=$((missing + 1))
@@ -90,6 +107,6 @@ for site in "${@:-${sites[@]}}"; do
       differ=$((differ + 1))
     fi
   done
-  printf '  %s same, %s differ, %s missing\n\n' "$same" "$differ" "$missing"
+  printf '  %s same, %s differ, %s missing, %s not used\n\n' "$same" "$differ" "$missing" "$unused"
 done
 echo "Differences are in $out/<site>/."

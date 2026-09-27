@@ -36,7 +36,9 @@ config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false
 
-config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 9091
+# Metrics listen on loopback, on a port the system picks, so this site runs beside the
+# other sites' local servers without taking the one port they all name in production.
+config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0
 
 config :ash_template, :app_surfaces, true
 

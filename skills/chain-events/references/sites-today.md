@@ -1,11 +1,11 @@
 # How each site watches the chain today
 
-Checked 2026-09-26. Read Autolaunch and Patchbay with `git show origin/main:<path>`; their
+Checked 2026-09-26; KeyFleet's row 2026-09-27. Read Autolaunch and Patchbay with `git show origin/main:<path>`; their
 local checkouts lag behind.
 
 | Site | Watcher | Row identity | Pages hear through |
 | --- | --- | --- | --- |
-| KeyFleet (`main` 59d4d5f) | `Keyfleet.Chain.Poller` and `Scanner`, at `latest`, cursor per fleet | `[:transaction_hash, :log_index]` | Plain `Phoenix.PubSub` topics (`Keyfleet.Proposals.topic/1`, `Keyfleet.Keys.topic/1`) |
+| KeyFleet (`main` 8f9629f) | `Keyfleet.Chain.Poller` and `Scanner`, at `latest`, cursor per fleet. Sent wallet steps are read by `KeyfleetWeb.OnchainSteps` through `Keyfleet.Chain.Client` at `latest` every 2 s; nothing stored | `[:transaction_hash, :log_index]` | Plain `Phoenix.PubSub` topics (`Keyfleet.Proposals.topic/1`, `Keyfleet.Keys.topic/1`) |
 | Autolaunch (`origin/main` 1b0e56c) | `Autolaunch.Indexer`, reading `safe` and `finalized` | `[:chain_id, :block_hash, :log_index]` | Ash `pub_sub` on the listing resources, re-read at most once a second (`AutolaunchWeb.LiveListings`) |
 | Regents | None; staking reads the chain directly (`AshPlatform.Staking.RpcClient`) | | |
 | Patchbay | None | | |
