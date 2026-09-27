@@ -28,17 +28,6 @@ domain_interfaces:
   - id: accounts
     owner: ash-template
     path: lib/ash_template/accounts.ex
-local_path_dependencies:
-  - id: regent_privy
-    path: ../../elixir-utils/privy
-  - id: regent_identity
-    path: ../../regents/identity
-  - id: regent_ui
-    path: ../../design-system/regent_ui
-  - id: regent_agent_access
-    path: ../../elixir-utils/agent_access
-  - id: credo_ash
-    path: ../../elixir-utils/credo_ash
 acceptance_commands:
   - cwd: platform
     command: mix precommit

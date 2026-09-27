@@ -1,0 +1,11 @@
+{
+  "fixes": [
+    {
+      "id": "2026-09-24-keccak",
+      "summary": "SIWA and ENS hashed with keccak_ex 0.4.2, which gives wrong hashes; they now hash with ex_keccak.",
+      "repository": "https://github.com/regents-ai/elixir-utils.git",
+      "commit": "3e782153c94f1bd07a0941149ddbe5517d05e603",
+      "packages": ["ens", "siwa"]
+    }
+  ]
+}

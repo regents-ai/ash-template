@@ -12,26 +12,23 @@ API.
 
 ## Shared dependencies
 
-From a directory that will hold the sibling repositories, acquire the shared
-libraries:
+The shared Regent libraries are git dependencies, each pinned to one published
+commit at the top of `mix.exs`: `regent_ui` from `design-system`, `regent_privy`,
+`regent_agent_access`, `regent_format` and `credo_ash` from `elixir-utils`, and
+`regent_identity` from `regents`. `mix deps.get` fetches them; `mix.lock`
+records the commit. To take a newer version, push the change to that
+library's `main`, set the new commit in `mix.exs` and run
+`mix deps.update <name>`.
 
-```sh
-git clone https://github.com/regents-ai/design-system.git
-git clone https://github.com/regents-ai/elixir-utils.git
-git clone https://github.com/regents-ai/regents.git
-```
-
-The expected layout is `<workspace>/<product>/platform`,
-`<workspace>/design-system/regent_ui`, `<workspace>/elixir-utils/` and
-`<workspace>/regents/identity`. `REGENT_DEPS_ROOT` may point at `<workspace>`
-when it is elsewhere; `REGENT_UI_PATH`, `REGENT_PRIVY_PATH` and
-`REGENT_IDENTITY_PATH` override one package each. Record the shared
-repository commit IDs with check results, and pin isolated worktrees to
-immutable revisions rather than updating sibling checkouts during verification.
+`../security/required-fixes.json` lists security fixes every Regent site must
+carry. `make check-platform` runs `scripts/check_required_fixes.exs` against it
+and fails when a pinned library lacks one. Other sites read the same list from
+this repository on GitHub. Third-party packages are checked by `mix hex.audit`
+in `mix precommit`.
 
 ## Quickstart
 
-Run these from `platform/` after acquiring the shared dependencies. You need
+Run these from `platform/`. You need
 Erlang, Elixir, Node and PostgreSQL at the versions pinned in `.tool-versions`.
 
 ```sh
@@ -117,15 +114,11 @@ mix precommit
 npm run typecheck
 ```
 
-These need `REGENT_DEPS_ROOT` when the shared dependencies live outside the
-sibling layout (see [Shared dependencies](#shared-dependencies)):
-
-```sh
-REGENT_DEPS_ROOT=<workspace> make check
-```
+`make check-platform` also runs the required-fixes check (see
+[Shared dependencies](#shared-dependencies)).
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
-locks and formatting, runs Credo in strict mode and Sobelow, holds the
+locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
 compile-connected `xref` graph under its limit, and verifies the Ash codegen
 and route handoff are current. `npm run typecheck` type-checks the TypeScript
 assets. The template carries no automated tests (founder decision,
@@ -141,9 +134,9 @@ hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything.
 
-The image is built from `Dockerfile`; `scripts/build-release-context.sh`
-assembles its offline build context. The Fly configuration lives in `fly.toml`
-and `fly.staging.toml`.
+The image is built from `Dockerfile` with this folder as its context; the build
+fetches every dependency at the version the lockfiles pin. The Fly
+configuration lives in `fly.toml` and `fly.staging.toml`.
 
 ## License
 

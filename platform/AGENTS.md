@@ -12,5 +12,5 @@ Keep the placeholder names until `scripts/init.sh` renames them.
 Follow the root instructions and the workspace's `regent-workflow`. Use the
 assignment's acceptance and applicable focused checks. Browser fixtures belong to
 the prepared local database. Shared dependencies (`design-system/regent_ui`,
-`elixir-utils/privy`, `elixir-utils/agent_access`, `elixir-utils/credo_ash`,
-`regents/identity`) resolve through `REGENT_DEPS_ROOT`.
+`elixir-utils` privy, agent_access, format and credo_ash, `regents/identity`) are
+git dependencies pinned to one commit each in `mix.exs`.

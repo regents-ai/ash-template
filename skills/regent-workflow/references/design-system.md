@@ -101,7 +101,8 @@ current founder request overrides older rollout notes. Re-read the working tree:
   ignored `.showcase/` static export from real components. Regenerate it when relevant;
   do not edit the exported HTML/CSS by hand.
 - Consumers copy shared assets through `mix regent_ui.assets`, normally invoked by
-  `mix assets.build`. Use explicit `REGENT_DEPS_ROOT` when resolving sibling libraries.
+  `mix assets.build`. A consumer takes a design-system change by moving its pinned
+  commit in `mix.exs`.
   Verify the installed aliases before running them. Fonts are same-origin under
   `/fonts/regent-ui/` and must be allowed by the static server and page CSP.
 - Rebuild each affected consumer after a shared change. A passing build does not refresh

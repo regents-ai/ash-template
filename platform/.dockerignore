@@ -1,0 +1,19 @@
+# Build output, fetched dependencies and local state stay out of the image
+# context; the build fetches dependencies itself from mix.lock and
+# package-lock.json.
+_build/
+deps/
+node_modules/
+tmp/
+priv/static/assets/
+priv/static/cache_manifest.json
+assets/vendor/
+priv/static/images/regent-ui/
+priv/static/fonts/regent-ui/
+.elixir_ls/
+erl_crash.dump
+
+# Runtime environment files never enter the image.
+**/.env
+**/.env.*
+**/.envrc

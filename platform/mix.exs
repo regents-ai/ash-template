@@ -1,6 +1,15 @@
 defmodule AshTemplate.MixProject do
   use Mix.Project
 
+  # Shared Regent libraries, each pinned to one published commit. To move a pin,
+  # change its ref and run `mix deps.update <name>`.
+  @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
+  @elixir_utils_ref "b8691b1ae91797f9acd5b2c9f6aa392d111cbd54"
+  @design_system "https://github.com/regents-ai/design-system.git"
+  @design_system_ref "a64ec86721a171faea39ae525a9478daa1f66847"
+  @regents "https://github.com/regents-ai/regents.git"
+  @regents_ref "0d5d18c2f4501a6a5bd00b0bedb005677d8876cc"
+
   def project do
     [
       app: :ash_template,
@@ -29,8 +38,6 @@ defmodule AshTemplate.MixProject do
   #
   # Type `mix help deps` for examples and options.
   defp deps do
-    shared = System.get_env("REGENT_DEPS_ROOT", Path.expand("../..", __DIR__))
-
     [
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -39,14 +46,13 @@ defmodule AshTemplate.MixProject do
       {:ash_postgres, "~> 2.13.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
+      # regent_identity names regent_privy by a sibling path; this pin replaces it.
       {:regent_privy,
-       path: System.get_env("REGENT_PRIVY_PATH", Path.join(shared, "elixir-utils/privy"))},
-      {:regent_identity,
-       path: System.get_env("REGENT_IDENTITY_PATH", Path.join(shared, "regents/identity"))},
-      {:regent_ui,
-       path: System.get_env("REGENT_UI_PATH", Path.join(shared, "design-system/regent_ui"))},
-      {:regent_agent_access, path: Path.join(shared, "elixir-utils/agent_access")},
-      {:regent_format, path: Path.join(shared, "elixir-utils/format")},
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
+      {:regent_identity, git: @regents, ref: @regents_ref, sparse: "identity"},
+      {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
+      {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
+      {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
       {:simple_sat, "~> 0.1"},
       {:sourceror, "~> 1.12", only: :dev, runtime: false},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
@@ -59,7 +65,8 @@ defmodule AshTemplate.MixProject do
       {:bandit, "~> 1.12.1"},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
-      {:credo_ash, path: Path.join(shared, "elixir-utils/credo_ash"), only: :dev, runtime: false},
+      {:credo_ash,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
       {:sobelow, "~> 0.14", only: :dev, runtime: false}
     ]
   end
@@ -89,6 +96,7 @@ defmodule AshTemplate.MixProject do
       precommit: [
         "compile --warnings-as-errors",
         "deps.unlock --check-unused",
+        "cmd mix hex.audit",
         "format --check-formatted",
         "credo --strict",
         "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",

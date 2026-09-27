@@ -34,9 +34,8 @@ digest, run the gate.
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
 | [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, and `chain-events` watching a chain and saving its events. | None |
 
-`make check` runs every component's check in turn. The platform check reads
-`REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout;
-the [platform README](platform/README.md#checks) explains it.
+`make check` runs every component's check in turn; the
+[platform README](platform/README.md#checks) explains the platform's.
 
 ## Start
 
@@ -49,11 +48,13 @@ the [platform README](platform/README.md#checks) explains it.
 
 ## Shared dependencies
 
-The platform depends on three sibling repositories resolved through
-`REGENT_DEPS_ROOT`: `design-system` (the shared UI), `elixir-utils` (Privy
-verification, agent access and lint checks) and `regents/identity` (the shared
-profile domain served at `/api/v1/profile`). The
-[platform README](platform/README.md#shared-dependencies) explains the layout.
+The platform takes its shared libraries from three Regent repositories, each
+pinned to one commit in `platform/mix.exs`: `design-system` (the shared UI),
+`elixir-utils` (Privy verification, agent access, formatting and lint checks)
+and `regents/identity` (the shared profile domain served at `/api/v1/profile`).
+`security/required-fixes.json` lists the security fixes every Regent site must
+carry; `make check` fails when a pinned library lacks one. The
+[platform README](platform/README.md#shared-dependencies) explains both.
 
 ## License
 
