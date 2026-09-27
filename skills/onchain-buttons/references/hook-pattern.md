@@ -27,10 +27,15 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
   <form phx-change="change" phx-submit="change" phx-target={@myself}>
     <input name="amount" value={@amount} data-onchain-input="amount" />
   </form>
-  <p :if={@review}>{review_line(@review)}</p>
+  <p aria-live="polite" hidden={!@review}>{@review && review_line(@review)}</p>
   <P.button data-onchain-step="record">Record</P.button>
 </section>
 ```
+
+- Lines above the buttons (the review, the "from" line, the wrong-wallet note) are always
+  in the page and shown or hidden with `hidden`, never added with `:if`. A line appearing
+  above a pressed button otherwise makes the page update replace that button, and focus
+  leaves it (Regents 65b20d87).
 
 - Whenever a person types an amount, a line beside the button says what the press sends,
   read from the review itself (founder decision, 2026-09-27: a review screen, not

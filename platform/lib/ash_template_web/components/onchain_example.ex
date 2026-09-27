@@ -110,7 +110,9 @@ defmodule AshTemplateWeb.OnchainExample do
         do: socket,
         else: socket |> assign(signer: signer, balance: nil) |> read_balance()
 
-    OnchainSteps.put_review(socket, review)
+    socket
+    |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
+    |> OnchainSteps.put_review(review)
   end
 
   defp steps(amount, chain) do
@@ -166,14 +168,18 @@ defmodule AshTemplateWeb.OnchainExample do
         />
       </form>
 
-      <p :if={@review} class="onchain-example-review" aria-live="polite">{review_line(@review)}</p>
-      <p :if={@signer} class="onchain-example-from">
-        Sending from <code>{RegentFormat.short_address(@signer)}</code>
-        on {@chain.name} · {balance(@balance)}
+      <%!-- Lines above the buttons stay in the page and are only hidden, so one
+           appearing never replaces the button a person has just pressed. --%>
+      <p class="onchain-example-review" aria-live="polite" hidden={!@review}>
+        {@review && review_line(@review)}
       </p>
-      <p :if={note = OnchainSteps.mismatch_note(@linked, @active)} class="onchain-example-note">
-        {note}
+      <p class="onchain-example-from" hidden={!@signer}>
+        <%= if @signer do %>
+          Sending from <code>{RegentFormat.short_address(@signer)}</code>
+          on {@chain.name} · {balance(@balance)}
+        <% end %>
       </p>
+      <p class="onchain-example-note" hidden={!@mismatch}>{@mismatch}</p>
 
       <div class="onchain-example-actions">
         <P.button data-onchain-step="record">Record</P.button>
