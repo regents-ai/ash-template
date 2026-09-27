@@ -19,13 +19,13 @@ import {
   shellDestinationChanged,
   type ShellState,
 } from "./shell_state"
-import {CopyText} from "./hooks/copy_text"
 import {HolographicCard} from "./hooks/holographic_card"
 import {MotionCount, MotionList} from "./hooks/motion/moments"
 import {MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {OnchainSteps} from "./hooks/onchain_steps"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
+import {installCopyButtons} from "./copy_buttons"
 
 type ShellHook = Hook & {
   el: HTMLElement
@@ -310,7 +310,6 @@ const hooks = {
   ...showcaseHooks,
   ...labHooks,
   ...colocatedHooks,
-  CopyText,
   HolographicCard,
   MotionCount,
   MotionList,
@@ -339,5 +338,6 @@ void retireRefusedSession()
 liveSocket.connect()
 installAccountAuthLazyLoader()
 installCrossTabCsrf()
+installCopyButtons()
 mountMotion(document)
 window.liveSocket = liveSocket

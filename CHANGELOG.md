@@ -134,3 +134,15 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   the stale-record check that proves it.
 - The `chain-events` watcher guide's cursor move uses such a validation
   (`CursorUnmoved`) in place of the filter; a stale pass gets `StaleRecord`.
+
+## 2026-09-27 — Copy buttons work on every page
+
+- The copy button now works on plain pages as well as live ones. One page-wide
+  listener (`installCopyButtons()` in `assets/js/copy_buttons.ts`, called once from
+  `app.ts`) replaces the `CopyText` hook; design-system `4239c53` drops the hook from
+  `copy_button` and tells LiveView to keep `data-copy-state` through redraws.
+- Checked in a browser: on /docs (no LiveView) a copy button copies and says
+  "Copied", and when the clipboard is refused it selects its target and says
+  "Selected" (a `text` button says "Couldn't copy"); on /showcase "Copied" and its
+  screen-reader status stay through a full reconnect redraw that strips any other
+  added attribute.
