@@ -1,6 +1,8 @@
 defmodule AshTemplateWeb.Router do
   use AshTemplateWeb, :router
 
+  alias AshTemplateWeb.ContentSecurityPolicy
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -10,7 +12,11 @@ defmodule AshTemplateWeb.Router do
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug AshTemplateWeb.Plugs.LaunchGate
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+
+    # These pages can start wallet sign-in.
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => ContentSecurityPolicy.sign_in()
+    }
   end
 
   pipeline :api do
@@ -24,7 +30,11 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.Theme
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+
+    # Reading only: these pages never start sign-in.
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => ContentSecurityPolicy.reading()
+    }
   end
 
   def enforce_session_authority(conn, _opts) do
@@ -41,7 +51,11 @@ defmodule AshTemplateWeb.Router do
       plug AshTemplateWeb.Plugs.Theme
       plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
       plug :protect_from_forgery
-      plug :put_secure_browser_headers
+
+      # The showcase includes the sign-in window and frames its own preview.
+      plug :put_secure_browser_headers, %{
+        "content-security-policy" => ContentSecurityPolicy.showcase()
+      }
     end
 
     scope "/showcase", AshTemplateWeb do
@@ -61,7 +75,6 @@ defmodule AshTemplateWeb.Router do
 
   scope "/", AshTemplateWeb do
     get "/healthz", HealthController, :show
-    get "/metrics", MetricsController, :show
     get "/developers", PublicPagesController, :developers
     get "/openapi.json", PublicPagesController, :openapi
     get "/sitemap.xml", PublicPagesController, :sitemap
