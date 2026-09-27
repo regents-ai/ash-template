@@ -175,3 +175,10 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   is rebuilt by the server before the limit comes (on approval, on revert and on a timer),
   never at the press. From the review of Autolaunch's A02; the template's example already
   keeps its buttons and has no timed step.
+
+## 2026-09-27 — No ignore line for Regent UI images
+
+- `platform/.gitignore` no longer ignores `priv/static/images/regent-ui/`. The pinned
+  design system (4239c53) stages only fonts and its vendor CSS; images stopped being
+  packaged in design-system 7756eb9, so the line hid files nothing produces (from
+  Regents' R14).
