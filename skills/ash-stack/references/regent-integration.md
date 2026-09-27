@@ -2,7 +2,7 @@
 
 ## Authority and acceptance
 
-Start with the workspace's `regent-workflow` in `.agents/skills/`. The founder's
+Start with `regent-workflow`. The founder's
 request defines scope, acceptance and the mode (Pairing or Claude only). This pack
 supplies engineering guidance, not another approval or tracking process.
 Reuse the assignment's acceptance criteria and review evidence.

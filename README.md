@@ -32,7 +32,7 @@ digest, run the gate.
 | [cli/](cli/README.md) | A pnpm workspace with one package, `@ash-template/cli`, publishing the `ash-template` command. It only prints usage and version today. | `make check-cli` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
-| [skills/](skills/) | Agent skills for building on this stack. `ash-stack` is the entry point and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks. | None |
+| [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks. | None |
 
 `make check` runs every component's check in turn. The platform check reads
 `REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout,

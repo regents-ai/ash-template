@@ -65,3 +65,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - New `skills/` folder for agent skills that go with this stack. The first is
   `skills/animejs`: Anime.js 4.5.0 inside LiveView hooks, with a docs lookup
   script and hook rules checked in a browser against LiveView 1.2.11.
+
+## 2026-09-26 — Every Regent skill lives here
+
+- `skills/` now holds every skill Regent writes: `regent-workflow` (the entry
+  point), `regent-notion` and `checkpoint` joined the Ash and Anime.js skills.
+  The workspace links to them; skills Regent only uses stay in the workspace.
