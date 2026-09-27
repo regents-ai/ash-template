@@ -38,13 +38,10 @@ defmodule AshTemplateWeb.RouteCatalog do
   ]
 
   @specs %{
-    home: {:home, nil, nil, "Ash Template", "/", [], :home, :landing, %{}},
-    app:
-      {:app, :product, "Ash Template", "Overview", "/app", [:profile_actions], :product,
-       :overview, %{}},
+    home: {:home, nil, nil, "Ash Template", "/", [], :home, %{}},
+    app: {:app, :product, "Ash Template", "Overview", "/app", [:profile_actions], :product, %{}},
     account:
-      {:account, :product, "Ash Template", "Account", "/app", [:profile_actions], :product,
-       :detail, %{}}
+      {:account, :product, "Ash Template", "Account", "/app", [:profile_actions], :product, %{}}
   }
 
   def entries, do: @entries
@@ -77,7 +74,7 @@ defmodule AshTemplateWeb.RouteCatalog do
   defp valid_parameter?(:slug, value), do: is_binary(value) and Regex.match?(@slug, value)
 
   defp build_spec(action, _params) do
-    {route_id, app_id, app_label, page_label, root, controls, background, transition, local_state} =
+    {route_id, app_id, app_label, page_label, root, controls, background, local_state} =
       Map.fetch!(@specs, action)
 
     %Spec{
@@ -90,7 +87,6 @@ defmodule AshTemplateWeb.RouteCatalog do
       sidebar_model: sidebar_model(app_id),
       header_controls: controls,
       background_slot: background,
-      content_transition_kind: transition,
       scroll_policy: :top,
       local_state: local_state
     }
@@ -116,7 +112,6 @@ defmodule AshTemplateWeb.RouteCatalog do
       "app_id" => spec.app_id,
       "background_slot" => spec.background_slot,
       "canonical_root" => spec.canonical_root,
-      "content_transition_kind" => spec.content_transition_kind,
       "destination" => spec.destination,
       "header_controls" => spec.header_controls,
       "live_action" => entry.live_action,

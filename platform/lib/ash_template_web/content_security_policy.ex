@@ -8,17 +8,23 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
 
   `sign_in/0` is the baseline plus exactly what Privy's wallet sign-in loads,
   taken from Privy's published policy and checked against the bundled Privy
-  and WalletConnect code: Privy's API and frame, Cloudflare Turnstile (when bot
-  protection is on for the Privy app), WalletConnect's relay, verify frame,
-  wallet list, logos, RPC and event reporting, and Coinbase Wallet's relay.
-  Privy's sign-in window writes its own style elements, so only this profile
-  allows them.
+  and WalletConnect code: Privy's API, frame and wallet RPC, Cloudflare
+  Turnstile (when bot protection is on for the Privy app), WalletConnect's
+  relays, verify frame, wallet list, logos, RPC and event reporting, Coinbase
+  Wallet's relay, and the `blob:` images Privy's window draws. Privy's sign-in
+  window writes its own style elements, so only this profile allows them.
+
+  A Privy app that offers Telegram sign-in also needs `https://auth.privy.io`
+  and `https://telegram.org` in `script-src` and `https://oauth.telegram.org` in
+  `frame-src` (Privy's Telegram script is served from `auth.privy.io`; found on
+  Regents' live sign-in pages, 2026-09-27).
 
   `showcase/0` is `sign_in/0` for the local showcase, which frames its own
   preview page.
 
   A site that loads anything else adds each origin to the one directive and the
-  one profile that needs it, never as a wildcard.
+  one profile that needs it. The only wildcard is Privy's own `*.rpc.privy.systems`,
+  from its published policy.
   """
 
   # The development code reloader runs in a frame from this site.
@@ -45,7 +51,7 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   @sign_in %{
     "script-src" => ["https://challenges.cloudflare.com"],
     "style-src" => ["'unsafe-inline'"],
-    "img-src" => ["https://explorer-api.walletconnect.com"],
+    "img-src" => ["blob:", "https://explorer-api.walletconnect.com"],
     "frame-src" => [
       "https://auth.privy.io",
       "https://verify.walletconnect.com",
@@ -54,6 +60,8 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
     ],
     "connect-src" => [
       "https://auth.privy.io",
+      "https://*.rpc.privy.systems",
+      "wss://relay.walletconnect.com",
       "wss://relay.walletconnect.org",
       "https://verify.walletconnect.org",
       "https://explorer-api.walletconnect.com",

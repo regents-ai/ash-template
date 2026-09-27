@@ -182,3 +182,16 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   design system (4239c53) stages only fonts and its vendor CSS; images stopped being
   packaged in design-system 7756eb9, so the line hid files nothing produces (from
   Regents' R14).
+
+## 2026-09-27 — Sign-in pages allow all of Privy's published policy
+
+- The sign-in page policy adds what Privy publishes and the template lacked: its wallet
+  RPC (`https://*.rpc.privy.systems`), WalletConnect's `.com` relay and `blob:` images.
+  The policy's notes say what a Privy app offering Telegram adds (from Regents' R14, where
+  the missing Telegram script stopped Telegram sign-in on the live site for four minutes).
+  Checked: every source the template allows is in the policy Regents runs live, where
+  Privy's window loads with no refusals; this machine has no Privy app for a sign-in here.
+- The "not open yet" page and its JSON answer carry the strict reading policy instead of
+  Phoenix's default. Checked in a browser with the gate closed: 503, the strict policy, the
+  page styled, no refusals.
+- The route catalog drops `content_transition_kind`; nothing read it.
