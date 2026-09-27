@@ -40,6 +40,12 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   ships; no notice period.
 - Chrome's WebMCP trial (founder "5 a"): the founder registers a token for autolaunch.sh;
   Patchbay's expires 2026-11-17 and needs renewing before then.
+- Wallet transactions (founder "4 a 5 a 6 a", 2026-09-27): the server builds every step
+  before the press and the press goes straight to the wallet. The building and checking
+  live in one shared package, `regent_chain` in elixir-utils (`b8691b1`), taken from
+  Autolaunch's version; `skills/onchain-buttons` shows how to use it. Autolaunch's press
+  gates, Regents' browser-built staking and KeyFleet's browser-built key and fleet
+  actions are on those sites' backlogs.
 
 ## Goal
 

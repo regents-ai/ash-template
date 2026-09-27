@@ -37,17 +37,25 @@ element needs two). The hook element needs an `id`; LiveView skips a hook withou
 
 ## The server builds the steps
 
-The server encodes every step (founder decision, 2026-09-27), then pushes the review
+The server encodes every step (founder decision, 2026-09-27) with `regent_chain` from
+elixir-utils (`{:regent_chain, path: "../elixir-utils/chain"}`), then pushes the review
 from the event that built it:
 
 ```elixir
-push_event(socket, "onchain-steps:review", %{
-  component_id: socket.assigns.id,
-  signer: wallet,
-  chain: %{chain_id: 8453, name: "Base", rpc_url: public_rpc_url},
-  steps: [%{step: "approve", to: token, data: approve_calldata}, %{step: "stake", to: pool, data: stake_calldata}]
-})
+alias RegentChain.{Call, Review}
+
+review =
+  Review.new(socket.assigns.id, wallet, %{chain_id: 8453, name: "Base", rpc_url: public_rpc_url}, [
+    Review.step("approve", token, Call.encode("approve(address,uint256)", [pool, amount])),
+    Review.step("stake", pool, Call.encode("stake(uint256)", [amount]))
+  ])
+
+socket |> assign(:review, review) |> push_event("onchain-steps:review", review)
 ```
+
+`Call.encode/2` takes the exact function signature and raises on an argument that does
+not fit it, so a step that cannot be built never reaches the page. `Review.step/4` takes
+the native currency in wei as a fourth argument when the step pays some.
 
 The hook keeps the latest review for its own `component_id` and sends the named step on
 a press; the browser never encodes calldata. Push the review as soon as the figures it
@@ -255,36 +263,11 @@ The button still takes presses; each one opens the wallet again. LiveView's own
 
 ## The server's check
 
+`RegentChain.Outcome.of(client, hash, signer, step)` answers `:pending` until the receipt
+exists, then `:confirmed` or `:reverted`. A hash whose sender, target, calldata or value
+is not the step's is `{:error, :not_this_step}`, which is no answer about the step.
 `MyApp.Chain.Client` is the chain client from `chain-events`: `transaction/1` and
 `receipt/1` read at `latest`.
-
-```elixir
-defmodule MyApp.Chain.Outcome do
-  @moduledoc "What a sent step did, read at `latest`."
-
-  @doc """
-  `:pending` until the receipt exists, then `:confirmed` or `:reverted`. A hash
-  whose sender, target or calldata is not the step's is not an answer about it.
-  """
-  def of(client, hash, signer, %{"to" => to, "data" => data}) do
-    with {:ok, tx} when is_map(tx) <- client.transaction(hash),
-         true <- same_step?(tx, signer, to, data) || {:error, :not_this_step},
-         {:ok, receipt} <- client.receipt(hash) do
-      {:ok, status(receipt)}
-    else
-      {:ok, nil} -> {:ok, :pending}
-      error -> error
-    end
-  end
-
-  defp same_step?(tx, signer, to, data),
-    do: Enum.map([tx["from"], tx["to"], tx["input"]], &String.downcase/1) == Enum.map([signer, to, data], &String.downcase/1)
-
-  defp status(nil), do: :pending
-  defp status(%{"status" => "0x1"}), do: :confirmed
-  defp status(%{"status" => "0x0"}), do: :reverted
-end
-```
 
 In the LiveComponent, from the moment the hash arrives:
 
@@ -341,12 +324,12 @@ defmodule MyAppWeb.StakePanel do
 
   defp check(socket, name) do
     %{hash: hash, reads: reads} = socket.assigns.sent[name]
-    step = Enum.find(socket.assigns.steps, &(&1["step"] == name))
-    %{client: client, signer: signer} = socket.assigns
+    %{client: client, review: %{signer: signer, steps: steps}} = socket.assigns
+    step = Enum.find(steps, &(&1.step == name))
 
     start_async(socket, {:check, name}, fn ->
       if reads > 0, do: Process.sleep(@recheck_ms)
-      {hash, MyApp.Chain.Outcome.of(client, hash, signer, step)}
+      {hash, RegentChain.Outcome.of(client, hash, signer, step)}
     end)
   end
 
@@ -405,7 +388,7 @@ An approval is its own step with its own button ("Approve USDC"). Approve exactl
 amount the next step needs. When the approval is sent, the next button shows at once; a
 press on it before the approval lands still reaches the wallet, and if it reverts the
 words say so. Whether an approval is needed at all is read on the server at `latest` when
-the steps are built or rendered.
+the steps are built.
 
 ## Signing instead of sending
 
