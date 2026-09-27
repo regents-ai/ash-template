@@ -1,6 +1,7 @@
 # One command line: moving to `regents-cli`
 
-Status: proposed 2026-09-26, awaiting the founder's answers to the decisions at the end.
+Status: decided 2026-09-26 (founder answers "1 a 2 a 3 a 4 a 5 a", then "6 a": join the
+history already on GitHub). Steps 1 and 2 are done.
 Follows the founder's "2 a 3 a 4 a" of 2026-09-26 (see `standardization-plan.md`).
 
 ## Where things are today
@@ -39,9 +40,14 @@ places; the Patchbay and Autolaunch runners differ by one branch.
 
 1. **Cut the repository.** Move `repos/regents/cli` into `repos/regents-cli`, keeping its
    history. Point the package's `repository` field at it. Regents' lane deletes `cli/`
-   from Regents in the same cutover.
+   from Regents in the same cutover. *Done:* `regents-ai/regents-cli` `457df04` (joined
+   with the 192 commits already published there); Regents `5307bf2`.
 2. **Describe the format.** `schemas/commands.v1.json` in `regents-cli`; the template's
-   `cli/` becomes a `commands.json` example and loses its placeholder package.
+   `cli/` becomes a `commands.json` example and loses its placeholder package. *Done:*
+   `scripts/check-platform-commands.mjs` checks a description against the format and the
+   site's OpenAPI documents; the template's `make check-cli` runs it. Drafts of Patchbay's
+   and Autolaunch's full descriptions pass it. The shared profile commands stay
+   `regents profile …` with `--base-url`, not in each site's description.
 3. **Patchbay and Autolaunch.** Their 20 commands become namespaces, sharing one profile,
    runner and base-address module. Their tests move with them; the tests that reach into
    the site's own folders become checks against the pinned description. Each site's `cli/`

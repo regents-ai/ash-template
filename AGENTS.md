@@ -26,8 +26,9 @@ After renaming, a new site must still replace, by hand:
 <!-- /template-only -->
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.
-- `cli/`: pnpm workspace for the `ash-template` command. Only `help` and
-  `version` exist.
+- `cli/`: `commands.json`, the description of every `regents ash-template`
+  command. The code lives in `regents-cli`; change the description in the same
+  commit as the route it describes.
 - `contracts/`: optional Foundry workspace, empty until contracts are needed.
 - `plugins/`: home for standalone runtime plugin packages; none exist yet.
 - `skills/`: every skill Regent writes, linked into the Regent workspace's
@@ -48,7 +49,8 @@ After renaming, a new site must still replace, by hand:
   sibling `regents/identity` package, resolved through `REGENT_DEPS_ROOT` with
   `design-system` and `elixir-utils`. Use `REGENT_DEPS_ROOT` for isolated builds.
 - `make check` runs every gate: the platform's `mix precommit`, TypeScript
-  typecheck and unit tests, then the CLI's build, typecheck and tests.
+  typecheck and unit tests, then the command description check against the
+  site's OpenAPI documents (it needs `regents-cli` beside this repository).
   `make check-platform`, `check-cli` and `check-contracts` run one component.
   Set `MIX_TEST_PARTITION` (an empty value uses `ash_template_test`) and, for
   isolated builds, `REGENT_DEPS_ROOT`.

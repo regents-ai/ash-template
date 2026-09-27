@@ -34,7 +34,7 @@ Relative to `repos/regents` (or its reviewed readiness worktree/revision):
 | Actual route/pipeline ownership | `platform/lib/ash_platform_web/router.ex` |
 | Shared metadata consumer | `platform/lib/ash_platform_web/components/layouts/root.html.heex` |
 | Frozen YAML contract headers | `platform/lib/ash_platform_web/plugs/contract_headers.ex` |
-| Derived CLI major/digest | `cli/scripts/sync-platform-contract-digest.mjs` |
+| Derived CLI major/digest | `scripts/sync-platform-contract-digest.mjs` in `regents-cli` |
 
 The shared presentation owner is
 `repos/design-system/regent_ui/lib/regent/agent_metadata.ex` on the approved

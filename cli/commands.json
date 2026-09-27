@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/regents-ai/regents-cli/main/schemas/commands.v1.json",
+  "format": "regents.commands.v1",
+  "platform": "ash-template",
+  "base_url": "https://ash-template.example",
+  "notes": [
+    "Public reads need no wallet or sign-in."
+  ],
+  "commands": [
+    {
+      "command": "health",
+      "description": "Read whether the web service is answering.",
+      "operation_id": "getServiceHealth",
+      "method": "GET",
+      "path": "/healthz",
+      "authority": "public",
+      "effect": "read"
+    }
+  ]
+}

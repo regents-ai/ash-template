@@ -9,12 +9,15 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cli
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Check out regents-cli
+        uses: actions/checkout@v4
+        with:
+          repository: regents-ai/regents-cli
+          path: regents-cli
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -24,18 +27,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: platform/.tool-versions
+          node-version: 22
           cache: pnpm
-          cache-dependency-path: cli/pnpm-lock.yaml
+          cache-dependency-path: regents-cli/pnpm-lock.yaml
 
-      - name: Install dependencies
+      - name: Install regents-cli dependencies
+        working-directory: regents-cli
         run: pnpm install --frozen-lockfile
 
-      - name: Build workspace
-        run: pnpm build
-
-      - name: Typecheck workspace
-        run: pnpm typecheck
-
-      - name: Run tests
-        run: pnpm test
+      - name: Check the command description
+        run: make check-cli REGENTS_CLI=regents-cli

@@ -71,3 +71,11 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `skills/` now holds every skill Regent writes: `regent-workflow` (the entry
   point), `regent-notion` and `checkpoint` joined the Ash and Anime.js skills.
   The workspace links to them; skills Regent only uses stay in the workspace.
+
+## 2026-09-26 — Commands are described, not built, here
+
+- `cli/` now holds `commands.json`, the description of every `regents ash-template`
+  command in the `regents.commands.v1` format. The placeholder `ash-template` command
+  package is gone; the code for every Regent site's commands lives in `regents-cli`.
+- `make check-cli` checks the description against the format and the site's OpenAPI
+  documents, using `regents-cli` beside this repository.

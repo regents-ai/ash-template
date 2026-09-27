@@ -29,7 +29,7 @@ digest, run the gate.
 | Component | What it holds | Check |
 | --- | --- | --- |
 | [platform/](platform/README.md) | The Phoenix/Ash web application: home page, Privy wallet sign-in, the signed-in Overview and Account pages, public pages, health and metrics, and the served API. | `make check-platform` |
-| [cli/](cli/README.md) | A pnpm workspace with one package, `@ash-template/cli`, publishing the `ash-template` command. It only prints usage and version today. | `make check-cli` |
+| [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command; the code that runs them lives in [regents-cli](https://github.com/regents-ai/regents-cli). | `make check-cli` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
 | [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks. | None |
@@ -44,7 +44,9 @@ and `MIX_TEST_PARTITION` must be set for its test database; the
 1. Follow the [platform quickstart](platform/README.md#quickstart) to create the
    local database, load Privy credentials and start the server.
 
-2. Build the CLI with `cd cli && pnpm install --frozen-lockfile && pnpm build`.
+2. To check the command description, clone
+   [regents-cli](https://github.com/regents-ai/regents-cli) beside this repository
+   and run `pnpm install --frozen-lockfile` there.
 
 ## Shared dependencies
 
