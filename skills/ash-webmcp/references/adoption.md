@@ -72,25 +72,33 @@ Keep dynamic sitemap reads policy-scoped and bounded; do not expose private inbo
 
 Read:
 - `platform/AGENTS.md`, `platform/lib/techtree_web/router.ex` and `endpoint.ex`.
-- `platform/lib/techtree_web/components/layouts/root.html.heex`, `page_copy.ex` and
-  `platform/lib/techtree_web/live/docs_live.ex`.
-- `platform/lib/techtree_web/controllers/skill_controller.ex` and actual public API
+- `platform/lib/techtree_web/components/layouts/root.html.heex`, `md.ex`,
+  `controllers/pages_controller.ex` with `priv/pages/*.md`, `open_api.ex` and
+  `controllers/sitemap_controller.ex`.
+- `platform/priv/tool_manifest.json`, `platform/lib/techtree/capabilities.ex` and
+  `platform/assets/js/public_tools.js`; `/llms.txt` is `priv/pages/llms.txt`, served by
+  `controllers/agent_guide_controller.ex` with the tool table filled in.
+- `platform/lib/techtree_web/controllers/skill_controller.ex` and the public API
   controllers for bootstrap, catalog, objects, climbs, publications and keys.
-- `platform/priv/static/llms.txt`, owning CLI/publication contracts and proof policy.
 
-`/skill.md` and a browser page-copy control do not establish same-URL Markdown
-negotiation for the rest of the site. Add only supported public representations
-behind the appropriate data/visibility checks. Describe actual public reads and
-signed publication separately. A Privy profile never grants publication-key authority;
-preserve publication rate limits, integrity checks and frozen proof bytes.
+Techtree follows [build](build.md) for five read-only, sign-in-free site tools
+(`techtree_start`, `techtree_climbs`, `techtree_climb`, `techtree_results`,
+`techtree_result`), each a thin read of an existing `/api/v1` route or `/skill.md`, all
+`readOnlyHint` and `untrustedContentHint`. Live since main `825ddb5` (2026-09-27) and on
+`release/v0.3.0`. Every browser page sends `Permissions-Policy: tools=(self)` and sets
+`data-webmcp-status` on the html element. There is no origin-trial token yet, so
+ordinary Chrome needs the WebMCP flag. Publishing stays with the CLI and its key: a
+Privy profile never grants publication-key authority; preserve publication rate limits,
+integrity checks and frozen proof bytes.
 
-No native registry is in effect. Its assets import the shared profile tools, but
-they install only beside `[data-regent-profile]`, which the retired profile page
-was the only one to render. Do not claim tools exist because the CLI/plugin is
-agent-oriented. The strict CSP and page-specific
-provider permissions must remain intact; structured data is inert data, not an excuse
-to add executable inline scripts. Leave retired profile and development preview
-routes retired. No paid model runs or publication for readiness verification.
+The home, About, Contact and Privacy pages answer `text/markdown` through Techtree's own
+`md.ex`, not `regent_agent_access`. The shared profile tools install only beside
+`[data-regent-profile]`, which no page renders since the profile page was withdrawn, so
+the manifest leaves them out. The strict CSP and page-specific provider permissions
+must remain intact; structured data is inert data, not an excuse to add executable
+inline scripts. Leave retired profile and development preview routes retired. No paid
+model runs or publication for readiness verification. Techtree's remaining steps onto
+the template are in the workspace's `docs/backlogs/techtree.md`.
 
 ## Per-owner acceptance and release
 

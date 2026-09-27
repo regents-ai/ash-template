@@ -199,3 +199,8 @@ this guide: `priv/tool_manifest.json` lists all eight tools its pages register (
 read-only public tools and the three shared profile tools, each with `scope`),
 `assets/js/public_tools.ts` imports it and registers the public five, and `/developers`
 and `/llms.txt` build their tool tables from it.
+
+Techtree, relative to `repos/techtree/platform`, is the smallest: five read-only site
+tools in `priv/tool_manifest.json`, read by `Techtree.Capabilities` (`manifest`, `tools`,
+`site_tools`) and registered by `assets/js/public_tools.js`, which records
+`data-webmcp-status`; the Docs page and `/llms.txt` list them from the manifest.
