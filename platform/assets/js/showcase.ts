@@ -150,7 +150,7 @@ const Showcase = {
       this.el.querySelector("[data-sc-contrast]")!.textContent =
         `${ratio.toFixed(1)}:1 text contrast${ratio < 4.5 ? " · below AA" : " · AA"}`
     }
-    const click = async (event: Event) => {
+    const click = (event: Event) => {
       const button = (event.target as Element).closest<HTMLElement>("button")
       if (!button) return
       if (button.dataset.scTheme) {
@@ -185,20 +185,6 @@ const Showcase = {
       if (button.hasAttribute("data-sc-shimmer-reset")) {
         shimmerColor = null
         apply()
-      }
-      if (button.dataset.scCopy) {
-        const source = document.getElementById(button.dataset.scCopy)
-        const value = source?.matches("dl")
-          ? Array.from(source.querySelectorAll("dt"), term =>
-              `${term.textContent?.trim()}: ${term.nextElementSibling?.textContent?.trim() || ""}`,
-            ).join("\n")
-          : source?.textContent || ""
-        try {
-          await navigator.clipboard.writeText(value)
-          button.textContent = "Copied"
-        } catch {
-          button.textContent = "Copy unavailable"
-        }
       }
     }
     const input = (event: Event) => {

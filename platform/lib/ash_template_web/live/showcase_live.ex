@@ -213,7 +213,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                     </:caption>
                   </S.technical_figure><p>
                     Geist Sans · body copy and interface.
-                  </p><code>0x71C7…976F</code><P.disclosure
+                  </p><code>0x71C7..976F</code><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="type-tokens"
                     summary="Type & spacing tokens"
@@ -481,7 +481,13 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   <dt>Network</dt><dd>Base</dd><dt>State</dt><dd>Confirmed</dd>
                 </dl>
                 <div class="sc-row">
-                  <P.button variant="quiet" data-sc-copy="showcase-facts-content">Copy</P.button>
+                  <P.copy_button
+                    id="showcase-facts-copy"
+                    variant="quiet"
+                    text={facts_text()}
+                  >
+                    Copy
+                  </P.copy_button>
                 </div>
                 <p>Application-owned records</p>
               </S.panel>
@@ -658,11 +664,14 @@ defmodule AshTemplateWeb.ShowcaseLive do
                     </option><option value="privy_expired">Privy: expired fixture token</option><option value="privy_audience">
                       Privy: wrong audience
                     </option></select><P.button type="submit">Run locally</P.button>
-                  </form><pre id="utility-result" role="status">{if @result && !@result[:example], do: Jason.encode!(@result, pretty: true)}</pre><button
-                    type="button"
-                    data-sc-copy="utility-result"
-                    class="sc-text-button"
-                  >Copy result</button><P.disclosure
+                  </form><pre id="utility-result" role="status">{utility_output(@result)}</pre><P.copy_button
+                    :if={utility_output(@result)}
+                    id="utility-result-copy"
+                    variant="quiet"
+                    text={utility_output(@result)}
+                  >
+                    Copy result
+                  </P.copy_button><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="utility-notes"
                     summary="Ownership & effects"
@@ -758,6 +767,12 @@ defmodule AshTemplateWeb.ShowcaseLive do
     </S.frame>
     """
   end
+
+  defp facts_text, do: "Network: Base\nState: Confirmed"
+
+  defp utility_output(nil), do: nil
+  defp utility_output(%{example: _example}), do: nil
+  defp utility_output(result), do: Jason.encode!(result, pretty: true)
 
   attr :number, :string, required: true
   attr :title, :string, required: true

@@ -47,7 +47,7 @@ defmodule AshTemplate.PublicIdentity do
 
   def short_wallet(<<"0x", hex::binary-size(40)>> = wallet) do
     if String.match?(hex, ~r/\A[0-9a-fA-F]{40}\z/),
-      do: RegentFormat.short_wallet(wallet),
+      do: RegentFormat.short_address(wallet),
       else: "Account"
   end
 
