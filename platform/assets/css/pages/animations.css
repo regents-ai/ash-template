@@ -41,7 +41,7 @@
 }
 
 .motion-lab__kicker {
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
   font: 0.72rem/1 var(--font-family-mono);
   letter-spacing: var(--tracking-microlabel);
   text-transform: uppercase;
@@ -53,14 +53,14 @@
 
 .motion-lab__lede {
   max-width: 40rem;
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
 }
 
 .motion-lab__section {
   display: grid;
   gap: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--ash-line);
+  border-top: 1px solid var(--color-border);
 }
 
 .motion-lab__section-head {
@@ -88,7 +88,7 @@
 
 .motion-lab__section-head p {
   max-width: 44rem;
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
 }
 
 .motion-lab__row {
@@ -123,9 +123,9 @@
   min-height: 2.25rem;
   padding: 0.3rem 0.8rem;
   border: 0;
-  border-inline-end: 1px solid var(--ash-line);
-  background: var(--ash-panel);
-  color: var(--ash-muted);
+  border-inline-end: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-fg-muted);
   font: 0.8rem/1 var(--font-family-mono);
   cursor: pointer;
 }
@@ -135,8 +135,8 @@
 }
 
 .motion-lab__picker button[aria-pressed="true"] {
-  background: var(--ash-ink);
-  color: var(--ash-ground);
+  background: var(--color-fg);
+  color: var(--color-bg);
 }
 
 .motion-lab__picker button:focus-visible {
@@ -157,7 +157,7 @@
 }
 
 .motion-lab__pickers dt {
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
   font: 0.72rem/1 var(--font-family-mono);
   letter-spacing: var(--tracking-microlabel);
   text-transform: uppercase;
@@ -179,8 +179,8 @@
   gap: var(--space-2);
   min-width: 0;
   padding: var(--rg-panel-padding);
-  border: 1px solid var(--ash-line);
-  background: var(--ash-panel);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .motion-lab__card h3 {
@@ -237,7 +237,7 @@
   display: grid;
   min-width: 13rem;
   border: 1px solid var(--ash-line-strong);
-  background: var(--ash-panel);
+  background: var(--color-surface);
   box-shadow: var(--shadow-md);
   transform-origin: 1.5rem 0;
 }
@@ -245,9 +245,9 @@
 .motion-lab__menu button {
   padding: 0.7rem 1rem;
   border: 0;
-  border-bottom: 1px solid var(--ash-line);
+  border-bottom: 1px solid var(--color-border);
   background: none;
-  color: var(--ash-ink);
+  color: var(--color-fg);
   font: inherit;
   text-align: start;
   cursor: pointer;
@@ -267,7 +267,7 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: color-mix(in oklch, var(--ash-ground) 72%, transparent);
+  background: color-mix(in oklch, var(--color-bg) 72%, transparent);
 }
 
 .motion-lab__drawer,
@@ -278,8 +278,8 @@
   align-content: start;
   gap: var(--space-2);
   padding: var(--rg-panel-padding);
-  background: var(--ash-panel);
-  color: var(--ash-ink);
+  background: var(--color-surface);
+  color: var(--color-fg);
 }
 
 /* The drawer comes from the left edge, like the phone menu. */
@@ -319,16 +319,16 @@
 
 .motion-lab__sheet li {
   padding: 0.8rem 1rem;
-  border: 1px solid var(--ash-line);
-  background: var(--ash-ground);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
 }
 
 .motion-lab__close {
   min-width: 2.5rem;
   min-height: 2.5rem;
   border: 1px solid var(--ash-line-strong);
-  background: var(--ash-panel);
-  color: var(--ash-ink);
+  background: var(--color-surface);
+  color: var(--color-fg);
   font: inherit;
   font-size: 1.2rem;
   cursor: pointer;
@@ -344,7 +344,7 @@
   width: min(15rem, calc(100vw - 2 * var(--space-3)));
   padding: var(--space-2);
   border: 1px solid var(--ash-line-strong);
-  background: color-mix(in oklab, var(--ash-accent-warm) 22%, var(--ash-panel));
+  background: color-mix(in oklab, var(--ash-accent-warm) 22%, var(--color-surface));
   box-shadow: var(--shadow-md);
   rotate: -2deg;
   transform-origin: 0 100%;
@@ -365,7 +365,7 @@
   min-height: 17rem;
   padding: var(--space-2);
   border: 1px dashed var(--ash-line-strong);
-  background: var(--ash-ground);
+  background: var(--color-bg);
   overflow: hidden;
 }
 
@@ -395,7 +395,7 @@
   padding: 0.6rem 0.6rem 0.6rem 0.9rem;
   border: 1px solid var(--ash-line-strong);
   border-inline-start: 4px solid var(--ash-accent-warm);
-  background: var(--ash-panel);
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
   font-size: 0.85rem;
 }
@@ -406,7 +406,7 @@
   height: 1.8rem;
   border: 0;
   background: none;
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
   font-size: 1.1rem;
   cursor: pointer;
 }
@@ -423,7 +423,7 @@
 .motion-lab__items li {
   padding: 0.45rem 0.8rem;
   border: 1px solid var(--ash-line-strong);
-  background: var(--ash-ground);
+  background: var(--color-bg);
   font: 0.8rem/1.2 var(--font-family-mono);
   white-space: nowrap;
 }
@@ -441,7 +441,7 @@
 }
 
 .motion-lab__count-label {
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
 }
 
 .motion-lab__task {
@@ -451,7 +451,7 @@
   gap: var(--space-1);
   padding: var(--space-2);
   border: 1px solid var(--ash-line-strong);
-  background: var(--ash-ground);
+  background: var(--color-bg);
 }
 
 .motion-lab__task h4 {
@@ -499,13 +499,13 @@
   padding: 0.8rem 1rem;
   border: 0;
   background: none;
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
   font: var(--font-weight-semibold) 0.95rem/1 var(--font-family-ui);
   cursor: pointer;
 }
 
 .motion-lab__tablist [role="tab"][aria-selected="true"] {
-  color: var(--ash-ink);
+  color: var(--color-fg);
 }
 
 .motion-lab__tablist [role="tab"]:focus-visible {
@@ -538,8 +538,8 @@
 
 .motion-lab__tabpanel li {
   padding: 0.7rem 1rem;
-  border: 1px solid var(--ash-line);
-  background: var(--ash-panel);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 /* Arriving */
@@ -571,7 +571,7 @@
   min-width: 0;
   padding: 0.6rem;
   border: 1px solid var(--ash-line-strong);
-  background: var(--ash-ground);
+  background: var(--color-bg);
   font: 0.75rem/1.2 var(--font-family-mono);
   overflow-wrap: anywhere;
 }
@@ -583,7 +583,7 @@
   width: 1.8rem;
   height: 1.8rem;
   background: var(--ash-accent);
-  color: var(--ash-ground);
+  color: var(--color-bg);
   font: 1rem/1 var(--font-family-title);
 }
 

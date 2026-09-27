@@ -14,8 +14,8 @@
   gap: 1rem;
   min-width: 0;
   padding: var(--rg-panel-padding);
-  border: 1px solid var(--ash-line);
-  background: var(--ash-panel);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .overview-page h1,
@@ -30,7 +30,7 @@
 }
 
 .overview-kicker {
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
   font-family: var(--font-family-ui);
   font-size: 0.7rem;
   letter-spacing: 0.14em;
@@ -51,7 +51,7 @@
 
 .overview-lede {
   max-width: 56ch;
-  color: var(--ash-muted);
+  color: var(--color-fg-muted);
   font-size: 1.05rem;
   line-height: 1.5;
 }
