@@ -124,3 +124,13 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   when the browser refuses the clipboard, saying "Selected" (from Patchbay 45a7c92;
   design-system 0dc5b0a).
 - `docs/donor-queue.md` lists each part brought in and each part left out, with why.
+
+## 2026-09-27 — Limits on updates are checked by the database
+
+- Ash 3.33.11 ignores `change filter(expr(...))` when one record's update runs
+  atomically, so a second, out-of-date call still writes (reproduced against
+  PostgreSQL; fixed on Ash main, not yet released). The `ash-data` skill now says a
+  limit or once-only rule on an update is an atomic validation, with the example and
+  the stale-record check that proves it.
+- The `chain-events` watcher guide's cursor move uses such a validation
+  (`CursorUnmoved`) in place of the filter; a stale pass gets `StaleRecord`.

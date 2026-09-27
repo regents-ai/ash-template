@@ -108,7 +108,7 @@ defmodule MyApp.Chain.Cursor do
       accept [:next_block, :head_block, :head_block_hash, :observed_at]
       require_attributes [:next_block, :head_block, :head_block_hash, :observed_at]
       argument :from, :integer, allow_nil?: false
-      change filter(expr(next_block == ^arg(:from) and is_nil(rescan_from)))
+      validate MyApp.Chain.Validations.CursorUnmoved
     end
 
     # Keeps the earliest block where the chain disagreed.
@@ -148,6 +148,26 @@ defmodule MyApp.Chain.Cursor do
 
   identities do
     identity :unique_cursor, [:chain_id, :name]
+  end
+end
+```
+
+The cursor check runs inside the `UPDATE`, so a pass holding an old copy of the cursor
+gets `StaleRecord` and writes nothing. It is a validation, not
+`change filter(expr(...))`, because Ash 3.33.11 drops that filter from a single
+record's atomic update (see `ash-data`).
+
+```elixir
+defmodule MyApp.Chain.Validations.CursorUnmoved do
+  use Ash.Resource.Validation
+
+  @impl true
+  def atomic(changeset, _opts, _context) do
+    from = Ash.Changeset.get_argument(changeset, :from)
+
+    {:atomic, [:next_block, :rescan_from],
+     expr(next_block != ^from or not is_nil(rescan_from)),
+     expr(error(Ash.Error.Changes.StaleRecord, %{resource: "cursor", filter: %{next_block: ^from}}))}
   end
 end
 ```

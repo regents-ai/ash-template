@@ -42,6 +42,27 @@ atomic/filter/locking mechanism appropriate to the invariant.
 constraint. Decide on serialization/locking/constraint design. A per-row atomic
 update or ordinary transaction is not by itself proof of this invariant.
 
+**A limit or once-only rule on an update goes in the SQL as an atomic validation**,
+never as `change filter(expr(...))`. Ash 3.33.11 drops that filter when a single
+record's update runs atomically (`UPDATE ... WHERE id = $1`, reproduced 2026-09-27;
+fixed on Ash main, not yet released), so a stale second call still writes. Write a
+validation whose `atomic/3` returns the failing condition and its error:
+
+```elixir
+@impl true
+def atomic(_changeset, _opts, _context) do
+  {:atomic, [:free_mints_used, :snapshot_total], expr(free_mints_used >= snapshot_total),
+   expr(error(Ash.Error.Changes.InvalidAttribute,
+     %{field: :free_mints_used, value: free_mints_used, message: "no free claims are left"}))}
+end
+```
+
+It runs inside the `UPDATE`, so the second of two racing calls gets the error and
+nothing is written. `validate compare(...)` is not a substitute: it checks the record
+as it was read. A once-only transition can also rest on a unique index. Prove it by
+updating the same stale record twice: the first succeeds, the second errors, and the
+row changes once.
+
 Do not disable atomicity globally. A targeted non-atomic action needs a specific
 reason; some relationship workflows require one, while row-local arithmetic usually
 does not. Test the actual accepted outcome, not simply that no exception occurred.
