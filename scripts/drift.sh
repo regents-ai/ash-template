@@ -47,6 +47,10 @@ not_used() {
   case "$1:$2" in
     techtree:platform/lib/ash_template_web/plugs/launch_gate.ex) echo "public, no sign-in: never closed" ;;
     techtree:platform/lib/ash_template_web/read.ex) echo "no page reads in the background" ;;
+    techtree:platform/lib/ash_template/chain_client.ex | \
+      techtree:platform/lib/ash_template_web/onchain_steps.ex | \
+      techtree:platform/assets/js/hooks/onchain_steps.ts | \
+      techtree:platform/assets/js/wallet_actions/*) echo "no on-chain buttons" ;;
     *) return 1 ;;
   esac
 }
