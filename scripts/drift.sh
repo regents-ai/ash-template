@@ -51,6 +51,7 @@ not_used() {
       techtree:platform/lib/ash_template_web/onchain_steps.ex | \
       techtree:platform/assets/js/hooks/onchain_steps.ts | \
       techtree:platform/assets/js/wallet_actions/*) echo "no on-chain buttons" ;;
+    patchbay:platform/lib/ash_template_web/plugs/launch_gate.ex) echo "launched and open to everyone: never closed" ;;
     *) return 1 ;;
   esac
 }
