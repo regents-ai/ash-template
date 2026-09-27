@@ -29,11 +29,12 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   @impl true
-  def handle_params(params, _uri, socket) do
+  def handle_params(params, uri, socket) do
     route_spec = RouteCatalog.fetch!(socket.assigns.live_action, params)
 
     {:noreply,
      socket
+     |> assign(AshTemplateWeb.PublicDocuments.page(URI.parse(uri).path))
      |> assign(:route_spec, route_spec)
      |> load_verified_connections(route_spec)}
   end

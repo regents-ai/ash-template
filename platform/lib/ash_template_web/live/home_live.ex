@@ -26,8 +26,12 @@ defmodule AshTemplateWeb.HomeLive do
     """
   end
 
-  def mount(_params, _session, socket),
-    do: {:ok, assign(socket, route_spec: RouteCatalog.fetch!(:home))}
+  def mount(_params, _session, socket) do
+    {:ok,
+     socket
+     |> assign(PublicDocuments.page("/"))
+     |> assign(route_spec: RouteCatalog.fetch!(:home))}
+  end
 
   def render(assigns) do
     ~H"""

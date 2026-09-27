@@ -32,8 +32,9 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
     chain = Application.fetch_env!(:ash_template, :lab_chain)
 
     {:ok,
-     assign(socket,
-       page_title: "Wallet buttons",
+     socket
+     |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/onchain"))
+     |> assign(
        theme: session["theme"] || "dark",
        chain: chain,
        wallets: @wallets,

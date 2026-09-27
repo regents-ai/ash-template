@@ -127,6 +127,8 @@ template in the template's shape, then every site takes it from there.
 | Patchbay | The copy-prompt control | Better than the template's copy text |
 | Techtree | Its strict content security policy | The template sets none |
 
+Done 2026-09-27: what came in, what was left out and why is in `docs/donor-queue.md`.
+
 Also in this stage:
 
 - Remove the route catalog's `content_transition_kind`: the old shell motion was its

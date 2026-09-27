@@ -9,6 +9,7 @@ defmodule AshTemplateWeb.Endpoint do
     websocket: [connect_info: [:peer_data, :uri, session: @session_options]],
     longpoll: [connect_info: [:peer_data, :uri, session: @session_options]]
 
+  plug AshTemplateWeb.Plugs.CanonicalHost
   plug AshTemplateWeb.Plugs.ContractHeaders
 
   # Serve at "/" the static files from "priv/static" directory.
@@ -35,7 +36,13 @@ defmodule AshTemplateWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  plug Plug.Parsers,
+  # Before the parsers, so a body they reject on an /api path is answered in
+  # JSON like every other API error.
+  plug RegentAgentAccess.Plug,
+    documents: &AshTemplateWeb.PublicDocuments.document/1,
+    guide: "/llms.txt"
+
+  plug AshTemplateWeb.Plugs.Parsers,
     body_reader: {RegentIdentity.BodyReader, :read_body, []},
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
@@ -44,10 +51,5 @@ defmodule AshTemplateWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug AshTemplateWeb.Plugs.RuntimeSession
-
-  plug RegentAgentAccess.Plug,
-    documents: &AshTemplateWeb.PublicDocuments.document/1,
-    guide: "/llms.txt"
-
   plug AshTemplateWeb.Router
 end

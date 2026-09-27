@@ -31,9 +31,10 @@ defmodule AshTemplateWeb.Router do
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug :protect_from_forgery
 
-    # Reading only: these pages never start sign-in.
+    # Reading only: these pages never start sign-in, so they send no referrer.
     plug :put_secure_browser_headers, %{
-      "content-security-policy" => ContentSecurityPolicy.reading()
+      "content-security-policy" => ContentSecurityPolicy.reading(),
+      "referrer-policy" => "no-referrer"
     }
   end
 

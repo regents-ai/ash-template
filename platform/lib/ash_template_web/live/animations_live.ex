@@ -58,8 +58,9 @@ defmodule AshTemplateWeb.AnimationsLive do
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-     assign(socket,
-       page_title: "Motion lab",
+     socket
+     |> assign(AshTemplateWeb.PublicDocuments.page("/animations"))
+     |> assign(
        variants: Motion.standard(),
        reduced?: false,
        toasts: [],

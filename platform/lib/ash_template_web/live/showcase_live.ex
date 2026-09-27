@@ -17,8 +17,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
 
   def mount(_params, _session, socket) do
     {:ok,
-     assign(socket,
-       page_title: "Showcase",
+     socket
+     |> assign(AshTemplateWeb.PublicDocuments.page("/showcase"))
+     |> assign(
        privy_mode: privy_mode(),
        theme: "dark",
        catalog: Catalog.snapshot(),
@@ -668,7 +669,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                     :if={utility_output(@result)}
                     id="utility-result-copy"
                     variant="quiet"
-                    text={utility_output(@result)}
+                    target="utility-result"
                   >
                     Copy result
                   </P.copy_button><P.disclosure

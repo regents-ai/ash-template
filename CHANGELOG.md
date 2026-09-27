@@ -103,3 +103,24 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   connection. It prints the app commit, the shared-library commits and the image digest.
 - `make check-cli` fetches regents-cli's checker from GitHub at the commit the
   `Makefile` pins, instead of using `regents-cli` beside this repository.
+
+## 2026-09-27 — The best parts of the sites, brought in
+
+- Every page names itself: one table in `PublicDocuments` holds each page's title and
+  search description, every page assigns them, and the layout adds the site name once
+  (from Regents 7f866f87). The Overview and Account pages no longer show the bare site
+  name.
+- Error pages say "We can't find that page" or "Something went wrong" (from KeyFleet
+  73145ed).
+- A visit to the site's www. address moves to the same page at the site's address
+  (from Regents c45e7cd5).
+- An `/api` request with a body the server can't read is answered in JSON, like every
+  other API error (from Regents ee7d1d51).
+- `/healthz` reads one of the site's own tables and answers "unavailable" when it
+  can't, and is never cached (from Autolaunch e7f296f).
+- Reading pages send no referrer (from Techtree bcf47ba). Sign-in pages keep the
+  browser's default for Privy.
+- The copy button can copy an element on the page by its id, and selects that text
+  when the browser refuses the clipboard, saying "Selected" (from Patchbay 45a7c92;
+  design-system 0dc5b0a).
+- `docs/donor-queue.md` lists each part brought in and each part left out, with why.
