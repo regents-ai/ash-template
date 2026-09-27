@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Actors.Human
-  alias AshTemplateWeb.{AccountLive, OverviewLive, RouteCatalog}
+  alias AshTemplateWeb.{AccountLive, OverviewLive, Read, RouteCatalog}
 
   @identity_providers %{"x" => :x, "github" => :github, "farcaster" => :farcaster}
 
@@ -22,8 +22,9 @@ defmodule AshTemplateWeb.ShellLive do
        theme: session["theme"],
        route_spec: RouteCatalog.fetch!(socket.assigns.live_action, params),
        shell_instance: System.unique_integer([:positive, :monotonic]),
-       verified_connections: [],
-       verified_connections_notice: nil
+       verified_connections: %Read{},
+       verified_connections_notice: nil,
+       connection_outcome: nil
      )}
   end
 
@@ -45,7 +46,8 @@ defmodule AshTemplateWeb.ShellLive do
       ) do
     with %Human{} <- human_actor(socket),
          {:ok, provider} <- linked_identity_provider(provider),
-         {:ok, request} <- identity_request(action, provider, socket.assigns.verified_connections) do
+         {:ok, request} <-
+           identity_request(action, provider, socket.assigns.verified_connections.value) do
       {:noreply,
        socket
        |> assign(
@@ -64,18 +66,18 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
+  # The outcome is judged against the connections read after the provider came
+  # back, so it waits for that read to land.
   def handle_event("refresh_verified_connections", params, socket) do
-    socket = reload_verified_connections(socket)
+    {:noreply,
+     socket
+     |> assign(connection_outcome: params, verified_connections_notice: nil)
+     |> read_verified_connections()}
+  end
 
-    notice =
-      with {:ok, provider} <- linked_identity_provider(params["provider"]),
-           {:ok, action} <- identity_action(params["action"]) do
-        connection_outcome(params["error"], action, provider, socket.assigns.verified_connections)
-      else
-        _unknown_outcome -> connection_outcome(params["error"])
-      end
-
-    {:noreply, assign(socket, verified_connections_notice: notice)}
+  @impl true
+  def handle_async({Read, _name, _generation} = name, result, socket) do
+    {:noreply, socket |> Read.settle(name, result) |> report_connection_outcome()}
   end
 
   @impl true
@@ -110,24 +112,49 @@ defmodule AshTemplateWeb.ShellLive do
   defp current_account(_access_context), do: nil
 
   defp load_verified_connections(socket, %{route_id: :account}),
-    do: reload_verified_connections(socket)
+    do: read_verified_connections(socket)
 
-  defp load_verified_connections(socket, _route_spec),
-    do: assign(socket, verified_connections: [], verified_connections_notice: nil)
+  defp load_verified_connections(socket, _route_spec) do
+    socket
+    |> Read.clear(:verified_connections)
+    |> assign(verified_connections_notice: nil, connection_outcome: nil)
+  end
 
   # The account's own record is the only thing a connection is read from, so
   # nothing the browser reports can name a connection the record does not hold.
-  defp reload_verified_connections(socket) do
+  defp read_verified_connections(socket) do
     case human_actor(socket) do
       %Human{} = actor ->
-        case Accounts.list_my_linked_identities(actor: actor) do
-          {:ok, identities} -> assign(socket, verified_connections: identities)
-          {:error, _error} -> assign(socket, verified_connections: [])
-        end
+        Read.start(socket, :verified_connections, actor.human_account_id, fn ->
+          Accounts.list_my_linked_identities(actor: actor)
+        end)
 
       nil ->
-        assign(socket, verified_connections: [])
+        Read.clear(socket, :verified_connections)
     end
+  end
+
+  defp report_connection_outcome(%{assigns: %{connection_outcome: nil}} = socket), do: socket
+
+  defp report_connection_outcome(
+         %{assigns: %{verified_connections: %Read{state: :loading}}} = socket
+       ),
+       do: socket
+
+  defp report_connection_outcome(%{assigns: assigns} = socket) do
+    params = assigns.connection_outcome
+
+    notice =
+      with %Read{state: state, value: identities} when state in [:ready, :empty] <-
+             assigns.verified_connections,
+           {:ok, provider} <- linked_identity_provider(params["provider"]),
+           {:ok, action} <- identity_action(params["action"]) do
+        connection_outcome(params["error"], action, provider, identities)
+      else
+        _unknown_outcome -> connection_outcome(params["error"])
+      end
+
+    assign(socket, verified_connections_notice: notice, connection_outcome: nil)
   end
 
   defp linked_identity_provider(provider) do
@@ -141,7 +168,7 @@ defmodule AshTemplateWeb.ShellLive do
     {:ok, %{action: :link, provider: provider}}
   end
 
-  defp identity_request("unlink", provider, identities) do
+  defp identity_request("unlink", provider, identities) when is_list(identities) do
     case Enum.find(identities, &(&1.provider == provider)) do
       nil -> {:error, :not_connected}
       identity -> {:ok, %{action: :unlink, provider: provider, subject: identity.subject}}

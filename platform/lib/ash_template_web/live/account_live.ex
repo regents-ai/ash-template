@@ -15,7 +15,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   attr :account, :map, default: nil
   attr :account_control, :map, required: true
-  attr :verified_connections, :list, default: []
+  attr :verified_connections, AshTemplateWeb.Read, required: true
   attr :verified_connections_notice, :map, default: nil
 
   def page(assigns) do
@@ -101,7 +101,8 @@ defmodule AshTemplateWeb.AccountLive do
         <.verified_connections
           id="account-verified-connections"
           class="account-panel"
-          identities={@verified_connections}
+          identities={@verified_connections.value}
+          read_state={@verified_connections.state}
           notice={@verified_connections_notice}
         />
 
