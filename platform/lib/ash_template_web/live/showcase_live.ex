@@ -1,9 +1,19 @@
 defmodule AshTemplateWeb.ShowcaseLive do
   @moduledoc "Loopback-only component workshop. Demo state lives in this LiveView."
   use AshTemplateWeb, :live_view
+  alias AshTemplateWeb.Read
   alias AshTemplateWeb.Showcase.{Catalog, Sample, Utilities}
   alias Regent.Primitives, as: P
   alias Regent.Structure, as: S
+
+  # Fixture wallets for the slow-read example: how long each takes to answer
+  # and what it holds. A zero balance is a real reading, unlike a failed one.
+  @fixture_wallets [
+    {"slow",
+     %{label: "Slow wallet", delay: 3_000, holdings: [{"REGENT", "1,250"}, {"USDC", "40.00"}]}},
+    {"quick", %{label: "Quick wallet", delay: 400, holdings: [{"REGENT", "0"}]}},
+    {"new", %{label: "New wallet", delay: 800, holdings: []}}
+  ]
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -18,6 +28,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
        records: [],
        empty_items: [],
        empty_error: nil,
+       fixture_wallets: @fixture_wallets,
+       balance: %Read{},
+       fail_reads: false,
        step_title: "Current step",
        step_editing: false,
        step_form: to_form(%{"title" => "Current step"}, as: :step),
@@ -354,6 +367,74 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   </div>
                   <p>Local Ash records only; reload clears this example.</p>
                   <.api module="Regent.Primitives" function="empty_state" />
+                </S.panel>
+              </div>
+              <div class="sc-example rg-feature">
+                <S.panel id="slow-read-demo" class="sc-card">
+                  <h3>Slow reads <small>Fixture</small></h3>
+                  <div class="rg-field">
+                    <div class="sc-segment" aria-label="Wallet to read">
+                      <button
+                        :for={{key, wallet} <- @fixture_wallets}
+                        id={"slow-read-#{key}"}
+                        type="button"
+                        phx-click="read_wallet"
+                        phx-value-wallet={key}
+                        aria-pressed={to_string(@balance.owner == key)}
+                      >
+                        {wallet.label}
+                      </button>
+                    </div>
+                    <label class="sc-row">
+                      <input
+                        id="slow-read-fail"
+                        type="checkbox"
+                        phx-click="toggle_read_failure"
+                        checked={@fail_reads}
+                      /> Make the next reads fail
+                    </label>
+                    <div id="slow-read-result" aria-live="polite">
+                      <P.status tone={read_tone(@balance.state)}>{read_label(@balance)}</P.status>
+                      <dl :if={@balance.value not in [nil, []]} class="sc-facts">
+                        <%= for {token, amount} <- @balance.value do %>
+                          <dt>{token}</dt><dd>{amount}</dd>
+                        <% end %>
+                      </dl>
+                      <P.empty_state :if={@balance.value == []} title="Nothing in this wallet yet.">
+                        A reading that found nothing, not a failed one.
+                      </P.empty_state>
+                      <P.notice :if={@balance.state == :stale} tone="warning">
+                        Couldn’t refresh. Showing the reading from {read_time(@balance.read_at)}.
+                      </P.notice>
+                      <P.notice :if={@balance.state == :error} tone="error">
+                        Couldn’t read this wallet. No balance is shown until a read works.
+                      </P.notice>
+                    </div>
+                  </div>
+                  <div class="sc-row">
+                    <P.button
+                      :if={@balance.owner}
+                      id="slow-read-refresh"
+                      variant="secondary"
+                      phx-click="read_wallet"
+                      phx-value-wallet={@balance.owner}
+                    >Refresh</P.button>
+                    <P.button
+                      :if={@balance.owner}
+                      id="slow-read-disconnect"
+                      variant="quiet"
+                      phx-click="forget_wallet"
+                    >Disconnect</P.button>
+                  </div>
+                  <P.disclosure
+                    phx-mounted={JS.ignore_attributes("open")}
+                    id="slow-read-notes"
+                    summary="What to try"
+                  >
+                    <p>
+                      Choose the slow wallet, then another before it answers: the slow answer is thrown away and never replaces the wallet you chose. Disconnect does the same. Tick the failure box and refresh to keep the last reading marked as old; choose a new wallet with it ticked to see a failed read shown as a failure, never as zero.
+                    </p>
+                  </P.disclosure>
                 </S.panel>
               </div>
             </div>
@@ -732,6 +813,24 @@ defmodule AshTemplateWeb.ShowcaseLive do
     end
   end
 
+  def handle_event("read_wallet", %{"wallet" => key}, socket) do
+    case List.keyfind(@fixture_wallets, key, 0) do
+      {^key, wallet} ->
+        fail? = socket.assigns.fail_reads
+
+        {:noreply,
+         Read.start(socket, :balance, key, fn -> read_fixture_wallet(wallet, fail?) end)}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("forget_wallet", _, socket), do: {:noreply, Read.clear(socket, :balance)}
+
+  def handle_event("toggle_read_failure", _, socket),
+    do: {:noreply, assign(socket, :fail_reads, !socket.assigns.fail_reads)}
+
   def handle_event("reset_items", _, socket),
     do: {:noreply, assign(socket, empty_items: [], empty_error: nil)}
 
@@ -795,6 +894,30 @@ defmodule AshTemplateWeb.ShowcaseLive do
        connection_notice: %{tone: :info, message: "Fixture updated. No provider request."}
      )}
   end
+
+  def handle_async({Read, _name, _generation} = name, result, socket),
+    do: {:noreply, Read.settle(socket, name, result)}
+
+  defp read_fixture_wallet(wallet, fail?) do
+    Process.sleep(wallet.delay)
+    if fail?, do: {:error, :unreachable}, else: {:ok, wallet.holdings}
+  end
+
+  defp read_tone(:ready), do: "success"
+  defp read_tone(:empty), do: "neutral"
+  defp read_tone(:stale), do: "warning"
+  defp read_tone(:error), do: "error"
+  defp read_tone(_reading), do: "info"
+
+  defp read_label(%Read{state: :idle}), do: "Choose a wallet"
+  defp read_label(%Read{state: :loading, value: nil}), do: "Reading…"
+  defp read_label(%Read{state: :loading}), do: "Refreshing…"
+  defp read_label(%Read{state: :ready, read_at: read_at}), do: "Read at #{read_time(read_at)}"
+  defp read_label(%Read{state: :empty, read_at: read_at}), do: "Read at #{read_time(read_at)}"
+  defp read_label(%Read{state: :stale}), do: "Old reading"
+  defp read_label(%Read{state: :error}), do: "Read failed"
+
+  defp read_time(read_at), do: Calendar.strftime(read_at, "%H:%M:%S UTC")
 
   defp capability_samples do
     [

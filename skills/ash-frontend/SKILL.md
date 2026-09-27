@@ -11,6 +11,8 @@ pipeline around them. Verify generated helper signatures against the installed v
 
 - [Forms and LiveView](references/forms-and-liveview.md): validation/submission,
   nested forms, omitted inputs, async results and reconnect behavior.
+- [Async state](references/async-state.md): reads owned by an account, wallet or
+  route; late answers dropped; loading, ready, empty, stale and error kept apart.
 - [UI review](references/ui-review.md): accessibility, responsive states and hooks.
 
 Reuse Regent UI primitives while retaining each product's theme, navigation and

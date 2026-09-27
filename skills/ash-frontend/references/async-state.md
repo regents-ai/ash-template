@@ -1,0 +1,73 @@
+# Reads a page waits for
+
+A read belongs to whoever asked for it: the account, wallet or route on screen when
+it started. An answer that arrives after the page moved on is dropped, and a read
+that failed never shows as zero or empty. Keep each page's own state machine
+(portfolio, staking, forum) in that page; this covers only how one read lands.
+
+## Use LiveView first
+
+`start_async/3`, `handle_async/3` and `cancel_async/2` do the work. A later
+`start_async` under the same name ignores the earlier task, but a cancel does not
+recall an answer already in the mailbox, so a read that is cleared without a new
+one can still land for the owner that left. `assign_async/3` has the same gap and
+stamps no read time; use it only for a read whose owner never changes while the
+page is open.
+
+## The pattern
+
+The template's `AshTemplateWeb.Read` (`platform/lib/ash_template_web/read.ex`)
+is the whole helper: a struct per read and three functions.
+
+```elixir
+def mount(_params, _session, socket), do: {:ok, assign(socket, balance: %Read{})}
+
+# owner is what the answer depends on: account id, wallet, route params.
+Read.start(socket, :balance, wallet, fn -> Balances.read(wallet) end)
+Read.clear(socket, :balance)
+
+def handle_async({Read, _name, _generation} = name, result, socket),
+  do: {:noreply, Read.settle(socket, name, result)}
+```
+
+- **Generation.** `start` and `clear` move the read to a new generation and name
+  the task `{Read, name, generation}`. `settle` lands only the current
+  generation's answer, so a slow answer for an earlier owner is dropped even if
+  it was already sent.
+- **Owner.** `start` for the same owner keeps the last value on screen while it
+  refreshes; a new owner starts from nothing, so one wallet's figures never sit
+  under another's name.
+- **States.** `:idle` (nothing asked), `:loading`, `:ready`, `:empty` (an answer
+  of `[]`, `%{}` or `nil`), `:stale` (a refresh failed; the last good value and
+  its `read_at` stay, marked as old) and `:error` (failed with no earlier
+  value). Render each one. Zero is a real value; a failure has none to show.
+- **Freshness per source.** `read_at` is stamped when that read's answer lands,
+  never when it starts. Each read on a page has its own; do not show one
+  "updated" time for several sources unless every one of them has landed.
+- **Cleanup.** In `handle_params`, `clear` every read the new route does not
+  show and `start` the ones it does with the new owner. When the signed-in
+  account or chosen wallet changes, `clear` or `start` every read it owned in
+  the same callback, so no render shows the old owner's figures.
+- **Merging reads.** A refresh while a read runs cancels it and starts again, so
+  many refresh reasons land one answer. When reasons can arrive faster than a
+  read finishes, note them and start once from `handle_async` after the running
+  read lands, so an answer still arrives. That is the only merging.
+
+## Never merged: wallet actions
+
+`Read` is for reads. A wallet press, its transaction and the server's check of
+the wallet's answer are never cancelled, merged, deferred or deduplicated
+through it; each press reaches the wallet and gets its own check (see
+`onchain-buttons`). Refresh reads after a confirmed action by calling `start`.
+
+A read that finishes inside the callback (a local database read in
+`handle_params`) cannot race and needs no generation, but it still needs its
+own error state instead of an empty list.
+
+## Proof
+
+`/showcase` (Feedback, "Slow reads") runs the pattern on fixture wallets:
+choose the slow wallet then another before it answers; the slow answer never
+appears. Tick "Make the next reads fail": a refresh keeps the old reading marked
+as old, and a new wallet shows a failure, never zero. Repeat that check in the
+browser for each read a page adds: switch owner mid-read and force a failure.
