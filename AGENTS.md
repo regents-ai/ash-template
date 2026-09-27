@@ -58,9 +58,12 @@ After renaming, a new site must still replace, by hand:
   it. A new shared library must be listed before any site can use it.
 - `make check` runs every gate: the platform's `mix precommit` and TypeScript
   typecheck, the required-fixes check, then the command description check against the
-  site's OpenAPI documents (it needs `regents-cli` beside this repository).
+  site's OpenAPI documents (regents-cli's checker at the commit the `Makefile` pins).
   `make check-platform`, `check-required-fixes`, `check-cli` and `check-contracts`
   run one component.
+- `make release` is the one release path: it refuses uncommitted changes, runs
+  `make check`, builds HEAD's `platform/` into an image and starts it against a
+  throwaway database (`scripts/release.sh`). It never deploys.
 - Follow the workspace's `regent-workflow`; use one integrating owner for this
   repository. Scope verification to observable acceptance and preserve useful
   regression coverage.

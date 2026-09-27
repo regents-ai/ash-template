@@ -125,8 +125,9 @@ mix precommit
 npm run typecheck
 ```
 
-`make check-platform` also runs the required-fixes check (see
-[Shared dependencies](#shared-dependencies)).
+`make check` also runs the required-fixes check (see
+[Shared dependencies](#shared-dependencies)) and the command description check
+(see [cli/README.md](../cli/README.md)).
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
@@ -146,8 +147,30 @@ hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 image disagree about, without applying anything.
 
 The image is built from `Dockerfile` with this folder as its context; the build
-fetches every dependency at the version the lockfiles pin. The Fly
+fetches every dependency at the version the lockfiles pin. The shared
+libraries' repositories are public, so the build takes no credentials. The Fly
 configuration lives in `fly.toml` and `fly.staging.toml`.
+
+## Release
+
+From the monorepo root, with Docker running:
+
+```sh
+make release
+```
+
+It stops unless every change is committed, then runs `make check`; a failing
+gate stops it before anything is built. `../scripts/release.sh` then builds
+the image from `git archive` of HEAD's `platform/` folder, reusing no cached
+layers, so nothing uncommitted or outside the repository enters it, and tags it
+`ash-template:<commit>`. The smoke check starts a throwaway PostgreSQL 17 on
+its own Docker network, answering to the staging database hostname, and runs
+the image as staging against it: `bin/bootstrap-staging`, `bin/migrate` and
+`bin/pending-migrations` (which must print `none`), then the server, whose
+`/healthz`, home page, fingerprinted stylesheet and own database connection it
+checks. It removes the database and the network afterwards, keeps the image,
+and prints the app commit, the shared-library commits from `mix.lock` and the
+image digest. It never deploys.
 
 ## License
 

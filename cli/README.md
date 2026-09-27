@@ -19,8 +19,9 @@ Change `commands.json` in the same commit as the route it describes, then check 
 make check-cli
 ```
 
-The check needs `regents-cli` beside this repository (set `REGENTS_CLI` for another
-place, and run `pnpm install` there once). It fails when the file does not fit the
+The check fetches regents-cli's checker and schema from GitHub at the commit
+`REGENTS_CLI_REV` in the root `Makefile` pins (it needs `gh auth login`); move that
+pin in a commit to take a newer format. It fails when the file does not fit the
 format, or when a command's operation, method or path is not in
 `platform/priv/public/openapi.json` or `platform/priv/static/api-contract.openapiv3.yaml`.
 
