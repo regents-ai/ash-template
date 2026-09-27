@@ -90,9 +90,14 @@ styles written since. `play()` owns `onComplete`; chain extra work with `.then()
 ```ts
 import {animate, createScope, stagger, type Scope} from "animejs"
 
+// Hooks mounted during the page's first connection sit on HTML the reader has
+// already seen. Only content that arrives after it gets an entrance.
+let joined = false
+window.addEventListener("phx:page-loading-stop", () => { joined = true }, {once: true})
+
 type ReceiptRevealHook = {
   el: HTMLElement
-  handleEvent(event: string, callback: (payload: {amount: string}) => void): void
+  handleEvent(event: string, callback: (payload: {id: string}) => void): void
   scope?: Scope
 }
 
@@ -102,17 +107,20 @@ export const ReceiptReveal = {
       root: this.el,
       mediaQueries: {reduced: "(prefers-reduced-motion: reduce)"},
     })
+    const enter = joined
 
     this.scope = scope.add(() => {
       const reduced = scope.matches.reduced
 
-      animate("[data-reveal]", {
-        opacity: {from: 0},
-        y: reduced ? 0 : {from: 8},
-        delay: reduced ? 0 : stagger(24),
-        duration: reduced ? 120 : 210,
-        ease: "out(4)",
-      })
+      if (enter) {
+        animate("[data-reveal]", {
+          opacity: {from: 0},
+          y: reduced ? 0 : {from: 8},
+          delay: reduced ? 0 : stagger(24),
+          duration: reduced ? 120 : 210,
+          ease: "out(4)",
+        })
+      }
 
       scope.add("confirmed", () => {
         animate("[data-receipt-total]", {
@@ -123,7 +131,9 @@ export const ReceiptReveal = {
       })
     })
 
-    this.handleEvent("receipt:confirmed", () => this.scope?.methods.confirmed())
+    this.handleEvent("receipt:confirmed", ({id}) => {
+      if (id === this.el.id) this.scope?.methods.confirmed()
+    })
   },
 
   destroyed(this: ReceiptRevealHook) {
@@ -133,10 +143,14 @@ export const ReceiptReveal = {
 ```
 
 ```heex
-<section id="receipt" phx-hook="ReceiptReveal">
+<section :if={@receipt} id={"receipt-#{@receipt.id}"} phx-hook="ReceiptReveal">
   <p data-reveal>Receipt</p>
-  <p data-reveal>Staked <strong data-receipt-total>{@total}</strong></p>
+  <p data-reveal>Staked <strong data-receipt-total>{@receipt.total}</strong></p>
 </section>
+```
+
+```elixir
+{:noreply, push_event(socket, "receipt:confirmed", %{id: "receipt-#{receipt.id}"})}
 ```
 
 Why it is shaped this way:
@@ -144,11 +158,28 @@ Why it is shaped this way:
 - `from` animations end on the element's natural, server-rendered state. When a later patch
   strips the inline style, nothing visible changes (lab). The page is fully readable
   without JavaScript because the server never renders `opacity: 0`.
+- The entrance plays only for content that arrives after the page connected: a later
+  render, a stream insert or a live navigation. See [When a hook mounts](#when-a-hook-mounts-lab).
 - Server moments arrive by `push_event`, and `handleEvent` calls a Scope method. Methods
   run inside the Scope, so what they create is tracked and reverted (lab).
+- `push_event` reaches every hook on the page listening for that name, including ones in
+  other LiveComponents (lab), so the payload names its target's DOM id.
 - Reference the `scope` constant, not the constructor's argument: the types declare that
   argument optional, so `self.add(...)` fails under `strict`.
 - `destroyed` reverts everything; LiveView removes `handleEvent` callbacks itself.
+- In a site, keep the `joined` flag once in the kit's `shared.ts`, in a module the main
+  bundle imports before `liveSocket.connect()`; a lazily loaded module misses the event.
+
+## When a hook mounts (lab)
+
+| What happened | Hook callbacks | Entrance? |
+| --- | --- | --- |
+| First page load | `mounted` for every hook, after the server's HTML has been on screen for a network round trip (lab: HTML ready at 41 ms, hooks at 1644 ms with 800 ms of simulated latency), then the first `phx:page-loading-stop` | No: the reader has already seen it |
+| Live navigation (`navigate`, `push_navigate`) | Old hooks `destroyed`, then new hooks `mounted` in the same task as the patch, before the browser paints (LiveView source) | Yes |
+| A later render adds the element (`:if`, a new list item, `stream_insert`) | `mounted` for the new element only | Yes |
+| `stream(..., reset: true)` | Rows whose DOM id stays keep their hook; only new rows mount, dropped rows are `destroyed` (lab) | Only the new rows |
+| Connection drops and returns (network, deploy) | Hooks in the template get `disconnected` then `reconnected`, not a new `mounted`. The view renders again from `mount`, so stream rows that are new to the page mount and missing ones are destroyed (lab) | Only rows new to the page |
+| `push_event` from the LiveView or any LiveComponent | Every hook on the page with a `handleEvent` for that name (lab) | Filter by the id in the payload |
 
 ## What a LiveView patch does to Anime.js's DOM writes
 
@@ -186,7 +217,7 @@ Never put a form inside `phx-update="ignore"`: AshPhoenix error rendering stops 
 
 | LiveView callback | Anime.js work |
 | --- | --- |
-| `mounted` | `createScope({root: this.el, mediaQueries})`; read `data-*`; entrance; register methods; `handleEvent` |
+| `mounted` | `createScope({root: this.el, mediaQueries})`; read `data-*`; entrance (not on the first page load); register methods; `handleEvent` filtered by id |
 | `beforeUpdate(toEl)` | `layout.record()`, `split.revert()`, remove JS-added nodes, snapshot geometry |
 | `updated` | `layout.animate()`, `splitText()` again, re-read `data-*` and call Scope methods. Must be harmless when nothing relevant changed |
 | `disconnected` / `reconnected` | Pause and resume long timelines or scroll observers if the island has them |

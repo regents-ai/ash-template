@@ -1,6 +1,6 @@
 ---
 name: animejs
-description: Anime.js v4 (npm animejs) animation in Regent's Phoenix LiveView and Ash apps, written as TypeScript hook islands. Use when adding, changing or reviewing motion that uses animejs — animate, timelines, timers, stagger, easings and springs, splitText, SVG morph/draw/motion path, draggable, animatable, onScroll, auto layout, Scope, engine, utils, WAAPI or the three.js adapter — or any LiveView hook that animates server-rendered DOM.
+description: Motion on Regent's Phoenix LiveView and Ash sites with Anime.js v4 (npm animejs) and the shared motion kit, written as TypeScript hook islands. Use for any animation, transition or motion work on a Regent site (entrances, presses, drawers, lists, counts, celebrations after an action) and whenever code uses animejs — animate, timelines, timers, stagger, easings and springs, splitText, SVG morph/draw/motion path, draggable, animatable, onScroll, auto layout, Scope, engine, utils, WAAPI or the three.js adapter — or a LiveView hook animates server-rendered DOM. Also for choosing between CSS, LiveView JS commands and Anime.js, and for motion that does not play.
 ---
 
 # Anime.js
@@ -38,7 +38,8 @@ exists; do not use it. v3 code (`anime({...})`, `easing: 'easeOutQuad'`,
 
 | File | Covers |
 | --- | --- |
-| [liveview-islands.md](references/liveview-islands.md) | Hooks, Scope per island, patch survival, Layout on server lists, Ash results, wallet rule, design rules, checks |
+| [liveview-islands.md](references/liveview-islands.md) | The motion kit, hooks, Scope per island, when hooks mount, patch survival, Layout on server lists, Ash results, wallet rule, design rules, checks |
+| [choosing-and-troubleshooting.md](references/choosing-and-troubleshooting.md) | CSS, JS commands, the kit, WAAPI or Anime.js; what each import costs; when nothing moves |
 | [animation.md](references/animation.md) | Install, imports, `animate()`: targets, properties, values, tween params, keyframes, playback, callbacks, methods; easings and springs |
 | [timer-timeline.md](references/timer-timeline.md) | `createTimer`, `createTimeline`, time positions, labels, sync |
 | [interaction.md](references/interaction.md) | `createAnimatable`, `createDraggable`, `onScroll` / ScrollObserver |
@@ -52,6 +53,9 @@ exists; do not use it. v3 code (`anime({...})`, `easing: 'easeOutQuad'`,
   constructor or a Scope method; `scope.revert()` in `destroyed`.
 - Server moments reach the island by `push_event` → `handleEvent` → Scope method, or by
   `data-*` attributes read in `updated`. Celebrate only after the Ash action succeeded.
+  Every hook on the page hears a `push_event`, so its payload names the target's DOM id.
+- Entrances are for content that arrives after the page connected. A hook mounted on the
+  first page load sits on HTML the reader has already seen, so it does not hide it again.
 - Anything Anime.js writes into server-rendered DOM (inline styles, `data-layout-id`,
   split spans, added nodes) is wiped by the next patch of that element. Design for it:
   end on the natural state, render layout ids from the server, revert-and-redo around
