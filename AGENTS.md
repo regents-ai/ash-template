@@ -50,13 +50,17 @@ After renaming, a new site must still replace, by hand:
 - There is no `identity/` folder. The shared profile domain comes from the
   `regents/identity` package. It and the `design-system` and `elixir-utils`
   libraries are git dependencies pinned to one commit each in `platform/mix.exs`.
-- `security/required-fixes.json` lists security fixes to shared libraries that
-  every Regent site must carry. Add an entry the day such a fix lands on the
-  library's `main`; every site's `make check` then fails until its pin holds it.
+- `security/required-fixes.json` lists every shared library (app, repository and
+  folder) and the security fixes every Regent site must carry: a `git` fix is a
+  commit the pin must contain, a `hex` fix is the lowest allowed Hex version.
+  Add an entry the day such a fix is published and push it to `main`; every
+  site's `make check-required-fixes` reads `main` and fails until the site takes
+  it. A new shared library must be listed before any site can use it.
 - `make check` runs every gate: the platform's `mix precommit` and TypeScript
-  typecheck, then the command description check against the
+  typecheck, the required-fixes check, then the command description check against the
   site's OpenAPI documents (it needs `regents-cli` beside this repository).
-  `make check-platform`, `check-cli` and `check-contracts` run one component.
+  `make check-platform`, `check-required-fixes`, `check-cli` and `check-contracts`
+  run one component.
 - Follow the workspace's `regent-workflow`; use one integrating owner for this
   repository. Scope verification to observable acceptance and preserve useful
   regression coverage.

@@ -52,8 +52,9 @@ The platform takes its shared libraries from three Regent repositories, each
 pinned to one commit in `platform/mix.exs`: `design-system` (the shared UI),
 `elixir-utils` (Privy verification, agent access, formatting and lint checks)
 and `regents/identity` (the shared profile domain served at `/api/v1/profile`).
-`security/required-fixes.json` lists the security fixes every Regent site must
-carry; `make check` fails when a pinned library lacks one. The
+`security/required-fixes.json` lists the shared libraries, where each must come
+from, and the security fixes every Regent site must carry. `make check` fails when
+a library is not pinned to an inspectable commit of its repository or lacks a fix. The
 [platform README](platform/README.md#shared-dependencies) explains both.
 
 ## License

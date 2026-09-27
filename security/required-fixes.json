@@ -1,11 +1,46 @@
 {
+  "managed": [
+    {"app": "regent_privy", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "privy"},
+    {"app": "regent_agent_access", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "agent_access"},
+    {"app": "regent_format", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "format"},
+    {"app": "regent_chain", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "chain"},
+    {"app": "regent_http", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "http"},
+    {"app": "regent_blog", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "blog"},
+    {"app": "credo_ash", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "credo_ash"},
+    {"app": "ens_elixir", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "ens"},
+    {"app": "siwa", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa"},
+    {"app": "siwa_keyring", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa_keyring"},
+    {"app": "regent_ui", "repository": "https://github.com/regents-ai/design-system.git", "sparse": "regent_ui"},
+    {"app": "regent_identity", "repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"}
+  ],
   "fixes": [
     {
       "id": "2026-09-24-keccak",
       "summary": "SIWA and ENS hashed with keccak_ex 0.4.2, which gives wrong hashes; they now hash with ex_keccak.",
-      "repository": "https://github.com/regents-ai/elixir-utils.git",
+      "kind": "git",
       "commit": "3e782153c94f1bd07a0941149ddbe5517d05e603",
-      "packages": ["ens", "siwa"]
+      "apps": ["ens_elixir", "siwa"]
+    },
+    {
+      "id": "EEF-CVE-2026-93477",
+      "summary": "Ash before 3.33.11 let user input set private action arguments in bulk update and destroy.",
+      "kind": "hex",
+      "package": "ash",
+      "minimum": "3.33.11"
+    },
+    {
+      "id": "EEF-CVE-2026-82672",
+      "summary": "Mint before 1.10.1 accepted malformed chunk-size lines, allowing response smuggling on pooled connections.",
+      "kind": "hex",
+      "package": "mint",
+      "minimum": "1.10.1"
+    },
+    {
+      "id": "EEF-CVE-2026-92106",
+      "summary": "lazy_html before 0.1.13 wrote SVG and MathML style and script text unescaped, allowing mutation XSS.",
+      "kind": "hex",
+      "package": "lazy_html",
+      "minimum": "0.1.13"
     }
   ]
 }

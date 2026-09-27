@@ -20,11 +20,15 @@ records the commit. To take a newer version, push the change to that
 library's `main`, set the new commit in `mix.exs` and run
 `mix deps.update <name>`.
 
-`../security/required-fixes.json` lists security fixes every Regent site must
-carry. `make check-platform` runs `scripts/check_required_fixes.exs` against it
-and fails when a pinned library lacks one. Other sites read the same list from
-this repository on GitHub. Third-party packages are checked by `mix hex.audit`
-in `mix precommit`.
+`../security/required-fixes.json` lists every shared library with its one
+repository and folder, and the security fixes every Regent site must carry.
+`make check-required-fixes` fetches that list and `scripts/check_required_fixes.exs`
+from this repository's `main` on GitHub and runs the script, printing the
+revision it used. It fails when a shared library loads from a local folder or a
+vendored copy, names another URL or folder, is not pinned to a full commit, has
+no fetched history, or lacks a listed fix, and when a Hex package is older than a
+listed fix. Library pins never change by themselves; only the list does.
+Retired Hex packages are checked by `mix hex.audit` in `mix precommit`.
 
 ## Quickstart
 
