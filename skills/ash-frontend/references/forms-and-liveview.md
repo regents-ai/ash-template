@@ -53,10 +53,10 @@ JS-controlled island. Separate temporary UI preferences from server-authoritativ
 Do not fetch data during render. For updates from other actors, requery under the
 viewer's scope; do not trust that the broadcast producer chose safe fields for them.
 
-For async results, use the installed API's naming/cancellation semantics and a query
-or scope identity where needed. Test reversed completion order. For streams, use the
-required container update mode and DOM IDs, and reset on changed filter/sort scope
-when necessary. Do not assume a stream is a normal enumerable retained in assigns.
+For async results, follow [async state](async-state.md): each read is owned by the
+account, wallet or route that started it. Check reversed completion order. For
+streams, use the required container update mode and DOM IDs, and reset on changed
+filter/sort scope when necessary. Do not assume a stream is a normal enumerable retained in assigns.
 
 ## UI-affordance checks are not final authorization
 
