@@ -146,3 +146,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   "Selected" (a `text` button says "Couldn't copy"); on /showcase "Copied" and its
   screen-reader status stay through a full reconnect redraw that strips any other
   added attribute.
+
+## 2026-09-27 — Counts that fail say so
+
+- `ash-frontend`'s async-state guide notes that `Ash.count` and `Ash.exists` raise a
+  database failure where `Ash.read` returns it (reproduced on Ash 3.33.11), and how a
+  page keeps its own error state for them (from Patchbay's P11 report).

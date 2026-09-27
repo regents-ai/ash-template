@@ -61,8 +61,15 @@ through it; each press reaches the wallet and gets its own check (see
 `onchain-buttons`). Refresh reads after a confirmed action by calling `start`.
 
 A read that finishes inside the callback (a local database read in
-`handle_params`) cannot race and needs no generation, but it still needs its
-own error state instead of an empty list.
+`handle_params`, or a controller action) cannot race and needs no generation, but it
+still needs its own error state instead of an empty list.
+
+`Ash.count` and `Ash.exists` raise a database failure (`Postgrex.Error`,
+`DBConnection.ConnectionError`) where `Ash.read` returns `{:error, _}` (Ash 3.33.11,
+reproduced against a missing table). Inside `Read.start` the raise ends the task and
+settles as failed. Inside a callback, turn exactly those two exceptions into
+`{:error, _}` in the one function that makes the count, with a comment saying why,
+and render its error state; never rescue everything.
 
 ## Proof
 
