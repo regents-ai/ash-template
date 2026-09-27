@@ -1,0 +1,67 @@
+---
+name: onchain-buttons
+description: Buttons that make a person's wallet act on Regent's Phoenix LiveView and Ash sites — send a transaction (approve, stake, bid, buy, claim, settle, launch) or sign (x402 payment, typed data). Use when adding, changing, reviewing or debugging any wallet or on-chain button, its TypeScript hook, the chain switch, the wallet's answer, the server's check of the result, or the words shown for each outcome.
+---
+
+# On-chain buttons
+
+**Load `ash-stack` and `ash-frontend` first.** The wallet rules in
+[regent-integration](../ash-stack/references/regent-integration.md#wallet-actions) apply
+and are not repeated here. For chain events recorded in the database, use `chain-events`.
+
+## Rules
+
+1. **Every press reaches the wallet**, including a second press while the first is with
+   the wallet or on its way to the chain. A reverted or duplicate transaction is an
+   accepted outcome. Never disable, hide, debounce, queue or merge presses, and never set
+   `pointer-events: none`. Mark a press in progress with a data attribute and CSS only.
+2. **A hook's own click listener handles the press.** LiveView ignores a second
+   `phx-click` on an element while the first is waiting for the server (lab: three presses,
+   one event), and disables every button in a form while its `phx-submit` is in flight
+   (lab). So an on-chain button has no `phx-click`, is never inside a `phx-submit` form,
+   and never waits for a server round trip before the wallet opens when the step is
+   already on the page.
+3. **The signed-in wallet sends** (founder decision, 2026-09-26). Panels read the wallet
+   from the server session and show it at once; the press sends from that wallet as this
+   tab has it connected. When it is not connected here, the press opens Privy's connect
+   step and sends nothing. When the browser wallet is on another account, show a note
+   beside the button naming both short addresses.
+4. **Where the transaction is built is not decided yet.** The founder is choosing between
+   the server building each step and pushing it to the page (Autolaunch) and the browser
+   encoding it from server-rendered figures (Regents staking, KeyFleet). Follow the site's
+   existing pattern and do not introduce either one to a site that has neither without
+   asking. [Hook pattern](references/hook-pattern.md) is written so either can feed it.
+5. **Before sending**, switch the wallet to the step's chain (add it when the wallet
+   answers 4902), then check the account is the signed-in wallet and make `eth_chainId`
+   the last read before `eth_sendTransaction`.
+6. **An approval is a step of its own.** The next step's button appears as soon as the
+   approval is sent; nothing waits for it to land before the next press can reach the
+   wallet.
+7. **The hook reports only what the wallet said**: the hash, or why nothing was sent.
+   `handleEvent` payloads carry the component's DOM id, since every hook on the page hears
+   every `push_event`.
+8. **The server checks the result at the latest block** (founder decision, 2026-09-26):
+   read the receipt every 2 s, confirm the transaction's sender, target and calldata are
+   the step's, and show pending, done or reverted. Stop after a set number of reads and
+   offer "Check again". Never use `safe` or `finalized`, never count confirmations, never
+   store pending transactions. The chain watcher (`chain-events`) records the outcome for
+   good.
+9. **Words are for customers**: say what happened and what to do, never an error code.
+   See the outcome table in [hook pattern](references/hook-pattern.md#outcomes-and-words).
+
+## References
+
+| File | Covers |
+| --- | --- |
+| [hook-pattern.md](references/hook-pattern.md) | The hook, sending one step, chain switching, reporting, the server's check, outcomes and words, pending marks, tests |
+| [sites-today.md](references/sites-today.md) | How each site does it now, where it differs from these rules, and which checkout to read |
+
+## Checks
+
+- Vitest with a stand-in wallet (`{request}` answering by method name). Prove that two
+  presses in a row both reach `eth_sendTransaction`, that a declined request reports
+  `wallet_declined`, and that nothing is sent on the wrong chain or account.
+- LiveView tests do not run hooks. Test the server's check with a stand-in RPC.
+- A person checks real Privy and a browser-extension wallet on a lab chain before
+  release; say so in the report rather than claiming it.
+- Motion on the button comes from the kit (`data-press-label`, see `animejs`).

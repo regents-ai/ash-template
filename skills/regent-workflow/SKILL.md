@@ -41,8 +41,8 @@ Apply the same rule in Regents, Autolaunch, Techtree and Patchbay:
 - Bind wallet-specific reads, displayed database data and signing authority to the
   Privy-authenticated wallet verified by the server session. A browser extension's
   account change must not select a new product identity or show that wallet's data.
-  On-chain buttons are never gated by this: every press reaches the connected
-  wallet. On mismatch, show a note beside the button naming both wallets (for
+  On-chain buttons are never gated by this: every press reaches the wallet and
+  sends from the signed-in wallet (`onchain-buttons`). On mismatch, show a note beside the button naming both wallets (for
   example "You're signed in as 0x1234..abcd but your wallet is on 0x9a8b..c1d2"; a short
   address is always `0x`, the first four and the last four characters, joined by `..`).
 - A signed-in customer never sees a wallet panel ask them to connect, choose or

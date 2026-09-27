@@ -79,3 +79,12 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   package is gone; the code for every Regent site's commands lives in `regents-cli`.
 - `make check-cli` checks the description against the format and the site's OpenAPI
   documents, using `regents-cli` beside this repository.
+
+## 2026-09-26 — Skills for on-chain buttons and chain events
+
+- `skills/onchain-buttons`: wallet and on-chain buttons driven by a hook's own click
+  listener, sending from the signed-in wallet, with the server checking each result at
+  the latest block. Its example hook and tests run against this template's wallet code.
+- `skills/chain-events`: watching a chain at the latest block, saving each event once
+  with a cursor, and updating pages through Ash notifications after the save.
+- `regent-workflow` now says a press sends from the signed-in wallet.

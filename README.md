@@ -32,7 +32,7 @@ digest, run the gate.
 | [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command; the code that runs them lives in [regents-cli](https://github.com/regents-ai/regents-cli). | `make check-cli` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
-| [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks. | None |
+| [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, and `chain-events` watching a chain and saving its events. | None |
 
 `make check` runs every component's check in turn. The platform check reads
 `REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout,
