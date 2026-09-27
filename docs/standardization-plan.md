@@ -46,6 +46,12 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   Autolaunch's version; `skills/onchain-buttons` shows how to use it. Autolaunch's press
   gates, Regents' browser-built staking and KeyFleet's browser-built key and fleet
   actions are on those sites' backlogs.
+- Server or browser (founder "1 a 2 a 3 a", 2026-09-27, after both sides were argued): the
+  template teaches server-built steps only, with a review screen whenever a person types an
+  amount. Regents staking and Autolaunch move onto it. The next customer-facing improvement is
+  one wallet prompt for approve-and-send and gas paid by Regent. A research brief for the
+  skill rewrite, with every reason on both sides, is in the workspace at
+  `docs/handoffs/server-built-transactions-research-2026-09-27.md`.
 
 ## Goal
 
