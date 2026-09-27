@@ -6,18 +6,24 @@
 # from the platform folder after `mix deps.get` (the Makefile's check-required-fixes
 # fetches both this script and the registry from ash-template's main branch):
 #
-#     mix run --no-start --no-compile --no-deps-check check_required_fixes.exs REVISION
+#     elixir check_required_fixes.exs REVISION < required-fixes.json
 #
 # "managed" lists each shared library: its app, its one repository URL and its folder
 # there. A managed library must be a git dependency on exactly that URL and folder,
 # pinned with `ref:` to a full commit whose history is fetched. Local folders,
 # vendored copies, other URLs and unlisted libraries from a shared repository fail,
-# and so do libraries from one repository pinned at different commits.
+# and so do libraries from one repository pinned at different commits. The one
+# local folder allowed is the library's own folder in its own repository (Regents
+# uses identity/ from the same commit).
 # A "git" fix must be in the pinned history of each listed app the site uses; a
 # "hex" fix sets the lowest allowed Hex version of a package. Dependencies of every
 # environment are checked, not only the one the check runs in.
 
 [revision] = System.argv()
+Mix.start()
+Mix.Hex.start()
+Code.compile_file("mix.exs")
+
 %{"managed" => managed, "fixes" => fixes} = JSON.decode!(IO.read(:stdio, :eof))
 managed = Map.new(managed, &{&1["app"], &1})
 
@@ -44,6 +50,18 @@ shared_repositories =
 folder = fn app -> Path.relative_to_cwd(deps[app].opts[:dest]) end
 git = fn app, args -> System.cmd("git", ["-C", folder.(app) | args], stderr_to_stdout: true) end
 
+own_folder? = fn app ->
+  %{"repository" => repository, "sparse" => sparse} = managed[app]
+
+  with {top, 0} <- System.cmd("git", ["rev-parse", "--show-toplevel"], stderr_to_stdout: true),
+       {origin, 0} <- System.cmd("git", ["remote", "get-url", "origin"], stderr_to_stdout: true) do
+    same_repository.(String.trim(origin)) == same_repository.(repository) and
+      Path.expand(deps[app].opts[:dest]) == Path.join(String.trim(top), sparse)
+  else
+    _not_a_checkout -> false
+  end
+end
+
 pinned_git = fn app, commit, opts, sparse ->
   cond do
     opts[:sparse] != sparse ->
@@ -69,24 +87,28 @@ end
 
 provenance = fn
   app, %{scm: Mix.SCM.Path} ->
-    [
-      "#{app} loads from a local folder (#{folder.(app)}); shared code must come from a pinned git commit"
-    ]
+    if own_folder?.(app),
+      do: [],
+      else: [
+        "#{app} loads from a local folder (#{folder.(app)}); shared code must come from a pinned git commit"
+      ]
 
-  app, %{scm: Mix.SCM.Git} ->
+  app, %{scm: Mix.SCM.Git, opts: opts} ->
     %{"repository" => repository, "sparse" => sparse} = managed[app]
 
-    case lock[app] do
-      {:git, ^repository, commit, opts} ->
-        pinned_git.(app, commit, opts, sparse)
+    case {opts[:git], lock[app]} do
+      {^repository, {:git, ^repository, commit, locked}} ->
+        if Keyword.take(locked, [:ref, :sparse]) == Keyword.take(opts, [:ref, :sparse]),
+          do: pinned_git.(app, commit, opts, sparse),
+          else: ["#{app}'s mix.lock entry does not match mix.exs; run mix deps.get"]
 
-      {:git, url, _commit, _opts} ->
+      {^repository, _entry} ->
+        ["#{app}'s mix.lock entry does not match mix.exs; run mix deps.get"]
+
+      {url, _entry} ->
         if same_repository.(url) == same_repository.(repository),
           do: ["#{app} names its repository as #{url}; write exactly #{repository}"],
           else: ["#{app} comes from #{url}, not #{repository}"]
-
-      nil ->
-        ["#{app} is missing from mix.lock; run mix deps.get"]
     end
 
   app, %{scm: scm} ->
@@ -99,11 +121,9 @@ stray = fn
       "#{app} loads from a local folder (#{folder.(app)}); use a Hex package or a pinned git commit"
     ]
 
-  app, %{scm: Mix.SCM.Git} ->
-    {:git, url, _commit, _opts} = lock[app]
-
-    if MapSet.member?(shared_repositories, same_repository.(url)),
-      do: ["#{app} comes from shared repository #{url} but is not listed in the registry"],
+  app, %{scm: Mix.SCM.Git, opts: opts} ->
+    if MapSet.member?(shared_repositories, same_repository.(opts[:git])),
+      do: ["#{app} comes from shared repository #{opts[:git]} but is not listed in the registry"],
       else: []
 
   _app, _dep ->
@@ -119,7 +139,8 @@ inspectable =
   for {app, []} <- provenance_problems, Map.has_key?(managed, app), into: MapSet.new(), do: app
 
 mixed_commit_problems =
-  for {repository, apps} <- Enum.group_by(inspectable, &managed[&1]["repository"]),
+  for {repository, apps} <-
+        inspectable |> Enum.filter(&lock[&1]) |> Enum.group_by(&managed[&1]["repository"]),
       commits = Enum.map(apps, &"#{&1} #{String.slice(elem(lock[&1], 2), 0, 7)}"),
       apps |> Enum.map(&elem(lock[&1], 2)) |> Enum.uniq() |> length() > 1,
       do:
