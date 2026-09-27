@@ -7,12 +7,13 @@ that failed never shows as zero or empty. Keep each page's own state machine
 
 ## Use LiveView first
 
-`start_async/3`, `handle_async/3` and `cancel_async/2` do the work. A later
-`start_async` under the same name ignores the earlier task, but a cancel does not
-recall an answer already in the mailbox, so a read that is cleared without a new
-one can still land for the owner that left. `assign_async/3` has the same gap and
-stamps no read time; use it only for a read whose owner never changes while the
-page is open.
+`start_async/3` and `handle_async/3` do the work. Do not stop a read with
+`cancel_async/2`: a task killed mid-query takes its database connection down with it
+(the pool logs "client exited" and reconnects; reproduced 2026-09-27), and a cancel
+does not recall an answer already in the mailbox. Let the read finish; its
+generation decides whether the answer lands. `assign_async/3` stamps no read time
+and has no owner; use it only for a read whose owner never changes while the page is
+open.
 
 ## The pattern
 
@@ -48,10 +49,11 @@ def handle_async({Read, _name, _generation} = name, result, socket),
   show and `start` the ones it does with the new owner. When the signed-in
   account or chosen wallet changes, `clear` or `start` every read it owned in
   the same callback, so no render shows the old owner's figures.
-- **Merging reads.** A refresh while a read runs cancels it and starts again, so
-  many refresh reasons land one answer. When reasons can arrive faster than a
-  read finishes, note them and start once from `handle_async` after the running
-  read lands, so an answer still arrives. That is the only merging.
+- **Merging reads.** A refresh while a read runs starts a new one; the running
+  read finishes and its answer is dropped, so many refresh reasons land one
+  answer. When reasons can arrive faster than a read finishes, note them and
+  start once from `handle_async` after the running read lands, so reads do not
+  pile up. That is the only merging.
 
 ## Never merged: wallet actions
 

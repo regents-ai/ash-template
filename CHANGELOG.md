@@ -152,3 +152,18 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `ash-frontend`'s async-state guide notes that `Ash.count` and `Ash.exists` raise a
   database failure where `Ash.read` returns it (reproduced on Ash 3.33.11), and how a
   page keeps its own error state for them (from Patchbay's P11 report).
+
+## 2026-09-27 — Wallet-button lines stay in place
+
+- The example wallet component's review, "from" and wrong-wallet lines are always in
+  the page and shown or hidden with `hidden`, so focus stays on a pressed button (from
+  Regents' R02). Checked in a browser: with the old lines focus left the Record button
+  when a wallet was picked; now it stays.
+
+## 2026-09-27 — Reads finish instead of being cancelled
+
+- `AshTemplateWeb.Read` no longer cancels a running read on `start` or `clear`. A task
+  stopped mid-query drops its database connection (reproduced: the pool logs "client
+  exited" and reconnects); the read's generation already drops its late answer (from
+  Patchbay's P14 report). Checked in a browser: a slow read that finishes after a
+  quicker one, or after Disconnect, does not replace what is shown.
