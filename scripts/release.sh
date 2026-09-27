@@ -3,9 +3,10 @@
 # Run it through `make release`, which runs every gate on that same tree first.
 #
 # The build context is `git archive` of HEAD's platform/ folder, so nothing
-# uncommitted, ignored or outside this repository enters the image. The
-# Dockerfile fetches every dependency at the version the lockfiles pin; the
-# shared libraries' repositories are public, so the build takes no credentials.
+# uncommitted, ignored or outside this repository enters the image. The build
+# reuses no cached layers, and the Dockerfile fetches every dependency at the
+# version the lockfiles pin; the shared libraries' repositories are public, so
+# the build takes no credentials.
 #
 # The smoke check starts the image against a throwaway PostgreSQL 17 on its own
 # Docker network and removes both afterwards. It runs the staging release
@@ -53,7 +54,7 @@ fail() {
 
 echo "==> Building $image from commit $commit"
 git archive --format=tar "$commit:platform" |
-  docker build --label "org.opencontainers.image.revision=$commit" --tag "$image" -
+  docker build --no-cache --label "org.opencontainers.image.revision=$commit" --tag "$image" -
 digest="$(docker image inspect --format '{{.Id}}' "$image")"
 
 echo "==> Starting a throwaway database"

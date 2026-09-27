@@ -161,8 +161,8 @@ make release
 
 It stops unless every change is committed, then runs `make check`; a failing
 gate stops it before anything is built. `../scripts/release.sh` then builds
-the image from `git archive` of HEAD's `platform/` folder, so nothing
-uncommitted or outside the repository enters it, and tags it
+the image from `git archive` of HEAD's `platform/` folder, reusing no cached
+layers, so nothing uncommitted or outside the repository enters it, and tags it
 `ash-template:<commit>`. The smoke check starts a throwaway PostgreSQL 17 on
 its own Docker network, answering to the staging database hostname, and runs
 the image as staging against it: `bin/bootstrap-staging`, `bin/migrate` and
