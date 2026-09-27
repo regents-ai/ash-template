@@ -26,7 +26,8 @@ Autolaunch's staking panel:
 
 ## Where sites differ from this skill
 
-Each is a backlog item for that site, not something to copy.
+Each is a backlog item for that site, not something to copy. The template follows every
+rule (`/showcase/onchain`); a site moves onto its files rather than patching its own.
 
 1. **No site follows rule 3 yet** (decided 2026-09-27). Regents and KeyFleet send from
    Privy's active wallet (`activeEthereumWallet()`) but never check it is one of the

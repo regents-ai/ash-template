@@ -166,6 +166,7 @@ defmodule AshTemplateWeb.OnchainExample do
         />
       </form>
 
+      <p :if={@review} class="onchain-example-review" aria-live="polite">{review_line(@review)}</p>
       <p :if={@signer} class="onchain-example-from">
         Sending from <code>{RegentFormat.short_address(@signer)}</code>
         on {@chain.name} · {balance(@balance)}
@@ -211,6 +212,12 @@ defmodule AshTemplateWeb.OnchainExample do
     </section>
     """
   end
+
+  # What the buttons send, read from the review itself, so a press sends what the page shows.
+  defp review_line(%{steps: []}), do: "Enter a whole number from 1 to 1,000,000 to record."
+
+  defp review_line(%{inputs: %{"amount" => amount}}),
+    do: "Record and Sign use the number #{amount}."
 
   defp title(%{name: name, review: %{inputs: %{"amount" => amount}}}),
     do: "#{Map.get(@titles, name, "Transaction")} #{amount}"

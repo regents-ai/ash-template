@@ -42,7 +42,7 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   Patchbay's expires 2026-11-17 and needs renewing before then.
 - Wallet transactions (founder "4 a 5 a 6 a", 2026-09-27): the server builds every step
   before the press and the press goes straight to the wallet. The building and checking
-  live in one shared package, `regent_chain` in elixir-utils (`b8691b1`), taken from
+  live in one shared package, `regent_chain` in elixir-utils (0.2.0 at `7a876e8`), taken from
   Autolaunch's version; `skills/onchain-buttons` shows how to use it. Autolaunch's press
   gates, Regents' browser-built staking and KeyFleet's browser-built key and fleet
   actions are on those sites' backlogs.

@@ -69,15 +69,14 @@ These are open in [hook pattern](hook-pattern.md) and `regent_chain` for every s
 page listing will find them. Mark them Gap until they are fixed.
 
 1. **Which linked wallet sends.** Decided 2026-09-27: Privy's active wallet, when it is
-   one of the account's linked wallets (rule 3). No site does this yet: Regents takes
-   the first linked wallet, the template takes the primary or else the first, and
-   Autolaunch sends from the signed-in wallet.
+   one of the account's linked wallets (rule 3). The template does this; each site
+   adopts it from there.
 2. **Smart wallets and Safe.** `RegentChain.Outcome.of/4` compares the transaction's
    sender with the signer, so a smart wallet's step reads as not this step, and a Safe
    transaction id never resolves.
-3. **No ETH for fees.** `send_step.ts` reports every failure after the send has started,
-   other than a 4001 decline, as "may have sent", including a wallet refusing for lack of
-   fees.
+3. **No ETH for fees.** `send_step.ts` recognises a refusal for lack of fees only by
+   the wallet's "insufficient funds" message; a wallet that words it otherwise reads as
+   "may have sent".
 4. **Revert words.** A reverted step says only that it did not go through, even when a
    read shows the contract is paused or full.
 5. **Replaced hashes.** A step sped up or cancelled in the wallet gets a new hash; the

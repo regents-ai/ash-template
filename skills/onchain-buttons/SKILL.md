@@ -40,8 +40,8 @@ and are not repeated here. For chain events recorded in the database, use `chain
    approval is sent; nothing waits for it to land before the next press can reach the
    wallet.
 7. **The hook reports only what the wallet said**: the hash, or why nothing was sent.
-   `handleEvent` payloads carry the component's DOM id, since every hook on the page hears
-   every `push_event`.
+   Each report names the review it was sent from, and `handleEvent` payloads carry the
+   component's DOM id, since every hook on the page hears every `push_event`.
 8. **The server checks the result at the latest block** (founder decision, 2026-09-26):
    read the receipt every 2 s, confirm the transaction's sender, target and calldata are
    the step's, and show pending, done or reverted. Stop after a set number of reads and
@@ -55,7 +55,7 @@ and are not repeated here. For chain events recorded in the database, use `chain
 
 | File | Covers |
 | --- | --- |
-| [hook-pattern.md](references/hook-pattern.md) | The hook, sending one step, chain switching, reporting, the server's check, outcomes and words, pending marks, tests |
+| [hook-pattern.md](references/hook-pattern.md) | The template's reference files, the review, which wallet sends, a press, the server's check, outcomes and words, checks |
 | [journeys.md](references/journeys.md) | Listing a page's wallet journeys: controls, the shared wallet situations, per-control cases, marks; known gaps in the pattern |
 | [sites-today.md](references/sites-today.md) | How each site does it now, where it differs from these rules, and which checkout to read |
 
@@ -63,10 +63,10 @@ and are not repeated here. For chain events recorded in the database, use `chain
 
 - Before a page with wallet buttons ships, list its journeys as
   [journeys.md](references/journeys.md) describes and mark every row.
-- Vitest with a stand-in wallet (`{request}` answering by method name). Prove that two
-  presses in a row both reach `eth_sendTransaction`, that a declined request reports
-  `wallet_declined`, and that nothing is sent on the wrong chain or account.
-- LiveView tests do not run hooks. Test the server's check with a stand-in RPC.
+- Run the page's wallet situations on a lab chain the way the template's
+  `/showcase/onchain` workshop does (see [hook pattern](references/hook-pattern.md#checks)).
+- Sites keep their own test policy; the template has no test suite. LiveView tests do not
+  run hooks.
 - A person checks real Privy and a browser-extension wallet on a lab chain before
   release; say so in the report rather than claiming it.
 - Motion on the button comes from the kit (`data-press-label`, see `animejs`).
