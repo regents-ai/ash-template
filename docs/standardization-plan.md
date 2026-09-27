@@ -160,4 +160,6 @@ shippable and checked in a browser.
 - A short script in the template compares each site's copies of shared files with
   the template's and lists the differences, so drift is visible rather than guessed.
 
+Done 2026-09-27: `make drift` (`scripts/drift.sh`) is that script.
+
 The options and recommendations behind each decision are in this file's history.

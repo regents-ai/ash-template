@@ -110,10 +110,12 @@ cat >> CHANGELOG.md <<EOF
 ## $(date -u +%F) — Renamed to $display
 
 - Renamed the Ash Template placeholder to $display (\`$snake\`, \`$module\`,
-  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself.
+  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself and
+  the template's drift report.
 EOF
 
-git rm -q -- scripts/init.sh
+# The drift report compares Regent's sites with the template; a new product has no use for it.
+git rm -q -- scripts/init.sh scripts/drift.sh
 cat <<EOF
 Renamed Ash Template to $display ($snake / $module).
 Review with: git status

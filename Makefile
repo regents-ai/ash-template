@@ -1,8 +1,9 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-required-fixes check-cli check-contracts release
+.PHONY: help check check-platform check-required-fixes check-cli check-contracts release drift
 help:
 	@echo "Run make check for every gate, or check-platform, check-required-fixes, check-cli or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
+	@echo "Run make drift to list where each site's copies of the shared files differ from the template's."
 check: check-platform check-required-fixes check-cli check-contracts
 check-platform:
 	cd platform && mix precommit && npm run typecheck
@@ -37,3 +38,7 @@ release:
 	@test -z "$$(git status --porcelain)" || { echo "Commit every change first: the release checks and builds the committed tree." >&2; exit 1; }
 	$(MAKE) check
 	scripts/release.sh
+# Lists where each site's copies of the template's shared files differ from these,
+# reading every site's main branch on GitHub. Needs `gh auth login`.
+drift:
+	scripts/drift.sh

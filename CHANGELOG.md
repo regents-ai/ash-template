@@ -195,3 +195,10 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   Phoenix's default. Checked in a browser with the gate closed: 503, the strict policy, the
   page styled, no refusals.
 - The route catalog drops `content_transition_kind`; nothing read it.
+
+## 2026-09-27 — Drift report
+
+- `make drift` (`scripts/drift.sh`) reads every site's main branch on GitHub and lists,
+  for each file the sites take from the template, whether the site's copy is the same
+  after renaming, differs (with the difference saved under `platform/_build/drift/`) or
+  is missing from the template's path. `scripts/init.sh` removes it from a new product.
