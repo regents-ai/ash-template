@@ -167,3 +167,11 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   exited" and reconnects); the read's generation already drops its late answer (from
   Patchbay's P14 report). Checked in a browser: a slow read that finishes after a
   quicker one, or after Disconnect, does not replace what is shown.
+
+## 2026-09-27 — Wallet buttons stay, and timed steps are rebuilt
+
+- `onchain-buttons`: a button stays on the page after its step is sent, the last one
+  included, so a repeat press still reaches the wallet; a step with a deadline or expiry
+  is rebuilt by the server before the limit comes (on approval, on revert and on a timer),
+  never at the press. From the review of Autolaunch's A02; the template's example already
+  keeps its buttons and has no timed step.

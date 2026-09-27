@@ -36,6 +36,10 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
   in the page and shown or hidden with `hidden`, never added with `:if`. A line appearing
   above a pressed button otherwise makes the page update replace that button, and focus
   leaves it (Regents 65b20d87).
+- A button stays on the page after its step is sent, the last step of a flow included,
+  and a further press sends that step again. Only its label or the status line changes.
+  A flow that hides its button once nothing is "next" stops a repeat press reaching the
+  wallet while the first is slow (rule 1; Autolaunch A02 review).
 
 - Whenever a person types an amount, a line beside the button says what the press sends,
   read from the review itself (founder decision, 2026-09-27: a review screen, not
@@ -76,6 +80,12 @@ OnchainSteps.put_review(socket, review)
   pushes `nil` when no wallet may act.
 - Build the review whenever the signer or a figure changes (`update/2`, the form's
   `change`, the active-wallet event), so it is on the page before anyone presses.
+- A step with a time limit in it (a Permit2 allowance expiry, a bid or swap deadline) is
+  rebuilt by the server before the limit comes: when its approval confirms, when it
+  reverts, and on a timer well inside the limit (every 10 minutes for a 15-minute
+  deadline). The page always holds a step that can still land, and a press never waits
+  for a rebuild (Autolaunch A02 review: a press after the deadline reverted, and the
+  same expired step was offered again).
 
 ## Which wallet sends
 
