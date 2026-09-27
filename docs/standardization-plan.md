@@ -52,6 +52,12 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   one wallet prompt for approve-and-send and gas paid by Regent. A research brief for the
   skill rewrite, with every reason on both sides, is in the workspace at
   `docs/handoffs/server-built-transactions-research-2026-09-27.md`.
+- Wallet journeys (founder "1 a 2 a 3 a", 2026-09-27): after listing all 87 wallet journeys by
+  user type (workspace `docs/handoffs/wallet-user-journeys-2026-09-27.md`), the standard is the
+  server building every step, one press path straight to the wallet, every outcome recovered
+  even when the page never reports back, and agent routes served from the same builder. The
+  command line's broken staking and ENS routes are added by Regents from that builder;
+  KeyFleet moves before it launches.
 
 ## Goal
 
