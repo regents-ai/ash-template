@@ -94,3 +94,12 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `onchain-buttons` now has one way to build a step: the server encodes it and pushes
   the review to the page. The browser-built example is gone; sites that still build
   steps in the browser are listed in the skill's backlog.
+
+## 2026-09-27 — One release path, checked end to end
+
+- `make release` refuses uncommitted changes, runs `make check`, builds HEAD's
+  `platform/` into an image and starts it against a throwaway PostgreSQL: the staging
+  release commands, the health endpoint, a built stylesheet and the server's database
+  connection. It prints the app commit, the shared-library commits and the image digest.
+- `make check-cli` fetches regents-cli's checker from GitHub at the commit the
+  `Makefile` pins, instead of using `regents-cli` beside this repository.
