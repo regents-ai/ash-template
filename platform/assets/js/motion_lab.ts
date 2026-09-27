@@ -21,7 +21,7 @@ import type {Hook} from "./hook_composition"
 import {LAYOUTS, ROLLS, countHook, listHook} from "./hooks/motion/moments"
 import {nope, squish} from "./hooks/motion/press"
 import {GRIDS, HEADLINES, TABS, tabsHook} from "./hooks/motion/reveals"
-import {BASE, EASE_IN_OUT, EASE_OUT, FAST, SLOW, byPointer, play, still} from "./hooks/motion/shared"
+import {BASE, CLIPPED_WORD, EASE_IN_OUT, EASE_OUT, FAST, SLOW, byPointer, play, still} from "./hooks/motion/shared"
 import {drawer, menu, sheet} from "./hooks/motion/slides"
 
 // Replay buttons dispatch this, so one press can restart every island.
@@ -552,7 +552,7 @@ export const hooks = {
   LabStamp,
   LabTabs: tabsHook(LAB_TABS),
   LabHeadline: entrance(LAB_HEADLINES, el =>
-    splitText(el.querySelector<HTMLElement>("[data-headline]")!, {words: {wrap: "clip"}, chars: true}),
+    splitText(el.querySelector<HTMLElement>("[data-headline]")!, {words: CLIPPED_WORD, chars: true}),
   ),
   LabCascade: entrance(LAB_GRIDS, el => [...el.querySelectorAll("[data-card]")]),
 }

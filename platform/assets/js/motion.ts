@@ -3,7 +3,8 @@
  * shake when the answer is no, panels that slide or pop open, and on pages the
  * server draws once, the headline rising in word by word and the cards
  * settling into place. The version of each is named in `AshTemplateWeb.Motion`
- * and every version that was tried is kept in the motion lab at /animations.
+ * and every version that was tried is kept in the template's motion lab at
+ * /animations.
  *
  * A live page draws its own parts again whenever it changes, so only what the
  * server drew once moves as the page opens; live parts move from their hooks.
@@ -14,7 +15,7 @@
 import {splitText} from "animejs"
 import {deny, nope, squish} from "./hooks/motion/press"
 import {GRIDS, HEADLINES} from "./hooks/motion/reveals"
-import {byPointer, lastInputByPointer, still, watchInput} from "./hooks/motion/shared"
+import {CLIPPED_WORD, byPointer, lastInputByPointer, still, watchInput} from "./hooks/motion/shared"
 import {backdrop, drawer, menu, sheet} from "./hooks/motion/slides"
 
 // A menu's summary is its button; other summaries open disclosures in the
@@ -89,6 +90,6 @@ function toggle(event: Event) {
 
 // The words are joined back into plain text once they have risen.
 function rise(headline: HTMLElement) {
-  const split = splitText(headline, {words: {wrap: "clip"}})
+  const split = splitText(headline, {words: CLIPPED_WORD})
   HEADLINES.rise(split).then(() => split.revert())
 }

@@ -274,6 +274,8 @@ stream DOM id as `data-layout-id`.
   Ask `still(el)`: the system setting, or a `[data-motion='reduced']` ancestor.
 - Content is visible by default. Only hide something after the script has taken over.
 - `splitText` keeps an accessible copy of the text by default; leave `accessible` on.
+- Nothing writes a style into markup. Clip rising words and digits with the kit's
+  `CLIPPED_WORD` / `CLIPPED_CHAR` (the `.split-clip` class), never `splitText`'s `wrap`.
 - Error text, costs and transaction outcomes stay visible. Never fade them out.
 
 ## Checks

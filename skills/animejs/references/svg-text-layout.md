@@ -152,6 +152,10 @@ Object form of `lines` / `words` / `chars`.
 | `wrap` | `boolean \| 'hidden' \| 'clip' \| 'visible' \| 'scroll' \| 'auto'` | none | Adds an outer `span` with that `overflow` value around each split element (`true` means `'clip'`). The classic masked slide-up reveal. |
 | `clone` | `boolean \| 'top' \| 'right' \| 'bottom' \| 'left' \| 'center'` | none | Inside each split element, renders the text twice: the original plus an absolutely positioned, `inert` duplicate offset by 100% in that direction (`true` means `'center'`, i.e. overlapping). The split element gets `position: relative`. Animate the split element by `-100%` to roll the copy into place; pair with `wrap` to mask it. |
 
+On a Regent site, clip with the kit's `CLIPPED_WORD` / `CLIPPED_CHAR` templates (the
+`.split-clip` class) instead of `wrap`: `wrap` writes a `style` attribute into the markup,
+which a strict page security policy refuses.
+
 #### HTML template `text/splittext/html-template`
 
 A string used as the wrapper for every line/word/char.

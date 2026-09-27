@@ -225,3 +225,17 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   gone, `Keyfleet.WalletSteps.Build` encodes each step, its `LinkedSigner` policy admits
   only a wallet the signed-in account links, and `KeyfleetWeb.OnchainSteps` reads the
   result at `latest` every 2 s without storing it.
+
+## 2026-09-27 — Rising words clip by class; the local server reads PORT
+
+- From Techtree's motion step (124cd0f): words and digits that rise into view sit in a
+  `.split-clip` box (`platform/assets/css/components/motion.css`) through the kit's
+  `CLIPPED_WORD` and `CLIPPED_CHAR` templates in `hooks/motion/shared.ts`, used by the
+  headline in `motion.ts`, the number roll in `moments.ts` and the lab. `splitText`'s
+  `wrap` wrote a `style` attribute into the markup, which a strict page policy refuses.
+  Checked in headless Chromium on `/about` and `/animations`: the headline rises word by
+  word and ends as plain text with no style left, digits roll inside their boxes, nothing
+  moves with reduced motion, no console errors. The `animejs` skill says to use them.
+- `config/dev.exs` takes its port from `PORT` (4000 when unset), with `check_origin`
+  following it, so the template runs beside the sites' local servers, as Techtree's does.
+- `make drift` lists `components/motion.css`, and Techtree now uses `hook_composition.ts`.

@@ -37,6 +37,7 @@ shared=(
   platform/assets/js/motion.ts
   platform/assets/js/wallet_actions/connected_wallet.ts
   platform/assets/js/wallet_actions/send_step.ts
+  platform/assets/css/components/motion.css
   scripts/release.sh
 )
 
@@ -46,7 +47,6 @@ not_used() {
   case "$1:$2" in
     techtree:platform/lib/ash_template_web/plugs/launch_gate.ex) echo "public, no sign-in: never closed" ;;
     techtree:platform/lib/ash_template_web/read.ex) echo "no page reads in the background" ;;
-    techtree:platform/assets/js/hook_composition.ts) echo "no element carries two hooks" ;;
     *) return 1 ;;
   esac
 }
