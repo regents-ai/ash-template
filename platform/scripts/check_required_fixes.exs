@@ -11,7 +11,8 @@
 # "managed" lists each shared library: its app, its one repository URL and its folder
 # there. A managed library must be a git dependency on exactly that URL and folder,
 # pinned with `ref:` to a full commit whose history is fetched. Local folders,
-# vendored copies, other URLs and unlisted libraries from a shared repository fail.
+# vendored copies, other URLs and unlisted libraries from a shared repository fail,
+# and so do libraries from one repository pinned at different commits.
 # A "git" fix must be in the pinned history of each listed app the site uses; a
 # "hex" fix sets the lowest allowed Hex version of a package. Dependencies of every
 # environment are checked, not only the one the check runs in.
@@ -117,6 +118,13 @@ provenance_problems =
 inspectable =
   for {app, []} <- provenance_problems, Map.has_key?(managed, app), into: MapSet.new(), do: app
 
+mixed_commit_problems =
+  for {repository, apps} <- Enum.group_by(inspectable, &managed[&1]["repository"]),
+      commits = Enum.map(apps, &"#{&1} #{String.slice(elem(lock[&1], 2), 0, 7)}"),
+      apps |> Enum.map(&elem(lock[&1], 2)) |> Enum.uniq() |> length() > 1,
+      do:
+        "#{repository} is pinned at more than one commit (#{Enum.join(commits, ", ")}); pin all its libraries to one commit"
+
 fix_problems =
   Enum.flat_map(fixes, fn
     %{"kind" => "git", "commit" => fix, "apps" => apps} = entry ->
@@ -142,7 +150,7 @@ fix_problems =
       end
   end)
 
-case Enum.flat_map(provenance_problems, &elem(&1, 1)) ++ fix_problems do
+case Enum.flat_map(provenance_problems, &elem(&1, 1)) ++ mixed_commit_problems ++ fix_problems do
   [] ->
     used = inspectable |> Enum.sort() |> Enum.join(", ")
 

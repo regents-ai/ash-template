@@ -18,7 +18,14 @@ commit at the top of `mix.exs`: `regent_ui` from `design-system`, `regent_privy`
 `regent_identity` from `regents`. `mix deps.get` fetches them; `mix.lock`
 records the commit. To take a newer version, push the change to that
 library's `main`, set the new commit in `mix.exs` and run
-`mix deps.update <name>`.
+`mix deps.update <name>`. Every library from one repository stays on one commit.
+
+Two shared libraries name another by a sibling folder, which does not exist in a
+git checkout, so the site pins that one itself with `override: true` at the same
+commit: `regent_identity` names `regent_privy` (see `mix.exs`), and `ens_elixir`
+names `siwa`, so a site using ENS adds
+`{:siwa, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "siwa/siwa-elixir/apps/siwa", override: true}`.
+`ens_elixir` also needs Req 0.7.
 
 `../security/required-fixes.json` lists every shared library with its one
 repository and folder, and the security fixes every Regent site must carry.
