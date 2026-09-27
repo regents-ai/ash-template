@@ -55,6 +55,7 @@ defmodule AshTemplateWeb.Router do
         live "/", ShowcaseLive, :index
         live "/preview", ShowcaseLive, :preview
         live "/privy", PrivyShowcaseLive, :index
+        live "/onchain", OnchainShowcaseLive, :index
       end
     end
   end

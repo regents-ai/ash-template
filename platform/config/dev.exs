@@ -1,6 +1,14 @@
 import Config
 config :ash_template, :local_showcase, true
 
+# The wallet-button workshop at /showcase/onchain sends to a lab chain on this
+# machine: `anvil --port 58600`.
+config :ash_template, :lab_chain, %{
+  chain_id: 31_337,
+  name: "Lab chain",
+  rpc_url: "http://127.0.0.1:58600"
+}
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

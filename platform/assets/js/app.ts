@@ -23,6 +23,7 @@ import {CopyText} from "./hooks/copy_text"
 import {HolographicCard} from "./hooks/holographic_card"
 import {MotionCount, MotionList} from "./hooks/motion/moments"
 import {MotionTabs, ShellViews} from "./hooks/motion/reveals"
+import {OnchainSteps} from "./hooks/onchain_steps"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
 
@@ -314,6 +315,7 @@ const hooks = {
   MotionCount,
   MotionList,
   MotionTabs,
+  OnchainSteps,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
   VerifiedConnections,
 }
