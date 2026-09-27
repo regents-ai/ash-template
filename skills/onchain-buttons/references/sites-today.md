@@ -7,7 +7,7 @@ the local Autolaunch, Techtree and Patchbay checkouts lag behind, so read those 
 | Site | Steps built by | Result checked by | Sends from |
 | --- | --- | --- | --- |
 | Autolaunch (`origin/main` 1b0e56c) | The server, pushed as a review | The server at `latest`, every 2 s | The signed-in wallet |
-| Regents (`main` 10c6b13) | The browser, from rendered figures (`wallet_actions/staking.ts`, `redemption.ts`) | The server, after the hook reports the hash (`observe_staking_transaction`) | Privy's selected wallet (`activeEthereumWallet()`) |
+| Regents (`main` 10c6b13) | Redeem: the server (`redemption/actions.ex`, `wallet_actions/envelope.ex`), re-encoded in the browser as a check. Staking: the browser (`wallet_actions/staking.ts`) | The server, after the hook reports the hash (`observe_staking_transaction`) | Privy's selected wallet (`activeEthereumWallet()`) |
 | KeyFleet (`main` 59d4d5f) | The browser, from the rendered order (`readKeyOrder` in `wallet_actions/buy_key.ts`) | The browser, which waits for each receipt (`confirmed` in `wallet_actions/chain_call.ts`) | Privy's selected wallet (`activeEthereumWallet()`) |
 | Patchbay | Signs x402 typed data only (`signTypedData` in `platform/assets/js/privy_bridge.jsx`) | The server, with the signature | The signed-in wallet as Privy holds it connected |
 | Techtree (`origin/main` c6c07a1) | No on-chain buttons | | |
@@ -39,9 +39,11 @@ Each is a backlog item for that site, not something to copy.
 3. **Autolaunch's bid, launch and subject-wallet hooks** use the older
    `hooks/wallet_presses.ts`, which records presses on the server; a press made before its
    review arrives is dropped.
-4. **Regents and KeyFleet build their steps in the browser** (`wallet_actions/staking.ts`,
-   `redemption.ts`, `buy_key.ts`, `fleet_action.ts`). Rule 4 has the server build them
-   and push a review, as Autolaunch does.
+4. **Regents staking and KeyFleet build their steps in the browser**
+   (`wallet_actions/staking.ts`, `buy_key.ts`, `fleet_action.ts`). Rule 4 has the server
+   build them and push a review, as Autolaunch does; Regents already has unused
+   `AshPlatform.Staking.prepare_*` actions for it. Regents redeem is built on the server
+   but re-encoded in the browser as a check, which goes too.
 5. **KeyFleet confirms in the browser** and sends the purchase from the same press once
    the approval's receipt arrives. Rule 8 has the server check the result, which makes the
    approval a step with its own button.
