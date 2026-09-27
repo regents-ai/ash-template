@@ -39,7 +39,8 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
 - A button stays on the page after its step is sent, the last step of a flow included,
   and a further press sends that step again. Only its label or the status line changes.
   A flow that hides its button once nothing is "next" stops a repeat press reaching the
-  wallet while the first is slow (rule 1; Autolaunch A02 review).
+  wallet while the first is slow (rule 1; Autolaunch A02 review). Once the server has
+  confirmed the last step, the flow may end on "Done" without a button.
 
 - Whenever a person types an amount, a line beside the button says what the press sends,
   read from the review itself (founder decision, 2026-09-27: a review screen, not
