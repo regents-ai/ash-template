@@ -22,7 +22,7 @@ cd "$root"
 commit="$(git rev-parse HEAD)"
 image="ash-template:${commit:0:12}"
 run="ash-template-smoke-$$"
-database_url="postgres://smoke:smoke@regents-staging-db.internal:5432/ash_template_smoke"
+database_url="postgres://smoke:smoke@regents-staging-db.internal/ash_template_smoke"
 
 cleanup() {
   status=$?
