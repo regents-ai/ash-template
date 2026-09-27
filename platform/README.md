@@ -127,7 +127,8 @@ Prometheus metrics are served only by `AshTemplateWeb.Metrics` on port 9091
 (`/metrics`), which `fly.toml` and `fly.staging.toml` declare under
 `[metrics]`. Fly sends public traffic only to the `[http_service]` port, so the
 metrics port is reachable from the app's private network, where Fly's scraper
-reads it, and not from the internet. Locally it listens on `127.0.0.1:9091`.
+reads it, and not from the internet. Locally it listens on loopback, on a port the
+system picks (`config/config.exs`), so sites run side by side without sharing 9091.
 `/healthz` stays public on the site's own port.
 
 ## Repository layout

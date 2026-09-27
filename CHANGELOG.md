@@ -239,3 +239,11 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `config/dev.exs` takes its port from `PORT` (4000 when unset), with `check_origin`
   following it, so the template runs beside the sites' local servers, as Techtree's does.
 - `make drift` lists `components/motion.css`, and Techtree now uses `hook_composition.ts`.
+
+## 2026-09-28 — Metrics README matches the config; KeyFleet's closed Markdown answer stays its own
+
+- `platform/README.md` said metrics listen locally on `127.0.0.1:9091`; since the free-port
+  change they listen on loopback on a port the system picks. Found by KeyFleet (a3e40ec).
+- KeyFleet's `launch_gate.ex` adds a Markdown closed answer for its `.md` routes. The
+  template serves no Markdown routes, so that clause stays a KeyFleet difference; a site
+  that serves Markdown behind the gate adds the same clause.
