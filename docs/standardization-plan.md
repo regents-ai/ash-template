@@ -59,6 +59,28 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   command line's broken staking and ENS routes are added by Regents from that builder;
   KeyFleet moves before it launches.
 
+- Template chief engineer's review (founder, 2026-09-27: "1a 2a 3 you can invent your own
+  way whatever is standard for production codebases 4a , yes and is related to security
+  fixes 5 daily sweep 6a 7a 8. delete 100% of the tests right now 9. a 10 b 11 b"):
+  1. Order: template fixes first, then bring the sites' best parts in, then send out.
+  2. The Autolaunch lane takes the keccak fix for SIWA and ENS and ships it.
+  3. Shared libraries are git dependencies pinned to one commit each in `mix.exs`,
+     recorded in `mix.lock`; the release image fetches them at that commit. This
+     replaces sibling checkouts, `release-inputs.json`, `shared-libs.lock` and vendored
+     copies in every site.
+  4. `security/required-fixes.json` lists security fixes to shared libraries; every
+     site's `make check` fails when a pin lacks one. Third-party packages are checked by
+     `mix hex.audit` in `mix precommit`.
+  5. A daily scheduled sweep reads every repository's new commits for fixes to share and
+     writes its report to the workspace's `artifacts/sweeps/`.
+  6. The five 2026-09-22 template branches are closed (kept in the workspace archive
+     `artifacts/ash-template-closed-branches-2026-09-27/`).
+  7. The template's `--ash-*` colour aliases are gone; it uses the design system's names.
+  8. The template has no automated tests.
+  9. Autolaunch's leftover launch countdown is removed.
+  10. v0.1.0 is for Regent's own sites first; a public launch comes later.
+  11. No WebMCP example tool in v0.1.0.
+
 ## Goal
 
 The template is the best example of three things: the Regent design system, the
@@ -101,7 +123,6 @@ template in the template's shape, then every site takes it from there.
 | Autolaunch | `SignedInWallet`: wallet panels read the signed-in wallet from the session on mount | The workflow skill already names it the reference; the template has no equivalent |
 | Autolaunch | Health and metrics endpoints; newer dependency versions | More complete checks; the template lags on versions |
 | KeyFleet | Page titles on every page; friendly error pages; the copy button announcing "Copied" to screen readers; `Time.ago` | Each is missing or weaker in the template |
-| KeyFleet | No test wallet in the production bundle | The template ships `__ashTemplateTestWallet` to customers |
 | Regents | Client address parsing, ENS identity, search titles, canonical host redirect, input parsers; the session authority clean-up | Each is tidier or missing in the template |
 | Patchbay | The copy-prompt control | Better than the template's copy text |
 | Techtree | Its strict content security policy | The template sets none |
