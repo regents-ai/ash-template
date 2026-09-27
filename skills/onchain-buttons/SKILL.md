@@ -53,10 +53,13 @@ and are not repeated here. For chain events recorded in the database, use `chain
 | File | Covers |
 | --- | --- |
 | [hook-pattern.md](references/hook-pattern.md) | The hook, sending one step, chain switching, reporting, the server's check, outcomes and words, pending marks, tests |
+| [journeys.md](references/journeys.md) | Listing a page's wallet journeys: controls, the shared wallet situations, per-control cases, marks; known gaps in the pattern |
 | [sites-today.md](references/sites-today.md) | How each site does it now, where it differs from these rules, and which checkout to read |
 
 ## Checks
 
+- Before a page with wallet buttons ships, list its journeys as
+  [journeys.md](references/journeys.md) describes and mark every row.
 - Vitest with a stand-in wallet (`{request}` answering by method name). Prove that two
   presses in a row both reach `eth_sendTransaction`, that a declined request reports
   `wallet_declined`, and that nothing is sent on the wrong chain or account.
