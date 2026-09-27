@@ -43,9 +43,10 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
 - Wallet transactions (founder "4 a 5 a 6 a", 2026-09-27): the server builds every step
   before the press and the press goes straight to the wallet. The building and checking
   live in one shared package, `regent_chain` in elixir-utils (0.2.0 at `7a876e8`), taken from
-  Autolaunch's version; `skills/onchain-buttons` shows how to use it. Autolaunch's press
-  gates, Regents' browser-built staking and KeyFleet's browser-built key and fleet
-  actions are on those sites' backlogs.
+  Autolaunch's version; `skills/onchain-buttons` shows how to use it. KeyFleet's `main`
+  does this for every wallet button (8f9629f); Autolaunch's remaining press gates,
+  Regents' redeem encoder and Patchbay's browser-signed payment are on branches held for
+  the founder, listed in `skills/onchain-buttons/references/sites-today.md`.
 - Server or browser (founder "1 a 2 a 3 a", 2026-09-27, after both sides were argued): the
   template teaches server-built steps only, with a review screen whenever a person types an
   amount. Regents staking and Autolaunch move onto it. The next customer-facing improvement is

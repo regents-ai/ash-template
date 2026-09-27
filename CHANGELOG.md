@@ -214,3 +214,14 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   server and is the closest site to the skill; Regents', Autolaunch's and Patchbay's held
   branches are named; two gaps in `regent_chain` recorded (no zero address in a call, no
   reader for return or log data). `chain-events` notes KeyFleet's 2 s check of sent steps.
+
+## 2026-09-27 — Standardization plan: KeyFleet's wallet buttons are on the standard
+
+- The wallet-transactions entry said KeyFleet's key and fleet actions were built in the
+  browser and sat on its backlog. KeyFleet's `main` (8f9629f) builds every step on the
+  server, so the entry now names that and points the held Autolaunch, Regents and Patchbay
+  work at `skills/onchain-buttons/references/sites-today.md`. Checked against KeyFleet's
+  checkout: the browser encoders (`buy_key.ts`, `fleet_action.ts`, `chain_call.ts`) are
+  gone, `Keyfleet.WalletSteps.Build` encodes each step, its `LinkedSigner` policy admits
+  only a wallet the signed-in account links, and `KeyfleetWeb.OnchainSteps` reads the
+  result at `latest` every 2 s without storing it.
