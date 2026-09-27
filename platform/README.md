@@ -7,8 +7,8 @@
 
 The Phoenix/Ash web application of Ash Template. It serves the public home
 page, Privy wallet sign-in, the signed-in Overview (`/app`) and Account
-(`/account`) pages, the public pages, health and metrics, and the public HTTP
-API.
+(`/account`) pages, the public pages, a health check, the public HTTP API, and
+Prometheus metrics on a private port.
 
 ## Shared dependencies
 
@@ -93,12 +93,42 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | Route | Method | Purpose |
 | --- | --- | --- |
 | `/healthz` | GET | Liveness check; plain text `ok`. |
-| `/metrics` | GET | Prometheus metrics. |
 | `/api/v1/profile`, `/api/v1/profile/sync` | GET, PATCH, POST | The signed-in person's shared profile, served by the `regent_identity` package with paired Privy proofs. |
 | `/auth/csrf`, `/auth/session`, `/auth/privy/session`, `/auth/privy/failure` | GET, POST, DELETE | Browser session start, read and end. |
 | `/openapi.json`, `/llms.txt`, `/sitemap.xml`, `/robots.txt` | GET | Discovery documents. |
 | `/`, `/docs`, `/about`, `/contact`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
 | `/app`, `/account` | GET | The signed-in shell. |
+
+## Security profiles
+
+`lib/ash_template_web/content_security_policy.ex` holds every page's content
+security policy; the router's pipelines choose one.
+
+| Profile | Pipelines | What it allows |
+| --- | --- | --- |
+| `reading` | `:public_documents` | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
+| `sign_in` | `:browser` | The baseline plus Privy wallet sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
+| `showcase` | `:local_showcase` | `sign_in` that may frame its own preview page. Local development only. |
+
+A site that loads something else (an RPC, an image host, an embedded wallet)
+adds each exact origin to the one directive in the one profile that needs it:
+`@sign_in` for anything the wallet or sign-in pages use, `@baseline` only for
+what every page loads. Never add `https:`, `*`, a whole-domain wildcard or
+`'unsafe-eval'`. After a change, load each affected page and the sign-in window
+and check the browser console for "Content Security Policy" errors.
+
+Rate limits key on the client address from `AshTemplateWeb.ClientAddress`. In
+production (`:behind_fly_proxy`, set in `config/prod.exs`) that is the one
+`Fly-Client-IP` header Fly's proxy writes, replacing anything a client sent;
+everywhere else it is the direct peer. `X-Forwarded-For` is never read. A site
+that puts another proxy in front of Fly must change this first.
+
+Prometheus metrics are served only by `AshTemplateWeb.Metrics` on port 9091
+(`/metrics`), which `fly.toml` and `fly.staging.toml` declare under
+`[metrics]`. Fly sends public traffic only to the `[http_service]` port, so the
+metrics port is reachable from the app's private network, where Fly's scraper
+reads it, and not from the internet. Locally it listens on `127.0.0.1:9091`.
+`/healthz` stays public on the site's own port.
 
 ## Repository layout
 

@@ -33,6 +33,11 @@ config :ash_template, AshTemplate.Repo,
 
 config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 300
 
+# Rate limits key on the direct peer. Production turns on Fly's client header.
+config :ash_template, :behind_fly_proxy, false
+
+config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 9091
+
 config :ash_template, :app_surfaces, true
 
 config :ash_template, :session_options,
