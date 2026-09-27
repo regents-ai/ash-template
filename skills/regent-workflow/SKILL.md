@@ -38,21 +38,22 @@ recognized assets; no fee conversion or denomination redesign is wanted.
 
 Apply the same rule in Regents, Autolaunch, Techtree and Patchbay:
 
-- Bind wallet-specific reads, displayed database data and signing authority to the
-  Privy-authenticated wallet verified by the server session. A browser extension's
-  account change must not select a new product identity or show that wallet's data.
-  On-chain buttons are never gated by this: every press reaches the wallet and
-  sends from the signed-in wallet (`onchain-buttons`). On mismatch, show a note beside the button naming both wallets (for
-  example "You're signed in as 0x1234..abcd but your wallet is on 0x9a8b..c1d2"; a short
-  address is always `0x`, the first four and the last four characters, joined by `..`).
-- A signed-in customer never sees a wallet panel ask them to connect, choose or
-  sign in again. Each panel reads the signed-in wallet from the server session when
-  it mounts (balance, positions, form) and shows it straight away, after page jumps
-  and reloads. Privy's browser selection is often empty after navigation, so never
-  wait on it: the browser wallet matters only at the press. A press sends from the
-  signed-in wallet as the tab has it connected; when it is not connected there, the
-  press opens Privy's connect step and the customer presses again. Autolaunch's
-  `AutolaunchWeb.SignedInWallet` is the reference.
+- Privy's active wallet is the only wallet that acts (founder, 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch").
+  When it is one of the signed-in account's linked wallets (the verified session's
+  `wallet_address` and `wallet_addresses`), panels show that wallet's figures and the
+  server builds its steps for it. When it is not linked, or none is active, panels stay
+  on the account's own wallet and a note beside the button names both wallets and asks
+  the person to switch (for example "Your wallet is on 0x9a8b..c1d2, which isn't linked
+  to this account. Switch to 0x1234..abcd or another of your wallets."; a short address
+  is always `0x`, the first four and the last four characters, joined by `..`). A press
+  from it sends nothing and says why. Signed out, panels show the active wallet's
+  figures and buttons ask for sign-in. `onchain-buttons` shows the pattern.
+- A signed-in customer never sees a wallet panel ask them to sign in again. Each panel
+  reads the account's wallet from the server session when it mounts (balance,
+  positions, form) and shows it straight away, after page jumps and reloads, then
+  moves to Privy's active wallet when the page reports one that is linked. Privy's
+  browser selection is often empty after navigation, so never wait on it. When no
+  wallet is active, a press opens Privy's connect step.
 - Never preserve pending transactions. Do not add browser-storage transaction
   queues, database pending-operation recovery, reload restoration, replay reports,
   recovery inboxes or resend orchestration. The wallet/blockchain owns transaction

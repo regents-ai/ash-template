@@ -21,9 +21,9 @@ this page.
 | Group | Situation |
 | --- | --- |
 | Who is pressing | Signed out |
-| | The wallet app is on another account than the signed-in wallet |
-| | The signed-in wallet is not connected in this tab |
-| | The tokens sit in a second wallet linked to the same Privy account |
+| | Privy's active wallet is not linked to the signed-in account |
+| | No wallet is active in this tab |
+| | The person switches to a second wallet linked to the same account (the figures move to it) |
 | What the wallet does | A repeat press while the wallet is open |
 | | Wrong network: switched, added, or the switch refused |
 | | Declined |
@@ -68,10 +68,10 @@ For each control that opens the wallet, list only the cases that change what hap
 These are open in [hook pattern](hook-pattern.md) and `regent_chain` for every site, so a
 page listing will find them. Mark them Gap until they are fixed.
 
-1. **Which linked wallet sends.** Rule 3 says the signed-in wallet sends, but a Privy
-   account can link several. Sites pick differently today (Regents takes the first
-   linked wallet; the template takes the primary or else the first; Autolaunch requires
-   the signed-in wallet to be one of the linked ones). Open founder decision.
+1. **Which linked wallet sends.** Decided 2026-09-27: Privy's active wallet, when it is
+   one of the account's linked wallets (rule 3). No site does this yet: Regents takes
+   the first linked wallet, the template takes the primary or else the first, and
+   Autolaunch sends from the signed-in wallet.
 2. **Smart wallets and Safe.** `RegentChain.Outcome.of/4` compares the transaction's
    sender with the signer, so a smart wallet's step reads as not this step, and a Safe
    transaction id never resolves.

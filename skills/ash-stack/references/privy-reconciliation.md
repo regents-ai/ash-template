@@ -6,11 +6,13 @@ authority are related but not interchangeable.
 
 ## Keep three state machines separate
 
-The product's active wallet is the Privy-authenticated wallet bound to the verified
-server session, not whichever account a browser extension later selects. Never
-show the newly selected extension wallet's private data or authorize its sends.
-Require switching the extension back, or explicit sign-out/sign-in as the new
-wallet. Connected or linked wallet membership alone does not authorize rebinding.
+The product's acting wallet is Privy's active wallet when the server finds it among
+the verified session's linked wallets (founder, 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch"). Then the page shows
+that wallet's data and the server builds its steps. Any other selection, including
+an extension account that is not linked, shows none of its private data and sends
+nothing; the page asks the person to switch to one of their own wallets. Linking a
+new wallet happens through Privy and a fresh verified session, never from the page's
+own report of a wallet.
 Use the shared `regent-workflow` rule: never preserve pending transactions; refresh
 website state from verified chain evidence instead of restoring transaction queues.
 

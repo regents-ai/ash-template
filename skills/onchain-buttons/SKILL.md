@@ -21,17 +21,20 @@ and are not repeated here. For chain events recorded in the database, use `chain
    (lab). So an on-chain button has no `phx-click`, is never inside a `phx-submit` form,
    and never waits for a server round trip before the wallet opens when the step is
    already on the page.
-3. **The signed-in wallet sends** (founder decision, 2026-09-26). Panels read the wallet
-   from the server session and show it at once; the press sends from that wallet as this
-   tab has it connected. When it is not connected here, the press opens Privy's connect
-   step and sends nothing. When the browser wallet is on another account, show a note
-   beside the button naming both short addresses.
+3. **Privy's active wallet sends, when it is one of the account's own** (founder decision
+   "1 a", 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch"). The hook reports the active wallet; when it is one of the
+   signed-in account's linked wallets, the panel shows its figures and the server builds
+   the steps for it. When it is not linked, or none is active, the figures stay on the
+   account's own wallet, a note beside the button names both short addresses and asks
+   the person to switch, and a press sends nothing and says why. Signed out, the active
+   wallet's figures show and the button asks for sign-in. See
+   [which wallet sends](references/hook-pattern.md#which-wallet-sends).
 4. **The server builds every step** (founder decision, 2026-09-27): it encodes the
    calldata and pushes the review to the panel before the button is pressed. The
    browser never encodes a transaction. See
    [hook pattern](references/hook-pattern.md#the-server-builds-the-steps).
 5. **Before sending**, switch the wallet to the step's chain (add it when the wallet
-   answers 4902), then check the account is the signed-in wallet and make `eth_chainId`
+   answers 4902), then check the account is the step's signer and make `eth_chainId`
    the last read before `eth_sendTransaction`.
 6. **An approval is a step of its own.** The next step's button appears as soon as the
    approval is sent; nothing waits for it to land before the next press can reach the

@@ -20,6 +20,7 @@ Ecto remains appropriate for migrations, diagnostics and justified data-layer wo
 
 Generic persistent idempotency or outbox guidance never authorizes blocking a Regent
 user-signed wallet transaction. Every distinct button press reaches the wallet.
-A wallet panel's signer is the signed-in wallet read from the server session at
-mount, never the browser's selected wallet; see the wallet rule in regent-workflow.
+A wallet panel's signer is Privy's active wallet when it is one of the signed-in
+account's linked wallets, checked on the server against the verified session; any
+other wallet only prompts a switch. See the wallet rule in regent-workflow.
 Keep the assignment’s acceptance and self-review; this skill adds no plan or reviewer.

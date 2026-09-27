@@ -22,10 +22,10 @@ persistence in each product. Extract only code with actual equivalent consumers.
 ## Wallet actions
 
 All four products use the wallet identity and transaction-state rules in
-`regent-workflow`: the server-verified Privy-authenticated wallet is authoritative.
-Extension account changes neither rebind product identity nor select another
-wallet's data. Require switching back, or explicit sign-out/sign-in with the new
-wallet, before sending. Match record and chain as well as signer.
+`regent-workflow`: Privy's active wallet acts when the server finds it among the
+signed-in account's linked wallets, and the page shows its data. Any other wallet
+shows no data of its own and sends nothing; the page asks the person to switch to
+one of their wallets. Match record and chain as well as signer.
 
 Never preserve pending transactions in browser storage or database recovery
 machinery. Do not restore/replay pending transactions on reload or build a recovery

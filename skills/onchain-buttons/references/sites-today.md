@@ -6,10 +6,10 @@ the local Autolaunch, Techtree and Patchbay checkouts lag behind, so read those 
 
 | Site | Steps built by | Result checked by | Sends from |
 | --- | --- | --- | --- |
-| Autolaunch (`origin/main` 1b0e56c) | The server, pushed as a review | The server at `latest`, every 2 s | The signed-in wallet |
+| Autolaunch (`origin/main` 1b0e56c) | The server, pushed as a review | The server at `latest`, every 2 s | The signed-in wallet only |
 | Regents (`main` 10c6b13) | Redeem: the server (`redemption/actions.ex`, `wallet_actions/envelope.ex`), re-encoded in the browser as a check. Staking: the browser (`wallet_actions/staking.ts`) | The server, after the hook reports the hash (`observe_staking_transaction`) | Privy's selected wallet (`activeEthereumWallet()`) |
 | KeyFleet (`main` 59d4d5f) | The browser, from the rendered order (`readKeyOrder` in `wallet_actions/buy_key.ts`) | The browser, which waits for each receipt (`confirmed` in `wallet_actions/chain_call.ts`) | Privy's selected wallet (`activeEthereumWallet()`) |
-| Patchbay | Signs x402 typed data only (`signTypedData` in `platform/assets/js/privy_bridge.jsx`) | The server, with the signature | The signed-in wallet as Privy holds it connected |
+| Patchbay | Signs x402 typed data only (`signTypedData` in `platform/assets/js/privy_bridge.jsx`) | The server, with the signature | The signed-in wallet only, as Privy holds it connected |
 | Techtree (`origin/main` c6c07a1) | No on-chain buttons | | |
 
 ## The closest to this skill
@@ -28,9 +28,10 @@ Autolaunch's staking panel:
 
 Each is a backlog item for that site, not something to copy.
 
-1. **Regents and KeyFleet send from Privy's selected wallet**, not the signed-in one
-   (their stake, redeem and buy hooks call `activeEthereumWallet()`). Rule 3 says the
-   signed-in wallet.
+1. **No site follows rule 3 yet** (decided 2026-09-27). Regents and KeyFleet send from
+   Privy's active wallet (`activeEthereumWallet()`) but never check it is one of the
+   account's linked wallets, and their figures do not move to it. Autolaunch and
+   Patchbay send only from the signed-in wallet. Regents is changing first.
 2. **Regents redeem asks the server for the step after the press** (`prepare_redemption`),
    so the wallet waits on a round trip, and changing the selection clears the presses
    still waiting (`clearPendingInitiators`): their reviews then arrive to no press and are

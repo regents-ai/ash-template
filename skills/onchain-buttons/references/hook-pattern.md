@@ -10,7 +10,7 @@ Ash 3.33 and Phoenix LiveView 1.2.11. `MyApp` stands for the site's own module p
 | --- | --- |
 | `assets/js/wallet_actions/send_step.ts` | Sending one step: chain switch, account check, the send, why it failed |
 | `assets/js/hooks/onchain_steps.ts` | The hook: listens for presses, reports what the wallet said |
-| `assets/js/wallet_actions/connected_wallet.ts` | Already in the template: `connectedEthereumWallet(signer)` is the signed-in wallet as this tab has it connected |
+| `assets/js/wallet_actions/connected_wallet.ts` | Already in the template: `activeEthereumWallet()` is Privy's active wallet in this tab, the only wallet that sends |
 | The LiveComponent | Renders the button, owns the words, checks the result on the chain |
 
 Register the hook in the `hooks` passed to `LiveSocket` (compose with `composeHooks` when an
@@ -38,8 +38,9 @@ element needs two). The hook element needs an `id`; LiveView skips a hook withou
 ## The server builds the steps
 
 The server encodes every step (founder decision, 2026-09-27) with `regent_chain` from
-elixir-utils (`{:regent_chain, path: "../elixir-utils/chain"}`), then pushes the review
-from the event that built it:
+elixir-utils (`{:regent_chain, git: "https://github.com/regents-ai/elixir-utils.git",
+ref: "<commit>", sparse: "chain"}`), then pushes the review from the event that built it.
+`wallet` is the wallet that sends; see [which wallet sends](#which-wallet-sends).
 
 ```elixir
 alias RegentChain.{Call, Review}
@@ -63,6 +64,44 @@ needs are known and again whenever they change, so it is on the page before the 
 is pressed. A press never asks the server for its step while the wallet waits. The
 server's check compares the sent transaction with exactly the calldata it built.
 
+## Which wallet sends
+
+Founder decision "1 a", 2026-09-27: "the Privy active wallet is the only wallet that can
+make actions, and so if the user wallet differs, make them switch". Whichever of the
+account's own linked wallets is active in Privy sends, and the panel shows that wallet's
+figures.
+
+- The hook reports Privy's active wallet to its component when it mounts and on every
+  `ash:wallet-state` event: `wallet_active` with the address, or `nil` when none is active.
+- The component checks the address against the signed-in account's linked wallets
+  (`wallet_address` and `wallet_addresses` from the verified session). When it is one of
+  them, the panel's figures and every review move to that wallet.
+- When it is not linked, or none is active, the figures stay on the account's
+  `wallet_address`, and a note beside the button names both short addresses and asks the
+  person to switch to one of their own wallets. A press sends nothing and says why.
+- Signed out, the panel shows the active wallet's figures and the button asks for sign-in.
+- A panel mounts with the session's wallet and shows it at once; it never waits on Privy.
+
+```elixir
+# Signed out: show the active wallet's figures; the button asks for sign-in.
+def handle_event("wallet_active", %{"address" => address}, %{assigns: %{current_account: nil}} = socket),
+  do: {:noreply, socket |> assign(signer: address, other_wallet: nil) |> build_review()}
+
+def handle_event("wallet_active", %{"address" => address}, socket) do
+  %{wallet_address: own, wallet_addresses: linked} = socket.assigns.current_account
+  signer = if address in [own | linked], do: address, else: own
+
+  {:noreply,
+   socket
+   |> assign(signer: signer, other_wallet: if(address in [own | linked], do: nil, else: address))
+   |> build_review()}
+end
+```
+
+Compare addresses in one case (the session and Privy both give checksummed or both
+lowercase; normalise once where the session is read). `build_review/1` is the function
+that builds and pushes the review above, now reading `socket.assigns.signer`.
+
 ## Sending one step
 
 ```ts
@@ -78,7 +117,7 @@ export type Step = {step: string; to: Address; data: Hex; value?: Hex}
 
 /** Nothing reached the wallet's send; the reason picks the words the server shows. */
 export class NothingSent extends Error {
-  constructor(readonly reason: "step_unknown" | "wallet_unavailable" | "network_mismatch") {
+  constructor(readonly reason: "step_unknown" | "wallet_unavailable" | "other_account" | "network_mismatch") {
     super(reason)
   }
 }
@@ -86,7 +125,7 @@ export class NothingSent extends Error {
 export type Failure = NothingSent["reason"] | "wallet_declined" | "send_unconfirmed"
 
 /**
- * Sends one step from the signed-in wallet. Chain and account are read again on
+ * Sends one step from Privy's active wallet, which must be the step's signer. Chain and account are read again on
  * every press, and `eth_chainId` is the last read before the send, so a wallet
  * that changes network part-way is refused before it sees the transaction.
  */
@@ -104,7 +143,7 @@ export async function sendStep(
   if ((await chainId(provider)) !== chain.chain_id) await switchChain(provider, chain)
 
   const [account] = await accounts(provider)
-  if (!account || getAddress(account) !== getAddress(signer)) throw new NothingSent("wallet_unavailable")
+  if (!account || getAddress(account) !== getAddress(signer)) throw new NothingSent("other_account")
   if ((await chainId(provider)) !== chain.chain_id) throw new NothingSent("network_mismatch")
   // Privy may have swapped the wallet during those reads; this check makes no request.
   if (wallet()?.provider !== provider) throw new NothingSent("wallet_unavailable")
@@ -178,9 +217,9 @@ function hasCode(error: unknown, code: number): boolean {
 ## The hook
 
 ```ts
-import type {Address} from "viem"
+import {getAddress, type Address} from "viem"
 
-import {connectedEthereumWallet} from "../wallet_actions/connected_wallet"
+import {activeEthereumWallet} from "../wallet_actions/connected_wallet"
 import {failure, NothingSent, sendStep, type Step, type StepChain} from "../wallet_actions/send_step"
 
 /** Who sends, on which chain, and the steps the panel's buttons name. */
@@ -194,6 +233,7 @@ type OnchainStepsHook = {
   pushEventTo(target: HTMLElement, event: string, payload: unknown): void
   review?: Review
   clicked?: (event: Event) => void
+  walletState?: () => void
 }
 
 export const OnchainSteps = {
@@ -211,10 +251,16 @@ export const OnchainSteps = {
       if (name) void press(this.el, this.review, name, push)
     }
     this.el.addEventListener("click", this.clicked)
+
+    // The server moves the panel to Privy's active wallet when it is one of the account's.
+    this.walletState = () => push("wallet_active", {address: activeEthereumWallet()?.address ?? null})
+    window.addEventListener("ash:wallet-state", this.walletState)
+    this.walletState()
   },
 
   destroyed(this: OnchainStepsHook) {
     if (this.clicked) this.el.removeEventListener("click", this.clicked)
+    if (this.walletState) window.removeEventListener("ash:wallet-state", this.walletState)
   },
 }
 
@@ -228,11 +274,13 @@ export async function press(el: HTMLElement, review: Review | undefined, name: s
 
   try {
     if (!review || !step) throw new NothingSent("step_unknown")
-    const wallet = () => connectedEthereumWallet(review.signer)
-    if (!wallet()) {
+    const wallet = activeEthereumWallet
+    const active = wallet()
+    if (!active) {
       window.dispatchEvent(new CustomEvent("ash:wallet-connect"))
       throw new NothingSent("wallet_unavailable")
     }
+    if (getAddress(active.address) !== getAddress(review.signer)) throw new NothingSent("other_account")
 
     const transaction_hash = await sendStep(review.chain, review.signer, step, wallet, () => {
       sending = true
@@ -351,7 +399,10 @@ defmodule MyAppWeb.StakePanel do
   defp failure_copy("step_unknown", _chain), do: "This page is out of date. Refresh it and press again."
 
   defp failure_copy("wallet_unavailable", _chain),
-    do: "Nothing was sent. Check the wallet you signed in with is connected and open, then press again."
+    do: "Nothing was sent. Connect one of your wallets, then press again."
+
+  defp failure_copy("other_account", _chain),
+    do: "Nothing was sent. Your wallet is on an account that isn't yours here. Switch to one of your wallets, then press again."
 
   defp failure_copy("network_mismatch", chain), do: "Your wallet is on a different network. Switch it to #{chain}, then try again. Nothing was sent."
   defp failure_copy("wallet_declined", _chain), do: "Your wallet declined this. Nothing was sent."
@@ -370,7 +421,8 @@ end
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |
 | `step_unknown` | The page holds no review with that step | "This page is out of date. Refresh it and press again." |
-| `wallet_unavailable` | The signed-in wallet is not connected here, or is on another account | "Nothing was sent. Check the wallet you signed in with is connected and open, then press again." |
+| `wallet_unavailable` | No wallet is active in Privy in this tab; the press opens Privy's connect step | "Nothing was sent. Connect one of your wallets, then press again." |
+| `other_account` | The active wallet is not the step's signer: not linked to the account, or the review for it has not arrived | "Nothing was sent. Your wallet is on an account that isn't yours here. Switch to one of your wallets, then press again." |
 | `network_mismatch` | The wallet would not move to the chain, or moved away | "Your wallet is on a different network. Switch it to Base, then try again. Nothing was sent." |
 | `wallet_declined` | The person said no in the wallet (4001) | "Your wallet declined this. Nothing was sent." |
 | `send_unconfirmed` | The wallet failed after the send began | "Your wallet may have sent this. Check your wallet activity." |
@@ -394,7 +446,7 @@ the steps are built.
 
 The same rules hold for a button that asks the wallet to sign (an x402 payment through
 `eth_signTypedData_v4`, as Patchbay does in `platform/assets/js/privy_bridge.jsx`): the
-hook's click listener, the signed-in wallet, the chain the typed data names, the
+hook's click listener, Privy's active wallet when it is one of the account's, the chain the typed data names, the
 signature reported to the server, which verifies it and does the rest. A declined
 signature is `wallet_declined`. Agents sign in with SIWA (`elixir-utils/siwa`), which is
 not a button.
@@ -405,7 +457,7 @@ not a button.
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {press, type Review} from "../js/hooks/onchain_steps"
-import {replaceConnectedEthereumWallets, type EthereumProvider} from "../js/wallet_actions/connected_wallet"
+import {replaceActiveEthereumWallet, type EthereumProvider} from "../js/wallet_actions/connected_wallet"
 
 const signer = "0x1111111111111111111111111111111111111111"
 const hash = `0x${"ab".repeat(32)}`
@@ -428,7 +480,7 @@ function wallet(answers: Record<string, unknown> = {}) {
       return answer
     }),
   }
-  replaceConnectedEthereumWallets([[signer, {provider, disconnect: () => {}}]])
+  replaceActiveEthereumWallet({address: signer, provider})
   return {provider, sends}
 }
 
@@ -495,7 +547,15 @@ describe("a press on an on-chain button", () => {
     const {provider} = wallet({eth_accounts: ["0x3333333333333333333333333333333333333333"]})
     await press(panel(), review, "approve", push)
     expect(methods(provider)).not.toContain("eth_sendTransaction")
-    expect(pushed).toEqual([["step_failed", {step: "approve", reason: "wallet_unavailable"}]])
+    expect(pushed).toEqual([["step_failed", {step: "approve", reason: "other_account"}]])
+  })
+
+  it("sends nothing while Privy's active wallet is not the step's signer", async () => {
+    const {provider} = wallet()
+    replaceActiveEthereumWallet({address: "0x3333333333333333333333333333333333333333", provider})
+    await press(panel(), review, "approve", push)
+    expect(methods(provider)).toEqual([])
+    expect(pushed).toEqual([["step_failed", {step: "approve", reason: "other_account"}]])
   })
 
   it("sends nothing when the wallet will not switch chain", async () => {
@@ -508,8 +568,8 @@ describe("a press on an on-chain button", () => {
     expect(pushed).toEqual([["step_failed", {step: "approve", reason: "network_mismatch"}]])
   })
 
-  it("opens the connect step when the signed-in wallet is not connected here", async () => {
-    replaceConnectedEthereumWallets([])
+  it("opens the connect step when no wallet is active here", async () => {
+    replaceActiveEthereumWallet(null)
     await press(panel(), review, "approve", push)
     expect(dispatched).toEqual(["ash:wallet-connect"])
     expect(pushed).toEqual([["step_failed", {step: "approve", reason: "wallet_unavailable"}]])
