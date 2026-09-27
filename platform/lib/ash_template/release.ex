@@ -24,41 +24,32 @@ defmodule AshTemplate.Release do
 
   Staging owns a disposable database, so it has no copy of the tables this
   repository reads but does not own, `regent_names.platform_human_users`. This
-  command creates a staging-only approximation of it with the shape the local
-  fixture already proves sufficient, then runs every migration into `ash_template_app`.
+  command creates a staging-only approximation of it with the local fixture's
+  shape, then runs every migration into `ash_template_app`.
 
   It refuses any database that already carries migration state or the
   regent_names schema, and it repairs nothing: recovery from a half-finished
   bootstrap is to destroy and recreate the staging database.
   """
-  def bootstrap_staging, do: bootstrap_staging_for_test([])
-
-  @doc false
-  # No deployed command reaches this: the launchers call the arity-zero entry
-  # points above, and this variant exists only so the test suite can aim the
-  # commands at a disposable database.
-  def bootstrap_staging_for_test(opts) when is_list(opts) do
-    getenv = Keyword.get(opts, :getenv, &System.get_env/1)
-
+  def bootstrap_staging do
     # The role is read before anything opens a connection, so no configuration
     # mistake can point this command at a database outside staging.
-    if getenv.(@deployment_role_variable) != @staging_role do
+    if System.get_env(@deployment_role_variable) != @staging_role do
       raise @bootstrap_role_error
     end
 
     load_app()
-    Application.put_env(@app, AshTemplate.Repo, configuration!(opts, getenv))
-    path = migrations_directory(opts)
+    Application.put_env(@app, AshTemplate.Repo, migration_config!())
 
     Ecto.Migrator.with_repo(AshTemplate.Repo, fn repo ->
       refuse_existing_state!(repo)
 
       # The fixture is the only definition of these tables' shape in the
-      # repository, and the whole test suite runs on it. Calling it keeps
-      # staging identical to that proven shape instead of copying it.
+      # repository. Calling it keeps staging identical to the local database
+      # instead of copying it.
       AshTemplate.LocalDatabaseFixture.create_shared_tables!()
 
-      repo.migrate!(path)
+      repo.migrate!(migrations_path())
     end)
   end
 
@@ -70,16 +61,10 @@ defmodule AshTemplate.Release do
   release does not carry under `applied-without-file:`. Prints `none` when both
   are empty. It applies nothing, creates nothing, and takes no migration lock.
   """
-  def pending_migrations, do: pending_migrations_for_test([])
-
-  @doc false
-  # Arity zero above for the same reason as the bootstrap: the deployed command
-  # can only ever read the database its own release configuration resolves.
-  def pending_migrations_for_test(opts) when is_list(opts) do
-    getenv = Keyword.get(opts, :getenv, &System.get_env/1)
+  def pending_migrations do
     load_app()
-    Application.put_env(@app, AshTemplate.Repo, configuration!(opts, getenv))
-    path = migrations_directory(opts)
+    Application.put_env(@app, AshTemplate.Repo, migration_config!())
+    path = migrations_path()
 
     {:ok, {pending, applied_without_file}, _started} =
       Ecto.Migrator.with_repo(AshTemplate.Repo, fn repo ->
@@ -197,14 +182,6 @@ defmodule AshTemplate.Release do
   end
 
   defp migration_source(repo), do: repo.config()[:migration_source] || "schema_migrations"
-
-  defp configuration!(opts, getenv) do
-    Keyword.get_lazy(opts, :config, fn -> migration_config!(getenv) end)
-  end
-
-  defp migrations_directory(opts) do
-    Keyword.get_lazy(opts, :migrations_path, &migrations_path/0)
-  end
 
   defp load_app do
     case Application.load(@app) do

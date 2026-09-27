@@ -34,15 +34,15 @@ defmodule AshTemplateWeb.Showcase.Utilities do
     database = config[:database] || ""
 
     if is_nil(config[:url]) and config[:hostname] in ["127.0.0.1", "localhost"] and
-         Regex.match?(~r/\Aash_template_[0-9a-f]{12}_test\z/, database) do
+         database == "ash_template_dev" do
       case Ecto.Adapters.SQL.query(AshTemplate.Repo, "SELECT current_database(), 1", [],
              timeout: 2_000
            ) do
-        {:ok, %{rows: [[name, 1]]}} -> %{database: name, result: "SELECT 1 passed", writes: 0}
+        {:ok, %{rows: [[name, 1]]}} -> %{database: name, result: "SELECT 1 succeeded", writes: 0}
         {:error, _} -> %{error: "Local database unavailable."}
       end
     else
-      %{error: "This diagnostic requires a prepared isolated local test database."}
+      %{error: "This diagnostic requires the local development database."}
     end
   catch
     :exit, _ -> %{error: "Local database process unavailable."}

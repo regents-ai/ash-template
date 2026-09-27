@@ -53,7 +53,7 @@ defmodule AshTemplateWeb.PrivySessionController do
   def create(conn, _untrusted_params) do
     with {:ok, pair} <- session_pair(conn),
          {:ok, verified} <-
-           verifier().verify(pair, Application.get_env(:ash_template, :privy, [])),
+           RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
          {:ok, account, identity_conflicts} <- establish(verified) do
       bind(conn, account, identity_conflicts)
     else
@@ -304,8 +304,6 @@ defmodule AshTemplateWeb.PrivySessionController do
   defp lifecycle_error(conn, error), do: conn |> put_status(:conflict) |> json(%{error: error})
 
   defp drop_session(conn), do: configure_session(conn, drop: true)
-
-  defp verifier, do: Application.get_env(:ash_template, :privy_verifier, RegentPrivy.Session)
 
   defp session_payload(nil),
     do: %{

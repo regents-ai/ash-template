@@ -11,8 +11,7 @@ defmodule AshTemplate.LocalDatabaseFixture do
     host = to_string(repo[:hostname])
     database = to_string(repo[:database])
 
-    if env in [:dev, :test] and host in ["127.0.0.1", "::1"] and
-         (String.ends_with?(database, "_dev") or String.ends_with?(database, "_test")) do
+    if env == :dev and host in ["127.0.0.1", "::1"] and String.ends_with?(database, "_dev") do
       :ok
     else
       raise "local human-account fixture refused unsafe database target"
@@ -24,8 +23,8 @@ defmodule AshTemplate.LocalDatabaseFixture do
   end
 
   @doc false
-  # The tables this repository reads but does not own, in the shape the test
-  # suite and the staging bootstrap run on. Every statement in the file is
+  # The tables this repository reads but does not own, in the shape local
+  # development and the staging bootstrap run on. Every statement in the file is
   # idempotent, so an already prepared database is left as it is. The file is
   # shipped inside this application's priv directory and holds only DDL written
   # in this repository, so neither the path nor the statements come from input.

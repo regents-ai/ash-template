@@ -35,9 +35,8 @@ digest, run the gate.
 | [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, and `chain-events` watching a chain and saving its events. | None |
 
 `make check` runs every component's check in turn. The platform check reads
-`REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout,
-and `MIX_TEST_PARTITION` must be set for its test database; the
-[platform README](platform/README.md#checks) explains both.
+`REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout;
+the [platform README](platform/README.md#checks) explains it.
 
 ## Start
 

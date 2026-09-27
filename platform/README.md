@@ -102,7 +102,6 @@ contracts/              The OpenAPI contract
 config/                 Compile-time and runtime configuration
 assets/                 TypeScript and CSS, built with esbuild
 priv/                   Migrations, public and legal Markdown, static assets
-test/                   ExUnit suites, including browser and budget tests
 docs/                   Local setup guides
 scripts/                Release helpers
 rel/                    Release overlays, including the migrate command
@@ -116,38 +115,21 @@ From the monorepo root, `make check-platform` runs this component's gate and
 ```sh
 mix precommit
 npm run typecheck
-npm test
 ```
 
-These need `MIX_TEST_PARTITION` set, even to an empty value, and
-`REGENT_DEPS_ROOT` when the shared dependencies live outside the sibling layout
-(see [Shared dependencies](#shared-dependencies)). For example, with the test
-database `ash_template_test`:
+These need `REGENT_DEPS_ROOT` when the shared dependencies live outside the
+sibling layout (see [Shared dependencies](#shared-dependencies)):
 
 ```sh
-MIX_TEST_PARTITION= REGENT_DEPS_ROOT=<workspace> make check
+REGENT_DEPS_ROOT=<workspace> make check
 ```
-
-The browser suite runs separately with `npm run test:browser`.
 
 `mix precommit` compiles with warnings as errors, checks unused dependency
 locks and formatting, runs Credo in strict mode and Sobelow, holds the
-compile-connected `xref` graph under its limit, runs the test suite with
-warnings as errors, and verifies the Ash codegen and route handoff are current.
-
-| Command | What it does |
-| --- | --- |
-| `npm run typecheck` | Type-checks the TypeScript assets. |
-| `npm test` | Runs the Vitest unit suite. |
-| `npm run test:browser` | Builds the assets, then runs the browser suite against a test server. |
-| `npm run test:budgets` | Enforces the asset size budgets. |
-| `mix test.external` | Runs one Docker build-context test that needs tools outside the hermetic suite. |
-
-The test database name carries whatever `MIX_TEST_PARTITION` holds, just
-before its `_test` ending. Give each test run its own value whenever more
-than one can happen on a machine: `MIX_TEST_PARTITION=_a1b` gives
-`ash_template_a1b_test`. Run `MIX_ENV=test mix ecto.create` once for a new
-value; the suite builds the schema itself on its first run.
+compile-connected `xref` graph under its limit, and verifies the Ash codegen
+and route handoff are current. `npm run typecheck` type-checks the TypeScript
+assets. The template carries no automated tests (founder decision,
+2026-09-27); check changes in a browser against the development server.
 
 ## Deployment
 

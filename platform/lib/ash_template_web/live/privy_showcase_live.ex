@@ -114,7 +114,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             </li>
             <li>
               Create your local PostgreSQL database (<code>ash_template_dev</code>
-              by default), then run <code>mix ash_template.setup_local_auth</code>. Use <code>MIX_ENV=dev</code>, not a browser-test server, for real sign-in.
+              by default), then run <code>mix ash_template.setup_local_auth</code>.
             </li>
             <li>
               Build the assets with <code>mix assets.build</code>, start <code>mix phx.server</code>, then open <code>/showcase/privy</code>.

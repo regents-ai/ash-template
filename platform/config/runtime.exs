@@ -11,12 +11,6 @@ config :ash_template, :privy,
   app_id: System.get_env("PRIVY_APP_ID"),
   verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 
-# The browser test server signs in through a deterministic test-only
-# verifier. Production can never take this branch.
-if config_env() == :test and System.get_env("ASH_TEMPLATE_BROWSER_TEST") == "1" do
-  config :ash_template, :privy, app_id: "browser-test-public-id", verification_key: nil
-end
-
 # Production must say out loud whether the product surfaces are open. Anything
 # but "on" keeps them closed, so a typo closes rather than opens.
 app_surfaces_setting =

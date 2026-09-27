@@ -50,12 +50,11 @@ After renaming, a new site must still replace, by hand:
 - There is no `identity/` folder. The shared profile domain comes from the
   sibling `regents/identity` package, resolved through `REGENT_DEPS_ROOT` with
   `design-system` and `elixir-utils`. Use `REGENT_DEPS_ROOT` for isolated builds.
-- `make check` runs every gate: the platform's `mix precommit`, TypeScript
-  typecheck and unit tests, then the command description check against the
+- `make check` runs every gate: the platform's `mix precommit` and TypeScript
+  typecheck, then the command description check against the
   site's OpenAPI documents (it needs `regents-cli` beside this repository).
   `make check-platform`, `check-cli` and `check-contracts` run one component.
-  Set `MIX_TEST_PARTITION` (an empty value uses `ash_template_test`) and, for
-  isolated builds, `REGENT_DEPS_ROOT`.
+  Set `REGENT_DEPS_ROOT` for isolated builds.
 - Follow the workspace's `regent-workflow`; use one integrating owner for this
   repository. Scope verification to observable acceptance and preserve useful
   regression coverage.

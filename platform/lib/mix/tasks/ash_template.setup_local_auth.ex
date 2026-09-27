@@ -5,7 +5,7 @@ defmodule Mix.Tasks.AshTemplate.SetupLocalAuth do
 
   @impl true
   def run(_args) do
-    unless Mix.env() in [:dev, :test], do: Mix.raise("local auth setup is dev/test only")
+    unless Mix.env() == :dev, do: Mix.raise("local auth setup is dev only")
     Mix.Task.run("app.start")
     AshTemplate.LocalDatabaseFixture.ensure_human_accounts!()
     Mix.shell().info("Local Ash Template database is ready.")

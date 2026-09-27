@@ -1,6 +1,6 @@
 # Local component workshop
 
-Open `/showcase` on a development or test server using `localhost` or `127.0.0.1`.
+Open `/showcase` on a development server using `localhost` or `127.0.0.1`.
 The production configuration omits its routes. HTTP requests and connected
 page mounts both require a loopback peer and a loopback hostname; forwarded
 headers do not grant access. Gallery styles and metadata use the same guard.
@@ -29,15 +29,14 @@ listed at `/showcase/catalog`. The catalog never reads resource records.
 separate wallet fixture in the main gallery. It includes configuration
 instructions, header Sign In/Disconnect, in-page connection controls and the
 selected wallet. Controls are disabled with an explanation when configuration is
-missing or the server uses a test verifier. No configuration values, tokens or
+missing. No configuration values, tokens or
 provider objects are displayed, and the page requests no transaction or extra
 signature.
 
-For real testing, use the configured development server and a Privy-allowed
+To sign in for real, use the configured development server and a Privy-allowed
 localhost origin with `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` set. Prepare
 the local database (`ash_template_dev`), run `mix ash_template.setup_local_auth`,
-then `mix assets.build` and `mix phx.server`. Do not use browser-test
-configuration as proof of real Privy sign-in.
+then `mix assets.build` and `mix phx.server`.
 
 ## Utility effects
 
@@ -50,33 +49,5 @@ configuration as proof of real Privy sign-in.
 - Privy verification: signs an ephemeral fixture token and calls `RegentPrivy`
   for valid, expired and incorrect-audience outcomes. No fixture token enters an
   authentication endpoint; no key or token is displayed or retained.
-- Postgres: a fixed read-only diagnostic accepts only the prepared loopback
-  test database naming convention. It refuses other database settings.
-
-## Run in an isolated worktree
-
-Give the worktree its own `MIX_TEST_PARTITION`, a unique `PORT` and, when the
-shared repositories are elsewhere, `REGENT_DEPS_ROOT`. Install locked Mix and
-npm dependencies, then run `mix assets.build`. A prepared test database can be
-created with `MIX_ENV=test mix ecto.create`.
-
-Run the disposable test server with that partition and port:
-
-```sh
-env MIX_ENV=test ASH_TEMPLATE_BROWSER_TEST=1 mix run --no-halt -e 'Ecto.Adapters.SQL.Sandbox.mode(AshTemplate.Repo, :auto)'
-```
-
-That command belongs only in the isolated test context. Use its printed URL and
-append `/showcase`.
-
-## Focused verification
-
-```sh
-mix test test/ash_template_web/showcase
-npm run typecheck
-npm test
-PORT=<port> npx playwright test --config playwright.showcase.config.ts
-```
-
-The dedicated browser configuration avoids the product suite's seeding and
-global teardown. Failures retain screenshots and traces in `test-results/`.
+- Postgres: a fixed read-only diagnostic accepts only the loopback development
+  database `ash_template_dev`. It refuses other database settings.

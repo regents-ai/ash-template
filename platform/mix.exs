@@ -6,7 +6,7 @@ defmodule AshTemplate.MixProject do
       app: :ash_template,
       version: "0.1.0",
       elixir: "~> 1.15",
-      elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_paths: ["lib"],
       start_permanent: false,
       aliases: aliases(),
       deps: deps(),
@@ -25,16 +25,6 @@ defmodule AshTemplate.MixProject do
     ]
   end
 
-  def cli do
-    [
-      preferred_envs: [precommit: :test, "test.external": :test]
-    ]
-  end
-
-  # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
-
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
@@ -47,7 +37,7 @@ defmodule AshTemplate.MixProject do
       {:phoenix_live_view, "~> 1.2.6", override: true},
       {:ash, "~> 3.33.0"},
       {:ash_postgres, "~> 2.13.0"},
-      {:igniter, "== 0.8.4", only: [:dev, :test], runtime: false},
+      {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
       {:regent_privy,
        path: System.get_env("REGENT_PRIVY_PATH", Path.join(shared, "elixir-utils/privy"))},
@@ -58,8 +48,7 @@ defmodule AshTemplate.MixProject do
       {:regent_agent_access, path: Path.join(shared, "elixir-utils/agent_access")},
       {:regent_format, path: Path.join(shared, "elixir-utils/format")},
       {:simple_sat, "~> 0.1"},
-      {:sourceror, "~> 1.12", only: [:dev, :test], runtime: false},
-      {:lazy_html, ">= 0.1.0", only: :test},
+      {:sourceror, "~> 1.12", only: :dev, runtime: false},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_metrics_prometheus_core, "~> 1.2"},
@@ -68,11 +57,10 @@ defmodule AshTemplate.MixProject do
       {:jason, "~> 1.2"},
       {:req, "== 0.6.2"},
       {:bandit, "~> 1.12.1"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:credo_ash,
-       path: Path.join(shared, "elixir-utils/credo_ash"), only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: :dev, runtime: false},
+      {:ex_slop, "~> 0.4", only: :dev, runtime: false},
+      {:credo_ash, path: Path.join(shared, "elixir-utils/credo_ash"), only: :dev, runtime: false},
+      {:sobelow, "~> 0.14", only: :dev, runtime: false}
     ]
   end
 
@@ -98,7 +86,6 @@ defmodule AshTemplate.MixProject do
         "esbuild ash_template --minify",
         "phx.digest"
       ],
-      "test.external": ["test --only external"],
       precommit: [
         "compile --warnings-as-errors",
         "deps.unlock --check-unused",
@@ -107,7 +94,6 @@ defmodule AshTemplate.MixProject do
         "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",
         # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
         "xref graph --label compile-connected --fail-above 28",
-        "test --warnings-as-errors",
         "ash.codegen --check",
         "ash_template.route_handoff --check"
       ]

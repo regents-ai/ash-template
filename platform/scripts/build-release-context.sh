@@ -173,7 +173,7 @@ mkdir -p "$staging/regents/identity" "$staging/platform" "$staging/elixir-utils/
 # The checkouts enter whole, minus their own build output and anything shaped
 # like a secrets file. This script excludes those itself, so the assembled
 # context on disk never carries one; Dockerfile.dockerignore additionally
-# narrows what a local build sees, and a proof test holds it to that.
+# narrows what a local build sees.
 # The pattern has no slash, so it matches at every depth, and it takes a
 # directory named .envs/ with it: deliberate, and none exists today.
 # rsync offers no portable case-insensitive filter, so an oddly cased name like

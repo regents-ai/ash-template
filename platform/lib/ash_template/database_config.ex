@@ -26,8 +26,6 @@ defmodule AshTemplate.DatabaseConfig do
 
   def runtime_config!(environment, getenv \\ &System.get_env/1)
 
-  def runtime_config!(:test, _getenv), do: nil
-
   def runtime_config!(:prod, getenv) do
     case deployment_role!(getenv) do
       :production ->
