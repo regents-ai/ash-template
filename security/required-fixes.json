@@ -15,6 +15,13 @@
   ],
   "fixes": [
     {
+      "id": "2026-09-27-privy-signed-in-wallet",
+      "summary": "regent_privy named the first linked wallet as the signed-in wallet; it now names the wallet Privy verified most recently.",
+      "kind": "git",
+      "commit": "7a876e8673a230e8fb2f7b6f64fe1dec5579fab8",
+      "apps": ["regent_privy"]
+    },
+    {
       "id": "2026-09-24-keccak",
       "summary": "SIWA and ENS hashed with keccak_ex 0.4.2, which gives wrong hashes; they now hash with ex_keccak.",
       "kind": "git",
