@@ -11,21 +11,16 @@ config :ash_template, :privy,
   app_id: System.get_env("PRIVY_APP_ID"),
   verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 
-# Production must say out loud whether the product surfaces are open. Anything
-# but "on" keeps them closed, so a typo closes rather than opens.
-app_surfaces_setting =
+# Production must say out loud whether the product surfaces are open, and any
+# value but "on" or "off" stops the boot.
+app_surfaces? =
   case {config_env(), System.get_env("ASH_TEMPLATE_APP_SURFACES")} do
-    {:prod, nil} ->
-      raise ~s(ASH_TEMPLATE_APP_SURFACES must be set to "on" or "off")
-
-    {_env, nil} ->
-      "on"
-
-    {_env, setting} ->
-      setting
+    {:prod, nil} -> raise ~s(ASH_TEMPLATE_APP_SURFACES must be set to "on" or "off")
+    {_env, nil} -> true
+    {_env, "on"} -> true
+    {_env, "off"} -> false
+    {_env, other} -> raise ~s(ASH_TEMPLATE_APP_SURFACES must be "on" or "off", got "#{other}")
   end
-
-app_surfaces? = app_surfaces_setting == "on"
 
 config :ash_template, :app_surfaces, app_surfaces?
 

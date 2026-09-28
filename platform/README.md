@@ -72,7 +72,7 @@ production.
 | --- | --- | --- |
 | `PRIVY_APP_ID` | For sign-in | The Privy application that browser sign-in runs against. |
 | `PRIVY_VERIFICATION_KEY` | For sign-in | Privy's ES256 verification **public** key, not the app secret: the PEM with real line breaks, for example `fly secrets set PRIVY_VERIFICATION_KEY="$(cat privy-verification-key.pem)"`. |
-| `ASH_TEMPLATE_APP_SURFACES` | Yes in production | `on` opens the signed-in pages. Anything else keeps them closed, so a typo closes rather than opens. Boot fails in production if unset. |
+| `ASH_TEMPLATE_APP_SURFACES` | Yes in production | `on` opens the signed-in pages and `off` closes them. Any other value stops the boot, and so does leaving it unset in production. Development is `on` when unset. |
 | `ASH_TEMPLATE_SHOWCASE` | Yes in production | `off` or `public`; see [Showcase](#showcase). Any other value stops the boot in production. Development takes `local`, `public` or `off` and is `local` when unset. |
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. |
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
