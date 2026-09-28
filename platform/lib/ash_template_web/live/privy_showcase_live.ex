@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.PrivyShowcaseLive do
   @moduledoc """
-  Local, executable reference for the Privy integration.
+  Executable reference for the Privy integration.
 
-  The router supplies BOTH LocalOnly and the ordinary trusted Session hook.
+  The router supplies BOTH the showcase gate and the ordinary trusted Session hook.
   Shell.account_control/1 and data-account-target use the production auth_lazy.ts
   dispatcher. PrivyShowcase only observes the existing wallet store and publishes
   its selected address; it never creates a provider, session, signature or payment.
@@ -22,6 +22,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
      |> assign(
        theme: session["theme"] || "dark",
        mode: ShowcaseLive.privy_mode(),
+       local?: AshTemplateWeb.Showcase.mode() == :local,
        wallet: nil
      ), layout: false}
   end
@@ -37,7 +38,9 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
     >
       <header class="sc-header privy-reference-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
-        <span class="sc-local">Local only · read-only wallet data</span>
+        <span class="sc-local">
+          {if @local?, do: "Local only · read-only wallet data", else: "Read-only wallet data"}
+        </span>
         <%!-- Same markup and event markers as the site header. No second auth handler. --%>
         <Shell.account_control account_control={@account_control} enabled={@mode == :configured} />
         <Shell.theme_toggle id="privy-reference-theme" theme={@theme} />

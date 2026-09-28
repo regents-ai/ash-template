@@ -20,9 +20,9 @@ defmodule AshTemplateWeb.Showcase.Sample do
 
   policies do
     # The workshop has no signed-in actor and this resource holds no data: each
-    # record lives only in the loopback-only LiveView that created it. Reaching
-    # the route is the boundary; the policy states that openly instead of
-    # skipping authorization at each call.
+    # record lives only in the workshop LiveView that created it and is gone when
+    # that page closes. The policy states that openly instead of skipping
+    # authorization at each call.
     policy action(:create) do
       authorize_if always()
     end

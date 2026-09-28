@@ -71,6 +71,7 @@ release_env=(
   --network "$run"
   --env ASH_TEMPLATE_DEPLOYMENT_ROLE=staging
   --env ASH_TEMPLATE_APP_SURFACES=on
+  --env ASH_TEMPLATE_SHOWCASE=off
 )
 
 echo "==> Creating and migrating the database with the release commands"

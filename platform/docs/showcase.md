@@ -1,9 +1,12 @@
-# Local component workshop
+# Component workshop
 
-Open `/showcase` on a development server using `localhost` or `127.0.0.1`.
-The production configuration omits its routes. HTTP requests and connected
-page mounts both require a loopback peer and a loopback hostname; forwarded
-headers do not grant access. Gallery styles and metadata use the same guard.
+The showcase setting (`ASH_TEMPLATE_SHOWCASE`, see the README's "Showcase"
+section) decides who can open `/showcase`. In development it is `local`: open it
+on a development server using `localhost` or `127.0.0.1`. HTTP requests and
+connected page mounts both require a loopback peer and a loopback hostname;
+forwarded headers do not grant access. Gallery styles and metadata use the same
+guard. On the hosted demo it is `public`, and a new site's production sets it to
+`off`, where the routes answer 404.
 
 ## What it shows
 
@@ -50,4 +53,5 @@ then `mix assets.build` and `mix phx.server`.
   for valid, expired and incorrect-audience outcomes. No fixture token enters an
   authentication endpoint; no key or token is displayed or retained.
 - Postgres: a fixed read-only diagnostic accepts only the loopback development
-  database `ash_template_dev`. It refuses other database settings.
+  database `ash_template_dev`. It refuses other database settings, and the
+  workshop shows it only in `local`.

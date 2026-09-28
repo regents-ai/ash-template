@@ -31,6 +31,25 @@ config :ash_template, :app_surfaces, app_surfaces?
 
 Logger.info("App surfaces #{if app_surfaces?, do: "enabled", else: "disabled"}")
 
+# The showcase pages, the motion lab and the build skills (AshTemplateWeb.Showcase).
+# Production must choose "public" (the hosted demo) or "off" (a new site), and any
+# other value stops the boot. Development is "local" unless told otherwise.
+showcase =
+  case {config_env(), System.get_env("ASH_TEMPLATE_SHOWCASE")} do
+    {:prod, "public"} -> :public
+    {:prod, "off"} -> :off
+    {:prod, _setting} -> raise ~s(ASH_TEMPLATE_SHOWCASE must be set to "public" or "off")
+    {_env, nil} -> :local
+    {_env, "local"} -> :local
+    {_env, "public"} -> :public
+    {_env, "off"} -> :off
+    {_env, _setting} -> raise ~s(ASH_TEMPLATE_SHOWCASE must be "local", "public" or "off")
+  end
+
+config :ash_template, :showcase, showcase
+
+Logger.info("Showcase #{showcase}")
+
 migrating? = System.get_env("ASH_TEMPLATE_RELEASE_COMMAND") == "migrate"
 
 database_config =

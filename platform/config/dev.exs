@@ -1,5 +1,4 @@
 import Config
-config :ash_template, :local_showcase, true
 
 # The wallet-button workshop at /showcase/onchain sends to a lab chain on this
 # machine: `anvil --port 58600`.

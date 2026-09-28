@@ -72,6 +72,7 @@ production.
 | `PRIVY_APP_ID` | For sign-in | The Privy application that browser sign-in runs against. |
 | `PRIVY_VERIFICATION_KEY` | For sign-in | Privy's ES256 verification **public** key, not the app secret: the PEM with real line breaks, for example `fly secrets set PRIVY_VERIFICATION_KEY="$(cat privy-verification-key.pem)"`. |
 | `ASH_TEMPLATE_APP_SURFACES` | Yes in production | `on` opens the signed-in pages. Anything else keeps them closed, so a typo closes rather than opens. Boot fails in production if unset. |
+| `ASH_TEMPLATE_SHOWCASE` | Yes in production | `off` or `public`; see [Showcase](#showcase). Any other value stops the boot in production. Development takes `local`, `public` or `off` and is `local` when unset. |
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. |
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
 | `PORT` | No | HTTP port. Defaults to `4000`. |
@@ -99,6 +100,27 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/`, `/docs`, `/about`, `/contact`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
 | `/app`, `/account` | GET | The signed-in shell. |
 
+## Showcase
+
+The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`), the
+motion lab (`/animations`) and the build skills follow one setting,
+`ASH_TEMPLATE_SHOWCASE`, which `config/runtime.exs` reads and
+`AshTemplateWeb.Showcase` enforces:
+
+| Setting | Where | What happens |
+| --- | --- | --- |
+| `local` | Development (the default when unset) | The showcase pages answer only a visitor on this machine at `localhost` or `127.0.0.1`, and are never cached or indexed. The motion lab is open. The home page links to them. |
+| `public` | The hosted demo at template.regents.sh | Every page above is public, listed in the sitemap and `/llms.txt`, and linked from the home page. |
+| `off` | A new site's production | None of them exist: each answers 404 and the home page does not link to them. |
+
+Production must set it to `off` or `public`; `fly.toml` leaves it out, so each
+deployment says which it is with `fly secrets set ASH_TEMPLATE_SHOWCASE=off` (or
+`public`). A new site built from this template chooses `off`.
+
+The wallet lab at `/showcase/onchain` sends to a lab chain on this machine, so it
+exists only in `local`, and only for a visitor on this machine.
+[docs/showcase.md](docs/showcase.md) describes the pages.
+
 ## Security profiles
 
 `lib/ash_template_web/content_security_policy.ex` holds every page's content
@@ -107,8 +129,8 @@ security policy; the router's pipelines choose one.
 | Profile | Pipelines | What it allows |
 | --- | --- | --- |
 | `reading` | `:public_documents` | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
-| `sign_in` | `:browser` | The baseline plus Privy wallet sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
-| `showcase` | `:local_showcase` | `sign_in` that may frame its own preview page. Local development only. |
+| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy wallet sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
+| `showcase` | `:framed_preview` | `sign_in` that may frame its own preview page, for `/showcase` and `/showcase/preview`. |
 
 A site that loads something else (an RPC, an image host, an embedded wallet)
 adds each exact origin to the one directive in the one profile that needs it:
@@ -173,7 +195,7 @@ Deploying runs `/app/bin/migrate` as its release command, so a deploy writes
 database migrations. Every deployment names its venue in
 `ASH_TEMPLATE_DEPLOYMENT_ROLE`, and each role admits only its own database
 hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
-`PHX_HOST` and a 64-byte `SECRET_KEY_BASE` are set.
+`ASH_TEMPLATE_SHOWCASE`, `PHX_HOST` and a 64-byte `SECRET_KEY_BASE` are set.
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything.
 

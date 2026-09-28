@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   `frame-src` (Privy's Telegram script is served from `auth.privy.io`; found on
   Regents' live sign-in pages, 2026-09-27).
 
-  `showcase/0` is `sign_in/0` for the local showcase, which frames its own
+  `showcase/0` is `sign_in/0` for the showcase catalog, which frames its own
   preview page.
 
   A site that loads anything else adds each origin to the one directive and the
@@ -78,7 +78,7 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   @doc "The baseline plus Privy wallet sign-in, for pages that can sign someone in."
   def sign_in, do: @baseline |> add(@sign_in) |> render()
 
-  @doc "Sign-in plus framing its own pages, for the local showcase's preview."
+  @doc "Sign-in plus framing its own pages, for the showcase catalog's preview."
   def showcase do
     @baseline
     |> add(@sign_in)

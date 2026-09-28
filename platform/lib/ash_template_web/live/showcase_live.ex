@@ -1,5 +1,5 @@
 defmodule AshTemplateWeb.ShowcaseLive do
-  @moduledoc "Loopback-only component workshop. Demo state lives in this LiveView."
+  @moduledoc "The component workshop. Demo state lives in this LiveView."
   use AshTemplateWeb, :live_view
   alias AshTemplateWeb.Read
   alias AshTemplateWeb.Showcase.{Catalog, Sample, Utilities}
@@ -21,6 +21,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase"))
      |> assign(
        privy_mode: privy_mode(),
+       local?: AshTemplateWeb.Showcase.mode() == :local,
        theme: "dark",
        catalog: Catalog.snapshot(),
        capabilities: capability_samples(),
@@ -77,7 +78,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
     <S.frame id="showcase" phx-hook="Showcase" class="sc">
       <header class="sc-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
-        <span class="sc-local">Local only</span>
+        <span :if={@local?} class="sc-local">Local only</span>
         <a href="/showcase/catalog" class="sc-api">Agent catalog ↗</a>
         <a href="/showcase/privy" class="sc-api">Privy reference ↗</a>
       </header>
@@ -664,7 +665,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                       Privy: valid fixture token
                     </option><option value="privy_expired">Privy: expired fixture token</option><option value="privy_audience">
                       Privy: wrong audience
-                    </option></select><P.button type="submit">Run locally</P.button>
+                    </option></select><P.button type="submit">Run</P.button>
                   </form><pre id="utility-result" role="status">{utility_output(@result)}</pre><P.copy_button
                     :if={utility_output(@result)}
                     id="utility-result-copy"
@@ -683,7 +684,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   </P.disclosure>
                 </S.panel>
               </div>
-              <div class="sc-example rg-feature">
+              <div :if={@local?} class="sc-example rg-feature">
                 <S.panel class="sc-card">
                   <h3>Postgres <small>Read only</small></h3><P.button
                     variant="secondary"

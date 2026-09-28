@@ -42,36 +42,71 @@ defmodule AshTemplateWeb.Router do
     AshTemplateWeb.PrivySessionController.enforce_authority(conn)
   end
 
-  if Application.compile_env(:ash_template, :local_showcase, false) do
-    pipeline :local_showcase do
-      plug AshTemplateWeb.Showcase.LocalOnly
-      plug :accepts, ["html", "json"]
-      plug :fetch_session
-      plug :enforce_session_authority
-      plug :fetch_live_flash
-      plug AshTemplateWeb.Plugs.Theme
-      plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
-      plug :protect_from_forgery
+  # The showcase setting guards every page below (AshTemplateWeb.Showcase).
+  pipeline :showcase do
+    plug AshTemplateWeb.Showcase, :pages
+  end
 
-      # The showcase includes the sign-in window and frames its own preview.
-      plug :put_secure_browser_headers, %{
-        "content-security-policy" => ContentSecurityPolicy.showcase()
-      }
+  pipeline :wallet_lab do
+    plug AshTemplateWeb.Showcase, :lab
+  end
+
+  pipeline :motion_lab do
+    plug AshTemplateWeb.Showcase, :motion_lab
+  end
+
+  pipeline :showcase_browser do
+    plug :accepts, ["html", "json"]
+    plug :fetch_session
+    plug :enforce_session_authority
+    plug :fetch_live_flash
+    plug AshTemplateWeb.Plugs.Theme
+    plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
+    plug :protect_from_forgery
+
+    # These pages can start wallet sign-in.
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => ContentSecurityPolicy.sign_in()
+    }
+  end
+
+  # The catalog also frames its own preview, so its policy replaces the one above.
+  pipeline :framed_preview do
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => ContentSecurityPolicy.showcase()
+    }
+  end
+
+  scope "/showcase", AshTemplateWeb do
+    pipe_through [:showcase, :showcase_browser, :framed_preview]
+    get "/catalog", Showcase.CatalogController, :show
+    get "/style.css", Showcase.CatalogController, :style
+
+    live_session :showcase_catalog,
+      session: {AshTemplateWeb.Live.Session, :render_context, []},
+      on_mount: [{AshTemplateWeb.Showcase, :pages}, {AshTemplateWeb.Live.Session, :load_human}] do
+      live "/", ShowcaseLive, :index
+      live "/preview", ShowcaseLive, :preview
     end
+  end
 
-    scope "/showcase", AshTemplateWeb do
-      pipe_through :local_showcase
-      get "/catalog", Showcase.CatalogController, :show
-      get "/style.css", Showcase.CatalogController, :style
+  scope "/showcase", AshTemplateWeb do
+    pipe_through [:showcase, :showcase_browser]
 
-      live_session :local_showcase,
-        session: {AshTemplateWeb.Live.Session, :render_context, []},
-        on_mount: [AshTemplateWeb.Showcase.LocalOnly, {AshTemplateWeb.Live.Session, :load_human}] do
-        live "/", ShowcaseLive, :index
-        live "/preview", ShowcaseLive, :preview
-        live "/privy", PrivyShowcaseLive, :index
-        live "/onchain", OnchainShowcaseLive, :index
-      end
+    live_session :showcase,
+      session: {AshTemplateWeb.Live.Session, :render_context, []},
+      on_mount: [{AshTemplateWeb.Showcase, :pages}, {AshTemplateWeb.Live.Session, :load_human}] do
+      live "/privy", PrivyShowcaseLive, :index
+    end
+  end
+
+  scope "/showcase", AshTemplateWeb do
+    pipe_through [:wallet_lab, :showcase_browser]
+
+    live_session :wallet_lab,
+      session: {AshTemplateWeb.Live.Session, :render_context, []},
+      on_mount: [{AshTemplateWeb.Showcase, :lab}, {AshTemplateWeb.Live.Session, :load_human}] do
+      live "/onchain", OnchainShowcaseLive, :index
     end
   end
 
@@ -118,9 +153,14 @@ defmodule AshTemplateWeb.Router do
       live "/app", ShellLive, :app
       live "/account", ShellLive, :account
     end
+  end
 
-    # The motion lab: public once the site opens, and linked from nowhere.
-    live_session :motion_lab, on_mount: [AshTemplateWeb.Live.LaunchGateHook] do
+  # The motion lab: public once the site opens, unless the showcase is off.
+  scope "/", AshTemplateWeb do
+    pipe_through [:motion_lab, :browser]
+
+    live_session :motion_lab,
+      on_mount: [{AshTemplateWeb.Showcase, :motion_lab}, AshTemplateWeb.Live.LaunchGateHook] do
       live "/animations", AnimationsLive, :index
     end
   end
