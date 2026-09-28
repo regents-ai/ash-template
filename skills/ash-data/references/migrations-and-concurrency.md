@@ -28,6 +28,25 @@ every table in raw SQL with the repo's schema:
 `execute("UPDATE \"#{MyApp.Repo.default_prefix()}\".assist_runs SET ...")`. `prefix()`
 inside a migration is `nil` under a plain `mix ecto.migrate`, so it is not a substitute.
 
+## Protected production tables
+
+Since 28 September 2026 the shared production database keeps a founder list of
+protected tables: accounts and identity, money, what people wrote or uploaded, and
+records that stop a bot sending twice. The list includes the shared
+`regent_identity.profiles` and `regent_names.platform_human_users`, which the template
+and the sites read. The list lives in the database as `regent_guard.protected_tables`.
+On a listed table:
+
+- `TRUNCATE` is refused;
+- `DELETE` is refused, except on the few tables where a person removing their own row
+  is a site feature (`rows_deletable`);
+- a plain `DROP TABLE` fails, because a guard view depends on the table.
+
+Adding or dropping columns still works. A migration or release step that empties,
+deletes from or drops a listed table fails in production even when it ran locally.
+Plan it as a new table or column, not a rewrite through a delete, and ask the founder
+first. Only Sean can lift the lock.
+
 ## Snapshots are generator state
 
 Commit snapshots with their migrations where the project does so.
