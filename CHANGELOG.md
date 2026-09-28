@@ -354,3 +354,28 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - Pages the server draws once keep their cascade and alert shake in `motion.ts`.
 - Checked in a headless browser with and without reduced motion; nothing moves when
   reduced motion is on.
+
+## 2026-09-28 — Public demo at template.regents.sh: showcase setting, wallet page, build skills
+
+- One setting, `ASH_TEMPLATE_SHOWCASE`, replaces the compile-time local showcase switch
+  and its loopback plug. `local` (development's default) is today's behaviour; `public`
+  is the hosted demo; `off` is a new site's production, where the showcase, wallet,
+  motion lab and skills addresses answer 404 and the home page does not link to them.
+  Production must set `public` or `off`, and any other value stops the boot. The wallet
+  lab at `/showcase/onchain` stays local only.
+- `/showcase/wallet` runs the reference wallet buttons on a real account with Privy's
+  active wallet, on Base Sepolia (`:wallet_chain`), and says a press needs a little
+  Base Sepolia test ETH. Every press reaches the wallet.
+- `AccessContext.linked_wallets/1` (Phase 1 item 22): the signed-in account's own
+  wallets, lowercase and each once, or `nil` signed out. The wallet page and the
+  `onchain-buttons` skill use it.
+- Build skills (Phase 1 item 37): ten skills from `skills/`, read when the app compiles,
+  at `/.well-known/agent-skills/index.json` in the Agent Skills Discovery v0.2.0 format
+  (a zip per skill with its sha256), each file on its own beside it, the agent guide at
+  `/skill.md` and a page for people at `/skills`. `regent-workflow`, `regent-notion` and
+  `checkpoint` are never served.
+- When public, the sitemap and `/llms.txt` list the showcase pages, the motion lab and
+  the skills; the home page links to them unless the setting is `off`.
+- The image builds from the repository root (only `platform/` and `skills/` enter it);
+  deploy with `fly deploy . --config platform/fly.toml`. `make release` builds from
+  `git archive` of both folders and checks the skills index.
