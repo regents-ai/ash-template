@@ -20,7 +20,9 @@ from the current task; this pack supplies Ash-specific judgment, not a delivery 
 For uncertain APIs, use the app's actual Mix root, lockfile and installed dependency
 usage rules. [Documentation lookup](references/docs-workflow.md) covers version
 mismatches; the [inventory helper](scripts/inventory.py) optionally locates projects
-without executing them. Do not turn this into a whole-repository scan before an edit.
+without executing them. Before an edit, open the files the change touches, their callers
+and the nearest existing example of the same pattern in the site, even when the request
+names none of them; a whole-repository scan is not needed.
 
 In Regent, [integration guidance](references/regent-integration.md) resolves shared
 libraries, claims and wallet rules. For Privy bridge/session changes, use

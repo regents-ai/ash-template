@@ -31,10 +31,16 @@ HTTP form was actually implemented and tested.
 
 **Consistency:** Follow existing tokens, light/dark treatment, icon system, component
 primitives, and content width. Do not add a UI library or change Tailwind versions for
-a local polish task. Prefer one memorable, restrained visual idea over generic
-AI-generated dashboard decoration.
+a local polish task. One restrained visual idea per page. Do not add: gradient washes or
+blurred glass panels, pill-shaped buttons, cards nested in cards, an icon or emoji beside
+every heading, numbered 01/02/03 section labels, italic accent words in headlines, a
+cream or off-white page background, decorative stats rows, or a decorative gradient in
+place of a real image. The tokens' flat square and cut skins, ruled frames and the Geist
+Pixel/Sans pairing are the look.
 
 **Browser proof:** Inspect the changed route at a narrow mobile width and a normal
 desktop width, with long text and realistic records. Test the actual primary action,
 error handling, and keyboard navigation. Screenshots document appearance; they do not
-by themselves prove interaction or server authorization.
+by themselves prove interaction or server authorization. Read each screenshot yourself
+before reporting: clipped or overlapping text, a control past the edge, a missing focus
+outline, spacing that differs from the neighbouring page. Name what you compared.
