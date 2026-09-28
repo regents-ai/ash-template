@@ -33,9 +33,39 @@ curl --fail-with-body '{{origin}}/api/v1/profile' \
 
 A successful response contains a `profile` object with the profile id, display name, the linked wallets and the selected wallet. Missing or invalid credentials return 401. A profile that has not been created yet returns 404; call `POST /api/v1/profile/sync` first. An invalid update returns 422. A service that is not configured for sign-in returns 503. Profile responses are never cached.
 
+## Errors
+
+Every JSON error has one shape:
+
+```json
+{"error": {"code": "not_found", "message": "Not Found", "hint": "See {{origin}}/docs and {{origin}}/openapi.json for supported requests."}}
+```
+
+`code` is stable and meant for programs, `message` says what went wrong and `hint` says what to do next. Profile answers carry the `code` alone, for example `authentication_required`, `profile_not_created` or `invalid_profile_update`. Branch on the status and the `code`, never on the wording of `message`.
+
+An unknown address under `/api` answers JSON 404 whatever the `Accept` header says. An unknown page address answers 404 as HTML, or as Markdown when you ask for `text/markdown`. The [OpenAPI JSON specification]({{origin}}/openapi.json) lists every status each operation can return.
+
+## Rate limits
+
+Each client address has 120 requests per 60 seconds, shared by `/healthz` and `/api/v1`. Every answer says where you stand:
+
+```http
+RateLimit-Policy: "default";q=120;w=60
+RateLimit: "default";r=119;t=42
+```
+
+`q` is the number of requests allowed in a window of `w` seconds, `r` is how many remain and `t` is the number of seconds until the window resets. Past the limit the answer is `429` with the code `too_many_requests` and a `Retry-After` header in seconds; wait that long, then send the request again.
+
+## Versioning and deprecation
+
+- The API version is in the path. Everything under `/api/v1` stays compatible: new endpoints, new response fields and new optional inputs can appear at any time, so ignore fields you do not recognise.
+- A breaking change, such as removing or renaming a field, endpoint or error code, changing a type or making an input required, arrives under a new major path such as `/api/v2`, with a new major `info.version` in the [OpenAPI JSON specification]({{origin}}/openapi.json).
+- Before an endpoint goes away, its answers carry a `Deprecation` header (RFC 9745) with the date it was deprecated and a `Sunset` header (RFC 8594) with the date it stops answering, at least 90 days later. The OpenAPI specification marks it `deprecated` and this page lists it.
+- The current version is `info.version` in the OpenAPI specification.
+
 ## Contracts
 
-The [OpenAPI JSON specification]({{origin}}/openapi.json) describes the health check and the profile API above, including their authentication requirements. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) is the full served contract, including the browser session endpoints the site itself uses.
+The [OpenAPI JSON specification]({{origin}}/openapi.json) describes the health check and the profile API above, including their authentication requirements. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) is the full served contract, including the browser session endpoints the site itself uses. The [API catalog]({{origin}}/.well-known/api-catalog) (RFC 9727) points to the OpenAPI specification and this page, and [security.txt]({{origin}}/.well-known/security.txt) names where to report a vulnerability.
 
 Public documentation does not authorize a payment, signature, credential change or other change to your account.
 

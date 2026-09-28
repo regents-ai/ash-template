@@ -15,6 +15,7 @@ paths:
         "403": {$ref: "#/components/responses/ProfileForbidden"}
         "404": {$ref: "#/components/responses/ProfileNotCreated"}
         "503": {$ref: "#/components/responses/ProfileUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
     patch:
       operationId: updateMyProfile
       security: [{privyAccessToken: [], privyIdentityToken: []}]
@@ -35,6 +36,7 @@ paths:
         "415": {$ref: "#/components/responses/ProfileJsonRequired"}
         "422": {$ref: "#/components/responses/ProfileInvalidUpdate"}
         "503": {$ref: "#/components/responses/ProfileUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/profile/sync:
     post:
       operationId: syncMyProfile
@@ -47,6 +49,7 @@ paths:
         "403": {$ref: "#/components/responses/ProfileForbidden"}
         "409": {$ref: "#/components/responses/ProfileEvidenceConflict"}
         "503": {$ref: "#/components/responses/ProfileUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
   /auth/csrf:
     get:
       operationId: getBrowserCsrf
@@ -139,7 +142,29 @@ components:
     privyIdentityToken: {type: apiKey, in: header, name: privy-id-token}
     cookieSession: {type: apiKey, in: cookie, name: _ash_template_key}
     csrfToken: {type: apiKey, in: header, name: x-csrf-token}
+  headers:
+    RateLimitPolicy:
+      description: The budget this request counted against, as "policy";q=requests;w=window seconds
+      schema: {type: string}
+    RateLimit:
+      description: What is left of that budget, as "policy";r=remaining;t=seconds until the window resets
+      schema: {type: string}
+    RetryAfter:
+      description: Seconds to wait before the window resets
+      schema: {type: integer, minimum: 1}
   responses:
+    TooManyRequests:
+      description: Too many requests from this client address in the current window
+      headers:
+        RateLimit-Policy: {$ref: "#/components/headers/RateLimitPolicy"}
+        RateLimit: {$ref: "#/components/headers/RateLimit"}
+        Retry-After: {$ref: "#/components/headers/RetryAfter"}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            tooManyRequests:
+              value: {error: {code: too_many_requests, message: Too Many Requests, hint: "Wait the number of seconds in Retry-After, then send the request again."}}
     Session:
       description: Current browser session
       content:
@@ -322,6 +347,19 @@ components:
             avatar_src:
               type: [string, "null"]
               pattern: "^data:image/svg\\+xml;base64,"
+    RecoveryError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, hint]
+          properties:
+            code: {type: string}
+            message: {type: string}
+            hint: {type: string}
     Error:
       type: object
       additionalProperties: false

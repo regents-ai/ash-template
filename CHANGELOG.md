@@ -270,3 +270,30 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `.credo.exs` no longer excludes `live/shell_live.ex` from three complexity checks; the
   shell passes them (Credo strict, no issues). Found by KeyFleet, whose split shell no
   longer needed them.
+
+## 2026-09-28 — A new site scores high on agent readiness from its first deploy
+
+- Every `/healthz` and `/api/v1` answer carries the IETF `RateLimit-Policy` and `RateLimit`
+  headers for one budget per client address (120 requests a minute); past it the answer
+  is 429 with `Retry-After`. The plug is `RegentAgentAccess.RateLimit` in elixir-utils
+  0.2.0 (pinned at 28f6ebc), with Patchbay's header format and Regents' budget-returning
+  limiter, which `RequestRateLimiter` now is too.
+- JSON errors have one shape, Autolaunch's `{"error": {"code", "message", "hint"}}`, from
+  the same elixir-utils release. `openapi.json` gives every error response that schema,
+  the rate-limit headers and a 429, plus a `default` answer; the YAML contract declares the
+  429 on the profile operations.
+- `/docs` gains Errors, Rate limits, and Versioning and deprecation sections (`/api/v1`
+  stays compatible; a breaking change arrives under a new major path after `Deprecation`
+  and `Sunset` notice of at least 90 days). `llms.txt` and the OpenAPI `externalDocs`
+  point to them.
+- The sitemap gives each page a `lastmod` (the release time). New
+  `/.well-known/security.txt` (RFC 9116, expiring a year after the release) and
+  `/.well-known/api-catalog` (RFC 9727). `llms.txt`, `robots.txt`, `openapi.json` and
+  both new files carry an ETag and a five-minute public cache, as KeyFleet's agent
+  files do.
+- The site type is a site setting beside the site name in `PublicDocuments`
+  (`business`; a product site sets `app`).
+- `make readiness` starts the local server on a free port with the error debugger off
+  and checks all of the above; `make drift` runs it, and lists the script as a shared
+  file. The WebMCP item of the work order waits on the founder, so nothing here checks
+  browser tools.

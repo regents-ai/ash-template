@@ -38,6 +38,7 @@ shared=(
   platform/assets/js/wallet_actions/connected_wallet.ts
   platform/assets/js/wallet_actions/send_step.ts
   platform/assets/css/components/motion.css
+  scripts/readiness.sh
   scripts/release.sh
 )
 

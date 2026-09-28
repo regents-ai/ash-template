@@ -18,6 +18,8 @@
 - `GET /healthz`: public plain-text health response, `ok`. No API key or wallet required.
 - `GET /api/v1/profile`, `PATCH /api/v1/profile`, `POST /api/v1/profile/sync`: the signed-in person's own profile. Every request carries both a Privy access bearer token and a `Privy-Id-Token` header. Missing or invalid credentials return 401; a profile that has not been created yet returns 404 until `POST /api/v1/profile/sync` creates it.
 - [YAML contract]({{origin}}/api-contract.openapiv3.yaml): the full served contract, including the browser session endpoints the site itself uses.
+- Errors are JSON `{"error": {"code", "message", "hint"}}`. Every `/healthz` and `/api/v1` answer carries `RateLimit-Policy` and `RateLimit` headers; past the limit the answer is 429 with `Retry-After`. See [errors, rate limits and the versioning and deprecation policy]({{origin}}/docs): `/api/v1` stays compatible, and a breaking change arrives under a new major path after `Deprecation` and `Sunset` notice.
+- [API catalog]({{origin}}/.well-known/api-catalog) and [security.txt]({{origin}}/.well-known/security.txt).
 
 Ash Template does not offer a hosted MCP endpoint or browser tool registry. A page address is not proof of a browser tool.
 

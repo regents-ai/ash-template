@@ -9,7 +9,12 @@ defmodule AshTemplateWeb.PublicDocuments do
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /docs /about /contact /privacy /terms)
+  # Site settings: the name; the type agent-readiness readers take as their lens,
+  # `business` for a company site or `app` for a product people use; and where
+  # security reports go, as published in security.txt.
   @site_name "Ash Template"
+  @site_type "business"
+  @security_contact "mailto:security@example.com"
   @description "Ash Template: sign in with a wallet, manage your account and read the developer documentation."
 
   # The browser-tab title and search description of every page, kept in one
@@ -36,6 +41,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/showcase/privy" => {"Privy integration", "The Ash Template sign-in reference page."},
     "/showcase/onchain" => {"Wallet buttons", "The Ash Template wallet-button workshop."}
   }
+  # The public documents change only with a release, so the release time is when
+  # each last changed.
+  @released_at DateTime.utc_now() |> DateTime.truncate(:second)
   @sanitize [
     tags: ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote),
     tag_attributes: %{"a" => ["href"]},
@@ -87,7 +95,8 @@ defmodule AshTemplateWeb.PublicDocuments do
       description: description,
       canonical: url(path),
       image: url("/mark.png"),
-      markdown?: path in @documents
+      markdown?: path in @documents,
+      site_type: @site_type
     }
   end
 
@@ -98,17 +107,20 @@ defmodule AshTemplateWeb.PublicDocuments do
     |> Map.put("servers", [%{"url" => url("")}])
     |> Map.put("externalDocs", %{
       "url" => url("/docs"),
-      "description" => "Developer documentation"
+      "description" =>
+        "Developer documentation: errors, rate limits, and the versioning and deprecation policy"
     })
     |> put_in(["info", "contact", "url"], url("/contact"))
     |> put_in(["info", "termsOfService"], url("/terms"))
   end
 
   def sitemap do
+    lastmod = DateTime.to_iso8601(@released_at)
+
     locations =
       Enum.map_join(@documents, "\n", fn path ->
         location = url(path) |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
-        "  <url><loc>#{location}</loc></url>"
+        "  <url><loc>#{location}</loc><lastmod>#{lastmod}</lastmod></url>"
       end)
 
     """
@@ -117,6 +129,30 @@ defmodule AshTemplateWeb.PublicDocuments do
     #{locations}
     </urlset>
     """
+  end
+
+  @doc "The RFC 9116 security contact file; it expires a year after the release."
+  def security_txt do
+    """
+    Contact: #{@security_contact}
+    Expires: #{@released_at |> DateTime.shift(year: 1) |> DateTime.to_iso8601()}
+    Preferred-Languages: en
+    Canonical: #{url("/.well-known/security.txt")}
+    Policy: #{url("/contact")}
+    """
+  end
+
+  @doc "The RFC 9727 API catalog: a linkset naming the API, its description and its documentation."
+  def api_catalog do
+    %{
+      "linkset" => [
+        %{
+          "anchor" => url("/api/v1"),
+          "service-desc" => [%{"href" => url("/openapi.json"), "type" => "application/json"}],
+          "service-doc" => [%{"href" => url("/docs"), "type" => "text/html"}]
+        }
+      ]
+    }
   end
 
   def structured_data do
