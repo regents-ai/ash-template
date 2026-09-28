@@ -427,3 +427,26 @@ Operations
 - New skill notes: how to add an operator action; page reads, counts that fail
   safely, notify after commit, insert once, keyset pages.
 - `make drift` also compares the access, session, actor and repo files with each site.
+
+## 2026-09-28 — Theme, chain reads and guides
+
+Pages
+- Until someone picks a theme, pages follow their device: dark, or light when the
+  device asks for light. A theme chosen on the site always wins, and the homepage
+  stays dark.
+- The sign-in dialog shows the site's own logo.
+
+Security
+- Mint 1.11.0 is required on every site (three advisories).
+- The server reads each chain through its own node, set by
+  `ASH_TEMPLATE_CHAIN_NODE_URL` in production, never through the address handed to
+  the visitor's wallet.
+
+Operations
+- Pins move to elixir-utils 590f6d6 and design-system 42a439b.
+- Readiness fetches only fixed paths. The command check job sets up uv. Drift lists
+  Techtree's sign-in files as not used.
+- Skill notes: when a turn may end, looking before editing, time budgets for
+  delegates, named design patterns to avoid, raw SQL naming the site's schema,
+  the nested JSON error shape, and the protected production tables with the command
+  guard that refuses deletes on them.
