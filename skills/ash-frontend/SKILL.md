@@ -13,6 +13,8 @@ pipeline around them. Verify generated helper signatures against the installed v
   nested forms, omitted inputs, async results and reconnect behavior.
 - [Async state](references/async-state.md): reads owned by an account, wallet or
   route; late answers dropped; loading, ready, empty, stale and error kept apart.
+  Every page read goes through the template's `Read`; never stop one with
+  `cancel_async`, which takes the read's database connection down with it.
 - [UI review](references/ui-review.md): accessibility, responsive states and hooks.
 
 Reuse Regent UI primitives while retaining each product's theme, navigation and
