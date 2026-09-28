@@ -88,31 +88,32 @@ to one operation and reset them after a stable success; do not use a permanent
 page-lifetime latch that makes later recovery impossible. After any `await`, use
 current provider callbacks/state rather than stale React captures.
 
-## Verification and observability
+## Browser checks before release
 
-Cover at least these behaviors when they are in scope:
+The template carries no automated tests. Before a sign-in change ships, a person
+runs these cases in a browser, with real Privy and a browser-extension wallet, on
+an origin the Privy application admits, and says in the report which were run:
 
-- authenticated startup while access token or wallets are still hydrating;
-- empty connected-wallet list without logout;
-- explicit unauthenticated state before wallet readiness;
-- bridge import/readiness/sync failure preserving the local session;
-- passive reconciliation and post-revocation provider-cleanup failures producing
-  no global user-facing error;
-- unavailable/unconfirmed handoff storage and failed local DELETE;
-- explicit logout racing automatic reconciliation, rapid double-clicks, and
-  document replacement, with one deletion and one reload;
-- account or selected-wallet changes without treating them as logout;
-- server rejection of forged, expired, wrong-audience, swapped-subject, and
-  mismatched-session proofs;
-- logs that record phase and elapsed time but never tokens, cookies, raw linked
-  accounts, authorization headers, or provider objects.
+- signing in while the access token or wallets are still loading;
+- an empty connected-wallet list, which must not sign the person out;
+- the signed-out state showing before the wallet is ready;
+- a bridge that fails to load, get ready or sync, keeping the local session;
+- background reconciliation and clean-up after sign-out failing without any
+  message on the page;
+- handoff storage that is unavailable or unconfirmed, and a failed local DELETE;
+- sign-out racing automatic reconciliation, a quick double click, and a page
+  replaced mid-flight: one deletion and one reload;
+- a change of account or selected wallet, which is not a sign-out;
+- the server refusing forged, expired, wrong-audience, swapped-subject and
+  mismatched-session proofs (send them with `curl`; each refusal raises
+  `ash_template.privy.session_refused.total` with its stage and reason);
+- logs that record the step and time taken but never tokens, cookies, raw linked
+  accounts, authorization headers or provider objects.
 
-Stubbed provider tests prove deterministic state handling, not real extension
-timing. For release-critical changes, leave the result explicitly unverified
-until a human runs a real Privy plus browser-wallet canary for sign-in, refresh,
-protected navigation, sign-out, and reload. Stubbed browser tests may use any
-free loopback port; a real Privy canary must use an origin admitted by the Privy
-application. Never stop an unrelated server merely to claim a preferred port.
+Until a person has run sign-in, refresh, protected navigation, sign-out and
+reload with real Privy and a real wallet, say the change is unchecked. Use a free
+port the Privy application admits, and never stop an unrelated server to claim a
+preferred one.
 
 Official references:
 
