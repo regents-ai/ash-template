@@ -21,17 +21,39 @@ defmodule AshTemplate.ChainClient do
     end
   end
 
-  @doc "One JSON-RPC request to the chain's node."
-  def rpc(%{rpc_url: url}, method, params) do
+  @doc """
+  One JSON-RPC request to the chain's node. Every request that gets no answer
+  is counted in `health.chain_request_failures.total` (`AshTemplateWeb.Telemetry`).
+  """
+  def rpc(%{rpc_url: url} = chain, method, params) do
     case Req.post(url,
            json: %{jsonrpc: "2.0", id: 1, method: method, params: params},
            retry: false,
            receive_timeout: 5_000
          ) do
       {:ok, %{status: 200, body: %{"result" => result}}} -> {:ok, result}
-      {:ok, %{body: %{"error" => error}}} -> {:error, {:rpc, error}}
-      {:ok, %{status: status}} -> {:error, {:http, status}}
-      {:error, error} -> {:error, error}
+      {:ok, %{body: %{"error" => error}}} -> failed(chain, method, {:rpc, error})
+      {:ok, %{status: status}} -> failed(chain, method, {:http, status})
+      {:error, error} -> failed(chain, method, error)
     end
   end
+
+  defp failed(chain, method, reason) do
+    :telemetry.execute([:ash_template, :chain, :failure], %{count: 1}, %{
+      method: method,
+      class: class(reason),
+      chain_id: chain.chain_id,
+      scope: "wallet"
+    })
+
+    {:error, reason}
+  end
+
+  defp class({:rpc, _error}), do: "rpc"
+  defp class({:http, status}), do: "http_#{status}"
+
+  defp class(%Req.TransportError{reason: reason}) when reason in [:timeout, :connect_timeout],
+    do: "timeout"
+
+  defp class(_transport), do: "transport"
 end

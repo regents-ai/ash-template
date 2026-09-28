@@ -71,6 +71,8 @@ defmodule AshTemplateWeb.OnchainExample do
   end
 
   def handle_event("step_failed", %{"reason" => reason}, socket) when is_binary(reason) do
+    AshTemplateWeb.Telemetry.wallet_failed(:onchain_example, reason)
+
     note =
       OnchainSteps.failure_note(
         reason,
