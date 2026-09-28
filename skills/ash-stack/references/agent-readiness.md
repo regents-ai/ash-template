@@ -64,19 +64,24 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
 
 ## 3. JSON errors with code, message and hint
 
-- `ErrorJSON.render(template, _)` returns `%{error, problem_code, hint}`. Codes:
-  `not_found`, `method_not_allowed`, `internal_error`, otherwise the status message
-  downcased with underscores (`unprocessable_content`). One hint string for all:
-  where the OpenAPI file and agent guide live.
+- `ErrorJSON.render(template, _)` returns
+  `%{error: %{code: code, message: message, hint: hint}}` through
+  `RegentAgentAccess.Recovery.json(message, hint)`, the shape of the `Error` schema in
+  `openapi.json`. `message` is the status message (`Not Found`); `code` is it
+  downcased with underscores (`not_found`, `method_not_allowed`,
+  `internal_server_error`, `unprocessable_content`). One hint string for all: where
+  the OpenAPI file and agent guide live. Anything more a caller needs goes inside
+  `error`, never beside it.
 - The endpoint plug from item 2 forces JSON on API prefixes, so an unknown API address
   answers JSON even when the caller sent a browser `Accept`.
-- Make every controller-level refusal use the same three keys. Delete any older ad-hoc
-  shapes; do not keep both.
+- Make every controller-level refusal use the same nested shape. Delete any older
+  ad-hoc shapes, including a flat `%{error, problem_code, hint}`; do not keep both.
 
 ## 4. OpenAPI 3.1 at `/openapi.json`
 
-- A static file in `priv/static/openapi.json`, listed in `static_paths/0`. Hand-write
-  or script it; do not generate at request time.
+- A hand-written file in `priv/public/openapi.json`, read once when the app compiles
+  (`PublicDocuments.openapi/0`) and served by a controller action at `/openapi.json`.
+  Do not generate it at request time.
 - Every operation has a unique `operationId` in camelCase verbs (`searchThreads`,
   `fileReport`), typed parameters, request and response schemas under
   `components/schemas`, and the error schema from item 3 as the default response.
