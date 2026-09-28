@@ -23,7 +23,10 @@ defmodule AshTemplateWeb.Telemetry do
 
   def prometheus_metrics do
     [
-      counter("ash_template.privy.browser_failure.total", tags: [:reason])
+      counter("ash_template.privy.browser_failure.total", tags: [:reason]),
+      counter("ash_template.privy.session_refused.total", tags: [:stage, :reason]),
+      counter("ash_template.session_bootstrap.rate_limited.total", tags: [:source]),
+      counter("ash_template.session_authority.absent_row.total")
     ]
   end
 
