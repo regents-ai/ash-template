@@ -164,22 +164,11 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     end)
   end
 
-  defp linked_wallet_evidence(%{wallet_address: primary, wallet_addresses: addresses})
-       when is_list(addresses) do
-    addresses =
-      addresses
-      |> Enum.filter(&(is_binary(&1) and String.trim(&1) != ""))
-      |> Enum.uniq()
-
-    case addresses do
-      [] ->
-        {:error, :missing_linked_wallet}
-
-      addresses ->
-        primary = if primary in addresses, do: primary, else: hd(addresses)
-        {:ok, primary, addresses}
-    end
-  end
+  # `RegentPrivy.Session` already lowercases the list, keeps each wallet once and
+  # puts the wallet the person signed in with inside it.
+  defp linked_wallet_evidence(%{wallet_address: primary, wallet_addresses: [_ | _] = addresses})
+       when is_binary(primary),
+       do: {:ok, primary, addresses}
 
   defp linked_wallet_evidence(_verified), do: {:error, :missing_linked_wallet}
 

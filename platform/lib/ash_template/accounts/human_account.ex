@@ -41,8 +41,9 @@ defmodule AshTemplate.Accounts.HumanAccount do
       accept []
       require_atomic? false
       argument :wallet_address, :string
-      argument :wallet_addresses, {:array, :string}
-      change AshTemplate.Accounts.Changes.RefreshWalletEvidence
+      argument :wallet_addresses, {:array, :string}, allow_nil?: false
+      change set_attribute(:wallet_address, arg(:wallet_address))
+      change set_attribute(:wallet_addresses, arg(:wallet_addresses))
     end
   end
 
