@@ -62,19 +62,14 @@ defmodule AshTemplateWeb.HomeLive do
     """
   end
 
-  attr :theme, :string, default: "dark"
-
+  # The homepage is always dark, so its mark is the dark one.
   def landing_header(assigns) do
     ~H"""
     <header class="rl-header" data-home-header>
       <div class="rl-header-bar">
         <.link navigate={~p"/"} class="rl-brand" aria-label="Ash Template home">
           <img
-            src={
-              if @theme == "light",
-                do: ~p"/images/brand/mark-flat-light.svg",
-                else: ~p"/images/brand/mark-flat-dark.svg"
-            }
+            src={~p"/images/brand/mark-flat-dark.svg"}
             width="252"
             height="186"
             alt=""

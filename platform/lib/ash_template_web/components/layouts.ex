@@ -22,13 +22,11 @@ defmodule AshTemplateWeb.Layouts do
     """
   end
 
-  attr(:theme, :string, default: "dark")
-
   @doc "Product and source discovery without loading a browser integration."
   def product_links(assigns) do
     ~H"""
     <footer aria-label="Project links" class="product-links">
-      <AshTemplateWeb.Components.Shell.theme_toggle id="footer-theme-control" theme={@theme} />
+      <AshTemplateWeb.Components.Shell.theme_toggle id="footer-theme-control" />
       <div class="rl-header-links">
         <AshTemplateWeb.Components.RegentLinks.header_links id="footer-token-menu" />
       </div>

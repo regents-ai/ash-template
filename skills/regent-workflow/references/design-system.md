@@ -30,6 +30,12 @@ current founder request overrides older rollout notes. Re-read the working tree:
   mode IDs are `light` and `dark`. Preserve the eight canonical palette definitions
   and Patchbay aliases. Use paired supporting surface/ink roles rather than recoloring
   the whole page from an individual card.
+- The root carries no `data-theme` until the person chooses on the site; the shared
+  tokens then follow the device, dark unless it asks for light (founder, 2026-09-28).
+  A choice travels in the `regent_theme` cookie and always wins. A product's own
+  theme CSS covers the no-choice case too. The template's theme plug, root layout and
+  `app.ts` theme block are the reference; the theme switch names itself, so the
+  server passes it no theme.
 - Canonical identities: Tangerine `#FF5B19`, Powder Blue `#AECACD`, Platinum
   `#E5E3D2`, Charcoal `#161616`. Typography/background/semantic roles still come from
   the tokens, not scattered literals. Do not replace real project images or site

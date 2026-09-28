@@ -15,12 +15,11 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
   alias Regent.Primitives, as: P
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/wallet"))
      |> assign(
-       theme: session["theme"] || "dark",
        mode: ShowcaseLive.privy_mode(),
        local?: AshTemplateWeb.Showcase.mode() == :local,
        chain: Application.fetch_env!(:ash_template, :wallet_chain)
@@ -36,7 +35,7 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
         <Shell.account_control account_control={@account_control} enabled={@mode == :configured} />
-        <Shell.theme_toggle id="wallet-page-theme" theme={@theme} />
+        <Shell.theme_toggle id="wallet-page-theme" />
       </header>
 
       <section class="onchain-workshop-intro">

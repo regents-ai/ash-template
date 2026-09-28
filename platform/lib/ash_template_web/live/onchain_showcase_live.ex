@@ -28,14 +28,13 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
   @gas "0x30d40"
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     chain = Application.fetch_env!(:ash_template, :lab_chain)
 
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/onchain"))
      |> assign(
-       theme: session["theme"] || "dark",
        chain: chain,
        wallets: @wallets,
        signed_in: true
