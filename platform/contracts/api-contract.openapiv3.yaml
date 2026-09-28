@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 1.0.0
+  version: 2.0.0
 paths:
   /api/v1/profile:
     get:
@@ -71,12 +71,11 @@ paths:
             Cache-Control: {schema: {type: string, const: no-store}}
           content:
             application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                required: [error]
-                properties:
-                  error: {type: string, const: rate_limited}
+              schema: {$ref: "#/components/schemas/RecoveryError"}
+              examples:
+                rateLimited:
+                  value: {error: {code: rate_limited, message: "Too many new sign-ins came from this address.", hint: "Wait the number of seconds in Retry-After, then try again."}}
+        "409": {$ref: "#/components/responses/SessionChanged"}
   /auth/privy/failure:
     post:
       operationId: reportPrivyBrowserFailure
@@ -109,6 +108,7 @@ paths:
         "200": {$ref: "#/components/responses/Session"}
         "403": {$ref: "#/components/responses/CsrfForbidden"}
         "401": {$ref: "#/components/responses/PrivySessionUnauthorized"}
+        "409": {$ref: "#/components/responses/SessionChanged"}
     delete:
       operationId: deletePrivyBrowserSession
       security: [{csrfToken: []}]
@@ -171,11 +171,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Session"
-    Unauthorized:
-      description: The Privy access and identity tokens were not both present and valid for one signed-in session
-      content:
-        application/json:
-            schema: {$ref: "#/components/schemas/Error"}
     PrivySessionUnauthorized:
       description: The Privy access and identity tokens were not both present and valid for one signed-in session
       headers:
@@ -185,7 +180,22 @@ components:
           schema: {type: string, const: allowed}
       content:
         application/json:
-          schema: {$ref: "#/components/schemas/Error"}
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            unauthorized:
+              value: {error: {code: unauthorized, message: "This sign-in couldn't be confirmed.", hint: "Sign in again."}}
+    SessionChanged:
+      description: This browser's session changed in another tab or ended; reload the page
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            superseded:
+              value: {error: {code: session_superseded, message: "This browser was signed in again from another tab.", hint: "Reload the page."}}
+            reset:
+              value: {error: {code: session_reset_required, message: "This browser's sign-in has ended.", hint: "Reload the page, then sign in again."}}
+            switched:
+              value: {error: {code: account_switch_required, message: "This browser was signed in to another account.", hint: "Reload the page, then sign in again."}}
     Logout:
       description: Local browser session removed
       content:
@@ -209,7 +219,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             authenticationRequired:
-              value: {error: {code: authentication_required}}
+              value: {error: {code: authentication_required, message: "Sign in to read or change your profile.", hint: "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."}}
     ProfileForbidden:
       description: The credentials do not own this profile
       content:
@@ -217,7 +227,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             forbidden:
-              value: {error: {code: profile_forbidden}}
+              value: {error: {code: profile_forbidden, message: "This profile belongs to another account.", hint: "Sign in as the profile's owner."}}
     ProfileNotCreated:
       description: The profile has not been created yet; POST /api/v1/profile/sync creates it
       content:
@@ -225,7 +235,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             notCreated:
-              value: {error: {code: profile_not_created}}
+              value: {error: {code: profile_not_created, message: "You have no profile yet.", hint: "Create it with POST /api/v1/profile/sync."}}
     ProfileInvalidJson:
       description: The request body is not valid JSON
       content:
@@ -233,7 +243,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             invalidJson:
-              value: {error: {code: invalid_profile_json}}
+              value: {error: {code: invalid_profile_json, message: "The request body is not valid JSON.", hint: "Send one JSON object."}}
     ProfileRequestTooLarge:
       description: The request body is larger than 8192 bytes
       content:
@@ -241,7 +251,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             tooLarge:
-              value: {error: {code: profile_request_too_large}}
+              value: {error: {code: profile_request_too_large, message: "The request body is too large.", hint: "Send only display_name and wallet_address, in under 8 KB."}}
     ProfileJsonRequired:
       description: The request body is not application/json
       content:
@@ -249,7 +259,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             jsonRequired:
-              value: {error: {code: json_required}}
+              value: {error: {code: json_required, message: "Profile changes must be sent as JSON.", hint: "Set Content-Type to application/json."}}
     ProfileInvalidUpdate:
       description: The update is invalid or the profile has not been created yet
       content:
@@ -257,7 +267,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             invalidUpdate:
-              value: {error: {code: invalid_profile_update}}
+              value: {error: {code: invalid_profile_update, message: "The profile change could not be made.", hint: "Send only display_name and wallet_address, where wallet_address is a wallet linked to your sign-in. If your profile changed, read it again first."}}
     ProfileEvidenceConflict:
       description: The presented sign-in evidence conflicts with the stored profile
       content:
@@ -265,7 +275,7 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             conflict:
-              value: {error: {code: identity_evidence_conflict}}
+              value: {error: {code: identity_evidence_conflict, message: "Your sign-in could not be matched to your profile.", hint: "Sign in again, then retry."}}
     ProfileUnavailable:
       description: Sign-in is not configured or the profile service is unavailable
       content:
@@ -273,9 +283,9 @@ components:
           schema: {$ref: "#/components/schemas/ProfileError"}
           examples:
             unconfigured:
-              value: {error: {code: profile_unconfigured}}
+              value: {error: {code: profile_unconfigured, message: "Profiles are not available on this site right now.", hint: "Try again later."}}
             unavailable:
-              value: {error: {code: profile_unavailable}}
+              value: {error: {code: profile_unavailable, message: "Your profile could not be reached right now.", hint: "Try again in a moment."}}
   schemas:
     ProfileEnvelope:
       type: object
@@ -326,11 +336,13 @@ components:
         error:
           type: object
           additionalProperties: false
-          required: [code]
+          required: [code, message, hint]
           properties:
             code:
               type: string
               enum: [authentication_required, profile_unconfigured, profile_unavailable, profile_not_created, profile_forbidden, invalid_profile_update, invalid_profile_json, profile_request_too_large, json_required, identity_evidence_conflict, method_not_allowed, not_found]
+            message: {type: string}
+            hint: {type: string}
     Session:
       type: object
       additionalProperties: false
@@ -360,9 +372,3 @@ components:
             code: {type: string}
             message: {type: string}
             hint: {type: string}
-    Error:
-      type: object
-      additionalProperties: false
-      required: [error]
-      properties:
-        error: {type: string, enum: [unauthorized]}

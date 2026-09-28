@@ -8,7 +8,7 @@ defmodule AshTemplate.MixProject do
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "42a439b9e5980e1174e3da85b24f0f60c2e78339"
   @regents "https://github.com/regents-ai/regents.git"
-  @regents_ref "0d5d18c2f4501a6a5bd00b0bedb005677d8876cc"
+  @regents_ref "baeffb12b2b64faf1d678ff64741c0b111a07288"
 
   def project do
     [
@@ -46,7 +46,7 @@ defmodule AshTemplate.MixProject do
       {:ash_postgres, "~> 2.13.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
-      # regent_identity names regent_privy by a sibling path; this pin replaces it.
+      # regent_identity pins its own elixir-utils commit for regent_privy; this pin wins.
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
       {:regent_identity, git: @regents, ref: @regents_ref, sparse: "identity"},

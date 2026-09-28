@@ -747,7 +747,9 @@
           "error": {
             "type": "object",
             "required": [
-              "code"
+              "code",
+              "message",
+              "hint"
             ],
             "properties": {
               "code": {

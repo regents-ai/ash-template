@@ -450,3 +450,11 @@ Operations
   delegates, named design patterns to avoid, raw SQL naming the site's schema,
   the nested JSON error shape, and the protected production tables with the command
   guard that refuses deletes on them.
+
+## 2026-09-28 — One error shape everywhere
+
+- Sign-in refusals and the closed-site answer now use the same error shape as every
+  other JSON error: a code, a message and a hint. The served YAML contract moves to
+  2.0.0 and the docs list the change.
+- Profile errors from the shared Regents identity code carry a message and hint;
+  the regents pin moves to baeffb12.

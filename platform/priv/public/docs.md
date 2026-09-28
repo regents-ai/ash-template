@@ -79,7 +79,7 @@ RateLimit: "default";r=119;t=42
 
 ### Breaking changes
 
-None yet.
+- 2026-09-28: the browser session endpoints `/auth/csrf` and `/auth/privy/session` answer a refusal as `{"error": {"code", "message", "hint"}}`, like every other error, instead of `{"error": "<code>"}`. The codes are unchanged. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) moves to version 2.0.0.
 
 ## Browser tools
 
