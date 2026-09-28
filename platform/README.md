@@ -35,7 +35,8 @@ revision it used. It fails when a shared library loads from a local folder or a
 vendored copy, names another URL or folder, is not pinned to a full commit, has
 no fetched history, or lacks a listed fix, and when a Hex package is older than a
 listed fix. Library pins never change by themselves; only the list does.
-Retired Hex packages are checked by `mix hex.audit` in `mix precommit`.
+`mix hex.audit` in `mix precommit` stops on a Hex package that is retired or has
+a published security advisory (Hex 2.5 reads both).
 
 ## Quickstart
 
