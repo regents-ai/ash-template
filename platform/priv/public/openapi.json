@@ -3,7 +3,7 @@
   "info": {
     "title": "Ash Template public API",
     "version": "1.0.0",
-    "description": "Service health and the signed-in person's own profile. Does not describe browser session changes. Paths under /api/v1 stay compatible; a breaking change arrives under a new major path, and the developer documentation holds the versioning and deprecation policy.",
+    "description": "Service health and the signed-in person's own profile. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
     }

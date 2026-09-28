@@ -58,10 +58,12 @@ RateLimit: "default";r=119;t=42
 
 ## Versioning and deprecation
 
-- The API version is in the path. Everything under `/api/v1` stays compatible: new endpoints, new response fields and new optional inputs can appear at any time, so ignore fields you do not recognise.
-- A breaking change, such as removing or renaming a field, endpoint or error code, changing a type or making an input required, arrives under a new major path such as `/api/v2`, with a new major `info.version` in the [OpenAPI JSON specification]({{origin}}/openapi.json).
-- Before an endpoint goes away, its answers carry a `Deprecation` header (RFC 9745) with the date it was deprecated and a `Sunset` header (RFC 8594) with the date it stops answering, at least 90 days later. The OpenAPI specification marks it `deprecated` and this page lists it.
-- The current version is `info.version` in the OpenAPI specification.
+- The API version is in the path (`/api/v1`) and in `info.version` of the [OpenAPI JSON specification]({{origin}}/openapi.json). New endpoints, response fields and optional inputs can appear at any time, so ignore fields you do not recognise.
+- A breaking change, such as removing or renaming a field, endpoint or error code, changing a type or making an input required, ships in place under the same path. It is listed below on the day it ships and `info.version` moves to a new major number. There is no notice period and no `Deprecation` or `Sunset` header, so check `info.version` before relying on a field.
+
+### Breaking changes
+
+None yet.
 
 ## Contracts
 

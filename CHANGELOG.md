@@ -282,9 +282,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   the same elixir-utils release. `openapi.json` gives every error response that schema,
   the rate-limit headers and a 429, plus a `default` answer; the YAML contract declares the
   429 on the profile operations.
-- `/docs` gains Errors, Rate limits, and Versioning and deprecation sections (`/api/v1`
-  stays compatible; a breaking change arrives under a new major path after `Deprecation`
-  and `Sunset` notice of at least 90 days). `llms.txt` and the OpenAPI `externalDocs`
+- `/docs` gains Errors, Rate limits, and Versioning and deprecation sections (a breaking change
+  ships in place, is listed there the same day and moves `info.version` to a new major
+  number, with no notice period, per the founder's API-changes decision of 2026-09-26). `llms.txt` and the OpenAPI `externalDocs`
   point to them.
 - The sitemap gives each page a `lastmod` (the release time). New
   `/.well-known/security.txt` (RFC 9116, expiring a year after the release) and
