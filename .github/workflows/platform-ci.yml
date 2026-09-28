@@ -1,0 +1,42 @@
+name: Platform
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  platform:
+    name: Platform checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: platform/.tool-versions
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          version-file: platform/.tool-versions
+          version-type: strict
+
+      - name: Install dependencies
+        working-directory: platform
+        run: mix deps.get --check-locked && npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build assets
+        working-directory: platform
+        run: mix assets.setup && mix assets.build
+
+      - name: Check the platform
+        run: make check-platform
