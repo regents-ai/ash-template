@@ -224,14 +224,7 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp human_actor(%{assigns: %{access_context: %{principal: {:human, account}}}}),
-    do: %Human{human_account_id: account.id, wallet_addresses: account_wallets(account)}
+    do: Human.for_account(account)
 
   defp human_actor(_socket), do: nil
-
-  defp account_wallets(account) do
-    [account.wallet_address | List.wrap(account.wallet_addresses)]
-    |> Enum.filter(&is_binary/1)
-    |> Enum.map(&String.downcase/1)
-    |> Enum.uniq()
-  end
 end

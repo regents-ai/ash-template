@@ -17,7 +17,14 @@ sites=(keyfleet regents autolaunch patchbay techtree)
 
 # The files every site takes from the template, at the template's paths.
 shared=(
+  platform/lib/ash_template/access_context.ex
+  platform/lib/ash_template/accounts/checks/human_actor.ex
+  platform/lib/ash_template/accounts/session_authority.ex
+  platform/lib/ash_template/actors/human.ex
+  platform/lib/ash_template/actors/system.ex
   platform/lib/ash_template/chain_client.ex
+  platform/lib/ash_template/checks/system_actor.ex
+  platform/lib/ash_template/repo.ex
   platform/lib/ash_template_web/client_address.ex
   platform/lib/ash_template_web/content_security_policy.ex
   platform/lib/ash_template_web/metrics.ex
