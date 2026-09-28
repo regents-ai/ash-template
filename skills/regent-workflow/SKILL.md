@@ -149,6 +149,20 @@ explicit known base. One coordinator integrates per repository. Preserve unrelat
 changes and avoid resetting or cleaning existing worktrees. Use isolated test databases
 and ports. Follow each component's dependency setup; never clear a shared database.
 
+## Domains and servers
+
+Founder rule (2026-09-28): every product domain is registered and its DNS managed in the
+Regents Labs Vercel team, and every server runs on Fly.io. No other registrar, DNS host or
+server host.
+
+- A new domain is bought in Vercel, then attached to its Fly app: Fly's A and AAAA records
+  (or a CNAME for `www`) entered in Vercel DNS, then `fly certs check`.
+- Before naming any DNS step, run `dig NS <domain>` and `whois <domain>`. If either shows
+  anything but Vercel, report it to the founder as a discrepancy (registrar, creation date,
+  nameservers) and propose the move to Vercel. Never write instructions for the other
+  provider as the plan.
+- No copy, internal or public, names a registrar or DNS host other than Vercel and Fly.
+
 ## Protected work
 
 Investigate and prepare billing, authentication, contracts, wallets and production
