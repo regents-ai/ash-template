@@ -48,6 +48,13 @@
       "kind": "hex",
       "package": "lazy_html",
       "minimum": "0.1.13"
+    },
+    {
+      "id": "EEF-CVE-2026-91043",
+      "summary": "Mint before 1.11.0 let HTTP/2 cookie headers exhaust memory, with two further advisories (EEF-CVE-2026-92103, EEF-CVE-2026-94194) including chunked framing smuggling.",
+      "kind": "hex",
+      "package": "mint",
+      "minimum": "1.11.0"
     }
   ]
 }
