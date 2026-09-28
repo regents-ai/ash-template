@@ -52,9 +52,9 @@ each kind of movement, and the lab where every version that was tried sits side 
 | --- | --- |
 | `platform/assets/js/hooks/motion/shared.ts` | Timings, curves, `still(el)`, `byPointer(event)`, `lastInputByPointer()`, `play()` |
 | `platform/assets/js/hooks/motion/press.ts` | `squish`, `nope`, `deny` |
-| `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `backdrop` |
-| `platform/assets/js/hooks/motion/reveals.ts` | `ShellViews`, `MotionTabs` / `tabsHook`, `HEADLINES`, `GRIDS` |
-| `platform/assets/js/hooks/motion/moments.ts` | `MotionList` / `listHook`, `MotionCount` / `countHook` |
+| `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `backdrop`, `MotionPanels` |
+| `platform/assets/js/hooks/motion/reveals.ts` | `ShellViews`, `MotionTabs` / `tabsHook`, `MotionCascade`, `HEADLINES`, `GRIDS` |
+| `platform/assets/js/hooks/motion/moments.ts` | `MotionList` / `listHook`, `MotionCount` / `countHook`, `MotionRefusal` |
 | `platform/assets/js/motion.ts` | `mountMotion(document)`: presses, panels, headline and cards on every page |
 | `platform/assets/js/motion_lab.ts` | The lab's other versions; lazy-loaded on `/animations` only |
 | `platform/lib/ash_template_web/motion.ex` | `AshTemplateWeb.Motion.standard/1`: the version each part uses |
@@ -71,7 +71,14 @@ Pages take part through markup, never through their own motion code:
 - On a page the server draws once (not live), the `h1` rises word by word, the first 12
   children of each `data-cascade` settle in and each `role="alert"` shakes once.
 - Live parts use a hook with `data-variant={AshTemplateWeb.Motion.standard("list")}`
-  (`MotionList`, `MotionCount` with `data-count` figures, `MotionTabs`).
+  (`MotionList`, `MotionCount` with `data-count` figures, `MotionTabs`). A counted
+  figure may carry decimals and a unit ("12.5 USDC"); only the changed digits roll.
+- On a live page, a card list takes `phx-hook="MotionCascade"` with
+  `data-variant={AshTemplateWeb.Motion.standard("grid")}` and settles in the first time
+  it scrolls into view; a refusal message takes `phx-hook="MotionRefusal"` and shakes
+  while `data-refused` is on it; an island whose `data-panel` drawers, sheets or menus
+  open by LiveView commands (`JS.show`) takes `phx-hook="MotionPanels"`. Don't put
+  `MotionPanels` around the shell's own drawer, which already moves on its press.
 - `/animations` is the lab: public once the site opens, linked from nowhere. A site
   changes a standard version by comparing there first, then changing `motion.ex`, the
   kit and every site together.

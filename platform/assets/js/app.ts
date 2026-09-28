@@ -20,8 +20,9 @@ import {
   type ShellState,
 } from "./shell_state"
 import {HolographicCard} from "./hooks/holographic_card"
-import {MotionCount, MotionList} from "./hooks/motion/moments"
-import {MotionTabs, ShellViews} from "./hooks/motion/reveals"
+import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
+import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
+import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
@@ -316,8 +317,11 @@ const hooks = {
   ...labHooks,
   ...colocatedHooks,
   HolographicCard,
+  MotionCascade,
   MotionCount,
   MotionList,
+  MotionPanels,
+  MotionRefusal,
   MotionTabs,
   OnchainSteps,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),

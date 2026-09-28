@@ -167,7 +167,9 @@ shippable and checked in a browser.
 Done 2026-09-27: `make drift` (`scripts/drift.sh`) is that script.
 
 Motion kit additions KeyFleet keeps as its own (b11ffdf), to weigh for the kit when a
-second site needs one; until then each stays a KeyFleet difference:
+second site needs one; until then each stays a KeyFleet difference. Taken into the kit
+2026-09-28 (Phase 1 item 53): 1 and 3 as `MotionPanels`, 5 in `countHook`, 6 as
+`MotionRefusal` and `MotionCascade`. Still KeyFleet's own: 2 and 4.
 
 1. Drawers and panels move when they become visible (a watcher in `slides.ts`) rather
    than on the press, so drawers opened by LiveView commands, or by another control

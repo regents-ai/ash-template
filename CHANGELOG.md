@@ -340,3 +340,17 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - The platform README says how a first staging deploy starts from an empty database
   (`bin/bootstrap-staging` once) and that Fly's attached database URLs lose their query.
 
+
+## 2026-09-28 — Motion kit: KeyFleet's four additions (Phase 1 item 53)
+
+- The number roll handles decimals and units: 1.75 to 2 rolls up, and "12.5 USDC" to
+  "13.0 USDC" rolls only the two digits that changed.
+- `MotionCascade`: a card list on a live page settles in the first time it scrolls into
+  view; the home page's proof cards use it.
+- `MotionRefusal`: a refusal message on a live page shakes when it appears and when it
+  changes; the verified-connections error notice uses it.
+- `MotionPanels`: drawers, sheets and menus opened by LiveView commands move when they
+  appear, when the reader was last using a mouse or a finger.
+- Pages the server draws once keep their cascade and alert shake in `motion.ts`.
+- Checked in a headless browser with and without reduced motion; nothing moves when
+  reduced motion is on.

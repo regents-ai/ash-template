@@ -36,11 +36,14 @@ defmodule AshTemplateWeb.Components.VerifiedConnections do
         <p>{@description}</p>
         <p
           :if={@notice}
+          id={"#{@id}-notice"}
           class={[
             "verified-connections__notice",
             @notice.tone == :error && "verified-connections__notice--error"
           ]}
           role={if(@notice.tone == :error, do: "alert", else: "status")}
+          phx-hook="MotionRefusal"
+          data-refused={@notice.tone == :error}
         >
           {@notice.message}
         </p>

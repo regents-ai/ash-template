@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.HomeLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.RegentLinks
-  alias AshTemplateWeb.{PublicDocuments, RouteCatalog}
+  alias AshTemplateWeb.{Motion, PublicDocuments, RouteCatalog}
 
   @doc "A public text representation using the same copy as the page."
   def agent_markdown do
@@ -176,7 +176,13 @@ defmodule AshTemplateWeb.HomeLive do
 
   defp proof_grid(assigns) do
     ~H"""
-    <div :if={@proofs != []} class="rl-proof-grid rg-feature-grid">
+    <div
+      :if={@proofs != []}
+      id={"home-proofs-#{@brand}"}
+      class="rl-proof-grid rg-feature-grid"
+      phx-hook="MotionCascade"
+      data-variant={Motion.standard("grid")}
+    >
       <Regent.Structure.capability_card
         :for={{proof, index} <- Enum.with_index(@proofs)}
         title={proof.title}
