@@ -19,17 +19,6 @@ defmodule AshTemplateWeb.Router do
     }
   end
 
-  # One budget per client address, shared by the health check and the API. Every
-  # answer says what is left of it; past it the answer is 429 with Retry-After.
-  pipeline :rate_limit do
-    plug RegentAgentAccess.RateLimit,
-      policy: "default",
-      limit: 120,
-      window: 60,
-      admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
-      key: &AshTemplateWeb.ClientAddress.key/1
-  end
-
   pipeline :api do
     plug :accepts, ["json"]
     plug AshTemplateWeb.Plugs.LaunchGate
@@ -87,11 +76,7 @@ defmodule AshTemplateWeb.Router do
   end
 
   scope "/", AshTemplateWeb do
-    pipe_through :rate_limit
     get "/healthz", HealthController, :show
-  end
-
-  scope "/", AshTemplateWeb do
     get "/developers", PublicPagesController, :developers
     get "/openapi.json", PublicPagesController, :openapi
     get "/sitemap.xml", PublicPagesController, :sitemap
@@ -110,7 +95,7 @@ defmodule AshTemplateWeb.Router do
   end
 
   scope "/api/v1" do
-    pipe_through [:rate_limit, :api]
+    pipe_through :api
     forward "/profile", RegentIdentity.HTTP, otp_app: :ash_template
   end
 

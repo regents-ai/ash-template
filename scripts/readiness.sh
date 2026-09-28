@@ -156,7 +156,7 @@ for (const { path, method, operation } of operations) {
 }
 
 console.log("Rate-limit headers");
-for (const path of ["/healthz", "/api/v1/profile"]) {
+for (const path of ["/healthz", "/api/v1/profile", "/api/readiness-no-such-route"]) {
   const answer = await get(path, "application/json");
   check(`${path} answers with RateLimit-Policy and RateLimit`, limited(answer),
     `${answer.headers.get("ratelimit-policy")} / ${answer.headers.get("ratelimit")}`);

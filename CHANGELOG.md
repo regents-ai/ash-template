@@ -328,3 +328,15 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   moved first, 08ebd27).
 - `cli/README.md` names the `regents-cli` package and drops the shared `regents profile`
   commands, which 1.0 no longer has.
+
+## 2026-09-28 — Every API answer carries the rate-limit headers
+
+- The live scan of the template (scratch deploy of 466c3c6, 100/100) marked rate-limit
+  headers partial: an unknown `/api` address answered 404 without them. The budget now
+  runs in the endpoint for `/healthz` and every `/api` path, answered or not, before
+  anything else can reply; the router's `:rate_limit` pipeline is gone. `make readiness`
+  checks an unknown `/api` address too.
+- `/docs` shows example requests for creating the profile and changing its name.
+- The platform README says how a first staging deploy starts from an empty database
+  (`bin/bootstrap-staging` once) and that Fly's attached database URLs lose their query.
+

@@ -31,6 +31,22 @@ curl --fail-with-body '{{origin}}/api/v1/profile' \
   -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}"
 ```
 
+Create the profile on first use, then change the name shown on it:
+
+```sh
+curl --fail-with-body -X POST '{{origin}}/api/v1/profile/sync' \
+  -H 'Accept: application/json' \
+  -H "Authorization: Bearer ${PRIVY_ACCESS_TOKEN}" \
+  -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}"
+
+curl --fail-with-body -X PATCH '{{origin}}/api/v1/profile' \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${PRIVY_ACCESS_TOKEN}" \
+  -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}" \
+  -d '{"display_name": "Ada"}'
+```
+
 A successful response contains a `profile` object with the profile id, display name, the linked wallets and the selected wallet. Missing or invalid credentials return 401. A profile that has not been created yet returns 404; call `POST /api/v1/profile/sync` first. An invalid update returns 422. A service that is not configured for sign-in returns 503. Profile responses are never cached.
 
 ## Errors

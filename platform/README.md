@@ -182,6 +182,14 @@ fetches every dependency at the version the lockfiles pin. The shared
 libraries' repositories are public, so the build takes no credentials. The Fly
 configuration lives in `fly.toml` and `fly.staging.toml`.
 
+A new staging database is empty and has no copy of the shared
+`regent_names.platform_human_users` table, so `bin/migrate` fails on it. Its
+first deploy runs `/app/bin/bootstrap-staging` once as the release command
+instead (it makes that table and runs every migration); later deploys use
+`bin/migrate` as `fly.staging.toml` says. Staging database URLs name
+`regents-staging-db.flycast` or `.internal` on port 5432 with no query
+options; Fly's `postgres attach` adds `?sslmode=disable`, which must be removed.
+
 ## Release
 
 From the monorepo root, with Docker running:
