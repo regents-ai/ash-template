@@ -264,3 +264,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - The cleanup ran `docker rm --force` on the database container, which leaves its
   anonymous data volume (~48 MB) behind on every run; it now passes `--volumes`. Found by
   Techtree (2b164bc).
+
+## 2026-09-28 — The signed-in shell lints like every other file
+
+- `.credo.exs` no longer excludes `live/shell_live.ex` from three complexity checks; the
+  shell passes them (Credo strict, no issues). Found by KeyFleet, whose split shell no
+  longer needed them.
