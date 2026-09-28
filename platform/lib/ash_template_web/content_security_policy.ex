@@ -14,11 +14,6 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   Wallet's relay, and the `blob:` images Privy's window draws. Privy's sign-in
   window writes its own style elements, so only this profile allows them.
 
-  A Privy app that offers Telegram sign-in also needs `https://auth.privy.io`
-  and `https://telegram.org` in `script-src` and `https://oauth.telegram.org` in
-  `frame-src` (Privy's Telegram script is served from `auth.privy.io`; found on
-  Regents' live sign-in pages, 2026-09-27).
-
   `showcase/0` is `sign_in/0` for the showcase catalog, which frames its own
   preview page.
 
