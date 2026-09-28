@@ -49,13 +49,16 @@ config :ash_template, :wallet_chain, %{
   rpc_url: "https://sepolia.base.org"
 }
 
+# A sign-in lasts 30 days: the cookie expires then, and
+# `AshTemplate.Accounts.SessionAuthority` reads this same limit.
 config :ash_template, :session_options,
   store: :cookie,
   key: "_ash_template_key",
   signing_salt: "OLoeAaio",
   same_site: "Lax",
   secure: false,
-  http_only: true
+  http_only: true,
+  max_age: 30 * 24 * 60 * 60
 
 # Configure the endpoint
 config :ash_template, AshTemplateWeb.Endpoint,

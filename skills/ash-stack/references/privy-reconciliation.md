@@ -19,7 +19,10 @@ website state from verified chain evidence instead of restoring transaction queu
 1. `usePrivy().ready/authenticated` is Privy's browser authentication state.
 2. `useWallets().ready/wallets` is connected-wallet hydration for wallet actions.
 3. Regent's server session and `SessionAuthority` exist only after server-side
-   verification and product authorization.
+   verification and product authorization. A sign-in lasts 30 days from the last
+   bind or refresh (founder, 2026-09-28): the session cookie's `max_age` sets the
+   limit, and `SessionAuthority` reads the same value and treats an older bound
+   row as reset.
 
 Never use a missing token, an empty wallet list, `walletsReady: false`, bridge
 import failure, a timeout, or a rejected sync as evidence that Privy logged the
