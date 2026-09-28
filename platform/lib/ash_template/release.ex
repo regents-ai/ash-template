@@ -12,12 +12,7 @@ defmodule AshTemplate.Release do
     AshTemplate.DatabaseConfig.release_config!(getenv)
   end
 
-  def migrate do
-    load_app()
-    Application.put_env(@app, AshTemplate.Repo, migration_config!())
-
-    Ecto.Migrator.with_repo(AshTemplate.Repo, fn repo -> repo.migrate!(migrations_path()) end)
-  end
+  def migrate, do: with_release_repo(fn repo -> repo.migrate!(migrations_path()) end)
 
   @doc """
   Prepares an empty staging database for the first deployment.
@@ -38,10 +33,7 @@ defmodule AshTemplate.Release do
       raise @bootstrap_role_error
     end
 
-    load_app()
-    Application.put_env(@app, AshTemplate.Repo, migration_config!())
-
-    Ecto.Migrator.with_repo(AshTemplate.Repo, fn repo ->
+    with_release_repo(fn repo ->
       refuse_existing_state!(repo)
 
       # The fixture is the only definition of these tables' shape in the
@@ -62,19 +54,12 @@ defmodule AshTemplate.Release do
   are empty. It applies nothing, creates nothing, and takes no migration lock.
   """
   def pending_migrations do
-    load_app()
-    Application.put_env(@app, AshTemplate.Repo, migration_config!())
-    path = migrations_path()
-
-    {:ok, {pending, applied_without_file}, _started} =
-      Ecto.Migrator.with_repo(AshTemplate.Repo, fn repo ->
-        collect_disagreements(repo, path)
-      end)
-
+    {pending, applied_without_file} = with_release_repo(&collect_disagreements/1)
     report(pending, applied_without_file)
   end
 
-  defp collect_disagreements(repo, path) do
+  defp collect_disagreements(repo) do
+    path = migrations_path()
     migrations = migration_status(repo, path)
     carried = carried_versions(path)
 
@@ -182,6 +167,17 @@ defmodule AshTemplate.Release do
   end
 
   defp migration_source(repo), do: repo.config()[:migration_source] || "schema_migrations"
+
+  # Loads the app and starts only its database connection, on the release
+  # login, for as long as `fun` runs; returns what `fun` returns. Every release
+  # command runs through it.
+  defp with_release_repo(fun) do
+    load_app()
+    Application.put_env(@app, AshTemplate.Repo, migration_config!())
+
+    {:ok, result, _started} = Ecto.Migrator.with_repo(AshTemplate.Repo, fun)
+    result
+  end
 
   defp load_app do
     case Application.load(@app) do
