@@ -94,7 +94,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Working reference</p>
-        <h1>Wallet buttons</h1>
+        <h1>Wallet lab</h1>
         <p>
           The server builds every step before anyone presses; a press goes straight to the wallet,
           and the server reads what happened on the chain.

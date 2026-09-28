@@ -41,6 +41,15 @@ localhost origin with `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` set. Prepare
 the local database (`ash_template_dev`), run `mix ash_template.setup_local_auth`,
 then `mix assets.build` and `mix phx.server`.
 
+## Wallet buttons
+
+`/showcase/wallet` runs `AshTemplateWeb.OnchainExample` exactly as a product
+page would: the signed-in account's wallets from `AccessContext.linked_wallets/1`,
+Privy's active wallet, and the chain from `:wallet_chain` (Base Sepolia). Every
+press reaches the wallet; Record and Fail on purpose need a little Base Sepolia
+test ETH for the network fee. `/showcase/onchain` is the same component against
+a lab chain and a stand-in wallet on this machine, and exists only in `local`.
+
 ## Utility effects
 
 - Wallet fixture: a separate local provider demonstrates connect/disconnect,

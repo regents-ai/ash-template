@@ -39,7 +39,11 @@ defmodule AshTemplateWeb.PublicDocuments do
     :holding => {"Not open yet", "This part of Ash Template isn't open to visitors yet."},
     "/showcase" => {"Showcase", "The Ash Template component showcase."},
     "/showcase/privy" => {"Privy integration", "The Ash Template sign-in reference page."},
-    "/showcase/onchain" => {"Wallet buttons", "The Ash Template wallet-button workshop."}
+    "/showcase/wallet" =>
+      {"Wallet buttons",
+       "Sign in and press real wallet buttons on Base Sepolia, a test network where nothing moves real money."},
+    "/showcase/onchain" =>
+      {"Wallet lab", "Wallet buttons against a practice network on this machine."}
   }
   # The public documents change only with a release, so the release time is when
   # each last changed.

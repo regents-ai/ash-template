@@ -102,7 +102,8 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 
 ## Showcase
 
-The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`), the
+The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
+wallet page `/showcase/wallet`), the
 motion lab (`/animations`) and the build skills follow one setting,
 `ASH_TEMPLATE_SHOWCASE`, which `config/runtime.exs` reads and
 `AshTemplateWeb.Showcase` enforces:
@@ -117,8 +118,12 @@ Production must set it to `off` or `public`; `fly.toml` leaves it out, so each
 deployment says which it is with `fly secrets set ASH_TEMPLATE_SHOWCASE=off` (or
 `public`). A new site built from this template chooses `off`.
 
-The wallet lab at `/showcase/onchain` sends to a lab chain on this machine, so it
-exists only in `local`, and only for a visitor on this machine.
+The wallet page at `/showcase/wallet` runs the wallet buttons with real sign-in
+and a real wallet on the chain set as `:wallet_chain` in `config/config.exs`
+(Base Sepolia, chain 84532). A press there needs a little Base Sepolia test ETH
+for the network fee. The wallet lab at `/showcase/onchain` sends to a lab chain
+on this machine, so it exists only in `local`, and only for a visitor on this
+machine.
 [docs/showcase.md](docs/showcase.md) describes the pages.
 
 ## Security profiles

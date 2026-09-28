@@ -41,6 +41,14 @@ config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0
 
 config :ash_template, :app_surfaces, true
 
+# The chain the wallet page at /showcase/wallet sends on: Base Sepolia, a test
+# network, so nothing it sends moves value.
+config :ash_template, :wallet_chain, %{
+  chain_id: 84_532,
+  name: "Base Sepolia",
+  rpc_url: "https://sepolia.base.org"
+}
+
 config :ash_template, :session_options,
   store: :cookie,
   key: "_ash_template_key",

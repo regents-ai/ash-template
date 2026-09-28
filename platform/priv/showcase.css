@@ -13,6 +13,11 @@
 .onchain-workshop-grid > section:last-child { grid-column: 1 / -1; }
 .onchain-workshop-grid fieldset { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; border: 0; }
 .onchain-workshop-grid label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.wallet-page-header #account-control { margin-left: auto; }
+@media (min-width: 768px) {
+  .wallet-page .onchain-workshop-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+  .wallet-page .onchain-workshop-grid > section:last-child { grid-column: auto; }
+}
 .onchain-workshop-log { min-height: 1.5em; font-size: 12px; overflow-wrap: anywhere; }
 @media (max-width: 767px) {
   .onchain-workshop-grid { grid-template-columns: 1fr; padding: 0 16px 16px; }

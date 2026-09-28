@@ -3,7 +3,8 @@
 The template carries the working reference. Copy these files and replace the example's
 steps; the paths are under `platform/` in ash-template. They compile against
 `regent_chain` 0.2.0 (elixir-utils 7a876e8), Phoenix LiveView 1.2 and viem 2.55, and
-were run in a browser against a lab chain at `/showcase/onchain`.
+were run in a browser against a lab chain at `/showcase/onchain`. The same component runs
+on a real account at `/showcase/wallet`, on Base Sepolia.
 
 ## Files
 
@@ -15,6 +16,8 @@ were run in a browser against a lab chain at `/showcase/onchain`.
 | `assets/js/hooks/onchain_steps.ts` | The hook: presses, the review, reports what the wallet said |
 | `assets/js/wallet_actions/send_step.ts` | One send or signature: chain switch, account check, why it failed |
 | `assets/js/wallet_actions/connected_wallet.ts` | `activeEthereumWallet()`: Privy's active wallet in this tab |
+| `lib/ash_template/access_context.ex` | `AccessContext.linked_wallets/1`: the signed-in account's own wallets, lowercase and each once, or `nil` signed out |
+| `lib/ash_template_web/live/wallet_showcase_live.ex` | The example as a product page runs it: the real account, Privy's active wallet, the `:wallet_chain` setting (Base Sepolia) |
 | `lib/ash_template_web/live/onchain_showcase_live.ex`, `assets/js/hooks/onchain_lab.ts` | The local workshop and its stand-in wallet |
 
 Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element needs an
@@ -93,6 +96,9 @@ OnchainSteps.put_review(socket, review)
 Founder decision "1 a", 2026-09-27: Privy's active wallet is the only wallet that acts,
 and only when the signed-in account links it.
 
+- The page passes the component `linked={AccessContext.linked_wallets(@access_context)}`:
+  the account's own `wallet_addresses`, lowercase and each once, or `nil` signed out.
+  Never a hard-coded list and never a wallet the browser names.
 - The hook pushes `onchain_active_wallet` with the address (or `nil`) when it mounts and
   on every `ash:wallet-state`.
 - `OnchainSteps.active_wallet/1` reads it; `OnchainSteps.signer(linked, active)` is the
@@ -190,7 +196,8 @@ the rest. A declined signature is `wallet_declined`. Agents sign in with SIWA
   then `mix phx.server`, and open `/showcase/onchain`. The stand-in wallet has lab
   accounts A and B (linked) and C (not linked), a network choice, a refusal to switch, a
   decline and a slow mode. Run every row of the table above there before changing the
-  pattern.
+  pattern. `/showcase/wallet` then runs the same buttons with real Privy sign-in and a
+  real wallet on Base Sepolia; a press there needs a little Base Sepolia test ETH.
 - Sites keep their own test policy. A site that keeps a Vitest suite proves with a
   stand-in wallet that two presses in a row both reach `eth_sendTransaction`, that a
   decline reports `wallet_declined`, and that nothing is sent on the wrong chain or

@@ -27,8 +27,9 @@ and are not repeated here. For chain events recorded in the database, use `chain
    the steps for it. When it is not linked, or none is active, the figures stay on the
    account's own wallet, a note beside the button names both short addresses and asks
    the person to switch, and a press sends nothing and says why. Signed out, the active
-   wallet's figures show and the button asks for sign-in. See
-   [which wallet sends](references/hook-pattern.md#which-wallet-sends).
+   wallet's figures show and the button asks for sign-in. The account's linked wallets
+   come from `AccessContext.linked_wallets/1` (`nil` signed out), never a hard-coded
+   list. See [which wallet sends](references/hook-pattern.md#which-wallet-sends).
 4. **The server builds every step** (founder decision, 2026-09-27): it encodes the
    calldata and pushes the review to the panel before the button is pressed. The
    browser never encodes a transaction. See
