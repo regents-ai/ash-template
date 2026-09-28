@@ -63,13 +63,15 @@ defmodule AshTemplateWeb.Endpoint do
     documents: &AshTemplateWeb.PublicDocuments.document/1,
     guide: "/llms.txt"
 
+  # The largest body the site takes is a sign-in request of a few kilobytes;
+  # anything past a megabyte is refused before it is read.
   plug AshTemplateWeb.Plugs.Parsers,
     body_reader: {RegentIdentity.BodyReader, :read_body, []},
-    parsers: [:urlencoded, :multipart, :json],
+    parsers: [:urlencoded, :json],
     pass: ["*/*"],
+    length: 1_000_000,
     json_decoder: Phoenix.json_library()
 
-  plug Plug.MethodOverride
   plug Plug.Head
   plug AshTemplateWeb.Plugs.RuntimeSession
   plug AshTemplateWeb.Router
