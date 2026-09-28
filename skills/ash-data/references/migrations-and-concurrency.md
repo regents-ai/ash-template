@@ -47,6 +47,12 @@ deletes from or drops a listed table fails in production even when it ran locall
 Plan it as a new table or column, not a rewrite through a delete, and ask the founder
 first. Only Sean can lift the lock.
 
+The command guard on the founder's machines refuses the same thing before it reaches any
+database. A command that names `DELETE FROM`, `TRUNCATE` or `DROP TABLE` with a listed
+table is refused even against a local test database. Reset test data with the Ecto
+sandbox or a fresh database, never by emptying a listed table. Agents do not edit the
+guard's settings or ask it to allow a command.
+
 ## Snapshots are generator state
 
 Commit snapshots with their migrations where the project does so.
