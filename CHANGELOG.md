@@ -247,3 +247,14 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - KeyFleet's `launch_gate.ex` adds a Markdown closed answer for its `.md` routes. The
   template serves no Markdown routes, so that clause stays a KeyFleet difference; a site
   that serves Markdown behind the gate adds the same clause.
+
+## 2026-09-28 — From KeyFleet's motion step: back and forward are keyboard changes
+
+- `hooks/motion/shared.ts`: going back or forward in the browser counts as a key press,
+  so a menu or dialog it reopens is simply there rather than moving. From KeyFleet
+  (b11ffdf).
+- The page policy's comment on style attributes names both uses: the ratio card, and an
+  element moving under `JS.ignore_attributes(["style"])` (the motion lab's list uses it).
+  70c71eb had named the ratio card alone.
+- `docs/standardization-plan.md` lists the motion additions KeyFleet keeps as its own, to
+  weigh for the kit when a second site needs one.

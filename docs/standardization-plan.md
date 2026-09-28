@@ -163,4 +163,17 @@ shippable and checked in a browser.
 
 Done 2026-09-27: `make drift` (`scripts/drift.sh`) is that script.
 
+Motion kit additions KeyFleet keeps as its own (b11ffdf), to weigh for the kit when a
+second site needs one; until then each stays a KeyFleet difference:
+
+1. Drawers and panels move when they become visible (a watcher in `slides.ts`) rather
+   than on the press, so drawers opened by LiveView commands, or by another control
+   such as "Get a key", move too. The template's own drawer opens from its page script
+   before the press reaches the document, so its press-time step is right for it.
+2. Drawers that come in from the right.
+3. A menu opened by a button rather than a summary element pops.
+4. New items arriving in a chosen list (`Arrivals`).
+5. A number roll for figures with units and decimals ("12.5 USDC").
+6. A refusal shake and a first-scroll cascade on live pages.
+
 The options and recommendations behind each decision are in this file's history.
