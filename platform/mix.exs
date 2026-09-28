@@ -8,7 +8,7 @@ defmodule AshTemplate.MixProject do
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "42a439b9e5980e1174e3da85b24f0f60c2e78339"
   @regents "https://github.com/regents-ai/regents.git"
-  @regents_ref "baeffb12b2b64faf1d678ff64741c0b111a07288"
+  @regents_ref "faec71a88752f2ddbb3ff3077a34b914bb9687ac"
 
   def project do
     [
@@ -46,9 +46,7 @@ defmodule AshTemplate.MixProject do
       {:ash_postgres, "~> 2.13.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
-      # regent_identity pins its own elixir-utils commit for regent_privy; this pin wins.
-      {:regent_privy,
-       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
+      {:regent_privy, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy"},
       {:regent_identity, git: @regents, ref: @regents_ref, sparse: "identity"},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},

@@ -458,3 +458,8 @@ Operations
   2.0.0 and the docs list the change.
 - Profile errors from the shared Regents identity code carry a message and hint;
   the regents pin moves to baeffb12.
+
+## 2026-09-28 — Regents faec71a8
+
+- Moved `regent_identity` to Regents `faec71a8`, which pins the same elixir-utils
+  commit as the template (`590f6d6`). `regent_privy` no longer needs `override: true`.
