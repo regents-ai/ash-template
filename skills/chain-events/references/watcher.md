@@ -175,8 +175,10 @@ end
 ```
 
 Clearing `rescan_from` after a hand fix is an operator step: add a `:clear` update the
-system actor alone may run, and a short runbook in the site's docs, as KeyFleet has in
-`docs/chain-reader.md`.
+system actor alone may run, a release command that runs it, and a short runbook in the
+site's docs, as KeyFleet has in `docs/chain-reader.md`. See
+[operator actions](../../ash-security/references/operator-actions.md) for the command
+and the record it leaves.
 
 ## The event row
 

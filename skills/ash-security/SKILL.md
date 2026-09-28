@@ -11,6 +11,9 @@ A supplied tenant ID is not proof of membership; a browser state is not authoriz
 
 [Threat cases](references/threat-cases.md) covers cross-tenant references, privilege
 changes, nested data, field exposure and background execution.
+[Operator actions](references/operator-actions.md) covers who an operator is, staff
+pages, release commands that change live data, the record they leave and development
+tools.
 
 Explicit Ash options can replace scope-derived values: `actor: nil` may erase the
 scope's actor. Inspect wrapper defaults and keyword merges. In callbacks, propagate
