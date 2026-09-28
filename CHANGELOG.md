@@ -258,3 +258,9 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   70c71eb had named the ratio card alone.
 - `docs/standardization-plan.md` lists the motion additions KeyFleet keeps as its own, to
   weigh for the kit when a second site needs one.
+
+## 2026-09-28 — release.sh removes the throwaway database's volume
+
+- The cleanup ran `docker rm --force` on the database container, which leaves its
+  anonymous data volume (~48 MB) behind on every run; it now passes `--volumes`. Found by
+  Techtree (2b164bc).
