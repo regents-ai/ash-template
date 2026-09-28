@@ -52,6 +52,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-wordmark span { margin-left: 12px; }
 .sc-local { font-size: 11px; border: 1px solid currentColor; padding: 4px 8px; }
 .sc-api { margin-left: auto; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
+.sc-api + .sc-api { margin-left: 0; }
 .sc-layout { display: grid; grid-template-columns: var(--rg-rail-width) minmax(0, 1fr); gap: var(--rg-track-gap); }
 .sc-sidebar { align-self: start; position: sticky; top: 0; padding: 24px 16px; }
 .sc-sidebar nav { display: grid; }

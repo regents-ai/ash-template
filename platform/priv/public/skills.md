@@ -2,7 +2,7 @@
 
 Regent's sites are built from Ash Template, and these are the guides its builders follow: what to reach for, the rules each part keeps, and how to check the work. They are written for coding agents, and people can read every one of them here.
 
-{{skills}}
+{{skill_list}}
 
 Start with ash-stack: it says which of the others a task needs. Each skill links to its own reference pages.
 

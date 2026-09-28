@@ -212,20 +212,30 @@ defmodule AshTemplateWeb.PublicDocuments do
     }
   end
 
-  # `{{tools}}` is the browser tools table, from the one tool manifest, and
-  # `{{skills}}` the build skills table. The `{{showcase}}` line and the blank
+  # `{{tools}}` is the browser tools table, from the one tool manifest;
+  # `{{skills}}` the build skills table for agents and `{{skill_list}}` the list
+  # for people. The `{{showcase}}` line and the blank
   # line after it become the showcase section when the showcase is public, and
-  # nothing otherwise. `{{origin}}` goes last, since all three name it.
+  # nothing otherwise. `{{origin}}` goes last, since they all name it.
   defp source(name) do
     @sources[name]
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
     |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
     |> String.replace("{{skills}}", skills_table())
+    |> String.replace("{{skill_list}}", skill_list())
     |> String.replace("{{origin}}", url(""))
   end
 
   defp showcase_section(false), do: ""
   defp showcase_section(true), do: @sources["llms-showcase"] <> "\n"
+
+  defp skill_list do
+    base = "{{origin}}" <> AshTemplateWeb.AgentSkills.base()
+
+    Enum.map_join(AshTemplateWeb.AgentSkills.skills(), "\n", fn skill ->
+      "- **[#{skill.name}](#{base}/#{skill.name}/SKILL.md)**: #{skill.description}"
+    end)
+  end
 
   defp skills_table do
     base = "{{origin}}" <> AshTemplateWeb.AgentSkills.base()
