@@ -44,8 +44,9 @@ image; see [Release](platform/README.md#release).
 1. Follow the [platform quickstart](platform/README.md#quickstart) to create the
    local database, load Privy credentials and start the server.
 
-2. Run `gh auth login` once: `make check` fetches the required-fixes list and
-   regents-cli's command description checker from GitHub.
+2. Run `gh auth login` once and install `uv`: `make check` fetches the
+   required-fixes list from GitHub, and runs regents-cli's command description
+   checker with `uv`.
 
 ## Shared dependencies
 

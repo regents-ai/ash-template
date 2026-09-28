@@ -4,6 +4,11 @@ Status: decided 2026-09-26 (founder answers "1 a 2 a 3 a 4 a 5 a", then "6 a": j
 history already on GitHub). Steps 1 and 2 are done.
 Follows the founder's "2 a 3 a 4 a" of 2026-09-26 (see `standardization-plan.md`).
 
+Superseded in part 2026-09-27: the founder moved `regents` to Python, published on PyPI as
+`regents-cli` (regents-cli `65722c6`); the TypeScript `@regentslabs/cli` left `main`. 1.0 keeps
+`regents auth`, each site's described commands, `regents <site> doctor` and `regents techtree`;
+the shared `regents profile` commands are dropped. The regents-cli chief owns that plan.
+
 ## Where things are today
 
 | Command line | Language | Commands | Published |

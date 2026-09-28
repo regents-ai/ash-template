@@ -317,3 +317,14 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - `make readiness` also checks the header on every public page, that `/capabilities`
   parses with WebMCP-valid entries, that the page's script registers exactly the manifest's
   site tools, and that `/docs` and `/llms.txt` list exactly the manifest's tools.
+
+## 2026-09-28 — The command check runs regents-cli's Python checker
+
+- `make check-cli` runs `regents_cli.check_commands` with `uv` straight from GitHub at
+  regents-cli `65722c6`, the founder's Python rewrite; no `gh`, `npm` or checkout. Every
+  site copies this target.
+- `cli/commands.json` points `$schema` at the format's new home,
+  `src/regents_cli/schemas/commands.v1.json` (the old address answers 404; Patchbay
+  moved first, 08ebd27).
+- `cli/README.md` names the `regents-cli` package and drops the shared `regents profile`
+  commands, which 1.0 no longer has.
