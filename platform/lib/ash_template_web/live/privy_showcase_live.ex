@@ -39,7 +39,9 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
       <header class="sc-header privy-reference-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span class="sc-local">
-          {if @local?, do: "Local only · read-only wallet data", else: "Read-only wallet data"}
+          {if @local?,
+            do: "Local only · this page only reads your wallet",
+            else: "This page only reads your wallet"}
         </span>
         <%!-- Same markup and event markers as the site header. No second auth handler. --%>
         <Shell.account_control account_control={@account_control} enabled={@mode == :configured} />
@@ -48,12 +50,12 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
 
       <div class="privy-reference-content">
         <section class="privy-reference-intro">
-          <p class="sc-eyebrow">Working reference</p>
-          <h1>Privy integration</h1>
+          <p class="sc-eyebrow">Working example</p>
+          <h1>Sign in with Privy</h1>
           <p>
             Sign in once, connect the wallet you want to use, and watch the selection arrive without replacing this page.
           </p>
-          <p>No transaction or extra signature is requested by the panels below.</p>
+          <p>Nothing on this page asks you to approve a transaction or sign a message.</p>
           <P.button
             type="button"
             disabled={@mode != :configured}
@@ -66,10 +68,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
               else: "Sign in with Privy"}
           </P.button>
           <p :if={@mode == :unconfigured} role="status">
-            Configure the local Privy app and verification key before using these controls. Nothing is simulated.
-          </p>
-          <p :if={@mode == :fixture} role="status">
-            This server uses a test verifier. Readouts are test data; real sign-in is disabled here.
+            Sign-in isn't available on this copy of the site.
           </p>
         </section>
 
@@ -77,7 +76,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           <h2 id="privy-state-heading">Account and wallet</h2>
           <dl class="privy-reference-facts">
             <div>
-              <dt>Session</dt><dd id="privy-session-state">
+              <dt>Status</dt><dd id="privy-session-state">
                 {if @account_control.kind == :signed_in, do: "Signed in", else: "Signed out"}
               </dd>
             </div>
@@ -85,7 +84,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
               <dt>Account</dt><dd>{@account_control.label}</dd>
             </div>
             <div>
-              <dt>Selected connected wallet</dt><dd id="privy-selected-wallet">
+              <dt>Wallet in use</dt><dd id="privy-selected-wallet">
                 {@wallet || "No wallet selected"}
               </dd>
             </div>
@@ -100,7 +99,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             Connect wallet
           </P.button>
           <p>
-            Signing in and having a transaction-ready wallet are separate states. Disconnect in the header clears this wallet selection.
+            Signing in and having a wallet ready to send are two separate steps. Disconnect in the header clears the wallet shown here.
           </p>
         </section>
 
@@ -108,53 +107,46 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           class="rg-panel rg-panel--surface privy-reference-setup"
           aria-labelledby="privy-setup-heading"
         >
-          <h2 id="privy-setup-heading">Setup and source map</h2>
+          <h2 id="privy-setup-heading">Set up your own copy</h2>
           <ol>
-            <li>Enable wallet login in your Privy app and admit your exact localhost origin.</li>
             <li>
-              Provide <code>PRIVY_APP_ID</code>
-              and <code>PRIVY_VERIFICATION_KEY</code>
-              to the development process. Never put an app secret in browser code.
+              In your Privy dashboard, turn on wallet sign-in and add your site's exact web address to the allowed list.
             </li>
             <li>
-              Create your local PostgreSQL database (<code>ash_template_dev</code>
-              by default), then run <code>mix ash_template.setup_local_auth</code>.
+              Give your copy of the site its Privy app ID and verification key, named
+              <code>PRIVY_APP_ID</code>
+              and <code>PRIVY_VERIFICATION_KEY</code>. Keep the Privy app secret off the page people load.
             </li>
             <li>
-              Build the assets with <code>mix assets.build</code>, start <code>mix phx.server</code>, then open <code>/showcase/privy</code>.
+              Create your database, then prepare sign-in with the command <code>mix ash_template.setup_local_auth</code>.
+            </li>
+            <li>
+              Start the site with the commands <code>mix assets.build</code>
+              and <code>mix phx.server</code>, then open this page.
             </li>
           </ol>
           <details>
-            <summary>Which file owns each step?</summary>
+            <summary>What each part does</summary>
             <ul>
+              <li>The sign-in button in the header, the same on every page.</li>
               <li>
-                <code>components/shell.ex · account_control/1</code>: the shared header markup.
+                One small script that hears every sign-in button press and keeps the page and the site in step.
               </li>
+              <li>The Privy connection: signing in, choosing a wallet and signing out.</li>
+              <li>This page's wallet readout, which only watches and never signs anyone in.</li>
               <li>
-                <code>assets/js/auth_lazy.ts</code>: one document-level button dispatcher and server-session coordination.
-              </li>
-              <li>
-                <code>assets/js/privy_bridge.tsx</code>: the existing Privy SDK hooks, selection and logout handling.
-              </li>
-              <li>
-                <code>assets/js/hooks/privy_showcase.ts</code>: observes wallet state; no authentication implementation.
-              </li>
-              <li>
-                <code>live/privy_showcase_live.ex</code>: this page's wallet selection readout.
-              </li>
-              <li>
-                <code>live/session.ex</code>: verified server identity; browser wallet addresses do not grant authority.
+                The site's own record of who is signed in. A wallet address in the browser never proves who you are.
               </li>
             </ul>
           </details>
           <p>
-            Shared presentation lives in <code>design-system/regent_ui</code>. Shared identity lives in <code>regents/identity</code>; token verification lives in <code>elixir-utils/privy</code>. The browser integration shown here belongs to this product.
+            The look comes from Regent's shared design kit, and the sign-in check comes from a shared Regent library. The Privy connection shown here belongs to this site.
           </p>
           <a
             href="https://docs.privy.io/authentication/user-authentication/logout"
             target="_blank"
             rel="noopener noreferrer"
-          >Privy logout documentation ↗</a>
+          >Privy's guide to signing out ↗</a>
         </section>
       </div>
     </main>

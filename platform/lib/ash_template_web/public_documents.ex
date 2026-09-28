@@ -46,7 +46,8 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Showcase",
        "Every shared Ash Template component, in light and dark, with the page layouts they build."},
     "/showcase/privy" =>
-      {"Privy integration", "Wallet sign-in with Privy, working as an Ash Template page runs it."},
+      {"Sign in with Privy",
+       "Wallet sign-in with Privy, working as an Ash Template page runs it."},
     "/skills" =>
       {"Build skills",
        "The guides Ash Template's builders follow, written for coding agents and open to everyone."},

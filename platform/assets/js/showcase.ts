@@ -239,7 +239,7 @@ const ShowcaseWallet = {
       const status = this.el.querySelector("[data-demo-wallet]")!
       if (button.hasAttribute("data-demo-connect")) {
         connected = true
-        status.textContent = `Fixture connected · ${address}`
+        status.textContent = `Practice wallet connected · ${address}`
       }
       if (button.hasAttribute("data-demo-disconnect")) {
         connected = false
@@ -266,17 +266,17 @@ const ShowcaseWallet = {
           address,
         )
         if (!wallet) {
-          row.textContent = `#${id} · Connect the fixture first`
+          row.textContent = `#${id} · Connect the practice wallet first`
           return
         }
-        const outcome = this.el.querySelector<HTMLSelectElement>(
-          "[data-demo-outcome]",
-        )!.value
+        const outcome = this.el
+          .querySelector<HTMLSelectElement>("[data-demo-outcome]")!
+          .selectedOptions[0].text.trim()
         void wallet.provider.request({
           method: "eth_sendTransaction",
           params: [],
         })
-        row.textContent = `#${id} · Wallet received · pending`
+        row.textContent = `#${id} · Wallet has it · waiting`
         const timer = setTimeout(() => {
           row.textContent = `#${id} · ${outcome}`
           timers.delete(timer)

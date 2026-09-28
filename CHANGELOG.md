@@ -379,3 +379,6 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - The image builds from the repository root (only `platform/` and `skills/` enter it);
   deploy with `fly deploy . --config platform/fly.toml`. `make release` builds from
   `git archive` of both folders and checks the skills index.
+- The showcase pages now use plain wording for the public demo: practice pieces are called
+  practice, and no file paths, code names or internal terms appear outside the labelled
+  code and the component list.

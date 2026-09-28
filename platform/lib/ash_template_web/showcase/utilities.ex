@@ -8,8 +8,8 @@ defmodule AshTemplateWeb.Showcase.Utilities do
 
     claims = %{
       "iss" => "privy.io",
-      "aud" => if(scenario == :audience, do: "another-app", else: "showcase-fixture"),
-      "sub" => "did:privy:showcase-fixture",
+      "aud" => if(scenario == :audience, do: "another-app", else: "showcase-practice"),
+      "sub" => "did:privy:showcase-practice",
       "iat" => now - 10,
       "exp" => if(scenario == :expired, do: now - 1, else: now + 3600)
     }
@@ -17,17 +17,21 @@ defmodule AshTemplateWeb.Showcase.Utilities do
     {_, token} = key |> JOSE.JWT.sign(%{"alg" => "ES256"}, claims) |> JOSE.JWS.compact()
 
     case RegentPrivy.verify_token(token,
-           app_id: "showcase-fixture",
+           app_id: "showcase-practice",
            verification_key: public_pem,
            now: now
          ) do
-      {:ok, verified} ->
-        %{result: "Verified fixture", identity: verified.privy_user_id, session_created: false}
+      {:ok, _verified} ->
+        "Practice sign-in check: valid. Nobody was signed in."
 
       {:error, reason} ->
-        %{result: "Rejected fixture", reason: reason, session_created: false}
+        "Practice sign-in check: turned down, because #{rejection(reason)}. Nobody was signed in."
     end
   end
+
+  defp rejection(:token_expired), do: "it has expired"
+  defp rejection(:invalid_audience), do: "it was made for a different app"
+  defp rejection(_reason), do: "it did not pass the check"
 
   def database do
     config = AshTemplate.Repo.config()
@@ -38,13 +42,13 @@ defmodule AshTemplateWeb.Showcase.Utilities do
       case Ecto.Adapters.SQL.query(AshTemplate.Repo, "SELECT current_database(), 1", [],
              timeout: 2_000
            ) do
-        {:ok, %{rows: [[name, 1]]}} -> %{database: name, result: "SELECT 1 succeeded", writes: 0}
-        {:error, _} -> %{error: "Local database unavailable."}
+        {:ok, %{rows: [[name, 1]]}} -> "Reached the #{name} database. Nothing was written."
+        {:error, _} -> "Local database unavailable."
       end
     else
-      %{error: "This diagnostic requires the local development database."}
+      "This check needs the local development database."
     end
   catch
-    :exit, _ -> %{error: "Local database process unavailable."}
+    :exit, _ -> "Local database process unavailable."
   end
 end

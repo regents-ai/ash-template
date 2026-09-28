@@ -55,12 +55,12 @@ defmodule AshTemplateWeb.Showcase.Catalog do
     shared =
       for app <- [:regent_privy],
           module <- Application.spec(app, :modules) || [],
-          do: {module, "Shared library"}
+          do: {module, "Shared by every site"}
 
     product =
       for module <- Application.spec(:ash_template, :modules) || [],
           String.starts_with?(inspect(module), "AshTemplate.DatabaseConfig"),
-          do: {module, "Product-owned"}
+          do: {module, "This site only"}
 
     (shared ++ product)
     |> Enum.uniq()

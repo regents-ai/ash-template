@@ -43,7 +43,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
        route_spec: AshTemplateWeb.RouteCatalog.fetch!(:app),
        account: %AshTemplate.AccessContext.AccountControl{
          kind: :preview,
-         label: "Fixture"
+         label: "Sample account"
        }
      ), layout: false}
   end
@@ -51,7 +51,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
   def render(%{live_action: :preview} = assigns) do
     ~H"""
     <AshTemplateWeb.Layouts.app
-      flash={%{"info" => "Layout flash · local preview"}}
+      flash={%{"info" => "A sample message at the top of the page."}}
       inner_content={nil}
     />
     <AshTemplateWeb.Components.Shell.shell
@@ -62,7 +62,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
     >
       <:content>
         <div style="padding: 32px">
-          <h1>Shell preview</h1><p>Navigation, account control, theme, background.</p><a
+          <h1>Page frame preview</h1><p>Menu, account button, theme switch and background.</p><a
             href="/showcase"
             target="_top"
           >Back to showcase</a>
@@ -80,7 +80,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
         <a href="/showcase/catalog" class="sc-api">Agent catalog ↗</a>
-        <a href="/showcase/privy" class="sc-api">Privy reference ↗</a>
+        <a href="/showcase/privy" class="sc-api">Privy sign-in ↗</a>
         <a href="/showcase/wallet" class="sc-api">Wallet buttons ↗</a>
       </header>
       <div class="sc-layout">
@@ -91,7 +91,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <a href="#feedback">03 <span>Feedback</span></a>
             <a href="#composition">04 <span>Composition</span></a>
             <a href="#identity">05 <span>Identity & wallets</span></a>
-            <a href="#data">06 <span>Ash & utilities</span></a>
+            <a href="#data">06 <span>Built with Ash</span></a>
             <a href="#inventory">07 <span>Complete inventory</span></a>
           </nav>
           <p class="sc-note">One library.<br />Four identities.</p>
@@ -183,10 +183,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <P.disclosure
               phx-mounted={JS.ignore_attributes("open")}
               id="palette-notes"
-              summary="Palette & structural details"
+              summary="Palette details"
             >
               <p>
-                Source: the shared design-system package. Platform uses charcoal, Autolaunch tangerine, Patchbay platinum, and Techtree powder blue. Preview edits stay in this browser; shared source changes reach each site through its asset build.
+                Colors come from Regent's shared design kit. Platform uses charcoal, Autolaunch tangerine, Patchbay platinum and Techtree powder blue. Changes you make here stay in this browser. Changes to the shared kit reach each site the next time it is built.
               </p>
               <dl class="sc-token-list" data-sc-tokens></dl>
             </P.disclosure>
@@ -219,10 +219,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   </p><code>0x71C7..976F</code><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="type-tokens"
-                    summary="Type & spacing tokens"
+                    summary="Type and spacing"
                   >
                     <p>
-                      Titles & subtitles: Geist Pixel Square, weight 400. Body & interface: Geist Sans. Code & technical identifiers: Geist Mono. Space: 8 / 16 / 24 / 32 / 40 / 48 / 64 px.
+                      Titles and subtitles: Geist Pixel Square, weight 400. Body text and controls: Geist Sans. Addresses and code: Geist Mono. Space: 8 / 16 / 24 / 32 / 40 / 48 / 64 px.
                     </p>
                   </P.disclosure>
                 </S.panel>
@@ -260,8 +260,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
                     summary="What is shared?"
                   >
                     <p>
-                      Components own presentation. Each application supplies actions, routes, authorization and state.
-                    </p><code>Regent.Primitives.disclosure/1</code>
+                      The shared pieces decide how things look. Each site decides what they do and who can use them.
+                    </p>
                   </P.disclosure><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="disclosure-open"
@@ -269,7 +269,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                     open
                   >
                     <p>
-                      Detail stays in the DOM when collapsed, and the catalog exposes the inventory independently of visual state.
+                      A closed section still holds its text, so search and screen readers can find it.
                     </p>
                   </P.disclosure><.api module="Regent.Primitives" function="disclosure" />
                 </S.panel>
@@ -278,7 +278,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           </section>
 
           <section id="capabilities" class="sc-section">
-            <.heading number="02" title="Capabilities" detail="One component. Your images and copy." />
+            <.heading number="02" title="Capabilities" detail="One card. Your images and words." />
             <div class="rg-feature-grid">
               <S.capability_card
                 :for={card <- @capabilities}
@@ -368,13 +368,13 @@ defmodule AshTemplateWeb.ShowcaseLive do
                       Reset items
                     </P.button>
                   </div>
-                  <p>Local Ash records only; reload clears this example.</p>
+                  <p>Items live only on this page. Reloading clears them.</p>
                   <.api module="Regent.Primitives" function="empty_state" />
                 </S.panel>
               </div>
               <div class="sc-example rg-feature">
                 <S.panel id="slow-read-demo" class="sc-card">
-                  <h3>Slow reads <small>Fixture</small></h3>
+                  <h3>Slow reads <small>Practice</small></h3>
                   <div class="rg-field">
                     <div class="sc-segment" aria-label="Wallet to read">
                       <button
@@ -473,7 +473,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   <P.status tone="success">Ready</P.status>
                   <P.button variant="quiet" phx-click="edit_step">Edit</P.button>
                 </div>
-                <p>Edits stay in this local workshop.</p>
+                <p>Edits stay on this page.</p>
               </S.panel>
               <S.panel id="showcase-facts">
                 <div class="rg-panel__heading">
@@ -492,21 +492,21 @@ defmodule AshTemplateWeb.ShowcaseLive do
                     Copy
                   </P.copy_button>
                 </div>
-                <p>Application-owned records</p>
+                <p>Each site fills these in from its own records.</p>
               </S.panel>
             </div>
             <P.disclosure
               phx-mounted={JS.ignore_attributes("open")}
               id="shell-detail"
-              summary="Shell, theme toggle & layouts"
+              summary="Page frame and theme switch"
             >
               <iframe
                 id="shell-preview"
-                title="Live shell component preview"
+                title="Page frame preview"
                 src="/showcase/preview"
                 loading="lazy"
               ></iframe><p>
-                The root layout renders this document. The preview renders the app layout, navigation, account control and theme toggle.
+                This preview shows the frame around every signed-in page: the menu, the account button and the light and dark switch.
               </p>
             </P.disclosure>
           </section>
@@ -516,14 +516,14 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <div class="sc-grid">
               <div class="sc-example rg-feature">
                 <S.panel class="sc-card">
-                  <h3>Wallet lifecycle <small>Fixture</small></h3><div
+                  <h3>Wallet steps <small>Practice</small></h3><div
                     id="wallet-fixture"
                     class="rg-field"
                     phx-hook="ShowcaseWallet"
                     phx-update="ignore"
                   >
                     <div class="sc-row">
-                      <P.button data-demo-connect>Connect fixture</P.button><P.button
+                      <P.button data-demo-connect>Connect practice wallet</P.button><P.button
                         variant="quiet"
                         data-demo-disconnect
                       >Disconnect</P.button>
@@ -531,8 +531,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
                       id="fixture-outcome"
                       data-demo-outcome
                     ><option value="confirmed">Confirmed</option><option value="rejected">
-                      Rejected
-                    </option><option value="reverted">Reverted</option></select><P.button data-demo-send>Send fixture transaction</P.button><ol
+                      Declined in the wallet
+                    </option><option value="reverted">Turned down by the network</option></select><P.button data-demo-send>Send practice transaction</P.button><ol
                       data-demo-results
                       aria-live="polite"
                     >
@@ -540,62 +540,59 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   </div><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="wallet-contract"
-                    summary="Execution contract"
+                    summary="How the practice wallet works"
                   >
                     <p>
-                      This isolated provider never accesses a real wallet or network. Each press creates its own request, including while another is pending. Disconnect affects only this fixture. The demo uses the existing wallet selection utility.
+                      These practice pieces never touch a real wallet or network. Each press starts its own request, even while an earlier one is still waiting. Disconnect here only affects the practice wallet.
                     </p>
                   </P.disclosure>
                 </S.panel>
               </div>
               <div class="sc-example rg-feature">
                 <S.panel class="sc-card">
-                  <h3>Privy <small>Real app session</small></h3>
+                  <h3>Privy <small>Real sign-in</small></h3>
                   <div data-sc-privy-mode={@privy_mode}>
                     <div id="account-control" class="sc-row">
                       <P.button
                         :if={@privy_mode == :configured && @account_control.kind == :sign_in}
                         data-account-target="sign-in"
-                      >Connect Privy</P.button>
+                      >Sign in with Privy</P.button>
                       <P.button
                         :if={@privy_mode == :configured && @account_control.kind == :signed_in}
                         variant="secondary"
                         data-account-target="sign-out"
-                      >Disconnect Privy</P.button>
+                      >Sign out</P.button>
                       <P.button
                         :if={@privy_mode != :configured}
                         disabled
                         aria-describedby="privy-unavailable"
-                      >Connect Privy</P.button>
+                      >Sign in with Privy</P.button>
                     </div>
                     <p :if={@privy_mode == :configured && @account_control.kind == :signed_in}>
                       Signed in as {@account_control.label}.
                     </p>
                     <p :if={@privy_mode == :unconfigured} id="privy-unavailable">
-                      Real sign-in is unavailable until this server has a Privy app ID and
-                      verification key. The Privy app must also allow this local origin.
+                      Sign-in isn't available on this copy of the site.
                     </p>
                   </div><p id="account-auth-status" role="status" phx-update="ignore" hidden></p><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="privy-scope"
-                    summary="Uses your configured identity"
+                    summary="Uses your real account"
                   >
                     <p>
-                      These controls use the application's existing Privy bridge and verified
-                      session loader. Only the action matching the server's current account
-                      state is offered. Connecting may open Privy; disconnecting ends the local
-                      app session. Provider readiness and the allowed origin still need to be
-                      verified with a real account. Wallet fixture state is separate.
+                      These buttons use this site's real sign-in. You only see the button that
+                      fits where you are now. Signing in may open Privy. Signing out ends your
+                      visit on this site. The practice wallet is separate.
                     </p>
                   </P.disclosure><h3>Product pages</h3><div class="sc-row">
                     <a href="/app">Overview ↗</a><a href="/account">Account ↗</a>
                   </div><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="real-actions"
-                    summary="Real action requirements"
+                    summary="What real actions need"
                   >
                     <p>
-                      These destinations use their existing authentication and wallet verification. Transactions require a wallet signature. The showcase does not submit them.
+                      These pages use real sign-in and check your wallet. Anything sent from your wallet asks you to approve it there first. This page never sends anything for you.
                     </p>
                   </P.disclosure>
                 </S.panel>
@@ -604,24 +601,24 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <P.disclosure
               phx-mounted={JS.ignore_attributes("open")}
               id="connections-detail"
-              summary="Verified connections · local fixture"
+              summary="Linked accounts · practice"
             >
               <AshTemplateWeb.Components.VerifiedConnections.verified_connections
                 id="showcase-connections"
                 identities={@identities}
                 authenticated
                 notice={@connection_notice}
-                description="Local presentation fixture"
+                description="Practice only. Nothing is linked for real."
               />
             </P.disclosure>
           </section>
 
           <section id="data" class="sc-section">
-            <.heading number="06" title="Ash & utilities" detail="Real functions. Bounded inputs." />
+            <.heading number="06" title="Built with Ash" detail="Real checks. Safe limits." />
             <div class="sc-grid">
               <div class="sc-example rg-feature">
                 <S.panel class="sc-card">
-                  <h3>Ash action <small>In memory</small></h3><.form
+                  <h3>Ash form <small>This page only</small></h3><.form
                     for={@form}
                     id="sample-form"
                     phx-submit="create_sample"
@@ -641,32 +638,32 @@ defmodule AshTemplateWeb.ShowcaseLive do
                         type="number"
                         value={@form[:quantity].value}
                       />
-                    </P.field><P.button type="submit">Run create action</P.button>
+                    </P.field><P.button type="submit">Add item</P.button>
                   </.form><ul id="sample-records">
                     <li :for={record <- @records}>{record.title} × {record.quantity}</li>
                   </ul><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="ash-demo-notes"
-                    summary="Resource & validation"
+                    summary="Rules for this form"
                   >
                     <p>
-                      Runs Ash.Changeset.for_create and Ash.create against Ash.DataLayer.Simple. Title: 2–80 characters. Quantity: 1–100. Records live only in this view; no database writes. AshPhoenix is not installed in this application; this form uses Phoenix with an Ash action.
+                      Built with Ash. The title needs 2 to 80 characters and the quantity must be from 1 to 100. Items live only on this page and are never saved.
                     </p>
                   </P.disclosure>
                 </S.panel>
               </div>
               <div class="sc-example rg-feature">
                 <S.panel class="sc-card">
-                  <h3>Privy verification</h3><form
+                  <h3>Sign-in check <small>Practice</small></h3><form
                     id="utility-form"
                     class="rg-field"
                     phx-submit="run_utility"
                   >
-                    <label for="utility-kind">Function</label><select id="utility-kind" name="kind"><option value="privy_valid">
-                      Privy: valid fixture token
-                    </option><option value="privy_expired">Privy: expired fixture token</option><option value="privy_audience">
-                      Privy: wrong audience
-                    </option></select><P.button type="submit">Run</P.button>
+                    <label for="utility-kind">Example</label><select id="utility-kind" name="kind"><option value="privy_valid">
+                      Valid practice sign-in
+                    </option><option value="privy_expired">Expired practice sign-in</option><option value="privy_audience">
+                      Practice sign-in for another app
+                    </option></select><P.button type="submit">Check</P.button>
                   </form><pre id="utility-result" role="status">{utility_output(@result)}</pre><P.copy_button
                     :if={utility_output(@result)}
                     id="utility-result-copy"
@@ -677,10 +674,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   </P.copy_button><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="utility-notes"
-                    summary="Ownership & effects"
+                    summary="What this checks"
                   >
                     <p>
-                      Privy verification uses an ephemeral fixture key and the real RegentPrivy verifier, with valid, expired and wrong-audience examples. Fixture tokens never enter the session endpoint. Shared APIs are labeled in the inventory below.
+                      Each example makes a practice sign-in and runs it through the same check the real site uses: one valid, one expired and one made for a different app. Practice sign-ins never sign anyone in, and they never touch a real wallet or network.
                     </p>
                   </P.disclosure>
                 </S.panel>
@@ -690,7 +687,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
                   <h3>Postgres <small>Read only</small></h3><P.button
                     variant="secondary"
                     phx-click="database"
-                  >Check isolated database</P.button><P.disclosure
+                  >Check the database</P.button><P.disclosure
                     phx-mounted={JS.ignore_attributes("open")}
                     id="database-notes"
                     summary="Diagnostic boundary"
@@ -708,21 +705,21 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <.heading
               number="07"
               title="Complete inventory"
-              detail="Inspect without expanding the page."
+              detail="Every piece in the kit, folded away."
             />
             <p class="sc-note">
-              {length(@catalog.components)} component entries · {length(@catalog.domains)} Ash domains
+              {length(@catalog.components)} components · {length(@catalog.domains)} Ash data groups
             </p>
             <P.disclosure
               phx-mounted={JS.ignore_attributes("open")}
               id="component-inventory"
-              summary="Active design components"
+              summary="Design components"
             >
               <div :for={item <- @catalog.components} class="sc-inventory-row">
-                <code>{item.module}.{item.function}/1</code><small>Attributes: {Enum.join(
+                <code>{item.module}.{item.function}/1</code><small>Settings: {Enum.join(
                   item.attributes,
                   ", "
-                )} · Slots: {Enum.join(item.slots, ", ")}</small>
+                )} · Parts: {Enum.join(item.slots, ", ")}</small>
               </div>
             </P.disclosure>
             <P.disclosure
@@ -733,18 +730,18 @@ defmodule AshTemplateWeb.ShowcaseLive do
             >
               <div :for={resource <- domain.resources} class="sc-inventory-row">
                 <code>{resource.name}</code><p>
-                  Actions: {Enum.map_join(resource.actions, ", ", &"#{&1.name} (#{&1.type})")}
-                </p><small>Attributes: {Enum.map_join(
+                  What it can do: {Enum.map_join(resource.actions, ", ", &"#{&1.name} (#{&1.type})")}
+                </p><small>Fields: {Enum.map_join(
                   resource.attributes,
                   ", ",
-                  &"#{&1.name}#{if &1.public, do: "", else: " [private]"}"
+                  &"#{&1.name}#{if &1.public, do: "", else: " (private)"}"
                 )}</small>
               </div>
             </P.disclosure>
             <P.disclosure
               phx-mounted={JS.ignore_attributes("open")}
               id="utility-inventory"
-              summary={"Utility API · #{length(@catalog.utilities)} modules"}
+              summary={"Shared tools · #{length(@catalog.utilities)}"}
             >
               <div :for={item <- @catalog.utilities} class="sc-inventory-row">
                 <code>{item.name}</code><small>{item.owner}</small><p>
@@ -755,10 +752,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <P.disclosure
               phx-mounted={JS.ignore_attributes("open")}
               id="coverage-scope"
-              summary="Coverage boundary"
+              summary="What this list covers"
             >
               <p>
-                The visual inventory covers the active components from regent_ui and this application's components directory. Product pages compose these pieces and retain their own behavior. Ash resources are inspected through installed metadata; this route never enumerates their records. Utilities list installed shared libraries and this application's database module.
+                This list covers every shared design component and the ones this site adds. Product pages are built from these pieces and keep their own behavior. The Ash groups show how the data is shaped, never the data itself. The shared tools are the libraries every site uses, plus this site's database settings.
               </p>
             </P.disclosure>
           </section>
@@ -775,7 +772,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
 
   defp utility_output(nil), do: nil
   defp utility_output(%{example: _example}), do: nil
-  defp utility_output(result), do: Jason.encode!(result, pretty: true)
+  defp utility_output(%{check: text}), do: text
 
   attr :number, :string, required: true
   attr :title, :string, required: true
@@ -795,7 +792,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
   defp api(assigns) do
     ~H"""
     <details class="sc-api-note">
-      <summary>API <span aria-hidden="true">›</span></summary><code>{@module}.{@function}/1</code>
+      <summary>Code <span aria-hidden="true">›</span></summary><code>{@module}.{@function}/1</code>
     </details>
     """
   end
@@ -882,10 +879,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
   end
 
   def handle_event("run_utility", params, socket),
-    do: {:noreply, assign(socket, :result, run_utility(params["kind"], params))}
+    do: {:noreply, assign(socket, :result, %{check: run_utility(params["kind"])})}
 
   def handle_event("database", _, socket),
-    do: {:noreply, assign(socket, :result, Utilities.database())}
+    do: {:noreply, assign(socket, :result, %{check: Utilities.database()})}
 
   def handle_event("example_action", _, socket),
     do: {:noreply, assign(socket, :result, %{example: "Action received."})}
@@ -901,7 +898,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
     identities =
       if action == "link" and not is_nil(provider),
         do: [
-          %{provider: provider, username: "workshop", display_name: "Workshop fixture"}
+          %{provider: provider, username: "workshop", display_name: "Workshop sample"}
           | identities
         ],
         else: identities
@@ -909,7 +906,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
     {:noreply,
      assign(socket,
        identities: identities,
-       connection_notice: %{tone: :info, message: "Fixture updated. No provider request."}
+       connection_notice: %{
+         tone: :info,
+         message: "Practice list updated. Nothing was linked for real."
+       }
      )}
   end
 
@@ -947,7 +947,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         image: nil,
         description: "Rules and shared edges give every region a deliberate place on the page.",
         href: "#foundations",
-        action: "Explore primitives"
+        action: "See the basics"
       },
       %{
         index: "002",
@@ -956,7 +956,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         kind: :triangle,
         image: nil,
         description:
-          "One set of components, assembled to suit each product. Replace the copy and illustration without rebuilding the card.",
+          "One set of components, put together to suit each product. Change the words and picture without rebuilding the card.",
         href: "#composition",
         action: "Explore composition"
       },
@@ -967,9 +967,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
         kind: :image,
         image: "/images/brand/mark-flat-dark.svg",
         description:
-          "Use an image and alternative text, or supply custom artwork in the media slot. Actions are optional and remain application-owned.",
+          "Use an image with a short description for screen readers, or your own artwork. Buttons on the card are optional.",
         href: "#inventory",
-        action: "Inspect component API"
+        action: "See every component"
       }
     ]
   end
@@ -985,8 +985,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
 
   defp present?(value), do: is_binary(value) and String.trim(value) != ""
 
-  defp run_utility("privy_valid", _params), do: Utilities.privy(:valid)
-  defp run_utility("privy_expired", _params), do: Utilities.privy(:expired)
-  defp run_utility("privy_audience", _params), do: Utilities.privy(:audience)
-  defp run_utility(_kind, _params), do: %{error: "Choose a listed utility."}
+  defp run_utility("privy_valid"), do: Utilities.privy(:valid)
+  defp run_utility("privy_expired"), do: Utilities.privy(:expired)
+  defp run_utility("privy_audience"), do: Utilities.privy(:audience)
+  defp run_utility(_kind), do: "Choose one of the listed examples."
 end
