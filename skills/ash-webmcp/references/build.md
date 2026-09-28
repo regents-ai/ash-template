@@ -123,6 +123,11 @@ const tools = manifest.tools.filter(tool => tool.scope === "site").map(tool => (
 - A write cancelled after the request left returns `{outcome: "unknown"}` with how to
   check, never "cancelled".
 - Keep results small and bounded. Refuse rather than truncate data into a lie.
+- A refusal is `isError: true` with the site's one error shape as `structuredContent`:
+  `{error: {code, message, hint}}`, the same as its JSON errors, plus the message and
+  hint as the text content. Anything more (field messages as `details`,
+  `retry_after_seconds`) goes inside `error`. No other refusal shape, in page tools or
+  hosted MCP tools.
 
 ### 3. Mark what a tool does, truthfully
 
