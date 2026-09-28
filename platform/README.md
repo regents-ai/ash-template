@@ -233,8 +233,19 @@ the app is in `platform/`, and the build skills it serves are read from
 folders). The build fetches every dependency at the version the lockfiles pin.
 The shared libraries' repositories are public, so the build takes no
 credentials. The Fly configuration lives in `fly.toml` and `fly.staging.toml`;
-deploy from the repository root with `fly deploy . --config platform/fly.toml`
-(or `platform/fly.staging.toml`), so both folders reach the build.
+`fly.toml` names no app, so every site deploys it under its own name.
+
+Deploy from the repository root with the app's name, for the hosted demo:
+
+```sh
+scripts/deploy.sh template-regents-sh
+```
+
+It refuses a working tree with any change and a commit that is not on
+`origin/main`, then runs `fly deploy . --config platform/fly.toml --app <app>
+--ha=false --remote-only --image-label <short commit>`, so both folders reach
+the build and the image names the commit it came from. Staging deploys with
+`fly deploy . --config platform/fly.staging.toml`.
 
 A new staging database is empty and has no copy of the shared
 `regent_names.platform_human_users` table, so `bin/migrate` fails on it. Its
