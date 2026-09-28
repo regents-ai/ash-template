@@ -382,3 +382,48 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - The showcase pages now use plain wording for the public demo: practice pieces are called
   practice, and no file paths, code names or internal terms appear outside the labelled
   code and the component list.
+
+## 2026-09-28 — Phase 1 fixes: sign-in, wallet buttons, security and operations
+
+Sign-in
+- A sign-in lasts 30 days; after that the next visit starts signed out. The browser
+  cookie carries the same limit.
+- When sign-in fails, the page says so in plain words and suggests reloading.
+- Refused sign-ins are counted by where and why they stopped, and logged without detail.
+- Removed code that was never reached: an unused session lease and a wallet fallback
+  at sign-in. The Telegram note is gone from the page security policy.
+
+Wallet buttons
+- With no wallet open in the wallet app, a press sends nothing and the note names the
+  account's own wallets and asks the person to open one. It no longer opens Privy's
+  connect window.
+- A press made before the page's first review arrives still reaches the wallet: the
+  server prepares it on the spot. Choice buttons report the chosen value.
+- A press that cannot reach the server shows "This page lost its connection, so
+  nothing was sent."
+- The wallet skills state the founder's one exception: a button the chain makes
+  certain to fail (for example "144/144 Keys sold") stays visible but disabled, with
+  the reason beside it. A pending transaction is never a reason to disable.
+
+Security
+- Production pages always use HTTPS and send Strict-Transport-Security; Fly's health
+  check still gets its answer.
+- Stylesheets, icons and images carry the same safety headers as pages.
+- The site accepts only the request bodies it uses, up to one megabyte; file uploads
+  and form method overrides are off.
+- The build image uses fixed Hex and rebar3 versions, and a stale mix.lock stops it.
+- A new CI job runs the platform checks; every CI action is pinned to an exact commit.
+
+Operations
+- The running site's database connection holds five connections, names itself, and
+  gives up on slow statements, lock waits and idle open transactions. The README
+  explains the serving login and the release login.
+- `scripts/deploy.sh <app>` deploys only a clean commit that is on origin/main.
+- The metrics page carries the three health series the site watch reads: database
+  waits, chain requests with no answer, and wallet presses that were not sent.
+- The page switch takes only "on" or "off"; anything else stops the boot, and the gate
+  never assumes open.
+- Every release command starts only the database connection through one helper.
+- New skill notes: how to add an operator action; page reads, counts that fail
+  safely, notify after commit, insert once, keyset pages.
+- `make drift` also compares the access, session, actor and repo files with each site.
