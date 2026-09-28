@@ -71,7 +71,22 @@ still needs its own error state instead of an empty list.
 reproduced against a missing table). Inside `Read.start` the raise ends the task and
 settles as failed. Inside a callback, turn exactly those two exceptions into
 `{:error, _}` in the one function that makes the count, with a comment saying why,
-and render its error state; never rescue everything.
+and render its error state; never rescue everything. Patchbay's daily allowance does it
+(patchbay@07208a0 `platform/lib/patchbay/assist/allowance.ex:137-143`):
+
+```elixir
+# Ash hands back a count's own errors, but a database that refuses the
+# count raises instead of answering; both come back here as an error.
+defp count(query) do
+  Ash.count(query, authorize?: false)
+rescue
+  failure in [Postgrex.Error, DBConnection.ConnectionError] -> {:error, failure}
+end
+```
+
+Every caller then matches `{:ok, n}` and `{:error, _}`; never `Ash.count!` or a bare
+`{:ok, n} =` on a read a page event can reach. The template itself has no count, so
+this is the example to copy.
 
 ## Proof
 
