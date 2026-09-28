@@ -85,6 +85,21 @@ production.
 | `ASH_TEMPLATE_DATABASE_CLUSTER_NAME` | For a remote target | Must match the approved cluster name. |
 | `ASH_TEMPLATE_RELEASE_COMMAND` | Set by the release | `migrate` switches the boot into migration mode. |
 
+### Two database logins
+
+The site signs in to the shared production database under two logins, and never
+uses one for the other's work.
+
+- **The serving login** (`DATABASE_POOLED_URL`) is what the running site uses. It
+  is a Fly Managed Postgres user with the `writer` role: it reads and changes
+  records, but cannot create, change or drop tables. It holds five connections,
+  shows up as `ash-template-web` in `pg_stat_activity`, and gives up on a statement
+  after 15 seconds, a lock wait after 5 seconds and an idle open transaction after
+  15 seconds (`AshTemplate.DatabaseConfig`).
+- **The release login** (`DATABASE_DIRECT_URL`) is a user with the `schema_admin`
+  role, used only while a release goes out: the release command runs the
+  migrations with it and then exits. The running site never reads it.
+
 ## Public HTTP surface
 
 `contracts/api-contract.openapiv3.yaml` is the source of truth for the API and

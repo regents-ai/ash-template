@@ -27,13 +27,16 @@ defmodule AshTemplate.DatabaseConfig do
   def runtime_config!(environment, getenv \\ &System.get_env/1)
 
   def runtime_config!(:prod, getenv) do
-    case deployment_role!(getenv) do
-      :production ->
-        database_url!(getenv, "DATABASE_POOLED_URL", @production_hosts, @production_identities)
+    options =
+      case deployment_role!(getenv) do
+        :production ->
+          database_url!(getenv, "DATABASE_POOLED_URL", @production_hosts, @production_identities)
 
-      :staging ->
-        database_url!(getenv, "DATABASE_POOLED_URL", @staging_hosts, @staging_refusals)
-    end
+        :staging ->
+          database_url!(getenv, "DATABASE_POOLED_URL", @staging_hosts, @staging_refusals)
+      end
+
+    serving(options)
   end
 
   def runtime_config!(:dev, getenv) do
@@ -54,6 +57,26 @@ defmodule AshTemplate.DatabaseConfig do
       :staging ->
         database_url!(getenv, "DATABASE_DIRECT_URL", @staging_hosts, @staging_refusals)
     end
+  end
+
+  # The serving connection shares one database with every other site, so it
+  # holds five connections, names itself in pg_stat_activity, keeps connection
+  # details out of its errors, and gives up on a statement, a lock wait or an
+  # idle open transaction before it can stall anyone else. Every host the
+  # allowlists admit is a direct PostgreSQL endpoint, which honours these
+  # session settings. Release commands connect with their own login and none of
+  # these limits.
+  defp serving(options) do
+    Keyword.merge(options,
+      pool_size: 5,
+      show_sensitive_data_on_connection_error: false,
+      parameters: [
+        application_name: "ash-template-web",
+        statement_timeout: "15000",
+        lock_timeout: "5000",
+        idle_in_transaction_session_timeout: "15000"
+      ]
+    )
   end
 
   # Deployments say which venue they are. There is no default and no fallback
