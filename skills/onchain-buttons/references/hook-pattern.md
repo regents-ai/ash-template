@@ -82,7 +82,9 @@ OnchainSteps.put_review(socket, review)
 ```
 
 - `chain` is `%{chain_id:, name:, rpc_url:}`; `rpc_url` is https, or http on this
-  machine for a lab chain.
+  machine for a lab chain. It is the public address a wallet adds the chain with. The
+  server reads results through its own node for `chain_id` (the template's
+  `:chain_nodes` setting), so a private node or a lab fork sees what the steps sent.
 - `Call.encode/2` takes the exact function signature and raises on an argument that
   does not fit, so a step that cannot be built never reaches the page. `Review.step/4`
   takes wei as a fourth argument when the step pays native currency.

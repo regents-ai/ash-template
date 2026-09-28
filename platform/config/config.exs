@@ -47,6 +47,11 @@ config :ash_template, :wallet_chain, %{
   rpc_url: "https://sepolia.base.org"
 }
 
+# The node the server reads each chain through, by chain id: sent steps, balances.
+# A wallet adds a chain with its public `rpc_url` above; the server may read through
+# a private node or a lab fork instead, and this address never reaches the browser.
+config :ash_template, :chain_nodes, %{84_532 => "https://sepolia.base.org"}
+
 # A sign-in lasts 30 days: the cookie expires then, and
 # `AshTemplate.Accounts.SessionAuthority` reads this same limit.
 config :ash_template, :session_options,

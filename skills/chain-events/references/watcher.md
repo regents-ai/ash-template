@@ -48,8 +48,9 @@ refuses a range for size, so the pass can halve it. Keep the node's URL in an en
 variable and never log it; provider URLs carry keys.
 
 `transaction/2` and `receipt/2` serve `onchain-buttons`' check: `RegentChain.Outcome`
-calls them with the review's chain (`chain_id`, `name`, `rpc_url`) and the hash, so they
-read from the node the review names. A watcher that only reads logs may leave them out of
+calls them with the review's chain (`chain_id`, `name`, `rpc_url`) and the hash. They
+read through the site's own node for `chain_id`, not the review's `rpc_url`, which is the
+public address wallets are given. A watcher that only reads logs may leave them out of
 its client.
 
 ## Domain and cursor

@@ -4,8 +4,9 @@ defmodule AshTemplate.ChainClient do
 
   `RegentChain.Outcome` reads sent steps through `transaction/2` and `receipt/2`.
   Every read is at `latest`: never count confirmations and never wait for `safe`
-  or `finalized`. The RPC address comes from the server-built review, never from
-  the browser.
+  or `finalized`. The node is the site's own for the chain (`:chain_nodes`), never
+  the public address a wallet adds the chain with, and never from the browser, so a
+  private node or a lab fork reads what the site's steps sent.
   """
 
   @doc "The transaction sent as `hash`, or `nil` while the chain does not know it."
@@ -25,7 +26,9 @@ defmodule AshTemplate.ChainClient do
   One JSON-RPC request to the chain's node. Every request that gets no answer
   is counted in `health.chain_request_failures.total` (`AshTemplateWeb.Telemetry`).
   """
-  def rpc(%{rpc_url: url} = chain, method, params) do
+  def rpc(%{chain_id: chain_id} = chain, method, params) do
+    url = :ash_template |> Application.fetch_env!(:chain_nodes) |> Map.fetch!(chain_id)
+
     case Req.post(url,
            json: %{jsonrpc: "2.0", id: 1, method: method, params: params},
            retry: false,

@@ -8,6 +8,11 @@ config :ash_template, :lab_chain, %{
   rpc_url: "http://127.0.0.1:58600"
 }
 
+config :ash_template, :chain_nodes, %{
+  84_532 => "https://sepolia.base.org",
+  31_337 => "http://127.0.0.1:58600"
+}
+
 # Several sites run side by side locally, each on the port named by PORT.
 port = String.to_integer(System.get_env("PORT", "4000"))
 

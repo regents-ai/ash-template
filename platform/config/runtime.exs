@@ -11,6 +11,14 @@ config :ash_template, :privy,
   app_id: System.get_env("PRIVY_APP_ID"),
   verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 
+# The server reads the wallet chain through this node when it is set, such as a
+# private node whose address carries a key; wallets still add the public address.
+if node_url = System.get_env("ASH_TEMPLATE_CHAIN_NODE_URL") do
+  %{chain_id: chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
+  nodes = Application.fetch_env!(:ash_template, :chain_nodes)
+  config :ash_template, :chain_nodes, Map.put(nodes, chain_id, node_url)
+end
+
 # Production must say out loud whether the product surfaces are open, and any
 # value but "on" or "off" stops the boot.
 app_surfaces? =
