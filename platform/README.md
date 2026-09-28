@@ -103,10 +103,10 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`), the
-motion lab (`/animations`) and the build skills follow one setting,
-`ASH_TEMPLATE_SHOWCASE`, which `config/runtime.exs` reads and
-`AshTemplateWeb.Showcase` enforces:
+wallet page `/showcase/wallet`), the motion lab (`/animations`) and the build
+skills (`/skills`, the agent guide `/skill.md` and
+`/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
+which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
 
 | Setting | Where | What happens |
 | --- | --- | --- |
@@ -125,6 +125,14 @@ for the network fee. The wallet lab at `/showcase/onchain` sends to a lab chain
 on this machine, so it exists only in `local`, and only for a visitor on this
 machine.
 [docs/showcase.md](docs/showcase.md) describes the pages.
+
+The build skills are ten of the repository's `skills/` folders (the Ash, motion
+and wallet skills, never the Regent workflow ones), read when the app compiles
+by `AshTemplateWeb.AgentSkills`. `/.well-known/agent-skills/index.json` lists
+them in the Agent Skills Discovery v0.2.0 format, each as a zip of its folder
+with the zip's sha256; every file is also served on its own under
+`/.well-known/agent-skills/<skill>/`. `/skill.md` tells an agent how to fetch
+and check them, and `/skills` lists them for people.
 
 ## Security profiles
 
@@ -204,10 +212,14 @@ hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything.
 
-The image is built from `Dockerfile` with this folder as its context; the build
-fetches every dependency at the version the lockfiles pin. The shared
-libraries' repositories are public, so the build takes no credentials. The Fly
-configuration lives in `fly.toml` and `fly.staging.toml`.
+The image is built from `Dockerfile` with the repository root as its context:
+the app is in `platform/`, and the build skills it serves are read from
+`skills/` when it compiles (`.dockerignore` at the root admits only those two
+folders). The build fetches every dependency at the version the lockfiles pin.
+The shared libraries' repositories are public, so the build takes no
+credentials. The Fly configuration lives in `fly.toml` and `fly.staging.toml`;
+deploy from the repository root with `fly deploy . --config platform/fly.toml`
+(or `platform/fly.staging.toml`), so both folders reach the build.
 
 A new staging database is empty and has no copy of the shared
 `regent_names.platform_human_users` table, so `bin/migrate` fails on it. Its
@@ -227,14 +239,14 @@ make release
 
 It stops unless every change is committed, then runs `make check`; a failing
 gate stops it before anything is built. `../scripts/release.sh` then builds
-the image from `git archive` of HEAD's `platform/` folder, reusing no cached
-layers, so nothing uncommitted or outside the repository enters it, and tags it
-`ash-template:<commit>`. The smoke check starts a throwaway PostgreSQL 17 on
+the image from `git archive` of HEAD's `platform/` and `skills/` folders,
+reusing no cached layers, so nothing uncommitted or outside the repository
+enters it, and tags it `ash-template:<commit>`. The smoke check starts a throwaway PostgreSQL 17 on
 its own Docker network, answering to the staging database hostname, and runs
-the image as staging against it: `bin/bootstrap-staging`, `bin/migrate` and
-`bin/pending-migrations` (which must print `none`), then the server, whose
-`/healthz`, home page, fingerprinted stylesheet and own database connection it
-checks. It removes the database and the network afterwards, keeps the image,
+the image as staging with the showcase `public` against it:
+`bin/bootstrap-staging`, `bin/migrate` and `bin/pending-migrations` (which must
+print `none`), then the server, whose `/healthz`, home page, fingerprinted
+stylesheet, build skills index and own database connection it checks. It removes the database and the network afterwards, keeps the image,
 and prints the app commit, the shared-library commits from `mix.lock` and the
 image digest. It never deploys.
 

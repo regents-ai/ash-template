@@ -123,6 +123,18 @@ defmodule AshTemplateWeb.Router do
     get "/.well-known/api-catalog", PublicPagesController, :api_catalog
   end
 
+  # The build skills and the agent guide (AshTemplateWeb.AgentSkills).
+  scope "/", AshTemplateWeb do
+    pipe_through :showcase
+    get "/skill.md", PublicPagesController, :skill_guide
+    get "/.well-known/agent-skills/*path", PublicPagesController, :agent_skill
+  end
+
+  scope "/", AshTemplateWeb do
+    pipe_through [:showcase, :public_documents]
+    get "/skills", PublicPagesController, :skills
+  end
+
   scope "/", AshTemplateWeb do
     pipe_through :public_documents
     get "/docs", PublicPagesController, :show

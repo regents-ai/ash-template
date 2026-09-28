@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.PublicPagesController do
   @moduledoc "Public documentation and discovery; no account or database reads."
   use AshTemplateWeb, :controller
-  alias AshTemplateWeb.PublicDocuments
+  alias AshTemplateWeb.{AgentSkills, PublicDocuments}
 
   def show(conn, _params) do
     document = PublicDocuments.document(conn.request_path)
@@ -9,6 +9,36 @@ defmodule AshTemplateWeb.PublicPagesController do
   end
 
   def developers(conn, _params), do: conn |> put_status(301) |> redirect(to: "/docs")
+
+  def skills(conn, _params) do
+    render(
+      conn,
+      :show,
+      [document: PublicDocuments.skills_page()] ++ PublicDocuments.page("/skills")
+    )
+  end
+
+  def skill_guide(conn, _params) do
+    body = PublicDocuments.skill_guide()
+    conn |> cached(body) |> put_resp_content_type("text/markdown") |> send_resp(200, body)
+  end
+
+  # Only the fixed table in AgentSkills answers; any other path is the site's 404.
+  # The content type comes from that table too, never from the request.
+  # sobelow_skip ["XSS.ContentType", "XSS.SendResp"]
+  def agent_skill(conn, %{"path" => path}) do
+    case AgentSkills.fetch(Enum.join(path, "/")) do
+      {:ok, {type, body}} ->
+        conn
+        |> cached(body)
+        |> put_resp_header("access-control-allow-origin", "*")
+        |> put_resp_content_type(type, if(type == "application/zip", do: nil, else: "utf-8"))
+        |> send_resp(200, body)
+
+      :error ->
+        raise AshTemplateWeb.NotFoundError
+    end
+  end
 
   def openapi(conn, _params) do
     body = Jason.encode!(PublicDocuments.openapi())

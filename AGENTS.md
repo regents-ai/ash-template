@@ -40,7 +40,10 @@ After renaming, a new site must still replace, by hand:
   LiveView hooks, `onchain-buttons` wallet and on-chain buttons, and
   `chain-events` watching a chain and saving its events; load `ash-stack` and
   `ash-frontend` before each. Change a skill here, never through a copy in
-  another repository.
+  another repository. The web app serves the `ash-*`, `animejs`,
+  `onchain-buttons` and `chain-events` skills publicly as its build skills
+  (`AshTemplateWeb.AgentSkills` names them), so a change to one is published
+  with the app's next release.
 - Motion: every Regent site shares the kit in `platform/assets/js/hooks/motion/`
   and `platform/assets/js/motion.ts`, with the standard version of each part in
   `AshTemplateWeb.Motion`. Pages join in through markup (`data-press-label` on

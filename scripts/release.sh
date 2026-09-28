@@ -2,8 +2,9 @@
 # Builds the committed tree into the release image and proves the image runs.
 # Run it through `make release`, which runs every gate on that same tree first.
 #
-# The build context is `git archive` of HEAD's platform/ folder, so nothing
-# uncommitted, ignored or outside this repository enters the image. The build
+# The build context is `git archive` of HEAD's platform/ and skills/ folders (the
+# app reads the build skills it serves from skills/ when it compiles), so
+# nothing uncommitted, ignored or outside this repository enters the image. The build
 # reuses no cached layers, and the Dockerfile fetches every dependency at the
 # version the lockfiles pin; the shared libraries' repositories are public, so
 # the build takes no credentials.
@@ -11,7 +12,8 @@
 # The smoke check starts the image against a throwaway PostgreSQL 17 on its own
 # Docker network and removes both afterwards. It runs the staging release
 # commands against it, starts the server, and checks the health endpoint, the
-# home page, a built stylesheet and the running server's database connection.
+# home page, a built stylesheet, the build skills index and the running server's
+# database connection. It runs with the showcase public so the skills answer.
 # It runs as staging because that role admits only the staging database
 # hostnames, which the throwaway database answers to on its network.
 set -euo pipefail
@@ -54,8 +56,9 @@ fail() {
 }
 
 echo "==> Building $image from commit $commit"
-git archive --format=tar "$commit:platform" |
-  docker build --no-cache --label "org.opencontainers.image.revision=$commit" --tag "$image" -
+git archive --format=tar "$commit" .dockerignore platform skills |
+  docker build --no-cache --file platform/Dockerfile \
+    --label "org.opencontainers.image.revision=$commit" --tag "$image" -
 digest="$(docker image inspect --format '{{.Id}}' "$image")"
 
 echo "==> Starting a throwaway database"
@@ -71,7 +74,7 @@ release_env=(
   --network "$run"
   --env ASH_TEMPLATE_DEPLOYMENT_ROLE=staging
   --env ASH_TEMPLATE_APP_SURFACES=on
-  --env ASH_TEMPLATE_SHOWCASE=off
+  --env ASH_TEMPLATE_SHOWCASE=public
 )
 
 echo "==> Creating and migrating the database with the release commands"
@@ -99,6 +102,9 @@ stylesheet="$(grep -oE '/assets/[^"]+-[0-9a-f]{32}\.css' <<<"$home" | head -n 1)
 stylesheet_answer="$(curl --silent --fail --output /dev/null --write-out '%{http_code} %{content_type} %{size_download} bytes' "$base$stylesheet")"
 [[ $stylesheet_answer == "200 text/css"* ]] || fail "$stylesheet answered $stylesheet_answer"
 
+skills_answer="$(curl --silent --fail --output /dev/null --write-out '%{http_code} %{content_type}' "$base/.well-known/agent-skills/index.json")"
+[[ $skills_answer == "200 application/json"* ]] || fail "the build skills index answered $skills_answer"
+
 connected_database="$(docker exec "$run-app" /app/bin/ash_template rpc \
   '[[name]] = AshTemplate.Repo.query!("SELECT current_database()").rows; IO.puts(name)')"
 [[ $connected_database == ash_template_smoke ]] || fail "the server's database answered \"$connected_database\""
@@ -113,4 +119,5 @@ echo "  image digest    $digest"
 echo "  migrations      bootstrap-staging and migrate succeeded; pending-migrations: $pending"
 echo "  health          $base/healthz answered $health"
 echo "  static asset    $stylesheet answered $stylesheet_answer"
+echo "  build skills    /.well-known/agent-skills/index.json answered $skills_answer"
 echo "  database        the running server queried $connected_database"

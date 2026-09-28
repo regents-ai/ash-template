@@ -3,19 +3,21 @@ FROM docker.io/hexpm/elixir@sha256:d21e3b8bab8bc2e8d51eb4bb03b1d73aad6b91c5c90b3
 FROM docker.io/library/node@sha256:5aea649bacdc35e8e20571131c4f3547477dfe66e677d45c005af6dbd1edfaa7 AS node
 FROM docker.io/library/debian@sha256:abd67ffcfa541b485a3dff59865ab629aa048a6c613e639d36e7456b0b229241 AS slim
 
+# The build context is the repository root: the app is in platform/, and the
+# build skills it serves are read from skills/ when it compiles.
 FROM native AS assets
 
 ENV npm_config_nodedir=/usr/local
 WORKDIR /app
 COPY --from=node /usr/local /usr/local
-COPY package.json package-lock.json ./
+COPY platform/package.json platform/package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 FROM native AS build
 
 ENV MIX_ENV=prod
 ENV HOME=/root
-WORKDIR /app
+WORKDIR /app/platform
 
 COPY --from=elixir /usr/local /usr/local
 COPY --from=assets /usr/local/bin/node /usr/local/bin/node
@@ -24,16 +26,17 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
 
 # Shared Regent libraries arrive here from GitHub at the commits mix.lock pins.
 RUN mix local.hex --force && mix local.rebar --force
-COPY mix.exs mix.lock ./
+COPY platform/mix.exs platform/mix.lock ./
 RUN mix deps.get --only prod
-COPY config config
+COPY platform/config config
 RUN mix deps.compile
 
-COPY lib lib
-COPY priv priv
-COPY rel rel
-COPY assets assets
-COPY contracts contracts
+COPY platform/lib lib
+COPY platform/priv priv
+COPY platform/rel rel
+COPY platform/assets assets
+COPY platform/contracts contracts
+COPY skills /app/skills
 COPY --from=assets /app/node_modules node_modules
 RUN mix compile && mix assets.deploy && mix release
 
@@ -78,7 +81,7 @@ COPY --from=runtime-support /runtime-support/ca-certificates.crt /etc/ssl/certs/
 RUN groupadd --system --gid 1001 app \
   && useradd --system --uid 1001 --gid app --home-dir /app app
 
-COPY --from=build --chown=app:app /app/_build/prod/rel/ash_template ./
+COPY --from=build --chown=app:app /app/platform/_build/prod/rel/ash_template ./
 
 USER app
 

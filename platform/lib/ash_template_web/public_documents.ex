@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @moduledoc "Public documents only; never projects a signed-in page or account."
 
   @directory Application.app_dir(:ash_template, "priv/public")
-  @files Enum.map(~w(docs about contact llms), &Path.join(@directory, &1 <> ".md"))
+  @files Enum.map(~w(docs about contact llms skill skills), &Path.join(@directory, &1 <> ".md"))
   for file <- @files, do: @external_resource(file)
   @sources Map.new(@files, &{Path.basename(&1, ".md"), File.read!(&1)})
   @openapi_path Path.join(@directory, "openapi.json")
@@ -39,6 +39,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     :holding => {"Not open yet", "This part of Ash Template isn't open to visitors yet."},
     "/showcase" => {"Showcase", "The Ash Template component showcase."},
     "/showcase/privy" => {"Privy integration", "The Ash Template sign-in reference page."},
+    "/skills" =>
+      {"Build skills",
+       "The guides Ash Template's builders follow, written for coding agents and open to everyone."},
     "/showcase/wallet" =>
       {"Wallet buttons",
        "Sign in and press real wallet buttons on Base Sepolia, a test network where nothing moves real money."},
@@ -74,6 +77,12 @@ defmodule AshTemplateWeb.PublicDocuments do
   def document(_path), do: nil
 
   def llms, do: source("llms")
+
+  @doc "The agent guide served at `/skill.md`."
+  def skill_guide, do: source("skill")
+
+  @doc "The build skills page for people at `/skills`."
+  def skills_page, do: %{title: title("/skills"), markdown: source("skills")}
 
   # The HTML is MDEx-sanitized from the committed public markdown.
   # sobelow_skip ["XSS.Raw"]
@@ -192,11 +201,26 @@ defmodule AshTemplateWeb.PublicDocuments do
     }
   end
 
-  # `{{tools}}` is the browser tools table, from the one tool manifest.
+  # `{{tools}}` is the browser tools table, from the one tool manifest, and
+  # `{{skills}}` the build skills table. `{{origin}}` goes last, since both
+  # tables name it.
   defp source(name) do
     @sources[name]
-    |> String.replace("{{origin}}", url(""))
     |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
+    |> String.replace("{{skills}}", skills_table())
+    |> String.replace("{{origin}}", url(""))
+  end
+
+  defp skills_table do
+    base = "{{origin}}" <> AshTemplateWeb.AgentSkills.base()
+
+    rows =
+      Enum.map_join(AshTemplateWeb.AgentSkills.skills(), "\n", fn skill ->
+        "| [#{skill.name}](#{base}/#{skill.name}/SKILL.md) | #{skill.description} | " <>
+          "[#{skill.name}.zip](#{base}/#{skill.name}.zip) |"
+      end)
+
+    "| Skill | Use it for | Download |\n| --- | --- | --- |\n" <> rows
   end
 
   def recovery_links do
