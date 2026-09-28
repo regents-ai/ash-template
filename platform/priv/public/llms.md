@@ -29,6 +29,8 @@ Every page offers a browser's own agent these tools through WebMCP (`document.mo
 
 Ash Template does not offer a hosted MCP endpoint.
 
+{{showcase}}
+
 ## Operator, help and boundaries
 
 [About]({{origin}}/about) · [Contact]({{origin}}/contact) · [Privacy]({{origin}}/privacy) · [Terms]({{origin}}/terms).

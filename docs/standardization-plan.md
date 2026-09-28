@@ -112,10 +112,11 @@ Rules for every stage:
 | Design | `regent_ui` components; product CSS in `@layer regents-product` with BEM names on the design-system tokens; page CSS in `assets/css/pages/`, parts in `assets/css/components/` |
 | Browser code | TypeScript, strict, typechecked; hooks in `assets/js/hooks/`, combined with `composeHooks`; page-only code lazy-loaded; size budgets (175 KiB script, 60 KiB style, compressed) |
 | Motion | The kit in `assets/js/hooks/motion/` and `assets/js/motion.ts`, versions in `Motion.standard/1`, the lab at `/animations` |
-| Shell | The shell component, route catalog, launch gate, Privy session and signed-in wallet handling |
+| Shell | The shell component, route catalog, launch gate, Privy session and signed-in wallet handling (the account's own wallets from `AccessContext.linked_wallets/1`) |
 | Server | Ash resources behind code interfaces, health and metrics endpoints, `mix precommit` with Credo, Sobelow, xref, format and codegen checks |
 | Tests | A small named set that each protects a stated rule, plus browser checks of real flows |
-| Skills | `skills/` in the template, linked into the workspace |
+| Skills | `skills/` in the template, linked into the workspace; the ten build skills are published at template.regents.sh (`/skills`, `/skill.md`, `/.well-known/agent-skills/index.json`) |
+| Showcase | One setting, `ASH_TEMPLATE_SHOWCASE`: `local` in development, `public` only on template.regents.sh, `off` on every site's production |
 
 ## Stage 1: bring the best code into the template
 

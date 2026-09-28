@@ -2,13 +2,18 @@ defmodule AshTemplateWeb.PublicDocuments do
   @moduledoc "Public documents only; never projects a signed-in page or account."
 
   @directory Application.app_dir(:ash_template, "priv/public")
-  @files Enum.map(~w(docs about contact llms skill skills), &Path.join(@directory, &1 <> ".md"))
+  @files Enum.map(
+           ~w(docs about contact llms llms-showcase skill skills),
+           &Path.join(@directory, &1 <> ".md")
+         )
   for file <- @files, do: @external_resource(file)
   @sources Map.new(@files, &{Path.basename(&1, ".md"), File.read!(&1)})
   @openapi_path Path.join(@directory, "openapi.json")
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /docs /about /contact /privacy /terms)
+  # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /animations /skills)
   # Site settings: the name; the type agent-readiness readers take as their lens,
   # `business` for a company site or `app` for a product people use; and where
   # security reports go, as published in security.txt.
@@ -37,8 +42,11 @@ defmodule AshTemplateWeb.PublicDocuments do
        "How Ash Template collects, uses, shares and protects personal information."},
     "/terms" => {"Terms of Use", "The terms that apply when you use Ash Template."},
     :holding => {"Not open yet", "This part of Ash Template isn't open to visitors yet."},
-    "/showcase" => {"Showcase", "The Ash Template component showcase."},
-    "/showcase/privy" => {"Privy integration", "The Ash Template sign-in reference page."},
+    "/showcase" =>
+      {"Showcase",
+       "Every shared Ash Template component, in light and dark, with the page layouts they build."},
+    "/showcase/privy" =>
+      {"Privy integration", "Wallet sign-in with Privy, working as an Ash Template page runs it."},
     "/skills" =>
       {"Build skills",
        "The guides Ash Template's builders follow, written for coding agents and open to everyone."},
@@ -130,8 +138,11 @@ defmodule AshTemplateWeb.PublicDocuments do
   def sitemap do
     lastmod = DateTime.to_iso8601(@released_at)
 
+    pages =
+      if AshTemplateWeb.Showcase.public?(), do: @documents ++ @showcase_pages, else: @documents
+
     locations =
-      Enum.map_join(@documents, "\n", fn path ->
+      Enum.map_join(pages, "\n", fn path ->
         location = url(path) |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
         "  <url><loc>#{location}</loc><lastmod>#{lastmod}</lastmod></url>"
       end)
@@ -202,14 +213,19 @@ defmodule AshTemplateWeb.PublicDocuments do
   end
 
   # `{{tools}}` is the browser tools table, from the one tool manifest, and
-  # `{{skills}}` the build skills table. `{{origin}}` goes last, since both
-  # tables name it.
+  # `{{skills}}` the build skills table. The `{{showcase}}` line and the blank
+  # line after it become the showcase section when the showcase is public, and
+  # nothing otherwise. `{{origin}}` goes last, since all three name it.
   defp source(name) do
     @sources[name]
+    |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
     |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
     |> String.replace("{{skills}}", skills_table())
     |> String.replace("{{origin}}", url(""))
   end
+
+  defp showcase_section(false), do: ""
+  defp showcase_section(true), do: @sources["llms-showcase"] <> "\n"
 
   defp skills_table do
     base = "{{origin}}" <> AshTemplateWeb.AgentSkills.base()

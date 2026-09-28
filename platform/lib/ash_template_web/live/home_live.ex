@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.HomeLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.RegentLinks
-  alias AshTemplateWeb.{Motion, PublicDocuments, RouteCatalog}
+  alias AshTemplateWeb.{Motion, PublicDocuments, RouteCatalog, Showcase}
 
   @doc "A public text representation using the same copy as the page."
   def agent_markdown do
@@ -22,15 +22,22 @@ defmodule AshTemplateWeb.HomeLive do
     ## Get started
 
     [Open the app](#{PublicDocuments.url("/app")}) · [Developer documentation](#{PublicDocuments.url("/docs")}) · [Agent guide](#{PublicDocuments.url("/llms.txt")})
-    [About](#{PublicDocuments.url("/about")}) · [Contact](#{PublicDocuments.url("/contact")}) · [Privacy](#{PublicDocuments.url("/privacy")})
+    #{kit_markdown(Showcase.linked?())}[About](#{PublicDocuments.url("/about")}) · [Contact](#{PublicDocuments.url("/contact")}) · [Privacy](#{PublicDocuments.url("/privacy")})
     """
+  end
+
+  defp kit_markdown(false), do: ""
+
+  defp kit_markdown(true) do
+    "[Showcase](#{PublicDocuments.url("/showcase")}) · [Motion lab](#{PublicDocuments.url("/animations")}) · " <>
+      "[Build skills](#{PublicDocuments.url("/skills")})\n"
   end
 
   def mount(_params, _session, socket) do
     {:ok,
      socket
      |> assign(PublicDocuments.page("/"))
-     |> assign(route_spec: RouteCatalog.fetch!(:home))}
+     |> assign(route_spec: RouteCatalog.fetch!(:home), showcase?: Showcase.linked?())}
   end
 
   def render(assigns) do
@@ -45,7 +52,9 @@ defmodule AshTemplateWeb.HomeLive do
           <Regent.Structure.row rail={false}><.chapter chapter={chapter} /></Regent.Structure.row>
         <% end %>
 
-        <Regent.Structure.row rail={false}><.closing_frame /></Regent.Structure.row>
+        <Regent.Structure.row rail={false}>
+          <.closing_frame showcase?={@showcase?} />
+        </Regent.Structure.row>
       </main>
 
       <Regent.Structure.row rail={false}><.landing_footer /></Regent.Structure.row>
@@ -301,6 +310,8 @@ defmodule AshTemplateWeb.HomeLive do
     """
   end
 
+  attr :showcase?, :boolean, required: true
+
   defp closing_frame(assigns) do
     ~H"""
     <section id="start" class="rl-closing" aria-labelledby="start-title">
@@ -313,6 +324,9 @@ defmodule AshTemplateWeb.HomeLive do
       <div class="rl-closing-actions">
         <a href={~p"/app"} class="rg-button rl-action rl-action--strong"><span class="rg-button__label">Open the app</span></a>
         <a href={~p"/docs"} class="rg-button rl-action"><span class="rg-button__label">Read the docs</span></a>
+        <a :if={@showcase?} href={~p"/showcase"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">See the components</span></a>
+        <a :if={@showcase?} href={~p"/animations"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">Motion lab</span></a>
+        <a :if={@showcase?} href={~p"/skills"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">Build skills</span></a>
       </div>
     </section>
     """
