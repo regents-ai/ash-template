@@ -87,16 +87,13 @@ export const OnchainLab: Hook = {
     }
     // The page's own Privy bridge may also announce a wallet; the tester's choice stands.
     const reassert = () => choose()
-    const connectAsked = () => log("The press asked the wallet app to connect. Choose a wallet above.")
 
     root.addEventListener("change", changed)
     window.addEventListener("ash:wallet-state", reassert)
-    window.addEventListener("ash:wallet-connect", connectAsked)
     choose()
     this.cleanup = () => {
       root.removeEventListener("change", changed)
       window.removeEventListener("ash:wallet-state", reassert)
-      window.removeEventListener("ash:wallet-connect", connectAsked)
       replaceActiveEthereumWallet(null)
     }
   },

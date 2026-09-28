@@ -188,6 +188,9 @@ defmodule AshTemplateWeb.OnchainExample do
       </div>
 
       <p :if={@press_note} class="onchain-example-note" role="status">{@press_note}</p>
+      <p class="onchain-example-note" role="status" data-onchain-lost hidden>
+        This page lost its connection, so nothing was sent. Press again once it's back.
+      </p>
 
       <p :if={@signed} class="onchain-example-signed" role="status">
         Signed by <code>{RegentFormat.short_address(@signed.review.signer)}</code>

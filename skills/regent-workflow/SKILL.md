@@ -53,7 +53,8 @@ Apply the same rule in Regents, Autolaunch, Techtree and Patchbay:
   positions, form) and shows it straight away, after page jumps and reloads, then
   moves to Privy's active wallet when the page reports one that is linked. Privy's
   browser selection is often empty after navigation, so never wait on it. When no
-  wallet is active, a press opens Privy's connect step.
+  wallet is active, a press sends nothing and a note names the account's wallets and
+  asks the person to open one; it never opens Privy's connect step.
 - Never preserve pending transactions. Do not add browser-storage transaction
   queues, database pending-operation recovery, reload restoration, replay reports,
   recovery inboxes or resend orchestration. The wallet/blockchain owns transaction

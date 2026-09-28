@@ -52,7 +52,11 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
 - A button names its step with `data-onchain-step`. It has no `phx-click` and sits
   outside any form (rule 2). Never `disabled`, never `aria-disabled="true"`.
 - Every field the review depends on carries `data-onchain-input="name"`, matching the
-  review's `inputs`.
+  review's `inputs`. A group of radio buttons sharing one name reports the chosen value;
+  a checkbox reports "true" or "false".
+- The component holds one hidden line marked `data-onchain-lost` with its own words
+  ("This page lost its connection, so nothing was sent. Press again once it's back.").
+  The hook shows it when a press could not reach the server; the next render hides it.
 - The hook marks a button `data-awaiting-wallet="true"` while the wallet has any of its
   presses, and only removes it when the last one is answered. Style it; never block with
   it.
@@ -111,14 +115,19 @@ and only when the signed-in account links it.
 
 The hook's own click listener runs every press on its own:
 
-1. **No active wallet**: it opens Privy's connect step and reports `wallet_unavailable`.
-2. **The form differs from the review's `inputs`** (the person typed and pressed before
-   the new review arrived): it sends `prepare_and_send` with the form and the step. The
-   component takes the form as the page's own, builds the review and replies
-   `%{review: review, send: name}`, and the hook sends that. An empty reply is
-   `step_unknown`.
+1. **No active wallet**: it reports `wallet_unavailable` and the server's note says why.
+   It never opens Privy's connect step (founder decision "1 a").
+2. **No review yet, or the form differs from the review's `inputs`** (the person pressed
+   before the first review arrived, or typed and pressed before the new one did), on a
+   component with `data-onchain-input` fields: it sends `prepare_and_send` with the form
+   and the step. The component takes the form as the page's own, builds the review and
+   replies `%{review: review, send: name}`, and the hook sends that. An empty reply is
+   `step_unknown`; no reply at all (a lost connection) shows the `data-onchain-lost` line.
 3. **Otherwise** it sends the step from the review it holds, if the active wallet is the
    review's signer.
+
+`press(review, name, push)` returns what it reported (`{transaction_hash}`, `{signature}`
+or `{reason}`), so an agent tool can take the same path as a person's press.
 
 Before any send or signature, `send_step.ts` switches the wallet to the step's chain
 (adding it on 4902), checks the account is the signer, makes `eth_chainId` the last read,
@@ -158,7 +167,7 @@ The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |
 | Signed out | No account | "Sign in to send this. Nothing was sent." |
-| `wallet_unavailable`, none active | The press opened Privy's connect step | "Connect your wallet, then press again. Nothing was sent." |
+| `wallet_unavailable`, none active | Signed in, but no wallet is open in the wallet app | "You're signed in with 0x1234..abcd, but your wallet app has no wallet open. Open 0x1234..abcd there, then press again. Nothing was sent." |
 | Active wallet not linked | Another wallet is open in the wallet app | "Switch to a wallet on your account in your wallet app, then press again. Nothing was sent." |
 | `step_unknown` | No step by that name for these figures | "This can't be sent as it stands. Check the details above, then press again. Nothing was sent." |
 | `wallet_unavailable`, mid-press | Privy swapped the wallet during the press | "Your wallet changed during the press, so nothing was sent. Press again." |
