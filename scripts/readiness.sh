@@ -192,6 +192,52 @@ check("/.well-known/api-catalog is a linkset naming /openapi.json",
   Boolean(catalog && catalog.linkset && catalog.linkset.some((entry) =>
     (entry["service-desc"] || []).some((link) => link.href.endsWith("/openapi.json")))));
 
+console.log("Browser tools (WebMCP)");
+for (const path of pages) {
+  const answer = await get(path, "text/html");
+  const policy = (answer.headers.get("permissions-policy") || "").split(",").map((v) => v.trim());
+  check(`${path} sends Permissions-Policy: tools=(self)`, policy.includes("tools=(self)"),
+    `permissions-policy=${answer.headers.get("permissions-policy")}`);
+}
+const manifestAnswer = await get("/capabilities");
+const manifest = parses(manifestAnswer.body);
+const tools = (manifest && Array.isArray(manifest.tools)) ? manifest.tools : [];
+check("/capabilities serves the tool manifest as JSON",
+  manifestAnswer.status === 200 && type(manifestAnswer) === "application/json" && tools.length > 0,
+  `${manifestAnswer.status} ${type(manifestAnswer)} ${tools.length} tools`);
+check("/capabilities is cached with an ETag", cached(manifestAnswer));
+const names = tools.map((tool) => tool.name);
+const hints = ["readOnlyHint", "untrustedContentHint", "consequentialHint", "debugging"];
+check("every tool name is unique and 1-128 of A-Z a-z 0-9 _ . -",
+  names.every((name) => /^[A-Za-z0-9_.-]{1,128}$/.test(name)) && new Set(names).size === names.length,
+  names.join(", "));
+for (const tool of tools) {
+  const schema = tool.input_schema || {};
+  check(`tool ${tool.name}: title, description, a closed object schema and WebMCP annotations only`,
+    Boolean(tool.title) && Boolean(tool.description) && schema.type === "object" &&
+    schema.additionalProperties === false && Array.isArray(schema.required) &&
+    Object.keys(tool.annotations || {}).every((hint) => hints.includes(hint)) &&
+    ["requires", "route", "scope"].every((key) => typeof tool[key] === "string"));
+}
+// The page's script registers every manifest entry whose scope is "site", from
+// the copy of the manifest bundled into it: that copy must name the same tools.
+const siteNames = tools.filter((tool) => tool.scope === "site").map((tool) => tool.name);
+const script = home.body.match(/<script[^>]*src="(\/assets\/js\/app[^"]*\.js)"/);
+const bundle = script ? (await get(script[1])).body : "";
+const bundledSite = (bundle.match(/scope:\s*"site"/g) || []).length;
+check(`the page's script registers the manifest's site tools: ${siteNames.join(", ")}`,
+  bundle.includes("registerTool") && bundledSite === siteNames.length &&
+  siteNames.every((name) => bundle.includes(JSON.stringify(name))),
+  script ? `${bundledSite} site tools bundled` : "no app.js script tag on /");
+const tableNames = (text) => [...text.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+const same = (listed) => listed.length === names.length && names.every((name) => listed.includes(name));
+check("/docs lists exactly the manifest's tools", same(tableNames(docs.body)), tableNames(docs.body).join(", "));
+const docsHtml = await get("/docs", "text/html");
+check("/docs shows the tools as a table",
+  names.every((name) => docsHtml.body.includes(`<td><code>${name}</code></td>`)));
+check("/llms.txt lists exactly the manifest's tools", same(tableNames(llms.body)), tableNames(llms.body).join(", "));
+check("/llms.txt links the tool manifest", llms.body.includes("/capabilities"));
+
 console.log("Past the budget");
 let last;
 for (let i = 0; i < 1000; i += 1) {

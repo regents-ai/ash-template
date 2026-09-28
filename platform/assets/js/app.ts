@@ -26,6 +26,7 @@ import {OnchainSteps} from "./hooks/onchain_steps"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
 import {installCopyButtons} from "./copy_buttons"
+import {installPublicTools} from "./public_tools"
 
 type ShellHook = Hook & {
   el: HTMLElement
@@ -118,6 +119,10 @@ window.addEventListener("phx:page-loading-stop", syncTheme)
 window.addEventListener("popstate", syncTheme)
 window.addEventListener("pageshow", syncTheme)
 syncTheme()
+
+// Before the lazy imports below can hold this module, so the page's first
+// pageshow registers the browser tools.
+installPublicTools()
 
 const shellBehavior: Hook = {
   mounted(this: ShellHook) {

@@ -20,6 +20,11 @@ defmodule AshTemplateWeb.PublicPagesController do
     conn |> cached(body) |> put_resp_content_type("text/plain") |> send_resp(200, body)
   end
 
+  def capabilities(conn, _params) do
+    body = Jason.encode!(AshTemplate.Capabilities.manifest())
+    conn |> cached(body) |> put_resp_content_type("application/json") |> send_resp(200, body)
+  end
+
   def robots(conn, _params) do
     body = "User-agent: *\nAllow: /\n\nSitemap: #{PublicDocuments.url("/sitemap.xml")}\n"
     conn |> cached(body) |> put_resp_content_type("text/plain") |> send_resp(200, body)

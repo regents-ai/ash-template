@@ -204,3 +204,11 @@ Techtree, relative to `repos/techtree/platform`, is the smallest: five read-only
 tools in `priv/tool_manifest.json`, read by `Techtree.Capabilities` (`manifest`, `tools`,
 `site_tools`) and registered by `assets/js/public_tools.js`, which records
 `data-webmcp-status`; the Docs page and `/llms.txt` list them from the manifest.
+
+The template itself, relative to `platform/`, is the starting point a new site copies:
+two read-only site tools, `about` and `docs`, in `priv/tool_manifest.json`, read by
+`AshTemplate.Capabilities` and served at `/capabilities`, registered by
+`assets/js/public_tools.ts` (Techtree's registration), with `permissions-policy:
+tools=(self)` set once in the endpoint. `/docs` and `/llms.txt` list the tools from the
+manifest, and `make readiness` checks the header, the manifest, the tools the page's
+script registers and both tables.

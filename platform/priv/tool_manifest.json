@@ -1,0 +1,42 @@
+{
+  "tools": [
+    {
+      "name": "about",
+      "title": "About Ash Template",
+      "description": "Read the About page as Markdown: what Ash Template is, what a person can do here and who runs it. Reads only; needs no sign-in; changes nothing.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "requires": "none",
+      "state_changing": false,
+      "payment": "none",
+      "route": "GET /about",
+      "scope": "site"
+    },
+    {
+      "name": "docs",
+      "title": "Developer documentation",
+      "description": "Read the developer documentation as Markdown: the public reads, the profile API, errors, rate limits and the versioning policy. Use it before calling the HTTP API. Reads only; needs no sign-in; changes nothing.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "requires": "none",
+      "state_changing": false,
+      "payment": "none",
+      "route": "GET /docs",
+      "scope": "site"
+    }
+  ]
+}

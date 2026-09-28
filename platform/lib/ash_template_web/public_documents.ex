@@ -45,7 +45,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   # each last changed.
   @released_at DateTime.utc_now() |> DateTime.truncate(:second)
   @sanitize [
-    tags: ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote),
+    tags: ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote table thead tbody tr th td),
     tag_attributes: %{"a" => ["href"]},
     generic_attributes: [],
     url_schemes: ~w(http https mailto),
@@ -74,7 +74,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   # The HTML is MDEx-sanitized from the committed public markdown.
   # sobelow_skip ["XSS.Raw"]
   def html(markdown) do
-    markdown |> MDEx.to_html!(sanitize: @sanitize) |> Phoenix.HTML.raw()
+    markdown |> MDEx.to_html!(extension: [table: true], sanitize: @sanitize) |> Phoenix.HTML.raw()
   end
 
   @doc """
@@ -188,7 +188,12 @@ defmodule AshTemplateWeb.PublicDocuments do
     }
   end
 
-  defp source(name), do: String.replace(@sources[name], "{{origin}}", url(""))
+  # `{{tools}}` is the browser tools table, from the one tool manifest.
+  defp source(name) do
+    @sources[name]
+    |> String.replace("{{origin}}", url(""))
+    |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
+  end
 
   def recovery_links do
     [

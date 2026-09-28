@@ -22,6 +22,7 @@ evidence) never come in.
 | Relative time | KeyFleet `Time.ago` (c9c0f97) | `RegentFormat.relative_time/2` (elixir-utils a034f91) | "3 minutes ago" and "in 2 hours", with `now` passed in | Delete local `ago` helpers |
 | Client address behind Fly | Regents `client_address.ex` (cc795b0a) | `ClientAddress` (template 163ecba) | `Fly-Client-IP` is read only behind Fly's proxy | Already in the template; take it where weaker |
 | Content security policy | Techtree `router.ex` (bcf47ba) | `ContentSecurityPolicy` reading, sign-in and showcase profiles (template 163ecba) | Each page names the one profile it needs; no wildcard origins | Keep a stricter site policy as it is |
+| Browser tools (WebMCP) | Techtree `public_tools.ts`, `capabilities.ex` and the endpoint's `permissions-policy: tools=(self)` (a226cd0); Autolaunch's tool manifest and its docs and `llms.txt` tables (3f4fbb0) | `priv/tool_manifest.json`, `AshTemplate.Capabilities`, `public_tools.ts`, the endpoint, `/capabilities` | One manifest: every page registers its site tools from it, and `/capabilities`, `/docs` and `/llms.txt` list them from it; `make readiness` checks they agree | Keep the manifest, reader, registration and header; add the site's own tools to the manifest and its reads to `public_tools.ts` |
 
 ## Left out
 
@@ -31,6 +32,5 @@ evidence) never come in.
 | Session authority clean-up | Regents `session_authority.ex` (82bdc370) | The template never had the Regents Club code it removed; the template's version already has everything else |
 | Amount and number parsing | Regents `staking*.ex`, `stake_live.ex` | Staking's own rules |
 | `Time.moment/2` ("Today 14:03 UTC") | KeyFleet `time.ex` (c9c0f97) | One site uses it |
-| `permissions-policy: tools=(self)` | Techtree `router.ex` (bcf47ba) | Only for pages that serve WebMCP tools, which `skills/ash-webmcp/references/build.md` already requires; the template serves none |
 | Techtree's `api.github.com` and `form-action 'none'` | Techtree `router.ex` | Techtree's own pages |
 | Metrics listener | Autolaunch `metrics.ex` (8706e24) | The template's own listener on a private port is at least as strict |

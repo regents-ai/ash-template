@@ -21,7 +21,13 @@
 - Errors are JSON `{"error": {"code", "message", "hint"}}`. Every `/healthz` and `/api/v1` answer carries `RateLimit-Policy` and `RateLimit` headers; past the limit the answer is 429 with `Retry-After`. See [errors, rate limits and the versioning and deprecation policy]({{origin}}/docs): a breaking change ships the day it is listed there, with a new major `info.version`.
 - [API catalog]({{origin}}/.well-known/api-catalog) and [security.txt]({{origin}}/.well-known/security.txt).
 
-Ash Template does not offer a hosted MCP endpoint or browser tool registry. A page address is not proof of a browser tool.
+## Browser tools
+
+Every page offers a browser's own agent these tools through WebMCP (`document.modelContext`). Each reads one of the public documents above as Markdown, needs no sign-in and changes nothing. The [tool manifest]({{origin}}/capabilities) describes them as JSON.
+
+{{tools}}
+
+Ash Template does not offer a hosted MCP endpoint.
 
 ## Operator, help and boundaries
 

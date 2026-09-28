@@ -297,3 +297,23 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   and checks all of the above; `make drift` runs it, and lists the script as a shared
   file. The WebMCP item of the work order waits on the founder, so nothing here checks
   browser tools.
+
+## 2026-09-28 — Every page offers a browser's agent two read tools
+
+- Founder "1 b": the template ships two read-only WebMCP tools that need no product,
+  `about` and `docs`. Each returns the About page or the developer documentation as the
+  same Markdown an agent gets when it asks for that page; neither needs a sign-in or
+  changes anything. This replaces the earlier "no WebMCP example tool in v0.1.0".
+- One `platform/priv/tool_manifest.json` describes both. `AshTemplate.Capabilities` reads it
+  when the app compiles and serves it at `/capabilities`; `/docs` and `/llms.txt` gain a
+  "Browser tools" section whose table comes from it, and `llms.txt` no longer says the site
+  has no tool registry. The Markdown pages can now show tables.
+- `assets/js/public_tools.ts` registers the manifest's site tools through
+  `document.modelContext.registerTool` on `pageshow`, removes them on `pagehide`, and sets
+  `data-webmcp-status` on the page (`connected`, `unsupported` or `error`). The registration
+  is Techtree's (a226cd0), as is the manifest reader and the endpoint-wide
+  `permissions-policy: tools=(self)` on every answer; the manifest's fields and the tool
+  tables in the docs and `llms.txt` follow Autolaunch (3f4fbb0).
+- `make readiness` also checks the header on every public page, that `/capabilities`
+  parses with WebMCP-valid entries, that the page's script registers exactly the manifest's
+  site tools, and that `/docs` and `/llms.txt` list exactly the manifest's tools.

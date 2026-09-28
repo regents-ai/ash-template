@@ -65,6 +65,12 @@ RateLimit: "default";r=119;t=42
 
 None yet.
 
+## Browser tools
+
+Every page offers a browser's own agent these tools through WebMCP (`document.modelContext`). Each reads one of the public documents as Markdown, needs no sign-in and changes nothing. The [tool manifest]({{origin}}/capabilities) describes them as JSON.
+
+{{tools}}
+
 ## Contracts
 
 The [OpenAPI JSON specification]({{origin}}/openapi.json) describes the health check and the profile API above, including their authentication requirements. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) is the full served contract, including the browser session endpoints the site itself uses. The [API catalog]({{origin}}/.well-known/api-catalog) (RFC 9727) points to the OpenAPI specification and this page, and [security.txt]({{origin}}/.well-known/security.txt) names where to report a vulnerability.

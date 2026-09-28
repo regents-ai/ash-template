@@ -80,7 +80,10 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   8. The template has no automated tests.
   9. Autolaunch's leftover launch countdown is removed.
   10. v0.1.0 is for Regent's own sites first; a public launch comes later.
-  11. No WebMCP example tool in v0.1.0.
+  11. No WebMCP example tool in v0.1.0. Superseded 2026-09-28 by founder "1 b" (below).
+- WebMCP in the template (founder "1 b", 2026-09-28): the template ships two read tools
+  that need no product, `about` and `docs`, from one `platform/priv/tool_manifest.json`;
+  `make readiness` checks them. This replaces item 11 above.
 
 ## Goal
 
