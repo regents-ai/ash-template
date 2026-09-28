@@ -34,7 +34,7 @@ REGENT fees and deposit both in kind into the launch's fixed splitter. Keep the
 existing swap hook and all splitter lanes, including the 2% skim on all three
 recognized assets; no fee conversion or denomination redesign is wanted.
 
-## Wallet identity and transaction state — all four products
+## Wallet identity and transaction state — all five sites
 
 Apply the same rule in Regents, Autolaunch, Techtree and Patchbay:
 
@@ -64,9 +64,12 @@ Apply the same rule in Regents, Autolaunch, Techtree and Patchbay:
   reads current state; it does not restore pending transactions or resend them.
   Confirmed chain-event indexing and ordinary saved creator drafts are separate
   from pending-transaction persistence and remain legitimate product data.
-- Bind each action to the displayed record, chain and authenticated signer. Explain
-  known failure conditions and disable the action until they change. A pending
-  transaction alone must not serialize or suppress another otherwise valid press.
+- Bind each action to the displayed record, chain and authenticated signer. Every
+  press reaches the wallet; never block, defer, queue, serialize or deduplicate one.
+  The one exception (founder decision, 2026-09-28): when the chain's own current state
+  makes a transaction certain to fail, such as "144/144 Keys sold", the button stays
+  visible but disabled with the reason beside it. A pending transaction, or one that
+  might revert, is never a reason to disable.
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 

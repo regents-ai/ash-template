@@ -50,7 +50,12 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
   browser-built steps). The example's is "Record and Sign use the number 42."; a money
   flow shows "You pay / You get" the same way.
 - A button names its step with `data-onchain-step`. It has no `phx-click` and sits
-  outside any form (rule 2). Never `disabled`, never `aria-disabled="true"`.
+  outside any form (rule 2). It is `disabled` in one case only: the server's own read of
+  the chain says the step is certain to fail (sold out, the sale has closed, the claim is
+  already made). Then a line beside it gives that reason in plain words, and the server
+  enables it again when the read changes. Never disable it because a press is pending,
+  or because the transaction might revert, and never use `aria-disabled="true"` or CSS
+  to make an enabled button inert.
 - Every field the review depends on carries `data-onchain-input="name"`, matching the
   review's `inputs`. A group of radio buttons sharing one name reports the chosen value;
   a checkbox reports "true" or "false".
@@ -81,6 +86,26 @@ OnchainSteps.put_review(socket, review)
 - `Call.encode/2` takes the exact function signature and raises on an argument that
   does not fit, so a step that cannot be built never reaches the page. `Review.step/4`
   takes wei as a fourth argument when the step pays native currency.
+- Prove every signature against the contract's pinned ABI when the module compiles, so a
+  signature that drifted from the deployed contract stops the build instead of reaching
+  a wallet. Regents' Stake steps do it (regents@2d61d9e1
+  `platform/lib/ash_platform/staking/steps.ex`, with `declared!/3` in
+  `wallet_actions/abi.ex`):
+
+  ```elixir
+  @abi_path Path.expand("../../../contracts/abi/revenue-staking.json", __DIR__)
+  @external_resource @abi_path
+  @abi @abi_path |> File.read!() |> Jason.decode!()
+  @after_compile __MODULE__
+
+  @doc false
+  def __after_compile__(_env, _bytecode),
+    do: Enum.each(Map.values(@calls), &Abi.declared!(@abi, "function", &1))
+  ```
+
+  `declared!/3` finds the ABI entry of that kind and name, rebuilds its signature from
+  the input types (a tuple becomes its component list) and raises unless it matches
+  exactly. `@external_resource` recompiles the module when the ABI file changes.
 - `Review.signature/2` takes EIP-712 typed data as `eth_signTypedData_v4` takes it. The
   server keeps its copy; the page reports only the signature.
 - A review never changes. Its `id` comes from everything in it, so a new signer, chain,

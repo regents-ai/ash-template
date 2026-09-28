@@ -21,7 +21,7 @@ persistence in each product. Extract only code with actual equivalent consumers.
 
 ## Wallet actions
 
-All four products use the wallet identity and transaction-state rules in
+All five sites use the wallet identity and transaction-state rules in
 `regent-workflow`: Privy's active wallet acts when the server finds it among the
 signed-in account's linked wallets, and the page shows its data. Any other wallet
 shows no data of its own and sends nothing; the page asks the person to switch to
@@ -37,11 +37,16 @@ rows are not authorization for destructive cleanup.
 Every distinct press of an on-chain button reaches the wallet, including a second
 press while an approval or transaction is pending. Generic outbox, idempotency,
 locking, retry and duplicate-operation guidance never authorizes admission state
-for user-signed transactions. Do not block, ignore, defer, serialize or deduplicate
-a second press. A literal double-fire of one browser click is not a second press.
-Explain known failure conditions and disable the action until they change; a
-pending transaction alone is not such a condition. Report current wallet feedback
-and verified chain outcomes without persisting a recovery queue.
+for user-signed transactions. Do not block, ignore, defer, queue, serialize or
+deduplicate a second press. A reverted or duplicate transaction is an accepted
+outcome. A literal double-fire of one browser click is not a second press.
+
+One exception (founder decision, 2026-09-28): when the chain's own current state
+makes a transaction certain to fail, such as "144/144 Keys sold", the button stays
+visible but disabled, and the reason is shown beside it. The button comes back as
+soon as that state changes. A pending transaction, or one that might revert, is never
+a reason to disable. Report current wallet feedback and verified chain outcomes
+without persisting a recovery queue.
 For Privy/session work, read [Privy reconciliation](privy-reconciliation.md). Its
 login/logout coordination must never become wallet-transaction serialization.
 

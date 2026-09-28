@@ -35,8 +35,8 @@ defmodule MyApp.Chain.Client do
   @callback block_hash(non_neg_integer()) :: {:ok, String.t()} | {:error, term()}
   @callback logs(addresses :: [String.t()], topic0s :: [String.t()], from :: non_neg_integer(), to :: non_neg_integer()) ::
               {:ok, [map()]} | {:error, :too_many_results | term()}
-  @callback transaction(hash :: String.t()) :: {:ok, map() | nil} | {:error, term()}
-  @callback receipt(hash :: String.t()) :: {:ok, map() | nil} | {:error, term()}
+  @callback transaction(chain :: map(), hash :: String.t()) :: {:ok, map() | nil} | {:error, term()}
+  @callback receipt(chain :: map(), hash :: String.t()) :: {:ok, map() | nil} | {:error, term()}
 
   def configured, do: Application.fetch_env!(:my_app, MyApp.Chain)[:client]
 end
@@ -47,8 +47,10 @@ hash and address it returns. `logs/4` answers `{:error, :too_many_results}` when
 refuses a range for size, so the pass can halve it. Keep the node's URL in an environment
 variable and never log it; provider URLs carry keys.
 
-`transaction/1` and `receipt/1` serve `onchain-buttons`' check; a watcher that only reads
-logs may leave them out of its client.
+`transaction/2` and `receipt/2` serve `onchain-buttons`' check: `RegentChain.Outcome`
+calls them with the review's chain (`chain_id`, `name`, `rpc_url`) and the hash, so they
+read from the node the review names. A watcher that only reads logs may leave them out of
+its client.
 
 ## Domain and cursor
 

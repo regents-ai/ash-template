@@ -13,8 +13,13 @@ and are not repeated here. For chain events recorded in the database, use `chain
 
 1. **Every press reaches the wallet**, including a second press while the first is with
    the wallet or on its way to the chain. A reverted or duplicate transaction is an
-   accepted outcome. Never disable, hide, debounce, queue or merge presses, and never set
+   accepted outcome. Never hide, debounce, queue or merge presses, and never set
    `pointer-events: none`. Mark a press in progress with a data attribute and CSS only.
+   The one exception (founder decision, 2026-09-28): when the chain's own current state
+   makes the transaction certain to fail, such as "144/144 Keys sold", the button stays
+   visible but `disabled`, and the reason is shown beside it; it comes back when that
+   state changes. A pending transaction, or one that might revert, is never a reason to
+   disable. See [hook pattern](references/hook-pattern.md#markup).
 2. **A hook's own click listener handles the press.** LiveView ignores a second
    `phx-click` on an element while the first is waiting for the server (lab: three presses,
    one event), and disables every button in a form while its `phx-submit` is in flight
