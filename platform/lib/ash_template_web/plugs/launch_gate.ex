@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
   alias AshTemplateWeb.{ContentSecurityPolicy, HoldingController}
 
   @doc "True while the product surfaces are open."
-  def app_surfaces_enabled?, do: Application.get_env(:ash_template, :app_surfaces, true)
+  def app_surfaces_enabled?, do: Application.fetch_env!(:ash_template, :app_surfaces)
 
   def init(opts), do: opts
 

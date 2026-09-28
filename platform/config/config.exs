@@ -39,8 +39,6 @@ config :ash_template, :behind_fly_proxy, false
 # other sites' local servers without taking the one port they all name in production.
 config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0
 
-config :ash_template, :app_surfaces, true
-
 # The chain the wallet page at /showcase/wallet sends on: Base Sepolia, a test
 # network, so nothing it sends moves value.
 config :ash_template, :wallet_chain, %{
