@@ -18,6 +18,16 @@ transaction and locking requirements. Inspect the installed migration APIs and D
 version before choosing them. Do not paste a raw SQL pattern from another version
 without checking its safety and Ash's representation of the intended index.
 
+## Raw SQL names its schema
+
+Each site keeps its tables in its own schema (the template's is `ash_template_app`,
+`Repo.default_prefix/0`), and the release runs migrations with that prefix. `table/2`
+and `index/2` pick it up; raw SQL in `execute/1` does not, so a bare `UPDATE assist_runs`
+fails in the release command (Patchbay, 2026-09-28) even when it worked locally. Qualify
+every table in raw SQL with the repo's schema:
+`execute("UPDATE \"#{MyApp.Repo.default_prefix()}\".assist_runs SET ...")`. `prefix()`
+inside a migration is `nil` under a plain `mix ecto.migrate`, so it is not a substitute.
+
 ## Snapshots are generator state
 
 Commit snapshots with their migrations where the project does so.
