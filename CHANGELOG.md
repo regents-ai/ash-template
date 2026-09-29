@@ -478,3 +478,5 @@ Operations
   and Pay is switched off (founder, 2026-09-29), since the shared payments library takes
   real USDC on Base only. Linked from the showcase, `/llms.txt`, `/skill.md` and the
   `payments` skill.
+- The `payments` skill says the payment tables are on the production protected-table lock
+  (founder, 2026-09-29).
