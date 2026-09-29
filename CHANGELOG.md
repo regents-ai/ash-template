@@ -480,3 +480,9 @@ Operations
   `payments` skill.
 - The `payments` skill says the payment tables are on the production protected-table lock
   (founder, 2026-09-29).
+
+## 2026-09-29 — Pins match Regents v106
+
+- Pins move to elixir-utils 5508072 and regents c927cdd0, the pair Regents v106 runs.
+  The libraries the template uses are unchanged between the pins; elixir-utils 5508072
+  adds smart-wallet signatures to sign-in (`siwa`), which the template does not use.
