@@ -141,6 +141,9 @@ const tools = manifest.tools.filter(tool => tool.scope === "site").map(tool => (
 
 ### 4. Wallets and payments
 
+A tool marked `payment: moves_usdc` takes the payment through the shared
+`RegentPayments.Purchase`, as the site's pages and HTTP doors do (`payments`).
+
 A tool that signs goes through the same wallet step as the button: the server issues
 the challenge, the customer's wallet signs exactly what it states, the server admits
 it. Nothing signs automatically, a refused signature never retries unsigned, and

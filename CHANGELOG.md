@@ -463,3 +463,10 @@ Operations
 
 - Moved `regent_identity` to Regents `faec71a8`, which pins the same elixir-utils
   commit as the template (`590f6d6`). `regent_privy` no longer needs `override: true`.
+
+## 2026-09-29 — Payments guide
+
+- Added the `payments` skill: how a site takes USDC payments through the shared
+  `regent_payments` library in Regents (one offer per paid action, the page, HTTP and MCP
+  doors, the USDC Balance, fees handed on to REGENT staking). The site serves it with
+  the other build skills. `onchain-buttons`, `ash-webmcp` and the README point to it.
