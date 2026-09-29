@@ -7,4 +7,5 @@ This site is also the public demo of the Ash Template starter kit, the one Regen
 - [Showcase]({{origin}}/showcase): every shared component, in light and dark. Its [catalog]({{origin}}/showcase/catalog) lists them as JSON.
 - [Sign in with Privy]({{origin}}/showcase/privy): wallet sign-in, working.
 - [Wallet buttons]({{origin}}/showcase/wallet) on Base Sepolia, a test network. Only a signed-in person can press them, from their own wallet, and each press needs a little Base Sepolia test ETH for the network fee.
+- [Pay with USDC]({{origin}}/showcase/payments): how paying looks on every Regent site, with sample figures and paying switched off.
 - [Motion lab]({{origin}}/animations): every motion the kit uses.

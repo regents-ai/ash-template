@@ -69,6 +69,8 @@ config :regent_payments, RegentPayments.Facilitator,
   seeing only the rows its own `site` wrote. The rows are the record of money that moved:
   never delete from these tables or empty them.
 - Payments are Base mainnet only (`RegentPayments.USDC`): real USDC, no test network.
+  The template's `/showcase/payments` shows the payer's view with sample figures
+  and Pay switched off.
 
 ## The three doors
 

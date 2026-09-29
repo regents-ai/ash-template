@@ -33,6 +33,7 @@ Start with `ash-stack`: it says which of the others a task needs. Every file can
 - {{origin}}/showcase: every shared component, in light and dark, with the page layouts they build.
 - {{origin}}/showcase/privy: wallet sign-in with Privy, as a product page runs it.
 - {{origin}}/showcase/wallet: the wallet buttons the `onchain-buttons` skill describes, on Base Sepolia, a test network.
+- {{origin}}/showcase/payments: how a payment the `payments` skill describes looks to the payer, with sample figures and paying switched off.
 - {{origin}}/animations: every motion the kit uses, side by side.
 - {{origin}}/showcase/catalog: the components and their attributes as JSON.
 

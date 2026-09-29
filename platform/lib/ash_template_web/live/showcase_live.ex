@@ -80,6 +80,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <a href="/showcase/catalog" class="sc-api">Agent catalog ↗</a>
         <a href="/showcase/privy" class="sc-api">Privy sign-in ↗</a>
         <a href="/showcase/wallet" class="sc-api">Wallet buttons ↗</a>
+        <a href="/showcase/payments" class="sc-api">Pay with USDC ↗</a>
       </header>
       <div class="sc-layout">
         <aside class="sc-sidebar">

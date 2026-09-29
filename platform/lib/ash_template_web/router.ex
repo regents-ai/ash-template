@@ -98,6 +98,7 @@ defmodule AshTemplateWeb.Router do
       on_mount: [{AshTemplateWeb.Showcase, :pages}, {AshTemplateWeb.Live.Session, :load_human}] do
       live "/privy", PrivyShowcaseLive, :index
       live "/wallet", WalletShowcaseLive, :index
+      live "/payments", PaymentsShowcaseLive, :index
     end
   end
 

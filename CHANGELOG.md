@@ -470,3 +470,11 @@ Operations
   `regent_payments` library in Regents (one offer per paid action, the page, HTTP and MCP
   doors, the USDC Balance, fees handed on to REGENT staking). The site serves it with
   the other build skills. `onchain-buttons`, `ash-webmcp` and the README point to it.
+
+## 2026-09-29 — Pay with USDC example
+
+- `/showcase/payments` shows how a USDC payment looks to the payer: the USDC Balance, what
+  is being paid for, the Pay button and the words for each outcome. The figures are samples
+  and Pay is switched off (founder, 2026-09-29), since the shared payments library takes
+  real USDC on Base only. Linked from the showcase, `/llms.txt`, `/skill.md` and the
+  `payments` skill.

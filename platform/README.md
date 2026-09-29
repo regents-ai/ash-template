@@ -120,7 +120,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`), the motion lab (`/animations`) and the build
+wallet page `/showcase/wallet`, the payment example `/showcase/payments`), the motion lab (`/animations`) and the build
 skills (`/skills`, the agent guide `/skill.md` and
 `/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
 which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
@@ -140,7 +140,9 @@ and a real wallet on the chain set as `:wallet_chain` in `config/config.exs`
 (Base Sepolia, chain 84532). A press there needs a little Base Sepolia test ETH
 for the network fee. The wallet lab at `/showcase/onchain` sends to a lab chain
 on this machine, so it exists only in `local`, and only for a visitor on this
-machine.
+machine. The payment example at `/showcase/payments` shows a USDC payment with
+sample figures and Pay switched off: the shared payments library takes real USDC
+on Base only, so the demo takes none.
 [docs/showcase.md](docs/showcase.md) describes the pages.
 
 The build skills are ten of the repository's `skills/` folders (the Ash, motion

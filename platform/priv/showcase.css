@@ -18,6 +18,18 @@
   .wallet-page .onchain-workshop-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
   .wallet-page .onchain-workshop-grid > section:last-child { grid-column: auto; }
 }
+.payments-page-header > :last-child { margin-left: auto; }
+.payments-figure { display: flex; align-items: center; gap: 8px; font-size: 24px; }
+.payments-terms { display: grid; gap: 12px; margin: 0 0 16px; }
+.payments-terms > div { display: grid; grid-template-columns: 8em minmax(0, 1fr); gap: 8px; }
+.payments-terms dt { color: var(--color-fg-muted); }
+.payments-terms dd { margin: 0; overflow-wrap: anywhere; }
+.payments-page blockquote { margin: 0 0 16px; padding-left: 12px; border-left: 2px solid var(--color-border); }
+.payments-press { display: grid; justify-items: start; gap: 8px; margin-bottom: 16px; }
+.payments-answers { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.payments-answers li { display: grid; grid-template-columns: 9em minmax(0, 1fr); align-items: start; gap: 8px; }
+.payments-answers .rg-status { justify-self: start; }
+@media (max-width: 767px) { .payments-answers li { grid-template-columns: 1fr; } }
 .onchain-workshop-log { min-height: 1.5em; font-size: 12px; overflow-wrap: anywhere; }
 @media (max-width: 767px) {
   .onchain-workshop-grid { grid-template-columns: 1fr; padding: 0 16px 16px; }

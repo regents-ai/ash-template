@@ -50,6 +50,14 @@ press reaches the wallet; Record and Fail on purpose need a little Base Sepolia
 test ETH for the network fee. `/showcase/onchain` is the same component against
 a lab chain and a stand-in wallet on this machine, and exists only in `local`.
 
+## Pay with USDC
+
+`/showcase/payments` shows what a payer sees when a product page takes a
+payment through the shared `RegentPayments` library (the `payments` skill): the
+USDC Balance, the frozen terms, the Pay button and the words for each answer.
+The figures are samples and Pay is switched off (founder, 2026-09-29), because
+the library takes real USDC on Base only. The page sends nothing to a wallet.
+
 ## Utility effects
 
 - Wallet fixture: a separate local provider demonstrates connect/disconnect,
