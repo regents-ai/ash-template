@@ -495,3 +495,10 @@ Operations
   is a prompt to fill in; Key facts keeps only rows with a true answer, and the token
   rows and risk sentence apply only to a site with a token.
 - `/llms.txt` repeats the About page's Key facts, so AI tools read the same facts.
+
+## 2026-09-29 — No GitHub Actions
+
+- GitHub Actions is off on every Regent repository except regents-cli (founder,
+  2026-09-29), so the template's `cli-ci.yml` and `platform-ci.yml` workflows are gone and
+  a product made with `scripts/init.sh` starts without any. `make check`, `mix precommit`,
+  the drift report and the readiness check run on your machine as before.
