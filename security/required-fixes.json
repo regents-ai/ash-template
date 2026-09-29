@@ -11,7 +11,8 @@
     {"app": "siwa", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa"},
     {"app": "siwa_keyring", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa_keyring"},
     {"app": "regent_ui", "repository": "https://github.com/regents-ai/design-system.git", "sparse": "regent_ui"},
-    {"app": "regent_identity", "repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"}
+    {"app": "regent_identity", "repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"},
+    {"app": "regent_payments", "repository": "https://github.com/regents-ai/regents.git", "sparse": "payments"}
   ],
   "fixes": [
     {
