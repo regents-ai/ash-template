@@ -8,6 +8,9 @@ defmodule AshTemplateWeb.PublicDocuments do
          )
   for file <- @files, do: @external_resource(file)
   @sources Map.new(@files, &{Path.basename(&1, ".md"), File.read!(&1)})
+  # The About page's Key facts, repeated in llms.txt so AI tools read the same facts.
+  [_about, facts] = String.split(@sources["about"], "\n## Key facts\n")
+  @key_facts "## Key facts\n" <> String.trim_trailing(hd(String.split(facts, "\n## ", parts: 2)))
   @openapi_path Path.join(@directory, "openapi.json")
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
@@ -216,6 +219,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     }
   end
 
+  # `{{key_facts}}` is the About page's Key facts section;
   # `{{tools}}` is the browser tools table, from the one tool manifest;
   # `{{skills}}` the build skills table for agents and `{{skill_list}}` the list
   # for people. The `{{showcase}}` line and the blank
@@ -224,6 +228,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   defp source(name) do
     @sources[name]
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
+    |> String.replace("{{key_facts}}", @key_facts)
     |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
     |> String.replace("{{skills}}", skills_table())
     |> String.replace("{{skill_list}}", skill_list())

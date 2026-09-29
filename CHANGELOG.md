@@ -486,3 +486,12 @@ Operations
 - Pins move to elixir-utils 5508072 and regents c927cdd0, the pair Regents v106 runs.
   The libraries the template uses are unchanged between the pins; elixir-utils 5508072
   adds smart-wallet signatures to sign-in (`siwa`), which the template does not use.
+
+## 2026-09-29 — About page layout
+
+- `/about` follows one layout for every site: a one-line summary, what the site does,
+  what makes it different (with named alternatives), who uses it, the team, how it works,
+  a Key facts table, frequently asked questions and who operates the service. Each part
+  is a prompt to fill in; Key facts keeps only rows with a true answer, and the token
+  rows and risk sentence apply only to a site with a token.
+- `/llms.txt` repeats the About page's Key facts, so AI tools read the same facts.

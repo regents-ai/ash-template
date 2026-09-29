@@ -2,6 +2,8 @@
 
 > A product where people sign in with a wallet, keep a small account and read plain documentation.
 
+{{key_facts}}
+
 ## When to use Ash Template
 
 - Read the public documentation without an account.

@@ -3,7 +3,7 @@
     {
       "name": "about",
       "title": "About Ash Template",
-      "description": "Read the About page as Markdown: what Ash Template is, what a person can do here and who runs it. Reads only; needs no sign-in; changes nothing.",
+      "description": "Read the About page as Markdown: what Ash Template is and does, how it differs, who uses it, the team, key facts, common questions and who runs it. Reads only; needs no sign-in; changes nothing.",
       "input_schema": {
         "type": "object",
         "properties": {},
