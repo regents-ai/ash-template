@@ -524,3 +524,8 @@ Operations
   their size.
 - Pin moves to design-system 322448c, which owns the button's size, border and hover. The
   header no longer sets the button's height, left border or hover colour.
+
+## 2026-09-30 — Theme button corners slightly rounded
+
+- Pin moves to design-system 970b5bc: the light/dark button's box has slightly rounded
+  corners on every site (founder, 2026-09-30).
