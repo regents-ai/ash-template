@@ -542,3 +542,10 @@ Operations
   the same like and read actions.
 - `app.ts` imports `discussion.mjs` from the design system.
 - Pin moves to design-system 405b73f.
+
+## 2026-09-30 — Discussion fixes from Patchbay
+
+- Pin moves to design-system 6bc2640: headings quoted in a Solved answer read as bold
+  body text, the current reply filter keeps an outline in high-contrast mode, a thread
+  takes a site's own attributes, and `Regent.Discussion.posts` lists posts outside a
+  thread, such as one person's replies across threads.
