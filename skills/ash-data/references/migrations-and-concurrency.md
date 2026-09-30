@@ -28,6 +28,12 @@ every table in raw SQL with the repo's schema:
 `execute("UPDATE \"#{MyApp.Repo.default_prefix()}\".assist_runs SET ...")`. `prefix()`
 inside a migration is `nil` under a plain `mix ecto.migrate`, so it is not a substitute.
 
+`mix ash.codegen` can write `prefix: "public"` into a new table's `references(...)`. That
+points the foreign key at the public schema, where the site's tables are not, so the
+release migration fails (Patchbay, 2026-09-30). Delete those `prefix:` options from every
+generated migration before committing; references then follow the schema the release
+migrates into.
+
 ## Protected production tables
 
 Since 28 September 2026 the shared production database keeps a founder list of
