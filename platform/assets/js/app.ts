@@ -1,4 +1,5 @@
 import "../css/app.css"
+import "../vendor/regent_ui/discussion.mjs"
 
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"

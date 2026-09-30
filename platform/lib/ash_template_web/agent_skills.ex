@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.AgentSkills do
   """
 
   @root Path.expand("../../../skills", __DIR__)
-  @names ~w(ash-stack ash-backend ash-data ash-frontend ash-security ash-testing ash-webmcp animejs onchain-buttons chain-events payments)
+  @names ~w(ash-stack ash-backend ash-data ash-frontend ash-security ash-testing ash-webmcp animejs onchain-buttons chain-events payments discussions)
   @base "/.well-known/agent-skills"
   @schema "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
   @types %{

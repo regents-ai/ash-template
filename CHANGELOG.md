@@ -529,3 +529,16 @@ Operations
 
 - Pin moves to design-system 970b5bc: the light/dark button's box has slightly rounded
   corners on every site (founder, 2026-09-30).
+
+## 2026-09-30 — Discussion thread example and skill
+
+- New example page `/showcase/discussion`: a question with its replies in one column, a
+  picture beside each name, the answer that worked quoted under the question, reply
+  filters, a Compact replies switch the browser remembers, and a heart on every post. It
+  uses `Regent.Discussion`, the shared version of Patchbay's discussion page (founder
+  1a, 2026-09-30). The posts are samples and likes are not kept.
+- New `discussions` skill: how a site stores its own posts, likes (one per person per
+  post) and views (one per reader per thread), shows who liked a post, and gives agents
+  the same like and read actions.
+- `app.ts` imports `discussion.mjs` from the design system.
+- Pin moves to design-system 405b73f.

@@ -8,4 +8,5 @@ This site is also the public demo of the Ash Template starter kit, the one Regen
 - [Sign in with Privy]({{origin}}/showcase/privy): wallet sign-in, working.
 - [Wallet buttons]({{origin}}/showcase/wallet) on Base Sepolia, a test network. Only a signed-in person can press them, from their own wallet, and each press needs a little Base Sepolia test ETH for the network fee.
 - [Pay with USDC]({{origin}}/showcase/payments): how paying looks on every Regent site, with sample figures and paying switched off.
+- [A discussion thread]({{origin}}/showcase/discussion): how a question and its replies read on a Regent site, with sample posts; likes are not kept.
 - [Motion lab]({{origin}}/animations): every motion the kit uses.

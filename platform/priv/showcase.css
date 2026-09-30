@@ -158,3 +158,6 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 @media (prefers-reduced-motion: reduce) {
   .sc *, .sc *::before, .sc *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+.discussion-page .rg-discussion { margin-block-end: 48px; }
+.discussion-avatar { display: grid; place-items: center; border: 1px solid var(--color-border); background: var(--color-surface); font: 600 14px/1 var(--font-family-mono); }
+.discussion-avatar--house { background: var(--color-fg); color: var(--color-bg); }
