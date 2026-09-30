@@ -514,3 +514,13 @@ Operations
 - The last column of a table on a public page wraps a long value, such as the site's web
   address or a contract address in Key facts, so the table fits a phone screen instead of
   scrolling sideways. Other columns keep whole words. Found by the Autolaunch lane.
+
+## 2026-09-29 — Smaller theme button beside larger header icons
+
+- The light/dark button is a small prism box in the middle of its press target instead of
+  a bordered cell the full height of the header, with the same space before the X icon as
+  between the icons. Pointing at it shows the other theme's colours (founder, 2026-09-29).
+- The X and GitHub icons in the headers are 1.5rem, up from 1.25rem; footer icons keep
+  their size.
+- Pin moves to design-system 322448c, which owns the button's size, border and hover. The
+  header no longer sets the button's height, left border or hover colour.
