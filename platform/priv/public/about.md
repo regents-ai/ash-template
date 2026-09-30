@@ -16,7 +16,7 @@ Ash Template is a [kind of product] that [does what] for [who it is for].
 
 ### [First difference]
 
-[Two or three sentences with a specific, checkable fact. Name the alternative: "Ash Template does X, whereas [competitor] does Y."]
+[Two or three sentences with a specific, checkable fact.]
 
 ### [Second difference]
 
@@ -60,7 +60,6 @@ Ash Template is a [kind of product] that [does what] for [who it is for].
 | Pricing | [What people pay] |
 | Services | [Products, comma-separated] |
 | Communication | [Channels] |
-| Competitors | [Names] |
 | Social | [Links] |
 | Token | [Only with a token: name and network] |
 | Token contract | [Only with a token: the contract address] |

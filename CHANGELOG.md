@@ -502,3 +502,9 @@ Operations
   2026-09-29), so the template's `cli-ci.yml` and `platform-ci.yml` workflows are gone and
   a product made with `scripts/init.sh` starts without any. `make check`, `mix precommit`,
   the drift report and the readiness check run on your machine as before.
+
+## 2026-09-29 — About page names no competitors
+
+- The About page describes what makes the site different without naming competitors
+  (founder, 2026-09-29), so the Competitors row of Key facts is gone. This replaces
+  "with named alternatives" in the About page layout entry above.
