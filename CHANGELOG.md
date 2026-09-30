@@ -508,3 +508,9 @@ Operations
 - The About page describes what makes the site different without naming competitors
   (founder, 2026-09-29), so the Competitors row of Key facts is gone. This replaces
   "with named alternatives" in the About page layout entry above.
+
+## 2026-09-29 — Long values wrap in public page tables
+
+- The last column of a table on a public page wraps a long value, such as the site's web
+  address or a contract address in Key facts, so the table fits a phone screen instead of
+  scrolling sideways. Other columns keep whole words. Found by the Autolaunch lane.
