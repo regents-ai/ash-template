@@ -14,8 +14,7 @@
     {"app": "regent_identity", "repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"},
     {"app": "regent_payments", "repository": "https://github.com/regents-ai/regents.git", "sparse": "payments"},
     {"app": "regent_agents", "repository": "https://github.com/regents-ai/regents.git", "sparse": "agents"},
-    {"app": "regent_openai", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "openai"},
-    {"app": "regent_allowance", "repository": "https://github.com/regents-ai/regents.git", "sparse": "allowance"}
+    {"app": "regent_openai", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "openai"}
   ],
   "fixes": [
     {
