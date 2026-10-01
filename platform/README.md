@@ -38,6 +38,35 @@ listed fix. Library pins never change by themselves; only the list does.
 `mix hex.audit` in `mix precommit` stops on a Hex package that is retired or has
 a published security advisory (Hex 2.5 reads both).
 
+### MCP events
+
+A site whose MCP endpoint offers events (protocol `2026-07-28`: `server/discover`,
+`events/list`, `events/subscribe`, `events/unsubscribe`, delivered by webhook) takes
+`regent_mcp_events` from `elixir-utils/mcp_events`. This template has no MCP endpoint
+and does not use it. The library first appears in elixir-utils commit `194896a`,
+which is not yet on GitHub, so no site can pin it until that commit is pushed; it
+then rides the site's one elixir-utils pin like every other library from there:
+`{:regent_mcp_events, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_events"}`.
+
+The library owns subscription ids, the signed callback challenge, the protected
+webhook transport and the delivery worker. The site owns three things, as the
+library's README sets out:
+
+- The event methods on its existing MCP endpoint, with the subscription owner taken
+  from the signed-in connection, never from the request.
+- An adapter implementing `Regent.MCPEvents.Adapter` (`claim_next/2`,
+  `authorize_delivery/2`, `finish/3`) over the site's own subscriptions table and a
+  commit-ordered event feed. A refresh resets the attempts and drops any lease, and
+  no outcome advances past an event still owed.
+- One worker, `{Regent.MCPEvents.Worker, adapter: MyAppWeb.MCP.EventDelivery}`,
+  started after the repo in `application.ex` and switched off in `config/test.exs`.
+
+Patchbay is the first site with events: `PatchbayWeb.MCP.Events` serves the
+methods, `PatchbayWeb.MCP.EventDelivery` is the adapter and
+`Patchbay.Forum.EventSubscription` holds the subscriptions, with signing secrets
+encrypted under `secret_key_base`. Its `/mcp` route is declared with `log: false`
+so the secret and callback address never reach the request log.
+
 ## Quickstart
 
 Run these from `platform/`. You need

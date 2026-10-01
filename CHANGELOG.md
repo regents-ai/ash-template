@@ -549,3 +549,12 @@ Operations
   body text, the current reply filter keeps an outline in high-contrast mode, a thread
   takes a site's own attributes, and `Regent.Discussion.posts` lists posts outside a
   thread, such as one person's replies across threads.
+
+## 2026-10-01 — Shared MCP events library listed
+
+- `security/required-fixes.json` lists `regent_mcp_events` (elixir-utils `mcp_events/`),
+  the shared helpers for MCP events, before any site adopts it.
+- The platform README's new MCP events section says what the library does, what a site
+  writes itself (the event methods, an adapter, one worker) and where Patchbay's are. The
+  library first appears in elixir-utils `194896a`, not yet on GitHub, so no site can pin
+  it until that commit is pushed. The template does not use it.
