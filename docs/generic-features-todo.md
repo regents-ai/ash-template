@@ -119,6 +119,9 @@ counts it runs on every request.
 - 2026-10-02: the Jev client is a small shared package in elixir-utils beside
   `regent_http` (request, answer checks, telemetry); each site keeps its own jobs,
   tables and limits. Patchbay can switch to it.
+- 2026-10-02: notes are what people wrote, a protected category. If the template ever
+  runs against the shared production database, `ash_template_app.notes` goes on
+  `regent_guard.protected_tables` first.
 
 ## Order
 
