@@ -79,7 +79,7 @@ To do:
 - [ ] WebMCP tools that act for the signed-in person (create a note, post in a room),
       declared in the manifest with `readOnlyHint: false`, going through the same Ash
       actions and policies as the page, and refusing clearly when signed out.
-- [ ] A Jev client: one function that sends `{model, state, questions}` and returns
+- [ ] A Jev client in elixir-utils (decided below): one function that sends `{model, state, questions}` and returns
       `{:ok, %{choice, confidence, usage}}` only when the choice is one of the offered keys,
       otherwise `{:error, :unexpected_answer}`. Req through `regent_http` (telemetry and
       secret redaction), endpoint, model and `OPENROUTER_API_KEY` read once in
@@ -111,12 +111,11 @@ hard-coded and the key is read with `System.get_env` at call time; a decision's 
 can be overwritten by anyone holding its id; `assist_decisions` has no indexes for the
 counts it runs on every request.
 
-## Open question for the founder
+## Decided
 
-1. Where the Jev client lives: in the template only, or as a small shared package in
-   elixir-utils (beside `regent_http`) that Patchbay can switch to as well. Recommended:
-   the shared package, since the request and answer checks are the same everywhere and
-   each site keeps its own jobs and tables.
+- 2026-10-02: the Jev client is a small shared package in elixir-utils beside
+  `regent_http` (request, answer checks, telemetry); each site keeps its own jobs,
+  tables and limits. Patchbay can switch to it.
 
 ## Order
 
