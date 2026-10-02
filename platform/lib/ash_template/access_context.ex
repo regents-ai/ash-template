@@ -7,9 +7,9 @@ defmodule AshTemplate.AccessContext do
   @enforce_keys [:principal]
   defstruct @enforce_keys
 
-  def anonymous, do: %__MODULE__{principal: :anonymous}
-
-  def human(account), do: %__MODULE__{principal: {:human, account}}
+  @doc "The context for a signed-in account, or for nobody when there is none."
+  def for_account(nil), do: %__MODULE__{principal: :anonymous}
+  def for_account(account), do: %__MODULE__{principal: {:human, account}}
 
   @doc "The only wallets that may act for the account, lowercase and each once; `nil` signed out."
   def linked_wallets(%__MODULE__{principal: {:human, account}}),

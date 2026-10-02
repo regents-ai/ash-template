@@ -96,14 +96,11 @@ defmodule AshTemplateWeb.Live.Session do
   defp local_route(path, query), do: path <> "?" <> query
 
   defp assign_principal(socket, account) do
-    context = access_context(account)
+    context = AccessContext.for_account(account)
 
     assign(socket,
       access_context: context,
       account_control: AccessContext.account_control(context)
     )
   end
-
-  defp access_context(nil), do: AccessContext.anonymous()
-  defp access_context(account), do: AccessContext.human(account)
 end

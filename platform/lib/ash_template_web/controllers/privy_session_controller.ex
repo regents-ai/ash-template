@@ -8,7 +8,6 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   require Logger
 
-  @account_evidence_reasons [:missing_linked_wallet, :invalid_verified_identity]
   @browser_failure_reasons ~w(bridge_startup flow_closed invalid_message provider_error request_timeout session_exchange unable_to_sign)
   @browser_failure_limit 20
   @browser_failure_window_seconds 60
@@ -183,13 +182,13 @@ defmodule AshTemplateWeb.PrivySessionController do
     end
   end
 
-  # The account boundary's own two outcomes are named; anything else it or Ash
+  # The account boundary's own outcomes are named; anything else it or Ash
   # returns is reduced without being inspected, so no query, changeset or record
   # detail can reach the classification.
   defp establish(verified) do
     case VerifiedSession.establish(verified) do
       {:ok, _account, _conflicts} = established -> established
-      {:error, reason} when reason in @account_evidence_reasons -> account_evidence(reason)
+      {:error, :missing_linked_wallet} -> account_evidence(:missing_linked_wallet)
       _rejected -> account_evidence(:account_rejected)
     end
   end
@@ -266,12 +265,9 @@ defmodule AshTemplateWeb.PrivySessionController do
   defp drop_session(conn), do: configure_session(conn, drop: true)
 
   defp session_payload(account) do
-    control = account |> access_context() |> AccessContext.account_control()
+    control = account |> AccessContext.for_account() |> AccessContext.account_control()
     %{authenticated: not is_nil(account), account_control: Map.from_struct(control)}
   end
-
-  defp access_context(nil), do: AccessContext.anonymous()
-  defp access_context(account), do: AccessContext.human(account)
 
   defp put_identity_conflict_header(conn, []), do: conn
 
