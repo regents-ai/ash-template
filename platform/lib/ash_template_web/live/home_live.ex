@@ -91,7 +91,7 @@ defmodule AshTemplateWeb.HomeLive do
 
         <div class="rl-header-links">
           <RegentLinks.header_links id="home-brand-links" />
-          <a href={~p"/app"} class="rg-button rl-action"><span class="rg-button__label">App</span></a>
+          <.action href={~p"/app"} class="rl-action">App</.action>
         </div>
       </div>
     </header>
@@ -118,7 +118,7 @@ defmodule AshTemplateWeb.HomeLive do
           <h1 id="home-title" class="rl-hero-title">Ash Template</h1>
           <p class="rl-hero-description">A starting point for your next product</p>
           <div class="rl-hero-actions">
-            <a href={~p"/app"} class="rg-button"><span class="rg-button__label">Open the app</span></a>
+            <.action href={~p"/app"}>Open the app</.action>
           </div>
         </div>
         <div class="rl-hero-products">
@@ -140,9 +140,7 @@ defmodule AshTemplateWeb.HomeLive do
               </div>
               <p>{card.line}</p>
               <div class="rl-card-actions">
-                <a href={card.href} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">
-                  {card.cta}
-                </span></a>
+                <.action href={card.href} class="rg-button--secondary rl-action">{card.cta}</.action>
               </div>
             </li>
           </ul>
@@ -168,9 +166,9 @@ defmodule AshTemplateWeb.HomeLive do
           <p>{@chapter.description}</p>
 
           <div class="rl-chapter-actions">
-            <a href={@chapter.href} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">
+            <.action href={@chapter.href} class="rg-button--secondary rl-action">
               {@chapter.cta}
-            </span></a>
+            </.action>
           </div>
         </div>
       </header>
@@ -319,11 +317,16 @@ defmodule AshTemplateWeb.HomeLive do
         public documents that already work.
       </p>
       <div class="rl-closing-actions">
-        <a href={~p"/app"} class="rg-button rl-action rl-action--strong"><span class="rg-button__label">Open the app</span></a>
-        <a href={~p"/docs"} class="rg-button rl-action"><span class="rg-button__label">Read the docs</span></a>
-        <a :if={@showcase?} href={~p"/showcase"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">See the components</span></a>
-        <a :if={@showcase?} href={~p"/animations"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">Motion lab</span></a>
-        <a :if={@showcase?} href={~p"/skills"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">Build skills</span></a>
+        <.action href={~p"/app"} class="rl-action rl-action--strong">Open the app</.action>
+        <.action href={~p"/docs"} class="rl-action">Read the docs</.action>
+        <.action
+          :for={{href, label} <- kit_links()}
+          :if={@showcase?}
+          href={href}
+          class="rg-button--secondary rl-action"
+        >
+          {label}
+        </.action>
       </div>
     </section>
     """
@@ -346,6 +349,29 @@ defmodule AshTemplateWeb.HomeLive do
     </footer>
     """
   end
+
+  attr :href, :string, required: true
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  # The class list is built here, not in the tag: a literal list there renders a
+  # trailing space when `class` is nil.
+  defp action(assigns) do
+    assigns = assign(assigns, :class, ["rg-button", assigns.class])
+
+    ~H"""
+    <a href={@href} class={@class}>
+      <span class="rg-button__label">{render_slot(@inner_block)}</span>
+    </a>
+    """
+  end
+
+  defp kit_links,
+    do: [
+      {~p"/showcase", "See the components"},
+      {~p"/animations", "Motion lab"},
+      {~p"/skills", "Build skills"}
+    ]
 
   # The three chapters, in page order: each is a hero card, a header tab and a
   # numbered section. `diagrams` is the first of its three card diagrams.

@@ -5,17 +5,18 @@ defmodule AshTemplateWeb.Layouts do
 
   embed_templates("layouts/*")
 
-  attr(:flash, :map, required: true)
-  attr(:inner_content, :any, required: true)
+  attr :flash, :map, required: true
+  attr :inner_content, :any, required: true
 
   def app(assigns) do
     ~H"""
     {@inner_content}
     <div id="flash-region" aria-live="polite">
-      <Regent.Primitives.notice :if={message = Phoenix.Flash.get(@flash, :info)}>
-        {message}
-      </Regent.Primitives.notice>
-      <Regent.Primitives.notice :if={message = Phoenix.Flash.get(@flash, :error)} tone="error">
+      <Regent.Primitives.notice
+        :for={tone <- ~w(info error)a}
+        :if={message = Phoenix.Flash.get(@flash, tone)}
+        tone={Atom.to_string(tone)}
+      >
         {message}
       </Regent.Primitives.notice>
     </div>

@@ -29,13 +29,9 @@ defmodule AshTemplateWeb.Components.Shell do
         <.link id="shell-brand" class="shell-brand" href="/">
           <span class="shell-brand__mark" aria-hidden="true">
             <img
-              class="shell-brand__mark-light"
-              src="/images/brand/mark-flat-light.svg"
-              alt=""
-            />
-            <img
-              class="shell-brand__mark-dark"
-              src="/images/brand/mark-flat-dark.svg"
+              :for={tone <- ~w(light dark)}
+              class={"shell-brand__mark-#{tone}"}
+              src={"/images/brand/mark-flat-#{tone}.svg"}
               alt=""
             />
           </span>
