@@ -1,21 +1,18 @@
 defmodule AshTemplateWeb.LegalController do
   @moduledoc "Serves the public Privacy Policy and Terms of Use."
-
   use AshTemplateWeb, :controller
-  alias AshTemplateWeb.PublicDocuments
 
   def privacy(conn, _params), do: show(conn, :privacy)
   def terms(conn, _params), do: show(conn, :terms)
 
   defp show(conn, id) do
-    document = AshTemplate.Legal.document(id)
-    render(conn, :show, [document: document] ++ PublicDocuments.page(conn.request_path))
+    page = AshTemplateWeb.PublicDocuments.page(conn.request_path)
+    render(conn, :show, [document: AshTemplate.Legal.document(id)] ++ page)
   end
 end
 
 defmodule AshTemplateWeb.LegalHTML do
   @moduledoc false
-
   use AshTemplateWeb, :html
 
   def show(assigns) do

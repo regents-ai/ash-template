@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.Router do
+  @moduledoc "Every route, with the pipeline and live session that admit it."
   use AshTemplateWeb, :router
 
-  alias AshTemplateWeb.ContentSecurityPolicy
+  alias AshTemplateWeb.{ContentSecurityPolicy, Live.Session, Showcase}
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -38,36 +39,47 @@ defmodule AshTemplateWeb.Router do
     }
   end
 
-  def enforce_session_authority(conn, _opts) do
-    AshTemplateWeb.PrivySessionController.enforce_authority(conn)
-  end
+  def enforce_session_authority(conn, _opts),
+    do: AshTemplateWeb.PrivySessionController.enforce_authority(conn)
 
   # The showcase setting guards every page below (AshTemplateWeb.Showcase).
   pipeline :showcase do
-    plug AshTemplateWeb.Showcase, :pages
+    plug Showcase, :pages
   end
 
   pipeline :wallet_lab do
-    plug AshTemplateWeb.Showcase, :lab
+    plug Showcase, :lab
   end
 
   pipeline :motion_lab do
-    plug AshTemplateWeb.Showcase, :motion_lab
+    plug Showcase, :motion_lab
   end
 
+  # The showcase pages are HTML; only the catalog also answers JSON. Each pipeline
+  # negotiates its formats first, so a refusal carries no page headers, and sends
+  # the headers of a page that can start wallet sign-in.
+  @showcase_headers %{"content-security-policy" => ContentSecurityPolicy.sign_in()}
+
   pipeline :showcase_browser do
+    plug :accepts, ["html"]
+    plug :showcase_page
+    plug :put_secure_browser_headers, @showcase_headers
+  end
+
+  pipeline :showcase_catalog do
     plug :accepts, ["html", "json"]
+    plug :showcase_page
+    plug :put_secure_browser_headers, @showcase_headers
+  end
+
+  # The browser pipeline without the launch gate: the showcase is open or absent.
+  pipeline :showcase_page do
     plug :fetch_session
     plug :enforce_session_authority
     plug :fetch_live_flash
     plug AshTemplateWeb.Plugs.Theme
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug :protect_from_forgery
-
-    # These pages can start wallet sign-in.
-    plug :put_secure_browser_headers, %{
-      "content-security-policy" => ContentSecurityPolicy.sign_in()
-    }
   end
 
   # The catalog also frames its own preview, so its policy replaces the one above.
@@ -77,14 +89,18 @@ defmodule AshTemplateWeb.Router do
     }
   end
 
+  scope "/showcase", AshTemplateWeb.Showcase do
+    pipe_through [:showcase, :showcase_catalog, :framed_preview]
+    get "/catalog", CatalogController, :show
+    get "/style.css", CatalogController, :style
+  end
+
   scope "/showcase", AshTemplateWeb do
     pipe_through [:showcase, :showcase_browser, :framed_preview]
-    get "/catalog", Showcase.CatalogController, :show
-    get "/style.css", Showcase.CatalogController, :style
 
     live_session :showcase_catalog,
-      session: {AshTemplateWeb.Live.Session, :render_context, []},
-      on_mount: [{AshTemplateWeb.Showcase, :pages}, {AshTemplateWeb.Live.Session, :load_human}] do
+      session: {Session, :render_context, []},
+      on_mount: [{Showcase, :pages}, {Session, :load_human}] do
       live "/", ShowcaseLive, :index
       live "/preview", ShowcaseLive, :preview
     end
@@ -94,8 +110,8 @@ defmodule AshTemplateWeb.Router do
     pipe_through [:showcase, :showcase_browser]
 
     live_session :showcase,
-      session: {AshTemplateWeb.Live.Session, :render_context, []},
-      on_mount: [{AshTemplateWeb.Showcase, :pages}, {AshTemplateWeb.Live.Session, :load_human}] do
+      session: {Session, :render_context, []},
+      on_mount: [{Showcase, :pages}, {Session, :load_human}] do
       live "/privy", PrivyShowcaseLive, :index
       live "/wallet", WalletShowcaseLive, :index
       live "/payments", PaymentsShowcaseLive, :index
@@ -107,8 +123,8 @@ defmodule AshTemplateWeb.Router do
     pipe_through [:wallet_lab, :showcase_browser]
 
     live_session :wallet_lab,
-      session: {AshTemplateWeb.Live.Session, :render_context, []},
-      on_mount: [{AshTemplateWeb.Showcase, :lab}, {AshTemplateWeb.Live.Session, :load_human}] do
+      session: {Session, :render_context, []},
+      on_mount: [{Showcase, :lab}, {Session, :load_human}] do
       live "/onchain", OnchainShowcaseLive, :index
     end
   end
@@ -163,8 +179,8 @@ defmodule AshTemplateWeb.Router do
     delete "/auth/privy/session", PrivySessionController, :delete
 
     live_session :product_shell,
-      session: {AshTemplateWeb.Live.Session, :render_context, []},
-      on_mount: [AshTemplateWeb.Live.LaunchGateHook, {AshTemplateWeb.Live.Session, :load_human}] do
+      session: {Session, :render_context, []},
+      on_mount: [AshTemplateWeb.Live.LaunchGateHook, {Session, :load_human}] do
       live "/app", ShellLive, :app
       live "/account", ShellLive, :account
     end
@@ -175,7 +191,7 @@ defmodule AshTemplateWeb.Router do
     pipe_through [:motion_lab, :browser]
 
     live_session :motion_lab,
-      on_mount: [{AshTemplateWeb.Showcase, :motion_lab}, AshTemplateWeb.Live.LaunchGateHook] do
+      on_mount: [{Showcase, :motion_lab}, AshTemplateWeb.Live.LaunchGateHook] do
       live "/animations", AnimationsLive, :index
     end
   end

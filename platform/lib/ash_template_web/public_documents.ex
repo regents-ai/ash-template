@@ -1,6 +1,8 @@
 defmodule AshTemplateWeb.PublicDocuments do
   @moduledoc "Public documents only; never projects a signed-in page or account."
 
+  alias AshTemplateWeb.AgentSkills
+
   @directory Application.app_dir(:ash_template, "priv/public")
   @files Enum.map(
            ~w(docs about contact llms llms-showcase skill skills),
@@ -17,16 +19,14 @@ defmodule AshTemplateWeb.PublicDocuments do
   @documents ~w(/ /docs /about /contact /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
   @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/discussion /animations /skills)
-  # Site settings: the name; the type agent-readiness readers take as their lens,
-  # `business` for a company site or `app` for a product people use; and where
-  # security reports go, as published in security.txt.
   @site_name "Ash Template"
+  # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
   @security_contact "mailto:security@example.com"
   @description "Ash Template: sign in with a wallet, manage your account and read the developer documentation."
 
-  # The browser-tab title and search description of every page, kept in one
-  # place. A title names the page alone; `metadata/3` adds the site name once.
+  # The browser-tab title and search description of every page. A title names
+  # the page alone; `metadata/3` adds the site name once.
   @pages %{
     "/" => {"Ash Template", @description},
     "/app" => {"Overview", "Your Ash Template overview, with the wallet you signed in with."},
@@ -80,19 +80,13 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   def url(path), do: AshTemplateWeb.Endpoint.url() <> path
 
-  def document("/"),
-    do: %{title: "Ash Template", markdown: AshTemplateWeb.HomeLive.agent_markdown()}
-
-  def document("/privacy"),
-    do: %{title: "Privacy Policy", markdown: AshTemplate.Legal.markdown(:privacy)}
-
-  def document("/terms"),
-    do: %{title: "Terms of Use", markdown: AshTemplate.Legal.markdown(:terms)}
-
-  def document(path) when path in ~w(/docs /about /contact),
-    do: %{title: title(path), markdown: source(String.trim_leading(path, "/"))}
-
+  def document(path) when path in @documents, do: %{title: title(path), markdown: markdown(path)}
   def document(_path), do: nil
+
+  defp markdown("/"), do: AshTemplateWeb.HomeLive.agent_markdown()
+  defp markdown("/privacy"), do: AshTemplate.Legal.markdown(:privacy)
+  defp markdown("/terms"), do: AshTemplate.Legal.markdown(:terms)
+  defp markdown(path), do: source(String.trim_leading(path, "/"))
 
   def llms, do: source("llms")
 
@@ -108,10 +102,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     markdown |> MDEx.to_html!(extension: [table: true], sanitize: @sanitize) |> Phoenix.HTML.raw()
   end
 
-  @doc """
-  The `page_title` and `page_description` assigns the root layout reads. Every
-  page that renders in the root layout assigns them from here.
-  """
+  @doc "The `page_title` and `page_description` assigns the root layout reads from every page."
   def page(key) do
     {title, description} = Map.fetch!(@pages, key)
     [page_title: title, page_description: description]
@@ -153,8 +144,7 @@ defmodule AshTemplateWeb.PublicDocuments do
 
     locations =
       Enum.map_join(pages, "\n", fn path ->
-        location = url(path) |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
-        "  <url><loc>#{location}</loc><lastmod>#{lastmod}</lastmod></url>"
+        "  <url><loc>#{Plug.HTML.html_escape(url(path))}</loc><lastmod>#{lastmod}</lastmod></url>"
       end)
 
     """
@@ -222,12 +212,19 @@ defmodule AshTemplateWeb.PublicDocuments do
     }
   end
 
-  # `{{key_facts}}` is the About page's Key facts section;
-  # `{{tools}}` is the browser tools table, from the one tool manifest;
-  # `{{skills}}` the build skills table for agents and `{{skill_list}}` the list
-  # for people. The `{{showcase}}` line and the blank
-  # line after it become the showcase section when the showcase is public, and
-  # nothing otherwise. `{{origin}}` goes last, since they all name it.
+  def recovery_links do
+    [
+      {"Home", "/"},
+      {"Developer documentation", "/docs"},
+      {"Agent guide", "/llms.txt"},
+      {"OpenAPI", "/openapi.json"},
+      {"Sitemap", "/sitemap.xml"}
+    ]
+  end
+
+  # The `{{showcase}}` line and the blank line after it become the showcase
+  # section only when the showcase is public. `{{origin}}` goes last, since the
+  # other sections all name it.
   defp source(name) do
     @sources[name]
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
@@ -241,33 +238,20 @@ defmodule AshTemplateWeb.PublicDocuments do
   defp showcase_section(false), do: ""
   defp showcase_section(true), do: @sources["llms-showcase"] <> "\n"
 
-  defp skill_list do
-    base = "{{origin}}" <> AshTemplateWeb.AgentSkills.base()
-
-    Enum.map_join(AshTemplateWeb.AgentSkills.skills(), "\n", fn skill ->
-      "- **[#{skill.name}](#{base}/#{skill.name}/SKILL.md)**: #{skill.description}"
-    end)
-  end
+  defp skill_list,
+    do: Enum.map_join(AgentSkills.skills(), "\n", &"- **#{skill_link(&1)}**: #{&1.description}")
 
   defp skills_table do
-    base = "{{origin}}" <> AshTemplateWeb.AgentSkills.base()
-
     rows =
-      Enum.map_join(AshTemplateWeb.AgentSkills.skills(), "\n", fn skill ->
-        "| [#{skill.name}](#{base}/#{skill.name}/SKILL.md) | #{skill.description} | " <>
-          "[#{skill.name}.zip](#{base}/#{skill.name}.zip) |"
+      Enum.map_join(AgentSkills.skills(), "\n", fn skill ->
+        "| #{skill_link(skill)} | #{skill.description} | " <>
+          "[#{skill.name}.zip](#{skills_base()}/#{skill.name}.zip) |"
       end)
 
     "| Skill | Use it for | Download |\n| --- | --- | --- |\n" <> rows
   end
 
-  def recovery_links do
-    [
-      {"Home", "/"},
-      {"Developer documentation", "/docs"},
-      {"Agent guide", "/llms.txt"},
-      {"OpenAPI", "/openapi.json"},
-      {"Sitemap", "/sitemap.xml"}
-    ]
-  end
+  defp skill_link(skill), do: "[#{skill.name}](#{skills_base()}/#{skill.name}/SKILL.md)"
+
+  defp skills_base, do: "{{origin}}" <> AgentSkills.base()
 end
