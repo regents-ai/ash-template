@@ -1,11 +1,8 @@
 defmodule AshTemplateWeb.WalletShowcaseLive do
   @moduledoc """
-  The wallet buttons on a real account, with a real wallet, on Base Sepolia.
-
-  `AshTemplateWeb.OnchainExample` runs here exactly as a product page runs it:
-  the signed-in account's own wallets from `AccessContext.linked_wallets/1`,
-  Privy's active wallet from the component's hook, and the chain from the
-  `:wallet_chain` setting. Every press reaches the wallet.
+  The wallet buttons on a real account, with a real wallet, on the `:wallet_chain`
+  test network. `AshTemplateWeb.OnchainExample` runs here as on a product page,
+  with the signed-in account's own wallets from `AccessContext.linked_wallets/1`.
   """
   use AshTemplateWeb, :live_view
 

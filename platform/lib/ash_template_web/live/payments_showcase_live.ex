@@ -1,13 +1,9 @@
 defmodule AshTemplateWeb.PaymentsShowcaseLive do
   @moduledoc """
-  How a USDC payment looks on a Regent site, with sample figures and Pay
-  switched off (founder, 2026-09-29).
-
-  The shared `RegentPayments` library takes real USDC on Base only, so this
-  page takes nothing: no offer, no intent, no wallet request. It shows the
-  USDC Balance, the frozen terms a payer sees, the Pay button and the words
-  for each answer `RegentPayments.WalletPayment.pay/4` can give. The
-  `payments` skill says how a product page wires the real thing.
+  How a USDC payment looks on a Regent site: the USDC Balance, the frozen terms,
+  the Pay button and the words for each answer, with sample figures and Pay
+  switched off (founder, 2026-09-29). The `payments` skill says how a product
+  page wires the real thing.
   """
   use AshTemplateWeb, :live_view
 
@@ -22,15 +18,25 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    [pay_to, signed_in, other] =
+      Enum.map([@pay_to, @signed_in, @other], &RegentFormat.short_address/1)
+
+    # The words for each answer `RegentPayments.WalletPayment.pay/4` can give.
+    answers = [
+      {"success", "Paid", "1.00 USDC went to #{pay_to}."},
+      {"info", "Going through", "Your payment is still going through. Check again in a moment."},
+      {"warning", "Expired", "This price has expired. Start again for a fresh one."},
+      {"warning", "Other wallet",
+       "You're signed in as #{signed_in}, but your wallet app has #{other} open."},
+      {"error", "Refused", "Those payment terms have changed since your wallet saw them."},
+      {"error", "Unavailable", "Payments aren't available right now. Try again shortly."}
+    ]
+
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/payments"))
-     |> assign(
-       local?: AshTemplateWeb.Showcase.mode() == :local,
-       pay_to: RegentFormat.short_address(@pay_to),
-       signed_in: RegentFormat.short_address(@signed_in),
-       other: RegentFormat.short_address(@other)
-     ), layout: false}
+     |> assign(local?: AshTemplateWeb.Showcase.mode() == :local, pay_to: pay_to, answers: answers),
+     layout: false}
   end
 
   @impl true
@@ -102,29 +108,9 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-answers-heading">
           <h2 id="payments-answers-heading">What you might see next</h2>
           <ul class="payments-answers">
-            <li>
-              <P.status tone="success">Paid</P.status>
-              <span>1.00 USDC went to {@pay_to}.</span>
-            </li>
-            <li>
-              <P.status tone="info">Going through</P.status>
-              <span>Your payment is still going through. Check again in a moment.</span>
-            </li>
-            <li>
-              <P.status tone="warning">Expired</P.status>
-              <span>This price has expired. Start again for a fresh one.</span>
-            </li>
-            <li>
-              <P.status tone="warning">Other wallet</P.status>
-              <span>You're signed in as {@signed_in}, but your wallet app has {@other} open.</span>
-            </li>
-            <li>
-              <P.status tone="error">Refused</P.status>
-              <span>Those payment terms have changed since your wallet saw them.</span>
-            </li>
-            <li>
-              <P.status tone="error">Unavailable</P.status>
-              <span>Payments aren't available right now. Try again shortly.</span>
+            <li :for={{tone, word, text} <- @answers}>
+              <P.status tone={tone}>{word}</P.status>
+              <span>{text}</span>
             </li>
           </ul>
         </section>
