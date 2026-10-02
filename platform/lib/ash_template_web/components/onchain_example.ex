@@ -4,13 +4,11 @@ defmodule AshTemplateWeb.OnchainExample do
   press sent straight to the wallet, every outcome checked against the review it
   was sent from. Copy its shape; replace its steps.
 
-  It records a number on a chain. "Record" sends a transaction that succeeds,
-  "Fail on purpose" one the chain turns down, and "Sign" asks for an EIP-712
-  signature. None of it moves value.
-
-  The parent passes `linked` (the signed-in account's wallets, `nil` when signed
-  out) and `chain`. The component hears Privy's active wallet from its hook, and
-  only that wallet acts, and only when the account links it.
+  "Record" sends a transaction that succeeds, "Fail on purpose" one the chain
+  turns down, and "Sign" asks for an EIP-712 signature. None of it moves value.
+  The parent passes `linked` (the signed-in account's wallets, `nil` signed out)
+  and `chain`; the hook reports Privy's active wallet, which acts only when the
+  account links it.
   """
   use AshTemplateWeb, :live_component
 
@@ -71,17 +69,11 @@ defmodule AshTemplateWeb.OnchainExample do
   end
 
   def handle_event("step_failed", %{"reason" => reason}, socket) when is_binary(reason) do
+    %{linked: linked, active: active, chain: chain} = socket.assigns
     AshTemplateWeb.Telemetry.wallet_failed(:onchain_example, reason)
 
-    note =
-      OnchainSteps.failure_note(
-        reason,
-        socket.assigns.linked,
-        socket.assigns.active,
-        socket.assigns.chain.name
-      )
-
-    {:noreply, assign(socket, press_note: note)}
+    {:noreply,
+     assign(socket, press_note: OnchainSteps.failure_note(reason, linked, active, chain.name))}
   end
 
   def handle_event("check_again", %{"hash" => hash}, socket),

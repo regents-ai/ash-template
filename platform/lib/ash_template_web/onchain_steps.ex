@@ -4,15 +4,13 @@ defmodule AshTemplateWeb.OnchainSteps do
   rules; `AshTemplateWeb.OnchainExample` uses every function here.
 
   The component builds a `RegentChain.Review` for the eligible signer and hands
-  it to `put_review/2`, which remembers it and pushes it to the page before
-  anyone presses. The page reports each press against the review it sent from.
-  Every sent step is then read at the latest block of the review's chain, every
-  two seconds, until it lands or the page stops asking. Nothing is kept beyond
-  the page.
+  it to `put_review/2`, which pushes it to the page before anyone presses. The
+  page reports each press against the review it sent from, and every sent step
+  is then read at the latest block of the review's chain, every two seconds,
+  until it lands or the page stops asking. Nothing is kept beyond the page.
 
   The only wallet that may act is Privy's active wallet when it is one of the
-  signed-in account's own (`signer/2`). Reads that show another wallet never
-  imply that wallet can send.
+  signed-in account's own (`signer/2`).
   """
 
   import Phoenix.Component, only: [assign: 2]
@@ -52,29 +50,25 @@ defmodule AshTemplateWeb.OnchainSteps do
   review is fixed once built, so a new signer, chain or figure is a new review,
   and the page drops the old one as soon as this arrives.
   """
-  def put_review(socket, review) do
-    if review_id(review) == review_id(socket.assigns.review) do
-      socket
-    else
-      presses =
-        if review,
-          do: Presses.remember(socket.assigns.presses, review),
-          else: socket.assigns.presses
+  def put_review(%{assigns: %{review: nil}} = socket, nil), do: socket
+  def put_review(%{assigns: %{review: %{id: id}}} = socket, %{id: id}), do: socket
 
-      socket
-      |> assign(review: review, presses: presses)
-      |> push_event("onchain-steps:review", %{component_id: socket.assigns.id, review: review})
-    end
+  def put_review(socket, review) do
+    presses =
+      if review,
+        do: Presses.remember(socket.assigns.presses, review),
+        else: socket.assigns.presses
+
+    socket
+    |> assign(review: review, presses: presses)
+    |> push_event("onchain-steps:review", %{component_id: socket.assigns.id, review: review})
   end
 
   @doc "The wallet sent a step; it is read from now on against the review it was sent from."
   def sent(socket, params) do
     case Presses.sent(socket.assigns.presses, params) do
-      {:ok, entry, presses} ->
-        socket |> assign(presses: presses, press_note: nil) |> check(entry)
-
-      :error ->
-        socket
+      {:ok, entry, presses} -> socket |> assign(presses: presses, press_note: nil) |> check(entry)
+      :error -> socket
     end
   end
 
@@ -98,13 +92,9 @@ defmodule AshTemplateWeb.OnchainSteps do
   end
 
   @doc "One answer from `handle_async({:onchain_step, hash}, result, socket)`."
-  def checked(socket, hash, result) do
-    answer =
-      case result do
-        {:ok, answer} -> answer
-        {:exit, _reason} -> :unanswered
-      end
+  def checked(socket, hash, {:exit, _reason}), do: checked(socket, hash, {:ok, :unanswered})
 
+  def checked(socket, hash, {:ok, answer}) do
     case Presses.checked(socket.assigns.presses, hash, answer) do
       {nil, _presses} ->
         socket
@@ -120,8 +110,6 @@ defmodule AshTemplateWeb.OnchainSteps do
   for the person who pressed. `linked` and `active` are the account's wallets
   (`nil` signed out) and Privy's active wallet, as for `signer/2`.
   """
-  def failure_note(reason, linked, active, chain_name)
-
   def failure_note(reason, nil, _active, _chain_name)
       when reason in ~w(step_unknown wallet_unavailable),
       do: "Sign in to send this. Nothing was sent."
@@ -200,9 +188,6 @@ defmodule AshTemplateWeb.OnchainSteps do
       Outcome.of(ChainClient, review, step, hash)
     end)
   end
-
-  defp review_id(nil), do: nil
-  defp review_id(%{id: id}), do: id
 
   defp wallets(linked, joiner), do: Enum.map_join(linked, joiner, &short/1)
 

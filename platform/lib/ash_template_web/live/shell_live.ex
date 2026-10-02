@@ -11,15 +11,19 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Actors.Human
-  alias AshTemplateWeb.{AccountLive, OverviewLive, Read, RouteCatalog}
+  alias AshTemplateWeb.{AccountLive, OverviewLive, PublicDocuments, Read, RouteCatalog}
 
-  @identity_providers %{"x" => :x, "github" => :github, "farcaster" => :farcaster}
+  @providers %{"x" => :x, "github" => :github, "farcaster" => :farcaster}
+  @actions %{"link" => :link, "unlink" => :unlink}
+  @refused %{
+    tone: :error,
+    message: "That connection couldn’t be updated. Refresh the page and try again."
+  }
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       route_spec: RouteCatalog.fetch!(socket.assigns.live_action, params),
        shell_instance: System.unique_integer([:positive, :monotonic]),
        verified_connections: %Read{},
        verified_connections_notice: nil,
@@ -33,7 +37,7 @@ defmodule AshTemplateWeb.ShellLive do
 
     {:noreply,
      socket
-     |> assign(AshTemplateWeb.PublicDocuments.page(URI.parse(uri).path))
+     |> assign(PublicDocuments.page(URI.parse(uri).path))
      |> assign(:route_spec, route_spec)
      |> load_verified_connections(route_spec)}
   end
@@ -45,7 +49,8 @@ defmodule AshTemplateWeb.ShellLive do
         socket
       ) do
     with %Human{} <- human_actor(socket),
-         {:ok, provider} <- linked_identity_provider(provider),
+         {:ok, provider} <- Map.fetch(@providers, provider),
+         {:ok, action} <- Map.fetch(@actions, action),
          {:ok, request} <-
            identity_request(action, provider, socket.assigns.verified_connections.value) do
       {:noreply,
@@ -55,14 +60,7 @@ defmodule AshTemplateWeb.ShellLive do
        )
        |> push_event("verified-connections:request", request)}
     else
-      _error ->
-        {:noreply,
-         assign(socket,
-           verified_connections_notice: %{
-             tone: :error,
-             message: "That connection couldn’t be updated. Refresh the page and try again."
-           }
-         )}
+      _refused -> {:noreply, assign(socket, verified_connections_notice: @refused)}
     end
   end
 
@@ -110,6 +108,11 @@ defmodule AshTemplateWeb.ShellLive do
   defp current_account(%{principal: {:human, account}}), do: account
   defp current_account(_access_context), do: nil
 
+  defp human_actor(%{assigns: %{access_context: %{principal: {:human, account}}}}),
+    do: Human.for_account(account)
+
+  defp human_actor(_socket), do: nil
+
   defp load_verified_connections(socket, %{route_id: :account}),
     do: read_verified_connections(socket)
 
@@ -133,52 +136,17 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  defp report_connection_outcome(%{assigns: %{connection_outcome: nil}} = socket), do: socket
+  defp identity_request(:link, provider, _identities),
+    do: {:ok, %{action: :link, provider: provider}}
 
-  defp report_connection_outcome(
-         %{assigns: %{verified_connections: %Read{state: :loading}}} = socket
-       ),
-       do: socket
-
-  defp report_connection_outcome(%{assigns: assigns} = socket) do
-    params = assigns.connection_outcome
-
-    notice =
-      with %Read{state: state, value: identities} when state in [:ready, :empty] <-
-             assigns.verified_connections,
-           {:ok, provider} <- linked_identity_provider(params["provider"]),
-           {:ok, action} <- identity_action(params["action"]) do
-        connection_outcome(params["error"], action, provider, identities)
-      else
-        _unknown_outcome -> connection_outcome(params["error"])
-      end
-
-    assign(socket, verified_connections_notice: notice, connection_outcome: nil)
-  end
-
-  defp linked_identity_provider(provider) do
-    case Map.fetch(@identity_providers, provider) do
-      {:ok, provider} -> {:ok, provider}
-      :error -> {:error, :invalid_provider}
-    end
-  end
-
-  defp identity_request("link", provider, _identities) do
-    {:ok, %{action: :link, provider: provider}}
-  end
-
-  defp identity_request("unlink", provider, identities) when is_list(identities) do
+  defp identity_request(:unlink, provider, identities) when is_list(identities) do
     case Enum.find(identities, &(&1.provider == provider)) do
-      nil -> {:error, :not_connected}
+      nil -> :error
       identity -> {:ok, %{action: :unlink, provider: provider, subject: identity.subject}}
     end
   end
 
-  defp identity_request(_action, _provider, _identities), do: {:error, :invalid_action}
-
-  defp identity_action("link"), do: {:ok, :link}
-  defp identity_action("unlink"), do: {:ok, :unlink}
-  defp identity_action(_action), do: {:error, :invalid_action}
+  defp identity_request(_action, _provider, _identities), do: :error
 
   # X and GitHub take the whole tab to their own approval page and bring it
   # back; Farcaster asks for a scan here.
@@ -191,38 +159,47 @@ defmodule AshTemplateWeb.ShellLive do
   defp connection_started(%{action: :unlink, provider: provider}),
     do: "Disconnecting #{Providers.label(provider)}…"
 
-  defp connection_outcome("already-connected"),
+  defp report_connection_outcome(%{assigns: %{connection_outcome: nil}} = socket), do: socket
+
+  defp report_connection_outcome(
+         %{assigns: %{verified_connections: %{state: :loading}}} = socket
+       ),
+       do: socket
+
+  defp report_connection_outcome(%{assigns: assigns} = socket) do
+    notice = connection_outcome(assigns.connection_outcome, assigns.verified_connections)
+    assign(socket, verified_connections_notice: notice, connection_outcome: nil)
+  end
+
+  defp connection_outcome(%{"error" => "already-connected"}, _read),
     do: %{tone: :error, message: "That account is already connected to another account here."}
 
-  defp connection_outcome(error) when is_binary(error) and error != "",
+  defp connection_outcome(%{"error" => error}, _read) when is_binary(error) and error != "",
     do: %{tone: :error, message: "That connection couldn’t be verified. Try again."}
 
-  defp connection_outcome(_none), do: nil
+  defp connection_outcome(params, %Read{state: state, value: identities})
+       when state in [:ready, :empty] do
+    with {:ok, provider} <- Map.fetch(@providers, params["provider"]),
+         {:ok, action} <- Map.fetch(@actions, params["action"]) do
+      label = Providers.label(provider)
 
-  defp connection_outcome(error, _action, _provider, _identities)
-       when is_binary(error) and error != "",
-       do: connection_outcome(error)
+      case {action, Enum.any?(identities, &(&1.provider == provider))} do
+        {:link, true} ->
+          %{tone: :success, message: "#{label} connected."}
 
-  defp connection_outcome(_none, action, provider, identities) do
-    label = Providers.label(provider)
+        {:link, false} ->
+          %{tone: :error, message: "#{label} didn’t come back connected. Try again."}
 
-    case {action, Enum.any?(identities, &(&1.provider == provider))} do
-      {:link, true} ->
-        %{tone: :success, message: "#{label} connected."}
+        {:unlink, false} ->
+          %{tone: :success, message: "#{label} disconnected."}
 
-      {:link, false} ->
-        %{tone: :error, message: "#{label} didn’t come back connected. Try again."}
-
-      {:unlink, false} ->
-        %{tone: :success, message: "#{label} disconnected."}
-
-      {:unlink, true} ->
-        %{tone: :error, message: "#{label} is still connected. Try again."}
+        {:unlink, true} ->
+          %{tone: :error, message: "#{label} is still connected. Try again."}
+      end
+    else
+      :error -> nil
     end
   end
 
-  defp human_actor(%{assigns: %{access_context: %{principal: {:human, account}}}}),
-    do: Human.for_account(account)
-
-  defp human_actor(_socket), do: nil
+  defp connection_outcome(_params, _read), do: nil
 end

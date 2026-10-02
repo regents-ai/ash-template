@@ -1,15 +1,15 @@
 defmodule AshTemplateWeb.Components.Shell do
-  @moduledoc "Semantic presentation seam for Ash-owned shell behavior."
+  @moduledoc "The app shell: header, sidebar, account control and theme switch."
 
   use Phoenix.Component
 
   alias AshTemplateWeb.Components.RegentLinks
   alias AshTemplateWeb.RouteCatalog.{RouteTarget, SidebarHeading}
 
-  attr(:route_spec, :map, required: true)
-  attr(:account_control, AshTemplate.AccessContext.AccountControl, required: true)
-  attr(:shell_instance, :integer, required: true)
-  slot(:content, required: true)
+  attr :route_spec, :map, required: true
+  attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
+  attr :shell_instance, :integer, required: true
+  slot :content, required: true
 
   def shell(assigns) do
     ~H"""
@@ -106,9 +106,8 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :enabled, :boolean, default: true
 
   @doc """
-  The real account control, also rendered by the local Privy reference.
-  These markers are consumed by auth_lazy.ts; this component never authenticates
-  a user itself. The caller supplies the server-verified account presentation.
+  The account control. auth_lazy.ts drives its `data-account-target` markers;
+  the component itself never authenticates anyone.
   """
   def account_control(assigns) do
     ~H"""
@@ -169,15 +168,12 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  attr(:id, :string, required: true)
+  attr :id, :string, required: true
 
   @doc """
-  The colour theme switch: one control that flips between the two themes.
-
-  It names the theme showing by itself, from the page's theme or the device's
-  setting, so the server passes no theme. The browser owns the press: it writes
-  the theme cookie the server reads on the next render and restyles the page, so
-  the control is left out of LiveView's patching.
+  The colour theme switch. The browser owns the press: it writes the theme
+  cookie the server reads on the next render, so the control is left out of
+  LiveView's patching.
   """
   def theme_toggle(assigns) do
     ~H"""
@@ -187,12 +183,10 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  attr(:target, :map, required: true)
-  attr(:route_spec, :map, required: true)
+  attr :target, :map, required: true
+  attr :route_spec, :map, required: true
 
-  defp sidebar_target(%{target: %RouteTarget{} = target} = assigns) do
-    assigns = assign(assigns, :target, target)
-
+  defp sidebar_target(%{target: %RouteTarget{}} = assigns) do
     ~H"""
     <.link
       patch={@target.path}
@@ -203,15 +197,13 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  defp sidebar_target(%{target: %SidebarHeading{} = heading} = assigns) do
-    assigns = assign(assigns, :heading, heading)
-
+  defp sidebar_target(%{target: %SidebarHeading{}} = assigns) do
     ~H"""
-    <span class="shell-sidebar__heading">{@heading.label}</span>
+    <span class="shell-sidebar__heading">{@target.label}</span>
     """
   end
 
-  attr(:name, :atom, required: true)
+  attr :name, :atom, required: true
 
   defp account_menu_icon(assigns) do
     ~H"""

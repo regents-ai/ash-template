@@ -113,11 +113,11 @@ defmodule AshTemplateWeb.Components.VerifiedConnections do
     """
   end
 
-  defp connection(assigns) do
+  defp connection(%{identity: identity} = assigns) do
     assigns =
       assign(assigns,
-        handle: Providers.handle(assigns.identity),
-        profile_url: Providers.profile_url(assigns.identity.provider, assigns.identity.username)
+        handle: Providers.handle(identity),
+        profile_url: Providers.profile_url(identity.provider, identity.username)
       )
 
     ~H"""
