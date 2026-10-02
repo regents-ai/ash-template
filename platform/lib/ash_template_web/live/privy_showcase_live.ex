@@ -1,20 +1,17 @@
 defmodule AshTemplateWeb.PrivyShowcaseLive do
   @moduledoc """
-  Executable reference for the Privy integration.
-
-  The router supplies BOTH the showcase gate and the ordinary trusted Session hook.
-  Shell.account_control/1 and data-account-target use the production auth_lazy.ts
-  dispatcher. PrivyShowcase only observes the existing wallet store and publishes
-  its selected address; it never creates a provider, session, signature or payment.
+  Working example of signing in with Privy. The header's own sign-in control
+  and the site's session hook do the work; this page only watches the wallet
+  the browser has active and never creates a provider, session or signature.
   """
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.Shell
+  alias AshTemplateWeb.OnchainSteps
   alias AshTemplateWeb.ShowcaseLive
   alias Regent.Primitives, as: P
 
-  @wallet ~r/\A0x[0-9a-fA-F]{40}\z/
-
+  @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
@@ -26,6 +23,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
      ), layout: false}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <link rel="stylesheet" href="/showcase/style.css" />
@@ -152,14 +150,9 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
     """
   end
 
-  # The address is a public read target, never proof of authentication. Session
-  # authority is independently supplied and rechecked by Live.Session.
-  def handle_event("privy_wallet_changed", %{"address" => address}, socket),
-    do: {:noreply, assign(socket, :wallet, normalize_wallet(address))}
-
-  defp normalize_wallet(address) when is_binary(address) do
-    if Regex.match?(@wallet, address), do: String.downcase(address)
-  end
-
-  defp normalize_wallet(_address), do: nil
+  # The address is a public read target, never proof of who is signed in; the
+  # session hook supplies and rechecks that on its own.
+  @impl true
+  def handle_event("privy_wallet_changed", params, socket),
+    do: {:noreply, assign(socket, :wallet, OnchainSteps.active_wallet(params))}
 end

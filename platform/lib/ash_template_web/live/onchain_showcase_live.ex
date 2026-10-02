@@ -1,12 +1,9 @@
 defmodule AshTemplateWeb.OnchainShowcaseLive do
   @moduledoc """
-  Local workshop for wallet buttons, on a lab chain on this machine.
-
-  `AshTemplateWeb.OnchainExample` runs here exactly as a product page would run
-  it. Two things stand in for the real ones: the account (a lab account that
-  links wallets A and B, or signed out) and the wallet app (the `OnchainLab`
-  hook, whose wallets A, B and C are the lab chain's first three accounts). The
-  stand-in wallet sends through this page to the lab chain only.
+  Local workshop for wallet buttons on a lab chain on this machine.
+  `AshTemplateWeb.OnchainExample` runs here as on a product page; a lab account
+  (linking wallets A and B, or signed out) and the `OnchainLab` stand-in wallet
+  app, whose wallets are the lab chain's first three accounts, replace the real ones.
   """
   use AshTemplateWeb, :live_view
 
@@ -19,24 +16,20 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
     {"B", "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"},
     {"C", "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"}
   ]
-  @linked [
-    "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
-    "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
-  ]
-  @sent_by_node ~w(eth_sendTransaction eth_signTypedData_v4)
+  @addresses Enum.map(@wallets, &elem(&1, 1))
+  @linked Enum.take(@addresses, 2)
   # The stand-in wallet sets its own gas, so a step the chain turns down is still sent.
   @gas "0x30d40"
 
   @impl true
   def mount(_params, _session, socket) do
-    chain = Application.fetch_env!(:ash_template, :lab_chain)
-
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/onchain"))
      |> assign(
-       chain: chain,
+       chain: Application.fetch_env!(:ash_template, :lab_chain),
        wallets: @wallets,
+       linked: @linked,
        signed_in: true
      ), layout: false}
   end
@@ -47,39 +40,34 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
 
   # The stand-in wallet's requests that need the lab chain. Only its own
   # accounts send, and only there.
-  def handle_event("lab_rpc", %{"method" => method, "params" => [first | rest]}, socket)
-      when method in @sent_by_node do
-    params =
-      if method == "eth_sendTransaction",
-        do: [Map.put(first, "gas", @gas) | rest],
-        else: [first | rest]
-
-    reply =
-      if lab_account?(method, first) do
-        case ChainClient.rpc(socket.assigns.chain, method, params) do
-          {:ok, result} ->
-            %{result: result}
-
-          {:error, {:rpc, error}} ->
-            %{error: error}
-
-          {:error, _unreachable} ->
-            %{error: %{code: -32_603, message: "The lab chain is not running."}}
-        end
-      else
-        %{error: %{code: 4100, message: "Not a lab wallet."}}
-      end
-
-    {:reply, reply, socket}
+  def handle_event("lab_rpc", %{"method" => method, "params" => params}, socket) do
+    {:reply, lab_reply(socket.assigns.chain, method, params), socket}
   end
 
-  defp lab_account?("eth_sendTransaction", %{"from" => from}), do: lab_wallet?(from)
-  defp lab_account?("eth_signTypedData_v4", from), do: lab_wallet?(from)
+  defp lab_reply(chain, "eth_sendTransaction" = method, [%{"from" => from} = tx | rest]),
+    do: lab_reply(chain, method, from, [Map.put(tx, "gas", @gas) | rest])
 
-  defp lab_wallet?(address) when is_binary(address),
-    do: String.downcase(address) in Enum.map(@wallets, &elem(&1, 1))
+  defp lab_reply(chain, "eth_signTypedData_v4" = method, [from | _] = params),
+    do: lab_reply(chain, method, from, params)
 
-  defp lab_wallet?(_address), do: false
+  defp lab_reply(chain, method, from, params) do
+    if is_binary(from) and String.downcase(from) in @addresses,
+      do: rpc(chain, method, params),
+      else: %{error: %{code: 4100, message: "Not a lab wallet."}}
+  end
+
+  defp rpc(chain, method, params) do
+    case ChainClient.rpc(chain, method, params) do
+      {:ok, result} ->
+        %{result: result}
+
+      {:error, {:rpc, error}} ->
+        %{error: error}
+
+      {:error, _unreachable} ->
+        %{error: %{code: -32_603, message: "The lab chain is not running."}}
+    end
+  end
 
   @impl true
   def render(assigns) do
@@ -129,7 +117,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
             <label :for={{name, address} <- @wallets}>
               <input type="radio" name="lab-wallet" value={address} data-lab-wallet={name} />
               {name} <code>{RegentFormat.short_address(address)}</code>
-              {if address in linked(), do: "(on the account)", else: "(not on the account)"}
+              {if address in @linked, do: "(on the account)", else: "(not on the account)"}
             </label>
             <label>
               <input type="radio" name="lab-wallet" value="" checked /> None
@@ -151,7 +139,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
           <.live_component
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
-            linked={if @signed_in, do: linked()}
+            linked={if @signed_in, do: @linked}
             chain={@chain}
           />
         </section>
@@ -159,6 +147,4 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
     </main>
     """
   end
-
-  defp linked, do: @linked
 end

@@ -1,12 +1,8 @@
 defmodule AshTemplateWeb.PaymentsShowcaseLive do
   @moduledoc """
-  How a USDC payment looks on a Regent site, with sample figures and Pay
-  switched off (founder, 2026-09-29).
-
-  The shared `RegentPayments` library takes real USDC on Base only, so this
-  page takes nothing: no offer, no intent, no wallet request. It shows the
-  USDC Balance, the frozen terms a payer sees, the Pay button and the words
-  for each answer `RegentPayments.WalletPayment.pay/4` can give. The
+  How a USDC payment looks on a Regent site: the USDC Balance, the frozen terms,
+  the Pay button and the words for each answer `RegentPayments.WalletPayment.pay/4`
+  can give, with sample figures and Pay switched off (founder, 2026-09-29). The
   `payments` skill says how a product page wires the real thing.
   """
   use AshTemplateWeb, :live_view
