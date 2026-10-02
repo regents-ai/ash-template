@@ -38,6 +38,7 @@ defmodule AshTemplate.MixProject do
       {:phoenix_live_view, "~> 1.2.6", override: true},
       {:ash, "~> 3.33.0"},
       {:ash_postgres, "~> 2.13.0"},
+      {:ash_phoenix, "~> 2.3.25"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
       {:regent_privy, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy"},

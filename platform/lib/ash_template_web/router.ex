@@ -163,6 +163,11 @@ defmodule AshTemplateWeb.Router do
   scope "/api/v1" do
     pipe_through :api
     forward "/profile", RegentIdentity.HTTP, otp_app: :ash_template
+    get "/notes", AshTemplateWeb.NotesController, :index
+    post "/notes", AshTemplateWeb.NotesController, :create
+    get "/notes/:id", AshTemplateWeb.NotesController, :show
+    patch "/notes/:id", AshTemplateWeb.NotesController, :update
+    delete "/notes/:id", AshTemplateWeb.NotesController, :delete
   end
 
   scope "/", AshTemplateWeb do
@@ -182,6 +187,7 @@ defmodule AshTemplateWeb.Router do
       session: {Session, :render_context, []},
       on_mount: [AshTemplateWeb.Live.LaunchGateHook, {Session, :load_human}] do
       live "/app", ShellLive, :app
+      live "/notes", ShellLive, :notes
       live "/account", ShellLive, :account
     end
   end

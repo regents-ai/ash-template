@@ -4,7 +4,7 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   alias AshTemplate.AccessContext
   alias AshTemplate.Accounts.{RequestRateLimiter, SessionAuthority, VerifiedSession}
-  alias AshTemplateWeb.ClientAddress
+  alias AshTemplateWeb.{ClientAddress, PrivyProof}
 
   require Logger
 
@@ -54,7 +54,7 @@ defmodule AshTemplateWeb.PrivySessionController do
   def failure(conn, _untrusted_params), do: diagnostic_accepted(conn)
 
   def create(conn, _untrusted_params) do
-    with {:ok, pair} <- session_pair(conn),
+    with {:ok, pair} <- PrivyProof.pair(conn),
          {:ok, verified} <-
            RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
          {:ok, account, identity_conflicts} <- establish(verified) do
@@ -273,34 +273,4 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   defp put_identity_conflict_header(conn, _conflicts),
     do: put_resp_header(conn, "x-ash-identity-error", "already-connected")
-
-  # The access token travels only as the bearer and the identity token only as
-  # Privy's own header, so neither reaches a URL, a body or a log. Exactly one
-  # of each is a pair; anything else is refused before the provider is asked.
-  defp session_pair(conn) do
-    with {:ok, access} <- bearer_token(conn),
-         {:ok, identity} <- identity_token(conn),
-         do: {:ok, %{access: access, identity: identity}}
-  end
-
-  defp bearer_token(conn) do
-    case get_req_header(conn, "authorization") do
-      ["Bearer " <> access] -> present(access, :missing_access_token)
-      _absent_or_duplicated -> {:error, {:request_pair, :missing_access_token}}
-    end
-  end
-
-  defp identity_token(conn) do
-    case get_req_header(conn, "privy-id-token") do
-      [identity] -> present(identity, :missing_identity_token)
-      _absent_or_duplicated -> {:error, {:request_pair, :missing_identity_token}}
-    end
-  end
-
-  defp present(token, reason) do
-    case String.trim(token) do
-      "" -> {:error, {:request_pair, reason}}
-      token -> {:ok, token}
-    end
-  end
 end

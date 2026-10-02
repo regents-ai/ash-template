@@ -1,6 +1,6 @@
 # Developer documentation
 
-Ash Template has a small public surface: documentation you can read without an account, a health check, and one account API for the person who signed in.
+Ash Template has a small public surface: documentation you can read without an account, a health check, and two APIs for the person who signed in: their profile and their notes.
 
 ## Start without an account
 
@@ -49,6 +49,23 @@ curl --fail-with-body -X PATCH '{{origin}}/api/v1/profile' \
 
 A successful response contains a `profile` object with the profile id, display name, the linked wallets and the selected wallet. Missing or invalid credentials return 401. A profile that has not been created yet returns 404; call `POST /api/v1/profile/sync` first. An invalid update returns 422. A service that is not configured for sign-in returns 503. Profile responses are never cached.
 
+## Keep notes
+
+`GET /api/v1/notes` lists your notes, newest first. `POST /api/v1/notes` adds one. `GET`, `PATCH` and `DELETE /api/v1/notes/{id}` read, change and delete one of yours. These are the same notes the [notes page]({{origin}}/notes) shows, and every notes page you have open shows a change straight away, whichever way it was made.
+
+Send the same two Privy tokens the profile API takes. Sign in on the website once first; until then the notes API answers 403 with `account_required`.
+
+```sh
+curl --fail-with-body -X POST '{{origin}}/api/v1/notes' \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${PRIVY_ACCESS_TOKEN}" \
+  -H "Privy-Id-Token: ${PRIVY_IDENTITY_TOKEN}" \
+  -d '{"title": "Groceries", "body": "Eggs, bread"}'
+```
+
+A note has an `id`, a `title` (1 to 120 characters), a `body` (up to 10,000 characters, or `null`), `inserted_at` and `updated_at`. One note comes back as `{"note": …}` and the list as `{"notes": […]}`. A note needs a title; a change sends either field or both, and any other field is refused with 422 and `invalid_note`. An id that names none of your notes answers 404 with `note_not_found`, also when the note belongs to someone else. Deleting answers 204 with no body. Notes responses are never cached.
+
 ## Errors
 
 Every JSON error has one shape:
@@ -57,7 +74,7 @@ Every JSON error has one shape:
 {"error": {"code": "not_found", "message": "Not Found", "hint": "See {{origin}}/docs and {{origin}}/openapi.json for supported requests."}}
 ```
 
-`code` is stable and meant for programs, `message` says what went wrong and `hint` says what to do next. Profile answers carry the `code` alone, for example `authentication_required`, `profile_not_created` or `invalid_profile_update`. Branch on the status and the `code`, never on the wording of `message`.
+`code` is stable and meant for programs, `message` says what went wrong and `hint` says what to do next. Profile and notes answers have their own codes, for example `authentication_required`, `profile_not_created`, `invalid_profile_update` or `note_not_found`. Branch on the status and the `code`, never on the wording of `message`.
 
 An unknown address under `/api` answers JSON 404 whatever the `Accept` header says. An unknown page address answers 404 as HTML, or as Markdown when you ask for `text/markdown`. The [OpenAPI JSON specification]({{origin}}/openapi.json) lists every status each operation can return.
 
@@ -89,7 +106,7 @@ Every page offers a browser's own agent these tools through WebMCP (`document.mo
 
 ## Contracts
 
-The [OpenAPI JSON specification]({{origin}}/openapi.json) describes the health check and the profile API above, including their authentication requirements. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) is the full served contract, including the browser session endpoints the site itself uses. The [API catalog]({{origin}}/.well-known/api-catalog) (RFC 9727) points to the OpenAPI specification and this page, and [security.txt]({{origin}}/.well-known/security.txt) names where to report a vulnerability.
+The [OpenAPI JSON specification]({{origin}}/openapi.json) describes the health check and the profile and notes APIs above, including their authentication requirements. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) is the full served contract, including the browser session endpoints the site itself uses. The [API catalog]({{origin}}/.well-known/api-catalog) (RFC 9727) points to the OpenAPI specification and this page, and [security.txt]({{origin}}/.well-known/security.txt) names where to report a vulnerability.
 
 Public documentation does not authorize a payment, signature, credential change or other change to your account.
 

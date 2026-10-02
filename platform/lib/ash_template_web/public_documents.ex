@@ -30,6 +30,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @pages %{
     "/" => {"Ash Template", @description},
     "/app" => {"Overview", "Your Ash Template overview, with the wallet you signed in with."},
+    "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/account" =>
       {"Account", "The wallet you signed in with and the accounts you have connected."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},

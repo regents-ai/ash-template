@@ -11,7 +11,16 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Actors.Human
-  alias AshTemplateWeb.{AccountLive, OverviewLive, PublicDocuments, Read, RouteCatalog}
+  alias AshTemplate.Notes.Note
+
+  alias AshTemplateWeb.{
+    AccountLive,
+    NotesLive,
+    OverviewLive,
+    PublicDocuments,
+    Read,
+    RouteCatalog
+  }
 
   @actions %{"link" => :link, "unlink" => :unlink}
   @refused %{
@@ -21,6 +30,8 @@ defmodule AshTemplateWeb.ShellLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket), do: subscribe_to_notes(socket.assigns.access_context)
+
     {:ok,
      assign(socket,
        shell_instance: System.unique_integer([:positive, :monotonic]),
@@ -77,6 +88,16 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket |> Read.settle(name, result) |> report_connection_outcome()}
   end
 
+  # Note changes are published on the writer's own topic; only the notes page
+  # shows them, so on any other page they are dropped.
+  @impl true
+  def handle_info(%{topic: "notes:" <> _, event: event, payload: note}, socket) do
+    if socket.assigns.route_spec.route_id == :notes,
+      do: send_update(NotesLive, id: "notes", change: {event, note})
+
+    {:noreply, socket}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -92,6 +113,13 @@ defmodule AshTemplateWeb.ShellLive do
           account={current_account(@access_context)}
         />
 
+        <.live_component
+          :if={@route_spec.route_id == :notes}
+          module={NotesLive}
+          id="notes"
+          account={current_account(@access_context)}
+        />
+
         <AccountLive.page
           :if={@route_spec.route_id == :account}
           account={current_account(@access_context)}
@@ -103,6 +131,11 @@ defmodule AshTemplateWeb.ShellLive do
     </.shell>
     """
   end
+
+  defp subscribe_to_notes(%{principal: {:human, account}}),
+    do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, Note.topic(account.id))
+
+  defp subscribe_to_notes(_access_context), do: :ok
 
   defp current_account(%{principal: {:human, account}}), do: account
   defp current_account(_access_context), do: nil

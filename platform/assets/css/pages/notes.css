@@ -1,0 +1,67 @@
+@layer regents-product {
+/* Notes stand on the Account page's panels and type; only the form and the
+   list are their own. */
+
+.notes-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.notes-form input,
+.notes-form textarea {
+  width: 100%;
+  font: inherit;
+}
+
+.notes-form textarea {
+  resize: vertical;
+}
+
+.notes-form__actions,
+.notes-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.notes-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notes-item {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  padding-block: 1rem;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.notes-item h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.notes-item p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The empty line shows only when it is the list's one child, and only once
+   a read has landed. */
+.notes-empty {
+  display: none;
+}
+
+.notes-empty:only-child {
+  display: block;
+}
+
+.notes-list:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .notes-empty {
+  display: none;
+}
+}

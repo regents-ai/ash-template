@@ -28,6 +28,24 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     end
   end
 
+  @doc """
+  The account a verified session names, read without changing it: an API call
+  acts for the account a sign-in on the site created, while its wallet evidence
+  is still current.
+  """
+  def account(%RegentPrivy.Session{privy_user_id: did}) do
+    case Accounts.get_by_privy_did(did, actor: @actor) do
+      {:ok, nil} ->
+        {:error, :account_required}
+
+      {:ok, account} ->
+        if current?(account), do: {:ok, account}, else: {:error, :account_required}
+
+      {:error, _error} = failure ->
+        failure
+    end
+  end
+
   @doc "Whether the account's stored wallet evidence still names a signed-in wallet."
   def current?(%{wallet_address: primary, wallet_addresses: addresses})
       when is_binary(primary) and is_list(addresses),

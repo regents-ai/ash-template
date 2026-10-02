@@ -1,0 +1,106 @@
+defmodule AshTemplateWeb.NotesController do
+  @moduledoc """
+  The notes API: the notes page's own Ash actions and policies, for a caller
+  presenting the Privy proof pair `/api/v1/profile` takes. A change made here
+  appears at once on every notes page its writer has open.
+  """
+
+  use AshTemplateWeb, :controller
+
+  alias AshTemplate.Accounts.VerifiedSession
+  alias AshTemplate.Actors.Human
+  alias AshTemplate.Notes
+  alias AshTemplate.Notes.Note
+  alias AshTemplateWeb.PrivyProof
+
+  plug :authenticate
+
+  # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
+  # site's other JSON errors.
+  @errors %{
+    "authentication_required" =>
+      {401, "Sign in to read or change your notes.",
+       "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."},
+    "account_required" =>
+      {403, "This sign-in has no account here yet.", "Sign in on the website once, then retry."},
+    "note_not_found" =>
+      {404, "You have no note with that id.", "List your notes with GET /api/v1/notes."},
+    "invalid_note" =>
+      {422, "The note could not be saved.",
+       "Send only title (1 to 120 characters) and body (up to 10,000 characters, optional)."},
+    "notes_unavailable" =>
+      {503, "Your notes could not be reached right now.", "Try again in a moment."}
+  }
+
+  def index(conn, _params) do
+    case Notes.list_my_notes(actor: conn.assigns.actor) do
+      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &present/1)})
+      {:error, _error} -> refuse(conn, "notes_unavailable")
+    end
+  end
+
+  def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: present(&2)}))
+
+  def create(conn, _params) do
+    case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
+      {:ok, note} -> conn |> put_status(:created) |> json(%{note: present(note)})
+      {:error, error} -> refuse_change(conn, error)
+    end
+  end
+
+  def update(conn, %{"id" => id}) do
+    with_note(conn, id, fn conn, note ->
+      case Notes.update_note(note, conn.body_params, actor: conn.assigns.actor) do
+        {:ok, note} -> json(conn, %{note: present(note)})
+        {:error, error} -> refuse_change(conn, error)
+      end
+    end)
+  end
+
+  def delete(conn, %{"id" => id}) do
+    with_note(conn, id, fn conn, note ->
+      case Notes.destroy_note(note, actor: conn.assigns.actor) do
+        :ok -> send_resp(conn, :no_content, "")
+        {:error, _error} -> refuse(conn, "notes_unavailable")
+      end
+    end)
+  end
+
+  defp authenticate(conn, _opts) do
+    conn = put_resp_header(conn, "cache-control", "no-store")
+
+    with {:ok, pair} <- PrivyProof.pair(conn),
+         {:ok, verified} <-
+           RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
+         {:ok, account} <- VerifiedSession.account(verified) do
+      assign(conn, :actor, Human.for_account(account))
+    else
+      {:error, :account_required} -> conn |> refuse("account_required") |> halt()
+      {:error, {:configuration, _reason}} -> conn |> refuse("notes_unavailable") |> halt()
+      {:error, {_stage, _reason}} -> conn |> refuse("authentication_required") |> halt()
+      {:error, _account_read} -> conn |> refuse("notes_unavailable") |> halt()
+    end
+  end
+
+  # Another account's note reads as absent, exactly like an id that names none.
+  defp with_note(conn, id, respond) do
+    case Notes.get_my_note(id, actor: conn.assigns.actor) do
+      {:ok, %Note{} = note} -> respond.(conn, note)
+      {:ok, nil} -> refuse(conn, "note_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
+      {:error, _error} -> refuse(conn, "notes_unavailable")
+    end
+  end
+
+  defp refuse_change(conn, %Ash.Error.Invalid{}), do: refuse(conn, "invalid_note")
+  defp refuse_change(conn, _error), do: refuse(conn, "notes_unavailable")
+
+  defp present(%Note{} = note) do
+    Map.take(note, [:id, :title, :body, :inserted_at, :updated_at])
+  end
+
+  defp refuse(conn, code) do
+    {status, message, hint} = Map.fetch!(@errors, code)
+    conn |> put_status(status) |> json(%{error: %{code: code, message: message, hint: hint}})
+  end
+end

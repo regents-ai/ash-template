@@ -14,17 +14,20 @@ Today: sign-in and the account page go LiveView → `AshTemplateWeb.Read` (`star
 example saves anything a person types.
 
 To do:
-- [ ] One small product resource on AshPostgres (for example a note owned by the
+- [x] One small product resource on AshPostgres (for example a note owned by the
       signed-in account), with a migration from `mix ash.codegen`, a policy, and a code
       interface on the domain.
-- [ ] A LiveView page with an action-bound `AshPhoenix.Form` (validate on change, create
+- [x] A LiveView page with an action-bound `AshPhoenix.Form` (validate on change, create
       and update on submit, errors kept on the form) and a stream for the list.
-- [ ] Open pages hear about changes through `Phoenix.PubSub` (Ash `pub_sub` notifier),
+- [x] Open pages hear about changes through `Phoenix.PubSub` (Ash `pub_sub` notifier),
       so a second tab updates without reloading.
-- [ ] The same action reachable over the JSON API and listed in the OpenAPI contract,
+- [x] The same action reachable over the JSON API and listed in the OpenAPI contract,
       so page, API and agents share one action.
 - Done when: a signed-in person creates, edits and lists their notes; another account
   cannot read them; a second open tab updates live.
+- Built 2026-10-02 on branch `feat/notes`: `AshTemplate.Notes.Note`, the `/notes` page
+  (`NotesLive` inside `ShellLive`) and `/api/v1/notes` (`NotesController`), all through
+  the same actions and policies.
 
 ## 2. Background jobs with Oban
 

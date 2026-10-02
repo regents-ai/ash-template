@@ -12,6 +12,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       id: :product,
       targets: [
         %RouteTarget{route_id: :app, label: "Overview", path: "/app"},
+        %RouteTarget{route_id: :notes, label: "Notes", path: "/notes"},
         %RouteTarget{route_id: :account, label: "Account", path: "/account"}
       ]
     },
@@ -37,6 +38,8 @@ defmodule AshTemplateWeb.RouteCatalog do
     },
     app:
       Map.merge(@product, %{route_id: :app, destination: "/app", page_display_label: "Overview"}),
+    notes:
+      Map.merge(@product, %{route_id: :notes, destination: "/notes", page_display_label: "Notes"}),
     account:
       Map.merge(@product, %{
         route_id: :account,

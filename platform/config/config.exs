@@ -11,7 +11,7 @@ config :ash, default_string_length_count: :codepoints
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 config :ash_template,
-  ash_domains: [AshTemplate.Accounts],
+  ash_domains: [AshTemplate.Accounts, AshTemplate.Notes],
   ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]
 
