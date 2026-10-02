@@ -35,10 +35,43 @@ defmodule AshTemplateWeb.AnimationsLive do
   ]
 
   @items ~w(Billing Search Sign-in Calendar Checkout Settings Reports Invites Exports Help)
-  @panels [{"drawer", "Drawer"}, {"sheet", "Sheet"}, {"menu", "Menu"}, {"note", "Note"}]
-  @tabs [{"recent", "Recent"}, {"saved", "Saved"}, {"shared", "Shared"}]
-  @counts [{"1", "+1"}, {"37", "+37"}, {"1000", "+1,000"}, {"-12", "−12"}]
-  @cards ~w(north harbor summit meadow canyon river forest island valley)
+
+  # The lab's fixed copy: the presses (squish and nope are the standard ones),
+  # the sliding panels, the list controls, the figure steps, the tabs and
+  # their lines, and the cards.
+  @static [
+    presses: ~w(squish jelly sparks ping stitches nope),
+    panels: [{"drawer", "Drawer"}, {"sheet", "Sheet"}, {"menu", "Menu"}, {"note", "Note"}],
+    controls: [
+      shuffle: "Shuffle",
+      sort: "A to Z",
+      add_item: "Add one",
+      remove_item: "Take one away"
+    ],
+    counts: [{"1", "+1"}, {"37", "+37"}, {"1000", "+1,000"}, {"-12", "−12"}],
+    tabs: [{"recent", "Recent"}, {"saved", "Saved"}, {"shared", "Shared"}],
+    views: %{
+      "recent" => ["Quarterly plan", "Team offsite notes", "Customer interviews"],
+      "saved" => ["Pricing ideas", "Launch checklist"],
+      "shared" => [
+        "Design review · 4 people",
+        "Roadmap · 9 people",
+        "Support guide · 2 people",
+        "Hiring plan · 3 people"
+      ]
+    },
+    cards: ~w(north harbor summit meadow canyon river forest island valley)
+  ]
+
+  # What the sliding panels show.
+  @openers [{"drawer", "Open the drawer"}, {"sheet", "Pull up a sheet"}, {"note", "Pin a note"}]
+  @menu_items ["Copy link", "Invite a teammate", "Save for later"]
+  @drawer_lines [
+    "The launch page needs a final review.",
+    "3 comments · 2 people assigned · updated 4 hours ago",
+    "Next step: check the pricing table, then publish."
+  ]
+  @sheet_lines ["Start a new project", "Open a recent file", "Invite your team"]
 
   # How long a note stays, and how long an item takes to fade out before the
   # page drops it.
@@ -50,6 +83,7 @@ defmodule AshTemplateWeb.AnimationsLive do
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/animations"))
+     |> assign(@static)
      |> assign(
        variants: Motion.standard(),
        reduced?: false,
@@ -71,11 +105,9 @@ defmodule AshTemplateWeb.AnimationsLive do
     end
   end
 
-  def handle_event("reduced", _params, socket) do
-    {:noreply, update(socket, :reduced?, &(!&1))}
-  end
+  def handle_event("reduced", _, socket), do: {:noreply, update(socket, :reduced?, &(!&1))}
 
-  def handle_event("toast", _params, socket) do
+  def handle_event("toast", _, socket) do
     %{next_id: id, toasts: toasts} = socket.assigns
     Process.send_after(self(), {:leave, :toasts, id}, @note_ms)
     toasts = toasts ++ [entry(id, Enum.random(@notes))]
@@ -88,19 +120,15 @@ defmodule AshTemplateWeb.AnimationsLive do
     end
   end
 
-  def handle_event("dismiss", %{"id" => id}, socket) do
-    {:noreply, leave(socket, :toasts, String.to_integer(id))}
-  end
+  def handle_event("dismiss", %{"id" => id}, socket),
+    do: {:noreply, leave(socket, :toasts, String.to_integer(id))}
 
-  def handle_event("shuffle", _params, socket) do
-    {:noreply, update(socket, :items, &Enum.shuffle/1)}
-  end
+  def handle_event("shuffle", _, socket), do: {:noreply, update(socket, :items, &Enum.shuffle/1)}
 
-  def handle_event("sort", _params, socket) do
-    {:noreply, update(socket, :items, &Enum.sort_by(&1, fn item -> item.name end))}
-  end
+  def handle_event("sort", _, socket),
+    do: {:noreply, update(socket, :items, &Enum.sort_by(&1, fn item -> item.name end))}
 
-  def handle_event("add_item", _params, socket) do
+  def handle_event("add_item", _, socket) do
     %{next_id: id, items: items} = socket.assigns
 
     case @items -- Enum.map(items, & &1.name) do
@@ -112,36 +140,30 @@ defmodule AshTemplateWeb.AnimationsLive do
     end
   end
 
-  def handle_event("remove_item", _params, socket) do
+  def handle_event("remove_item", _, socket) do
     case socket.assigns.items |> Enum.reject(& &1.leaving?) |> List.last() do
       nil -> {:noreply, socket}
       item -> {:noreply, leave(socket, :items, item.id)}
     end
   end
 
-  def handle_event("count", %{"by" => by}, socket) when by in ["1", "37", "1000", "-12"] do
-    {:noreply, update(socket, :count, &max(&1 + String.to_integer(by), 0))}
-  end
+  def handle_event("count", %{"by" => by}, socket) when by in ["1", "37", "1000", "-12"],
+    do: {:noreply, update(socket, :count, &max(&1 + String.to_integer(by), 0))}
 
   # The stamp is told to land only once the work is marked done.
-  def handle_event("finish", _params, socket) do
-    {:noreply, socket |> assign(done?: true) |> push_event("motion:done", %{})}
-  end
+  def handle_event("finish", _, socket),
+    do: {:noreply, socket |> assign(done?: true) |> push_event("motion:done", %{})}
 
-  def handle_event("reopen", _params, socket) do
-    {:noreply, assign(socket, done?: false)}
-  end
+  def handle_event("reopen", _, socket), do: {:noreply, assign(socket, done?: false)}
 
-  def handle_event("tab", %{"tab" => tab}, socket) when tab in ["recent", "saved", "shared"] do
-    {:noreply, assign(socket, tab: tab)}
-  end
+  def handle_event("tab", %{"tab" => tab}, socket) when tab in ["recent", "saved", "shared"],
+    do: {:noreply, assign(socket, tab: tab)}
 
   @impl true
   def handle_info({:leave, key, id}, socket), do: {:noreply, leave(socket, key, id)}
 
-  def handle_info({:drop, key, id}, socket) do
-    {:noreply, update(socket, key, &Enum.reject(&1, fn item -> item.id == id end))}
-  end
+  def handle_info({:drop, key, id}, socket),
+    do: {:noreply, update(socket, key, &Enum.reject(&1, fn item -> item.id == id end))}
 
   # An item is hidden first, so it can fade out while its neighbours close
   # the gap, and dropped once that is over.
@@ -162,8 +184,6 @@ defmodule AshTemplateWeb.AnimationsLive do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, panels: @panels, tabs: @tabs, counts: @counts, cards: @cards)
-
     ~H"""
     <main id="motion-lab" class="motion-lab" data-motion={@reduced? && "reduced"}>
       <header class="motion-lab__head">
@@ -174,9 +194,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           use; the others stay here to compare. Press things and switch between them.
         </p>
         <div class="motion-lab__row">
-          <P.button variant="secondary" phx-click={JS.dispatch("lab:replay")}>
-            Replay everything
-          </P.button>
+          <P.button variant="secondary" phx-click={JS.dispatch("lab:replay")}>Replay everything</P.button>
           <P.button variant="secondary" phx-click="reduced" aria-pressed={to_string(@reduced?)}>
             Less motion
           </P.button>
@@ -189,23 +207,8 @@ defmodule AshTemplateWeb.AnimationsLive do
           just without the show. Every button squishes, and one that says no shakes its head.
         </:lede>
         <div id="lab-presses" class="motion-lab__row" phx-hook="LabPress">
-          <P.button variant="secondary" data-press="squish">
-            Squish<.standard />
-          </P.button>
-          <P.button variant="secondary" data-press="jelly">
-            Jelly
-          </P.button>
-          <P.button variant="secondary" data-press="sparks">
-            Sparks
-          </P.button>
-          <P.button variant="secondary" data-press="ping">
-            Ping
-          </P.button>
-          <P.button variant="secondary" data-press="stitches">
-            Stitches
-          </P.button>
-          <P.button variant="secondary" data-press="nope">
-            Nope<.standard />
+          <P.button :for={press <- @presses} variant="secondary" data-press={press}>
+            {String.capitalize(press)}<.standard :if={press in ~w(squish nope)} />
           </P.button>
         </div>
       </.section>
@@ -226,13 +229,9 @@ defmodule AshTemplateWeb.AnimationsLive do
           Each of these waits for the page to decide, then moves from the old picture to the new one.
         </:lede>
         <div class="motion-lab__grid">
-          <article class="motion-lab__card">
-            <h3>Notes that pop up</h3>
-            <.picker part="toast" variants={@variants} />
+          <.card title="Notes that pop up" part="toast" variants={@variants}>
             <div class="motion-lab__stage">
-              <P.button variant="secondary" phx-click="toast">
-                Send a note
-              </P.button>
+              <P.button variant="secondary" phx-click="toast">Send a note</P.button>
               <div class="motion-lab__toast-dock">
                 <ol
                   id="lab-toasts"
@@ -264,23 +263,16 @@ defmodule AshTemplateWeb.AnimationsLive do
                 </ol>
               </div>
             </div>
-          </article>
+          </.card>
 
-          <article class="motion-lab__card">
-            <h3>A list that rearranges</h3>
-            <.picker part="list" variants={@variants} />
+          <.card title="A list that rearranges" part="list" variants={@variants}>
             <div class="motion-lab__row motion-lab__row--tight">
-              <P.button variant="secondary" phx-click="shuffle">
-                Shuffle
-              </P.button>
-              <P.button variant="secondary" phx-click="sort">
-                A to Z
-              </P.button>
-              <P.button variant="secondary" phx-click="add_item">
-                Add one
-              </P.button>
-              <P.button variant="secondary" phx-click="remove_item">
-                Take one away
+              <P.button
+                :for={{event, label} <- @controls}
+                variant="secondary"
+                phx-click={to_string(event)}
+              >
+                {label}
               </P.button>
             </div>
             <ul
@@ -301,11 +293,9 @@ defmodule AshTemplateWeb.AnimationsLive do
                 {item.name}
               </li>
             </ul>
-          </article>
+          </.card>
 
-          <article class="motion-lab__card">
-            <h3>A number that turns over</h3>
-            <.picker part="count" variants={@variants} />
+          <.card title="A number that turns over" part="count" variants={@variants}>
             <p
               id="lab-count"
               class="motion-lab__count"
@@ -325,11 +315,9 @@ defmodule AshTemplateWeb.AnimationsLive do
                 {label}
               </P.button>
             </div>
-          </article>
+          </.card>
 
-          <article class="motion-lab__card">
-            <h3>Work marked done</h3>
-            <.picker part="stamp" variants={@variants} />
+          <.card title="Work marked done" part="stamp" variants={@variants}>
             <div
               id="lab-stamp"
               class="motion-lab__task"
@@ -347,7 +335,7 @@ defmodule AshTemplateWeb.AnimationsLive do
                 {if @done?, do: "Reopen", else: "Mark as done"}
               </P.button>
             </div>
-          </article>
+          </.card>
         </div>
       </.section>
 
@@ -390,20 +378,8 @@ defmodule AshTemplateWeb.AnimationsLive do
             role="tabpanel"
             aria-labelledby={"lab-tab-#{@tab}"}
           >
-            <ul :if={@tab == "recent"}>
-              <li>Quarterly plan</li>
-              <li>Team offsite notes</li>
-              <li>Customer interviews</li>
-            </ul>
-            <ul :if={@tab == "saved"}>
-              <li>Pricing ideas</li>
-              <li>Launch checklist</li>
-            </ul>
-            <ul :if={@tab == "shared"}>
-              <li>Design review · 4 people</li>
-              <li>Roadmap · 9 people</li>
-              <li>Support guide · 2 people</li>
-              <li>Hiring plan · 3 people</li>
+            <ul>
+              <li :for={line <- @views[@tab]}>{line}</li>
             </ul>
           </div>
         </div>
@@ -412,9 +388,7 @@ defmodule AshTemplateWeb.AnimationsLive do
       <.section number="5" id="arriving" title="Arriving">
         <:lede>How a headline and a page of cards first appear.</:lede>
         <div class="motion-lab__grid motion-lab__grid--wide">
-          <article class="motion-lab__card">
-            <h3>Headline</h3>
-            <.picker part="headline" variants={@variants} />
+          <.card title="Headline" part="headline" variants={@variants}>
             <div
               id="lab-headline"
               class="motion-lab__headline"
@@ -425,11 +399,9 @@ defmodule AshTemplateWeb.AnimationsLive do
               <p data-headline>Build something people love.</p>
               <P.button variant="secondary" data-replay>Replay</P.button>
             </div>
-          </article>
+          </.card>
 
-          <article class="motion-lab__card">
-            <h3>Cards</h3>
-            <.picker part="grid" variants={@variants} />
+          <.card title="Cards" part="grid" variants={@variants}>
             <div
               id="lab-cards"
               class="motion-lab__cascade"
@@ -445,7 +417,7 @@ defmodule AshTemplateWeb.AnimationsLive do
               </ul>
               <P.button variant="secondary" data-replay>Replay</P.button>
             </div>
-          </article>
+          </.card>
         </div>
       </.section>
 
@@ -469,6 +441,21 @@ defmodule AshTemplateWeb.AnimationsLive do
       </header>
       {render_slot(@inner_block)}
     </section>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :part, :string, required: true
+  attr :variants, :map, required: true
+  slot :inner_block, required: true
+
+  defp card(assigns) do
+    ~H"""
+    <article class="motion-lab__card">
+      <h3>{@title}</h3>
+      <.picker part={@part} variants={@variants} />
+      {render_slot(@inner_block)}
+    </article>
     """
   end
 
@@ -505,6 +492,14 @@ defmodule AshTemplateWeb.AnimationsLive do
   # The lab owns these panels outright, so the page never patches inside
   # them; it keeps only the versions on the island current.
   defp slides(assigns) do
+    assigns =
+      assign(assigns,
+        openers: @openers,
+        menu_items: @menu_items,
+        drawer_lines: @drawer_lines,
+        sheet_lines: @sheet_lines
+      )
+
     ~H"""
     <div
       id="lab-slides"
@@ -527,75 +522,60 @@ defmodule AshTemplateWeb.AnimationsLive do
             Share <span aria-hidden="true">▾</span>
           </P.button>
           <div id="lab-menu" class="motion-lab__menu" data-lab-panel="menu" hidden>
-            <button type="button" data-item data-close>Copy link</button>
-            <button type="button" data-item data-close>Invite a teammate</button>
-            <button type="button" data-item data-close>Save for later</button>
+            <button :for={label <- @menu_items} type="button" data-item data-close>{label}</button>
           </div>
         </div>
         <P.button
+          :for={{name, label} <- @openers}
           variant="secondary"
-          data-open="drawer"
+          data-open={name}
           aria-expanded="false"
-          aria-controls="lab-drawer"
+          aria-controls={"lab-#{name}"}
         >
-          Open the drawer
-        </P.button>
-        <P.button
-          variant="secondary"
-          data-open="sheet"
-          aria-expanded="false"
-          aria-controls="lab-sheet"
-        >
-          Pull up a sheet
-        </P.button>
-        <P.button variant="secondary" data-open="note" aria-expanded="false" aria-controls="lab-note">
-          Pin a note
+          {label}
         </P.button>
       </div>
 
       <div class="motion-lab__shade" data-shade hidden></div>
 
-      <aside
-        id="lab-drawer"
-        class="motion-lab__drawer"
-        data-lab-panel="drawer"
-        role="dialog"
-        aria-labelledby="lab-drawer-title"
-        hidden
-      >
-        <header>
-          <h3 id="lab-drawer-title">Project details</h3>
-          <button type="button" class="motion-lab__close" data-close aria-label="Close">×</button>
-        </header>
-        <p data-item>The launch page needs a final review.</p>
-        <p data-item>3 comments · 2 people assigned · updated 4 hours ago</p>
-        <p data-item>Next step: check the pricing table, then publish.</p>
-      </aside>
+      <.dialog name="drawer" title="Project details">
+        <p :for={line <- @drawer_lines} data-item>{line}</p>
+      </.dialog>
 
-      <section
-        id="lab-sheet"
-        class="motion-lab__sheet"
-        data-lab-panel="sheet"
-        role="dialog"
-        aria-labelledby="lab-sheet-title"
-        hidden
-      >
-        <header>
-          <h3 id="lab-sheet-title">What would you like to do?</h3>
-          <button type="button" class="motion-lab__close" data-close aria-label="Close">×</button>
-        </header>
+      <.dialog name="sheet" title="What would you like to do?">
         <ul>
-          <li data-item>Start a new project</li>
-          <li data-item>Open a recent file</li>
-          <li data-item>Invite your team</li>
+          <li :for={line <- @sheet_lines} data-item>{line}</li>
         </ul>
-      </section>
+      </.dialog>
 
       <div id="lab-note" class="motion-lab__note" data-lab-panel="note" hidden>
         <p>Remember to thank the team for the launch.</p>
         <button type="button" class="motion-lab__close" data-close>Unpin</button>
       </div>
     </div>
+    """
+  end
+
+  attr :name, :string, required: true
+  attr :title, :string, required: true
+  slot :inner_block, required: true
+
+  defp dialog(assigns) do
+    ~H"""
+    <section
+      id={"lab-#{@name}"}
+      class={"motion-lab__#{@name}"}
+      data-lab-panel={@name}
+      role="dialog"
+      aria-labelledby={"lab-#{@name}-title"}
+      hidden
+    >
+      <header>
+        <h3 id={"lab-#{@name}-title"}>{@title}</h3>
+        <button type="button" class="motion-lab__close" data-close aria-label="Close">×</button>
+      </header>
+      {render_slot(@inner_block)}
+    </section>
     """
   end
 end

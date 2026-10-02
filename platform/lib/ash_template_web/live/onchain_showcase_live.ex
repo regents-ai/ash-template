@@ -20,6 +20,12 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
   @linked Enum.take(@addresses, 2)
   # The stand-in wallet sets its own gas, so a step the chain turns down is still sent.
   @gas "0x30d40"
+  # What the tester can make the stand-in wallet do.
+  @switches [
+    {"lab-refuse-switch", "Refuse to switch network"},
+    {"lab-decline", "Decline in the wallet"},
+    {"lab-slow", "Answer slowly (1.5 s a request)"}
+  ]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -30,6 +36,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
        chain: Application.fetch_env!(:ash_template, :lab_chain),
        wallets: @wallets,
        linked: @linked,
+       switches: @switches,
        signed_in: true
      ), layout: false}
   end
@@ -128,9 +135,9 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
             <label><input type="radio" name="lab-network" value={@chain.chain_id} checked /> {@chain.name}</label>
             <label><input type="radio" name="lab-network" value="8453" /> Base</label>
           </fieldset>
-          <label><input type="checkbox" name="lab-refuse-switch" /> Refuse to switch network</label>
-          <label><input type="checkbox" name="lab-decline" /> Decline in the wallet</label>
-          <label><input type="checkbox" name="lab-slow" /> Answer slowly (1.5 s a request)</label>
+          <label :for={{name, label} <- @switches}>
+            <input type="checkbox" name={name} /> {label}
+          </label>
           <p class="onchain-workshop-log" data-lab-log aria-live="polite"></p>
         </section>
 

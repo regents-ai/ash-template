@@ -11,6 +11,15 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
   alias AshTemplateWeb.ShowcaseLive
   alias Regent.Primitives, as: P
 
+  # What each part of sign-in does, for the page's own explanation.
+  @parts [
+    "The sign-in button in the header, the same on every page.",
+    "One small script that hears every sign-in button press and keeps the page and the site in step.",
+    "The Privy connection: signing in, choosing a wallet and signing out.",
+    "This page's wallet readout, which only watches and never signs anyone in.",
+    "The site's own record of who is signed in. A wallet address in the browser never proves who you are."
+  ]
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -19,6 +28,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
      |> assign(
        mode: ShowcaseLive.privy_mode(),
        local?: AshTemplateWeb.Showcase.mode() == :local,
+       parts: @parts,
        wallet: nil
      ), layout: false}
   end
@@ -125,15 +135,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           <details>
             <summary>What each part does</summary>
             <ul>
-              <li>The sign-in button in the header, the same on every page.</li>
-              <li>
-                One small script that hears every sign-in button press and keeps the page and the site in step.
-              </li>
-              <li>The Privy connection: signing in, choosing a wallet and signing out.</li>
-              <li>This page's wallet readout, which only watches and never signs anyone in.</li>
-              <li>
-                The site's own record of who is signed in. A wallet address in the browser never proves who you are.
-              </li>
+              <li :for={part <- @parts}>{part}</li>
             </ul>
           </details>
           <p>
