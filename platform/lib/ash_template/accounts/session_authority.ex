@@ -18,8 +18,6 @@ defmodule AshTemplate.Accounts.SessionAuthority do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  require Ash.Query
-
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.{Human, System}
