@@ -66,9 +66,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           <P.button
             type="button"
             disabled={@mode != :configured}
-            data-account-target={
-              if @account_control.kind == :signed_in, do: "connect-wallet", else: "sign-in"
-            }
+            data-account-target={Shell.account_target(@account_control)}
           >
             {if @account_control.kind == :signed_in,
               do: "Connect or change wallet",
@@ -99,9 +97,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           <P.button
             type="button"
             disabled={@mode != :configured}
-            data-account-target={
-              if @account_control.kind == :signed_in, do: "connect-wallet", else: "sign-in"
-            }
+            data-account-target={Shell.account_target(@account_control)}
           >
             Connect wallet
           </P.button>

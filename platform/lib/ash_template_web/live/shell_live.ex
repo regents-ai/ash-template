@@ -13,7 +13,6 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Actors.Human
   alias AshTemplateWeb.{AccountLive, OverviewLive, PublicDocuments, Read, RouteCatalog}
 
-  @providers %{"x" => :x, "github" => :github, "farcaster" => :farcaster}
   @actions %{"link" => :link, "unlink" => :unlink}
   @refused %{
     tone: :error,
@@ -32,8 +31,8 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   @impl true
-  def handle_params(params, uri, socket) do
-    route_spec = RouteCatalog.fetch!(socket.assigns.live_action, params)
+  def handle_params(_params, uri, socket) do
+    route_spec = RouteCatalog.fetch!(socket.assigns.live_action)
 
     {:noreply,
      socket
@@ -49,7 +48,7 @@ defmodule AshTemplateWeb.ShellLive do
         socket
       ) do
     with %Human{} <- human_actor(socket),
-         {:ok, provider} <- Map.fetch(@providers, provider),
+         {:ok, provider} <- Providers.parse(provider),
          {:ok, action} <- Map.fetch(@actions, action),
          {:ok, request} <-
            identity_request(action, provider, socket.assigns.verified_connections.value) do
@@ -179,7 +178,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp connection_outcome(params, %Read{state: state, value: identities})
        when state in [:ready, :empty] do
-    with {:ok, provider} <- Map.fetch(@providers, params["provider"]),
+    with {:ok, provider} <- Providers.parse(params["provider"]),
          {:ok, action} <- Map.fetch(@actions, params["action"]) do
       label = Providers.label(provider)
 

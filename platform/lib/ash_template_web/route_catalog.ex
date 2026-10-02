@@ -46,7 +46,7 @@ defmodule AshTemplateWeb.RouteCatalog do
   ]
 
   @doc "The spec of a live action. No route takes parameters, so `params` is not read."
-  def fetch!(action, _params \\ %{}), do: Keyword.fetch!(@routes, action)
+  def fetch!(action), do: Keyword.fetch!(@routes, action)
 
   @doc "The catalog as `mix ash_template.route_handoff` writes it, with its sha256 digest."
   def design_handoff do

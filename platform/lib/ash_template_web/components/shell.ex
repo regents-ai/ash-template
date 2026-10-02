@@ -4,7 +4,6 @@ defmodule AshTemplateWeb.Components.Shell do
   use Phoenix.Component
 
   alias AshTemplateWeb.Components.RegentLinks
-  alias AshTemplateWeb.RouteCatalog.{RouteTarget, SidebarHeading}
 
   attr :route_spec, :map, required: true
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
@@ -98,6 +97,10 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
+  @doc "The `data-account-target` a wallet button carries: connect once signed in, sign in before."
+  def account_target(%{kind: :signed_in}), do: "connect-wallet"
+  def account_target(_account_control), do: "sign-in"
+
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
   attr :enabled, :boolean, default: true
 
@@ -182,7 +185,7 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :target, :map, required: true
   attr :route_spec, :map, required: true
 
-  defp sidebar_target(%{target: %RouteTarget{}} = assigns) do
+  defp sidebar_target(assigns) do
     ~H"""
     <.link
       patch={@target.path}
@@ -190,12 +193,6 @@ defmodule AshTemplateWeb.Components.Shell do
     >
       {@target.label}
     </.link>
-    """
-  end
-
-  defp sidebar_target(%{target: %SidebarHeading{}} = assigns) do
-    ~H"""
-    <span class="shell-sidebar__heading">{@target.label}</span>
     """
   end
 

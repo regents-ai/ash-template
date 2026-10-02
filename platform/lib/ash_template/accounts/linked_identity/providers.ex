@@ -2,6 +2,7 @@ defmodule AshTemplate.Accounts.LinkedIdentity.Providers do
   @moduledoc false
 
   @labels [x: "X", github: "GitHub", farcaster: "Farcaster"]
+  @by_name Map.new(@labels, fn {provider, _label} -> {Atom.to_string(provider), provider} end)
   @profile_roots %{
     x: "https://x.com/",
     github: "https://github.com/",
@@ -11,6 +12,9 @@ defmodule AshTemplate.Accounts.LinkedIdentity.Providers do
   def all, do: for({provider, label} <- @labels, do: %{provider: provider, label: label})
 
   def label(provider), do: @labels[provider]
+
+  @doc "The provider a browser names by its string form, or `:error` for any other string."
+  def parse(name), do: Map.fetch(@by_name, name)
 
   def profile_url(provider, username) do
     case {@profile_roots[provider], present(username)} do
