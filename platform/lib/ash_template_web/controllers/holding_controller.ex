@@ -1,15 +1,12 @@
 defmodule AshTemplateWeb.HoldingController do
   @moduledoc "Renders the page shown where a product area is not open yet."
-
   use AshTemplateWeb, :controller
 
-  def show(conn, _params),
-    do: render(conn, :show, AshTemplateWeb.PublicDocuments.page(:holding))
+  def show(conn, _params), do: render(conn, :show, AshTemplateWeb.PublicDocuments.page(:holding))
 end
 
 defmodule AshTemplateWeb.HoldingHTML do
   @moduledoc false
-
   use AshTemplateWeb, :html
 
   def show(assigns) do

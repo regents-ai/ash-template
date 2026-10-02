@@ -1,27 +1,11 @@
 defmodule AshTemplateWeb.ErrorHTML do
-  @moduledoc """
-  This module is invoked by your endpoint in case of errors on HTML requests.
-
-  See config/config.exs.
-  """
+  @moduledoc "Errors on HTML requests: a headline and recovery links, in the visitor's chosen theme."
   use AshTemplateWeb, :html
 
   def render(template, assigns) do
-    assigns = assigns |> Map.new() |> Map.put_new(:__changed__, nil)
-
-    cookie_theme =
-      case assigns[:conn] do
-        %Plug.Conn{} = conn -> Plug.Conn.fetch_cookies(conn).req_cookies["regent_theme"]
-        _ -> nil
-      end
-
-    theme = Enum.find([assigns[:theme], cookie_theme], &(&1 in ["light", "dark"]))
-
-    assigns =
-      assign(assigns,
-        title: headline(template),
-        theme: theme
-      )
+    cookie = Plug.Conn.fetch_cookies(assigns.conn).req_cookies["regent_theme"]
+    theme = if cookie in ["light", "dark"], do: cookie
+    assigns = assign(assigns, title: headline(template), theme: theme)
 
     ~H"""
     <!DOCTYPE html>

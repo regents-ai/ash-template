@@ -3,8 +3,8 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
   Closes every non-marketing surface while the launch gate is closed.
 
   The setting is read on each request, so a deploy opens or closes surfaces
-  without rebuilding the release. The marketing page and signing out stay open
-  in either state. The Privacy Policy and Terms of Use stay open with them.
+  without rebuilding the release. The marketing page, the Privacy Policy, the
+  Terms of Use and signing out stay open in either state.
   """
 
   import Phoenix.Controller, only: [get_format: 1, json: 2, put_secure_browser_headers: 2]
@@ -12,24 +12,22 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
 
   alias AshTemplateWeb.{ContentSecurityPolicy, HoldingController}
 
+  @open_pages [[], ["privacy"], ["terms"]]
+
   @doc "True while the product surfaces are open."
   def app_surfaces_enabled?, do: Application.fetch_env!(:ash_template, :app_surfaces)
 
   def init(opts), do: opts
 
-  def call(%Plug.Conn{method: "GET", path_info: []} = conn, _opts), do: conn
-
-  def call(%Plug.Conn{method: "GET", path_info: ["privacy"]} = conn, _opts), do: conn
-
-  def call(%Plug.Conn{method: "GET", path_info: ["terms"]} = conn, _opts), do: conn
+  def call(%Plug.Conn{method: "GET", path_info: path} = conn, _opts) when path in @open_pages,
+    do: conn
 
   def call(%Plug.Conn{method: "DELETE", path_info: ["auth", "privy", "session"]} = conn, _opts),
     do: conn
 
-  def call(conn, _opts), do: gate(app_surfaces_enabled?(), conn)
-
-  defp gate(true, conn), do: conn
-  defp gate(false, conn), do: conn |> closed(response_format(conn)) |> halt()
+  def call(conn, _opts) do
+    if app_surfaces_enabled?(), do: conn, else: conn |> closed(response_format(conn)) |> halt()
+  end
 
   # The session endpoints ride the browser pipeline but answer JSON callers.
   defp response_format(%Plug.Conn{path_info: ["auth" | _]}), do: "json"

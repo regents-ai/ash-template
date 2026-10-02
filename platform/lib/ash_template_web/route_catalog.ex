@@ -1,163 +1,86 @@
 defmodule AshTemplateWeb.RouteCatalog do
-  @moduledoc "Canonical behavior metadata for the route allowlist."
+  @moduledoc "The route specs the shell renders, and the design handoff built from them."
 
-  alias AshTemplateWeb.NotFoundError
+  alias __MODULE__.RouteTarget
 
-  alias __MODULE__.{
-    Entry,
-    RouteTarget,
-    SidebarHeading,
-    SidebarModel,
-    Spec
-  }
-
-  @slug ~r/\A[a-z0-9][a-z0-9-]{0,62}\z/
-
-  @entries [
-    %Entry{
-      path_pattern: "/",
-      live_action: :home,
-      parameter_schema: %{},
-      reserved_values: %{},
-      route_spec_id: :home
-    },
-    %Entry{
-      path_pattern: "/app",
-      live_action: :app,
-      parameter_schema: %{},
-      reserved_values: %{},
-      route_spec_id: :app
-    },
-    %Entry{
-      path_pattern: "/account",
-      live_action: :account,
-      parameter_schema: %{},
-      reserved_values: %{},
-      route_spec_id: :account
-    }
-  ]
-
-  @specs %{
-    home: {:home, nil, nil, "Ash Template", "/", [], :home, %{}},
-    app: {:app, :product, "Ash Template", "Overview", "/app", [:profile_actions], :product, %{}},
-    account:
-      {:account, :product, "Ash Template", "Account", "/app", [:profile_actions], :product, %{}}
-  }
-
-  def entries, do: @entries
-
-  def fetch!(action, params \\ %{}) do
-    entry = Enum.find(@entries, &(&1.live_action == action)) || raise(NotFoundError)
-    validate_params!(entry, params)
-    build_spec(entry.route_spec_id, params)
-  end
-
-  def design_handoff do
-    json =
-      %{"schema_version" => 1, "routes" => Enum.map(@entries, &handoff_route/1)}
-      |> ordered_json_value()
-      |> Jason.encode!()
-
-    %{json: json, digest: Base.encode16(:crypto.hash(:sha256, json), case: :lower)}
-  end
-
-  defp validate_params!(%Entry{parameter_schema: schema, reserved_values: reserved}, params) do
-    valid? =
-      Enum.all?(schema, fn {key, type} ->
-        value = Map.get(params, Atom.to_string(key))
-        valid_parameter?(type, value) and value not in Map.get(reserved, key, [])
-      end)
-
-    if valid?, do: :ok, else: raise(NotFoundError)
-  end
-
-  defp valid_parameter?(:slug, value), do: is_binary(value) and Regex.match?(@slug, value)
-
-  defp build_spec(action, _params) do
-    {route_id, app_id, app_label, page_label, root, controls, background, local_state} =
-      Map.fetch!(@specs, action)
-
-    %Spec{
-      route_id: route_id,
-      destination: destination(action),
-      app_id: app_id,
-      app_display_label: app_label,
-      page_display_label: page_label,
-      canonical_root: root,
-      sidebar_model: sidebar_model(app_id),
-      header_controls: controls,
-      background_slot: background,
-      scroll_policy: :top,
-      local_state: local_state
-    }
-  end
-
-  defp sidebar_model(nil), do: %SidebarModel{id: :public, targets: []}
-
-  defp sidebar_model(:product) do
-    %SidebarModel{
+  # The product pages share one shell: sidebar, header controls and background.
+  @product %{
+    app_id: :product,
+    app_display_label: "Ash Template",
+    canonical_root: "/app",
+    sidebar_model: %{
       id: :product,
       targets: [
         %RouteTarget{route_id: :app, label: "Overview", path: "/app"},
         %RouteTarget{route_id: :account, label: "Account", path: "/account"}
       ]
+    },
+    header_controls: [:profile_actions],
+    background_slot: :product,
+    scroll_policy: :top,
+    local_state: %{}
+  }
+
+  @routes [
+    home: %{
+      route_id: :home,
+      destination: "/",
+      app_id: nil,
+      app_display_label: nil,
+      page_display_label: "Ash Template",
+      canonical_root: "/",
+      sidebar_model: %{id: :public, targets: []},
+      header_controls: [],
+      background_slot: :home,
+      scroll_policy: :top,
+      local_state: %{}
+    },
+    app:
+      Map.merge(@product, %{route_id: :app, destination: "/app", page_display_label: "Overview"}),
+    account:
+      Map.merge(@product, %{
+        route_id: :account,
+        destination: "/account",
+        page_display_label: "Account"
+      })
+  ]
+
+  @doc "The spec of a live action. No route takes parameters, so `params` is not read."
+  def fetch!(action, _params \\ %{}), do: Keyword.fetch!(@routes, action)
+
+  @doc "The catalog as `mix ash_template.route_handoff` writes it, with its sha256 digest."
+  def design_handoff do
+    handoff = %{"schema_version" => 1, "routes" => Enum.map(@routes, &handoff_route/1)}
+    json = handoff |> ordered() |> Jason.encode!()
+    %{json: json, digest: Base.encode16(:crypto.hash(:sha256, json), case: :lower)}
+  end
+
+  defp handoff_route({action, spec}) do
+    sidebar = %{
+      id: spec.sidebar_model.id,
+      targets: Enum.map(spec.sidebar_model.targets, &handoff_target/1)
     }
+
+    Map.merge(spec, %{
+      live_action: action,
+      path_pattern: spec.destination,
+      parameter_schema: %{},
+      reserved_values: %{},
+      sidebar_model: sidebar
+    })
   end
 
-  defp handoff_route(entry) do
-    spec = fetch!(entry.live_action)
+  defp handoff_target(%RouteTarget{} = target),
+    do: %{type: "route", route_id: target.route_id, label: target.label, destination: target.path}
 
-    %{
-      "app_display_label" => spec.app_display_label,
-      "app_id" => spec.app_id,
-      "background_slot" => spec.background_slot,
-      "canonical_root" => spec.canonical_root,
-      "destination" => spec.destination,
-      "header_controls" => spec.header_controls,
-      "live_action" => entry.live_action,
-      "local_state" => spec.local_state,
-      "page_display_label" => spec.page_display_label,
-      "parameter_schema" => entry.parameter_schema,
-      "path_pattern" => entry.path_pattern,
-      "reserved_values" => entry.reserved_values,
-      "route_id" => spec.route_id,
-      "scroll_policy" => spec.scroll_policy,
-      "sidebar_model" => sidebar_handoff(spec.sidebar_model)
-    }
-  end
-
-  defp sidebar_handoff(sidebar) do
-    %{"id" => sidebar.id, "targets" => Enum.map(sidebar.targets, &sidebar_target_handoff/1)}
-  end
-
-  defp sidebar_target_handoff(%RouteTarget{} = target) do
-    %{
-      "type" => "route",
-      "route_id" => target.route_id,
-      "label" => target.label,
-      "destination" => target.path
-    }
-  end
-
-  defp sidebar_target_handoff(%SidebarHeading{} = heading) do
-    %{"type" => "heading", "label" => heading.label}
-  end
-
-  defp destination(action) do
-    @entries
-    |> Enum.find(&(&1.live_action == action))
-    |> Map.fetch!(:path_pattern)
-  end
-
-  defp ordered_json_value(value) when is_map(value) do
+  # Keys sorted at every level, so the digest names the content alone.
+  defp ordered(value) when is_map(value) do
     value
-    |> Enum.map(fn {key, nested_value} ->
-      {to_string(key), ordered_json_value(nested_value)}
-    end)
-    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map(fn {key, nested} -> {to_string(key), ordered(nested)} end)
+    |> Enum.sort()
     |> Jason.OrderedObject.new()
   end
 
-  defp ordered_json_value(value) when is_list(value), do: Enum.map(value, &ordered_json_value/1)
-  defp ordered_json_value(value), do: value
+  defp ordered(value) when is_list(value), do: Enum.map(value, &ordered/1)
+  defp ordered(value), do: value
 end

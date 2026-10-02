@@ -1,4 +1,5 @@
 defmodule AshTemplateWeb.PrivySessionController do
+  @moduledoc "The browser session endpoints: CSRF bootstrap, Privy sign-in, sign-out and failure reports."
   use AshTemplateWeb, :controller
 
   alias AshTemplate.AccessContext
@@ -8,41 +9,43 @@ defmodule AshTemplateWeb.PrivySessionController do
   require Logger
 
   @account_evidence_reasons [:missing_linked_wallet, :invalid_verified_identity]
-  @browser_failure_reasons ~w(
-    bridge_startup
-    flow_closed
-    invalid_message
-    provider_error
-    request_timeout
-    session_exchange
-    unable_to_sign
-  )
+  @browser_failure_reasons ~w(bridge_startup flow_closed invalid_message provider_error request_timeout session_exchange unable_to_sign)
   @browser_failure_limit 20
   @browser_failure_window_seconds 60
 
-  @doc """
-  The browser-session state matrix.
+  # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
+  # site's other JSON errors. The browser reads the code; people read the words.
+  @refusals %{
+    "unauthorized" => {401, "This sign-in couldn't be confirmed.", "Sign in again."},
+    "rate_limited" =>
+      {429, "Too many new sign-ins came from this address.",
+       "Wait the number of seconds in Retry-After, then try again."},
+    "session_superseded" =>
+      {409, "This browser was signed in again from another tab.", "Reload the page."},
+    "session_reset_required" =>
+      {409, "This browser's sign-in has ended.", "Reload the page, then sign in again."},
+    "account_switch_required" =>
+      {409, "This browser was signed in to another account.",
+       "Reload the page, then sign in again."}
+  }
 
-  A browser with no claim is bootstrapped onto a fresh unbound lineage; an exact
-  claim is only observed; a superseded or unrecoverable one is told which of the
-  two it is instead of being silently reset.
+  @doc """
+  The browser-session state matrix: a browser with no claim is bootstrapped onto
+  a fresh unbound lineage; an exact claim is only observed; a superseded or
+  unrecoverable one is told which of the two it is instead of being silently reset.
 
   Observation writes no session, so this response carries no `Set-Cookie` and a
   delayed one cannot put an older generation back over a later winner's cookie.
-
   Only a browser carrying no claim can create a lineage, so only that request
   spends the anonymous bootstrap budget, and it spends it before `renew/1` can
-  insert a row: a denial therefore leaves behind no `SessionAuthority` lineage
-  and no CSRF session state.
+  insert a row: a denial leaves behind no lineage and no CSRF session state.
   """
   def csrf(conn, _params), do: admit_bootstrap(conn, claim(conn))
 
   @doc """
   Records a bounded browser-side Privy failure without accepting provider text,
-  identity, wallet, token, signature, or exception data.
-
-  The response is deliberately identical for valid, invalid, and rate-limited
-  reports because diagnostics must never become part of the sign-in control flow.
+  identity, wallet, token, signature or exception data. The response is the same
+  for valid, invalid and rate-limited reports: diagnostics never steer sign-in.
   """
   def failure(conn, %{"reason" => reason}) when reason in @browser_failure_reasons do
     report_bounded_sign_in_failure(conn, reason)
@@ -64,26 +67,16 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   def show(conn, _params), do: json(conn, session_payload(conn.assigns.current_human_account))
 
-  def delete(conn, _params) do
-    topic = SessionAuthority.revoke(claim(conn))
-
-    %Plug.Conn{state: :sent} = conn = conn |> drop_session() |> json(%{ok: true})
-
-    broadcast_disconnect(topic)
-    conn
-  end
+  def delete(conn, _params),
+    do: disconnect_after(conn, SessionAuthority.revoke(claim(conn)), &json(&1, %{ok: true}))
 
   @doc """
-  The one place a request turns a cookie into an account.
-
-  The cookie names no account, so identity comes from the locked row and only
-  after the claim is exactly current. Anything else — missing, malformed,
-  superseded, revoked or absent authority, or an account whose verified evidence
-  has lapsed — leaves the request anonymous.
-
-  A request whose cookie states a claim that is not current is also told so. No
-  ordinary response may replace that cookie, so the page names the refusal and
-  the browser retires the cookie through the session endpoints, which can.
+  The one place a request turns a cookie into an account. The cookie names no
+  account, so identity comes from the locked row and only after the claim is
+  exactly current; anything else leaves the request anonymous. A claim that is
+  not current is also named as refused: no ordinary response may replace that
+  cookie, so the page says so and the browser retires it through the session
+  endpoints, which can.
   """
   def enforce_authority(conn) do
     session = get_session(conn)
@@ -132,18 +125,26 @@ defmodule AshTemplateWeb.PrivySessionController do
     |> refuse("rate_limited")
   end
 
-  defp diagnostic_accepted(conn) do
-    conn
-    |> put_resp_header("cache-control", "no-store")
-    |> send_resp(:no_content, "")
+  defp diagnostic_accepted(conn),
+    do: conn |> put_resp_header("cache-control", "no-store") |> send_resp(:no_content, "")
+
+  defp report_bounded_sign_in_failure(conn, reason) do
+    {key, _source} = ClientAddress.key(conn)
+    bucket = if reason == "flow_closed", do: :retryable, else: :actionable
+
+    case RequestRateLimiter.admit(
+           {:privy_browser_failure, bucket, key},
+           @browser_failure_limit,
+           @browser_failure_window_seconds
+         ) do
+      {:ok, _budget} -> report_sign_in_failure(reason)
+      {:error, :rate_limited, _budget} -> :ok
+    end
   end
 
   defp report_sign_in_failure(reason) do
     Logger.warning("Privy browser reported sign-in failure reason=#{reason}")
-
-    :telemetry.execute([:ash_template, :privy, :browser_failure], %{count: 1}, %{
-      reason: reason
-    })
+    :telemetry.execute([:ash_template, :privy, :browser_failure], %{count: 1}, %{reason: reason})
 
     if sentry_configured?() do
       Sentry.capture_message("Privy browser sign-in failure",
@@ -155,26 +156,8 @@ defmodule AshTemplateWeb.PrivySessionController do
   end
 
   defp sentry_configured? do
-    case Application.get_env(:sentry, :dsn) do
-      dsn when is_binary(dsn) -> String.trim(dsn) != ""
-      _absent -> false
-    end
-  end
-
-  defp browser_failure_bucket("flow_closed"), do: :retryable
-  defp browser_failure_bucket(_actionable_reason), do: :actionable
-
-  defp report_bounded_sign_in_failure(conn, reason) do
-    {key, _source} = ClientAddress.key(conn)
-
-    case RequestRateLimiter.admit(
-           {:privy_browser_failure, browser_failure_bucket(reason), key},
-           @browser_failure_limit,
-           @browser_failure_window_seconds
-         ) do
-      {:ok, _budget} -> report_sign_in_failure(reason)
-      {:error, :rate_limited, _budget} -> :ok
-    end
+    dsn = Application.get_env(:sentry, :dsn)
+    is_binary(dsn) and String.trim(dsn) != ""
   end
 
   # Privy is verified before the row lock, so only the transition itself is
@@ -190,9 +173,7 @@ defmodule AshTemplateWeb.PrivySessionController do
         |> json(session_payload(account))
 
       {:switch, topic} ->
-        conn = conn |> drop_session() |> refuse("account_switch_required")
-        broadcast_disconnect(topic)
-        conn
+        disconnect_after(conn, topic, &refuse(&1, "account_switch_required"))
 
       {:error, :superseded} ->
         refuse(conn, "session_superseded")
@@ -215,10 +196,12 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   defp account_evidence(reason), do: {:error, {:account_evidence, reason}}
 
-  # Both values are fixed atoms from the classification contract, so they are
-  # safe as metric tags and belong in the message itself, since the development
-  # formatter drops metadata. The refused pair is never interpolated, inspected
-  # or answered differently.
+  # Stage and reason are fixed atoms from the classification contract, so they
+  # are safe as metric tags and in the message itself (the development formatter
+  # drops metadata); they are never inspected or answered differently. The
+  # provider attempt is over before any authority work starts, so no external
+  # call sits inside the transaction: a bearer this browser cannot prove revokes
+  # the lineage it was offered for instead of leaving it bound and current.
   defp refuse(conn, stage, reason) do
     Logger.info("Privy session refused stage=#{stage} reason=#{reason}")
 
@@ -228,28 +211,25 @@ defmodule AshTemplateWeb.PrivySessionController do
     })
 
     report_bounded_sign_in_failure(conn, "session_exchange")
-    conn |> mark_recoverable(stage, reason) |> unauthorized()
+
+    conn
+    |> mark_recoverable(stage, reason)
+    |> disconnect_after(SessionAuthority.revoke(claim(conn)), &refuse(&1, "unauthorized"))
   end
 
   # The one refusal a browser may answer with a fresh provider login: the access
   # token itself did not verify, so the provider session behind it is spent. The
-  # marker names nothing about the refusal, and every other refusal carries none,
-  # so no other 401 can end a provider session.
+  # marker names nothing about the refusal, and no other 401 carries it.
   defp mark_recoverable(conn, :access_verification, :token_verification_failed),
     do: put_resp_header(conn, "x-ash-provider-relogin", "allowed")
 
   defp mark_recoverable(conn, _stage, _reason), do: conn
 
-  # The provider attempt is over before any authority work starts, so no external
-  # call sits inside the transaction: a bearer this browser cannot prove revokes
-  # the lineage it was offered for instead of leaving it bound and current.
-  defp unauthorized(conn) do
-    topic = SessionAuthority.revoke(claim(conn))
-
-    %Plug.Conn{state: :sent} =
-      conn = conn |> drop_session() |> refuse("unauthorized")
-
-    broadcast_disconnect(topic)
+  # The answer is sent before the lineage's sockets are told to disconnect, so
+  # the browser reads it rather than a dropped connection.
+  defp disconnect_after(conn, topic, respond) do
+    %Plug.Conn{state: :sent} = conn = conn |> drop_session() |> respond.()
+    if topic, do: AshTemplateWeb.Endpoint.broadcast(topic, "disconnect", %{})
     conn
   end
 
@@ -278,22 +258,6 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   defp issue_token(conn), do: json(conn, %{csrf_token: Plug.CSRFProtection.get_csrf_token()})
 
-  # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
-  # site's other JSON errors. The browser reads the code; people read the words.
-  @refusals %{
-    "unauthorized" => {401, "This sign-in couldn't be confirmed.", "Sign in again."},
-    "rate_limited" =>
-      {429, "Too many new sign-ins came from this address.",
-       "Wait the number of seconds in Retry-After, then try again."},
-    "session_superseded" =>
-      {409, "This browser was signed in again from another tab.", "Reload the page."},
-    "session_reset_required" =>
-      {409, "This browser's sign-in has ended.", "Reload the page, then sign in again."},
-    "account_switch_required" =>
-      {409, "This browser was signed in to another account.",
-       "Reload the page, then sign in again."}
-  }
-
   defp refuse(conn, code) do
     {status, message, hint} = Map.fetch!(@refusals, code)
     conn |> put_status(status) |> json(%{error: %{code: code, message: message, hint: hint}})
@@ -301,27 +265,13 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   defp drop_session(conn), do: configure_session(conn, drop: true)
 
-  defp session_payload(nil),
-    do: %{
-      authenticated: false,
-      account_control: %{
-        kind: :sign_in,
-        label: "Sign In",
-        avatar_src: nil
-      }
-    }
-
   defp session_payload(account) do
-    access_context = AccessContext.human(account)
-    control = AccessContext.account_control(access_context)
-
-    %{authenticated: true, account_control: Map.from_struct(control)}
+    control = account |> access_context() |> AccessContext.account_control()
+    %{authenticated: not is_nil(account), account_control: Map.from_struct(control)}
   end
 
-  defp broadcast_disconnect(nil), do: :ok
-
-  defp broadcast_disconnect(topic),
-    do: AshTemplateWeb.Endpoint.broadcast(topic, "disconnect", %{})
+  defp access_context(nil), do: AccessContext.anonymous()
+  defp access_context(account), do: AccessContext.human(account)
 
   defp put_identity_conflict_header(conn, []), do: conn
 
@@ -333,9 +283,8 @@ defmodule AshTemplateWeb.PrivySessionController do
   # of each is a pair; anything else is refused before the provider is asked.
   defp session_pair(conn) do
     with {:ok, access} <- bearer_token(conn),
-         {:ok, identity} <- identity_token(conn) do
-      {:ok, %{access: access, identity: identity}}
-    end
+         {:ok, identity} <- identity_token(conn),
+         do: {:ok, %{access: access, identity: identity}}
   end
 
   defp bearer_token(conn) do
