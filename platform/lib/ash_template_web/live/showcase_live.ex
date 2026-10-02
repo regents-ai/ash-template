@@ -77,8 +77,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
      |> assign(
        sections: @sections,
        pages: @pages,
-       privy_mode: privy_mode(),
-       local?: AshTemplateWeb.Showcase.mode() == :local,
+       privy_mode: AshTemplateWeb.Showcase.privy_mode(),
        catalog: Catalog.snapshot(),
        capabilities: @capabilities,
        form: to_form(%{"title" => "First launch", "quantity" => "1"}, as: :sample),
@@ -991,17 +990,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
     do: "Read at #{read_time(read_at)}"
 
   defp read_time(read_at), do: Calendar.strftime(read_at, "%H:%M:%S UTC")
-
-  @doc "Configuration status for local reference pages; never returns configuration values."
-  def privy_mode do
-    config = Application.get_env(:ash_template, :privy, [])
-
-    if Enum.all?([:app_id, :verification_key], &present?(config[&1])),
-      do: :configured,
-      else: :unconfigured
-  end
-
-  defp present?(value), do: is_binary(value) and String.trim(value) != ""
 
   defp run_utility("privy_valid"), do: Utilities.privy(:valid)
   defp run_utility("privy_expired"), do: Utilities.privy(:expired)

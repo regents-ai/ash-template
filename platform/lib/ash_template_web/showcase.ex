@@ -48,9 +48,18 @@ defmodule AshTemplateWeb.Showcase do
       else: conn
   end
 
+  @doc "Whether Privy sign-in is configured here; never returns configuration values."
+  def privy_mode do
+    config = Application.get_env(:ash_template, :privy, [])
+
+    if Enum.all?([:app_id, :verification_key], &present?(config[&1])),
+      do: :configured,
+      else: :unconfigured
+  end
+
   def on_mount(part, _params, _session, socket) do
     if admits_mount?(part, socket),
-      do: {:cont, socket},
+      do: {:cont, Phoenix.Component.assign(socket, :local?, mode() == :local)},
       else: {:halt, Phoenix.LiveView.redirect(socket, to: "/")}
   end
 
@@ -76,6 +85,8 @@ defmodule AshTemplateWeb.Showcase do
     |> put_resp_header("cache-control", "no-store")
     |> put_resp_header("x-robots-tag", "noindex, nofollow")
   end
+
+  defp present?(value), do: is_binary(value) and String.trim(value) != ""
 
   defp loopback?({127, _, _, _}, host) when host in @loopback_hosts, do: true
   defp loopback?({0, 0, 0, 0, 0, 0, 0, 1}, host) when host in @loopback_hosts, do: true

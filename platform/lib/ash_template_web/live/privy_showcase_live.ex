@@ -8,7 +8,6 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
 
   alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.OnchainSteps
-  alias AshTemplateWeb.ShowcaseLive
   alias Regent.Primitives, as: P
 
   # What each part of sign-in does, for the page's own explanation.
@@ -26,8 +25,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/privy"))
      |> assign(
-       mode: ShowcaseLive.privy_mode(),
-       local?: AshTemplateWeb.Showcase.mode() == :local,
+       mode: AshTemplateWeb.Showcase.privy_mode(),
        parts: @parts,
        wallet: nil
      ), layout: false}

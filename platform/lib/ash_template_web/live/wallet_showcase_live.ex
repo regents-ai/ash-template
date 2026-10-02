@@ -8,7 +8,6 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
 
   alias AshTemplate.AccessContext
   alias AshTemplateWeb.Components.Shell
-  alias AshTemplateWeb.ShowcaseLive
   alias Regent.Primitives, as: P
 
   @impl true
@@ -17,8 +16,7 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/wallet"))
      |> assign(
-       mode: ShowcaseLive.privy_mode(),
-       local?: AshTemplateWeb.Showcase.mode() == :local,
+       mode: AshTemplateWeb.Showcase.privy_mode(),
        chain: Application.fetch_env!(:ash_template, :wallet_chain)
      ), layout: false}
   end

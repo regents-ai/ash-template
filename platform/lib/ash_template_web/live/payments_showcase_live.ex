@@ -35,8 +35,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/payments"))
-     |> assign(local?: AshTemplateWeb.Showcase.mode() == :local, pay_to: pay_to, answers: answers),
-     layout: false}
+     |> assign(pay_to: pay_to, answers: answers), layout: false}
   end
 
   @impl true

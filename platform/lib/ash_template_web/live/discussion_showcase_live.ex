@@ -25,7 +25,6 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/discussion"))
      |> assign(
-       local?: AshTemplateWeb.Showcase.mode() == :local,
        now: now,
        opening: opening,
        all_replies: replies,
