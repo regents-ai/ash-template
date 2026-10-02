@@ -1,8 +1,7 @@
 defmodule AshTemplate.Capabilities do
   @moduledoc """
-  Every tool Ash Template's pages offer a browser's own agent, read at compile
-  time from `priv/tool_manifest.json`. The browser code registers them from the
-  same file; `/capabilities`, the docs page and `/llms.txt` list them from here.
+  Every tool the pages offer a browser's own agent, read at compile time from
+  `priv/tool_manifest.json`, the file the browser code registers them from.
   """
 
   @manifest_path Application.app_dir(:ash_template, "priv/tool_manifest.json")
@@ -10,7 +9,6 @@ defmodule AshTemplate.Capabilities do
   @manifest @manifest_path |> File.read!() |> Jason.decode!()
   @needs %{"none" => "Nothing"}
 
-  @doc "The whole manifest."
   @spec manifest() :: map()
   def manifest, do: @manifest
 
@@ -24,10 +22,7 @@ defmodule AshTemplate.Capabilities do
     """
     | Tool | Reads | Needs | What it does |
     | --- | --- | --- | --- |
-    #{Enum.map_join(tools(), "\n", &"| `#{&1["name"]}` | `#{&1["route"]}` | #{needs(&1)} | #{&1["description"]} |")}\
+    #{Enum.map_join(tools(), "\n", &"| `#{&1["name"]}` | `#{&1["route"]}` | #{Map.fetch!(@needs, &1["requires"])} | #{&1["description"]} |")}\
     """
   end
-
-  # What a tool needs from the person, in words.
-  defp needs(tool), do: Map.fetch!(@needs, tool["requires"])
 end
