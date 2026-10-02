@@ -572,3 +572,15 @@ Operations
   and at the start of every review, and asks every founder decision to restate what
   changes, what yes and hold mean, and the recommendation.
 - The site serves `elixir-stack` with its other build skills.
+
+## 2026-10-02 — MCP events delivered by Oban
+
+- `regent_mcp_events` (elixir-utils `c1544e5`) no longer ships a delivery worker or
+  adapter. A site with events delivers them with an AshOban trigger on its
+  subscriptions table, as Patchbay now does; the platform README's MCP events
+  section describes the pieces.
+- The `elixir-stack` skill's Oban recipes now name AshOban 0.9, the `cron:` key
+  AshOban needs, the schema setting for sites that choose it at runtime, and the
+  trigger rules the Patchbay build turned up: `on_error` runs only for update or
+  destroy actions, outside calls run with `transaction?(false)`, retries log only
+  their final failure, and a job cannot queue a second run of itself.

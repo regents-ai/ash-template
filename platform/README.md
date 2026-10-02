@@ -43,29 +43,32 @@ a published security advisory (Hex 2.5 reads both).
 A site whose MCP endpoint offers events (protocol `2026-07-28`: `server/discover`,
 `events/list`, `events/subscribe`, `events/unsubscribe`, delivered by webhook) takes
 `regent_mcp_events` from `elixir-utils/mcp_events`. This template has no MCP endpoint
-and does not use it. The library first appears in elixir-utils commit `194896a`,
-which is not yet on GitHub, so no site can pin it until that commit is pushed; it
+and does not use it. The library is in elixir-utils commits `194896a` and `c1544e5`,
+which are not yet on GitHub, so no site can pin it until they are pushed; it
 then rides the site's one elixir-utils pin like every other library from there:
 `{:regent_mcp_events, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_events"}`.
 
-The library owns subscription ids, the signed callback challenge, the protected
-webhook transport and the delivery worker. The site owns three things, as the
-library's README sets out:
+The library owns subscription ids, the signed callback challenge and one safe,
+signed delivery attempt (`deliver/2`). It ships no queue or worker. The site owns:
 
 - The event methods on its existing MCP endpoint, with the subscription owner taken
   from the signed-in connection, never from the request.
-- An adapter implementing `Regent.MCPEvents.Adapter` (`claim_next/2`,
-  `authorize_delivery/2`, `finish/3`) over the site's own subscriptions table and a
-  commit-ordered event feed. A refresh resets the attempts and drops any lease, and
-  no outcome advances past an event still owed.
-- One worker, `{Regent.MCPEvents.Worker, adapter: MyAppWeb.MCP.EventDelivery}`,
-  started after the repo in `application.ex` and switched off in `config/test.exs`.
+- A subscriptions table holding the callback, its encrypted secret, whether it is
+  active, and `delivered_seq`, its place in a commit-ordered event feed. No lease,
+  attempt or retry columns: Oban keeps those.
+- Delivery as an AshOban trigger on that table, following the ordered-delivery
+  recipe in the `elixir-stack` skill (`skills/elixir-stack/references/oban.md`): one
+  job per subscription, queued in the same transaction as each new event, on
+  subscribe and on refresh, and swept every minute. The job sends owed events in
+  order outside any transaction, moves `delivered_seq` with a compare-and-set,
+  retries a failure that may pass, and on a refusal or the last attempt stops the
+  subscription where it is; a refresh resumes it from the same event.
 
 Patchbay is the first site with events: `PatchbayWeb.MCP.Events` serves the
-methods, `PatchbayWeb.MCP.EventDelivery` is the adapter and
-`Patchbay.Forum.EventSubscription` holds the subscriptions, with signing secrets
-encrypted under `secret_key_base`. Its `/mcp` route is declared with `log: false`
-so the secret and callback address never reach the request log.
+methods, `Patchbay.Forum.EventSubscription` holds the subscriptions (signing secrets
+encrypted under `secret_key_base`) and carries the `:deliver` trigger, and
+`PatchbayWeb.MCP.EventDelivery` is its delivery action. Its `/mcp` route is declared
+with `log: false` so the secret and callback address never reach the request log.
 
 ## Quickstart
 

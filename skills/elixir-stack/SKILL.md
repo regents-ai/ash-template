@@ -69,7 +69,8 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
   `{:cancel, reason}` to stop for good; `{:snooze, seconds}` to wait without using an
   attempt.
 - Set `max_attempts` on purpose (AshOban triggers default to 1) and decide what
-  running out of attempts means. With AshOban, the `on_error` action records it.
+  running out of attempts means. With AshOban, the `on_error` update action
+  records it.
 - One job at a time per key: `unique: [keys: [...], period: :infinity, states:
   :incomplete]`, where `:incomplete` includes executing jobs. AshOban trigger workers
   already do this for each record.

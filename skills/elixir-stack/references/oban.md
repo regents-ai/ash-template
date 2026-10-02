@@ -1,11 +1,12 @@
 # Oban recipes
 
-Versions current in Regent: `oban` 2.24, `ash_oban` 0.8. Check the site's lockfile
-and read the installed version's docs before relying on an option.
+Versions current in Regent: `oban` 2.24, `ash_oban` 0.9 (the first AshOban that
+understands Oban 2.24's top-level `cron:`, `pruner:` and `lifeline:` keys). Check the
+site's lockfile and read the installed version's docs before relying on an option.
 
 ## Add Oban to a site
 
-1. Add `{:oban, "~> 2.24"}`, and `{:ash_oban, "~> 0.8"}` when Ash resources will
+1. Add `{:oban, "~> 2.24"}`, and `{:ash_oban, "~> 0.9"}` when Ash resources will
    own jobs. The `oban.install` and `ash_oban.install` Igniter tasks set up the same
    pieces when the site uses Igniter.
 2. Migration, in the site's own schema (Autolaunch:
@@ -24,12 +25,20 @@ and read the installed version's docs before relying on an option.
      repo: MyApp.Repo,
      prefix: "mysite_app",
      queues: [default: 10, webhooks: 20],
+     # Required with AshOban, even empty: it adds each trigger's sweep here.
+     cron: [crontab: []],
      pruner: [max_age: {7, :days}],
      lifeline: [rescue_after: {10, :minutes}]
 
    # config/test.exs
    config :my_app, Oban, testing: :manual
+
+   # config/runtime.exs, when the site's schema is set at runtime (Patchbay)
+   config :my_app, Oban, prefix: database_schema
    ```
+
+   The migration takes the same schema the repo migrates into:
+   `Oban.Migrations.up(prefix: prefix() || "public")`.
 
 4. Supervision, after the repo. With AshOban, wrap the config so triggers and
    scheduled actions get their queues and cron entries:
@@ -99,9 +108,24 @@ end
 
 Name the worker and scheduler modules so renaming the trigger does not orphan
 queued jobs. `max_attempts` defaults to 1. After the last failed attempt, the
-`on_error` update action runs; make it change the record so `where` stops
-matching, or the scheduler keeps re-queuing it. Autolaunch's `AuctionFinish` is a
-working example.
+`on_error` update action runs with the error as its `error` argument; make it
+change the record so `where` stops matching, or the scheduler keeps re-queuing it.
+Autolaunch's `AuctionFinish` and Patchbay's `EventSubscription` are working examples.
+
+- The trigger's action must be an update (or destroy) for `on_error` to run; a
+  generic action trigger never calls it.
+- An action that calls another service sets `transaction?(false)`, so the call is
+  not made inside a database transaction, and `lock_for_update?(false)` on the
+  trigger, since the one-job-per-record rule is the lock.
+- AshOban logs every failed attempt by default. For outside calls that fail for a
+  while as a matter of course, set `log_errors?(false)`: Oban keeps each attempt's
+  error on the job, and the final failure is still logged.
+- The trigger's uniqueness includes executing jobs, so a job cannot queue a second
+  run of itself for the same record: that insert is dropped. Do all the record's
+  work in one run (bounded), and let the sweep take up the rest.
+- To wake a trigger from another resource's change, queue its sweep with
+  `AshOban.schedule(Resource, :trigger)` in that change's `after_action`; the sweep
+  is one job however many changes land.
 
 ## Ordered delivery to subscribers (webhooks, event feeds)
 
@@ -113,13 +137,15 @@ that failed":
 2. **Subscriber cursor.** Each subscription stores the last sequence number its
    receiver acknowledged, and whether it is active.
 3. **One job per subscription.** An AshOban trigger on the subscription with
-   `where` "active and owed an event", or a plain worker unique on the subscription
-   id. The job reads the first owed event after the cursor, sends it, and on success
-   advances the cursor with a compare-and-set from the old value to the new one. If
-   more events are owed, it queues itself again.
-4. **Wake-up.** When an event row is written, queue the jobs for the subscriptions
-   it concerns in the same transaction. The trigger's scheduler sweep catches
-   anything else, such as a subscription refreshed after a stop.
+   `where` "active, unexpired and behind an event of its kind" (an `exists` over the
+   event table), or a plain worker unique on the subscription id. The job reads the
+   first owed event after the cursor, sends it outside any transaction, and on
+   success advances the cursor with a compare-and-set from the value it read. It
+   repeats until nothing is owed or a per-run limit is reached.
+4. **Wake-up.** When an event row is written, queue the trigger's sweep in the same
+   transaction (`AshOban.schedule`), and run the trigger on subscribe and refresh
+   (`run_oban_trigger`). The minute sweep catches an event that lands while a job
+   for that subscription is already running.
 5. **Failure.** Return `{:error, reason}` to retry the same event with backoff.
    When attempts run out, `on_error` stops the subscription and keeps its cursor.
    A refresh switches it back on, and delivery resumes at the same event.
