@@ -8,6 +8,10 @@ description: Choose an Ash workflow for cross-layer features or refactors.
 Use the smallest relevant specialist. Product intent and repository authority come
 from the current task; this pack supplies Ash-specific judgment, not a delivery ritual.
 
+Before building or reviewing, run elixir-stack's design check: name the standard
+tool (Ash, Ecto, Oban, Phoenix, OTP) for each moving part. Code that rebuilds one is
+a defect, however correct it is.
+
 | Work | Reference |
 | --- | --- |
 | Resources, actions and domain interfaces | [ash-backend](../ash-backend/SKILL.md) |
@@ -16,6 +20,7 @@ from the current task; this pack supplies Ash-specific judgment, not a delivery 
 | Policies, actors and data exposure | [ash-security](../ash-security/SKILL.md) |
 | Regression design or test cleanup | [ash-testing](../ash-testing/SKILL.md) |
 | Agent readiness, shared discovery metadata, and building or adopting WebMCP tools | [ash-webmcp](../ash-webmcp/SKILL.md) |
+| Background, retried or scheduled work, webhooks, polling, GenServers, PubSub, HTTP clients and shared Elixir libraries | [elixir-stack](../elixir-stack/SKILL.md) |
 
 For uncertain APIs, use the app's actual Mix root, lockfile and installed dependency
 usage rules. [Documentation lookup](references/docs-workflow.md) covers version

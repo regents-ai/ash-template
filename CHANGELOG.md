@@ -558,3 +558,17 @@ Operations
   writes itself (the event methods, an adapter, one worker) and where Patchbay's are. The
   library first appears in elixir-utils `194896a`, not yet on GitHub, so no site can pin
   it until that commit is pushed. The template does not use it.
+
+## 2026-10-01 — Elixir stack skill
+
+- New `elixir-stack` skill: the standard Elixir, Phoenix, Ecto, Oban and OTP tool for
+  each job, the list of things never to hand-build (job queues, leases, retry timers,
+  polling loops), a design check to run before building and before reviewing, and
+  Regent's Oban recipes. Every agent loads it with `regent-workflow` and `ash-stack`
+  before Elixir work (founder, 2026-10-01).
+- `ash-stack` routes background, retried and scheduled work to it; `ash-backend` says
+  that durable work justifies adding Oban to a site that lacks it.
+- `regent-workflow` requires the three skills, runs the design check before building
+  and at the start of every review, and asks every founder decision to restate what
+  changes, what yes and hold mean, and the recommendation.
+- The site serves `elixir-stack` with its other build skills.

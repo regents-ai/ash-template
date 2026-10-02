@@ -34,7 +34,9 @@ After renaming, a new site must still replace, by hand:
 - `skills/`: every skill Regent writes, linked into the Regent workspace's
   `.agents/skills` and `.claude/skills`. `regent-workflow` is the entry point
   for Regent work; `regent-notion` covers the Notion data room and `checkpoint`
-  a local handoff. For code, start with `ash-stack`, which routes to
+  a local handoff. For code, load `regent-workflow`, `ash-stack` and
+  `elixir-stack` first: `elixir-stack` names the standard Elixir, Phoenix, Ecto
+  and Oban tool for each job and runs the design check, and `ash-stack` routes to
   `ash-backend`, `ash-frontend`, `ash-data`, `ash-security`, `ash-testing` and
   `ash-webmcp` (agent readiness and WebMCP tools). `animejs` covers Anime.js in
   LiveView hooks, `onchain-buttons` wallet and on-chain buttons, and

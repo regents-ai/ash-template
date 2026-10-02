@@ -17,6 +17,7 @@ Ecto remains appropriate for migrations, diagnostics and justified data-layer wo
 - [Action and resource decisions](references/decision-guide.md): accepted inputs,
   relationships, derived values and choosing an implementation boundary.
 - [Integrations](references/integrations.md): jobs, external effects and adapters.
+  Durable, retried or scheduled work is Oban; see [elixir-stack](../elixir-stack/SKILL.md).
 
 Generic persistent idempotency or outbox guidance never authorizes blocking a Regent
 user-signed wallet transaction. Every distinct button press reaches the wallet.

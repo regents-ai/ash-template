@@ -15,6 +15,8 @@ There are two development modes; the founder's request says which one applies.
 
 In both modes the implementing agent owns the requested working result and implements,
 reviews and verifies it directly, using ash-stack and the relevant specialist skills.
+Every agent, Claude or Codex, loads regent-workflow, ash-stack and elixir-stack before
+any Elixir, Phoenix, Ecto, Oban or Ash work, including reviews and pairing.
 Delegation is optional, not a prerequisite; an unavailable peer or external coding
 agent must not block direct implementation. This skill is workflow guidance, not a launcher.
 
@@ -120,6 +122,8 @@ cancelled work.
    shared-library pins the change depends on. State the observable result and the checks
    that define done, keep that list, and tick it as you go. Infer reasonable criteria
    from the founder's request. A short task does not need a separate plan.
+   Before writing code, run elixir-stack's design check: name the standard tool for each
+   moving part, and build only what no standard tool covers.
 2. Implement the bounded change directly. If delegating an independent subtask, give
    it the objective, absolute repository/worktree path, owned files or component,
    acceptance checks, a time budget for the subtask (a delegate paces itself to one; it
@@ -130,7 +134,10 @@ cancelled work.
 3. Record the changed files, checks actually run, failures and remaining work.
    For delegated work, retain the session/worktree reference and verify the returned
    results before integration.
-4. The implementing agent reviews the change against acceptance, resolves integration
+4. Every review, of your own work or a peer's, starts with elixir-stack's design check
+   before any correctness check: code that rebuilds Oban, Ecto, Phoenix, OTP or Ash is
+   reported as a replacement, not repaired in place.
+   The implementing agent reviews the change against acceptance, resolves integration
    issues, and runs scoped checks on the integrated result within the testing policy above.
    Exercise real or representative user flows; compilation alone does not prove an
    interaction. Fix product failures without expanding into broad test maintenance.
@@ -145,6 +152,14 @@ cancelled work.
    as the next tool call and carry on with whatever does not depend on an answer.
    Confirmation before a push, release, payment, signature or destructive action is
    unchanged.
+
+## Decisions for the founder
+
+Every numbered decision put to the founder stands on its own, because earlier context
+is often hundreds of lines away. Under the question, give two to four plain bullets:
+what changes and in which product or repository; what happens on yes and what happens
+on hold; the recommendation. Then the lettered options. Repeat the bullets each time
+the decision is listed again; never a bare "Push X? a) yes b) hold".
 
 ## Project pages in Notion
 

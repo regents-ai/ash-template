@@ -6,6 +6,11 @@ implement an extension correctly.
 
 ## Durable jobs: AshOban / Oban
 
+Work that must survive a restart, retry, run later or on a schedule, or call another
+service is an Oban job, through AshOban when an Ash resource owns it. That need
+justifies adding Oban to a site that lacks it; never hand-build a queue, lease or
+polling loop instead. Recipes are in [elixir-stack](../../elixir-stack/references/oban.md).
+
 Inspect existing worker, trigger, queue, retry, scheduler, and test configuration.
 Identify how actor and tenant are reconstructed at execution time. A queued user ID
 is not a permanent authorization grant. Decide whether the job runs under current
