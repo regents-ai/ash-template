@@ -1,7 +1,5 @@
 defmodule AshTemplate.Legal do
-  @moduledoc """
-  The Privacy Policy and Terms of Use as they are served on the public site.
-  """
+  @moduledoc "The Privacy Policy and Terms of Use as they are served on the public site."
 
   @sanitize [
     tags: ~w(h1 h2 h3 p ul ol li strong em a code br),
@@ -12,9 +10,8 @@ defmodule AshTemplate.Legal do
     link_rel: "noopener noreferrer"
   ]
 
-  @priv Application.app_dir(:ash_template, "priv/legal")
-  @privacy_path Path.join(@priv, "privacy.md")
-  @terms_path Path.join(@priv, "terms.md")
+  @privacy_path Application.app_dir(:ash_template, "priv/legal/privacy.md")
+  @terms_path Application.app_dir(:ash_template, "priv/legal/terms.md")
   @external_resource @privacy_path
   @external_resource @terms_path
 
@@ -26,8 +23,8 @@ defmodule AshTemplate.Legal do
   def markdown(id) when is_map_key(@sources, id), do: @sources[id].markdown
 
   def document(id) when is_map_key(@sources, id) do
-    spec = @sources[id]
-    %{id: id, title: spec.title, html: to_safe_html(spec.markdown)}
+    %{title: title, markdown: markdown} = @sources[id]
+    %{id: id, title: title, html: to_safe_html(markdown)}
   end
 
   # The HTML is MDEx-sanitized from the committed legal markdown.

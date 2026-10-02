@@ -24,8 +24,7 @@ end
 app_surfaces? =
   case {config_env(), System.get_env("ASH_TEMPLATE_APP_SURFACES")} do
     {:prod, nil} -> raise ~s(ASH_TEMPLATE_APP_SURFACES must be set to "on" or "off")
-    {_env, nil} -> true
-    {_env, "on"} -> true
+    {_env, setting} when setting in [nil, "on"] -> true
     {_env, "off"} -> false
     {_env, other} -> raise ~s(ASH_TEMPLATE_APP_SURFACES must be "on" or "off", got "#{other}")
   end
@@ -42,8 +41,7 @@ showcase =
     {:prod, "public"} -> :public
     {:prod, "off"} -> :off
     {:prod, _setting} -> raise ~s(ASH_TEMPLATE_SHOWCASE must be set to "public" or "off")
-    {_env, nil} -> :local
-    {_env, "local"} -> :local
+    {_env, setting} when setting in [nil, "local"] -> :local
     {_env, "public"} -> :public
     {_env, "off"} -> :off
     {_env, _setting} -> raise ~s(ASH_TEMPLATE_SHOWCASE must be "local", "public" or "off")
@@ -56,16 +54,12 @@ Logger.info("Showcase #{showcase}")
 migrating? = System.get_env("ASH_TEMPLATE_RELEASE_COMMAND") == "migrate"
 
 database_config =
-  if config_env() == :prod and migrating? do
-    AshTemplate.DatabaseConfig.release_config!()
-  else
-    AshTemplate.DatabaseConfig.runtime_config!(config_env())
-  end
+  if config_env() == :prod and migrating?,
+    do: AshTemplate.DatabaseConfig.release_config!(),
+    else: AshTemplate.DatabaseConfig.runtime_config!(config_env())
 
-if database_config do
-  config :ash_template, :database_startup_enabled, true
-  config :ash_template, AshTemplate.Repo, database_config
-end
+config :ash_template, :database_startup_enabled, true
+config :ash_template, AshTemplate.Repo, database_config
 
 if config_env() == :prod do
   config :ash_template, :session_options, secure: true, http_only: true
@@ -74,13 +68,8 @@ if config_env() == :prod do
     host = String.trim(System.fetch_env!("PHX_HOST"))
     secret_key_base = System.fetch_env!("SECRET_KEY_BASE")
 
-    if host == "" do
-      raise "PHX_HOST must not be empty"
-    end
-
-    if byte_size(secret_key_base) < 64 do
-      raise "SECRET_KEY_BASE must be at least 64 bytes"
-    end
+    if host == "", do: raise("PHX_HOST must not be empty")
+    if byte_size(secret_key_base) < 64, do: raise("SECRET_KEY_BASE must be at least 64 bytes")
 
     config :ash_template, AshTemplateWeb.Endpoint,
       server: true,

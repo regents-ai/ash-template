@@ -1,10 +1,3 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
-# General application configuration
 import Config
 
 config :regent_identity, repo: AshTemplate.Repo, ash_domains: [RegentIdentity]
@@ -19,9 +12,8 @@ config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 config :ash_template,
   ash_domains: [AshTemplate.Accounts],
+  ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]
-
-config :ash_template, ecto_repos: [AshTemplate.Repo]
 
 config :ash_template, AshTemplate.Repo,
   database: "ash_template_disabled",
@@ -47,9 +39,9 @@ config :ash_template, :wallet_chain, %{
   rpc_url: "https://sepolia.base.org"
 }
 
-# The node the server reads each chain through, by chain id: sent steps, balances.
-# A wallet adds a chain with its public `rpc_url` above; the server may read through
-# a private node or a lab fork instead, and this address never reaches the browser.
+# The node the server reads each chain through, by chain id. A wallet adds a chain
+# with its public `rpc_url` above; the server may read through a private node or a
+# lab fork instead, and this address never reaches the browser.
 config :ash_template, :chain_nodes, %{84_532 => "https://sepolia.base.org"}
 
 # A sign-in lasts 30 days: the cookie expires then, and
@@ -63,7 +55,6 @@ config :ash_template, :session_options,
   http_only: true,
   max_age: 30 * 24 * 60 * 60
 
-# Configure the endpoint
 config :ash_template, AshTemplateWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
@@ -78,7 +69,6 @@ config :ash_template, AshTemplateWeb.Endpoint,
   pubsub_server: AshTemplate.PubSub,
   live_view: [signing_salt: "RH19ZPg2"]
 
-# Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",
   ash_template: [
@@ -88,7 +78,6 @@ config :esbuild,
     env: %{"NODE_PATH" => [Mix.Project.deps_path(), Mix.Project.build_path()]}
   ]
 
-# Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
@@ -99,9 +88,6 @@ config :sentry,
   enable_metrics: false,
   tags: %{app: "ash_template"}
 
-# Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
