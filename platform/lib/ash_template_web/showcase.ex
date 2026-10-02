@@ -25,6 +25,8 @@ defmodule AshTemplateWeb.Showcase do
   @behaviour Plug
   import Plug.Conn
 
+  @loopback_hosts ~w(localhost 127.0.0.1 ::1 [::1])
+
   @doc "The showcase setting."
   def mode, do: Application.fetch_env!(:ash_template, :showcase)
 
@@ -39,8 +41,7 @@ defmodule AshTemplateWeb.Showcase do
 
   @impl Plug
   def call(conn, part) do
-    unless admits?(part, mode(), conn.remote_ip, conn.host),
-      do: raise(AshTemplateWeb.NotFoundError)
+    admits?(part, mode(), conn.remote_ip, conn.host) or raise AshTemplateWeb.NotFoundError
 
     if mode() == :local and part != :motion_lab,
       do: register_before_send(conn, &unlisted/1),
@@ -56,9 +57,9 @@ defmodule AshTemplateWeb.Showcase do
   # A disconnected render passed the plug; a connected mount is checked again.
   defp admits_mount?(part, socket) do
     if Phoenix.LiveView.connected?(socket) do
-      peer = Phoenix.LiveView.get_connect_info(socket, :peer_data)
-      uri = Phoenix.LiveView.get_connect_info(socket, :uri)
-      admits?(part, mode(), peer && peer.address, uri && uri.host)
+      %{address: address} = Phoenix.LiveView.get_connect_info(socket, :peer_data)
+      %{host: host} = Phoenix.LiveView.get_connect_info(socket, :uri)
+      admits?(part, mode(), address, host)
     else
       true
     end
@@ -76,11 +77,7 @@ defmodule AshTemplateWeb.Showcase do
     |> put_resp_header("x-robots-tag", "noindex, nofollow")
   end
 
-  defp loopback?(address, host) when host in ["localhost", "127.0.0.1", "::1", "[::1]"],
-    do: loopback_address?(address)
-
+  defp loopback?({127, _, _, _}, host) when host in @loopback_hosts, do: true
+  defp loopback?({0, 0, 0, 0, 0, 0, 0, 1}, host) when host in @loopback_hosts, do: true
   defp loopback?(_address, _host), do: false
-  defp loopback_address?({127, _, _, _}), do: true
-  defp loopback_address?({0, 0, 0, 0, 0, 0, 0, 1}), do: true
-  defp loopback_address?(_address), do: false
 end

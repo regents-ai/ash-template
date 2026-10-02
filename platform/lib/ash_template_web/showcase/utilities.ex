@@ -35,10 +35,9 @@ defmodule AshTemplateWeb.Showcase.Utilities do
 
   def database do
     config = AshTemplate.Repo.config()
-    database = config[:database] || ""
 
     if is_nil(config[:url]) and config[:hostname] in ["127.0.0.1", "localhost"] and
-         database == "ash_template_dev" do
+         config[:database] == "ash_template_dev" do
       case Ecto.Adapters.SQL.query(AshTemplate.Repo, "SELECT current_database(), 1", [],
              timeout: 2_000
            ) do
