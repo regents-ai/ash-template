@@ -9,7 +9,7 @@ defmodule AshTemplate.Application do
       [
         AshTemplateWeb.Telemetry,
         AshTemplate.Accounts.RequestRateLimiter,
-        database_child(),
+        AshTemplate.Repo,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
         AshTemplateWeb.Endpoint,
         metrics_child()
@@ -23,10 +23,6 @@ defmodule AshTemplate.Application do
   def config_change(changed, _new, removed) do
     AshTemplateWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp database_child do
-    if Application.get_env(:ash_template, :database_startup_enabled, false), do: AshTemplate.Repo
   end
 
   # Metrics are served beside the site, never by a process that only runs a task.

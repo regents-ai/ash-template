@@ -82,7 +82,7 @@ defmodule AshTemplate.Accounts.LinkedIdentity do
 
   policies do
     policy action([:upsert_verified, :for_account, :by_provider_subject, :remove_verified]) do
-      authorize_if AshTemplate.Checks.SystemActor
+      authorize_if actor_attribute_equals(:role, :system)
     end
 
     policy action(:read_mine) do

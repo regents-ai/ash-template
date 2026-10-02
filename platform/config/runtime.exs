@@ -58,7 +58,6 @@ database_config =
     do: AshTemplate.DatabaseConfig.release_config!(),
     else: AshTemplate.DatabaseConfig.runtime_config!(config_env())
 
-config :ash_template, :database_startup_enabled, true
 config :ash_template, AshTemplate.Repo, database_config
 
 if config_env() == :prod do

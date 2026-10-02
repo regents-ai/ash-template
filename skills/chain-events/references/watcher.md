@@ -2,8 +2,8 @@
 
 The code here compiles against Ash 3.33, AshPostgres 2.13 and Phoenix LiveView 1.2.11.
 It was not run against a database; KeyFleet's reader, which it follows, is the tested
-version. `MyApp` stands for the site's module prefix, and `Actors.System` with
-`Checks.SystemActor` are the template's own. The example watches ERC-20 `Transfer` logs.
+version. `MyApp` stands for the site's module prefix, and `Actors.System` (whose `role: :system`
+the policies check) is the template's own. The example watches ERC-20 `Transfer` logs.
 
 ## Files
 
@@ -133,7 +133,7 @@ defmodule MyApp.Chain.Cursor do
     end
 
     policy action([:open, :advance, :stop]) do
-      authorize_if MyApp.Checks.SystemActor
+      authorize_if actor_attribute_equals(:role, :system)
     end
   end
 
@@ -234,7 +234,7 @@ defmodule MyApp.Chain.Transfer do
     end
 
     policy action(:record) do
-      authorize_if MyApp.Checks.SystemActor
+      authorize_if actor_attribute_equals(:role, :system)
     end
   end
 

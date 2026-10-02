@@ -24,9 +24,9 @@ for adding one operator action when a product needs it. Staff lists stay per sit
 
 - Every staff or operator read and write is an Ash action behind a domain code
   interface, run with an actor.
-- The action's policy names the check that admits it: `AshTemplate.Checks.SystemActor`
-  for a release command, and a staff check of the same shape for a staff page
-  (`platform/lib/ash_template/checks/system_actor.ex`).
+- The action's policy names the actor it admits: `actor_attribute_equals(:role, :system)`
+  for a release command (run as `AshTemplate.Actors.System`), and the staff actor's
+  role for a staff page.
 - The plug in front of a staff page only decides who sees it. It is never the only
   place authority lives.
 - Never `authorize?: false`, for staff or for commands (see
