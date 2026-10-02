@@ -1,25 +1,14 @@
 defmodule AshTemplateWeb.ContentSecurityPolicy do
   @moduledoc """
-  The content security policies the site's pages are served under.
-
-  `reading/0` is the strict baseline: scripts, styles, images and fonts come
-  from this site, requests and the live connection go back to it, no page frames
-  another site or is framed itself, and forms submit only here.
-
-  `sign_in/0` is the baseline plus exactly what Privy's wallet sign-in loads,
-  taken from Privy's published policy and checked against the bundled Privy
-  and WalletConnect code: Privy's API, frame and wallet RPC, Cloudflare
-  Turnstile (when bot protection is on for the Privy app), WalletConnect's
-  relays, verify frame, wallet list, logos, RPC and event reporting, Coinbase
-  Wallet's relay, and the `blob:` images Privy's window draws. Privy's sign-in
-  window writes its own style elements, so only this profile allows them.
-
-  `showcase/0` is `sign_in/0` for the showcase catalog, which frames its own
-  preview page.
-
-  A site that loads anything else adds each origin to the one directive and the
-  one profile that needs it. The only wildcard is Privy's own `*.rpc.privy.systems`,
-  from its published policy.
+  The content security policies the site's pages are served under. `reading/0` is
+  the strict baseline: everything comes from this site, no page frames another site
+  or is framed itself, and forms submit only here. `sign_in/0` adds exactly what
+  Privy's wallet sign-in loads, from Privy's published policy and the bundled Privy
+  and WalletConnect code; Privy's sign-in window writes its own style elements, so
+  only that profile allows them. `showcase/0` is `sign_in/0` for the showcase
+  catalog, which frames its own preview page. A site that loads anything else adds
+  each origin to the one directive and the one profile that needs it; the only
+  wildcard is Privy's own `*.rpc.privy.systems`, from its published policy.
   """
 
   # The development code reloader runs in a frame from this site.
@@ -83,9 +72,8 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   end
 
   defp add(directives, additions) do
-    Enum.map(directives, fn {directive, sources} ->
-      {directive, Enum.uniq(sources ++ Map.get(additions, directive, []))}
-    end)
+    for {directive, sources} <- directives,
+        do: {directive, Enum.uniq(sources ++ Map.get(additions, directive, []))}
   end
 
   defp render(directives) do
