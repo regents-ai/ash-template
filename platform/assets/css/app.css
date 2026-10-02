@@ -2,7 +2,6 @@
 @import "../vendor/regent_ui/primitives.css";
 @import "./tokens/root.css";
 @import "./components/shell.css";
-@import "./components/loading.css";
 @import "./components/onchain_steps.css";
 @import "./components/motion.css";
 @import "./pages/home.css";

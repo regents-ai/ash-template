@@ -8,7 +8,9 @@ defmodule AshTemplateWeb.HomeLive do
   def agent_markdown do
     chapters =
       Enum.map_join(chapters(), "\n\n", fn chapter ->
-        proofs = Enum.map_join(chapter.proofs, "\n", &"- **#{&1.title}** #{&1.copy}")
+        proofs =
+          Enum.map_join(chapter.proofs, "\n", fn {title, copy} -> "- **#{title}** #{copy}" end)
+
         Enum.join(["## #{chapter.title}", chapter.description, proofs], "\n\n")
       end)
 
@@ -63,7 +65,7 @@ defmodule AshTemplateWeb.HomeLive do
   end
 
   # The homepage is always dark, so its mark is the dark one.
-  def landing_header(assigns) do
+  defp landing_header(assigns) do
     ~H"""
     <header class="rl-header" data-home-header>
       <div class="rl-header-bar">
@@ -89,7 +91,7 @@ defmodule AshTemplateWeb.HomeLive do
 
         <div class="rl-header-links">
           <RegentLinks.header_links id="home-brand-links" />
-          <a href={~p"/app"} class="rg-button rl-action"><span class="rg-button__label">App</span></a>
+          <.action href={~p"/app"} class="rl-action">App</.action>
         </div>
       </div>
     </header>
@@ -116,7 +118,7 @@ defmodule AshTemplateWeb.HomeLive do
           <h1 id="home-title" class="rl-hero-title">Ash Template</h1>
           <p class="rl-hero-description">A starting point for your next product</p>
           <div class="rl-hero-actions">
-            <a href={~p"/app"} class="rg-button"><span class="rg-button__label">Open the app</span></a>
+            <.action href={~p"/app"}>Open the app</.action>
           </div>
         </div>
         <div class="rl-hero-products">
@@ -128,19 +130,17 @@ defmodule AshTemplateWeb.HomeLive do
             aria-label="Highlights"
           >
             <li
-              :for={card <- hero_cards()}
-              id={"home-card-#{card.name}"}
+              :for={card <- chapters()}
+              id={"home-card-#{card.anchor}"}
               class="rl-hero-card"
-              data-home-hero-card={card.name}
+              data-home-hero-card={card.anchor}
             >
               <div class="rl-card-heading">
-                <h2>{card.heading}</h2>
+                <h2>{card.eyebrow}</h2>
               </div>
               <p>{card.line}</p>
               <div class="rl-card-actions">
-                <a href={card.href} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">
-                  {card.cta}
-                </span></a>
+                <.action href={card.href} class="rg-button--secondary rl-action">{card.cta}</.action>
               </div>
             </li>
           </ul>
@@ -166,9 +166,9 @@ defmodule AshTemplateWeb.HomeLive do
           <p>{@chapter.description}</p>
 
           <div class="rl-chapter-actions">
-            <a href={@chapter.href} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">
+            <.action href={@chapter.href} class="rg-button--secondary rl-action">
               {@chapter.cta}
-            </span></a>
+            </.action>
           </div>
         </div>
       </header>
@@ -188,9 +188,9 @@ defmodule AshTemplateWeb.HomeLive do
       data-variant={Motion.standard("grid")}
     >
       <Regent.Structure.capability_card
-        :for={{proof, index} <- Enum.with_index(@proofs)}
-        title={proof.title}
-        description={proof.copy}
+        :for={{{title, copy}, index} <- Enum.with_index(@proofs)}
+        title={title}
+        description={copy}
         id={"home-proof-#{@brand}-#{index}"}
         class="rl-proof-card"
         data-card-color={Enum.at(~w(orange blue platinum), index)}
@@ -215,7 +215,7 @@ defmodule AshTemplateWeb.HomeLive do
   attr :variant, :integer, required: true
 
   # Static line diagrams: registration marks and sparse geometry, not charts.
-  def card_diagram(assigns) do
+  defp card_diagram(assigns) do
     ~H"""
     <svg
       id={@id}
@@ -317,11 +317,16 @@ defmodule AshTemplateWeb.HomeLive do
         public documents that already work.
       </p>
       <div class="rl-closing-actions">
-        <a href={~p"/app"} class="rg-button rl-action rl-action--strong"><span class="rg-button__label">Open the app</span></a>
-        <a href={~p"/docs"} class="rg-button rl-action"><span class="rg-button__label">Read the docs</span></a>
-        <a :if={@showcase?} href={~p"/showcase"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">See the components</span></a>
-        <a :if={@showcase?} href={~p"/animations"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">Motion lab</span></a>
-        <a :if={@showcase?} href={~p"/skills"} class="rg-button rg-button--secondary rl-action"><span class="rg-button__label">Build skills</span></a>
+        <.action href={~p"/app"} class="rl-action rl-action--strong">Open the app</.action>
+        <.action href={~p"/docs"} class="rl-action">Read the docs</.action>
+        <.action
+          :for={{href, label} <- kit_links()}
+          :if={@showcase?}
+          href={href}
+          class="rg-button--secondary rl-action"
+        >
+          {label}
+        </.action>
       </div>
     </section>
     """
@@ -345,51 +350,38 @@ defmodule AshTemplateWeb.HomeLive do
     """
   end
 
-  # Every tab names a section on this page.
-  defp nav_links,
-    do: [
-      {"Sign in", "signin"},
-      {"Account", "account"},
-      {"Agents", "agents"},
-      {"Start", "start"}
-    ]
+  attr :href, :string, required: true
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
 
-  # The three highlights on the hero. Their names double as the chapter anchors.
-  @doc false
-  def hero_cards do
-    [
-      %{
-        name: "signin",
-        heading: "Sign in",
-        line: "One wallet sign-in, with social accounts you can connect afterwards.",
-        href: "/app",
-        cta: "Open the app"
-      },
-      %{
-        name: "account",
-        heading: "Account",
-        line: "Your wallets, your display name and your connected accounts on one page.",
-        href: "/account",
-        cta: "See your account"
-      },
-      %{
-        name: "agents",
-        heading: "Agents",
-        line: "A documented API, an agent guide and an OpenAPI description from day one.",
-        href: "/docs",
-        cta: "Read the docs"
-      }
-    ]
+  # The class list is built here, not in the tag: a literal list there renders a
+  # trailing space when `class` is nil.
+  defp action(assigns) do
+    assigns = assign(assigns, :class, ["rg-button", assigns.class])
+
+    ~H"""
+    <a href={@href} class={@class}>
+      <span class="rg-button__label">{render_slot(@inner_block)}</span>
+    </a>
+    """
   end
 
-  # Section order matches the hero cards and the header navigation.
-  @doc false
-  def chapters do
+  defp kit_links,
+    do: [
+      {~p"/showcase", "See the components"},
+      {~p"/animations", "Motion lab"},
+      {~p"/skills", "Build skills"}
+    ]
+
+  # The three chapters, in page order: each is a hero card, a header tab and a
+  # numbered section. `diagrams` is the first of its three card diagrams.
+  defp chapters do
     [
       %{
         index: "01",
         anchor: "signin",
         eyebrow: "Sign in",
+        line: "One wallet sign-in, with social accounts you can connect afterwards.",
         title: "One sign-in, verified on the server.",
         description:
           "People sign in with a wallet. The server verifies the proof, keeps the session and never trusts the browser's word for who is present.",
@@ -397,24 +389,16 @@ defmodule AshTemplateWeb.HomeLive do
         cta: "Open the app",
         diagrams: 0,
         proofs: [
-          %{
-            title: "Wallet first.",
-            copy: "Sign in with the wallet you already have; no password to keep."
-          },
-          %{
-            title: "Connections.",
-            copy: "Connect X, GitHub or Farcaster to the account once signed in."
-          },
-          %{
-            title: "Sessions.",
-            copy: "Sign out ends the session on this browser only; nothing else changes."
-          }
+          {"Wallet first.", "Sign in with the wallet you already have; no password to keep."},
+          {"Connections.", "Connect X, GitHub or Farcaster to the account once signed in."},
+          {"Sessions.", "Sign out ends the session on this browser only; nothing else changes."}
         ]
       },
       %{
         index: "02",
         anchor: "account",
         eyebrow: "Account",
+        line: "Your wallets, your display name and your connected accounts on one page.",
         title: "Everything the site knows, on one page.",
         description:
           "The account page shows the wallet the sign-in verified, any other linked wallets, the display name and the connected accounts.",
@@ -422,24 +406,17 @@ defmodule AshTemplateWeb.HomeLive do
         cta: "See your account",
         diagrams: 3,
         proofs: [
-          %{
-            title: "Your wallets.",
-            copy: "The primary wallet and every other wallet the sign-in named."
-          },
-          %{
-            title: "Your name.",
-            copy: "A display name and a picture generated from the wallet address."
-          },
-          %{
-            title: "Your say.",
-            copy: "Connect and disconnect accounts; each change is confirmed by the record."
-          }
+          {"Your wallets.", "The primary wallet and every other wallet the sign-in named."},
+          {"Your name.", "A display name and a picture generated from the wallet address."},
+          {"Your say.",
+           "Connect and disconnect accounts; each change is confirmed by the record."}
         ]
       },
       %{
         index: "03",
         anchor: "agents",
         eyebrow: "Agents",
+        line: "A documented API, an agent guide and an OpenAPI description from day one.",
         title: "Readable by people and by agents.",
         description:
           "Every public page has a text form, the API is described in OpenAPI, and the agent guide explains how to use both.",
@@ -447,20 +424,14 @@ defmodule AshTemplateWeb.HomeLive do
         cta: "Read the docs",
         diagrams: 6,
         proofs: [
-          %{
-            title: "Text first.",
-            copy: "Public pages answer in Markdown when an agent asks for it."
-          },
-          %{
-            title: "OpenAPI.",
-            copy: "The served API is described at /openapi.json and versioned by header."
-          },
-          %{
-            title: "Agent guide.",
-            copy: "/llms.txt says what the site is and where each thing lives."
-          }
+          {"Text first.", "Public pages answer in Markdown when an agent asks for it."},
+          {"OpenAPI.", "The served API is described at /openapi.json and versioned by header."},
+          {"Agent guide.", "/llms.txt says what the site is and where each thing lives."}
         ]
       }
     ]
   end
+
+  # Every tab names a section on this page.
+  defp nav_links, do: Enum.map(chapters(), &{&1.eyebrow, &1.anchor}) ++ [{"Start", "start"}]
 end
