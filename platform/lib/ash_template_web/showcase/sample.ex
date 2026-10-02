@@ -19,10 +19,8 @@ defmodule AshTemplateWeb.Showcase.Sample do
   end
 
   policies do
-    # The workshop has no signed-in actor and this resource holds no data: each
-    # record lives only in the workshop LiveView that created it and is gone when
-    # that page closes. The policy states that openly instead of skipping
-    # authorization at each call.
+    # The workshop has no signed-in actor and a record lives only in the page that
+    # made it, so the policy says so openly instead of skipping authorization per call.
     policy action(:create) do
       authorize_if always()
     end
@@ -35,6 +33,7 @@ defmodule AshTemplateWeb.Showcase.Sample do
 
   actions do
     create :create do
+      primary? true
       accept [:title, :quantity]
       validate string_length(:title, min: 2, max: 80)
       validate numericality(:quantity, greater_than: 0, less_than_or_equal_to: 100)

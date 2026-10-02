@@ -10,86 +10,67 @@ defmodule AshTemplateWeb.Showcase.Catalog do
     {AshTemplateWeb.Components.VerifiedConnections, [:verified_connections]},
     {AshTemplateWeb.Layouts, [:app, :root]}
   ]
-  def registry, do: @components
 
-  def components do
-    for {module, names} <- @components, name <- names do
-      Code.ensure_loaded!(module)
-
-      info =
-        if function_exported?(module, :__components__, 0),
-          do: Map.get(module.__components__(), name, %{}),
-          else: %{}
-
-      %{
-        module: inspect(module),
-        function: Atom.to_string(name),
-        attributes: Enum.map(Map.get(info, :attrs, []), &Atom.to_string(&1.name)),
-        slots: Enum.map(Map.get(info, :slots, []), &Atom.to_string(&1.name))
-      }
-    end
-  end
-
-  def domains do
-    for domain <- Application.get_env(:ash_template, :ash_domains, []) do
-      %{
-        name: inspect(domain),
-        resources:
-          Enum.map(Ash.Domain.Info.resources(domain), fn resource ->
-            %{
-              name: inspect(resource),
-              attributes:
-                Enum.map(
-                  Ash.Resource.Info.attributes(resource),
-                  &%{name: &1.name, public: &1.public?}
-                ),
-              actions:
-                Enum.map(Ash.Resource.Info.actions(resource), &%{name: &1.name, type: &1.type})
-            }
-          end)
-      }
-    end
-  end
-
-  def utilities do
-    shared =
-      for app <- [:regent_privy],
-          module <- Application.spec(app, :modules) || [],
-          do: {module, "Shared by every site"}
-
-    product =
-      for module <- Application.spec(:ash_template, :modules) || [],
-          String.starts_with?(inspect(module), "AshTemplate.DatabaseConfig"),
-          do: {module, "This site only"}
-
-    (shared ++ product)
-    |> Enum.uniq()
-    |> Enum.sort_by(fn {module, _} -> inspect(module) end)
-    |> Enum.flat_map(fn {module, owner} ->
-      case exported_functions(module) do
-        [] -> []
-        functions -> [%{name: inspect(module), owner: owner, functions: functions}]
-      end
-    end)
-  end
-
-  defp exported_functions(module) do
-    if Code.ensure_loaded?(module) and function_exported?(module, :__info__, 1) do
-      for {name, arity} <- module.__info__(:functions),
-          not String.starts_with?(Atom.to_string(name), "__"),
-          do: "#{name}/#{arity}"
-    else
-      []
-    end
-  end
-
-  def snapshot,
-    do: %{
+  def snapshot do
+    %{
       components: components(),
       domains: domains(),
       utilities: utilities(),
       ash_phoenix_installed: Code.ensure_loaded?(AshPhoenix.Form)
     }
+  end
+
+  defp components do
+    for {module, names} <- @components, name <- names do
+      %{attrs: attrs, slots: slots} =
+        Map.get(module.__components__(), name, %{attrs: [], slots: []})
+
+      %{
+        module: inspect(module),
+        function: Atom.to_string(name),
+        attributes: Enum.map(attrs, &Atom.to_string(&1.name)),
+        slots: Enum.map(slots, &Atom.to_string(&1.name))
+      }
+    end
+  end
+
+  defp domains do
+    for domain <- Application.fetch_env!(:ash_template, :ash_domains) do
+      %{
+        name: inspect(domain),
+        resources: Enum.map(Ash.Domain.Info.resources(domain), &resource/1)
+      }
+    end
+  end
+
+  defp resource(resource) do
+    %{
+      name: inspect(resource),
+      attributes:
+        Enum.map(Ash.Resource.Info.attributes(resource), &%{name: &1.name, public: &1.public?}),
+      actions: Enum.map(Ash.Resource.Info.actions(resource), &%{name: &1.name, type: &1.type})
+    }
+  end
+
+  defp utilities do
+    shared =
+      for module <- Application.spec(:regent_privy, :modules),
+          do: {module, "Shared by every site"}
+
+    product = [{AshTemplate.DatabaseConfig, "This site only"}]
+
+    for {module, owner} <-
+          Enum.sort_by(shared ++ product, fn {module, _owner} -> inspect(module) end),
+        functions = exported_functions(module),
+        functions != [],
+        do: %{name: inspect(module), owner: owner, functions: functions}
+  end
+
+  defp exported_functions(module) do
+    for {name, arity} <- module.__info__(:functions),
+        not String.starts_with?(Atom.to_string(name), "__"),
+        do: "#{name}/#{arity}"
+  end
 end
 
 defmodule AshTemplateWeb.Showcase.CatalogController do

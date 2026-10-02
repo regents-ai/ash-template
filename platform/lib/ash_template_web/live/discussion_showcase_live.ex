@@ -19,6 +19,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
   @impl true
   def mount(_params, _session, socket) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
+    [opening | replies] = posts(now)
 
     {:ok,
      socket
@@ -26,8 +27,8 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
      |> assign(
        local?: AshTemplateWeb.Showcase.mode() == :local,
        now: now,
-       opening: opening(now),
-       all_replies: replies(now),
+       opening: opening,
+       all_replies: replies,
        liked: MapSet.new(["r2"])
      ), layout: false}
   end
@@ -39,14 +40,8 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
   end
 
   @impl true
-  def handle_event("like", %{"post" => id}, socket) do
-    liked = socket.assigns.liked
-
-    liked =
-      if MapSet.member?(liked, id), do: MapSet.delete(liked, id), else: MapSet.put(liked, id)
-
-    {:noreply, assign(socket, liked: liked)}
-  end
+  def handle_event("like", %{"post" => id}, socket),
+    do: {:noreply, update(socket, :liked, &MapSet.symmetric_difference(&1, MapSet.new([id])))}
 
   @impl true
   def render(assigns) do
@@ -89,7 +84,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
         views={214}
         likes={@like_total}
         last_activity_at={List.last(@all_replies).at}
-        last_activity={ago(List.last(@all_replies).at, @now)}
+        last_activity={RegentFormat.relative_time(List.last(@all_replies).at, @now)}
       >
         <:context>
           <span>Asked on Pixel Garden</span><P.status>Question</P.status>
@@ -135,7 +130,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
       opening={@opening}
       author={@post.author}
       at={@post.at}
-      ago={ago(@post.at, @now)}
+      ago={RegentFormat.relative_time(@post.at, @now)}
       href={"##{@post.id}"}
       solution={@post.solution}
       house={@post.house}
@@ -193,26 +188,22 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
     length(post.likers) + post.others + if(MapSet.member?(liked, post.id), do: 1, else: 0)
   end
 
-  defp ago(at, now), do: RegentFormat.relative_time(at, now)
-
-  defp opening(now) do
-    %{
-      id: "post",
-      author: "Mara Quill",
-      at: DateTime.add(now, -26, :hour),
-      solution: false,
-      house: false,
-      likers: [%{name: "Ode Park", href: nil}, %{name: "Lin Tavers", href: nil}],
-      others: 3,
-      body: [
-        "I press Sign in, the window opens for a moment, then closes before my wallet asks me anything.",
-        "It happens in Safari on my phone. On my laptop it works."
-      ]
-    }
-  end
-
-  defp replies(now) do
+  # The sample thread: the question first, then its replies in order.
+  defp posts(now) do
     [
+      %{
+        id: "post",
+        author: "Mara Quill",
+        at: DateTime.add(now, -26, :hour),
+        solution: false,
+        house: false,
+        likers: [%{name: "Ode Park", href: nil}, %{name: "Lin Tavers", href: nil}],
+        others: 3,
+        body: [
+          "I press Sign in, the window opens for a moment, then closes before my wallet asks me anything.",
+          "It happens in Safari on my phone. On my laptop it works."
+        ]
+      },
       %{
         id: "r1",
         author: "Ode Park",
