@@ -3,13 +3,21 @@ defmodule AshTemplate.Notes.Note do
   A note one signed-in person wrote. Only its writer can read, change or delete
   it, and every change is published on the writer's own topic, so each of their
   open pages shows it at once.
+
+  When the site owner has set an address for saved notes, each save also
+  queues one job, in the same transaction, that posts the save there
+  (`AshTemplate.Notes.Webhook`). A save that rolls back queues nothing. The job
+  retries with backoff and records its last failure on the note.
   """
 
   use Ash.Resource,
     domain: AshTemplate.Notes,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub]
+    notifiers: [Ash.Notifier.PubSub],
+    extensions: [AshOban]
+
+  alias AshTemplate.Notes.Note.{DeliverWebhook, RecordWebhook, WebhookAddressSet}
 
   postgres do
     table "notes"
@@ -25,6 +33,13 @@ defmodule AshTemplate.Notes.Note do
     attribute :title, :string, allow_nil?: false, public?: true, constraints: [max_length: 120]
     attribute :body, :string, public?: true, constraints: [max_length: 10_000]
     timestamps(public?: true)
+
+    # Counts saves, so each one's job can tell whether the note was saved again since.
+    attribute :revision, :integer, allow_nil?: false, default: 1
+
+    # How the latest save's post to the site owner's address went; nil while no
+    # address is set.
+    attribute :webhook_state, :atom, constraints: [one_of: [:pending, :sent, :failed]]
   end
 
   relationships do
@@ -45,15 +60,53 @@ defmodule AshTemplate.Notes.Note do
       primary? true
       accept [:title, :body]
       change set_attribute(:human_account_id, actor(:human_account_id))
+      change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
+      change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
     end
 
     update :update do
       primary? true
       accept [:title, :body]
+      change atomic_update(:revision, expr(revision + 1))
+      change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
+      change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
+    end
+
+    update :send_webhook do
+      transaction? false
+      require_atomic? false
+      change DeliverWebhook
+      change {RecordWebhook, state: :sent}
+    end
+
+    update :webhook_failed do
+      change {RecordWebhook, state: :failed}
+    end
+  end
+
+  oban do
+    triggers do
+      # Every save queues its own job, so there is no sweep to find missed ones.
+      # A job whose note has since been sent, failed or deleted ends unrun.
+      trigger :send_webhook do
+        action :send_webhook
+        where expr(webhook_state == :pending)
+        extra_args &%{revision: &1.revision}
+        queue :outside_calls
+        max_attempts 5
+        on_error :webhook_failed
+        lock_for_update? false
+        scheduler_cron false
+        worker_module_name AshTemplate.Notes.Note.Workers.SendWebhook
+      end
     end
   end
 
   policies do
+    bypass AshOban.Checks.AshObanInteraction do
+      authorize_if always()
+    end
+
     policy action_type(:create) do
       authorize_if actor_attribute_equals(:role, :human)
     end
@@ -64,7 +117,8 @@ defmodule AshTemplate.Notes.Note do
   end
 
   # Delivered after the transaction commits, as %{event: "create" | "update" |
-  # "destroy", payload: note}, to `topic/1` of the note's writer.
+  # "destroy", payload: note}, to `topic/1` of the note's writer. A webhook job
+  # recording its outcome changes nothing the writer sees, so it is not published.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
@@ -73,9 +127,13 @@ defmodule AshTemplate.Notes.Note do
     transform & &1.data
 
     publish_all :create, [:human_account_id]
-    publish_all :update, [:human_account_id]
+    publish :update, [:human_account_id]
     publish_all :destroy, [:human_account_id]
   end
+
+  @doc "The save a webhook job was queued for, from the job running `changeset`."
+  def job_revision(%{context: %{ash_oban: %{job: %{args: %{"revision" => revision}}}}}),
+    do: revision
 
   @doc "The topic every change to `human_account_id`'s notes is published on."
   def topic(human_account_id), do: "notes:#{human_account_id}"

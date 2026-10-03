@@ -31,9 +31,9 @@ To do:
 
 ## 2. Background jobs with Oban
 
-Today: Oban is not a dependency. The rules and recipes exist
-(`skills/elixir-stack/references/oban.md`); Autolaunch runs Oban in production and is
-the donor.
+Today: Oban and AshOban run in the site's own schema, and saving a note posts the save
+to an address the site owner sets (`ASH_TEMPLATE_NOTES_WEBHOOK_URL`). The rules and
+recipes are in `skills/elixir-stack/references/oban.md`.
 
 To do:
 - [x] Add `oban` and `ash_oban`; one Oban instance in the site's own schema
@@ -41,16 +41,23 @@ To do:
       `pruner:` and `lifeline:`. Queues hear of new jobs through `Oban.Notifiers.PG`,
       since the serving connection's pooler drops LISTEN/NOTIFY. The template has no
       test environment, so there is no `testing: :manual` setting.
-- [ ] One AshOban trigger on the note resource (for example "summarise after save")
-      queued in the same transaction as the change, with `max_attempts`, an `on_error`
-      action that records the final failure, and `unique` per record.
-- [ ] One plain worker that calls another website with Req outside any transaction,
-      returns `:ok`, `{:error, _}`, `{:cancel, _}` or `{:snooze, _}`, and is safe to run twice.
+- [x] One AshOban trigger on the note resource (`send_webhook`): every create and edit
+      queues one job in its own transaction while the address is set, with
+      `max_attempts 5` and an `on_error` action (`webhook_failed`) that records the final
+      failure on the note. Each job carries the save's `revision`, so jobs are unique
+      per save rather than per note, and an outcome is recorded only while the note is
+      still at that save. No minute sweep: no save can lose its job.
+- [x] The call to another website (`AshTemplate.Notes.Webhook`) uses Req in a
+      `before_action` of a `transaction? false` action, so it runs outside any
+      transaction. A 2xx answer is `:ok`, 429 snoozes for Retry-After, a removed address
+      cancels, anything else fails and retries. The `webhook-id` header is the same on
+      every attempt at one save, so running twice is harmless at the receiving end.
 - [x] A slow-calls queue (`outside_calls`) separate from the default queue; job
       outcomes and run times in the Prometheus metrics.
 - Done when: saving a note queues exactly one job in the same transaction, a forced
   failure retries with backoff and then records the failure, and a rolled-back save
-  queues nothing.
+  queues nothing. (Met 3 Oct 2026 on `feat/oban`, local: also checked a 429 pause, an
+  older job finishing after a newer save, a deleted note, and no address set.)
 
 ## 3. Chat rooms
 

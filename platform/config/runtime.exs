@@ -19,6 +19,18 @@ if node_url = System.get_env("ASH_TEMPLATE_CHAIN_NODE_URL") do
   config :ash_template, :chain_nodes, Map.put(nodes, chain_id, node_url)
 end
 
+# Each saved note is posted to this address when it is set (AshTemplate.Notes.Webhook).
+if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
+  case URI.new(webhook_url) do
+    {:ok, %URI{scheme: scheme, host: host}}
+    when scheme in ["http", "https"] and host not in [nil, ""] ->
+      config :ash_template, :notes_webhook_url, webhook_url
+
+    _invalid ->
+      raise "ASH_TEMPLATE_NOTES_WEBHOOK_URL must be an http or https address"
+  end
+end
+
 # Production must say out loud whether the product surfaces are open, and any
 # value but "on" or "off" stops the boot.
 app_surfaces? =
