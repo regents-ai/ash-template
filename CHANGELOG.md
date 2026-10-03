@@ -584,3 +584,14 @@ Operations
   trigger rules the Patchbay build turned up: `on_error` runs only for update or
   destroy actions, outside calls run with `transaction?(false)`, retries log only
   their final failure, and a job cannot queue a second run of itself.
+
+## 2026-10-03 — Keyboard and screen reader pieces from KeyFleet
+
+- The app shell opens with a "Skip to content" link, hidden until the keyboard
+  reaches it, that jumps past the header and side menu to the page.
+- Moving between Overview, Notes and Account inside the app puts focus on the new
+  page's title, so a screen reader announces where the person has arrived.
+- Editing or deleting a note that the database couldn't answer for now says to try
+  again, instead of saying the note is gone.
+- The ash-testing skill's test recipes say to wait for a page's reads before a
+  browser spec leaves it when specs share one sandbox transaction.

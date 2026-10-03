@@ -65,7 +65,7 @@ defmodule AshTemplateWeb.NotesLive do
   def handle_event("edit", %{"id" => id}, socket) do
     case Notes.get_my_note(id, actor: socket.assigns.actor) do
       {:ok, %Note{} = note} -> {:noreply, edit_form(socket, note)}
-      _gone -> {:noreply, assign(socket, :notice, "That note is no longer here.")}
+      failure -> {:noreply, assign(socket, :notice, notice(failure, "loaded"))}
     end
   end
 
@@ -78,7 +78,7 @@ defmodule AshTemplateWeb.NotesLive do
          :ok <- Notes.destroy_note(note, actor: actor) do
       {:noreply, assign(socket, :notice, nil)}
     else
-      _gone -> {:noreply, assign(socket, :notice, "That note is no longer here.")}
+      failure -> {:noreply, assign(socket, :notice, notice(failure, "deleted"))}
     end
   end
 
@@ -227,6 +227,12 @@ defmodule AshTemplateWeb.NotesLive do
     socket = stream_delete(socket, :notes, note)
     if socket.assigns.editing == note.id, do: new_form(socket), else: socket
   end
+
+  # A note that is gone (deleted elsewhere, or never this person's) says so; a
+  # database that could not answer says to try again.
+  defp notice({:ok, nil}, _verb), do: "That note is no longer here."
+  defp notice({:error, %Ash.Error.Invalid{}}, _verb), do: "That note is no longer here."
+  defp notice({:error, _failure}, verb), do: "That note couldn’t be #{verb}. Try again."
 
   defp new_form(socket) do
     form = AshPhoenix.Form.for_create(Note, :create, actor: socket.assigns.actor, as: "note")

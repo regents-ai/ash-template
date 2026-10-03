@@ -64,6 +64,12 @@ Use the installed async helper to await completion. Reverse search completion or
 and ensure the old result does not overwrite the new query. Test a scope change when
 that is supported. Use the browser for hooks, focus, and reconnect behavior.
 
+When browser specs share one sandbox transaction, wait for each page's reads to land
+(assert on the loaded content or its `data-state`) before navigating away. Leaving a
+page mid-read kills the read's process inside the shared connection, which ends the
+transaction and fails every later spec with DBConnection "client exited", far from
+the cause.
+
 ## Negative assertion quality
 
 A denied request that crashes before reaching authorization is not a good security

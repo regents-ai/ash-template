@@ -24,6 +24,7 @@ defmodule AshTemplateWeb.Components.Shell do
       data-destination={@route_spec.destination}
       data-shell-instance={@shell_instance}
     >
+      <a class="shell-skip" href="#route-content">Skip to content</a>
       <header id="shell-header">
         <.link id="shell-brand" class="shell-brand" href="/">
           <span class="shell-brand__mark" aria-hidden="true">

@@ -12,6 +12,26 @@
   line-height: 1.55;
 }
 
+/* Hidden above the page until a keyboard reaches it. */
+.shell-skip {
+  position: absolute;
+  inset-block-start: 0.5rem;
+  inset-inline-start: 0.5rem;
+  z-index: 20;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  transform: translateY(-200%);
+}
+
+.shell-skip:focus {
+  transform: none;
+}
+
+#route-content h1:focus {
+  outline: none;
+}
+
 #shell-header,
 #shell-sidebar,
 #app-shell-scroller {
