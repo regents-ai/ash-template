@@ -7,6 +7,7 @@ defmodule AshTemplateWeb.Telemetry do
   `[:ash_template, :chain, :failure]` for each chain request that got no answer
   (`AshTemplate.ChainClient`), and `[:ash_template, :wallet, :failure]` for each
   press the browser reported as not sent or not confirmed (`wallet_failed/2`).
+  Background jobs report each run's outcome and time from Oban's own events.
   """
 
   import Telemetry.Metrics
@@ -55,6 +56,23 @@ defmodule AshTemplateWeb.Telemetry do
         event_name: [:ash_template, :chain, :failure],
         tags: [:method, :class, :chain_id, :scope],
         description: "Chain requests that got no answer"
+      ),
+      counter("ash_template.jobs.finished.total",
+        event_name: [:oban, :job, :stop],
+        tags: [:queue, :worker, :state],
+        description: "Job runs that ended done, cancelled or snoozed"
+      ),
+      counter("ash_template.jobs.failed.total",
+        event_name: [:oban, :job, :exception],
+        tags: [:queue, :worker, :state],
+        description: "Job runs that failed; state says whether the job will retry"
+      ),
+      distribution("ash_template.jobs.duration.seconds",
+        event_name: [:oban, :job, :stop],
+        measurement: :duration,
+        unit: {:native, :second},
+        tags: [:queue, :worker],
+        reporter_options: [buckets: [0.01, 0.05, 0.1, 0.5, 1, 5, 15, 60]]
       ),
       counter("health.wallet_send_failures.total",
         event_name: [:ash_template, :wallet, :failure],

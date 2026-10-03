@@ -22,6 +22,20 @@ config :ash_template, AshTemplate.Repo,
   pool_size: 1,
   migration_default_prefix: "ash_template_app"
 
+# Background jobs live in the site's own schema, beside its tables. The serving
+# connection goes through a pooler that drops LISTEN/NOTIFY, so queues hear about
+# new jobs through Erlang process groups instead. `outside_calls` keeps slow calls
+# to other websites from holding up the default queue. AshOban adds each trigger's
+# sweep to `cron`.
+config :ash_template, Oban,
+  repo: AshTemplate.Repo,
+  prefix: "ash_template_app",
+  notifier: Oban.Notifiers.PG,
+  queues: [default: 5, outside_calls: 3],
+  cron: [crontab: []],
+  pruner: [max_age: {7, :days}],
+  lifeline: [rescue_after: {10, :minutes}]
+
 config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 300
 
 # Rate limits key on the direct peer. Production turns on Fly's client header.

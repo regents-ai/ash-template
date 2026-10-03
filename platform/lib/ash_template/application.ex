@@ -11,6 +11,7 @@ defmodule AshTemplate.Application do
         AshTemplate.Accounts.RequestRateLimiter,
         AshTemplate.Repo,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
+        {Oban, oban_config()},
         AshTemplateWeb.Endpoint,
         metrics_child()
       ]
@@ -23,6 +24,14 @@ defmodule AshTemplate.Application do
   def config_change(changed, _new, removed) do
     AshTemplateWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  # AshOban adds a queue and a sweep for every trigger in the site's domains.
+  defp oban_config do
+    AshOban.config(
+      Application.fetch_env!(:ash_template, :ash_domains),
+      Application.fetch_env!(:ash_template, Oban)
+    )
   end
 
   # Metrics are served beside the site, never by a process that only runs a task.

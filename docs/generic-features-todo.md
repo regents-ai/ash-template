@@ -36,15 +36,18 @@ Today: Oban is not a dependency. The rules and recipes exist
 the donor.
 
 To do:
-- [ ] Add `oban` and `ash_oban`; one Oban instance in the site's own schema
+- [x] Add `oban` and `ash_oban`; one Oban instance in the site's own schema
       (`prefix: "ash_template_app"`), its migration with the same prefix, top-level
-      `pruner:` and `lifeline:`, `testing: :manual` in test config.
+      `pruner:` and `lifeline:`. Queues hear of new jobs through `Oban.Notifiers.PG`,
+      since the serving connection's pooler drops LISTEN/NOTIFY. The template has no
+      test environment, so there is no `testing: :manual` setting.
 - [ ] One AshOban trigger on the note resource (for example "summarise after save")
       queued in the same transaction as the change, with `max_attempts`, an `on_error`
       action that records the final failure, and `unique` per record.
 - [ ] One plain worker that calls another website with Req outside any transaction,
       returns `:ok`, `{:error, _}`, `{:cancel, _}` or `{:snooze, _}`, and is safe to run twice.
-- [ ] A slow-calls queue separate from the default queue; `:telemetry` on job outcomes.
+- [x] A slow-calls queue (`outside_calls`) separate from the default queue; job
+      outcomes and run times in the Prometheus metrics.
 - Done when: saving a note queues exactly one job in the same transaction, a forced
   failure retries with backoff and then records the failure, and a rolled-back save
   queues nothing.
