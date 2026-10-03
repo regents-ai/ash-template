@@ -1,6 +1,7 @@
 defmodule AshTemplateWeb.PublicDocuments do
   @moduledoc "Public documents only; never projects a signed-in page or account."
 
+  alias AshTemplate.Rooms.Room
   alias AshTemplateWeb.AgentSkills
 
   @directory Application.app_dir(:ash_template, "priv/public")
@@ -67,6 +68,10 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/showcase/onchain" =>
       {"Wallet lab", "Wallet buttons against a practice network on this machine."}
   }
+  @pages Map.merge(
+           @pages,
+           Map.new(Room.all(), &{"/rooms/#{&1.slug}", {"#{&1.name} room", &1.about}})
+         )
   # The public documents change only with a release, so the release time is when
   # each last changed.
   @released_at DateTime.utc_now() |> DateTime.truncate(:second)

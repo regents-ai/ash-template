@@ -2,6 +2,9 @@ defmodule AshTemplateWeb.RouteCatalog do
   @moduledoc "The route specs the shell renders, and the design handoff built from them."
 
   alias __MODULE__.RouteTarget
+  alias AshTemplate.Rooms.Room
+
+  @first_room "/rooms/#{hd(Room.all()).slug}"
 
   # The product pages share one shell: sidebar, header controls and background.
   @product %{
@@ -13,6 +16,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       targets: [
         %RouteTarget{route_id: :app, label: "Overview", path: "/app"},
         %RouteTarget{route_id: :notes, label: "Notes", path: "/notes"},
+        %RouteTarget{route_id: :room, label: "Rooms", path: @first_room},
         %RouteTarget{route_id: :account, label: "Account", path: "/account"}
       ]
     },
@@ -40,6 +44,12 @@ defmodule AshTemplateWeb.RouteCatalog do
       Map.merge(@product, %{route_id: :app, destination: "/app", page_display_label: "Overview"}),
     notes:
       Map.merge(@product, %{route_id: :notes, destination: "/notes", page_display_label: "Notes"}),
+    room:
+      Map.merge(@product, %{
+        route_id: :room,
+        destination: "/rooms/:room",
+        page_display_label: "Rooms"
+      }),
     account:
       Map.merge(@product, %{
         route_id: :account,
@@ -48,7 +58,11 @@ defmodule AshTemplateWeb.RouteCatalog do
       })
   ]
 
-  @doc "The spec of a live action. No route takes parameters, so `params` is not read."
+  @doc "The spec of a live action; a room's destination is the room its `params` name."
+  def fetch!(:room, %{"room" => room}), do: %{fetch!(:room) | destination: "/rooms/#{room}"}
+  def fetch!(action, _params), do: fetch!(action)
+
+  @doc "The spec of a live action as the catalog holds it."
   def fetch!(action), do: Keyword.fetch!(@routes, action)
 
   @doc "The catalog as `mix ash_template.route_handoff` writes it, with its sha256 digest."
@@ -67,11 +81,16 @@ defmodule AshTemplateWeb.RouteCatalog do
     Map.merge(spec, %{
       live_action: action,
       path_pattern: spec.destination,
-      parameter_schema: %{},
+      parameter_schema: parameter_schema(action),
       reserved_values: %{},
       sidebar_model: sidebar
     })
   end
+
+  defp parameter_schema(:room),
+    do: %{room: %{type: "string", enum: Enum.map(Room.slugs(), &Atom.to_string/1)}}
+
+  defp parameter_schema(_action), do: %{}
 
   defp handoff_target(%RouteTarget{} = target),
     do: %{type: "route", route_id: target.route_id, label: target.label, destination: target.path}

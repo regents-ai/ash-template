@@ -11,7 +11,7 @@ config :ash, default_string_length_count: :codepoints
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 config :ash_template,
-  ash_domains: [AshTemplate.Accounts, AshTemplate.Notes],
+  ash_domains: [AshTemplate.Accounts, AshTemplate.Notes, AshTemplate.Rooms],
   ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]
 
@@ -37,6 +37,9 @@ config :ash_template, Oban,
   lifeline: [rescue_after: {10, :minutes}]
 
 config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 300
+
+# How many messages one person may post across the rooms each window.
+config :ash_template, :room_post_rate_limit, limit: 10, window_seconds: 60
 
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false

@@ -61,22 +61,33 @@ To do:
 
 ## 3. Chat rooms
 
-Today: `/showcase/discussion` renders the shared `Regent.Discussion` component from
-sample data. Nothing is saved, nothing is live, and there is no presence. KeyFleet
-(`keyfleet/rooms`) and Patchbay (`patchbay/room.ex`) both have Ash room resources and
-are the donors.
+Today: `/rooms/general` and `/rooms/help` are live chat rooms. Anyone can read them,
+a signed-in person can post, edit and delete their own messages, and anyone signed in
+can mute another person so that person's messages stay out of every room they read.
 
 To do:
-- [ ] `Room` and `Message` resources on AshPostgres with policies (who may read, post,
-      edit their own message), an identity for room slugs, and paging by insertion time.
-- [ ] A LiveView room page: messages as a stream, a post form bound to the create
-      action, new messages pushed to every open page through `Phoenix.PubSub`, and
-      `Phoenix.Presence` for who is here.
-- [ ] Posting rate limit through the existing limiter, and moderation (hide a message)
-      as an Ash action with its own policy.
+- [x] `Message` (`room_messages`) and `Mute` (`room_mutes`) resources on AshPostgres
+      with policies: anyone reads, a signed-in person posts, only the author edits or
+      deletes, only the muter sees or lifts a mute. Rooms are a fixed list in
+      `AshTemplate.Rooms.Room` (decided 2026-10-03), so there is no room table or slug
+      identity; a message stores its room's slug, checked against that list. Messages
+      page newest first by keyset (`inserted_at`, `id`), indexed on `[room, inserted_at]`.
+- [x] A room page (`RoomsLive` inside `ShellLive`): messages as a stream through the
+      shared `Regent.Discussion` posts, a post form bound to the `post` action, every
+      post, edit and delete pushed to each open page of the room through the Ash
+      `pub_sub` notifier, and `Phoenix.Presence` (`AshTemplateWeb.Presence`) for who
+      is here, counting a person once however many tabs they have open.
+- [x] Posting limit through the existing limiter (`room_post_rate_limit`, 10 a minute),
+      counted when a post is saved. Moderation is per reader, decided 2026-10-03: only
+      an author removes their message, and any signed-in person mutes any other
+      (`mute` action, muted from one of their messages so no page handles another
+      account's id); the read leaves out muted authors and "Here now" hides them.
 - [ ] Agents can read a room and post (with sign-in) through the WebMCP tools in item 4.
 - Done when: two browsers in one room see each other's messages and presence at once,
   a signed-out visitor can read but not post, and reloads show the saved history.
+  (Met 3 Oct 2026 on `feat/rooms`, local, with two signed-in browsers and a visitor:
+  also checked live edits and deletes, mute hiding a person in every room and after a
+  reload, unmute, the posting limit, and a 404 for an unknown room.)
 
 ## 4. Agents: WebMCP and Jev decisions
 
@@ -132,6 +143,9 @@ counts it runs on every request.
 - 2026-10-02: notes are what people wrote, a protected category. If the template ever
   runs against the shared production database, `ash_template_app.notes` goes on
   `regent_guard.protected_tables` first.
+- 2026-10-03: rooms are a fixed list the site sets; only an author removes their own
+  message; any signed-in person can mute any other, hiding that person's messages in
+  every room for them; a name is the display name, or the short wallet address.
 
 ## Order
 

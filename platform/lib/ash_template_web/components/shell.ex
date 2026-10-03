@@ -190,7 +190,7 @@ defmodule AshTemplateWeb.Components.Shell do
     ~H"""
     <.link
       patch={@target.path}
-      aria-current={if @route_spec.destination == @target.path, do: "page"}
+      aria-current={if @route_spec.route_id == @target.route_id, do: "page"}
     >
       {@target.label}
     </.link>

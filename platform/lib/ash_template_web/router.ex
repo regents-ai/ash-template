@@ -188,6 +188,7 @@ defmodule AshTemplateWeb.Router do
       on_mount: [AshTemplateWeb.Live.LaunchGateHook, {Session, :load_human}] do
       live "/app", ShellLive, :app
       live "/notes", ShellLive, :notes
+      live "/rooms/:room", ShellLive, :room
       live "/account", ShellLive, :account
     end
   end

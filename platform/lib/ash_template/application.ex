@@ -11,6 +11,7 @@ defmodule AshTemplate.Application do
         AshTemplate.Accounts.RequestRateLimiter,
         AshTemplate.Repo,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
+        AshTemplateWeb.Presence,
         {Oban, oban_config()},
         AshTemplateWeb.Endpoint,
         metrics_child()

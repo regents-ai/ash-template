@@ -1,0 +1,118 @@
+@layer regents-product {
+/* Rooms stand on the Account page's panels and type and the shared discussion
+   posts; only the room tabs, the form, the side lists and the avatar are their own. */
+
+.rooms-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.rooms-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--color-fg-muted);
+  text-decoration: none;
+}
+
+.rooms-tabs a[aria-current="page"] {
+  color: var(--color-fg);
+  box-shadow: inset 0 -2px var(--palette-tangerine-tango);
+}
+
+.rooms-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .rooms-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  }
+}
+
+.rooms-conversation,
+.rooms-side {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.rooms-signed-out {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.rooms-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rooms-form textarea {
+  width: 100%;
+  font: inherit;
+  resize: vertical;
+}
+
+.rooms-form__actions,
+.rooms-mutes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rooms-mutes li {
+  justify-content: space-between;
+}
+
+/* The posts are the shared discussion posts without a thread around them, so
+   the rule between them is set here. */
+.rooms-messages {
+  --rg-discussion-rule: var(--rg-page-rule);
+}
+
+.rooms-avatar {
+  align-content: center;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font: 600 14px/1 var(--font-family-mono);
+}
+
+.rooms-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rooms-people,
+.rooms-mutes {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+/* The empty line shows only when it is the list's one child, and only once
+   a read has landed. */
+.rooms-empty {
+  display: none;
+  padding-block: 1rem;
+}
+
+.rooms-empty:only-child {
+  display: block;
+}
+
+.rooms-messages:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .rooms-empty {
+  display: none;
+}
+}
