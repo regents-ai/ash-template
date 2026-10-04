@@ -30,6 +30,13 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
+  # An agent's request, signed with its wallet; the signature is its only sign-in.
+  pipeline :agent_api do
+    plug :accepts, ["json"]
+    plug AshTemplateWeb.Plugs.LaunchGate
+    plug AshTemplateWeb.Plugs.AgentWallet
+  end
+
   # The browser tools a page offers its own agent: JSON on the page's own
   # session cookie, with the page's CSRF token on every write.
   pipeline :page_tools do
@@ -186,6 +193,11 @@ defmodule AshTemplateWeb.Router do
     delete "/notes/:id", AshTemplateWeb.NotesController, :delete
     get "/rooms", AshTemplateWeb.RoomsController, :index
     get "/rooms/:room/messages", AshTemplateWeb.RoomsController, :messages
+  end
+
+  scope "/api/v1" do
+    pipe_through :agent_api
+    post "/rooms/:room/messages", AshTemplateWeb.RoomsController, :post
   end
 
   scope "/tools", AshTemplateWeb do

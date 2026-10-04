@@ -19,6 +19,12 @@ if node_url = System.get_env("ASH_TEMPLATE_CHAIN_NODE_URL") do
   config :ash_template, :chain_nodes, Map.put(nodes, chain_id, node_url)
 end
 
+# Agents' signed requests are checked by this sign-in service instead, such as one
+# running on this machine.
+if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do
+  config :ash_template, :agent_sign_in, broker_url: broker_url
+end
+
 # Each saved note is posted to this address when it is set (AshTemplate.Notes.Webhook).
 if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
   case URI.new(webhook_url) do

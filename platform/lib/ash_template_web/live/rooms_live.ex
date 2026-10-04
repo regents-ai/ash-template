@@ -214,13 +214,13 @@ defmodule AshTemplateWeb.RoomsLive do
                   :for={{dom_id, message} <- @streams.messages}
                   id={dom_id}
                   class="rooms-message"
-                  data-author={message.human_account_id}
+                  data-author={author(message)}
                   data-at={DateTime.to_unix(message.inserted_at)}
                   phx-mounted={JS.ignore_attributes(["data-continued"])}
                 >
                   <span
                     class="rooms-avatar"
-                    data-tone={rem(message.human_account_id, 3)}
+                    data-tone={:erlang.phash2(author(message), 3)}
                     aria-hidden="true"
                   >
                     {initials(message.author_name)}
@@ -228,6 +228,7 @@ defmodule AshTemplateWeb.RoomsLive do
                   <div class="rooms-message__main">
                     <p class="rooms-message__meta">
                       <bdi class="rooms-message__author">{message.author_name}</bdi>
+                      <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
                       <time datetime={DateTime.to_iso8601(message.inserted_at)}>
                         {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
                       </time>
@@ -452,7 +453,7 @@ defmodule AshTemplateWeb.RoomsLive do
     |> assign(
       page: value.page,
       mutes: value.mutes,
-      muted: MapSet.new(value.mutes, & &1.muted_account_id)
+      muted: MapSet.new(value.mutes, &muted_author/1)
     )
     |> stream(:messages, Enum.reverse(value.page.results), reset: true)
   end
@@ -476,7 +477,7 @@ defmodule AshTemplateWeb.RoomsLive do
 
   defp apply_change(socket, event, message) do
     cond do
-      MapSet.member?(socket.assigns.muted, message.human_account_id) -> socket
+      MapSet.member?(socket.assigns.muted, author(message)) -> socket
       event == "post" -> stream_insert(socket, :messages, message, at: -1)
       event == "edit" -> stream_insert(socket, :messages, message, update_only: true)
     end
@@ -509,7 +510,14 @@ defmodule AshTemplateWeb.RoomsLive do
     if opening == body, do: nil, else: String.trim_trailing(opening) <> "…"
   end
 
-  defp here(people, muted), do: Enum.reject(people, &MapSet.member?(muted, &1.id))
+  # Who wrote a message, the same for every message by that person or agent.
+  defp author(%Message{agent_id: nil, human_account_id: id}), do: "person-#{id}"
+  defp author(%Message{agent_id: id}), do: "agent-#{id}"
+
+  defp muted_author(%Mute{muted_agent_id: nil, muted_account_id: id}), do: "person-#{id}"
+  defp muted_author(%Mute{muted_agent_id: id}), do: "agent-#{id}"
+
+  defp here(people, muted), do: Enum.reject(people, &MapSet.member?(muted, "person-#{&1.id}"))
 
   defp new_form(%{assigns: %{actor: nil}} = socket), do: assign(socket, form: nil, editing: nil)
 

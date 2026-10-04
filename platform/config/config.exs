@@ -14,7 +14,13 @@ config :ash, default_string_length_count: :codepoints
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 config :ash_template,
-  ash_domains: [AshTemplate.Chat, AshTemplate.Accounts, AshTemplate.Notes, AshTemplate.Rooms],
+  ash_domains: [
+    AshTemplate.Chat,
+    AshTemplate.Accounts,
+    AshTemplate.Agents,
+    AshTemplate.Notes,
+    AshTemplate.Rooms
+  ],
   ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]
 
@@ -41,7 +47,11 @@ config :ash_template, Oban,
 
 config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 300
 
-# How many messages one person may post across the rooms each window.
+# Agents sign in through the shared sign-in service, which checks every signed
+# request (AshTemplateWeb.Plugs.AgentWallet).
+config :ash_template, :agent_sign_in, broker_url: "https://siwa.regents.sh"
+
+# How many messages one person or agent may post across the rooms each window.
 config :ash_template, :room_post_rate_limit, limit: 10, window_seconds: 60
 
 # Rate limits key on the direct peer. Production turns on Fly's client header.

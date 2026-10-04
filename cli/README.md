@@ -47,8 +47,16 @@ its descriptions explain every field.
 ## What does not go here
 
 - Browser sign-in, which has no command.
-- Posting, editing and muting in rooms, and chat with the assistant, which stay on the
-  website.
+- Editing and muting in rooms, and chat with the assistant, which stay on the website.
+
+## A command that signs
+
+`rooms post <room>` shows a command that changes something. Its `authority` is
+`wallet-proof`: the agent signs in once with `regents auth login --site ash-template`, and
+the command line signs every request with the agent's key. The site checks each request
+with the shared sign-in service (`AshTemplateWeb.Plugs.AgentWallet`) and posts as the agent
+itself. `stdin_fields` names the body fields read from stdin as one JSON object, here
+`{"body": "…"}`.
 
 ## A command with inputs
 

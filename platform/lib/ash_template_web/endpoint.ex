@@ -65,7 +65,7 @@ defmodule AshTemplateWeb.Endpoint do
   # The largest body the site takes is a sign-in request of a few kilobytes;
   # anything past a megabyte is refused before it is read.
   plug AshTemplateWeb.Plugs.Parsers,
-    body_reader: {RegentIdentity.BodyReader, :read_body, []},
+    body_reader: {AshTemplateWeb.SignedBodyReader, :read_body, []},
     parsers: [:urlencoded, :json],
     pass: ["*/*"],
     length: 1_000_000,

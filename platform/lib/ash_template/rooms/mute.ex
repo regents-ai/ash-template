@@ -1,8 +1,9 @@
 defmodule AshTemplate.Rooms.Mute do
   @moduledoc """
-  One signed-in person muting another: the muted person's messages and their
-  place in "Here now" stay out of every room the muter reads. Only the muter
-  can see or lift a mute. A person is muted from one of their messages, so no
+  One signed-in person muting another person or an agent: the muted author's
+  messages, and a muted person's place in "Here now", stay out of every room the
+  muter reads. Only the muter
+  can see or lift a mute. An author is muted from one of their messages, so no
   page ever handles another account's id. Each change is published on the
   muter's own topic, so all their open pages update at once.
   """
@@ -19,12 +20,19 @@ defmodule AshTemplate.Rooms.Mute do
   postgres do
     table "room_mutes"
     repo(AshTemplate.Repo)
+
+    check_constraints do
+      check_constraint(:muted_account_id, "one_muted_author",
+        check: "(muted_account_id IS NULL) <> (muted_agent_id IS NULL)",
+        message: "mutes one author"
+      )
+    end
   end
 
   attributes do
     uuid_primary_key :id
 
-    # The muted person's name when they were last muted, for the muter's list.
+    # The muted author's name when they were last muted, for the muter's list.
     attribute :muted_name, :string, allow_nil?: false, public?: true
     create_timestamp :inserted_at, public?: true
   end
@@ -35,14 +43,18 @@ defmodule AshTemplate.Rooms.Mute do
       attribute_type :integer
     end
 
+    # The muted author: a person, or an agent.
     belongs_to :muted_account, HumanAccount do
-      allow_nil? false
       attribute_type :integer
     end
+
+    belongs_to :muted_agent, AshTemplate.Agents.Agent
   end
 
   identities do
-    identity :one_per_pair, [:muter_account_id, :muted_account_id]
+    # One mute per muter and author; the author column left empty counts as equal.
+    identity :one_per_pair, [:muter_account_id, :muted_account_id, :muted_agent_id],
+      nils_distinct?: false
   end
 
   actions do
@@ -52,7 +64,7 @@ defmodule AshTemplate.Rooms.Mute do
       prepare build(sort: [inserted_at: :desc])
     end
 
-    # Muting someone already muted keeps the one mute and refreshes their name.
+    # Muting an author already muted keeps the one mute and refreshes their name.
     create :mute do
       argument :message_id, :uuid, allow_nil?: false
       upsert? true

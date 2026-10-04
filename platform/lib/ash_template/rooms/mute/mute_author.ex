@@ -1,5 +1,5 @@
 defmodule AshTemplate.Rooms.Mute.MuteAuthor do
-  @moduledoc "Mutes the author of the message named by `message_id`, never the muter themselves."
+  @moduledoc "Mutes the author of the message named by `message_id`, a person or an agent, never the muter themselves."
 
   use Ash.Resource.Change
 
@@ -21,6 +21,7 @@ defmodule AshTemplate.Rooms.Mute.MuteAuthor do
       {:ok, %Message{} = message} ->
         Ash.Changeset.force_change_attributes(changeset,
           muted_account_id: message.human_account_id,
+          muted_agent_id: message.agent_id,
           muted_name: message.author_name
         )
 

@@ -1,8 +1,9 @@
 defmodule AshTemplateWeb.RoomsController do
   @moduledoc """
   The public rooms API: the rooms, and each room's messages newest first, a page
-  at a time. Anyone may read them, as anyone may read the rooms pages; posting
-  stays on the website.
+  at a time. Anyone may read them, as anyone may read the rooms pages. An agent
+  signed in with its wallet (`AshTemplateWeb.Plugs.AgentWallet`) may post, as
+  itself.
   """
 
   use AshTemplateWeb, :controller
@@ -20,6 +21,9 @@ defmodule AshTemplateWeb.RoomsController do
        "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
     "invalid_limit" =>
       {422, "limit must be a whole number from 1 to 50.", "Leave it out for pages of 50."},
+    "invalid_message" =>
+      {422, "The message could not be posted.",
+       "Send {\"body\": \"…\"} of 1 to 2,000 characters; after several quick posts, wait a minute."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
@@ -46,6 +50,20 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
+  def post(conn, %{"room" => slug}) do
+    with {:ok, room} <- Room.fetch(slug),
+         {:ok, message} <-
+           Rooms.post_message(%{"room" => room.slug, "body" => conn.body_params["body"]},
+             actor: conn.assigns.actor
+           ) do
+      conn |> put_status(:created) |> json(%{message: present(message)})
+    else
+      :error -> refuse(conn, "room_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_message")
+      {:error, _error} -> refuse(conn, "rooms_unavailable")
+    end
+  end
+
   defp limit(%{"limit" => text}) do
     case Integer.parse(text) do
       {limit, ""} when limit in 1..50 -> {:ok, limit}
@@ -68,11 +86,15 @@ defmodule AshTemplateWeb.RoomsController do
       id: message.id,
       room: message.room,
       author_name: message.author_name,
+      author_kind: author_kind(message),
       body: message.body,
       inserted_at: message.inserted_at,
       edited_at: message.edited_at
     }
   end
+
+  defp author_kind(%{agent_id: nil}), do: "person"
+  defp author_kind(_message), do: "agent"
 
   defp refuse(conn, code) do
     {status, message, hint} = Map.fetch!(@errors, code)

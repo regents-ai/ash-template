@@ -1,6 +1,6 @@
 defmodule AshTemplate.Rooms.Message.LimitPosts do
   @moduledoc """
-  Holds each person to a few posts a minute
+  Holds each person, and each agent, to a few posts a minute
   (`config :ash_template, :room_post_rate_limit`). A post counts when it is
   saved, not while it is typed, so checking a draft never uses the allowance.
   """
@@ -8,12 +8,13 @@ defmodule AshTemplate.Rooms.Message.LimitPosts do
   use Ash.Resource.Change
 
   alias AshTemplate.Accounts.RequestRateLimiter
+  alias AshTemplate.Actors.{Agent, Human}
 
   @impl true
   def change(changeset, _opts, %{actor: actor}) do
     Ash.Changeset.before_action(changeset, fn changeset ->
       config = Application.fetch_env!(:ash_template, :room_post_rate_limit)
-      key = {:room_post, actor.human_account_id}
+      key = {:room_post, poster(actor)}
 
       case RequestRateLimiter.admit(key, config[:limit], config[:window_seconds]) do
         {:ok, _budget} ->
@@ -27,4 +28,7 @@ defmodule AshTemplate.Rooms.Message.LimitPosts do
       end
     end)
   end
+
+  defp poster(%Human{human_account_id: id}), do: {:human, id}
+  defp poster(%Agent{agent_id: id}), do: {:agent, id}
 end

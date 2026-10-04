@@ -1,8 +1,9 @@
 defmodule AshTemplate.Rooms.Message do
   @moduledoc """
   One message in one of the site's rooms (`AshTemplate.Rooms.Room`). Anyone can
-  read a room; a signed-in person can post, a few times a minute at most, and
-  only a message's author can change or delete it. A signed-in reader never
+  read a room; a signed-in person, or an agent signed in with its wallet, can
+  post, a few times a minute at most. Its author is that person or that agent.
+  Only a person can change or delete their own message. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once.
@@ -14,7 +15,7 @@ defmodule AshTemplate.Rooms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
-  alias AshTemplate.Rooms.Message.{LeaveOutMuted, LimitPosts, SquashBlankLines}
+  alias AshTemplate.Rooms.Message.{LeaveOutMuted, LimitPosts, SetAuthor, SquashBlankLines}
   alias AshTemplate.Rooms.{Mute, Room}
 
   postgres do
@@ -23,6 +24,13 @@ defmodule AshTemplate.Rooms.Message do
 
     custom_indexes do
       index([:room, :inserted_at])
+    end
+
+    check_constraints do
+      check_constraint(:human_account_id, "one_author",
+        check: "(human_account_id IS NULL) <> (agent_id IS NULL)",
+        message: "has one author"
+      )
     end
   end
 
@@ -33,21 +41,30 @@ defmodule AshTemplate.Rooms.Message do
 
     # The author's display name, or their short wallet address, when they posted.
     # Other people's accounts are private, so the name is kept with the message.
+    # An agent's is its short wallet address.
     attribute :author_name, :string, allow_nil?: false, public?: true
     attribute :edited_at, :utc_datetime_usec, public?: true
     create_timestamp :inserted_at, public?: true
   end
 
   relationships do
+    # The author: a person, or an agent.
     belongs_to :human_account, AshTemplate.Accounts.HumanAccount do
-      allow_nil? false
       attribute_type :integer
+      public? true
     end
+
+    belongs_to :agent, AshTemplate.Agents.Agent, public?: true
 
     # Every mute of this message's author, so a read can leave out the reader's.
     has_many :author_mutes, Mute do
       source_attribute :human_account_id
       destination_attribute :muted_account_id
+    end
+
+    has_many :agent_mutes, Mute do
+      source_attribute :agent_id
+      destination_attribute :muted_agent_id
     end
   end
 
@@ -65,8 +82,7 @@ defmodule AshTemplate.Rooms.Message do
 
     create :post do
       accept [:room, :body]
-      change set_attribute(:human_account_id, actor(:human_account_id))
-      change set_attribute(:author_name, actor(:name))
+      change SetAuthor
       change SquashBlankLines
       change LimitPosts
     end
@@ -88,9 +104,11 @@ defmodule AshTemplate.Rooms.Message do
 
     policy action(:post) do
       authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:update, :destroy]) do
+      forbid_unless actor_attribute_equals(:role, :human)
       authorize_if expr(human_account_id == ^actor(:human_account_id))
     end
   end

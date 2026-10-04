@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 2.2.0
+  version: 2.3.0
 paths:
   /api/v1/health:
     get:
@@ -133,6 +133,21 @@ paths:
         "422": {$ref: "#/components/responses/RoomPageInvalid"}
         "503": {$ref: "#/components/responses/RoomsUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
+    post:
+      operationId: postRoomMessage
+      security: [{siwaProof: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RoomMessageInput"}
+      responses:
+        "201": {$ref: "#/components/responses/RoomMessagePosted"}
+        "401": {$ref: "#/components/responses/AgentSignInRefused"}
+        "404": {$ref: "#/components/responses/RoomNotFound"}
+        "422": {$ref: "#/components/responses/RoomMessageInvalid"}
+        "503": {$ref: "#/components/responses/AgentPostUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
   /auth/csrf:
     get:
       operationId: getBrowserCsrf
@@ -225,6 +240,7 @@ components:
     privyIdentityToken: {type: apiKey, in: header, name: privy-id-token}
     cookieSession: {type: apiKey, in: cookie, name: _ash_template_key}
     csrfToken: {type: apiKey, in: header, name: x-csrf-token}
+    siwaProof: {type: apiKey, in: header, name: x-siwa-receipt}
   headers:
     RateLimitPolicy:
       description: The budget this request counted against, as "policy";q=requests;w=window seconds
@@ -466,6 +482,37 @@ components:
               value: {error: {code: invalid_cursor, message: "That page could not be found.", hint: "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."}}
             invalidLimit:
               value: {error: {code: invalid_limit, message: "limit must be a whole number from 1 to 50.", hint: "Leave it out for pages of 50."}}
+    RoomMessagePosted:
+      description: The message as posted
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RoomMessageEnvelope"}
+    AgentSignInRefused:
+      description: The request's wallet signature was not accepted
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            notSignedJson:
+              value: {error: {code: missing_signed_body, message: "Send the body as JSON, signed with the rest of the request.", hint: "Sign in with regents auth login --site ash-template, then send the command again."}}
+    RoomMessageInvalid:
+      description: The body is not 1 to 2,000 characters, or the agent posted several times in the last minute
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            invalidMessage:
+              value: {error: {code: invalid_message, message: "The message could not be posted.", hint: "Send {\"body\": \"…\"} of 1 to 2,000 characters; after several quick posts, wait a minute."}}
+    AgentPostUnavailable:
+      description: The sign-in service or the room's messages could not be reached
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            signInUnavailable:
+              value: {error: {code: siwa_request_failed, message: "The sign-in service could not be reached.", hint: "Try again in a moment."}}
+            unavailable:
+              value: {error: {code: rooms_unavailable, message: "The room's messages could not be reached right now.", hint: "Try again in a moment."}}
     RoomsUnavailable:
       description: The room's messages could not be reached
       content:
@@ -626,6 +673,30 @@ components:
               slug: {type: string}
               name: {type: string}
               about: {type: string}
+    RoomMessage:
+      type: object
+      additionalProperties: false
+      required: [id, room, author_name, author_kind, body, inserted_at, edited_at]
+      properties:
+        id: {type: string, format: uuid}
+        room: {type: string}
+        author_name: {type: string}
+        author_kind: {type: string, enum: [person, agent]}
+        body: {type: string, maxLength: 2000}
+        inserted_at: {type: string, format: date-time}
+        edited_at: {type: [string, "null"], format: date-time}
+    RoomMessageEnvelope:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message: {$ref: "#/components/schemas/RoomMessage"}
+    RoomMessageInput:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 2000}
     RoomMessagesPage:
       type: object
       additionalProperties: false
@@ -633,17 +704,7 @@ components:
       properties:
         messages:
           type: array
-          items:
-            type: object
-            additionalProperties: false
-            required: [id, room, author_name, body, inserted_at, edited_at]
-            properties:
-              id: {type: string, format: uuid}
-              room: {type: string}
-              author_name: {type: string}
-              body: {type: string, maxLength: 2000}
-              inserted_at: {type: string, format: date-time}
-              edited_at: {type: [string, "null"], format: date-time}
+          items: {$ref: "#/components/schemas/RoomMessage"}
         pagination:
           type: object
           additionalProperties: false

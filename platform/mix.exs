@@ -5,6 +5,9 @@ defmodule AshTemplate.MixProject do
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
   @elixir_utils_ref "55080723b20d57297855a23ee6e3e50ded77da9a"
+  # Agent sign-in hands the sign-in service's own refusal words on, which is newer
+  # than the commit the other packages are pinned to.
+  @siwa_ref "f30b2f283ba03f0d0aa0adbcba5cee6c5a7de1cc"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "6bc26409835f76f99f91cf6e48bdebd18f1fe8eb"
   @regents "https://github.com/regents-ai/regents.git"
@@ -52,6 +55,7 @@ defmodule AshTemplate.MixProject do
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
       {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
       {:regent_chain, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain"},
+      {:siwa, git: @elixir_utils, ref: @siwa_ref, sparse: "siwa/siwa-elixir/apps/siwa"},
       {:simple_sat, "~> 0.1"},
       {:sourceror, "~> 1.12", only: :dev, runtime: false},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
@@ -59,7 +63,7 @@ defmodule AshTemplate.MixProject do
       {:telemetry_metrics_prometheus_core, "~> 1.2"},
       {:sentry, "~> 13.0"},
       {:jason, "~> 1.2"},
-      {:req, "== 0.6.2"},
+      {:req, "== 0.7.4"},
       {:bandit, "~> 1.12.1"},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
