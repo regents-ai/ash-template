@@ -42,7 +42,7 @@ defmodule AshTemplateWeb.NotesController do
   def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: NotesJSON.note(&2)}))
 
   def create(conn, _params) do
-    case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
+    case Notes.create_note(conn.body_params, actor: conn.assigns.actor, load: [:label_decision]) do
       {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
       {:error, error} -> refuse_change(conn, error)
     end
@@ -50,7 +50,10 @@ defmodule AshTemplateWeb.NotesController do
 
   def update(conn, %{"id" => id}) do
     with_note(conn, id, fn conn, note ->
-      case Notes.update_note(note, conn.body_params, actor: conn.assigns.actor) do
+      case Notes.update_note(note, conn.body_params,
+             actor: conn.assigns.actor,
+             load: [:label_decision]
+           ) do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, error} -> refuse_change(conn, error)
       end

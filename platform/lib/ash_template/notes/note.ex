@@ -8,6 +8,9 @@ defmodule AshTemplate.Notes.Note do
   queues one job, in the same transaction, that posts the save there
   (`AshTemplate.Notes.Webhook`). A save that rolls back queues nothing. The job
   retries with backoff and records its last failure on the note.
+
+  When the server can ask Jev, each save also asks which label fits the note
+  (`AshTemplate.Notes.Decision`); `label_decision` is the latest one.
   """
 
   use Ash.Resource,
@@ -17,7 +20,13 @@ defmodule AshTemplate.Notes.Note do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
 
-  alias AshTemplate.Notes.Note.{DeliverWebhook, RecordWebhook, WebhookAddressSet}
+  alias AshTemplate.Notes.Note.{
+    AskForLabel,
+    AskingJev,
+    DeliverWebhook,
+    RecordWebhook,
+    WebhookAddressSet
+  }
 
   postgres do
     table "notes"
@@ -47,6 +56,12 @@ defmodule AshTemplate.Notes.Note do
       allow_nil? false
       attribute_type :integer
     end
+
+    has_one :label_decision, AshTemplate.Notes.Decision do
+      public? true
+      from_many? true
+      sort inserted_at: :desc
+    end
   end
 
   actions do
@@ -74,6 +89,7 @@ defmodule AshTemplate.Notes.Note do
       change set_attribute(:human_account_id, actor(:human_account_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
+      change AskForLabel, where: [AskingJev]
     end
 
     update :update do
@@ -82,6 +98,7 @@ defmodule AshTemplate.Notes.Note do
       change atomic_update(:revision, expr(revision + 1))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
+      change AskForLabel, where: [AskingJev]
     end
 
     update :send_webhook do

@@ -52,6 +52,10 @@ config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 
 # request (AshTemplateWeb.Plugs.AgentWallet).
 config :ash_template, :agent_sign_in, broker_url: "https://siwa.regents.sh"
 
+# Jev picks a label for each saved note while the server has an OpenRouter key
+# (AshTemplate.Notes.Labels); the whole site asks at most daily_questions a day.
+config :ash_template, :note_labels, model: "~typesafe/jev-latest", daily_questions: 500
+
 # How many messages one person or agent may post across the rooms each window.
 config :ash_template, :room_post_rate_limit, limit: 10, window_seconds: 60
 

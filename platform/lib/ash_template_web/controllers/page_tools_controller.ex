@@ -61,7 +61,7 @@ defmodule AshTemplateWeb.PageToolsController do
 
   def create_note(conn, _params) do
     signed_in(conn, fn conn, actor ->
-      case Notes.create_note(conn.body_params, actor: actor) do
+      case Notes.create_note(conn.body_params, actor: actor, load: [:label_decision]) do
         {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
         {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
         {:error, _error} -> refuse(conn, "unavailable")

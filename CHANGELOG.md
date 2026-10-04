@@ -703,3 +703,17 @@ Operations
 - The background-jobs count comes from Oban's telemetry events (`AshTemplate.JobsRunning`);
   the version shows the deployed image's commit.
 - Notes and chat lists moved into the sidebar; rooms' tab row and side column are gone.
+
+## 2026-10-04 — Note labels
+
+- Each saved note is given a label (idea, task, question, reference or other),
+  chosen by Jev in the background after the save. The notes page shows "Choosing a
+  label…", then the label, live on every open page, and the writer can say once
+  whether it fits. Editing a note asks again. The whole site asks at most 500
+  questions a day; past that, notes save without a label.
+- Each question is stored with the model, tokens and cost, retried up to three
+  times when the request does not get through, and counted on the metrics listener.
+- The notes API and the notes browser tools return each note's `label`;
+  `/openapi.json` moves to 1.4.0 and the YAML contract to 2.4.0.
+- Needs the `regent_jev` package from elixir-utils (`feat/jev`, `f9bc17c`) and
+  `OPENROUTER_API_KEY`; without the key, notes save without a label.

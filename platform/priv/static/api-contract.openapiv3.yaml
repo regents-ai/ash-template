@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 2.3.0
+  version: 2.4.0
 paths:
   /api/v1/health:
     get:
@@ -595,13 +595,28 @@ components:
     Note:
       type: object
       additionalProperties: false
-      required: [id, title, body, inserted_at, updated_at]
+      required: [id, title, body, inserted_at, updated_at, label]
       properties:
         id: {type: string, format: uuid}
         title: {type: string, minLength: 1, maxLength: 120}
         body: {type: [string, "null"], maxLength: 10000}
         inserted_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        label:
+          description: The label chosen for the note's latest save, or null when none was asked for (the site has no labelling set up, or has used today's questions).
+          oneOf:
+            - {type: "null"}
+            - {$ref: "#/components/schemas/NoteLabel"}
+    NoteLabel:
+      type: object
+      additionalProperties: false
+      required: [state, choice, confidence, rating]
+      description: Which label fits the note, chosen automatically after each save.
+      properties:
+        state: {type: string, enum: [pending, answered, failed], description: "pending while the label is being chosen; failed when no label could be chosen this time."}
+        choice: {type: [string, "null"], enum: [idea, task, question, reference, other, null], description: The chosen label once answered.}
+        confidence: {type: [number, "null"], minimum: 0, maximum: 1, description: "How sure the choice is, from 0 to 1, when known."}
+        rating: {type: [string, "null"], enum: [fits, does_not_fit, null], description: "Whether the writer said the label fits, once rated on the notes page."}
     NoteInput:
       type: object
       additionalProperties: false

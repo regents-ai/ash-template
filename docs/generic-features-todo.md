@@ -82,7 +82,8 @@ To do:
       an author removes their message, and any signed-in person mutes any other
       (`mute` action, muted from one of their messages so no page handles another
       account's id); the read leaves out muted authors and "Here now" hides them.
-- [ ] Agents can read a room and post (with sign-in) through the WebMCP tools in item 4.
+- [x] Agents can read a room and post (with sign-in) through the WebMCP tools in item 4
+      (`room_read`, `room_post`, built 4 Oct 2026 on `feat/agents`).
 - Done when: two browsers in one room see each other's messages and presence at once,
   a signed-out visitor can read but not post, and reloads show the saved history.
   (Met 3 Oct 2026 on `feat/rooms`, local, with two signed-in browsers and a visitor:
@@ -91,8 +92,12 @@ To do:
 
 ## 4. Agents: WebMCP and Jev decisions
 
-Today: WebMCP ships two read-only tools (`about`, `docs`) from `priv/tool_manifest.json`
-through `assets/js/public_tools.ts`. The template makes no model calls. OpenAI's own
+Today (on `feat/agents`, local): WebMCP ships seven tools from `priv/tool_manifest.json`
+through `assets/js/public_tools.ts`: `about`, `docs`, `notes_list`, `notes_get`,
+`notes_create`, `room_read` and `room_post`. Each saved note is given a label by Jev
+(idea, task, question, reference or other), shown on the notes page, in the API and
+through the tools, and the writer can say once whether it fits. Before this the
+template made no model calls. OpenAI's own
 decisions API is not public yet, so model decisions use Jev, the classifier Patchbay
 already runs: OpenRouter's decisions endpoint (`/api/alpha/decisions`, model
 `~typesafe/jev-latest`), which answers each question with one of the keys it was given
@@ -100,31 +105,44 @@ and a confidence. Patchbay's version (`repos/patchbay/platform/lib/patchbay/foru
 `assist/known_fix_pick.ex`, `assist/judge.ex`) is the donor.
 
 To do:
-- [ ] WebMCP tools that act for the signed-in person (create a note, post in a room),
-      declared in the manifest with `readOnlyHint: false`, going through the same Ash
-      actions and policies as the page, and refusing clearly when signed out.
-- [ ] A Jev client in elixir-utils (decided below): one function that sends `{model, state, questions}` and returns
-      `{:ok, %{choice, confidence, usage}}` only when the choice is one of the offered keys,
-      otherwise `{:error, :unexpected_answer}`. Req through `regent_http` (telemetry and
-      secret redaction), endpoint, model and `OPENROUTER_API_KEY` read once in
-      `config/runtime.exs`, a short receive timeout, no Req retries (Oban retries).
-- [ ] One decision example on the note resource ("which label fits this note?"), held in
-      a `Decision` resource: subject, question, offered keys, choice, confidence, model,
-      tokens, cost, state, inserted_at. The decision row is created in the same
+- [x] WebMCP tools that act for the signed-in person (create a note, post in a room),
+      going through the same Ash actions and policies as the page, and refusing clearly
+      when signed out. They call `/tools/...` routes (`PageToolsController`) on the
+      page's own session cookie and CSRF token; writes carry no `readOnlyHint` (the
+      draft has no `readOnlyHint: false`), `room_post` is marked `consequentialHint`,
+      and a write whose answer never arrived reports `outcome_unknown` with how to check.
+- [x] A Jev client in elixir-utils (decided below): `regent_jev`, on branch `feat/jev`
+      at `f9bc17c`, not pushed yet. `RegentJev.decide(state, questions, model:)` returns
+      `{:ok, %Decision{answers, model, usage, cost_usd}}` only when every answer is one
+      of the offered keys, otherwise `{:error, %Error{reason: {:unexpected_answer, name}}}`
+      with the billed usage. Req through `regent_http`, endpoint and
+      `OPENROUTER_API_KEY` read once in `config/runtime.exs`, a short receive timeout,
+      no Req retries (Oban retries).
+- [x] One decision example on the note resource ("which label fits this note?"), held in
+      a `Decision` resource (`note_decisions`): note, question, offered keys, choice,
+      confidence, model, tokens, cost, state, failure, inserted_at. The decision row is created in the same
       transaction as the change that asks for it, and an AshOban trigger runs the Jev call
       outside any transaction (`max_attempts: 3`, an `on_error` action that records the
       failure, unique per decision). The page hears the answer through PubSub.
-- [ ] Spending limits as Ash rules, not plain functions: a daily model-call budget counted
+- [x] Spending limits as Ash rules, not plain functions (`UnderDailyBudget`, 500
+      questions a day by default, under an advisory lock so two saves cannot both take
+      the last one; past it a note saves with no label): a daily model-call budget counted
       from decision rows (every Jev question counts, not every run), checked by a policy
       on the create action, with the counting index in the migration.
-- [ ] Feedback: one "worked / didn't" report per decision, stored on the row; a second
-      report is refused.
-- [ ] `:telemetry` on every Jev call (duration, outcome, tokens, cost) feeding the
-      existing Prometheus reporter.
+- [x] Feedback: one "fits / doesn't fit" report per decision, stored on the row; a second
+      report is refused inside the `UPDATE` (`RateOnce`, an atomic validation).
+- [x] `:telemetry` on every Jev call (duration, outcome, tokens, cost) feeding the
+      existing Prometheus reporter (`ash_template_jev_*`; cost is a histogram, since a
+      Prometheus sum adds whole numbers only).
 - Done when: saving a note queues exactly one Jev job, a browser agent can read the
   chosen label through WebMCP while signed in, the decision row shows the model, tokens
   and cost, a forced failure retries and then records the failure, and a rolled-back
   save queues nothing.
+  (Met 4 Oct 2026 on `feat/agents`, local, against a stand-in for OpenRouter: one save
+  gave one decision and one job; the answer recorded model, 480/70 tokens and its cost;
+  a server error was asked three times and then recorded as failed; a rolled-back save
+  left no job and no decision; a signed-in browser agent created a note and read its
+  label through `notes_get`; the label appeared live in two tabs. No paid call made.)
 
 What this improves on Patchbay (also worth taking back there): Patchbay runs Jev from a
 hand-built in-memory queue (`assist/runner.ex`) that loses queued paid runs on a deploy
@@ -146,6 +164,10 @@ counts it runs on every request.
 - 2026-10-03: rooms are a fixed list the site sets; only an author removes their own
   message; any signed-in person can mute any other, hiding that person's messages in
   every room for them; a name is the display name, or the short wallet address.
+- 2026-10-04 (defaults chosen while building, for Sean to confirm): labels are idea,
+  task, question, reference and other; the site asks Jev at most 500 questions a day;
+  the model is `~typesafe/jev-latest`; the tools are `notes_list`, `notes_get`,
+  `notes_create`, `room_read` and `room_post`, behind `/tools`.
 
 ## Order
 

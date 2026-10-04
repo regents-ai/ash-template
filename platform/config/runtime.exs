@@ -46,6 +46,23 @@ if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
   end
 end
 
+# Jev labels saved notes while this key is set (AshTemplate.Notes.Labels).
+if openrouter_key = System.get_env("OPENROUTER_API_KEY") do
+  config :regent_jev, api_key: openrouter_key
+end
+
+# A local stand-in for OpenRouter's decisions endpoint, so development makes no paid call.
+if jev_endpoint = System.get_env("OPENROUTER_DECISIONS_URL") do
+  case URI.new(jev_endpoint) do
+    {:ok, %URI{scheme: scheme, host: host}}
+    when scheme in ["http", "https"] and host not in [nil, ""] ->
+      config :regent_jev, endpoint: jev_endpoint
+
+    _invalid ->
+      raise "OPENROUTER_DECISIONS_URL must be an http or https address"
+  end
+end
+
 # Production must say out loud whether the product surfaces are open, and any
 # value but "on" or "off" stops the boot.
 app_surfaces? =

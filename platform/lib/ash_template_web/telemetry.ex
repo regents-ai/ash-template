@@ -8,6 +8,8 @@ defmodule AshTemplateWeb.Telemetry do
   (`AshTemplate.ChainClient`), and `[:ash_template, :wallet, :failure]` for each
   press the browser reported as not sent or not confirmed (`wallet_failed/2`).
   Background jobs report each run's outcome and time from Oban's own events.
+  Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
+  by outcome, with its tokens, what OpenRouter charged and how long it took.
   """
 
   import Telemetry.Metrics
@@ -73,6 +75,36 @@ defmodule AshTemplateWeb.Telemetry do
         unit: {:native, :second},
         tags: [:queue, :worker],
         reporter_options: [buckets: [0.01, 0.05, 0.1, 0.5, 1, 5, 15, 60]]
+      ),
+      counter("ash_template.jev.questions.total",
+        event_name: [:regent_jev, :decide],
+        tags: [:outcome],
+        description: "Questions asked of Jev, by outcome"
+      ),
+      sum("ash_template.jev.input_tokens.total",
+        event_name: [:regent_jev, :decide],
+        measurement: :input_tokens,
+        description: "Input tokens Jev was billed for"
+      ),
+      sum("ash_template.jev.output_tokens.total",
+        event_name: [:regent_jev, :decide],
+        measurement: :output_tokens,
+        description: "Output tokens Jev was billed for"
+      ),
+      # A Prometheus sum adds whole numbers only, so the dollars are a histogram;
+      # its `_sum` series is the running total.
+      distribution("ash_template.jev.cost.usd",
+        event_name: [:regent_jev, :decide],
+        measurement: :cost_usd,
+        description: "US dollars OpenRouter charged per Jev question",
+        reporter_options: [buckets: [0.00001, 0.0001, 0.001, 0.01, 0.1]]
+      ),
+      distribution("ash_template.jev.duration.seconds",
+        event_name: [:regent_jev, :decide],
+        measurement: :duration,
+        unit: {:native, :second},
+        tags: [:outcome],
+        reporter_options: [buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30]]
       ),
       counter("health.wallet_send_failures.total",
         event_name: [:ash_template, :wallet, :failure],

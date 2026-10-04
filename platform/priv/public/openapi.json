@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, and posting to a room as an agent signed in with its wallet. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -1985,7 +1985,8 @@
           "title",
           "body",
           "inserted_at",
-          "updated_at"
+          "updated_at",
+          "label"
         ],
         "properties": {
           "id": {
@@ -2011,6 +2012,74 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "label": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NoteLabel"
+              }
+            ],
+            "description": "The label chosen for the note's latest save, or null when none was asked for (the site has no labelling set up, or has used today's questions)."
+          }
+        }
+      },
+      "NoteLabel": {
+        "type": "object",
+        "required": [
+          "state",
+          "choice",
+          "confidence",
+          "rating"
+        ],
+        "description": "Which label fits the note, chosen automatically after each save.",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "answered",
+              "failed"
+            ],
+            "description": "pending while the label is being chosen; failed when no label could be chosen this time."
+          },
+          "choice": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "idea",
+              "task",
+              "question",
+              "reference",
+              "other",
+              null
+            ],
+            "description": "The chosen label once answered."
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1,
+            "description": "How sure the choice is, from 0 to 1, when known."
+          },
+          "rating": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "fits",
+              "does_not_fit",
+              null
+            ],
+            "description": "Whether the writer said the label fits, once rated on the notes page."
           }
         }
       },

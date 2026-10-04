@@ -64,7 +64,9 @@ curl --fail-with-body -X POST '{{origin}}/api/v1/notes' \
   -d '{"title": "Groceries", "body": "Eggs, bread"}'
 ```
 
-A note has an `id`, a `title` (1 to 120 characters), a `body` (up to 10,000 characters, or `null`), `inserted_at` and `updated_at`. One note comes back as `{"note": …}` and the list as `{"notes": […]}`. A note needs a title; a change sends either field or both, and any other field is refused with 422 and `invalid_note`. An id that names none of your notes answers 404 with `note_not_found`, also when the note belongs to someone else. Deleting answers 204 with no body. Notes responses are never cached.
+A note has an `id`, a `title` (1 to 120 characters), a `body` (up to 10,000 characters, or `null`), `inserted_at`, `updated_at` and a `label`. One note comes back as `{"note": …}` and the list as `{"notes": […]}`. A note needs a title; a change sends either field or both, and any other field is refused with 422 and `invalid_note`. An id that names none of your notes answers 404 with `note_not_found`, also when the note belongs to someone else. Deleting answers 204 with no body. Notes responses are never cached.
+
+Each save is given a label, chosen automatically from `idea`, `task`, `question`, `reference` and `other`. `label` is `{"state", "choice", "confidence", "rating"}`: `state` is `pending` while the label is being chosen (usually a few seconds), then `answered` with `choice` set, or `failed` when no label could be chosen this time. `confidence` runs from 0 to 1 when known. `rating` is `fits` or `does_not_fit` once you rate the label on the notes page. `label` is `null` when none was asked for: the site has no labelling set up, or has used its questions for the day. The note itself still saves.
 
 ## Read the rooms
 

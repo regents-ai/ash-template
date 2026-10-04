@@ -8,6 +8,8 @@ defmodule AshTemplate.MixProject do
   # Agent sign-in hands the sign-in service's own refusal words on, which is newer
   # than the commit the other packages are pinned to.
   @siwa_ref "f30b2f283ba03f0d0aa0adbcba5cee6c5a7de1cc"
+  # The Jev client is newer than the commit regent_identity pins regent_privy to.
+  @jev_ref "f9bc17c1d5b86b354bde6245cafcd7a9bbea8e76"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "6bc26409835f76f99f91cf6e48bdebd18f1fe8eb"
   @regents "https://github.com/regents-ai/regents.git"
@@ -56,6 +58,8 @@ defmodule AshTemplate.MixProject do
       {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
       {:regent_chain, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain"},
       {:siwa, git: @elixir_utils, ref: @siwa_ref, sparse: "siwa/siwa-elixir/apps/siwa"},
+      {:regent_jev, git: @elixir_utils, ref: @jev_ref, sparse: "jev"},
+      {:regent_http, git: @elixir_utils, ref: @jev_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
       {:sourceror, "~> 1.12", only: :dev, runtime: false},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},

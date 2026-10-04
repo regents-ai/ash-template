@@ -1,21 +1,23 @@
 defmodule AshTemplateWeb.NotesLive do
   @moduledoc """
   The signed-in person's notes: a form bound to the note's own Ash actions and a
-  list every open page of theirs keeps current. Their titles also fill the
-  shell's sidebar, where choosing one opens it in the form.
+  list every open page of theirs keeps current, each note with the label Jev
+  chose for it. Their titles also fill the shell's sidebar, where choosing one
+  opens it in the form.
 
   Saving never touches the list directly. Each change reaches the list the same
-  way, whether it came from this page, another tab or the API: the note's PubSub
-  notifier publishes it after the transaction commits, the shell holds the
-  subscription, and hands it on here as `send_update(NotesLive, id: "notes",
-  change: {event, note})`.
+  way, whether it came from this page, another tab or the API: the note's and
+  its label decision's PubSub notifiers publish it after the transaction
+  commits, the shell holds the subscription, and hands it on here as
+  `send_update(NotesLive, id: "notes", change: {event, note_or_decision})`.
+  Any change but a delete reads the note again with its latest label.
   """
 
   use AshTemplateWeb, :live_component
 
   alias AshTemplate.Actors.Human
   alias AshTemplate.Notes
-  alias AshTemplate.Notes.Note
+  alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -73,6 +75,21 @@ defmodule AshTemplateWeb.NotesLive do
 
   def handle_event("cancel", _params, socket), do: {:noreply, new_form(socket)}
 
+  def handle_event("rate", %{"id" => id, "report" => report}, socket) do
+    actor = socket.assigns.actor
+
+    with {:ok, %Decision{} = decision} <- Notes.get_label_decision(id, actor: actor),
+         {:ok, _decision} <- Notes.rate_label(decision, report, actor: actor) do
+      {:noreply, assign(socket, :notice, nil)}
+    else
+      {:error, %Ash.Error.Invalid{}} ->
+        {:noreply, assign(socket, :notice, "That label has already been rated.")}
+
+      failure ->
+        {:noreply, assign(socket, :notice, notice(failure, "rated"))}
+    end
+  end
+
   def handle_event("delete", %{"id" => id}, socket) do
     actor = socket.assigns.actor
 
@@ -106,6 +123,7 @@ defmodule AshTemplateWeb.NotesLive do
         <h1 tabindex="-1">Notes</h1>
         <p class="account-lede">
           Notes only you can read. Every page you have open shows each change straight away.
+          Each note you save is given a label, chosen automatically.
         </p>
       </header>
 
@@ -185,6 +203,7 @@ defmodule AshTemplateWeb.NotesLive do
             <li :for={{dom_id, note} <- @streams.notes} id={dom_id} class="notes-item">
               <h3>{note.title}</h3>
               <p :if={note.body}>{note.body}</p>
+              <.label decision={note.label_decision} target={@myself} />
               <div class="notes-item__actions">
                 <Primitives.button
                   type="button"
@@ -214,6 +233,49 @@ defmodule AshTemplateWeb.NotesLive do
     """
   end
 
+  attr :decision, Decision, default: nil
+  attr :target, :any, required: true
+
+  defp label(%{decision: nil} = assigns), do: ~H""
+
+  defp label(%{decision: %Decision{state: :pending}} = assigns) do
+    ~H"""
+    <p class="notes-label rg-muted" data-label-state="pending">Choosing a label…</p>
+    """
+  end
+
+  defp label(%{decision: %Decision{state: :failed}} = assigns) do
+    ~H"""
+    <p class="notes-label rg-muted" data-label-state="failed">No label this time.</p>
+    """
+  end
+
+  defp label(%{decision: %Decision{state: :answered}} = assigns) do
+    ~H"""
+    <div class="notes-label" data-label-state="answered">
+      <Primitives.status tone="info">{String.capitalize(@decision.choice)}</Primitives.status>
+      <span :if={@decision.report == :fits} class="rg-muted">You said this label fits.</span>
+      <span :if={@decision.report == :does_not_fit} class="rg-muted">
+        You said this label doesn’t fit.
+      </span>
+      <span :if={is_nil(@decision.report)} class="notes-label__rate">
+        <span class="rg-muted">Does it fit?</span>
+        <Primitives.button
+          :for={{report, text} <- [fits: "Fits", does_not_fit: "Doesn’t fit"]}
+          type="button"
+          variant="quiet"
+          phx-click="rate"
+          phx-value-id={@decision.id}
+          phx-value-report={report}
+          phx-target={@target}
+        >
+          {text}
+        </Primitives.button>
+      </span>
+    </div>
+    """
+  end
+
   defp load(%{assigns: %{actor: nil}} = socket) do
     socket
     |> Read.clear(:notes)
@@ -239,21 +301,29 @@ defmodule AshTemplateWeb.NotesLive do
 
   defp show_notes(socket), do: socket
 
-  defp apply_change(socket, "create", note) do
-    socket
-    |> stream_insert(:notes, note, at: 0)
-    |> stream_insert(:note_links, note, at: 0)
-  end
-
-  defp apply_change(socket, "update", note) do
-    socket
-    |> stream_insert(:notes, note)
-    |> stream_insert(:note_links, note)
-  end
-
-  defp apply_change(socket, "destroy", note) do
+  defp apply_change(socket, "destroy", %Note{} = note) do
     socket = socket |> stream_delete(:notes, note) |> stream_delete(:note_links, note)
     if socket.assigns.editing == note.id, do: new_form(socket), else: socket
+  end
+
+  defp apply_change(socket, _event, %Note{id: id}), do: refresh(socket, id)
+  defp apply_change(socket, _event, %Decision{note_id: id}), do: refresh(socket, id)
+
+  # A note already on the page is updated where it stands; a new one goes on
+  # top. One deleted since the change leaves the page as it is.
+  defp refresh(socket, id) do
+    case Notes.get_my_note(id, actor: socket.assigns.actor) do
+      {:ok, %Note{} = note} ->
+        socket
+        |> stream_insert(:notes, note, at: 0)
+        |> stream_insert(:note_links, note, at: 0)
+
+      {:ok, nil} ->
+        socket
+
+      {:error, _failure} ->
+        assign(socket, :notice, "A change couldn’t be shown. Refresh the page to see it.")
+    end
   end
 
   # A note that is gone (deleted elsewhere, or never this person's) says so; a

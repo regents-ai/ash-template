@@ -51,6 +51,16 @@
   overflow-wrap: anywhere;
 }
 
+/* A note's label, and the two buttons that say whether it fits. */
+.notes-label,
+.notes-label__rate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
 /* The empty line shows only when it is the list's one child, and only once
    a read has landed. */
 .notes-empty {
