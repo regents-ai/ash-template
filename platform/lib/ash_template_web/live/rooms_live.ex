@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.RoomsLive do
   @moduledoc """
-  One chat room: its messages newest first, a post form bound to the message's
-  own Ash actions, who is here now, and the people the reader has muted.
+  One chat room: its messages oldest at the top and newest at the bottom above
+  the message box, a form bound to the message's own Ash actions, who is here
+  now, and the people the reader has muted.
 
   Posting never touches the list directly. Every post, edit and delete reaches
   each open page of the room the same way: the message's PubSub notifier
@@ -17,7 +18,10 @@ defmodule AshTemplateWeb.RoomsLive do
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Mute, Room}
   alias AshTemplateWeb.Read
-  alias Regent.{Discussion, Primitives}
+  alias Regent.Primitives
+
+  @preview_lines 6
+  @preview_characters 280
 
   @gone "That message is no longer here."
 
@@ -89,7 +93,7 @@ defmodule AshTemplateWeb.RoomsLive do
   def handle_event("edit", %{"id" => id}, socket) do
     case Rooms.get_message(id, actor: socket.assigns.actor) do
       {:ok, %Message{} = message} ->
-        {:noreply, edit_form(socket, message)}
+        {:noreply, socket |> edit_form(message) |> push_event("room:edit", %{})}
 
       failure ->
         {:noreply, notice(socket, failure, @gone, "That message couldn’t be loaded. Try again.")}
@@ -162,8 +166,91 @@ defmodule AshTemplateWeb.RoomsLive do
       </header>
 
       <div class="rooms-layout">
-        <section class="account-panel rooms-conversation" aria-labelledby="room-messages-title">
-          <h2 id="room-messages-title">Messages</h2>
+        <section
+          id="room-conversation"
+          class="account-panel rooms-conversation"
+          aria-labelledby="room-messages-title"
+          phx-hook="RoomConversation"
+        >
+          <h2 id="room-messages-title" class="visually-hidden">Messages in {@room.name}</h2>
+
+          <div
+            class="rooms-scroller"
+            role="log"
+            aria-labelledby="room-messages-title"
+            tabindex="0"
+            data-room-scroller
+          >
+            <div class="rooms-scroller__inner">
+              <Primitives.button
+                :if={@page && @page.more?}
+                type="button"
+                variant="secondary"
+                class="rooms-older"
+                phx-click="older"
+                phx-target={@myself}
+                phx-disable-with="Loading…"
+              >
+                Show older messages
+              </Primitives.button>
+              <Primitives.notice :if={@older.state in [:error, :stale]} tone="error">
+                Older messages couldn’t be loaded. Try again.
+              </Primitives.notice>
+              <p :if={@messages.state == :loading} class="rg-muted rooms-loading">
+                Loading messages…
+              </p>
+
+              <ol
+                id="room-messages"
+                class="rooms-messages"
+                data-state={@messages.state}
+                data-room-messages
+                phx-update="stream"
+              >
+                <li id="room-messages-empty" class="rooms-empty rg-muted">
+                  No messages yet. Say hello.
+                </li>
+                <li
+                  :for={{dom_id, message} <- @streams.messages}
+                  id={dom_id}
+                  class="rooms-message"
+                  data-author={message.human_account_id}
+                  data-at={DateTime.to_unix(message.inserted_at)}
+                  phx-mounted={JS.ignore_attributes(["data-continued"])}
+                >
+                  <span
+                    class="rooms-avatar"
+                    data-tone={rem(message.human_account_id, 3)}
+                    aria-hidden="true"
+                  >
+                    {initials(message.author_name)}
+                  </span>
+                  <div class="rooms-message__main">
+                    <p class="rooms-message__meta">
+                      <bdi class="rooms-message__author">{message.author_name}</bdi>
+                      <time datetime={DateTime.to_iso8601(message.inserted_at)}>
+                        {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
+                      </time>
+                    </p>
+                    <.message_body id={dom_id} body={message.body} />
+                    <p :if={message.edited_at} class="rooms-message__edited">Edited</p>
+                  </div>
+                  <.message_menu
+                    :if={@actor}
+                    id={dom_id}
+                    message={message}
+                    actor={@actor}
+                    myself={@myself}
+                  />
+                </li>
+              </ol>
+            </div>
+          </div>
+
+          <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
+          <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
+            This room couldn’t be loaded. Refresh the page to try again.
+          </Primitives.notice>
 
           <div :if={is_nil(@actor)} class="rooms-signed-out">
             <p>Anyone can read along. Sign in to post.</p>
@@ -174,7 +261,7 @@ defmodule AshTemplateWeb.RoomsLive do
             :if={@actor}
             for={@form}
             id="room-message-form"
-            class="rooms-form"
+            class="rooms-composer"
             phx-change="validate"
             phx-submit="save"
             phx-target={@myself}
@@ -182,23 +269,22 @@ defmodule AshTemplateWeb.RoomsLive do
             <Primitives.field
               :let={field}
               id="room-message-body"
-              label={if @editing, do: "Edit your message", else: "Message"}
+              label={if @editing, do: "Edit your message", else: "Message #{@room.name}"}
               errors={errors(@form[:body])}
             >
               <textarea
                 id={field.id}
                 name={@form[:body].name}
-                rows="3"
+                rows="2"
                 maxlength="2000"
-                phx-debounce="300"
                 aria-invalid={field.aria_invalid}
-                aria-describedby={field.described_by}
+                aria-describedby={"room-message-hint #{field.described_by}"}
               >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
             </Primitives.field>
-            <div class="rooms-form__actions">
-              <Primitives.button type="submit" phx-disable-with="Posting…">
-                {if @editing, do: "Save changes", else: "Post"}
-              </Primitives.button>
+            <div class="rooms-composer__actions">
+              <p id="room-message-hint" class="rooms-composer__hint rg-muted">
+                Enter sends. Shift+Enter starts a new line.
+              </p>
               <Primitives.button
                 :if={@editing}
                 type="button"
@@ -208,61 +294,11 @@ defmodule AshTemplateWeb.RoomsLive do
               >
                 Cancel
               </Primitives.button>
+              <Primitives.button type="submit" phx-disable-with="Sending…">
+                {if @editing, do: "Save", else: "Send"}
+              </Primitives.button>
             </div>
           </.form>
-
-          <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
-          <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
-            This room couldn’t be loaded. Refresh the page to try again.
-          </Primitives.notice>
-          <p :if={@messages.state == :loading} class="rg-muted">Loading messages…</p>
-
-          <ol
-            id="room-messages"
-            class="rg-sheet rg-discussion__replies rooms-messages"
-            role="list"
-            data-state={@messages.state}
-            phx-update="stream"
-          >
-            <li id="room-messages-empty" class="rooms-empty rg-muted">
-              No messages yet. Say hello.
-            </li>
-            <Discussion.post
-              :for={{dom_id, message} <- @streams.messages}
-              id={dom_id}
-              author={message.author_name}
-              at={message.inserted_at}
-              ago={RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
-              href={"##{dom_id}"}
-            >
-              <:avatar>
-                <span class="rooms-avatar" aria-hidden="true">
-                  {initials(message.author_name)}
-                </span>
-              </:avatar>
-              <:label :if={message.edited_at}>
-                <Discussion.label>edited</Discussion.label>
-              </:label>
-              <p class="rooms-body">{message.body}</p>
-              <:actions :if={@actor}>
-                <.message_actions message={message} actor={@actor} myself={@myself} />
-              </:actions>
-            </Discussion.post>
-          </ol>
-
-          <Primitives.button
-            :if={@page && @page.more?}
-            type="button"
-            variant="secondary"
-            phx-click="older"
-            phx-target={@myself}
-            phx-disable-with="Loading…"
-          >
-            Show older messages
-          </Primitives.button>
-          <Primitives.notice :if={@older.state in [:error, :stale]} tone="error">
-            Older messages couldn’t be loaded. Try again.
-          </Primitives.notice>
         </section>
 
         <aside class="rooms-side">
@@ -302,49 +338,88 @@ defmodule AshTemplateWeb.RoomsLive do
     """
   end
 
+  attr :id, :string, required: true
+  attr :body, :string, required: true
+
+  # A long message shows its opening lines and a "Show more" that opens the
+  # rest in place, in the browser alone.
+  defp message_body(assigns) do
+    assigns = assign(assigns, :preview, preview(assigns.body))
+
+    ~H"""
+    <p :if={is_nil(@preview)} class="rooms-body">{@body}</p>
+    <div :if={@preview} class="rooms-long">
+      <p id={"#{@id}-preview"} class="rooms-body">{@preview}</p>
+      <p id={"#{@id}-full"} class="rooms-body" tabindex="-1" hidden>{@body}</p>
+      <button
+        type="button"
+        class="rooms-more"
+        phx-click={
+          JS.set_attribute({"hidden", ""}, to: "##{@id}-preview")
+          |> JS.remove_attribute("hidden", to: "##{@id}-full")
+          |> JS.focus(to: "##{@id}-full")
+          |> JS.set_attribute({"hidden", ""})
+        }
+      >
+        Show more
+      </button>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
   attr :message, Message, required: true
   attr :actor, Human, required: true
   attr :myself, :any, required: true
 
-  defp message_actions(
-         %{message: %{human_account_id: author}, actor: %{human_account_id: author}} = assigns
-       ) do
+  # The author's own message offers Edit and Delete; anyone else's, Mute.
+  defp message_menu(assigns) do
+    assigns =
+      assign(assigns, :own?, assigns.message.human_account_id == assigns.actor.human_account_id)
+
     ~H"""
-    <Primitives.button
-      type="button"
-      variant="quiet"
-      phx-click="edit"
-      phx-value-id={@message.id}
-      phx-target={@myself}
-    >
-      Edit
-    </Primitives.button>
-    <Primitives.button
-      type="button"
-      variant="quiet"
-      phx-click="delete"
-      phx-value-id={@message.id}
-      phx-target={@myself}
-      data-confirm="Delete this message?"
-    >
-      Delete
-    </Primitives.button>
+    <details class="rooms-menu">
+      <summary>
+        <span aria-hidden="true">…</span>
+        <span class="visually-hidden">Options for this message</span>
+      </summary>
+      <div class="rooms-menu__items" role="group" aria-label="Message options">
+        <button
+          :if={@own?}
+          type="button"
+          class="rooms-menu__item"
+          phx-click={choose("edit", @message.id, @myself)}
+        >
+          Edit
+        </button>
+        <button
+          :if={@own?}
+          type="button"
+          class="rooms-menu__item"
+          phx-click={choose("delete", @message.id, @myself)}
+          data-confirm="Delete this message?"
+        >
+          Delete
+        </button>
+        <button
+          :if={!@own?}
+          type="button"
+          class="rooms-menu__item"
+          phx-click={choose("mute", @message.id, @myself)}
+          data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
+        >
+          Mute <bdi>{@message.author_name}</bdi>
+        </button>
+      </div>
+    </details>
     """
   end
 
-  defp message_actions(assigns) do
-    ~H"""
-    <Primitives.button
-      type="button"
-      variant="quiet"
-      phx-click="mute"
-      phx-value-id={@message.id}
-      phx-target={@myself}
-      data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
-    >
-      Mute
-    </Primitives.button>
-    """
+  # Runs the choice and closes the menu it was chosen from.
+  defp choose(event, id, target) do
+    event
+    |> JS.push(value: %{id: id}, target: target)
+    |> JS.remove_attribute("open", to: {:closest, "details"})
   end
 
   defp owner(%{assigns: %{room: room, actor: actor}}),
@@ -379,15 +454,17 @@ defmodule AshTemplateWeb.RoomsLive do
       mutes: value.mutes,
       muted: MapSet.new(value.mutes, & &1.muted_account_id)
     )
-    |> stream(:messages, value.page.results, reset: true)
+    |> stream(:messages, Enum.reverse(value.page.results), reset: true)
   end
 
   defp show_messages(socket), do: socket
 
+  # A page of older messages comes newest first, so putting each one at the top
+  # in turn leaves them in order above the ones already shown.
   defp show_older(%{assigns: %{older: %Read{state: :ready, value: page}}} = socket) do
     socket
     |> assign(:page, page)
-    |> stream(:messages, page.results, at: -1)
+    |> stream(:messages, page.results, at: 0)
   end
 
   defp show_older(socket), do: socket
@@ -400,7 +477,7 @@ defmodule AshTemplateWeb.RoomsLive do
   defp apply_change(socket, event, message) do
     cond do
       MapSet.member?(socket.assigns.muted, message.human_account_id) -> socket
-      event == "post" -> stream_insert(socket, :messages, message, at: 0)
+      event == "post" -> stream_insert(socket, :messages, message, at: -1)
       event == "edit" -> stream_insert(socket, :messages, message, update_only: true)
     end
   end
@@ -414,8 +491,23 @@ defmodule AshTemplateWeb.RoomsLive do
 
   defp notice(socket, {:error, _failure}, _gone, retry), do: assign(socket, :notice, retry)
 
-  # A short wallet address starts with "0x" for everyone, so its letters start after.
-  defp initials(name), do: name |> String.replace_prefix("0x", "") |> RegentFormat.monogram("?")
+  # A short wallet address starts with "0x" for everyone, so its picture shows
+  # the two characters after it.
+  defp initials("0x" <> rest), do: rest |> String.slice(0, 2) |> String.upcase()
+  defp initials(name), do: RegentFormat.monogram(name, "?")
+
+  # The opening lines of a long message, cut at a word and ending in "…"; nil
+  # when the whole message is short enough to show.
+  defp preview(body) do
+    opening = body |> String.split("\n") |> Enum.take(@preview_lines) |> Enum.join("\n")
+
+    opening =
+      if String.length(opening) > @preview_characters,
+        do: opening |> String.slice(0, @preview_characters) |> String.replace(~r/\s+\S*\z/u, ""),
+        else: opening
+
+    if opening == body, do: nil, else: String.trim_trailing(opening) <> "…"
+  end
 
   defp here(people, muted), do: Enum.reject(people, &MapSet.member?(muted, &1.id))
 

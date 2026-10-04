@@ -14,7 +14,7 @@ defmodule AshTemplate.Rooms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
-  alias AshTemplate.Rooms.Message.{LeaveOutMuted, LimitPosts}
+  alias AshTemplate.Rooms.Message.{LeaveOutMuted, LimitPosts, SquashBlankLines}
   alias AshTemplate.Rooms.{Mute, Room}
 
   postgres do
@@ -67,11 +67,16 @@ defmodule AshTemplate.Rooms.Message do
       accept [:room, :body]
       change set_attribute(:human_account_id, actor(:human_account_id))
       change set_attribute(:author_name, actor(:name))
+      change SquashBlankLines
       change LimitPosts
     end
 
+    # Squashing the empty lines reads the new text, so an edit is not a single
+    # atomic statement; only the author ever edits a message.
     update :edit do
       accept [:body]
+      require_atomic? false
+      change SquashBlankLines
       change atomic_update(:edited_at, expr(now()))
     end
   end

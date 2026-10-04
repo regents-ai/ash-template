@@ -606,3 +606,18 @@ Operations
   "Here now" lists the signed-in people who have the room open.
 - Editing, deleting, muting or unmuting that the database couldn't answer says to
   try again, instead of saying the message is gone.
+
+## 2026-10-04 — Rooms read like a chat app
+
+- Newest message at the bottom, where the room opens; the message box sits under
+  the conversation. Enter sends, Shift+Enter starts a new line (on a touch screen
+  Enter starts a new line and the Send button sends).
+- Messages one person sends within five minutes sit under one name and picture;
+  each person has a coloured picture with their initials.
+- Edit, Delete and Mute moved into a small "…" menu on each message, which closes
+  on Escape or a press anywhere else. Choosing Edit puts the cursor at the end of
+  the message in the box.
+- Messages over six lines or 280 characters show the opening and a "Show more"
+  button that opens the rest in place.
+- Saving a message or an edit keeps at most one empty line between lines.
+- Added `docs/app-shell-structure-plan.md`, the plan for the app's panel layout.

@@ -1,6 +1,6 @@
 @layer regents-product {
-/* Rooms stand on the Account page's panels and type and the shared discussion
-   posts; only the room tabs, the form, the side lists and the avatar are their own. */
+/* Rooms stand on the Account page's panels and type; the conversation, its
+   messages, the message box and the side lists are their own. */
 
 .rooms-tabs {
   display: flex;
@@ -42,6 +42,187 @@
   min-width: 0;
 }
 
+/* The conversation scrolls on its own and rests at its newest message: the
+   reversed column keeps the view at the bottom as messages arrive, while the
+   messages themselves stay oldest first for reading and keyboard order. */
+.rooms-scroller {
+  display: flex;
+  flex-direction: column-reverse;
+  block-size: clamp(20rem, 60dvh, 42rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.rooms-scroller__inner {
+  display: grid;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+}
+
+.rooms-older {
+  justify-self: center;
+}
+
+.rooms-loading {
+  margin: 0;
+  text-align: center;
+}
+
+.rooms-messages {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rooms-message {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: 0 0.75rem;
+  align-items: start;
+  padding: 0.6rem 0.5rem 0.2rem;
+}
+
+.rooms-message[data-continued] {
+  padding-block-start: 0.1rem;
+}
+
+@media (hover: hover) {
+  .rooms-message:hover {
+    background: color-mix(in oklch, var(--color-fg) 4%, transparent);
+  }
+}
+
+.rooms-avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  background: var(--palette-platinum);
+  color: var(--palette-charcoal);
+  font: 600 0.8rem/1 var(--font-family-mono);
+}
+
+.rooms-avatar[data-tone="0"] {
+  background: var(--palette-tangerine-tango);
+}
+
+.rooms-avatar[data-tone="1"] {
+  background: var(--palette-powder-blue);
+}
+
+/* A message that continues its author's last one keeps the picture's column
+   but not the picture, and its name and time are read but not shown. */
+.rooms-message[data-continued] .rooms-avatar {
+  visibility: hidden;
+  block-size: 0;
+}
+
+.rooms-message[data-continued] .rooms-message__meta {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rooms-message__main {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.rooms-message__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  margin: 0;
+}
+
+.rooms-message__author {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rooms-message__meta time,
+.rooms-message__edited {
+  color: var(--color-fg-muted);
+  font-size: 0.8rem;
+}
+
+.rooms-message__edited {
+  margin: 0;
+}
+
+.rooms-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rooms-long {
+  display: grid;
+  justify-items: start;
+  gap: 0.15rem;
+}
+
+.rooms-body[hidden] {
+  display: none;
+}
+
+.rooms-menu {
+  position: relative;
+}
+
+/* A message's menu button shows when the message is pointed at or reached by
+   keyboard, and always on a touch screen. */
+@media (hover: hover) {
+  .rooms-menu:not([open]) {
+    opacity: 0;
+  }
+
+  .rooms-message:is(:hover, :focus-within) .rooms-menu {
+    opacity: 1;
+  }
+}
+
+.rooms-menu summary {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  list-style: none;
+  cursor: pointer;
+  color: var(--color-fg-muted);
+  font-weight: 600;
+}
+
+.rooms-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.rooms-menu summary:hover,
+.rooms-menu[open] summary {
+  color: var(--color-fg);
+  background: color-mix(in oklch, var(--color-fg) 8%, transparent);
+}
+
+.rooms-menu__items {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-end: 0;
+  z-index: 5;
+  display: grid;
+  min-inline-size: 10rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
 .rooms-signed-out {
   display: flex;
   flex-wrap: wrap;
@@ -49,18 +230,23 @@
   gap: 0.75rem 1rem;
 }
 
-.rooms-form {
-  display: grid;
-  gap: 0.75rem;
+.rooms-signed-out p {
+  margin: 0;
 }
 
-.rooms-form textarea {
+.rooms-composer {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rooms-composer textarea {
   width: 100%;
+  max-block-size: 12rem;
   font: inherit;
   resize: vertical;
 }
 
-.rooms-form__actions,
+.rooms-composer__actions,
 .rooms-mutes li {
   display: flex;
   flex-wrap: wrap;
@@ -68,27 +254,23 @@
   gap: 0.5rem;
 }
 
+.rooms-composer__actions {
+  justify-content: flex-end;
+}
+
+.rooms-composer__hint {
+  margin: 0 auto 0 0;
+  font-size: 0.8rem;
+}
+
+@media (pointer: coarse) {
+  .rooms-composer__hint {
+    display: none;
+  }
+}
+
 .rooms-mutes li {
   justify-content: space-between;
-}
-
-/* The posts are the shared discussion posts without a thread around them, so
-   the rule between them is set here. */
-.rooms-messages {
-  --rg-discussion-rule: var(--rg-page-rule);
-}
-
-.rooms-avatar {
-  align-content: center;
-  text-align: center;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  font: 600 14px/1 var(--font-family-mono);
-}
-
-.rooms-body {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 .rooms-people,
@@ -105,7 +287,7 @@
    a read has landed. */
 .rooms-empty {
   display: none;
-  padding-block: 1rem;
+  padding: 1rem 0.5rem;
 }
 
 .rooms-empty:only-child {
@@ -115,4 +297,41 @@
 .rooms-messages:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .rooms-empty {
   display: none;
 }
+}
+
+/* The menu's choices and "Show more" are plain buttons. The site's base button
+   rule is outside any layer, so these sit outside the product layer too. */
+.rooms-menu .rooms-menu__item {
+  min-block-size: 2.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 0;
+  border-block-end: 1px solid var(--color-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+.rooms-menu .rooms-menu__item:last-child {
+  border-block-end: 0;
+}
+
+@media (hover: hover) {
+  .rooms-menu .rooms-menu__item:hover {
+    background: color-mix(in oklch, var(--color-fg) 8%, transparent);
+  }
+}
+
+.rooms-long .rooms-more {
+  min-block-size: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ash-accent-warm);
+  font: inherit;
+  font-weight: 600;
+}
+
+.rooms-long .rooms-more[hidden] {
+  display: none;
 }

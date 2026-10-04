@@ -27,6 +27,7 @@ import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
+import {RoomConversation} from "./hooks/room_conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
 import {installCopyButtons} from "./copy_buttons"
@@ -304,6 +305,7 @@ const hooks = {
   MotionRefusal,
   MotionTabs,
   OnchainSteps,
+  RoomConversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
   VerifiedConnections,
 }
