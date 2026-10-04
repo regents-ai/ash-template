@@ -7,7 +7,7 @@ defmodule AshTemplate.Capabilities do
   @manifest_path Application.app_dir(:ash_template, "priv/tool_manifest.json")
   @external_resource @manifest_path
   @manifest @manifest_path |> File.read!() |> Jason.decode!()
-  @needs %{"none" => "Nothing"}
+  @needs %{"none" => "Nothing", "session" => "Sign-in on the page"}
 
   @spec manifest() :: map()
   def manifest, do: @manifest
@@ -20,7 +20,7 @@ defmodule AshTemplate.Capabilities do
   @spec markdown_table() :: String.t()
   def markdown_table do
     """
-    | Tool | Reads | Needs | What it does |
+    | Tool | Route | Needs | What it does |
     | --- | --- | --- | --- |
     #{Enum.map_join(tools(), "\n", &"| `#{&1["name"]}` | `#{&1["route"]}` | #{Map.fetch!(@needs, &1["requires"])} | #{&1["description"]} |")}\
     """

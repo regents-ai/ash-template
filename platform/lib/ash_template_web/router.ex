@@ -30,6 +30,16 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
+  # The browser tools a page offers its own agent: JSON on the page's own
+  # session cookie, with the page's CSRF token on every write.
+  pipeline :page_tools do
+    plug :accepts, ["json"]
+    plug :fetch_session
+    plug :enforce_session_authority
+    plug AshTemplateWeb.Plugs.LaunchGate
+    plug :protect_from_forgery
+  end
+
   pipeline :public_documents do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -176,6 +186,15 @@ defmodule AshTemplateWeb.Router do
     delete "/notes/:id", AshTemplateWeb.NotesController, :delete
     get "/rooms", AshTemplateWeb.RoomsController, :index
     get "/rooms/:room/messages", AshTemplateWeb.RoomsController, :messages
+  end
+
+  scope "/tools", AshTemplateWeb do
+    pipe_through :page_tools
+    get "/notes", PageToolsController, :notes
+    post "/notes", PageToolsController, :create_note
+    get "/notes/:id", PageToolsController, :note
+    get "/rooms/:room/messages", PageToolsController, :room_messages
+    post "/rooms/:room/messages", PageToolsController, :post_message
   end
 
   # Before the product shell, whose `/chat/:conversation_id` would take `original`.

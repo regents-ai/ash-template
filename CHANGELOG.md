@@ -649,3 +649,14 @@ Operations
   `cli/README.md` gives the steps for changing a command, docs first.
 - The source copy of the YAML API description had fallen behind the served copy (it lacked
   the notes routes); both now match, and `mix precommit` checks that they stay matched.
+
+## 2026-10-04 — Browser tools that act for the signed-in person
+
+- Five new browser tools act as whoever is signed in on the page: `notes_list`,
+  `notes_get` and `notes_create` for that person's notes, `room_read` for any room
+  (leaving out people the reader muted) and `room_post` to post in one. They call the
+  site's `/tools` routes on the page's own session, with the page's form token on every
+  write, so a tool can never do more than the person could on the page.
+- A write whose answer is lost reports that its outcome is unknown, with how to check
+  before trying again; it never reports that it was cancelled.
+- The notes API and the tools share one description of a note.

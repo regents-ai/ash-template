@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.NotesController do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.PrivyProof
+  alias AshTemplateWeb.{NotesJSON, PrivyProof}
 
   plug :authenticate
 
@@ -34,16 +34,16 @@ defmodule AshTemplateWeb.NotesController do
 
   def index(conn, _params) do
     case Notes.list_my_notes(actor: conn.assigns.actor) do
-      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &present/1)})
+      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
       {:error, _error} -> refuse(conn, "notes_unavailable")
     end
   end
 
-  def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: present(&2)}))
+  def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: NotesJSON.note(&2)}))
 
   def create(conn, _params) do
     case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
-      {:ok, note} -> conn |> put_status(:created) |> json(%{note: present(note)})
+      {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
       {:error, error} -> refuse_change(conn, error)
     end
   end
@@ -51,7 +51,7 @@ defmodule AshTemplateWeb.NotesController do
   def update(conn, %{"id" => id}) do
     with_note(conn, id, fn conn, note ->
       case Notes.update_note(note, conn.body_params, actor: conn.assigns.actor) do
-        {:ok, note} -> json(conn, %{note: present(note)})
+        {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, error} -> refuse_change(conn, error)
       end
     end)
@@ -94,10 +94,6 @@ defmodule AshTemplateWeb.NotesController do
 
   defp refuse_change(conn, %Ash.Error.Invalid{}), do: refuse(conn, "invalid_note")
   defp refuse_change(conn, _error), do: refuse(conn, "notes_unavailable")
-
-  defp present(%Note{} = note) do
-    Map.take(note, [:id, :title, :body, :inserted_at, :updated_at])
-  end
 
   defp refuse(conn, code) do
     {status, message, hint} = Map.fetch!(@errors, code)

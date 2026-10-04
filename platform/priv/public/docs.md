@@ -110,7 +110,7 @@ RateLimit: "default";r=119;t=42
 
 ## Browser tools
 
-Every page offers a browser's own agent these tools through WebMCP (`document.modelContext`). Each reads one of the public documents as Markdown, needs no sign-in and changes nothing. The [tool manifest]({{origin}}/capabilities) describes them as JSON.
+Every page offers a browser's own agent these tools through WebMCP (`document.modelContext`). `about` and `docs` read a public document as Markdown. The notes tools and `room_post` act as the person signed in on that page, through the page's own session, and do only what the person could do there; signed out they answer 401 with `authentication_required`. `room_read` needs no sign-in. Only `notes_create` and `room_post` change anything, and `room_post` publishes, so an agent should ask the person first. A refusal comes back as `{"error": {"code", "message", "hint"}}`. The [tool manifest]({{origin}}/capabilities) describes them as JSON.
 
 {{tools}}
 
