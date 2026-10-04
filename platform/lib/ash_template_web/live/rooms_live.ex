@@ -88,8 +88,11 @@ defmodule AshTemplateWeb.RoomsLive do
 
   def handle_event("edit", %{"id" => id}, socket) do
     case Rooms.get_message(id, actor: socket.assigns.actor) do
-      {:ok, %Message{} = message} -> {:noreply, edit_form(socket, message)}
-      _gone -> {:noreply, assign(socket, :notice, @gone)}
+      {:ok, %Message{} = message} ->
+        {:noreply, edit_form(socket, message)}
+
+      failure ->
+        {:noreply, notice(socket, failure, @gone, "That message couldn’t be loaded. Try again.")}
     end
   end
 
@@ -102,14 +105,18 @@ defmodule AshTemplateWeb.RoomsLive do
          :ok <- Rooms.delete_message(message, actor: actor) do
       {:noreply, assign(socket, :notice, nil)}
     else
-      _gone -> {:noreply, assign(socket, :notice, @gone)}
+      failure ->
+        {:noreply, notice(socket, failure, @gone, "That message couldn’t be deleted. Try again.")}
     end
   end
 
   def handle_event("mute", %{"id" => id}, socket) do
     case Rooms.mute_author(id, actor: socket.assigns.actor) do
-      {:ok, _mute} -> {:noreply, assign(socket, :notice, nil)}
-      {:error, _refused} -> {:noreply, assign(socket, :notice, @gone)}
+      {:ok, _mute} ->
+        {:noreply, assign(socket, :notice, nil)}
+
+      failure ->
+        {:noreply, notice(socket, failure, @gone, "That person couldn’t be muted. Try again.")}
     end
   end
 
@@ -120,7 +127,14 @@ defmodule AshTemplateWeb.RoomsLive do
          :ok <- Rooms.unmute(mute, actor: actor) do
       {:noreply, assign(socket, :notice, nil)}
     else
-      _gone -> {:noreply, assign(socket, :notice, "That person is no longer muted.")}
+      failure ->
+        {:noreply,
+         notice(
+           socket,
+           failure,
+           "That person is no longer muted.",
+           "That person couldn’t be unmuted. Try again."
+         )}
     end
   end
 
@@ -390,6 +404,15 @@ defmodule AshTemplateWeb.RoomsLive do
       event == "edit" -> stream_insert(socket, :messages, message, update_only: true)
     end
   end
+
+  # A message or mute that is gone (deleted elsewhere, or never this person's)
+  # says so; a database that could not answer says to try again.
+  defp notice(socket, {:ok, nil}, gone, _retry), do: assign(socket, :notice, gone)
+
+  defp notice(socket, {:error, %Ash.Error.Invalid{}}, gone, _retry),
+    do: assign(socket, :notice, gone)
+
+  defp notice(socket, {:error, _failure}, _gone, retry), do: assign(socket, :notice, retry)
 
   # A short wallet address starts with "0x" for everyone, so its letters start after.
   defp initials(name), do: name |> String.replace_prefix("0x", "") |> RegentFormat.monogram("?")

@@ -595,3 +595,14 @@ Operations
   again, instead of saying the note is gone.
 - The ash-testing skill's test recipes say to wait for a page's reads before a
   browser spec leaves it when specs share one sandbox transaction.
+
+## 2026-10-04 — Chat rooms
+
+- Two fixed rooms, General and Help, at `/rooms/general` and `/rooms/help` inside
+  the app. Anyone can read; a signed-in person posts (ten a minute at most), edits
+  and deletes their own messages, and can mute someone, which hides that person's
+  messages and their place in "Here now" in every room, for the muter only.
+- Every post, edit and delete reaches each open page of the room at once, and
+  "Here now" lists the signed-in people who have the room open.
+- Editing, deleting, muting or unmuting that the database couldn't answer says to
+  try again, instead of saying the message is gone.
