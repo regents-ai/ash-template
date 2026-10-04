@@ -1,8 +1,15 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 2.0.0
+  version: 2.2.0
 paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      responses:
+        "200": {$ref: "#/components/responses/Health"}
+        "503": {$ref: "#/components/responses/HealthUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/profile:
     get:
       operationId: getMyProfile
@@ -49,6 +56,82 @@ paths:
         "403": {$ref: "#/components/responses/ProfileForbidden"}
         "409": {$ref: "#/components/responses/ProfileEvidenceConflict"}
         "503": {$ref: "#/components/responses/ProfileUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/notes:
+    get:
+      operationId: listMyNotes
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
+      responses:
+        "200": {$ref: "#/components/responses/Notes"}
+        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "503": {$ref: "#/components/responses/NotesUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    post:
+      operationId: createNote
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
+      requestBody: {$ref: "#/components/requestBodies/NoteInput"}
+      responses:
+        "201": {$ref: "#/components/responses/Note"}
+        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "422": {$ref: "#/components/responses/NoteInvalid"}
+        "503": {$ref: "#/components/responses/NotesUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/notes/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    get:
+      operationId: getMyNote
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
+      responses:
+        "200": {$ref: "#/components/responses/Note"}
+        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "404": {$ref: "#/components/responses/NoteNotFound"}
+        "503": {$ref: "#/components/responses/NotesUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    patch:
+      operationId: updateMyNote
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
+      requestBody: {$ref: "#/components/requestBodies/NoteInput"}
+      responses:
+        "200": {$ref: "#/components/responses/Note"}
+        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "404": {$ref: "#/components/responses/NoteNotFound"}
+        "422": {$ref: "#/components/responses/NoteInvalid"}
+        "503": {$ref: "#/components/responses/NotesUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    delete:
+      operationId: deleteMyNote
+      security: [{privyAccessToken: [], privyIdentityToken: []}]
+      responses:
+        "204": {description: The note is deleted}
+        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
+        "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "404": {$ref: "#/components/responses/NoteNotFound"}
+        "503": {$ref: "#/components/responses/NotesUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/rooms:
+    get:
+      operationId: listRooms
+      responses:
+        "200": {$ref: "#/components/responses/Rooms"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/rooms/{room}/messages:
+    parameters:
+      - {name: room, in: path, required: true, schema: {type: string}}
+    get:
+      operationId: listRoomMessages
+      parameters:
+        - {name: after, in: query, required: false, schema: {type: string}}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 50, default: 50}}
+      responses:
+        "200": {$ref: "#/components/responses/RoomMessages"}
+        "404": {$ref: "#/components/responses/RoomNotFound"}
+        "422": {$ref: "#/components/responses/RoomPageInvalid"}
+        "503": {$ref: "#/components/responses/RoomsUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /auth/csrf:
     get:
@@ -152,6 +235,12 @@ components:
     RetryAfter:
       description: Seconds to wait before the window resets
       schema: {type: integer, minimum: 1}
+  requestBodies:
+    NoteInput:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteInput"}
   responses:
     TooManyRequests:
       description: Too many requests from this client address in the current window
@@ -286,6 +375,105 @@ components:
               value: {error: {code: profile_unconfigured, message: "Profiles are not available on this site right now.", hint: "Try again later."}}
             unavailable:
               value: {error: {code: profile_unavailable, message: "Your profile could not be reached right now.", hint: "Try again in a moment."}}
+    Notes:
+      description: The verified account's notes, newest first
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NotesEnvelope"}
+    Note:
+      description: One of the verified account's notes
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteEnvelope"}
+    NotesAuthenticationRequired:
+      description: Both Privy credentials were not present and valid
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            authenticationRequired:
+              value: {error: {code: authentication_required, message: "Sign in to read or change your notes.", hint: "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."}}
+    NotesAccountRequired:
+      description: The credentials are valid but have never signed in on the website
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            accountRequired:
+              value: {error: {code: account_required, message: "This sign-in has no account here yet.", hint: "Sign in on the website once, then retry."}}
+    NoteNotFound:
+      description: No note of the verified account has this id; another account's note answers the same way
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            notFound:
+              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes with GET /api/v1/notes."}}
+    NoteInvalid:
+      description: The note is invalid
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            invalid:
+              value: {error: {code: invalid_note, message: "The note could not be saved.", hint: "Send only title (1 to 120 characters) and body (up to 10,000 characters, optional)."}}
+    NotesUnavailable:
+      description: Sign-in is not configured or the notes could not be reached
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            unavailable:
+              value: {error: {code: notes_unavailable, message: "Your notes could not be reached right now.", hint: "Try again in a moment."}}
+    Health:
+      description: The site and its database answer
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Health"}
+    HealthUnavailable:
+      description: The site is up but its database is not answering
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            unavailable:
+              value: {error: {code: unavailable, message: "The site is up but its database is not answering.", hint: "Try again in a minute."}}
+    Rooms:
+      description: Every room, in the order the website lists them
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RoomsEnvelope"}
+    RoomMessages:
+      description: One page of a room's messages, newest first
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RoomMessagesPage"}
+    RoomNotFound:
+      description: There is no room with that slug
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            notFound:
+              value: {error: {code: room_not_found, message: "There is no room with that name.", hint: "List the rooms with GET /api/v1/rooms."}}
+    RoomPageInvalid:
+      description: after is not a cursor this site gave, or limit is not a whole number from 1 to 50
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            invalidCursor:
+              value: {error: {code: invalid_cursor, message: "That page could not be found.", hint: "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."}}
+            invalidLimit:
+              value: {error: {code: invalid_limit, message: "limit must be a whole number from 1 to 50.", hint: "Leave it out for pages of 50."}}
+    RoomsUnavailable:
+      description: The room's messages could not be reached
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            unavailable:
+              value: {error: {code: rooms_unavailable, message: "The room's messages could not be reached right now.", hint: "Try again in a moment."}}
   schemas:
     ProfileEnvelope:
       type: object
@@ -343,6 +531,51 @@ components:
               enum: [authentication_required, profile_unconfigured, profile_unavailable, profile_not_created, profile_forbidden, invalid_profile_update, invalid_profile_json, profile_request_too_large, json_required, identity_evidence_conflict, method_not_allowed, not_found]
             message: {type: string}
             hint: {type: string}
+    NotesEnvelope:
+      type: object
+      additionalProperties: false
+      required: [notes]
+      properties:
+        notes:
+          type: array
+          items: {$ref: "#/components/schemas/Note"}
+    NoteEnvelope:
+      type: object
+      additionalProperties: false
+      required: [note]
+      properties:
+        note: {$ref: "#/components/schemas/Note"}
+    Note:
+      type: object
+      additionalProperties: false
+      required: [id, title, body, inserted_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string, minLength: 1, maxLength: 120}
+        body: {type: [string, "null"], maxLength: 10000}
+        inserted_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    NoteInput:
+      type: object
+      additionalProperties: false
+      properties:
+        title: {type: string, minLength: 1, maxLength: 120}
+        body: {type: [string, "null"], maxLength: 10000}
+    NoteError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, hint]
+          properties:
+            code:
+              type: string
+              enum: [authentication_required, account_required, note_not_found, invalid_note, notes_unavailable]
+            message: {type: string}
+            hint: {type: string}
     Session:
       type: object
       additionalProperties: false
@@ -372,3 +605,49 @@ components:
             code: {type: string}
             message: {type: string}
             hint: {type: string}
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {type: string, const: ok}
+    RoomsEnvelope:
+      type: object
+      additionalProperties: false
+      required: [rooms]
+      properties:
+        rooms:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [slug, name, about]
+            properties:
+              slug: {type: string}
+              name: {type: string}
+              about: {type: string}
+    RoomMessagesPage:
+      type: object
+      additionalProperties: false
+      required: [messages, pagination]
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, room, author_name, body, inserted_at, edited_at]
+            properties:
+              id: {type: string, format: uuid}
+              room: {type: string}
+              author_name: {type: string}
+              body: {type: string, maxLength: 2000}
+              inserted_at: {type: string, format: date-time}
+              edited_at: {type: [string, "null"], format: date-time}
+        pagination:
+          type: object
+          additionalProperties: false
+          required: [has_more, next_cursor]
+          properties:
+            has_more: {type: boolean}
+            next_cursor: {type: [string, "null"]}

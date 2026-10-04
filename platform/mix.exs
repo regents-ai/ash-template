@@ -100,7 +100,8 @@ defmodule AshTemplate.MixProject do
         # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
         "xref graph --label compile-connected --fail-above 28",
         "ash.codegen --check",
-        "ash_template.route_handoff --check"
+        "ash_template.route_handoff --check",
+        "ash_template.sync_api_contract --check"
       ]
     ]
   end

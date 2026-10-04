@@ -167,12 +167,15 @@ defmodule AshTemplateWeb.Router do
 
   scope "/api/v1" do
     pipe_through :api
+    get "/health", AshTemplateWeb.HealthController, :status
     forward "/profile", RegentIdentity.HTTP, otp_app: :ash_template
     get "/notes", AshTemplateWeb.NotesController, :index
     post "/notes", AshTemplateWeb.NotesController, :create
     get "/notes/:id", AshTemplateWeb.NotesController, :show
     patch "/notes/:id", AshTemplateWeb.NotesController, :update
     delete "/notes/:id", AshTemplateWeb.NotesController, :delete
+    get "/rooms", AshTemplateWeb.RoomsController, :index
+    get "/rooms/:room/messages", AshTemplateWeb.RoomsController, :messages
   end
 
   # Before the product shell, whose `/chat/:conversation_id` would take `original`.

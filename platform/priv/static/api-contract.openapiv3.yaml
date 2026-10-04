@@ -1,8 +1,15 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 2.1.0
+  version: 2.2.0
 paths:
+  /api/v1/health:
+    get:
+      operationId: getHealth
+      responses:
+        "200": {$ref: "#/components/responses/Health"}
+        "503": {$ref: "#/components/responses/HealthUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/profile:
     get:
       operationId: getMyProfile
@@ -105,6 +112,26 @@ paths:
         "403": {$ref: "#/components/responses/NotesAccountRequired"}
         "404": {$ref: "#/components/responses/NoteNotFound"}
         "503": {$ref: "#/components/responses/NotesUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/rooms:
+    get:
+      operationId: listRooms
+      responses:
+        "200": {$ref: "#/components/responses/Rooms"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/rooms/{room}/messages:
+    parameters:
+      - {name: room, in: path, required: true, schema: {type: string}}
+    get:
+      operationId: listRoomMessages
+      parameters:
+        - {name: after, in: query, required: false, schema: {type: string}}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 50, default: 50}}
+      responses:
+        "200": {$ref: "#/components/responses/RoomMessages"}
+        "404": {$ref: "#/components/responses/RoomNotFound"}
+        "422": {$ref: "#/components/responses/RoomPageInvalid"}
+        "503": {$ref: "#/components/responses/RoomsUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /auth/csrf:
     get:
@@ -398,6 +425,55 @@ components:
           examples:
             unavailable:
               value: {error: {code: notes_unavailable, message: "Your notes could not be reached right now.", hint: "Try again in a moment."}}
+    Health:
+      description: The site and its database answer
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Health"}
+    HealthUnavailable:
+      description: The site is up but its database is not answering
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            unavailable:
+              value: {error: {code: unavailable, message: "The site is up but its database is not answering.", hint: "Try again in a minute."}}
+    Rooms:
+      description: Every room, in the order the website lists them
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RoomsEnvelope"}
+    RoomMessages:
+      description: One page of a room's messages, newest first
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RoomMessagesPage"}
+    RoomNotFound:
+      description: There is no room with that slug
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            notFound:
+              value: {error: {code: room_not_found, message: "There is no room with that name.", hint: "List the rooms with GET /api/v1/rooms."}}
+    RoomPageInvalid:
+      description: after is not a cursor this site gave, or limit is not a whole number from 1 to 50
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            invalidCursor:
+              value: {error: {code: invalid_cursor, message: "That page could not be found.", hint: "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."}}
+            invalidLimit:
+              value: {error: {code: invalid_limit, message: "limit must be a whole number from 1 to 50.", hint: "Leave it out for pages of 50."}}
+    RoomsUnavailable:
+      description: The room's messages could not be reached
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            unavailable:
+              value: {error: {code: rooms_unavailable, message: "The room's messages could not be reached right now.", hint: "Try again in a moment."}}
   schemas:
     ProfileEnvelope:
       type: object
@@ -529,3 +605,49 @@ components:
             code: {type: string}
             message: {type: string}
             hint: {type: string}
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {type: string, const: ok}
+    RoomsEnvelope:
+      type: object
+      additionalProperties: false
+      required: [rooms]
+      properties:
+        rooms:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [slug, name, about]
+            properties:
+              slug: {type: string}
+              name: {type: string}
+              about: {type: string}
+    RoomMessagesPage:
+      type: object
+      additionalProperties: false
+      required: [messages, pagination]
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, room, author_name, body, inserted_at, edited_at]
+            properties:
+              id: {type: string, format: uuid}
+              room: {type: string}
+              author_name: {type: string}
+              body: {type: string, maxLength: 2000}
+              inserted_at: {type: string, format: date-time}
+              edited_at: {type: [string, "null"], format: date-time}
+        pagination:
+          type: object
+          additionalProperties: false
+          required: [has_more, next_cursor]
+          properties:
+            has_more: {type: boolean}
+            next_cursor: {type: [string, "null"]}

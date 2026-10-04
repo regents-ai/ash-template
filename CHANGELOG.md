@@ -635,3 +635,17 @@ Operations
   `/chat/original`, linked from the Chat page.
 - Built with Ash AI's chat generator; switching to a real assistant is a
   one-line change in each of the two places the stand-in is named.
+
+## 2026-10-04 — Rooms to read from the command line
+
+- Anyone can read the chat rooms without signing in: `GET /api/v1/rooms` lists them and
+  `GET /api/v1/rooms/{room}/messages` reads one room's messages, newest first, up to 50 a
+  page, with a cursor for the next page. The developer documentation, the agent guide and
+  both API descriptions list them.
+- `GET /api/v1/health` gives the health check's answer as JSON for the command line, which
+  could not read the plain-text `/healthz`. `/healthz` is unchanged for the host.
+- `cli/` is the worked example of a site's commands: `COMMANDS.md` describes `health`,
+  `rooms list` and `rooms messages <room>` before `commands.json` lists them, and
+  `cli/README.md` gives the steps for changing a command, docs first.
+- The source copy of the YAML API description had fallen behind the served copy (it lacked
+  the notes routes); both now match, and `mix precommit` checks that they stay matched.

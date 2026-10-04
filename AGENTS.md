@@ -26,9 +26,11 @@ After renaming, a new site must still replace, by hand:
 <!-- /template-only -->
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.
-- `cli/`: `commands.json`, the description of every `regents ash-template`
-  command. The code lives in `regents-cli`; change the description in the same
-  commit as the route it describes.
+- `cli/`: `COMMANDS.md` and `commands.json`, the description of every
+  `regents ash-template` command; the code lives in `regents-cli`. Docs first in
+  `COMMANDS.md`, then the route, its OpenAPI operation and `commands.json` in one
+  commit, then `make check-cli`, then the change note to the regents-cli chief
+  (`cli/README.md`).
 - `contracts/`: optional Foundry workspace, empty until contracts are needed.
 - `plugins/`: home for standalone runtime plugin packages; none exist yet.
 - `skills/`: every skill Regent writes, linked into the Regent workspace's
