@@ -10,6 +10,7 @@
 @import "./pages/account.css";
 @import "./pages/notes.css";
 @import "./pages/rooms.css";
+@import "./pages/chat.css";
 @import "./pages/animations.css";
 @import "./components/account_auth_status.css";
 

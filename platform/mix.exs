@@ -33,6 +33,8 @@ defmodule AshTemplate.MixProject do
 
   defp deps do
     [
+      {:lumis, "~> 0.1"},
+      {:req_llm, "~> 1.18"},
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
@@ -41,6 +43,7 @@ defmodule AshTemplate.MixProject do
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
       {:ash_oban, "~> 0.9.0"},
+      {:ash_ai, "~> 1.1.1"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
       {:regent_privy, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy"},
@@ -66,6 +69,9 @@ defmodule AshTemplate.MixProject do
     ]
   end
 
+  # The stylesheet of the one page in Ash AI's own look (`assets/ash_ai_chat/`).
+  @ash_ai_chat_css "node_modules/.bin/tailwindcss -i assets/ash_ai_chat/ash_ai_chat.css -o priv/static/assets/css/ash_ai_chat.css"
+
   defp aliases do
     [
       setup: ["deps.get", "cmd npm ci", "assets.setup", "assets.build"],
@@ -74,12 +80,14 @@ defmodule AshTemplate.MixProject do
         "compile",
         "regent_ui.assets",
         "regent_identity.assets",
-        "esbuild ash_template"
+        "esbuild ash_template",
+        "cmd #{@ash_ai_chat_css}"
       ],
       "assets.deploy": [
         "regent_ui.assets",
         "regent_identity.assets",
         "esbuild ash_template --minify",
+        "cmd #{@ash_ai_chat_css} --minify",
         "phx.digest"
       ],
       precommit: [

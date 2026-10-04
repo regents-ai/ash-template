@@ -1,0 +1,11 @@
+/* Tailwind and DaisyUI for the one page that keeps `mix ash_ai.gen.chat`'s own
+   look (`AshTemplateWeb.ChatOriginalLive`); nothing else on the site loads
+   this. Built by `npx @tailwindcss/cli` into priv/static/assets/css/. */
+@import "tailwindcss" source(none);
+@source "../../lib/ash_template_web/live/chat_original_live.ex";
+@source "../../lib/ash_template_web/components/layouts/ash_ai_chat.html.heex";
+
+@plugin "./heroicons.js";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}

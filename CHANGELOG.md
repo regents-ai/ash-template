@@ -621,3 +621,17 @@ Operations
   button that opens the rest in place.
 - Saving a message or an edit keeps at most one empty line between lines.
 - Added `docs/app-shell-structure-plan.md`, the plan for the app's panel layout.
+
+## 2026-10-04 — Chat with an assistant
+
+- A Chat page at `/chat` inside the app: a signed-in person talks with an
+  assistant, keeps a list of their own chats beside the one open, and the first
+  message starts a new chat that names itself from that message.
+- The assistant is a free stand-in that needs no account or key: it quotes back
+  what you wrote, a few words at a time, the way a real assistant's reply
+  arrives. Every page with the chat open sees the reply grow, with "The
+  assistant is writing…" until it is done.
+- The same chat in the look Ash AI's chat generator gives it, at
+  `/chat/original`, linked from the Chat page.
+- Built with Ash AI's chat generator; switching to a real assistant is a
+  one-line change in each of the two places the stand-in is named.

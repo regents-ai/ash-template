@@ -1,6 +1,6 @@
 import type {Hook} from "../hook_composition"
 
-type RoomConversationHook = Hook & {
+type ConversationHook = Hook & {
   el: HTMLElement
   handleEvent(event: string, callback: (payload: unknown) => void): void
   observer?: MutationObserver
@@ -14,16 +14,17 @@ type RoomConversationHook = Hook & {
 const GROUP_SECONDS = 5 * 60
 
 /**
- * One room's conversation. Marks each message that continues the one before it
- * (`data-continued`, kept through patches by the message's
- * `JS.ignore_attributes`), sends the message box with Enter (Shift+Enter, and
- * Enter on a touch screen, start a new line), shows the newest message after a
- * send, puts the cursor at the end of a message chosen for editing once its text
- * is in the box, and closes a message's menu on Escape or a press anywhere else.
+ * One conversation: a chat room's, or a chat with the assistant. Marks each
+ * message that continues the one before it (`data-continued`, kept through
+ * patches by the message's `JS.ignore_attributes`), sends the message box with
+ * Enter (Shift+Enter, and Enter on a touch screen, start a new line), shows the
+ * newest message after a send, puts the cursor at the end of a message chosen
+ * for editing once its text is in the box, and closes a message's menu on
+ * Escape or a press anywhere else.
  */
-export const RoomConversation: Hook = {
-  mounted(this: RoomConversationHook) {
-    const list = this.el.querySelector<HTMLElement>("[data-room-messages]")
+export const Conversation: Hook = {
+  mounted(this: ConversationHook) {
+    const list = this.el.querySelector<HTMLElement>("[data-conversation-messages]")
     if (list) {
       group(list)
       this.observer = new MutationObserver(() => group(list))
@@ -43,7 +44,7 @@ export const RoomConversation: Hook = {
 
     // The newest message is at the bottom, which is where the list rests.
     this.submitted = () => {
-      const scroller = this.el.querySelector<HTMLElement>("[data-room-scroller]")
+      const scroller = this.el.querySelector<HTMLElement>("[data-conversation-scroller]")
       scroller?.scrollTo({top: scroller.scrollHeight})
     }
     this.el.addEventListener("submit", this.submitted)
@@ -53,7 +54,7 @@ export const RoomConversation: Hook = {
 
     // Sent after the page holds the message's text, so focusing cannot keep the
     // box from receiving it.
-    this.handleEvent("room:edit", () => {
+    this.handleEvent("conversation:edit", () => {
       const box = this.el.querySelector<HTMLTextAreaElement>("form textarea")
       if (!box) return
       box.focus()
@@ -61,7 +62,7 @@ export const RoomConversation: Hook = {
     })
   },
 
-  destroyed(this: RoomConversationHook) {
+  destroyed(this: ConversationHook) {
     this.observer?.disconnect()
     if (this.keydown) this.el.removeEventListener("keydown", this.keydown)
     if (this.submitted) this.el.removeEventListener("submit", this.submitted)

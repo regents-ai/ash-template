@@ -1,5 +1,8 @@
 import Config
 
+config :mdex_native, syntax_highlighter: :lumis
+# The chat page's free stand-in model (`AshTemplate.Chat.StandIn`).
+config :req_llm, custom_providers: [AshTemplate.Chat.StandIn]
 config :regent_identity, repo: AshTemplate.Repo, ash_domains: [RegentIdentity]
 
 # Ash 3.33 requires an explicit string length unit. Codepoints match how
@@ -11,7 +14,7 @@ config :ash, default_string_length_count: :codepoints
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 config :ash_template,
-  ash_domains: [AshTemplate.Accounts, AshTemplate.Notes, AshTemplate.Rooms],
+  ash_domains: [AshTemplate.Chat, AshTemplate.Accounts, AshTemplate.Notes, AshTemplate.Rooms],
   ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]
 
@@ -31,7 +34,7 @@ config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
   notifier: Oban.Notifiers.PG,
-  queues: [default: 5, outside_calls: 3],
+  queues: [default: 5, outside_calls: 3, chat_responses: [limit: 10], conversations: [limit: 10]],
   cron: [crontab: []],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]

@@ -93,7 +93,7 @@ defmodule AshTemplateWeb.RoomsLive do
   def handle_event("edit", %{"id" => id}, socket) do
     case Rooms.get_message(id, actor: socket.assigns.actor) do
       {:ok, %Message{} = message} ->
-        {:noreply, socket |> edit_form(message) |> push_event("room:edit", %{})}
+        {:noreply, socket |> edit_form(message) |> push_event("conversation:edit", %{})}
 
       failure ->
         {:noreply, notice(socket, failure, @gone, "That message couldn’t be loaded. Try again.")}
@@ -170,7 +170,7 @@ defmodule AshTemplateWeb.RoomsLive do
           id="room-conversation"
           class="account-panel rooms-conversation"
           aria-labelledby="room-messages-title"
-          phx-hook="RoomConversation"
+          phx-hook="Conversation"
         >
           <h2 id="room-messages-title" class="visually-hidden">Messages in {@room.name}</h2>
 
@@ -179,7 +179,7 @@ defmodule AshTemplateWeb.RoomsLive do
             role="log"
             aria-labelledby="room-messages-title"
             tabindex="0"
-            data-room-scroller
+            data-conversation-scroller
           >
             <div class="rooms-scroller__inner">
               <Primitives.button
@@ -204,7 +204,7 @@ defmodule AshTemplateWeb.RoomsLive do
                 id="room-messages"
                 class="rooms-messages"
                 data-state={@messages.state}
-                data-room-messages
+                data-conversation-messages
                 phx-update="stream"
               >
                 <li id="room-messages-empty" class="rooms-empty rg-muted">

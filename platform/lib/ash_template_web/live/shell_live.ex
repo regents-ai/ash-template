@@ -11,11 +11,13 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Actors.Human
+  alias AshTemplate.Chat
   alias AshTemplate.Notes.Note
   alias AshTemplate.Rooms.{Message, Mute, Room}
 
   alias AshTemplateWeb.{
     AccountLive,
+    ChatLive,
     NotesLive,
     NotFoundError,
     OverviewLive,
@@ -41,6 +43,7 @@ defmodule AshTemplateWeb.ShellLive do
        shell_instance: System.unique_integer([:positive, :monotonic]),
        room: nil,
        people: [],
+       conversation: nil,
        verified_connections: %Read{},
        verified_connections_notice: nil,
        connection_outcome: nil
@@ -51,14 +54,16 @@ defmodule AshTemplateWeb.ShellLive do
   def handle_params(params, uri, socket) do
     action = socket.assigns.live_action
     room = room_in(action, params)
+    conversation = conversation_in(action, params, human_actor(socket))
     route_spec = RouteCatalog.fetch!(action, params)
 
     {:noreply,
      socket
-     |> assign(PublicDocuments.page(URI.parse(uri).path))
+     |> assign(PublicDocuments.page(page_path(action, uri)))
      |> assign(:route_spec, route_spec)
      |> load_verified_connections(route_spec)
-     |> enter_room(room)}
+     |> enter_room(room)
+     |> open_conversation(conversation)}
   end
 
   @impl true
@@ -129,6 +134,26 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
+  # Each piece of the assistant's reply, and the person's own message, reach only
+  # the conversation on screen.
+  def handle_info(%{topic: "chat:messages:" <> id, payload: message}, socket) do
+    if on_conversation?(socket, id),
+      do: send_update(ChatLive, id: "chat", change: message)
+
+    {:noreply, socket}
+  end
+
+  # A conversation started or named on any of the person's pages joins their
+  # list, and renames the one on screen.
+  def handle_info(%{topic: "chat:conversations:" <> _, payload: conversation}, socket) do
+    if socket.assigns.route_spec.route_id == :chat,
+      do: send_update(ChatLive, id: "chat", conversation_change: conversation)
+
+    if on_conversation?(socket, conversation.id),
+      do: {:noreply, assign(socket, :conversation, conversation)},
+      else: {:noreply, socket}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -160,6 +185,14 @@ defmodule AshTemplateWeb.ShellLive do
           people={@people}
         />
 
+        <.live_component
+          :if={@route_spec.route_id == :chat}
+          module={ChatLive}
+          id="chat"
+          account={current_account(@access_context)}
+          conversation={@conversation}
+        />
+
         <AccountLive.page
           :if={@route_spec.route_id == :account}
           account={current_account(@access_context)}
@@ -175,6 +208,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp subscribe_to_own_topics(%{principal: {:human, account}}) do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Note.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Mute.topic(account.id))
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:conversations:#{account.id}")
   end
 
   defp subscribe_to_own_topics(_access_context), do: :ok
@@ -187,6 +221,51 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp room_in(_action, _params), do: nil
+
+  # A conversation opens only for the person it belongs to; a visitor sees the
+  # chat page's sign-in prompt instead.
+  defp conversation_in(:conversation, %{"conversation_id" => id}, %Human{} = actor) do
+    case Chat.get_conversation(id, actor: actor) do
+      {:ok, conversation} -> conversation
+      {:error, _not_theirs} -> raise NotFoundError
+    end
+  end
+
+  defp conversation_in(_action, _params, _actor), do: nil
+
+  # Every conversation shares the chat page's title.
+  defp page_path(:conversation, _uri), do: "/chat"
+  defp page_path(_action, uri), do: URI.parse(uri).path
+
+  defp on_conversation?(%{assigns: %{conversation: %{id: id}}}, id), do: true
+  defp on_conversation?(_socket, _id), do: false
+
+  # The page hears the conversation it shows. The renamed copy of the same one
+  # replaces it without hearing it twice.
+  defp open_conversation(
+         %{assigns: %{conversation: %{id: id}}} = socket,
+         %{id: id} = conversation
+       ),
+       do: assign(socket, :conversation, conversation)
+
+  defp open_conversation(socket, conversation) do
+    if connected?(socket) do
+      unsubscribe_conversation(socket.assigns.conversation)
+      subscribe_conversation(conversation)
+    end
+
+    assign(socket, :conversation, conversation)
+  end
+
+  defp subscribe_conversation(nil), do: :ok
+
+  defp subscribe_conversation(conversation),
+    do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{conversation.id}")
+
+  defp unsubscribe_conversation(nil), do: :ok
+
+  defp unsubscribe_conversation(conversation),
+    do: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, "chat:messages:#{conversation.id}")
 
   defp on_room?(%{assigns: %{room: %{slug: slug}}}, room), do: to_string(slug) == to_string(room)
   defp on_room?(_socket, _room), do: false

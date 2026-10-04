@@ -17,6 +17,7 @@ defmodule AshTemplateWeb.RouteCatalog do
         %RouteTarget{route_id: :app, label: "Overview", path: "/app"},
         %RouteTarget{route_id: :notes, label: "Notes", path: "/notes"},
         %RouteTarget{route_id: :room, label: "Rooms", path: @first_room},
+        %RouteTarget{route_id: :chat, label: "Chat", path: "/chat"},
         %RouteTarget{route_id: :account, label: "Account", path: "/account"}
       ]
     },
@@ -50,6 +51,14 @@ defmodule AshTemplateWeb.RouteCatalog do
         destination: "/rooms/:room",
         page_display_label: "Rooms"
       }),
+    chat:
+      Map.merge(@product, %{route_id: :chat, destination: "/chat", page_display_label: "Chat"}),
+    conversation:
+      Map.merge(@product, %{
+        route_id: :chat,
+        destination: "/chat/:conversation_id",
+        page_display_label: "Chat"
+      }),
     account:
       Map.merge(@product, %{
         route_id: :account,
@@ -58,8 +67,15 @@ defmodule AshTemplateWeb.RouteCatalog do
       })
   ]
 
-  @doc "The spec of a live action; a room's destination is the room its `params` name."
+  @doc """
+  The spec of a live action; a room's or conversation's destination is the one
+  its `params` name.
+  """
   def fetch!(:room, %{"room" => room}), do: %{fetch!(:room) | destination: "/rooms/#{room}"}
+
+  def fetch!(:conversation, %{"conversation_id" => id}),
+    do: %{fetch!(:conversation) | destination: "/chat/#{id}"}
+
   def fetch!(action, _params), do: fetch!(action)
 
   @doc "The spec of a live action as the catalog holds it."
@@ -90,6 +106,7 @@ defmodule AshTemplateWeb.RouteCatalog do
   defp parameter_schema(:room),
     do: %{room: %{type: "string", enum: Enum.map(Room.slugs(), &Atom.to_string/1)}}
 
+  defp parameter_schema(:conversation), do: %{conversation_id: %{type: "string", format: "uuid"}}
   defp parameter_schema(_action), do: %{}
 
   defp handoff_target(%RouteTarget{} = target),

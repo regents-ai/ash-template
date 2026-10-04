@@ -32,6 +32,10 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/" => {"Ash Template", @description},
     "/app" => {"Overview", "Your Ash Template overview, with the wallet you signed in with."},
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
+    "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
+    "/chat/original" =>
+      {"Chat in Ash AI's look",
+       "The same chat with the assistant, in the look Ash AI's chat generator gives it."},
     "/account" =>
       {"Account", "The wallet you signed in with and the accounts you have connected."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},

@@ -25,7 +25,9 @@ config :ash_template, AshTemplateWeb.Endpoint,
   debug_errors: System.get_env("ASH_TEMPLATE_DEBUG_ERRORS", "on") == "on",
   secret_key_base: "6ihHqnWB0px5FXmoddiKg3V2NLeiM0k0UsFs5DwmIADSX35FFdeSs5VNICCc3iU5",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]}
+    esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]},
+    npx:
+      ~w(tailwindcss -i assets/ash_ai_chat/ash_ai_chat.css -o priv/static/assets/css/ash_ai_chat.css --watch=always)
   ],
   live_reload: [
     web_console_logger: true,

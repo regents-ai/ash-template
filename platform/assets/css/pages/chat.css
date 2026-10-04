@@ -1,0 +1,217 @@
+@layer regents-product {
+/* Chat stands on the Account page's panels and type; the list of chats, the
+   conversation, its messages and the message box are its own. */
+
+.chat-original {
+  margin: 0;
+}
+
+.chat-original a {
+  color: var(--ash-accent-warm);
+  font-weight: 600;
+}
+
+.chat-signed-out {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.chat-signed-out p {
+  margin: 0;
+}
+
+.chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .chat-layout {
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  }
+}
+
+.chat-list,
+.chat-conversation {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.chat-list {
+  justify-items: start;
+}
+
+.chat-conversations {
+  display: grid;
+  justify-self: stretch;
+  margin: 0;
+  padding: 0;
+  max-block-size: 12rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+@media (min-width: 64rem) {
+  .chat-conversations {
+    max-block-size: clamp(16rem, 52dvh, 36rem);
+  }
+}
+
+.chat-conversations a {
+  display: flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding-inline: 0.75rem;
+  color: var(--color-fg-muted);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .chat-conversations a:hover {
+    color: var(--color-fg);
+    background: color-mix(in oklch, var(--color-fg) 4%, transparent);
+  }
+}
+
+.chat-conversations a[aria-current="page"] {
+  color: var(--color-fg);
+  box-shadow: inset 2px 0 var(--palette-tangerine-tango);
+  background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+}
+
+/* The conversation scrolls on its own and rests at its newest message: the
+   reversed column keeps the view at the bottom as a reply grows, while the
+   messages themselves stay oldest first for reading and keyboard order. */
+.chat-scroller {
+  display: flex;
+  flex-direction: column-reverse;
+  block-size: clamp(20rem, 60dvh, 42rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-block-end: 1px solid var(--color-border);
+}
+
+/* A chat with no messages yet takes only the room its prompt needs. */
+.chat-scroller:has(.chat-messages[data-state="empty"]) {
+  block-size: auto;
+}
+
+.chat-scroller__inner {
+  display: grid;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+}
+
+.chat-loading,
+.chat-writing {
+  margin: 0;
+}
+
+.chat-loading {
+  text-align: center;
+}
+
+.chat-messages {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-message {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  max-inline-size: min(100%, 42rem);
+}
+
+/* The person's own messages sit to the right, the assistant's to the left. */
+.chat-message[data-source="user"] {
+  justify-self: end;
+  justify-items: end;
+}
+
+.chat-message__author {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.chat-message__body {
+  min-width: 0;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.chat-message[data-source="user"] .chat-message__body {
+  border-color: transparent;
+  background: color-mix(in oklch, var(--palette-powder-blue) 22%, var(--color-surface));
+}
+
+.chat-message__body > :first-child {
+  margin-block-start: 0;
+}
+
+.chat-message__body > :last-child {
+  margin-block-end: 0;
+}
+
+.chat-message__body pre {
+  overflow-x: auto;
+}
+
+.chat-composer {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.chat-composer textarea {
+  width: 100%;
+  max-block-size: 12rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.chat-composer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.chat-composer__hint {
+  margin: 0 auto 0 0;
+  font-size: 0.8rem;
+}
+
+@media (pointer: coarse) {
+  .chat-composer__hint {
+    display: none;
+  }
+}
+
+/* The empty line shows only when it is the list's one child, and only once
+   a read has landed. */
+.chat-empty {
+  display: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.chat-empty:only-child {
+  display: block;
+}
+
+:is(.chat-messages, .chat-conversations):is([data-state="idle"], [data-state="loading"], [data-state="error"]) .chat-empty {
+  display: none;
+}
+}
