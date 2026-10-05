@@ -717,3 +717,14 @@ Operations
   `/openapi.json` moves to 1.4.0 and the YAML contract to 2.4.0.
 - Needs the `regent_jev` package from elixir-utils (`feat/jev`, `f9bc17c`) and
   `OPENROUTER_API_KEY`; without the key, notes save without a label.
+
+## 2026-10-05 — Regents apps menu
+
+- A nine-dot button in the app header, labelled "Regents apps", opens a "Regents Labs
+  apps" panel linking Patchbay, Autolaunch, KeyFleet, Techtree, Protocol
+  (regents.sh/stake) and Account (regents.sh/account) in a new tab. Each app shows the
+  13-block crown in its own pair of the four brand colours.
+- The panel is a native `popover`: the browser closes it on Escape or a press outside,
+  and a LiveView patch leaves it open.
+- On phones the header's icon presses narrow to 2.25rem so every tool fits on one row
+  down to 360px wide.

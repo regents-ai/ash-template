@@ -2,6 +2,11 @@
 
 What changed in Ash Template lately, newest first.
 
+## 5 October 2026
+
+- **Regents apps.** The nine dots at the top open every Regents Labs app: Patchbay,
+  Autolaunch, KeyFleet, Techtree, Protocol and your Regents account.
+
 ## 4 October 2026
 
 - **A new layout.** Every section has its own icon on the left, its own list beside it and

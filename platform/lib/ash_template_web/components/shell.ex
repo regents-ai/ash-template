@@ -2,11 +2,11 @@ defmodule AshTemplateWeb.Components.Shell do
   @moduledoc """
   The app shell: the top bar, the rail of sections, the open section's sidebar
   and tabs, the page, the right side bar and the bottom bar, plus the search
-  dialog, the account control and the theme switch.
+  dialog, the Regents apps menu, the account control and the theme switch.
 
-  The panels' open and closed states are the browser's (the `ShellBehavior`
-  hook and the `ash_template_panels` cookie, read into `<html data-aside
-  data-sidebar>`), so the server never stores them. A page puts its own parts
+  The panels' open and closed states are the browser's (`assets/js/shell_panels.ts`
+  and the `ash_template_aside` and `ash_template_sidebar` cookies, read into
+  `<html data-aside data-sidebar>`), so the server never stores them. A page puts its own parts
   into the sidebar and the right side bar with `<.portal>` into
   `#shell-sidebar-page` and `#shell-aside-page`.
   """
@@ -31,6 +31,16 @@ defmodule AshTemplateWeb.Components.Shell do
     {"For agents", "/llms.txt"},
     {"Privacy", "/privacy"},
     {"Terms", "/terms"}
+  ]
+
+  # The Regents Labs apps, each shown with the crown in its own pair of brand colours.
+  @regents_apps [
+    %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
+    %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
+    %{name: "KeyFleet", url: "https://keyfleet.ai", tone: "keyfleet"},
+    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
+    %{name: "Protocol", url: "https://regents.sh/stake", tone: "protocol"},
+    %{name: "Account", url: "https://regents.sh/account", tone: "account"}
   ]
 
   attr :route_spec, :map, required: true
@@ -163,6 +173,7 @@ defmodule AshTemplateWeb.Components.Shell do
         <div class="rl-header-links">
           <RegentLinks.header_links id="shell-token-menu" />
         </div>
+        <.apps_menu />
 
         <.account_control account_control={@account_control} />
       </header>
@@ -559,6 +570,53 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
+  # The browser opens and closes the panel itself (`popover`), so it closes on
+  # Escape or a press anywhere else, and a page update never shuts it.
+  defp apps_menu(assigns) do
+    assigns = assign(assigns, :apps, @regents_apps)
+
+    ~H"""
+    <button
+      id="shell-apps-button"
+      class="shell-tool"
+      type="button"
+      popovertarget="shell-apps"
+      aria-label="Regents apps"
+    >
+      <.icon name={:apps} />
+      <span class="shell-tool__tip" aria-hidden="true">Regents apps</span>
+    </button>
+    <nav id="shell-apps" class="shell-apps" popover aria-labelledby="shell-apps-title">
+      <h2 id="shell-apps-title">Regents Labs apps</h2>
+      <ul>
+        <li :for={app <- @apps}>
+          <a href={app.url} target="_blank" rel="noopener">
+            <span class="shell-apps__tile" data-tone={app.tone}><.crown /></span>
+            <span>{app.name}</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    """
+  end
+
+  # The Regents crown: thirteen blocks, drawn in the current text colour.
+  defp crown(assigns) do
+    ~H"""
+    <svg class="shell-apps__crown" viewBox="31 46 178 106" fill="currentColor" aria-hidden="true">
+      <rect :for={{x, y} <- crown_blocks()} x={x} y={y} width="34" height="34" />
+    </svg>
+    """
+  end
+
+  defp nine_dots, do: for(y <- [4, 10.5, 17], x <- [4, 10.5, 17], do: {x, y})
+
+  defp crown_blocks do
+    top = for x <- [31, 103, 175], do: {x, 46}
+    rows = for y <- [82, 118], x <- [31, 67, 103, 139, 175], do: {x, y}
+    top ++ rows
+  end
+
   attr :name, :atom, required: true
   attr :class, :string, default: "shell-icon"
 
@@ -600,6 +658,9 @@ defmodule AshTemplateWeb.Components.Shell do
       <path :if={@name == :collapse} d="M3 4h18v16H3zM9 4v16M15 10l-2 2 2 2" />
       <path :if={@name == :expand} d="M3 4h18v16H3zM9 4v16M13 10l2 2-2 2" />
       <path :if={@name == :close} d="M6 6l12 12M18 6 6 18" />
+      <g :if={@name == :apps} fill="currentColor" stroke="none">
+        <rect :for={{x, y} <- nine_dots()} x={x} y={y} width="3" height="3" />
+      </g>
     </svg>
     """
   end
