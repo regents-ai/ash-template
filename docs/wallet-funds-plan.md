@@ -76,15 +76,20 @@ The registry replaces today's hard-coded Base in `RegentPayments.USDC`, as a har
 - It delivers USDC on Base, Ethereum, Arbitrum, Polygon and Solana.
 - The result is one of `submitted`, `confirmed`, `address_shown` or `completed`; only `completed` means the money arrived.
 - Privy's docs don't say whether this path also needs Stripe's own onramp application, which a direct Stripe integration needs (Stripe reviews most within 48 hours). Sean checks this in the Privy dashboard.
-- **Where, more exactly.** Privy says the US excluding New York, plus the EU. Stripe's own pages add two limits that Privy's page leaves out:
-  - Stripe's embedded onramp excludes Hawaii.
-  - Stripe's hosted onramp lists **USDC on Base as not offered in the EU**, while USDC on Ethereum is.
-  - So an EU buyer may only be able to receive Ethereum USDC, and would then need a quoted move to Base before paying for an Offers bid. This is checked with a sandbox purchase before any EU wording ships.
-- **Fees.** The buyer pays on top of the amount they receive. The fee is not published as a rate. Stripe's quote example, for 100 USD, shows a transaction fee of about 3 USD plus a network fee, for a total of 104.44 USD. Regent pays nothing and earns nothing per purchase. Pages show Stripe's quote before the buyer pays.
-- **Limits.** No minimum or maximum is published. Stripe sets limits per buyer after its identity check. The sandbox only allows purchases under 200 USD.
-- **Identity.** Stripe runs the check through Link: phone, then identity details. Returning buyers keep their saved details with Stripe, not with Regent.
-- **Other currencies.** MoonPay covers AUD and BRL by default. Meld covers 50+ currencies in 100+ countries after Regent completes a business check with Meld; that check is Sean's.
-- **Start with USDC (HQ 95, Sean: "we want to allow cards asap, it can start USDC").** The first card step is Stripe through Privy, delivering USDC on Base to the person's own wallet, in the US outside New York and Hawaii. The EU follows once the sandbox check shows which network arrives there.
+- **Already in use.** Patchbay has this path live: Privy's `useFiatOnramp`, paying in USD for USDC on Base, sent to the signed-in wallet. Privy's newer deposit window replaces that call in later Privy versions. Patchbay's fuller write-up, with sources, is in the section "The fastest card path" of `repos/patchbay/local-only-docs-and-specs/stripe-link-and-mpp-scope-2026-10-05.md` (a local file, not in Patchbay's repository).
+- **Where USDC on Base can be bought by card.**
+  - Through Stripe: in the US only, excluding New York and Hawaii.
+  - Stripe does not offer USDC on Base in the EU, although Privy's page lists the EU for Stripe in general.
+  - Outside the US, it goes through MoonPay or Meld. Whether a euro buyer is sent to MoonPay for Base is not documented; a test purchase settles it.
+- **Fees.**
+  - The buyer pays every fee, shown before paying. Regent pays and earns nothing.
+  - Stripe is the seller of record and carries fraud and disputes.
+  - Stripe's example: 3.00 on a 100.00 purchase, plus a network fee.
+  - MoonPay charges up to 4.5%, with a minimum fee of up to 3.99, plus a network fee. That makes small top-ups expensive.
+- **Limits.** Neither publishes a minimum. Stripe's example limit is 3,000 per card purchase per customer, and its test modes cap purchases at 100–200.
+- **A person must be there.** Each purchase needs the person in the browser: Link sign-in, an identity check the first time, the card, and any 3D Secure step. An agent can send its person to the window but cannot buy for itself. Privy's server-side funding covers bank transfers (Bridge) and crypto deposits, not cards.
+- **Other currencies.** MoonPay covers AUD and BRL by default. Meld covers 50+ currencies in 100+ countries after Regents Labs completes Meld's business check in the Privy dashboard; that check is Sean's.
+- **Start with USDC (HQ 95, Sean: "we want to allow cards asap, it can start USDC").** The first card step is the path Patchbay already runs: Stripe through Privy, USDC on Base into the person's own wallet, in the US outside New York and Hawaii. Other countries follow after a test purchase shows which provider and network they get.
 
 **Bank cash-out (Bridge through Privy).**
 - Setup: a Bridge account, sandbox and production keys registered in Privy, and server-side flows switched on.
@@ -144,7 +149,7 @@ A new `/showcase/funds` page beside `/showcase/payments`, built from real compon
    - **Committed**: 60.00 in two Patchbay Offers bids, each with its rule line.
    - **Pending transfers**: a card purchase of 50.00, processing.
 2. **Ready to pay.** A 30.00 Offers bid on Base shows as covered. A 180.00 bid shows short on Base, offers "Move 25 USDC from Ethereum" with a quote (fee, expected arrival, expiry), and stays not ready until the funds arrive.
-3. **Add funds.** Card through Privy (Stripe or MoonPay). Stripe is offered first in the US outside New York and Hawaii; the EU follows the sandbox check above. The dialog names the destination wallet and network, the fees and the amount expected. It moves through Submitted → Confirmed → Completed, and closing the dialog is never shown as a completed payment.
+3. **Add funds.** Card through Privy (Stripe or MoonPay). Stripe is offered first in the US outside New York and Hawaii; other countries follow the test purchase above. The dialog says a person must complete the purchase themselves. The dialog names the destination wallet and network, the fees and the amount expected. It moves through Submitted → Confirmed → Completed, and closing the dialog is never shown as a completed payment.
 4. **Send to another wallet.** Separate from cashing out.
 5. **Cash out to a bank.** Identity check (Bridge), bank account, amount, fee, expected arrival, then pending. It includes the failure state where the crypto left but the bank transfer failed: "We're checking this with the provider", with no resend button.
 6. **Wallet choice.** The connected external wallet, plus "Create a payments wallet".
