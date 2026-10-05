@@ -24,7 +24,7 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
     # its fill with one, and an element moving under `JS.ignore_attributes(["style"])`
     # keeps the one Anime.js wrote. Rising words clip by class (`.split-clip`).
     {"style-src-attr", ["'unsafe-inline'"]},
-    {"img-src", ["'self'", "data:"]},
+    {"img-src", ["'self'", "data:", "https://metadata.ens.domains"]},
     {"font-src", ["'self'"]},
     {"connect-src", ["'self'"]},
     {"frame-src", @own_frames},

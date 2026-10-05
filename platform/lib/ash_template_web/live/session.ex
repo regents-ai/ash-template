@@ -5,7 +5,7 @@ defmodule AshTemplateWeb.Live.Session do
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1, get_connect_info: 2, redirect: 2]
 
   alias AshTemplate.AccessContext
-  alias AshTemplate.Accounts.SessionAuthority
+  alias AshTemplate.Accounts.{EnsIdentity, SessionAuthority}
 
   @public_root "/"
 
@@ -68,9 +68,12 @@ defmodule AshTemplateWeb.Live.Session do
   # account's own provider evidence are re-read every time, and the principal is
   # rebuilt from that read rather than from the struct the mount captured. A
   # lapsed lease withdraws the principal, so nothing downstream can still
-  # present it as authority.
+  # present it as authority. A finished ENS lookup reads the account again, so
+  # the header shows the name and picture it found.
   defp hold(socket, lineage, account) do
     lease = %{lineage: lineage, account_id: account.id}
+    ens_topic = EnsIdentity.topic(account.id)
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, ens_topic)
 
     socket
     |> assign_principal(account)
@@ -79,6 +82,14 @@ defmodule AshTemplateWeb.Live.Session do
     end)
     |> attach_hook(:session_authority_event, :handle_event, fn _event, _params, socket ->
       recheck(socket, lease, & &1)
+    end)
+    |> attach_hook(:ens_identity, :handle_info, fn
+      %{topic: ^ens_topic}, socket ->
+        {_cont_or_halt, socket} = recheck(socket, lease, & &1)
+        {:halt, socket}
+
+      _message, socket ->
+        {:cont, socket}
     end)
   end
 

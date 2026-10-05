@@ -24,6 +24,32 @@ defmodule AshTemplate.Accounts.HumanAccount do
     update_timestamp :updated_at
   end
 
+  relationships do
+    has_one :ens_identity, AshTemplate.Accounts.EnsIdentity do
+      destination_attribute :human_account_id
+    end
+  end
+
+  # The ENS name and picture, only while they were read for the account's
+  # current wallet.
+  calculations do
+    calculate :ens_name,
+              :string,
+              expr(
+                if ens_identity.wallet_address == wallet_address do
+                  ens_identity.ens_name
+                end
+              )
+
+    calculate :ens_avatar_url,
+              :string,
+              expr(
+                if ens_identity.wallet_address == wallet_address do
+                  ens_identity.ens_avatar_url
+                end
+              )
+  end
+
   identities do
     identity :unique_privy_user_id, [:privy_user_id]
   end
@@ -33,12 +59,14 @@ defmodule AshTemplate.Accounts.HumanAccount do
       get? true
       argument :privy_did, :string, allow_nil?: false
       filter expr(privy_user_id == ^arg(:privy_did))
+      prepare build(load: [:ens_name, :ens_avatar_url])
     end
 
     read :read_self do
       get? true
       argument :id, :integer, allow_nil?: false
       filter expr(id == ^arg(:id))
+      prepare build(load: [:ens_name, :ens_avatar_url])
     end
 
     create :register_verified do
@@ -52,6 +80,7 @@ defmodule AshTemplate.Accounts.HumanAccount do
       accept [:wallet_address, :wallet_addresses]
       require_atomic? false
       validate present(:wallet_addresses)
+      change load([:ens_name, :ens_avatar_url])
     end
   end
 

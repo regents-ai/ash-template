@@ -733,3 +733,21 @@ Operations
 
 - The nine dots fill a 1.5rem box like the X and GitHub marks beside them, and the
   button centres itself in the top bar (it sat at the top before).
+
+## 2026-10-05 — ENS names and pictures
+
+- A signed-in person whose wallet has an ENS name is shown by it, with its picture,
+  in the header, the rail and the account page. A display name still comes first;
+  a wallet with no name keeps its short address and generated picture.
+- Each sign-in upserts the account's row in `account_ens_identities` and queues one
+  AshOban job (`:look_up`, queue `outside_calls`, 3 attempts) in the same
+  transaction. The job reads Ethereum mainnet outside any transaction through
+  `AgentEns.PrimaryName` (elixir-utils `ens`), which keeps a name only when it
+  resolves back to the same wallet and a picture only when the ENS avatar service
+  answers with one. Open pages hear the result and redraw the header.
+- The row records the wallet it was read for, so an account whose wallet changed is
+  never shown the old wallet's name. A lookup that keeps failing leaves the last
+  name standing.
+- Needs `ETHEREUM_READ_RPC_URL` (https); without it, sign-in asks nothing.
+  `img-src` allows `https://metadata.ens.domains`. Account pictures scale smoothly
+  instead of as pixels, so photos are not jagged.

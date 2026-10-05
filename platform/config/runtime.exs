@@ -46,6 +46,18 @@ if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
   end
 end
 
+# Each sign-in reads the wallet's ENS name from Ethereum mainnet while this
+# endpoint is set (AshTemplate.Accounts.EnsIdentity).
+if ethereum_read_rpc_url = System.get_env("ETHEREUM_READ_RPC_URL") do
+  case URI.new(ethereum_read_rpc_url) do
+    {:ok, %URI{scheme: "https", host: host}} when host not in [nil, ""] ->
+      config :ash_template, :ethereum_read_rpc_url, ethereum_read_rpc_url
+
+    _invalid ->
+      raise "ETHEREUM_READ_RPC_URL must be an https address"
+  end
+end
+
 # Jev labels saved notes while this key is set (AshTemplate.Notes.Labels).
 if openrouter_key = System.get_env("OPENROUTER_API_KEY") do
   config :regent_jev, api_key: openrouter_key

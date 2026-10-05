@@ -354,7 +354,7 @@
   height: 1.75rem;
   flex: 0 0 auto;
   border: 1px solid var(--ash-line-strong);
-  image-rendering: pixelated;
+  object-fit: cover;
 }
 
 .shell-brand__mark {
@@ -657,7 +657,7 @@ details[open] > summary .shell-chevron {
 .shell-rail__you img {
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
+  object-fit: cover;
 }
 
 /* Each scrolling panel holds its own positioned content, so nothing in it can

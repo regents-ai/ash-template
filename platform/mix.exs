@@ -57,7 +57,10 @@ defmodule AshTemplate.MixProject do
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
       {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
       {:regent_chain, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain"},
-      {:siwa, git: @elixir_utils, ref: @siwa_ref, sparse: "siwa/siwa-elixir/apps/siwa"},
+      {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
+      # ens_elixir names siwa by a sibling path; this pin replaces it.
+      {:siwa,
+       git: @elixir_utils, ref: @siwa_ref, sparse: "siwa/siwa-elixir/apps/siwa", override: true},
       {:regent_jev, git: @elixir_utils, ref: @jev_ref, sparse: "jev"},
       {:regent_http, git: @elixir_utils, ref: @jev_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},

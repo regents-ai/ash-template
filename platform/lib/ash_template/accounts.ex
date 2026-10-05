@@ -1,5 +1,5 @@
 defmodule AshTemplate.Accounts do
-  @moduledoc "Human accounts, their verified sessions and linked social identities."
+  @moduledoc "Human accounts, their verified sessions, linked social identities and ENS names."
 
   use Ash.Domain
 
@@ -18,6 +18,12 @@ defmodule AshTemplate.Accounts do
     end
 
     resource AshTemplate.Accounts.SessionAuthority
+
+    resource AshTemplate.Accounts.EnsIdentity do
+      define :request_ens_lookup,
+        action: :request_lookup,
+        args: [:human_account_id, :wallet_address]
+    end
 
     resource AshTemplate.Accounts.LinkedIdentity do
       define :upsert_linked_identity, action: :upsert_verified
