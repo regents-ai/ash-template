@@ -751,3 +751,19 @@ Operations
 - Needs `ETHEREUM_READ_RPC_URL` (https); without it, sign-in asks nothing.
   `img-src` allows `https://metadata.ens.domains`. Account pictures scale smoothly
   instead of as pixels, so photos are not jagged.
+
+## 2026-10-05 — Search box redesign
+
+- The search dialog is now a command palette: a full-width field with the
+  search mark and an Esc key, results in groups with counts, a kind mark per
+  result (page, action, note, room message), the first match marked in each
+  label and excerpt, and a footer naming the keys. Phones get a Close word and
+  no key hints.
+- Search opens with every page and action as suggestions instead of an empty
+  list (`ShellLive.unsearched/0`, also used by the showcase frame preview).
+- Focus stays in the field (combobox with `aria-activedescendant`); the arrow
+  keys move the highlight, Enter opens it, Escape closes the box, and the
+  pointer moves the highlight too. Enter pressed before the results for the
+  typed text arrive searches instead of opening a stale result.
+- Note and room-message excerpts start a little before the first match.
+- The field's focus shows as the accent line under it rather than a frame.

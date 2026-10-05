@@ -389,45 +389,83 @@ defmodule AshTemplateWeb.Components.Shell do
       <dialog
         id="shell-search"
         class="shell-search"
-        aria-labelledby="shell-search-title"
+        aria-label="Search"
         phx-mounted={JS.ignore_attributes(["open"])}
       >
         <form id="shell-search-form" role="search" phx-change="search" phx-submit="search">
-          <label id="shell-search-title" for="shell-search-input">Search</label>
+          <.icon name={:search} class="shell-icon shell-search__glass" />
           <input
             id="shell-search-input"
             name="q"
             type="search"
             value={@search.query}
+            role="combobox"
+            aria-label="Search"
+            aria-expanded="true"
+            aria-controls="shell-search-results"
+            aria-autocomplete="list"
             autocomplete="off"
+            spellcheck="false"
             maxlength="100"
-            phx-debounce="200"
-            placeholder="Pages, actions, notes and room messages"
-            aria-describedby="shell-search-hint"
+            phx-debounce="150"
+            phx-mounted={JS.ignore_attributes(["aria-activedescendant"])}
+            placeholder="Search pages, actions, notes and messages"
           />
-          <p id="shell-search-hint" class="visually-hidden">Results appear below as you type.</p>
+          <button type="button" class="shell-search__close" data-search-close>
+            <kbd class="shell-search__esc">Esc</kbd>
+            <span class="shell-search__close-word">Close</span>
+          </button>
         </form>
-        <div id="shell-search-results" aria-live="polite">
-          <p :if={@search.query != "" and @search.results == []} class="rg-muted">
-            Nothing matches “{@search.query}”.
-          </p>
-          <section :for={{group, items} <- @search.results} aria-label={group}>
-            <h3>{group}</h3>
-            <ul>
-              <li :for={item <- items}>
-                <.link
-                  patch={item.live? && item.path}
-                  href={!item.live? && item.path}
-                  data-search-result
-                >
-                  <span>{item.label}</span>
-                  <span :if={item[:detail]} class="shell-search__detail">{item.detail}</span>
-                </.link>
-              </li>
-            </ul>
+        <div
+          id="shell-search-results"
+          role="listbox"
+          aria-label="Results"
+          data-query={@search.query}
+        >
+          <div :if={@search.query != "" and @search.results == []} class="shell-search__empty">
+            <.icon name={:search} />
+            <p><strong>No results for “{@search.query}”</strong></p>
+            <p>Try a page name, a note title or words from a room message.</p>
+          </div>
+          <section
+            :for={{{group, items}, g} <- Enum.with_index(@search.results)}
+            role="group"
+            aria-labelledby={"shell-search-group-#{g}"}
+          >
+            <h3 id={"shell-search-group-#{g}"}>
+              {group} <span class="shell-search__count">{length(items)}</span>
+            </h3>
+            <.link
+              :for={{item, i} <- Enum.with_index(items)}
+              id={"shell-search-result-#{g}-#{i}"}
+              patch={item.live? && item.path}
+              href={!item.live? && item.path}
+              role="option"
+              aria-selected="false"
+              data-search-result
+              phx-mounted={JS.ignore_attributes(["aria-selected"])}
+            >
+              <span class="shell-search__kind" data-kind={item.kind}>
+                <.icon name={kind_icon(item.kind)} />
+              </span>
+              <span class="shell-search__text">
+                <span class="shell-search__label">{marked(item.label, @search.query)}</span>
+                <span :if={item[:detail]} class="shell-search__detail">
+                  {marked(item.detail, @search.query)}
+                </span>
+              </span>
+              <kbd class="shell-search__enter" aria-hidden="true">↵</kbd>
+            </.link>
           </section>
         </div>
-        <button type="button" class="shell-search__close" data-search-close>Close</button>
+        <p id="shell-search-status" class="visually-hidden" aria-live="polite">
+          {result_count(@search)}
+        </p>
+        <footer class="shell-search__footer" aria-hidden="true">
+          <span><kbd>↑</kbd><kbd>↓</kbd> Move</span>
+          <span><kbd>↵</kbd> Open</span>
+          <span><kbd>Esc</kbd> Close</span>
+        </footer>
       </dialog>
     </div>
     """
@@ -437,6 +475,36 @@ defmodule AshTemplateWeb.Components.Shell do
   # the panel is closed, the light pulses until the panel is opened.
   defp aside_digest(checklist),
     do: checklist |> Enum.map(&{&1.id, &1.done?}) |> :erlang.phash2() |> Integer.to_string(36)
+
+  defp kind_icon(:page), do: :page
+  defp kind_icon(:action), do: :action
+  defp kind_icon(:note), do: :notes
+  defp kind_icon(:message), do: :rooms
+
+  defp result_count(%{query: ""}), do: ""
+
+  defp result_count(%{results: results}) do
+    case results |> Enum.map(fn {_group, items} -> length(items) end) |> Enum.sum() do
+      0 -> "No results"
+      1 -> "1 result"
+      count -> "#{count} results"
+    end
+  end
+
+  # The first place the query appears in `text` is marked.
+  defp marked(text, ""), do: text
+
+  defp marked(text, query) do
+    case Regex.split(~r/#{Regex.escape(query)}/iu, text, parts: 2, include_captures: true) do
+      [before, match, rest] ->
+        {:safe, [escape(before), "<mark>", escape(match), "</mark>", escape(rest)]}
+
+      [_unmatched] ->
+        text
+    end
+  end
+
+  defp escape(text), do: Phoenix.HTML.Engine.html_escape(text)
 
   defp help, do: @help
   defp footer_links, do: @footer_links
@@ -650,6 +718,8 @@ defmodule AshTemplateWeb.Components.Shell do
         <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17v.5" />
       </g>
       <path :if={@name == :news} d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+      <path :if={@name == :page} d="M6 3h9l4 4v14H6zM14 3v5h5" />
+      <path :if={@name == :action} d="M13 3 5 13h6l-1 8 8-10h-6z" />
       <g :if={@name == :assistant}>
         <path d="M5 8h14v10H5zM12 4v4M9 13v1M15 13v1" /><path d="M2 12v3M22 12v3" />
       </g>

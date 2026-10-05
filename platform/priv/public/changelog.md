@@ -8,6 +8,9 @@ What changed in Ash Template lately, newest first.
   Autolaunch, KeyFleet, Techtree, Protocol and your Regents account.
 - **Your ENS name.** If your wallet has an ENS name, you are shown by it, with its
   picture, a moment after you sign in.
+- **A better search.** Search opens with suggestions, marks the words you typed in each
+  result and shows what kind of thing each one is. Move through results with the arrow
+  keys and press Enter to open one.
 
 ## 4 October 2026
 

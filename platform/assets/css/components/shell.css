@@ -1018,83 +1018,275 @@ details[open] > summary .shell-chevron {
 /* ---- Search ---- */
 
 .shell-search {
-  width: min(36rem, calc(100% - 2rem));
-  max-height: min(36rem, calc(100dvh - 4rem));
-  margin-block-start: 4.5rem;
+  width: min(40rem, calc(100% - 2rem));
+  max-height: min(34rem, calc(100dvh - 6rem));
+  margin-block-start: 12vh;
   padding: 0;
   border: 1px solid var(--ash-line-strong);
   background: var(--color-surface);
   color: var(--color-fg);
+  box-shadow: 0 1.5rem 3rem -1rem color-mix(in oklch, var(--palette-charcoal) 35%, transparent);
+}
+
+.shell-search[open] {
+  display: flex;
+  flex-direction: column;
 }
 
 .shell-search::backdrop {
-  background: color-mix(in oklch, var(--color-bg) 70%, transparent);
+  background: color-mix(in oklch, var(--palette-charcoal) 30%, transparent);
+}
+
+.shell-search kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 #shell-search-form {
-  display: grid;
-  gap: 0.35rem;
-  padding: 1rem;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.75rem 0 1.1rem;
   border-block-end: 1px solid var(--color-border);
 }
 
-#shell-search-form label {
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-#shell-search-results {
-  display: grid;
-  gap: 0.75rem;
-  max-height: 24rem;
-  padding: 0.75rem 1rem;
-  overflow: auto;
-}
-
-#shell-search-results h3 {
-  margin: 0 0 0.25rem;
+.shell-search__glass {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
   color: var(--color-fg-muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
-#shell-search-results ul {
-  display: grid;
-  margin: 0;
+#shell-search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 3.75rem;
   padding: 0;
-  list-style: none;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  font-size: 1.1rem;
 }
 
-#shell-search-results a {
-  display: grid;
-  gap: 0.1rem;
-  padding: 0.45rem 0.6rem;
-  text-decoration: none;
+/* The field fills the top of the box, so its line marks focus instead of a frame. */
+#app-shell #shell-search-input:focus-visible {
+  outline: none;
 }
 
-#shell-search-results a:is(:hover, :focus-visible) {
-  background: var(--ash-panel-strong);
+#shell-search-form:has(#shell-search-input:focus-visible) {
+  border-block-end-color: var(--ash-accent);
 }
 
-.shell-search__detail {
+#shell-search-input::placeholder {
   color: var(--color-fg-muted);
-  font-size: 0.85rem;
-  overflow-wrap: anywhere;
+}
+
+#shell-search-input::-webkit-search-cancel-button {
+  display: none;
 }
 
 #app-shell .shell-search__close {
-  display: block;
-  width: 100%;
-  min-height: 2.75rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-height: 2rem;
+  padding: 0;
   border: 0;
-  border-block-start: 1px solid var(--color-border);
-  border-radius: 0;
   background: transparent;
   color: var(--color-fg-muted);
   font: inherit;
+  font-size: 0.85rem;
   cursor: pointer;
+}
+
+.shell-search__close-word {
+  display: none;
+}
+
+#shell-search-results {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.5rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+#shell-search-results section + section {
+  margin-block-start: 0.5rem;
+}
+
+#shell-search-results h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.6rem 0.35rem;
+  color: var(--color-fg-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.shell-search__count {
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+
+#shell-search-results [data-search-result] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  border-inline-start: 2px solid transparent;
+  color: var(--color-fg);
+  text-decoration: none;
+  scroll-margin-block: 2.5rem 0.5rem;
+}
+
+#shell-search-results [data-search-result][aria-selected="true"] {
+  border-inline-start-color: var(--ash-accent-warm);
+  background: var(--ash-panel-strong);
+}
+
+.shell-search__kind {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg-muted);
+}
+
+.shell-search__kind .shell-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.shell-search__kind[data-kind="action"] {
+  color: var(--ash-accent-warm);
+}
+
+.shell-search__kind[data-kind="note"],
+.shell-search__kind[data-kind="message"] {
+  color: var(--ash-accent);
+}
+
+.shell-search__text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 0.1rem;
+}
+
+.shell-search__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-search__detail {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+#shell-search-results mark {
+  background: color-mix(in oklch, var(--palette-tangerine-tango) 22%, transparent);
+  color: inherit;
+}
+
+.shell-search__enter {
+  visibility: hidden;
+}
+
+[aria-selected="true"] > .shell-search__enter {
+  visibility: visible;
+}
+
+.shell-search__empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 2.5rem 1.5rem;
+  color: var(--color-fg-muted);
+  text-align: center;
+}
+
+.shell-search__empty .shell-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-block-end: 0.5rem;
+}
+
+.shell-search__empty p {
+  margin: 0;
+}
+
+.shell-search__empty strong {
+  color: var(--color-fg);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.shell-search__footer {
+  display: flex;
+  flex: none;
+  gap: 1.25rem;
+  padding: 0.6rem 1.1rem;
+  border-block-start: 1px solid var(--color-border);
+  color: var(--color-fg-muted);
+  font-size: 0.78rem;
+}
+
+.shell-search__footer span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* A phone has no keys to name, so the box takes the top of the screen and
+   closes with a word. */
+@media (max-width: 47.99rem) {
+  .shell-search {
+    width: calc(100% - 1rem);
+    max-width: none;
+    max-height: calc(100dvh - 1rem);
+    margin-block-start: 0.5rem;
+  }
+
+  .shell-search .shell-search__esc,
+  .shell-search .shell-search__enter,
+  .shell-search__footer {
+    display: none;
+  }
+
+  .shell-search__close-word {
+    display: inline;
+  }
+
+  #app-shell .shell-search__close {
+    min-height: 2.75rem;
+    padding-inline: 0.5rem;
+  }
 }
 
 /* ---- Below a wide screen the right side bar covers the page's edge ---- */

@@ -53,7 +53,7 @@ defmodule AshTemplateWeb.ShellLive do
     room: "/rooms/#{hd(Room.all()).slug}",
     chat: "/chat"
   }
-  @no_search %{query: "", results: []}
+  @kinds %{"Pages" => :page, "Actions" => :action}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -78,7 +78,7 @@ defmodule AshTemplateWeb.ShellLive do
        jobs_running: JobsRunning.count(),
        healthy: AshTemplate.Health.database_ready?(),
        version: version(),
-       search: @no_search,
+       search: unsearched(),
        assistant: nil
      )
      |> count_unread()}
@@ -97,7 +97,7 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(:route_spec, route_spec)
      |> load_verified_connections(route_spec)
      |> load_notifications(route_spec)
-     |> assign(:search, @no_search)
+     |> assign(:search, unsearched())
      |> enter_room(room)
      |> open_conversation(conversation)}
   end
@@ -246,6 +246,9 @@ defmodule AshTemplateWeb.ShellLive do
       do: {:noreply, assign(socket, :conversation, conversation)},
       else: {:noreply, socket}
   end
+
+  @doc "The search box before anything is typed: every page and action, as suggestions."
+  def unsearched, do: %{query: "", results: search("", nil)}
 
   @impl true
   def render(assigns) do
@@ -509,19 +512,17 @@ defmodule AshTemplateWeb.ShellLive do
     named ++ found_notes(query, actor) ++ found_messages(query, actor)
   end
 
-  defp live_items({group, entries}),
-    do: {group, Enum.map(entries, &Map.put(&1, :live?, RouteCatalog.live_path?(&1.path)))}
+  defp live_items({group, entries}) do
+    kind = Map.fetch!(@kinds, group)
+
+    {group,
+     Enum.map(entries, &Map.merge(&1, %{kind: kind, live?: RouteCatalog.live_path?(&1.path)}))}
+  end
 
   defp found_notes(query, %Human{} = actor) when byte_size(query) >= 2 do
     case Notes.search_my_notes(query, actor: actor) do
       {:ok, [_ | _] = notes} ->
-        [
-          {"Notes",
-           Enum.map(
-             notes,
-             &%{label: &1.title, detail: excerpt(&1.body), path: "/notes", live?: true}
-           )}
-        ]
+        [{"Notes", Enum.map(notes, &note_item(&1, query))}]
 
       _none ->
         []
@@ -533,7 +534,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp found_messages(query, actor) when byte_size(query) >= 2 do
     case Rooms.search_messages(query, actor: actor) do
       {:ok, [_ | _] = messages} ->
-        [{"Room messages", Enum.map(messages, &message_item/1)}]
+        [{"Room messages", Enum.map(messages, &message_item(&1, query))}]
 
       _none ->
         []
@@ -542,20 +543,47 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp found_messages(_query, _actor), do: []
 
-  defp message_item(message) do
+  defp note_item(note, query),
+    do: %{
+      kind: :note,
+      label: note.title,
+      detail: excerpt(note.body, query),
+      path: "/notes",
+      live?: true
+    }
+
+  defp message_item(message, query) do
     {:ok, room} = message.room |> Atom.to_string() |> Room.fetch()
 
     %{
+      kind: :message,
       label: "#{message.author_name} in #{room.name}",
-      detail: excerpt(message.body),
+      detail: excerpt(message.body, query),
       path: "/rooms/#{room.slug}",
       live?: true
     }
   end
 
-  defp excerpt(nil), do: nil
-  defp excerpt(text) when byte_size(text) <= 90, do: text
-  defp excerpt(text), do: String.slice(text, 0, 89) <> "…"
+  @excerpt_length 90
+
+  # A long text is cut to about ninety characters, starting a little before
+  # its first match so the match is in view.
+  defp excerpt(nil, _query), do: nil
+
+  defp excerpt(text, query) do
+    length = String.length(text)
+
+    start =
+      case Regex.run(~r/#{Regex.escape(query)}/iu, text, return: :index) do
+        [{at, _size}] -> text |> binary_part(0, at) |> String.length() |> Kernel.-(30) |> max(0)
+        nil -> 0
+      end
+
+    start = min(start, max(length - @excerpt_length, 0))
+    lead = if start > 0, do: "…", else: ""
+    tail = if start + @excerpt_length < length, do: "…", else: ""
+    lead <> String.slice(text, start, @excerpt_length) <> tail
+  end
 
   defp assistant_conversation(%{conversation_id: id}), do: %{conversation_id: id}
   defp assistant_conversation(nil), do: %{}

@@ -1,5 +1,5 @@
 // The app shell's panels that the browser alone opens and closes: the right side
-// bar, the section sidebar and the search dialog. Open and hidden states live
+// bar, the section sidebar and the search dialog, with the dialog's highlight. Open and hidden states live
 // on <html data-aside data-sidebar>, which the server first draws from the
 // cookies written here (AshTemplateWeb.Plugs.Panels), so LiveView never patches
 // them away.
@@ -95,11 +95,47 @@ export function installShellPanels(shell: HTMLElement) {
     shell.querySelector<HTMLButtonElement>(next)?.focus()
   }
 
+  // Focus stays in the search field; the arrow keys move a highlight through
+  // the results and Enter opens the highlighted one. The results the server
+  // last drew name their query, and a new query starts again at the top.
+  const searchInput = () => search()?.querySelector<HTMLInputElement>("#shell-search-input")
+  const results = () => [...shell.querySelectorAll<HTMLAnchorElement>("[data-search-result]")]
+  const highlighted = () => results().find(result => result.getAttribute("aria-selected") === "true")
+  const drawnQuery = () => shell.querySelector<HTMLElement>("#shell-search-results")?.dataset.query
+  let highlightedQuery: string | undefined
+
+  const highlight = (result: HTMLAnchorElement | undefined) => {
+    results().forEach(other => other.setAttribute("aria-selected", String(other === result)))
+    if (result) {
+      searchInput()?.setAttribute("aria-activedescendant", result.id)
+      result.scrollIntoView({block: "nearest"})
+    } else {
+      searchInput()?.removeAttribute("aria-activedescendant")
+    }
+  }
+
+  const syncSearch = () => {
+    if (!search()?.open) return
+    const query = drawnQuery()
+    if (query !== highlightedQuery || !highlighted()) highlight(results()[0])
+    highlightedQuery = query
+  }
+
+  const moveHighlight = (step: number) => {
+    const all = results()
+    if (all.length === 0) return
+    const at = all.indexOf(highlighted() as HTMLAnchorElement)
+    const next = at < 0 ? (step > 0 ? 0 : all.length - 1) : (at + step + all.length) % all.length
+    highlight(all[next])
+  }
+
   const openSearch = () => {
     const dialog = search()
     if (!dialog || dialog.open) return
     dialog.showModal()
-    dialog.querySelector<HTMLInputElement>("#shell-search-input")?.select()
+    searchInput()?.select()
+    highlightedQuery = undefined
+    syncSearch()
   }
 
   const closeSearch = () => search()?.close()
@@ -132,6 +168,27 @@ export function installShellPanels(shell: HTMLElement) {
       return
     }
 
+    if (search()?.open && event.target === searchInput()) {
+      // A search field would spend Escape on clearing itself; here it closes.
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeSearch()
+        return
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault()
+        moveHighlight(event.key === "ArrowDown" ? 1 : -1)
+        return
+      }
+      // Enter before the results for what was typed arrive searches instead.
+      const current = drawnQuery() === searchInput()?.value.trim()
+      if (event.key === "Enter" && !event.isComposing && current && highlighted()) {
+        event.preventDefault()
+        highlighted()?.click()
+        return
+      }
+    }
+
     if (event.key === "Escape" && asideOpen() && aside()?.contains(document.activeElement)) {
       event.preventDefault()
       setAside(false)
@@ -143,13 +200,22 @@ export function installShellPanels(shell: HTMLElement) {
   const keys = shell.querySelector<HTMLElement>("[data-shell-search-keys]")
   if (keys && /Mac|iPhone|iPad/.test(navigator.platform)) keys.textContent = "⌘K"
 
+  // The pointer moves the highlight too, so Enter and a press agree.
+  const onPointerMove = (event: PointerEvent) => {
+    const target = event.target instanceof Element ? event.target : null
+    const result = target?.closest<HTMLAnchorElement>("[data-search-result]")
+    if (result && result !== highlighted()) highlight(result)
+  }
+
   shell.addEventListener("click", onClick)
+  shell.addEventListener("pointermove", onPointerMove)
   document.addEventListener("keydown", onKeydown)
 
   // A list the page put in the sidebar marks the page it is on, as the
   // server-drawn links do.
   const sync = () => {
     syncAside()
+    syncSearch()
     const destination = shell.dataset.destination
     shell.querySelectorAll<HTMLAnchorElement>("#shell-sidebar-page a[href]").forEach(link => {
       if (link.getAttribute("href") === destination) link.setAttribute("aria-current", "page")
@@ -163,6 +229,7 @@ export function installShellPanels(shell: HTMLElement) {
     sync,
     cleanup: () => {
       shell.removeEventListener("click", onClick)
+      shell.removeEventListener("pointermove", onPointerMove)
       document.removeEventListener("keydown", onKeydown)
     },
   }

@@ -118,7 +118,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
       jobs_running={0}
       healthy={true}
       version="sample"
-      search={%{query: "", results: []}}
+      search={AshTemplateWeb.ShellLive.unsearched()}
     >
       <:content>
         <div style="padding: 32px">
