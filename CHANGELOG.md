@@ -728,3 +728,8 @@ Operations
   and a LiveView patch leaves it open.
 - On phones the header's icon presses narrow to 2.25rem so every tool fits on one row
   down to 360px wide.
+
+## 2026-10-05 — Regents apps button size
+
+- The nine dots fill a 1.5rem box like the X and GitHub marks beside them, and the
+  button centres itself in the top bar (it sat at the top before).

@@ -220,6 +220,12 @@
   height: 1.3rem;
 }
 
+/* The nine dots fill their box, as the X and GitHub marks beside them do. */
+.shell-icon--apps {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 @media (hover: hover) {
   #app-shell .shell-tool:hover,
   #app-shell .shell-search-button:hover {
@@ -475,6 +481,12 @@ details[open] > summary .shell-chevron {
 }
 
 /* ---- Regents apps ---- */
+
+/* The button sits straight in the top bar rather than in the tools group, so it
+   centres itself as the groups beside it do. */
+#app-shell #shell-apps-button {
+  align-self: center;
+}
 
 /* The panel sits under the top bar's right end; the browser places it above
    everything else and closes it on Escape or a press outside. */

@@ -583,7 +583,7 @@ defmodule AshTemplateWeb.Components.Shell do
       popovertarget="shell-apps"
       aria-label="Regents apps"
     >
-      <.icon name={:apps} />
+      <.icon name={:apps} class="shell-icon shell-icon--apps" />
       <span class="shell-tool__tip" aria-hidden="true">Regents apps</span>
     </button>
     <nav id="shell-apps" class="shell-apps" popover aria-labelledby="shell-apps-title">
@@ -609,7 +609,7 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  defp nine_dots, do: for(y <- [4, 10.5, 17], x <- [4, 10.5, 17], do: {x, y})
+  defp nine_dots, do: for(y <- [1.5, 9.75, 18], x <- [1.5, 9.75, 18], do: {x, y})
 
   defp crown_blocks do
     top = for x <- [31, 103, 175], do: {x, 46}
@@ -659,7 +659,7 @@ defmodule AshTemplateWeb.Components.Shell do
       <path :if={@name == :expand} d="M3 4h18v16H3zM9 4v16M13 10l2 2-2 2" />
       <path :if={@name == :close} d="M6 6l12 12M18 6 6 18" />
       <g :if={@name == :apps} fill="currentColor" stroke="none">
-        <rect :for={{x, y} <- nine_dots()} x={x} y={y} width="3" height="3" />
+        <rect :for={{x, y} <- nine_dots()} x={x} y={y} width="4.5" height="4.5" />
       </g>
     </svg>
     """
