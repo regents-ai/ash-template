@@ -15,7 +15,9 @@
     {"app": "regent_payments", "repository": "https://github.com/regents-ai/regents.git", "sparse": "payments"},
     {"app": "regent_agents", "repository": "https://github.com/regents-ai/regents.git", "sparse": "agents"},
     {"app": "regent_openai", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "openai"},
-    {"app": "regent_mcp_events", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "mcp_events"}
+    {"app": "regent_mcp_events", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "mcp_events"},
+    {"app": "regent_jev", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "jev"},
+    {"app": "regent_sprites", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "sprites"}
   ],
   "fixes": [
     {
