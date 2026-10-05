@@ -50,7 +50,7 @@ export const ShellViews: Hook = {
 
     this.scope = scope.add(() => {
       const place = (path?: string) =>
-        [...this.el.querySelectorAll("#shell-sidebar a[href]")].findIndex(
+        [...this.el.querySelectorAll("#shell-rail a[href], #shell-tabs a[href]")].findIndex(
           link => link.getAttribute("href") === path,
         )
 

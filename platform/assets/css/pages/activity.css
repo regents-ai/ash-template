@@ -1,0 +1,64 @@
+/* Activity: what happened for the signed-in person, newest first. */
+.activity-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.activity-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-list li + li {
+  border-block-start: 1px solid var(--color-border);
+}
+
+.activity-list a {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .activity-list a:hover {
+    background: color-mix(in oklch, var(--color-fg) 5%, transparent);
+  }
+}
+
+.activity-list li[data-unread="true"] a {
+  box-shadow: inset 3px 0 var(--ash-accent-warm);
+}
+
+.activity-list__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.activity-list__new {
+  padding: 0 0.35rem;
+  background: var(--ash-accent-warm);
+  color: var(--color-bg);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.activity-list__body {
+  overflow-wrap: anywhere;
+}
+
+.activity-list time {
+  color: var(--color-fg-muted);
+  font-size: 0.8rem;
+}

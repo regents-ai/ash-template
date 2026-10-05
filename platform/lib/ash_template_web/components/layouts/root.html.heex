@@ -7,6 +7,8 @@
   data-brand="platform"
   data-theme={theme}
   data-home-theme-locked={if home?, do: "true", else: "false"}
+  data-aside={assigns[:aside]}
+  data-sidebar={assigns[:sidebar]}
 >
   <head>
     <meta charset="utf-8" />
@@ -54,6 +56,6 @@
   </head>
   <body>
     {@inner_content}
-    <.product_links :if={!home?} />
+    <.product_links :if={!home? and !assigns[:route_spec]} />
   </body>
 </html>

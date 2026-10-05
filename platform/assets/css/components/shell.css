@@ -1,8 +1,18 @@
+/* The app shell: one hairline grid of top bar, rail, sidebar, page, right side
+   bar and bottom bar. Which side panels show is the visitor's, on
+   <html data-aside data-sidebar>. */
 #app-shell {
+  --shell-rail: 4.25rem;
+  --shell-sidebar: 15rem;
+  --shell-aside: 20rem;
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template: auto minmax(0, 1fr) / var(--rg-rail-width) minmax(0, 1fr);
+  grid-template:
+    "header header header header" auto
+    "rail sidebar main aside" minmax(0, 1fr)
+    "footer footer footer footer" auto
+    / var(--shell-rail) var(--shell-sidebar) minmax(0, 1fr) var(--shell-aside);
   min-width: 0;
   height: 100dvh;
   overflow: visible;
@@ -12,7 +22,15 @@
   line-height: 1.55;
 }
 
-/* Hidden above the page until a keyboard reaches it. */
+:root[data-sidebar="hidden"] #app-shell {
+  --shell-sidebar: 0px;
+}
+
+:root:not([data-aside="open"]) #app-shell {
+  --shell-aside: 0px;
+}
+
+/* Unseen until a keyboard reaches it. */
 .shell-skip {
   position: absolute;
   inset-block-start: 0.5rem;
@@ -21,34 +39,48 @@
   padding: 0.5rem 0.75rem;
   background: var(--color-bg);
   color: var(--color-fg);
-  transform: translateY(-200%);
 }
 
-.shell-skip:focus {
-  transform: none;
+.shell-skip:not(:focus) {
+  clip-path: inset(50%);
 }
 
-#route-content h1:focus {
+#route-content h1:focus,
+#shell-aside h3:focus {
   outline: none;
 }
 
-#shell-header,
-#shell-sidebar,
-#app-shell-scroller {
-  position: relative;
+#app-shell :focus-visible {
+  outline: 2px solid var(--ash-accent);
+  outline-offset: 2px;
 }
 
-/* One hairline grid: the header draws the line under it, the sidebar the line
-   beside it, and nothing floats. */
+#shell-header :focus-visible,
+#shell-drawer :focus-visible,
+#shell-footer :focus-visible {
+  outline-offset: -2px;
+}
+
+#app-shell a {
+  color: inherit;
+}
+
+/* ---- Top bar ---- */
+
 #shell-header {
+  position: relative;
   z-index: 4;
   display: flex;
-  grid-column: 1 / -1;
+  grid-area: header;
   align-items: stretch;
   min-width: 0;
-  min-height: 4rem;
+  min-height: 3.5rem;
   border-block-end: 1px solid var(--color-border);
   background: var(--color-bg);
+}
+
+#shell-header a {
+  text-decoration: none;
 }
 
 #shell-header .shell-spacer {
@@ -56,37 +88,14 @@
 }
 
 #shell-header .rl-header-links {
-  margin-inline-end: 1.7rem;
+  display: flex;
+  align-items: center;
+  margin-inline: var(--space-1) 1.2rem;
 }
 
-#shell-header a,
-#shell-sidebar a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* One ring on both grounds: outside the control where there is room for it,
-   inside the header and sidebar cells, which run edge to edge. */
-#app-shell :focus-visible {
-  outline: 2px solid var(--ash-accent);
-  outline-offset: 2px;
-}
-
-#shell-header :focus-visible,
-#shell-sidebar :focus-visible {
-  outline-offset: -2px;
-}
-
-.account-control,
-.theme-control,
-.account-control details {
-  position: relative;
-}
-
-/* Every header control is a bordered cell, as the marketing header's tabs are. */
 .shell-brand,
 .account-control summary,
-.mobile-menu-button {
+#app-shell .mobile-menu-button {
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -105,6 +114,208 @@
 
 .shell-brand {
   margin-inline-start: -1px;
+  border-inline-end: 1px solid var(--color-border);
+}
+
+.shell-brand__name {
+  font-family: var(--font-family-title);
+  font-weight: 400;
+}
+
+.shell-brand__mark {
+  position: relative;
+  display: block;
+  width: 1.6rem;
+  height: 1.3rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.shell-brand__mark img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Dark is the default; light shows once chosen, or before any choice on a
+   device that asks for light. */
+.shell-brand__mark-light {
+  display: none;
+}
+
+:root[data-theme="light"] .shell-brand__mark-light {
+  display: block;
+}
+
+:root[data-theme="light"] .shell-brand__mark-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .shell-brand__mark-light {
+    display: block;
+  }
+
+  :root:not([data-theme]) .shell-brand__mark-dark {
+    display: none;
+  }
+}
+
+#app-shell .shell-search-button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  align-self: center;
+  min-width: min(22rem, 32vw);
+  min-height: 2.5rem;
+  margin-inline-start: var(--space-2);
+  padding: 0.35rem 0.5rem 0.35rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: color-mix(in oklch, var(--color-fg) 3%, transparent);
+  color: var(--color-fg-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.shell-search-button__label {
+  flex: 1;
+  text-align: start;
+}
+
+.shell-search-button__keys {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--color-border);
+  font-family: var(--font-family-ui);
+  font-size: 0.72rem;
+}
+
+.shell-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-inline-end: var(--space-1);
+}
+
+#app-shell .shell-tool {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.shell-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+@media (hover: hover) {
+  #app-shell .shell-tool:hover,
+  #app-shell .shell-search-button:hover {
+    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+    color: var(--color-fg);
+  }
+
+  .shell-brand:hover,
+  .account-control summary:hover,
+  #app-shell .mobile-menu-button:hover {
+    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+  }
+}
+
+#shell-aside-button[aria-expanded="true"] {
+  background: var(--ash-panel-strong);
+  color: var(--color-fg);
+}
+
+/* A name for every icon, shown on hover and on keyboard focus. */
+.shell-tool__tip {
+  position: absolute;
+  inset-block-start: calc(100% + 0.35rem);
+  inset-inline-start: 50%;
+  z-index: 8;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--ash-line-strong);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+:is(.shell-tool, .shell-rail__section):is(:hover, :focus-visible) > .shell-tool__tip {
+  opacity: 1;
+}
+
+.shell-tool__count {
+  position: absolute;
+  inset-block-start: 0.3rem;
+  inset-inline-end: 0.2rem;
+  min-width: 1.1rem;
+  padding: 0 0.25rem;
+  background: var(--ash-accent-warm);
+  color: var(--color-bg);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
+/* The side panel's light: still until the panel holds something not yet seen,
+   then a slow pulse of its glow while the panel stays closed. */
+.shell-pulse {
+  position: absolute;
+  inset-block-start: 0.55rem;
+  inset-inline-end: 0.55rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ash-accent-warm);
+  opacity: 0;
+}
+
+#shell-aside-button[data-unseen="true"] .shell-pulse {
+  opacity: 1;
+  animation: shell-pulse 1.6s var(--ease-out) infinite;
+}
+
+@keyframes shell-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--ash-accent-warm) 60%, transparent);
+  }
+
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 0.35rem color-mix(in oklch, var(--ash-accent-warm) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #shell-aside-button[data-unseen="true"] .shell-pulse {
+    animation: none;
+  }
+}
+
+.account-control,
+.theme-control,
+.account-control details {
+  position: relative;
 }
 
 .account-control {
@@ -125,14 +336,6 @@
 
 .account-control summary::-webkit-details-marker {
   display: none;
-}
-
-@media (hover: hover) {
-  .shell-brand:hover,
-  .account-control summary:hover,
-  .mobile-menu-button:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
-  }
 }
 
 .account-control details[open] summary {
@@ -265,27 +468,132 @@ details[open] > summary .shell-chevron {
   color: var(--ash-accent-warm);
 }
 
-.mobile-menu-button {
-  display: none;
+.account-control > .rg-button {
+  height: auto;
+  margin: var(--space-1);
+}
+
+/* ---- Rail and sidebar ---- */
+
+#shell-drawer {
+  display: contents;
 }
 
 .shell-menu-close,
-.shell-menu-scrim {
+.shell-menu-scrim,
+#app-shell .mobile-menu-button {
   display: none;
 }
 
+#shell-rail {
+  z-index: 3;
+  display: flex;
+  grid-area: rail;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+  border-inline-end: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+#shell-rail ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-rail__section {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+  border-block-end: 1px solid var(--color-border);
+  color: var(--color-fg-muted);
+  text-decoration: none;
+}
+
+.shell-rail__label {
+  display: none;
+}
+
+.shell-rail__section .shell-tool__tip {
+  inset-block-start: 50%;
+  inset-inline-start: calc(100% + 0.35rem);
+  transform: translateY(-50%);
+}
+
+@media (hover: hover) {
+  .shell-rail__section:hover {
+    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+    color: var(--color-fg);
+  }
+}
+
+.shell-rail__section[aria-current="page"] {
+  background: var(--ash-panel-strong);
+  box-shadow: inset 3px 0 var(--ash-accent);
+  color: var(--color-fg);
+}
+
+.shell-rail__you {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0.75rem auto;
+  overflow: hidden;
+  border: 1px solid var(--ash-line-strong);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.shell-rail__you img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Each scrolling panel holds its own positioned content, so nothing in it can
+   scroll the page behind the frame. */
 #shell-sidebar {
+  position: relative;
   z-index: 2;
+  grid-area: sidebar;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   border-inline-end: 1px solid var(--color-border);
   background: var(--color-bg);
 }
 
+:root[data-sidebar="hidden"] #shell-sidebar {
+  display: none;
+}
+
+.shell-sidebar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3rem;
+  padding-inline-start: 0.85rem;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.shell-sidebar__head h2 {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-family: var(--font-family-ui);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 #shell-sidebar ul {
   display: grid;
   margin: 0;
-  padding: 0;
+  padding: var(--space-1);
   list-style: none;
 }
 
@@ -293,90 +601,123 @@ details[open] > summary .shell-chevron {
   min-width: 0;
 }
 
-/* The left nav reads as the marketing page's bordered cells: one line under each
-   destination, the label tracked and set in the Sans UI voice. */
 #shell-sidebar li > a,
 #shell-sidebar li > button,
-#shell-sidebar [data-tree] > a {
+.shell-sidebar__new {
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 2.75rem;
-  padding: 0.65rem 0.85rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
   border: 0;
-  border-block-end: 1px solid var(--color-border);
   border-radius: 0;
   background: transparent;
   color: var(--color-fg-muted);
-  font-family: var(--font-family-ui);
-  font-size: 0.72rem;
-  letter-spacing: 0.07em;
-  text-align: left;
-  text-transform: uppercase;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: start;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
 }
 
 @media (hover: hover) {
   #shell-sidebar li > a:hover,
   #shell-sidebar li > button:hover,
-  #shell-sidebar [data-tree] > a:hover {
+  .shell-sidebar__new:hover {
     background: color-mix(in oklch, var(--color-fg) 6%, transparent);
     color: var(--color-fg);
   }
 }
 
-#shell-sidebar [aria-current="page"],
-#shell-sidebar [aria-pressed="true"] {
+#shell-sidebar [aria-current="page"] {
   background: var(--ash-panel-strong);
+  box-shadow: inset 3px 0 var(--ash-accent);
   color: var(--color-fg);
 }
 
-/* A heading opens a group of destinations; it is not a destination itself. */
-#shell-sidebar li > .shell-sidebar__heading {
-  display: flex;
-  align-items: flex-end;
-  min-height: 2.75rem;
-  padding: 1.1rem 0.85rem 0.4rem;
-  border-block-end: 1px solid var(--color-border);
-  color: var(--color-fg-muted);
-  font-family: var(--font-family-ui);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.shell-sidebar__page {
+  display: grid;
 }
 
-@media (min-width: 48rem) and (max-width: 63.99rem) {
-  #shell-sidebar li:has(> .shell-sidebar__heading) {
-    grid-column: 1 / -1;
-  }
-}
-
-#shell-sidebar [data-tree] > span {
-  display: flex;
-  padding: 0.35rem 0.85rem 0.55rem;
-  border-block-end: 1px solid var(--color-border);
-}
-
-#shell-sidebar [data-tree] > span a {
-  padding: 0.2rem 0.45rem;
+.shell-sidebar__new {
+  margin: var(--space-1) var(--space-1) 0;
+  width: auto;
   border: 1px solid var(--color-border);
-  color: var(--color-fg-muted);
-  font-family: var(--font-family-ui);
-  font-size: 0.66rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-#shell-sidebar [data-tree] > span a[aria-pressed="true"] {
-  border-color: var(--ash-line-strong);
-  background: var(--ash-panel-strong);
   color: var(--color-fg);
 }
+
+.shell-sidebar__empty {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+}
+
+.shell-sidebar__list > .shell-sidebar__empty {
+  display: none;
+}
+
+.shell-sidebar__list > .shell-sidebar__empty:only-child {
+  display: block;
+}
+
+.shell-sidebar__list:is([data-state="idle"], [data-state="loading"], [data-state="error"])
+  > .shell-sidebar__empty {
+  display: none;
+}
+
+#app-shell .shell-sidebar-show {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  margin: var(--space-1) 0 0 var(--space-1);
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+:root[data-sidebar="hidden"] #app-shell .shell-sidebar-show {
+  display: inline-flex;
+}
+
+/* ---- Page and tabs ---- */
 
 #app-shell-scroller {
+  position: relative;
+  grid-area: main;
   min-width: 0;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
+}
+
+.shell-tabs {
+  display: flex;
+  gap: 1.5rem;
+  padding-inline: var(--rg-panel-padding);
+  overflow-x: auto;
+  border-block-end: 1px solid var(--color-border);
+  scrollbar-width: thin;
+}
+
+.shell-tabs a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 3rem;
+  color: var(--color-fg-muted);
+  text-decoration: none;
+}
+
+.shell-tabs a[aria-current="page"] {
+  color: var(--color-fg);
+  box-shadow: inset 0 -2px var(--palette-tangerine-tango);
 }
 
 #route-content {
@@ -386,39 +727,328 @@ details[open] > summary .shell-chevron {
   padding: var(--rg-panel-padding);
 }
 
-@media (max-width: 48rem) {
+/* ---- Right side bar ---- */
+
+#shell-aside {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-area: aside;
+  align-content: start;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border-inline-start: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+:root:not([data-aside="open"]) #shell-aside {
+  display: none;
+}
+
+.shell-aside__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3rem;
+  padding-inline-start: 1rem;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.shell-aside__head h2 {
+  margin: 0;
+  font-family: var(--font-family-ui);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#shell-aside section {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-block-end: 1px solid var(--color-border);
+}
+
+#shell-aside h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+#shell-aside p {
+  margin: 0;
+}
+
+#shell-aside ul,
+#shell-aside ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#shell-aside .shell-promo {
+  margin: 1rem;
+  border: 1px solid var(--ash-line-strong);
+  background: var(--ash-panel-strong);
+}
+
+.shell-promo__kicker {
+  color: var(--ash-accent-warm);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shell-checklist__count {
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+}
+
+#shell-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.shell-checklist__mark {
+  display: grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--ash-line-strong);
+  font-size: 0.75rem;
+}
+
+#shell-checklist li[data-done="true"] {
+  color: var(--color-fg-muted);
+}
+
+#shell-checklist li[data-done="true"] .shell-checklist__mark {
+  border-color: var(--ash-accent);
+  color: var(--ash-accent);
+}
+
+#app-shell .shell-checklist__action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.shell-assistant__form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.shell-assistant__form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.shell-assistant__exchange {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.shell-assistant__question {
+  justify-self: end;
+  max-width: 90%;
+  padding: 0.4rem 0.6rem;
+  background: var(--ash-panel-strong);
+}
+
+/* ---- Bottom bar ---- */
+
+#shell-footer {
+  z-index: 3;
+  display: flex;
+  grid-area: footer;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.5rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 1rem;
+  border-block-start: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg-muted);
+  font-size: 0.75rem;
+}
+
+#shell-footer p {
+  margin: 0;
+}
+
+.shell-footer__status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.shell-footer__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--palette-powder-blue);
+}
+
+.shell-footer__status[data-healthy="false"] .shell-footer__dot {
+  background: var(--ash-accent-warm);
+}
+
+.shell-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-inline-start: auto;
+}
+
+/* ---- Search ---- */
+
+.shell-search {
+  width: min(36rem, calc(100% - 2rem));
+  max-height: min(36rem, calc(100dvh - 4rem));
+  margin-block-start: 4.5rem;
+  padding: 0;
+  border: 1px solid var(--ash-line-strong);
+  background: var(--color-surface);
+  color: var(--color-fg);
+}
+
+.shell-search::backdrop {
+  background: color-mix(in oklch, var(--color-bg) 70%, transparent);
+}
+
+#shell-search-form {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-block-end: 1px solid var(--color-border);
+}
+
+#shell-search-form label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#shell-search-results {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 24rem;
+  padding: 0.75rem 1rem;
+  overflow: auto;
+}
+
+#shell-search-results h3 {
+  margin: 0 0 0.25rem;
+  color: var(--color-fg-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#shell-search-results ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#shell-search-results a {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.45rem 0.6rem;
+  text-decoration: none;
+}
+
+#shell-search-results a:is(:hover, :focus-visible) {
+  background: var(--ash-panel-strong);
+}
+
+.shell-search__detail {
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+#app-shell .shell-search__close {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 0;
+  border-block-start: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ---- Below a wide screen the right side bar covers the page's edge ---- */
+
+@media (max-width: 63.99rem) {
   #app-shell {
-    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr);
+    --shell-aside: 0px;
   }
 
-  #shell-header {
-    grid-column: 1;
-    min-height: 3.5rem;
+  #shell-aside {
+    position: fixed;
+    inset: 3.5rem 0 0 auto;
+    z-index: 6;
+    width: min(22rem, 100%);
+    border-inline-start: 1px solid var(--ash-line-strong);
+  }
+
+  #app-shell .shell-search-button {
+    min-width: 0;
+  }
+
+  .shell-brand__name,
+  .shell-search-button__keys {
+    display: none;
+  }
+}
+
+/* ---- Phones: the rail and sidebar fold into the menu drawer ---- */
+
+@media (max-width: 47.99rem) {
+  #app-shell {
+    grid-template:
+      "header" auto
+      "main" minmax(0, 1fr)
+      "footer" auto
+      / minmax(0, 1fr);
   }
 
   #shell-header > * {
     min-width: 0;
   }
 
-  #shell-header .shell-spacer {
+  #shell-header .shell-spacer,
+  #shell-header .rl-header-links,
+  .shell-brand__name,
+  .shell-search-button__label,
+  .shell-search-button__keys,
+  #app-shell #shell-help-button,
+  #app-shell #shell-news-link,
+  #app-shell #shell-assistant-button,
+  .shell-tool__tip {
     display: none;
   }
 
   .shell-brand {
-    flex: 1 1 auto;
-    gap: 0.4rem;
-    max-width: 100%;
-    min-width: 0;
-    padding-inline: 0.5rem;
+    flex: 0 0 auto;
+    padding-inline: 0.6rem;
   }
 
-  .shell-brand__name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .mobile-menu-button {
+  #app-shell .mobile-menu-button {
     display: inline-flex;
     flex: 0 0 auto;
     justify-content: center;
@@ -429,30 +1059,98 @@ details[open] > summary .shell-chevron {
     text-transform: uppercase;
   }
 
-    .account-control summary {
+  #app-shell .shell-search-button {
+    flex: 0 0 auto;
+    justify-content: center;
+    width: 2.75rem;
+    min-height: 2.75rem;
+    margin-inline-start: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .shell-tools {
+    flex: 0 0 auto;
+    gap: 0;
+    margin: 0;
+  }
+
+  .account-control {
+    min-width: 0;
+  }
+
+  .account-control summary {
     max-width: 6rem;
     padding-inline: 0.5rem;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  #shell-sidebar {
+  .account-control summary [data-account-target="profile"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* With a picture, the name is for screen readers only. */
+  .account-avatar + [data-account-target="profile"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .account-control summary .shell-chevron {
+    display: none;
+  }
+
+  #app-shell .shell-tool {
+    width: 2.5rem;
+  }
+
+  .account-control > .rg-button {
+    margin: 4px;
+    padding-inline: 0.75rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  #shell-drawer {
     position: fixed;
     inset: 3.5rem auto 0 0;
     z-index: 5;
     display: none;
-    width: min(20rem, calc(100% - 3rem));
+    grid-template:
+      "close close" auto
+      "rail sidebar" minmax(0, 1fr)
+      / var(--shell-rail) minmax(0, 1fr);
+    width: min(22rem, calc(100% - 3rem));
     border-inline-end: 1px solid var(--ash-line-strong);
     background: var(--color-bg);
   }
 
-  #app-shell[data-menu-open="true"] #shell-sidebar {
+  #app-shell[data-menu-open="true"] #shell-drawer {
+    display: grid;
+  }
+
+  #shell-drawer #shell-sidebar {
     display: block;
+    border-inline-end: 0;
+  }
+
+  #app-shell #shell-sidebar-button,
+  #app-shell .shell-sidebar-show,
+  :root[data-sidebar="hidden"] #app-shell .shell-sidebar-show {
+    display: none;
   }
 
   .shell-menu-close {
     display: block;
+    grid-area: close;
     width: 100%;
     min-height: 2.75rem;
     border: 0;
@@ -483,6 +1181,16 @@ details[open] > summary .shell-chevron {
     display: none;
   }
 
+  #shell-aside {
+    inset: 3.5rem 0 0;
+    width: 100%;
+    border-inline-start: 0;
+  }
+
+  .shell-tabs {
+    padding-inline: 1rem;
+  }
+
   #route-content {
     padding: 1rem;
   }
@@ -496,37 +1204,20 @@ details[open] > summary .shell-chevron {
     overflow: auto;
     border-inline: 0;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .shell-chevron {
-    transition: none;
+  .shell-footer__jobs,
+  .shell-footer__links {
+    display: none;
+  }
+
+  .shell-footer__version {
+    margin-inline-start: auto;
   }
 }
 
-/* The frame itself owns the ruled edges; there is no decorative page mat. */
-#shell-sidebar ul { padding: var(--space-1); }
-#shell-sidebar [aria-current="page"] { border-inline-start: 3px solid currentColor; font-weight: 600; }
-.shell-brand__name { font-family: var(--font-family-title); font-weight: 400; }
-#shell-header { flex-wrap: wrap; }
-#shell-header > a:not(.shell-brand) { align-self: center; padding: var(--space-1); font-size: .75rem; }
-.account-control > .rg-button { margin: var(--space-1); height: auto; }
-@media (min-width: 48rem) and (max-width: 63.99rem) {
-  #app-shell { grid-template: auto auto minmax(0, 1fr) / minmax(0, 1fr); }
-  #shell-sidebar { border-inline-end: 0; border-block-end: 1px solid var(--color-border); }
-  #shell-sidebar ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (max-width: 47.99rem) {
-  /* One row on a phone: brand, Menu, theme, account. The X and GitHub
-     links stay reachable in the footer, so the header never wraps over content. */
-  #shell-header { flex-wrap: nowrap; }
-  #shell-header .rl-header-links { display: none; }
-  #shell-header > a:not(.shell-brand) { display: none; }
-  #shell-header .account-control { min-width: 0; }
-  /* The account button keeps its 6rem cap; the name shrinks to an ellipsis so
-     the avatar and chevron stay inside the cap instead of spilling past the
-     screen edge. */
-  #shell-header .account-control summary [data-account-target="profile"] { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  #shell-header .account-control summary .shell-chevron { flex: 0 0 auto; }
-  .account-control > .rg-button { font-size: .75rem; margin: 4px; padding-inline: .75rem; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .shell-chevron,
+  .shell-tool__tip {
+    transition: none;
+  }
 }

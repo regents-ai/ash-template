@@ -1,22 +1,28 @@
 defmodule AshTemplateWeb.ShellLive do
   @moduledoc """
-  One LiveView holds the header, sidebar and account control across every in-app
-  route and patches between them, so the frame never remounts on navigation.
+  One LiveView holds the frame (`AshTemplateWeb.Components.Shell`) across every
+  in-app route and patches between them, so the frame never remounts on
+  navigation. Besides the page, it keeps the frame's own parts current: the
+  Get started checklist, the bell's unread count, the background jobs running,
+  search and the assistant box.
   """
 
   use AshTemplateWeb, :live_view
 
   import AshTemplateWeb.Components.Shell
 
-  alias AshTemplate.Accounts
+  require Ash.Query
+
+  alias AshTemplate.{Accounts, Activity, Chat, JobsRunning, Notes, Rooms}
   alias AshTemplate.Accounts.LinkedIdentity.Providers
+  alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
-  alias AshTemplate.Chat
   alias AshTemplate.Notes.Note
   alias AshTemplate.Rooms.{Message, Mute, Room}
 
   alias AshTemplateWeb.{
     AccountLive,
+    ActivityLive,
     ChatLive,
     NotesLive,
     NotFoundError,
@@ -34,20 +40,48 @@ defmodule AshTemplateWeb.ShellLive do
     message: "That connection couldn’t be updated. Refresh the page and try again."
   }
 
+  @steps [
+    sign_in: "Sign in",
+    wallet: "Link a wallet",
+    note: "Write your first note",
+    room: "Post in a room",
+    chat: "Start a chat"
+  ]
+  @step_paths %{
+    wallet: "/account/wallets",
+    note: "/notes",
+    room: "/rooms/#{hd(Room.all()).slug}",
+    chat: "/chat"
+  }
+  @no_search %{query: "", results: []}
+
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: subscribe_to_own_topics(socket.assigns.access_context)
+    if connected?(socket) do
+      subscribe_to_own_topics(socket.assigns.access_context)
+      Phoenix.PubSub.subscribe(AshTemplate.PubSub, JobsRunning.topic())
+    end
 
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        shell_instance: System.unique_integer([:positive, :monotonic]),
        room: nil,
        people: [],
        conversation: nil,
+       chat_topics: MapSet.new(),
        verified_connections: %Read{},
        verified_connections_notice: nil,
-       connection_outcome: nil
-     )}
+       connection_outcome: nil,
+       notifications: %Read{},
+       progress: progress(human_actor(socket)),
+       jobs_running: JobsRunning.count(),
+       healthy: AshTemplate.Health.database_ready?(),
+       version: version(),
+       search: @no_search,
+       assistant: nil
+     )
+     |> count_unread()}
   end
 
   @impl true
@@ -62,6 +96,8 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(PublicDocuments.page(page_path(action, uri)))
      |> assign(:route_spec, route_spec)
      |> load_verified_connections(route_spec)
+     |> load_notifications(route_spec)
+     |> assign(:search, @no_search)
      |> enter_room(room)
      |> open_conversation(conversation)}
   end
@@ -97,6 +133,43 @@ defmodule AshTemplateWeb.ShellLive do
      |> read_verified_connections()}
   end
 
+  def handle_event("mark_all_read", _params, socket) do
+    with %Human{} = actor <- human_actor(socket) do
+      Activity.mark_all_read(actor: actor)
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("search", %{"q" => query}, socket) do
+    query = String.trim(query)
+
+    {:noreply,
+     assign(socket, :search, %{query: query, results: search(query, human_actor(socket))})}
+  end
+
+  # The first question starts a conversation; the next ones continue it. The
+  # reply arrives a piece at a time on the conversation's topic.
+  def handle_event("assistant_ask", %{"text" => text}, socket) do
+    with %Human{} = actor <- human_actor(socket),
+         {:ok, message} <-
+           Chat.create_message(%{text: text},
+             actor: actor,
+             private_arguments: assistant_conversation(socket.assigns.assistant)
+           ) do
+      {:noreply,
+       socket
+       |> assign(:assistant, %{
+         conversation_id: message.conversation_id,
+         question: text,
+         reply: ""
+       })
+       |> sync_chat_topics()}
+    else
+      _refused -> {:noreply, socket}
+    end
+  end
+
   @impl true
   def handle_async({Read, _name, _generation} = name, result, socket) do
     {:noreply, socket |> Read.settle(name, result) |> report_connection_outcome()}
@@ -109,8 +182,17 @@ defmodule AshTemplateWeb.ShellLive do
     if socket.assigns.route_spec.route_id == :notes,
       do: send_update(NotesLive, id: "notes", change: {event, note})
 
-    {:noreply, socket}
+    {:noreply, if(event == "create", do: step_done(socket, :note), else: socket)}
   end
+
+  # A notification arriving or being read anywhere recounts the bell, and
+  # reads the Activity page again when it is open.
+  def handle_info(%{topic: "notifications:" <> _}, socket) do
+    {:noreply, socket |> count_unread() |> load_notifications(socket.assigns.route_spec)}
+  end
+
+  def handle_info({:jobs_running, count}, socket),
+    do: {:noreply, assign(socket, :jobs_running, count)}
 
   # A room's posts, edits and deletes reach only the room on screen, so one
   # still in the mailbox from the room just left is dropped.
@@ -118,7 +200,9 @@ defmodule AshTemplateWeb.ShellLive do
     if on_room?(socket, message.room),
       do: send_update(RoomsLive, id: "rooms", change: {event, message})
 
-    {:noreply, socket}
+    if event == "post" and own?(socket, message),
+      do: {:noreply, step_done(socket, :room)},
+      else: {:noreply, socket}
   end
 
   def handle_info(%{topic: "room_people:" <> room, event: "presence_diff"}, socket) do
@@ -136,11 +220,18 @@ defmodule AshTemplateWeb.ShellLive do
 
   # Each piece of the assistant's reply, and the person's own message, reach only
   # the conversation on screen.
+  # The assistant box shows the reply to its own conversation as it is written.
   def handle_info(%{topic: "chat:messages:" <> id, payload: message}, socket) do
     if on_conversation?(socket, id),
       do: send_update(ChatLive, id: "chat", change: message)
 
-    {:noreply, socket}
+    case socket.assigns.assistant do
+      %{conversation_id: ^id} when message.source == :agent ->
+        {:noreply, update(socket, :assistant, &%{&1 | reply: message.text})}
+
+      _other ->
+        {:noreply, socket}
+    end
   end
 
   # A conversation started or named on any of the person's pages joins their
@@ -148,6 +239,8 @@ defmodule AshTemplateWeb.ShellLive do
   def handle_info(%{topic: "chat:conversations:" <> _, payload: conversation}, socket) do
     if socket.assigns.route_spec.route_id == :chat,
       do: send_update(ChatLive, id: "chat", conversation_change: conversation)
+
+    socket = step_done(socket, :chat)
 
     if on_conversation?(socket, conversation.id),
       do: {:noreply, assign(socket, :conversation, conversation)},
@@ -161,12 +254,25 @@ defmodule AshTemplateWeb.ShellLive do
       route_spec={@route_spec}
       account_control={@account_control}
       shell_instance={@shell_instance}
+      checklist={checklist(@progress)}
+      unread={@unread}
+      jobs_running={@jobs_running}
+      healthy={@healthy}
+      version={@version}
+      search={@search}
+      assistant={@assistant}
     >
       <:content>
         <OverviewLive.page
           :if={@route_spec.route_id == :app}
           account_control={@account_control}
           account={current_account(@access_context)}
+        />
+
+        <ActivityLive.page
+          :if={@route_spec.route_id == :activity}
+          account={current_account(@access_context)}
+          notifications={@notifications}
         />
 
         <.live_component
@@ -193,10 +299,20 @@ defmodule AshTemplateWeb.ShellLive do
           conversation={@conversation}
         />
 
-        <AccountLive.page
+        <AccountLive.profile
           :if={@route_spec.route_id == :account}
           account={current_account(@access_context)}
           account_control={@account_control}
+        />
+
+        <AccountLive.wallets
+          :if={@route_spec.route_id == :wallets}
+          account={current_account(@access_context)}
+        />
+
+        <AccountLive.connections
+          :if={@route_spec.route_id == :connections}
+          account={current_account(@access_context)}
           verified_connections={@verified_connections}
           verified_connections_notice={@verified_connections_notice}
         />
@@ -208,6 +324,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp subscribe_to_own_topics(%{principal: {:human, account}}) do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Note.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Mute.topic(account.id))
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:conversations:#{account.id}")
   end
 
@@ -248,24 +365,35 @@ defmodule AshTemplateWeb.ShellLive do
        ),
        do: assign(socket, :conversation, conversation)
 
-  defp open_conversation(socket, conversation) do
+  defp open_conversation(socket, conversation),
+    do: socket |> assign(:conversation, conversation) |> sync_chat_topics()
+
+  # The page hears the conversation on screen and the assistant box's own, each
+  # once even when they are the same conversation.
+  defp sync_chat_topics(socket) do
+    wanted =
+      [socket.assigns.conversation, socket.assigns.assistant]
+      |> Enum.flat_map(fn
+        %{id: id} -> ["chat:messages:#{id}"]
+        %{conversation_id: id} -> ["chat:messages:#{id}"]
+        nil -> []
+      end)
+      |> MapSet.new()
+
     if connected?(socket) do
-      unsubscribe_conversation(socket.assigns.conversation)
-      subscribe_conversation(conversation)
+      held = socket.assigns.chat_topics
+
+      for topic <- MapSet.difference(held, wanted),
+          do: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, topic)
+
+      for topic <- MapSet.difference(wanted, held),
+          do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, topic)
+
+      assign(socket, :chat_topics, wanted)
+    else
+      socket
     end
-
-    assign(socket, :conversation, conversation)
   end
-
-  defp subscribe_conversation(nil), do: :ok
-
-  defp subscribe_conversation(conversation),
-    do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{conversation.id}")
-
-  defp unsubscribe_conversation(nil), do: :ok
-
-  defp unsubscribe_conversation(conversation),
-    do: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, "chat:messages:#{conversation.id}")
 
   defp on_room?(%{assigns: %{room: %{slug: slug}}}, room), do: to_string(slug) == to_string(room)
   defp on_room?(_socket, _room), do: false
@@ -310,7 +438,134 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp human_actor(_socket), do: nil
 
-  defp load_verified_connections(socket, %{route_id: :account}),
+  defp own?(socket, message) do
+    case human_actor(socket) do
+      %Human{human_account_id: id} -> message.human_account_id == id
+      nil -> false
+    end
+  end
+
+  # What the Get started checklist shows as done, read from the person's own
+  # records once, then kept current by the events the page already hears.
+  defp progress(nil), do: %{}
+
+  defp progress(%Human{} = actor) do
+    %{
+      sign_in: true,
+      wallet: actor.wallet_addresses != [],
+      note: Ash.exists?(Note, actor: actor),
+      room:
+        Message
+        |> Ash.Query.filter(human_account_id == ^actor.human_account_id)
+        |> Ash.exists?(actor: actor),
+      chat: Ash.exists?(AshTemplate.Chat.Conversation, actor: actor)
+    }
+  end
+
+  defp step_done(socket, step), do: update(socket, :progress, &Map.put(&1, step, true))
+
+  defp checklist(progress) do
+    for {id, label} <- @steps,
+        do: %{id: id, label: label, path: @step_paths[id], done?: Map.get(progress, id, false)}
+  end
+
+  defp count_unread(socket) do
+    with %Human{} = actor <- human_actor(socket),
+         {:ok, count} <- Activity.count_unread(actor: actor) do
+      assign(socket, :unread, count)
+    else
+      nil -> assign(socket, :unread, nil)
+      {:error, _error} -> assign_new(socket, :unread, fn -> 0 end)
+    end
+  end
+
+  defp load_notifications(socket, %{route_id: :activity}) do
+    case human_actor(socket) do
+      %Human{} = actor ->
+        Read.start(socket, :notifications, actor.human_account_id, fn ->
+          Activity.list_my_notifications(actor: actor)
+        end)
+
+      nil ->
+        Read.clear(socket, :notifications)
+    end
+  end
+
+  defp load_notifications(socket, _route_spec), do: Read.clear(socket, :notifications)
+
+  # Pages and actions match their names; the person's notes and the room
+  # messages they can read match their text, from two characters on.
+  defp search("", _actor), do: RouteCatalog.search_entries() |> Enum.map(&live_items/1)
+
+  defp search(query, actor) do
+    needle = String.downcase(query)
+
+    named =
+      for {group, entries} <- RouteCatalog.search_entries(),
+          matches = Enum.filter(entries, &String.contains?(String.downcase(&1.label), needle)),
+          matches != [],
+          do: live_items({group, matches})
+
+    named ++ found_notes(query, actor) ++ found_messages(query, actor)
+  end
+
+  defp live_items({group, entries}),
+    do: {group, Enum.map(entries, &Map.put(&1, :live?, RouteCatalog.live_path?(&1.path)))}
+
+  defp found_notes(query, %Human{} = actor) when byte_size(query) >= 2 do
+    case Notes.search_my_notes(query, actor: actor) do
+      {:ok, [_ | _] = notes} ->
+        [
+          {"Notes",
+           Enum.map(
+             notes,
+             &%{label: &1.title, detail: excerpt(&1.body), path: "/notes", live?: true}
+           )}
+        ]
+
+      _none ->
+        []
+    end
+  end
+
+  defp found_notes(_query, _actor), do: []
+
+  defp found_messages(query, actor) when byte_size(query) >= 2 do
+    case Rooms.search_messages(query, actor: actor) do
+      {:ok, [_ | _] = messages} ->
+        [{"Room messages", Enum.map(messages, &message_item/1)}]
+
+      _none ->
+        []
+    end
+  end
+
+  defp found_messages(_query, _actor), do: []
+
+  defp message_item(message) do
+    {:ok, room} = message.room |> Atom.to_string() |> Room.fetch()
+
+    %{
+      label: "#{message.author_name} in #{room.name}",
+      detail: excerpt(message.body),
+      path: "/rooms/#{room.slug}",
+      live?: true
+    }
+  end
+
+  defp excerpt(nil), do: nil
+  defp excerpt(text) when byte_size(text) <= 90, do: text
+  defp excerpt(text), do: String.slice(text, 0, 89) <> "…"
+
+  defp assistant_conversation(%{conversation_id: id}), do: %{conversation_id: id}
+  defp assistant_conversation(nil), do: %{}
+
+  defp version do
+    commit = Application.fetch_env!(:ash_template, :running_version)[:commit]
+    "#{Application.spec(:ash_template, :vsn)} (#{commit})"
+  end
+
+  defp load_verified_connections(socket, %{route_id: :connections}),
     do: read_verified_connections(socket)
 
   defp load_verified_connections(socket, _route_spec) do

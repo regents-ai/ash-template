@@ -4,7 +4,8 @@ defmodule AshTemplate.Rooms.Message do
   read a room; a signed-in person, or an agent signed in with its wallet, can
   post, a few times a minute at most. Its author is that person or that agent.
   Only a person can change or delete their own message. A signed-in reader never
-  sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Every post,
+  sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A post that
+  mentions someone by name tells them (`NotifyMentions`). Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once.
   """
@@ -15,7 +16,14 @@ defmodule AshTemplate.Rooms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
-  alias AshTemplate.Rooms.Message.{LeaveOutMuted, LimitPosts, SetAuthor, SquashBlankLines}
+  alias AshTemplate.Rooms.Message.{
+    LeaveOutMuted,
+    LimitPosts,
+    NotifyMentions,
+    SetAuthor,
+    SquashBlankLines
+  }
+
   alias AshTemplate.Rooms.{Mute, Room}
 
   postgres do
@@ -80,11 +88,20 @@ defmodule AshTemplate.Rooms.Message do
       pagination keyset?: true, default_limit: 50
     end
 
+    # Messages in any room that hold `text`, in any case, newest first.
+    read :search do
+      argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
+      filter expr(contains(string_downcase(body), string_downcase(^arg(:text))))
+      prepare LeaveOutMuted
+      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5)
+    end
+
     create :post do
       accept [:room, :body]
       change SetAuthor
       change SquashBlankLines
       change LimitPosts
+      change NotifyMentions
     end
 
     # Squashing the empty lines reads the new text, so an edit is not a single

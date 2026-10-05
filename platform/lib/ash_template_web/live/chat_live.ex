@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.ChatLive do
   @moduledoc """
   Chat with the assistant (`AshTemplate.Chat`, from `mix ash_ai.gen.chat`) in
-  the site's own look: the reader's conversations beside the one open, and a
-  message box that starts a new conversation when none is open.
+  the site's own look: the reader's conversations in the shell's sidebar, the
+  one open, and a message box that starts a new conversation when none is open.
 
   Sending never touches the list directly. The person's message and each piece
   of the assistant's reply are published by the message's PubSub notifier; the
@@ -105,6 +105,32 @@ defmodule AshTemplateWeb.ChatLive do
   def render(assigns) do
     ~H"""
     <article id="chat-page" class="account-page">
+      <.portal id="chat-sidebar" target="#shell-sidebar-page">
+        <div class="shell-sidebar__page">
+          <.link :if={@actor} patch={~p"/chat"} class="shell-sidebar__new">New chat</.link>
+          <p :if={@conversations.state == :loading} class="shell-sidebar__empty">
+            Loading your chats…
+          </p>
+          <Primitives.notice :if={@conversations.state in [:error, :stale]} tone="error">
+            Your chats couldn’t be loaded. Refresh the page to try again.
+          </Primitives.notice>
+          <ul
+            :if={@actor}
+            id="chat-conversations"
+            class="shell-sidebar__list"
+            data-state={@conversations.state}
+            phx-update="stream"
+          >
+            <li id="chat-conversations-empty" class="shell-sidebar__empty">
+              Nothing yet. Your first message starts a chat.
+            </li>
+            <li :for={{dom_id, conversation} <- @streams.conversations} id={dom_id}>
+              <.link patch={~p"/chat/#{conversation.id}"}>{title(conversation)}</.link>
+            </li>
+          </ul>
+          <p :if={!@actor} class="shell-sidebar__empty">Sign in to see your chats here.</p>
+        </div>
+      </.portal>
       <header class="account-heading">
         <p class="account-kicker">Chat</p>
         <h1 tabindex="-1">{title(@conversation)}</h1>
@@ -122,115 +148,87 @@ defmodule AshTemplateWeb.ChatLive do
         <Primitives.button type="button" data-account-target="sign-in">Sign in</Primitives.button>
       </div>
 
-      <div :if={@actor} class="chat-layout">
-        <nav class="account-panel chat-list" aria-labelledby="chat-list-title">
-          <h2 id="chat-list-title">Your chats</h2>
-          <.link patch={~p"/chat"} class="rg-button rg-button--secondary">New chat</.link>
-          <p :if={@conversations.state == :loading} class="rg-muted">Loading your chats…</p>
-          <Primitives.notice :if={@conversations.state in [:error, :stale]} tone="error">
-            Your chats couldn’t be loaded. Refresh the page to try again.
-          </Primitives.notice>
-          <ul
-            id="chat-conversations"
-            class="chat-conversations"
-            data-state={@conversations.state}
-            phx-update="stream"
-          >
-            <li id="chat-conversations-empty" class="chat-empty rg-muted">
-              Nothing yet. Your first message starts a chat.
-            </li>
-            <li :for={{dom_id, conversation} <- @streams.conversations} id={dom_id}>
-              <.link
-                patch={~p"/chat/#{conversation.id}"}
-                aria-current={conversation_id(@conversation) == conversation.id && "page"}
-              >
-                {title(conversation)}
-              </.link>
-            </li>
-          </ul>
-        </nav>
+      <section
+        :if={@actor}
+        id="chat-conversation"
+        class="account-panel chat-conversation"
+        aria-labelledby="chat-messages-title"
+        phx-hook="Conversation"
+      >
+        <h2 id="chat-messages-title" class="visually-hidden">Messages</h2>
 
-        <section
-          id="chat-conversation"
-          class="account-panel chat-conversation"
+        <div
+          class="chat-scroller"
+          role="log"
           aria-labelledby="chat-messages-title"
-          phx-hook="Conversation"
+          tabindex="0"
+          data-conversation-scroller
         >
-          <h2 id="chat-messages-title" class="visually-hidden">Messages</h2>
-
-          <div
-            class="chat-scroller"
-            role="log"
-            aria-labelledby="chat-messages-title"
-            tabindex="0"
-            data-conversation-scroller
-          >
-            <div class="chat-scroller__inner">
-              <p :if={@messages.state == :loading} class="rg-muted chat-loading">
-                Loading messages…
-              </p>
-              <ol
-                id="chat-messages"
-                class="chat-messages"
-                data-state={if @conversation, do: @messages.state, else: :empty}
-                data-conversation-messages
-                phx-update="stream"
-              >
-                <li id="chat-messages-empty" class="chat-empty rg-muted">
-                  Ask anything to start.
-                </li>
-                <li
-                  :for={{dom_id, message} <- @streams.messages}
-                  id={dom_id}
-                  class="chat-message"
-                  data-source={message.source}
-                >
-                  <p class="chat-message__author">{author(message.source)}</p>
-                  <div class="chat-message__body">{markdown(message.text)}</div>
-                </li>
-              </ol>
-              <p :if={@writing?} class="chat-writing rg-muted" role="status">
-                The assistant is writing…
-              </p>
-            </div>
-          </div>
-
-          <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
-            This chat couldn’t be loaded. Refresh the page to try again.
-          </Primitives.notice>
-
-          <.form
-            for={@form}
-            id="chat-message-form"
-            class="chat-composer"
-            phx-change="validate"
-            phx-submit="send"
-            phx-target={@myself}
-          >
-            <Primitives.field
-              :let={field}
-              id="chat-message-text"
-              label="Message the assistant"
-              errors={errors(@form[:text])}
+          <div class="chat-scroller__inner">
+            <p :if={@messages.state == :loading} class="rg-muted chat-loading">
+              Loading messages…
+            </p>
+            <ol
+              id="chat-messages"
+              class="chat-messages"
+              data-state={if @conversation, do: @messages.state, else: :empty}
+              data-conversation-messages
+              phx-update="stream"
             >
-              <textarea
-                id={field.id}
-                name={@form[:text].name}
-                rows="2"
-                maxlength="4000"
-                aria-invalid={field.aria_invalid}
-                aria-describedby={"chat-message-hint #{field.described_by}"}
-              >{Phoenix.HTML.Form.normalize_value("textarea", @form[:text].value)}</textarea>
-            </Primitives.field>
-            <div class="chat-composer__actions">
-              <p id="chat-message-hint" class="chat-composer__hint rg-muted">
-                Enter sends. Shift+Enter starts a new line.
-              </p>
-              <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
-            </div>
-          </.form>
-        </section>
-      </div>
+              <li id="chat-messages-empty" class="chat-empty rg-muted">
+                Ask anything to start.
+              </li>
+              <li
+                :for={{dom_id, message} <- @streams.messages}
+                id={dom_id}
+                class="chat-message"
+                data-source={message.source}
+              >
+                <p class="chat-message__author">{author(message.source)}</p>
+                <div class="chat-message__body">{markdown(message.text)}</div>
+              </li>
+            </ol>
+            <p :if={@writing?} class="chat-writing rg-muted" role="status">
+              The assistant is writing…
+            </p>
+          </div>
+        </div>
+
+        <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
+          This chat couldn’t be loaded. Refresh the page to try again.
+        </Primitives.notice>
+
+        <.form
+          for={@form}
+          id="chat-message-form"
+          class="chat-composer"
+          phx-change="validate"
+          phx-submit="send"
+          phx-target={@myself}
+        >
+          <Primitives.field
+            :let={field}
+            id="chat-message-text"
+            label="Message the assistant"
+            errors={errors(@form[:text])}
+          >
+            <textarea
+              id={field.id}
+              name={@form[:text].name}
+              rows="2"
+              maxlength="4000"
+              aria-invalid={field.aria_invalid}
+              aria-describedby={"chat-message-hint #{field.described_by}"}
+            >{Phoenix.HTML.Form.normalize_value("textarea", @form[:text].value)}</textarea>
+          </Primitives.field>
+          <div class="chat-composer__actions">
+            <p id="chat-message-hint" class="chat-composer__hint rg-muted">
+              Enter sends. Shift+Enter starts a new line.
+            </p>
+            <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
+          </div>
+        </.form>
+      </section>
     </article>
     """
   end

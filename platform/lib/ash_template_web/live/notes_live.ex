@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.NotesLive do
   @moduledoc """
   The signed-in person's notes: a form bound to the note's own Ash actions and a
-  list every open page of theirs keeps current.
+  list every open page of theirs keeps current. Their titles also fill the
+  shell's sidebar, where choosing one opens it in the form.
 
   Saving never touches the list directly. Each change reaches the list the same
   way, whether it came from this page, another tab or the API: the note's PubSub
@@ -23,7 +24,8 @@ defmodule AshTemplateWeb.NotesLive do
     {:ok,
      socket
      |> assign(actor: nil, notes: %Read{}, form: nil, editing: nil, notice: nil)
-     |> stream(:notes, [])}
+     |> stream(:notes, [])
+     |> stream(:note_links, [], dom_id: &"note-link-#{&1.id}")}
   end
 
   @impl true
@@ -86,6 +88,19 @@ defmodule AshTemplateWeb.NotesLive do
   def render(assigns) do
     ~H"""
     <article id="notes-page" class="account-page">
+      <.portal id="notes-sidebar" target="#shell-sidebar-page">
+        <div class="shell-sidebar__page">
+          <ul :if={@actor} id="notes-sidebar-list" class="shell-sidebar__list" phx-update="stream">
+            <li id="notes-sidebar-empty" class="shell-sidebar__empty">No notes yet.</li>
+            <li :for={{dom_id, note} <- @streams.note_links} id={dom_id}>
+              <button type="button" phx-click="edit" phx-value-id={note.id} phx-target={@myself}>
+                {note.title}
+              </button>
+            </li>
+          </ul>
+          <p :if={!@actor} class="shell-sidebar__empty">Sign in to see your notes here.</p>
+        </div>
+      </.portal>
       <header class="account-heading">
         <p class="account-kicker">Ash Template</p>
         <h1 tabindex="-1">Notes</h1>
@@ -203,6 +218,7 @@ defmodule AshTemplateWeb.NotesLive do
     socket
     |> Read.clear(:notes)
     |> stream(:notes, [], reset: true)
+    |> stream(:note_links, [], reset: true)
     |> assign(form: nil, editing: nil, notice: nil)
   end
 
@@ -215,16 +231,28 @@ defmodule AshTemplateWeb.NotesLive do
   # A failed read keeps the notes already on the page, so only a read that
   # landed replaces them.
   defp show_notes(%{assigns: %{notes: %Read{state: state, value: notes}}} = socket)
-       when state in [:ready, :empty],
-       do: stream(socket, :notes, notes, reset: true)
+       when state in [:ready, :empty] do
+    socket
+    |> stream(:notes, notes, reset: true)
+    |> stream(:note_links, notes, reset: true)
+  end
 
   defp show_notes(socket), do: socket
 
-  defp apply_change(socket, "create", note), do: stream_insert(socket, :notes, note, at: 0)
-  defp apply_change(socket, "update", note), do: stream_insert(socket, :notes, note)
+  defp apply_change(socket, "create", note) do
+    socket
+    |> stream_insert(:notes, note, at: 0)
+    |> stream_insert(:note_links, note, at: 0)
+  end
+
+  defp apply_change(socket, "update", note) do
+    socket
+    |> stream_insert(:notes, note)
+    |> stream_insert(:note_links, note)
+  end
 
   defp apply_change(socket, "destroy", note) do
-    socket = stream_delete(socket, :notes, note)
+    socket = socket |> stream_delete(:notes, note) |> stream_delete(:note_links, note)
     if socket.assigns.editing == note.id, do: new_form(socket), else: socket
   end
 

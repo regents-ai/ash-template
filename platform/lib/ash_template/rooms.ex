@@ -6,6 +6,7 @@ defmodule AshTemplate.Rooms do
   resources do
     resource AshTemplate.Rooms.Message do
       define :list_room_messages, action: :in_room, args: [:room]
+      define :search_messages, action: :search, args: [:text]
       define :get_message, action: :read, get_by: [:id], not_found_error?: false
       define :post_message, action: :post
       define :edit_message, action: :edit

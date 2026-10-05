@@ -35,11 +35,11 @@ each page (its sidebar, header controls and scroll rule).
 | --- | --- |
 | Top bar | The logo (our mark). Search with ⌘K / Ctrl+K. Icons: help (opens help in the right side bar), what's new (the changelog), assistant (opens the assistant in the right side bar), notifications bell with a count. The person menu: Account, theme, Disconnect. Signed out, a Sign in button replaces the bell and the person menu. |
 | Left rail | One icon per section: Home, Notes, Rooms, Chat, Settings. The person's picture at the bottom. Each icon has a visible tooltip and an accessible name. |
-| Sidebar | The open section's own list. Home: workspace links and favourites. Notes: the person's notes. Rooms: the rooms with unread counts. Chat: the conversations and "New chat" (the Ash AI chat page's list lives here). Settings: the account pages. It can be collapsed to give the content more room. |
+| Sidebar | The open section's own list. Home: shortcuts (write a note, start a chat, the General room, connect an account). Notes: the person's notes. Rooms: the rooms. Chat: the conversations and "New chat" (the Ash AI chat page's list lives here). Settings: help links (the account pages are its tabs). It can be hidden to give the content more room, and stays hidden until shown again. |
 | Tabs | Views of the open section. Home: Overview, Activity. Settings: Profile, Wallets, Connections. A section with one view shows no tabs. |
 | Main content | The page itself, as today. |
-| Right side bar | Context for the page, collapsible. A "Get started" checklist worked out from the person's real data (signed in, wallet linked, first note, first room post, first chat), the assistant box (talks to the chat page's free stand-in), "Here now" on a room page, and one promotional card. |
-| Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Status, Changelog, API, Help, Privacy, Terms) and the running version. |
+| Right side bar | Context for the page. Closed until the person opens it, and remembered open or closed; a light on its top-bar icon pulses while it holds something new the person has not opened it to see. It holds one promotional card, a "Get started" checklist worked out from the person's real data (signed in, wallet linked, first note, first room post, first chat), the page's own part ("Here now" and muted people on a room page), the assistant box (talks to the chat page's free stand-in) and help links. |
+| Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Help, API, What's new, For agents, Privacy, Terms) and the running version with its commit. |
 
 ### Phones and small screens
 
@@ -58,8 +58,12 @@ The standard tool for each part (elixir-stack design check):
   `ShellLive` stays the single LiveView, so the frame never reloads between pages.
 - **What each page puts in each panel:** `RouteCatalog` gains a section per page (rail icon,
   sidebar model, tabs, right side bar parts), checked by the existing route handoff.
-- **Open/closed panels:** browser state through the existing `ShellBehavior` hook and the
-  site's own cookie, like the theme. Nothing is stored server-side.
+- **Open/closed panels:** browser state on `<html data-aside data-sidebar>`, set by
+  `assets/js/shell_panels.ts` and kept in the cookies `ash_template_aside` and
+  `ash_template_sidebar`, which `AshTemplateWeb.Plugs.Panels` reads so the first paint is
+  right. LiveView never patches them. Nothing is stored server-side. The pulsing light
+  compares a digest of the side bar's content (`data-aside-digest`) with the last one seen
+  in this browser.
 - **Search:** Ash read actions on the domains (pages and actions from `RouteCatalog`; the
   person's notes and room messages through their own policies), opened as a dialog.
 - **Notifications:** a `Notification` Ash resource on AshPostgres, per person, written in the
@@ -85,12 +89,14 @@ template.regents.sh.
 
 ## Decisions
 
-Open; asked 2026-10-04 (numbered 6–10 in that reply).
+Settled by the founder on 2026-10-04.
 
-6. Tabs fixed per section, or tabs the person opens and closes like the sketch's "New Tab".
-7. Search over pages, actions, notes and room messages, or pages and actions only.
-8. A real notifications example (a mention in a room, a note delivery that failed), or a
-   bell with nothing behind it yet.
-9. Build the frame in the template first and move it to the shared design system when a
-   second site adopts it, or build it in the design system from the start.
-10. A promotional card in the right side bar, or none.
+1. Tabs are fixed per section (6 a).
+2. Search covers pages, actions, notes and room messages (7 a).
+3. The bell has a real example behind it: a mention in a room (8 a). A mention is `@` and
+   a name someone has posted under in that room; it reaches no one who muted the author.
+4. The frame is built in the template first and moves to the shared design system when a
+   second site adopts it (9 a).
+5. The right side bar is collapsible, closed by default, and a pulsing light shows when it
+   has something new (founder's own answer to 10).
+6. The promotional card shows whenever the right side bar is open.

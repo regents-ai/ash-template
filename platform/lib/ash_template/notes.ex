@@ -6,6 +6,7 @@ defmodule AshTemplate.Notes do
   resources do
     resource AshTemplate.Notes.Note do
       define :list_my_notes, action: :mine
+      define :search_my_notes, action: :search, args: [:text]
       define :get_my_note, action: :read, get_by: [:id], not_found_error?: false
       define :create_note, action: :create
       define :update_note, action: :update

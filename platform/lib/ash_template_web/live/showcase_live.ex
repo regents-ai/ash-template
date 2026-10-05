@@ -110,11 +110,20 @@ defmodule AshTemplateWeb.ShowcaseLive do
       route_spec={@route_spec}
       account_control={@account}
       shell_instance={0}
+      checklist={[
+        %{id: :sign_in, label: "Sign in", path: nil, done?: true},
+        %{id: :note, label: "Write your first note", path: "/notes", done?: false}
+      ]}
+      unread={2}
+      jobs_running={0}
+      healthy={true}
+      version="sample"
+      search={%{query: "", results: []}}
     >
       <:content>
         <div style="padding: 32px">
           <h1>Page frame preview</h1>
-          <p>Menu, account button, theme switch and background.</p>
+          <p>The top bar, sections, lists, side panel and bottom bar around every signed-in page.</p>
           <a href="/showcase" target="_top">Back to showcase</a>
         </div>
       </:content>
@@ -570,7 +579,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
       <.disclosure id="shell-detail" summary="Page frame and theme switch">
         <iframe id="shell-preview" title="Page frame preview" src="/showcase/preview" loading="lazy"></iframe>
         <p>
-          This preview shows the frame around every signed-in page: the menu, the account button and the light and dark switch.
+          This preview shows the frame around every signed-in page: the top bar, the sections, each section's list, the side panel and the bottom bar.
         </p>
       </.disclosure>
     </.section>

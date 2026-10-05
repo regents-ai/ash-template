@@ -22,67 +22,10 @@
   margin: 0;
 }
 
-.chat-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
-  align-items: start;
-}
-
-@media (min-width: 64rem) {
-  .chat-layout {
-    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
-  }
-}
-
-.chat-list,
 .chat-conversation {
   display: grid;
   gap: 1rem;
   min-width: 0;
-}
-
-.chat-list {
-  justify-items: start;
-}
-
-.chat-conversations {
-  display: grid;
-  justify-self: stretch;
-  margin: 0;
-  padding: 0;
-  max-block-size: 12rem;
-  overflow-y: auto;
-  list-style: none;
-}
-
-@media (min-width: 64rem) {
-  .chat-conversations {
-    max-block-size: clamp(16rem, 52dvh, 36rem);
-  }
-}
-
-.chat-conversations a {
-  display: flex;
-  align-items: center;
-  min-block-size: 2.75rem;
-  padding-inline: 0.75rem;
-  color: var(--color-fg-muted);
-  text-decoration: none;
-  overflow-wrap: anywhere;
-}
-
-@media (hover: hover) {
-  .chat-conversations a:hover {
-    color: var(--color-fg);
-    background: color-mix(in oklch, var(--color-fg) 4%, transparent);
-  }
-}
-
-.chat-conversations a[aria-current="page"] {
-  color: var(--color-fg);
-  box-shadow: inset 2px 0 var(--palette-tangerine-tango);
-  background: color-mix(in oklch, var(--color-fg) 6%, transparent);
 }
 
 /* The conversation scrolls on its own and rests at its newest message: the
@@ -211,7 +154,7 @@
   display: block;
 }
 
-:is(.chat-messages, .chat-conversations):is([data-state="idle"], [data-state="loading"], [data-state="error"]) .chat-empty {
+.chat-messages:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .chat-empty {
   display: none;
 }
 }

@@ -10,6 +10,7 @@ defmodule AshTemplateWeb.Router do
     plug :enforce_session_authority
     plug :fetch_live_flash
     plug AshTemplateWeb.Plugs.Theme
+    plug AshTemplateWeb.Plugs.Panels
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug AshTemplateWeb.Plugs.LaunchGate
     plug :protect_from_forgery
@@ -180,6 +181,7 @@ defmodule AshTemplateWeb.Router do
     get "/docs", PublicPagesController, :show
     get "/about", PublicPagesController, :show
     get "/contact", PublicPagesController, :show
+    get "/changelog", PublicPagesController, :show
   end
 
   scope "/api/v1" do
@@ -238,11 +240,14 @@ defmodule AshTemplateWeb.Router do
       session: {Session, :render_context, []},
       on_mount: [AshTemplateWeb.Live.LaunchGateHook, {Session, :load_human}] do
       live "/app", ShellLive, :app
+      live "/app/activity", ShellLive, :activity
       live "/notes", ShellLive, :notes
       live "/rooms/:room", ShellLive, :room
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
       live "/account", ShellLive, :account
+      live "/account/wallets", ShellLive, :wallets
+      live "/account/connections", ShellLive, :connections
     end
   end
 

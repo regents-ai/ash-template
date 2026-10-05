@@ -56,6 +56,18 @@ defmodule AshTemplate.Notes.Note do
       prepare build(sort: [inserted_at: :desc])
     end
 
+    # The person's notes whose title or text holds `text`, in any case.
+    read :search do
+      argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
+
+      filter expr(
+               contains(string_downcase(title), string_downcase(^arg(:text))) or
+                 contains(string_downcase(body), string_downcase(^arg(:text)))
+             )
+
+      prepare build(sort: [inserted_at: :desc], limit: 5)
+    end
+
     create :create do
       primary? true
       accept [:title, :body]

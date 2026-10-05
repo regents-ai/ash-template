@@ -22,6 +22,7 @@ import {
   shellDestinationChanged,
   type ShellState,
 } from "./shell_state"
+import {installShellPanels} from "./shell_panels"
 import {HolographicCard} from "./hooks/holographic_card"
 import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
@@ -36,6 +37,7 @@ import {installPublicTools} from "./public_tools"
 type ShellHook = Hook & {
   el: HTMLElement
   cleanup?: () => void
+  syncPanels?: () => void
   shellState?: ShellState
   restoreState?: () => void
   openPopoverIds?: string[]
@@ -120,13 +122,13 @@ const shellBehavior: Hook = {
 
     const menuButton = () =>
       shell.querySelector<HTMLButtonElement>("#mobile-menu-button")
-    const sidebar = () => shell.querySelector<HTMLElement>("#shell-sidebar")
+    const drawer = () => shell.querySelector<HTMLElement>("#shell-drawer")
     const scroller = () => shell.querySelector<HTMLElement>("#app-shell-scroller")
     const menuScrim = () =>
       shell.querySelector<HTMLButtonElement>("[data-shell-menu-scrim]")
     const menuFocusables = () =>
       Array.from(
-        sidebar()?.querySelectorAll<HTMLElement>(
+        drawer()?.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ) ?? [],
       ).filter(element => !element.hidden && !element.inert)
@@ -140,7 +142,7 @@ const shellBehavior: Hook = {
 
       if (focusMenu && menuOpen) {
         const [first] = menuFocusables()
-        ;(first ?? sidebar())?.focus()
+        ;(first ?? drawer())?.focus()
       }
 
       if (restoreFocus && !menuOpen) menuButton()?.focus()
@@ -175,7 +177,7 @@ const shellBehavior: Hook = {
         closeMenu()
       }
 
-      if (target?.closest("#shell-sidebar a")) closeMenu()
+      if (target?.closest("#shell-drawer a")) closeMenu()
       if (target?.closest("#account-menu a")) {
         target.closest("details")?.removeAttribute("open")
       }
@@ -192,12 +194,12 @@ const shellBehavior: Hook = {
         const focusables = menuFocusables()
         const first = focusables.at(0)
         const last = focusables.at(-1)
-        const currentSidebar = sidebar()
+        const currentDrawer = drawer()
 
         if (!first || !last) {
           event.preventDefault()
-          currentSidebar?.focus()
-        } else if (!currentSidebar?.contains(document.activeElement)) {
+          currentDrawer?.focus()
+        } else if (!currentDrawer?.contains(document.activeElement)) {
           event.preventDefault()
           ;(event.shiftKey ? last : first).focus()
         } else if (event.shiftKey && document.activeElement === first) {
@@ -230,12 +232,15 @@ const shellBehavior: Hook = {
     shell.addEventListener("click", onClick)
     shell.addEventListener("keydown", onKeydown)
     window.addEventListener("popstate", onHistoryNavigation)
+    const panels = installShellPanels(shell)
+    this.syncPanels = panels.sync
     this.restoreState()
     scroller()?.scrollTo({top: 0})
     shell.dataset.behaviorReady = "true"
 
     this.cleanup = () => {
       closeMenu(false)
+      panels.cleanup()
       shell.removeEventListener("click", onClick)
       shell.removeEventListener("keydown", onKeydown)
       window.removeEventListener("popstate", onHistoryNavigation)
@@ -266,6 +271,7 @@ const shellBehavior: Hook = {
       this.shellState = reconcileShellState(this.shellState, incoming)
     }
     this.restoreState?.()
+    this.syncPanels?.()
     if (menuWasOpen && this.shellState?.menuOpen === false) {
       this.el.querySelector<HTMLButtonElement>("#mobile-menu-button")?.focus()
     }

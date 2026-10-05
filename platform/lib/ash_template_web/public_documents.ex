@@ -6,7 +6,7 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   @directory Application.app_dir(:ash_template, "priv/public")
   @files Enum.map(
-           ~w(docs about contact llms llms-showcase skill skills),
+           ~w(docs about contact changelog llms llms-showcase skill skills),
            &Path.join(@directory, &1 <> ".md")
          )
   for file <- @files, do: @external_resource(file)
@@ -17,7 +17,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi_path Path.join(@directory, "openapi.json")
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
-  @documents ~w(/ /docs /about /contact /privacy /terms)
+  @documents ~w(/ /docs /about /contact /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
   @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/discussion /animations /skills)
   @site_name "Ash Template"
@@ -31,18 +31,23 @@ defmodule AshTemplateWeb.PublicDocuments do
   @pages %{
     "/" => {"Ash Template", @description},
     "/app" => {"Overview", "Your Ash Template overview, with the wallet you signed in with."},
+    "/app/activity" =>
+      {"Activity", "What has happened for you lately: mentions in rooms, newest first."},
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
     "/chat/original" =>
       {"Chat in Ash AI's look",
        "The same chat with the assistant, in the look Ash AI's chat generator gives it."},
-    "/account" =>
-      {"Account", "The wallet you signed in with and the accounts you have connected."},
+    "/account" => {"Profile", "Who Ash Template knows you as, and the session on this browser."},
+    "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
+    "/account/connections" =>
+      {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
     "/about" => {"About", "What Ash Template is and who runs it."},
+    "/changelog" => {"What's new", "What changed in Ash Template lately, newest first."},
     "/contact" =>
       {"Contact",
        "How to reach Ash Template about privacy requests, legal questions and security reports."},

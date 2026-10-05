@@ -15,6 +15,7 @@ config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 config :ash_template,
   ash_domains: [
+    AshTemplate.Activity,
     AshTemplate.Chat,
     AshTemplate.Accounts,
     AshTemplate.Agents,

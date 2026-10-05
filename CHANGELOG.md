@@ -676,3 +676,30 @@ Operations
   first signed command, documented in `cli/COMMANDS.md` first.
 - Needs the sign-in service to list `ash-template=https://template.regents.sh` among its
   wallet audiences before live posts are accepted.
+
+## 2026-10-04 — The app frame: rail, sidebars, tabs, side bar, search and activity
+
+- Every signed-in page sits in one frame (`docs/app-shell-structure-plan.md`, decisions
+  1–6): a top bar (logo, ⌘K / Ctrl+K search, help, what's new, assistant, bell, side bar
+  toggle, person menu), a rail of five sections (Home, Notes, Rooms, Chat, Settings), each
+  section's own sidebar list (hideable, remembered), fixed tabs per section, the page, a
+  right side bar and a bottom bar (status dot, background jobs running, links, version).
+- The right side bar is closed until opened and remembers its state in the cookie
+  `ash_template_aside`; the sidebar uses `ash_template_sidebar`. `Plugs.Panels` reads both
+  for the first paint, and LiveView never patches them. A light on the side bar's icon
+  pulses while the bar holds something not yet seen in this browser.
+- The side bar holds a promotional card, a Get started checklist worked out from the
+  person's own data and ticked live, the page's own part (rooms' "Here now" and muted
+  people), the assistant box (a conversation on the chat stand-in, "Open in Chat") and
+  help links.
+- New pages: Activity (`/app/activity`), Profile, Wallets and Connections as Settings tabs
+  (`/account`, `/account/wallets`, `/account/connections`) and What's new (`/changelog`).
+- Notifications: a new `Activity` domain with a `notifications` table (migration
+  `20261004235329`). Posting `@name` in a room notifies everyone who has posted under that
+  name there, in the post's own transaction, except the author and anyone who muted them.
+  Open pages hear it over PubSub; the bell counts unread ones and Activity marks them read.
+- Search reads pages and actions from the route catalog and the person's own notes and
+  room messages through new `:search` read actions (2–100 characters, five each).
+- The background-jobs count comes from Oban's telemetry events (`AshTemplate.JobsRunning`);
+  the version shows the deployed image's commit.
+- Notes and chat lists moved into the sidebar; rooms' tab row and side column are gone.

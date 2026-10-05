@@ -25,6 +25,15 @@ if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do
   config :ash_template, :agent_sign_in, broker_url: broker_url
 end
 
+# The running version the bottom bar shows: the release, and on Fly the short
+# commit `scripts/deploy.sh` labels the image with; "dev" anywhere else.
+config :ash_template, :running_version,
+  commit:
+    (case System.get_env("FLY_IMAGE_REF") do
+       nil -> "dev"
+       image -> image |> String.split(":") |> List.last()
+     end)
+
 # Each saved note is posted to this address when it is set (AshTemplate.Notes.Webhook).
 if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
   case URI.new(webhook_url) do

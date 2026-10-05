@@ -2,7 +2,8 @@ defmodule AshTemplateWeb.RoomsLive do
   @moduledoc """
   One chat room: its messages oldest at the top and newest at the bottom above
   the message box, a form bound to the message's own Ash actions, who is here
-  now, and the people the reader has muted.
+  now and the people the reader has muted, which it puts in the shell's right
+  side bar.
 
   Posting never touches the list directly. Every post, edit and delete reaches
   each open page of the room the same way: the message's PubSub notifier
@@ -16,7 +17,7 @@ defmodule AshTemplateWeb.RoomsLive do
 
   alias AshTemplate.Actors.Human
   alias AshTemplate.Rooms
-  alias AshTemplate.Rooms.{Message, Mute, Room}
+  alias AshTemplate.Rooms.{Message, Mute}
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -150,161 +151,10 @@ defmodule AshTemplateWeb.RoomsLive do
   def render(assigns) do
     ~H"""
     <article id="rooms-page" class="account-page">
-      <header class="account-heading">
-        <p class="account-kicker">Rooms</p>
-        <h1 tabindex="-1">{@room.name}</h1>
-        <p class="account-lede">{@room.about}</p>
-        <nav class="rooms-tabs" aria-label="Rooms">
-          <.link
-            :for={room <- Room.all()}
-            patch={~p"/rooms/#{room.slug}"}
-            aria-current={room.slug == @room.slug && "page"}
-          >
-            {room.name}
-          </.link>
-        </nav>
-      </header>
-
-      <div class="rooms-layout">
-        <section
-          id="room-conversation"
-          class="account-panel rooms-conversation"
-          aria-labelledby="room-messages-title"
-          phx-hook="Conversation"
-        >
-          <h2 id="room-messages-title" class="visually-hidden">Messages in {@room.name}</h2>
-
-          <div
-            class="rooms-scroller"
-            role="log"
-            aria-labelledby="room-messages-title"
-            tabindex="0"
-            data-conversation-scroller
-          >
-            <div class="rooms-scroller__inner">
-              <Primitives.button
-                :if={@page && @page.more?}
-                type="button"
-                variant="secondary"
-                class="rooms-older"
-                phx-click="older"
-                phx-target={@myself}
-                phx-disable-with="Loading…"
-              >
-                Show older messages
-              </Primitives.button>
-              <Primitives.notice :if={@older.state in [:error, :stale]} tone="error">
-                Older messages couldn’t be loaded. Try again.
-              </Primitives.notice>
-              <p :if={@messages.state == :loading} class="rg-muted rooms-loading">
-                Loading messages…
-              </p>
-
-              <ol
-                id="room-messages"
-                class="rooms-messages"
-                data-state={@messages.state}
-                data-conversation-messages
-                phx-update="stream"
-              >
-                <li id="room-messages-empty" class="rooms-empty rg-muted">
-                  No messages yet. Say hello.
-                </li>
-                <li
-                  :for={{dom_id, message} <- @streams.messages}
-                  id={dom_id}
-                  class="rooms-message"
-                  data-author={author(message)}
-                  data-at={DateTime.to_unix(message.inserted_at)}
-                  phx-mounted={JS.ignore_attributes(["data-continued"])}
-                >
-                  <span
-                    class="rooms-avatar"
-                    data-tone={:erlang.phash2(author(message), 3)}
-                    aria-hidden="true"
-                  >
-                    {initials(message.author_name)}
-                  </span>
-                  <div class="rooms-message__main">
-                    <p class="rooms-message__meta">
-                      <bdi class="rooms-message__author">{message.author_name}</bdi>
-                      <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
-                      <time datetime={DateTime.to_iso8601(message.inserted_at)}>
-                        {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
-                      </time>
-                    </p>
-                    <.message_body id={dom_id} body={message.body} />
-                    <p :if={message.edited_at} class="rooms-message__edited">Edited</p>
-                  </div>
-                  <.message_menu
-                    :if={@actor}
-                    id={dom_id}
-                    message={message}
-                    actor={@actor}
-                    myself={@myself}
-                  />
-                </li>
-              </ol>
-            </div>
-          </div>
-
-          <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
-          <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
-            This room couldn’t be loaded. Refresh the page to try again.
-          </Primitives.notice>
-
-          <div :if={is_nil(@actor)} class="rooms-signed-out">
-            <p>Anyone can read along. Sign in to post.</p>
-            <Primitives.button type="button" data-account-target="sign-in">Sign in</Primitives.button>
-          </div>
-
-          <.form
-            :if={@actor}
-            for={@form}
-            id="room-message-form"
-            class="rooms-composer"
-            phx-change="validate"
-            phx-submit="save"
-            phx-target={@myself}
-          >
-            <Primitives.field
-              :let={field}
-              id="room-message-body"
-              label={if @editing, do: "Edit your message", else: "Message #{@room.name}"}
-              errors={errors(@form[:body])}
-            >
-              <textarea
-                id={field.id}
-                name={@form[:body].name}
-                rows="2"
-                maxlength="2000"
-                aria-invalid={field.aria_invalid}
-                aria-describedby={"room-message-hint #{field.described_by}"}
-              >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
-            </Primitives.field>
-            <div class="rooms-composer__actions">
-              <p id="room-message-hint" class="rooms-composer__hint rg-muted">
-                Enter sends. Shift+Enter starts a new line.
-              </p>
-              <Primitives.button
-                :if={@editing}
-                type="button"
-                variant="secondary"
-                phx-click="cancel"
-                phx-target={@myself}
-              >
-                Cancel
-              </Primitives.button>
-              <Primitives.button type="submit" phx-disable-with="Sending…">
-                {if @editing, do: "Save", else: "Send"}
-              </Primitives.button>
-            </div>
-          </.form>
-        </section>
-
-        <aside class="rooms-side">
-          <section class="account-panel" aria-labelledby="room-people-title">
-            <h2 id="room-people-title">Here now</h2>
+      <.portal id="rooms-aside" target="#shell-aside-page">
+        <div class="rooms-side">
+          <section aria-labelledby="room-people-title">
+            <h3 id="room-people-title">Here now</h3>
             <ul :if={here(@people, @muted) != []} class="rooms-people">
               <li :for={person <- here(@people, @muted)}><bdi>{person.name}</bdi></li>
             </ul>
@@ -313,8 +163,8 @@ defmodule AshTemplateWeb.RoomsLive do
             </p>
           </section>
 
-          <section :if={@actor} class="account-panel" aria-labelledby="room-mutes-title">
-            <h2 id="room-mutes-title">People you’ve muted</h2>
+          <section :if={@actor} aria-labelledby="room-mutes-title">
+            <h3 id="room-mutes-title">People you’ve muted</h3>
             <p class="rg-muted">
               You don’t see their messages in any room. They aren’t told.
             </p>
@@ -333,8 +183,149 @@ defmodule AshTemplateWeb.RoomsLive do
               </li>
             </ul>
           </section>
-        </aside>
-      </div>
+        </div>
+      </.portal>
+      <header class="account-heading">
+        <p class="account-kicker">Rooms</p>
+        <h1 tabindex="-1">{@room.name}</h1>
+        <p class="account-lede">{@room.about}</p>
+      </header>
+
+      <section
+        id="room-conversation"
+        class="account-panel rooms-conversation"
+        aria-labelledby="room-messages-title"
+        phx-hook="Conversation"
+      >
+        <h2 id="room-messages-title" class="visually-hidden">Messages in {@room.name}</h2>
+
+        <div
+          class="rooms-scroller"
+          role="log"
+          aria-labelledby="room-messages-title"
+          tabindex="0"
+          data-conversation-scroller
+        >
+          <div class="rooms-scroller__inner">
+            <Primitives.button
+              :if={@page && @page.more?}
+              type="button"
+              variant="secondary"
+              class="rooms-older"
+              phx-click="older"
+              phx-target={@myself}
+              phx-disable-with="Loading…"
+            >
+              Show older messages
+            </Primitives.button>
+            <Primitives.notice :if={@older.state in [:error, :stale]} tone="error">
+              Older messages couldn’t be loaded. Try again.
+            </Primitives.notice>
+            <p :if={@messages.state == :loading} class="rg-muted rooms-loading">
+              Loading messages…
+            </p>
+
+            <ol
+              id="room-messages"
+              class="rooms-messages"
+              data-state={@messages.state}
+              data-conversation-messages
+              phx-update="stream"
+            >
+              <li id="room-messages-empty" class="rooms-empty rg-muted">
+                No messages yet. Say hello.
+              </li>
+              <li
+                :for={{dom_id, message} <- @streams.messages}
+                id={dom_id}
+                class="rooms-message"
+                data-author={author(message)}
+                data-at={DateTime.to_unix(message.inserted_at)}
+                phx-mounted={JS.ignore_attributes(["data-continued"])}
+              >
+                <span
+                  class="rooms-avatar"
+                  data-tone={:erlang.phash2(author(message), 3)}
+                  aria-hidden="true"
+                >
+                  {initials(message.author_name)}
+                </span>
+                <div class="rooms-message__main">
+                  <p class="rooms-message__meta">
+                    <bdi class="rooms-message__author">{message.author_name}</bdi>
+                    <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
+                    <time datetime={DateTime.to_iso8601(message.inserted_at)}>
+                      {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
+                    </time>
+                  </p>
+                  <.message_body id={dom_id} body={message.body} />
+                  <p :if={message.edited_at} class="rooms-message__edited">Edited</p>
+                </div>
+                <.message_menu
+                  :if={@actor}
+                  id={dom_id}
+                  message={message}
+                  actor={@actor}
+                  myself={@myself}
+                />
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
+        <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
+          This room couldn’t be loaded. Refresh the page to try again.
+        </Primitives.notice>
+
+        <div :if={is_nil(@actor)} class="rooms-signed-out">
+          <p>Anyone can read along. Sign in to post.</p>
+          <Primitives.button type="button" data-account-target="sign-in">Sign in</Primitives.button>
+        </div>
+
+        <.form
+          :if={@actor}
+          for={@form}
+          id="room-message-form"
+          class="rooms-composer"
+          phx-change="validate"
+          phx-submit="save"
+          phx-target={@myself}
+        >
+          <Primitives.field
+            :let={field}
+            id="room-message-body"
+            label={if @editing, do: "Edit your message", else: "Message #{@room.name}"}
+            errors={errors(@form[:body])}
+          >
+            <textarea
+              id={field.id}
+              name={@form[:body].name}
+              rows="2"
+              maxlength="2000"
+              aria-invalid={field.aria_invalid}
+              aria-describedby={"room-message-hint #{field.described_by}"}
+            >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
+          </Primitives.field>
+          <div class="rooms-composer__actions">
+            <p id="room-message-hint" class="rooms-composer__hint rg-muted">
+              Enter sends. Shift+Enter starts a new line.
+            </p>
+            <Primitives.button
+              :if={@editing}
+              type="button"
+              variant="secondary"
+              phx-click="cancel"
+              phx-target={@myself}
+            >
+              Cancel
+            </Primitives.button>
+            <Primitives.button type="submit" phx-disable-with="Sending…">
+              {if @editing, do: "Save", else: "Send"}
+            </Primitives.button>
+          </div>
+        </.form>
+      </section>
     </article>
     """
   end
