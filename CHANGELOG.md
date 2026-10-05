@@ -767,3 +767,17 @@ Operations
   typed text arrive searches instead of opening a stale result.
 - Note and room-message excerpts start a little before the first match.
 - The field's focus shows as the accent line under it rather than a frame.
+
+## 2026-10-05 — Your funds example
+
+- `/showcase/funds` shows how a person's money looks on every Regent site, from
+  the wallet funds plan (`docs/wallet-funds-plan.md`): USDC ready to use on
+  Base, funds on other networks with an estimate that is never spendable as one
+  amount, USDC committed to Patchbay Offers bids with each bid's rule, a card
+  purchase on its way, a quoted move to Base for a bid that is short, adding
+  funds by card (Stripe through Privy, in the US except New York and Hawaii),
+  sending, cashing out to a bank with a failure that is checked, never resent,
+  and the wallet choice. Sample figures; every money button is switched off.
+- The payment example now says "Regents does not keep a balance for you" and
+  that USDC can be bought with a card.
+- Amounts stay in USDC; the "Credits" label is not used (founder, 2026-10-05).

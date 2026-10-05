@@ -67,6 +67,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
     {"/showcase/privy", "Privy sign-in"},
     {"/showcase/wallet", "Wallet buttons"},
     {"/showcase/payments", "Pay with USDC"},
+    {"/showcase/funds", "Your funds"},
     {"/showcase/discussion", "Discussion"}
   ]
 

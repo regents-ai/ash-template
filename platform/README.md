@@ -154,7 +154,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`, the payment example `/showcase/payments`), the motion lab (`/animations`) and the build
+wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations`) and the build
 skills (`/skills`, the agent guide `/skill.md` and
 `/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
 which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
@@ -176,7 +176,9 @@ for the network fee. The wallet lab at `/showcase/onchain` sends to a lab chain
 on this machine, so it exists only in `local`, and only for a visitor on this
 machine. The payment example at `/showcase/payments` shows a USDC payment with
 sample figures and Pay switched off: the shared payments library takes real USDC
-on Base only, so the demo takes none.
+on Base only, so the demo takes none. The funds example at `/showcase/funds`
+shows wallet funds, commitments, card purchases, sends and cash-outs the same
+way, with sample figures and every money button switched off.
 [docs/showcase.md](docs/showcase.md) describes the pages.
 
 The build skills are ten of the repository's `skills/` folders (the Ash, motion

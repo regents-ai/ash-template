@@ -58,6 +58,16 @@ USDC Balance, the frozen terms, the Pay button and the words for each answer.
 The figures are samples and Pay is switched off (founder, 2026-09-29), because
 the library takes real USDC on Base only. The page sends nothing to a wallet.
 
+## Your funds
+
+`/showcase/funds` shows how a person's money looks on a Regent site, following
+`docs/wallet-funds-plan.md` (founder, 2026-10-05): USDC ready to use on Base,
+funds on other networks (never added into one spendable amount), USDC committed
+to Patchbay Offers bids with each bid's rule, a card purchase on its way, a quoted
+move between networks, adding funds by card, sending, cashing out to a bank and
+the wallet choice. The figures are samples and every money button is switched
+off. The page sends nothing to a wallet or a provider.
+
 ## Utility effects
 
 - Wallet fixture: a separate local provider demonstrates connect/disconnect,

@@ -8,11 +8,13 @@ Background survey: `/Users/sean/Documents/regent/docs/handoffs/regent-credits-ba
 
 | Question | Decision |
 |---|---|
-| What are Credits? | User-owned wallet funds. There is no Regent-kept redeemable balance and no Stripe Checkout top-up ledger. Product commitments, such as Offers bids, are held under disclosed, product-specific rules. Whether to show the word "Credits" is a separate change to the 28 Sep naming rule. |
+| What are Credits? | User-owned wallet funds. There is no Regent-kept redeemable balance and no Stripe Checkout top-up ledger. Product commitments, such as Offers bids, are held under disclosed, product-specific rules. |
 | Privy wallets | Optional, user-owned embedded wallets alongside external wallets: one shared wallet experience across sites, not one per site. No existing ownership is moved silently. Creating a wallet grants Regent no spending authority. |
 | Robinhood Chain | USDG is kept as USDG, and Base and Ethereum USDC stay USDC. They are never added up into one spendable number. Conversion happens only with a quote and confirmed arrival. Bridged "USDC" tokens are not accepted by name. |
 | Providers | First check the Privy-managed Stripe path already in use. Look into Bridge eligibility, fees and onboarding now. Defer Privy Enterprise balance webhooks. Account creation, terms and paid plans stay with Sean. |
 | 1 Credit = $1 | A pricing convention, not a promise of exactly $1 at a bank. Fees and the amount received are always shown. |
+| The word "Credits" | Not used (Sean, 5 Oct, answer 4 b). Pages say USDC. |
+| Offers commitments | Sean approved the Offers-only escrow contract on Base (HQ 98 a): revenue to REGENT staking `0xb027Dc261636E30Cbc0fE25b2F8e1ed273354AB5`, gas paid by Patchbay. |
 
 ## The model: three things, never mixed
 
@@ -137,7 +139,7 @@ Replace "Regent never holds your money" everywhere with:
 
 > Regents does not keep a balance for you. Your available funds stay in your own wallet. Funds you commit to a product follow that product's stated rules.
 
-If Sean approves the "Credits" label, amounts read **100 Credits · 100 USDC on Base**, with the real token and network always beside it. The label never covers KeyFleet treasuries, auction positions or other contract positions.
+Amounts are written in USDC (or USDG), with the network beside them. The "Credits" label is not used (Sean, 5 Oct).
 
 ## The showcase (ash-template, sample figures, every money button off)
 
@@ -159,7 +161,7 @@ Checked at desktop and phone widths, in light and dark, and with the keyboard, a
 ## Order of work
 
 1. Done: this plan; the Offers escrow proposal goes to Sean.
-2. The showcase page in ash-template (sample figures).
+2. Done: the showcase page in ash-template, `/showcase/funds` (sample figures, every money button off).
 3. Provider checks for Sean: the Privy-managed Stripe path in the Privy dashboard, Bridge eligibility and fees, Global Wallets access.
 4. Shared library: token registry, snapshots and readiness, provider operations. These go on a Regents branch, after telling the Regents lane.
 5. A two-site wallet proof.

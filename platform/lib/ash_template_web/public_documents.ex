@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /docs /about /contact /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/discussion /animations /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /animations /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -71,6 +71,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/showcase/payments" =>
       {"Pay with USDC",
        "How paying with USDC looks on every Regent site, with sample figures and paying switched off."},
+    "/showcase/funds" =>
+      {"Your funds",
+       "How your money looks on every Regent site: what's in your wallet, what you've committed, adding funds and cashing out, with sample figures."},
     "/showcase/discussion" =>
       {"A discussion thread",
        "How a question and its replies read on a Regent site, with sample posts; likes are not kept."},

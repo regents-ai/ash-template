@@ -30,6 +30,17 @@
 .payments-answers li { display: grid; grid-template-columns: 9em minmax(0, 1fr); align-items: start; gap: 8px; }
 .payments-answers .rg-status { justify-self: start; }
 @media (max-width: 767px) { .payments-answers li { grid-template-columns: 1fr; } }
+.funds-page h3 { margin: 24px 0 12px; }
+.funds-page .onchain-workshop-grid > section:first-child { grid-column: 1 / -1; }
+.funds-rows .payments-figure { flex-wrap: wrap; font-size: 20px; }
+.funds-rows { display: grid; gap: 20px; margin: 0; }
+.funds-rows > div { display: grid; grid-template-columns: 10em minmax(0, 1fr); gap: 8px; }
+.funds-rows dt { color: var(--color-fg-muted); }
+.funds-rows dd { display: grid; gap: 8px; margin: 0; min-width: 0; }
+.funds-rows dd > p { margin: 0; }
+.funds-list { display: grid; gap: 8px; margin: 0 0 16px; padding-left: 1.25em; }
+.funds-rows .funds-list { margin: 0; }
+@media (max-width: 767px) { .funds-rows > div { grid-template-columns: 1fr; } }
 .onchain-workshop-log { min-height: 1.5em; font-size: 12px; overflow-wrap: anywhere; }
 @media (max-width: 767px) {
   .onchain-workshop-grid { grid-template-columns: 1fr; padding: 0 16px 16px; }

@@ -54,7 +54,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
         <h1>Pay with USDC</h1>
         <p>
           This is how paying looks on every Regent site. You pay from your own wallet, straight to
-          the person or project you're paying. Regent never holds your money.
+          the person or project you're paying. Regents does not keep a balance for you.
         </p>
         <p>
           Paying is switched off on this copy of the site and the figures are samples, so nothing
@@ -71,7 +71,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
           </p>
           <p>
             Your USDC Balance is the USDC in the wallet you signed in with, on Base. Add to it by
-            sending USDC to your wallet's address or by buying it with MoonPay.
+            sending USDC to your wallet's address or by buying it with a card.
           </p>
         </section>
 

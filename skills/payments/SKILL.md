@@ -18,14 +18,19 @@ a site fits around it.
 
 ## Rules
 
-1. **Regent holds no money.** There is no prepaid balance, top-up, credit, refund or
-   withdrawal (founder, 2026-09-28). A payment goes from the payer's own wallet straight
-   to the wallet the offer names, settled by an x402 facilitator. The library stores what
-   was promised and what happened.
+1. **Regents keeps no balance for anyone.** Available funds stay in the person's own
+   wallet; there is no Regent-kept balance, top-up or withdrawal (founder, 2026-09-28,
+   confirmed 2026-10-05). A payment goes from the payer's own wallet straight to the
+   wallet the offer names, settled by an x402 facilitator. Funds committed to a product
+   sit in that product's own escrow under its stated rules (Patchbay Offers) and are
+   shown apart from wallet funds. The library stores what was promised and what happened.
+   Say "Regents does not keep a balance for you", never "Regent never holds your money".
 2. **USDC Balance** is what the person's signed-in Privy wallet holds in USDC on Base,
    read live with `RegentPayments.Balance.usdc_balance_atomic/1`. It gets there when they
-   send USDC to their address or buy it through MoonPay. Call it "USDC Balance" on every
-   site, never credit or account balance.
+   send USDC to their address or buy it by card through Privy. Call it "USDC Balance" on
+   every site, never Credits, credit or account balance (founder, 2026-10-05). The
+   template's `/showcase/funds` shows funds on other networks, commitments, card
+   purchases and cash-outs; the plan is `docs/wallet-funds-plan.md`.
 3. **One offer per paid action.** A site writes a module implementing
    `RegentPayments.Offer` for each thing it sells (a tip, a paid fix, a run) and lists it
    in `config :regent_payments, offers: [...]`. The offer freezes the terms (`freeze/2`:

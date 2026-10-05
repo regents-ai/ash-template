@@ -138,6 +138,7 @@ defmodule AshTemplateWeb.Router do
       live "/privy", PrivyShowcaseLive, :index
       live "/wallet", WalletShowcaseLive, :index
       live "/payments", PaymentsShowcaseLive, :index
+      live "/funds", FundsShowcaseLive, :index
       live "/discussion", DiscussionShowcaseLive, :index
     end
   end
