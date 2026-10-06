@@ -20,7 +20,8 @@ defmodule AshTemplate.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      usage_rules: usage_rules()
     ]
   end
 
@@ -45,6 +46,7 @@ defmodule AshTemplate.MixProject do
       {:ash_oban, "~> 0.9.0"},
       {:ash_ai, "~> 1.1.1"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
+      {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
       {:mdex, "== 0.13.3"},
       {:regent_privy, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy"},
       {:regent_identity, git: @regents, ref: @regents_ref, sparse: "identity"},
@@ -82,6 +84,22 @@ defmodule AshTemplate.MixProject do
   # The stylesheet of the one page in Ash AI's own look (`assets/ash_ai_chat/`).
   @ash_ai_chat_css "node_modules/.bin/tailwindcss -i assets/ash_ai_chat/ash_ai_chat.css -o priv/static/assets/css/ash_ai_chat.css"
 
+  # `mix usage_rules.sync` writes the marked block at the end of AGENTS.md: how to
+  # read the installed version's docs, and links to each package's own rules in deps/.
+  defp usage_rules do
+    [
+      file: "AGENTS.md",
+      usage_rules: [
+        {:usage_rules, sub_rules: []},
+        {:usage_rules, sub_rules: :all, main: false, link: :markdown},
+        {:ash, link: :markdown},
+        {~r/^ash_/, link: :markdown},
+        {:phoenix, sub_rules: ["phoenix", "liveview", "html"], link: :markdown},
+        {:req_llm, link: :markdown}
+      ]
+    ]
+  end
+
   defp aliases do
     [
       setup: ["deps.get", "cmd npm ci", "assets.setup", "assets.build"],
@@ -110,6 +128,7 @@ defmodule AshTemplate.MixProject do
         # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
         "xref graph --label compile-connected --fail-above 28",
         "ash.codegen --check",
+        "usage_rules.sync --check",
         "ash_template.route_handoff --check",
         "ash_template.sync_api_contract --check"
       ]

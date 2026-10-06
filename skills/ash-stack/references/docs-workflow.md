@@ -24,59 +24,56 @@ packages split nearly all useful content into sub-rules. Read the relevant files
 reading a five-line top-level summary is not sufficient. Avoid loading every rule in
 the ecosystem for every task.
 
-If `usage_rules` exists, inspect these commands before choosing syntax:
+Regent sites install `usage_rules` as a development dependency (template
+`platform/mix.exs`, `>= 1.2.8` for EEF-CVE-2026-82710). Its block at the end of the
+app's `AGENTS.md` links every Ash, Phoenix and Elixir rule file in `deps/`. Look up
+the locked version's docs with it:
 
 ```sh
-mix help usage_rules.search_docs
-mix help usage_rules.sync
+mix usage_rules.docs AshPhoenix.Form.submit/2
+mix usage_rules.search_docs "atomic update"
+mix usage_rules.search_docs "AshPhoenix.Form submit" --query-by title
 ```
 
-For the documented v1.2.7 search task, these are valid examples:
-
-```sh
-mix usage_rules.search_docs "AshPhoenix.Form submit" -p ash_phoenix
-mix usage_rules.search_docs "atomic update" -p ash
-mix usage_rules.search_docs "scope" -p ash@3.32.3
-```
-
-The explicit version above is an example, not a required app version. Substitute the
-locked version. From inside a project, the task uses project versions when possible;
-outside one, it can fall back to latest. Keep searches to public symbols, not private
-code or customer data. Read the actual result, not merely its search summary.
+Leave `-p` off inside a project: search then covers exactly the locked versions. On
+1.2.8, `-p ash` searches the newest release on Hex whatever the lockfile says, and
+`-p ash@3.33.11` finds nothing, despite the task's help. Narrow a search with the
+module name in the query instead. Read the actual result, not merely its search
+summary. Keep searches to public symbols, not private code or
+customer data.
 
 If Tidewave or another development MCP is already connected, inspect its available
 tools and use documented read-only documentation/log queries. Do not assume tool names,
 start or stop the user's server, or execute data-changing runtime evaluation just to
 inspect docs. Fall back to local source and HexDocs when the runtime tool is absent.
-No additional plugin is required by this pack.
 
-## Optional maintainer-rule synchronization
+## Keeping the rule links in step
 
-`usage_rules` is optional; the pack works with local files and official docs. Adding
-it is a project dependency decision, not an automatic first step. Current v1.x uses
-project configuration; older blog snippets with CLI-driven sync may not apply.
-Consult the installed version's help before editing or running sync.
-
-A minimal v1.x configuration can link maintainer guidance without copying it into the
-custom skills. Merge this inside the existing `project/0` keyword list, not as a second
-`project/0` function:
+The site's `mix.exs` holds the `usage_rules:` config; `mix usage_rules.sync` rewrites
+only the marked block at the end of `AGENTS.md`, and `mix precommit` runs
+`usage_rules.sync --check`, so a dependency change that adds or drops a rule file
+fails until the block is synced. Change the config, never the block. Sites copy the
+template's config:
 
 ```elixir
 usage_rules: [
   file: "AGENTS.md",
   usage_rules: [
+    {:usage_rules, sub_rules: []},
+    {:usage_rules, sub_rules: :all, main: false, link: :markdown},
     {:ash, link: :markdown},
     {~r/^ash_/, link: :markdown},
-    {:phoenix, link: :markdown},
-    {:phoenix_live_view, link: :markdown}
+    {:phoenix, sub_rules: ["phoenix", "liveview", "html"], link: :markdown},
+    {:req_llm, link: :markdown}
   ]
 ]
 ```
 
-Then review the effects of `mix usage_rules.sync`. Keep the six `ash-*` names reserved
-for this authored pack. If composing generated skills, use distinct names such as
-`ash-upstream-rules`; never point generation at one of these six names. Review managed
-content deletion and changes to `AGENTS.md` before accepting a sync.
+The usage_rules docs section is written out in full; everything else is a link, so the
+file stays short. Phoenix's `ecto` and `elixir` rules are left out: Ash owns data
+access, and usage_rules already links its own Elixir rules. The tool does not write
+skills here. Keep the six `ash-*` names reserved for this authored pack; if generated
+skills are ever wanted, give them distinct names such as `ash-upstream-rules`.
 
 ## Record only useful evidence
 

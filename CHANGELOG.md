@@ -803,3 +803,19 @@ Operations
   Jev pins are gone.
 - Ash is `~> 3.34 and >= 3.34.3` (locked 3.34.4), so `mix hex.audit` and the
   required-fixes check are both clean.
+
+## 2026-10-06 — Package rules for coding agents
+
+- `usage_rules` 1.2.8 is a development dependency. `mix usage_rules.sync` keeps
+  a marked block at the end of `platform/AGENTS.md`: how to read the locked
+  versions' docs (`mix usage_rules.docs`, `mix usage_rules.search_docs`), plus
+  links to the Ash, Ash extension, Phoenix, LiveView, ReqLLM, Elixir and OTP
+  rule files in `deps/`. The config lives under `usage_rules:` in
+  `platform/mix.exs`.
+- `mix precommit` runs `usage_rules.sync --check`, so a dependency change that
+  adds or drops a rule file fails until the block is synced.
+- The required-fixes registry asks for `usage_rules` 1.2.8 or later
+  (EEF-CVE-2026-82710).
+- `ash-stack`'s docs guide now treats usage_rules as standard. Inside a project,
+  search without `-p`: on 1.2.8, `-p ash` searches the newest Hex release and
+  `-p ash@<version>` finds nothing.

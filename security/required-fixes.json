@@ -75,6 +75,13 @@
       "kind": "hex",
       "package": "mint",
       "requirement": ">= 1.11.0"
+    },
+    {
+      "id": "EEF-CVE-2026-82710",
+      "summary": "usage_rules before 1.2.8 printed terminal control sequences from package documentation in search results, letting a published package's docs rewrite what the terminal shows.",
+      "kind": "hex",
+      "package": "usage_rules",
+      "requirement": ">= 1.2.8"
     }
   ]
 }
