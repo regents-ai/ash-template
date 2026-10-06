@@ -39,35 +39,42 @@
       "summary": "Ash before 3.33.11 let user input set private action arguments in bulk update and destroy.",
       "kind": "hex",
       "package": "ash",
-      "minimum": "3.33.11"
+      "requirement": ">= 3.33.11"
     },
     {
       "id": "EEF-CVE-2026-94201",
       "summary": "Ash before 3.34.3 turned filter values for an :atom attribute declared with unsafe_to_atom? into new atoms, which can exhaust the atom table and crash the node.",
       "kind": "hex",
       "package": "ash",
-      "minimum": "3.34.3"
+      "requirement": ">= 3.34.3"
+    },
+    {
+      "id": "2026-10-06-ash-postgres-upsert-schema",
+      "summary": "ash_postgres 2.13.1 through at least 2.14.2 writes upserts into the resource's own schema setting only and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release is shown to keep the Repo prefix; take it together with the Ash 3.34.3 move.",
+      "kind": "hex",
+      "package": "ash_postgres",
+      "requirement": "== 2.13.0"
     },
     {
       "id": "EEF-CVE-2026-82672",
       "summary": "Mint before 1.10.1 accepted malformed chunk-size lines, allowing response smuggling on pooled connections.",
       "kind": "hex",
       "package": "mint",
-      "minimum": "1.10.1"
+      "requirement": ">= 1.10.1"
     },
     {
       "id": "EEF-CVE-2026-92106",
       "summary": "lazy_html before 0.1.13 wrote SVG and MathML style and script text unescaped, allowing mutation XSS.",
       "kind": "hex",
       "package": "lazy_html",
-      "minimum": "0.1.13"
+      "requirement": ">= 0.1.13"
     },
     {
       "id": "EEF-CVE-2026-91043",
       "summary": "Mint before 1.11.0 let HTTP/2 cookie headers exhaust memory, with two further advisories (EEF-CVE-2026-92103, EEF-CVE-2026-94194) including chunked framing smuggling.",
       "kind": "hex",
       "package": "mint",
-      "minimum": "1.11.0"
+      "requirement": ">= 1.11.0"
     }
   ]
 }

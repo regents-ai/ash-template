@@ -44,7 +44,7 @@ defmodule AshTemplate.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
       {:ash, "~> 3.33.0"},
-      {:ash_postgres, "~> 2.13.0"},
+      {:ash_postgres, "== 2.13.0"},
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
       {:ash_oban, "~> 0.9.0"},

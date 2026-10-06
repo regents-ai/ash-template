@@ -59,7 +59,8 @@ After renaming, a new site must still replace, by hand:
   libraries are git dependencies pinned to one commit each in `platform/mix.exs`.
 - `security/required-fixes.json` lists every shared library (app, repository and
   folder) and the security fixes every Regent site must carry: a `git` fix is a
-  commit the pin must contain, a `hex` fix is the lowest allowed Hex version.
+  commit the pin must contain, a `hex` fix is a version requirement the locked
+  Hex version must meet (`>= 3.34.3`, or `== 2.13.0` to hold a package back).
   Add an entry the day such a fix is published and push it to `main`; every
   site's `make check-required-fixes` reads `main` and fails until the site takes
   it. A new shared library must be listed before any site can use it.

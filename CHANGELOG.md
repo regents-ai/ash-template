@@ -781,3 +781,15 @@ Operations
 - The payment example now says "Regents does not keep a balance for you" and
   that USDC can be bought with a card.
 - Amounts stay in USDC; the "Credits" label is not used (founder, 2026-10-05).
+
+## 2026-10-06 — ash_postgres held at 2.13.0
+
+- `platform/mix.exs` pins `{:ash_postgres, "== 2.13.0"}`. From 2.13.1 (through
+  at least 2.14.2) upserts name the schema only from the resource's own
+  setting and skip the Repo's default prefix, which is how every Regent site
+  picks its schema in the shared production database.
+- A `hex` entry in `security/required-fixes.json` now carries `requirement`, an
+  Elixir version requirement, instead of `minimum`: existing entries read
+  `>= x.y.z`, and the new `2026-10-06-ash-postgres-upsert-schema` entry reads
+  `== 2.13.0`. `check_required_fixes.exs` reports a locked version outside the
+  requirement. Sites fetch the script and the list from the same commit.

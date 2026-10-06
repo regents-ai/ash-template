@@ -33,8 +33,8 @@ repository and folder, and the security fixes every Regent site must carry.
 from this repository's `main` on GitHub and runs the script, printing the
 revision it used. It fails when a shared library loads from a local folder or a
 vendored copy, names another URL or folder, is not pinned to a full commit, has
-no fetched history, or lacks a listed fix, and when a Hex package is older than a
-listed fix. Library pins never change by themselves; only the list does.
+no fetched history, or lacks a listed fix, and when a Hex package's locked version
+is outside a listed fix's requirement. Library pins never change by themselves; only the list does.
 `mix hex.audit` in `mix precommit` stops on a Hex package that is retired or has
 a published security advisory (Hex 2.5 reads both).
 

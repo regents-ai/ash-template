@@ -16,7 +16,8 @@
 # local folder allowed is the library's own folder in its own repository (Regents
 # uses identity/ from the same commit).
 # A "git" fix must be in the pinned history of each listed app the site uses; a
-# "hex" fix sets the lowest allowed Hex version of a package. Dependencies of every
+# "hex" fix sets the Hex versions a package may be locked at, as an Elixir version
+# requirement (">= 3.34.3", "== 2.13.0"). Dependencies of every
 # environment are checked, not only the one the check runs in.
 
 [revision] = System.argv()
@@ -154,15 +155,15 @@ fix_problems =
           elem(git.(app, ["merge-base", "--is-ancestor", fix, "HEAD"]), 1) != 0,
           do: "#{app} is pinned without #{entry["id"]}: #{entry["summary"]}"
 
-    %{"kind" => "hex", "package" => package, "minimum" => minimum} = entry ->
+    %{"kind" => "hex", "package" => package, "requirement" => requirement} = entry ->
       case {deps[package], lock[package]} do
         {nil, _entry} ->
           []
 
         {_dep, {:hex, _name, version, _hash, _managers, _deps, _repo, _outer}} ->
-          if Version.compare(version, minimum) == :lt,
+          if not Version.match?(version, requirement),
             do: [
-              "#{package} #{version} is older than #{minimum} and lacks #{entry["id"]}: #{entry["summary"]}"
+              "#{package} #{version} is outside #{requirement} (#{entry["id"]}): #{entry["summary"]}"
             ],
             else: []
 
