@@ -320,7 +320,13 @@
   min-width: 0;
 }
 
-.credits-panel__step-words span {
+.credits-panel__step-words strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.credits-panel__step-words > span {
   color: var(--color-fg-muted);
   font-size: 0.85rem;
 }
@@ -328,11 +334,6 @@
 .credits-panel__again {
   grid-column: 2 / -1;
   justify-self: start;
-}
-
-/* Buy waits on Approve in look only: it keeps taking presses. */
-.credits-panel__step[data-waiting] .credits-panel__step-words {
-  opacity: 0.55;
 }
 
 .credits-panel__check {
@@ -378,7 +379,7 @@
   border-color: var(--color-error);
 }
 
-.credits-panel__step[data-state="done"] .credits-panel__step-words span {
+.credits-panel__step[data-state="done"] .credits-panel__step-words > span:first-of-type {
   color: var(--color-success);
 }
 
