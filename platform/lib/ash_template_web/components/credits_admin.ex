@@ -52,7 +52,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
          assign(socket,
            gift_key: Ecto.UUID.generate(),
            gift_note:
-             {:ok, "Gave #{Amount.format(hd(gifts).amount)} to #{length(gifts)} recipients."}
+             {:ok, "Gave #{Amount.format(hd(gifts).amount)} to #{recipients(length(gifts))}."}
          )}
 
       {:error, error} ->
@@ -262,4 +262,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
     </div>
     """
   end
+
+  defp recipients(1), do: "1 recipient"
+  defp recipients(count), do: "#{count} recipients"
 end

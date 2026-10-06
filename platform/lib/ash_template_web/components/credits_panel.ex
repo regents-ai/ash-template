@@ -264,6 +264,7 @@ defmodule AshTemplateWeb.CreditsPanel do
       </header>
 
       <form
+        id={"#{@id}-form"}
         class="credits-panel__form"
         phx-change="change"
         phx-submit="change"

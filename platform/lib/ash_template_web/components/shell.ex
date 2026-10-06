@@ -188,8 +188,9 @@ defmodule AshTemplateWeb.Components.Shell do
           type="button"
           aria-haspopup="dialog"
           aria-controls="shell-credits"
+          aria-label={RegentCredits.Amount.format(@credits)}
         >
-          {RegentCredits.Amount.format(@credits)}
+          <.credits_amount amount={@credits} />
         </button>
 
         <.account_control account_control={@account_control} />
@@ -503,6 +504,18 @@ defmodule AshTemplateWeb.Components.Shell do
         {render_slot(@credits_panel)}
       </dialog>
     </div>
+    """
+  end
+
+  attr :amount, Decimal, required: true
+
+  # "12.40 Credits", whose unit a phone's header leaves out for room.
+  defp credits_amount(assigns) do
+    [number, unit] = String.split(RegentCredits.Amount.format(assigns.amount), " ", parts: 2)
+    assigns = assign(assigns, number: number, unit: unit)
+
+    ~H"""
+    {@number} <span class="shell-credits__unit">{@unit}</span>
     """
   end
 

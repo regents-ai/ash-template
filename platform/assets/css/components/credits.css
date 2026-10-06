@@ -24,6 +24,7 @@
 }
 
 .shell-credits-dialog {
+  box-sizing: border-box;
   width: min(34rem, calc(100% - 2rem));
   max-height: calc(100dvh - 4rem);
   padding: 1.25rem;
@@ -38,8 +39,15 @@
   background: color-mix(in oklch, var(--palette-charcoal) 30%, transparent);
 }
 
+/* Pinned to the corner rather than floated, so the panel keeps the full width. */
 .shell-credits-dialog__close {
-  float: inline-end;
+  position: absolute;
+  inset-block-start: 0.75rem;
+  inset-inline-end: 0.75rem;
+}
+
+.shell-credits-dialog .credits-panel__head {
+  padding-inline-end: 5rem;
 }
 
 .credits-panel {
@@ -141,9 +149,16 @@
 }
 
 @media (max-width: 47.99rem) {
+  /* The balance keeps its full width; the brand's name gives way first. */
   #app-shell .shell-credits {
+    flex: 0 0 auto;
+    margin-inline-end: 0;
     padding-inline: 0.5rem;
     font-size: 0.8rem;
+  }
+
+  #app-shell .shell-credits__unit {
+    display: none;
   }
 
   .shell-credits-dialog {
