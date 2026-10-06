@@ -189,6 +189,8 @@ defmodule AshTemplateWeb.Components.Shell do
           aria-haspopup="dialog"
           aria-controls="shell-credits"
           aria-label={RegentCredits.Amount.format(@credits)}
+          phx-hook="MotionCount"
+          data-variant="flash"
         >
           <.credits_amount amount={@credits} />
         </button>
@@ -497,9 +499,10 @@ defmodule AshTemplateWeb.Components.Shell do
           variant="quiet"
           type="button"
           class="shell-credits-dialog__close"
+          aria-label="Close"
           data-credits-close
         >
-          Close
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </Regent.Primitives.button>
         {render_slot(@credits_panel)}
       </dialog>
@@ -515,7 +518,7 @@ defmodule AshTemplateWeb.Components.Shell do
     assigns = assign(assigns, number: number, unit: unit)
 
     ~H"""
-    {@number} <span class="shell-credits__unit">{@unit}</span>
+    <span data-count>{@number}</span> <span class="shell-credits__unit">{@unit}</span>
     """
   end
 
