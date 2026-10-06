@@ -793,3 +793,13 @@ Operations
   `>= x.y.z`, and the new `2026-10-06-ash-postgres-upsert-schema` entry reads
   `== 2.13.0`. `check_required_fixes.exs` reports a locked version outside the
   requirement. Sites fetch the script and the list from the same commit.
+
+## 2026-10-06 — Pins follow Regents v128
+
+- `@regents_ref` is Regents `004307e65ffcf9cc9b3034d7cc2b015dcd45011b` (live
+  as regents.sh v128).
+- Every elixir-utils library, siwa and the Jev client included, is pinned to
+  one commit, `467cba652f975f8ddbc169dac499d696bcb24248`; the separate siwa and
+  Jev pins are gone.
+- Ash is `~> 3.34 and >= 3.34.3` (locked 3.34.4), so `mix hex.audit` and the
+  required-fixes check are both clean.

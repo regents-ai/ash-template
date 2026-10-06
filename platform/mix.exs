@@ -4,16 +4,11 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "55080723b20d57297855a23ee6e3e50ded77da9a"
-  # Agent sign-in hands the sign-in service's own refusal words on, which is newer
-  # than the commit the other packages are pinned to.
-  @siwa_ref "f30b2f283ba03f0d0aa0adbcba5cee6c5a7de1cc"
-  # The Jev client is newer than the commit regent_identity pins regent_privy to.
-  @jev_ref "f9bc17c1d5b86b354bde6245cafcd7a9bbea8e76"
+  @elixir_utils_ref "467cba652f975f8ddbc169dac499d696bcb24248"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "6bc26409835f76f99f91cf6e48bdebd18f1fe8eb"
   @regents "https://github.com/regents-ai/regents.git"
-  @regents_ref "c927cdd0031a76ccdd7a49280fc93c455df32b60"
+  @regents_ref "004307e65ffcf9cc9b3034d7cc2b015dcd45011b"
 
   def project do
     [
@@ -43,7 +38,7 @@ defmodule AshTemplate.MixProject do
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
-      {:ash, "~> 3.33.0"},
+      {:ash, "~> 3.34 and >= 3.34.3"},
       {:ash_postgres, "== 2.13.0"},
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
@@ -60,9 +55,13 @@ defmodule AshTemplate.MixProject do
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
       # ens_elixir names siwa by a sibling path; this pin replaces it.
       {:siwa,
-       git: @elixir_utils, ref: @siwa_ref, sparse: "siwa/siwa-elixir/apps/siwa", override: true},
-      {:regent_jev, git: @elixir_utils, ref: @jev_ref, sparse: "jev"},
-      {:regent_http, git: @elixir_utils, ref: @jev_ref, sparse: "http", override: true},
+       git: @elixir_utils,
+       ref: @elixir_utils_ref,
+       sparse: "siwa/siwa-elixir/apps/siwa",
+       override: true},
+      {:regent_jev, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "jev"},
+      # regent_jev names regent_http by a sibling path; this pin replaces it.
+      {:regent_http, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
       {:sourceror, "~> 1.12", only: :dev, runtime: false},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
