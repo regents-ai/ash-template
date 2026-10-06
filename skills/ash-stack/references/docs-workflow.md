@@ -75,6 +75,12 @@ access, and usage_rules already links its own Elixir rules. The tool does not wr
 skills here. Keep the six `ash-*` names reserved for this authored pack; if generated
 skills are ever wanted, give them distinct names such as `ash-upstream-rules`.
 
+When adding it to a site: the dependency is `only: :dev` where `mix precommit` runs in
+dev, as in the template, and `only: [:dev, :test]` where `preferred_envs` runs
+precommit in test, or the check cannot find the task. The first `mix usage_rules.sync`
+asks a yes/no question, so run it with `--yes`; `--check` asks nothing. Put the block in
+the `AGENTS.md` beside the site's `mix.exs` so its `deps/` links resolve.
+
 ## Record only useful evidence
 
 For a disputed API, note the installed version, module/function or DSL section, and
