@@ -14,6 +14,9 @@ defmodule AshTemplate.Application do
         AshTemplate.Repo,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
         AshTemplateWeb.Presence,
+        # After the repository and PubSub: a Credits balance changed on any
+        # Regent site reaches the pages showing it.
+        RegentCredits.Listener,
         {Oban, oban_config()},
         AshTemplateWeb.Endpoint,
         metrics_child()

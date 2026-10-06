@@ -14,6 +14,7 @@ config :ex_money,
 
 config :regent_credits,
   repo: AshTemplate.Repo,
+  pubsub: AshTemplate.PubSub,
   ash_domains: [RegentCredits],
   admins: [],
   chain_client: AshTemplate.ChainClient,

@@ -192,7 +192,8 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket |> count_unread() |> load_notifications(socket.assigns.route_spec)}
   end
 
-  # The Credits panel added Credits; the header's balance follows.
+  # The balance changed on this or any Regent site: a purchase, a gift, a spend.
+  # The header, the Buy Credits panel and the Account page follow.
   def handle_info(:credits_changed, socket), do: {:noreply, read_credits(socket)}
 
   def handle_info({:jobs_running, count}, socket),
@@ -275,6 +276,7 @@ defmodule AshTemplateWeb.ShellLive do
           module={AshTemplateWeb.CreditsPanel}
           id="credits-panel"
           account={current_account(@access_context)}
+          balance={@balance}
         />
       </:credits_panel>
       <:content>
@@ -342,6 +344,7 @@ defmodule AshTemplateWeb.ShellLive do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Mute.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:conversations:#{account.id}")
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(account.privy_user_id))
   end
 
   defp subscribe_to_own_topics(_access_context), do: :ok
@@ -487,8 +490,12 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp read_credits(socket) do
     case current_account(socket.assigns.access_context) do
-      nil -> assign(socket, :credits, nil)
-      account -> assign(socket, :credits, RegentCredits.balance(account.privy_user_id).available)
+      nil ->
+        assign(socket, balance: nil, credits: nil)
+
+      account ->
+        balance = RegentCredits.balance(account.privy_user_id)
+        assign(socket, balance: balance, credits: balance.available)
     end
   end
 

@@ -53,6 +53,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/credits"))
+     |> follow_credits()
      |> assign(
        chains: chains,
        local: Enum.filter(chains, &local?/1),
@@ -113,12 +114,23 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
     result =
       RegentCredits.hold(Ecto.UUID.generate(), @account.privy_user_id, 3, "lab bid", actor: agent)
 
-    send_update(AshTemplateWeb.CreditsPanel, id: "credits-panel", account: @account)
     {:noreply, assign(socket, agent_hold: hold_words(result))}
   end
 
   @impl true
-  def handle_info(:credits_changed, socket), do: {:noreply, socket}
+  def handle_info(:credits_changed, socket), do: {:noreply, read_balance(socket)}
+
+  # The lab account's balance follows every change, as the site header's does.
+  defp follow_credits(socket) do
+    if connected?(socket),
+      do:
+        Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(@account.privy_user_id))
+
+    read_balance(socket)
+  end
+
+  defp read_balance(socket),
+    do: assign(socket, :balance, RegentCredits.balance(@account.privy_user_id))
 
   defp hold_words({:ok, hold}), do: "The agent now holds #{Amount.format(hold.amount)}."
 
@@ -244,7 +256,12 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="lab-panel-heading">
           <h2 id="lab-panel-heading">The panel</h2>
-          <.live_component module={AshTemplateWeb.CreditsPanel} id="credits-panel" account={@account} />
+          <.live_component
+            module={AshTemplateWeb.CreditsPanel}
+            id="credits-panel"
+            account={@account}
+            balance={@balance}
+          />
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="lab-agents-heading">

@@ -848,3 +848,7 @@ Operations
   refunds) and the refund rules Sean approved.
 - `/showcase/credits` (local only) tries every part against local copies of
   Base and Ethereum; the stand-in wallet now serves more than one network.
+- Credits balances update on open pages at once: a purchase, a gift, a hold or
+  a spend on any Regent site reaches the header and the Buy Credits panel
+  without a reload, and a gift to a wallet a signed-in account holds lands on
+  the account straight away. Regent Credits pinned to elixir-utils bf4aed7.
