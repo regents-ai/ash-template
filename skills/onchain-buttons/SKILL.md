@@ -16,10 +16,13 @@ for a USDC payment's button, `payments`.
    the wallet or on its way to the chain. A reverted or duplicate transaction is an
    accepted outcome. Never hide, debounce, queue or merge presses, and never set
    `pointer-events: none`. Mark a press in progress with a data attribute and CSS only.
-   The one exception (founder decision, 2026-09-28): when the chain's own current state
-   makes the transaction certain to fail, such as "144/144 Keys sold", the button stays
-   visible but `disabled`, and the reason is shown beside it; it comes back when that
-   state changes. A pending transaction, or one that might revert, is never a reason to
+   The one exception (founder decisions, 2026-09-28 and 2026-10-06): the site may block a
+   press that is certain to fail. When the chain's own current state, read by the server
+   at the latest block, makes the transaction certain to fail, the button stays visible
+   but `disabled` with a reason of a few words beside it, and it comes back when that
+   state changes. Examples: "144/144 Keys sold"; a Buy whose USDC approval is not on the
+   chain yet ("Approve first"); a payment larger than the wallet's USDC. A pending
+   transaction, a repeat press, or one that only might revert is never a reason to
    disable. See [hook pattern](references/hook-pattern.md#markup).
 2. **A hook's own click listener handles the press.** LiveView ignores a second
    `phx-click` on an element while the first is waiting for the server (lab: three presses,

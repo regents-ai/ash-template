@@ -45,15 +45,17 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
   wallet while the first is slow (rule 1; Autolaunch A02 review). Once the server has
   confirmed the last step, the flow may end on "Done" without a button.
 
-- Whenever a person types an amount, a line beside the button says what the press sends,
-  read from the review itself (founder decision, 2026-09-27: a review screen, not
-  browser-built steps). The example's is "Record and Sign use the number 42."; a money
-  flow shows "You pay / You get" the same way.
+- Whenever a person types an amount, the step names what the press sends, read from the
+  review itself (founder decision, 2026-09-27: a review screen, not browser-built
+  steps): "Approve 5 USDC", "Buy 5 Credits". Keep it to that label; why the step exists
+  and how long it takes go in a `Regent.Primitives.tip` beside it (STYLE.md, "Few words
+  on screen"). A done step shows a tick, a waiting one a dashed box.
 - A button names its step with `data-onchain-step`. It has no `phx-click` and sits
   outside any form (rule 2). It is `disabled` in one case only: the server's own read of
   the chain says the step is certain to fail (sold out, the sale has closed, the claim is
-  already made). Then a line beside it gives that reason in plain words, and the server
-  enables it again when the read changes. Never disable it because a press is pending,
+  already made, the approval the step spends is not on the chain yet, the wallet holds
+  too little). Then a few words beside it give that reason, and the server enables it
+  again when the read changes. Never disable it because a press is pending,
   or because the transaction might revert, and never use `aria-disabled="true"` or CSS
   to make an enabled button inert.
 - Every field the review depends on carries `data-onchain-input="name"`, matching the

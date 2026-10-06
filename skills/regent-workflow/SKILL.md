@@ -68,10 +68,12 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and KeyFleet:
   from pending-transaction persistence and remain legitimate product data.
 - Bind each action to the displayed record, chain and authenticated signer. Every
   press reaches the wallet; never block, defer, queue, serialize or deduplicate one.
-  The one exception (founder decision, 2026-09-28): when the chain's own current state
-  makes a transaction certain to fail, such as "144/144 Keys sold", the button stays
-  visible but disabled with the reason beside it. A pending transaction, or one that
-  might revert, is never a reason to disable.
+  The one exception (founder decisions, 2026-09-28 and 2026-10-06): the site may block
+  a press that is certain to fail. When the chain's own current state makes a
+  transaction certain to fail, such as "144/144 Keys sold" or a Buy whose approval is
+  not on the chain yet, the button stays visible but disabled with the reason beside it.
+  A pending transaction, a repeat press, or one that only might revert is never a
+  reason to disable.
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 

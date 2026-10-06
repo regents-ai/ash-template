@@ -7,8 +7,11 @@ Use meaningful headings, restrained typography, aligned edges, and consistent sp
 Do not label everything a platform, ecosystem, engine, or workflow. Explain the result
 of an action in normal language.
 
-**Density:** Remove repeated headings, duplicate explanations, gratuitous badges,
-unused controls, and excessive nested cards. Use a real table for comparative data,
+**Density:** Few words on screen (design-system STYLE.md): figures, inputs, choices and
+the action stay visible; explanations wait in a `Regent.Primitives.tip`, a dropdown or
+their own dialog, and state shows as marks rather than sentences. Remove repeated
+headings, duplicate explanations, gratuitous badges, unused controls, and excessive
+nested cards. Use a real table for comparative data,
 a list for a simple sequence, and a form for an edit. Keep long technical identifiers
 copyable and readable without forcing the entire page to overflow.
 
