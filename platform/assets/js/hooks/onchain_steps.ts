@@ -74,10 +74,13 @@ export const OnchainSteps: Hook = {
       const switching = (event.target as Element | null)?.closest<HTMLElement>("[data-switch-chain]")
       if (switching && this.el.contains(switching)) {
         const release = mark(switching)
-        void switched(this.review, push).finally(() => {
-          release()
-          this.looked?.()
-        })
+        lost(this.el, false)
+        void switched(this.review, push)
+          .catch(() => lost(this.el, true))
+          .finally(() => {
+            release()
+            this.looked?.()
+          })
         return
       }
 
