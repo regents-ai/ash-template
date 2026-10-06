@@ -1,12 +1,3 @@
-defmodule AshTemplateWeb.Showcase.Domain do
-  @moduledoc false
-  use Ash.Domain, validate_config_inclusion?: false
-
-  resources do
-    resource AshTemplateWeb.Showcase.Sample
-  end
-end
-
 defmodule AshTemplateWeb.Showcase.Sample do
   @moduledoc "Local, data-layer-less resource. Its records never reach Postgres."
   use Ash.Resource,
@@ -37,6 +28,17 @@ defmodule AshTemplateWeb.Showcase.Sample do
       accept [:title, :quantity]
       validate string_length(:title, min: 2, max: 80)
       validate numericality(:quantity, greater_than: 0, less_than_or_equal_to: 100)
+    end
+  end
+end
+
+defmodule AshTemplateWeb.Showcase.Domain do
+  @moduledoc false
+  use Ash.Domain, validate_config_inclusion?: false, extensions: [AshPhoenix]
+
+  resources do
+    resource AshTemplateWeb.Showcase.Sample do
+      define :create_sample, action: :create
     end
   end
 end

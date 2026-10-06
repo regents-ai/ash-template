@@ -1,7 +1,7 @@
 defmodule AshTemplate.Notes do
   @moduledoc "Notes a signed-in person writes for themselves, from the page or the API."
 
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshPhoenix]
 
   resources do
     resource AshTemplate.Notes.Note do

@@ -819,3 +819,17 @@ Operations
 - `ash-stack`'s docs guide now treats usage_rules as standard. Inside a project,
   search without `-p`: on 1.2.8, `-p ash` searches the newest Hex release and
   `-p ash@<version>` finds nothing.
+
+## 2026-10-06 — Ash review fixes
+
+- The notes, rooms and showcase forms are built from their domain's code
+  interface (`form_to_*` from the `AshPhoenix` domain extension) instead of
+  naming the resource and action in the LiveView.
+- `AshTemplateWeb.FormErrors.messages/1` replaces three identical copies of the
+  field-error helper in the chat, rooms and notes pages.
+- The showcase sample form shows the plain message under each field instead of
+  the full internal error text, and marks the field invalid for screen readers.
+- The session lookup sets who is acting when the query is built, not when it
+  runs. A comment records why that module keeps `Repo.transaction`: an
+  exhausted session lineage is revoked and must stay revoked while the call
+  still answers with an error, which `Ash.transact` would roll back.

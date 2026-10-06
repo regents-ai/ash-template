@@ -16,6 +16,7 @@ defmodule AshTemplateWeb.ChatLive do
 
   alias AshTemplate.Actors.Human
   alias AshTemplate.Chat
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -210,7 +211,7 @@ defmodule AshTemplateWeb.ChatLive do
             :let={field}
             id="chat-message-text"
             label="Message the assistant"
-            errors={errors(@form[:text])}
+            errors={FormErrors.messages(@form[:text])}
           >
             <textarea
               id={field.id}
@@ -313,15 +314,5 @@ defmodule AshTemplateWeb.ChatLive do
       sanitize: MDEx.Document.default_sanitize_options()
     )
     |> Phoenix.HTML.raw()
-  end
-
-  defp errors(field) do
-    if used_input?(field), do: Enum.map(field.errors, &message/1), else: []
-  end
-
-  defp message({message, values}) do
-    Enum.reduce(values, message, fn {key, value}, message ->
-      String.replace(message, "%{#{key}}", to_string(value))
-    end)
   end
 end

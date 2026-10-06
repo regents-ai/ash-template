@@ -1,8 +1,9 @@
 defmodule AshTemplateWeb.ShowcaseLive do
   @moduledoc "The component workshop. Demo state lives in this LiveView."
   use AshTemplateWeb, :live_view
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Read
-  alias AshTemplateWeb.Showcase.{Catalog, Sample, Utilities}
+  alias AshTemplateWeb.Showcase.{Catalog, Domain, Utilities}
   alias Regent.Primitives, as: P
   alias Regent.Structure, as: S
 
@@ -81,18 +82,15 @@ defmodule AshTemplateWeb.ShowcaseLive do
        privy_mode: AshTemplateWeb.Showcase.privy_mode(),
        catalog: Catalog.snapshot(),
        capabilities: @capabilities,
-       form: to_form(%{"title" => "First launch", "quantity" => "1"}, as: :sample),
-       errors: [],
+       form: sample_form(%{"title" => "First launch", "quantity" => "1"}),
        records: [],
        empty_items: [],
-       empty_error: nil,
        fixture_wallets: @fixture_wallets,
        balance: %Read{},
        fail_reads: false,
        step_title: "Current step",
        step_editing: false,
-       step_form: to_form(%{"title" => "Current step"}, as: :step),
-       step_errors: [],
+       step_form: step_form("Current step"),
        result: nil,
        identities: [],
        connection_notice: nil,
@@ -163,7 +161,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <.capabilities cards={@capabilities} />
           <.feedback
             empty_items={@empty_items}
-            empty_error={@empty_error}
             fixture_wallets={@fixture_wallets}
             balance={@balance}
             fail_reads={@fail_reads}
@@ -172,7 +169,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
             step_title={@step_title}
             step_editing={@step_editing}
             step_form={@step_form}
-            step_errors={@step_errors}
           />
           <.identity
             privy_mode={@privy_mode}
@@ -180,7 +176,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
             identities={@identities}
             connection_notice={@connection_notice}
           />
-          <.data form={@form} errors={@errors} records={@records} result={@result} local?={@local?} />
+          <.data form={@form} records={@records} result={@result} local?={@local?} />
           <.inventory catalog={@catalog} />
           <footer class="sc-footer">
             <span>Ash / Component workshop</span>
@@ -397,7 +393,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
   end
 
   attr :empty_items, :list, required: true
-  attr :empty_error, :string, default: nil
   attr :fixture_wallets, :list, required: true
   attr :balance, Read, required: true
   attr :fail_reads, :boolean, required: true
@@ -439,7 +434,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <ul :if={@empty_items != []} id="empty-state-items">
               <li :for={item <- @empty_items}>{item.title}</li>
             </ul>
-            <P.notice :if={@empty_error} tone="error">{@empty_error}</P.notice>
           </div>
           <div class="sc-row">
             <P.button id="add-item" phx-click="create_item" variant="secondary">
@@ -523,7 +517,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
   attr :step_title, :string, required: true
   attr :step_editing, :boolean, required: true
   attr :step_form, Phoenix.HTML.Form, required: true
-  attr :step_errors, :list, required: true
 
   defp composition(assigns) do
     ~H"""
@@ -535,7 +528,12 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <span class="rg-panel__index">Step</span>
           </div>
           <.form :if={@step_editing} for={@step_form} id="step-form" phx-submit="save_step">
-            <P.field :let={field} id="step-title" label="Step title" errors={@step_errors}>
+            <P.field
+              :let={field}
+              id="step-title"
+              label="Step title"
+              errors={FormErrors.messages(@step_form[:title])}
+            >
               <input
                 id={field.id}
                 name="step[title]"
@@ -675,7 +673,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
   end
 
   attr :form, Phoenix.HTML.Form, required: true
-  attr :errors, :list, required: true
   attr :records, :list, required: true
   attr :result, :map, default: nil
   attr :local?, :boolean, required: true
@@ -687,7 +684,12 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <.card>
           <h3>Ash form <small>This page only</small></h3>
           <.form for={@form} id="sample-form" phx-submit="create_sample">
-            <P.field :let={field} id="sample-title" label="Title" errors={@errors}>
+            <P.field
+              :let={field}
+              id="sample-title"
+              label="Title"
+              errors={FormErrors.messages(@form[:title])}
+            >
               <input
                 id={field.id}
                 name="sample[title]"
@@ -696,12 +698,19 @@ defmodule AshTemplateWeb.ShowcaseLive do
                 aria-describedby={field.described_by}
               />
             </P.field>
-            <P.field :let={field} id="sample-quantity" label="Quantity">
+            <P.field
+              :let={field}
+              id="sample-quantity"
+              label="Quantity"
+              errors={FormErrors.messages(@form[:quantity])}
+            >
               <input
                 id={field.id}
                 name="sample[quantity]"
                 type="number"
                 value={@form[:quantity].value}
+                aria-invalid={field.aria_invalid}
+                aria-describedby={field.described_by}
               />
             </P.field>
             <P.button type="submit">Add item</P.button>
@@ -877,25 +886,20 @@ defmodule AshTemplateWeb.ShowcaseLive do
   end
 
   def handle_event("create_sample", %{"sample" => params}, socket) do
-    form = to_form(params, as: :sample)
-
-    case Ash.create(Sample, params) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, record} ->
         {:noreply,
-         assign(socket, records: [record | socket.assigns.records], errors: [], form: form)}
+         assign(socket, records: [record | socket.assigns.records], form: sample_form(params))}
 
-      {:error, error} ->
-        {:noreply, assign(socket, errors: [Exception.message(error)], form: form)}
+      {:error, form} ->
+        {:noreply, assign(socket, :form, form)}
     end
   end
 
   def handle_event("create_item", _, socket) do
     items = socket.assigns.empty_items
-
-    case Ash.create(Sample, %{title: "Workshop item #{length(items) + 1}", quantity: 1}) do
-      {:ok, item} -> {:noreply, assign(socket, empty_items: items ++ [item], empty_error: nil)}
-      {:error, error} -> {:noreply, assign(socket, :empty_error, Exception.message(error))}
-    end
+    item = Domain.create_sample!(%{title: "Workshop item #{length(items) + 1}", quantity: 1})
+    {:noreply, assign(socket, :empty_items, items ++ [item])}
   end
 
   def handle_event("read_wallet", %{"wallet" => key}, socket) do
@@ -917,28 +921,19 @@ defmodule AshTemplateWeb.ShowcaseLive do
     do: {:noreply, update(socket, :fail_reads, &(!&1))}
 
   def handle_event("reset_items", _, socket),
-    do: {:noreply, assign(socket, empty_items: [], empty_error: nil)}
+    do: {:noreply, assign(socket, :empty_items, [])}
 
   def handle_event("edit_step", _, socket) do
-    step_form = to_form(%{"title" => socket.assigns.step_title}, as: :step)
-    {:noreply, assign(socket, step_editing: true, step_errors: [], step_form: step_form)}
+    {:noreply,
+     assign(socket, step_editing: true, step_form: step_form(socket.assigns.step_title))}
   end
 
-  def handle_event("cancel_step", _, socket),
-    do: {:noreply, assign(socket, step_editing: false, step_errors: [])}
+  def handle_event("cancel_step", _, socket), do: {:noreply, assign(socket, :step_editing, false)}
 
   def handle_event("save_step", %{"step" => params}, socket) do
-    # Reuse the local sample action's title validation, never a product resource.
-    case Ash.create(Sample, Map.take(params, ["title"])) do
-      {:ok, item} ->
-        {:noreply, assign(socket, step_title: item.title, step_editing: false, step_errors: [])}
-
-      {:error, error} ->
-        {:noreply,
-         assign(socket,
-           step_errors: [Exception.message(error)],
-           step_form: to_form(params, as: :step)
-         )}
+    case AshPhoenix.Form.submit(socket.assigns.step_form, params: Map.take(params, ["title"])) do
+      {:ok, item} -> {:noreply, assign(socket, step_title: item.title, step_editing: false)}
+      {:error, form} -> {:noreply, assign(socket, :step_form, form)}
     end
   end
 
@@ -1005,4 +1000,11 @@ defmodule AshTemplateWeb.ShowcaseLive do
   defp run_utility("privy_expired"), do: Utilities.privy(:expired)
   defp run_utility("privy_audience"), do: Utilities.privy(:audience)
   defp run_utility(_kind), do: "Choose one of the listed examples."
+
+  defp sample_form(params),
+    do: Domain.form_to_create_sample(as: "sample", params: params) |> to_form()
+
+  # The step's title reuses the local sample action's title rules, never a product resource.
+  defp step_form(title),
+    do: Domain.form_to_create_sample(as: "step", params: %{"title" => title}) |> to_form()
 end

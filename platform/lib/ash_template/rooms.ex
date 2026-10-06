@@ -1,7 +1,7 @@
 defmodule AshTemplate.Rooms do
   @moduledoc "The site's chat rooms: messages anyone can read, and the people each reader has muted."
 
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshPhoenix]
 
   resources do
     resource AshTemplate.Rooms.Message do

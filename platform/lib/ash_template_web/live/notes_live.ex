@@ -18,6 +18,7 @@ defmodule AshTemplateWeb.NotesLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Notes
   alias AshTemplate.Notes.{Decision, Note}
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -148,7 +149,7 @@ defmodule AshTemplateWeb.NotesLive do
               :let={field}
               id="note-title"
               label="Title"
-              errors={errors(@form[:title])}
+              errors={FormErrors.messages(@form[:title])}
             >
               <input
                 id={field.id}
@@ -161,7 +162,12 @@ defmodule AshTemplateWeb.NotesLive do
                 aria-describedby={field.described_by}
               />
             </Primitives.field>
-            <Primitives.field :let={field} id="note-body" label="Note" errors={errors(@form[:body])}>
+            <Primitives.field
+              :let={field}
+              id="note-body"
+              label="Note"
+              errors={FormErrors.messages(@form[:body])}
+            >
               <textarea
                 id={field.id}
                 name={@form[:body].name}
@@ -333,22 +339,12 @@ defmodule AshTemplateWeb.NotesLive do
   defp notice({:error, _failure}, verb), do: "That note couldn’t be #{verb}. Try again."
 
   defp new_form(socket) do
-    form = AshPhoenix.Form.for_create(Note, :create, actor: socket.assigns.actor, as: "note")
+    form = Notes.form_to_create_note(actor: socket.assigns.actor, as: "note")
     assign(socket, form: to_form(form), editing: nil, notice: nil)
   end
 
   defp edit_form(socket, note) do
-    form = AshPhoenix.Form.for_update(note, :update, actor: socket.assigns.actor, as: "note")
+    form = Notes.form_to_update_note(note, actor: socket.assigns.actor, as: "note")
     assign(socket, form: to_form(form), editing: note.id, notice: nil)
-  end
-
-  defp errors(field) do
-    if used_input?(field), do: Enum.map(field.errors, &message/1), else: []
-  end
-
-  defp message({message, values}) do
-    Enum.reduce(values, message, fn {key, value}, message ->
-      String.replace(message, "%{#{key}}", to_string(value))
-    end)
   end
 end

@@ -18,6 +18,7 @@ defmodule AshTemplateWeb.RoomsLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Mute}
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -296,7 +297,7 @@ defmodule AshTemplateWeb.RoomsLive do
             :let={field}
             id="room-message-body"
             label={if @editing, do: "Edit your message", else: "Message #{@room.name}"}
-            errors={errors(@form[:body])}
+            errors={FormErrors.messages(@form[:body])}
           >
             <textarea
               id={field.id}
@@ -514,7 +515,7 @@ defmodule AshTemplateWeb.RoomsLive do
 
   defp new_form(%{assigns: %{actor: actor, room: room}} = socket) do
     form =
-      AshPhoenix.Form.for_create(Message, :post,
+      Rooms.form_to_post_message(
         actor: actor,
         as: "message",
         prepare_params: fn params, _phase -> Map.put(params, "room", room.slug) end
@@ -524,17 +525,7 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   defp edit_form(socket, message) do
-    form = AshPhoenix.Form.for_update(message, :edit, actor: socket.assigns.actor, as: "message")
+    form = Rooms.form_to_edit_message(message, actor: socket.assigns.actor, as: "message")
     assign(socket, form: to_form(form), editing: message.id, notice: nil)
-  end
-
-  defp errors(field) do
-    if used_input?(field), do: Enum.map(field.errors, &message/1), else: []
-  end
-
-  defp message({message, values}) do
-    Enum.reduce(values, message, fn {key, value}, message ->
-      String.replace(message, "%{#{key}}", to_string(value))
-    end)
   end
 end
