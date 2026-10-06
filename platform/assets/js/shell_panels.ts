@@ -1,5 +1,6 @@
 // The app shell's panels that the browser alone opens and closes: the right side
-// bar, the section sidebar and the search dialog, with the dialog's highlight. Open and hidden states live
+// bar, the section sidebar, the search dialog, with the dialog's highlight, and
+// the Buy Credits dialog. Open and hidden states live
 // on <html data-aside data-sidebar>, which the server first draws from the
 // cookies written here (AshTemplateWeb.Plugs.Panels), so LiveView never patches
 // them away.
@@ -48,6 +49,7 @@ export function installShellPanels(shell: HTMLElement) {
   const aside = () => shell.querySelector<HTMLElement>("#shell-aside")
   const asideButton = () => shell.querySelector<HTMLButtonElement>("#shell-aside-button")
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
+  const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
   const phone = () => window.matchMedia("(max-width: 47.99rem)").matches
 
   // The light pulses while the panel is closed and holds something the person
@@ -140,6 +142,13 @@ export function installShellPanels(shell: HTMLElement) {
 
   const closeSearch = () => search()?.close()
 
+  const openCredits = () => {
+    const dialog = credits()
+    if (dialog && !dialog.open) dialog.showModal()
+  }
+
+  const closeCredits = () => credits()?.close()
+
   const onClick = (event: MouseEvent) => {
     const target = event.target instanceof Element ? event.target : null
     if (!target) return
@@ -154,6 +163,9 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()
+    if (target.closest("#shell-credits-button")) return openCredits()
+    if (target.closest("[data-credits-close]")) return closeCredits()
+    if (target === credits()) return closeCredits()
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()
     // A press on the dialog's own backdrop lands on the dialog itself.
     if (target === search()) return closeSearch()

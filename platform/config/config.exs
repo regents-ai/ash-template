@@ -5,6 +5,23 @@ config :mdex_native, syntax_highlighter: :lumis
 config :req_llm, custom_providers: [AshTemplate.Chat.StandIn]
 config :regent_identity, repo: AshTemplate.Repo, ash_domains: [RegentIdentity]
 
+# Regent Credits: one prepaid balance per Privy account, shared by every Regent
+# site. Credits are the private currency XRC, kept to the millionth. Admins come
+# from REGENT_CREDITS_ADMINS at runtime.
+config :ex_money,
+  custom_currencies: [{:XRC, name: "Credits", digits: 6}],
+  auto_start_exchange_rate_service: false
+
+config :regent_credits,
+  repo: AshTemplate.Repo,
+  ash_domains: [RegentCredits],
+  admins: [],
+  chain_client: AshTemplate.ChainClient,
+  chains: %{
+    base: %{chain_id: 8453, name: "Base", rpc_url: "https://mainnet.base.org"},
+    ethereum: %{chain_id: 1, name: "Ethereum", rpc_url: "https://ethereum-rpc.publicnode.com"}
+  }
+
 # Ash 3.33 requires an explicit string length unit. Codepoints match how
 # PostgreSQL counts `length()`, so `max_length` bounds stored size; graphemes
 # (`:mixed`) do not, because one grapheme can carry unbounded combining marks
@@ -35,13 +52,19 @@ config :ash_template, AshTemplate.Repo,
 # Background jobs live in the site's own schema, beside its tables. The serving
 # connection goes through a pooler that drops LISTEN/NOTIFY, so queues hear about
 # new jobs through Erlang process groups instead. `outside_calls` keeps slow calls
-# to other websites from holding up the default queue. AshOban adds each trigger's
-# sweep to `cron`.
+# to other websites from holding up the default queue; `regent_credits` checks
+# Credits purchases on chain. AshOban adds each trigger's sweep to `cron`.
 config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
   notifier: Oban.Notifiers.PG,
-  queues: [default: 5, outside_calls: 3, chat_responses: [limit: 10], conversations: [limit: 10]],
+  queues: [
+    default: 5,
+    outside_calls: 3,
+    chat_responses: [limit: 10],
+    conversations: [limit: 10],
+    regent_credits: 3
+  ],
   cron: [crontab: []],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]
@@ -77,7 +100,11 @@ config :ash_template, :wallet_chain, %{
 # The node the server reads each chain through, by chain id. A wallet adds a chain
 # with its public `rpc_url` above; the server may read through a private node or a
 # lab fork instead, and this address never reaches the browser.
-config :ash_template, :chain_nodes, %{84_532 => "https://sepolia.base.org"}
+config :ash_template, :chain_nodes, %{
+  84_532 => "https://sepolia.base.org",
+  8453 => "https://mainnet.base.org",
+  1 => "https://ethereum-rpc.publicnode.com"
+}
 
 # A sign-in lasts 30 days: the cookie expires then, and
 # `AshTemplate.Accounts.SessionAuthority` reads this same limit.

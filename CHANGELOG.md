@@ -833,3 +833,18 @@ Operations
   runs. A comment records why that module keeps `Repo.transaction`: an
   exhausted session lineage is revoked and must stay revoked while the call
   still answers with an error, which `Ash.transact` would roll back.
+
+## 2026-10-06 — Regent Credits
+
+- Adds `regent_credits` from elixir-utils at `f3cfb29`: one prepaid Credits
+  balance per Privy account, shared by every Regent site (1 Credit = $1).
+  It is listed in `security/required-fixes.json`.
+- The site's Oban checks each purchase: USDC on Base (approve, then a deposit
+  into REGENT staking), counted at the first block, and USDC on Ethereum (a
+  transfer to the Treasury Safe), counted after 12 blocks.
+- Parts any site can show: the Buy Credits panel and the balance in the
+  header, the account-page notice pointing to regents.sh/account, agent
+  spending limits (shown on regents.sh only), the admin page (gifts, purchases,
+  refunds) and the refund rules Sean approved.
+- `/showcase/credits` (local only) tries every part against local copies of
+  Base and Ethereum; the stand-in wallet now serves more than one network.

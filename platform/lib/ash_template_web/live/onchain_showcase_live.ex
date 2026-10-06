@@ -47,7 +47,12 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
 
   # The stand-in wallet's requests that need the lab chain. Only its own
   # accounts send, and only there.
-  def handle_event("lab_rpc", %{"method" => method, "params" => params}, socket) do
+  def handle_event(
+        "lab_rpc",
+        %{"chain_id" => chain_id, "method" => method, "params" => params},
+        socket
+      )
+      when chain_id == socket.assigns.chain.chain_id do
     {:reply, lab_reply(socket.assigns.chain, method, params), socket}
   end
 
@@ -116,7 +121,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
           phx-hook="OnchainLab"
           phx-update="ignore"
           aria-labelledby="lab-wallet-heading"
-          data-lab-chain-id={@chain.chain_id}
+          data-lab-chain-ids={@chain.chain_id}
         >
           <h2 id="lab-wallet-heading">Wallet app</h2>
           <fieldset>

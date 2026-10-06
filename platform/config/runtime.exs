@@ -11,12 +11,39 @@ config :ash_template, :privy,
   app_id: System.get_env("PRIVY_APP_ID"),
   verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 
-# The server reads the wallet chain through this node when it is set, such as a
-# private node whose address carries a key; wallets still add the public address.
-if node_url = System.get_env("ASH_TEMPLATE_CHAIN_NODE_URL") do
-  %{chain_id: chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
-  nodes = Application.fetch_env!(:ash_template, :chain_nodes)
-  config :ash_template, :chain_nodes, Map.put(nodes, chain_id, node_url)
+# The server reads a chain through its own node when one is set, such as a
+# private node whose address carries a key, or a local copy of the chain for a
+# lab run; wallets still add the public address. The wallet chain's node is
+# ASH_TEMPLATE_CHAIN_NODE_URL; Credits purchases are checked through the Base
+# and Ethereum ones.
+%{chain_id: wallet_chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
+
+node_overrides =
+  for {chain_id, setting} <- [
+        {wallet_chain_id, "ASH_TEMPLATE_CHAIN_NODE_URL"},
+        {8453, "ASH_TEMPLATE_BASE_NODE_URL"},
+        {1, "ASH_TEMPLATE_ETHEREUM_NODE_URL"}
+      ],
+      node_url = System.get_env(setting),
+      into: %{} do
+    case URI.new(node_url) do
+      {:ok, %URI{scheme: scheme, host: host}}
+      when scheme in ["http", "https"] and host not in [nil, ""] ->
+        {chain_id, node_url}
+
+      _invalid ->
+        raise "#{setting} must be an http or https address"
+    end
+  end
+
+config :ash_template,
+       :chain_nodes,
+       Map.merge(Application.fetch_env!(:ash_template, :chain_nodes), node_overrides)
+
+# The Privy accounts that may give Credits and handle refunds, comma separated.
+if admins = System.get_env("REGENT_CREDITS_ADMINS") do
+  config :regent_credits,
+    admins: admins |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
 end
 
 # Agents' signed requests are checked by this sign-in service instead, such as one

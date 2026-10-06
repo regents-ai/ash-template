@@ -81,7 +81,8 @@ defmodule AshTemplateWeb.ShellLive do
        search: unsearched(),
        assistant: nil
      )
-     |> count_unread()}
+     |> count_unread()
+     |> read_credits()}
   end
 
   @impl true
@@ -191,6 +192,9 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket |> count_unread() |> load_notifications(socket.assigns.route_spec)}
   end
 
+  # The Credits panel added Credits; the header's balance follows.
+  def handle_info(:credits_changed, socket), do: {:noreply, read_credits(socket)}
+
   def handle_info({:jobs_running, count}, socket),
     do: {:noreply, assign(socket, :jobs_running, count)}
 
@@ -259,12 +263,20 @@ defmodule AshTemplateWeb.ShellLive do
       shell_instance={@shell_instance}
       checklist={checklist(@progress)}
       unread={@unread}
+      credits={@credits}
       jobs_running={@jobs_running}
       healthy={@healthy}
       version={@version}
       search={@search}
       assistant={@assistant}
     >
+      <:credits_panel :if={@credits}>
+        <.live_component
+          module={AshTemplateWeb.CreditsPanel}
+          id="credits-panel"
+          account={current_account(@access_context)}
+        />
+      </:credits_panel>
       <:content>
         <OverviewLive.page
           :if={@route_spec.route_id == :app}
@@ -306,6 +318,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :account}
           account={current_account(@access_context)}
           account_control={@account_control}
+          credits={@credits}
         />
 
         <AccountLive.wallets
@@ -470,6 +483,13 @@ defmodule AshTemplateWeb.ShellLive do
   defp checklist(progress) do
     for {id, label} <- @steps,
         do: %{id: id, label: label, path: @step_paths[id], done?: Map.get(progress, id, false)}
+  end
+
+  defp read_credits(socket) do
+    case current_account(socket.assigns.access_context) do
+      nil -> assign(socket, :credits, nil)
+      account -> assign(socket, :credits, RegentCredits.balance(account.privy_user_id).available)
+    end
   end
 
   defp count_unread(socket) do

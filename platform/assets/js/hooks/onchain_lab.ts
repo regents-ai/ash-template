@@ -17,20 +17,21 @@ type RpcError = {code: number; message: string}
 /**
  * The workshop's stand-in wallet app. It holds the lab chain's first three
  * accounts, one provider each, and takes Privy's place as the active wallet on
- * this page only. Sends and signatures go through the page to the lab chain;
- * the network, a refused switch, a decline and a slow answer are the tester's to set.
+ * this page only. It switches to any network the page lists, and sends and signs
+ * on the lab chains (`data-lab-chain-ids`) through the page; the network, a
+ * refused switch, a decline and a slow answer are the tester's to set.
  */
 export const OnchainLab: Hook = {
   mounted(this: LabHook) {
     const root = this.el
-    const labChainId = Number(root.dataset.labChainId)
+    const labChainIds = (root.dataset.labChainIds ?? "").split(",").map(Number)
     const field = (name: string) => root.querySelector<HTMLInputElement>(`[name="${name}"]:checked`)
     const ticked = (name: string) => field(name) !== null
     const log = (words: string) => {
       const line = root.querySelector<HTMLElement>("[data-lab-log]")
       if (line) line.textContent = words
     }
-    let chainId = Number(field("lab-network")?.value ?? labChainId)
+    let chainId = Number(field("lab-network")?.value ?? labChainIds[0])
 
     const provider = (address: string): EthereumProvider => ({
       request: async ({method, params = []}) => {
@@ -43,9 +44,10 @@ export const OnchainLab: Hook = {
           case "wallet_switchEthereumChain": {
             if (ticked("lab-refuse-switch")) throw rpcError({code: 4001, message: "User rejected the request."})
             const wanted = Number(BigInt((params[0] as {chainId: string}).chainId))
-            if (wanted !== labChainId && wanted !== 8453) throw rpcError({code: 4902, message: "Unrecognized chain."})
+            const network = root.querySelector<HTMLInputElement>(`[name="lab-network"][value="${wanted}"]`)
+            if (!network) throw rpcError({code: 4902, message: "Unrecognized chain."})
             chainId = wanted
-            root.querySelector<HTMLInputElement>(`[name="lab-network"][value="${wanted}"]`)!.checked = true
+            network.checked = true
             log(`The wallet switched to network ${wanted}.`)
             return null
           }
@@ -55,8 +57,8 @@ export const OnchainLab: Hook = {
               log("The wallet declined.")
               throw rpcError({code: 4001, message: "User rejected the request."})
             }
-            if (chainId !== labChainId) throw rpcError({code: -32603, message: "This wallet can only send on the lab chain."})
-            const reply = await this.pushEvent("lab_rpc", {method, params}) as {result?: string; error?: RpcError}
+            if (!labChainIds.includes(chainId)) throw rpcError({code: -32603, message: "This wallet can only send on the lab chains."})
+            const reply = await this.pushEvent("lab_rpc", {chain_id: chainId, method, params}) as {result?: string; error?: RpcError}
             if (reply.error) throw rpcError(reply.error)
             log(method === "eth_sendTransaction" ? `The wallet sent ${reply.result}.` : "The wallet signed.")
             return reply.result

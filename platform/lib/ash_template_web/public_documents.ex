@@ -78,7 +78,10 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"A discussion thread",
        "How a question and its replies read on a Regent site, with sample posts; likes are not kept."},
     "/showcase/onchain" =>
-      {"Wallet lab", "Wallet buttons against a practice network on this machine."}
+      {"Wallet lab", "Wallet buttons against a practice network on this machine."},
+    "/showcase/credits" =>
+      {"Credits lab",
+       "Buying Credits against practice copies of Base and Ethereum on this machine."}
   }
   @pages Map.merge(
            @pages,

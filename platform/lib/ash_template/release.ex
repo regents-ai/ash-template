@@ -18,8 +18,9 @@ defmodule AshTemplate.Release do
   @doc """
   Prepares an empty staging database for the first deployment: creates a
   staging-only copy of the tables this repository reads but does not own
-  (`regent_names.platform_human_users`), in the local fixture's shape, then runs
-  every migration into `ash_template_app`. It refuses a database that already
+  (`regent_names.platform_human_users`), in the local fixture's shape, runs
+  every migration into `ash_template_app`, then creates the Regent Credits
+  ledger, which Regents migrates in production. It refuses a database that already
   carries migration state or the regent_names schema and repairs nothing: recovery
   from a half-finished bootstrap is to destroy and recreate the staging database.
   """
@@ -34,6 +35,7 @@ defmodule AshTemplate.Release do
       # The fixture is the only definition of these tables' shape in the repository.
       AshTemplate.LocalDatabaseFixture.create_shared_tables!()
       repo.migrate!(migrations_path())
+      RegentCredits.Migrator.up(repo)
     end)
   end
 

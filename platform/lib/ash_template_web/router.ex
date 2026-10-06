@@ -150,6 +150,7 @@ defmodule AshTemplateWeb.Router do
       session: {Session, :render_context, []},
       on_mount: [{Showcase, :lab}, {Session, :load_human}] do
       live "/onchain", OnchainShowcaseLive, :index
+      live "/credits", CreditsShowcaseLive, :index
     end
   end
 

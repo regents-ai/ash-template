@@ -9,8 +9,9 @@ defmodule AshTemplate.Accounts.VerifiedSession do
 
   @doc """
   Registers or refreshes the account the verified session names, reconciles
-  its linked socials and asks Ethereum for its wallet's ENS name again,
-  returning the providers another account already holds.
+  its linked socials, moves Credits waiting under its wallets to it and asks
+  Ethereum for its wallet's ENS name again, returning the providers another
+  account already holds.
   Without a linked wallet the account's wallet evidence is withdrawn instead.
   """
   def establish(%RegentPrivy.Session{privy_user_id: did} = verified) do
@@ -22,6 +23,10 @@ defmodule AshTemplate.Accounts.VerifiedSession do
              {:ok, account} <-
                Accounts.refresh_verified(account, primary, addresses, actor: @actor),
              {:ok, conflicts} <- reconcile(account.id, verified.linked_socials),
+             {:ok, _moved} <-
+               RegentCredits.attach_wallets(did, addresses,
+                 actor: AshTemplate.Credits.site_actor()
+               ),
              :ok <- request_ens_lookup(account) do
           {:ok, account, conflicts}
         end

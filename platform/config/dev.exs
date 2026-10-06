@@ -10,6 +10,8 @@ config :ash_template, :lab_chain, %{
 
 config :ash_template, :chain_nodes, %{
   84_532 => "https://sepolia.base.org",
+  8453 => "https://mainnet.base.org",
+  1 => "https://ethereum-rpc.publicnode.com",
   31_337 => "http://127.0.0.1:58600"
 }
 

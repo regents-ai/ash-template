@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.AccountLive do
   @moduledoc """
   The signed-in person's Settings, one tab each: Profile (who the site knows
-  them as, and this browser's session), Wallets (the wallets their sign-in
-  verified) and Connections (the accounts they have connected).
+  them as, their Credits and this browser's session), Wallets (the wallets
+  their sign-in verified) and Connections (the accounts they have connected).
 
   Everything here is read from the sign-in the shell already holds; nothing on
   the page asks the visitor to sign in again.
@@ -16,6 +16,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   attr :account, :map, default: nil
   attr :account_control, :map, required: true
+  attr :credits, Decimal, default: nil
 
   def profile(assigns) do
     ~H"""
@@ -56,6 +57,25 @@ defmodule AshTemplateWeb.AccountLive do
               <dd>{@account.display_name || "Not set"}</dd>
             </div>
           </dl>
+        </section>
+
+        <section
+          :if={@credits}
+          id="account-credits"
+          class="account-panel account-details"
+          aria-labelledby="account-credits-title"
+        >
+          <h2 id="account-credits-title">Credits</h2>
+          <dl>
+            <div>
+              <dt>Balance</dt>
+              <dd>{RegentCredits.Amount.format(@credits)}</dd>
+            </div>
+          </dl>
+          <p>
+            All account settings, including what your agents may spend, live at <a href="https://regents.sh/account">regents.sh/account</a>.
+            Sign in there with the same login you use here.
+          </p>
         </section>
 
         <section class="account-panel account-session" aria-labelledby="account-session-title">

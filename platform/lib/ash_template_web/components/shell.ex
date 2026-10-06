@@ -52,12 +52,18 @@ defmodule AshTemplateWeb.Components.Shell do
     doc: "The Get started steps, each `%{id, label, path, done?}`."
 
   attr :unread, :integer, default: nil, doc: "Unread notifications; nil when signed out."
+
+  attr :credits, Decimal,
+    default: nil,
+    doc: "The Credits available to spend; nil when signed out."
+
   attr :jobs_running, :integer, required: true
   attr :healthy, :boolean, required: true
   attr :version, :string, required: true
   attr :search, :map, required: true, doc: "`%{query, results}` for the search dialog."
   attr :assistant, :map, default: nil, doc: "The assistant box's last question and reply."
   slot :content, required: true
+  slot :credits_panel, doc: "The Buy Credits panel, opened from the header's balance."
 
   def shell(assigns) do
     assigns = assign(assigns, :aside_digest, aside_digest(assigns.checklist))
@@ -174,6 +180,17 @@ defmodule AshTemplateWeb.Components.Shell do
           <RegentLinks.header_links id="shell-token-menu" />
         </div>
         <.apps_menu />
+
+        <button
+          :if={@credits}
+          id="shell-credits-button"
+          class="shell-credits"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="shell-credits"
+        >
+          {RegentCredits.Amount.format(@credits)}
+        </button>
 
         <.account_control account_control={@account_control} />
       </header>
@@ -466,6 +483,24 @@ defmodule AshTemplateWeb.Components.Shell do
           <span><kbd>↵</kbd> Open</span>
           <span><kbd>Esc</kbd> Close</span>
         </footer>
+      </dialog>
+
+      <dialog
+        :if={@credits_panel != []}
+        id="shell-credits"
+        class="shell-credits-dialog"
+        aria-label="Buy Credits"
+        phx-mounted={JS.ignore_attributes(["open"])}
+      >
+        <Regent.Primitives.button
+          variant="quiet"
+          type="button"
+          class="shell-credits-dialog__close"
+          data-credits-close
+        >
+          Close
+        </Regent.Primitives.button>
+        {render_slot(@credits_panel)}
       </dialog>
     </div>
     """

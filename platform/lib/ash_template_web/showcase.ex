@@ -15,8 +15,9 @@ defmodule AshTemplateWeb.Showcase do
   The gate takes the part of the site it guards:
 
     * `:pages` — the showcase pages, the wallet page and the build skills.
-    * `:lab` — the wallet lab at `/showcase/onchain`, which sends to a lab chain
-      on this machine, so it exists only in `:local`.
+    * `:lab` — the wallet lab at `/showcase/onchain` and the Credits lab at
+      `/showcase/credits`, which send to chains on this machine, so they exist
+      only in `:local`.
     * `:motion_lab` — `/animations`, which exists unless the setting is `:off`.
 
   A request the gate refuses answers the site's own 404. A connected mount it

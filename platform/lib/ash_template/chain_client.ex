@@ -5,14 +5,26 @@ defmodule AshTemplate.ChainClient do
   node is the site's own for the chain (`:chain_nodes`), never the public address a
   wallet adds the chain with, so a private node or a lab fork reads what the site's
   steps sent. `RegentChain.Outcome` reads sent steps through `transaction/2` and
-  `receipt/2`.
+  `receipt/2`; Regent Credits also reads the newest block number.
   """
 
+  @behaviour RegentCredits.ChainClient
+
   @doc "The transaction sent as `hash`, or `nil` while the chain does not know it."
+  @impl RegentCredits.ChainClient
   def transaction(chain, hash), do: rpc(chain, "eth_getTransactionByHash", [hash])
 
   @doc "The receipt for `hash`, or `nil` while it has not landed."
+  @impl RegentCredits.ChainClient
   def receipt(chain, hash), do: rpc(chain, "eth_getTransactionReceipt", [hash])
+
+  @doc "The newest block number."
+  @impl RegentCredits.ChainClient
+  def block_number(chain) do
+    with {:ok, "0x" <> hex} <- rpc(chain, "eth_blockNumber", []) do
+      {:ok, String.to_integer(hex, 16)}
+    end
+  end
 
   @doc "The native balance of `address` in wei."
   def balance(chain, address) do
