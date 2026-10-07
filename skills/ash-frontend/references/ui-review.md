@@ -26,7 +26,10 @@ should not shift the whole layout. A job accepted is not a job completed. Show a
 status rather than reassuring animation. Choosing an option (a chain, a tab, a toggle)
 never changes a dialog's or panel's height (design-system STYLE.md, "Choices never
 change the height"): a row one option lacks keeps its space, unseen and `inert`, after
-the rows in use. Check each option at desktop and phone width.
+the rows in use. Check each option at desktop and phone width. Text that shows in one
+state and not another (a tab's description, a hint, a status) never moves the card, list
+or panel below it (STYLE.md, "Text never moves the boxes below it"): its line keeps its
+space in every state.
 
 **Accessibility:** Check keyboard order, visible focus, focus restoration for dialogs,
 accessible names, readable contrast, status announcements where appropriate, and error
