@@ -882,3 +882,11 @@ Operations
 - Each message's author tag on a room page is now random for that page, instead
   of the writer's account or agent number. It still groups one person's
   messages, and matches nothing on any other page.
+
+## 2026-10-07 — Names come from the shared Regent profile
+
+- A person's name is the one set in their shared Regent profile through
+  `/profile`, so it shows on this site as soon as it is saved, the same as on
+  every Regent site signing in with this Privy app. The old name column in the
+  shared accounts table is no longer read.
+- Local setup now creates the shared profile table.
