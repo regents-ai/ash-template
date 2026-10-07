@@ -861,3 +861,12 @@ Operations
 - Regents Credits and Active Bids (was In Bids) show as one two-by-two table,
   labels and figures at one size.
 - Approve and Buy take the place of the tick boxes, on the left of each step.
+
+## 2026-10-07 — Wallet presses reach the signed-in wallet
+
+- A signed-in account whose wallet Privy holds but has not marked active now
+  sends from that wallet: the bridge selects the one connected wallet the
+  account is linked to. Two such wallets stay a choice for the customer.
+- A press with no wallet opens Privy's connect window. Privy's active-wallet
+  dialog is gone from the bridge: no page rendered it, so those presses did
+  nothing.
