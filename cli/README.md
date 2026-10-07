@@ -1,9 +1,11 @@
 # Ash Template commands
 
-`commands.json` describes every command the `regents` command line runs against this
+`commands.json` describes every command the `regents` command line would run against this
 site: `regents ash-template health`, and so on. The code that runs them lives in
 [regents-cli](https://github.com/regents-ai/regents-cli), which publishes the one
-`regents-cli` package for every Regent site and pins this file by commit.
+`regents-cli` package for every Regent site and pins each site's file by commit.
+regents-cli does not carry this site: these files are the pattern each Regent site copies
+for its own commands.
 
 Each command names the route it calls and the operation in this site's OpenAPI
 document that answers it, who may call it (`authority`) and what it changes

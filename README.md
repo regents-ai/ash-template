@@ -29,7 +29,7 @@ digest, run the gate.
 | Component | What it holds | Check |
 | --- | --- | --- |
 | [platform/](platform/README.md) | The Phoenix/Ash web application: home page, Privy wallet sign-in, the signed-in Overview and Account pages, public pages, health and metrics, and the served API. | `make check-platform` |
-| [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command; the code that runs them lives in [regents-cli](https://github.com/regents-ai/regents-cli). | `make check-cli` |
+| [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command: the pattern each site copies for its own commands, run by [regents-cli](https://github.com/regents-ai/regents-cli), which does not carry this site itself. | `make check-cli` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |
 | [skills/](skills/) | Every agent skill Regent writes. `regent-workflow` is the entry point for Regent work; `ash-stack` is the entry point for code and routes to the backend, frontend, data, security, testing and WebMCP skills; `animejs` covers Anime.js animation inside LiveView hooks, `onchain-buttons` wallet and on-chain buttons, `chain-events` watching a chain and saving its events, and `payments` taking USDC payments through the shared Regents library. The web app serves all of them except `regent-workflow`, `regent-notion` and `checkpoint` as its [build skills](platform/README.md#showcase). | None |

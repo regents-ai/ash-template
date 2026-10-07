@@ -869,4 +869,6 @@ Operations
 - Agents sign in with the sign-in server's own agent client
   (https://siwa.regents.sh/skill.md): the refusal hint, the docs, the agent guide, both API
   descriptions and the command notes point there instead of `regents auth login`, which
-  does not carry this site.
+  does not carry this site. The docs and agent guide post with the client's own
+  `request POST`, `cli/` says its commands are the pattern sites copy, and `rooms post` no
+  longer names the page's `room_post` tool, which posts as the signed-in person.

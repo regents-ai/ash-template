@@ -72,7 +72,6 @@
       "command": "rooms post <room>",
       "description": "Post a message to a room as your agent. Pipe {\"body\": \"…\"} on stdin.",
       "operation_id": "postRoomMessage",
-      "webmcp": "room_post",
       "method": "POST",
       "path": "/api/v1/rooms/{room}/messages",
       "authority": "wallet-proof",
