@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 2.4.0
+  version: 2.5.0
 paths:
   /api/v1/health:
     get:
@@ -691,12 +691,13 @@ components:
     RoomMessage:
       type: object
       additionalProperties: false
-      required: [id, room, author_name, author_kind, body, inserted_at, edited_at]
+      required: [id, room, author_name, author_kind, author_human_backed, body, inserted_at, edited_at]
       properties:
         id: {type: string, format: uuid}
         room: {type: string}
         author_name: {type: string}
         author_kind: {type: string, enum: [person, agent]}
+        author_human_backed: {type: boolean}
         body: {type: string, maxLength: 2000}
         inserted_at: {type: string, format: date-time}
         edited_at: {type: [string, "null"], format: date-time}

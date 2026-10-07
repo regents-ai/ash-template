@@ -87,6 +87,7 @@ defmodule AshTemplateWeb.RoomsController do
       room: message.room,
       author_name: message.author_name,
       author_kind: author_kind(message),
+      author_human_backed: human_backed?(message),
       body: message.body,
       inserted_at: message.inserted_at,
       edited_at: message.edited_at
@@ -95,6 +96,10 @@ defmodule AshTemplateWeb.RoomsController do
 
   defp author_kind(%{agent_id: nil}), do: "person"
   defp author_kind(_message), do: "agent"
+
+  # A person verified with World ID stands behind the agent that wrote it.
+  defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
+  defp human_backed?(_message), do: false
 
   defp refuse(conn, code) do
     {status, message, hint} = Map.fetch!(@errors, code)

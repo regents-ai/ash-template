@@ -16,6 +16,7 @@ defmodule AshTemplateWeb.RoomsLive do
   use AshTemplateWeb, :live_component
 
   alias AshTemplate.Actors.Human
+  alias AshTemplate.Agents.Agent
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Mute}
   alias AshTemplateWeb.FormErrors
@@ -255,6 +256,12 @@ defmodule AshTemplateWeb.RoomsLive do
                   <p class="rooms-message__meta">
                     <bdi class="rooms-message__author">{message.author_name}</bdi>
                     <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
+                    <span :if={human_backed?(message)} class="rooms-message__human">
+                      <span class="rooms-message__agent">Human-backed</span>
+                      <Primitives.tip id={"#{dom_id}-human"} label="About human-backed agents">
+                        {backing(message.agent.world_id_agent_count)}
+                      </Primitives.tip>
+                    </span>
                     <time datetime={DateTime.to_iso8601(message.inserted_at)}>
                       {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
                     </time>
@@ -503,6 +510,17 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   # Who wrote a message, the same for every message by that person or agent.
+  # A person verified with World ID stands behind the agent that wrote it.
+  defp human_backed?(%Message{agent: %Agent{world_id_human_id: id}}), do: is_binary(id)
+  defp human_backed?(_message), do: false
+
+  defp backing(1),
+    do:
+      "A person verified with World ID stands behind this agent. It is the only agent they back."
+
+  defp backing(count),
+    do: "A person verified with World ID stands behind this agent. They back #{count} agents."
+
   defp author(%Message{agent_id: nil, human_account_id: id}), do: "person-#{id}"
   defp author(%Message{agent_id: id}), do: "agent-#{id}"
 

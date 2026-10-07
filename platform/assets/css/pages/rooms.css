@@ -124,6 +124,12 @@
   letter-spacing: 0.04em;
 }
 
+.rooms-message__human {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
 .rooms-message__meta time,
 .rooms-message__edited {
   color: var(--color-fg-muted);

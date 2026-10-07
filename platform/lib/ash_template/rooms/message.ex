@@ -4,7 +4,9 @@ defmodule AshTemplate.Rooms.Message do
   read a room; a signed-in person, or an agent signed in with its wallet, can
   post, a few times a minute at most. Its author is that person or that agent.
   Only a person can change or delete their own message. A signed-in reader never
-  sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A post that
+  sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A room's
+  messages, and every new post, come with their agent, if an agent wrote them, so its
+  World ID mark shows as it stands now. A post that
   mentions someone by name tells them (`NotifyMentions`). Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once.
@@ -84,7 +86,7 @@ defmodule AshTemplate.Rooms.Message do
       argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
       filter expr(room == ^arg(:room))
       prepare LeaveOutMuted
-      prepare build(sort: [inserted_at: :desc, id: :desc])
+      prepare build(sort: [inserted_at: :desc, id: :desc], load: [:agent])
       pagination keyset?: true, default_limit: 50
     end
 
@@ -102,6 +104,7 @@ defmodule AshTemplate.Rooms.Message do
       change SquashBlankLines
       change LimitPosts
       change NotifyMentions
+      change load(:agent)
     end
 
     # Squashing the empty lines reads the new text, so an edit is not a single
