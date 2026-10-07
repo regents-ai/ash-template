@@ -870,3 +870,9 @@ Operations
 - A press with no wallet opens Privy's connect window. Privy's active-wallet
   dialog is gone from the bridge: no page rendered it, so those presses did
   nothing.
+
+## 2026-10-07 — One person cannot use up the day's note labels
+
+- Each person's saves may ask Jev for at most `person_daily_questions` labels a
+  day (50), inside the site's `daily_questions` (500). A save past either limit
+  still saves, with no label.
