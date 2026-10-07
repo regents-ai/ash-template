@@ -906,3 +906,9 @@ Operations
   they back. This replaces "a request whose answer is empty clears both" above. Only the
   agent's signed request records it (`Agents.record_backing`), and the World ID number is
   checked there. The docs and the public API description say so.
+
+## 2026-10-07 — Credits help is a link
+
+- When the Buy Credits panel can't match a sent payment to a purchase, it says so and
+  links to Credits help (https://patchbay.help/credits-help) to post the transaction.
+  The refund rules link to it wherever they name it. support@regents.sh now exists.
