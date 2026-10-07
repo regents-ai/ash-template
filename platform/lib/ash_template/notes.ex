@@ -5,17 +5,26 @@ defmodule AshTemplate.Notes do
 
   resources do
     resource AshTemplate.Notes.Note do
-      define :list_my_notes, action: :mine, default_options: [load: [:label_decision]]
+      define :list_my_notes,
+        action: :mine,
+        default_options: [load: [:label_decision, :changed_by_agent]]
+
       define :search_my_notes, action: :search, args: [:text]
 
       define :get_my_note,
         action: :read,
         get_by: [:id],
         not_found_error?: false,
-        default_options: [load: [:label_decision]]
+        default_options: [load: [:label_decision, :changed_by_agent]]
 
-      define :create_note, action: :create
-      define :update_note, action: :update
+      define :create_note,
+        action: :create,
+        default_options: [load: [:label_decision, :changed_by_agent]]
+
+      define :update_note,
+        action: :update,
+        default_options: [load: [:label_decision, :changed_by_agent]]
+
       define :destroy_note, action: :destroy
     end
 

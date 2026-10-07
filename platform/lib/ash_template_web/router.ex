@@ -199,9 +199,18 @@ defmodule AshTemplateWeb.Router do
     get "/rooms/:room/messages", AshTemplateWeb.RoomsController, :messages
   end
 
+  # An agent pairs with the person who gave it a code, and checks in; both are
+  # signed, and RegentAgents.HTTP checks each signature itself.
+  scope "/api/agents" do
+    pipe_through :api
+    forward "/v1", RegentAgents.HTTP
+  end
+
   scope "/api/v1" do
     pipe_through :agent_api
     post "/rooms/:room/messages", AshTemplateWeb.RoomsController, :post
+    patch "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :update
+    delete "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :delete
   end
 
   scope "/tools", AshTemplateWeb do

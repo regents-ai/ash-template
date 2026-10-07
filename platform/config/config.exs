@@ -73,8 +73,14 @@ config :ash_template, Oban,
 config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 300
 
 # Agents sign in through the shared sign-in service, which checks every signed
-# request (AshTemplateWeb.Plugs.AgentWallet).
-config :ash_template, :agent_sign_in, broker_url: "https://siwa.regents.sh"
+# request (AshTemplateWeb.Plugs.AgentWallet), and pair with a person's account
+# through the agent pairing every Regent site shares (RegentAgents).
+config :regent_agents,
+  repo: AshTemplate.Repo,
+  pubsub: AshTemplate.PubSub,
+  account: {AshTemplate.Agents.PairedAccount, :account},
+  ash_domains: [RegentAgents],
+  siwa: [url: "https://siwa.regents.sh", audience: "ash-template"]
 
 # Jev picks a label for each saved note while the server has an OpenRouter key
 # (AshTemplate.Notes.Labels); the whole site asks at most daily_questions a day,

@@ -61,7 +61,7 @@ end
 # Agents' signed requests are checked by this sign-in service instead, such as one
 # running on this machine.
 if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do
-  config :ash_template, :agent_sign_in, broker_url: broker_url
+  config :regent_agents, :siwa, url: broker_url, audience: "ash-template"
 end
 
 # The running version the bottom bar shows: the release, and on Fly the short

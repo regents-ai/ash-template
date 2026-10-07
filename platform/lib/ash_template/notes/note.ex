@@ -1,7 +1,8 @@
 defmodule AshTemplate.Notes.Note do
   @moduledoc """
-  A note one signed-in person wrote. Only its writer can read, change or delete
-  it, and every change is published on the writer's own topic, so each of their
+  A note one signed-in person wrote. Only its writer, or an agent they paired
+  acting as them, can read, change or delete it; the agent that made the latest
+  save is kept with the note (`changed_by_agent`). Every change is published on the writer's own topic, so each of their
   open pages shows it at once.
 
   When the site owner has set an address for saved notes, each save also
@@ -57,6 +58,9 @@ defmodule AshTemplate.Notes.Note do
       attribute_type :integer
     end
 
+    # The paired agent that made the latest save, as the writer; nil when they did.
+    belongs_to :changed_by_agent, AshTemplate.Agents.Agent, public?: true
+
     has_one :label_decision, AshTemplate.Notes.Decision do
       public? true
       from_many? true
@@ -87,6 +91,7 @@ defmodule AshTemplate.Notes.Note do
       primary? true
       accept [:title, :body]
       change set_attribute(:human_account_id, actor(:human_account_id))
+      change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       change AskForLabel, where: [AskingJev]
@@ -96,6 +101,7 @@ defmodule AshTemplate.Notes.Note do
       primary? true
       accept [:title, :body]
       change atomic_update(:revision, expr(revision + 1))
+      change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       change AskForLabel, where: [AskingJev]

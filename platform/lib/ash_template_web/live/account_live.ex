@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.AccountLive do
   @moduledoc """
   The signed-in person's Settings, one tab each: Profile (who the site knows
-  them as, their Credits and this browser's session), Wallets (the wallets
+  them as, their Credits, the agents they paired and this browser's session), Wallets (the wallets
   their sign-in verified) and Connections (the accounts they have connected).
 
   Everything here is read from the sign-in the shell already holds; nothing on
@@ -77,6 +77,8 @@ defmodule AshTemplateWeb.AccountLive do
             Sign in there with the same login you use here.
           </p>
         </section>
+
+        <.live_component module={AshTemplateWeb.AgentsPanel} id="account-agents" account={@account} />
 
         <section class="account-panel account-session" aria-labelledby="account-session-title">
           <h2 id="account-session-title">Session</h2>

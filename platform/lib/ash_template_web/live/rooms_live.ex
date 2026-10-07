@@ -263,6 +263,12 @@ defmodule AshTemplateWeb.RoomsLive do
                         {backing(message.agent.world_id_agent_count)}
                       </Primitives.tip>
                     </span>
+                    <span :if={message.via_agent} class="rooms-message__human">
+                      <span class="rooms-message__agent">Via agent</span>
+                      <Primitives.tip id={"#{dom_id}-via"} label="About this agent">
+                        Written by {RegentFormat.short_address(message.via_agent.wallet_address)}, an agent {message.author_name} paired with their account.
+                      </Primitives.tip>
+                    </span>
                     <time datetime={DateTime.to_iso8601(message.inserted_at)}>
                       {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
                     </time>

@@ -1,7 +1,9 @@
 defmodule AshTemplateWeb.NotesController do
   @moduledoc """
   The notes API: the notes page's own Ash actions and policies, for a caller
-  presenting the Privy proof pair `/api/v1/profile` takes. A change made here
+  presenting the Privy proof pair `/api/v1/profile` takes, or for an agent the
+  person paired, signing its request with its wallet
+  (`AshTemplateWeb.Plugs.AgentWallet`), which acts as them. A change made here
   appears at once on every notes page its writer has open.
   """
 
@@ -12,6 +14,7 @@ defmodule AshTemplateWeb.NotesController do
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
   alias AshTemplateWeb.{NotesJSON, PrivyProof}
+  alias AshTemplateWeb.Plugs.AgentWallet
 
   plug :authenticate
 
@@ -23,6 +26,15 @@ defmodule AshTemplateWeb.NotesController do
        "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."},
     "account_required" =>
       {403, "This sign-in has no account here yet.", "Sign in on the website once, then retry."},
+    "agent_not_paired" =>
+      {403, "Only an agent paired with a person, and backed by World ID, can use their notes.",
+       "Ask your person for a pairing code from their account page, then pair with POST /api/agents/v1/pair."},
+    "agent_not_backed" =>
+      {403, "This agent is paired, but no person verified with World ID backs it yet.",
+       "Accept your World ID person with regents auth accept-world-id, then send the request again."},
+    "person_not_here" =>
+      {403, "The person this agent is paired with has no account on this site yet.",
+       "Ask your person to sign in on this website once, then send the request again."},
     "note_not_found" =>
       {404, "You have no note with that id.", "List your notes with GET /api/v1/notes."},
     "invalid_note" =>
@@ -42,7 +54,7 @@ defmodule AshTemplateWeb.NotesController do
   def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: NotesJSON.note(&2)}))
 
   def create(conn, _params) do
-    case Notes.create_note(conn.body_params, actor: conn.assigns.actor, load: [:label_decision]) do
+    case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
       {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
       {:error, error} -> refuse_change(conn, error)
     end
@@ -50,10 +62,7 @@ defmodule AshTemplateWeb.NotesController do
 
   def update(conn, %{"id" => id}) do
     with_note(conn, id, fn conn, note ->
-      case Notes.update_note(note, conn.body_params,
-             actor: conn.assigns.actor,
-             load: [:label_decision]
-           ) do
+      case Notes.update_note(note, conn.body_params, actor: conn.assigns.actor) do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, error} -> refuse_change(conn, error)
       end
@@ -72,6 +81,21 @@ defmodule AshTemplateWeb.NotesController do
   defp authenticate(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
+    if get_req_header(conn, "signature-input") == [],
+      do: authenticate_person(conn),
+      else: authenticate_agent(conn)
+  end
+
+  # An agent's signed request acts as the person it is paired with, or not at all.
+  defp authenticate_agent(conn) do
+    case AgentWallet.call(conn, []) do
+      %{halted: true} = conn -> conn
+      %{assigns: %{actor: %Human{}}} = conn -> conn
+      conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
+    end
+  end
+
+  defp authenticate_person(conn) do
     with {:ok, pair} <- PrivyProof.pair(conn),
          {:ok, verified} <-
            RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),

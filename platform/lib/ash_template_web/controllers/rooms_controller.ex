@@ -3,13 +3,16 @@ defmodule AshTemplateWeb.RoomsController do
   The public rooms API: the rooms, and each room's messages newest first, a page
   at a time. Anyone may read them, as anyone may read the rooms pages. An agent
   signed in with its wallet (`AshTemplateWeb.Plugs.AgentWallet`) may post, as
-  itself.
+  itself. An agent a person paired posts as them instead, and may change or
+  delete their messages.
   """
 
   use AshTemplateWeb, :controller
 
+  alias AshTemplate.Actors.Human
   alias AshTemplate.Rooms
-  alias AshTemplate.Rooms.Room
+  alias AshTemplate.Rooms.{Message, Room}
+  alias AshTemplateWeb.Plugs.AgentWallet
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
@@ -21,6 +24,19 @@ defmodule AshTemplateWeb.RoomsController do
        "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
     "invalid_limit" =>
       {422, "limit must be a whole number from 1 to 50.", "Leave it out for pages of 50."},
+    "message_not_found" =>
+      {404, "Your person has no message with that id in this room.",
+       "List the room's messages with GET /api/v1/rooms/:room/messages."},
+    "agent_not_paired" =>
+      {403,
+       "Only an agent paired with a person, and backed by World ID, can change their messages.",
+       "Ask your person for a pairing code from their account page, then pair with POST /api/agents/v1/pair."},
+    "agent_not_backed" =>
+      {403, "This agent is paired, but no person verified with World ID backs it yet.",
+       "Accept your World ID person with regents auth accept-world-id, then send the request again."},
+    "person_not_here" =>
+      {403, "The person this agent is paired with has no account on this site yet.",
+       "Ask your person to sign in on this website once, then send the request again."},
     "invalid_message" =>
       {422, "The message could not be posted.",
        "Send {\"body\": \"…\"} of 1 to 2,000 characters; after several quick posts, wait a minute."},
@@ -64,6 +80,50 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
+  def update(conn, %{"room" => slug, "id" => id}) do
+    with_message(conn, slug, id, fn conn, message ->
+      case Rooms.edit_message(message, %{"body" => conn.body_params["body"]},
+             actor: conn.assigns.actor
+           ) do
+        {:ok, message} -> json(conn, %{message: present(message)})
+        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_message")
+        {:error, _error} -> refuse(conn, "rooms_unavailable")
+      end
+    end)
+  end
+
+  def delete(conn, %{"room" => slug, "id" => id}) do
+    with_message(conn, slug, id, fn conn, message ->
+      case Rooms.delete_message(message, actor: conn.assigns.actor) do
+        :ok -> send_resp(conn, :no_content, "")
+        {:error, _error} -> refuse(conn, "rooms_unavailable")
+      end
+    end)
+  end
+
+  # Only an agent acting as its person changes messages, and only theirs; any
+  # other message reads as absent, exactly like an id that names none.
+  defp with_message(%{assigns: %{actor: %Human{} = actor}} = conn, slug, id, respond) do
+    with {:ok, room} <- Room.fetch(slug),
+         {:ok, %Message{room: room_slug, human_account_id: author} = message}
+         when room_slug == room.slug and author == actor.human_account_id <-
+           Rooms.get_message(id, actor: actor) do
+      respond.(conn, message)
+    else
+      :error ->
+        refuse(conn, "room_not_found")
+
+      {:error, error} when not is_struct(error, Ash.Error.Invalid) ->
+        refuse(conn, "rooms_unavailable")
+
+      _absent ->
+        refuse(conn, "message_not_found")
+    end
+  end
+
+  defp with_message(conn, _slug, _id, _respond),
+    do: refuse(conn, AgentWallet.not_person_code(conn.assigns.actor))
+
   defp limit(%{"limit" => text}) do
     case Integer.parse(text) do
       {limit, ""} when limit in 1..50 -> {:ok, limit}
@@ -88,6 +148,7 @@ defmodule AshTemplateWeb.RoomsController do
       author_name: message.author_name,
       author_kind: author_kind(message),
       author_human_backed: human_backed?(message),
+      via_agent: via_agent(message.via_agent),
       body: message.body,
       inserted_at: message.inserted_at,
       edited_at: message.edited_at
@@ -96,6 +157,10 @@ defmodule AshTemplateWeb.RoomsController do
 
   defp author_kind(%{agent_id: nil}), do: "person"
   defp author_kind(_message), do: "agent"
+
+  # The agent a person paired that wrote their message's text.
+  defp via_agent(nil), do: nil
+  defp via_agent(agent), do: %{wallet_address: agent.wallet_address}
 
   # A person verified with World ID stands behind the agent that wrote it.
   defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)

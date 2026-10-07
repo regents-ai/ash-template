@@ -8,7 +8,7 @@ defmodule AshTemplate.MixProject do
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "4da6db2bfe3559a8f8a761018dc099a28ab5f6a3"
   @regents "https://github.com/regents-ai/regents.git"
-  @regents_ref "004307e65ffcf9cc9b3034d7cc2b015dcd45011b"
+  @regents_ref "d634da3cc5a0a975f5d3ff5d19a8c5443032a47c"
 
   def project do
     [
@@ -52,6 +52,7 @@ defmodule AshTemplate.MixProject do
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
       {:regent_identity, git: @regents, ref: @regents_ref, sparse: "identity"},
+      {:regent_agents, git: @regents, ref: @regents_ref, sparse: "agents"},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
       {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},

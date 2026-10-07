@@ -17,6 +17,8 @@ defmodule AshTemplate.Application do
         # After the repository and PubSub: a Credits balance changed on any
         # Regent site reaches the pages showing it.
         RegentCredits.Listener,
+        # A pairing made or ended anywhere reaches the person's account page.
+        RegentAgents.Listener,
         {Oban, oban_config()},
         AshTemplateWeb.Endpoint,
         metrics_child()

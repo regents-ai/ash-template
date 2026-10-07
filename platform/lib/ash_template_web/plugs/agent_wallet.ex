@@ -16,10 +16,9 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   import Plug.Conn
 
-  alias AshTemplate.Actors.{Agent, System}
-  alias AshTemplate.Agents
+  alias AshTemplate.{Accounts, Agents}
+  alias AshTemplate.Actors.{Agent, Human, System}
 
-  @audience "ash-template"
   @headers ~w(x-siwa-receipt signature signature-input x-key-id x-timestamp x-agent-wallet-address x-agent-chain-id content-digest)
   @hint "Sign in with the agent client at https://siwa.regents.sh/skill.md, then send the request again."
 
@@ -41,7 +40,11 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   @impl Plug
   def call(conn, _opts) do
-    Siwa.AgentAuthPlug.call(conn, client: __MODULE__, hooks: __MODULE__, audience: @audience)
+    Siwa.AgentAuthPlug.call(conn,
+      client: __MODULE__,
+      hooks: __MODULE__,
+      audience: RegentAgents.Broker.audience()
+    )
   end
 
   @impl Siwa.AgentAuthPlug.Hooks
@@ -51,7 +54,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     cond do
       Enum.any?(@headers, &(Map.get(repeated, &1, 0) > 1)) -> refused(:duplicate_proof)
       conn.query_string != "" -> refused(:unsupported_query)
-      not signed_json?(conn) -> refused(:missing_signed_body)
+      not signed_body?(conn) -> refused(:missing_signed_body)
       true -> {:ok, nil}
     end
   end
@@ -61,8 +64,8 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     Siwa.AgentAuthPlug.BrokerClient.verify_http_request(
       Map.update!(payload, "headers", &Map.take(&1, @headers)),
       http: __MODULE__,
-      base_url: Application.fetch_env!(:ash_template, :agent_sign_in)[:broker_url],
-      audience: @audience,
+      base_url: Application.fetch_env!(:regent_agents, :siwa)[:url],
+      audience: RegentAgents.Broker.audience(),
       connect_timeout_ms: 3_000,
       receive_timeout_ms: 5_000
     )
@@ -82,20 +85,57 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
           "principal" => %{
             "kind" => "wallet",
             "wallet_address" => address,
-            "audience" => @audience
+            "audience" => audience
           }
         },
         _context
       ) do
+    if audience == RegentAgents.Broker.audience(),
+      do: sign_in(conn, address, book),
+      else: refused(:unsupported_principal)
+  end
+
+  def accept(_conn, _data, _context), do: refused(:unsupported_principal)
+
+  defp sign_in(conn, address, book) do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}),
-         {:ok, agent} <- record_backing(agent, book) do
-      {:ok, assign(conn, :actor, Agent.for_agent(agent))}
+         {:ok, agent} <- record_backing(agent, book),
+         {:ok, actor} <- actor(agent) do
+      {:ok, assign(conn, :actor, actor)}
     else
       {:error, _error} -> refused(:agent_unavailable)
     end
   end
 
-  def accept(_conn, _data, _context), do: refused(:unsupported_principal)
+  # An agent paired with a person, and backed by a person verified with World ID,
+  # acts as the person it is paired with, marked as itself. Any other agent acts
+  # as itself, saying which of those it is missing.
+  defp actor(agent) do
+    case Agents.get_pairing(agent.wallet_address, actor: %System{}) do
+      {:ok, %{privy_user_id: person}} -> paired(agent, person)
+      {:ok, nil} -> {:ok, Agent.for_agent(agent)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp paired(%{world_id_human_id: nil} = agent, _person),
+    do: {:ok, Agent.for_agent(agent, :not_backed)}
+
+  defp paired(agent, person) do
+    case Accounts.get_by_privy_did(person, actor: %System{}) do
+      {:ok, %{} = account} -> {:ok, Human.for_paired_agent(account, agent)}
+      {:ok, nil} -> {:ok, Agent.for_agent(agent, :person_not_here)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @doc """
+  The refusal code for an agent that acts as itself where only an agent acting as
+  its person may go, naming what it is missing.
+  """
+  def not_person_code(%Agent{pairing: :none}), do: "agent_not_paired"
+  def not_person_code(%Agent{pairing: :not_backed}), do: "agent_not_backed"
+  def not_person_code(%Agent{pairing: :person_not_here}), do: "person_not_here"
 
   # The person World ID says stands behind the wallet, once the wallet has accepted
   # them. Null names nobody and changes nothing: the link, once made, stays.
@@ -127,6 +167,14 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     |> Phoenix.Controller.json(%{error: body})
     |> halt()
   end
+
+  # A read or a delete is signed with no body at all; anything else signs its JSON.
+  defp signed_body?(%{method: method} = conn) when method in ["GET", "DELETE"],
+    do:
+      not is_map_key(conn.assigns, :raw_body) and
+        get_req_header(conn, "content-length") in [[], ["0"]]
+
+  defp signed_body?(conn), do: signed_json?(conn)
 
   defp signed_json?(%{assigns: %{raw_body: body}, private: %{signed_body_complete: true}} = conn)
        when is_binary(body) do

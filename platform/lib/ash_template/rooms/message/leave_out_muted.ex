@@ -1,5 +1,8 @@
 defmodule AshTemplate.Rooms.Message.LeaveOutMuted do
-  @moduledoc "Leaves out messages from anyone the signed-in reader muted; a visitor or an agent sees every message."
+  @moduledoc """
+  Leaves out messages from anyone the signed-in reader muted, and those a muted
+  agent wrote for its person; a visitor or an agent sees every message.
+  """
 
   use Ash.Resource.Preparation
 
@@ -12,7 +15,8 @@ defmodule AshTemplate.Rooms.Message.LeaveOutMuted do
     Ash.Query.filter(
       query,
       not exists(author_mutes, muter_account_id == ^reader) and
-        not exists(agent_mutes, muter_account_id == ^reader)
+        not exists(agent_mutes, muter_account_id == ^reader) and
+        not exists(via_agent_mutes, muter_account_id == ^reader)
     )
   end
 

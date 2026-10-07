@@ -209,6 +209,9 @@ defmodule AshTemplateWeb.NotesLive do
             <li :for={{dom_id, note} <- @streams.notes} id={dom_id} class="notes-item">
               <h3>{note.title}</h3>
               <p :if={note.body}>{note.body}</p>
+              <p :if={note.changed_by_agent} class="rg-muted">
+                Saved by your agent {RegentFormat.short_address(note.changed_by_agent.wallet_address)}
+              </p>
               <.label decision={note.label_decision} target={@myself} />
               <div class="notes-item__actions">
                 <Primitives.button

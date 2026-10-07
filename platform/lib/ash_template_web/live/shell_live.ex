@@ -196,6 +196,14 @@ defmodule AshTemplateWeb.ShellLive do
   # The header, the Buy Credits panel and the Account page follow.
   def handle_info(:credits_changed, socket), do: {:noreply, read_credits(socket)}
 
+  # An agent paired, checked in or was unpaired, here or on another Regent site.
+  def handle_info(:agents_changed, socket) do
+    if socket.assigns.route_spec.route_id == :account,
+      do: send_update(AshTemplateWeb.AgentsPanel, id: "account-agents", agents_changed: true)
+
+    {:noreply, socket}
+  end
+
   def handle_info({:jobs_running, count}, socket),
     do: {:noreply, assign(socket, :jobs_running, count)}
 
@@ -345,6 +353,7 @@ defmodule AshTemplateWeb.ShellLive do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:conversations:#{account.id}")
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(account.privy_user_id))
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentAgents.topic(account.privy_user_id))
   end
 
   defp subscribe_to_own_topics(_access_context), do: :ok

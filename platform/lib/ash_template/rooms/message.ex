@@ -3,7 +3,9 @@ defmodule AshTemplate.Rooms.Message do
   One message in one of the site's rooms (`AshTemplate.Rooms.Room`). Anyone can
   read a room; a signed-in person, or an agent signed in with its wallet, can
   post, a few times a minute at most. Its author is that person or that agent.
-  Only a person can change or delete their own message. A signed-in reader never
+  Only a person can change or delete their own message. An agent the person
+  paired acts as them: what it posts or edits is theirs, marked with the agent
+  (`via_agent`) until they edit it themselves. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A room's
   messages, and every new post, come with their agent, if an agent wrote them, so its
   World ID mark shows as it stands now. A post that
@@ -66,6 +68,9 @@ defmodule AshTemplate.Rooms.Message do
 
     belongs_to :agent, AshTemplate.Agents.Agent, public?: true
 
+    # The paired agent that wrote the person's text, posting or editing as them.
+    belongs_to :via_agent, AshTemplate.Agents.Agent, public?: true
+
     # Every mute of this message's author, so a read can leave out the reader's.
     has_many :author_mutes, Mute do
       source_attribute :human_account_id
@@ -74,6 +79,11 @@ defmodule AshTemplate.Rooms.Message do
 
     has_many :agent_mutes, Mute do
       source_attribute :agent_id
+      destination_attribute :muted_agent_id
+    end
+
+    has_many :via_agent_mutes, Mute do
+      source_attribute :via_agent_id
       destination_attribute :muted_agent_id
     end
   end
@@ -86,7 +96,7 @@ defmodule AshTemplate.Rooms.Message do
       argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
       filter expr(room == ^arg(:room))
       prepare LeaveOutMuted
-      prepare build(sort: [inserted_at: :desc, id: :desc], load: [:agent])
+      prepare build(sort: [inserted_at: :desc, id: :desc], load: [:agent, :via_agent])
       pagination keyset?: true, default_limit: 50
     end
 
@@ -104,16 +114,19 @@ defmodule AshTemplate.Rooms.Message do
       change SquashBlankLines
       change LimitPosts
       change NotifyMentions
-      change load(:agent)
+      change load([:agent, :via_agent])
     end
 
     # Squashing the empty lines reads the new text, so an edit is not a single
-    # atomic statement; only the author ever edits a message.
+    # atomic statement; only the author, or an agent acting as them, ever edits a
+    # message.
     update :edit do
       accept [:body]
       require_atomic? false
       change SquashBlankLines
       change atomic_update(:edited_at, expr(now()))
+      change set_attribute(:via_agent_id, actor(:acting_agent_id))
+      change load([:agent, :via_agent])
     end
   end
 
