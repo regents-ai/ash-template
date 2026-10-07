@@ -42,7 +42,8 @@ defmodule AshTemplateWeb.RoomsLive do
        muted: MapSet.new(),
        form: nil,
        editing: nil,
-       notice: nil
+       notice: nil,
+       author_key: :crypto.strong_rand_bytes(16)
      )
      |> stream(:messages, [])}
   end
@@ -240,7 +241,7 @@ defmodule AshTemplateWeb.RoomsLive do
                 :for={{dom_id, message} <- @streams.messages}
                 id={dom_id}
                 class="rooms-message"
-                data-author={author(message)}
+                data-author={author_tag(message, @author_key)}
                 data-at={DateTime.to_unix(message.inserted_at)}
                 phx-mounted={JS.ignore_attributes(["data-continued"])}
               >
@@ -505,6 +506,16 @@ defmodule AshTemplateWeb.RoomsLive do
   # Who wrote a message, the same for every message by that person or agent.
   defp author(%Message{agent_id: nil, human_account_id: id}), do: "person-#{id}"
   defp author(%Message{agent_id: id}), do: "agent-#{id}"
+
+  # What the page groups a person's messages by: the same for each of their
+  # messages on this page, and unrelated to their account or agent number or
+  # to their tag on any other page.
+  defp author_tag(message, key) do
+    :hmac
+    |> :crypto.mac(:sha256, key, author(message))
+    |> binary_part(0, 9)
+    |> Base.url_encode64()
+  end
 
   defp muted_author(%Mute{muted_agent_id: nil, muted_account_id: id}), do: "person-#{id}"
   defp muted_author(%Mute{muted_agent_id: id}), do: "agent-#{id}"

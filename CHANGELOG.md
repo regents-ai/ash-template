@@ -876,3 +876,9 @@ Operations
 - Each person's saves may ask Jev for at most `person_daily_questions` labels a
   day (50), inside the site's `daily_questions` (500). A save past either limit
   still saves, with no label.
+
+## 2026-10-07 — Rooms pages no longer show account numbers
+
+- Each message's author tag on a room page is now random for that page, instead
+  of the writer's account or agent number. It still groups one person's
+  messages, and matches nothing on any other page.
