@@ -3,16 +3,16 @@
 #
 #   scripts/init.sh <snake_name> <ModuleName> ["Display Name"]
 #
-# Example: scripts/init.sh keyfleet KeyFleet
+# Example: scripts/init.sh night_owl NightOwl "Night Owl"
 #
 # Rewrites every spelling of the placeholder across the monorepo:
-#   ash_template  -> keyfleet     (OTP app, Mix tasks, databases, schema, session key)
-#   AshTemplate   -> KeyFleet     (Elixir modules)
-#   ashTemplate   -> keyFleet     (JavaScript names)
-#   ASH_TEMPLATE  -> KEYFLEET     (environment variables)
-#   ash-template  -> keyfleet     (package and Fly names)
-#   Ash Template  -> KeyFleet     (public copy; the display name, "KeyFleet" by default)
-#   ASH TEMPLATE  -> KEYFLEET     (capitalised legal copy; the display name in capitals)
+#   ash_template  -> night_owl    (OTP app, Mix tasks, databases, schema, session key)
+#   AshTemplate   -> NightOwl     (Elixir modules)
+#   ashTemplate   -> nightOwl     (JavaScript names)
+#   ASH_TEMPLATE  -> NIGHT_OWL    (environment variables)
+#   ash-template  -> night-owl    (package and Fly names)
+#   Ash Template  -> Night Owl    (public copy; the display name, the module name by default)
+#   ASH TEMPLATE  -> NIGHT OWL    (capitalised legal copy; the display name in capitals)
 # renames the files and directories that carry the app name, drops the Markdown
 # passages fenced by <!-- template-only --> and <!-- /template-only --> that
 # describe the template itself, and records the rename at the end of
@@ -42,8 +42,8 @@ kebab="${snake//_/-}"
 upper="$(printf '%s' "$snake" | tr '[:lower:]' '[:upper:]')"
 camel="$(printf '%s' "${module:0:1}" | tr '[:upper:]' '[:lower:]')${module:1}"
 display_upper="$(printf '%s' "$display" | tr '[:lower:]' '[:upper:]')"
-# Mix names a task after its module, so `Mix.Tasks.KeyFleet.RouteHandoff` is
-# `mix key_fleet.route_handoff` whatever the OTP app is called.
+# Mix names a task after its module, so `Mix.Tasks.NightOwl.RouteHandoff` is
+# `mix night_owl.route_handoff` whatever the OTP app is called.
 task_prefix="$(printf '%s' "$module" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' | tr '[:upper:]' '[:lower:]')"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"

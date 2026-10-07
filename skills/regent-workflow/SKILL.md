@@ -38,7 +38,7 @@ recognized assets; no fee conversion or denomination redesign is wanted.
 
 ## Wallet identity and transaction state — all five sites
 
-Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and KeyFleet:
+Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 
 - Privy's active wallet is the only wallet that acts (founder, 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch").
   When it is one of the signed-in account's linked wallets (the verified session's

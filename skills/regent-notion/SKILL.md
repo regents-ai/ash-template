@@ -20,7 +20,7 @@ Regents Labs (home)                    29459985-6802-805f-ba39-ff82f2d2c833
 │   ├── Autolaunch                     3e359985-6802-8180-aec4-f17ea5edb9c3
 │   ├── Techtree                       3e359985-6802-81a0-9897-f1e4c2086b32
 │   ├── Patchbay                       3e359985-6802-81f5-a7e5-fc63422095ba
-│   └── KeyFleet                       3e359985-6802-8152-9c18-d39feb238869
+│   └── Keyfleet                       3e359985-6802-8152-9c18-d39feb238869
 │       ├── Planning                   3e459985-6802-8172-afc3-d10669e79f22
 │       ├── Spec                       3e459985-6802-8190-a87f-fdff64df34be
 │       └── Implementation             3e459985-6802-8166-ba1f-e7b84aee3e40
@@ -34,7 +34,7 @@ If one has moved, search for it by title, and update this list.
 
 - **Product pages** are short "mini-homes": what the product is, a screenshot and
   links. Each product page has three child pages: Planning, Spec and Implementation.
-  KeyFleet has them already. Other products get them when their lane first needs them.
+  Keyfleet has them already. Other products get them when their lane first needs them.
   Create all three at once, as children of that product's page and with these exact
   titles, then add their IDs above.
 - **Company pages** in the Data Room hold Sean's content. Yellow callouts mark blanks

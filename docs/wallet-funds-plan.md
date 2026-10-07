@@ -46,7 +46,7 @@ Worked example: someone has 200 USDC on Base and commits 60 to an Offers bid.
 | Token | Chain | Address | Can do |
 |---|---|---|---|
 | USDC | Base (8453) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | balance, pay, card purchase, bank payout |
-| USDC | Ethereum (1) | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | balance, pay (KeyFleet), card purchase, bank payout, convert |
+| USDC | Ethereum (1) | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | balance, pay (Keyfleet), card purchase, bank payout, convert |
 | USDG | Robinhood Chain (4663) | `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168` | balance, convert |
 
 The registry replaces today's hard-coded Base in `RegentPayments.USDC`, as a hard cutover. Each capability is switched on only after it is checked end to end.
@@ -64,7 +64,7 @@ The registry replaces today's hard-coded Base in `RegentPayments.USDC`, as a har
 
 ## Wallets
 
-- External wallets stay exactly as they are (sign-in, ownership, KeyFleet keys).
+- External wallets stay exactly as they are (sign-in, ownership, Keyfleet keys).
 - A person may choose **Create a payments wallet**: a user-owned Privy embedded wallet on the same Privy user.
 - **One wallet across sites.** Before any site turns this on, prove it on two sites (Regents account page and Patchbay): both must find the same wallet, with no second user and no second default wallet.
 - **Privy Global Wallets** is evaluated for this. Its access request is Sean's.

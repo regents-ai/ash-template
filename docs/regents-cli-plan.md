@@ -16,7 +16,7 @@ the shared `regents profile` commands are dropped. The regents-cli chief owns th
 | `@regentslabs/cli` (`repos/regents/cli`) | TypeScript | 135 in 35 groups, 8 of them `techtree …` | npm 0.5.0; local 1.0.0 |
 | Patchbay (`repos/patchbay/cli`) | JavaScript | 12 | no |
 | Autolaunch (`repos/autolaunch/cli`) | JavaScript | 8 | no |
-| KeyFleet, template (`cli/`) | TypeScript | `version`, `help` only | no (private) |
+| Keyfleet, template (`cli/`) | TypeScript | `version`, `help` only | no (private) |
 | Techtree (`repos/techtree/cli`) | Python, 56k lines | ~28 | PyPI `techtree` 0.2.1 |
 | `repos/regents-cli-v2` | Python host | `status`, `commands` | no; one local commit, no remote |
 
@@ -57,7 +57,7 @@ places; the Patchbay and Autolaunch runners differ by one branch.
    runner and base-address module. Their tests move with them; the tests that reach into
    the site's own folders become checks against the pinned description. Each site's `cli/`
    becomes `commands.json` and a README.
-4. **KeyFleet.** Its placeholder package goes; `commands.json` describes its API when it
+4. **Keyfleet.** Its placeholder package goes; `commands.json` describes its API when it
    has commands.
 5. **Techtree.** Its 8 existing `regents techtree` commands and the ~28 Python ones become
    one namespace (they overlap: both have `forge` and `uplift`, with different

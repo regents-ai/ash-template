@@ -35,7 +35,7 @@ for adding one operator action when a product needs it. Staff lists stay per sit
 
 ## Release commands
 
-KeyFleet's are the model (keyfleet@985dc31 `platform/lib/keyfleet/release.ex`,
+Keyfleet's are the model (keyfleet@985dc31 `platform/lib/keyfleet/release.ex`,
 `platform/rel/overlays/bin/clear-fleet-stop`).
 
 - Each command is one `Release.<command>/n` function run through

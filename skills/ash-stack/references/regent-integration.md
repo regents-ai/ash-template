@@ -9,7 +9,7 @@ Reuse the assignment's acceptance criteria and review evidence.
 
 ## Product boundaries
 
-Regents.sh, Techtree, Patchbay, Autolaunch and KeyFleet remain separate Phoenix/Ash apps with
+Regents.sh, Techtree, Patchbay, Autolaunch and Keyfleet remain separate Phoenix/Ash apps with
 separate deployments. They share one physical PostgreSQL database: each product owns
 its schema and migration ledger through its own Repo, and the Regents-owned
 `identity/` package owns the shared identity schema (see

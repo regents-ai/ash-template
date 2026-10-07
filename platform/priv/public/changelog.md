@@ -5,7 +5,7 @@ What changed in Ash Template lately, newest first.
 ## 5 October 2026
 
 - **Regents apps.** The nine dots at the top open every Regents Labs app: Patchbay,
-  Autolaunch, KeyFleet, Techtree, Protocol and your Regents account.
+  Autolaunch, Keyfleet, Techtree, Protocol and your Regents account.
 - **Your ENS name.** If your wallet has an ENS name, you are shown by it, with its
   picture, a moment after you sign in.
 - **A better search.** Search opens with suggestions, marks the words you typed in each

@@ -1,7 +1,7 @@
 # The watcher
 
 The code here compiles against Ash 3.33, AshPostgres 2.13 and Phoenix LiveView 1.2.11.
-It was not run against a database; KeyFleet's reader, which it follows, is the tested
+It was not run against a database; Keyfleet's reader, which it follows, is the tested
 version. `MyApp` stands for the site's module prefix, and `Actors.System` (whose `role: :system`
 the policies check) is the template's own. The example watches ERC-20 `Transfer` logs.
 
@@ -15,7 +15,7 @@ the policies check) is the template's own. The example watches ERC-20 `Transfer`
 | `lib/my_app/chain/cursor.ex` | How far each contract has been read |
 | `lib/my_app/chain/<event>.ex` | One resource per kind of event row |
 | `lib/my_app/chain/changes/record_once.ex` | The check that a row read again matches |
-| `lib/my_app/chain/scanner.ex` | One pass (follow KeyFleet's) |
+| `lib/my_app/chain/scanner.ex` | One pass (follow Keyfleet's) |
 | `lib/my_app/chain/poller.ex` | Runs passes |
 | `test/support/chain_stub_client.ex` | The chain a test describes |
 
@@ -177,7 +177,7 @@ end
 
 Clearing `rescan_from` after a hand fix is an operator step: add a `:clear` update the
 system actor alone may run, a release command that runs it, and a short runbook in the
-site's docs, as KeyFleet has in `docs/chain-reader.md`. See
+site's docs, as Keyfleet has in `docs/chain-reader.md`. See
 [operator actions](../../ash-security/references/operator-actions.md) for the command
 and the record it leaves.
 
@@ -453,7 +453,7 @@ end
 
 Start one per contract from the site's supervisor, with `chain_id`, `name` and
 `interval` (4 seconds on Base). Before its first pass it must check `client.chain_id()`
-equals the cursor's chain and refuse to read at all when it does not, as KeyFleet's
+equals the cursor's chain and refuse to read at all when it does not, as Keyfleet's
 poller does on its first tick. Open the cursor at the
 contract's deployment block with `Chain.open_cursor/2`, which leaves an existing one
 alone.
@@ -504,13 +504,13 @@ end
   carries no row data to show.
 - For the "catching up" notice, read the cursor through a `fresh?` calculation
   (`observed_at` within 120 seconds and `head_block - next_block` within 300 blocks, as
-  KeyFleet's cursor has) and show plain words: "Catching up with the chain. Recent
+  Keyfleet's cursor has) and show plain words: "Catching up with the chain. Recent
   activity may take a moment to appear."
 
 ## Tests
 
 - **Stub client** holding the chain in the test process (`Process.put`), as
-  `test/support/chain_stub_client.ex` in KeyFleet does: a head, raw logs, block hashes,
+  `test/support/chain_stub_client.ex` in Keyfleet does: a head, raw logs, block hashes,
   and the requests it was asked, so a test can check the ranges asked for.
 - **A pass** against the stub: rows appear once; the same pass twice changes nothing; a
   log that reads differently stops the cursor at its block; a changed block hash stops

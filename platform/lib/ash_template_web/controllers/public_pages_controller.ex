@@ -58,7 +58,7 @@ defmodule AshTemplateWeb.PublicPagesController do
     do: render(conn, :show, [document: document] ++ PublicDocuments.page(conn.request_path))
 
   # These documents change only with a release: a sha256 ETag of the body and a
-  # five-minute public cache, as KeyFleet sends on its agent files. Every type
+  # five-minute public cache, as Keyfleet sends on its agent files. Every type
   # and body comes from this site's own tables, never from the request.
   # sobelow_skip ["XSS.ContentType", "XSS.SendResp"]
   defp send_cached(conn, type, body, charset \\ "utf-8") do

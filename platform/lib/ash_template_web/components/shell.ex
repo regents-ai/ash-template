@@ -37,7 +37,7 @@ defmodule AshTemplateWeb.Components.Shell do
   @regents_apps [
     %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
     %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
-    %{name: "KeyFleet", url: "https://keyfleet.ai", tone: "keyfleet"},
+    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet"},
     %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
     %{name: "Protocol", url: "https://regents.sh/stake", tone: "protocol"},
     %{name: "Account", url: "https://regents.sh/account", tone: "account"}

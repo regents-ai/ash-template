@@ -110,7 +110,7 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   search description, every page assigns them, and the layout adds the site name once
   (from Regents 7f866f87). The Overview and Account pages no longer show the bare site
   name.
-- Error pages say "We can't find that page" or "Something went wrong" (from KeyFleet
+- Error pages say "We can't find that page" or "Something went wrong" (from Keyfleet
   73145ed).
 - A visit to the site's www. address moves to the same page at the site's address
   (from Regents c45e7cd5).
@@ -210,17 +210,17 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   Checked: two listeners started together on loopback, on two different ports.
 - `make drift` lists a shared file a site has no use for yet as "not used", with why
   (Techtree: the launch gate, `Read`, hook composition), instead of missing.
-- `onchain-buttons` sites-today checked 2026-09-27: KeyFleet builds every step on the
+- `onchain-buttons` sites-today checked 2026-09-27: Keyfleet builds every step on the
   server and is the closest site to the skill; Regents', Autolaunch's and Patchbay's held
   branches are named; two gaps in `regent_chain` recorded (no zero address in a call, no
-  reader for return or log data). `chain-events` notes KeyFleet's 2 s check of sent steps.
+  reader for return or log data). `chain-events` notes Keyfleet's 2 s check of sent steps.
 
-## 2026-09-27 — Standardization plan: KeyFleet's wallet buttons are on the standard
+## 2026-09-27 — Standardization plan: Keyfleet's wallet buttons are on the standard
 
-- The wallet-transactions entry said KeyFleet's key and fleet actions were built in the
-  browser and sat on its backlog. KeyFleet's `main` (8f9629f) builds every step on the
+- The wallet-transactions entry said Keyfleet's key and fleet actions were built in the
+  browser and sat on its backlog. Keyfleet's `main` (8f9629f) builds every step on the
   server, so the entry now names that and points the held Autolaunch, Regents and Patchbay
-  work at `skills/onchain-buttons/references/sites-today.md`. Checked against KeyFleet's
+  work at `skills/onchain-buttons/references/sites-today.md`. Checked against Keyfleet's
   checkout: the browser encoders (`buy_key.ts`, `fleet_action.ts`, `chain_call.ts`) are
   gone, `Keyfleet.WalletSteps.Build` encodes each step, its `LinkedSigner` policy admits
   only a wallet the signed-in account links, and `KeyfleetWeb.OnchainSteps` reads the
@@ -240,23 +240,23 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   following it, so the template runs beside the sites' local servers, as Techtree's does.
 - `make drift` lists `components/motion.css`, and Techtree now uses `hook_composition.ts`.
 
-## 2026-09-28 — Metrics README matches the config; KeyFleet's closed Markdown answer stays its own
+## 2026-09-28 — Metrics README matches the config; Keyfleet's closed Markdown answer stays its own
 
 - `platform/README.md` said metrics listen locally on `127.0.0.1:9091`; since the free-port
-  change they listen on loopback on a port the system picks. Found by KeyFleet (a3e40ec).
-- KeyFleet's `launch_gate.ex` adds a Markdown closed answer for its `.md` routes. The
-  template serves no Markdown routes, so that clause stays a KeyFleet difference; a site
+  change they listen on loopback on a port the system picks. Found by Keyfleet (a3e40ec).
+- Keyfleet's `launch_gate.ex` adds a Markdown closed answer for its `.md` routes. The
+  template serves no Markdown routes, so that clause stays a Keyfleet difference; a site
   that serves Markdown behind the gate adds the same clause.
 
-## 2026-09-28 — From KeyFleet's motion step: back and forward are keyboard changes
+## 2026-09-28 — From Keyfleet's motion step: back and forward are keyboard changes
 
 - `hooks/motion/shared.ts`: going back or forward in the browser counts as a key press,
-  so a menu or dialog it reopens is simply there rather than moving. From KeyFleet
+  so a menu or dialog it reopens is simply there rather than moving. From Keyfleet
   (b11ffdf).
 - The page policy's comment on style attributes names both uses: the ratio card, and an
   element moving under `JS.ignore_attributes(["style"])` (the motion lab's list uses it).
   70c71eb had named the ratio card alone.
-- `docs/standardization-plan.md` lists the motion additions KeyFleet keeps as its own, to
+- `docs/standardization-plan.md` lists the motion additions Keyfleet keeps as its own, to
   weigh for the kit when a second site needs one.
 
 ## 2026-09-28 — release.sh removes the throwaway database's volume
@@ -268,7 +268,7 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 ## 2026-09-28 — The signed-in shell lints like every other file
 
 - `.credo.exs` no longer excludes `live/shell_live.ex` from three complexity checks; the
-  shell passes them (Credo strict, no issues). Found by KeyFleet, whose split shell no
+  shell passes them (Credo strict, no issues). Found by Keyfleet, whose split shell no
   longer needed them.
 
 ## 2026-09-28 — A new site scores high on agent readiness from its first deploy
@@ -289,7 +289,7 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
 - The sitemap gives each page a `lastmod` (the release time). New
   `/.well-known/security.txt` (RFC 9116, expiring a year after the release) and
   `/.well-known/api-catalog` (RFC 9727). `llms.txt`, `robots.txt`, `openapi.json` and
-  both new files carry an ETag and a five-minute public cache, as KeyFleet's agent
+  both new files carry an ETag and a five-minute public cache, as Keyfleet's agent
   files do.
 - The site type is a site setting beside the site name in `PublicDocuments`
   (`business`; a product site sets `app`).
@@ -341,7 +341,7 @@ Do not edit, reorder, or remove existing entries; append corrections separately.
   (`bin/bootstrap-staging` once) and that Fly's attached database URLs lose their query.
 
 
-## 2026-09-28 — Motion kit: KeyFleet's four additions (Phase 1 item 53)
+## 2026-09-28 — Motion kit: Keyfleet's four additions (Phase 1 item 53)
 
 - The number roll handles decimals and units: 1.75 to 2 rolls up, and "12.5 USDC" to
   "13.0 USDC" rolls only the two digits that changed.
@@ -585,7 +585,7 @@ Operations
   destroy actions, outside calls run with `transaction?(false)`, retries log only
   their final failure, and a job cannot queue a second run of itself.
 
-## 2026-10-03 — Keyboard and screen reader pieces from KeyFleet
+## 2026-10-03 — Keyboard and screen reader pieces from Keyfleet
 
 - The app shell opens with a "Skip to content" link, hidden until the keyboard
   reaches it, that jumps past the header and side menu to the page.
@@ -721,7 +721,7 @@ Operations
 ## 2026-10-05 — Regents apps menu
 
 - A nine-dot button in the app header, labelled "Regents apps", opens a "Regents Labs
-  apps" panel linking Patchbay, Autolaunch, KeyFleet, Techtree, Protocol
+  apps" panel linking Patchbay, Autolaunch, Keyfleet, Techtree, Protocol
   (regents.sh/stake) and Account (regents.sh/account) in a new tab. Each app shows the
   13-block crown in its own pair of the four brand colours.
 - The panel is a native `popover`: the browser closes it on Escape or a press outside,
@@ -951,3 +951,11 @@ Operations
   notes API and message changes refuse it with 403 naming what it is missing:
   `agent_not_paired`, `agent_not_backed` or `person_not_here`.
 - API 1.6.0, contract 2.6.0.
+
+## 2026-10-07 — Keyfleet is spelled Keyfleet
+
+- The apps menu, documents, skills and code comments write Keyfleet, never
+  KeyFleet, as its brand spells it (design-system `STYLE.md`, Product names).
+- The rename example in `README.md` and `scripts/init.sh` is now a made-up
+  two-word product, `night_owl` / `NightOwl` / "Night Owl", so it still shows how
+  each spelling of a two-word name is written.

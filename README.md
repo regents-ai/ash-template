@@ -10,7 +10,7 @@ the parts every product starts with. The placeholder product is called
 **Ash Template**; run the rename script before building anything on it:
 
 ```sh
-scripts/init.sh keyfleet KeyFleet "KeyFleet"
+scripts/init.sh night_owl NightOwl "Night Owl"
 ```
 
 `scripts/init.sh <snake_name> <ModuleName> ["Display Name"]` replaces the

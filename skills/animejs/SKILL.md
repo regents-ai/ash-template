@@ -9,7 +9,7 @@ description: Motion on Regent's Phoenix LiveView and Ash sites with Anime.js v4 
 action and the LiveView own state, markup, authorization and outcomes. Their rules win
 wherever they touch this skill.
 
-Target version: **animejs 4.5.0** (pinned in Regents, KeyFleet and the template). A 5.0 beta
+Target version: **animejs 4.5.0** (pinned in Regents, Keyfleet and the template). A 5.0 beta
 exists; do not use it. v3 code (`anime({...})`, `easing: 'easeOutQuad'`,
 `direction: 'alternate'`, `anime.timeline`) is obsolete: rewrite it to the v4 API in
 [animation](references/animation.md) rather than mixing styles.

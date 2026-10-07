@@ -6,7 +6,7 @@ description: Watching a chain for contract events on Regent's Phoenix and Ash si
 # Chain events
 
 **Load `ash-stack` first, then `ash-data` for the tables and `ash-frontend` for the page.**
-Buttons that send transactions are `onchain-buttons`. KeyFleet's reader
+Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
 (`platform/lib/keyfleet/chain/`) is the tested model for everything here.
 
 ## Rules

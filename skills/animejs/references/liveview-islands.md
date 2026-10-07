@@ -34,7 +34,7 @@ How Anime.js runs inside a Phoenix LiveView hook in Regent's Ash apps. Everythin
   `npm`, commit the lockfile. Adding TypeScript islands to techtree or patchbay changes
   their pipeline; ask first.
 - Import named functions from `"animejs"`; the esbuild `--bundle` build tree-shakes them.
-  Regents, KeyFleet and the template cap `app.js` at 175 KiB gzip (`vitest.budgets.config.ts`).
+  Regents, Keyfleet and the template cap `app.js` at 175 KiB gzip (`vitest.budgets.config.ts`).
 - Type the hook's `this` the house way (see `hooks/infinite_scroll.ts`): a local type with
   `el`, the LiveView methods you call, and your own fields. Combine behaviours on one element
   with `composeHooks` from `assets/js/hook_composition.ts`.

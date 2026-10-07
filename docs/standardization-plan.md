@@ -43,7 +43,7 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
 - Wallet transactions (founder "4 a 5 a 6 a", 2026-09-27): the server builds every step
   before the press and the press goes straight to the wallet. The building and checking
   live in one shared package, `regent_chain` in elixir-utils (0.2.0 at `7a876e8`), taken from
-  Autolaunch's version; `skills/onchain-buttons` shows how to use it. KeyFleet's `main`
+  Autolaunch's version; `skills/onchain-buttons` shows how to use it. Keyfleet's `main`
   does this for every wallet button (8f9629f); Autolaunch's remaining press gates,
   Regents' redeem encoder and Patchbay's browser-signed payment are on branches held for
   the founder, listed in `skills/onchain-buttons/references/sites-today.md`.
@@ -58,7 +58,7 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   server building every step, one press path straight to the wallet, every outcome recovered
   even when the page never reports back, and agent routes served from the same builder. The
   command line's broken staking and ENS routes are added by Regents from that builder;
-  KeyFleet moves before it launches.
+  Keyfleet moves before it launches.
 
 - Template chief engineer's review (founder, 2026-09-27: "1a 2a 3 you can invent your own
   way whatever is standard for production codebases 4a , yes and is related to security
@@ -89,7 +89,7 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
 
 The template is the best example of three things: the Regent design system, the
 codebase structure, and the agent skills. Regents, Patchbay, Techtree, Autolaunch
-and KeyFleet are each built on the template's design and code. What only one site
+and Keyfleet are each built on the template's design and code. What only one site
 does (staking, auctions, maps, research trees, pairing) stays in that site; the
 parts every site has come from the template, in the template's shape.
 
@@ -127,7 +127,7 @@ template in the template's shape, then every site takes it from there.
 | --- | --- | --- |
 | Autolaunch | `SignedInWallet`: wallet panels read the signed-in wallet from the session on mount | The workflow skill already names it the reference; the template has no equivalent |
 | Autolaunch | Health and metrics endpoints; newer dependency versions | More complete checks; the template lags on versions |
-| KeyFleet | Page titles on every page; friendly error pages; the copy button announcing "Copied" to screen readers; `Time.ago` | Each is missing or weaker in the template |
+| Keyfleet | Page titles on every page; friendly error pages; the copy button announcing "Copied" to screen readers; `Time.ago` | Each is missing or weaker in the template |
 | Regents | Client address parsing, ENS identity, search titles, canonical host redirect, input parsers; the session authority clean-up | Each is tidier or missing in the template |
 | Patchbay | The copy-prompt control | Better than the template's copy text |
 | Techtree | Its strict content security policy | The template sets none |
@@ -149,7 +149,7 @@ Order, closest first, so the checklist is proven on the easy sites:
 
 | Site | Distance | Main work |
 | --- | --- | --- |
-| KeyFleet | Closest | Add `regent_format` and `skills/`; split the 1,636-line `shell_live.ex` along the template's lines; adopt the motion kit (it has its own) |
+| Keyfleet | Closest | Add `regent_format` and `skills/`; split the 1,636-line `shell_live.ex` along the template's lines; adopt the motion kit (it has its own) |
 | Regents | Near | Delete the leftover `material.css` alias; add the missing ignore line for `priv/static/images/regent-ui/`; take the template's newer parts; rename the app from `ash_platform` (decision 5) |
 | Autolaunch | Medium | Adopt the template's sign-in; move `core_tests` into the standard layout; add a `Makefile` and `skills/`; read the theme instead of fixing it; one short-address helper instead of six copies |
 | Patchbay | Far | Move from Tailwind and daisyUI onto the design system (decision 3); JavaScript to TypeScript (decision 4); newer Privy session; the full precommit |
@@ -167,10 +167,10 @@ shippable and checked in a browser.
 
 Done 2026-09-27: `make drift` (`scripts/drift.sh`) is that script.
 
-Motion kit additions KeyFleet keeps as its own (b11ffdf), to weigh for the kit when a
-second site needs one; until then each stays a KeyFleet difference. Taken into the kit
+Motion kit additions Keyfleet keeps as its own (b11ffdf), to weigh for the kit when a
+second site needs one; until then each stays a Keyfleet difference. Taken into the kit
 2026-09-28 (Phase 1 item 53): 1 and 3 as `MotionPanels`, 5 in `countHook`, 6 as
-`MotionRefusal` and `MotionCascade`. Still KeyFleet's own: 2 and 4.
+`MotionRefusal` and `MotionCascade`. Still Keyfleet's own: 2 and 4.
 
 1. Drawers and panels move when they become visible (a watcher in `slides.ts`) rather
    than on the press, so drawers opened by LiveView commands, or by another control
