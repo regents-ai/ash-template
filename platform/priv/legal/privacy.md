@@ -136,7 +136,7 @@ Account and profile information is generally retained while the account is activ
 
 We use administrative, technical, and organizational safeguards designed to protect information, including access controls, transport encryption, signed sessions, server-side authorization, bounded inputs, and rate limits.
 
-No system is perfectly secure. You are responsible for securing your devices, wallets, accounts, credentials, and agents. Notify us promptly at **[security@example.com](mailto:security@example.com)** if you believe your account has been compromised. Do not send a private key or recovery phrase in a security report.
+No system is perfectly secure. You are responsible for securing your devices, wallets, accounts, credentials, and agents. Notify us promptly at **[build@regents.sh](mailto:build@regents.sh)** if you believe your account has been compromised. Do not send a private key or recovery phrase in a security report.
 
 ## 12. International transfers
 

@@ -152,4 +152,4 @@ Sections that by their nature should survive termination will survive, including
 **Ash Template**  
 Email: **[legal@example.com](mailto:legal@example.com)**
 
-For security reports, use **[security@example.com](mailto:security@example.com)**. Do not include private keys, recovery phrases, or unnecessary personal data.
+For security reports, use **[build@regents.sh](mailto:build@regents.sh)**. Do not include private keys, recovery phrases, or unnecessary personal data.

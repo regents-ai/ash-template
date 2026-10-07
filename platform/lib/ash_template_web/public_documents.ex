@@ -23,7 +23,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
-  @security_contact "mailto:security@example.com"
+  @security_contact "mailto:build@regents.sh"
   @description "Ash Template: sign in with a wallet, manage your account and read the developer documentation."
 
   # The browser-tab title and search description of every page. A title names

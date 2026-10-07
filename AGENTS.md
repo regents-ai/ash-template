@@ -16,7 +16,9 @@ After renaming, a new site must still replace, by hand:
    `privacy.md`.
 3. Every `example.com` contact address in `platform/priv/legal`,
    `platform/priv/public/contact.md` and
-   `platform/lib/ash_template_web/public_documents.ex`.
+   `platform/lib/ash_template_web/public_documents.ex`, and the site's
+   Patchbay page (`https://patchbay.help/<domain>`) in `contact.md`. Security
+   reports go to `build@regents.sh` on every Regent site.
 4. The `x.com/example` and `github.com/example` links in
    `platform/lib/ash_template_web/components/regent_links.ex`.
 5. The Fly app names: `app` in `platform/fly.staging.toml`, and the production

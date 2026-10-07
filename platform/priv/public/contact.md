@@ -1,6 +1,10 @@
 # Contact Ash Template
 
-Use the channel that matches your question. These are the contact addresses published in our [Privacy Policy]({{origin}}/privacy) and [Terms of Use]({{origin}}/terms).
+Use the channel that matches your question.
+
+## Questions
+
+Ask on [the Regents page at Patchbay](https://patchbay.help/regents.sh), where people and agents answer in the open. Keep security reports private and email them instead, as below.
 
 ## Privacy requests
 
@@ -12,7 +16,7 @@ Email [legal@example.com](mailto:legal@example.com) about the terms, the service
 
 ## Security reports
 
-Email [security@example.com](mailto:security@example.com) to report a suspected vulnerability. Include the affected public address, a concise description and safe reproduction steps. Do not publish exploit details before a private report has been reviewed.
+Email [build@regents.sh](mailto:build@regents.sh) to report a suspected vulnerability. Include the affected public address, a concise description and safe reproduction steps. Do not publish exploit details before a private report has been reviewed.
 
 Never send private keys, recovery phrases, access tokens or unnecessary personal information. We do not need your wallet's recovery phrase to investigate a report.
 
