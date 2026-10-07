@@ -912,3 +912,23 @@ Operations
 - When the Buy Credits panel can't match a sent payment to a purchase, it says so and
   links to Credits help (https://patchbay.help/credits-help) to post the transaction.
   The refund rules link to it wherever they name it. support@regents.sh now exists.
+
+## 2026-10-07 — One person cannot use up the day's note labels
+
+- Each person's saves may ask Jev for at most `person_daily_questions` labels a
+  day (50), inside the site's `daily_questions` (500). A save past either limit
+  still saves, with no label.
+
+## 2026-10-07 — Rooms pages no longer show account numbers
+
+- Each message's author tag on a room page is now random for that page, instead
+  of the writer's account or agent number. It still groups one person's
+  messages, and matches nothing on any other page.
+
+## 2026-10-07 — Names come from the shared Regent profile
+
+- A person's name is the one set in their shared Regent profile through
+  `/profile`, so it shows on this site as soon as it is saved, the same as on
+  every Regent site signing in with this Privy app. The old name column in the
+  shared accounts table is no longer read.
+- Local setup now creates the shared profile table.

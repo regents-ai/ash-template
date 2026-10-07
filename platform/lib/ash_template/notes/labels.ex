@@ -3,9 +3,9 @@ defmodule AshTemplate.Notes.Labels do
   The labels Jev picks from for a note, and the settings it is asked with.
 
   Jev is asked only while the server has an OpenRouter key
-  (`OPENROUTER_API_KEY`); with none, saving a note asks nothing. The model and
-  the site's daily number of questions are set in `config/config.exs` under
-  `:note_labels`.
+  (`OPENROUTER_API_KEY`); with none, saving a note asks nothing. The model, the
+  site's daily number of questions and each person's share of them are set in
+  `config/config.exs` under `:note_labels`.
   """
 
   @choices %{
@@ -41,6 +41,10 @@ defmodule AshTemplate.Notes.Labels do
   @doc "How many questions the whole site may ask Jev each day (UTC)."
   @spec daily_questions() :: pos_integer()
   def daily_questions, do: Keyword.fetch!(settings(), :daily_questions)
+
+  @doc "How many of those questions one person's saves may ask each day (UTC)."
+  @spec person_daily_questions() :: pos_integer()
+  def person_daily_questions, do: Keyword.fetch!(settings(), :person_daily_questions)
 
   defp settings, do: Application.fetch_env!(:ash_template, :note_labels)
 end

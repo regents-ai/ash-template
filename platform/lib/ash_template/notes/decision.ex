@@ -9,9 +9,10 @@ defmodule AshTemplate.Notes.Decision do
   not get through retries with backoff, then records its failure. The writer
   can say once whether the label fits.
 
-  Every decision counts against the site's daily number of questions, checked
-  by the create policy (`UnderDailyBudget`). Only the note's writer reads its
-  decisions; each change is published on the writer's notes topic.
+  Every decision counts against the site's daily number of questions and the
+  writer's share of it, checked by the create policy (`UnderDailyBudget`). Only
+  the note's writer reads its decisions; each change is published on the
+  writer's notes topic.
   """
 
   use Ash.Resource,
@@ -33,8 +34,10 @@ defmodule AshTemplate.Notes.Decision do
     end
 
     custom_indexes do
-      # The daily budget counts today's rows; a note shows its latest decision.
+      # The daily budgets count today's rows, the site's and each person's; a
+      # note shows its latest decision.
       index([:inserted_at])
+      index([:human_account_id, :inserted_at])
       index([:note_id, :inserted_at])
     end
   end

@@ -18,7 +18,6 @@ defmodule AshTemplate.Accounts.HumanAccount do
     attribute :privy_user_id, :string, allow_nil?: false, sensitive?: true
     attribute :wallet_address, :string, sensitive?: true
     attribute :wallet_addresses, {:array, :string}, default: [], sensitive?: true
-    attribute :display_name, :string, public?: true, constraints: [max_length: 80]
     attribute :avatar, :map
     create_timestamp :created_at
     update_timestamp :updated_at
@@ -30,9 +29,12 @@ defmodule AshTemplate.Accounts.HumanAccount do
     end
   end
 
-  # The ENS name and picture, only while they were read for the account's
-  # current wallet.
   calculations do
+    # The name set in the person's shared Regent profile.
+    calculate :display_name, :string, AshTemplate.Accounts.HumanAccount.ProfileName, public?: true
+
+    # The ENS name and picture, only while they were read for the account's
+    # current wallet.
     calculate :ens_name,
               :string,
               expr(
@@ -59,14 +61,14 @@ defmodule AshTemplate.Accounts.HumanAccount do
       get? true
       argument :privy_did, :string, allow_nil?: false
       filter expr(privy_user_id == ^arg(:privy_did))
-      prepare build(load: [:ens_name, :ens_avatar_url])
+      prepare build(load: [:display_name, :ens_name, :ens_avatar_url])
     end
 
     read :read_self do
       get? true
       argument :id, :integer, allow_nil?: false
       filter expr(id == ^arg(:id))
-      prepare build(load: [:ens_name, :ens_avatar_url])
+      prepare build(load: [:display_name, :ens_name, :ens_avatar_url])
     end
 
     create :register_verified do
@@ -74,13 +76,14 @@ defmodule AshTemplate.Accounts.HumanAccount do
       upsert? true
       upsert_identity :unique_privy_user_id
       upsert_fields []
+      change load([:display_name])
     end
 
     update :refresh_verified do
       accept [:wallet_address, :wallet_addresses]
       require_atomic? false
       validate present(:wallet_addresses)
-      change load([:ens_name, :ens_avatar_url])
+      change load([:display_name, :ens_name, :ens_avatar_url])
     end
   end
 
