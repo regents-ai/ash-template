@@ -870,3 +870,10 @@ Operations
 - A press with no wallet opens Privy's connect window. Privy's active-wallet
   dialog is gone from the bridge: no page rendered it, so those presses did
   nothing.
+
+## 2026-10-07 — The Credits panel keeps its height on every chain
+
+- Picking Ethereum no longer shortens the panel: the Approve row and the Switch
+  Chain button keep their space, unseen, when the chain does not use them.
+- The UI review checklist now says choosing an option never changes a panel's
+  height (design-system STYLE.md).

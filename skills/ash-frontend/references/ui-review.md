@@ -23,7 +23,10 @@ for harmless edits. Keep primary controls usable on a phone.
 **States:** An empty account is different from a filter returning no matches, a server
 error, or missing permission. Explain each with one useful next action. Loading states
 should not shift the whole layout. A job accepted is not a job completed. Show actual
-status rather than reassuring animation.
+status rather than reassuring animation. Choosing an option (a chain, a tab, a toggle)
+never changes a dialog's or panel's height (design-system STYLE.md, "Choices never
+change the height"): a row one option lacks keeps its space, unseen and `inert`, after
+the rows in use. Check each option at desktop and phone width.
 
 **Accessibility:** Check keyboard order, visible focus, focus restoration for dialogs,
 accessible names, readable contrast, status announcements where appropriate, and error
