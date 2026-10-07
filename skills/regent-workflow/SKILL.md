@@ -182,6 +182,21 @@ explicit known base. One coordinator integrates per repository. Preserve unrelat
 changes and avoid resetting or cleaning existing worktrees. Use isolated test databases
 and ports. Follow each component's dependency setup; never clear a shared database.
 
+## Local sites
+
+Founder rule (2026-10-06, critical): no session or subagent ever starts a local site
+without its Privy settings.
+
+- Start a site only with its own settings loaded, the way its repository loads them. For
+  Regents that is `direnv exec /Users/sean/Documents/regent/repos/regents/platform mix
+  phx.server`, run from the checkout or worktree under test. Worktrees hold no settings
+  files, so a plain `mix phx.server` there starts with no Privy app id: every page still
+  answers 200 and nobody can sign in.
+- After every start or restart, check that the home page's `privy-app-id` meta is
+  non-empty (its length, never its value), not only the status code.
+- Never stop or restart a server the founder or another session started without saying
+  so to them first.
+
 ## Domains and servers
 
 Founder rule (2026-09-28): every product domain is registered and its DNS managed in the
