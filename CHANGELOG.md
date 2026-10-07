@@ -852,3 +852,12 @@ Operations
   a spend on any Regent site reaches the header and the Buy Credits panel
   without a reload, and a gift to a wallet a signed-in account holds lands on
   the account straight away. Regent Credits pinned to elixir-utils bf4aed7.
+
+## 2026-10-07 — Buy Credits layout
+
+- The Buy Credits close button sits flush in the dialog's top right corner and
+  stays there while the dialog scrolls. Its styles moved out of the product
+  layer, so the shared button's padding no longer shrinks the icon.
+- Regents Credits and Active Bids (was In Bids) show as one two-by-two table,
+  labels and figures at one size.
+- Approve and Buy take the place of the tick boxes, on the left of each step.
