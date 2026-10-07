@@ -853,6 +853,31 @@ Operations
   without a reload, and a gift to a wallet a signed-in account holds lands on
   the account straight away. Regent Credits pinned to elixir-utils bf4aed7.
 
+## 2026-10-07 — Buy Credits layout
+
+- The Buy Credits close button sits flush in the dialog's top right corner and
+  stays there while the dialog scrolls. Its styles moved out of the product
+  layer, so the shared button's padding no longer shrinks the icon.
+- Regents Credits and Active Bids (was In Bids) show as one two-by-two table,
+  labels and figures at one size.
+- Approve and Buy take the place of the tick boxes, on the left of each step.
+
+## 2026-10-07 — Wallet presses reach the signed-in wallet
+
+- A signed-in account whose wallet Privy holds but has not marked active now
+  sends from that wallet: the bridge selects the one connected wallet the
+  account is linked to. Two such wallets stay a choice for the customer.
+- A press with no wallet opens Privy's connect window. Privy's active-wallet
+  dialog is gone from the bridge: no page rendered it, so those presses did
+  nothing.
+
+## 2026-10-07 — The Credits panel keeps its height on every chain
+
+- Picking Ethereum no longer shortens the panel: the Approve row and the Switch
+  Chain button keep their space, unseen, when the chain does not use them.
+- The UI review checklist now says choosing an option never changes a panel's
+  height (design-system STYLE.md).
+
 ## 2026-10-07 — Human-backed agents (World ID)
 
 - Each signed agent request keeps the sign-in service's `agentBook` answer on the agent:
