@@ -21,7 +21,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.{ChainClient, Credits}
+  alias AshTemplate.{ChainClient, Credits, Limits}
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
   alias RegentChain.{Call, Presses, Review}
@@ -82,13 +82,16 @@ defmodule AshTemplateWeb.CreditsPanel do
       when is_integer(id) or is_nil(id) do
     socket = assign(socket, wallet_chain: id)
 
-    case chain_of(id) do
-      chain when is_binary(chain) and not socket.assigns.chain_chosen? ->
-        {:noreply, socket |> assign(chain: chain) |> sync()}
+    socket =
+      case chain_of(id) do
+        chain when is_binary(chain) and not socket.assigns.chain_chosen? ->
+          socket |> assign(chain: chain) |> sync()
 
-      _keep ->
-        {:noreply, read_funds(socket)}
-    end
+        _keep ->
+          socket
+      end
+
+    {:noreply, read_funds(socket)}
   end
 
   # A press made before the review caught up with the form: the form is taken
@@ -138,8 +141,18 @@ defmodule AshTemplateWeb.CreditsPanel do
   end
 
   @impl true
-  def handle_async({:onchain_step, hash}, result, socket),
-    do: {:noreply, socket |> OnchainSteps.checked(hash, result) |> approved(hash) |> read_funds()}
+  # The funds are read again once a step lands, not at every read while it waits.
+  def handle_async({:onchain_step, hash}, result, socket) do
+    socket = socket |> OnchainSteps.checked(hash, result) |> approved(hash)
+
+    case Enum.find(socket.assigns.presses.sent, &(&1.hash == hash)) do
+      %{outcome: outcome} when outcome in [:confirmed, :reverted] ->
+        {:noreply, read_funds(socket)}
+
+      _waiting ->
+        {:noreply, socket}
+    end
+  end
 
   def handle_async({:purchase, hash}, {:ok, {:ok, purchase}}, socket) do
     shown = %{purchase: purchase, reads: socket.assigns.purchases[hash].reads + 1}
@@ -228,16 +241,16 @@ defmodule AshTemplateWeb.CreditsPanel do
         Review.new(socket.assigns.id, signer, Chains.chain(@chains[chain]), steps, inputs)
       end
 
+    # A new amount or chain changes no balance, so only a new signer reads them.
     socket =
       if signer == socket.assigns.signer,
         do: socket,
-        else: assign(socket, signer: signer, usdc: %{}, allowance: nil)
+        else: socket |> assign(signer: signer, usdc: %{}, allowance: nil) |> read_funds()
 
     socket
     |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
     |> remember_number(review)
     |> OnchainSteps.put_review(review)
-    |> read_funds()
   end
 
   defp remember_number(socket, nil), do: socket
@@ -280,10 +293,18 @@ defmodule AshTemplateWeb.CreditsPanel do
     do: assign(socket, purchases: Map.put(socket.assigns.purchases, hash, shown))
 
   # The paying wallet's USDC on both chains, and what REGENT staking may take
-  # of its Base USDC, all at the latest block.
+  # of its Base USDC, all at the latest block. Each account has a read
+  # allowance; past it, the figures already shown stay.
   defp read_funds(%{assigns: %{signer: nil}} = socket), do: socket
 
   defp read_funds(socket) do
+    case Limits.spend(:wallet_read, {:human, socket.assigns.account.id}) do
+      :ok -> start_reads(socket)
+      :limited -> socket
+    end
+  end
+
+  defp start_reads(socket) do
     signer = socket.assigns.signer
 
     socket =

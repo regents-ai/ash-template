@@ -39,8 +39,12 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
   end
 
   @impl true
-  def handle_event("like", %{"post" => id}, socket),
-    do: {:noreply, update(socket, :liked, &MapSet.symmetric_difference(&1, MapSet.new([id])))}
+  # Only the posts on the page can be liked.
+  def handle_event("like", %{"post" => id}, socket) do
+    if Enum.any?([socket.assigns.opening | socket.assigns.all_replies], &(&1.id == id)),
+      do: {:noreply, update(socket, :liked, &MapSet.symmetric_difference(&1, MapSet.new([id])))},
+      else: {:noreply, socket}
+  end
 
   @impl true
   def render(assigns) do

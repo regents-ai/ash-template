@@ -553,6 +553,7 @@ defmodule AshTemplateWeb.RoomsLive do
       Rooms.form_to_post_message(
         actor: actor,
         as: "message",
+        context: %{client_key: socket.assigns.client_key},
         prepare_params: fn params, _phase -> Map.put(params, "room", room.slug) end
       )
 

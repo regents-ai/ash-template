@@ -90,6 +90,7 @@ defmodule AshTemplate.Notes.Note do
     create :create do
       primary? true
       accept [:title, :body]
+      change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
       change set_attribute(:human_account_id, actor(:human_account_id))
       change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
@@ -97,9 +98,13 @@ defmodule AshTemplate.Notes.Note do
       change AskForLabel, where: [AskingJev]
     end
 
+    # The save allowance is counted before the statement, so an edit is not a
+    # single atomic statement.
     update :update do
       primary? true
       accept [:title, :body]
+      require_atomic? false
+      change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
       change atomic_update(:revision, expr(revision + 1))
       change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]

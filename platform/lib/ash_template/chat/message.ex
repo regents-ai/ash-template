@@ -76,6 +76,7 @@ defmodule AshTemplate.Chat.Message do
         public? false
       end
 
+      change {AshTemplate.Limits.LimitWrites, allowance: :chat_message, field: :text}
       change AshTemplate.Chat.Message.Changes.CreateConversationIfNotProvided
       change run_oban_trigger(:respond)
     end

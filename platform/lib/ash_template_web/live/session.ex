@@ -6,6 +6,7 @@ defmodule AshTemplateWeb.Live.Session do
 
   alias AshTemplate.AccessContext
   alias AshTemplate.Accounts.{EnsIdentity, SessionAuthority}
+  alias AshTemplateWeb.ClientAddress
 
   @public_root "/"
 
@@ -15,17 +16,25 @@ defmodule AshTemplateWeb.Live.Session do
   lineage-stable topic, a digest that names the browser session without being
   able to authenticate as it, rather than the lineage. The route travels with it
   because a connected mount cannot otherwise learn it before `handle_params`,
-  which is too late to refuse the mount. LiveView merges these keys over the
-  handshake session, so they can never stand in for the authority the socket
+  which is too late to refuse the mount. The client key travels too, because a
+  connected socket cannot see the address header the rendering request carried;
+  it is what the page's posts and searches count against
+  (`AshTemplateWeb.ClientAddress.client_key/1`). LiveView merges these keys over
+  the handshake session, so they can never stand in for the authority the socket
   connected with.
   """
   def render_context(conn) do
     conn.assigns.current_lineage
     |> rendered_topic()
-    |> Map.put("render_route", local_route(conn.request_path, conn.query_string))
+    |> Map.merge(%{
+      "render_route" => local_route(conn.request_path, conn.query_string),
+      "client_key" => ClientAddress.client_key(conn)
+    })
   end
 
   def on_mount(:load_human, _params, session, socket) do
+    socket = assign(socket, client_key: Map.fetch!(session, "client_key"))
+
     if connected?(socket) do
       connected(socket, session, get_connect_info(socket, :session))
     else

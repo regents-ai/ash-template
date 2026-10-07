@@ -20,9 +20,10 @@ defmodule AshTemplate.Rooms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshTemplate.Limits.LimitWrites
+
   alias AshTemplate.Rooms.Message.{
     LeaveOutMuted,
-    LimitPosts,
     NotifyMentions,
     SetAuthor,
     SquashBlankLines
@@ -112,7 +113,10 @@ defmodule AshTemplate.Rooms.Message do
       accept [:room, :body]
       change SetAuthor
       change SquashBlankLines
-      change LimitPosts
+
+      change {LimitWrites,
+              allowance: :room_post, address_allowance: :room_post_address, field: :body}
+
       change NotifyMentions
       change load([:agent, :via_agent])
     end

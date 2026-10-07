@@ -53,6 +53,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
 
   @providers %{"x" => :x, "github" => :github, "farcaster" => :farcaster}
 
+  # The most samples a page keeps, so a connection cannot grow without end.
+  @shown_samples 12
+
   @sections [
     {"01", "foundations", "Foundations"},
     {"02", "capabilities", "Capabilities"},
@@ -436,14 +439,23 @@ defmodule AshTemplateWeb.ShowcaseLive do
             </ul>
           </div>
           <div class="sc-row">
-            <P.button id="add-item" phx-click="create_item" variant="secondary">
+            <P.button
+              id="add-item"
+              phx-click="create_item"
+              variant="secondary"
+              disabled={full?(@empty_items)}
+            >
               {if @empty_items == [], do: "Create item", else: "Add item"}
             </P.button>
             <P.button :if={@empty_items != []} phx-click="reset_items" variant="quiet">
               Reset items
             </P.button>
           </div>
-          <p>Items live only on this page. Reloading clears them.</p>
+          <p>
+            {if full?(@empty_items),
+              do: "This page keeps #{length(@empty_items)} items. Reset to add more.",
+              else: "Items live only on this page. Reloading clears them."}
+          </p>
           <.api module="Regent.Primitives" function="empty_state" />
         </.card>
         <.card id="slow-read-demo">
@@ -889,12 +901,20 @@ defmodule AshTemplateWeb.ShowcaseLive do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, record} ->
         {:noreply,
-         assign(socket, records: [record | socket.assigns.records], form: sample_form(params))}
+         assign(socket,
+           records: Enum.take([record | socket.assigns.records], @shown_samples),
+           form: sample_form(params)
+         )}
 
       {:error, form} ->
         {:noreply, assign(socket, :form, form)}
     end
   end
+
+  # The same limit as the disabled Add item button, for a press sent past it.
+  def handle_event("create_item", _, %{assigns: %{empty_items: items}} = socket)
+      when length(items) >= @shown_samples,
+      do: {:noreply, socket}
 
   def handle_event("create_item", _, socket) do
     items = socket.assigns.empty_items
@@ -1003,6 +1023,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
 
   defp sample_form(params),
     do: Domain.form_to_create_sample(as: "sample", params: params) |> to_form()
+
+  defp full?(items), do: length(items) >= @shown_samples
 
   # The step's title reuses the local sample action's title rules, never a product resource.
   defp step_form(title),

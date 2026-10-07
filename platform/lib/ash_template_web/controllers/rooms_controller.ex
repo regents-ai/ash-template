@@ -12,6 +12,7 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Room}
+  alias AshTemplateWeb.ClientAddress
   alias AshTemplateWeb.Plugs.AgentWallet
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
@@ -70,7 +71,8 @@ defmodule AshTemplateWeb.RoomsController do
     with {:ok, room} <- Room.fetch(slug),
          {:ok, message} <-
            Rooms.post_message(%{"room" => room.slug, "body" => conn.body_params["body"]},
-             actor: conn.assigns.actor
+             actor: conn.assigns.actor,
+             context: %{client_key: ClientAddress.client_key(conn)}
            ) do
       conn |> put_status(:created) |> json(%{message: present(message)})
     else

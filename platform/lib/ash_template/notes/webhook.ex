@@ -29,6 +29,7 @@ defmodule AshTemplate.Notes.Webhook do
            json: %{event: "note.saved", note_id: note_id, revision: revision},
            headers: [{"webhook-id", "#{note_id}:#{revision}"}],
            retry: false,
+           redirect: false,
            receive_timeout: 10_000
          ) do
       {:ok, %{status: status}} when status in 200..299 -> :ok

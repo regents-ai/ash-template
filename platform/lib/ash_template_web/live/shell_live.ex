@@ -142,11 +142,16 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
+  # A search of the saved notes and messages spends the address's search
+  # allowance; past it, the last results stay.
   def handle_event("search", %{"q" => query}, socket) do
     query = String.trim(query)
 
-    {:noreply,
-     assign(socket, :search, %{query: query, results: search(query, human_actor(socket))})}
+    if query == "" or AshTemplate.Limits.spend(:search_address, socket.assigns.client_key) == :ok,
+      do:
+        {:noreply,
+         assign(socket, :search, %{query: query, results: search(query, human_actor(socket))})},
+      else: {:noreply, socket}
   end
 
   # The first question starts a conversation; the next ones continue it. The

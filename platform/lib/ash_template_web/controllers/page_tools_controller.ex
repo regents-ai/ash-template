@@ -17,7 +17,7 @@ defmodule AshTemplateWeb.PageToolsController do
   alias AshTemplate.{Notes, Rooms}
   alias AshTemplate.Notes.Note
   alias AshTemplate.Rooms.{Message, Room}
-  alias AshTemplateWeb.NotesJSON
+  alias AshTemplateWeb.{ClientAddress, NotesJSON}
 
   plug :put_actor
 
@@ -107,7 +107,10 @@ defmodule AshTemplateWeb.PageToolsController do
   end
 
   defp post(conn, actor, room) do
-    case Rooms.post_message(Map.put(conn.body_params, "room", room.slug), actor: actor) do
+    case Rooms.post_message(Map.put(conn.body_params, "room", room.slug),
+           actor: actor,
+           context: %{client_key: ClientAddress.client_key(conn)}
+         ) do
       {:ok, message} -> conn |> put_status(:created) |> json(%{message: message(message)})
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
       {:error, _error} -> refuse(conn, "unavailable")

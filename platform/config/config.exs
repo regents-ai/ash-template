@@ -90,8 +90,15 @@ config :ash_template, :note_labels,
   daily_questions: 500,
   person_daily_questions: 50
 
-# How many messages one person or agent may post across the rooms each window.
-config :ash_template, :room_post_rate_limit, limit: 10, window_seconds: 60
+# How often one person or agent may save each kind of writing, and how often one
+# client address may post or search, each window (AshTemplate.Limits).
+config :ash_template, :limits,
+  room_post: [limit: 10, window_seconds: 60],
+  room_post_address: [limit: 30, window_seconds: 60],
+  note: [limit: 30, window_seconds: 60],
+  chat_message: [limit: 10, window_seconds: 60],
+  search_address: [limit: 300, window_seconds: 60],
+  wallet_read: [limit: 30, window_seconds: 60]
 
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false
