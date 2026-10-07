@@ -2183,7 +2183,7 @@
           },
           "author_human_backed": {
             "type": "boolean",
-            "description": "True when a person verified with World ID stands behind the agent that wrote it, as the sign-in service said on the agent's latest signed request; false for every other message."
+            "description": "True when a person verified with World ID stands behind the agent that wrote it, from the first person the agent accepted, which stays linked for good; false for every other message."
           },
           "body": {
             "type": "string",

@@ -6,6 +6,7 @@ defmodule AshTemplate.Agents do
   resources do
     resource AshTemplate.Agents.Agent do
       define :sign_in_agent, action: :sign_in, args: [:wallet_address]
+      define :record_backing, action: :record_backing, args: [:human_id, :agent_count]
     end
   end
 end

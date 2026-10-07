@@ -5,8 +5,9 @@ defmodule AshTemplate.Agents.Agent do
 
   When a person verified with World ID stands behind the wallet in World's AgentBook,
   and the wallet has accepted that person, the sign-in service says so on every signed
-  request. Each request keeps its answer: the person's anonymous World ID number and how
-  many agent wallets they stand behind, or neither.
+  request. The first such answer links that person to the wallet for good: a later
+  answer naming nobody, or someone else, changes nothing. Each answer naming them
+  updates how many agent wallets they stand behind.
   """
 
   use Ash.Resource,
@@ -36,10 +37,8 @@ defmodule AshTemplate.Agents.Agent do
     end
 
     # The person's anonymous World ID number; the same person's agents share it.
-    attribute :world_id_human_id, :string do
-      public? true
-      constraints match: ~r/\A0x[0-9a-f]{64}\z/
-    end
+    # Only `record_backing` writes it, from its checked `human_id`.
+    attribute :world_id_human_id, :string, public?: true
 
     # How many agent wallets, this one included, that person stands behind.
     attribute :world_id_agent_count, :integer do
@@ -57,20 +56,44 @@ defmodule AshTemplate.Agents.Agent do
   actions do
     defaults [:read]
 
-    # The wallet's agent, added on its first signed request, with the World ID
-    # answer of this request.
+    # The wallet's agent, added on its first signed request.
     create :sign_in do
       argument :wallet_address, :string, allow_nil?: false
-      accept [:world_id_human_id, :world_id_agent_count]
       upsert? true
       upsert_identity :unique_wallet_address
-      upsert_fields [:world_id_human_id, :world_id_agent_count]
+      upsert_fields []
       change set_attribute(:wallet_address, arg(:wallet_address))
+    end
+
+    # The World ID person a signed request names. Both expressions read the row as
+    # it was, in the one statement, so two requests at once cannot replace the
+    # first person.
+    update :record_backing do
+      argument :human_id, :string do
+        allow_nil? false
+        constraints match: ~r/\A0x[0-9a-f]{64}\z/
+      end
+
+      argument :agent_count, :integer, allow_nil?: false, constraints: [min: 1]
+
+      change atomic_update(
+               :world_id_agent_count,
+               expr(
+                 if is_nil(world_id_human_id) or world_id_human_id == ^arg(:human_id),
+                   do: ^arg(:agent_count),
+                   else: world_id_agent_count
+               )
+             )
+
+      change atomic_update(
+               :world_id_human_id,
+               expr(if is_nil(world_id_human_id), do: ^arg(:human_id), else: world_id_human_id)
+             )
     end
   end
 
   policies do
-    policy action(:sign_in) do
+    policy action([:sign_in, :record_backing]) do
       authorize_if actor_attribute_equals(:role, :system)
     end
 

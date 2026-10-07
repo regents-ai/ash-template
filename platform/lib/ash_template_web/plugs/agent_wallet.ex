@@ -87,8 +87,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
         },
         _context
       ) do
-    case Agents.sign_in_agent(address, world_id(book), actor: %System{}) do
-      {:ok, agent} -> {:ok, assign(conn, :actor, Agent.for_agent(agent))}
+    with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}),
+         {:ok, agent} <- record_backing(agent, book) do
+      {:ok, assign(conn, :actor, Agent.for_agent(agent))}
+    else
       {:error, _error} -> refused(:agent_unavailable)
     end
   end
@@ -96,11 +98,11 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   def accept(_conn, _data, _context), do: refused(:unsupported_principal)
 
   # The person World ID says stands behind the wallet, once the wallet has accepted
-  # them; null otherwise, which clears what an earlier request kept.
-  defp world_id(%{"humanId" => human_id, "agentCount" => count}),
-    do: %{world_id_human_id: human_id, world_id_agent_count: count}
+  # them. Null names nobody and changes nothing: the link, once made, stays.
+  defp record_backing(agent, %{"humanId" => human_id, "agentCount" => count}),
+    do: Agents.record_backing(agent, human_id, count, actor: %System{})
 
-  defp world_id(nil), do: %{world_id_human_id: nil, world_id_agent_count: nil}
+  defp record_backing(agent, nil), do: {:ok, agent}
 
   @impl Siwa.AgentAuthPlug.Hooks
   def deny(conn, %{reason: reason}) when is_map_key(@refusals, reason) do
