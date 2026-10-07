@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.Plugs.AgentWallet do
   @moduledoc """
   Signs in an agent from its signed request. The agent signs in once with the
-  shared sign-in service (`regents auth login --site ash-template`) and signs
-  every request after that over its exact method, path and body. The service
+  shared sign-in service's agent client (https://siwa.regents.sh/skill.md) and
+  signs every request after that over its exact method, path and body. The service
   checks the signature and the sign-in (`Siwa.AgentAuthPlug`), so only a wallet
   it vouches for becomes the actor, as itself (`AshTemplate.Actors.Agent`).
   Cookies grant nothing here. Every refusal answers
@@ -21,7 +21,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   @audience "ash-template"
   @headers ~w(x-siwa-receipt signature signature-input x-key-id x-timestamp x-agent-wallet-address x-agent-chain-id content-digest)
-  @hint "Sign in with regents auth login --site ash-template, then send the command again."
+  @hint "Sign in with the agent client at https://siwa.regents.sh/skill.md, then send the request again."
 
   # Refusals made here, before or after the sign-in service answered.
   @refusals %{
