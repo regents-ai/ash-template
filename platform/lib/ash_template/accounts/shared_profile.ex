@@ -27,4 +27,10 @@ defmodule AshTemplate.Accounts.SharedProfile do
   actions do
     defaults [:read]
   end
+
+  policies do
+    policy always() do
+      forbid_if always()
+    end
+  end
 end
