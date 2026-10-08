@@ -999,3 +999,15 @@ Operations
   `x-siwa-signature-input`, the names the shared sign-in service checks
   (OpenAPI 1.7.0). The shared libraries move to elixir-utils 1f8670a, which
   changes only those header names.
+
+## 2026-10-08 — Signed headers come from the shared library
+
+- The template no longer names any signed agent header or reads a signed body
+  itself. The shared sign-in plug forwards only the signed headers, refuses one
+  sent twice, refuses a query string, and refuses a body it did not capture
+  whole (`Siwa.AgentAuthPlug.read_body/3`). It also tells an agent's request
+  from a person's (`Siwa.AgentAuthPlug.signed_request?/1`). The template keeps
+  its own wording for each refusal and one rule of its own: a signed body is JSON.
+- The shared libraries move to elixir-utils 44d3b35. It also brings Credits'
+  notice that a purchase was credited; the template answers it with nothing to
+  add (`AshTemplate.Credits.Credited`).

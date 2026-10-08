@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.SignedBodyReader do
 
   def read_body(conn, opts) do
     if signed?(conn),
-      do: read_signed(conn, opts),
+      do: Siwa.AgentAuthPlug.read_body(conn, opts, @limit),
       else: RegentIdentity.BodyReader.read_body(conn, opts)
   end
 
@@ -22,24 +22,4 @@ defmodule AshTemplateWeb.SignedBodyReader do
   end
 
   defp signed?(_conn), do: false
-
-  defp read_signed(conn, opts) do
-    opts = opts |> Keyword.put(:length, @limit) |> Keyword.put(:read_length, @limit + 1)
-
-    case Plug.Conn.read_body(conn, opts) do
-      {status, chunk, conn} when status in [:ok, :more] ->
-        body = Map.get(conn.assigns, :raw_body, "") <> chunk
-        if byte_size(body) > @limit, do: raise(Plug.Parsers.RequestTooLargeError)
-
-        conn =
-          conn
-          |> Plug.Conn.assign(:raw_body, body)
-          |> Plug.Conn.put_private(:signed_body_complete, status == :ok)
-
-        {status, chunk, conn}
-
-      other ->
-        other
-    end
-  end
 end

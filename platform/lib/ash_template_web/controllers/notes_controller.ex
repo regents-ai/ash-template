@@ -81,9 +81,9 @@ defmodule AshTemplateWeb.NotesController do
   defp authenticate(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
-    if get_req_header(conn, "x-siwa-signature-input") == [],
-      do: authenticate_person(conn),
-      else: authenticate_agent(conn)
+    if Siwa.AgentAuthPlug.signed_request?(conn),
+      do: authenticate_agent(conn),
+      else: authenticate_person(conn)
   end
 
   # An agent's signed request acts as the person it is paired with, or not at all.

@@ -19,10 +19,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   alias AshTemplate.{Accounts, Agents}
   alias AshTemplate.Actors.{Agent, Human, System}
 
-  @headers ~w(x-siwa-receipt x-siwa-signature x-siwa-signature-input x-key-id x-timestamp x-agent-wallet-address x-agent-chain-id content-digest)
   @hint "Sign in with the agent client at https://siwa.regents.sh/skill.md, then send the request again."
 
-  # Refusals made here, before or after the sign-in service answered.
+  # Refusals made here or by the shared plug, before or after the sign-in service
+  # answered.
   @refusals %{
     duplicate_proof: {401, "A signature header was sent more than once.", @hint},
     unsupported_query: {401, "A signed request here takes no query string.", @hint},
@@ -47,22 +47,18 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     )
   end
 
+  # The shared plug has already refused a query string and a body it did not
+  # capture whole. A body sent here is JSON.
   @impl Siwa.AgentAuthPlug.Hooks
   def before_verify(conn, _headers) do
-    repeated = conn.req_headers |> Enum.map(&elem(&1, 0)) |> Enum.frequencies()
-
-    cond do
-      Enum.any?(@headers, &(Map.get(repeated, &1, 0) > 1)) -> refused(:duplicate_proof)
-      conn.query_string != "" -> refused(:unsupported_query)
-      not signed_body?(conn) -> refused(:missing_signed_body)
-      true -> {:ok, nil}
-    end
+    if is_map_key(conn.assigns, :raw_body) and not json?(conn),
+      do: refused(:missing_signed_body),
+      else: {:ok, nil}
   end
 
   @impl Siwa.AgentAuthPlug.Client
   def verify_http_request(payload, _opts) do
-    Siwa.AgentAuthPlug.BrokerClient.verify_http_request(
-      Map.update!(payload, "headers", &Map.take(&1, @headers)),
+    Siwa.AgentAuthPlug.BrokerClient.verify_http_request(payload,
       http: __MODULE__,
       base_url: Application.fetch_env!(:regent_agents, :siwa)[:url],
       audience: RegentAgents.Broker.audience(),
@@ -168,23 +164,12 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     |> halt()
   end
 
-  # A read or a delete is signed with no body at all; anything else signs its JSON.
-  defp signed_body?(%{method: method} = conn) when method in ["GET", "DELETE"],
-    do:
-      not is_map_key(conn.assigns, :raw_body) and
-        get_req_header(conn, "content-length") in [[], ["0"]]
-
-  defp signed_body?(conn), do: signed_json?(conn)
-
-  defp signed_json?(%{assigns: %{raw_body: body}, private: %{signed_body_complete: true}} = conn)
-       when is_binary(body) do
+  defp json?(conn) do
     case get_req_header(conn, "content-type") do
       [type] -> type |> String.split(";", parts: 2) |> hd() |> String.trim() == "application/json"
       _other -> false
     end
   end
-
-  defp signed_json?(_conn), do: false
 
   defp refused(reason), do: {:error, %{reason: reason, source: :agent_wallet}}
 end
