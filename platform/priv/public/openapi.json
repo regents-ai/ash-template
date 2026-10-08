@@ -1810,7 +1810,7 @@
       "post": {
         "operationId": "pairAgent",
         "summary": "Pair this agent with a person's account",
-        "description": "Joins the signing agent to the account that issued the one-time pairing code. Sign the request with your SIWA key for the audience regents. A code works once and expires ten minutes after it was made.",
+        "description": "Joins the signing agent to the account that issued the one-time pairing code. Sign the request with your SIWA key for the audience ash-template. A code works once and expires ten minutes after it was made.",
         "security": [],
         "parameters": [
           {

@@ -1018,3 +1018,11 @@ Operations
 - `mix test` now also credits a Credits purchase through the site's
   `on_credited` module. Without that setting a site never credits a purchase,
   and nothing shows it until a person pays. The template now has two tests.
+
+## 2026-10-08 — Pairing names the right audience and setting
+
+- The OpenAPI description of `POST /api/agents/v1/pair` told agents to sign for
+  the audience `regents`. This site checks pairing signatures for
+  `ash-template`, so it now says that.
+- The README named a setting that does not exist (`:agent_sign_in`) as the place
+  the sign-in service's address lives; it is `config :regent_agents, siwa:`.
