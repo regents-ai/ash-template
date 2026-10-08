@@ -188,5 +188,5 @@ config :regent_points,
   program_id: "regents-points-v1",
   starts_at: nil,
   approved_rules: [],
-  adapters: %{},
+  adapters: %{"credits.purchase_settled" => AshTemplate.Points.CreditsPurchase},
   nft_tracking_enabled: false
