@@ -959,3 +959,9 @@ Operations
 - The rename example in `README.md` and `scripts/init.sh` is now a made-up
   two-word product, `night_owl` / `NightOwl` / "Night Owl", so it still shows how
   each spelling of a two-word name is written.
+
+## 2026-10-08 — Sign-in works again
+
+- Signing in raised an error from 5 October: after sign-in saves the account it
+  loads the name and picture again, and the account had no primary read to load
+  them through. The account now has one, open only to the site itself.

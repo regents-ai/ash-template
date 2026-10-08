@@ -57,6 +57,12 @@ defmodule AshTemplate.Accounts.HumanAccount do
   end
 
   actions do
+    # Loading the name and picture after sign-in writes the account reads it
+    # again through the primary read.
+    read :read do
+      primary? true
+    end
+
     read :by_privy_did do
       get? true
       argument :privy_did, :string, allow_nil?: false
@@ -88,7 +94,7 @@ defmodule AshTemplate.Accounts.HumanAccount do
   end
 
   policies do
-    policy action([:by_privy_did, :register_verified, :refresh_verified]) do
+    policy action([:read, :by_privy_did, :register_verified, :refresh_verified]) do
       authorize_if actor_attribute_equals(:role, :system)
     end
 
