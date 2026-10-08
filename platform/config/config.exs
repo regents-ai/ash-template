@@ -98,7 +98,8 @@ config :ash_template, :limits,
   note: [limit: 30, window_seconds: 60],
   chat_message: [limit: 10, window_seconds: 60],
   search_address: [limit: 300, window_seconds: 60],
-  wallet_read: [limit: 30, window_seconds: 60]
+  wallet_read: [limit: 30, window_seconds: 60],
+  credits_report: [limit: 120, window_seconds: 60]
 
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false
