@@ -1032,3 +1032,9 @@ Operations
   `ash-template`, so it now says that.
 - The README named a setting that does not exist (`:agent_sign_in`) as the place
   the sign-in service's address lives; it is `config :regent_agents, siwa:`.
+
+## 2026-10-08 — regent_points joins the required-fixes registry
+
+- `regent_points` (elixir-utils, sparse `points`) is listed under `managed` in
+  `security/required-fixes.json`, so every site that uses Regent Points can pass
+  `make check-required-fixes`.
