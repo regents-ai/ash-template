@@ -17,6 +17,7 @@ defmodule AshTemplateWeb.ChatLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Chat
   alias AshTemplateWeb.FormErrors
+  alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -24,6 +25,7 @@ defmodule AshTemplateWeb.ChatLive do
   def mount(socket) do
     {:ok,
      socket
+     |> Session.check_component_events()
      |> assign(
        actor: nil,
        conversation: nil,
@@ -50,10 +52,10 @@ defmodule AshTemplateWeb.ChatLive do
   # The shell renders this with every update of its own, so the list is read
   # again only for a different person, and the messages only for a different
   # conversation.
-  def update(%{id: id, account: account, conversation: conversation}, socket) do
+  def update(%{id: id, lease: lease, account: account, conversation: conversation}, socket) do
     actor = account && Human.for_account(account)
     previous = {socket.assigns.actor, conversation_id(socket.assigns.conversation)}
-    socket = assign(socket, id: id, conversation: conversation)
+    socket = assign(socket, id: id, lease: lease, conversation: conversation)
 
     socket =
       if actor == socket.assigns.actor,

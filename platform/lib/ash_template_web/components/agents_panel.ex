@@ -9,24 +9,27 @@ defmodule AshTemplateWeb.AgentsPanel do
   shared by every Regent site, so an agent paired on another one is listed
   here too.
 
-  The parent passes `account` (the signed-in account) and `id`, and sends
+  The parent passes `account` (the signed-in account), its `session_lease` as
+  `lease` and `id`, and sends
   `agents_changed: true` when an agent pairs, checks in or is unpaired anywhere.
   """
   use AshTemplateWeb, :live_component
 
+  alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
   alias RegentAgents.{Harness, PairingCode, Person}
 
   @impl true
-  def mount(socket), do: {:ok, assign(socket, pairing: nil, notice: nil)}
+  def mount(socket),
+    do: {:ok, socket |> Session.check_component_events() |> assign(pairing: nil, notice: nil)}
 
   @impl true
   def update(%{agents_changed: true}, socket), do: {:ok, read_agents(socket)}
 
-  def update(%{account: account, id: id}, socket) do
+  def update(%{account: account, id: id, lease: lease}, socket) do
     {:ok,
      socket
-     |> assign(id: id, person: %Person{privy_user_id: account.privy_user_id})
+     |> assign(id: id, lease: lease, person: %Person{privy_user_id: account.privy_user_id})
      |> read_agents()}
   end
 

@@ -288,6 +288,7 @@ defmodule AshTemplateWeb.ShellLive do
         <.live_component
           module={AshTemplateWeb.CreditsPanel}
           id="credits-panel"
+          lease={@session_lease}
           account={current_account(@access_context)}
           balance={@balance}
         />
@@ -309,6 +310,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :notes}
           module={NotesLive}
           id="notes"
+          lease={@session_lease}
           account={current_account(@access_context)}
         />
 
@@ -316,6 +318,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :room}
           module={RoomsLive}
           id="rooms"
+          lease={@session_lease}
           account={current_account(@access_context)}
           room={@room}
           people={@people}
@@ -325,12 +328,14 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :chat}
           module={ChatLive}
           id="chat"
+          lease={@session_lease}
           account={current_account(@access_context)}
           conversation={@conversation}
         />
 
         <AccountLive.profile
           :if={@route_spec.route_id == :account}
+          lease={@session_lease}
           account={current_account(@access_context)}
           account_control={@account_control}
           credits={@credits}

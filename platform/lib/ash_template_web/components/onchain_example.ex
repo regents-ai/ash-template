@@ -6,13 +6,14 @@ defmodule AshTemplateWeb.OnchainExample do
 
   "Record" sends a transaction that succeeds, "Fail on purpose" one the chain
   turns down, and "Sign" asks for an EIP-712 signature. None of it moves value.
-  The parent passes `linked` (the signed-in account's wallets, `nil` signed out)
-  and `chain`; the hook reports Privy's active wallet, which acts only when the
+  The parent passes `linked` (the signed-in account's wallets, `nil` signed out),
+  `chain` and its `session_lease` as `lease`; the hook reports Privy's active wallet, which acts only when the
   account links it.
   """
   use AshTemplateWeb, :live_component
 
   alias AshTemplate.ChainClient
+  alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
   alias RegentChain.{Call, Review}
@@ -27,13 +28,14 @@ defmodule AshTemplateWeb.OnchainExample do
   def mount(socket) do
     {:ok,
      socket
+     |> Session.check_component_events()
      |> OnchainSteps.init()
      |> assign(active: nil, amount: "1", balance: nil, signer: nil, signed: nil)}
   end
 
   @impl true
   def update(assigns, socket) do
-    {:ok, socket |> assign(Map.take(assigns, [:id, :linked, :chain])) |> sync()}
+    {:ok, socket |> assign(Map.take(assigns, [:id, :lease, :linked, :chain])) |> sync()}
   end
 
   @impl true

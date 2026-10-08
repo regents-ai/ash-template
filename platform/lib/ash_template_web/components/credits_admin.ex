@@ -12,6 +12,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
 
   require Ash.Query
 
+  alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
   alias RegentCredits.{Amount, Chains, Purchase, Refund}
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
@@ -22,7 +23,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
   @impl true
   def mount(socket) do
     {:ok,
-     assign(socket,
+     socket
+     |> Session.check_component_events()
+     |> assign(
        gift_key: Ecto.UUID.generate(),
        gift_note: nil,
        search: "",

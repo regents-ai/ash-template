@@ -73,6 +73,7 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
           <.live_component
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
+            lease={@session_lease}
             linked={AccessContext.linked_wallets(@access_context)}
             chain={@chain}
           />

@@ -151,6 +151,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
           <.live_component
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
+            lease={@session_lease}
             linked={if @signed_in, do: @linked}
             chain={@chain}
           />

@@ -19,6 +19,7 @@ defmodule AshTemplateWeb.NotesLive do
   alias AshTemplate.Notes
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplateWeb.FormErrors
+  alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -26,6 +27,7 @@ defmodule AshTemplateWeb.NotesLive do
   def mount(socket) do
     {:ok,
      socket
+     |> Session.check_component_events()
      |> assign(actor: nil, notes: %Read{}, form: nil, editing: nil, notice: nil)
      |> stream(:notes, [])
      |> stream(:note_links, [], dom_id: &"note-link-#{&1.id}")}
@@ -36,9 +38,9 @@ defmodule AshTemplateWeb.NotesLive do
 
   # The shell renders this with every update of its own, so the notes are read
   # again only when the person behind them changes.
-  def update(%{id: id, account: account}, socket) do
+  def update(%{id: id, lease: lease, account: account}, socket) do
     actor = account && Human.for_account(account)
-    socket = assign(socket, :id, id)
+    socket = assign(socket, id: id, lease: lease)
 
     if actor == socket.assigns.actor,
       do: {:ok, socket},

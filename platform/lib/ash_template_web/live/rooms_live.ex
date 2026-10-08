@@ -20,6 +20,7 @@ defmodule AshTemplateWeb.RoomsLive do
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Mute}
   alias AshTemplateWeb.FormErrors
+  alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -32,6 +33,7 @@ defmodule AshTemplateWeb.RoomsLive do
   def mount(socket) do
     {:ok,
      socket
+     |> Session.check_component_events()
      |> assign(
        actor: nil,
        room: nil,
@@ -55,9 +57,9 @@ defmodule AshTemplateWeb.RoomsLive do
 
   # The shell renders this with every update of its own, so the room is read
   # again only when the room or the person reading it changes.
-  def update(%{id: id, account: account, room: room, people: people}, socket) do
+  def update(%{id: id, lease: lease, account: account, room: room, people: people}, socket) do
     actor = account && Human.for_account(account)
-    socket = assign(socket, id: id, people: people)
+    socket = assign(socket, id: id, lease: lease, people: people)
 
     if {actor, room} == {socket.assigns.actor, socket.assigns.room},
       do: {:ok, socket},

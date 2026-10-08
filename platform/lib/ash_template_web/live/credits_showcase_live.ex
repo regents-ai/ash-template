@@ -259,6 +259,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
           <.live_component
             module={AshTemplateWeb.CreditsPanel}
             id="credits-panel"
+            lease={@session_lease}
             account={@account}
             balance={@balance}
           />
@@ -269,6 +270,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
           <.live_component
             module={AshTemplateWeb.CreditsAgentSpending}
             id="credits-agents"
+            lease={@session_lease}
             actor={@owner}
             agents={@agents}
             sites={@agent_sites}
@@ -286,7 +288,12 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
             Run the site with <code>REGENT_CREDITS_ADMINS=did:privy:credits-lab-admin</code>
             to act as the lab admin; until then every action here is refused.
           </p>
-          <.live_component module={AshTemplateWeb.CreditsAdmin} id="credits-admin" actor={@admin} />
+          <.live_component
+            module={AshTemplateWeb.CreditsAdmin}
+            id="credits-admin"
+            lease={@session_lease}
+            actor={@admin}
+          />
         </section>
 
         <section class="rg-panel rg-panel--surface">

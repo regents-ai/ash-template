@@ -13,11 +13,12 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   use AshTemplateWeb, :live_component
 
   alias AshTemplateWeb.FormErrors
+  alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
   alias RegentCredits.AgentPermission
 
   @impl true
-  def mount(socket), do: {:ok, assign(socket, saved: nil)}
+  def mount(socket), do: {:ok, socket |> Session.check_component_events() |> assign(saved: nil)}
 
   @impl true
   def update(assigns, socket) do

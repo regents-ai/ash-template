@@ -14,6 +14,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   alias AshTemplate.PublicIdentity
 
+  attr :lease, :map, required: true
   attr :account, :map, default: nil
   attr :account_control, :map, required: true
   attr :credits, Decimal, default: nil
@@ -78,7 +79,12 @@ defmodule AshTemplateWeb.AccountLive do
           </p>
         </section>
 
-        <.live_component module={AshTemplateWeb.AgentsPanel} id="account-agents" account={@account} />
+        <.live_component
+          module={AshTemplateWeb.AgentsPanel}
+          id="account-agents"
+          lease={@lease}
+          account={@account}
+        />
 
         <section class="account-panel account-session" aria-labelledby="account-session-title">
           <h2 id="account-session-title">Session</h2>

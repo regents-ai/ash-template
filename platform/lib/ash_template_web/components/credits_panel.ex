@@ -17,11 +17,13 @@ defmodule AshTemplateWeb.CreditsPanel do
   presses and outcomes.
 
   The parent passes `account` (the signed-in account), its `balance`
-  (`RegentCredits.balance/1`, kept current by the parent) and `id`.
+  (`RegentCredits.balance/1`, kept current by the parent), its `session_lease`
+  as `lease` and `id`.
   """
   use AshTemplateWeb, :live_component
 
   alias AshTemplate.{ChainClient, Credits, Limits}
+  alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
   alias RegentChain.{Call, Presses, Review}
@@ -35,6 +37,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   def mount(socket) do
     {:ok,
      socket
+     |> Session.check_component_events()
      |> OnchainSteps.init()
      |> assign(
        active: nil,
@@ -57,6 +60,7 @@ defmodule AshTemplateWeb.CreditsPanel do
      socket
      |> assign(
        id: assigns.id,
+       lease: assigns.lease,
        account: account,
        balance: assigns.balance,
        linked: wallets(account)
