@@ -1012,10 +1012,12 @@ Operations
   (id 53180b09…6060) is the one every SIWA client and verifier follows. It also
   brings Credits' notice that a purchase was credited; the template answers it
   with nothing to add (`AshTemplate.Credits.Credited`).
-- `@regents_ref` moves to Regents a6ce561a. An agent's check-in
+- `@regents_ref` moves to Regents 81d6200e. An agent's check-in
   (`GET /api/agents/v1/me`) now checks the signature before anything else, so a
-  request with a query string is refused rather than told it is not paired. A
-  person may also hold several live pairing codes at once.
+  request with a query string is refused (`unsupported_query`) rather than told
+  it is not paired. Pairing and check-in answer the shared plug's refusals with
+  the same codes as the rest of the site. A person may also hold several live
+  pairing codes at once.
 
 ## 2026-10-08 — A Credits test
 
