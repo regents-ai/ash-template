@@ -14,6 +14,8 @@ changes, nested data, field exposure and background execution.
 [Operator actions](references/operator-actions.md) covers who an operator is, staff
 pages, release commands that change live data, the record they leave and development
 tools.
+[Component session check](references/component-session-check.md) covers LiveComponents,
+whose events skip the page's session re-check.
 
 Explicit Ash options can replace scope-derived values: `actor: nil` may erase the
 scope's actor. Inspect wrapper defaults and keyword merges. In callbacks, propagate

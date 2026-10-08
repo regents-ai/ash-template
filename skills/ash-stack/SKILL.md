@@ -12,6 +12,15 @@ Before building or reviewing, run elixir-stack's design check: name the standard
 tool (Ash, Ecto, Oban, Phoenix, OTP) for each moving part. Code that rebuilds one is
 a defect, however correct it is.
 
+## Shared work across the five Ash sites (founder rule, 8 Oct 2026)
+
+Regents, Patchbay, Keyfleet, Autolaunch and Techtree are five similar Ash sites. Site-specific work stays in the site's monorepo. Anything shared goes in two places, in this order:
+
+1. **The shared component library** (`repos/design-system`, the `regent_ui` pin, and the shared Elixir packages in `repos/elixir-utils`): components, primitives, CSS tokens, and library code every site uses.
+2. **`repos/ash-template`**: the reference implementation that wires those pieces into a working site (pages, resources, policies, WebMCP tools, skills).
+
+Then, before building a feature in a site monorepo: **check whether ash-template already implements it, use that implementation, and improve it there if it falls short.** Never fork a second copy of a shared feature into one site. When a site needs something the template lacks, the change lands in the library and the template first, then the site re-pins. The ash-template chief owns the template and the shared skills; coordinate the change with that thread.
+
 | Work | Reference |
 | --- | --- |
 | Resources, actions and domain interfaces | [ash-backend](../ash-backend/SKILL.md) |
