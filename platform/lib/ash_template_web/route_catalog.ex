@@ -61,6 +61,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     ],
     settings: [
       %RouteTarget{route_id: :account, label: "Profile", path: "/account"},
+      %RouteTarget{route_id: :points, label: "Points", path: "/account/points"},
       %RouteTarget{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
       %RouteTarget{route_id: :connections, label: "Connections", path: "/account/connections"}
     ]
@@ -105,6 +106,9 @@ defmodule AshTemplateWeb.RouteCatalog do
        %{route_id: :chat, destination: "/chat/:conversation_id", page_display_label: "Chat"}},
     account:
       {:settings, %{route_id: :account, destination: "/account", page_display_label: "Profile"}},
+    points:
+      {:settings,
+       %{route_id: :points, destination: "/account/points", page_display_label: "Points"}},
     wallets:
       {:settings,
        %{route_id: :wallets, destination: "/account/wallets", page_display_label: "Wallets"}},

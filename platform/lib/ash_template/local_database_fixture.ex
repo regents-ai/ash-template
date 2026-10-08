@@ -16,6 +16,7 @@ defmodule AshTemplate.LocalDatabaseFixture do
     RegentCredits.Migrator.up(AshTemplate.Repo)
     RegentIdentity.Migrator.up(AshTemplate.Repo)
     RegentAgents.Migrator.up(AshTemplate.Repo)
+    RegentPoints.Migrator.up(AshTemplate.Repo)
   end
 
   # The tables this repository reads but does not own, in the shape local

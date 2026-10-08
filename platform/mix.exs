@@ -59,6 +59,7 @@ defmodule AshTemplate.MixProject do
       # regent_credits names regent_chain by a sibling path; this pin replaces it.
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},
+      {:regent_points, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "points"},
       {:regent_credits, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits"},
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
       # ens_elixir names siwa by a sibling path; this pin replaces it.

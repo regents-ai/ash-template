@@ -62,11 +62,14 @@ config :ash_template, Oban,
   notifier: Oban.Notifiers.PG,
   queues: [
     default: 5,
+    points: 5,
+    points_chain: 2,
     outside_calls: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10],
     regent_credits: 3
   ],
+  # Regents alone runs RegentPoints.WatchTransfers, the shared NFT transfer watcher.
   cron: [crontab: []],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]
@@ -173,3 +176,17 @@ config :sentry,
 config :phoenix, :json_library, Jason
 
 import_config "#{config_env()}.exs"
+
+# Points launch is explicit: nothing earns until Sean sets the rules and start time.
+# Every site reads the one shared regent_points schema; Regents owns its migrations.
+config :regent_points,
+  repo: AshTemplate.Repo,
+  pubsub: AshTemplate.PubSub,
+  accounts: AshTemplate.Points.Accounts,
+  chain_client: AshTemplate.ChainClient,
+  ash_domains: [RegentPoints],
+  program_id: "regents-points-v1",
+  starts_at: nil,
+  approved_rules: [],
+  adapters: %{},
+  nft_tracking_enabled: false

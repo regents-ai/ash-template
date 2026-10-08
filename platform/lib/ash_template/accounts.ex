@@ -5,6 +5,8 @@ defmodule AshTemplate.Accounts do
 
   resources do
     resource AshTemplate.Accounts.HumanAccount do
+      define :points_account, action: :points_account, args: [:id]
+      define :points_wallet_holders, action: :points_wallet_holders, args: [:wallets]
       define :get_by_privy_did, action: :by_privy_did, args: [:privy_did], not_found_error?: false
       define :get_human_account, action: :read_self, args: [:id]
 

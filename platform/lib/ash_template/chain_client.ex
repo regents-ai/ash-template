@@ -9,6 +9,7 @@ defmodule AshTemplate.ChainClient do
   """
 
   @behaviour RegentCredits.ChainClient
+  @behaviour RegentPoints.ChainClient
 
   @doc "The transaction sent as `hash`, or `nil` while the chain does not know it."
   @impl RegentCredits.ChainClient
@@ -34,6 +35,7 @@ defmodule AshTemplate.ChainClient do
   end
 
   @doc "One JSON-RPC request to the node; one that gets no answer counts in `health.chain_request_failures.total`."
+  @impl RegentPoints.ChainClient
   def rpc(%{chain_id: chain_id} = chain, method, params) do
     url = :ash_template |> Application.fetch_env!(:chain_nodes) |> Map.fetch!(chain_id)
 

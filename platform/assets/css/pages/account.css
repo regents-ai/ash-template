@@ -297,3 +297,9 @@
   overflow-wrap: anywhere;
   border: 1px solid var(--color-border);
 }
+
+/* The Points page's refresh note keeps its space while unseen, so a failed
+   refresh never moves the panels below it. */
+.points-stale[data-unseen] {
+  visibility: hidden;
+}

@@ -71,6 +71,7 @@ defmodule AshTemplateWeb.ShellLive do
        conversation: nil,
        chat_topics: MapSet.new(),
        verified_connections: %Read{},
+       points: %Read{},
        verified_connections_notice: nil,
        connection_outcome: nil,
        notifications: %Read{},
@@ -96,6 +97,7 @@ defmodule AshTemplateWeb.ShellLive do
      socket
      |> assign(PublicDocuments.page(page_path(action, uri)))
      |> assign(:route_spec, route_spec)
+     |> load_points(route_spec)
      |> load_verified_connections(route_spec)
      |> load_notifications(route_spec)
      |> assign(:search, unsearched())
@@ -196,6 +198,10 @@ defmodule AshTemplateWeb.ShellLive do
   def handle_info(%{topic: "notifications:" <> _}, socket) do
     {:noreply, socket |> count_unread() |> load_notifications(socket.assigns.route_spec)}
   end
+
+  # A points award or correction landed for this account; the Points page follows.
+  def handle_info(%{topic: "points:" <> _}, socket),
+    do: {:noreply, load_points(socket, socket.assigns.route_spec)}
 
   # The balance changed on this or any Regent site: a purchase, a gift, a spend.
   # The header, the Buy Credits panel and the Account page follow.
@@ -341,6 +347,12 @@ defmodule AshTemplateWeb.ShellLive do
           credits={@credits}
         />
 
+        <AshTemplateWeb.PointsLive.page
+          :if={@route_spec.route_id == :points}
+          account={current_account(@access_context)}
+          points={@points}
+        />
+
         <AccountLive.wallets
           :if={@route_spec.route_id == :wallets}
           account={current_account(@access_context)}
@@ -358,6 +370,7 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp subscribe_to_own_topics(%{principal: {:human, account}}) do
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, "points:#{account.id}")
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Note.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Mute.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
@@ -638,6 +651,20 @@ defmodule AshTemplateWeb.ShellLive do
     commit = Application.fetch_env!(:ash_template, :running_version)[:commit]
     "#{Application.spec(:ash_template, :vsn)} (#{commit})"
   end
+
+  defp load_points(socket, %{route_id: :points}) do
+    case human_actor(socket) do
+      %Human{} = actor ->
+        Read.start(socket, :points, actor.human_account_id, fn ->
+          RegentPoints.summary(actor: actor)
+        end)
+
+      nil ->
+        Read.clear(socket, :points)
+    end
+  end
+
+  defp load_points(socket, _), do: Read.clear(socket, :points)
 
   defp load_verified_connections(socket, %{route_id: :connections}),
     do: read_verified_connections(socket)

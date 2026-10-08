@@ -63,6 +63,21 @@ defmodule AshTemplate.Accounts.HumanAccount do
       primary? true
     end
 
+    read :points_account do
+      get? true
+      argument :id, :integer, allow_nil?: false
+      filter expr(id == ^arg(:id))
+    end
+
+    read :points_wallet_holders do
+      argument :wallets, {:array, :string}, allow_nil?: false
+
+      filter expr(
+               wallet_address in ^arg(:wallets) or
+                 fragment("? && ?::text[]", wallet_addresses, ^arg(:wallets))
+             )
+    end
+
     read :by_privy_did do
       get? true
       argument :privy_did, :string, allow_nil?: false
@@ -90,11 +105,19 @@ defmodule AshTemplate.Accounts.HumanAccount do
       require_atomic? false
       validate present(:wallet_addresses)
       change load([:display_name, :ens_name, :ens_avatar_url])
+      change AshTemplate.Points.TrackWallets
     end
   end
 
   policies do
-    policy action([:read, :by_privy_did, :register_verified, :refresh_verified]) do
+    policy action([
+             :read,
+             :by_privy_did,
+             :register_verified,
+             :refresh_verified,
+             :points_account,
+             :points_wallet_holders
+           ]) do
       authorize_if actor_attribute_equals(:role, :system)
     end
 
