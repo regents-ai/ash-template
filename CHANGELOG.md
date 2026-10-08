@@ -986,3 +986,9 @@ Operations
 - `mix ash_template.setup_local_auth` now prepares the test database as well as
   the development one, starting only the database connection, and `mix test`
   runs it first.
+
+## 2026-10-08 — Open account reads in light mode
+
+- The "Open account" button on the signed-in home page showed no words in light
+  mode: the app frame gave every link the colour of the text around it, which
+  beat the button's own. Links drawn as buttons now keep the button's colour.

@@ -29,7 +29,7 @@ defmodule AshTemplateWeb.OverviewLive do
         >
           <h2 id="overview-signed-in-title">Signed in as {@account_control.label}</h2>
           <p>Your wallets and connected accounts are on your account page.</p>
-          <.link patch="/account" class="rg-button">
+          <.link patch="/account" class="rg-button rg-button--primary">
             <span class="rg-button__label">Open account</span>
           </.link>
         </section>

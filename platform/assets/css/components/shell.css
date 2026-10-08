@@ -61,7 +61,8 @@
   outline-offset: -2px;
 }
 
-#app-shell a {
+/* A link drawn as a button keeps the button's own text colour. */
+#app-shell a:not(.rg-button) {
   color: inherit;
 }
 
