@@ -3,11 +3,18 @@ defmodule Mix.Tasks.AshTemplate.SetupLocalAuth do
 
   @shortdoc "Prepares the guarded local Ash Template database"
 
+  # Only the database connection runs, so a database without the job tables yet
+  # can still be brought up to date; `mix test` runs this first.
   @impl true
   def run(_args) do
-    unless Mix.env() == :dev, do: Mix.raise("local auth setup is dev only")
-    Mix.Task.run("app.start")
-    AshTemplate.LocalDatabaseFixture.ensure_human_accounts!()
+    unless Mix.env() in [:dev, :test], do: Mix.raise("local database setup is dev and test only")
+    Mix.Task.run("app.config")
+
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(AshTemplate.Repo, fn _repo ->
+        AshTemplate.LocalDatabaseFixture.ensure_human_accounts!()
+      end)
+
     Mix.shell().info("Local Ash Template database is ready.")
   end
 end

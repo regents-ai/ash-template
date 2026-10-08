@@ -109,6 +109,7 @@ defmodule AshTemplate.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "cmd npm ci", "assets.setup", "assets.build"],
+      test: ["ash_template.setup_local_auth", "test"],
       "assets.setup": ["esbuild.install --if-missing"],
       "assets.build": [
         "compile",

@@ -93,7 +93,8 @@ current provider callbacks/state rather than stale React captures.
 
 ## Browser checks before release
 
-The template carries no automated tests. Before a sign-in change ships, a person
+The template's one automated test (`mix test`) covers only the server step that
+saves the account after sign-in. Before a sign-in change ships, a person also
 runs these cases in a browser, with real Privy and a browser-extension wallet, on
 an origin the Privy application admits, and says in the report which were run:
 

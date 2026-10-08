@@ -977,3 +977,12 @@ Operations
   build their actor from it, as regents.sh hands them.
 - The Credits and wallet labs act for stand-in accounts, so they pass no session
   lease.
+
+## 2026-10-08 — One sign-in test
+
+- `mix test` signs a person in, then back in with a wallet added, on the local
+  `ash_template_test` database, and fails if sign-in raises again. It is the
+  template's only automated test.
+- `mix ash_template.setup_local_auth` now prepares the test database as well as
+  the development one, starting only the database connection, and `mix test`
+  runs it first.

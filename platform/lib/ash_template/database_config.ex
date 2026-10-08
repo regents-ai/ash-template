@@ -44,6 +44,18 @@ defmodule AshTemplate.DatabaseConfig do
     end
   end
 
+  def runtime_config!(:test, getenv) do
+    [
+      username: getenv.("USER"),
+      password: nil,
+      hostname: "127.0.0.1",
+      port: 5432,
+      database: "ash_template_test",
+      pool: Ecto.Adapters.SQL.Sandbox,
+      pool_size: 5
+    ]
+  end
+
   def release_config!(getenv \\ &System.get_env/1) do
     role = deployment_role!(getenv)
     if role == :production, do: require_production_target!(getenv)

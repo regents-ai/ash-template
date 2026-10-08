@@ -5,7 +5,7 @@ defmodule AshTemplate.LocalDatabaseFixture do
     repo = AshTemplate.Repo.config()
 
     unless to_string(repo[:hostname]) in ["127.0.0.1", "::1"] and
-             String.ends_with?(to_string(repo[:database]), "_dev") do
+             String.ends_with?(to_string(repo[:database]), ["_dev", "_test"]) do
       raise "local human-account fixture refused unsafe database target"
     end
 
