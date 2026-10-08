@@ -72,6 +72,7 @@ defmodule AshTemplateWeb.ShellLive do
        chat_topics: MapSet.new(),
        verified_connections: %Read{},
        points: %Read{},
+       points_earning: [],
        verified_connections_notice: nil,
        connection_outcome: nil,
        notifications: %Read{},
@@ -351,6 +352,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :points}
           account={current_account(@access_context)}
           points={@points}
+          earning={@points_earning}
         />
 
         <AccountLive.wallets
@@ -653,6 +655,8 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp load_points(socket, %{route_id: :points}) do
+    socket = assign(socket, :points_earning, RegentPoints.Rules.active())
+
     case human_actor(socket) do
       %Human{} = actor ->
         Read.start(socket, :points, actor.human_account_id, fn ->

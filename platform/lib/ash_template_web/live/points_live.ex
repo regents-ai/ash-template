@@ -4,6 +4,7 @@ defmodule AshTemplateWeb.PointsLive do
   alias RegentPoints.{Amount, Rules}
   attr :account, :map, default: nil
   attr :points, AshTemplateWeb.Read, required: true
+  attr :earning, :list, required: true, doc: "the catalog rules earning now"
 
   def page(assigns) do
     ~H"""
@@ -42,24 +43,18 @@ defmodule AshTemplateWeb.PointsLive do
               <dt>Confirmed</dt><dd>{Amount.format(@points.value.balance_micro)}</dd>
             </div>
             <div>
-              <dt>Earned today (UTC)</dt><dd>{Amount.format(@points.value.earned_today_micro)}</dd>
+              <dt>Earned today</dt><dd>{Amount.format(@points.value.earned_today_micro)}</dd>
             </div>
             <div>
               <dt>Activity being verified</dt><dd>{@points.value.pending}</dd>
             </div>
           </dl>
-          <p :if={@points.value.active_rules == []}>
-            Points earning has not opened yet.
-          </p>
         </section>
         <section class="account-panel account-details">
           <h2>
             Your bonus
             <Regent.Primitives.tip id="points-bonus-about" label="About your points bonus">
               Animata I, Animata II and Regents Club count across your verified linked wallets.
-              <span :for={{minimum, percent} <- Enum.reverse(RegentPoints.Bonus.tiers())}>
-                {minimum}+ NFTs: +{percent}%.
-              </span>
               The highest tier applies once to base points awarded after limits, including
               one-time awards. Each award keeps the tier from the time of the action.
               Transfers change future bonuses, not earlier awards.
@@ -75,7 +70,7 @@ defmodule AshTemplateWeb.PointsLive do
             Last checked: {Calendar.strftime(@points.value.nft_checked_at, "%d %b %Y %H:%M UTC")}.
           </p>
         </section>
-        <section :if={@points.value.active_rules != []} class="account-panel account-details">
+        <section :if={@earning != []} class="account-panel account-details">
           <h2>
             Daily base allowances
             <Regent.Primitives.tip id="points-allowances-about" label="About daily allowances">
@@ -96,7 +91,7 @@ defmodule AshTemplateWeb.PointsLive do
           <ol>
             <li :for={entry <- @points.value.entries}>
               <p>
-                {String.capitalize(entry.source_app)} · {Rules.label(entry.rule_id)} · {actor_name(
+                {Rules.label(entry.rule_id)} · {actor_name(
                   entry,
                   @points.value.agent_names
                 )}
@@ -123,8 +118,124 @@ defmodule AshTemplateWeb.PointsLive do
           <p :if={@points.value.more?}>Showing the latest 50 entries.</p>
         </section>
       </div>
+      <section id="points-earn" class="account-panel points-earn">
+        <h2>What earns points</h2>
+        <p :if={@earning == []} role="status">Earning hasn’t opened yet.</p>
+        <h3>Every day</h3>
+        <table class="points-table">
+          <thead>
+            <tr>
+              <th scope="col">Action</th><th scope="col">Points</th><th scope="col">Limit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={rule <- daily(Rules.catalog())}>
+              <th scope="row">
+                {Rules.label(rule["id"])}<.not_yet rule={rule} earning={@earning} />
+              </th>
+              <td>{points(rule)}</td>
+              <td>{limit(rule)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Once</h3>
+        <table class="points-table">
+          <thead>
+            <tr>
+              <th scope="col">Action</th><th scope="col">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={rule <- once(Rules.catalog())}>
+              <th scope="row">
+                {Rules.label(rule["id"])}<.not_yet rule={rule} earning={@earning} />
+              </th>
+              <td>{points(rule)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="account-details points-earn__notes">
+          <div>
+            <h3>Daily limits</h3>
+            <dl>
+              <div>
+                <dt>You</dt>
+                <dd>Up to {whole(Rules.daily_cap("activity:human"))} a day on {apps()}</dd>
+              </div>
+              <div>
+                <dt>Your agents, together</dt>
+                <dd>Up to {whole(Rules.daily_cap("activity:agent"))} a day on {apps()}</dd>
+              </div>
+            </dl>
+          </div>
+          <div>
+            <h3>NFT bonus</h3>
+            <p>
+              Animata I, Animata II and Regents Club in your linked wallets. Only your highest tier counts, after limits.
+            </p>
+            <table class="points-table">
+              <thead>
+                <tr>
+                  <th scope="col">NFTs</th><th scope="col">Bonus</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={{nfts, percent} <- tiers()}>
+                  <th scope="row">{nfts}</th><td>+{percent}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </article>
     """
+  end
+
+  attr :rule, :map, required: true
+  attr :earning, :list, required: true
+
+  defp not_yet(assigns) do
+    ~H"""
+    <span :if={@earning != [] and @rule not in @earning} class="points-earn__soon">Not yet</span>
+    """
+  end
+
+  defp daily(catalog), do: Enum.filter(catalog, &(&1["category"] in ["credits", "activity"]))
+  defp once(catalog), do: Enum.filter(catalog, &(&1["category"] == "milestone"))
+
+  defp points(%{"category" => "credits", "micro_points_per_atomic_usdc" => rate}),
+    do: "#{whole(rate * 1_000_000)} per USDC"
+
+  defp points(%{"points" => points}), do: points
+
+  defp limit(%{"category" => "credits", "daily_caps_micro" => caps}),
+    do: "Up to #{whole(caps["credits"])} a day"
+
+  defp limit(%{"count" => 1}), do: "Once a day"
+  defp limit(%{"count" => 2}), do: "Twice a day"
+  defp limit(%{"count" => count}), do: "#{count} times a day"
+
+  defp whole(micro), do: div(micro, Rules.unit())
+
+  defp apps, do: Rules.activity_apps() |> Enum.map(&String.capitalize/1) |> names()
+
+  defp names([name]), do: name
+
+  defp names(names) do
+    {last, rest} = List.pop_at(names, -1)
+    Enum.join(rest, ", ") <> " and " <> last
+  end
+
+  # Ascending tiers, each running up to the next one's minimum.
+  defp tiers do
+    ascending = Enum.sort(RegentPoints.Bonus.tiers())
+    next = Enum.map(Enum.drop(ascending, 1), &elem(&1, 0)) ++ [nil]
+
+    Enum.zip_with(ascending, next, fn
+      {minimum, percent}, nil -> {"#{minimum}+", percent}
+      {minimum, percent}, upper -> {"#{minimum}–#{upper - 1}", percent}
+    end)
   end
 
   defp actor_name(%{actor_kind: "human"}, _names), do: "You"
