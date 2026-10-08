@@ -992,3 +992,10 @@ Operations
 - The "Open account" button on the signed-in home page showed no words in light
   mode: the app frame gave every link the colour of the text around it, which
   beat the button's own. Links drawn as buttons now keep the button's colour.
+
+## 2026-10-08 — Agents sign with x-siwa-signature
+
+- A signed agent request now carries its signature in `x-siwa-signature` and
+  `x-siwa-signature-input`, the names the shared sign-in service checks
+  (OpenAPI 1.7.0). The shared libraries move to elixir-utils 1f8670a, which
+  changes only those header names.

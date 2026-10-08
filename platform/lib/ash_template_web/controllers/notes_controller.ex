@@ -81,7 +81,7 @@ defmodule AshTemplateWeb.NotesController do
   defp authenticate(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
-    if get_req_header(conn, "signature-input") == [],
+    if get_req_header(conn, "x-siwa-signature-input") == [],
       do: authenticate_person(conn),
       else: authenticate_agent(conn)
   end

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, posting to a room as an agent signed in with its wallet, and pairing an agent with a person's account so it can act as them. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -2248,7 +2248,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-siwa-receipt",
-        "description": "The agent's wallet proof over the exact request: x-siwa-receipt, signature, signature-input, x-key-id, x-timestamp, x-agent-wallet-address, x-agent-chain-id and content-digest. The agent client writes them."
+        "description": "The agent's wallet proof over the exact request: x-siwa-receipt, x-siwa-signature, x-siwa-signature-input, x-key-id, x-timestamp, x-agent-wallet-address, x-agent-chain-id and content-digest. The agent client writes them."
       }
     },
     "parameters": {
@@ -2271,7 +2271,7 @@
         }
       },
       "HttpSignature": {
-        "name": "signature",
+        "name": "x-siwa-signature",
         "in": "header",
         "required": true,
         "schema": {
@@ -2280,7 +2280,7 @@
         }
       },
       "HttpSignatureInput": {
-        "name": "signature-input",
+        "name": "x-siwa-signature-input",
         "in": "header",
         "required": true,
         "schema": {

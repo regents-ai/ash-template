@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   alias AshTemplate.{Accounts, Agents}
   alias AshTemplate.Actors.{Agent, Human, System}
 
-  @headers ~w(x-siwa-receipt signature signature-input x-key-id x-timestamp x-agent-wallet-address x-agent-chain-id content-digest)
+  @headers ~w(x-siwa-receipt x-siwa-signature x-siwa-signature-input x-key-id x-timestamp x-agent-wallet-address x-agent-chain-id content-digest)
   @hint "Sign in with the agent client at https://siwa.regents.sh/skill.md, then send the request again."
 
   # Refusals made here, before or after the sign-in service answered.
