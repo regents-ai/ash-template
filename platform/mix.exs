@@ -8,7 +8,7 @@ defmodule AshTemplate.MixProject do
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "4da6db2bfe3559a8f8a761018dc099a28ab5f6a3"
   @regents "https://github.com/regents-ai/regents.git"
-  @regents_ref "d634da3cc5a0a975f5d3ff5d19a8c5443032a47c"
+  @regents_ref "a6ce561a8900379e82474ef442f15cf45f2ae3f6"
 
   def project do
     [
