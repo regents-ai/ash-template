@@ -1008,8 +1008,8 @@ Operations
   whole (`Siwa.AgentAuthPlug.read_body/3`). It also tells an agent's request
   from a person's (`Siwa.AgentAuthPlug.signed_request?/1`). The template keeps
   its own wording for each refusal and one rule of its own: a signed body is JSON.
-- The shared libraries move to elixir-utils de6c3e0, whose signing contract
-  (id 517e597b…4d4f) is the one every SIWA client and verifier follows. It also
+- The shared libraries move to elixir-utils fe3aa1d, whose signing contract
+  (id 53180b09…6060) is the one every SIWA client and verifier follows. It also
   brings Credits' notice that a purchase was credited; the template answers it
   with nothing to add (`AshTemplate.Credits.Credited`).
 
