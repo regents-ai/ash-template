@@ -10,7 +10,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
   It also shows the parts regents.sh hosts, signed in by stand-ins: the agent
   spending settings (as the lab account on regents.sh), an agent placing a hold
   here, the admin page (as the lab admin, when `REGENT_CREDITS_ADMINS` names
-  it) and the refund rules.
+  it) and the refund rules. Every part here acts for a stand-in, not for
+  whoever is signed in, so none gets the session lease.
   """
   use AshTemplateWeb, :live_view
 
@@ -63,8 +64,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
        topped_up: nil,
        agents: @agents,
        agent_sites: @agent_sites,
-       owner: Actor.person(@account.privy_user_id, @account.wallet_addresses, "regents"),
-       admin: Actor.admin(@admin),
+       admin_account: %{privy_user_id: @admin},
        admin?: @admin in Application.fetch_env!(:regent_credits, :admins),
        agent_hold: nil
      ), layout: false}
@@ -259,7 +259,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
           <.live_component
             module={AshTemplateWeb.CreditsPanel}
             id="credits-panel"
-            lease={@session_lease}
+            lease={nil}
             account={@account}
             balance={@balance}
           />
@@ -270,8 +270,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
           <.live_component
             module={AshTemplateWeb.CreditsAgentSpending}
             id="credits-agents"
-            lease={@session_lease}
-            actor={@owner}
+            lease={nil}
+            account={@account}
             agents={@agents}
             sites={@agent_sites}
           />
@@ -291,8 +291,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
           <.live_component
             module={AshTemplateWeb.CreditsAdmin}
             id="credits-admin"
-            lease={@session_lease}
-            actor={@admin}
+            lease={nil}
+            account={@admin_account}
           />
         </section>
 

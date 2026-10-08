@@ -39,7 +39,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events()
+     |> Session.check_component_events(&take_account/2)
      |> OnchainSteps.init()
      |> assign(
        active: nil,
@@ -60,14 +60,8 @@ defmodule AshTemplateWeb.CreditsPanel do
   def update(%{account: account} = assigns, socket) do
     {:ok,
      socket
-     |> assign(
-       id: assigns.id,
-       lease: assigns.lease,
-       account: account,
-       balance: assigns.balance,
-       linked: wallets(account)
-     )
-     |> sync()}
+     |> assign(id: assigns.id, lease: assigns.lease, balance: assigns.balance)
+     |> take_account(account)}
   end
 
   @impl true
@@ -373,6 +367,12 @@ defmodule AshTemplateWeb.CreditsPanel do
       {:ok, String.to_integer(hex, 16)}
     end
   end
+
+  # The account as the page gave it, or as it reads now before each event
+  # (`Session.check_component_events/2`): the wallets that may act and the
+  # review follow it.
+  defp take_account(socket, account),
+    do: socket |> assign(account: account, linked: wallets(account)) |> sync()
 
   defp wallets(account), do: Enum.map(account.wallet_addresses, &String.downcase/1)
 

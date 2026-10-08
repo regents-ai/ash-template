@@ -4,6 +4,8 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
   `AshTemplateWeb.OnchainExample` runs here as on a product page; a lab account
   (linking wallets A and B, or signed out) and the `OnchainLab` stand-in wallet
   app, whose wallets are the lab chain's first three accounts, replace the real ones.
+  The example acts for the lab account, not for whoever is signed in, so it
+  gets no session lease.
   """
   use AshTemplateWeb, :live_view
 
@@ -151,8 +153,8 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
           <.live_component
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
-            lease={@session_lease}
-            linked={if @signed_in, do: @linked}
+            lease={nil}
+            account={if @signed_in, do: %{wallet_addresses: @linked}}
             chain={@chain}
           />
         </section>

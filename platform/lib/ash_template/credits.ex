@@ -15,6 +15,9 @@ defmodule AshTemplate.Credits do
   @doc "The signed-in account, with the wallets its sign-in verified."
   def person(account), do: Actor.person(account.privy_user_id, account.wallet_addresses, @site)
 
+  @doc "The signed-in account as a Credits admin; the library's `:admins` setting decides if it is one."
+  def admin(account), do: Actor.admin(account.privy_user_id)
+
   @doc "The site's own server code."
   def site_actor, do: Actor.site(@site)
 end

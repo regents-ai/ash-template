@@ -6,13 +6,13 @@ defmodule AshTemplateWeb.OnchainExample do
 
   "Record" sends a transaction that succeeds, "Fail on purpose" one the chain
   turns down, and "Sign" asks for an EIP-712 signature. None of it moves value.
-  The parent passes `linked` (the signed-in account's wallets, `nil` signed out),
-  `chain` and its `session_lease` as `lease`; the hook reports Privy's active wallet, which acts only when the
-  account links it.
+  The parent passes `account` (the signed-in account, `nil` signed out), `chain`
+  and its `session_lease` as `lease`; the hook reports Privy's active wallet,
+  which acts only when the account links it.
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.ChainClient
+  alias AshTemplate.{AccessContext, ChainClient}
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
@@ -28,14 +28,15 @@ defmodule AshTemplateWeb.OnchainExample do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events()
+     |> Session.check_component_events(&take_account/2)
      |> OnchainSteps.init()
      |> assign(active: nil, amount: "1", balance: nil, signer: nil, signed: nil)}
   end
 
   @impl true
   def update(assigns, socket) do
-    {:ok, socket |> assign(Map.take(assigns, [:id, :lease, :linked, :chain])) |> sync()}
+    {:ok,
+     socket |> assign(Map.take(assigns, [:id, :lease, :chain])) |> take_account(assigns.account)}
   end
 
   @impl true
@@ -89,6 +90,14 @@ defmodule AshTemplateWeb.OnchainExample do
     do: {:noreply, assign(socket, balance: wei)}
 
   def handle_async(:balance, _unread, socket), do: {:noreply, assign(socket, balance: :unread)}
+
+  # The account as the page gave it, or as it reads now before each event
+  # (`Session.check_component_events/2`): the wallets that may act and the
+  # review follow it.
+  defp take_account(socket, account) do
+    linked = account |> AccessContext.for_account() |> AccessContext.linked_wallets()
+    socket |> assign(linked: linked) |> sync()
+  end
 
   # The review follows the signer and the form. With no eligible signer there is
   # no review, and figures for another wallet are not shown as the signer's.

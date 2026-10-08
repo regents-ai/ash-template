@@ -27,7 +27,7 @@ defmodule AshTemplateWeb.NotesLive do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events()
+     |> Session.check_component_events(&take_account/2)
      |> assign(actor: nil, notes: %Read{}, form: nil, editing: nil, notice: nil)
      |> stream(:notes, [])
      |> stream(:note_links, [], dom_id: &"note-link-#{&1.id}")}
@@ -103,6 +103,10 @@ defmodule AshTemplateWeb.NotesLive do
       failure -> {:noreply, assign(socket, :notice, notice(failure, "deleted"))}
     end
   end
+
+  # The account as it reads now, before each event
+  # (`Session.check_component_events/2`).
+  defp take_account(socket, account), do: assign(socket, :actor, Human.for_account(account))
 
   @impl true
   def render(assigns) do

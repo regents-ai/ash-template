@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
   @moduledoc """
   The wallet buttons on a real account, with a real wallet, on the `:wallet_chain`
   test network. `AshTemplateWeb.OnchainExample` runs here as on a product page,
-  with the signed-in account's own wallets from `AccessContext.linked_wallets/1`.
+  with the signed-in account, whose own wallets are the ones that act.
   """
   use AshTemplateWeb, :live_view
 
@@ -74,7 +74,7 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
             lease={@session_lease}
-            linked={AccessContext.linked_wallets(@access_context)}
+            account={current_account(@access_context)}
             chain={@chain}
           />
         </section>
@@ -82,6 +82,9 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
     </main>
     """
   end
+
+  defp current_account(%{principal: {:human, account}}), do: account
+  defp current_account(_access_context), do: nil
 
   defp account_line(:sign_in, _access_context), do: "Signed out. Sign in to use the buttons."
 

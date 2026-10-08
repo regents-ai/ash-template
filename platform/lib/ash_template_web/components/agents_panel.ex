@@ -21,7 +21,11 @@ defmodule AshTemplateWeb.AgentsPanel do
 
   @impl true
   def mount(socket),
-    do: {:ok, socket |> Session.check_component_events() |> assign(pairing: nil, notice: nil)}
+    do:
+      {:ok,
+       socket
+       |> Session.check_component_events(&take_account/2)
+       |> assign(pairing: nil, notice: nil)}
 
   @impl true
   def update(%{agents_changed: true}, socket), do: {:ok, read_agents(socket)}
@@ -29,9 +33,15 @@ defmodule AshTemplateWeb.AgentsPanel do
   def update(%{account: account, id: id, lease: lease}, socket) do
     {:ok,
      socket
-     |> assign(id: id, lease: lease, person: %Person{privy_user_id: account.privy_user_id})
+     |> assign(id: id, lease: lease)
+     |> take_account(account)
      |> read_agents()}
   end
+
+  # The account as the page gave it, or as it reads now before each event
+  # (`Session.check_component_events/2`).
+  defp take_account(socket, account),
+    do: assign(socket, person: %Person{privy_user_id: account.privy_user_id})
 
   @impl true
   def handle_event("issue_pairing_code", _params, socket),

@@ -965,3 +965,15 @@ Operations
 - Signing in raised an error from 5 October: after sign-in saves the account it
   loads the name and picture again, and the account had no primary read to load
   them through. The account now has one, open only to the site itself.
+
+## 2026-10-08 — Components act on the account as it is now
+
+- A component's session check now hands it the account as it reads at that
+  moment, and each component rebuilds the wallets and actor it acts with from
+  it (`Session.check_component_events/2`), so a wallet taken off the account in
+  another tab no longer counts on an open page until it reloads.
+- The Credits panel, the wallet buttons, the agents panel, notes, chat and rooms
+  do this; the Credits admin and agent-spending parts now take `account` and
+  build their actor from it, as regents.sh hands them.
+- The Credits and wallet labs act for stand-in accounts, so they pass no session
+  lease.

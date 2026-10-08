@@ -25,7 +25,7 @@ defmodule AshTemplateWeb.ChatLive do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events()
+     |> Session.check_component_events(&take_account/2)
      |> assign(
        actor: nil,
        conversation: nil,
@@ -103,6 +103,10 @@ defmodule AshTemplateWeb.ChatLive do
         {:noreply, assign(socket, :form, form)}
     end
   end
+
+  # The account as it reads now, before each event
+  # (`Session.check_component_events/2`).
+  defp take_account(socket, account), do: assign(socket, :actor, Human.for_account(account))
 
   @impl true
   def render(assigns) do

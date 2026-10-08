@@ -5,8 +5,8 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   Spending starts off for every agent. Only regents.sh/account shows this; the
   Credits library saves it only for a person signed in there.
 
-  The host passes `actor` (the signed-in person, `RegentCredits.Actor` with
-  site "regents"), `agents` (the wallet addresses of the agents linked to the
+  The host passes `account` (the signed-in account), its `session_lease` as
+  `lease`, `agents` (the wallet addresses of the agents linked to the
   account in the agents panel) and `sites` (`{site, label}` pairs an agent may
   spend on).
   """
@@ -15,22 +15,23 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
-  alias RegentCredits.AgentPermission
+  alias RegentCredits.{Actor, AgentPermission}
 
   @impl true
-  def mount(socket), do: {:ok, socket |> Session.check_component_events() |> assign(saved: nil)}
+  def mount(socket),
+    do: {:ok, socket |> Session.check_component_events(&take_account/2) |> assign(saved: nil)}
 
   @impl true
   def update(assigns, socket) do
-    saved =
-      Map.new(RegentCredits.agent_permissions!(actor: assigns.actor), &{&1.agent_address, &1})
+    socket =
+      socket |> assign(Map.take(assigns, [:id, :lease, :sites])) |> take_account(assigns.account)
 
+    actor = socket.assigns.actor
+    saved = Map.new(RegentCredits.agent_permissions!(actor: actor), &{&1.agent_address, &1})
     agents = Enum.map(assigns.agents, &String.downcase/1)
 
     {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(agents: agents, forms: Map.new(agents, &{&1, form(assigns.actor, &1, saved[&1])}))}
+     assign(socket, agents: agents, forms: Map.new(agents, &{&1, form(actor, &1, saved[&1])}))}
   end
 
   @impl true
@@ -57,6 +58,15 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
         {:noreply, socket |> put_form(agent, form) |> assign(saved: nil)}
     end
   end
+
+  # The account as the page gave it, or as it reads now before each event
+  # (`Session.check_component_events/2`). The library saves these settings only
+  # for a person signed in at regents.sh.
+  defp take_account(socket, account),
+    do:
+      assign(socket,
+        actor: Actor.person(account.privy_user_id, account.wallet_addresses, "regents")
+      )
 
   # The account and agent come from the page, never the form; sites only from the list offered.
   defp clean(params, agent, socket) do
