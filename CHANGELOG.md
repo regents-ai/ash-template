@@ -1011,3 +1011,9 @@ Operations
 - The shared libraries move to elixir-utils 44d3b35. It also brings Credits'
   notice that a purchase was credited; the template answers it with nothing to
   add (`AshTemplate.Credits.Credited`).
+
+## 2026-10-08 — A Credits test
+
+- `mix test` now also credits a Credits purchase through the site's
+  `on_credited` module. Without that setting a site never credits a purchase,
+  and nothing shows it until a person pays. The template now has two tests.

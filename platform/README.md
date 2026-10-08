@@ -233,7 +233,7 @@ system picks (`config/config.exs`), so sites run side by side without sharing 90
 lib/ash_template/       Ash domains: accounts, sign-in, legal documents
 lib/ash_template_web/   Endpoint, router, live pages, controllers, components
 lib/mix/tasks/          Local setup, contract sync and route-handoff checks
-test/                   The one sign-in test (see Checks)
+test/                   The sign-in and Credits tests (see Checks)
 contracts/              The OpenAPI contract
 config/                 Compile-time and runtime configuration
 assets/                 TypeScript and CSS, built with esbuild
@@ -261,10 +261,12 @@ npm run typecheck
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
 compile-connected `xref` graph under its limit, and verifies the Ash codegen
 and route handoff are current. `npm run typecheck` type-checks the TypeScript
-assets. The template carries one automated test (founder decisions, 2026-09-27 and
-2026-10-08): `mix test` signs a person in and back in, because sign-in once failed
-for three days unnoticed. It first brings the local `ash_template_test` database up
-to date. Check every other change in a browser against the development server.
+assets. The template carries two automated tests (founder decisions, 2026-09-27 and
+2026-10-08; the second assigned by the agent pairing thread on Sean's word, 2026-10-08).
+`mix test` signs a person in and back in, because sign-in once failed for three
+days unnoticed, and credits a Credits purchase through the site's `on_credited`
+module, because a site without one never credits a purchase. It first brings the
+local `ash_template_test` database up to date. Check every other change in a browser against the development server.
 
 ## Deployment
 
