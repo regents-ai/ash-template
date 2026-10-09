@@ -1096,3 +1096,13 @@ Operations
 - Removed the sign-in holdings refresh (`AshTemplate.Points.TrackWallets`), the
   `points_wallet_holders` account read, wallets in the Credits purchase facts and
   `nft_tracking_enabled`. Regents alone runs the tally; the template adds no cron.
+
+## 2026-10-09 — Points for an agent's first note
+
+- `template.first_agent_note` (10 points, once per person, "First note written by
+  your agent") now has a source: when a paired agent acting as its person creates
+  a note, the create action asks Regent Points, inside its transaction, to consider
+  it (`source_app` `template`, `source_kind` `note`, the note's id). Points'
+  check (`AshTemplate.Points.AgentNote`) counts it only while the agent that saved
+  it is still paired with the note's writer, and marks the award as that agent's.
+  Nothing earns until the rule is approved and the program starts.

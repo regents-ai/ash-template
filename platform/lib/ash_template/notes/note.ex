@@ -12,6 +12,9 @@ defmodule AshTemplate.Notes.Note do
 
   When the server can ask Jev, each save also asks which label fits the note
   (`AshTemplate.Notes.Decision`); `label_decision` is the latest one.
+
+  A note an agent writes for its person is offered to Regent Points
+  (`AgentNotePoints`).
   """
 
   use Ash.Resource,
@@ -22,6 +25,7 @@ defmodule AshTemplate.Notes.Note do
     extensions: [AshOban]
 
   alias AshTemplate.Notes.Note.{
+    AgentNotePoints,
     AskForLabel,
     AskingJev,
     DeliverWebhook,
@@ -96,6 +100,7 @@ defmodule AshTemplate.Notes.Note do
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       change AskForLabel, where: [AskingJev]
+      change AgentNotePoints, where: [present(:changed_by_agent_id)]
     end
 
     # The save allowance is counted before the statement, so an edit is not a

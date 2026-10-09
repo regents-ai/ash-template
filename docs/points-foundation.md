@@ -103,15 +103,17 @@ back together; an insert failure rolls back the action.
 The configured adapter verifies committed facts in the background. Invalid evidence
 and conflicting source identities receive a private, durable rejection audit.
 Events save the rule's Credits rate and daily caps; delayed awards use that snapshot.
-The template configures one adapter, for Credits purchases
-(`AshTemplate.Points.CreditsPurchase`). See the package README for the adapter
+The template configures two adapters: Credits purchases
+(`AshTemplate.Points.CreditsPurchase`) and a note an agent writes for its person
+(`AshTemplate.Points.AgentNote`, rule `template.first_agent_note`, source
+`template`/`note`, recorded by the note's create action). See the package README for the adapter
 contract, actor policy and migration instructions.
 
 ## Account Points page
 
 `/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
 site has an adapter for, so it never offers an action nothing records. Today that is
-Credits bought, plus the NFT bonus tiers and the tier the account's wallets hold now. The Once table and the daily limits appear
+Credits bought and "First note written by your agent", plus the NFT bonus tiers and the tier the account's wallets hold now. The Once table and the daily limits appear
 when the site records a rule of that kind. A site that adds an adapter shows its rule
 without changing the page.
 

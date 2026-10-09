@@ -192,4 +192,7 @@ config :regent_points,
   program_id: "regents-points-v1",
   starts_at: nil,
   approved_rules: [],
-  adapters: %{"credits.purchase_settled" => AshTemplate.Points.CreditsPurchase}
+  adapters: %{
+    "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
+    "template.first_agent_note" => AshTemplate.Points.AgentNote
+  }
