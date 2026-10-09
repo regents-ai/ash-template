@@ -9,8 +9,6 @@ defmodule AshTemplate.Points.Accounts do
 
   @impl true
   def human(id), do: Accounts.points_account!(id, actor: %System{})
-  @impl true
-  def wallet_holders(wallets), do: Accounts.points_wallet_holders!(wallets, actor: %System{})
 
   @impl true
   def agent_names(_id, []), do: {:ok, %{}}

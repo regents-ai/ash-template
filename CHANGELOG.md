@@ -1080,3 +1080,14 @@ Operations
 - The Credits lab at `/showcase/credits` runs against one local copy of Base
   (`ASH_TEMPLATE_BASE_NODE_URL`). Its stand-in account now carries an id, so
   picking a lab wallet reads its funds instead of stopping the page.
+
+## 2026-10-09 — Points NFT bonus at the month-end tally
+
+- Sean, HQ thread, 2026-10-09 04:56Z, item 6: the NFT bonus is no longer saved
+  with each award. `/account/points` shows the tier the account's linked wallets
+  hold now, read from Base once per page open ("3 NFTs now · +45% at the
+  month-end tally"), and lists each month's bonus once Regents tallies it.
+  Awards show points only. Tiers are 1–2, 3–6 and 7+.
+- Removed the sign-in holdings refresh (`AshTemplate.Points.TrackWallets`), the
+  `points_wallet_holders` account read, wallets in the Credits purchase facts and
+  `nft_tracking_enabled`. Regents alone runs the tally; the template adds no cron.

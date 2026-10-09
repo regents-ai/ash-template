@@ -2,8 +2,7 @@
 
 The reference implementation uses `regent_points` from elixir-utils/points.
 The package owns the ledger, rules, NFT reads, jobs and migrations. The template
-supplies configuration, verified account callbacks, the wallet-refresh hook and
-Account Points page. Points and Credits remain separate.
+supplies configuration, verified account callbacks and the Account Points page. Points and Credits remain separate.
 
 ## Approved basis and caps
 
@@ -49,16 +48,16 @@ Different accounts alone do not prove independence. These adapters and pattern
 review remain launch requirements. Existing correction entries can invalidate
 awards without reopening limits.
 
-Capped awards show requested base, base actually awarded, NFT bonus and total.
-For example, a 20-point solution with 8 base points remaining at the 75% tier earns
-8 base + 6 bonus = 14, with 12 base points excluded by the cap.
+Capped awards show the points before limits and the points awarded. For example, a
+20-point solution with 8 points of allowance remaining earns 8, with 12 excluded by
+the cap.
 
-The proposed lifetime catalog totals **500 base points**:
+The proposed lifetime catalog totals **510 points**:
 
 | Group | Milestones | Total |
 | --- | --- | ---: |
 | Account | Activation 25; profile 10; verified email 5; X/GitHub/Farcaster 10 each; verified ENS selection 25 | 95 |
-| Agents | First verified pairing 10; first core action 25; first ERC-8004 registration 25 | 60 |
+| Agents | First verified pairing 10; first core action 25; first ERC-8004 registration 25; first note written by your agent 10 | 70 |
 | Apps | First core action in each of the five apps, 10 each | 50 |
 | Patchbay | First report 10; reply 10; solution 25; paid Assist 10; resolved priority report 15 | 70 |
 | Techtree | First signing key 10; first eligible non-demo publication 25 | 35 |
@@ -84,23 +83,21 @@ Combine the verified linked wallets' holdings across these Base collections:
 - Animata II: `0x903c4c1e8b8532fbd3575482d942d493eb9266e2`
 - Regents Club: `0x2208aadbdecd47d3b4430b5b75a175f6d885d487`
 
-1–4 NFTs add 20%; 5–9 add 45%; 10+ add 75%. The highest tier applies once, above
-base allowances and to one-time awards. The bonus uses only base points actually
-awarded after limits; tiers never stack. Daily awards total at most 250 base or
-437.5 with the top tier; the proposed 500-base milestone catalog can reach 875.
-Account count, tier and observation time are saved. Each award keeps its action-time
-verified wallet set and holdings, rather than processing-time ownership. Transfer processing refreshes both sender and receiver and stops on
-changed chain history. Transfers affect subsequent awards and do not reprice old
-ones. Account merging and automatic history repair remain deferred.
+1–2 NFTs add 20%; 3–6 add 45%; 7 or more add 75%. Awards save points only; the
+bonus is added once per program month, at the month-end tally (Sean, 9 October).
+The tier the account's wallets hold on the tally day applies once, without stacking,
+to the points earned that month after limits, one-time awards included. Regents
+runs the tally; each account and month gets one saved bonus row. The Points page
+shows the tier the wallets hold now as "+X% at the month-end tally", read from Base
+when the page opens and never saved. Daily earning is at most 250 points before the
+bonus. Account merging remains deferred.
 
 ## Source integration
 
 `RegentPoints.record_event/2` accepts a server-only source reference: `rule_id`,
-`source_app`, `source_kind`, `source_event_key`. Call it inside the source transaction
-and preserve that transaction's original result. Only an Oban job is inserted there.
-Statement savepoints isolate Points insertion errors. Source rollback removes the
-job; failed enqueue emits telemetry and returns `:not_queued` for reconciliation
-from saved source records, without repeating the user's action.
+`source_app`, `source_kind`, `source_event_key`. Call it inside the source transaction.
+Only an Oban job is inserted there, so the action and its Points job commit or roll
+back together; an insert failure rolls back the action.
 
 The configured adapter verifies committed facts in the background. Invalid evidence
 and conflicting source identities receive a private, durable rejection audit.
@@ -113,7 +110,7 @@ contract, actor policy and migration instructions.
 
 `/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
 site has an adapter for, so it never offers an action nothing records. Today that is
-Credits bought, plus the NFT bonus tiers. The Once table and the daily limits appear
+Credits bought, plus the NFT bonus tiers and the tier the account's wallets hold now. The Once table and the daily limits appear
 when the site records a rule of that kind. A site that adds an adapter shows its rule
 without changing the page.
 
@@ -124,14 +121,13 @@ The template has one Git dependency for Points, pinned with the same
 
 The shared migrations live only in elixir-utils/points/priv/repo/migrations.
 `RegentPoints.Migrator.up/1` uses a dedicated connection and shared migration history.
-Regents runs the production migrations and the NFT transfer watcher; other sites,
-the template included, only read and award. Schema changes require Sean's grant.
+Regents runs the production migrations and the month-end NFT bonus tally; other
+sites, the template included, only read and award. Schema changes require Sean's grant.
 The package ships one generated initial migration. Under Sean’s POINTS-8 approval,
 the old local Points fixture schema was backed up and rebuilt successfully.
 Canonical users, Credits, legacy queued jobs and other schemas were left intact.
 
-Earning and NFT tracking remain disabled: no start time or approved rules are
-configured. Before launch, settle per-action rates, implement trusted
-sources and complete live acceptance. Regents' RPC comes from its `chain_nodes[8453]` setting through chain client;
-it must support historical canonical reads and explicit `removed: false` in logs.
+Earning remains disabled: no start time or approved rules are configured. Before launch, settle per-action rates, implement trusted
+sources and complete live acceptance. The NFT reads use the latest Base block through the site's chain client
+(`chain_nodes[8453]`).
 Full Account filters/detail navigation remain separate work.

@@ -69,7 +69,7 @@ config :ash_template, Oban,
     conversations: [limit: 10],
     regent_credits: 3
   ],
-  # Regents alone runs RegentPoints.WatchTransfers, the shared NFT transfer watcher.
+  # Regents alone runs RegentPoints.TallyMonths, the shared month-end NFT bonus tally.
   cron: [crontab: []],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]
@@ -192,5 +192,4 @@ config :regent_points,
   program_id: "regents-points-v1",
   starts_at: nil,
   approved_rules: [],
-  adapters: %{"credits.purchase_settled" => AshTemplate.Points.CreditsPurchase},
-  nft_tracking_enabled: false
+  adapters: %{"credits.purchase_settled" => AshTemplate.Points.CreditsPurchase}

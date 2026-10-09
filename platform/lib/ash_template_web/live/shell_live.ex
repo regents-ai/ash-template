@@ -72,6 +72,7 @@ defmodule AshTemplateWeb.ShellLive do
        chat_topics: MapSet.new(),
        verified_connections: %Read{},
        points: %Read{},
+       points_bonus: %Read{},
        points_earning: [],
        verified_connections_notice: nil,
        connection_outcome: nil,
@@ -201,8 +202,13 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # A points award or correction landed for this account; the Points page follows.
-  def handle_info(%{topic: "points:" <> _}, socket),
-    do: {:noreply, load_points(socket, socket.assigns.route_spec)}
+  def handle_info(
+        %{topic: "points:" <> _},
+        %{assigns: %{route_spec: %{route_id: :points}}} = socket
+      ),
+      do: {:noreply, read_points(socket)}
+
+  def handle_info(%{topic: "points:" <> _}, socket), do: {:noreply, socket}
 
   # The balance changed on this or any Regent site: a purchase, a gift, a spend.
   # The header, the Buy Credits panel and the Account page follow.
@@ -352,6 +358,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :points}
           account={current_account(@access_context)}
           points={@points}
+          bonus={@points_bonus}
           earning={@points_earning}
         />
 
@@ -654,9 +661,17 @@ defmodule AshTemplateWeb.ShellLive do
     "#{Application.spec(:ash_template, :vsn)} (#{commit})"
   end
 
+  # The NFT tier is read from Base once per page open, never on each award notice.
   defp load_points(socket, %{route_id: :points}) do
-    socket = assign(socket, :points_earning, RegentPoints.Rules.active())
+    socket
+    |> assign(:points_earning, RegentPoints.Rules.active())
+    |> read_points()
+    |> read_points_bonus()
+  end
 
+  defp load_points(socket, _), do: socket |> Read.clear(:points) |> Read.clear(:points_bonus)
+
+  defp read_points(socket) do
     case human_actor(socket) do
       %Human{} = actor ->
         Read.start(socket, :points, actor.human_account_id, fn ->
@@ -668,7 +683,15 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  defp load_points(socket, _), do: Read.clear(socket, :points)
+  defp read_points_bonus(socket) do
+    case human_actor(socket) do
+      %Human{human_account_id: id} ->
+        Read.start(socket, :points_bonus, id, fn -> RegentPoints.Bonus.current(id) end)
+
+      nil ->
+        Read.clear(socket, :points_bonus)
+    end
+  end
 
   defp load_verified_connections(socket, %{route_id: :connections}),
     do: read_verified_connections(socket)
