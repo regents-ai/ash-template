@@ -69,12 +69,9 @@ defmodule AshTemplateWeb.CreditsPanel do
   def handle_event("change", %{"amount" => amount}, socket),
     do: {:noreply, socket |> assign(amount: amount) |> sync()}
 
-  # The page says which chain the wallet is on when the panel opens and each
-  # time it comes back into view, so the funds behind a disabled Buy are read
-  # again then.
-  def handle_event("wallet_chain", %{"chain_id" => id}, socket)
-      when is_integer(id) or is_nil(id),
-      do: {:noreply, read_funds(socket)}
+  # The page asks when the panel opens, when it comes back into view and after
+  # each press, so the funds behind a disabled Buy are read again then.
+  def handle_event("refresh_funds", _params, socket), do: {:noreply, read_funds(socket)}
 
   # A press made before the review caught up with the form: the form is taken
   # as the page's own, and the reply carries the review for it.
@@ -367,7 +364,7 @@ defmodule AshTemplateWeb.CreditsPanel do
       )
 
     ~H"""
-    <section id={@id} class="credits-panel" phx-hook="OnchainSteps" data-wallet-chain>
+    <section id={@id} class="credits-panel" phx-hook="OnchainSteps" data-refresh-funds>
       <header class="credits-panel__head">
         <dl
           id={"#{@id}-figures"}

@@ -1080,6 +1080,10 @@ Operations
 - The Credits lab at `/showcase/credits` runs against one local copy of Base
   (`ASH_TEMPLATE_BASE_NODE_URL`). Its stand-in account now carries an id, so
   picking a lab wallet reads its funds instead of stopping the page.
+- The wallet hook's Switch Chain handling is gone. A root marked
+  `data-refresh-funds` asks for `refresh_funds` when the wallet changes, when the
+  page comes back into view and after each press. Each send names its chain
+  (`chainId`), so a wallet that checks it refuses one that moved off Base.
 
 ## 2026-10-09 — Points NFT bonus at the end of each 30-day period
 
