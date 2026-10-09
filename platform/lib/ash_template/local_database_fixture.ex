@@ -13,10 +13,10 @@ defmodule AshTemplate.LocalDatabaseFixture do
     AshTemplate.Repo.migrate!(Application.app_dir(:ash_template, "priv/repo/migrations"))
     # Regents migrates the shared Credits ledger, profiles and agent pairings in
     # production; locally each site does.
-    RegentCredits.Migrator.up(AshTemplate.Repo)
-    RegentIdentity.Migrator.up(AshTemplate.Repo)
     RegentAgents.Migrator.up(AshTemplate.Repo)
+    RegentCredits.Migrator.up(AshTemplate.Repo)
     RegentPoints.Migrator.up(AshTemplate.Repo)
+    RegentIdentity.Migrator.up(AshTemplate.Repo)
   end
 
   # The tables this repository reads but does not own, in the shape local

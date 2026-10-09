@@ -18,7 +18,8 @@ defmodule AshTemplateWeb.SignedBodyReader do
   defp signed?(%{method: method, path_info: path}) when method in ["POST", "PATCH"] do
     match?(["api", "v1", "rooms", _room, "messages" | _rest], path) or
       match?(["api", "v1", "notes" | _rest], path) or
-      match?(["api", "agents", "v1" | _rest], path)
+      match?(["api", "agents", "v1" | _rest], path) or
+      match?(["tools" | _rest], path)
   end
 
   defp signed?(_conn), do: false

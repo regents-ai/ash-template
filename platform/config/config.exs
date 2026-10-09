@@ -3,6 +3,19 @@ import Config
 config :mdex_native, syntax_highlighter: :lumis
 # The chat page's free stand-in model (`AshTemplate.Chat.StandIn`).
 config :req_llm, custom_providers: [AshTemplate.Chat.StandIn]
+
+config :regent_points,
+  repo: AshTemplate.Repo,
+  pubsub: AshTemplate.PubSub,
+  ash_domains: [RegentPoints],
+  accounts: AshTemplate.Points.Accounts,
+  chain_client: AshTemplate.ChainClient,
+  program_id: "regents-points-v1",
+  starts_at: nil,
+  unified_activity_starts_at: nil,
+  approved_rules: [],
+  adapters: %{}
+
 config :regent_identity, repo: AshTemplate.Repo, ash_domains: [RegentIdentity]
 
 # Regent Credits: one prepaid balance per Privy account, shared by every Regent

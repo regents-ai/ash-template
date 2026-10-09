@@ -17,36 +17,61 @@ defmodule AshTemplate.Notes.Decision.AskJev do
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
-      # Runs in the background job with no person behind it; the decision names
-      # its own note, so reading that note is not a choice made by anyone.
-      %{note: note} = Ash.load!(changeset.data, :note, authorize?: false)
+      args = get_in(changeset.context, [:ash_oban, :job, Access.key(:args)]) || %{}
 
-      case RegentJev.decide(%{title: note.title, body: note.body}, Labels.questions(),
-             model: Labels.model()
-           ) do
-        {:ok, %{answers: %{"label" => answer}} = decision} ->
-          Ash.Changeset.force_change_attributes(changeset, %{
-            state: :answered,
-            choice: answer.choice,
-            confidence: answer.confidence,
-            model: decision.model,
-            input_tokens: decision.usage.input_tokens,
-            output_tokens: decision.usage.output_tokens,
-            cost_usd: decision.cost_usd
-          })
-
-        {:error, %Error{usage: %{} = usage} = error} ->
+      cond do
+        args["authority_version"] != 1 ->
           Ash.Changeset.force_change_attributes(changeset, %{
             state: :failed,
-            failure: Exception.message(error),
-            input_tokens: usage.input_tokens,
-            output_tokens: usage.output_tokens,
-            cost_usd: error.cost_usd
+            failure: "Legacy authority requires review"
           })
 
-        {:error, error} ->
-          Ash.Changeset.add_error(changeset, Exception.message(error))
+        changeset.data.pairing_id &&
+            not RegentAgents.Authority.active_episode?(
+              AshTemplate.Repo,
+              changeset.data.pairing_id
+            ) ->
+          Ash.Changeset.force_change_attributes(changeset, %{
+            state: :failed,
+            failure: "Agent pairing revoked"
+          })
+
+        true ->
+          ask(changeset)
       end
     end)
+  end
+
+  defp ask(changeset) do
+    # Runs in the background job with no person behind it; the decision names
+    # its own note, so reading that note is not a choice made by anyone.
+    %{note: note} = Ash.load!(changeset.data, :note, authorize?: false)
+
+    case RegentJev.decide(%{title: note.title, body: note.body}, Labels.questions(),
+           model: Labels.model()
+         ) do
+      {:ok, %{answers: %{"label" => answer}} = decision} ->
+        Ash.Changeset.force_change_attributes(changeset, %{
+          state: :answered,
+          choice: answer.choice,
+          confidence: answer.confidence,
+          model: decision.model,
+          input_tokens: decision.usage.input_tokens,
+          output_tokens: decision.usage.output_tokens,
+          cost_usd: decision.cost_usd
+        })
+
+      {:error, %Error{usage: %{} = usage} = error} ->
+        Ash.Changeset.force_change_attributes(changeset, %{
+          state: :failed,
+          failure: Exception.message(error),
+          input_tokens: usage.input_tokens,
+          output_tokens: usage.output_tokens,
+          cost_usd: error.cost_usd
+        })
+
+      {:error, error} ->
+        Ash.Changeset.add_error(changeset, Exception.message(error))
+    end
   end
 end

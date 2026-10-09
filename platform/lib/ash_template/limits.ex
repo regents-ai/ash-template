@@ -20,5 +20,6 @@ defmodule AshTemplate.Limits do
 
   @doc "Who an actor's writing counts against: the person, or the agent."
   def writer(%Human{human_account_id: id}), do: {:human, id}
+  def writer(%Agent{pairing: :active, human_account_id: id}), do: {:human, id}
   def writer(%Agent{agent_id: id}), do: {:agent, id}
 end

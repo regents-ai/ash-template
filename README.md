@@ -59,6 +59,14 @@ from, and the security fixes every Regent site must carry. `make check` fails wh
 a library is not pinned to an inspectable commit of its repository or lacks a fix. The
 [platform README](platform/README.md#shared-dependencies) explains both.
 
+Agent pairing also uses the shared [SIWA client](https://siwa.regents.sh/skill.md).
+Its local Touch ID page belongs to `siwa-server`, with the branded visual shell in
+`design-system/standalone/agent-key.html`; the Regents CLI embeds the same page.
+Do not copy it into a site's Phoenix app or elixir-utils. Keep the pairing guide in
+`platform/priv/public/llms.md` pointed at SIWA. On macOS, explain the local Touch ID
+step before opening it: the page confirms the passkey step, and the agent checks
+pairing separately with `me`. Updating SIWA's clients needs no site dependency pin.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). Vendored dependencies retain their own licenses.

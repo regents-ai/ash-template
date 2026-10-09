@@ -77,3 +77,5 @@ Thumbs.db
 
 # Fonts staged by mix regent_ui.assets, served through the existing fonts allowlist.
 /priv/static/fonts/regent-ui/
+
+/assets/vendor/regent_agent_access/

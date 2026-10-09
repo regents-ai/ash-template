@@ -30,12 +30,17 @@ defmodule AshTemplate.DatabaseConfig do
   def runtime_config!(:dev, getenv) do
     case remote_target(getenv) do
       :local ->
+        partition = getenv.("ASH_TEMPLATE_DEV_PARTITION") || ""
+
+        unless Regex.match?(~r/\A[a-z0-9_]*\z/, partition),
+          do: raise("invalid development partition")
+
         [
           username: getenv.("USER"),
           password: nil,
           hostname: "127.0.0.1",
           port: 5432,
-          database: "ash_template_dev",
+          database: "ash_template#{partition}_dev",
           pool_size: 2
         ]
 
@@ -45,12 +50,15 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   def runtime_config!(:test, getenv) do
+    partition = getenv.("MIX_TEST_PARTITION") || ""
+    unless Regex.match?(~r/\A[a-z0-9_]*\z/, partition), do: raise("invalid test partition")
+
     [
       username: getenv.("USER"),
       password: nil,
       hostname: "127.0.0.1",
       port: 5432,
-      database: "ash_template_test",
+      database: "ash_template#{partition}_test",
       pool: Ecto.Adapters.SQL.Sandbox,
       pool_size: 5
     ]

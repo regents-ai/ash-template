@@ -1,28 +1,36 @@
 defmodule AshTemplate.Points.AgentNote do
   @moduledoc """
   Regent Points' check of a note an agent wrote: it reads the saved note and
-  answers with what Points records. Only a note whose latest save was by an agent
-  still paired with the note's writer counts, for that writer, marked as the agent's.
+  answers with what Points records. Attribution uses the creation-time episode,
+  even after an edit, revocation or re-pairing. Old notes without that evidence
+  cannot be attributed by guessing from the current wallet owner.
   """
 
-  alias AshTemplate.Actors.System
-  alias AshTemplate.{Agents, Notes}
+  alias AshTemplate.Notes
 
   def verify(%{"source_event_key" => id}) do
     # No person is asking: Points' server check reads the committed note it was given.
-    case Notes.get_my_note(id, load: [:changed_by_agent, :human_account], authorize?: false) do
-      {:ok, %{changed_by_agent: %{} = agent} = note} -> with_pairing(note, agent)
+    case Notes.get_my_note(id, load: [:human_account], authorize?: false) do
+      {:ok, %{created_by_pairing_id: id} = note} when is_binary(id) -> with_pairing(note)
       {:ok, %{}} -> {:error, :note_not_by_agent}
       {:ok, nil} -> {:error, :note_not_found}
       {:error, reason} -> {:retry, reason}
     end
   end
 
-  defp with_pairing(note, agent) do
-    writer = note.human_account.privy_user_id
-
-    case Agents.get_pairing(agent.wallet_address, actor: %System{}) do
-      {:ok, %{privy_user_id: ^writer} = pairing} -> {:ok, facts(note, pairing)}
+  defp with_pairing(note) do
+    case Ecto.Adapters.SQL.query(
+           AshTemplate.Repo,
+           """
+           SELECT id FROM regent_agents.pairing_history
+           WHERE id = $1 AND privy_user_id = $2
+           """,
+           [
+             Ecto.UUID.dump!(note.created_by_pairing_id),
+             note.human_account.privy_user_id
+           ]
+         ) do
+      {:ok, %{rows: [[id]]}} -> {:ok, facts(note, %{id: Ecto.UUID.load!(id)})}
       {:ok, _} -> {:error, :agent_not_paired_with_writer}
       {:error, reason} -> {:retry, reason}
     end

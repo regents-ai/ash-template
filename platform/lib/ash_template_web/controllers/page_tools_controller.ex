@@ -3,17 +3,13 @@ defmodule AshTemplateWeb.PageToolsController do
   The doors behind the browser tools a page offers its own agent
   (`priv/tool_manifest.json`, `assets/js/public_tools.ts`).
 
-  They act as whoever the page's session cookie names, through the same code
-  interfaces and policies as the notes and room pages, so a tool can never do
-  more than the person could on the page. Writes carry the page's CSRF token.
-  Signed out, the notes tools and posting answer 401; reading a room needs no
-  sign-in. Every refusal answers `{"error": {"code", "message", "hint"}}`, with
-  `details` naming each field a save refused.
+  Every private read and write requires per-request SIWA proof and a current
+  pairing. Browser cookies grant no authority. Public room reads remain open.
   """
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Actors.Human
+  alias AshTemplate.Actors.Agent
   alias AshTemplate.{Notes, Rooms}
   alias AshTemplate.Notes.Note
   alias AshTemplate.Rooms.{Message, Room}
@@ -23,8 +19,14 @@ defmodule AshTemplateWeb.PageToolsController do
 
   @errors %{
     "authentication_required" =>
-      {401, "Nobody is signed in on this page.",
-       "Ask the person to sign in on the site, then call the tool again."},
+      {401, "A signed request from an actively paired agent is required.",
+       "Prepare the tool request, sign its exact bytes with the existing SIWA signer, then pass the request and proof."},
+    "agent_not_paired" =>
+      {403, "This authenticated agent is not paired with an account.",
+       "Ask your owner to sign in at /account and use Agents > Pair an agent. Redeem their code with the existing SIWA pairing flow at POST /api/agents/v1/pair, then retry with fresh proof."},
+    "person_not_here" =>
+      {403, "The paired owner has no account on this site yet.",
+       "Ask your owner to sign in at /account on this site, then retry with fresh proof."},
     "note_not_found" =>
       {404, "There is no note of yours with that id.", "List your notes with notes_list."},
     "invalid_note" =>
@@ -38,6 +40,84 @@ defmodule AshTemplateWeb.PageToolsController do
        "details says why: a body is 1 to 2,000 characters, and after several quick posts wait a minute."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
+
+  def balances(conn, _params) do
+    actor = credit_actor(conn)
+
+    permission =
+      RegentCredits.agent_permissions!(actor: actor)
+      |> Enum.find(
+        &(&1.agent_address == actor.agent_address and &1.pairing_id == actor.pairing_id)
+      )
+
+    budget =
+      if permission do
+        Map.take(permission, [:enabled, :max_per_spend, :daily_limit, :sites])
+        |> Map.put(:used_24h, RegentCredits.AgentSpending.spent_today(actor))
+      else
+        %{enabled: false}
+      end
+
+    json(conn, %{
+      account_id: conn.assigns.actor.human_account_id,
+      pairing_id: actor.pairing_id,
+      credits: RegentCredits.balance(actor.privy_user_id),
+      spending_grant: budget
+    })
+  end
+
+  def credits_history(conn, _params) do
+    args =
+      case conn.body_params do
+        %{"after" => cursor} when is_binary(cursor) -> %{after: cursor}
+        _ -> %{}
+      end
+
+    case RegentCredits.history(args, actor: credit_actor(conn)) do
+      {:ok, history} -> json(conn, history)
+      {:error, _} -> refuse(conn, "unavailable")
+    end
+  end
+
+  def points(conn, _params) do
+    case RegentPoints.summary(actor: conn.assigns.actor) do
+      {:ok, summary} ->
+        entries =
+          Enum.map(
+            summary.entries,
+            &Map.take(&1, [
+              :id,
+              :rule_id,
+              :rule_version,
+              :source_app,
+              :actor_kind,
+              :actor_id,
+              :points_micro_delta,
+              :earned_at,
+              :reason_code
+            ])
+          )
+
+        result =
+          Map.take(summary, [:balance_micro, :earned_today_micro, :pending, :allowances, :more?])
+
+        json(conn, Map.put(result, :entries, entries))
+
+      {:error, _} ->
+        refuse(conn, "unavailable")
+    end
+  end
+
+  defp credit_actor(conn) do
+    actor = conn.assigns.actor
+
+    RegentCredits.Actor.agent(
+      actor.privy_user_id,
+      actor.wallet_address,
+      AshTemplate.Credits.site(),
+      actor.pairing_id
+    )
+  end
 
   def notes(conn, _params) do
     signed_in(conn, fn conn, actor ->
@@ -87,11 +167,25 @@ defmodule AshTemplateWeb.PageToolsController do
   end
 
   defp put_actor(conn, _opts) do
-    account = conn.assigns.current_human_account
+    conn = put_resp_header(conn, "cache-control", "no-store")
 
-    conn
-    |> put_resp_header("cache-control", "no-store")
-    |> assign(:actor, account && Human.for_account(account))
+    if action_name(conn) == :room_messages do
+      assign(conn, :actor, nil)
+    else
+      case AshTemplateWeb.Plugs.AgentWallet.call(conn, []) do
+        %{halted: true} = conn ->
+          conn
+
+        %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
+          conn
+
+        %{assigns: %{actor: %Agent{} = actor}} = conn ->
+          conn |> refuse(AshTemplateWeb.Plugs.AgentWallet.not_person_code(actor)) |> halt()
+
+        conn ->
+          conn |> refuse("authentication_required") |> halt()
+      end
+    end
   end
 
   defp signed_in(%{assigns: %{actor: nil}} = conn, _respond),

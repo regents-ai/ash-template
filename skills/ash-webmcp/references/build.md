@@ -66,10 +66,10 @@ priv/tool_manifest.json ──► MyApp.Capabilities (compile time)
         └─► assets/js/webmcp/tools.ts ──► document.modelContext.registerTool
                                               │ execute(input, {signal})
                                               ▼
-                     fetch JSON route (same-origin cookie, CSRF, signal)
-                     or LiveView pushEvent with a reply (page-scoped tools)
+                     prepare exact request → existing SIWA signer
+                     → named JSON operation (credentials omitted, signal)
                                               ▼
-                     controller / LiveView ──► Domain code interface (actor: from session)
+                     SIWA verification → current pairing → Domain interface (user + agent)
                                               ▼
                                          Ash policies decide
 ```
@@ -82,7 +82,7 @@ from it; nothing is typed twice. Patchbay's `platform/priv/tool_manifest.json` w
 `Patchbay.Forum.Capabilities` is the working reference.
 
 Each entry: `name`, `title`, `description`, `input_schema`, `annotations`, plus the
-facts docs need: `requires` (`none`, `session`, `profile`, `wallet_signed`),
+facts docs need: `requires` (`none`, `siwa_and_pairing`),
 `state_changing`, `payment` (`none`, `moves_usdc`), the HTTP route behind it, and
 `scope` (`site` or the page that registers it). Include page-scoped tools and the
 shared profile tools too, so the published list never denies a tool a page registers.
@@ -220,3 +220,28 @@ two read-only site tools, `about` and `docs`, in `priv/tool_manifest.json`, read
 tools=(self)` set once in the endpoint. `/docs` and `/llms.txt` list the tools from the
 manifest, and `make readiness` checks the header, the manifest, the tools the page's
 script registers and both tables.
+
+## Unified Regent agent access (approved 9 October 2026)
+
+Every protected agent tool and CLI operation uses per-request SIWA signing with
+its existing signer. Public reads, discovery and pairing bootstrap remain public.
+Never use ambient Privy cookies as an agent-tool fallback. The server resolves
+current pairing and canonical user; retain the acting agent and enforce product
+ownership. Mutations lock the exact pairing in their transaction. Queued work
+rechecks before starting. Security, pairing and grant management remain owner-only.
+
+Use `elixir-utils/agent_access/assets/signed_tools.ts`, copied by
+`mix regent_agent_access.assets`, for manifest-restricted request preparation and
+exact-byte forwarding. Bind it to the server's configured trusted origin. It is
+transport only: signer access must be supplied and demonstrated by each runtime.
+No arbitrary URL/signing proxy, browser keys, replayed proofs or automatic retries.
+Keep logical operation IDs across retries. Preserve harmless unrelated headers by
+ignoring them; validate every authority-bearing proof header strictly.
+
+Reference source is ash-template. Its unified integration is unreleased until the
+native desktop/web-agent demonstration, shared pins and coordinated deployment
+pass. Source inspection and mocked broker tests are not native acceptance. Record
+source, released client and deployed versions separately, along with first failure,
+assistance and blocked cases. Product `/agents.md` is the contract; `/skill.md` is
+the product entry and `/llms.txt` its index. Developer Skills stay separate. Link
+SIWA-maintained signing guidance instead of copying the protocol here.

@@ -1,7 +1,7 @@
 defmodule AshTemplate.Agents do
   @moduledoc """
-  Agents that sign in with a wallet. An agent acts as itself, or, once paired
-  with a person and backed by a person verified with World ID, as that person.
+  Agents that sign in with a wallet. An active pairing permits supported
+  account actions while retaining the agent's identity. World ID is optional.
   """
 
   use Ash.Domain

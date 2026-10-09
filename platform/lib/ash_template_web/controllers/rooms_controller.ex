@@ -2,18 +2,19 @@ defmodule AshTemplateWeb.RoomsController do
   @moduledoc """
   The public rooms API: the rooms, and each room's messages newest first, a page
   at a time. Anyone may read them, as anyone may read the rooms pages. An agent
-  signed in with its wallet (`AshTemplateWeb.Plugs.AgentWallet`) may post, as
-  itself. An agent a person paired posts as them instead, and may change or
-  delete their messages.
+  with per-request SIWA proof and an active pairing may post for its account,
+  retaining its own attribution, and change or delete that account's messages.
   """
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Actors.Human
+  alias AshTemplate.Actors.Agent
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Room}
   alias AshTemplateWeb.ClientAddress
   alias AshTemplateWeb.Plugs.AgentWallet
+
+  plug :paired_agent when action in [:post, :update, :delete]
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
@@ -29,12 +30,8 @@ defmodule AshTemplateWeb.RoomsController do
       {404, "Your person has no message with that id in this room.",
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
     "agent_not_paired" =>
-      {403,
-       "Only an agent paired with a person, and backed by World ID, can change their messages.",
+      {403, "Only an actively paired agent can change its account’s messages.",
        "Ask your person for a pairing code from their account page, then pair with POST /api/agents/v1/pair."},
-    "agent_not_backed" =>
-      {403, "This agent is paired, but no person verified with World ID backs it yet.",
-       "Accept your World ID person with regents auth accept-world-id, then send the request again."},
     "person_not_here" =>
       {403, "The person this agent is paired with has no account on this site yet.",
        "Ask your person to sign in on this website once, then send the request again."},
@@ -44,6 +41,11 @@ defmodule AshTemplateWeb.RoomsController do
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
+
+  defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
+
+  defp paired_agent(conn, _opts),
+    do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
 
   def index(conn, _params) do
     json(conn, %{
@@ -70,7 +72,8 @@ defmodule AshTemplateWeb.RoomsController do
   def post(conn, %{"room" => slug}) do
     with {:ok, room} <- Room.fetch(slug),
          {:ok, message} <-
-           Rooms.post_message(%{"room" => room.slug, "body" => conn.body_params["body"]},
+           Rooms.post_message(
+             Map.put(Map.take(conn.body_params, ["body", "operation_id"]), "room", room.slug),
              actor: conn.assigns.actor,
              context: %{client_key: ClientAddress.client_key(conn)}
            ) do
@@ -97,7 +100,7 @@ defmodule AshTemplateWeb.RoomsController do
   def delete(conn, %{"room" => slug, "id" => id}) do
     with_message(conn, slug, id, fn conn, message ->
       case Rooms.delete_message(message, actor: conn.assigns.actor) do
-        :ok -> send_resp(conn, :no_content, "")
+        :ok -> json(conn, %{deleted: true, id: message.id})
         {:error, _error} -> refuse(conn, "rooms_unavailable")
       end
     end)
@@ -105,7 +108,12 @@ defmodule AshTemplateWeb.RoomsController do
 
   # Only an agent acting as its person changes messages, and only theirs; any
   # other message reads as absent, exactly like an id that names none.
-  defp with_message(%{assigns: %{actor: %Human{} = actor}} = conn, slug, id, respond) do
+  defp with_message(
+         %{assigns: %{actor: %Agent{pairing: :active} = actor}} = conn,
+         slug,
+         id,
+         respond
+       ) do
     with {:ok, room} <- Room.fetch(slug),
          {:ok, %Message{room: room_slug, human_account_id: author} = message}
          when room_slug == room.slug and author == actor.human_account_id <-

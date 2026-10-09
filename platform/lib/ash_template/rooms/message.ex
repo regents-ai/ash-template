@@ -90,7 +90,12 @@ defmodule AshTemplate.Rooms.Message do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+    end
 
     # Newest first, a page at a time.
     read :in_room do
@@ -111,6 +116,20 @@ defmodule AshTemplate.Rooms.Message do
 
     create :post do
       accept [:room, :body]
+      argument :operation_id, :uuid
+
+      change fn changeset, %{actor: actor} ->
+        if Map.get(actor || %{}, :role) == :agent and
+             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
+           do:
+             Ash.Changeset.add_error(changeset,
+               field: :operation_id,
+               message: "is required for agent creates"
+             ),
+           else: changeset
+      end
+
+      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change SetAuthor
       change SquashBlankLines
 
@@ -134,6 +153,10 @@ defmodule AshTemplate.Rooms.Message do
     end
   end
 
+  changes do
+    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:create, :update, :destroy]
+  end
+
   policies do
     policy action_type(:read) do
       authorize_if always()
@@ -141,11 +164,15 @@ defmodule AshTemplate.Rooms.Message do
 
     policy action(:post) do
       authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy action_type([:update, :destroy]) do
-      forbid_unless actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+    end
+
+    policy action_type([:update, :destroy]) do
       authorize_if expr(human_account_id == ^actor(:human_account_id))
     end
   end

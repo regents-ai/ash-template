@@ -114,7 +114,14 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
 
   # The first lab agent holds 3 Credits on this site, as it would for a bid.
   def handle_event("agent_hold", _params, socket) do
-    agent = Actor.agent(@account.privy_user_id, hd(@agents), AshTemplate.Credits.site())
+    pairing_id =
+      case RegentAgents.Authority.resolve(AshTemplate.Repo, hd(@agents)) do
+        {:ok, pairing} -> pairing.id
+        _ -> nil
+      end
+
+    agent =
+      Actor.agent(@account.privy_user_id, hd(@agents), AshTemplate.Credits.site(), pairing_id)
 
     result =
       RegentCredits.hold(Ecto.UUID.generate(), @account.privy_user_id, 3, "lab bid", actor: agent)

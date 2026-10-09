@@ -7,7 +7,11 @@ defmodule AshTemplate.Capabilities do
   @manifest_path Application.app_dir(:ash_template, "priv/tool_manifest.json")
   @external_resource @manifest_path
   @manifest @manifest_path |> File.read!() |> Jason.decode!()
-  @needs %{"none" => "Nothing", "session" => "Sign-in on the page"}
+  @needs %{
+    "none" => "Nothing",
+    "siwa" => "Per-request SIWA proof; no pairing required",
+    "siwa_and_pairing" => "Per-request SIWA proof and current pairing"
+  }
 
   @spec manifest() :: map()
   def manifest, do: @manifest

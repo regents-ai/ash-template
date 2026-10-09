@@ -84,6 +84,9 @@ defmodule AshTemplateWeb.Endpoint do
   defp limit_rate(%Plug.Conn{path_info: ["api" | _]} = conn, _opts),
     do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
 
+  defp limit_rate(%Plug.Conn{path_info: ["tools" | _]} = conn, _opts),
+    do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
+
   defp limit_rate(conn, _opts), do: conn
 
   # Production sets the cookie's `secure` flag in runtime.exs, after this module compiles.

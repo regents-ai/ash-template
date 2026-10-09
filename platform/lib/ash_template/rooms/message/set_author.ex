@@ -17,9 +17,10 @@ defmodule AshTemplate.Rooms.Message.SetAuthor do
     )
   end
 
-  def change(changeset, _opts, %{actor: %Agent{} = agent}) do
+  def change(changeset, _opts, %{actor: %Agent{pairing: :active} = agent}) do
     Ash.Changeset.force_change_attributes(changeset,
-      agent_id: agent.agent_id,
+      human_account_id: agent.human_account_id,
+      via_agent_id: agent.agent_id,
       author_name: agent.name
     )
   end

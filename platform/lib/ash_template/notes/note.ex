@@ -47,6 +47,8 @@ defmodule AshTemplate.Notes.Note do
     attribute :title, :string, allow_nil?: false, public?: true, constraints: [max_length: 120]
     attribute :body, :string, public?: true, constraints: [max_length: 10_000]
     timestamps(public?: true)
+    attribute :changed_by_pairing_id, :uuid
+    attribute :created_by_pairing_id, :uuid
 
     # Counts saves, so each one's job can tell whether the note was saved again since.
     attribute :revision, :integer, allow_nil?: false, default: 1
@@ -73,7 +75,13 @@ defmodule AshTemplate.Notes.Note do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+    end
 
     read :mine do
       prepare build(sort: [inserted_at: :desc])
@@ -93,10 +101,27 @@ defmodule AshTemplate.Notes.Note do
 
     create :create do
       primary? true
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:title, :body]
+      argument :operation_id, :uuid
+
+      change fn changeset, %{actor: actor} ->
+        if Map.get(actor || %{}, :role) == :agent and
+             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
+           do:
+             Ash.Changeset.add_error(changeset,
+               field: :operation_id,
+               message: "is required for agent creates"
+             ),
+           else: changeset
+      end
+
+      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
       change set_attribute(:human_account_id, actor(:human_account_id))
       change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
+      change set_attribute(:changed_by_pairing_id, actor(:pairing_id))
+      change set_attribute(:created_by_pairing_id, actor(:pairing_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       change AskForLabel, where: [AskingJev]
@@ -107,11 +132,13 @@ defmodule AshTemplate.Notes.Note do
     # single atomic statement.
     update :update do
       primary? true
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:title, :body]
       require_atomic? false
       change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
       change atomic_update(:revision, expr(revision + 1))
       change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
+      change set_attribute(:changed_by_pairing_id, actor(:pairing_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       change AskForLabel, where: [AskingJev]
@@ -136,7 +163,13 @@ defmodule AshTemplate.Notes.Note do
       trigger :send_webhook do
         action :send_webhook
         where expr(webhook_state == :pending)
-        extra_args &%{revision: &1.revision}
+
+        extra_args &%{
+                     revision: &1.revision,
+                     pairing_id: &1.changed_by_pairing_id,
+                     authority_version: 1
+                   }
+
         queue :outside_calls
         max_attempts 5
         on_error :webhook_failed
@@ -154,6 +187,12 @@ defmodule AshTemplate.Notes.Note do
 
     policy action_type(:create) do
       authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+    end
+
+    policy action_type([:read, :update, :destroy]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy action_type([:read, :update, :destroy]) do

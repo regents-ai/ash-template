@@ -11,9 +11,9 @@
     {"app": "siwa", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa"},
     {"app": "siwa_keyring", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa_keyring"},
     {"app": "regent_ui", "repository": "https://github.com/regents-ai/design-system.git", "sparse": "regent_ui"},
-    {"app": "regent_identity", "repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"},
+    {"app": "regent_identity", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "ash_components/identity", "previous_sources": [{"repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"}]},
     {"app": "regent_payments", "repository": "https://github.com/regents-ai/regents.git", "sparse": "payments"},
-    {"app": "regent_agents", "repository": "https://github.com/regents-ai/regents.git", "sparse": "agents"},
+    {"app": "regent_agents", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "ash_components/agents", "previous_sources": [{"repository": "https://github.com/regents-ai/regents.git", "sparse": "agents"}]},
     {"app": "regent_openai", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "openai"},
     {"app": "regent_mcp_events", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "mcp_events"},
     {"app": "regent_jev", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "jev"},
@@ -22,6 +22,13 @@
     {"app": "regent_points", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "points"}
   ],
   "fixes": [
+    {
+      "id": "EEF-CVE-2026-101028",
+      "summary": "Ash count, exists and aggregate skipped related resource read policies in user filters before 3.34.6.",
+      "kind": "hex",
+      "package": "ash",
+      "requirement": ">= 3.34.6"
+    },
     {
       "id": "2026-09-27-privy-signed-in-wallet",
       "summary": "regent_privy named the first linked wallet as the signed-in wallet; it now names the wallet Privy verified most recently.",

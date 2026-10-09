@@ -26,6 +26,9 @@ Mix.Hex.start()
 Code.compile_file("mix.exs")
 
 %{"managed" => managed, "fixes" => fixes} = JSON.decode!(IO.read(:stdio, :eof))
+# A moved shared package can name its previous repository/folder explicitly
+# until product adoption. Every candidate still needs an exact, inspectable pin.
+sources = fn entry -> [entry | Map.get(entry, "previous_sources", [])] end
 managed = Map.new(managed, &{&1["app"], &1})
 
 {:ok, quoted} = Code.string_to_quoted(File.read!("mix.lock"), emit_warnings: false)
@@ -46,18 +49,26 @@ same_repository = fn url ->
 end
 
 shared_repositories =
-  managed |> Map.values() |> MapSet.new(&same_repository.(&1["repository"]))
+  managed |> Map.values() |> Enum.flat_map(sources) |> MapSet.new(&same_repository.(&1["repository"]))
+
+managed = Map.new(managed, fn {app, entry} ->
+  repository = if deps[app], do: deps[app].opts[:git]
+  source = Enum.find(sources.(entry), &(&1["repository"] == repository)) || entry
+  {app, Map.merge(entry, Map.take(source, ["repository", "sparse"]))}
+end)
 
 folder = fn app -> Path.relative_to_cwd(deps[app].opts[:dest]) end
 git = fn app, args -> System.cmd("git", ["-C", folder.(app) | args], stderr_to_stdout: true) end
 
 own_folder? = fn app ->
-  %{"repository" => repository, "sparse" => sparse} = managed[app]
+  candidates = sources.(managed[app])
 
   with {top, 0} <- System.cmd("git", ["rev-parse", "--show-toplevel"], stderr_to_stdout: true),
        {origin, 0} <- System.cmd("git", ["remote", "get-url", "origin"], stderr_to_stdout: true) do
-    same_repository.(String.trim(origin)) == same_repository.(repository) and
-      Path.expand(deps[app].opts[:dest]) == Path.join(String.trim(top), sparse)
+    Enum.any?(candidates, fn %{"repository" => repository, "sparse" => sparse} ->
+      same_repository.(String.trim(origin)) == same_repository.(repository) and
+        Path.expand(deps[app].opts[:dest]) == Path.join(String.trim(top), sparse)
+    end)
   else
     _not_a_checkout -> false
   end

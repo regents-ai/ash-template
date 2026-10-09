@@ -11,13 +11,12 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   """
 
   @behaviour Plug
-  @behaviour Siwa.AgentAuthPlug.Client
   @behaviour Siwa.AgentAuthPlug.Hooks
 
   import Plug.Conn
 
   alias AshTemplate.{Accounts, Agents}
-  alias AshTemplate.Actors.{Agent, Human, System}
+  alias AshTemplate.Actors.{Agent, System}
 
   @hint "Sign in with the agent client at https://siwa.regents.sh/skill.md, then send the request again."
 
@@ -41,7 +40,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   @impl Plug
   def call(conn, _opts) do
     Siwa.AgentAuthPlug.call(conn,
-      client: __MODULE__,
+      client: RegentAgents.Broker,
       hooks: __MODULE__,
       audience: RegentAgents.Broker.audience()
     )
@@ -56,21 +55,6 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
       else: {:ok, nil}
   end
 
-  @impl Siwa.AgentAuthPlug.Client
-  def verify_http_request(payload, _opts) do
-    Siwa.AgentAuthPlug.BrokerClient.verify_http_request(payload,
-      http: __MODULE__,
-      base_url: Application.fetch_env!(:regent_agents, :siwa)[:url],
-      audience: RegentAgents.Broker.audience(),
-      connect_timeout_ms: 3_000,
-      receive_timeout_ms: 5_000
-    )
-  end
-
-  # Checking a signed request uses up its one-time nonce, so it is never retried
-  # or redirected.
-  def request(opts), do: Req.request(Keyword.merge(opts, retry: false, redirect: false))
-
   @impl Siwa.AgentAuthPlug.Hooks
   def accept(
         conn,
@@ -81,6 +65,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
           "principal" => %{
             "kind" => "wallet",
             "wallet_address" => address,
+            "chain_id" => 8453,
             "audience" => audience
           }
         },
@@ -103,23 +88,17 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     end
   end
 
-  # An agent paired with a person, and backed by a person verified with World ID,
-  # acts as the person it is paired with, marked as itself. Any other agent acts
-  # as itself, saying which of those it is missing.
   defp actor(agent) do
-    case Agents.get_pairing(agent.wallet_address, actor: %System{}) do
-      {:ok, %{privy_user_id: person}} -> paired(agent, person)
-      {:ok, nil} -> {:ok, Agent.for_agent(agent)}
+    case RegentAgents.Authority.resolve(AshTemplate.Repo, agent.wallet_address) do
+      {:ok, pairing} -> paired(agent, pairing)
+      {:error, :not_paired} -> {:ok, Agent.for_agent(agent)}
       {:error, error} -> {:error, error}
     end
   end
 
-  defp paired(%{world_id_human_id: nil} = agent, _person),
-    do: {:ok, Agent.for_agent(agent, :not_backed)}
-
-  defp paired(agent, person) do
-    case Accounts.get_by_privy_did(person, actor: %System{}) do
-      {:ok, %{} = account} -> {:ok, Human.for_paired_agent(account, agent)}
+  defp paired(agent, pairing) do
+    case Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
+      {:ok, %{} = account} -> {:ok, Agent.paired(agent, account, pairing)}
       {:ok, nil} -> {:ok, Agent.for_agent(agent, :person_not_here)}
       {:error, error} -> {:error, error}
     end
@@ -130,7 +109,6 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   its person may go, naming what it is missing.
   """
   def not_person_code(%Agent{pairing: :none}), do: "agent_not_paired"
-  def not_person_code(%Agent{pairing: :not_backed}), do: "agent_not_backed"
   def not_person_code(%Agent{pairing: :person_not_here}), do: "person_not_here"
 
   # The person World ID says stands behind the wallet, once the wallet has accepted

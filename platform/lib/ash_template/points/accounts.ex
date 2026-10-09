@@ -2,8 +2,6 @@ defmodule AshTemplate.Points.Accounts do
   @moduledoc "Verified account lookups supplied to the shared Points package."
   @behaviour RegentPoints.Accounts
 
-  require Ash.Query
-
   alias AshTemplate.Accounts
   alias AshTemplate.Actors.System
 
@@ -14,13 +12,15 @@ defmodule AshTemplate.Points.Accounts do
   def agent_names(_id, []), do: {:ok, %{}}
 
   def agent_names(id, ids) do
-    query = Ash.Query.filter(RegentAgents.PairedAgent, id in ^ids)
-
-    # Reads as the account's own person, so the agents policy shows only that person's agents.
+    # The canonical account supplies the owner; historical episodes retain names.
     with {:ok, account} <- Accounts.points_account(id, actor: %System{}),
-         person = %RegentAgents.Person{privy_user_id: account.privy_user_id},
-         {:ok, agents} <- RegentAgents.list_my_agents(query: query, actor: person) do
-      {:ok, Map.new(agents, &{&1.id, &1.name})}
+         {:ok, %{rows: rows}} <-
+           Ecto.Adapters.SQL.query(
+             AshTemplate.Repo,
+             "SELECT id::text, name FROM regent_agents.pairing_history WHERE privy_user_id = $1 AND id::text = ANY($2::text[])",
+             [account.privy_user_id, ids]
+           ) do
+      {:ok, Map.new(rows, fn [id, name] -> {id, name} end)}
     end
   end
 end

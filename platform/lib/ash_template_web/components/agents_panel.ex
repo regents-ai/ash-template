@@ -3,8 +3,8 @@ defmodule AshTemplateWeb.AgentsPanel do
   The agents a person has paired with their account (`RegentAgents`), a code to
   pair another, and Unpair for each.
 
-  A paired agent backed by World ID acts as the person on this site: it posts
-  and edits in rooms and writes notes as them, each marked as its own, and
+  Pairing immediately lets an agent read and change the person's notes and
+  post and edit in rooms, each marked as its own. World ID is optional. It
   never touches their wallet (`AshTemplateWeb.Plugs.AgentWallet`). Pairing is
   shared by every Regent site, so an agent paired on another one is listed
   here too.
@@ -70,7 +70,7 @@ defmodule AshTemplateWeb.AgentsPanel do
       <h2 id={"#{@id}-title"}>
         Agents
         <P.tip id={"#{@id}-about"} label="About paired agents">
-          An agent you pair, and back with World ID, can post in rooms and write notes as you.
+          Pairing immediately lets an agent read and change your notes and post in rooms for you.
           Each thing it does is marked as its own. It can never use your wallet.
         </P.tip>
       </h2>
@@ -90,13 +90,14 @@ defmodule AshTemplateWeb.AgentsPanel do
             <span :if={agent.human_id} class="account-agents__human">
               Human-backed
               <P.tip id={"#{@id}-human-#{agent.id}"} label="About Human-backed">
-                A person verified with World ID stands behind this agent, so it can act as you.
+                A person verified with World ID stands behind this agent. This optional
+                verification does not change its paired access.
               </P.tip>
             </span>
             <span :if={is_nil(agent.human_id)} class="account-agents__human">
-              Not backed yet
+              No World ID backing
               <P.tip id={"#{@id}-human-#{agent.id}"} label="About backing">
-                It acts as you once it accepts its World ID person. Step 7 of
+                This agent already has paired access. World ID backing is optional. Step 7 of
                 <a href="https://siwa.regents.sh/skill.md" target="_blank" rel="noopener">
                   the agent guide
                 </a>

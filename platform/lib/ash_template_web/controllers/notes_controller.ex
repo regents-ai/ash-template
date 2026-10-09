@@ -10,7 +10,7 @@ defmodule AshTemplateWeb.NotesController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Accounts.VerifiedSession
-  alias AshTemplate.Actors.Human
+  alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
   alias AshTemplateWeb.{NotesJSON, PrivyProof}
@@ -27,11 +27,8 @@ defmodule AshTemplateWeb.NotesController do
     "account_required" =>
       {403, "This sign-in has no account here yet.", "Sign in on the website once, then retry."},
     "agent_not_paired" =>
-      {403, "Only an agent paired with a person, and backed by World ID, can use their notes.",
+      {403, "Only an agent paired with this account can use its notes.",
        "Ask your person for a pairing code from their account page, then pair with POST /api/agents/v1/pair."},
-    "agent_not_backed" =>
-      {403, "This agent is paired, but no person verified with World ID backs it yet.",
-       "Accept your World ID person with regents auth accept-world-id, then send the request again."},
     "person_not_here" =>
       {403, "The person this agent is paired with has no account on this site yet.",
        "Ask your person to sign in on this website once, then send the request again."},
@@ -90,7 +87,7 @@ defmodule AshTemplateWeb.NotesController do
   defp authenticate_agent(conn) do
     case AgentWallet.call(conn, []) do
       %{halted: true} = conn -> conn
-      %{assigns: %{actor: %Human{}}} = conn -> conn
+      %{assigns: %{actor: %Agent{pairing: :active}}} = conn -> conn
       conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
     end
   end

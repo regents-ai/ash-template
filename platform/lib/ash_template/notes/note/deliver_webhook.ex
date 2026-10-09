@@ -34,9 +34,21 @@ defmodule AshTemplate.Notes.Note.DeliverWebhook do
   end
 
   defp deliver(changeset) do
-    case Webhook.address() do
-      nil -> {:cancel, :no_address}
-      url -> Webhook.deliver(url, changeset.data.id, Note.job_revision(changeset))
+    args = get_in(changeset.context, [:ash_oban, :job, Access.key(:args)]) || %{}
+    pairing_id = args["pairing_id"]
+
+    cond do
+      args["authority_version"] != 1 ->
+        {:cancel, :legacy_authority_requires_review}
+
+      pairing_id && not RegentAgents.Authority.active_episode?(AshTemplate.Repo, pairing_id) ->
+        {:cancel, :pairing_revoked}
+
+      true ->
+        case Webhook.address() do
+          nil -> {:cancel, :no_address}
+          url -> Webhook.deliver(url, changeset.data.id, Note.job_revision(changeset))
+        end
     end
   end
 end

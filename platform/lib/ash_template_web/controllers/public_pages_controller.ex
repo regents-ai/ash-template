@@ -9,6 +9,11 @@ defmodule AshTemplateWeb.PublicPagesController do
 
   def developers(conn, _params), do: conn |> put_status(301) |> redirect(to: "/docs")
 
+  def agents(conn, _params), do: send_cached(conn, "text/markdown", PublicDocuments.agents())
+
+  def build_skill(conn, _params),
+    do: send_cached(conn, "text/markdown", PublicDocuments.build_skill())
+
   def skill_guide(conn, _params),
     do: send_cached(conn, "text/markdown", PublicDocuments.skill_guide())
 

@@ -6,7 +6,7 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   @directory Application.app_dir(:ash_template, "priv/public")
   @files Enum.map(
-           ~w(docs about contact changelog llms llms-showcase skill skills),
+           ~w(docs about contact changelog llms llms-showcase skill skills agents build-skill),
            &Path.join(@directory, &1 <> ".md")
          )
   for file <- @files, do: @external_resource(file)
@@ -110,6 +110,9 @@ defmodule AshTemplateWeb.PublicDocuments do
   defp markdown(path), do: source(String.trim_leading(path, "/"))
 
   def llms, do: source("llms")
+
+  def agents, do: Map.fetch!(@sources, "agents")
+  def build_skill, do: source("build-skill")
 
   @doc "The agent guide served at `/skill.md`."
   def skill_guide, do: source("skill")

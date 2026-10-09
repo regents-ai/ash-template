@@ -45,6 +45,7 @@ defmodule AshTemplate.Notes.Decision do
   attributes do
     uuid_primary_key :id
 
+    attribute :pairing_id, :uuid
     attribute :question, :string, allow_nil?: false, public?: true
     attribute :choices, {:array, :string}, allow_nil?: false, public?: true
 
@@ -81,6 +82,8 @@ defmodule AshTemplate.Notes.Decision do
 
     create :ask do
       accept [:note_id]
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change set_attribute(:pairing_id, actor(:pairing_id))
       change set_attribute(:human_account_id, actor(:human_account_id))
       change set_attribute(:question, Labels.instructions())
       change set_attribute(:choices, Labels.keys())
@@ -109,6 +112,7 @@ defmodule AshTemplate.Notes.Decision do
     triggers do
       trigger :ask_jev do
         action :ask_jev
+        extra_args &%{authority_version: 1, pairing_id: &1.pairing_id}
         where expr(state == :pending)
         queue :outside_calls
         max_attempts 3
@@ -127,6 +131,7 @@ defmodule AshTemplate.Notes.Decision do
 
     policy action(:ask) do
       authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy action(:ask) do

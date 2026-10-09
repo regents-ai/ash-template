@@ -13,7 +13,44 @@ defmodule AshTemplate.Release do
   """
   @schema_exists "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = $1)"
 
-  def migrate, do: with_release_repo(fn repo -> repo.migrate!(migrations_path()) end)
+  def migrate do
+    with_release_repo(fn repo ->
+      require_signed_access_schema!(repo)
+      repo.migrate!(migrations_path())
+    end)
+  end
+
+  @doc "Read-only release prerequisite; shared migrations require separate founder authority."
+  def require_signed_access_schema!(repo) do
+    %{rows: [[ready?]]} =
+      Ecto.Adapters.SQL.query!(repo, """
+      SELECT
+        EXISTS (SELECT 1 FROM pg_catalog.pg_attribute a
+          JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'regent_agents' AND c.relname = 'pairing_history'
+            AND a.attname = 'revoked_at' AND NOT a.attisdropped)
+        AND (SELECT count(*) = 2 FROM pg_catalog.pg_attribute a
+          JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'regent_credits' AND c.relname IN ('holds', 'agent_permissions')
+            AND a.attname = 'pairing_id' AND NOT a.attisdropped)
+        AND (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
+          JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
+          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'regent_agents' AND c.relname = 'paired_agents'
+            AND t.tgname IN ('retain_pairing_episode', 'revoke_credit_grant')
+            AND NOT t.tgisinternal AND t.tgenabled IN ('O', 'A'))
+      """)
+
+    unless ready?,
+      do:
+        raise(
+          "Signed agent access requires the separately approved shared Agents and Credits migrations before deployment"
+        )
+
+    :ok
+  end
 
   @doc """
   Prepares an empty staging database for the first deployment: creates a
@@ -35,7 +72,10 @@ defmodule AshTemplate.Release do
       # The fixture is the only definition of these tables' shape in the repository.
       AshTemplate.LocalDatabaseFixture.create_shared_tables!()
       repo.migrate!(migrations_path())
+      RegentAgents.Migrator.up(repo)
       RegentCredits.Migrator.up(repo)
+      RegentPoints.Migrator.up(repo)
+      RegentIdentity.Migrator.up(repo)
     end)
   end
 

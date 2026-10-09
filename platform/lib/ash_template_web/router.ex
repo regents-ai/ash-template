@@ -38,14 +38,10 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
-  # The browser tools a page offers its own agent: JSON on the page's own
-  # session cookie, with the page's CSRF token on every write.
+  # Named agent tools use SIWA proof only. No browser session enters this pipeline.
   pipeline :page_tools do
     plug :accepts, ["json"]
-    plug :fetch_session
-    plug :enforce_session_authority
     plug AshTemplateWeb.Plugs.LaunchGate
-    plug :protect_from_forgery
   end
 
   pipeline :public_documents do
@@ -161,6 +157,8 @@ defmodule AshTemplateWeb.Router do
     get "/sitemap.xml", PublicPagesController, :sitemap
     get "/robots.txt", PublicPagesController, :robots
     get "/llms.txt", PublicPagesController, :llms
+    get "/agents.md", PublicPagesController, :agents
+    get "/skill.md", PublicPagesController, :skill_guide
     get "/capabilities", PublicPagesController, :capabilities
     get "/.well-known/security.txt", PublicPagesController, :security
     get "/.well-known/api-catalog", PublicPagesController, :api_catalog
@@ -169,7 +167,7 @@ defmodule AshTemplateWeb.Router do
   # The build skills and the agent guide (AshTemplateWeb.AgentSkills).
   scope "/", AshTemplateWeb do
     pipe_through :showcase
-    get "/skill.md", PublicPagesController, :skill_guide
+    get "/build/skill.md", PublicPagesController, :build_skill
     get "/.well-known/agent-skills/*path", PublicPagesController, :agent_skill
   end
 
@@ -215,6 +213,9 @@ defmodule AshTemplateWeb.Router do
 
   scope "/tools", AshTemplateWeb do
     pipe_through :page_tools
+    get "/account/balances", PageToolsController, :balances
+    post "/account/credits/history", PageToolsController, :credits_history
+    get "/account/points", PageToolsController, :points
     get "/notes", PageToolsController, :notes
     post "/notes", PageToolsController, :create_note
     get "/notes/:id", PageToolsController, :note

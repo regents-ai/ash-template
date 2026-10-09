@@ -4,11 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "58acbc4742ea8acded42e8fb40816ac6e0400aaa"
+  @elixir_utils_ref "3397d80c8d5eec7085d003cb7a0e4a0e8605706f"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "4da6db2bfe3559a8f8a761018dc099a28ab5f6a3"
-  @regents "https://github.com/regents-ai/regents.git"
-  @regents_ref "ba23ceee534c34ff9f773a8c1b38bfca49d7b790"
 
   def project do
     [
@@ -39,7 +37,7 @@ defmodule AshTemplate.MixProject do
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
-      {:ash, "~> 3.34 and >= 3.34.3"},
+      {:ash, "~> 3.34 and >= 3.34.6"},
       {:ash_postgres, "== 2.13.0"},
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
@@ -51,8 +49,10 @@ defmodule AshTemplate.MixProject do
       # regent_identity pins its own elixir-utils commit; this pin replaces it.
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
-      {:regent_identity, git: @regents, ref: @regents_ref, sparse: "identity"},
-      {:regent_agents, git: @regents, ref: @regents_ref, sparse: "agents"},
+      {:regent_identity,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/identity"},
+      {:regent_agents,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/agents", override: true},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
       {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
@@ -87,7 +87,46 @@ defmodule AshTemplate.MixProject do
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
       {:sobelow, "~> 0.14", only: :dev, runtime: false}
     ]
+    |> local_shared_dependencies()
   end
+
+  # Local verification of an unreleased shared change. Production always uses
+  # reviewed published pins; this override cannot enter a release build.
+  defp local_shared_dependencies(deps) do
+    case {Mix.env(), System.get_env("REGENT_ELIXIR_UTILS_PATH")} do
+      {:prod, nil} ->
+        deps
+
+      {:prod, _} ->
+        raise "local shared libraries are forbidden in production"
+
+      {_, nil} ->
+        deps
+
+      {_, root} ->
+        paths = %{
+          regent_agents: "ash_components/agents",
+          regent_identity: "ash_components/identity",
+          regent_points: "points",
+          regent_privy: "privy",
+          regent_credits: "credits",
+          regent_chain: "chain",
+          regent_agent_access: "agent_access",
+          siwa: "siwa/siwa-elixir/apps/siwa"
+        }
+
+        Enum.map(deps, &local_dependency(&1, paths, root))
+    end
+  end
+
+  defp local_dependency({name, _opts} = dep, paths, root) do
+    case paths[name] do
+      nil -> dep
+      path -> {name, path: Path.join(root, path), override: true}
+    end
+  end
+
+  defp local_dependency(dep, _paths, _root), do: dep
 
   # The stylesheet of the one page in Ash AI's own look (`assets/ash_ai_chat/`).
   @ash_ai_chat_css "node_modules/.bin/tailwindcss -i assets/ash_ai_chat/ash_ai_chat.css -o priv/static/assets/css/ash_ai_chat.css"
@@ -117,12 +156,14 @@ defmodule AshTemplate.MixProject do
         "compile",
         "regent_ui.assets",
         "regent_identity.assets",
+        "regent_agent_access.assets",
         "esbuild ash_template",
         "cmd #{@ash_ai_chat_css}"
       ],
       "assets.deploy": [
         "regent_ui.assets",
         "regent_identity.assets",
+        "regent_agent_access.assets",
         "esbuild ash_template --minify",
         "cmd #{@ash_ai_chat_css} --minify",
         "phx.digest"

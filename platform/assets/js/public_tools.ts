@@ -1,12 +1,16 @@
-// The tools every page offers a browser's own agent (WebMCP draft,
-// document.modelContext). priv/tool_manifest.json describes each tool once;
-// this file only adds the request behind it. about and docs read a public
-// document. The notes and room tools call the site's /tools routes on the
-// page's own session cookie, so they act as whoever is signed in on the page
-// and the server decides what that person may do; writes carry the page's
-// CSRF token. Nothing here signs in, signs or spends.
-
+// Manifest-listed WebMCP operations. SIWA keys stay in the caller’s existing signer.
 import manifest from "../../priv/tool_manifest.json" with {type: "json"}
+import {signedTools, type SignedOperation, type SignedInput} from "../vendor/regent_agent_access/signed_tools"
+
+function signedTransport() { return signedTools({
+  origin: window.location.origin,
+  trustedOrigins: [document.querySelector<HTMLMetaElement>('meta[name="agent-request-origin"]')?.content ?? ""],
+  audience: manifest.audience,
+  proofHeaders: manifest.proof_headers,
+  operations: manifest.tools.map(entry => ({...entry,
+    input_schema: "operation_input_schema" in entry ? entry.operation_input_schema : entry.input_schema,
+  })) as unknown as SignedOperation[],
+}) }
 
 type Property = {type: "string"; description: string}
 
@@ -25,6 +29,7 @@ type Entry = {
   annotations: Record<string, boolean>
   state_changing: boolean
   scope: string
+  authentication: string
 }
 
 type Input = Record<string, string>
@@ -40,15 +45,8 @@ type Request = (input: Input, signal: AbortSignal | undefined) => Promise<Reply>
 const requests: Record<string, Request> = {
   about: (_input, signal) => markdown("/about", signal),
   docs: (_input, signal) => markdown("/docs", signal),
-  notes_list: (_input, signal) => call("GET", "/tools/notes", signal),
-  notes_get: (input, signal) => call("GET", `/tools/notes/${encodeURIComponent(input.id)}`, signal),
-  notes_create: (input, signal) => call("POST", "/tools/notes", signal, input),
   room_read: (input, signal) =>
     call("GET", `/tools/rooms/${encodeURIComponent(input.room)}/messages`, signal),
-  room_post: (input, signal) =>
-    call("POST", `/tools/rooms/${encodeURIComponent(input.room)}/messages`, signal, {
-      body: input.body,
-    }),
 }
 
 // How to learn whether a write that lost its answer happened, before trying again.
@@ -71,7 +69,7 @@ async function markdown(path: string, signal: AbortSignal | undefined): Promise<
   return {ok: false, status: response.status, error: {code: "unreadable", message: body}}
 }
 
-// The site's own JSON, on this page's session. Every refusal it sends is
+// Public JSON without session authority. Every refusal it sends is
 // {"error": {"code", "message", "hint"}}, handed on as it came.
 async function call(
   method: "GET" | "POST",
@@ -80,15 +78,12 @@ async function call(
   body?: Input,
 ): Promise<Reply> {
   const headers: Record<string, string> = {Accept: "application/json"}
-  if (body) {
-    headers["Content-Type"] = "application/json"
-    headers["x-csrf-token"] = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')!.content
-  }
+  if (body) headers["Content-Type"] = "application/json"
   const response = await fetch(path, {
     method,
     headers,
     body: body && JSON.stringify(body),
-    credentials: "same-origin",
+    credentials: "omit",
     cache: "no-store",
     redirect: "error",
     signal,
@@ -148,6 +143,26 @@ const tools: ModelContextTool[] = entries.filter(entry => entry.scope === "site"
   inputSchema: entry.input_schema,
   annotations: entry.annotations,
   async execute(input: unknown, {signal}: {signal?: AbortSignal}) {
+    if (entry.name === "prepare_agent_request") {
+      try {
+        const args = input as {operation: string; input: Input}
+        return {ok: true, request: signedTransport().prepare(args.operation, args.input)}
+      } catch (error) {
+        return {ok: false, error: {code: "invalid_preparation", message: String(error)}}
+      }
+    }
+    if (entry.authentication === "siwa_per_request") {
+      try {
+        const response = await signedTransport().execute(entry.name, input as SignedInput, signal)
+        const data = await response.json()
+        return response.ok ? {ok: true, status: response.status, data} : {ok: false, status: response.status, error: data.error}
+      } catch (error) {
+        return {ok: false, error: {code: "signed_request_failed", message: String(error),
+          hint: entry.state_changing
+            ? "Keep the logical operation ID. Check the outcome before retrying, and sign fresh proof."
+            : "Sign fresh proof for the exact prepared request with your existing SIWA signer. If no supported signer is available, report the blocker."}}
+      }
+    }
     const problem = inputProblem(input, entry.input_schema)
     if (problem) return {ok: false, error: {code: "invalid_input", message: problem}}
     if (signal?.aborted) {
@@ -191,5 +206,5 @@ export function installPublicTools(): void {
         console.warn("The browser tools could not be offered.", error)
       })
   })
-  window.addEventListener("pagehide", () => registration!.abort())
+  window.addEventListener("pagehide", () => registration?.abort())
 }
