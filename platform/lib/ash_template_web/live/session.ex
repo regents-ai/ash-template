@@ -9,9 +9,6 @@ defmodule AshTemplateWeb.Live.Session do
   alias AshTemplateWeb.ClientAddress
 
   @public_root "/"
-  # The topics that carry one account's own Notes, Activity, Points, mutes and
-  # chats; a page subscribes to them only while that account is signed in.
-  @account_topics ["notes:", "notifications:", "points:", "mutes:", "chat:"]
 
   @doc """
   What the render knew, signed into the static LiveView token. The token is
@@ -81,19 +78,22 @@ defmodule AshTemplateWeb.Live.Session do
   defp hold(socket, _lineage, nil), do: assign_principal(socket, nil)
 
   # The lease holds no generation, because a same-account refresh advances it
-  # beneath a live socket. Lineage, account binding, revocation and the
-  # account's own provider evidence are re-read every time, and the principal is
-  # rebuilt from that read rather than from the struct the mount captured. A
-  # lapsed lease withdraws the principal, so nothing downstream can still
-  # present it as authority, and a page that stays open says the sign-in ended
-  # (`signed_out_reason: :expired`) rather than that no one signed in. A
+  # beneath a live socket. Lineage, account binding, revocation, sign-in age and
+  # the account's own provider evidence are re-read every time, and the
+  # principal is rebuilt from that read rather than from the struct the mount
+  # captured. A lapsed lease withdraws the principal, so nothing downstream can
+  # still present it as authority, and a page that stays open says the sign-in
+  # ended (`signed_out_reason: :expired`) rather than that no one signed in. A
   # finished ENS lookup reads the account again, so the header shows the name
-  # and picture it found. A change to the account's own data (its Credits,
-  # agents or one of `@account_topics`) is read again only while the lease
-  # holds; one that has lapsed renders signed out instead. Components receive
-  # the lease as `session_lease` and check it on their own events
-  # (`check_component_events/1`); one that finds it lapsed asks the page to
-  # withdraw the principal here.
+  # and picture it found.
+  #
+  # Every other message and every background result is re-read the same way
+  # before the page sees it, because a notification or a read can arrive after
+  # the sign-in has outlived its lifetime with no navigation or event between.
+  # A lapsed lease then drops it and the page renders signed out. Components
+  # receive the lease as `session_lease` and check it on their own events and
+  # results (`check_component_lease/2`); one that finds it lapsed asks the page
+  # to withdraw the principal here.
   defp hold(socket, lineage, account) do
     lease = %{lineage: lineage, account_id: account.id}
     ens_topic = EnsIdentity.topic(account.id)
@@ -117,49 +117,59 @@ defmodule AshTemplateWeb.Live.Session do
         {_cont_or_halt, socket} = recheck(socket, lease, & &1)
         {:halt, socket}
 
-      message, socket when message in [:credits_changed, :agents_changed] ->
-        recheck(socket, lease, & &1)
-
-      %{topic: topic}, socket ->
-        if String.starts_with?(topic, @account_topics),
-          do: recheck(socket, lease, & &1),
-          else: {:cont, socket}
-
       _message, socket ->
-        {:cont, socket}
+        recheck(socket, lease, & &1)
+    end)
+    |> attach_hook(:session_authority_async, :handle_async, fn _name, _result, socket ->
+      recheck(socket, lease, & &1)
     end)
   end
 
   @doc """
-  A LiveComponent's events never reach the page's own event hook, so every
-  component that acts calls this from `mount/1`, and its page passes it the
-  page's `session_lease` as `lease`. Each event first re-reads that lease, as
-  the page does for its own events. A current lease hands `take_account`, the
-  component's own function (the one its `update/2` uses too), the account as
-  it reads now, and the component rebuilds from it the wallets and actor it
-  acts with, so no event acts on a wallet list or actor captured earlier. A
-  lapsed lease refuses the event with an empty reply, so a wallet step it was
-  asked for is not sent, and tells the page, which withdraws the principal and
-  renders signed out. A page with no signed-in session, or one whose component
-  acts for a stand-in account, passes a nil lease and the component acts on what
-  the page gave it.
+  A LiveComponent's events and background results never reach the page's own
+  hooks, so every component that acts calls this from `mount/1`, and its page
+  passes it the page's `session_lease` as `lease`. Each event and each result
+  first re-reads that lease, as the page does for its own. A current lease
+  hands `take_account`, the component's own function (the one its `update/2`
+  uses too), the account as it reads now, and the component rebuilds from it
+  the wallets and actor it acts with, so nothing acts on a wallet list or actor
+  captured earlier. A lapsed lease refuses the event with an empty reply, so a
+  wallet step it was asked for is not sent, or drops the result unseen, and
+  tells the page, which withdraws the principal and renders signed out. A page
+  with no signed-in session, or one whose component acts for a stand-in
+  account, passes a nil lease and the component acts on what the page gave it.
   """
-  def check_component_events(socket, take_account) do
-    attach_hook(socket, :session_authority_event, :handle_event, fn
-      _event, _params, %{assigns: %{lease: nil}} = socket ->
-        {:cont, socket}
-
-      _event, _params, %{assigns: %{lease: lease}} = socket ->
-        case SessionAuthority.leased_account(lease.lineage, lease.account_id) do
-          nil ->
-            send(self(), {__MODULE__, :component_lease_lapsed})
-            {:halt, %{}, socket}
-
-          account ->
-            {:cont, take_account.(socket, account)}
-        end
+  def check_component_lease(socket, take_account) do
+    socket
+    |> attach_hook(:session_authority_event, :handle_event, fn _event, _params, socket ->
+      case component_account(socket) do
+        :lapsed -> {:halt, %{}, socket}
+        account -> {:cont, take(socket, take_account, account)}
+      end
+    end)
+    |> attach_hook(:session_authority_async, :handle_async, fn _name, _result, socket ->
+      case component_account(socket) do
+        :lapsed -> {:halt, socket}
+        account -> {:cont, take(socket, take_account, account)}
+      end
     end)
   end
+
+  defp component_account(%{assigns: %{lease: nil}}), do: :signed_out
+
+  defp component_account(%{assigns: %{lease: lease}}) do
+    case SessionAuthority.leased_account(lease.lineage, lease.account_id) do
+      nil ->
+        send(self(), {__MODULE__, :component_lease_lapsed})
+        :lapsed
+
+      account ->
+        account
+    end
+  end
+
+  defp take(socket, _take_account, :signed_out), do: socket
+  defp take(socket, take_account, account), do: take_account.(socket, account)
 
   defp recheck(socket, lease, lapsed) do
     case SessionAuthority.leased_account(lease.lineage, lease.account_id) do

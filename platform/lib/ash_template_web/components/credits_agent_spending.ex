@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
 
   @impl true
   def mount(socket),
-    do: {:ok, socket |> Session.check_component_events(&take_account/2) |> assign(saved: nil)}
+    do: {:ok, socket |> Session.check_component_lease(&take_account/2) |> assign(saved: nil)}
 
   @impl true
   def update(assigns, socket) do
@@ -63,8 +63,8 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
     end
   end
 
-  # The account as the page gave it, or as it reads now before each event
-  # (`Session.check_component_events/2`). The library saves these settings only
+  # The account as the page gave it, or as it reads now before each event and
+  # each background result (`Session.check_component_lease/2`). The library saves these settings only
   # for a person signed in at regents.sh.
   defp take_account(socket, account),
     do:

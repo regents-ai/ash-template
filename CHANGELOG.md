@@ -1139,3 +1139,15 @@ Operations
   shown is the one that approved.
 - The wallet line says "Paying from" or "Sending from" only for the wallet that
   can send; the account's wallet shown beside a switch note reads "Wallet".
+
+## 2026-10-09 — A signed-in page re-checks the sign-in before every push
+
+- A page held open past the 30-day sign-in no longer reads or shows fresh
+  private figures when a notification (a points award, a Credits change, an
+  agent update) or a background read arrives. The session re-reads the sign-in
+  before each one; when it has lapsed, the page goes to the home page, which
+  drops every private figure and read still running. While current, the page
+  continues with the account as it reads now.
+- Components check the same before each background result as well as each
+  event (`Session.check_component_lease/2`, renamed from
+  `check_component_events/2`).

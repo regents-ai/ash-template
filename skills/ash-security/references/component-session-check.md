@@ -1,4 +1,22 @@
-# LiveComponents re-check the session on their own events
+# Pages and components re-check the session before every push and result
+
+A page's event and params hooks re-read the session, but a server push
+(`handle_info`: a PubSub notification such as a points award or a Credits change) and a
+background result (`handle_async`) arrive with no navigation or event in between. A
+socket idle past the sign-in lifetime would otherwise read and show fresh private data
+with the actor it saved at mount. The session module that holds a signed-in socket
+attaches `:handle_info` and `:handle_async` hooks that re-read the lease
+(`leased_account/2`) before the page sees any message or result:
+
+- Current: `{:cont, socket}` with the principal rebuilt from the account that read
+  returned, so the page's handler builds its actor from the refreshed account.
+- Lapsed: `{:halt, redirect(socket, to: public_root)}`. The message or result is
+  dropped, and leaving the page ends its process, so every private assign,
+  subscription and running read goes with it. No timer, no polling.
+
+The rest of this note covers components, whose events and results never reach the
+page's hooks.
+
 
 A page's `attach_hook(:session_authority_event, :handle_event, ...)` never runs for an
 event targeted at a LiveComponent (`phx-target={@myself}`, `pushEventTo`). A component
@@ -6,21 +24,20 @@ that acts with an actor built from its assigns keeps acting for the person the p
 was given at mount, even after that session is signed out elsewhere. Every component
 that handles events and acts for a person carries its own check, and acts on the
 account as it reads at that event, not on wallets or an actor built earlier. The
-reference is ash-template `AshTemplateWeb.Live.Session.check_component_events/2`
-(branch `at/component-fresh-account`, e7ee597 until it reaches main).
+reference is ash-template `AshTemplateWeb.Live.Session.check_component_lease/2`.
 
 1. **The page keeps its lease.** The `on_mount` that loads the person assigns
    `session_lease: nil`, and the code that holds a signed-in session assigns the lease
    it already re-reads on its own events (`%{lineage: ..., account_id: ...}`).
 2. **One shared check.** The session module exposes a function that attaches a
-   `:handle_event` hook to the component socket. LiveView allows `:handle_event`,
-   `:after_render` and `:handle_async` hooks on components.
+   `:handle_event` hook and a `:handle_async` hook to the component socket. LiveView
+   allows `:handle_event`, `:after_render` and `:handle_async` hooks on components.
    - `lease: nil` (signed out): `{:cont, socket}`.
    - The lease still resolves (the same `leased_account/2` read the page uses):
      `{:cont, take_account.(socket, account)}` with the account that read returned.
      The check never reduces that account to a truth test.
    - Lapsed: `send(self(), {SessionModule, :component_lease_lapsed})` and
-     `{:halt, %{}, socket}`. The empty reply answers reply-style events (a wallet
+     `{:halt, %{}, socket}` for an event, `{:halt, socket}` for a result, which drops it. The empty reply answers reply-style events (a wallet
      step asked for gets nothing to send); the page's own `:handle_info` hook takes
      the message, re-reads the lease and withdraws the principal, so the page renders
      signed out. The component runs in the page's process, so `self()` is the page.
@@ -39,10 +56,13 @@ reference is ash-template `AshTemplateWeb.Live.Session.check_component_events/2`
    `lease={nil}`: the session is not the account it acts for.
 
 Check: `grep -rl ":live_component" lib` lists every component; each one with a
-`handle_event` that reads or writes for a person needs steps 3 and 4. Verify signed
-out (events still answered), and with a scratch script, inside a transaction it rolls
-back, that runs the component's hook with a nil, a lapsed and a current lease, then
-changes the account's wallets and checks the next event sees them.
+`handle_event` or `handle_async` that reads or writes for a person needs steps 3 and 4.
+Verify with a scratch test, inside a sandbox that rolls back, that runs the hooks
+through `Phoenix.LiveView.Lifecycle` on a socket mounted by the session module: a push
+and a result while current (continue, with the account as it reads now), after a
+same-account refresh (unchanged), and after the sign-in's `updated_at` is moved past
+its lifetime (halt, principal withdrawn, redirect to the public root; for a component,
+halted and the page told). Run it once against the old code to see it fail.
 
 The page's disconnect broadcast on sign-out reaches only the node that handled it
 unless the site's nodes are clustered; this check covers every event either way.

@@ -35,7 +35,7 @@ defmodule AshTemplateWeb.RoomsLive do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events(&take_account/2)
+     |> Session.check_component_lease(&take_account/2)
      |> assign(
        actor: nil,
        room: nil,
@@ -157,8 +157,8 @@ defmodule AshTemplateWeb.RoomsLive do
     {:noreply, Read.start(socket, :older, owner(socket), fn -> Ash.page(page, :next) end)}
   end
 
-  # The account as it reads now, before each event
-  # (`Session.check_component_events/2`).
+  # The account as it reads now, before each event and each background result
+  # (`Session.check_component_lease/2`).
   defp take_account(socket, account), do: assign(socket, :actor, Human.for_account(account))
 
   @impl true

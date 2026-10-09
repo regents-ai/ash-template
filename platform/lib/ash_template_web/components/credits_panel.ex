@@ -38,7 +38,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events(&take_account/2)
+     |> Session.check_component_lease(&take_account/2)
      |> OnchainSteps.init()
      |> assign(
        active: nil,
@@ -339,8 +339,8 @@ defmodule AshTemplateWeb.CreditsPanel do
     end
   end
 
-  # The account as the page gave it, or as it reads now before each event
-  # (`Session.check_component_events/2`): the wallets that may act and the
+  # The account as the page gave it, or as it reads now before each event and
+  # each background result (`Session.check_component_lease/2`): the wallets that may act and the
   # review follow it.
   defp take_account(socket, account) do
     context = AccessContext.for_account(account)

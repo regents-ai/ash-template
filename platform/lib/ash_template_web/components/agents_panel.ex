@@ -24,7 +24,7 @@ defmodule AshTemplateWeb.AgentsPanel do
     do:
       {:ok,
        socket
-       |> Session.check_component_events(&take_account/2)
+       |> Session.check_component_lease(&take_account/2)
        |> assign(pairing: nil, notice: nil)}
 
   @impl true
@@ -38,8 +38,8 @@ defmodule AshTemplateWeb.AgentsPanel do
      |> read_agents()}
   end
 
-  # The account as the page gave it, or as it reads now before each event
-  # (`Session.check_component_events/2`).
+  # The account as the page gave it, or as it reads now before each event and
+  # each background result (`Session.check_component_lease/2`).
   defp take_account(socket, account),
     do: assign(socket, person: %Person{privy_user_id: account.privy_user_id})
 

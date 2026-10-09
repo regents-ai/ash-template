@@ -25,7 +25,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
   def mount(socket) do
     {:ok,
      socket
-     |> Session.check_component_events(&take_account/2)
+     |> Session.check_component_lease(&take_account/2)
      |> assign(
        gift_key: Ecto.UUID.generate(),
        gift_note: nil,
@@ -45,8 +45,8 @@ defmodule AshTemplateWeb.CreditsAdmin do
      |> read_refunds()}
   end
 
-  # The account as the page gave it, or as it reads now before each event
-  # (`Session.check_component_events/2`).
+  # The account as the page gave it, or as it reads now before each event and
+  # each background result (`Session.check_component_lease/2`).
   defp take_account(socket, account), do: assign(socket, actor: Credits.admin(account))
 
   @impl true
