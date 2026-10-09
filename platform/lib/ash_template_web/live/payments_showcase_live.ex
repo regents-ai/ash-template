@@ -27,7 +27,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
       {"info", "Going through", "Your payment is still going through. Check again in a moment."},
       {"warning", "Expired", "This price has expired. Start again for a fresh one."},
       {"warning", "Other wallet",
-       "You're signed in as #{signed_in}, but your wallet app has #{other} open."},
+       "Your wallet is on #{other}, which isn't linked to this account. Switch to #{signed_in}."},
       {"error", "Refused", "Those payment terms have changed since your wallet saw them."},
       {"error", "Unavailable", "Payments aren't available right now. Try again shortly."}
     ]

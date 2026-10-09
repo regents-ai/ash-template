@@ -31,6 +31,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
   @account %{
     id: "credits-lab",
     privy_user_id: "did:privy:credits-lab",
+    wallet_address: hd(@addresses),
     wallet_addresses: Enum.take(@addresses, 2)
   }
   @chains [:base]

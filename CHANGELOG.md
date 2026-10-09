@@ -1120,3 +1120,14 @@ Operations
   account", names no account and offers no Refund until someone signs in with it.
 - Locally, `RegentCredits.Migrator.up/1` adds the deposit tables; in production
   Regents runs them.
+
+## 2026-10-09 — Wallet panels keep the account's wallet and ask to switch
+
+- While the wallet app has open a wallet the account does not link, or none, the
+  Credits panel and the wallet example keep showing the account's own wallet and
+  its figures (`OnchainSteps.shown_wallet/3`, `AccessContext.own_wallet/1`), as
+  the onchain-buttons rule says. The note now asks the person to switch: "Your
+  wallet is on 0x3c44..93bc, which isn't linked to this account. Switch to
+  0xf39f..2266 or 0x7099..79c8." A press from that wallet still sends nothing.
+- The Points page's NFT check on Base counts against the same per-account
+  `wallet_read` allowance as the Buy panel's reads.

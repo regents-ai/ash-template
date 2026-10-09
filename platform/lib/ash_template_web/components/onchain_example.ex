@@ -30,7 +30,7 @@ defmodule AshTemplateWeb.OnchainExample do
      socket
      |> Session.check_component_events(&take_account/2)
      |> OnchainSteps.init()
-     |> assign(active: nil, amount: "1", balance: nil, signer: nil, signed: nil)}
+     |> assign(active: nil, amount: "1", balance: nil, signer: nil, wallet: nil, signed: nil)}
   end
 
   @impl true
@@ -95,12 +95,15 @@ defmodule AshTemplateWeb.OnchainExample do
   # (`Session.check_component_events/2`): the wallets that may act and the
   # review follow it.
   defp take_account(socket, account) do
-    linked = account |> AccessContext.for_account() |> AccessContext.linked_wallets()
-    socket |> assign(linked: linked) |> sync()
+    context = AccessContext.for_account(account)
+
+    socket
+    |> assign(linked: AccessContext.linked_wallets(context), own: AccessContext.own_wallet(context))
+    |> sync()
   end
 
   # The review follows the signer and the form. With no eligible signer there is
-  # no review, and figures for another wallet are not shown as the signer's.
+  # no review, and the figures stay on the account's own wallet.
   defp sync(socket) do
     %{linked: linked, active: active, chain: chain, amount: amount} = socket.assigns
     signer = OnchainSteps.signer(linked, active)
@@ -110,10 +113,12 @@ defmodule AshTemplateWeb.OnchainExample do
         do:
           Review.new(socket.assigns.id, signer, chain, steps(amount, chain), %{"amount" => amount})
 
+    wallet = OnchainSteps.shown_wallet(linked, socket.assigns.own, active)
+
     socket =
-      if signer == socket.assigns.signer,
-        do: socket,
-        else: socket |> assign(signer: signer, balance: nil) |> read_balance()
+      if wallet == socket.assigns.wallet,
+        do: assign(socket, signer: signer),
+        else: socket |> assign(signer: signer, wallet: wallet, balance: nil) |> read_balance()
 
     socket
     |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
@@ -150,11 +155,11 @@ defmodule AshTemplateWeb.OnchainExample do
     }
   end
 
-  defp read_balance(%{assigns: %{signer: nil}} = socket), do: socket
+  defp read_balance(%{assigns: %{wallet: nil}} = socket), do: socket
 
   defp read_balance(socket) do
-    %{chain: chain, signer: signer} = socket.assigns
-    start_async(socket, :balance, fn -> ChainClient.balance(chain, signer) end)
+    %{chain: chain, wallet: wallet} = socket.assigns
+    start_async(socket, :balance, fn -> ChainClient.balance(chain, wallet) end)
   end
 
   @impl true
@@ -178,9 +183,9 @@ defmodule AshTemplateWeb.OnchainExample do
       <p class="onchain-example-review" aria-live="polite" hidden={!@review}>
         {@review && review_line(@review)}
       </p>
-      <p class="onchain-example-from" hidden={!@signer}>
-        <%= if @signer do %>
-          Sending from <code>{RegentFormat.short_address(@signer)}</code>
+      <p class="onchain-example-from" hidden={!@wallet}>
+        <%= if @wallet do %>
+          Sending from <code>{RegentFormat.short_address(@wallet)}</code>
           on {@chain.name} · {balance(@balance)}
         <% end %>
       </p>
