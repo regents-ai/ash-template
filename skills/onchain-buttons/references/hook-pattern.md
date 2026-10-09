@@ -145,6 +145,13 @@ and only when the signed-in account links it.
   for: the signer, or with none the account's own wallet
   (`AccessContext.own_wallet/1`), so a wrong or missing active wallet never empties the
   panel. Signed out, it is the active wallet.
+- Every figure read for the shown wallet counts against a read allowance
+  (`Limits.spend(:wallet_read, who)`): the account signed in, the visitor's client address
+  (`client_key`) wherever the wallet can be one the browser reports. Past it, the figure
+  already shown stays, and one not read yet shows as unavailable. Figures are read again
+  when the wallet changes and when a step lands, never on each check while it is on its way.
+- A figure taken from a confirmed step's receipt (an approval's amount) applies only when
+  that step's signer is the shown wallet.
 
 ## A press
 

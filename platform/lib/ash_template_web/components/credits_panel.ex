@@ -193,10 +193,15 @@ defmodule AshTemplateWeb.CreditsPanel do
     do: {:noreply, assign(socket, allowance: :unread)}
 
   # A confirmed approval sets what staking may take to exactly its amount, so
-  # the panel knows it from the receipt it just read, before the next read.
-  defp approved(socket, hash) do
+  # the panel knows it from the receipt it just read, before the next read. It
+  # is the shown wallet's figure only when that wallet sent it.
+  defp approved(%{assigns: %{wallet: wallet}} = socket, hash) do
     case Enum.find(socket.assigns.presses.sent, &(&1.hash == hash)) do
-      %{name: "approve", outcome: :confirmed, review: %{inputs: %{"amount" => amount}}} ->
+      %{
+        name: "approve",
+        outcome: :confirmed,
+        review: %{signer: ^wallet, inputs: %{"amount" => amount}}
+      } ->
         assign(socket, allowance: Chains.micro(dollars(amount)))
 
       _other ->
@@ -233,7 +238,9 @@ defmodule AshTemplateWeb.CreditsPanel do
       if wallet == socket.assigns.wallet,
         do: assign(socket, signer: signer),
         else:
-          socket |> assign(signer: signer, wallet: wallet, usdc: nil, allowance: nil) |> read_funds()
+          socket
+          |> assign(signer: signer, wallet: wallet, usdc: nil, allowance: nil)
+          |> read_funds()
 
     socket
     |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
@@ -300,14 +307,16 @@ defmodule AshTemplateWeb.CreditsPanel do
     do: assign(socket, purchases: Map.put(socket.assigns.purchases, hash, shown))
 
   # The shown wallet's USDC on Base, and what REGENT staking may take of it,
-  # both at the latest block. Each account has a read
-  # allowance; past it, the figures already shown stay.
+  # both at the latest block. Each account has a read allowance; past it, the
+  # figures already shown stay, and a wallet not read yet shows them unavailable.
   defp read_funds(%{assigns: %{wallet: nil}} = socket), do: socket
 
   defp read_funds(socket) do
+    %{usdc: usdc, allowance: allowance} = socket.assigns
+
     case Limits.spend(:wallet_read, {:human, socket.assigns.account.id}) do
       :ok -> start_reads(socket)
-      :limited -> socket
+      :limited -> assign(socket, usdc: usdc || :unread, allowance: allowance || :unread)
     end
   end
 

@@ -1131,3 +1131,9 @@ Operations
   0xf39f..2266 or 0x7099..79c8." A press from that wallet still sends nothing.
 - The Points page's NFT check on Base counts against the same per-account
   `wallet_read` allowance as the Buy panel's reads.
+- The wallet example's balance reads count against the visitor's address
+  allowance, signed in or out, and run when the wallet changes or a step lands
+  rather than on every check. Past the allowance the figure shown stays; one not
+  read yet, there and in the Buy panel, reads "unavailable" instead of waiting.
+- A confirmed approval fills in the Buy panel's allowance only when the wallet
+  shown is the one that approved.

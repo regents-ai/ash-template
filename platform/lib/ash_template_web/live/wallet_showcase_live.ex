@@ -74,6 +74,7 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
             lease={@session_lease}
+            client_key={@client_key}
             account={current_account(@access_context)}
             chain={@chain}
           />
