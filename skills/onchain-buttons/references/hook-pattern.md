@@ -138,7 +138,13 @@ and only when the signed-in account links it.
   wallet that may act, or `nil` when signed out, when none is active, or when the account
   does not link it.
 - With no signer there is no review. `OnchainSteps.mismatch_note/2` names both short
-  addresses when the wallet app has another wallet open.
+  addresses and asks the person to switch when the wallet app has another wallet open
+  ("Your wallet is on 0x9a8b..c1d2, which isn't linked to this account. Switch to
+  0x1234..abcd.").
+- `OnchainSteps.shown_wallet(linked, own, active)` is the wallet the panel shows figures
+  for: the signer, or with none the account's own wallet
+  (`AccessContext.own_wallet/1`), so a wrong or missing active wallet never empties the
+  panel. Signed out, it is the active wallet.
 
 ## A press
 

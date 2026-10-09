@@ -154,7 +154,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"
             lease={nil}
-            account={if @signed_in, do: %{wallet_addresses: @linked}}
+            account={if @signed_in, do: %{wallet_address: hd(@linked), wallet_addresses: @linked}}
             chain={@chain}
           />
         </section>

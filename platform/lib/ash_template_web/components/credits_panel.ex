@@ -22,7 +22,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.{ChainClient, Credits, Limits}
+  alias AshTemplate.{AccessContext, ChainClient, Credits, Limits}
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
@@ -43,6 +43,7 @@ defmodule AshTemplateWeb.CreditsPanel do
      |> assign(
        active: nil,
        signer: nil,
+       wallet: nil,
        amount: "5",
        number: Ecto.UUID.generate(),
        numbers: %{},
@@ -225,11 +226,14 @@ defmodule AshTemplateWeb.CreditsPanel do
         Review.new(socket.assigns.id, signer, Chains.chain(:base), steps, inputs)
       end
 
-    # A new amount changes no balance, so only a new signer reads them.
+    # A new amount changes no balance, so only a new wallet reads them.
+    wallet = OnchainSteps.shown_wallet(linked, socket.assigns.own, active)
+
     socket =
-      if signer == socket.assigns.signer,
-        do: socket,
-        else: socket |> assign(signer: signer, usdc: nil, allowance: nil) |> read_funds()
+      if wallet == socket.assigns.wallet,
+        do: assign(socket, signer: signer),
+        else:
+          socket |> assign(signer: signer, wallet: wallet, usdc: nil, allowance: nil) |> read_funds()
 
     socket
     |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
@@ -295,10 +299,10 @@ defmodule AshTemplateWeb.CreditsPanel do
   defp put_purchase(socket, hash, shown),
     do: assign(socket, purchases: Map.put(socket.assigns.purchases, hash, shown))
 
-  # The paying wallet's USDC on Base, and what REGENT staking may take of it,
+  # The shown wallet's USDC on Base, and what REGENT staking may take of it,
   # both at the latest block. Each account has a read
   # allowance; past it, the figures already shown stay.
-  defp read_funds(%{assigns: %{signer: nil}} = socket), do: socket
+  defp read_funds(%{assigns: %{wallet: nil}} = socket), do: socket
 
   defp read_funds(socket) do
     case Limits.spend(:wallet_read, {:human, socket.assigns.account.id}) do
@@ -308,12 +312,12 @@ defmodule AshTemplateWeb.CreditsPanel do
   end
 
   defp start_reads(socket) do
-    signer = socket.assigns.signer
+    wallet = socket.assigns.wallet
 
     socket
-    |> start_async(:usdc, fn -> usdc_call("balanceOf(address)", [signer]) end)
+    |> start_async(:usdc, fn -> usdc_call("balanceOf(address)", [wallet]) end)
     |> start_async(:allowance, fn ->
-      usdc_call("allowance(address,address)", [signer, Chains.staking()])
+      usdc_call("allowance(address,address)", [wallet, Chains.staking()])
     end)
   end
 
@@ -329,10 +333,17 @@ defmodule AshTemplateWeb.CreditsPanel do
   # The account as the page gave it, or as it reads now before each event
   # (`Session.check_component_events/2`): the wallets that may act and the
   # review follow it.
-  defp take_account(socket, account),
-    do: socket |> assign(account: account, linked: wallets(account)) |> sync()
+  defp take_account(socket, account) do
+    context = AccessContext.for_account(account)
 
-  defp wallets(account), do: Enum.map(account.wallet_addresses, &String.downcase/1)
+    socket
+    |> assign(
+      account: account,
+      linked: AccessContext.linked_wallets(context),
+      own: AccessContext.own_wallet(context)
+    )
+    |> sync()
+  end
 
   defp dollars(amount) do
     case Integer.parse(String.trim(amount)) do
@@ -424,9 +435,9 @@ defmodule AshTemplateWeb.CreditsPanel do
 
       <%!-- Lines above the buttons stay in the page and are only hidden, so one
            appearing never replaces the button a person has just pressed. --%>
-      <div class="credits-panel__wallet" hidden={!@signer}>
+      <div class="credits-panel__wallet" hidden={!@wallet}>
         <span class="credits-panel__muted">Paying from</span>
-        <code>{@signer && RegentFormat.short_address(@signer)}</code>
+        <code>{@wallet && RegentFormat.short_address(@wallet)}</code>
         <span class="credits-panel__usdc">{usdc(@usdc)}</span>
       </div>
       <p class="credits-panel__note" hidden={!@mismatch}>{@mismatch}</p>
