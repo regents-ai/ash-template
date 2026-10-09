@@ -180,17 +180,15 @@ defmodule AshTemplateWeb.CreditsPanel do
       else: {:noreply, put_purchase(socket, hash, shown)}
   end
 
-  def handle_async(:usdc, {:ok, {:ok, micro}}, socket),
-    do: {:noreply, assign(socket, usdc: micro)}
-
-  def handle_async(:usdc, _unread, socket),
-    do: {:noreply, assign(socket, usdc: :unread)}
-
-  def handle_async(:allowance, {:ok, {:ok, micro}}, socket),
-    do: {:noreply, assign(socket, allowance: micro)}
-
-  def handle_async(:allowance, _unread, socket),
-    do: {:noreply, assign(socket, allowance: :unread)}
+  # Each read answers with the wallet it was for, and lands only while that
+  # wallet is still the one shown: the check before it can move the panel to
+  # another.
+  def handle_async(figure, result, socket) when figure in [:usdc, :allowance] do
+    case read(result, socket.assigns.wallet) do
+      :other_wallet -> {:noreply, socket}
+      micro -> {:noreply, assign(socket, figure, micro)}
+    end
+  end
 
   # A confirmed approval sets what staking may take to exactly its amount, so
   # the panel knows it from the receipt it just read, before the next read. It
@@ -324,11 +322,16 @@ defmodule AshTemplateWeb.CreditsPanel do
     wallet = socket.assigns.wallet
 
     socket
-    |> start_async(:usdc, fn -> usdc_call("balanceOf(address)", [wallet]) end)
+    |> start_async(:usdc, fn -> {wallet, usdc_call("balanceOf(address)", [wallet])} end)
     |> start_async(:allowance, fn ->
-      usdc_call("allowance(address,address)", [wallet, Chains.staking()])
+      {wallet, usdc_call("allowance(address,address)", [wallet, Chains.staking()])}
     end)
   end
+
+  defp read({:ok, {wallet, {:ok, micro}}}, wallet), do: micro
+  defp read({:ok, {wallet, _unread}}, wallet), do: :unread
+  defp read({:ok, {_other, _answer}}, _wallet), do: :other_wallet
+  defp read({:exit, _reason}, _wallet), do: :unread
 
   defp usdc_call(signature, args) do
     call = %{to: Chains.usdc(:base), data: Call.encode(signature, args)}
