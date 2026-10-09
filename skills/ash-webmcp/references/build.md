@@ -1,8 +1,9 @@
 # Build WebMCP tools into an Ash site
 
-WebMCP lets a page hand the browser's own agent a set of tools. The agent calls them
-inside the signed-in customer's tab, so every call is the customer acting. It is not
-a remote MCP server; a hosted `/mcp` endpoint is a separate surface with its own auth.
+WebMCP lets a page expose tools to the browser's agent. Protected agent operations
+authenticate the agent through per-request SIWA proof and resolve its current owner
+pairing. A signed-in customer's tab does not supply agent authority. A hosted `/mcp`
+endpoint is a separate transport and must enforce the same product authorization.
 
 Checked against the WebMCP Editor's Draft at webmachinelearning/webmcp `729ae01`
 (2026-09-26) and Chrome's WebMCP docs (updated 2026-09-21). The API changed several
@@ -112,14 +113,16 @@ const tools = manifest.tools.filter(tool => tool.scope === "site").map(tool => (
 
 ### 2. A tool is a thin door to an Ash action
 
-- `execute` calls the same route or LiveView event the page's own buttons use. The
-  controller calls the domain's code interface with the actor from the session
-  (`MyApp.Forum.post_reply(input, actor: actor)`); Ash policies decide. A tool never
-  gets its own authorization path.
-- Identity never comes from tool input. The server reads it from the session; the
-  page learns who is signed in from server-rendered markup.
-- `fetch(url, {credentials: "same-origin", headers: {"x-csrf-token": token}, signal})`.
-  Pass the agent's `signal` through.
+- Protected agent executors use the manifest's signed HTTP operation. The controller
+  resolves the verified agent and current pairing, then calls the same product
+  domain interface used by the human UI (`MyApp.Forum.post_reply(input, actor: actor)`).
+  Ash policies enforce ownership and membership for that actor. Do not forward an
+  agent call to a LiveView event that inherits the customer's session authority.
+- Identity never comes from tool input or browser cookies. Keep the verified agent
+  and its benefiting user separate through the product action and stored outcome.
+- Use the shared signed transport described below: it omits credentials, refuses
+  redirects and sends the exact prepared bytes with the supplied proof. Public
+  reads also omit credentials. Pass the agent's `signal` through.
 - A write cancelled after the request left returns `{outcome: "unknown"}` with how to
   check, never "cancelled".
 - Keep results small and bounded. Refuse rather than truncate data into a lie.
@@ -144,11 +147,11 @@ const tools = manifest.tools.filter(tool => tool.scope === "site").map(tool => (
 A tool marked `payment: moves_usdc` takes the payment through the shared
 `RegentPayments.Purchase`, as the site's pages and HTTP doors do (`payments`).
 
-A tool that signs goes through the same wallet step as the button: the server issues
-the challenge, the customer's wallet signs exactly what it states, the server admits
-it. Nothing signs automatically, a refused signature never retries unsigned, and
-every call reaches the wallet (the same rule as on-chain buttons: no gating,
-deferring or deduplicating a press).
+A customer-wallet transaction goes through the same wallet step as its button:
+the server prepares the transaction, the customer's active linked wallet approves
+it, and the existing transaction rules apply. Every distinct press reaches that
+wallet; never queue or deduplicate it. SIWA request authentication is separate:
+the named agent uses its own existing signer, and a refusal never retries unsigned.
 
 ### 5. Register once, remove cleanly
 
@@ -165,22 +168,23 @@ deferring or deduplicating a press).
 
 ### 6. The shared profile tools
 
-`regents/identity/assets/profile_tools.mjs` defines `profile_get`, `profile_sync` and
-`profile_update`; `mix regent_identity.assets` copies it into each product's
-gitignored `vendor/regent_identity/`, and the page calls `installProfileTools`.
-They use the Privy session and return `authentication_required` when signed out.
-List them in the manifest with `scope: "site"`.
+The legacy shared profile tools use the customer's Privy session. That behavior
+does not meet the signed-agent contract. Do not register those executors as agent
+tools during adoption. Expose only product-authorized profile operations through
+signed routes that retain the agent and beneficiary; keep account-security actions
+owner-only. List every supported replacement in the manifest with `scope: "site"`.
+The human profile UI may continue using its authenticated owner session.
 
 ## Checks
 
 1. Compile and typecheck. Tests only where the founder agreed them; a fake
    `modelContext` proves the adapter, not the browser.
-2. The HTTP routes behind each tool: real requests signed out and signed in, and a
-   refused write returns a fixable error.
+2. The HTTP routes behind each tool: public reads, signed agent requests and
+   unpaired/revoked/cookie-only refusals. A refused write returns a fixable error.
 3. Native discovery: Chrome with the flag (or the trial token on the real host) and
    the Model Context Tool Inspector extension. The tools appear with the manifest's
-   names and annotations; run each read-only one; run one write as a test customer
-   on a local server only.
+    names and annotations; run each public read, then a protected read and write as
+    a signed agent paired with a test beneficiary on a local server only.
 4. Report which of the three you proved: the manifest and adapter, the adapter against
    the site, or the browser's own discovery and execution.
 
@@ -202,24 +206,24 @@ to `navigator.modelContext`, sends MCP-only annotations, marks site-wide tools w
 `doors.page` instead of `scope`, and leaves its room and profile tools out of the
 manifest. Follow this guide where they differ.
 
-Autolaunch, relative to `repos/autolaunch/platform`, is the smaller example that follows
-this guide: `priv/tool_manifest.json` lists all eight tools its pages register (five
-read-only public tools and the three shared profile tools, each with `scope`),
-`assets/js/public_tools.ts` imports it and registers the public five, and `/developers`
-and `/llms.txt` build their tool tables from it.
+Autolaunch's historical public-read layout is a smaller manifest example:
+`platform/assets/js/public_tools.ts` imports `platform/priv/tool_manifest.json`,
+and `/developers` and `/llms.txt` derive their tables from it. Its legacy shared
+profile executors must be replaced or omitted under the signed-agent contract;
+do not copy their owner-session authority into a new agent tool.
 
 Techtree, relative to `repos/techtree/platform`, is the smallest: five read-only site
 tools in `priv/tool_manifest.json`, read by `Techtree.Capabilities` (`manifest`, `tools`,
 `site_tools`) and registered by `assets/js/public_tools.js`, which records
 `data-webmcp-status`; the Docs page and `/llms.txt` list them from the manifest.
 
-The template itself, relative to `platform/`, is the starting point a new site copies:
-two read-only site tools, `about` and `docs`, in `priv/tool_manifest.json`, read by
-`AshTemplate.Capabilities` and served at `/capabilities`, registered by
-`assets/js/public_tools.ts` (Techtree's registration), with `permissions-policy:
-tools=(self)` set once in the endpoint. `/docs` and `/llms.txt` list the tools from the
-manifest, and `make readiness` checks the header, the manifest, the tools the page's
-script registers and both tables.
+The template is the signed-access reference. `priv/tool_manifest.json` includes
+public discovery, signed identity and protected account, note and room operations.
+`assets/js/public_tools.ts` prepares and forwards signed requests through the shared
+transport; `AshTemplateWeb.Plugs.AgentWallet` resolves the agent and pairing.
+Read the current manifest and `docs/signed-agent-access-release.md` for exact source
+coverage and remaining runtime acceptance. Historical product examples above are
+layout references, not evidence of signed-access adoption.
 
 ## Unified Regent agent access (approved 9 October 2026)
 

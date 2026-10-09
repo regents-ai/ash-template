@@ -10,7 +10,7 @@ fixture is included.
 ## Release prerequisites
 
 The shared source is pinned to elixir-utils commit
-`3397d80c8d5eec7085d003cb7a0e4a0e8605706f`. It must be published before a remote build.
+`5107b790acd5735b1755110b65d94a2ce9cbc450` (published on main).
 The production deployment also requires separately approved shared migrations:
 
 - Agents `20261009200000`: archive current and future pairing episodes; preserve
@@ -24,8 +24,11 @@ grants with compatible grant controls. The five product-site deployments are
 outside this release. Their old pairing lookups and deletes remain compatible;
 the global grant changes still affect their shared database.
 
-The template's release command checks shared prerequisites before applying its
-own note-attribution migrations. It never applies shared migrations automatically.
+The template's release command calls the shared libraries' read-only prerequisite
+checks before applying its own note-attribution migrations. Other sites reuse
+`RegentAgents.Migrator.require_pairing_history!/1` and
+`RegentCredits.Migrator.require_pairing_grants!/1` before their own migrations.
+These checks never apply shared migrations automatically.
 Apply only the approved Agents and Credits migrations, using the direct release
 connection; do not run the Points migrator or activate earning rules for this task.
 Points `starts_at` and `unified_activity_starts_at` remain nil.

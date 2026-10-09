@@ -22,34 +22,8 @@ defmodule AshTemplate.Release do
 
   @doc "Read-only release prerequisite; shared migrations require separate founder authority."
   def require_signed_access_schema!(repo) do
-    %{rows: [[ready?]]} =
-      Ecto.Adapters.SQL.query!(repo, """
-      SELECT
-        EXISTS (SELECT 1 FROM pg_catalog.pg_attribute a
-          JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
-          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-          WHERE n.nspname = 'regent_agents' AND c.relname = 'pairing_history'
-            AND a.attname = 'revoked_at' AND NOT a.attisdropped)
-        AND (SELECT count(*) = 2 FROM pg_catalog.pg_attribute a
-          JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
-          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-          WHERE n.nspname = 'regent_credits' AND c.relname IN ('holds', 'agent_permissions')
-            AND a.attname = 'pairing_id' AND NOT a.attisdropped)
-        AND (SELECT count(*) = 2 FROM pg_catalog.pg_trigger t
-          JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
-          JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-          WHERE n.nspname = 'regent_agents' AND c.relname = 'paired_agents'
-            AND t.tgname IN ('retain_pairing_episode', 'revoke_credit_grant')
-            AND NOT t.tgisinternal AND t.tgenabled IN ('O', 'A'))
-      """)
-
-    unless ready?,
-      do:
-        raise(
-          "Signed agent access requires the separately approved shared Agents and Credits migrations before deployment"
-        )
-
-    :ok
+    :ok = RegentAgents.Migrator.require_pairing_history!(repo)
+    RegentCredits.Migrator.require_pairing_grants!(repo)
   end
 
   @doc """
