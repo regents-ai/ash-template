@@ -112,6 +112,10 @@ config :ash_template, :behind_fly_proxy, false
 # other sites' local servers without taking the one port they all name in production.
 config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0
 
+# The engine's own measurements (memory, run queues, process counts), taken every
+# 10 seconds by telemetry_poller's default poller and exported as `vm.*` metrics.
+config :telemetry_poller, :default, period: 10_000
+
 # The chain the wallet page at /showcase/wallet sends on: Base Sepolia, a test
 # network, so nothing it sends moves value.
 config :ash_template, :wallet_chain, %{

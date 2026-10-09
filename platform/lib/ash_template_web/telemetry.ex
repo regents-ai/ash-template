@@ -8,6 +8,8 @@ defmodule AshTemplateWeb.Telemetry do
   (`AshTemplate.ChainClient`), and `[:ash_template, :wallet, :failure]` for each
   press the browser reported as not sent or not confirmed (`wallet_failed/2`).
   Background jobs report each run's outcome and time from Oban's own events.
+  The engine's memory, run queues and process counts come from telemetry_poller's
+  default poller, every 10 seconds (`config/config.exs`).
   Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
   by outcome, with its tokens, what OpenRouter charged and how long it took.
   """
@@ -106,6 +108,20 @@ defmodule AshTemplateWeb.Telemetry do
         tags: [:outcome],
         reporter_options: [buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30]]
       ),
+      last_value("vm.memory.total.bytes", event_name: [:vm, :memory], measurement: :total),
+      last_value("vm.memory.processes.bytes",
+        event_name: [:vm, :memory],
+        measurement: :processes
+      ),
+      last_value("vm.memory.binary.bytes", event_name: [:vm, :memory], measurement: :binary),
+      last_value("vm.memory.ets.bytes", event_name: [:vm, :memory], measurement: :ets),
+      last_value("vm.memory.code.bytes", event_name: [:vm, :memory], measurement: :code),
+      last_value("vm.memory.atom.bytes", event_name: [:vm, :memory], measurement: :atom),
+      last_value("vm.total_run_queue_lengths.total"),
+      last_value("vm.total_run_queue_lengths.cpu"),
+      last_value("vm.system_counts.process_count"),
+      last_value("vm.system_counts.atom_count"),
+      last_value("vm.system_counts.port_count"),
       counter("health.wallet_send_failures.total",
         event_name: [:ash_template, :wallet, :failure],
         tags: [:flow, :reason],
