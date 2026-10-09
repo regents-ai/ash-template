@@ -6,13 +6,13 @@ defmodule AshTemplateWeb.OnchainExample do
 
   "Record" sends a transaction that succeeds, "Fail on purpose" one the chain
   turns down, and "Sign" asks for an EIP-712 signature. None of it moves value.
-  The parent passes `account` (the signed-in account, `nil` signed out), `chain`
-  and its `session_lease` as `lease`; the hook reports Privy's active wallet,
-  which acts only when the account links it.
+  The parent passes `account` (the signed-in account, `nil` signed out), `chain`,
+  its `session_lease` as `lease` and its `client_key`; the hook reports Privy's
+  active wallet, which acts only when the account links it.
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.{AccessContext, ChainClient}
+  alias AshTemplate.{AccessContext, ChainClient, Limits}
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
@@ -36,7 +36,9 @@ defmodule AshTemplateWeb.OnchainExample do
   @impl true
   def update(assigns, socket) do
     {:ok,
-     socket |> assign(Map.take(assigns, [:id, :lease, :chain])) |> take_account(assigns.account)}
+     socket
+     |> assign(Map.take(assigns, [:id, :lease, :chain, :client_key]))
+     |> take_account(assigns.account)}
   end
 
   @impl true
@@ -83,8 +85,18 @@ defmodule AshTemplateWeb.OnchainExample do
     do: {:noreply, OnchainSteps.check_again(socket, hash)}
 
   @impl true
-  def handle_async({:onchain_step, hash}, result, socket),
-    do: {:noreply, OnchainSteps.checked(socket, hash, result) |> read_balance()}
+  # The balance is read again once a step lands, not on every check before it.
+  def handle_async({:onchain_step, hash}, result, socket) do
+    socket = OnchainSteps.checked(socket, hash, result)
+
+    case Enum.find(socket.assigns.presses.sent, &(&1.hash == hash)) do
+      %{outcome: outcome} when outcome in [:confirmed, :reverted] ->
+        {:noreply, read_balance(socket)}
+
+      _reading ->
+        {:noreply, socket}
+    end
+  end
 
   def handle_async(:balance, {:ok, {:ok, wei}}, socket),
     do: {:noreply, assign(socket, balance: wei)}
@@ -98,7 +110,10 @@ defmodule AshTemplateWeb.OnchainExample do
     context = AccessContext.for_account(account)
 
     socket
-    |> assign(linked: AccessContext.linked_wallets(context), own: AccessContext.own_wallet(context))
+    |> assign(
+      linked: AccessContext.linked_wallets(context),
+      own: AccessContext.own_wallet(context)
+    )
     |> sync()
   end
 
@@ -157,9 +172,16 @@ defmodule AshTemplateWeb.OnchainExample do
 
   defp read_balance(%{assigns: %{wallet: nil}} = socket), do: socket
 
+  # Signed out the shown wallet is whatever the browser reports, so every read
+  # counts against the visitor's address allowance; past it, the figure already
+  # shown stays.
   defp read_balance(socket) do
-    %{chain: chain, wallet: wallet} = socket.assigns
-    start_async(socket, :balance, fn -> ChainClient.balance(chain, wallet) end)
+    %{chain: chain, wallet: wallet, balance: balance} = socket.assigns
+
+    case Limits.spend(:wallet_read, {:client, socket.assigns.client_key}) do
+      :ok -> start_async(socket, :balance, fn -> ChainClient.balance(chain, wallet) end)
+      :limited -> assign(socket, balance: balance || :unread)
+    end
   end
 
   @impl true
