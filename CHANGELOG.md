@@ -1137,3 +1137,5 @@ Operations
   read yet, there and in the Buy panel, reads "unavailable" instead of waiting.
 - A confirmed approval fills in the Buy panel's allowance only when the wallet
   shown is the one that approved.
+- The wallet line says "Paying from" or "Sending from" only for the wallet that
+  can send; the account's wallet shown beside a switch note reads "Wallet".

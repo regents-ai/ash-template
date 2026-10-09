@@ -445,7 +445,7 @@ defmodule AshTemplateWeb.CreditsPanel do
       <%!-- Lines above the buttons stay in the page and are only hidden, so one
            appearing never replaces the button a person has just pressed. --%>
       <div class="credits-panel__wallet" hidden={!@wallet}>
-        <span class="credits-panel__muted">Paying from</span>
+        <span class="credits-panel__muted">{if @signer, do: "Paying from", else: "Wallet"}</span>
         <code>{@wallet && RegentFormat.short_address(@wallet)}</code>
         <span class="credits-panel__usdc">{usdc(@usdc)}</span>
       </div>
