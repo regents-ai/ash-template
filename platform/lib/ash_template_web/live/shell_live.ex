@@ -703,10 +703,19 @@ defmodule AshTemplateWeb.ShellLive do
   defp read_points_bonus(socket) do
     case human_actor(socket) do
       %Human{human_account_id: id} ->
-        Read.start(socket, :points_bonus, id, fn -> RegentPoints.Bonus.current(id) end)
+        Read.start(socket, :points_bonus, id, fn -> points_bonus(id) end)
 
       nil ->
         Read.clear(socket, :points_bonus)
+    end
+  end
+
+  # Base is read for the person's NFTs, counted against the same per-account
+  # allowance as the Buy panel's reads.
+  defp points_bonus(id) do
+    case AshTemplate.Limits.spend(:wallet_read, {:human, id}) do
+      :ok -> RegentPoints.Bonus.current(id)
+      :limited -> {:error, :limited}
     end
   end
 
