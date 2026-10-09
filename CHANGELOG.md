@@ -1081,8 +1081,6 @@ Operations
   (`ASH_TEMPLATE_BASE_NODE_URL`). Its stand-in account now carries an id, so
   picking a lab wallet reads its funds instead of stopping the page.
 
-## 2026-10-09 — Points NFT bonus at the month-end tally
-
 ## 2026-10-09 — Points NFT bonus at the end of each 30-day period
 
 - Sean, HQ thread, 2026-10-09 04:56Z, item 6: the NFT bonus is no longer saved
@@ -1106,3 +1104,15 @@ Operations
   check (`AshTemplate.Points.AgentNote`) counts it only while the agent that saved
   it is still paired with the note's writer, and marks the award as that agent's.
   Nothing earns until the rule is approved and the program starts.
+
+## 2026-10-09 — Credits deposits read from Base
+
+- `@elixir_utils_ref` moves to 58acbc4, which reads USDC sent straight to the
+  Treasury on Base and keeps each purchase's USDC to the millionth. The site's
+  chain client answers the reader's log requests (`logs/2`, `eth_getLogs`), and
+  the Points Credits source counts micro-USDC from the exact amount.
+- The Credits admin shows each amount as paid ("4.123456 USDC"). A deposit from a
+  wallet no account has signed in with yet reads "credited, waiting for an
+  account", names no account and offers no Refund until someone signs in with it.
+- Locally, `RegentCredits.Migrator.up/1` adds the deposit tables; in production
+  Regents runs them.

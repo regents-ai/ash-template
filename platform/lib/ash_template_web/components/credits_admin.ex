@@ -160,6 +160,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
   defp refund_words(%Refused{reason: :used}),
     do: "This account has used Credits, so its purchases can't be refunded."
 
+  defp refund_words(%Refused{reason: :no_account}),
+    do: "No account holds these Credits yet, so there is nothing to refund."
+
   defp refund_words(%Refused{reason: :not_credited}),
     do: "This purchase never added Credits, so there is nothing to refund."
 
@@ -176,10 +179,20 @@ defmodule AshTemplateWeb.CreditsAdmin do
   defp state(_purchase, %{status: :locked}), do: "refund started"
   defp state(_purchase, %{status: :sent}), do: "refunded"
   defp state(%{status: :checking}, nil), do: "being checked"
+
+  defp state(%{status: :credited, privy_user_id: nil}, nil),
+    do: "credited, waiting for an account"
+
   defp state(%{status: :credited}, nil), do: "credited"
   defp state(%{status: :failed, reason: reason}, nil), do: "not credited (#{reason})"
 
   defp sent_on(purchase), do: Calendar.strftime(purchase.inserted_at, "%d %b %Y %H:%M UTC")
+
+  # USDC to the millionth, as exact as it was paid: "5.00", "4.123456".
+  defp usdc(amount) do
+    places = max(-Decimal.normalize(amount).exp, 2)
+    amount |> Decimal.round(places) |> Decimal.to_string(:normal)
+  end
 
   defp chain_name(:base), do: "Base"
   defp chain_name(:ethereum), do: "Ethereum"
@@ -225,20 +238,26 @@ defmodule AshTemplateWeb.CreditsAdmin do
         <ul :if={@purchases not in [nil, []]} class="credits-admin__list">
           <li :for={purchase <- @purchases}>
             <p>
-              <strong>{purchase.amount} USDC on {chain_name(purchase.chain)}</strong>
+              <strong>{usdc(purchase.amount)} USDC on {chain_name(purchase.chain)}</strong>
               · {state(purchase, @refunded[purchase.id])} · {sent_on(purchase)}
             </p>
-            <p>Account <code>{purchase.privy_user_id}</code></p>
+            <p :if={purchase.privy_user_id}>Account <code>{purchase.privy_user_id}</code></p>
+            <p :if={!purchase.privy_user_id}>
+              No account yet. These Credits wait until someone signs in with this wallet.
+            </p>
             <p>From <code>{purchase.wallet}</code></p>
             <p><a href={@explorers[purchase.chain] <> purchase.tx_hash}>Transaction</a></p>
             <P.button
-              :if={purchase.status == :credited and is_nil(@refunded[purchase.id])}
+              :if={
+                purchase.status == :credited and purchase.privy_user_id != nil and
+                  is_nil(@refunded[purchase.id])
+              }
               type="button"
               variant="secondary"
               phx-click="start_refund"
               phx-value-id={purchase.id}
               phx-target={@myself}
-              data-confirm={"Lock #{purchase.amount} purchased Credits for a refund?"}
+              data-confirm={"Lock #{usdc(purchase.amount)} purchased Credits for a refund?"}
             >
               Refund
             </P.button>
@@ -258,7 +277,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
         <ul :if={@refunds != []} class="credits-admin__list">
           <li :for={refund <- @refunds}>
             <p>
-              Send exactly <strong>{refund.amount} USDC</strong>
+              Send exactly <strong>{usdc(refund.amount)} USDC</strong>
               on <strong>{chain_name(refund.chain)}</strong>
               from the Treasury Safe <code>{@treasury}</code>
               to <code>{refund.wallet}</code>.

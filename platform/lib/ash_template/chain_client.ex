@@ -5,7 +5,8 @@ defmodule AshTemplate.ChainClient do
   node is the site's own for the chain (`:chain_nodes`), never the public address a
   wallet adds the chain with, so a private node or a lab fork reads what the site's
   steps sent. `RegentChain.Outcome` reads sent steps through `transaction/2` and
-  `receipt/2`; Regent Credits also reads the newest block number.
+  `receipt/2`; Regent Credits also reads the newest block number and the logs its
+  deposit reader asks for.
   """
 
   @behaviour RegentCredits.ChainClient
@@ -26,6 +27,10 @@ defmodule AshTemplate.ChainClient do
       {:ok, String.to_integer(hex, 16)}
     end
   end
+
+  @doc "`eth_getLogs` with `filter` as given."
+  @impl RegentCredits.ChainClient
+  def logs(chain, filter), do: rpc(chain, "eth_getLogs", [filter])
 
   @doc "The native balance of `address` in wei."
   def balance(chain, address) do
