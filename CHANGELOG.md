@@ -1038,3 +1038,16 @@ Operations
 - `regent_points` (elixir-utils, sparse `points`) is listed under `managed` in
   `security/required-fixes.json`, so every site that uses Regent Points can pass
   `make check-required-fixes`.
+
+## 2026-10-08 — The sign-in library turns away an answer that is not a verdict
+
+- The shared libraries move to elixir-utils f8a9385. When the sign-in service
+  answers a signed request with something other than a refusal or a verdict (a
+  200 without one, a redirect or a 1xx), the shared plug now treats it as a failed
+  request, so the site answers 503 `siwa_request_failed` instead of repeating the
+  service's status. Every site gets this by moving its pin; the template keeps no
+  rule of its own for it. The signing contract is unchanged (id 53180b09…6060).
+  The move also brings `regent_chain`'s signing with a key the app holds, which
+  the template does not use.
+- `@regents_ref` moves to Regents ba23ceee, whose `regent_agents` and
+  `regent_identity` take the same elixir-utils commit; their code is unchanged.
