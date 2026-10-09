@@ -144,7 +144,9 @@ and only when the signed-in account links it.
 - `OnchainSteps.shown_wallet(linked, own, active)` is the wallet the panel shows figures
   for: the signer, or with none the account's own wallet
   (`AccessContext.own_wallet/1`), so a wrong or missing active wallet never empties the
-  panel. Signed out, it is the active wallet.
+  panel. Signed out, it is the active wallet. The line naming it says "Paying from" or
+  "Sending from" only for the signer; any other shown wallet is just "Wallet", so the
+  panel never names a wallet nothing will send from beside the note asking to switch.
 - Every figure read for the shown wallet counts against a read allowance
   (`Limits.spend(:wallet_read, who)`). A panel that also shows figures signed out, where
   the wallet can be one the browser reports, counts every read against the visitor's

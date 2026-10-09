@@ -207,8 +207,8 @@ defmodule AshTemplateWeb.OnchainExample do
       </p>
       <p class="onchain-example-from" hidden={!@wallet}>
         <%= if @wallet do %>
-          Sending from <code>{RegentFormat.short_address(@wallet)}</code>
-          on {@chain.name} · {balance(@balance)}
+          {if @signer, do: "Sending from", else: "Wallet"}
+          <code>{RegentFormat.short_address(@wallet)}</code> on {@chain.name} · {balance(@balance)}
         <% end %>
       </p>
       <p class="onchain-example-note" hidden={!@mismatch}>{@mismatch}</p>
