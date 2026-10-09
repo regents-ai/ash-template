@@ -7,10 +7,10 @@ description: Taking USDC payments on Regent's Phoenix and Ash sites with the sha
 
 **Load `ash-stack` first, then `onchain-buttons` for the pay button.** Every Regent site
 takes payment the same way, through one shared library: `regent_payments`
-(`RegentPayments`) in `repos/regents/payments`, pinned like `regent_identity`:
+(`RegentPayments`) in `repos/elixir-utils/ash_components/payments`, pinned like `regent_identity`:
 
 ```elixir
-{:regent_payments, git: "https://github.com/regents-ai/regents.git", ref: @regents_ref, sparse: "payments"}
+{:regent_payments, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/payments"}
 ```
 
 Read the library's module docs before building; they are the contract. This skill says how
@@ -90,6 +90,40 @@ config :regent_payments, RegentPayments.Facilitator,
 Answer each outcome in customer words: paid, still settling (check again), expired
 (prepare again), refused (with the reason), or the payment service unavailable. The
 WebMCP tool refusal shape is in `ash-webmcp`.
+
+## Paired agent authority
+
+Verify SIWA before resolving the current pairing and canonical beneficiary. Every
+agent payment entry point, including hosted MCP, supplies an explicit `role: :agent`
+actor. Its `id` and `acting_agent_id` are the same agent profile UUID;
+`beneficiary_profile_id` is the site's owner profile UUID; `human_account_id` is the
+canonical positive integer account ID. Include the verified `privy_user_id`,
+lowercase `wallet_address` and original `pairing_id`. Do not pass an owner actor or
+accept these values from request fields.
+
+The library freezes that authority with the payment terms and locks the original
+active pairing before preparation and initial settlement. Revocation or re-pairing
+cannot authorize a new settlement against the old episode. Facilitator verification
+runs outside the database transaction; the locked transition checks authority again.
+The reserved `__regent_payments_agent_authority` payload entry is private server data.
+Never serialize a whole intent payload or return it as recovery material.
+
+After settlement is authorized, paid effects receive a
+`RegentPayments.CompletionActor`. An offer must check
+`AgentAuthority.completion_for?(actor, intent, expected_kind)` and bind its product
+action to the stored intent's exact target. This actor may finish only that paid
+effect; it grants no owner permissions, ordinary private reads, new purchases or
+unrelated product actions. Keep its original beneficiary and pairing attribution.
+
+For recovery after unpairing, authenticate the original agent signer, then use
+`Purchase.complete(actor, intent_id)`. Accept no payment signature on this route and
+return only intent ID, status and receipt. It never starts or retries settlement.
+Legacy pending intents without a frozen wallet or receipt are refused by this new
+API; legacy settled/applied intents require the receipt payer to match the signer.
+Do not guess historical ownership or widen authorization to make recovery succeed.
+
+The template documents this integration and keeps its payment showcase illustrative;
+it does not configure a payable offer. Product sites adopt the shared implementation.
 
 ## Fees handed on to REGENT staking
 

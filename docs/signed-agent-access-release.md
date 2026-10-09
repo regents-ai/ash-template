@@ -10,7 +10,7 @@ fixture is included.
 ## Release prerequisites
 
 The shared source is pinned to elixir-utils commit
-`a24d9bf5ce8dbca5852b081613e9e1674623512e` (published on main).
+`1564d79eb3b653f06ab11b6c422bd4d6283ea199` (published on main).
 The production deployment also requires separately approved shared migrations:
 
 - Agents `20261009200000`: archive current and future pairing episodes; preserve
@@ -38,6 +38,13 @@ These checks never apply shared migrations automatically.
 Apply only the approved Agents and Credits migrations, using the direct release
 connection; do not run the Points migrator or activate earning rules for this task.
 Points `starts_at` and `unified_activity_starts_at` remain nil.
+
+The shared payment guard freezes the verified agent, beneficiary and original
+pairing before a new payment. Recovery can finish only its already authorized
+effect. The canonical [payment integration](../skills/payments/SKILL.md) documents
+the typed actor, private metadata and narrow completion boundary. The template
+keeps its existing illustrative showcase; it configures no payable offer. Sites
+using `regent_payments` must adopt the required shared fix before release.
 
 ## Verification boundaries
 

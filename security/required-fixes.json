@@ -12,7 +12,7 @@
     {"app": "siwa_keyring", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "siwa/siwa-elixir/apps/siwa_keyring"},
     {"app": "regent_ui", "repository": "https://github.com/regents-ai/design-system.git", "sparse": "regent_ui"},
     {"app": "regent_identity", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "ash_components/identity", "previous_sources": [{"repository": "https://github.com/regents-ai/regents.git", "sparse": "identity"}]},
-    {"app": "regent_payments", "repository": "https://github.com/regents-ai/regents.git", "sparse": "payments"},
+    {"app": "regent_payments", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "ash_components/payments", "previous_sources": [{"repository": "https://github.com/regents-ai/regents.git", "sparse": "payments"}]},
     {"app": "regent_agents", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "ash_components/agents", "previous_sources": [{"repository": "https://github.com/regents-ai/regents.git", "sparse": "agents"}]},
     {"app": "regent_openai", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "openai"},
     {"app": "regent_mcp_events", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "mcp_events"},
@@ -22,6 +22,13 @@
     {"app": "regent_points", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "points"}
   ],
   "fixes": [
+    {
+      "id": "2026-10-09-agent-payment-pairing",
+      "summary": "Delegated payments freeze their original beneficiary and pairing, recheck that episode before settlement, and restrict recovery to the already authorized effect.",
+      "kind": "git",
+      "commit": "1564d79eb3b653f06ab11b6c422bd4d6283ea199",
+      "apps": ["regent_payments"]
+    },
     {
       "id": "EEF-CVE-2026-101028",
       "summary": "Ash count, exists and aggregate skipped related resource read policies in user filters before 3.34.6.",
