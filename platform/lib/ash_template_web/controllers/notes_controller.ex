@@ -36,7 +36,7 @@ defmodule AshTemplateWeb.NotesController do
       {404, "You have no note with that id.", "List your notes with GET /api/v1/notes."},
     "invalid_note" =>
       {422, "The note could not be saved.",
-       "Send only title (1 to 120 characters) and body (up to 10,000 characters, optional)."},
+       "Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. Agent creates also require operation_id, a UUID retained when retrying with fresh proof; omit it for updates."},
     "notes_unavailable" =>
       {503, "Your notes could not be reached right now.", "Try again in a moment."}
   }

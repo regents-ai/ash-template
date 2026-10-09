@@ -31,7 +31,7 @@ defmodule AshTemplateWeb.PageToolsController do
       {404, "There is no note of yours with that id.", "List your notes with notes_list."},
     "invalid_note" =>
       {422, "The note could not be saved.",
-       "Send a title of 1 to 120 characters and, if you like, a body of up to 10,000 characters."},
+       "Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID retained when retrying with fresh proof."},
     "room_not_found" =>
       {404, "There is no room with that name.",
        "The rooms are #{Enum.map_join(Room.all(), ", ", & &1.slug)}."},
