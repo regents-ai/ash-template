@@ -174,76 +174,7 @@
   font-size: 0.85rem;
 }
 
-/* The chain: a two-way slider with each chain's mark. */
-
-.credits-panel__chain-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-block-start: 0.75rem;
-}
-
-.credits-panel__chains {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  margin: 0;
-  padding: 0.25rem;
-  border: 0;
-  border-radius: 999px;
-  background: var(--color-bg);
-}
-
-/* The thumb slides under whichever chain is picked. */
-.credits-panel__chains::before {
-  content: "";
-  position: absolute;
-  inset: 0.25rem auto 0.25rem 0.25rem;
-  width: calc(50% - 0.25rem);
-  border-radius: 999px;
-  background: var(--color-surface);
-  box-shadow: 0 1px 3px color-mix(in oklch, var(--color-fg) 20%, transparent);
-  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.credits-panel__chains[data-chain="ethereum"]::before {
-  transform: translateX(100%);
-}
-
-.credits-panel__chains label {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 2.75rem;
-  padding-inline: 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.credits-panel__chains input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.credits-panel__chains label:has(input:focus-visible) {
-  outline: 2px solid var(--color-fg);
-  outline-offset: 2px;
-}
-
-.credits-panel__chains label:not(:has(input:checked)) {
-  color: var(--color-fg-muted);
-}
-
-.credits-panel__logo {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* The wallet the purchase comes from, with its USDC on both chains. */
+/* The wallet the purchase comes from, with its USDC on Base. */
 
 .credits-panel__wallet {
   display: grid;
@@ -260,9 +191,6 @@
 
 .credits-panel__usdc {
   grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -284,16 +212,6 @@
   grid-template-columns: subgrid;
   align-items: center;
   row-gap: 0.5rem;
-}
-
-/* A button or step this chain does not use keeps its space, unseen, so changing
-   chain never changes the panel's height; an unused step sits after the rest. */
-.credits-panel [data-unused] {
-  visibility: hidden;
-}
-
-.credits-panel__step[data-unused] {
-  order: 1;
 }
 
 .credits-panel__step > .credits-panel__again {
@@ -322,12 +240,6 @@
 
 .credits-panel__step[data-state="done"] .credits-panel__step-words > span:first-of-type {
   color: var(--color-success);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .credits-panel__chains::before {
-    transition: none;
-  }
 }
 
 /* A press the wallet still has: marked, never blocked. */

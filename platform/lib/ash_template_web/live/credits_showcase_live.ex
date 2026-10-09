@@ -1,11 +1,11 @@
 defmodule AshTemplateWeb.CreditsShowcaseLive do
   @moduledoc """
-  Local workshop for the Buy Credits panel against copies of Base and Ethereum on
-  this machine. `AshTemplateWeb.CreditsPanel` runs here as in the site header; a
+  Local workshop for the Buy Credits panel against a copy of Base on this
+  machine. `AshTemplateWeb.CreditsPanel` runs here as in the site header; a
   lab account (linking wallets A and B) and the `OnchainLab` stand-in wallet app
-  replace the real ones. The stand-in wallet sends only while the site's node for
-  the chain is on this machine (`ASH_TEMPLATE_BASE_NODE_URL` and
-  `ASH_TEMPLATE_ETHEREUM_NODE_URL`), so nothing reaches a real network.
+  replace the real ones. The stand-in wallet sends only while the site's Base node
+  is on this machine (`ASH_TEMPLATE_BASE_NODE_URL`), so nothing reaches a real
+  network.
 
   It also shows the parts regents.sh hosts, signed in by stand-ins: the agent
   spending settings (as the lab account on regents.sh), an agent placing a hold
@@ -27,8 +27,13 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
     {"C", "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"}
   ]
   @addresses Enum.map(@wallets, &elem(&1, 1))
-  @account %{privy_user_id: "did:privy:credits-lab", wallet_addresses: Enum.take(@addresses, 2)}
-  @chains [:base, :ethereum]
+  # The id keys the lab account's read and report allowances, as a real account's does.
+  @account %{
+    id: "credits-lab",
+    privy_user_id: "did:privy:credits-lab",
+    wallet_addresses: Enum.take(@addresses, 2)
+  }
+  @chains [:base]
   # The lab account's agents (the local copies' fourth and fifth accounts).
   @agents [
     "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
@@ -87,7 +92,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
     end
   end
 
-  # Gives every lab wallet 1,000 USDC on each local copy.
+  # Gives every lab wallet 1,000 USDC on the local copy.
   def handle_event("top_up", _params, socket) do
     results =
       for chain <- socket.assigns.local,
@@ -101,8 +106,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
 
     topped_up =
       if Enum.all?(results, &match?({:ok, _}, &1)),
-        do: "Every lab wallet now holds 1,000 USDC on each local copy.",
-        else: "A local copy did not answer. Start it and try again."
+        do: "Every lab wallet now holds 1,000 USDC on the local copy.",
+        else: "The local copy did not answer. Start it and try again."
 
     {:noreply, assign(socket, topped_up: topped_up)}
   end
@@ -192,7 +197,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
     <main id="credits-workshop" class="sc onchain-workshop">
       <header class="sc-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
-        <span class="sc-local">Local only · copies of Base and Ethereum on this machine</span>
+        <span class="sc-local">Local only · a copy of Base on this machine</span>
       </header>
 
       <section class="onchain-workshop-intro">
@@ -203,9 +208,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
           purchase and checked on the chain; the site's Oban keeps checking once a minute.
         </p>
         <p :if={@local != @chains}>
-          Start local copies and point the site at them: <code>anvil --fork-url https://mainnet.base.org --port 58610</code>, <code>anvil --fork-url https://ethereum-rpc.publicnode.com --port 58611</code>, then
-          run the site with <code>ASH_TEMPLATE_BASE_NODE_URL=http://127.0.0.1:58610</code>
-          and <code>ASH_TEMPLATE_ETHEREUM_NODE_URL=http://127.0.0.1:58611</code>.
+          Start a local copy and point the site at it: <code>anvil --fork-url https://mainnet.base.org --port 58610</code>, then
+          run the site with <code>ASH_TEMPLATE_BASE_NODE_URL=http://127.0.0.1:58610</code>.
         </p>
       </section>
 

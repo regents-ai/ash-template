@@ -1071,3 +1071,12 @@ Operations
   Credits bought and the NFT bonus tiers. The `@elixir_utils_ref` move to 8cbd69c
   brings `Rules.tracked/0` and `Rules.daily_apps/1`; nothing else changes for other
   packages.
+
+## 2026-10-09 — Credits are bought on Base only
+
+- The Buy Credits panel buys on Base alone: no chain picker and no Switch Chain
+  button. The wallet line shows the paying wallet's USDC on Base, and Buy waits
+  on "Not enough USDC on Base" or "Approve first", read from the chain.
+- The Credits lab at `/showcase/credits` runs against one local copy of Base
+  (`ASH_TEMPLATE_BASE_NODE_URL`). Its stand-in account now carries an id, so
+  picking a lab wallet reads its funds instead of stopping the page.
