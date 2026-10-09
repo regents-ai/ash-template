@@ -1083,11 +1083,16 @@ Operations
 
 ## 2026-10-09 — Points NFT bonus at the month-end tally
 
+## 2026-10-09 — Points NFT bonus at the end of each 30-day period
+
 - Sean, HQ thread, 2026-10-09 04:56Z, item 6: the NFT bonus is no longer saved
   with each award. `/account/points` shows the tier the account's linked wallets
-  hold now, read from Base once per page open ("3 NFTs now · +45% at the
-  month-end tally"), and lists each month's bonus once Regents tallies it.
-  Awards show points only. Tiers are 1–2, 3–6 and 7+.
+  hold now, read from Base once per page open ("3 NFTs now · +45% at the end of
+  this period"), and lists each period's bonus once Regents tallies it.
+  Awards show points only. Tiers are 1–2, 3–6 and 7+, adding 20%, 45% and 75%.
+- Sean, Points thread, 2026-10-09 ~05:30Z: "1 a 2 at the end of a period, which
+  lasts for 30 days. 3 a". The bonus is tallied at the end of each 30-day period
+  counted from the program start, not each calendar month; the percentages stay.
 - Removed the sign-in holdings refresh (`AshTemplate.Points.TrackWallets`), the
   `points_wallet_holders` account read, wallets in the Credits purchase facts and
   `nft_tracking_enabled`. Regents alone runs the tally; the template adds no cron.

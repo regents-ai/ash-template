@@ -69,7 +69,7 @@ config :ash_template, Oban,
     conversations: [limit: 10],
     regent_credits: 3
   ],
-  # Regents alone runs RegentPoints.TallyMonths, the shared month-end NFT bonus tally.
+  # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end.
   cron: [crontab: []],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]

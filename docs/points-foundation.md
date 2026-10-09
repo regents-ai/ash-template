@@ -84,11 +84,12 @@ Combine the verified linked wallets' holdings across these Base collections:
 - Regents Club: `0x2208aadbdecd47d3b4430b5b75a175f6d885d487`
 
 1–2 NFTs add 20%; 3–6 add 45%; 7 or more add 75%. Awards save points only; the
-bonus is added once per program month, at the month-end tally (Sean, 9 October).
-The tier the account's wallets hold on the tally day applies once, without stacking,
-to the points earned that month after limits, one-time awards included. Regents
-runs the tally; each account and month gets one saved bonus row. The Points page
-shows the tier the wallets hold now as "+X% at the month-end tally", read from Base
+bonus is added once per program period, when the period ends (Sean, 9 October).
+Periods last 30 days, counted from the program start. The tier the account's wallets
+hold on the tally day applies once, without stacking, to the points earned in that
+period after limits, one-time awards included. Regents runs the tally; each account
+and period gets one saved bonus row. The Points page shows the tier the wallets
+hold now as "+X% at the end of this period", read from Base
 when the page opens and never saved. Daily earning is at most 250 points before the
 bonus. Account merging remains deferred.
 
@@ -121,7 +122,7 @@ The template has one Git dependency for Points, pinned with the same
 
 The shared migrations live only in elixir-utils/points/priv/repo/migrations.
 `RegentPoints.Migrator.up/1` uses a dedicated connection and shared migration history.
-Regents runs the production migrations and the month-end NFT bonus tally; other
+Regents runs the production migrations and the NFT bonus tally at each period end; other
 sites, the template included, only read and award. Schema changes require Sean's grant.
 The package ships one generated initial migration. Under Sean’s POINTS-8 approval,
 the old local Points fixture schema was backed up and rebuilt successfully.
