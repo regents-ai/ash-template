@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the committed tree into the release image and proves the image runs.
 # Run it through `make release`, which runs every gate on that same tree first.
+# Load this site's Privy settings with `direnv exec platform make release`.
 #
 # The build context is `git archive` of HEAD's platform/ and skills/ folders (the
 # app reads the build skills it serves from skills/ when it compiles), so
@@ -20,6 +21,15 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
+
+# Docker inherits only these named sign-in settings, never a settings file or
+# the caller's other credentials. Refuse before building an unusable preview.
+for setting in PRIVY_APP_ID PRIVY_VERIFICATION_KEY; do
+  if [[ -z ${!setting:-} ]]; then
+    echo "$setting is required. Run: direnv exec platform make release" >&2
+    exit 1
+  fi
+done
 
 commit="$(git rev-parse HEAD)"
 image="ash-template:${commit:0:12}"
@@ -86,6 +96,7 @@ pending="$(docker run --rm "${release_env[@]}" --env DATABASE_DIRECT_URL="$datab
 echo "==> Starting the server"
 docker run --detach --name "$run-app" "${release_env[@]}" \
   --publish 127.0.0.1::4000 \
+  --env PRIVY_APP_ID --env PRIVY_VERIFICATION_KEY \
   --env DATABASE_POOLED_URL="$database_url" \
   --env PHX_HOST=localhost \
   --env SECRET_KEY_BASE="$(openssl rand -base64 48)" \
@@ -97,6 +108,9 @@ health="$(curl --silent --fail "$base/healthz")"
 [[ $health == ok ]] || fail "the health endpoint answered \"$health\""
 
 home="$(curl --silent --fail "$base/")"
+privy_meta_pattern='<meta[[:space:]]+name="privy-app-id"[[:space:]]+content="([^"]+)"'
+[[ $home =~ $privy_meta_pattern ]] || fail "the home page has no nonempty Privy app id"
+privy_app_id_length=${#BASH_REMATCH[1]}
 stylesheet="$(grep -oE '/assets/[^"]+-[0-9a-f]{32}\.css' <<<"$home" | head -n 1)" ||
   fail "the home page links no fingerprinted stylesheet"
 stylesheet_answer="$(curl --silent --fail --output /dev/null --write-out '%{http_code} %{content_type} %{size_download} bytes' "$base$stylesheet")"
@@ -118,6 +132,7 @@ echo "  image           $image"
 echo "  image digest    $digest"
 echo "  migrations      bootstrap-staging and migrate succeeded; pending-migrations: $pending"
 echo "  health          $base/healthz answered $health"
+echo "  sign-in config  rendered Privy app id length: $privy_app_id_length"
 echo "  static asset    $stylesheet answered $stylesheet_answer"
 echo "  build skills    /.well-known/agent-skills/index.json answered $skills_answer"
 echo "  database        the running server queried $connected_database"

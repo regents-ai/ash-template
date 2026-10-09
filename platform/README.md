@@ -308,11 +308,17 @@ options; Fly's `postgres attach` adds `?sslmode=disable`, which must be removed.
 
 ## Release
 
-From the monorepo root, with Docker running:
+From the monorepo root, with Docker running and this site's Privy settings configured:
 
 ```sh
-make release
+direnv exec platform make release
 ```
+
+The release check requires `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` before
+building. It passes those settings to the disposable server by environment name,
+without adding them to the image or printing their values. After startup it checks
+that the home page renders a nonempty Privy app id. This verifies configuration,
+not a completed Privy sign-in.
 
 It stops unless every change is committed, then runs `make check`; a failing
 gate stops it before anything is built. `../scripts/release.sh` then builds
