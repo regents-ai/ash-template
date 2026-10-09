@@ -1050,4 +1050,7 @@ Operations
   The move also brings `regent_chain`'s signing with a key the app holds, which
   the template does not use.
 - `@regents_ref` moves to Regents ba23ceee, whose `regent_agents` and
-  `regent_identity` take the same elixir-utils commit; their code is unchanged.
+  `regent_identity` take the same elixir-utils commit. Agent pairing and
+  check-in (`RegentAgents.HTTP`) now answer the library's failed-request refusal
+  with `verification_unavailable`, as they did for an unreachable service;
+  `regent_identity` is unchanged.
