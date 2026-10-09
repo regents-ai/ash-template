@@ -10,7 +10,7 @@ fixture is included.
 ## Release prerequisites
 
 The shared source is pinned to elixir-utils commit
-`5107b790acd5735b1755110b65d94a2ce9cbc450` (published on main).
+`a24d9bf5ce8dbca5852b081613e9e1674623512e` (published on main).
 The production deployment also requires separately approved shared migrations:
 
 - Agents `20261009200000`: archive current and future pairing episodes; preserve
@@ -20,9 +20,15 @@ The production deployment also requires separately approved shared migrations:
   enabled grants lacking provable episode binding, and revoke grants on unpairing.
 
 Existing settings and historical charges remain. Owners must reapprove unbound
-grants with compatible grant controls. The five product-site deployments are
-outside this release. Their old pairing lookups and deletes remain compatible;
-the global grant changes still affect their shared database.
+grants with compatible grant controls. Product-site deployment is coordinated separately against the same shared database.
+Their old pairing lookups and deletes remain compatible, but older spending code
+must not see newly enabled grants during the transition. Keep grant enablement
+closed until every serving writer and worker has adopted the reviewed version.
+The shared `AgentPermission.set` action refuses enabled grants by default.
+`RegentCredits.agent_grants_enabled?/0` reads the explicit
+`:regent_credits, :agent_grants_enabled` runtime setting; only `true` opens it.
+Disabling grants and settling existing holds remain available. Set it only after
+all grant writers and hold creators are verified compatible, including workers.
 
 The template's release command calls the shared libraries' read-only prerequisite
 checks before applying its own note-attribution migrations. Other sites reuse

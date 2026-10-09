@@ -31,7 +31,11 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
     agents = Enum.map(assigns.agents, &String.downcase/1)
 
     {:ok,
-     assign(socket, agents: agents, forms: Map.new(agents, &{&1, form(actor, &1, saved[&1])}))}
+     assign(socket,
+       agents: agents,
+       grants_enabled: RegentCredits.agent_grants_enabled?(),
+       forms: Map.new(agents, &{&1, form(actor, &1, saved[&1])})
+     )}
   end
 
   @impl true
@@ -110,6 +114,10 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   def render(assigns) do
     ~H"""
     <div id={@id} class="credits-agents">
+      <p :if={!@grants_enabled}>
+        Agent spending grants are unavailable until the shared rollout is complete.
+        You can still turn spending off.
+      </p>
       <p :if={@agents == []}>
         No agents are linked to your account yet. Link one in the agents panel to let it spend.
       </p>
@@ -131,6 +139,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
             name={@forms[agent][:enabled].name}
             value="true"
             checked={enabled?(@forms[agent])}
+            disabled={!@grants_enabled and !enabled?(@forms[agent])}
           /> Can spend my Credits
         </label>
         <P.field
@@ -180,7 +189,13 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
             {label}
           </label>
         </fieldset>
-        <P.button type="submit" phx-disable-with="Saving…">Save</P.button>
+        <P.button
+          type="submit"
+          disabled={!@grants_enabled and enabled?(@forms[agent])}
+          phx-disable-with="Saving…"
+        >
+          Save
+        </P.button>
         <p :if={@saved == agent} role="status">Saved.</p>
       </.form>
     </div>

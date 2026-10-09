@@ -239,6 +239,17 @@ Use `elixir-utils/agent_access/assets/signed_tools.ts`, copied by
 exact-byte forwarding. Bind it to the server's configured trusted origin. It is
 transport only: signer access must be supplied and demonstrated by each runtime.
 No arbitrary URL/signing proxy, browser keys, replayed proofs or automatic retries.
+Declare typed inputs in `operation_input_schema`; the shared transport validates
+its bounded JSON Schema subset before preparing a request. Use declared array
+items and object properties instead of encoding structured product data as strings.
+Opaque JSON objects must opt into `additionalProperties: true` and a byte bound.
+
+For a product whose own proof covers exact JSON text, declare
+`request_body: {encoding: "raw_json", field: "raw_body", maxBytes: 2097152}`
+and require that string field. The helper validates JSON but sends its original
+UTF-8 bytes. Only declared path fields may accompany it; arbitrary headers and
+URLs are never accepted. Keep the product's independent proof checks on the server.
+
 Keep logical operation IDs across retries. Preserve harmless unrelated headers by
 ignoring them; validate every authority-bearing proof header strictly.
 

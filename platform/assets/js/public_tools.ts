@@ -145,7 +145,7 @@ const tools: ModelContextTool[] = entries.filter(entry => entry.scope === "site"
   async execute(input: unknown, {signal}: {signal?: AbortSignal}) {
     if (entry.name === "prepare_agent_request") {
       try {
-        const args = input as {operation: string; input: Input}
+        const args = input as {operation: string; input: Record<string, unknown>}
         return {ok: true, request: signedTransport().prepare(args.operation, args.input)}
       } catch (error) {
         return {ok: false, error: {code: "invalid_preparation", message: String(error)}}
