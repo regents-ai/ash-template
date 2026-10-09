@@ -1054,3 +1054,20 @@ Operations
   check-in (`RegentAgents.HTTP`) now answer the library's failed-request refusal
   with `verification_unavailable`, as they did for an unreachable service;
   `regent_identity` is unchanged.
+
+## 2026-10-09 — Regent Points on the Account page, earning off
+
+- The template hosts Regent Points (elixir-utils 8cbd69c, sparse `points`) as the
+  reference consumer: configuration with no start time and no approved rules, the
+  verified account callbacks (`AshTemplate.Points.Accounts`), the wallet refresh after
+  linking, and the `points` and `points_chain` queues. Regents runs the migrations and
+  the NFT transfer watcher; the template only reads and awards.
+- Credits purchases are Points' first source. `AshTemplate.Credits.Credited` records
+  `credits.purchase_settled` inside the credit's transaction, and
+  `AshTemplate.Points.CreditsPurchase` checks the committed purchase. Both name the
+  source `regents`, because Credits is one Regents ledger on every site.
+- `/account/points` shows the person's points, NFT bonus and recent awards, and lists
+  only the rules the site has a source for (`RegentPoints.Rules.tracked/0`): today
+  Credits bought and the NFT bonus tiers. The `@elixir_utils_ref` move to 8cbd69c
+  brings `Rules.tracked/0` and `Rules.daily_apps/1`; nothing else changes for other
+  packages.

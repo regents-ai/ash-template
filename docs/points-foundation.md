@@ -9,8 +9,8 @@ Account Points page. Points and Credits remain separate.
 
 10 points per USDC spent on purchased Credits, capped at 100 base points per UTC
 day. Promotional Credits, gifts and later spending do not earn this purchase award.
-Privy-account actions across Patchbay, Keyfleet and Autolaunch share 50 base points
-per day. Connected agents share 100 across the same apps. Techtree comes later.
+Privy-account daily actions share 50 base points per day, and connected agents share
+100. Today every daily action comes from Patchbay.
 One-time actions sit outside every daily cap. Authenticated connected-agent actions follow the same rules through supported
 WebMCP, HTTP, CLI and MCP routes. Verified identity determines the pool, not the
 interface. A human session using a tool still uses the human pool unless an agent
@@ -28,14 +28,11 @@ Trial daily action rates revised with Sean’s approval on 7 October; earning re
 | Patchbay valid reply | 5 | Twice/day, distinct reports |
 | Patchbay accepted solution | 20 | Once/day per pool |
 | Patchbay asker resolves report | 5 | Once/day |
-| Independently verified repair | 15 | Twice/day; requires an actual verifier |
-| Keyfleet rollcall | 5 | Once/day per pool; disabled participation-incentive candidate |
 
 There is no active-day or recurring voting award. The first-vote milestone remains
-10 points, with equal treatment for all supported choices. Rollcall rewards
-participation, not useful work, and needs an explicit launch decision. No new
-rollcall or voting mechanism is being built for Points. Independent repair remains
-disabled until an actual independent verifier exists.
+10 points, with equal treatment for all supported choices. Keyfleet rollcall (5
+once/day) and independently verified Patchbay repair (15 twice/day) stay out of the
+catalog until their products exist (Sean, 8 October).
 
 Server and confirmed on-chain versions of the same action share one business
 identity and allowance. The source adapter must establish that the action
@@ -108,16 +105,22 @@ from saved source records, without repeating the user's action.
 The configured adapter verifies committed facts in the background. Invalid evidence
 and conflicting source identities receive a private, durable rejection audit.
 Events save the rule's Credits rate and daily caps; delayed awards use that snapshot.
-No production source adapters are shipped. See the package README for the adapter
+The template configures one adapter, for Credits purchases
+(`AshTemplate.Points.CreditsPurchase`). See the package README for the adapter
 contract, actor policy and migration instructions.
+
+## Account Points page
+
+`/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
+site has an adapter for, so it never offers an action nothing records. Today that is
+Credits bought, plus the NFT bonus tiers. The Once table and the daily limits appear
+when the site records a rule of that kind. A site that adds an adapter shows its rule
+without changing the page.
 
 ## Local development and launch
 
-The template has one Git dependency for Points. The package is still unpublished;
-review copies can fetch its exact commit from the local elixir-utils repository.
-After the package lands on elixir-utils main, pin it with the same
-`@elixir_utils_ref` as the other shared packages. No environment-based path override
-or template release migration function remains.
+The template has one Git dependency for Points, pinned with the same
+`@elixir_utils_ref` as the other shared packages.
 
 The shared migrations live only in elixir-utils/points/priv/repo/migrations.
 `RegentPoints.Migrator.up/1` uses a dedicated connection and shared migration history.
@@ -127,8 +130,8 @@ The package ships one generated initial migration. Under Sean’s POINTS-8 appro
 the old local Points fixture schema was backed up and rebuilt successfully.
 Canonical users, Credits, legacy queued jobs and other schemas were left intact.
 
-Earning and NFT tracking remain disabled: no start time, approved rules or source
-adapters are configured. Before launch, settle per-action rates, implement trusted
+Earning and NFT tracking remain disabled: no start time or approved rules are
+configured. Before launch, settle per-action rates, implement trusted
 sources and complete live acceptance. Regents' RPC comes from its `chain_nodes[8453]` setting through chain client;
 it must support historical canonical reads and explicit `removed: false` in logs.
 Full Account filters/detail navigation remain separate work.

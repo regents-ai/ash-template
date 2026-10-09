@@ -13,6 +13,7 @@ defmodule AshTemplate.Credits.Credited do
   def credited(purchase) do
     reference = %{
       rule_id: "credits.purchase_settled",
+      # Credits is one Regents ledger, so every site names it "regents" and a purchase earns once.
       source_app: "regents",
       source_kind: "credits_purchase",
       source_event_key: purchase.id
