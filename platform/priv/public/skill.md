@@ -5,7 +5,7 @@ description: Use Ash Template's public reads and SIWA-signed tools with your pai
 
 # Use Ash Template
 
-Read [/agents.md](/agents.md) first, then [/capabilities](/capabilities) and
+Read [/agents.md](/agents.md) for the released CLI installation, identity and pairing steps first, then [/capabilities](/capabilities) and
 [/openapi.json](/openapi.json) for the operations this build provides.
 
 Public documents and room reads need no account. Private notes and every write

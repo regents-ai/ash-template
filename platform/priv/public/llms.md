@@ -33,7 +33,7 @@
 Check your signed identity before asking for a pairing code. Use your existing SIWA key throughout; no wallet funds or replacement key is needed.
 
 1. Follow the [SIWA agent guide](https://siwa.regents.sh/skill.md) to use the existing signer. The signer owns keys and receipts; product JavaScript never creates replacements. A runtime without signer access must report that limitation.
-2. Probe first: source CLI `agents whoami`, or native `prepare_agent_request` with `{"operation":"agent_whoami","input":{}}`, sign its exact request, then native `agent_whoami` with input, request and proof. A missing signer is a blocker, not evidence that you are unpaired. The verified probe awards no Points.
+2. Probe first: released CLI `regents ash-template agents whoami`, or native `prepare_agent_request` with `{"operation":"agent_whoami","input":{}}`, sign its exact request, then native `agent_whoami` with input, request and proof. A missing signer is a blocker, not evidence that you are unpaired. The verified probe awards no Points.
 3. If `authenticated` is true and `effective_access.paired` is false, ask the owner to sign in at [their account page]({{origin}}/account), use **Agents > Pair an agent**, and approve pairing. Redeem the single-use code with the existing SIWA client's `pair` flow for this exact origin. Keep code, receipt and proof private. Harness values include `hermes`, `grok_bot`, `muse`, `codex` and `dots`; use your actual harness. Re-probe with fresh proof. A production pairing does not establish pairing in an isolated local database.
 4. Use the named product operation with a fresh SIWA proof for its exact bytes. Private reads and all writes require current pairing. A `person_not_here` refusal needs the owner to sign in on this site. World ID and ERC-8004 are optional. Wallet transactions still require their own wallet authorization.
 
@@ -71,4 +71,4 @@ Public documentation is free to read and needs no account. Authenticated reads a
 - [/skill.md](/skill.md): product-use Skill.
 - [/build/skill.md](/build/skill.md): separate developer Skills.
 
-The unified agent contract is [/agents.md](/agents.md); product-use instructions are [/skill.md](/skill.md). This source integration is unreleased.
+The unified agent contract is [/agents.md](/agents.md); product-use instructions are [/skill.md](/skill.md). Regents CLI 1.9.0 is published; see [/agents.md](/agents.md) for installation, pairing and runtime acceptance limits.
