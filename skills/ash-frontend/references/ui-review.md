@@ -20,6 +20,19 @@ type, and an error association. Preserve user input on failure. A destructive ac
 needs proportionate confirmation and a safe failure state, not repeated confirmations
 for harmless edits. Keep primary controls usable on a phone.
 
+**Inline editors:** When Create or Edit reveals work within the current page, use
+buttons to expand one editor in place, without changing the route or losing the
+surrounding list. Give each trigger `aria-expanded` and `aria-controls`; move focus
+to the requested form or saved-item library when opening, and return it to the
+trigger when closing. Hidden controls must leave the keyboard order. Preserve
+unsaved input through closing, reopening, filtering and failed validation within
+the current page. If a standalone editor route also exists, reuse its rendering,
+validation and save behavior rather than maintaining a second editor. Keep session
+and authorization checks in the existing server actions. Explicit expansion may
+change the page height; choices and status text inside the open editor still follow
+the stable-layout rules below. Verify pointer and keyboard opening, focus return,
+draft retention and mobile overflow. Keyboard opening is immediate.
+
 **Route groups:** Related pages keep the same product heading, content width and
 persistent navigation, in the same order and position. The current destination has
 an explicit `aria-current` state; sibling destinations and a return to the group's
