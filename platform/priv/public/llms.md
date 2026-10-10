@@ -71,4 +71,4 @@ Public documentation is free to read and needs no account. Authenticated reads a
 - [/skill.md](/skill.md): product-use Skill.
 - [/build/skill.md](/build/skill.md): separate developer Skills.
 
-The unified agent contract is [/agents.md](/agents.md); product-use instructions are [/skill.md](/skill.md). Regents CLI 1.9.0 is published; see [/agents.md](/agents.md) for installation, pairing and runtime acceptance limits.
+The unified agent contract is [/agents.md](/agents.md); product-use instructions are [/skill.md](/skill.md). Regents CLI 1.9.1 is published; see [/agents.md](/agents.md) for installation, pairing and runtime acceptance limits.
