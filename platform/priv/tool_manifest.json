@@ -105,7 +105,7 @@
           "command": "regents ash-template agents whoami",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -167,7 +167,7 @@
           "command": "regents ash-template notes list",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -237,7 +237,7 @@
           "command": "regents ash-template notes get <id>",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -323,7 +323,7 @@
           "command": "regents ash-template notes create",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -458,7 +458,7 @@
           "command": "regents ash-template rooms post <room>",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -540,7 +540,7 @@
           "command": "regents ash-template account balances",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -608,7 +608,7 @@
           "command": "regents ash-template account credits-history",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {
@@ -676,7 +676,7 @@
           "command": "regents ash-template account points",
           "release_status": "released",
           "package": "regents-cli",
-          "version": "1.9.0"
+          "version": "1.9.1"
         }
       },
       "operation_input_schema": {

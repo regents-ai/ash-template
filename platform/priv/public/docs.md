@@ -158,4 +158,4 @@ Public documentation does not authorize a payment, signature, credential change 
 
 Need help? Read [About]({{origin}}/about), [Contact]({{origin}}/contact), [Privacy]({{origin}}/privacy) and [Terms]({{origin}}/terms).
 
-The unified agent contract is [/agents.md](/agents.md); product-use instructions are [/skill.md](/skill.md). Regents CLI 1.9.0 is published; see [/agents.md](/agents.md) for installation, pairing and runtime acceptance limits.
+The unified agent contract is [/agents.md](/agents.md); product-use instructions are [/skill.md](/skill.md). Regents CLI 1.9.1 is published; see [/agents.md](/agents.md) for installation, pairing and runtime acceptance limits.
