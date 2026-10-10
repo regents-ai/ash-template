@@ -25,11 +25,16 @@ persistent navigation, in the same order and position. The current destination h
 an explicit `aria-current` state; sibling destinations and a return to the group's
 overview remain available on every page, including empty and signed-out states.
 Use a `nav` of links for real routes, preserving deep links, refresh and browser
-Back/Forward. Use tab roles only for panels switched within the same view; do not
-style unrelated destination links as an in-place toggle. The template's `Shell`
+Back/Forward. Carry the overview's selected filters and view context through detail
+and comparison links, GET forms and return links. Clicking through and loading the
+same URL directly must retain the same shell and page meaning; do not show a modal
+on click but an unrelated page on refresh. Use tab roles only for panels switched
+within the same view; do not style unrelated destination links as an in-place
+toggle. The template's `Shell`
 section navigation and `shell-tabs` are the reference. Route selection is immediate:
-frequent and keyboard navigation needs no entrance animation. Keep the existing
-shared press motion for actions and respect reduced motion. Verify a complete round
+frequent and keyboard navigation needs no entrance animation, and recurring product
+headings stay still across these routes. Keep the existing shared press motion for
+actions and respect reduced motion. Verify a complete round
 trip between sibling pages on desktop and phone, not just each page in isolation.
 
 **States:** An empty account is different from a filter returning no matches, a server
