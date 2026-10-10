@@ -82,18 +82,7 @@ defmodule AshTemplateWeb.PublicPagesHTML do
   def show(assigns) do
     ~H"""
     <div class="rl-root legal-root rg-sheet rg-frame public-document">
-      <header class="legal-header">
-        <a href={~p"/"} class="legal-home">Ash Template</a>
-        <nav class="legal-nav" aria-label="Information">
-          <a
-            :for={{label, path} <- [{"Docs", "/docs"}, {"About", "/about"}, {"Contact", "/contact"}]}
-            href={path}
-            aria-current={if(@conn.request_path == path, do: "page")}
-          >
-            {label}
-          </a>
-        </nav>
-      </header>
+      <AshTemplateWeb.Components.InformationNavigation.header current_path={@conn.request_path} />
       <main class="legal-page">
         {AshTemplateWeb.PublicDocuments.html(@document.markdown)}
       </main>

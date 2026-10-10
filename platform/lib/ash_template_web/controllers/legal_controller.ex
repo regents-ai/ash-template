@@ -17,16 +17,8 @@ defmodule AshTemplateWeb.LegalHTML do
 
   def show(assigns) do
     ~H"""
-    <div class="rl-root legal-root rg-sheet rg-frame">
-      <header class="legal-header">
-        <a href={~p"/"} class="legal-home">Ash Template</a>
-        <nav class="legal-nav" aria-label="Legal">
-          <a href={~p"/privacy"} aria-current={if(@document.id == :privacy, do: "page")}>
-            Privacy
-          </a>
-          <a href={~p"/terms"} aria-current={if(@document.id == :terms, do: "page")}>Terms</a>
-        </nav>
-      </header>
+    <div class="rl-root legal-root rg-sheet rg-frame public-document">
+      <AshTemplateWeb.Components.InformationNavigation.header current_path={@conn.request_path} />
       <main class="legal-page">
         {@document.html}
       </main>

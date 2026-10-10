@@ -20,6 +20,18 @@ type, and an error association. Preserve user input on failure. A destructive ac
 needs proportionate confirmation and a safe failure state, not repeated confirmations
 for harmless edits. Keep primary controls usable on a phone.
 
+**Route groups:** Related pages keep the same product heading, content width and
+persistent navigation, in the same order and position. The current destination has
+an explicit `aria-current` state; sibling destinations and a return to the group's
+overview remain available on every page, including empty and signed-out states.
+Use a `nav` of links for real routes, preserving deep links, refresh and browser
+Back/Forward. Use tab roles only for panels switched within the same view; do not
+style unrelated destination links as an in-place toggle. The template's `Shell`
+section navigation and `shell-tabs` are the reference. Route selection is immediate:
+frequent and keyboard navigation needs no entrance animation. Keep the existing
+shared press motion for actions and respect reduced motion. Verify a complete round
+trip between sibling pages on desktop and phone, not just each page in isolation.
+
 **States:** An empty account is different from a filter returning no matches, a server
 error, or missing permission. Explain each with one useful next action. Loading states
 should not shift the whole layout. A job accepted is not a job completed. Show actual
