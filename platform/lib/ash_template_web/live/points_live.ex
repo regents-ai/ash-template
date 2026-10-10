@@ -44,20 +44,19 @@ defmodule AshTemplateWeb.PointsLive do
         These are your last saved figures. The latest refresh failed.
       </Regent.Primitives.notice>
       <div :if={@account && @points.value} class="account-grid">
-        <section class="account-panel account-details">
-          <h2>Your points</h2>
-          <dl>
-            <div>
-              <dt>Confirmed</dt><dd>{Amount.format(@points.value.balance_micro)}</dd>
-            </div>
-            <div>
-              <dt>Earned today</dt><dd>{Amount.format(@points.value.earned_today_micro)}</dd>
-            </div>
-            <div>
-              <dt>Activity being verified</dt><dd>{@points.value.pending}</dd>
-            </div>
-          </dl>
-        </section>
+        <Regent.Account.points_summary
+          id="account-points-summary"
+          confirmed={Amount.format(@points.value.balance_micro)}
+          today={Amount.format(@points.value.earned_today_micro)}
+          pending={to_string(@points.value.pending)}
+          state={summary_state(@points.state)}
+          allowances={
+            Enum.map(
+              if(@earning == [], do: [], else: @points.value.allowances),
+              &%{label: scope_name(&1.scope), value: "#{Amount.format(&1.remaining)} remaining"}
+            )
+          }
+        />
         <section class="account-panel account-details">
           <h2>
             Your bonus
@@ -80,21 +79,6 @@ defmodule AshTemplateWeb.PointsLive do
               <dd>
                 +{Amount.format(period.bonus_micro)} ({period.nft_count} NFTs, +{period.bonus_percent}%)
               </dd>
-            </div>
-          </dl>
-        </section>
-        <section :if={@earning != []} class="account-panel account-details">
-          <h2>
-            Daily allowances
-            <Regent.Primitives.tip id="points-allowances-about" label="About daily allowances">
-              All your agents share one allowance. Your per-action limits are separate from theirs.
-              Each action uses one pool. Allowances reset at midnight UTC.
-              One-time awards do not use these allowances.
-            </Regent.Primitives.tip>
-          </h2>
-          <dl>
-            <div :for={cap <- @points.value.allowances}>
-              <dt>{scope_name(cap.scope)}</dt><dd>{Amount.format(cap.remaining)} remaining</dd>
             </div>
           </dl>
         </section>
@@ -254,6 +238,11 @@ defmodule AshTemplateWeb.PointsLive do
   defp entry_status(%{points_micro_delta: 0}), do: "Allowance reached"
   defp entry_status(_), do: "Confirmed"
 
+  defp summary_state(state) when state in [:idle, :loading], do: :loading
+  defp summary_state(:empty), do: :ready
+  defp summary_state(state), do: state
+
+  defp scope_name("activity:account"), do: "You and your agents"
   defp scope_name("credits"), do: "Credits purchases"
   defp scope_name("activity:human"), do: "Your actions"
   defp scope_name("activity:agent"), do: "Your agents’ actions"

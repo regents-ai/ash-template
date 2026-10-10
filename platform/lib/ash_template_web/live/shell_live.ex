@@ -72,6 +72,7 @@ defmodule AshTemplateWeb.ShellLive do
        chat_topics: MapSet.new(),
        verified_connections: %Read{},
        points: %Read{},
+       credits_read: %Read{},
        points_bonus: %Read{},
        points_earning: [],
        verified_connections_notice: nil,
@@ -181,6 +182,10 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   @impl true
+  def handle_async({Read, :credits_read, _generation} = name, result, socket) do
+    {:noreply, socket |> Read.settle(name, result) |> show_credits()}
+  end
+
   def handle_async({Read, _name, _generation} = name, result, socket) do
     {:noreply, socket |> Read.settle(name, result) |> report_connection_outcome()}
   end
@@ -304,6 +309,7 @@ defmodule AshTemplateWeb.ShellLive do
           lease={@session_lease}
           account={current_account(@access_context)}
           balance={@balance}
+          credits_read={@credits_read}
         />
       </:credits_panel>
       <:content>
@@ -352,6 +358,8 @@ defmodule AshTemplateWeb.ShellLive do
           account={current_account(@access_context)}
           account_control={@account_control}
           credits={@credits}
+          balance={@balance}
+          credits_read={@credits_read}
         />
 
         <AshTemplateWeb.PointsLive.page
@@ -530,14 +538,23 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp read_credits(socket) do
-    case current_account(socket.assigns.access_context) do
-      nil ->
-        assign(socket, balance: nil, credits: nil)
+    socket =
+      case current_account(socket.assigns.access_context) do
+        nil ->
+          Read.clear(socket, :credits_read)
 
-      account ->
-        balance = RegentCredits.balance(account.privy_user_id)
-        assign(socket, balance: balance, credits: balance.available)
-    end
+        account ->
+          Read.start(socket, :credits_read, account.privy_user_id, fn ->
+            {:ok, RegentCredits.balance(account.privy_user_id)}
+          end)
+      end
+
+    show_credits(socket)
+  end
+
+  defp show_credits(socket) do
+    balance = socket.assigns.credits_read.value
+    assign(socket, balance: balance, credits: balance && balance.available)
   end
 
   defp count_unread(socket) do

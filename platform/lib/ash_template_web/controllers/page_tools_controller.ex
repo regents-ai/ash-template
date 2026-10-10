@@ -44,26 +44,18 @@ defmodule AshTemplateWeb.PageToolsController do
   def balances(conn, _params) do
     actor = credit_actor(conn)
 
-    permission =
-      RegentCredits.agent_permissions!(actor: actor)
-      |> Enum.find(
-        &(&1.agent_address == actor.agent_address and &1.pairing_id == actor.pairing_id)
-      )
+    case RegentCredits.agent_budget(actor: actor) do
+      {:ok, budget} ->
+        json(conn, %{
+          account_id: conn.assigns.actor.human_account_id,
+          pairing_id: actor.pairing_id,
+          credits: RegentCredits.balance(actor.privy_user_id),
+          spending_grant: budget
+        })
 
-    budget =
-      if permission do
-        Map.take(permission, [:enabled, :max_per_spend, :daily_limit, :sites])
-        |> Map.put(:used_24h, RegentCredits.AgentSpending.spent_today(actor))
-      else
-        %{enabled: false}
-      end
-
-    json(conn, %{
-      account_id: conn.assigns.actor.human_account_id,
-      pairing_id: actor.pairing_id,
-      credits: RegentCredits.balance(actor.privy_user_id),
-      spending_grant: budget
-    })
+      {:error, _} ->
+        refuse(conn, "unavailable")
+    end
   end
 
   def credits_history(conn, _params) do

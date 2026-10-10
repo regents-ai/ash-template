@@ -4,9 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "1564d79eb3b653f06ab11b6c422bd4d6283ea199"
+  @elixir_utils_ref "96fe9d3f386742ce93b04c6dfca183d99cc00787"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "4da6db2bfe3559a8f8a761018dc099a28ab5f6a3"
+  @design_system_ref "11b61865e3d3c7b5e64599cca187c434498425a6"
 
   def project do
     [

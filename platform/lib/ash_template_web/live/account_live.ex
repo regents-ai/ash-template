@@ -18,6 +18,8 @@ defmodule AshTemplateWeb.AccountLive do
   attr :account, :map, default: nil
   attr :account_control, :map, required: true
   attr :credits, Decimal, default: nil
+  attr :balance, :map, default: nil
+  attr :credits_read, AshTemplateWeb.Read, default: %AshTemplateWeb.Read{}
 
   def profile(assigns) do
     ~H"""
@@ -60,19 +62,13 @@ defmodule AshTemplateWeb.AccountLive do
           </dl>
         </section>
 
-        <section
-          :if={@credits}
-          id="account-credits"
-          class="account-panel account-details"
-          aria-labelledby="account-credits-title"
-        >
-          <h2 id="account-credits-title">Credits</h2>
-          <dl>
-            <div>
-              <dt>Balance</dt>
-              <dd>{RegentCredits.Amount.format(@credits)}</dd>
-            </div>
-          </dl>
+        <section :if={@account} class="account-panel">
+          <Regent.Account.credits_summary
+            id="account-credits"
+            available={@balance && RegentCredits.Amount.format(@balance.available)}
+            held={@balance && RegentCredits.Amount.format(@balance.held)}
+            state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
+          />
           <p>
             All account settings, including what your agents may spend, live at <a href="https://regents.sh/account">regents.sh/account</a>.
             Sign in there with the same login you use here.

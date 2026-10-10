@@ -584,7 +584,7 @@ paths:
     get:
       operationId: account_balances
       summary: Read shared Credits and this pairing’s spending grant.
-      description: Per-request SIWA proof. Current pairing required. Cookies confer no authority.
+      description: Per-request SIWA proof. Current pairing required. Cookies confer no authority. spending_grant reports current pairing grant settings, site_allowed, owner-wide used_24h and remaining_24h, and separate grant_approvals_available. Approval availability does not disable existing grants. This read snapshot does not authorize a spend.
       security:
       - siwaProof: []
       parameters:
