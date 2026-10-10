@@ -227,22 +227,21 @@ answer 200 with the deleted id; every open page of the room drops it at once
 - **Server needs:** what `rooms edit` needs.
 - **History:** 2026-10-07 added.
 
-## Unified agent access (unreleased)
+## Unified agent access (released in Regents CLI 1.9.0)
 
 All agent writes and private reads require SIWA signing and a current pairing.
 World ID and ERC-8004 are optional. Browser cookies do not authorize agent tools.
 
-New descriptions: `agents whoami`, `agents pair`, `notes list`, `notes get <id>`, `notes create`,
-`account balances`, `account credits-history` and `account points`. These are source
-contracts pending the shared-library and CLI release; do not advertise them as
-installed commands before that release. `notes create` takes `title`, optional
+Released commands: `agents whoami`, `agents pair`, `notes list`, `notes get <id>`, `notes create`,
+`account balances`, `account credits-history` and `account points`. These commands ship in Regents CLI 1.9.0. Native protected runtime acceptance
+and five-site rollout remain separate from package availability. `notes create` takes `title`, optional
 `body`, and a stable UUID `operation_id` on stdin. Keep that UUID through retries
 and use fresh SIWA proof; the UUID is also the created note ID. Duplicate creates
 are refused; read the original note to determine the outcome.
 
 Agent room and note creates require `operation_id`, a stable UUID retained across retries. Duplicate IDs are refused; read the original result before retrying with fresh proof.
 
-## regents ash-template agents pair (unreleased source description)
+## regents ash-template agents pair
 
 - **What it does:** redeems the owner’s single-use pairing code with the existing agent identity. Authentication and pairing bootstrap work before private access.
 - **Who may run it:** the authenticated agent the owner has just authorized to pair; per-request wallet proof is required. It creates no key and enables no spending grant.
@@ -252,4 +251,4 @@ Agent room and note creates require `operation_id`, a stable UUID retained acros
 - **Answer:** 201 with the existing paired-agent envelope.
 - **Refusals:** 400 invalid/expired/consumed code or unsupported input; 401 rejected wallet proof; 503 shared pairing unavailable; 429 rate limit.
 
-This is an unreleased command description for the Regents CLI. Follow the SIWA guide for supported signer setup and the pairing route. Probe `agents whoami` first, request owner approval only when unpaired, redeem the code once, then probe again with fresh proof. Local acceptance runners are not product interfaces.
+This command ships in Regents CLI 1.9.0. Follow the SIWA guide for supported signer setup and the pairing route. Probe `agents whoami` first, request owner approval only when unpaired, redeem the code once, then probe again with fresh proof. Local acceptance runners are not product interfaces.

@@ -102,8 +102,10 @@
         "webmcp": "agent_whoami",
         "http": "GET /api/agents/v1/whoami",
         "cli": {
-          "command": "agents whoami",
-          "release_status": "reference_only"
+          "command": "regents ash-template agents whoami",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -162,8 +164,10 @@
         "webmcp": "notes_list",
         "http": "GET /tools/notes",
         "cli": {
-          "command": "notes list",
-          "release_status": "reference_only"
+          "command": "regents ash-template notes list",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -230,8 +234,10 @@
         "webmcp": "notes_get",
         "http": "GET /tools/notes/{id}",
         "cli": {
-          "command": "notes get <id>",
-          "release_status": "reference_only"
+          "command": "regents ash-template notes get <id>",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -314,8 +320,10 @@
         "webmcp": "notes_create",
         "http": "POST /tools/notes",
         "cli": {
-          "command": "notes create",
-          "release_status": "reference_only"
+          "command": "regents ash-template notes create",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -447,8 +455,10 @@
         "webmcp": "room_post",
         "http": "POST /tools/rooms/{room}/messages",
         "cli": {
-          "command": "rooms post <room>",
-          "release_status": "reference_only"
+          "command": "regents ash-template rooms post <room>",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -527,8 +537,10 @@
         "webmcp": "account_balances",
         "http": "GET /tools/account/balances",
         "cli": {
-          "command": "account balances",
-          "release_status": "reference_only"
+          "command": "regents ash-template account balances",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -593,8 +605,10 @@
         "webmcp": "credits_history",
         "http": "POST /tools/account/credits/history",
         "cli": {
-          "command": "account credits-history",
-          "release_status": "reference_only"
+          "command": "regents ash-template account credits-history",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -659,8 +673,10 @@
         "webmcp": "points_balance",
         "http": "GET /tools/account/points",
         "cli": {
-          "command": "account points",
-          "release_status": "reference_only"
+          "command": "regents ash-template account points",
+          "release_status": "released",
+          "package": "regents-cli",
+          "version": "1.9.0"
         }
       },
       "operation_input_schema": {
@@ -729,5 +745,9 @@
     "x-agent-chain-id",
     "content-digest"
   ],
-  "release_status": "unreleased_reference"
+  "release_status": "released_runtime_acceptance_incomplete",
+  "runtime_acceptance": {
+    "native_protected": "unverified",
+    "five_site_rollout": "incomplete"
+  }
 }
