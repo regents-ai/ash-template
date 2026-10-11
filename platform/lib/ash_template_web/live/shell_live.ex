@@ -295,14 +295,14 @@ defmodule AshTemplateWeb.ShellLive do
       shell_instance={@shell_instance}
       checklist={checklist(@progress)}
       unread={@unread}
-      credits={@credits}
+      credits={signed_in_credits(@access_context, @credits)}
       jobs_running={@jobs_running}
       healthy={@healthy}
       version={@version}
       search={@search}
       assistant={@assistant}
     >
-      <:credits_panel :if={@credits}>
+      <:credits_panel :if={signed_in_credits(@access_context, @credits)}>
         <.live_component
           module={AshTemplateWeb.CreditsPanel}
           id="credits-panel"
@@ -354,6 +354,7 @@ defmodule AshTemplateWeb.ShellLive do
 
         <AccountLive.profile
           :if={@route_spec.route_id == :account}
+          signed_out_reason={@signed_out_reason}
           lease={@session_lease}
           account={current_account(@access_context)}
           account_control={@account_control}
@@ -364,6 +365,7 @@ defmodule AshTemplateWeb.ShellLive do
 
         <AshTemplateWeb.PointsLive.page
           :if={@route_spec.route_id == :points}
+          signed_out_reason={@signed_out_reason}
           account={current_account(@access_context)}
           points={@points}
           bonus={@points_bonus}
@@ -372,11 +374,13 @@ defmodule AshTemplateWeb.ShellLive do
 
         <AccountLive.wallets
           :if={@route_spec.route_id == :wallets}
+          signed_out_reason={@signed_out_reason}
           account={current_account(@access_context)}
         />
 
         <AccountLive.connections
           :if={@route_spec.route_id == :connections}
+          signed_out_reason={@signed_out_reason}
           account={current_account(@access_context)}
           verified_connections={@verified_connections}
           verified_connections_notice={@verified_connections_notice}
@@ -500,6 +504,10 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp current_account(%{principal: {:human, account}}), do: account
   defp current_account(_access_context), do: nil
+
+  # A sign-in that ends while the page is open withdraws the account, and its
+  # balance and the Buy Credits panel go with it.
+  defp signed_in_credits(access_context, credits), do: current_account(access_context) && credits
 
   defp human_actor(%{assigns: %{access_context: %{principal: {:human, account}}}}),
     do: Human.for_account(account)

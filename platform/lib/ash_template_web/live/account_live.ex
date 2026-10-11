@@ -17,6 +17,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   attr :lease, :map, required: true
   attr :account, :map, default: nil
+  attr :signed_out_reason, :atom, default: :signed_out
   attr :account_control, :map, required: true
   attr :credits, Decimal, default: nil
   attr :balance, :map, default: nil
@@ -24,7 +25,12 @@ defmodule AshTemplateWeb.AccountLive do
 
   def profile(assigns) do
     ~H"""
-    <.settings_page id="account-page" title="Account" account={@account}>
+    <.settings_page
+      id="account-page"
+      title="Account"
+      account={@account}
+      signed_out_reason={@signed_out_reason}
+    >
       <:lede>Who Ash Template knows you as, and your session on this browser.</:lede>
       <div class="account-grid">
         <Regent.HolographicCard.card
@@ -96,10 +102,16 @@ defmodule AshTemplateWeb.AccountLive do
   end
 
   attr :account, :map, default: nil
+  attr :signed_out_reason, :atom, default: :signed_out
 
   def wallets(assigns) do
     ~H"""
-    <.settings_page id="wallets-page" title="Wallets" account={@account}>
+    <.settings_page
+      id="wallets-page"
+      title="Wallets"
+      account={@account}
+      signed_out_reason={@signed_out_reason}
+    >
       <:lede>The wallets your sign-in verified.</:lede>
       <section class="account-panel account-details" aria-labelledby="account-wallets-title">
         <h2 id="account-wallets-title">Your wallets</h2>
@@ -129,12 +141,18 @@ defmodule AshTemplateWeb.AccountLive do
   end
 
   attr :account, :map, default: nil
+  attr :signed_out_reason, :atom, default: :signed_out
   attr :verified_connections, AshTemplateWeb.Read, required: true
   attr :verified_connections_notice, :map, default: nil
 
   def connections(assigns) do
     ~H"""
-    <.settings_page id="connections-page" title="Connections" account={@account}>
+    <.settings_page
+      id="connections-page"
+      title="Connections"
+      account={@account}
+      signed_out_reason={@signed_out_reason}
+    >
       <:lede>The accounts you have connected, such as X, GitHub and Farcaster.</:lede>
       <.verified_connections
         id="account-verified-connections"
@@ -150,6 +168,7 @@ defmodule AshTemplateWeb.AccountLive do
   attr :id, :string, required: true
   attr :title, :string, required: true
   attr :account, :map, default: nil
+  attr :signed_out_reason, :atom, default: :signed_out
   slot :lede, required: true
   slot :inner_block, required: true
 
@@ -162,7 +181,11 @@ defmodule AshTemplateWeb.AccountLive do
         <p class="account-lede">{render_slot(@lede)}</p>
       </header>
 
-      <Regent.Account.signed_out :if={is_nil(@account)} id={"#{@id}-signed-out"}>
+      <Regent.Account.signed_out
+        :if={is_nil(@account)}
+        id={"#{@id}-signed-out"}
+        reason={@signed_out_reason}
+      >
         <:sign_in>
           <Regent.Primitives.button type="button" data-account-target="sign-in">
             Sign in

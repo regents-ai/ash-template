@@ -3,6 +3,7 @@ defmodule AshTemplateWeb.PointsLive do
   use AshTemplateWeb, :html
   alias RegentPoints.{Amount, Rules}
   attr :account, :map, default: nil
+  attr :signed_out_reason, :atom, default: :signed_out
   attr :points, AshTemplateWeb.Read, required: true
 
   attr :bonus, AshTemplateWeb.Read,
@@ -24,7 +25,11 @@ defmodule AshTemplateWeb.PointsLive do
           Eligible activity by you and your connected agents, in one account.
         </p>
       </header>
-      <Regent.Account.signed_out :if={is_nil(@account)} id="points-signed-out">
+      <Regent.Account.signed_out
+        :if={is_nil(@account)}
+        id="points-signed-out"
+        reason={@signed_out_reason}
+      >
         <:sign_in>
           <Regent.Primitives.button type="button" data-account-target="sign-in">
             Sign in
