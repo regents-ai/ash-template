@@ -214,7 +214,7 @@ The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4
 | --- | --- | --- |
 | Signed out | No account | "Sign in to send this. Nothing was sent." |
 | `wallet_unavailable`, none active | Signed in, but no wallet is open in the wallet app | "You're signed in with 0x1234..abcd, but your wallet app has no wallet open. Open 0x1234..abcd there, then press again. Nothing was sent." |
-| Active wallet not linked | Another wallet is open in the wallet app | "Switch to a wallet on your account in your wallet app, then press again. Nothing was sent." |
+| Active wallet not linked | Another wallet is open in the wallet app | "Your wallet is on 0x9a8b..c1d2, which isn't linked to this account. Switch to 0x1234..abcd. Nothing was sent." |
 | `step_unknown` | No step by that name for these figures | "This can't be sent as it stands. Check the details above, then press again. Nothing was sent." |
 | `wallet_unavailable`, mid-press | Privy swapped the wallet during the press | "Your wallet changed during the press, so nothing was sent. Press again." |
 | `network_mismatch` | The wallet would not move to the chain, or moved away | "Your wallet is on a different network. Switch it to Base, then press again. Nothing was sent." |
