@@ -83,7 +83,8 @@ def update(site, js_dir, commit, base, log):
     if not checkout.is_dir():
         raise Blocked('checkout', f'{checkout} is missing; create it with worktrees.py add '
                       f'--owner ui-standardization --name update-{site}')
-    if git(checkout, 'status', '--porcelain'):
+    # Generated files a branch does not ignore are left alone; only the pin and lock are committed.
+    if git(checkout, 'status', '--porcelain', '--untracked-files=no'):
         raise Blocked('checkout', f'{checkout} has uncommitted changes')
 
     run(['git', 'fetch', '--quiet', 'origin'], checkout, log, 'fetch')
