@@ -11,9 +11,11 @@ For each site this works in its standing update checkout,
 nothing else uses. It starts a branch from the site's origin/main (or the
 branch given with --base), pins the commit in platform/mix.exs, updates
 mix.lock for regent_ui alone, then runs the site's compile, asset build and
-typecheck. A site that gets through every step gets a commit on that branch;
+typecheck. Before committing it checks again that only the pin and regent_ui's
+lock line changed and that no file appeared beyond what the Regent libraries
+generate. A site that gets through every step gets a commit on that branch;
 a site already on the commit is reported current; any other site is reported
-blocked, with the failing step and its log. Nothing
+blocked, with the failing step, what the run left behind, and its log. Nothing
 is pushed. Each site's owner reviews, pushes and releases the branch.
 """
 
@@ -39,6 +41,10 @@ SITES = {
 }
 
 PIN = re.compile(r'^(  @design_system_ref ")([0-9a-f]{40})(")$', re.M)
+
+# What the Regent libraries' asset steps write. Any other new file blocks the site,
+# because it could change the build without being in the commit.
+GENERATED = re.compile(r'^platform/(assets/vendor/regent_[a-z_]+|priv/static/fonts/regent-ui)/')
 
 
 class Blocked(Exception):
@@ -83,9 +89,11 @@ def update(site, js_dir, commit, base, log):
     if not checkout.is_dir():
         raise Blocked('checkout', f'{checkout} is missing; create it with worktrees.py add '
                       f'--owner ui-standardization --name update-{site}')
-    # Generated files a branch does not ignore are left alone; only the pin and lock are committed.
     if git(checkout, 'status', '--porcelain', '--untracked-files=no'):
         raise Blocked('checkout', f'{checkout} has uncommitted changes')
+    stray = new_files(checkout)
+    if stray:
+        raise Blocked('checkout', f'{checkout} has files that are not generated: {", ".join(stray)}')
 
     run(['git', 'fetch', '--quiet', 'origin'], checkout, log, 'fetch')
     branch = f'ui/regent-ui-{commit[:7]}' + ('' if base == 'main' else '-' + base.replace('/', '-'))
@@ -94,12 +102,51 @@ def update(site, js_dir, commit, base, log):
     run(['git', 'switch', '--quiet', '-c', branch, f'origin/{base}'], checkout, log, 'branch')
     try:
         return pin(checkout, js_dir, commit, branch, log)
-    except (Blocked, AlreadyCurrent):
-        # Leave the checkout clean and the branch gone, so the next run starts fresh.
-        git(checkout, 'restore', '--staged', '--worktree', 'platform/mix.exs', 'platform/mix.lock')
-        git(checkout, 'switch', '--quiet', '--detach')
-        git(checkout, 'branch', '--quiet', '-D', branch)
+    except AlreadyCurrent:
+        clean_up(checkout, branch)
         raise
+    except Blocked as blocked:
+        # Keep what the run changed in the log, then put back the pin and lock.
+        log.write('\n$ git status --porcelain\n' + git(checkout, 'status', '--porcelain') + '\n')
+        log.write('\n$ git diff\n' + git(checkout, 'diff') + '\n')
+        git(checkout, 'restore', '--staged', '--worktree', 'platform/mix.exs', 'platform/mix.lock')
+        left = git(checkout, 'diff', '--name-only', 'HEAD').splitlines() + new_files(checkout)
+        if left:
+            raise Blocked(blocked.step, f'{blocked.detail}; {branch} left as it is in {checkout}, '
+                          f'with changes still in {", ".join(left)}')
+        clean_up(checkout, branch)
+        raise
+
+
+def clean_up(checkout, branch):
+    git(checkout, 'switch', '--quiet', '--detach')
+    git(checkout, 'branch', '--quiet', '-D', branch)
+
+
+def new_files(checkout):
+    return [path for path in git(checkout, 'ls-files', '--others', '--exclude-standard').splitlines()
+            if not GENERATED.match(path)]
+
+
+def check_changes(checkout, commit):
+    """The only changes are the pin and regent_ui's lock line, and no unexpected files."""
+    mix_exs = (checkout / 'platform' / 'mix.exs').read_text()
+    if [pin[1] for pin in PIN.findall(mix_exs)] != [commit]:
+        raise Blocked('check', f'platform/mix.exs does not pin {commit[:7]} once')
+    changed = set(git(checkout, 'diff', '--name-only', 'HEAD').splitlines())
+    if changed != {'platform/mix.exs', 'platform/mix.lock'}:
+        raise Blocked('check', f'unexpected files changed: {", ".join(sorted(changed))}')
+    lock_lines = [line for line in git(checkout, 'diff', '-U0', 'HEAD', 'platform/mix.lock').splitlines()
+                  if line[:1] in '+-' and not line.startswith(('+++', '---'))]
+    others = sorted({line[1:].split(':')[0].strip() for line in lock_lines
+                     if not line[1:].lstrip().startswith('"regent_ui"')})
+    if others:
+        raise Blocked('check', f'mix.lock also changed {", ".join(others)}')
+    if not any(line.startswith('+') and commit in line for line in lock_lines):
+        raise Blocked('check', f'mix.lock does not lock regent_ui to {commit[:7]}')
+    stray = new_files(checkout)
+    if stray:
+        raise Blocked('check', f'files that are not generated appeared: {", ".join(stray)}')
 
 
 def pin(checkout, js_dir, commit, branch, log):
@@ -122,21 +169,15 @@ def pin(checkout, js_dir, commit, branch, log):
 
     platform = checkout / 'platform'
     run(['mix', 'deps.update', 'regent_ui'], platform, log, 'lock')
-    changed = set(git(checkout, 'diff', '--name-only').splitlines())
-    if changed != {'platform/mix.exs', 'platform/mix.lock'}:
-        raise Blocked('lock', f'unexpected files changed: {", ".join(sorted(changed))}')
-    lock_lines = [line for line in git(checkout, 'diff', '-U0', 'platform/mix.lock').splitlines()
-                  if line[:1] in '+-' and not line.startswith(('+++', '---'))]
-    others = sorted({line[1:].split(':')[0].strip() for line in lock_lines
-                     if not line[1:].lstrip().startswith('"regent_ui"')})
-    if others:
-        raise Blocked('lock', f'mix.lock also changed {", ".join(others)}')
+    check_changes(checkout, commit)
 
     run(['mix', 'deps.get'], platform, log, 'deps')
     run(['npm', 'ci', '--no-audit', '--no-fund'], checkout / js_dir, log, 'npm')
     run(['mix', 'compile', '--warnings-as-errors'], platform, log, 'compile')
     run(['mix', 'assets.build'], platform, log, 'assets')
     run(['npm', 'run', 'typecheck'], checkout / js_dir, log, 'typecheck')
+    # The steps above may touch the lock or leave files; what gets committed is checked again.
+    check_changes(checkout, commit)
 
     run(['git', 'add', 'platform/mix.exs', 'platform/mix.lock'], checkout, log, 'commit')
     run(['git', 'commit', '--quiet', '-m', f'Use design-system {commit[:7]}'], checkout, log, 'commit')
