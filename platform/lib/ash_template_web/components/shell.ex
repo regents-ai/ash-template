@@ -626,7 +626,7 @@ defmodule AshTemplateWeb.Components.Shell do
             data-account-menu-item="disconnect"
             data-account-target="sign-out"
           >
-            <.icon name={:logout} class="account-menu__icon" /><span>Disconnect</span>
+            <.icon name={:logout} class="account-menu__icon" /><span>Sign out</span>
           </Regent.Primitives.button>
         </div>
       </details>

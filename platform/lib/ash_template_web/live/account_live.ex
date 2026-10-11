@@ -1,8 +1,9 @@
 defmodule AshTemplateWeb.AccountLive do
   @moduledoc """
-  The signed-in person's Settings, one tab each: Profile (who the site knows
-  them as, their Credits, the agents they paired and this browser's session), Wallets (the wallets
-  their sign-in verified) and Connections (the accounts they have connected).
+  The signed-in person's Account, one tab each: Account (their profile, the
+  agents they paired, their Credits and this browser's session), Wallets (the
+  wallets their sign-in verified) and Connections (the accounts they have
+  connected). Points has its own tab (`AshTemplateWeb.PointsLive`).
 
   Everything here is read from the sign-in the shell already holds; nothing on
   the page asks the visitor to sign in again.
@@ -23,7 +24,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   def profile(assigns) do
     ~H"""
-    <.settings_page id="account-page" title="Profile" account={@account}>
+    <.settings_page id="account-page" title="Account" account={@account}>
       <:lede>Who Ash Template knows you as, and your session on this browser.</:lede>
       <div class="account-grid">
         <Regent.HolographicCard.card
@@ -53,7 +54,7 @@ defmodule AshTemplateWeb.AccountLive do
         </Regent.HolographicCard.card>
 
         <section class="account-panel account-details" aria-labelledby="account-details-title">
-          <h2 id="account-details-title">Details</h2>
+          <h2 id="account-details-title">Profile</h2>
           <dl>
             <div>
               <dt>Display name</dt>
@@ -61,6 +62,13 @@ defmodule AshTemplateWeb.AccountLive do
             </div>
           </dl>
         </section>
+
+        <.live_component
+          module={AshTemplateWeb.AgentsPanel}
+          id="account-agents"
+          lease={@lease}
+          account={@account}
+        />
 
         <section :if={@account} class="account-panel">
           <Regent.Account.credits_summary
@@ -74,13 +82,6 @@ defmodule AshTemplateWeb.AccountLive do
             Sign in there with the same login you use here.
           </p>
         </section>
-
-        <.live_component
-          module={AshTemplateWeb.AgentsPanel}
-          id="account-agents"
-          lease={@lease}
-          account={@account}
-        />
 
         <section class="account-panel account-session" aria-labelledby="account-session-title">
           <h2 id="account-session-title">Session</h2>
@@ -156,18 +157,18 @@ defmodule AshTemplateWeb.AccountLive do
     ~H"""
     <article id={@id} class="account-page">
       <header class="account-heading">
-        <p class="account-kicker">Settings</p>
+        <p :if={@title != "Account"} class="account-kicker">Account</p>
         <h1 tabindex="-1">{@title}</h1>
         <p class="account-lede">{render_slot(@lede)}</p>
       </header>
 
-      <section :if={is_nil(@account)} class="account-panel account-signed-out">
-        <h2>Sign in to see your settings</h2>
-        <p>Your profile, wallets and connections appear here once you are signed in.</p>
-        <Regent.Primitives.button type="button" data-account-target="sign-in">
-          Sign in
-        </Regent.Primitives.button>
-      </section>
+      <Regent.Account.signed_out :if={is_nil(@account)} id={"#{@id}-signed-out"}>
+        <:sign_in>
+          <Regent.Primitives.button type="button" data-account-target="sign-in">
+            Sign in
+          </Regent.Primitives.button>
+        </:sign_in>
+      </Regent.Account.signed_out>
 
       {@account && render_slot(@inner_block)}
     </article>

@@ -46,7 +46,7 @@ Passive reconciliation is background work, not a user action. Bridge import,
 readiness, token hydration, wallet hydration, timeout, and sync failures should
 be recorded only through redacted diagnostics; they must not produce a global
 account-error toast. Show auth feedback only when an explicit user action such
-as Sign In, Sign Out, link, or unlink actually failed at the boundary that action
+as Sign in, Sign out, link, or unlink actually failed at the boundary that action
 promised.
 
 ## Token and persistence boundary

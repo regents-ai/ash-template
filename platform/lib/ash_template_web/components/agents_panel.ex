@@ -66,54 +66,17 @@ defmodule AshTemplateWeb.AgentsPanel do
   @impl true
   def render(assigns) do
     ~H"""
-    <section id={@id} class="account-panel account-agents" aria-labelledby={"#{@id}-title"}>
-      <h2 id={"#{@id}-title"}>
-        Agents
-        <P.tip id={"#{@id}-about"} label="About paired agents">
+    <div id={@id}>
+      <Regent.Account.agents id={"#{@id}-list"} agents={rows(@agents)} notice={@notice}>
+        <:about>
           Pairing immediately lets an agent read and change your notes and post in rooms for you.
           Each thing it does is marked as its own. It can never use your wallet.
-        </P.tip>
-      </h2>
-
-      <p :if={@notice} id={"#{@id}-notice"} role="status">{@notice}</p>
-
-      <p :if={@agents == :unavailable} role="status">
-        Your agents couldn’t be read right now. Refresh to try again.
-      </p>
-      <p :if={@agents == []} class="rg-muted">No agents paired yet.</p>
-
-      <ul :if={is_list(@agents) and @agents != []} class="account-agents__list">
-        <li :for={agent <- @agents} id={"#{@id}-agent-#{agent.id}"} class="account-agents__agent">
-          <div>
-            <strong>{agent.name}</strong>
-            <span class="rg-muted">{Harness.label(agent.harness)}</span>
-            <span :if={agent.human_id} class="account-agents__human">
-              Human-backed
-              <P.tip id={"#{@id}-human-#{agent.id}"} label="About Human-backed">
-                A person verified with World ID stands behind this agent. This optional
-                verification does not change its paired access.
-              </P.tip>
-            </span>
-            <span :if={is_nil(agent.human_id)} class="account-agents__human">
-              No World ID backing
-              <P.tip id={"#{@id}-human-#{agent.id}"} label="About backing">
-                This agent already has paired access. World ID backing is optional. Step 7 of
-                <a href="https://siwa.regents.sh/skill.md" target="_blank" rel="noopener">
-                  the agent guide
-                </a>
-                shows how.
-              </P.tip>
-            </span>
-          </div>
-          <p class="rg-muted">
-            Last contact
-            <time datetime={DateTime.to_iso8601(agent.last_contact_at)}>
-              {RegentFormat.relative_time(agent.last_contact_at, DateTime.utc_now())}
-            </time>
-          </p>
+        </:about>
+        <:actions :let={agent}>
           <P.button
             type="button"
             variant="quiet"
+            aria-label={"Unpair #{agent.name}"}
             phx-click="unpair_agent"
             phx-value-id={agent.id}
             phx-target={@myself}
@@ -121,23 +84,41 @@ defmodule AshTemplateWeb.AgentsPanel do
           >
             Unpair
           </P.button>
-        </li>
-      </ul>
-
-      <P.button
-        id={"#{@id}-pair"}
-        type="button"
-        variant="secondary"
-        phx-click="issue_pairing_code"
-        phx-target={@myself}
-        phx-disable-with="Making a code…"
-      >
-        {if match?(%PairingCode.Issued{}, @pairing), do: "Make a new code", else: "Pair an agent"}
-      </P.button>
-
-      <.pairing id={@id} pairing={@pairing} />
-    </section>
+        </:actions>
+        <:footer>
+          <P.button
+            id={"#{@id}-pair"}
+            type="button"
+            variant="secondary"
+            phx-click="issue_pairing_code"
+            phx-target={@myself}
+            phx-disable-with="Making a code…"
+          >
+            {if match?(%PairingCode.Issued{}, @pairing), do: "Make a new code", else: "Pair an agent"}
+          </P.button>
+          <.pairing id={@id} pairing={@pairing} />
+        </:footer>
+      </Regent.Account.agents>
+    </div>
     """
+  end
+
+  defp rows(:unavailable), do: :unavailable
+
+  defp rows(agents) do
+    now = DateTime.utc_now()
+
+    Enum.map(
+      agents,
+      &%{
+        id: &1.id,
+        name: &1.name,
+        harness: Harness.label(&1.harness),
+        backed: not is_nil(&1.human_id),
+        last_contact_iso: DateTime.to_iso8601(&1.last_contact_at),
+        last_contact: RegentFormat.relative_time(&1.last_contact_at, now)
+      }
+    )
   end
 
   attr :id, :string, required: true

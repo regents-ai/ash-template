@@ -479,6 +479,7 @@ details[open] > summary .shell-chevron {
 .account-control > .rg-button {
   height: auto;
   margin: var(--space-1);
+  white-space: nowrap;
 }
 
 /* ---- Regents apps ---- */
@@ -1460,7 +1461,6 @@ details[open] > summary .shell-chevron {
     margin: 4px;
     padding-inline: 0.75rem;
     font-size: 0.75rem;
-    white-space: nowrap;
   }
 
   #shell-drawer {

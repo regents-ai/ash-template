@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :notes, label: "Notes", path: "/notes", icon: :notes},
     %{id: :rooms, label: "Rooms", path: @first_room, icon: :rooms},
     %{id: :chat, label: "Chat", path: "/chat", icon: :chat},
-    %{id: :settings, label: "Settings", path: "/account", icon: :settings}
+    %{id: :settings, label: "Account", path: "/account", icon: :settings}
   ]
 
   @sidebars %{
@@ -60,7 +60,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       %RouteTarget{route_id: :activity, label: "Activity", path: "/app/activity"}
     ],
     settings: [
-      %RouteTarget{route_id: :account, label: "Profile", path: "/account"},
+      %RouteTarget{route_id: :account, label: "Account", path: "/account"},
       %RouteTarget{route_id: :points, label: "Points", path: "/account/points"},
       %RouteTarget{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
       %RouteTarget{route_id: :connections, label: "Connections", path: "/account/connections"}
@@ -105,7 +105,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       {:chat,
        %{route_id: :chat, destination: "/chat/:conversation_id", page_display_label: "Chat"}},
     account:
-      {:settings, %{route_id: :account, destination: "/account", page_display_label: "Profile"}},
+      {:settings, %{route_id: :account, destination: "/account", page_display_label: "Account"}},
     points:
       {:settings,
        %{route_id: :points, destination: "/account/points", page_display_label: "Points"}},
@@ -145,7 +145,7 @@ defmodule AshTemplateWeb.RouteCatalog do
            Enum.map(Room.all(), &%{label: "#{&1.name} room", path: "/rooms/#{&1.slug}"}) ++
            [
              %{label: "Chat", path: "/chat"},
-             %{label: "Profile", path: "/account"},
+             %{label: "Account", path: "/account"},
              %{label: "Wallets", path: "/account/wallets"},
              %{label: "Connections", path: "/account/connections"},
              %{label: "Documentation", path: "/docs"},

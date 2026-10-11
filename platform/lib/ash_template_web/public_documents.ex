@@ -38,7 +38,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/chat/original" =>
       {"Chat in Ash AI's look",
        "The same chat with the assistant, in the look Ash AI's chat generator gives it."},
-    "/account" => {"Profile", "Who Ash Template knows you as, and the session on this browser."},
+    "/account" => {"Account", "Your profile, agents, Credits and the session on this browser."},
     "/account/points" => {"Points", "Your points and activity."},
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
     "/account/connections" =>

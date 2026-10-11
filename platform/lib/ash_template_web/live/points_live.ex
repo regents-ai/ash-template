@@ -18,30 +18,24 @@ defmodule AshTemplateWeb.PointsLive do
     ~H"""
     <article id="points-page" class="account-page">
       <header class="account-heading">
-        <p class="account-kicker">Settings</p>
+        <p class="account-kicker">Account</p>
         <h1 tabindex="-1">Points</h1>
         <p class="account-lede">
           Eligible activity by you and your connected agents, in one account.
         </p>
       </header>
-      <section :if={is_nil(@account)} class="account-panel">
-        <h2>Sign in to see your points</h2>
-        <Regent.Primitives.button type="button" data-account-target="sign-in">Sign in</Regent.Primitives.button>
-      </section>
+      <Regent.Account.signed_out :if={is_nil(@account)} id="points-signed-out">
+        <:sign_in>
+          <Regent.Primitives.button type="button" data-account-target="sign-in">
+            Sign in
+          </Regent.Primitives.button>
+        </:sign_in>
+      </Regent.Account.signed_out>
       <p :if={@account && is_nil(@points.value) && @points.state in [:idle, :loading]} role="status">
         Reading your points…
       </p>
       <Regent.Primitives.notice :if={@points.state == :error} tone="error">
         Points could not be read. Try refreshing this page.
-      </Regent.Primitives.notice>
-      <%!-- Keeps its space while unseen, so a failed refresh never moves the panels. --%>
-      <Regent.Primitives.notice
-        :if={@account && @points.value}
-        tone="warning"
-        class="points-stale"
-        data-unseen={@points.state != :stale}
-      >
-        These are your last saved figures. The latest refresh failed.
       </Regent.Primitives.notice>
       <div :if={@account && @points.value} class="account-grid">
         <Regent.Account.points_summary

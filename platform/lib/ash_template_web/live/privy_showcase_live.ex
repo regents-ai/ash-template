@@ -100,7 +100,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             Connect wallet
           </P.button>
           <p>
-            Signing in and having a wallet ready to send are two separate steps. Disconnect in the header clears the wallet shown here.
+            Signing in and having a wallet ready to send are two separate steps. Sign out in the header clears the wallet shown here.
           </p>
         </section>
 
