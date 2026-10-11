@@ -432,7 +432,9 @@ defmodule AshTemplateWeb.CreditsPanel do
 
       <ol class="credits-panel__steps">
         <li class="credits-panel__step" data-state={@approve.state}>
-          <P.button variant="secondary" data-onchain-step="approve">Approve</P.button>
+          <P.button variant="secondary" data-onchain-step="approve">
+            <span data-press-label>Approve</span>
+          </P.button>
           <div class="credits-panel__step-words">
             <strong>
               Approve {@dollars && "#{@dollars} "}USDC
@@ -450,7 +452,7 @@ defmodule AshTemplateWeb.CreditsPanel do
             disabled={@blocked != nil}
             aria-describedby={@blocked && "#{@id}-buy-why"}
           >
-            Buy
+            <span data-press-label>Buy</span>
           </P.button>
           <div class="credits-panel__step-words">
             <strong>

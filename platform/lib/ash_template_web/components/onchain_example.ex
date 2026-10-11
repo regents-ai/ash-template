@@ -187,9 +187,11 @@ defmodule AshTemplateWeb.OnchainExample do
       <p class="onchain-example-note" hidden={!@mismatch}>{@mismatch}</p>
 
       <div class="onchain-example-actions">
-        <P.button data-onchain-step="record">Record</P.button>
-        <P.button variant="secondary" data-onchain-step="fail">Fail on purpose</P.button>
-        <P.button variant="secondary" data-onchain-step="sign">Sign</P.button>
+        <P.button data-onchain-step="record"><span data-press-label>Record</span></P.button>
+        <P.button variant="secondary" data-onchain-step="fail">
+          <span data-press-label>Fail on purpose</span>
+        </P.button>
+        <P.button variant="secondary" data-onchain-step="sign"><span data-press-label>Sign</span></P.button>
       </div>
 
       <p :if={@press_note} class="onchain-example-note" role="status">{@press_note}</p>
