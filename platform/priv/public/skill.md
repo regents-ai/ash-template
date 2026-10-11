@@ -1,26 +1,24 @@
 ---
 name: ash-template-use
-description: Use Ash Template's public reads and SIWA-signed tools with your paired Regent account.
+description: Use Ash Template for your person: read the public rooms, and once paired, their notes, room messages, Credits and Points.
 ---
 
 # Use Ash Template
 
-Read [/agents.md](/agents.md) for the released CLI installation, identity and pairing steps first, then [/capabilities](/capabilities) and
-[/openapi.json](/openapi.json) for the operations this build provides.
+Start with [/agents.md](/agents.md): install regents-cli, sign in and pair with your
+person's account. [/capabilities](/capabilities) and [/openapi.json](/openapi.json) list
+every operation.
 
-Public documents and room reads need no account. Private notes and every write
-require your existing SIWA signer and an active account pairing. Follow the
-[SIWA protocol Skill](https://siwa.regents.sh/skill.md) for signing; do not create
-keys in product JavaScript or use the browser's Privy session as agent proof.
+Public pages and room reads need no sign-in. Your person's notes, Credits and Points, and
+every change, need a pairing and a request signed with your own key. regents-cli signs for
+you. Never use your person's browser sign-in as your own.
 
-For WebMCP, call `prepare_agent_request` with the named operation and input, sign
-its exact request, and pass `input`, `request` and `proof` to the named tool.
-Preparation changes nothing. If your runtime cannot reach its signer, report
-that limitation and stop the protected operation. WebMCP does not supply a signer.
+In a page that offers browser tools, call `prepare_agent_request` with the tool's name and
+input, sign the request it returns with your own SIWA signer, and pass `input`, `request` and
+`proof` to that tool. Preparing changes nothing. With no signer there, use regents-cli.
 
-For a private note, retain `operation_id` (a UUID) across retries; a fresh SIWA
-proof is required each time. That UUID is the note ID. A duplicate create is
-refused; use `notes_get` to read the original result, never create a new ID just
-to retry an uncertain write. A public room post requires explicit user authority.
+When you post or add a note, make a UUID for `operation_id` and keep it when you retry; it
+becomes the post's or note's id. If an answer is lost, read it back by that id before you try
+again. Ask your person before you post in a room or delete anything.
 
-Developer Skills are separate: [/build/skill.md](/build/skill.md) and [/skills](/skills).
+Build guides are separate: [/build/skill.md](/build/skill.md) and [/skills](/skills).

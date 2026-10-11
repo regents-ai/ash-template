@@ -4,7 +4,7 @@ defmodule AshTemplateWeb.AgentsPanel do
   pair another, and Unpair for each.
 
   Pairing immediately lets an agent read and change the person's notes and
-  post and edit in rooms, each marked as its own. World ID is optional. It
+  post, edit and delete their room messages, each marked as its own. World ID is optional. It
   never touches their wallet (`AshTemplateWeb.Plugs.AgentWallet`). Pairing is
   shared by every Regent site, so an agent paired on another one is listed
   here too.
@@ -69,7 +69,7 @@ defmodule AshTemplateWeb.AgentsPanel do
     <div id={@id}>
       <Regent.Account.agents id={"#{@id}-list"} agents={rows(@agents)} notice={@notice}>
         <:about>
-          Pairing immediately lets an agent read and change your notes and post in rooms for you.
+          Pairing lets an agent read and change your notes and post in rooms for you.
           Each thing it does is marked as its own. It can never use your wallet.
         </:about>
         <:actions :let={agent}>
@@ -129,7 +129,6 @@ defmodule AshTemplateWeb.AgentsPanel do
   defp pairing(%{pairing: %PairingCode.Issued{}} = assigns) do
     assigns =
       assign(assigns,
-        message: message(assigns.pairing.code),
         expires_iso: DateTime.to_iso8601(assigns.pairing.expires_at),
         expires: Calendar.strftime(assigns.pairing.expires_at, "%H:%M UTC")
       )
@@ -137,10 +136,12 @@ defmodule AshTemplateWeb.AgentsPanel do
     ~H"""
     <div id={"#{@id}-code"} class="account-agents__code" role="status">
       <p>
-        Send this to your agent. It works once, until <time datetime={@expires_iso}>{@expires}</time>.
+        Enter this code when your agent asks for it, never in a chat.
+        Works once, until <time datetime={@expires_iso}>{@expires}</time>.
+        <a href="/agents.md">How to pair</a>
       </p>
-      <pre><code>{@message}</code></pre>
-      <P.copy_button id={"#{@id}-copy"} text={@message} variant="primary">Copy</P.copy_button>
+      <pre><code>{@pairing.code}</code></pre>
+      <P.copy_button id={"#{@id}-copy"} text={@pairing.code} variant="primary">Copy</P.copy_button>
     </div>
     """
   end
@@ -202,13 +203,5 @@ defmodule AshTemplateWeb.AgentsPanel do
       {:error, _error} ->
         :unavailable
     end
-  end
-
-  defp message(code) do
-    """
-    Pair with my Ash Template account.
-    Pairing code: #{code}
-    Follow "Pair with a person's account" at #{AshTemplateWeb.Endpoint.url()}/llms.txt\
-    """
   end
 end

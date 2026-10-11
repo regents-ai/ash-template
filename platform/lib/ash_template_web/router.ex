@@ -38,7 +38,7 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
-  # Named agent tools use SIWA proof only. No browser session enters this pipeline.
+  # The /tools doors take SIWA proof only. No browser session enters this pipeline.
   pipeline :page_tools do
     plug :accepts, ["json"]
     plug AshTemplateWeb.Plugs.LaunchGate
@@ -218,9 +218,8 @@ defmodule AshTemplateWeb.Router do
     get "/account/points", PageToolsController, :points
     get "/notes", PageToolsController, :notes
     post "/notes", PageToolsController, :create_note
+    post "/notes/search", PageToolsController, :search_notes
     get "/notes/:id", PageToolsController, :note
-    get "/rooms/:room/messages", PageToolsController, :room_messages
-    post "/rooms/:room/messages", PageToolsController, :post_message
   end
 
   # Before the product shell, whose `/chat/:conversation_id` would take `original`.

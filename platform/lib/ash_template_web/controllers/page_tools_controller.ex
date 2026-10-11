@@ -1,57 +1,55 @@
 defmodule AshTemplateWeb.PageToolsController do
   @moduledoc """
-  The doors behind the browser tools a page offers its own agent
-  (`priv/tool_manifest.json`, `assets/js/public_tools.ts`).
+  The agent doors under `/tools` that the browser tools (`priv/tool_manifest.json`,
+  `assets/js/public_tools.ts`) and regents-cli share: notes and the account's
+  Credits and Points.
 
-  Every private read and write requires per-request SIWA proof and a current
-  pairing. Browser cookies grant no authority. Public room reads remain open.
+  Every request needs per-request SIWA proof from an actively paired agent.
+  Browser cookies grant no authority.
   """
 
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
-  alias AshTemplate.{Notes, Rooms}
+  alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplate.Rooms.{Message, Room}
-  alias AshTemplateWeb.{ClientAddress, NotesJSON}
+  alias AshTemplateWeb.NotesJSON
+  alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentPoints.{Amount, Rules}
 
-  plug :put_actor
+  plug :paired_agent
 
   @errors %{
     "authentication_required" =>
-      {401, "A signed request from an actively paired agent is required.",
-       "Prepare the tool request, sign its exact bytes with the existing SIWA signer, then pass the request and proof."},
+      {401, "A signed request from a paired agent is required.",
+       "Prepare the request, sign its exact bytes with your SIWA signer, then send the request and proof."},
     "agent_not_paired" =>
-      {403, "This authenticated agent is not paired with an account.",
-       "Ask your owner to sign in at /account and use Agents > Pair an agent. Redeem their code with the existing SIWA pairing flow at POST /api/agents/v1/pair, then retry with fresh proof."},
+      {403, "This agent is not paired with an account.",
+       "Ask your person to sign in at /account and use Agents > Pair an agent. Redeem their code at POST /api/agents/v1/pair (regents ash-template agents pair), then retry with fresh proof."},
     "person_not_here" =>
-      {403, "The paired owner has no account on this site yet.",
-       "Ask your owner to sign in at /account on this site, then retry with fresh proof."},
+      {403, "The person this agent is paired with has no account on this site yet.",
+       "Ask your person to sign in at /account on this site, then retry with fresh proof."},
     "note_not_found" =>
-      {404, "There is no note of yours with that id.", "List your notes with notes_list."},
+      {404, "There is no note of yours with that id.",
+       "List your person's notes and use an id from there."},
     "invalid_note" =>
       {422, "The note could not be saved.",
-       "Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID retained when retrying with fresh proof."},
-    "room_not_found" =>
-      {404, "There is no room with that name.",
-       "The rooms are #{Enum.map_join(Room.all(), ", ", & &1.slug)}."},
-    "invalid_message" =>
-      {422, "The message could not be posted.",
-       "details says why: a body is 1 to 2,000 characters, and after several quick posts wait a minute."},
+       "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying. If that operation_id was used before, the note exists: read it with notes_get."},
+    "invalid_search" =>
+      {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
+
+  @points_off "Earning Points is off on this site."
+  @spending_off "Approving agent spending is off on this site."
 
   def balances(conn, _params) do
     actor = credit_actor(conn)
 
     case RegentCredits.agent_budget(actor: actor) do
       {:ok, budget} ->
-        json(conn, %{
-          account_id: conn.assigns.actor.human_account_id,
-          pairing_id: actor.pairing_id,
-          credits: RegentCredits.balance(actor.privy_user_id),
-          spending_grant: budget
-        })
+        answer = %{credits: RegentCredits.balance(actor.privy_user_id), spending_grant: budget}
+        json(conn, with_note(answer, not RegentCredits.agent_grants_enabled?(), @spending_off))
 
       {:error, _} ->
         refuse(conn, "unavailable")
@@ -71,32 +69,71 @@ defmodule AshTemplateWeb.PageToolsController do
     end
   end
 
+  # Points as decimal text, as the Points page shows them.
   def points(conn, _params) do
     case RegentPoints.summary(actor: conn.assigns.actor) do
       {:ok, summary} ->
-        entries =
-          Enum.map(
-            summary.entries,
-            &Map.take(&1, [
-              :id,
-              :rule_id,
-              :rule_version,
-              :source_app,
-              :actor_kind,
-              :actor_id,
-              :points_micro_delta,
-              :earned_at,
-              :reason_code
-            ])
-          )
+        answer = %{
+          points: Amount.format(summary.balance_micro),
+          earned_today: Amount.format(summary.earned_today_micro),
+          pending: summary.pending,
+          daily_allowances:
+            Enum.map(
+              summary.allowances,
+              &%{scope: &1.scope, remaining: Amount.format(&1.remaining)}
+            ),
+          entries:
+            Enum.map(
+              summary.entries,
+              &%{
+                points: Amount.format(&1.points_micro_delta),
+                source: &1.source_app,
+                by: &1.actor_kind,
+                earned_at: &1.earned_at
+              }
+            ),
+          more: summary.more?
+        }
 
-        result =
-          Map.take(summary, [:balance_micro, :earned_today_micro, :pending, :allowances, :more?])
-
-        json(conn, Map.put(result, :entries, entries))
+        json(conn, with_note(answer, Rules.active() == [], @points_off))
 
       {:error, _} ->
         refuse(conn, "unavailable")
+    end
+  end
+
+  def notes(conn, _params) do
+    case Notes.list_my_notes(actor: conn.assigns.actor) do
+      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
+      {:error, _error} -> refuse(conn, "unavailable")
+    end
+  end
+
+  def note(conn, %{"id" => id}) do
+    case Notes.get_my_note(id, actor: conn.assigns.actor) do
+      {:ok, %Note{} = note} -> json(conn, %{note: NotesJSON.note(note)})
+      {:ok, nil} -> refuse(conn, "note_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
+      {:error, _error} -> refuse(conn, "unavailable")
+    end
+  end
+
+  def search_notes(conn, _params) do
+    case Notes.search_my_notes(conn.body_params["text"],
+           actor: conn.assigns.actor,
+           load: [:label_decision, :changed_by_agent]
+         ) do
+      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_search")
+      {:error, _error} -> refuse(conn, "unavailable")
+    end
+  end
+
+  def create_note(conn, _params) do
+    case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
+      {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
+      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
+      {:error, _error} -> refuse(conn, "unavailable")
     end
   end
 
@@ -111,100 +148,26 @@ defmodule AshTemplateWeb.PageToolsController do
     )
   end
 
-  def notes(conn, _params) do
-    signed_in(conn, fn conn, actor ->
-      case Notes.list_my_notes(actor: actor) do
-        {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
-        {:error, _error} -> refuse(conn, "unavailable")
-      end
-    end)
-  end
+  defp with_note(answer, true, note), do: Map.put(answer, :note, note)
+  defp with_note(answer, false, _note), do: answer
 
-  def note(conn, %{"id" => id}) do
-    signed_in(conn, fn conn, actor ->
-      case Notes.get_my_note(id, actor: actor) do
-        {:ok, %Note{} = note} -> json(conn, %{note: NotesJSON.note(note)})
-        {:ok, nil} -> refuse(conn, "note_not_found")
-        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
-        {:error, _error} -> refuse(conn, "unavailable")
-      end
-    end)
-  end
-
-  def create_note(conn, _params) do
-    signed_in(conn, fn conn, actor ->
-      case Notes.create_note(conn.body_params, actor: actor) do
-        {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
-        {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
-        {:error, _error} -> refuse(conn, "unavailable")
-      end
-    end)
-  end
-
-  # The newest 50 messages, without the authors the signed-in reader muted.
-  def room_messages(conn, %{"room" => slug}) do
-    with_room(conn, slug, fn conn, room ->
-      case Rooms.list_room_messages(room.slug, actor: conn.assigns.actor) do
-        {:ok, page} ->
-          json(conn, %{room: room.slug, messages: Enum.map(page.results, &message/1)})
-
-        {:error, _error} ->
-          refuse(conn, "unavailable")
-      end
-    end)
-  end
-
-  def post_message(conn, %{"room" => slug}) do
-    with_room(conn, slug, fn conn, room -> signed_in(conn, &post(&1, &2, room)) end)
-  end
-
-  defp put_actor(conn, _opts) do
+  defp paired_agent(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
-    if action_name(conn) == :room_messages do
-      assign(conn, :actor, nil)
-    else
-      case AshTemplateWeb.Plugs.AgentWallet.call(conn, []) do
-        %{halted: true} = conn ->
-          conn
+    case AgentWallet.call(conn, []) do
+      %{halted: true} = conn ->
+        conn
 
-        %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
-          conn
+      %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
+        conn
 
-        %{assigns: %{actor: %Agent{} = actor}} = conn ->
-          conn |> refuse(AshTemplateWeb.Plugs.AgentWallet.not_person_code(actor)) |> halt()
+      %{assigns: %{actor: %Agent{} = actor}} = conn ->
+        conn |> refuse(AgentWallet.not_person_code(actor)) |> halt()
 
-        conn ->
-          conn |> refuse("authentication_required") |> halt()
-      end
+      conn ->
+        conn |> refuse("authentication_required") |> halt()
     end
   end
-
-  defp signed_in(%{assigns: %{actor: nil}} = conn, _respond),
-    do: refuse(conn, "authentication_required")
-
-  defp signed_in(conn, respond), do: respond.(conn, conn.assigns.actor)
-
-  defp with_room(conn, slug, respond) do
-    case Room.fetch(slug) do
-      {:ok, room} -> respond.(conn, room)
-      :error -> refuse(conn, "room_not_found")
-    end
-  end
-
-  defp post(conn, actor, room) do
-    case Rooms.post_message(Map.put(conn.body_params, "room", room.slug),
-           actor: actor,
-           context: %{client_key: ClientAddress.client_key(conn)}
-         ) do
-      {:ok, message} -> conn |> put_status(:created) |> json(%{message: message(message)})
-      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
-      {:error, _error} -> refuse(conn, "unavailable")
-    end
-  end
-
-  defp message(%Message{} = message),
-    do: Map.take(message, [:id, :room, :author_name, :body, :inserted_at, :edited_at])
 
   defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)

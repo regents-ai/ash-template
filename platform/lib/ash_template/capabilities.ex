@@ -9,8 +9,8 @@ defmodule AshTemplate.Capabilities do
   @manifest @manifest_path |> File.read!() |> Jason.decode!()
   @needs %{
     "none" => "Nothing",
-    "siwa" => "Per-request SIWA proof; no pairing required",
-    "siwa_and_pairing" => "Per-request SIWA proof and current pairing"
+    "siwa" => "A signed request",
+    "siwa_and_pairing" => "A signed request and a pairing"
   }
 
   @spec manifest() :: map()

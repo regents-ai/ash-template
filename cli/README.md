@@ -1,11 +1,10 @@
 # Ash Template commands
 
-`commands.json` describes every command the `regents` command line would run against this
-site: `regents ash-template health`, and so on. The code that runs them lives in
+`commands.json` describes every command the `regents` command line runs against this site:
+`regents ash-template health`, and so on. The code that runs them lives in
 [regents-cli](https://github.com/regents-ai/regents-cli), which publishes the one
-`regents-cli` package for every Regent site and pins each site's file by commit.
-regents-cli does not carry this site: these files are the pattern each Regent site copies
-for its own commands.
+`regents-cli` package for every Regent site and pins each site's file by commit. regents-cli
+1.9.1 carries this site; each Regent site copies the same pattern for its own commands.
 
 Each command names the route it calls and the operation in this site's OpenAPI
 document that answers it, who may call it (`authority`) and what it changes
@@ -15,10 +14,10 @@ its descriptions explain every field.
 
 ## Changing a command
 
-1. **Docs first.** Write the change in [COMMANDS.md](COMMANDS.md): what the command does for
-   a person, who may run it, what it changes, its route, inputs, answer and refusals, the
-   server pseudo-code, what the server needs, and a history line. A command that is not
-   described there does not exist yet.
+1. **Docs first.** Write the change in [COMMANDS.md](COMMANDS.md): what the command does,
+   its arguments and stdin, an example, its answer and its refusals, and a dated line under
+   Changes when callers must change something. A command that is not described there does
+   not exist yet.
 2. **Build it in one commit:** the route, its operation in the OpenAPI documents and the
    `commands.json` entry together.
 3. **Check it** from the repository root:
@@ -32,9 +31,8 @@ its descriptions explain every field.
    format. It fails when the file does not fit the format, or when a command's operation,
    method or path is not in `platform/priv/public/openapi.json` or
    `platform/priv/static/api-contract.openapiv3.yaml`.
-4. **Send the change note.** Once the route is on main, a product the command line carries
-   sends this note to the regents-cli chief, who moves the pin, tries each changed command
-   and releases. The template itself is not in the command line, so it sends none.
+4. **Send the change note.** Once the route is on main, send this note to the regents-cli
+   chief, who moves the pin, tries each changed command and releases.
 
    ```text
    Site: ash-template
@@ -49,15 +47,16 @@ its descriptions explain every field.
 ## What does not go here
 
 - Browser sign-in, which has no command.
-- Editing and muting in rooms, and chat with the assistant, which stay on the website.
+- Muting in rooms, and chat with the assistant, which stay on the website.
 
 ## A command that signs
 
 `rooms post <room>` shows a command that changes something. Its `authority` is
-`wallet-proof`: the agent signs in once with the sign-in server's agent client
-(https://siwa.regents.sh/skill.md), and every request is signed with the agent's key. The site checks each request
-with the shared sign-in service (`AshTemplateWeb.Plugs.AgentWallet`) and posts for its actively paired account, retaining agent attribution. `stdin_fields` names the body fields read from stdin as one JSON object, here
-`{"body": "…", "operation_id": "<stable-uuid>"}`.
+`wallet-proof`: the agent signs in once with `regents auth login --site ash-template`, and
+the command line signs every request with the agent's key. The site checks each request with
+the shared sign-in service (`AshTemplateWeb.Plugs.AgentWallet`) and posts for the person the
+agent is paired with, marked with the agent. `stdin_fields` names the body fields read from
+stdin as one JSON object, here `{"body": "…", "operation_id": "<UUID>"}`.
 
 ## A command with inputs
 

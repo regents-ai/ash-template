@@ -12,7 +12,7 @@ function signedTransport() { return signedTools({
   })) as unknown as SignedOperation[],
 }) }
 
-type Property = {type: "string"; description: string}
+type Property = {type: "string" | "integer" | "object"; description?: string}
 
 type Schema = {
   type: "object"
@@ -32,27 +32,26 @@ type Entry = {
   authentication: string
 }
 
-type Input = Record<string, string>
+type Input = Record<string, string | number>
 
 type Refusal = {code: string; message: string; hint?: string; details?: unknown}
 
 type Reply =
   | {ok: true; status: number; data: unknown}
-  | {ok: false; status: number; error: Refusal}
+  | {ok: false; status?: number; outcome?: "unknown"; error: Refusal}
 
 type Request = (input: Input, signal: AbortSignal | undefined) => Promise<Reply>
 
+// The public reads. Every other tool except prepare_agent_request is signed.
 const requests: Record<string, Request> = {
   about: (_input, signal) => markdown("/about", signal),
   docs: (_input, signal) => markdown("/docs", signal),
-  room_read: (input, signal) =>
-    call("GET", `/tools/rooms/${encodeURIComponent(input.room)}/messages`, signal),
-}
-
-// How to learn whether a write that lost its answer happened, before trying again.
-const checks: Record<string, string> = {
-  notes_create: "List the notes with notes_list to see whether it was saved before adding it again.",
-  room_post: "Read the room with room_read to see whether it was posted before posting again.",
+  rooms_list: (_input, signal) => call("/api/v1/rooms", signal),
+  room_read: ({room, ...page}, signal) => {
+    const query = new URLSearchParams(Object.entries(page).map(([key, value]) => [key, String(value)])).toString()
+    const path = `/api/v1/rooms/${encodeURIComponent(String(room))}/messages`
+    return call(query ? `${path}?${query}` : path, signal)
+  },
 }
 
 // A public document, in the Markdown an agent gets when it asks for that page.
@@ -71,29 +70,24 @@ async function markdown(path: string, signal: AbortSignal | undefined): Promise<
 
 // Public JSON without session authority. Every refusal it sends is
 // {"error": {"code", "message", "hint"}}, handed on as it came.
-async function call(
-  method: "GET" | "POST",
-  path: string,
-  signal: AbortSignal | undefined,
-  body?: Input,
-): Promise<Reply> {
-  const headers: Record<string, string> = {Accept: "application/json"}
-  if (body) headers["Content-Type"] = "application/json"
+async function call(path: string, signal: AbortSignal | undefined): Promise<Reply> {
   const response = await fetch(path, {
-    method,
-    headers,
-    body: body && JSON.stringify(body),
+    headers: {Accept: "application/json"},
     credentials: "omit",
     cache: "no-store",
     redirect: "error",
     signal,
   })
-  const answer = await response.json()
+  return reply(response)
+}
+
+async function reply(response: Response): Promise<Reply> {
+  const answer = response.status === 204 ? null : await response.json()
   if (response.ok) return {ok: true, status: response.status, data: answer}
   return {ok: false, status: response.status, error: answer.error}
 }
 
-// The browser does not check input against the schema, so each call is
+// The browser does not check input against the schema, so each public call is
 // checked here, and a refusal names the field and what it must be. The server
 // checks lengths and everything else again.
 function inputProblem(input: unknown, schema: Schema) {
@@ -110,27 +104,58 @@ function inputProblem(input: unknown, schema: Schema) {
   const missing = schema.required.find(key => !Object.hasOwn(input, key))
   if (missing) return `${missing} is required.`
   const values = input as Record<string, unknown>
-  const notText = Object.keys(values).find(key => typeof values[key] !== "string")
-  return notText ? `${notText} must be text.` : null
+  const wrong = Object.keys(values).find(key =>
+    schema.properties[key].type === "integer" ? !Number.isInteger(values[key]) : typeof values[key] !== "string")
+  if (!wrong) return null
+  return schema.properties[wrong].type === "integer" ? `${wrong} must be a whole number.` : `${wrong} must be text.`
 }
 
 // A call that ended without an answer. A write may already have reached the
 // server, so its outcome is unknown, never cancelled.
-function unanswered(entry: Entry, signal: AbortSignal | undefined) {
+function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
   if (entry.state_changing) {
     return {
       ok: false,
       outcome: "unknown",
       error: {
         code: "outcome_unknown",
-        message: "The answer did not arrive, so it is not known whether this happened.",
-        hint: checks[entry.name],
+        message: "The answer was lost, so it is not known whether this happened.",
+        hint: "Read it back by its operation_id or id before you try again.",
       },
     }
   }
   return signal?.aborted
     ? {ok: false, error: {code: "cancelled", message: "The read was cancelled; nothing changed."}}
     : {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
+}
+
+const invalid = (error: unknown): Reply => ({ok: false, error: {
+  code: "invalid_request",
+  message: error instanceof Error ? error.message : String(error),
+  hint: "Check the input against this tool's schema, then prepare and sign the request again.",
+}})
+
+// fetch fails with a TypeError when the network fails and an AbortError when
+// cancelled; the transport's own refusals, made before anything is sent, are
+// plain Errors.
+const lost = (error: unknown) =>
+  error instanceof TypeError || (error instanceof DOMException && error.name === "AbortError")
+
+async function signed(entry: Entry, input: SignedInput, signal: AbortSignal | undefined): Promise<Reply> {
+  if (signal?.aborted) {
+    return {ok: false, error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
+  }
+  let response: Response
+  try {
+    response = await signedTransport().execute(entry.name, input, signal)
+  } catch (error) {
+    return lost(error) ? unanswered(entry, signal) : invalid(error)
+  }
+  try {
+    return await reply(response)
+  } catch (_error) {
+    return unanswered(entry, signal)
+  }
 }
 
 // JSON imports widen every literal, so the manifest is read as the shape it is written in.
@@ -148,21 +173,10 @@ const tools: ModelContextTool[] = entries.filter(entry => entry.scope === "site"
         const args = input as {operation: string; input: Record<string, unknown>}
         return {ok: true, request: signedTransport().prepare(args.operation, args.input)}
       } catch (error) {
-        return {ok: false, error: {code: "invalid_preparation", message: String(error)}}
+        return invalid(error)
       }
     }
-    if (entry.authentication === "siwa_per_request") {
-      try {
-        const response = await signedTransport().execute(entry.name, input as SignedInput, signal)
-        const data = await response.json()
-        return response.ok ? {ok: true, status: response.status, data} : {ok: false, status: response.status, error: data.error}
-      } catch (error) {
-        return {ok: false, error: {code: "signed_request_failed", message: String(error),
-          hint: entry.state_changing
-            ? "Keep the logical operation ID. Check the outcome before retrying, and sign fresh proof."
-            : "Sign fresh proof for the exact prepared request with your existing SIWA signer. If no supported signer is available, report the blocker."}}
-      }
-    }
+    if (entry.authentication === "siwa_per_request") return signed(entry, input as SignedInput, signal)
     const problem = inputProblem(input, entry.input_schema)
     if (problem) return {ok: false, error: {code: "invalid_input", message: problem}}
     if (signal?.aborted) {

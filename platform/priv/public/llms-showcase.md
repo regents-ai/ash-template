@@ -2,7 +2,7 @@
 
 This site is also the public demo of the Ash Template starter kit, the one Regent's sites are built from.
 
-- [Agent guide to the build skills]({{origin}}/skill.md): how to fetch them and check each download.
+- [Agent guide to the build skills]({{origin}}/build/skill.md): how to fetch them and check each download.
 - [Build skills index]({{origin}}/.well-known/agent-skills/index.json) in the Agent Skills Discovery v0.2.0 format, and [the same skills for people]({{origin}}/skills).
 - [Showcase]({{origin}}/showcase): every shared component, in light and dark. Its [catalog]({{origin}}/showcase/catalog) lists them as JSON.
 - [Sign in with Privy]({{origin}}/showcase/privy): wallet sign-in, working.

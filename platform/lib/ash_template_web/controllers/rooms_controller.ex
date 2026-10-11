@@ -31,13 +31,13 @@ defmodule AshTemplateWeb.RoomsController do
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
     "agent_not_paired" =>
       {403, "Only an actively paired agent can change its account’s messages.",
-       "Ask your person for a pairing code from their account page, then pair with POST /api/agents/v1/pair."},
+       "Ask your person to sign in at /account and use Pair an agent. Redeem their code with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."},
     "person_not_here" =>
       {403, "The person this agent is paired with has no account on this site yet.",
        "Ask your person to sign in on this website once, then send the request again."},
     "invalid_message" =>
-      {422, "The message could not be posted.",
-       "Send {\"body\": \"…\"} of 1 to 2,000 characters; after several quick posts, wait a minute."},
+      {422, "The message could not be saved.",
+       "A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. If that operation_id was used before, the message exists: read the room. An edit sends only body. After several quick posts, wait a minute."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
