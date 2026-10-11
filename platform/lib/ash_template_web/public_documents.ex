@@ -254,6 +254,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
     |> String.replace("{{key_facts}}", @key_facts)
     |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
+    |> String.replace("{{tool_summary}}", AshTemplate.Capabilities.summary_table())
     |> String.replace("{{skills}}", skills_table())
     |> String.replace("{{skill_list}}", skill_list())
     |> String.replace("{{origin}}", url(""))

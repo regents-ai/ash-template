@@ -20,7 +20,7 @@ The homepage, this page, About, Contact, Privacy and Terms answer `Accept: text/
 
 `GET /api/v1/profile` reads your profile, `PATCH /api/v1/profile` changes its `display_name` or `wallet_address`, and `POST /api/v1/profile/sync` creates it on first use and refreshes it after.
 
-Each request carries your Privy access token in `Authorization: Bearer …` and your Privy identity token in `Privy-Id-Token`. They are your own sign-in, not an API key: never paste them into a chat, report or issue.
+Each request carries your Privy access token in `Authorization: Bearer …` and your Privy identity token in `Privy-Id-Token`. They are your own sign-in, not an API key: never paste them, a private key or a recovery phrase into a chat, report or issue.
 
 ```sh
 curl --fail-with-body '{{origin}}/api/v1/profile' \
@@ -126,9 +126,9 @@ New endpoints, fields and optional inputs can appear at any time: ignore what yo
 
 ## Browser tools
 
-Every page offers an agent running in it these tools through WebMCP (`document.modelContext`). Signed tools take three steps: `prepare_agent_request`, sign the request it returns with your own SIWA signer, then call the tool with input, request and proof. The person's browser sign-in gives an agent nothing. A write whose answer was lost comes back as `outcome_unknown`: read it back before trying again. [/capabilities]({{origin}}/capabilities) has them as JSON.
+Every page offers an agent running in it these tools through WebMCP (`document.modelContext`). Signed tools take three steps: `prepare_agent_request`, sign the request it returns with your own SIWA signer, then call the tool with input, request and proof. The person's browser sign-in gives an agent nothing. A write whose answer was lost comes back as `outcome_unknown`: read it back before trying again. The [agent guide]({{origin}}/llms.txt) says what each does, and [/capabilities]({{origin}}/capabilities) has them as JSON.
 
-{{tools}}
+{{tool_summary}}
 
 ## Contracts
 
