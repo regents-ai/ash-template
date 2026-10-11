@@ -341,6 +341,7 @@ defmodule AshTemplateWeb.ShellLive do
           account={current_account(@access_context)}
           room={@room}
           people={@people}
+          client_key={@client_key}
         />
 
         <.live_component
