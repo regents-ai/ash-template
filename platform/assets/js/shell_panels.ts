@@ -63,28 +63,17 @@ export function installShellPanels(shell: HTMLElement) {
   }
 
   const syncAside = () => {
-    const open = asideOpen()
-    shell
-      .querySelectorAll<HTMLButtonElement>("#shell-aside-button, [data-aside-part]")
-      .forEach(button => button.setAttribute("aria-expanded", String(open)))
+    asideButton()?.setAttribute("aria-expanded", String(asideOpen()))
     syncPulse()
   }
 
-  const setAside = (open: boolean, part?: string) => {
+  const setAside = (open: boolean) => {
     const value = open ? "open" : "closed"
     root().dataset.aside = value
     remember("aside", value)
     syncAside()
 
-    if (open && part) {
-      const section = shell.querySelector<HTMLElement>(`#shell-aside-${part}`)
-      section?.scrollIntoView({block: "start"})
-      const heading = section?.querySelector<HTMLElement>("h3")
-      if (heading) {
-        heading.tabIndex = -1
-        heading.focus({preventScroll: true})
-      }
-    } else if (open && phone()) {
+    if (open && phone()) {
       aside()?.focus()
     }
   }
@@ -153,8 +142,6 @@ export function installShellPanels(shell: HTMLElement) {
     const target = event.target instanceof Element ? event.target : null
     if (!target) return
 
-    const part = target.closest<HTMLElement>("[data-aside-part]")
-    if (part) return setAside(true, part.dataset.asidePart)
     if (target.closest("#shell-aside-button")) return setAside(!asideOpen())
     if (target.closest("[data-aside-close]")) {
       setAside(false)

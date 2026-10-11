@@ -15,6 +15,8 @@ defmodule AshTemplateWeb.RoomsLive do
 
   use AshTemplateWeb, :live_component
 
+  import AshTemplateWeb.Components.PageHead
+
   alias AshTemplate.Actors.Human
   alias AshTemplate.Agents.Agent
   alias AshTemplate.Rooms
@@ -197,11 +199,9 @@ defmodule AshTemplateWeb.RoomsLive do
           </section>
         </div>
       </.portal>
-      <header class="account-heading">
-        <p class="account-kicker">Rooms</p>
-        <h1 tabindex="-1">{@room.name}</h1>
-        <p class="account-lede">{@room.about}</p>
-      </header>
+      <.page_head title={@room.name}>
+        <:tip>{@room.about}</:tip>
+      </.page_head>
 
       <section
         id="room-conversation"

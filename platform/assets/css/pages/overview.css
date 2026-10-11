@@ -1,6 +1,5 @@
 @layer regents-product {
-/* The Overview shares the Account grammar: one ground, hairline panels, the
-   display face for headings and a mono voice for the kicker. */
+/* The Overview: a title, then one card per place, each a name and a short line. */
 
 .overview-page {
   display: grid;
@@ -8,74 +7,52 @@
   min-width: 0;
 }
 
-.overview-heading,
-.overview-panel {
+.overview-places {
   display: grid;
-  gap: 1rem;
-  min-width: 0;
-  padding: var(--rg-panel-padding);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-2);
+}
+
+.overview-place {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+  min-height: 7rem;
+  padding: 1.25rem;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
 }
 
-.overview-page h1,
-.overview-page h2 {
-  margin: 0;
+.overview-place__title {
   font-family: var(--font-family-title);
-  font-weight: 400;
-}
-
-.overview-page p {
-  margin: 0;
-}
-
-.overview-kicker {
-  color: var(--color-fg-muted);
-  font-family: var(--font-family-ui);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.overview-heading h1 {
-  max-width: 18ch;
-  font-size: clamp(2rem, 5vw, 3.75rem);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-
-.overview-heading h1:focus {
-  outline: none;
-}
-
-.overview-lede {
-  max-width: 56ch;
-  color: var(--color-fg-muted);
-  font-size: 1.05rem;
-  line-height: 1.5;
-}
-
-.overview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.overview-panel {
-  justify-items: start;
-}
-
-.overview-panel h2 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   line-height: 1.1;
+}
+
+.overview-place__line {
+  color: var(--color-fg-muted);
+  font-size: 0.9rem;
+}
+
+@media (hover: hover) {
+  .overview-place:hover {
+    background: color-mix(in oklch, var(--color-fg) 5%, var(--color-surface));
+  }
+}
+
+.overview-place:focus-visible {
+  outline: 2px solid var(--ash-accent-warm);
+  outline-offset: 2px;
 }
 
 .overview-links {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 1.25rem;
+  color: var(--color-fg-muted);
+  font-size: 0.9rem;
 }
 
 }

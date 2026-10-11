@@ -17,13 +17,13 @@ defmodule AshTemplateWeb.HomeLive do
     """
     # Ash Template
 
-    A starting point for a product with wallet sign-in, an account page and a documented API.
+    A starting point for your next product: wallet sign-in, an account page, Credits, Points and paired agents.
 
     #{chapters}
 
     ## Get started
 
-    [Open the app](#{PublicDocuments.url("/app")}) · [Developer documentation](#{PublicDocuments.url("/docs")}) · [Agent guide](#{PublicDocuments.url("/llms.txt")})
+    [Open the app](#{PublicDocuments.url("/app")}) · [Developer documentation](#{PublicDocuments.url("/docs")}) · [Agent guide](#{PublicDocuments.url("/agents.md")})
     #{kit_markdown(Showcase.linked?())}[About](#{PublicDocuments.url("/about")}) · [Contact](#{PublicDocuments.url("/contact")}) · [Privacy](#{PublicDocuments.url("/privacy")})
     """
   end
@@ -312,10 +312,7 @@ defmodule AshTemplateWeb.HomeLive do
     <section id="start" class="rl-closing" aria-labelledby="start-title">
       <p class="rl-overline">Get started</p>
       <h2 id="start-title">Make it yours.</h2>
-      <p>
-        Rename the product, replace this page, and keep the sign-in, the account page and the
-        public documents that already work.
-      </p>
+      <p>Rename it, replace this page and keep everything that already works.</p>
       <div class="rl-closing-actions">
         <.action href={~p"/app"} class="rl-action rl-action--strong">Open the app</.action>
         <.action href={~p"/docs"} class="rl-action">Read the docs</.action>
@@ -380,53 +377,49 @@ defmodule AshTemplateWeb.HomeLive do
       %{
         index: "01",
         anchor: "signin",
-        eyebrow: "Sign in",
-        line: "One wallet sign-in, with social accounts you can connect afterwards.",
-        title: "One sign-in, verified on the server.",
-        description:
-          "People sign in with a wallet. The server verifies the proof, keeps the session and never trusts the browser's word for who is present.",
+        eyebrow: "Wallet",
+        line: "One wallet sign-in. Connect other accounts later.",
+        title: "Sign in with your wallet.",
+        description: "No password to keep. Connect X, GitHub or Farcaster once you are in.",
         href: "/app",
         cta: "Open the app",
         diagrams: 0,
         proofs: [
-          {"Wallet first.", "Sign in with the wallet you already have; no password to keep."},
-          {"Connections.", "Connect X, GitHub or Farcaster to the account once signed in."},
-          {"Sessions.", "Sign out ends the session on this browser only; nothing else changes."}
+          {"Wallet first.", "No password to keep."},
+          {"Connections.", "Add X, GitHub or Farcaster."},
+          {"Sessions.", "Sign out ends this browser only."}
         ]
       },
       %{
         index: "02",
         anchor: "account",
         eyebrow: "Account",
-        line: "Your wallets, your display name and your connected accounts on one page.",
-        title: "Everything the site knows, on one page.",
-        description:
-          "The account page shows the wallet the sign-in verified, any other linked wallets, the display name and the connected accounts.",
+        line: "Wallets, Credits and Points on one page.",
+        title: "Everything you hold, on one page.",
+        description: "Your wallets, Credits, Points and connected accounts.",
         href: "/account",
         cta: "See your account",
         diagrams: 3,
         proofs: [
-          {"Your wallets.", "The primary wallet and every other wallet the sign-in named."},
-          {"Your name.", "A display name and a picture generated from the wallet address."},
-          {"Your say.",
-           "Connect and disconnect accounts; each change is confirmed by the record."}
+          {"Wallets.", "Every wallet your sign-in verified."},
+          {"Credits.", "Your balance, always in view."},
+          {"Points.", "What you and your agents earn."}
         ]
       },
       %{
         index: "03",
         anchor: "agents",
         eyebrow: "Agents",
-        line: "A documented API, an agent guide and an OpenAPI description from day one.",
-        title: "Readable by people and by agents.",
-        description:
-          "Every public page has a text form, the API is described in OpenAPI, and the agent guide explains how to use both.",
-        href: "/docs",
-        cta: "Read the docs",
+        line: "Pair an agent and work side by side.",
+        title: "Built for people and their agents.",
+        description: "Pair an agent from your account. It signs in with its own key.",
+        href: "/agents.md",
+        cta: "Read the agent guide",
         diagrams: 6,
         proofs: [
-          {"Text first.", "Public pages answer in Markdown when an agent asks for it."},
-          {"OpenAPI.", "The served API is described at /openapi.json and versioned by header."},
-          {"Agent guide.", "/llms.txt says what the site is and where each thing lives."}
+          {"Pairing.", "One code links an agent to you."},
+          {"In the browser.", "Agents use the page's own tools."},
+          {"In the terminal.", "Every action is a regents-cli command."}
         ]
       }
     ]

@@ -129,23 +129,6 @@ defmodule AshTemplateWeb.Components.Shell do
         <span class="shell-spacer" />
 
         <div class="shell-tools">
-          <.tool_button
-            id="shell-help-button"
-            label="Help"
-            icon={:help}
-            data-aside-part="help"
-            aria-controls="shell-aside"
-          />
-          <.link id="shell-news-link" class="shell-tool" href="/changelog" aria-label="What's new">
-            <.icon name={:news} /><span class="shell-tool__tip" aria-hidden="true">What's new</span>
-          </.link>
-          <.tool_button
-            id="shell-assistant-button"
-            label="Assistant"
-            icon={:assistant}
-            data-aside-part="assistant"
-            aria-controls="shell-aside"
-          />
           <.link
             :if={@unread}
             id="shell-bell"
@@ -175,10 +158,6 @@ defmodule AshTemplateWeb.Components.Shell do
           </button>
         </div>
 
-        <.theme_toggle id="theme-control" />
-        <div class="rl-header-links">
-          <RegentLinks.header_links id="shell-token-menu" />
-        </div>
         <.apps_menu />
 
         <button
@@ -320,9 +299,8 @@ defmodule AshTemplateWeb.Components.Shell do
 
         <section class="shell-promo" aria-labelledby="shell-promo-title">
           <p class="shell-promo__kicker">New</p>
-          <h3 id="shell-promo-title">Bring your agent</h3>
-          <p>An agent with its own wallet can post in rooms as itself.</p>
-          <a href="/docs">Read how in the documentation</a>
+          <h3 id="shell-promo-title">Pair your agent</h3>
+          <a href="/agents.md">How it works</a>
         </section>
 
         <section id="shell-checklist" aria-labelledby="shell-checklist-title">
@@ -403,6 +381,10 @@ defmodule AshTemplateWeb.Components.Shell do
         <nav class="shell-footer__links" aria-label="Site links">
           <a :for={{label, path} <- footer_links()} href={path}>{label}</a>
         </nav>
+        <div class="shell-footer__brand rl-header-links">
+          <RegentLinks.header_links id="shell-token-menu" />
+        </div>
+        <.theme_toggle id="theme-control" />
         <p class="shell-footer__version">Version {@version}</p>
       </footer>
 
@@ -659,19 +641,6 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  attr :id, :string, required: true
-  attr :label, :string, required: true
-  attr :icon, :atom, required: true
-  attr :rest, :global
-
-  defp tool_button(assigns) do
-    ~H"""
-    <button id={@id} class="shell-tool" type="button" aria-label={@label} {@rest}>
-      <.icon name={@icon} /><span class="shell-tool__tip" aria-hidden="true">{@label}</span>
-    </button>
-    """
-  end
-
   attr :target, :map, required: true
   attr :route_spec, :map, required: true
 
@@ -764,16 +733,8 @@ defmodule AshTemplateWeb.Components.Shell do
       </g>
       <path :if={@name == :logout} d="M10 4H4v16h6M14 8l4 4-4 4M8 12h10" />
       <g :if={@name == :search}><circle cx="10.5" cy="10.5" r="6" /><path d="m15 15 5 5" /></g>
-      <g :if={@name == :help}>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17v.5" />
-      </g>
-      <path :if={@name == :news} d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
       <path :if={@name == :page} d="M6 3h9l4 4v14H6zM14 3v5h5" />
       <path :if={@name == :action} d="M13 3 5 13h6l-1 8 8-10h-6z" />
-      <g :if={@name == :assistant}>
-        <path d="M5 8h14v10H5zM12 4v4M9 13v1M15 13v1" /><path d="M2 12v3M22 12v3" />
-      </g>
       <path :if={@name == :bell} d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4" />
       <path :if={@name == :panel} d="M3 4h18v16H3zM15 4v16" />
       <path :if={@name == :collapse} d="M3 4h18v16H3zM9 4v16M15 10l-2 2 2 2" />

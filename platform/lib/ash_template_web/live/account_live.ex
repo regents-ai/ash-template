@@ -11,6 +11,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   use AshTemplateWeb, :html
 
+  import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   import AshTemplateWeb.Components.VerifiedConnections
 
   alias AshTemplate.PublicIdentity
@@ -31,7 +32,7 @@ defmodule AshTemplateWeb.AccountLive do
       account={@account}
       signed_out_reason={@signed_out_reason}
     >
-      <:lede>Who Ash Template knows you as, and your session on this browser.</:lede>
+      <:tip>Your profile, your agents, your Credits and this browser's session.</:tip>
       <div class="account-grid">
         <Regent.HolographicCard.card
           id="account-identity"
@@ -76,22 +77,23 @@ defmodule AshTemplateWeb.AccountLive do
           account={@account}
         />
 
-        <section :if={@account} class="account-panel">
+        <div :if={@account} class="account-credits">
           <Regent.Account.credits_summary
             id="account-credits"
             available={@balance && RegentCredits.Amount.format(@balance.available)}
             held={@balance && RegentCredits.Amount.format(@balance.held)}
             state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
           />
-          <p>
-            All account settings, including what your agents may spend, live at <a href="https://regents.sh/account">regents.sh/account</a>.
-            Sign in there with the same login you use here.
-          </p>
-        </section>
+          <a href="https://regents.sh/account">Manage Credits on regents.sh</a>
+        </div>
 
         <section class="account-panel account-session" aria-labelledby="account-session-title">
-          <h2 id="account-session-title">Session</h2>
-          <p>Signing out ends this session on this browser only.</p>
+          <h2 id="account-session-title">
+            Session
+            <Regent.Primitives.tip id="account-session-tip" label="About signing out">
+              Signing out ends the session on this browser only.
+            </Regent.Primitives.tip>
+          </h2>
           <Regent.Primitives.button type="button" variant="secondary" data-account-target="sign-out">
             Sign out
           </Regent.Primitives.button>
@@ -112,7 +114,7 @@ defmodule AshTemplateWeb.AccountLive do
       account={@account}
       signed_out_reason={@signed_out_reason}
     >
-      <:lede>The wallets your sign-in verified.</:lede>
+      <:tip>The wallets your sign-in verified.</:tip>
       <section class="account-panel account-details" aria-labelledby="account-wallets-title">
         <h2 id="account-wallets-title">Your wallets</h2>
         <dl>
@@ -153,7 +155,7 @@ defmodule AshTemplateWeb.AccountLive do
       account={@account}
       signed_out_reason={@signed_out_reason}
     >
-      <:lede>The accounts you have connected, such as X, GitHub and Farcaster.</:lede>
+      <:tip>Accounts you have connected, such as X, GitHub and Farcaster.</:tip>
       <.verified_connections
         id="account-verified-connections"
         class="account-panel"
@@ -169,17 +171,15 @@ defmodule AshTemplateWeb.AccountLive do
   attr :title, :string, required: true
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
-  slot :lede, required: true
+  slot :tip, required: true
   slot :inner_block, required: true
 
   defp settings_page(assigns) do
     ~H"""
     <article id={@id} class="account-page">
-      <header class="account-heading">
-        <p :if={@title != "Account"} class="account-kicker">Account</p>
-        <h1 tabindex="-1">{@title}</h1>
-        <p class="account-lede">{render_slot(@lede)}</p>
-      </header>
+      <.page_head title={@title}>
+        <:tip>{render_slot(@tip)}</:tip>
+      </.page_head>
 
       <Regent.Account.signed_out
         :if={is_nil(@account)}

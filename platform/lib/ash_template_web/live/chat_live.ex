@@ -14,6 +14,8 @@ defmodule AshTemplateWeb.ChatLive do
 
   use AshTemplateWeb, :live_component
 
+  import AshTemplateWeb.Components.PageHead
+
   alias AshTemplate.Actors.Human
   alias AshTemplate.Chat
   alias AshTemplateWeb.FormErrors
@@ -138,22 +140,19 @@ defmodule AshTemplateWeb.ChatLive do
           <p :if={!@actor} class="shell-sidebar__empty">Sign in to see your chats here.</p>
         </div>
       </.portal>
-      <header class="account-heading">
-        <p class="account-kicker">Chat</p>
-        <h1 tabindex="-1">{title(@conversation)}</h1>
-        <p class="account-lede">
-          Talk with the assistant. This one is a free stand-in: it doesn’t read what you
-          write, but its replies arrive a few words at a time, the way a real one’s do.
-        </p>
-        <p class="chat-original">
-          <.link navigate={~p"/chat/original"}>See this chat in Ash AI’s own look</.link>
-        </p>
-      </header>
+      <.page_head title={title(@conversation)}>
+        <:tip>
+          This assistant is a free stand-in: it doesn’t read what you write, but its replies
+          arrive a few words at a time, the way a real one’s do.
+        </:tip>
+        <:actions>
+          <.link navigate={~p"/chat/original"}>Ash AI’s own look</.link>
+        </:actions>
+      </.page_head>
 
-      <div :if={is_nil(@actor)} class="account-panel chat-signed-out">
-        <p>Sign in to chat with the assistant. Your conversations are yours alone.</p>
-        <Primitives.button type="button" data-account-target="sign-in">Sign in</Primitives.button>
-      </div>
+      <.signed_out :if={is_nil(@actor)} id="chat-signed-out">
+        Sign in to chat with the assistant.
+      </.signed_out>
 
       <section
         :if={@actor}

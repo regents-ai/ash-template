@@ -9,7 +9,6 @@
   min-width: 0;
 }
 
-.account-heading,
 .account-panel {
   min-width: 0;
   border: 1px solid var(--color-border);
@@ -41,33 +40,6 @@
   color: color-mix(in srgb, var(--rg-holo-ink) 70%, transparent);
 }
 
-/* Heading */
-
-.account-heading {
-  display: grid;
-  gap: 1rem;
-  padding: var(--rg-panel-padding);
-}
-
-.account-heading h1 {
-  max-width: 18ch;
-  font-size: clamp(2rem, 5vw, 3.75rem);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
-}
-
-.account-heading h1:focus {
-  outline: none;
-}
-
-.account-lede {
-  max-width: 56ch;
-  color: var(--color-fg-muted);
-  font-size: 1.05rem;
-  line-height: 1.5;
-}
-
 /* Panels */
 
 .account-grid {
@@ -93,8 +65,16 @@
   line-height: 1.1;
 }
 
-.account-signed-out {
+/* Credits: the shared summary box, with the way to manage them under it. */
+.account-credits {
+  display: grid;
+  gap: var(--space-1);
   justify-items: start;
+  min-width: 0;
+}
+
+.account-credits > .rg-account {
+  justify-self: stretch;
 }
 
 /* Identity card */

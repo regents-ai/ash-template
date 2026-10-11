@@ -2,26 +2,6 @@
 /* Chat stands on the Account page's panels and type; the list of chats, the
    conversation, its messages and the message box are its own. */
 
-.chat-original {
-  margin: 0;
-}
-
-.chat-original a {
-  color: var(--ash-accent-warm);
-  font-weight: 600;
-}
-
-.chat-signed-out {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1rem;
-}
-
-.chat-signed-out p {
-  margin: 0;
-}
-
 .chat-conversation {
   display: grid;
   gap: 1rem;

@@ -88,12 +88,6 @@
   flex: 1;
 }
 
-#shell-header .rl-header-links {
-  display: flex;
-  align-items: center;
-  margin-inline: var(--space-1) 1.2rem;
-}
-
 .shell-brand,
 .account-control summary,
 #app-shell .mobile-menu-button {
@@ -330,16 +324,10 @@
   display: flex;
 }
 
-/* The shared prism control draws its own box and hover; the header only centres it.
-   Its prism sits .5rem inside the press target, so this margin leaves the same space
-   before the X icon as between the icons themselves. */
+/* The shared prism control draws its own box and hover; the bar only centres it. */
 .theme-control {
   display: flex;
   align-items: center;
-}
-
-#shell-header .theme-control {
-  margin-inline-end: var(--space-1);
 }
 
 .account-control summary::-webkit-details-marker {
@@ -1047,6 +1035,26 @@ details[open] > summary .shell-chevron {
   margin-inline-start: auto;
 }
 
+#shell-footer .rl-header-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#shell-footer .rl-header-links a {
+  display: inline-flex;
+}
+
+#shell-footer .rl-header-links svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* The footer holds the 2.75rem theme press without growing past it. */
+#shell-footer .theme-control {
+  margin-block: -0.25rem;
+}
+
 /* ---- Search ---- */
 
 .shell-search {
@@ -1362,13 +1370,9 @@ details[open] > summary .shell-chevron {
   }
 
   #shell-header .shell-spacer,
-  #shell-header .rl-header-links,
   .shell-brand__name,
   .shell-search-button__label,
   .shell-search-button__keys,
-  #app-shell #shell-help-button,
-  #app-shell #shell-news-link,
-  #app-shell #shell-assistant-button,
   .shell-tool__tip {
     display: none;
   }
@@ -1438,19 +1442,9 @@ details[open] > summary .shell-chevron {
     display: none;
   }
 
-  /* Narrower presses keep every header tool on one row down to 360px wide. */
+  /* Narrower presses keep every header tool on one row on phones. */
   #app-shell .shell-tool {
     width: 2.25rem;
-  }
-
-  #shell-header .theme-control {
-    flex: 0 0 auto;
-    margin-inline-end: 0;
-  }
-
-  #shell-header .rg-theme-toggle.rg-button {
-    width: 2.25rem;
-    min-width: 2.25rem;
   }
 
   #app-shell #shell-apps-button {
@@ -1555,12 +1549,30 @@ details[open] > summary .shell-chevron {
   }
 
   .shell-footer__jobs,
-  .shell-footer__links {
+  .shell-footer__links,
+  #shell-footer .rl-header-links {
     display: none;
   }
 
-  .shell-footer__version {
+  #shell-footer .theme-control {
     margin-inline-start: auto;
+  }
+}
+
+/* The narrowest phones: tighter presses keep the whole header on one row at 360px. */
+@media (max-width: 23.75rem) {
+  #app-shell .shell-tool,
+  #app-shell .shell-search-button {
+    width: 2rem;
+  }
+
+  #app-shell .mobile-menu-button {
+    padding-inline: 0.35rem;
+    letter-spacing: 0.04em;
+  }
+
+  .account-control summary {
+    padding-inline: 0.25rem;
   }
 }
 

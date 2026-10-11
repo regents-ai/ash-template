@@ -1,6 +1,7 @@
 defmodule AshTemplateWeb.PointsLive do
   @moduledoc "Private Account Points presentation; the NFT bonus is added at the end of each 30-day period."
   use AshTemplateWeb, :html
+  import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   alias RegentPoints.{Amount, Rules}
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
@@ -18,13 +19,9 @@ defmodule AshTemplateWeb.PointsLive do
 
     ~H"""
     <article id="points-page" class="account-page">
-      <header class="account-heading">
-        <p class="account-kicker">Account</p>
-        <h1 tabindex="-1">Points</h1>
-        <p class="account-lede">
-          Eligible activity by you and your connected agents, in one account.
-        </p>
-      </header>
+      <.page_head title="Points">
+        <:tip>What you and your paired agents earn here, counted in one account.</:tip>
+      </.page_head>
       <Regent.Account.signed_out
         :if={is_nil(@account)}
         id="points-signed-out"
@@ -69,9 +66,16 @@ defmodule AshTemplateWeb.PointsLive do
           <p :if={@bonus.state in [:error, :stale]}>
             Your NFTs could not be checked. Try refreshing this page.
           </p>
-          <p :if={@bonus.state == :ready}>
-            {@bonus.value.nft_count} NFTs now · +{@bonus.value.percent}% at the end of this period
-          </p>
+          <dl :if={@bonus.state == :ready}>
+            <div>
+              <dt>NFTs held</dt>
+              <dd>{@bonus.value.nft_count}</dd>
+            </div>
+            <div>
+              <dt>Bonus this period</dt>
+              <dd>+{@bonus.value.percent}%</dd>
+            </div>
+          </dl>
           <dl :if={@points.value.period_bonuses != []}>
             <div :for={period <- @points.value.period_bonuses}>
               <dt>Period {period.period}</dt>

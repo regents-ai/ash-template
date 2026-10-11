@@ -15,6 +15,8 @@ defmodule AshTemplateWeb.NotesLive do
 
   use AshTemplateWeb, :live_component
 
+  import AshTemplateWeb.Components.PageHead
+
   alias AshTemplate.Actors.Human
   alias AshTemplate.Notes
   alias AshTemplate.Notes.{Decision, Note}
@@ -125,20 +127,14 @@ defmodule AshTemplateWeb.NotesLive do
           <p :if={!@actor} class="shell-sidebar__empty">Sign in to see your notes here.</p>
         </div>
       </.portal>
-      <header class="account-heading">
-        <p class="account-kicker">Ash Template</p>
-        <h1 tabindex="-1">Notes</h1>
-        <p class="account-lede">
-          Notes only you can read. Every page you have open shows each change straight away.
-          Each note you save is given a label, chosen automatically.
-        </p>
-      </header>
+      <.page_head title="Notes">
+        <:tip>
+          Only you can read your notes. Every open page shows each change straight away,
+          and each note you save gets a label, chosen automatically.
+        </:tip>
+      </.page_head>
 
-      <section :if={is_nil(@actor)} class="account-panel account-signed-out">
-        <h2>Sign in to keep notes</h2>
-        <p>Your notes appear here once you are signed in.</p>
-        <Primitives.button type="button" data-account-target="sign-in">Sign in</Primitives.button>
-      </section>
+      <.signed_out :if={is_nil(@actor)} id="notes-signed-out">Sign in to keep notes.</.signed_out>
 
       <div :if={@actor} class="account-grid">
         <section class="account-panel" aria-labelledby="note-form-title">

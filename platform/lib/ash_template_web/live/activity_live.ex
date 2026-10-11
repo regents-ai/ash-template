@@ -7,6 +7,8 @@ defmodule AshTemplateWeb.ActivityLive do
 
   use AshTemplateWeb, :html
 
+  import AshTemplateWeb.Components.PageHead
+
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -16,19 +18,13 @@ defmodule AshTemplateWeb.ActivityLive do
   def page(assigns) do
     ~H"""
     <article id="activity-page" class="account-page">
-      <header class="account-heading">
-        <p class="account-kicker">Home</p>
-        <h1 tabindex="-1">Activity</h1>
-        <p class="account-lede">
-          When someone writes @ and your name in a room, it shows here and on the bell.
-        </p>
-      </header>
+      <.page_head title="Activity">
+        <:tip>When someone writes @ and your name in a room, it shows here and on the bell.</:tip>
+      </.page_head>
 
-      <section :if={is_nil(@account)} class="account-panel account-signed-out">
-        <h2>Sign in to see your activity</h2>
-        <p>Mentions of you appear here once you are signed in.</p>
-        <Primitives.button type="button" data-account-target="sign-in">Sign in</Primitives.button>
-      </section>
+      <.signed_out :if={is_nil(@account)} id="activity-signed-out">
+        Sign in to see mentions of you.
+      </.signed_out>
 
       <section :if={@account} class="account-panel activity-panel" aria-labelledby="activity-title">
         <div class="activity-panel__head">
