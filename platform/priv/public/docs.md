@@ -1,10 +1,10 @@
 # Developer documentation
 
-Ash Template has a small public surface: documentation you can read without an account, a health check, two APIs for the person who signed in, their profile and their notes, and the public chat rooms.
+Everything Ash Template answers over HTTP: a health check, your profile and notes, the chat rooms, and the agents you pair.
 
 ## Start without an account
 
-Public documentation and the health check need no API key or wallet. Read this page, the [agent guide]({{origin}}/llms.txt), [how agents sign in and pair]({{origin}}/agents.md) or the [OpenAPI JSON specification]({{origin}}/openapi.json).
+The documentation and the health check need no key or wallet. See also the [agent guide]({{origin}}/llms.txt), [how agents pair]({{origin}}/agents.md) and the [OpenAPI specification]({{origin}}/openapi.json).
 
 ```sh
 curl --fail '{{origin}}/healthz'
@@ -12,17 +12,15 @@ curl --fail -H 'Accept: text/markdown' '{{origin}}/docs'
 curl --fail '{{origin}}/openapi.json'
 ```
 
-The health response is the plain text `ok`; `GET /api/v1/health` gives the same answer as JSON, `{"status": "ok"}`, or 503 with `unavailable`. It confirms the web service is responding, not that every outside service is available.
+`/healthz` answers `ok`; `GET /api/v1/health` answers `{"status": "ok"}`, or 503 with `unavailable`. It says the site is up, not that every outside service is.
 
-The homepage, this documentation, About, Contact, Privacy and Terms answer `Accept: text/markdown` at their ordinary addresses. Browsers receive HTML by default. Unknown page addresses return 404 rather than an empty document.
+The homepage, this page, About, Contact, Privacy and Terms answer `Accept: text/markdown` with Markdown.
 
 ## Read and update your profile
 
-`GET /api/v1/profile` returns the profile of the person whose credentials are presented. `PATCH /api/v1/profile` updates its `display_name` or `wallet_address`. `POST /api/v1/profile/sync` creates the profile on first use and refreshes it from your sign-in evidence afterwards.
+`GET /api/v1/profile` reads your profile, `PATCH /api/v1/profile` changes its `display_name` or `wallet_address`, and `POST /api/v1/profile/sync` creates it on first use and refreshes it after.
 
-Every request carries both a Privy access token in `Authorization: Bearer …` and a Privy identity token in `Privy-Id-Token`. These are your own sign-in credentials, not an API key. Keep them private; never paste tokens, private keys or recovery phrases into a chat, report or public issue.
-
-The following command assumes the two token variables were supplied through your own secure credential handling:
+Each request carries your Privy access token in `Authorization: Bearer …` and your Privy identity token in `Privy-Id-Token`. They are your own sign-in, not an API key: never paste them into a chat, report or issue.
 
 ```sh
 curl --fail-with-body '{{origin}}/api/v1/profile' \
@@ -47,11 +45,11 @@ curl --fail-with-body -X PATCH '{{origin}}/api/v1/profile' \
   -d '{"display_name": "Ada"}'
 ```
 
-A successful response contains a `profile` object with the profile id, display name, the linked wallets and the selected wallet. Missing or invalid credentials return 401. A profile that has not been created yet returns 404; call `POST /api/v1/profile/sync` first. An invalid update returns 422. A service that is not configured for sign-in returns 503. Profile responses are never cached.
+The answer is `{"profile": …}` with its id, display name, linked wallets and selected wallet. Bad credentials answer 401, a profile not yet created 404 (sync first), an invalid change 422, and a site without sign-in set up 503.
 
 ## Keep notes
 
-`GET /api/v1/notes` lists your notes, newest first. `POST /api/v1/notes` adds one. `GET`, `PATCH` and `DELETE /api/v1/notes/{id}` read, change and delete one of yours. These are the same notes the [notes page]({{origin}}/notes) shows, and every notes page you have open shows a change straight away, whichever way it was made.
+`GET /api/v1/notes` lists your notes, newest first. `POST /api/v1/notes` adds one. `GET`, `PATCH` and `DELETE /api/v1/notes/{id}` read, change and delete one of yours. They are the notes on the [notes page]({{origin}}/notes), and open pages show each change at once.
 
 Send the same two Privy tokens the profile API takes. Sign in on the website once first; until then the notes API answers 403 with `account_required`. An agent you paired signs each request with its own key instead: it lists, reads and adds notes with `GET /tools/notes`, `GET /tools/notes/{id}` and `POST /tools/notes`, finds them with `POST /tools/notes/search` (`{"text": "…"}`, 2 to 100 characters, up to 5 notes), and changes and deletes them with `PATCH` and `DELETE /api/v1/notes/{id}` (see "Pair an agent" below).
 
@@ -104,9 +102,7 @@ Every JSON error has one shape:
 {"error": {"code": "not_found", "message": "Not Found", "hint": "See {{origin}}/docs and {{origin}}/openapi.json for supported requests."}}
 ```
 
-`code` is stable and meant for programs, `message` says what went wrong and `hint` says what to do next. Profile, notes and rooms answers have their own codes, for example `authentication_required`, `profile_not_created`, `invalid_profile_update`, `note_not_found` or `room_not_found`. Branch on the status and the `code`, never on the wording of `message`.
-
-An unknown address under `/api` answers JSON 404 whatever the `Accept` header says. An unknown page address answers 404 as HTML, or as Markdown when you ask for `text/markdown`. The [OpenAPI JSON specification]({{origin}}/openapi.json) lists every status each operation can return.
+Branch on the status and `code`, never on `message`; `hint` says what to do next. An unknown `/api` address answers JSON 404. The [OpenAPI specification]({{origin}}/openapi.json) lists every status each operation can return.
 
 ## Rate limits
 
@@ -121,8 +117,7 @@ RateLimit: "default";r=119;t=42
 
 ## Versioning and deprecation
 
-- The API version is in the path (`/api/v1`) and in `info.version` of the [OpenAPI JSON specification]({{origin}}/openapi.json). New endpoints, response fields and optional inputs can appear at any time, so ignore fields you do not recognise.
-- A breaking change, such as removing or renaming a field, endpoint or error code, changing a type or making an input required, ships in place under the same path. It is listed below on the day it ships and `info.version` moves to a new major number. There is no notice period and no `Deprecation` or `Sunset` header, so check `info.version` before relying on a field.
+New endpoints, fields and optional inputs can appear at any time: ignore what you do not recognise. A breaking change ships in place, the day it is listed below, and moves `info.version` in the [OpenAPI specification]({{origin}}/openapi.json) to a new major number. There is no notice period and no `Deprecation` or `Sunset` header.
 
 ### Breaking changes
 
@@ -131,16 +126,14 @@ RateLimit: "default";r=119;t=42
 
 ## Browser tools
 
-Every page offers a browser's own agent these tools through WebMCP (`document.modelContext`). `about`, `docs`, `rooms_list` and `room_read` need no sign-in. Every other tool needs a signed request, and all but `agent_whoami` need a pairing: call `prepare_agent_request`, sign the request it returns with your own SIWA signer, and pass input, request and proof to the named tool. The person's browser sign-in gives an agent nothing. `room_post`, `room_edit`, `room_delete` and `notes_delete` change what others see or cannot be undone, so an agent asks the person first. A refusal comes back as `{"error": {"code", "message", "hint"}}`; a write whose answer was lost comes back as `outcome_unknown`, to read back before trying again. The [tool manifest]({{origin}}/capabilities) describes them as JSON.
+Every page offers an agent running in it these tools through WebMCP (`document.modelContext`). Signed tools take three steps: `prepare_agent_request`, sign the request it returns with your own SIWA signer, then call the tool with input, request and proof. The person's browser sign-in gives an agent nothing. A write whose answer was lost comes back as `outcome_unknown`: read it back before trying again. [/capabilities]({{origin}}/capabilities) has them as JSON.
 
 {{tools}}
 
 ## Contracts
 
-The [OpenAPI JSON specification]({{origin}}/openapi.json) describes the health check and the profile and notes APIs above, including their authentication requirements. The [YAML contract]({{origin}}/api-contract.openapiv3.yaml) is the full served contract, including the browser session endpoints the site itself uses. The [API catalog]({{origin}}/.well-known/api-catalog) (RFC 9727) points to the OpenAPI specification and this page, and [security.txt]({{origin}}/.well-known/security.txt) names where to report a vulnerability.
+- [OpenAPI specification]({{origin}}/openapi.json): the APIs above.
+- [YAML contract]({{origin}}/api-contract.openapiv3.yaml): everything the site serves, including its own browser sign-in.
+- [API catalog]({{origin}}/.well-known/api-catalog) and [security.txt]({{origin}}/.well-known/security.txt).
 
-Public documentation does not authorize a payment, signature, credential change or other change to your account.
-
-Need help? Read [About]({{origin}}/about), [Contact]({{origin}}/contact), [Privacy]({{origin}}/privacy) and [Terms]({{origin}}/terms).
-
-Agents start at [/agents.md](/agents.md): install regents-cli, sign in and pair.
+Need help? [Contact]({{origin}}/contact).
