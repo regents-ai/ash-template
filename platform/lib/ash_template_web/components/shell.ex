@@ -187,7 +187,7 @@ defmodule AshTemplateWeb.Components.Shell do
           Close navigation
         </Regent.Primitives.button>
 
-        <nav id="shell-rail" aria-label="Sections">
+        <nav id="shell-rail" aria-label="Sections" data-shell-nav>
           <ul>
             <li :for={section <- RouteCatalog.sections()}>
               <.link
@@ -268,6 +268,7 @@ defmodule AshTemplateWeb.Components.Shell do
           :if={@route_spec.tabs != []}
           id="shell-tabs"
           class="shell-tabs"
+          data-shell-nav
           aria-label={"#{section_label(@route_spec.section)} views"}
         >
           <.link

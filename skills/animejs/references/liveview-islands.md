@@ -61,6 +61,9 @@ each kind of movement, and the lab where every version that was tried sits side 
 
 Pages take part through markup, never through their own motion code:
 
+- The shell glides between pages in the order of the links inside each element marked
+  `data-shell-nav` (the template marks its section rail and its tabs). Mark a site's own
+  navigation the same way; the kit names no site's element ids.
 - Every button, `.rg-button` and `[role=button]` squishes on a pointer press; one marked
   `aria-disabled="true"` shakes instead. A wallet button wraps its text in
   `<span data-press-label>`, so only the label squishes and the button never shrinks
