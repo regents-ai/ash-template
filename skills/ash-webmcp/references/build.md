@@ -221,8 +221,8 @@ The template is the signed-access reference. `priv/tool_manifest.json` includes
 public discovery, signed identity and protected account, note and room operations.
 `assets/js/public_tools.ts` prepares and forwards signed requests through the shared
 transport; `AshTemplateWeb.Plugs.AgentWallet` resolves the agent and pairing.
-Read the current manifest and `docs/signed-agent-access-release.md` for exact source
-coverage and remaining runtime acceptance. Historical product examples above are
+Read the current manifest for exact tool coverage, and
+`docs/signed-agent-access-release.md` for what has and has not been accepted. Historical product examples above are
 layout references, not evidence of signed-access adoption.
 
 ## Unified Regent agent access (approved 9 October 2026)

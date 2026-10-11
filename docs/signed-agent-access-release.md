@@ -1,5 +1,21 @@
 # Signed agent access release
 
+> **Historical record (9 October 2026).** The pin and migration list below were
+> correct for that release. They are not current: the pins live in
+> `platform/mix.exs`. The current steps for an agent are in the public guide
+> `/agents.md` (`platform/priv/public/agents.md`); do not rerun the setup here.
+
+## Acceptance as of 11 October 2026
+
+- **Released CLI:** the earlier real CLI run is still only historical evidence.
+  The current candidate has not had a real pairing, private read or private write
+  through the released regents-cli; that run needs a real pairing from Sean.
+- **Native WebMCP:** a signed protected read and write has still not been verified
+  in a browser with native WebMCP. Discovering and preparing the tools is not
+  acceptance.
+
+## The 9 October release
+
 The generic template uses exact-request SIWA proof and current owner pairing for
 private reads and product writes. Browser cookies provide no agent authority.
 World ID and ERC-8004 are optional; owner security, pairing controls and spending
@@ -7,7 +23,7 @@ grants remain owner-only. Native tools prepare manifest operations and forward
 signed bytes without retries, redirects or cookies. No signer or proof-import
 fixture is included.
 
-## Release prerequisites
+### Release prerequisites
 
 The shared source is pinned to elixir-utils commit
 `1564d79eb3b653f06ab11b6c422bd4d6283ea199` (published on main).
@@ -46,7 +62,7 @@ the typed actor, private metadata and narrow completion boundary. The template
 keeps its existing illustrative showcase; it configures no payable offer. Sites
 using `regent_payments` must adopt the required shared fix before release.
 
-## Verification boundaries
+### Verification boundaries
 
 Local evidence covers paired private reads/create/readback, single verification
 of exact bytes, cookie-only refusal, duplicate logical create refusal, revocation,
