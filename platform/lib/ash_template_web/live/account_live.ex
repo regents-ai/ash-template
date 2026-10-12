@@ -75,17 +75,17 @@ defmodule AshTemplateWeb.AccountLive do
           account={@account}
         />
 
-        <div :if={@account} class="account-credits">
-          <Regent.Account.credits_summary
-            id="account-credits"
-            available={
-              @credits_read.value && RegentCredits.Amount.format(@credits_read.value.available)
-            }
-            held={@credits_read.value && RegentCredits.Amount.format(@credits_read.value.held)}
-            state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
-          />
+        <Regent.Account.credits_summary
+          :if={@account}
+          id="account-credits"
+          available={
+            @credits_read.value && RegentCredits.Amount.format(@credits_read.value.available)
+          }
+          held={@credits_read.value && RegentCredits.Amount.format(@credits_read.value.held)}
+          state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
+        >
           <a href="https://regents.sh/account">Manage Credits on regents.sh</a>
-        </div>
+        </Regent.Account.credits_summary>
 
         <section class="account-panel account-session" aria-labelledby="account-session-title">
           <h2 id="account-session-title">

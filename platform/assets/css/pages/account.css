@@ -65,18 +65,6 @@
   line-height: 1.1;
 }
 
-/* Credits: the shared summary box, with the way to manage them under it. */
-.account-credits {
-  display: grid;
-  gap: var(--space-1);
-  justify-items: start;
-  min-width: 0;
-}
-
-.account-credits > .rg-account {
-  justify-self: stretch;
-}
-
 /* Identity card */
 
 .account-identity .rg-holo__content {
