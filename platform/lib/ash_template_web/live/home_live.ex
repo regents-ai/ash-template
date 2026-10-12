@@ -297,9 +297,10 @@ defmodule AshTemplateWeb.HomeLive do
         <rect x="236" y="146" width="12" height="36" fill={"url(##{@id}-hatch)"} />
       </g>
       <g :if={@variant == 8}>
-        <path d="M126 70H194L242 118V202L194 250H126L78 202V118Z" fill="var(--rg-panel-fill)" />
-        <path d="M194 70L242 118V202L194 250V70Z" fill={"url(##{@id}-hatch)"} />
-        <path d="M174 114H136V156H174V198H136M155 98V214M48 120V72H96M272 200V248H224M40 80L48 72L56 80M264 240L272 248L280 240" />
+        <rect x="56" y="72" width="208" height="176" fill="var(--rg-panel-fill)" />
+        <path d="M56 100H264M70 82H78V90H70ZM86 82H94V90H86ZM102 82H110V90H102Z" />
+        <path d="M80 130L96 142L80 154M108 142H180M80 182H236M80 202H210M80 222H158" />
+        <rect x="188" y="131" width="12" height="22" fill={"url(##{@id}-hatch)"} />
       </g>
     </svg>
     """
