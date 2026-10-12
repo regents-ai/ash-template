@@ -315,8 +315,7 @@ defmodule AshTemplateWeb.HomeLive do
       <h2 id="start-title">Make it yours.</h2>
       <p>Rename it, replace this page and keep everything that already works.</p>
       <div class="rl-closing-actions">
-        <.action href={~p"/app"} class="rl-action rl-action--strong">Open the app</.action>
-        <.action href={~p"/docs"} class="rl-action">Read the docs</.action>
+        <.action href={~p"/docs"} class="rl-action rl-action--strong">Read the docs</.action>
         <.action
           :for={{href, label} <- kit_links()}
           :if={@showcase?}
@@ -383,7 +382,7 @@ defmodule AshTemplateWeb.HomeLive do
         title: "Sign in with your wallet.",
         description: "No password to keep. Connect X, GitHub or Farcaster once you are in.",
         href: "/app",
-        cta: "Open the app",
+        cta: "Try sign-in",
         diagrams: 0,
         proofs: [
           {"Wallet first.", "No password to keep."},

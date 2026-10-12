@@ -503,6 +503,30 @@
   display: none;
 }
 
+/* The header's Credits balance, which opens Buy Credits. It sits here, outside
+   the product layer, so it wins over the site's plain button rules. */
+#app-shell .shell-credits {
+  align-self: center;
+  min-height: 2.5rem;
+  margin-inline-end: var(--space-1);
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  #app-shell .shell-credits:hover {
+    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+  }
+}
+
 /* The Buy Credits dialog's close button, square in the dialog's top right
    corner, and kept there while the dialog scrolls. Its margins give back the
    room it takes, so the panel keeps its place. It sits here, outside the
@@ -1468,8 +1492,23 @@
     border-inline-start: 0;
   }
 
+  /* Four tabs fit a 320px phone without the strip scrolling. */
   .shell-tabs {
+    gap: 0.625rem;
     padding-inline: 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* The balance keeps its full width; the brand's name gives way first. */
+  #app-shell .shell-credits {
+    flex: 0 0 auto;
+    margin-inline-end: 0;
+    padding-inline: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  #app-shell .shell-credits__unit {
+    display: none;
   }
 
   #route-content {

@@ -1,28 +1,6 @@
 @layer regents-product {
 /* Regent Credits: the header's balance and the Buy Credits dialog it opens. */
 
-#app-shell .shell-credits {
-  align-self: center;
-  min-height: 2.5rem;
-  margin-inline-end: var(--space-1);
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-fg);
-  font: inherit;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  #app-shell .shell-credits:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
-  }
-}
-
 .shell-credits-dialog {
   --shell-credits-pad-top: 1.5rem;
   --shell-credits-pad-side: 1.5rem;
@@ -258,18 +236,6 @@
 }
 
 @media (max-width: 47.99rem) {
-  /* The balance keeps its full width; the brand's name gives way first. */
-  #app-shell .shell-credits {
-    flex: 0 0 auto;
-    margin-inline-end: 0;
-    padding-inline: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  #app-shell .shell-credits__unit {
-    display: none;
-  }
-
   .shell-credits-dialog {
     width: calc(100% - 1rem);
     --shell-credits-pad-top: 1rem;
