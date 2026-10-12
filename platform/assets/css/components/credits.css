@@ -160,6 +160,11 @@
   font-size: 0.85rem;
 }
 
+.credits-panel__rate a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .credits-panel__problem {
   color: var(--color-error);
   font-size: 0.85rem;
