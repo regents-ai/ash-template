@@ -178,6 +178,7 @@ defmodule AshTemplate.MixProject do
         "credo --strict",
         "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",
         # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
+        # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         "xref graph --label compile-connected --fail-above 28",
         "ash.codegen --check",
         "usage_rules.sync --check",
