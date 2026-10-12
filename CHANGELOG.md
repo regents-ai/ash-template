@@ -1240,3 +1240,13 @@ Operations
   page no longer has a Session card. The Points page calls its card "Balance"
   under the page's own Points title, and the pairing box asks "Choose the agent
   to pair". Pins design-system `a97eb2b` (Sean, UI-POLISH-1 b).
+
+## 2026-10-12 — Saved errors cleared by age
+
+- `AshTemplate.ErrorPruner`, an Oban cron job at 04:17 UTC, clears every
+  occurrence older than a week and every error not seen for a week, whatever
+  its status. ErrorTracker's own pruner, now removed, only cleared resolved
+  errors, so a fault that kept happening would have grown the tables without
+  end (security chief request).
+- The motion page ignores a dismiss for a note that is not on screen; a
+  non-number id used to crash the page.

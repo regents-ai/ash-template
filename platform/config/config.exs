@@ -83,7 +83,7 @@ config :ash_template, Oban,
     regent_credits: 3
   ],
   # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end.
-  cron: [crontab: []],
+  cron: [crontab: [{"17 4 * * *", AshTemplate.ErrorPruner}]],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]
 
@@ -187,14 +187,14 @@ config :logger, :default_formatter,
 # Failed requests, pages and jobs are saved in the site's own schema and shown
 # to Credits admins at /admin/errors. Only server faults are saved
 # (AshTemplate.ErrorIgnorer), only where each one happened is kept
-# (AshTemplate.ErrorFilter), and a resolved error is cleared after a week.
+# (AshTemplate.ErrorFilter), and AshTemplate.ErrorPruner clears each one a week
+# after it was last seen.
 config :error_tracker,
   repo: AshTemplate.Repo,
   otp_app: :ash_template,
   prefix: "ash_template_app",
   ignorer: AshTemplate.ErrorIgnorer,
-  filter: AshTemplate.ErrorFilter,
-  plugins: [{ErrorTracker.Plugins.Pruner, max_age: :timer.hours(24 * 7)}]
+  filter: AshTemplate.ErrorFilter
 
 config :phoenix, :json_library, Jason
 
