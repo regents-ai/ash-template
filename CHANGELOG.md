@@ -1200,3 +1200,11 @@ Operations
   `hooks/motion/reveals.ts` (Sean, 45 a).
 - Until earning opens, the Points page names the ways to earn with no points,
   limits or bonus tiers (Sean, 46 a).
+
+## 2026-10-12 — Sentry events leave without arguments or process state
+
+- `AshTemplate.SentryScrub`, Sentry's `before_send`, clears every stack frame's
+  arguments (exceptions and threads) and drops a crashed process's state, last
+  message and sender before an event is sent, so a crash in a signing call or a
+  page cannot carry a key or the page's assigns. Each site takes it before its
+  `SENTRY_DSN` is set (security chief request).
