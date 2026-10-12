@@ -211,7 +211,7 @@ defmodule AshTemplateWeb.PublicDocuments do
           "@type" => "Organization",
           "@id" => url("/#organization"),
           "name" => "Ash Template",
-          "legalName" => "Ash Template",
+          "legalName" => "Regents Labs, Inc.",
           "url" => url("/"),
           "logo" => url("/mark.png"),
           "description" => @description,
@@ -220,9 +220,9 @@ defmodule AshTemplateWeb.PublicDocuments do
             %{
               "@type" => "ContactPoint",
               "contactType" => "privacy",
-              "email" => "privacy@example.com"
+              "email" => "privacy@regents.sh"
             },
-            %{"@type" => "ContactPoint", "contactType" => "legal", "email" => "legal@example.com"}
+            %{"@type" => "ContactPoint", "contactType" => "legal", "email" => "legal@regents.sh"}
           ]
         },
         %{

@@ -1,20 +1,20 @@
 # Ash Template Privacy Policy
 
-**Effective date:** September 3, 2026  
-**Version:** 1.0
+**Effective date:** October 12, 2026  
+**Version:** 1.1
 
-This Privacy Policy explains how **Ash Template** ("we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name (collectively, the "Services").
+This Privacy Policy explains how **Regents Labs, Inc.** ("Regents Labs," "we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name at `template.regents.sh` (collectively, the "Services").
 
 This Policy does not govern third-party websites, wallets, sign-in providers, or other services that we do not control. Those parties have their own privacy practices.
 
 ## 1. Who is responsible for your information
 
-Ash Template is the controller of personal information covered by this Policy, except where we process information solely on behalf of a business customer under a separate agreement.
+Regents Labs is the controller of personal information covered by this Policy, except where we process information solely on behalf of a business customer under a separate agreement.
 
 Contact:
 
-**Ash Template**  
-Privacy email: **[privacy@example.com](mailto:privacy@example.com)**
+**Regents Labs, Inc.**  
+Privacy email: **[privacy@regents.sh](mailto:privacy@regents.sh)**
 
 ## 2. Important privacy facts
 
@@ -69,7 +69,7 @@ We use personal information to:
 3. authenticate users and verify wallet control;
 4. provide support and respond to requests;
 5. detect, investigate, and prevent fraud, abuse, unauthorized access, spam, malware, and security incidents;
-6. enforce our Terms and protect users, third parties, Ash Template, and the Services;
+6. enforce our Terms and protect users, third parties, Regents Labs, and the Services;
 7. comply with law, sanctions, court orders, and lawful requests;
 8. debug, analyze, and improve reliability and user experience;
 9. communicate operational, security, legal, and product information; and
@@ -146,7 +146,7 @@ The Services and service providers may process information in countries other th
 
 Depending on where you live, you may have the right to know whether we process your personal information; access or receive a copy of it; correct inaccurate information; delete information; obtain portable information you provided; restrict or object to certain processing; withdraw consent; opt out of sale, targeted advertising, or certain profiling; appeal a denied privacy request; and complain to a data-protection authority.
 
-To make a request, email **[privacy@example.com](mailto:privacy@example.com)** with the subject "Privacy Request."
+To make a request, email **[privacy@regents.sh](mailto:privacy@regents.sh)** with the subject "Privacy Request."
 
 We may need to verify your identity and authority. For a wallet-linked account, verification may include asking you to sign a message that moves nothing or to authenticate through the same method used for the account. We will not ask for a private key or recovery phrase.
 
@@ -162,7 +162,7 @@ If a state law gives you a right to appeal our decision, you may appeal by reply
 
 ## 15. Children
 
-The Services are not directed to people under 18, and we do not knowingly collect personal information from them. If you believe a person under 18 has provided personal information, contact **[privacy@example.com](mailto:privacy@example.com)**.
+The Services are not directed to people under 18, and we do not knowingly collect personal information from them. If you believe a person under 18 has provided personal information, contact **[privacy@regents.sh](mailto:privacy@regents.sh)**.
 
 ## 16. Changes to this Policy
 
@@ -172,8 +172,8 @@ We may update this Policy as the Services and law change. We will post the updat
 
 Questions, requests, or complaints may be sent to:
 
-**Ash Template**  
-Privacy email: **[privacy@example.com](mailto:privacy@example.com)**  
-Legal email: **[legal@example.com](mailto:legal@example.com)**
+**Regents Labs, Inc.**  
+Privacy email: **[privacy@regents.sh](mailto:privacy@regents.sh)**  
+Legal email: **[legal@regents.sh](mailto:legal@regents.sh)**
 
 You may also have the right to lodge a complaint with the data-protection or privacy authority where you live.
