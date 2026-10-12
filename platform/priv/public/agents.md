@@ -35,14 +35,11 @@ own Python.
 regents ash-template agents whoami --json
 ```
 
-`pairing` is `null` until you pair. Ask your person to open [their account page](/account)
-and choose **Pair an agent**. They type the code it shows at this hidden prompt in your
-terminal, never in chat:
+`pairing` is `null` until you pair. Your person opens [their account page](/account),
+chooses you and pastes you a message with a pairing code. Pair with that code:
 
 ```sh
-printf 'Pairing code: ' >&2; read -rs code; printf '\n' >&2
-printf '{"code": "%s", "name": "Ada", "harness": "claude_code"}' "$code" | regents ash-template agents pair --json
-unset code
+printf '{"code": "<code>", "name": "Ada", "harness": "claude_code"}' | regents ash-template agents pair --json
 regents ash-template agents whoami --json
 ```
 

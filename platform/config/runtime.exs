@@ -64,6 +64,10 @@ if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do
   config :regent_agents, :siwa, url: broker_url, audience: "ash-template"
 end
 
+# This site's own key for reading what paired agents have done from the sign-in
+# service (AshTemplate.AgentActivity).
+config :ash_template, :siwa_activity_read_token, System.get_env("SIWA_ACTIVITY_READ_TOKEN")
+
 # Each saved note is posted to this address when it is set (AshTemplate.Notes.Webhook).
 if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
   case URI.new(webhook_url) do

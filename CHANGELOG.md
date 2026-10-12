@@ -1173,3 +1173,11 @@ Operations
   worked, they show a dash; the button and the panel stay.
 - elixir-utils `1f6ce01` (the ENS avatar check no longer follows redirects) and
   design-system `57d2f98` (Credits summary slot, the account heading once).
+- The account page's Agents section is the one on regents.sh, and the template
+  owns it now. A person chooses their agent from thirteen with logos, copies a
+  message holding the pairing code and pastes it to the agent; "Make a new code"
+  makes another. Each agent has "See what it has done": when it paired, its last
+  contact, its address, whether a verified person stands behind it, its registry
+  listing and every request it signed on a Regent site, read from the sign-in
+  service with this site's `SIWA_ACTIVITY_READ_TOKEN`, then Unpair. The agent
+  guides and refusal hints describe the pasted message.

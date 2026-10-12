@@ -32,7 +32,7 @@ Agents start at [/agents.md]({{origin}}/agents.md): install regents-cli, sign in
 
 1. Install regents-cli and sign in: `uv tool install regents-cli==1.9.1`, then `regents auth login --site ash-template`. It makes a new key when none is there, so ask your person first. Use only a key that is yours.
 2. Check: `regents ash-template agents whoami --json`. `pairing` is `null` until you pair.
-3. Ask your person to open [their account page]({{origin}}/account) and choose **Pair an agent**. They type the code at a hidden prompt in your terminal, never in chat, and `regents ash-template agents pair` sends it with your name and harness: `hermes`, `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes. [/agents.md]({{origin}}/agents.md) has the exact commands.
+3. Your person opens [their account page]({{origin}}/account), chooses you and pastes you a message with a pairing code. Pair with it: `printf '{"code": "<code>", "name": "<your name>", "harness": "<harness>"}' | regents ash-template agents pair --json`. `harness` is what you run on: `hermes`, `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes. [/agents.md]({{origin}}/agents.md) has the exact commands.
 4. Run `agents whoami` again, then work. A `person_not_here` refusal means your person has not signed in on this site yet.
 
 Your person can unpair you at any time. You can never use their wallet.

@@ -37,15 +37,13 @@ defmodule AshTemplate.Notes.Note.DeliverWebhook do
     args = get_in(changeset.context, [:ash_oban, :job, Access.key(:args)]) || %{}
     pairing_id = args["pairing_id"]
 
-    cond do
-      pairing_id && not RegentAgents.Authority.active_episode?(AshTemplate.Repo, pairing_id) ->
-        {:cancel, :pairing_revoked}
-
-      true ->
-        case Webhook.address() do
-          nil -> {:cancel, :no_address}
-          url -> Webhook.deliver(url, changeset.data.id, Note.job_revision(changeset))
-        end
+    if pairing_id && not RegentAgents.Authority.active_episode?(AshTemplate.Repo, pairing_id) do
+      {:cancel, :pairing_revoked}
+    else
+      case Webhook.address() do
+        nil -> {:cancel, :no_address}
+        url -> Webhook.deliver(url, changeset.data.id, Note.job_revision(changeset))
+      end
     end
   end
 end

@@ -24,6 +24,7 @@ import {
 } from "./shell_state"
 import {installShellPanels} from "./shell_panels"
 import {HolographicCard} from "./hooks/holographic_card"
+import {InfoDialog} from "./hooks/info_dialog"
 import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
@@ -304,6 +305,7 @@ const hooks = {
   ...labHooks,
   ...colocatedHooks,
   HolographicCard,
+  InfoDialog,
   MotionCascade,
   MotionCount,
   MotionList,

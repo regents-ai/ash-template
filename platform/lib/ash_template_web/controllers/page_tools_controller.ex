@@ -25,7 +25,7 @@ defmodule AshTemplateWeb.PageToolsController do
        "Prepare the request, sign its exact bytes with your SIWA signer, then send the request and proof."},
     "agent_not_paired" =>
       {403, "This agent is not paired with an account.",
-       "Ask your person to sign in at /account and use Agents > Pair an agent. Redeem their code at POST /api/agents/v1/pair (regents ash-template agents pair), then retry with fresh proof."},
+       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you at POST /api/agents/v1/pair (regents ash-template agents pair), then retry with fresh proof."},
     "person_not_here" =>
       {403, "The person this agent is paired with has no account on this site yet.",
        "Ask your person to sign in at /account on this site, then retry with fresh proof."},
