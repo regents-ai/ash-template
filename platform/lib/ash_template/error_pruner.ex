@@ -12,7 +12,6 @@ defmodule AshTemplate.ErrorPruner do
   alias AshTemplate.Repo
   alias ErrorTracker.{Error, Occurrence}
 
-  @prefix "ash_template_app"
   @batch 5_000
 
   @impl Oban.Worker
@@ -28,7 +27,7 @@ defmodule AshTemplate.ErrorPruner do
   defp delete_all(query) do
     batch = from(row in query, select: row.id, limit: @batch)
 
-    case Repo.delete_all(from(row in query, where: row.id in subquery(batch)), prefix: @prefix) do
+    case Repo.delete_all(from(row in query, where: row.id in subquery(batch))) do
       {@batch, _rows} -> delete_all(query)
       {_fewer, _rows} -> :ok
     end
