@@ -90,7 +90,9 @@ defmodule AshTemplateWeb.Live.Session do
   # Every other message and every background result is re-read the same way
   # before the page sees it, because a notification or a read can arrive after
   # the sign-in has outlived its lifetime with no navigation or event between.
-  # A lapsed lease then drops it and the page renders signed out. Components
+  # A lapsed lease then drops it and the page renders signed out. The running
+  # jobs count alone goes straight through: it reaches every open page on each
+  # job start and stop and says nothing about any account. Components
   # receive the lease as `session_lease` and check it on their own events and
   # results (`check_component_lease/2`); one that finds it lapsed asks the page
   # to withdraw the principal here.
@@ -109,6 +111,9 @@ defmodule AshTemplateWeb.Live.Session do
       recheck(socket, lease, & &1)
     end)
     |> attach_hook(:session_authority_info, :handle_info, fn
+      {:jobs_running, _count}, socket ->
+        {:cont, socket}
+
       %{topic: ^ens_topic}, socket ->
         {_cont_or_halt, socket} = recheck(socket, lease, & &1)
         {:halt, socket}

@@ -1,18 +1,25 @@
 # Pages and components re-check the session before every push and result
 
-A page's event and params hooks re-read the session, but a server push
-(`handle_info`: a PubSub notification such as a points award or a Credits change) and a
-background result (`handle_async`) arrive with no navigation or event in between. A
-socket idle past the sign-in lifetime would otherwise read and show fresh private data
-with the actor it saved at mount. The session module that holds a signed-in socket
-attaches `:handle_info` and `:handle_async` hooks that re-read the lease
-(`leased_account/2`) before the page sees any message or result:
+A server push (`handle_info`: a PubSub notification such as a points award or a
+Credits change) and a background result (`handle_async`) arrive with no navigation or
+event in between. A socket idle past the sign-in lifetime would otherwise read and show
+fresh private data with the actor it saved at mount. The session module that holds a
+signed-in socket attaches `:handle_params`, `:handle_event`, `:handle_info` and
+`:handle_async` hooks that re-read the lease (`leased_account/2`) before the page sees
+any navigation, event, message or result:
 
 - Current: `{:cont, socket}` with the principal rebuilt from the account that read
   returned, so the page's handler builds its actor from the refreshed account.
-- Lapsed: `{:halt, redirect(socket, to: public_root)}`. The message or result is
-  dropped, and leaving the page ends its process, so every private assign,
-  subscription and running read goes with it. No timer, no polling.
+- Lapsed: `{:halt, socket}` with the principal withdrawn and
+  `signed_out_reason: :expired`. What arrived is dropped, the page renders signed out
+  and says the sign-in ended, and every later message or result meets the same check.
+  A navigation (`:handle_params`) goes to the public root instead. No timer, no
+  polling.
+- A broadcast that reaches every open page often and carries no account data (the
+  template's `{:jobs_running, count}`) goes straight through, so it costs no reads.
+  Only such a message may skip the check.
+- Background work goes through `start_async/3`: `assign_async` and `stream_async`
+  results never reach `:handle_async` hooks, so they would skip the check.
 
 The rest of this note covers components, whose events and results never reach the
 page's hooks.
@@ -37,7 +44,8 @@ reference is ash-template `AshTemplateWeb.Live.Session.check_component_lease/2`.
      `{:cont, take_account.(socket, account)}` with the account that read returned.
      The check never reduces that account to a truth test.
    - Lapsed: `send(self(), {SessionModule, :component_lease_lapsed})` and
-     `{:halt, %{}, socket}` for an event, `{:halt, socket}` for a result, which drops it. The empty reply answers reply-style events (a wallet
+     `{:halt, %{}, socket}` for an event, `{:halt, socket}` for a result, which drops
+     it. The empty reply answers reply-style events (a wallet
      step asked for gets nothing to send); the page's own `:handle_info` hook takes
      the message, re-reads the lease and withdraws the principal, so the page renders
      signed out. The component runs in the page's process, so `self()` is the page.
@@ -61,7 +69,7 @@ Verify with a scratch test, inside a sandbox that rolls back, that runs the hook
 through `Phoenix.LiveView.Lifecycle` on a socket mounted by the session module: a push
 and a result while current (continue, with the account as it reads now), after a
 same-account refresh (unchanged), and after the sign-in's `updated_at` is moved past
-its lifetime (halt, principal withdrawn, redirect to the public root; for a component,
+its lifetime (halt, principal withdrawn, `signed_out_reason: :expired`; for a component,
 halted and the page told). Run it once against the old code to see it fail.
 
 The page's disconnect broadcast on sign-out reaches only the node that handled it

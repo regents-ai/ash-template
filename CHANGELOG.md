@@ -1145,9 +1145,12 @@ Operations
 - A page held open past the 30-day sign-in no longer reads or shows fresh
   private figures when a notification (a points award, a Credits change, an
   agent update) or a background read arrives. The session re-reads the sign-in
-  before each one; when it has lapsed, the page goes to the home page, which
-  drops every private figure and read still running. While current, the page
-  continues with the account as it reads now.
+  before each one; when it has lapsed, what arrived is dropped and the page
+  says the sign-in ended. While current, the page continues with the account
+  as it reads now.
 - Components check the same before each background result as well as each
   event (`Session.check_component_lease/2`, renamed from
   `check_component_events/2`).
+- The running jobs count in the bottom bar is the one message that skips the
+  check: it says nothing about any account and reaches every open page on each
+  job start and stop.
