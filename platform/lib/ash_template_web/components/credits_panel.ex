@@ -17,8 +17,8 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   The parent passes `account` (the signed-in account), its `credits` reading
   (`state` and the `RegentCredits.balance/1` value, kept current by the
-  parent; until it has a value the figures show a dash), its `session_lease`
-  as `lease` and `id`.
+  parent; the figures show only while it is `:ready`, and a dash otherwise), its
+  `session_lease` as `lease` and `id`.
   """
   use AshTemplateWeb, :live_component
 
@@ -614,16 +614,19 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   # Until the balance is read, or when it can't be, each figure is a dash, as
   # in the header; a word beside it would wrap on a phone and move the buttons.
-  defp figure(%{value: nil}, _field), do: "—"
-
-  defp figure(%{value: balance}, field),
+  # Only a balance just read shows; while it is read again, or when it can't be,
+  # each figure is a dash.
+  defp figure(%{state: :ready, value: balance}, field),
     do: balance |> Map.fetch!(field) |> Amount.format() |> String.replace_suffix(" Credits", "")
 
-  defp missing(%{value: nil, state: :error} = assigns),
+  defp figure(_credits, _field), do: "—"
+
+  defp missing(%{state: :ready}), do: nil
+
+  defp missing(%{state: state} = assigns) when state in [:error, :stale],
     do: ~H|<span class="visually-hidden">Unavailable</span>|
 
-  defp missing(%{value: nil} = assigns), do: ~H|<span class="visually-hidden">Loading</span>|
-  defp missing(_credits), do: nil
+  defp missing(assigns), do: ~H|<span class="visually-hidden">Loading</span>|
 
   defp state(entry, nil), do: OnchainSteps.describe(entry, chain_name_of(entry)).state
   defp state(_entry, %{purchase: :reporting}), do: :checking

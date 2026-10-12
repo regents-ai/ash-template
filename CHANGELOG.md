@@ -1168,5 +1168,8 @@ Operations
   authority version; the pairing check stays. Only signed tools are passed to the
   signed-request client.
 - The route handoff names the account tab "Account".
+- The header's Credits figure and the Buy panel's figures show only a balance
+  just read. While it is read again, or when a read fails after an earlier one
+  worked, they show a dash; the button and the panel stay.
 - elixir-utils `1f6ce01` (the ENS avatar check no longer follows redirects) and
   design-system `57d2f98` (Credits summary slot, the account heading once).
