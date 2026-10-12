@@ -76,13 +76,13 @@ type AccountAuthInstallOptions = {
   clearSession?: () => Promise<void>
   handoffStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem">
   now?: () => number
-  providerSignOutTimeoutMs?: number
+  walletSignOutTimeoutMs?: number
   reload?: () => void
   sessionMutations?: SessionMutationCoordinator
   signedInStartupTimeoutMs?: number
 }
 
-const defaultProviderSignOutTimeoutMs = 1_500
+const defaultWalletSignOutTimeoutMs = 1_500
 const defaultSignedInStartupTimeoutMs = 5_000
 const signOutHandoffKey = "regent:privy-sign-out-handoff:v1"
 const signOutHandoffMaxAgeMs = 30_000
@@ -96,7 +96,7 @@ const walletSignOuts = new WeakMap<Document, Promise<void>>()
 export function finishWalletSignOut(
   documentRoot: Document = document,
   walletEvents: EventTarget = documentRoot.defaultView ?? documentRoot,
-  timeoutMs = defaultProviderSignOutTimeoutMs,
+  timeoutMs = defaultWalletSignOutTimeoutMs,
 ): Promise<void> {
   const existing = walletSignOuts.get(documentRoot)
   if (existing) return existing
@@ -883,7 +883,7 @@ export function installAccountAuthLazyLoader(
     clearSession = clearLocalSession,
     handoffStorage,
     now = () => Date.now(),
-    providerSignOutTimeoutMs = defaultProviderSignOutTimeoutMs,
+    walletSignOutTimeoutMs = defaultWalletSignOutTimeoutMs,
     reload = () => window.location.reload(),
     sessionMutations = browserSessionMutations,
     signedInStartupTimeoutMs = defaultSignedInStartupTimeoutMs,
@@ -934,7 +934,7 @@ export function installAccountAuthLazyLoader(
         if (!await proveAnonymousSession()) throw new Error("Session changed again.")
       })
       if (!installed) return
-      await finishWalletSignOut(documentRoot, walletEvents, providerSignOutTimeoutMs)
+      await finishWalletSignOut(documentRoot, walletEvents, walletSignOutTimeoutMs)
       if (installed) reloadDocumentOnce(documentRoot, reload)
     })().catch(() => undefined)
     peerLogout = attempt
@@ -991,7 +991,8 @@ export function installAccountAuthLazyLoader(
     controls.forEach(control => control.setAttribute("aria-busy", "true"))
 
     invalidateWalletWork()
-    const handedOff = writeSignOutHandoff(storage, now())
+    // Until Privy's logout lands, the next page owes it.
+    writeSignOutHandoff(storage, now())
 
     const attempt = (async () => {
       try {
@@ -1003,16 +1004,13 @@ export function installAccountAuthLazyLoader(
       }
       // Disconnect is one command. The site session is gone; every wallet
       // Privy holds is released here, before this document is replaced, so the
-      // wallet apps are asked while the page that asked them still exists. They
-      // get the same window the provider sign out gets, and the page goes
-      // anonymous whether or not they use it.
-      await finishWalletSignOut(documentRoot, walletEvents, providerSignOutTimeoutMs)
-      if (!handedOff) {
-        // Restricted storage must not make logout impossible. Once the local
-        // session is revoked, provider cleanup can run here with a strict bound.
-        await withinWindow(loader.request("sign-out"), providerSignOutTimeoutMs,
-          "Provider sign out did not settle.").catch(() => undefined)
-      }
+      // wallet apps are asked while the page that asked them still exists, and
+      // the page goes anonymous whether or not they answer.
+      await finishWalletSignOut(documentRoot, walletEvents, walletSignOutTimeoutMs)
+      // Privy is logged out here too, where its bridge is usually already
+      // running. Only its own startup limits end the wait; a logout that
+      // still could not finish stays owed to the next page.
+      if (await loader.request("sign-out").then(() => true, () => false)) clearSignOutHandoff(storage)
       clearStatus()
       reloadDocumentOnce(documentRoot, reload)
     })()
@@ -1077,23 +1075,11 @@ export function installAccountAuthLazyLoader(
   walletEvents.addEventListener(IDENTITY_REQUEST_EVENT, onIdentityRequest)
   walletEvents.addEventListener("ash:wallet-sync", onWalletSync)
   if (consumedHandoff) {
+    // The page that signed out could not finish Privy's logout. It is waited
+    // for here, never cut short, before this page acts on anything else.
     void proveAnonymousSession().then(async anonymous => {
-      if (!anonymous) {
-        loader.finishHandoff()
-        return
-      }
-
-      try {
-        await withinWindow(
-          loader.request("sign-out"),
-          providerSignOutTimeoutMs,
-          "Provider sign out did not become ready.",
-        )
-      } catch {
-        // Provider cleanup is best-effort background work.
-      } finally {
-        loader.finishHandoff()
-      }
+      if (anonymous) await loader.request("sign-out").catch(() => undefined)
+      loader.finishHandoff()
     })
   } else if (documentRoot.querySelector("#account-control [data-account-target='sign-out']")) {
     reconcileSignedInStartup()
