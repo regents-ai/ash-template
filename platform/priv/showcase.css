@@ -122,7 +122,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-card > .rg-notice { margin-top: 12px; }
 .sc-card h3:not(:first-child) { margin-top: 24px; }
 .sc .rg-panel__heading h3 { margin: 0; }
-.sc .rg-field { margin-top: 12px; }
+.sc :is(.rg-field, .rg-pill-select) { margin-top: 12px; }
 .sc form > .rg-button { margin-top: 8px; }
 .sc label { font-size: 12px; }
 .sc .rg-disclosure { margin-top: 12px; }

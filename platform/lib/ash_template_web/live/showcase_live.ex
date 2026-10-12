@@ -312,6 +312,12 @@ defmodule AshTemplateWeb.ShowcaseLive do
               <option>Ethereum</option>
             </select>
           </P.field>
+          <label class="rg-pill-select">
+            <select id="preview-sort" aria-label="Sort">
+              <option>Newest</option>
+              <option>Most raised</option>
+            </select>
+          </label>
           <P.field :let={field} id="preview-invalid" label="Required name" errors={["Enter a name."]}>
             <input
               id={field.id}
