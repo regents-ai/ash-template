@@ -88,12 +88,9 @@ defmodule AshTemplate.SignedToolsTest do
   setup do
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
     old = Application.fetch_env(:regent_agents, :req_options)
-    old_privy = Application.fetch_env!(:ash_template, :privy)
-    Application.put_env(:ash_template, :privy, Keyword.put(old_privy, :app_id, "test-app"))
     Application.put_env(:regent_agents, :req_options, plug: {Req.Test, RegentAgents.Broker})
 
     on_exit(fn ->
-      Application.put_env(:ash_template, :privy, old_privy)
       Ecto.Adapters.SQL.Sandbox.stop_owner(owner)
 
       case old do
