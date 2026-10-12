@@ -130,11 +130,42 @@ function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
     : {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
 }
 
-const invalid = (error: unknown): Reply => ({ok: false, error: {
-  code: "invalid_request",
-  message: error instanceof Error ? error.message : String(error),
-  hint: "Check the input against this tool's schema, then prepare and sign the request again.",
-}})
+// The signing transport refuses with a reason such as "missing_field:title".
+// The agent reads it in words; the reason itself stays in details.
+const invalid = (error: unknown): Reply => {
+  const reason = error instanceof Error ? error.message : String(error)
+  return {ok: false, error: {
+    code: "invalid_request",
+    message: explain(reason),
+    hint: "Check the input against this tool's schema, then prepare and sign the request again.",
+    details: {reason},
+  }}
+}
+
+function explain(reason: string): string {
+  const [kind, field] = reason.split(":", 2)
+  switch (kind) {
+    case "missing_field": return `${field} is required.`
+    case "invalid_field": return `${field} is not a field of this tool, or is not the kind of value it takes.`
+    case "invalid_path_field": return `${field} must be a name, not empty.`
+    case "operation_unavailable": return "No signed tool has that name. Use a name from this page's tools."
+    case "operation_id_required": return "operation_id is required. Use a new one for each change and keep it when retrying."
+    case "body_too_large": return "The input is too large."
+    case "input_complexity_exceeded": return "The input has too many parts or is nested too deeply."
+    case "prepared_request_mismatch": return "The signed request is not the one prepared for this input. Prepare it again with the same input, then sign it."
+    case "signed_request_required": return "Send the prepared request as request, with its proof."
+    case "proof_required":
+    case "invalid_proof":
+    case "incomplete_proof":
+    case "body_proof_required":
+    case "unexpected_body_proof":
+      return "The proof is missing or incomplete. Sign the prepared request with your SIWA signer and send every header it returns."
+    case "untrusted_origin":
+    case "insecure_origin":
+      return "This page can't send signed requests."
+    default: return "The input doesn't fit this tool's schema."
+  }
+}
 
 // fetch fails with a TypeError when the network fails and an AbortError when
 // cancelled; the transport's own refusals, made before anything is sent, are
