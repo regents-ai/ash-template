@@ -576,11 +576,14 @@ export function createPrivyLoginCallbacks({
   acceptsSubject = () => true,
 }: PrivyLoginCallbackOptions): PrivyEvents["login"] {
   return {
-    onComplete: ({loginAccount, user}) => {
+    onComplete: ({loginAccount, user, wasAlreadyAuthenticated}) => {
       if (!isCurrent() || !acceptsSubject(user?.id)) return
       const opened = loginOpen.current
       loginOpen.current = false
-      if (!opened && walletDisconnected()) return
+      // A Privy session the browser already held is never the visitor's own
+      // sign-in: a page's sign-in logs Privy out first, and a real redirect
+      // return arrives signed out. So after a Disconnect it stays signed out.
+      if ((!opened || wasAlreadyAuthenticated) && walletDisconnected()) return
       forgetEthereumWalletSelection()
       if (loginAccount?.type === "wallet" && loginAccount.chainType === "ethereum") {
         rememberEthereumWalletSelection(loginAccount)
