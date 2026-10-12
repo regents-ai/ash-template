@@ -51,6 +51,7 @@ defmodule AshTemplate.AgentActivity do
          when is_nil(next) or (is_binary(next) and next != "") <-
            Req.post(config.base_url <> "/api/shared/siwa/activity",
              retry: false,
+             redirect: false,
              receive_timeout: 5_000,
              connect_options: [timeout: 2_000],
              auth: {:bearer, config.token},
