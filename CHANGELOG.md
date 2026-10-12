@@ -1181,3 +1181,11 @@ Operations
   listing and every request it signed on a Regent site, read from the sign-in
   service with this site's `SIWA_ACTIVITY_READ_TOKEN`, then Unpair. The agent
   guides and refusal hints describe the pasted message.
+
+## 2026-10-12 — Errors reach Sentry
+
+- Crashed processes and failed requests now go to Sentry through its logger
+  handler, which the application attaches at start (`config :ash_template,
+  :logger`). Nothing is sent until `SENTRY_DSN` is set. Before, only the Privy
+  sign-in failure message reached Sentry (Sean, 42 a: every site reports errors
+  to Sentry).
