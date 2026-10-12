@@ -21,6 +21,7 @@ defmodule AshTemplateWeb.OnchainSteps do
 
   @recheck_ms 2_000
   @address ~r/\A0x[0-9a-fA-F]{40}\z/
+  @no_wallet "Your account has no wallet yet. Sign in again to get one."
 
   @doc "The assigns a wallet-button component starts with."
   def init(socket), do: assign(socket, presses: Presses.new(), review: nil, press_note: nil)
@@ -122,6 +123,10 @@ defmodule AshTemplateWeb.OnchainSteps do
       when reason in ~w(step_unknown wallet_unavailable),
       do: "Sign in to send this. Nothing was sent."
 
+  def failure_note(reason, [], _active, _chain_name)
+      when reason in ~w(step_unknown wallet_unavailable),
+      do: "#{@no_wallet} Nothing was sent."
+
   def failure_note(reason, linked, nil, _chain_name)
       when reason in ~w(step_unknown wallet_unavailable),
       do:
@@ -159,6 +164,8 @@ defmodule AshTemplateWeb.OnchainSteps do
   The note beside the buttons while the wallet app has open a wallet the
   signed-in account does not link, naming both and asking the person to switch.
   """
+  def mismatch_note([], active) when is_binary(active), do: @no_wallet
+
   def mismatch_note(linked, active) when is_list(linked) and is_binary(active) do
     if signer(linked, active) == nil do
       "Your wallet is on #{short(active)}, which isn't linked to this account. Switch to #{wallets(linked, " or ")}."
