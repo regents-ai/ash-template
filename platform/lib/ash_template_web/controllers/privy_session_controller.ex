@@ -211,18 +211,8 @@ defmodule AshTemplateWeb.PrivySessionController do
 
     report_bounded_sign_in_failure(conn, "session_exchange")
 
-    conn
-    |> mark_recoverable(stage, reason)
-    |> disconnect_after(SessionAuthority.revoke(claim(conn)), &refuse(&1, "unauthorized"))
+    disconnect_after(conn, SessionAuthority.revoke(claim(conn)), &refuse(&1, "unauthorized"))
   end
-
-  # The one refusal a browser may answer with a fresh provider login: the access
-  # token itself did not verify, so the provider session behind it is spent. The
-  # marker names nothing about the refusal, and no other 401 carries it.
-  defp mark_recoverable(conn, :access_verification, :token_verification_failed),
-    do: put_resp_header(conn, "x-ash-provider-relogin", "allowed")
-
-  defp mark_recoverable(conn, _stage, _reason), do: conn
 
   # The answer is sent before the lineage's sockets are told to disconnect, so
   # the browser reads it rather than a dropped connection.
