@@ -169,6 +169,24 @@ counts it runs on every request.
   the model is `~typesafe/jev-latest`; the tools are `notes_list`, `notes_get`,
   `notes_create`, `room_read` and `room_post`, behind `/tools`.
 
+## 5. Sign-in for connected apps (ChatGPT, Codex, Claude): held
+
+Held 12 Oct 2026 until Sean accepts the template account system (Sean's rulings of
+12 Oct and 76 b; recorded by the orchestrator as CONNECTOR-AUTH-1 b). Nothing is built.
+Techtree's first milestone does not wait on it.
+
+To do, once released from hold:
+- [ ] An OAuth sign-in service in the template on Boruta, with Privy sign-in as its
+      login step and a consent page; connected apps register and sign in the standard
+      way (discovery documents, PKCE, client registration). Privy's agent approval
+      cannot do this: it has no discovery documents or client registration.
+- [ ] A connected-apps list with Revoke on Account.
+- [ ] Nested input checking (JSON Schema) for connected apps in elixir-utils
+      `agent_access`; today `public_tools.ts` checks flat fields only and
+      `signed_tools.ts` caps only depth and size.
+- Size: about 3 to 5 days plus Sentinel's review, then about 1 day for the input
+  checking. Sites take it after the template.
+
 ## Order
 
 Agreed 2026-10-02: 1 → 2 → 3 → 4, since each later item reuses the earlier ones.

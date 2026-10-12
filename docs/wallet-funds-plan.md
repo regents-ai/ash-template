@@ -68,7 +68,7 @@ The registry replaces today's hard-coded Base in `RegentPayments.USDC`, as a har
 - A person may choose **Create a payments wallet**: a user-owned Privy embedded wallet on the same Privy user.
 - **One wallet across sites.** Before any site turns this on, prove it on two sites (Regents account page and Patchbay): both must find the same wallet, with no second user and no second default wallet.
 - **Privy Global Wallets** is evaluated for this. Its access request is Sean's.
-- Knowing a wallet belongs to someone is never permission to spend from it. Agent or server spending is a separate decision. If it is ever approved, it must name the actions, recipients, tokens, chains, limits and expiry it allows.
+- Knowing a wallet belongs to someone is never permission to spend from it. Agent spending from a payments wallet is approved in principle (Sean, 12 Oct, 86 a) only within limits Sean names; see "Agent spending" below. Server spending stays a separate decision.
 
 ## Provider facts (checked in the docs, 5 Oct)
 
@@ -157,6 +157,15 @@ A new `/showcase/funds` page beside `/showcase/payments`, built from real compon
 6. **Wallet choice.** The connected external wallet, plus "Create a payments wallet".
 
 Checked at desktop and phone widths, in light and dark, and with the keyboard, as for the other showcase pages.
+
+## Agent spending (Sean, 12 Oct 2026, 85 b and 86 a)
+
+- Privy's "Enable for CLI and agent access" stays on, with its approval page at https://regents.sh/account until the page below ships (85 b).
+- A person may approve their own agent to pay from their payments wallet, through Privy's agent approval (an agent asks, the person approves on our page, the agent then signs at Privy). Sign-in on every site stays SIWA; an agent approval is never a way to sign in to a site.
+- Limits first: Sean names which actions, recipients, tokens, chains, cap and expiry an approved agent gets. No code is written before that.
+- The limits are held by Privy's own wallet rules, which it checks inside its secure hardware before signing. Rules kept only in our command-line tool are not limits, because any program holding the approval can ignore them. Whether Privy's rules hold an approved agent is not stated in Privy's docs, so a live check proves it before any page ships; if they do not, the work stops and goes back to Sean.
+- Order: the limits, then the payments wallet (template first, with the limits attached), then the live check, then a page of its own at https://regents.sh/authorize with a list of approvals and Revoke on Account, then `wallet connect` in regents-cli keeping its tokens in the Mac keychain. Each release has its own go.
+- Before the page ships, a real approval's token is checked against `RegentPrivy.verify_token` to learn whether a site would take it as a browser sign-in; the result goes to Sentinel.
 
 ## Order of work
 
