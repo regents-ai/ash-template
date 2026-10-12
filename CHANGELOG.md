@@ -1224,3 +1224,11 @@ Operations
 - Sentry is gone: the dependency, its logger handler, `AshTemplate.SentryScrub`,
   the Privy sign-in failure capture and the `SENTRY_*` settings. The sign-in
   failure log line and telemetry stay.
+
+## 2026-10-12 — Only server faults are saved
+
+- `AshTemplate.ErrorIgnorer` leaves out every exception the site answers below
+  500, such as not found or a bad request, so visiting wrong addresses cannot
+  fill the error table. Ash's Invalid and Forbidden errors count as the
+  visitor's; Unknown and Framework errors, other server faults, exits and throws
+  are saved (security chief request).
