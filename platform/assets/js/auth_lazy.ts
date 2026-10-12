@@ -83,6 +83,7 @@ type AccountAuthInstallOptions = {
 }
 
 const defaultWalletSignOutTimeoutMs = 1_500
+const providerSignOutWaitMs = 15_000
 const defaultSignedInStartupTimeoutMs = 5_000
 const signOutHandoffKey = "regent:privy-sign-out-handoff:v1"
 const signOutHandoffMaxAgeMs = 30_000
@@ -1008,9 +1009,12 @@ export function installAccountAuthLazyLoader(
       // the page goes anonymous whether or not they answer.
       await finishWalletSignOut(documentRoot, walletEvents, walletSignOutTimeoutMs)
       // Privy is logged out here too, where its bridge is usually already
-      // running. Only its own startup limits end the wait; a logout that
-      // still could not finish stays owed to the next page.
-      if (await loader.request("sign-out").then(() => true, () => false)) clearSignOutHandoff(storage)
+      // running. A logout that could not finish in time is handed on, freshly
+      // dated, so the next page still owes it.
+      const providerSignedOut = await withinWindow(loader.request("sign-out"), providerSignOutWaitMs,
+        "Provider sign out did not settle.").then(() => true, () => false)
+      if (providerSignedOut) clearSignOutHandoff(storage)
+      else writeSignOutHandoff(storage, now())
       clearStatus()
       reloadDocumentOnce(documentRoot, reload)
     })()
