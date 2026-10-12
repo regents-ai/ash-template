@@ -251,6 +251,7 @@ From the monorepo root, `make check-platform` runs this component's gate and
 ```sh
 mix precommit
 npm run typecheck
+npm test
 ```
 
 `make check` also runs the required-fixes check (see
@@ -261,12 +262,26 @@ npm run typecheck
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
 compile-connected `xref` graph under its limit, and verifies the Ash codegen
 and route handoff are current. `npm run typecheck` type-checks the TypeScript
-assets. The template carries two automated tests (founder decisions, 2026-09-27 and
-2026-10-08; the second assigned by the agent pairing thread on Sean's word, 2026-10-08).
-`mix test` signs a person in and back in, because sign-in once failed for three
-days unnoticed, and credits a Credits purchase through the site's `on_credited`
-module, because a site without one never credits a purchase. It first brings the
-local `ash_template_test` database up to date. Check every other change in a browser against the development server.
+assets. The template keeps a few automated tests, each for a costly failure a
+browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
+2026-10-12):
+
+- `mix test` signs a person in and back in, because sign-in once failed for three
+  days unnoticed, and walks a new person from an email sign-in without a wallet,
+  through the wallet Privy gives them, to the same account at every sign-in.
+- It credits a Credits purchase through the site's `on_credited` module, because
+  a site without one never credits a purchase.
+- It checks that a paired agent's tools accept only signed proof, never a cookie.
+- It races two agents on two sites for a person's last Credits, retries a lost
+  pin answer, and revokes an allowance mid-session: an agent never spends more
+  than its person has, never pays twice, and stops the moment its allowance
+  is off. These run on real separate connections, so their rows stay in the test
+  database.
+- `npm test` checks that after Disconnect, a Privy session the browser still
+  remembers never signs the previous person back in.
+
+`mix test` first brings the local `ash_template_test` database up to date. Check
+every other change in a browser against the development server.
 
 ## Deployment
 
