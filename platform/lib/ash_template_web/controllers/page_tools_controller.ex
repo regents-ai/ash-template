@@ -145,6 +145,7 @@ defmodule AshTemplateWeb.PageToolsController do
     case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
       {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, _error} -> refuse(conn, "unavailable")
     end
   end
@@ -155,6 +156,7 @@ defmodule AshTemplateWeb.PageToolsController do
       case Notes.pin_note(note, conn.body_params["operation_id"], actor: conn.assigns.actor) do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, %Ash.Error.Invalid{} = error} -> refuse_pin(conn, error)
+        {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
         {:error, _error} -> refuse(conn, "unavailable")
       end
     end)
@@ -171,6 +173,7 @@ defmodule AshTemplateWeb.PageToolsController do
     for_note(conn, id, fn note ->
       case Notes.unpin_note(note, actor: conn.assigns.actor) do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
+        {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
         {:error, _error} -> refuse(conn, "unavailable")
       end
     end)
@@ -181,6 +184,7 @@ defmodule AshTemplateWeb.PageToolsController do
       {:ok, %Note{} = note} -> respond.(note)
       {:ok, nil} -> refuse(conn, "note_not_found")
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, _error} -> refuse(conn, "unavailable")
     end
   end
