@@ -20,7 +20,7 @@ import {
 import type {Hook} from "./hook_composition"
 import {LAYOUTS, ROLLS, countHook, listHook} from "./hooks/motion/moments"
 import {nope, squish} from "./hooks/motion/press"
-import {GRIDS, HEADLINES, TABS, tabsHook} from "./hooks/motion/reveals"
+import {GRIDS, HEADLINES, TABS, onFirstSight, tabsHook} from "./hooks/motion/reveals"
 import {BASE, CLIPPED_WORD, EASE_IN_OUT, EASE_OUT, FAST, SLOW, byPointer, play, still} from "./hooks/motion/shared"
 import {drawer, menu, sheet} from "./hooks/motion/slides"
 
@@ -502,9 +502,9 @@ type EntranceIsland = Island & {variant?: string}
 
 /*
  * An entrance the island owns outright: the page never patches inside it and
- * only keeps `data-variant` current. It plays when the island mounts, when the
- * version changes, when its own replay button is pressed and when the page
- * asks every island to replay.
+ * only keeps `data-variant` current. It plays once the first time it scrolls
+ * into view (`onFirstSight`), and again when the version changes, when its own
+ * replay button is pressed and when the page asks every island to replay.
  */
 const entrance = <T>(versions: Record<string, (targets: T) => unknown>, pieces: (el: HTMLElement) => T): Hook => ({
   mounted(this: EntranceIsland) {
@@ -523,10 +523,11 @@ const entrance = <T>(versions: Record<string, (targets: T) => unknown>, pieces: 
       }
       const onReplay = () => scope.methods.play()
 
-      scope.methods.play()
+      const stopWatching = onFirstSight(this.el, () => scope.methods.play())
       this.el.addEventListener("click", onClick)
       window.addEventListener(REPLAY, onReplay)
       return () => {
+        stopWatching()
         this.el.removeEventListener("click", onClick)
         window.removeEventListener(REPLAY, onReplay)
       }

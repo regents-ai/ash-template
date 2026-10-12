@@ -118,7 +118,8 @@ defmodule AshTemplateWeb.PointsLive do
         <h2>What earns points</h2>
         <p :if={@earning == []} role="status">Earning hasn’t opened yet.</p>
         <h3 :if={@daily != []}>Every day</h3>
-        <table :if={@daily != []} class="points-table">
+        <.ways :if={@earning == []} rules={@daily} />
+        <table :if={@earning != [] and @daily != []} class="points-table">
           <thead>
             <tr>
               <th scope="col">Action</th><th scope="col">Points</th><th scope="col">Limit</th>
@@ -135,7 +136,8 @@ defmodule AshTemplateWeb.PointsLive do
           </tbody>
         </table>
         <h3 :if={@once != []}>Once</h3>
-        <table :if={@once != []} class="points-table">
+        <.ways :if={@earning == []} rules={@once} />
+        <table :if={@earning != [] and @once != []} class="points-table">
           <thead>
             <tr>
               <th scope="col">Action</th><th scope="col">Points</th>
@@ -151,7 +153,7 @@ defmodule AshTemplateWeb.PointsLive do
           </tbody>
         </table>
         <div class="account-details points-earn__notes">
-          <div :if={@apps != []}>
+          <div :if={@earning != [] and @apps != []}>
             <h3>Daily limits</h3>
             <dl>
               <div>
@@ -169,7 +171,7 @@ defmodule AshTemplateWeb.PointsLive do
             <p>
               Animata I, Animata II and Regents Club in your linked wallets, counted at the end of each 30-day period. That period’s points get the bonus.
             </p>
-            <table class="points-table">
+            <table :if={@earning != []} class="points-table">
               <thead>
                 <tr>
                   <th scope="col">NFTs</th><th scope="col">Bonus</th>
@@ -188,12 +190,23 @@ defmodule AshTemplateWeb.PointsLive do
     """
   end
 
+  attr :rules, :list, required: true
+
+  # Before earning opens, the ways to earn are named with no amounts.
+  defp ways(assigns) do
+    ~H"""
+    <ul :if={@rules != []} class="points-ways">
+      <li :for={rule <- @rules}>{Rules.label(rule["id"])}</li>
+    </ul>
+    """
+  end
+
   attr :rule, :map, required: true
   attr :earning, :list, required: true
 
   defp not_yet(assigns) do
     ~H"""
-    <span :if={@earning != [] and @rule not in @earning} class="points-earn__soon">Not yet</span>
+    <span :if={@rule not in @earning} class="points-earn__soon">Not yet</span>
     """
   end
 

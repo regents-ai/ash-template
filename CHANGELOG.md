@@ -1189,3 +1189,14 @@ Operations
   :logger`). Nothing is sent until `SENTRY_DSN` is set. Before, only the Privy
   sign-in failure message reached Sentry (Sean, 42 a: every site reports errors
   to Sentry).
+
+## 2026-10-12 — Arrivals play on sight; Points shows ways to earn
+
+- On /animations, the Arriving headline and cards play once, the first time
+  they scroll into view, instead of when the page opens; one already in view
+  when the page opens is simply there, and Replay still plays it. Lists the
+  server draws once (`data-cascade`) settle in the same way. `MotionCascade`,
+  the lab entrances and `motion.ts` share `onFirstSight` in
+  `hooks/motion/reveals.ts` (Sean, 45 a).
+- Until earning opens, the Points page names the ways to earn with no points,
+  limits or bonus tiers (Sean, 46 a).
