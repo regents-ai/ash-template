@@ -27,30 +27,32 @@ end
 # private node whose address carries a key, or a local copy of the chain for a
 # lab run; wallets still add the public address. The wallet chain's node is
 # ASH_TEMPLATE_CHAIN_NODE_URL; Credits purchases are checked through the Base
-# and Ethereum ones.
-%{chain_id: wallet_chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
+# and Ethereum ones. Tests read no chain, whatever the shell sets.
+if config_env() != :test do
+  %{chain_id: wallet_chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
 
-node_overrides =
-  for {chain_id, setting} <- [
-        {wallet_chain_id, "ASH_TEMPLATE_CHAIN_NODE_URL"},
-        {8453, "ASH_TEMPLATE_BASE_NODE_URL"},
-        {1, "ASH_TEMPLATE_ETHEREUM_NODE_URL"}
-      ],
-      node_url = System.get_env(setting),
-      into: %{} do
-    case URI.new(node_url) do
-      {:ok, %URI{scheme: scheme, host: host}}
-      when scheme in ["http", "https"] and host not in [nil, ""] ->
-        {chain_id, node_url}
+  node_overrides =
+    for {chain_id, setting} <- [
+          {wallet_chain_id, "ASH_TEMPLATE_CHAIN_NODE_URL"},
+          {8453, "ASH_TEMPLATE_BASE_NODE_URL"},
+          {1, "ASH_TEMPLATE_ETHEREUM_NODE_URL"}
+        ],
+        node_url = System.get_env(setting),
+        into: %{} do
+      case URI.new(node_url) do
+        {:ok, %URI{scheme: scheme, host: host}}
+        when scheme in ["http", "https"] and host not in [nil, ""] ->
+          {chain_id, node_url}
 
-      _invalid ->
-        raise "#{setting} must be an http or https address"
+        _invalid ->
+          raise "#{setting} must be an http or https address"
+      end
     end
-  end
 
-config :ash_template,
-       :chain_nodes,
-       Map.merge(Application.fetch_env!(:ash_template, :chain_nodes), node_overrides)
+  config :ash_template,
+         :chain_nodes,
+         Map.merge(Application.fetch_env!(:ash_template, :chain_nodes), node_overrides)
+end
 
 # The Privy accounts that may give Credits and handle refunds, comma separated.
 if admins = System.get_env("REGENT_CREDITS_ADMINS") do
@@ -81,14 +83,16 @@ if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
 end
 
 # Each sign-in reads the wallet's ENS name from Ethereum mainnet while this
-# endpoint is set (AshTemplate.Accounts.EnsIdentity).
-if ethereum_read_rpc_url = System.get_env("ETHEREUM_READ_RPC_URL") do
-  case URI.new(ethereum_read_rpc_url) do
-    {:ok, %URI{scheme: "https", host: host}} when host not in [nil, ""] ->
-      config :ash_template, :ethereum_read_rpc_url, ethereum_read_rpc_url
+# endpoint is set (AshTemplate.Accounts.EnsIdentity). Tests never read it.
+if config_env() != :test do
+  if ethereum_read_rpc_url = System.get_env("ETHEREUM_READ_RPC_URL") do
+    case URI.new(ethereum_read_rpc_url) do
+      {:ok, %URI{scheme: "https", host: host}} when host not in [nil, ""] ->
+        config :ash_template, :ethereum_read_rpc_url, ethereum_read_rpc_url
 
-    _invalid ->
-      raise "ETHEREUM_READ_RPC_URL must be an https address"
+      _invalid ->
+        raise "ETHEREUM_READ_RPC_URL must be an https address"
+    end
   end
 end
 
