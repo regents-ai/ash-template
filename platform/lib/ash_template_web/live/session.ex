@@ -9,6 +9,9 @@ defmodule AshTemplateWeb.Live.Session do
   alias AshTemplateWeb.ClientAddress
 
   @public_root "/"
+  # The topics that carry one account's own Notes, Activity, Points, mutes and
+  # chats; a page subscribes to them only while that account is signed in.
+  @account_topics ["notes:", "notifications:", "points:", "mutes:", "chat:"]
 
   @doc """
   What the render knew, signed into the static LiveView token. The token is
@@ -85,9 +88,12 @@ defmodule AshTemplateWeb.Live.Session do
   # present it as authority, and a page that stays open says the sign-in ended
   # (`signed_out_reason: :expired`) rather than that no one signed in. A
   # finished ENS lookup reads the account again, so the header shows the name
-  # and picture it found. Components receive the lease as `session_lease` and
-  # check it on their own events (`check_component_events/1`); one that finds
-  # it lapsed asks the page to withdraw the principal here.
+  # and picture it found. A change to the account's own data (its Credits,
+  # agents or one of `@account_topics`) is read again only while the lease
+  # holds; one that has lapsed renders signed out instead. Components receive
+  # the lease as `session_lease` and check it on their own events
+  # (`check_component_events/1`); one that finds it lapsed asks the page to
+  # withdraw the principal here.
   defp hold(socket, lineage, account) do
     lease = %{lineage: lineage, account_id: account.id}
     ens_topic = EnsIdentity.topic(account.id)
@@ -110,6 +116,14 @@ defmodule AshTemplateWeb.Live.Session do
       {__MODULE__, :component_lease_lapsed}, socket ->
         {_cont_or_halt, socket} = recheck(socket, lease, & &1)
         {:halt, socket}
+
+      message, socket when message in [:credits_changed, :agents_changed] ->
+        recheck(socket, lease, & &1)
+
+      %{topic: topic}, socket ->
+        if String.starts_with?(topic, @account_topics),
+          do: recheck(socket, lease, & &1),
+          else: {:cont, socket}
 
       _message, socket ->
         {:cont, socket}
