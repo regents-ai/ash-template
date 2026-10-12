@@ -186,12 +186,6 @@
   border-inline-start-color: var(--ash-accent-warm);
 }
 
-/* Session */
-
-.account-session {
-  justify-items: start;
-}
-
 @media (max-width: 30rem) {
   .verified-connections__list li {
     align-items: stretch;

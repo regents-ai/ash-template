@@ -171,7 +171,6 @@ defmodule AshTemplateWeb.AgentsPanel do
         <:footer>
           <Regent.Account.pairing
             id={"#{@id}-pair"}
-            site="Ash Template"
             harnesses={harnesses()}
             phx-change="issue_pairing_code"
             phx-submit="issue_pairing_code"

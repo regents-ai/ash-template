@@ -1232,3 +1232,11 @@ Operations
   fill the error table. Ash's Invalid and Forbidden errors count as the
   visitor's; Unknown and Framework errors, other server faults, exits and throws
   are saved (security chief request).
+
+## 2026-10-12 — Account page: Credits beside Profile
+
+- Profile and Credits share a row and the agents take the row below, so no
+  card stands alone. Sign out lives in the side panel only, so the account
+  page no longer has a Session card. The Points page calls its card "Balance"
+  under the page's own Points title, and the pairing box asks "Choose the agent
+  to pair". Pins design-system `a97eb2b` (Sean, UI-POLISH-1 b).

@@ -30,7 +30,7 @@ defmodule AshTemplateWeb.AccountLive do
       account={@account}
       signed_out_reason={@signed_out_reason}
     >
-      <:tip>Your profile, your agents, your Credits and this browser's session.</:tip>
+      <:tip>Your profile, your Credits and your agents.</:tip>
       <div class="account-grid">
         <Regent.HolographicCard.card
           id="account-identity"
@@ -68,13 +68,6 @@ defmodule AshTemplateWeb.AccountLive do
           </dl>
         </section>
 
-        <.live_component
-          module={AshTemplateWeb.AgentsPanel}
-          id="account-agents"
-          lease={@lease}
-          account={@account}
-        />
-
         <Regent.Account.credits_summary
           :if={@account}
           id="account-credits"
@@ -87,17 +80,12 @@ defmodule AshTemplateWeb.AccountLive do
           <a href="https://regents.sh/account">Manage Credits on regents.sh</a>
         </Regent.Account.credits_summary>
 
-        <section class="account-panel account-session" aria-labelledby="account-session-title">
-          <h2 id="account-session-title">
-            Session
-            <Regent.Primitives.tip id="account-session-tip" label="About signing out">
-              Signing out ends the session on this browser only.
-            </Regent.Primitives.tip>
-          </h2>
-          <Regent.Primitives.button type="button" variant="secondary" data-account-target="sign-out">
-            Sign out
-          </Regent.Primitives.button>
-        </section>
+        <.live_component
+          module={AshTemplateWeb.AgentsPanel}
+          id="account-agents"
+          lease={@lease}
+          account={@account}
+        />
       </div>
     </.settings_page>
     """
