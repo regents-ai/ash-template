@@ -3,7 +3,7 @@ defmodule AshTemplateWeb.AgentsPanel do
   The agents a person has paired with their account (`RegentAgents`), in the
   shared agents list (`Regent.Account.agents`), a way to pair another by
   choosing it and pasting it a message, and a larger view of one agent with
-  what it has done across the Regent sites (`AshTemplate.AgentActivity`) and
+  what it has done across the Regent sites (`RegentAgents.Activity`) and
   Unpair.
 
   Pairing immediately lets an agent read and change the person's notes and
@@ -18,10 +18,18 @@ defmodule AshTemplateWeb.AgentsPanel do
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.AgentActivity
   alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
-  alias RegentAgents.{Harness, HumanBacking, PairedAgent, PairingCode, Person}
+
+  alias RegentAgents.{
+    Activity,
+    Harness,
+    HumanBacking,
+    PairedAgent,
+    PairingCode,
+    PairingMessage,
+    Person
+  }
 
   # Stands in for a code before one is made, so the message keeps its size.
   @no_code String.duplicate("X", 24)
@@ -374,7 +382,7 @@ defmodule AshTemplateWeb.AgentsPanel do
   end
 
   defp read_activity(socket, agent),
-    do: start_async(socket, {:agent_activity, agent.id}, fn -> AgentActivity.recent(agent) end)
+    do: start_async(socket, {:agent_activity, agent.id}, fn -> Activity.recent(agent) end)
 
   defp load_more_activity(
          %{assigns: %{detail: %{agent: %{id: id} = agent, next: next, more: more} = detail}} =
@@ -384,26 +392,14 @@ defmodule AshTemplateWeb.AgentsPanel do
        when is_binary(next) and more != :loading do
     socket
     |> assign(detail: %{detail | more: :loading, paged: true})
-    |> start_async({:more_agent_activity, id}, fn -> AgentActivity.recent(agent, next) end)
+    |> start_async({:more_agent_activity, id}, fn -> Activity.recent(agent, next) end)
   end
 
   defp load_more_activity(socket, _id), do: socket
 
-  # What the person pastes to their agent. Muse runs where siwa.regents.sh may
-  # not answer, so its message names the sign-in service's other address.
-  defp agent_message(code, :muse) do
-    agent_message(code, nil) <>
-      "\nIf siwa.regents.sh doesn't answer from your host, set " <>
-      "SIWA_BROKER=https://siwa-server.fly.dev and try again."
-  end
-
-  defp agent_message(code, _harness) do
-    """
-    Pair with my Ash Template account.
-    Pairing code: #{code}
-    Follow the "Pair with a person's account" steps at #{AshTemplateWeb.Endpoint.url()}/llms.txt\
-    """
-  end
+  # What the person pastes to their agent.
+  defp agent_message(code, harness),
+    do: PairingMessage.text(code, "Ash Template", AshTemplateWeb.Endpoint.url(), harness)
 
   defp moment(datetime), do: Calendar.strftime(datetime, "%-d %B %Y, %H:%M UTC")
 end
