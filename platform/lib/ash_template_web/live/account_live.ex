@@ -20,8 +20,6 @@ defmodule AshTemplateWeb.AccountLive do
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
   attr :account_control, :map, required: true
-  attr :credits, Decimal, default: nil
-  attr :balance, :map, default: nil
   attr :credits_read, AshTemplateWeb.Read, default: %AshTemplateWeb.Read{}
 
   def profile(assigns) do
@@ -80,8 +78,10 @@ defmodule AshTemplateWeb.AccountLive do
         <div :if={@account} class="account-credits">
           <Regent.Account.credits_summary
             id="account-credits"
-            available={@balance && RegentCredits.Amount.format(@balance.available)}
-            held={@balance && RegentCredits.Amount.format(@balance.held)}
+            available={
+              @credits_read.value && RegentCredits.Amount.format(@credits_read.value.available)
+            }
+            held={@credits_read.value && RegentCredits.Amount.format(@credits_read.value.held)}
             state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
           />
           <a href="https://regents.sh/account">Manage Credits on regents.sh</a>

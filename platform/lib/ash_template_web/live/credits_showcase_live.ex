@@ -141,8 +141,14 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
     read_balance(socket)
   end
 
+  # Read in place, so the panel always has a value; the shell's reading can
+  # also be loading or failed.
   defp read_balance(socket),
-    do: assign(socket, :balance, RegentCredits.balance(@account.privy_user_id))
+    do:
+      assign(socket, :credits, %{
+        state: :ready,
+        value: RegentCredits.balance(@account.privy_user_id)
+      })
 
   defp hold_words({:ok, hold}), do: "The agent now holds #{Amount.format(hold.amount)}."
 
@@ -272,7 +278,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
             id="credits-panel"
             lease={nil}
             account={@account}
-            balance={@balance}
+            credits={@credits}
           />
         </section>
 

@@ -53,9 +53,9 @@ defmodule AshTemplateWeb.Components.Shell do
 
   attr :unread, :integer, default: nil, doc: "Unread notifications; nil when signed out."
 
-  attr :credits, Decimal,
+  attr :credits, :map,
     default: nil,
-    doc: "The Credits available to spend; nil when signed out."
+    doc: "The account's Credits reading (`state` and `value`); nil when signed out."
 
   attr :jobs_running, :integer, required: true
   attr :healthy, :boolean, required: true
@@ -167,7 +167,7 @@ defmodule AshTemplateWeb.Components.Shell do
           type="button"
           aria-haspopup="dialog"
           aria-controls="shell-credits"
-          aria-label={RegentCredits.Amount.format(@credits)}
+          aria-label={credits_label(@credits)}
           phx-hook="MotionCount"
           data-variant="flash"
         >
@@ -493,11 +493,23 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  attr :amount, Decimal, required: true
+  defp credits_label(%{value: nil, state: :error}), do: "Credits unavailable"
+  defp credits_label(%{value: nil}), do: "Credits loading"
+  defp credits_label(%{value: balance}), do: RegentCredits.Amount.format(balance.available)
 
-  # "12.40 Credits", whose unit a phone's header leaves out for room.
-  defp credits_amount(assigns) do
-    [number, unit] = String.split(RegentCredits.Amount.format(assigns.amount), " ", parts: 2)
+  attr :amount, :map, required: true
+
+  # "12.40 Credits", whose unit a phone's header leaves out for room. Until the
+  # balance is read, or when it can't be, the figure is a dash; the button and
+  # the Buy Credits panel behind it are there either way.
+  defp credits_amount(%{amount: %{value: nil}} = assigns) do
+    ~H"""
+    <span data-count>—</span> <span class="shell-credits__unit">Credits</span>
+    """
+  end
+
+  defp credits_amount(%{amount: %{value: balance}} = assigns) do
+    [number, unit] = String.split(RegentCredits.Amount.format(balance.available), " ", parts: 2)
     assigns = assign(assigns, number: number, unit: unit)
 
     ~H"""

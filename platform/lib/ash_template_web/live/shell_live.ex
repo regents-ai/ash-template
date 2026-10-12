@@ -183,7 +183,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   @impl true
   def handle_async({Read, :credits_read, _generation} = name, result, socket) do
-    {:noreply, socket |> Read.settle(name, result) |> show_credits()}
+    {:noreply, Read.settle(socket, name, result)}
   end
 
   def handle_async({Read, _name, _generation} = name, result, socket) do
@@ -295,21 +295,20 @@ defmodule AshTemplateWeb.ShellLive do
       shell_instance={@shell_instance}
       checklist={checklist(@progress)}
       unread={@unread}
-      credits={signed_in_credits(@access_context, @credits)}
+      credits={signed_in_credits(@access_context, @credits_read)}
       jobs_running={@jobs_running}
       healthy={@healthy}
       version={@version}
       search={@search}
       assistant={@assistant}
     >
-      <:credits_panel :if={signed_in_credits(@access_context, @credits)}>
+      <:credits_panel :if={signed_in_credits(@access_context, @credits_read)}>
         <.live_component
           module={AshTemplateWeb.CreditsPanel}
           id="credits-panel"
           lease={@session_lease}
           account={current_account(@access_context)}
-          balance={@balance}
-          credits_read={@credits_read}
+          credits={@credits_read}
         />
       </:credits_panel>
       <:content>
@@ -359,8 +358,6 @@ defmodule AshTemplateWeb.ShellLive do
           lease={@session_lease}
           account={current_account(@access_context)}
           account_control={@account_control}
-          credits={@credits}
-          balance={@balance}
           credits_read={@credits_read}
         />
 
@@ -507,8 +504,10 @@ defmodule AshTemplateWeb.ShellLive do
   defp current_account(_access_context), do: nil
 
   # A sign-in that ends while the page is open withdraws the account, and its
-  # balance and the Buy Credits panel go with it.
-  defp signed_in_credits(access_context, credits), do: current_account(access_context) && credits
+  # balance and the Buy Credits panel go with it. While signed in, the panel and
+  # its wallet buttons are there whatever the reading.
+  defp signed_in_credits(access_context, credits_read),
+    do: current_account(access_context) && credits_read
 
   defp human_actor(%{assigns: %{access_context: %{principal: {:human, account}}}}),
     do: Human.for_account(account)
@@ -547,23 +546,15 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp read_credits(socket) do
-    socket =
-      case current_account(socket.assigns.access_context) do
-        nil ->
-          Read.clear(socket, :credits_read)
+    case current_account(socket.assigns.access_context) do
+      nil ->
+        Read.clear(socket, :credits_read)
 
-        account ->
-          Read.start(socket, :credits_read, account.privy_user_id, fn ->
-            {:ok, RegentCredits.balance(account.privy_user_id)}
-          end)
-      end
-
-    show_credits(socket)
-  end
-
-  defp show_credits(socket) do
-    balance = socket.assigns.credits_read.value
-    assign(socket, balance: balance, credits: balance && balance.available)
+      account ->
+        Read.start(socket, :credits_read, account.privy_user_id, fn ->
+          {:ok, RegentCredits.balance(account.privy_user_id)}
+        end)
+    end
   end
 
   defp count_unread(socket) do

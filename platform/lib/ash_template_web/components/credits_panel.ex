@@ -15,8 +15,9 @@ defmodule AshTemplateWeb.CreditsPanel do
   too little USDC. Explanations wait in tips; the panel shows figures, choices,
   presses and outcomes.
 
-  The parent passes `account` (the signed-in account), its `balance`
-  (`RegentCredits.balance/1`, kept current by the parent), its `session_lease`
+  The parent passes `account` (the signed-in account), its `credits` reading
+  (`state` and the `RegentCredits.balance/1` value, kept current by the
+  parent; until it has a value the figures show a dash), its `session_lease`
   as `lease` and `id`.
   """
   use AshTemplateWeb, :live_component
@@ -55,7 +56,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   def update(%{account: account} = assigns, socket) do
     {:ok,
      socket
-     |> assign(id: assigns.id, lease: assigns.lease, balance: assigns.balance)
+     |> assign(id: assigns.id, lease: assigns.lease, credits: assigns.credits)
      |> take_account(account)}
   end
 
@@ -373,9 +374,9 @@ defmodule AshTemplateWeb.CreditsPanel do
           data-variant="flash"
         >
           <dt>Regents Credits</dt>
-          <dd data-count>{figure(@balance.available)}</dd>
+          <dd><span data-count>{figure(@credits, :available)}</span>{missing(@credits)}</dd>
           <dt>Active Bids</dt>
-          <dd data-count>{figure(@balance.held)}</dd>
+          <dd><span data-count>{figure(@credits, :held)}</span>{missing(@credits)}</dd>
         </dl>
         <a
           class="credits-panel__history"
@@ -577,8 +578,18 @@ defmodule AshTemplateWeb.CreditsPanel do
   defp stalled?(entry, nil), do: Presses.stalled?(entry)
   defp stalled?(_entry, _shown), do: false
 
-  defp figure(amount),
-    do: amount |> Amount.format() |> String.replace_suffix(" Credits", "")
+  # Until the balance is read, or when it can't be, each figure is a dash, as
+  # in the header; a word beside it would wrap on a phone and move the buttons.
+  defp figure(%{value: nil}, _field), do: "—"
+
+  defp figure(%{value: balance}, field),
+    do: balance |> Map.fetch!(field) |> Amount.format() |> String.replace_suffix(" Credits", "")
+
+  defp missing(%{value: nil, state: :error} = assigns),
+    do: ~H|<span class="visually-hidden">Unavailable</span>|
+
+  defp missing(%{value: nil} = assigns), do: ~H|<span class="visually-hidden">Loading</span>|
+  defp missing(_credits), do: nil
 
   defp state(entry, nil), do: OnchainSteps.describe(entry, chain_name_of(entry)).state
   defp state(_entry, %{purchase: :reporting}), do: :checking
