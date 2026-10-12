@@ -68,7 +68,7 @@ The registry replaces today's hard-coded Base in `RegentPayments.USDC`, as a har
 - A person may choose **Create a payments wallet**: a user-owned Privy embedded wallet on the same Privy user.
 - **One wallet across sites.** Before any site turns this on, prove it on two sites (Regents account page and Patchbay): both must find the same wallet, with no second user and no second default wallet.
 - **Privy Global Wallets** is evaluated for this. Its access request is Sean's.
-- Knowing a wallet belongs to someone is never permission to spend from it. Agent spending from a payments wallet is approved in principle (Sean, 12 Oct, 86 a) only within limits Sean names; see "Agent spending" below. Server spending stays a separate decision.
+- Knowing a wallet belongs to someone is never permission to spend from it. Agents never spend from a person's wallet; see "Agent spending" below. Server spending stays a separate decision.
 
 ## Provider facts (checked in the docs, 5 Oct)
 
@@ -158,31 +158,12 @@ A new `/showcase/funds` page beside `/showcase/payments`, built from real compon
 
 Checked at desktop and phone widths, in light and dark, and with the keyboard, as for the other showcase pages.
 
-## Agent spending (Sean, 12 Oct 2026, 85 b and 86 a)
+## Agent spending (Sean, 12 Oct 2026: 92, 98, 99, 100)
 
-- Privy's "Enable for CLI and agent access" stays on, with its approval page at https://regents.sh/account until the page below ships (85 b).
-- A person may approve their own agent to pay from their payments wallet, through Privy's agent approval (an agent asks, the person approves on our page, the agent then signs at Privy). Sign-in on every site stays SIWA; an agent approval is never a way to sign in to a site.
-- Limits first: Sean names which actions, recipients, tokens, chains, cap and expiry an approved agent gets. No code is written before that.
-- The limits are held by Privy's own wallet rules, which it checks inside its secure hardware before signing. Rules kept only in our command-line tool are not limits, because any program holding the approval can ignore them. Whether Privy's rules hold an approved agent is not stated in Privy's docs, so a live check proves it before any page ships; if they do not, the work stops and goes back to Sean.
-- Order: the limits, then the payments wallet (template first, with the limits attached), then the live check, then a page of its own at https://regents.sh/authorize with a list of approvals and Revoke on Account, then `wallet connect` in regents-cli keeping its tokens in the Mac keychain. Each release has its own go.
-- Before the page ships, a real approval's token is checked against `RegentPrivy.verify_token` to learn whether a site would take it as a browser sign-in; the result goes to Sentinel. The approval is made with Sean's own account only and revoked straight after. Sentinel gets the token's claim names (never values) and whether the approval could fetch an identity token (from `users/me` or a session refresh).
-- If the approval's token carries a session id and can fetch an identity token, and no claim tells it apart from a browser token, the approval page does not ship and the question goes back to Sean (Sentinel, 12 Oct, risk R1). Requiring the identity token's session id to match is not the fix: Privy does not document a session id on identity tokens.
-
-### The limits (Sean, 12 Oct 2026, 88 a) and why the work stopped
-
-- Limits: USDC on Base only; sends and x402 payments only; only to Regent sites' published payment addresses; 10 USDC a payment and 50 USDC a day for each wallet, shared by every agent the person approves; approvals last 7 days.
-- Stopped before any code (88.1 a). In Privy's docs an approved agent signs as the wallet's owner, so the wallet's rules would bind the person as tightly as the agent; Privy's daily totals do not count x402 payments; the owner may change the rules and export the key, and the docs do not say whether an approved agent can; and an approval has no id, so Revoke cannot name one agent.
-- Put to Sean as item 90: agents become limited co-signers instead (Privy's "user-owned wallets with agent signers"). The person owns the wallet with no limits on themselves; each agent is a separate signer with its own rules; signers cannot change signers, owners or rules, or export the key. The agent's key stays in its Mac keychain, its requests reach Privy only through our server (Privy needs our app secret), and our server keeps the daily total with x402 counted. Privy's agent approval switch would go off.
-
-Sentinel's conditions for the co-signer design, each shown live on https://template.regents.sh before release:
-
-1. Every agent signer is created with its rules attached; none exists without them.
-2. Privy refuses an agent's send to an address outside the rules and one over 10 USDC.
-3. Our server refuses a request that would take the day past 50 USDC, x402 included. It records the payment, then signs; the total is held by a database constraint or one locked update, never a read and then a check in code.
-4. An agent signer is refused when it tries to add a signer, change the owner or rules, or export the key; one refused attempt of each is shown.
-5. The app secret is only on the server and the agent's key only in the Mac keychain; neither appears in logs or on any page.
-6. Privy's agent approval switch is off, with no `device_verify` call and no page that approves a user code.
-7. Revoke removes the signer at Privy, and that signer's next request is refused.
+- An agent never signs with, or for, a person's Privy wallet. A paired agent has its own wallet, its SIWA agent key, and the pairing lets it spend the person's Regents Credits within the limits the person sets (98).
+- Privy's "Enable for CLI and agent access" is off (92).
+- Dropped: Privy's agent approval, and agents as limited signers on a person's Privy wallet. The app's embedded wallets lack the TEE access agent signers need (100).
+- Network fees: Regent sponsors them (99 b); what that covers with no payments wallet is open with Sean.
 
 ## Order of work
 
