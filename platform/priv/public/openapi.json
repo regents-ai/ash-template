@@ -2651,6 +2651,193 @@
         }
       }
     },
+    "/tools/notes/{id}/pin": {
+      "post": {
+        "operationId": "pinNoteAsAgent",
+        "summary": "Pin a note to the top of your person's notes, for 1 Credit.",
+        "description": "Signed; needs a pairing. A browser sign-in does not work here. Costs 1 of your person's Credits, within the spending they allow you on their Regents account; a refused pin, or a note already pinned, costs nothing.",
+        "security": [
+          {
+            "siwaProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiwaReceipt"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaKeyId"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentWallet"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentChainId"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignatureInput"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignature"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDigest"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "A UUID you make for this pin. Keep it when retrying; a retry never pays twice."
+                  }
+                },
+                "required": [
+                  "operation_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AgentVerificationFailed"
+          },
+          "404": {
+            "$ref": "#/components/responses/AgentNotPaired"
+          },
+          "429": {
+            "$ref": "#/components/responses/AgentRateLimited"
+          },
+          "409": {
+            "$ref": "#/components/responses/AgentRequestReplayed"
+          },
+          "503": {
+            "$ref": "#/components/responses/AgentVerificationUnavailable"
+          },
+          "default": {
+            "$ref": "#/components/responses/AgentSignInRefused"
+          },
+          "403": {
+            "description": "The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in at /account and pair you, then send the request again. Or your person has not allowed this spend: spending_not_allowed, spending_not_on_this_site, spending_over_limit_per_spend or spending_over_daily_limit. GET /tools/account/balances shows your limits."
+          },
+          "402": {
+            "description": "Your person does not have enough Credits for this pin (not_enough_credits). Nothing was pinned or taken."
+          },
+          "422": {
+            "description": "operation_id is missing or is not a UUID (invalid_pin); details says why."
+          }
+        }
+      }
+    },
+    "/tools/notes/{id}/unpin": {
+      "post": {
+        "operationId": "unpinNoteAsAgent",
+        "summary": "Unpin one of your person's notes. Free.",
+        "description": "Signed; needs a pairing. A browser sign-in does not work here.",
+        "security": [
+          {
+            "siwaProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiwaReceipt"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaKeyId"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentWallet"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentChainId"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignatureInput"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignature"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDigest"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AgentVerificationFailed"
+          },
+          "404": {
+            "$ref": "#/components/responses/AgentNotPaired"
+          },
+          "429": {
+            "$ref": "#/components/responses/AgentRateLimited"
+          },
+          "409": {
+            "$ref": "#/components/responses/AgentRequestReplayed"
+          },
+          "503": {
+            "$ref": "#/components/responses/AgentVerificationUnavailable"
+          },
+          "default": {
+            "$ref": "#/components/responses/AgentSignInRefused"
+          },
+          "403": {
+            "description": "The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in at /account and pair you, then send the request again."
+          }
+        }
+      }
+    },
     "/tools/account/balances": {
       "get": {
         "operationId": "getAccountBalances",

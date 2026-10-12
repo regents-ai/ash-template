@@ -13,6 +13,9 @@ defmodule AshTemplate.Notes.Note do
   When the server can ask Jev, each save also asks which label fits the note
   (`AshTemplate.Notes.Decision`); `label_decision` is the latest one.
 
+  A pinned note comes first among its writer's notes. An agent pinning one
+  costs that person one Regent Credit (`Pin`); unpinning is free.
+
   A note an agent writes for its person is offered to Regent Points
   (`AgentNotePoints`).
   """
@@ -29,6 +32,7 @@ defmodule AshTemplate.Notes.Note do
     AskForLabel,
     AskingJev,
     DeliverWebhook,
+    Pin,
     RecordWebhook,
     WebhookAddressSet
   }
@@ -56,6 +60,9 @@ defmodule AshTemplate.Notes.Note do
     # How the latest save's post to the site owner's address went; nil while no
     # address is set.
     attribute :webhook_state, :atom, constraints: [one_of: [:pending, :sent, :failed]]
+
+    # When the note was pinned to the top of its writer's notes; nil when it is not.
+    attribute :pinned_at, :utc_datetime_usec, public?: true
   end
 
   relationships do
@@ -84,7 +91,7 @@ defmodule AshTemplate.Notes.Note do
     end
 
     read :mine do
-      prepare build(sort: [inserted_at: :desc])
+      prepare build(sort: [pinned_at: :desc_nils_last, inserted_at: :desc])
     end
 
     # The person's notes whose title or text holds `text`, in any case.
@@ -142,6 +149,20 @@ defmodule AshTemplate.Notes.Note do
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       change AskForLabel, where: [AskingJev]
+    end
+
+    update :pin do
+      require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      argument :operation_id, :uuid, allow_nil?: false
+      change get_and_lock_for_update()
+      change Pin
+    end
+
+    update :unpin do
+      require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change set_attribute(:pinned_at, nil)
     end
 
     update :send_webhook do
@@ -208,6 +229,8 @@ defmodule AshTemplate.Notes.Note do
 
     publish_all :create, [:human_account_id]
     publish :update, [:human_account_id]
+    publish :pin, [:human_account_id]
+    publish :unpin, [:human_account_id]
     publish_all :destroy, [:human_account_id]
   end
 

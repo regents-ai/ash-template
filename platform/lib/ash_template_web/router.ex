@@ -237,6 +237,8 @@ defmodule AshTemplateWeb.Router do
     post "/notes", PageToolsController, :create_note
     post "/notes/search", PageToolsController, :search_notes
     get "/notes/:id", PageToolsController, :note
+    post "/notes/:id/pin", PageToolsController, :pin_note
+    post "/notes/:id/unpin", PageToolsController, :unpin_note
   end
 
   # Before the product shell, whose `/chat/:conversation_id` would take `original`.

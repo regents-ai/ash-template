@@ -25,6 +25,15 @@ defmodule AshTemplate.Notes do
         action: :update,
         default_options: [load: [:label_decision, :changed_by_agent]]
 
+      define :pin_note,
+        action: :pin,
+        args: [:operation_id],
+        default_options: [load: [:label_decision, :changed_by_agent]]
+
+      define :unpin_note,
+        action: :unpin,
+        default_options: [load: [:label_decision, :changed_by_agent]]
+
       define :destroy_note, action: :destroy
     end
 

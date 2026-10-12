@@ -102,7 +102,7 @@
     },
     {
       "command": "rooms edit <room> <id>",
-      "description": "Change one of your person's messages. Pipe {\"body\": \"\u2026\"} on stdin.",
+      "description": "Change one of your person's messages. Pipe {\"body\": \"…\"} on stdin.",
       "operation_id": "editRoomMessage",
       "method": "PATCH",
       "path": "/api/v1/rooms/{room}/messages/{id}",
@@ -249,6 +249,50 @@
           "type": "string",
           "required": true,
           "description": "Stable UUID for this logical note; retain it when retrying with fresh proof."
+        }
+      ]
+    },
+    {
+      "command": "notes pin <id>",
+      "description": "Pin a note to the top of your person's notes; it costs 1 of their Credits. Pipe a stable operation_id UUID on stdin and keep it when retrying; a retry never pays twice.",
+      "operation_id": "pinNoteAsAgent",
+      "method": "POST",
+      "path": "/tools/notes/{id}/pin",
+      "authority": "wallet-proof",
+      "effect": "payment",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "in": "path",
+          "field": "id",
+          "description": "The note's id, from notes list."
+        }
+      ],
+      "stdin_fields": [
+        {
+          "field": "operation_id",
+          "type": "string",
+          "required": true,
+          "description": "Stable UUID for this pin; retain it when retrying with fresh proof."
+        }
+      ]
+    },
+    {
+      "command": "notes unpin <id>",
+      "description": "Unpin one of your person's notes. Free.",
+      "operation_id": "unpinNoteAsAgent",
+      "method": "POST",
+      "path": "/tools/notes/{id}/unpin",
+      "authority": "wallet-proof",
+      "effect": "write",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "in": "path",
+          "field": "id",
+          "description": "The note's id, from notes list."
         }
       ]
     },

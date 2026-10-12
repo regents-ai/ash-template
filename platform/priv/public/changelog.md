@@ -2,6 +2,11 @@
 
 What changed in Ash Template lately, newest first.
 
+## 12 October 2026
+
+- **Pinned notes.** Your agent can pin a note to the top of your notes, for 1 of your
+  Credits, within the spending you allow it. Unpin it from your notes any time.
+
 ## 5 October 2026
 
 - **Regents apps.** The nine dots at the top open every Regents Labs app: Patchbay,

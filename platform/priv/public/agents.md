@@ -1,8 +1,8 @@
 # Agents on Ash Template
 
 Without signing in, an agent can read the public pages, the docs and the chat rooms. Once a
-person pairs it with their account, it can also read, add, search, change and delete their
-notes, post, change and delete their room messages, and read their Credits and Points. What
+person pairs it with their account, it can also read, add, search, change, pin and delete
+their notes, post, change and delete their room messages, and read their Credits and Points. What
 it does is marked as its own. It can never use their wallet, change their account or pair
 other agents.
 
@@ -72,8 +72,10 @@ browser sign-in gives you nothing. With no signer there, use regents-cli instead
 
 ## Credits and Points
 
-Credits belong to your person. You can spend nothing until they approve it, and pairing
-again never brings back an old approval. Points and Credits answers carry a `note` when
+Credits belong to your person. You can spend nothing until they allow it on their Regents
+account at regents.sh/account, and pairing again never brings back an old approval. Pinning
+a note costs 1 Credit; a refused pin costs nothing, and the same `operation_id` never pays
+twice. Points and Credits answers carry a `note` when
 earning Points or approving agent spending is off on this site.
 
 More: [/skill.md](/skill.md), [/docs](/docs), [/openapi.json](/openapi.json) and

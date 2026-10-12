@@ -10,7 +10,8 @@ defmodule AshTemplateWeb.NotesLive do
   its label decision's PubSub notifiers publish it after the transaction
   commits, the shell holds the subscription, and hands it on here as
   `send_update(NotesLive, id: "notes", change: {event, note_or_decision})`.
-  Any change but a delete reads the note again with its latest label.
+  Any change but a delete reads the note again with its latest label; a pin or
+  unpin reads the list again, since pinned notes come first.
   """
 
   use AshTemplateWeb, :live_component
@@ -92,6 +93,17 @@ defmodule AshTemplateWeb.NotesLive do
 
       failure ->
         {:noreply, assign(socket, :notice, notice(failure, "rated"))}
+    end
+  end
+
+  def handle_event("unpin", %{"id" => id}, socket) do
+    actor = socket.assigns.actor
+
+    with {:ok, %Note{} = note} <- Notes.get_my_note(id, actor: actor),
+         {:ok, _note} <- Notes.unpin_note(note, actor: actor) do
+      {:noreply, assign(socket, :notice, nil)}
+    else
+      failure -> {:noreply, assign(socket, :notice, notice(failure, "unpinned"))}
     end
   end
 
@@ -209,6 +221,7 @@ defmodule AshTemplateWeb.NotesLive do
               No notes yet. Write your first one with the form.
             </li>
             <li :for={{dom_id, note} <- @streams.notes} id={dom_id} class="notes-item">
+              <Primitives.status :if={note.pinned_at} tone="info">Pinned</Primitives.status>
               <h3>{note.title}</h3>
               <p :if={note.body}>{note.body}</p>
               <p :if={note.changed_by_agent} class="rg-muted">
@@ -224,6 +237,16 @@ defmodule AshTemplateWeb.NotesLive do
                   phx-target={@myself}
                 >
                   Edit
+                </Primitives.button>
+                <Primitives.button
+                  :if={note.pinned_at}
+                  type="button"
+                  variant="quiet"
+                  phx-click="unpin"
+                  phx-value-id={note.id}
+                  phx-target={@myself}
+                >
+                  Unpin
                 </Primitives.button>
                 <Primitives.button
                   type="button"
@@ -295,11 +318,13 @@ defmodule AshTemplateWeb.NotesLive do
     |> assign(form: nil, editing: nil, notice: nil)
   end
 
-  defp load(%{assigns: %{actor: actor}} = socket) do
-    socket
-    |> Read.start(:notes, actor.human_account_id, fn -> Notes.list_my_notes(actor: actor) end)
-    |> new_form()
-  end
+  defp load(socket), do: socket |> reread() |> new_form()
+
+  defp reread(%{assigns: %{actor: actor}} = socket),
+    do:
+      Read.start(socket, :notes, actor.human_account_id, fn ->
+        Notes.list_my_notes(actor: actor)
+      end)
 
   # A failed read keeps the notes already on the page, so only a read that
   # landed replaces them.
@@ -317,6 +342,7 @@ defmodule AshTemplateWeb.NotesLive do
     if socket.assigns.editing == note.id, do: new_form(socket), else: socket
   end
 
+  defp apply_change(socket, event, %Note{}) when event in ["pin", "unpin"], do: reread(socket)
   defp apply_change(socket, _event, %Note{id: id}), do: refresh(socket, id)
   defp apply_change(socket, _event, %Decision{note_id: id}), do: refresh(socket, id)
 

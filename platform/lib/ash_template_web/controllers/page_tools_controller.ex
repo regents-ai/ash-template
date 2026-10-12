@@ -15,6 +15,7 @@ defmodule AshTemplateWeb.PageToolsController do
   alias AshTemplate.Notes.Note
   alias AshTemplateWeb.NotesJSON
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentCredits.Errors.{NotEnoughCredits, Refused}
   alias RegentPoints.{Amount, Rules}
 
   plug :paired_agent
@@ -37,6 +38,24 @@ defmodule AshTemplateWeb.PageToolsController do
        "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying. If that operation_id was used before, the note exists: read it with notes_get."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
+    "invalid_pin" =>
+      {422, "The note could not be pinned.",
+       "details says why. Send operation_id, a UUID you make for this pin and keep when retrying."},
+    "not_enough_credits" =>
+      {402, "Your person does not have enough Credits for this.",
+       "Ask your person to buy Credits on regents.sh, then retry with the same operation_id and fresh proof."},
+    "spending_not_allowed" =>
+      {403, "Your person has not allowed you to spend their Credits.",
+       "Ask your person to allow you to spend on their Regents account at regents.sh/account, with this site included. account_balances shows your current limits."},
+    "spending_not_on_this_site" =>
+      {403, "Your person has not allowed you to spend Credits on this site.",
+       "Ask your person to add this site to the sites you may spend on, on their Regents account at regents.sh/account. account_balances shows your current limits."},
+    "spending_over_limit_per_spend" =>
+      {403, "This costs more than your person lets you spend at once.",
+       "account_balances shows your limit per spend. Ask your person to raise it."},
+    "spending_over_daily_limit" =>
+      {403, "This would go over the daily limit your person set for you.",
+       "account_balances shows what is left over the last 24 hours. Retry once enough is left, or ask your person to raise the limit."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
 
@@ -109,14 +128,7 @@ defmodule AshTemplateWeb.PageToolsController do
     end
   end
 
-  def note(conn, %{"id" => id}) do
-    case Notes.get_my_note(id, actor: conn.assigns.actor) do
-      {:ok, %Note{} = note} -> json(conn, %{note: NotesJSON.note(note)})
-      {:ok, nil} -> refuse(conn, "note_not_found")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
-      {:error, _error} -> refuse(conn, "unavailable")
-    end
-  end
+  def note(conn, %{"id" => id}), do: for_note(conn, id, &json(conn, %{note: NotesJSON.note(&1)}))
 
   def search_notes(conn, _params) do
     case Notes.search_my_notes(conn.body_params["text"],
@@ -136,6 +148,50 @@ defmodule AshTemplateWeb.PageToolsController do
       {:error, _error} -> refuse(conn, "unavailable")
     end
   end
+
+  # Pinning costs the person one Credit (`Note.Pin`); a refused spend pins nothing.
+  def pin_note(conn, %{"id" => id}) do
+    for_note(conn, id, fn note ->
+      case Notes.pin_note(note, conn.body_params["operation_id"], actor: conn.assigns.actor) do
+        {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
+        {:error, %Ash.Error.Invalid{} = error} -> refuse_pin(conn, error)
+        {:error, _error} -> refuse(conn, "unavailable")
+      end
+    end)
+  end
+
+  defp refuse_pin(conn, %Ash.Error.Invalid{errors: errors} = error) do
+    case Enum.find_value(errors, &spending_code/1) do
+      nil -> refuse(conn, "invalid_pin", error)
+      code -> refuse(conn, code)
+    end
+  end
+
+  def unpin_note(conn, %{"id" => id}) do
+    for_note(conn, id, fn note ->
+      case Notes.unpin_note(note, actor: conn.assigns.actor) do
+        {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
+        {:error, _error} -> refuse(conn, "unavailable")
+      end
+    end)
+  end
+
+  defp for_note(conn, id, respond) do
+    case Notes.get_my_note(id, actor: conn.assigns.actor) do
+      {:ok, %Note{} = note} -> respond.(note)
+      {:ok, nil} -> refuse(conn, "note_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
+      {:error, _error} -> refuse(conn, "unavailable")
+    end
+  end
+
+  defp spending_code(%NotEnoughCredits{}), do: "not_enough_credits"
+  defp spending_code(%Refused{reason: :agent_off}), do: "spending_not_allowed"
+  defp spending_code(%Refused{reason: :agent_site}), do: "spending_not_on_this_site"
+  defp spending_code(%Refused{reason: :agent_max_per_spend}), do: "spending_over_limit_per_spend"
+  defp spending_code(%Refused{reason: :agent_daily_limit}), do: "spending_over_daily_limit"
+  defp spending_code(%Refused{reason: :agent_not_paired}), do: "agent_not_paired"
+  defp spending_code(_error), do: nil
 
   defp credit_actor(conn) do
     actor = conn.assigns.actor

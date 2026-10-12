@@ -565,6 +565,159 @@
       "effect": "write"
     },
     {
+      "name": "notes_pin",
+      "title": "Pin a note",
+      "description": "Pin one of your person's notes to the top of their notes. Costs 1 of their Credits, within the spending they allow you on their Regents account; a refused pin, or a note already pinned, costs nothing. Keep operation_id when retrying; a retry never pays twice. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "request",
+          "proof"
+        ],
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The note's id, from notes_list or notes_search."
+              },
+              "operation_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "A UUID you make for this pin. Keep it when retrying."
+              }
+            },
+            "required": [
+              "id",
+              "operation_id"
+            ],
+            "additionalProperties": false
+          },
+          "request": {
+            "type": "object",
+            "description": "The exact request prepare_agent_request returned."
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The proof headers your SIWA signer made for that request."
+          }
+        }
+      },
+      "annotations": {
+        "consequentialHint": true
+      },
+      "requires": "siwa_and_pairing",
+      "state_changing": true,
+      "payment": "spends_credits",
+      "route": "POST /tools/notes/{id}/pin",
+      "scope": "site",
+      "authentication": "siwa_per_request",
+      "pairing_required": true,
+      "availability": "available",
+      "interfaces": {
+        "webmcp": "notes_pin",
+        "http": "POST /tools/notes/{id}/pin"
+      },
+      "operation_input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The note's id, from notes_list or notes_search."
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A UUID you make for this pin. Keep it when retrying."
+          }
+        },
+        "required": [
+          "id",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "operation_id_field": "operation_id",
+      "effect": "payment"
+    },
+    {
+      "name": "notes_unpin",
+      "title": "Unpin a note",
+      "description": "Unpin one of your person's notes. Free. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "request",
+          "proof"
+        ],
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The note's id, from notes_list or notes_search."
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "request": {
+            "type": "object",
+            "description": "The exact request prepare_agent_request returned."
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The proof headers your SIWA signer made for that request."
+          }
+        }
+      },
+      "annotations": {},
+      "requires": "siwa_and_pairing",
+      "state_changing": true,
+      "payment": "none",
+      "route": "POST /tools/notes/{id}/unpin",
+      "scope": "site",
+      "authentication": "siwa_per_request",
+      "pairing_required": true,
+      "availability": "available",
+      "interfaces": {
+        "webmcp": "notes_unpin",
+        "http": "POST /tools/notes/{id}/unpin"
+      },
+      "operation_input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The note's id, from notes_list or notes_search."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "effect": "write"
+    },
+    {
       "name": "notes_update",
       "title": "Change a note",
       "description": "Change the title or text of one of your person's notes. Send the fields to change. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
@@ -1229,6 +1382,8 @@
               "notes_get",
               "notes_search",
               "notes_create",
+              "notes_pin",
+              "notes_unpin",
               "notes_update",
               "notes_delete",
               "room_post",

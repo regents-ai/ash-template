@@ -173,6 +173,36 @@ address; wait the seconds in `Retry-After`.
   `operation_id` used before means the note exists: read it with `notes get <UUID>`.
 - **If the answer is lost:** run `notes get <UUID>` before you create it again.
 
+## notes pin \<id\>
+
+- **What:** pins one of your person's notes to the top of their notes. Costs 1 of their
+  Credits, within the spending they allow you on their Regents account at
+  regents.sh/account. Signed; needs a pairing.
+- **Arguments:** `<id>`, the note's id from `notes list`.
+- **Stdin:** `{"operation_id": "<UUID>"}`: a UUID you make and keep when retrying.
+- **Example:**
+
+  ```sh
+  echo '{"operation_id": "<UUID>"}' | regents ash-template notes pin <id>
+  ```
+
+- **Answer:** 200 `{"note": …}`, with `pinned_at`.
+- **Paying:** a refused pin, or a note already pinned, costs nothing, and the same
+  `operation_id` never pays twice. 402 `not_enough_credits`: your person needs more Credits.
+  403 `spending_not_allowed`, `spending_not_on_this_site`, `spending_over_limit_per_spend` or
+  `spending_over_daily_limit`: your person has not allowed this spend; `account balances`
+  shows your limits.
+- **Refusals:** as for `notes get`, and 422 `invalid_pin` when `operation_id` is missing.
+- **If the answer is lost:** run `notes get <id>`; a pinned note has `pinned_at`.
+
+## notes unpin \<id\>
+
+- **What:** unpins one of your person's notes. Free. Signed; needs a pairing.
+- **Arguments:** `<id>`, the note's id from `notes list`.
+- **Example:** `regents ash-template notes unpin <id>`
+- **Answer:** 200 `{"note": …}`, with `pinned_at` empty.
+- **Refusals:** as for `notes get`.
+
 ## account balances
 
 - **What:** your person's Credits and how much you may spend. Signed; needs a pairing; spends
@@ -200,6 +230,7 @@ address; wait the seconds in `Retry-After`.
 
 ## Changes
 
+- 2026-10-12: `notes pin <id>` (1 Credit) and `notes unpin <id>` (free).
 - 2026-10-11: `account balances` no longer answers `account_id` or `pairing_id`, and
   `account points` answers decimal text with the fields above. The operation names in
   `commands.json` match the site's OpenAPI documents (4.0.0).

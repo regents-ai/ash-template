@@ -7,13 +7,14 @@ defmodule AshTemplateWeb.NotesJSON do
   alias AshTemplate.Notes.{Decision, Note}
 
   @doc """
-  The note's fields, its `label`, or `label: nil` when none was asked for, and
+  The note's fields (`pinned_at` is nil unless it is pinned), its `label`, or
+  `label: nil` when none was asked for, and
   `changed_by_agent`, or nil when its writer made the latest save.
   """
   @spec note(Note.t()) :: map()
   def note(%Note{} = note) do
     note
-    |> Map.take([:id, :title, :body, :inserted_at, :updated_at])
+    |> Map.take([:id, :title, :body, :pinned_at, :inserted_at, :updated_at])
     |> Map.put(:label, label(note.label_decision))
     |> Map.put(:changed_by_agent, agent(note.changed_by_agent))
   end
