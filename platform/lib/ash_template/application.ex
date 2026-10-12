@@ -5,8 +5,6 @@ defmodule AshTemplate.Application do
 
   @impl true
   def start(_type, _args) do
-    :ok = Logger.add_handlers(:ash_template)
-
     children =
       [
         AshTemplateWeb.Telemetry,

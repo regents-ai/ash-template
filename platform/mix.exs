@@ -77,7 +77,7 @@ defmodule AshTemplate.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_metrics_prometheus_core, "~> 1.2"},
       {:telemetry_poller, "~> 1.3"},
-      {:sentry, "~> 13.0"},
+      {:error_tracker, "~> 0.9"},
       # 3.1.1 has the EEF-CVE-2026-97853 advisory in Decimal.round/3.
       {:decimal, "== 3.1.2"},
       {:jason, "~> 1.2"},

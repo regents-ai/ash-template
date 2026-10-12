@@ -1208,3 +1208,19 @@ Operations
   message and sender before an event is sent, so a crash in a signing call or a
   page cannot carry a key or the page's assigns. Each site takes it before its
   `SENTRY_DSN` is set (security chief request).
+
+## 2026-10-12 — Errors are kept on the site; Sentry removed
+
+- Failed requests, pages and jobs are saved in the site's own schema by
+  ErrorTracker 0.9 (`error_tracker_*` tables in `ash_template_app`) and shown at
+  `/admin/errors` to Credits admins only (REGENT_CREDITS_ADMINS); anyone else
+  gets the ordinary not-found page. The page runs under its own content
+  security policy with a per-request nonce (Sean, 51 and 80 a).
+- `AshTemplate.ErrorFilter` keeps only where an error happened: the request's
+  host, path and method, the page, component and event names, and the job's
+  id, worker, queue, attempt and priority. Headers, addresses, query strings,
+  parameters and job arguments are never saved. Stack frames carry no
+  arguments. ErrorTracker's pruner clears resolved errors after a week.
+- Sentry is gone: the dependency, its logger handler, `AshTemplate.SentryScrub`,
+  the Privy sign-in failure capture and the `SENTRY_*` settings. The sign-in
+  failure log line and telemetry stay.

@@ -184,19 +184,15 @@ config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-# Errors go to Sentry once SENTRY_DSN is set (config/runtime.exs): crashed
-# processes and failed requests, through the handler the application adds.
-# Each event leaves without its frames' arguments or a crashed process's state.
-config :sentry,
-  environment_name: config_env(),
-  json_library: Jason,
-  enable_metrics: false,
-  tags: %{app: "ash_template"},
-  before_send: {AshTemplate.SentryScrub, :scrub}
-
-config :ash_template, :logger, [
-  {:handler, :sentry_handler, Sentry.LoggerHandler, %{config: %{metadata: [:file, :line]}}}
-]
+# Failed requests, pages and jobs are saved in the site's own schema and shown
+# to Credits admins at /admin/errors. Only where each one happened is kept
+# (AshTemplate.ErrorFilter); a resolved error is cleared after a week.
+config :error_tracker,
+  repo: AshTemplate.Repo,
+  otp_app: :ash_template,
+  prefix: "ash_template_app",
+  filter: AshTemplate.ErrorFilter,
+  plugins: [{ErrorTracker.Plugins.Pruner, max_age: :timer.hours(24 * 7)}]
 
 config :phoenix, :json_library, Jason
 

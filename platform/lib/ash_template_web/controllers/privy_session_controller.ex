@@ -148,19 +148,6 @@ defmodule AshTemplateWeb.PrivySessionController do
   defp report_sign_in_failure(reason) do
     Logger.warning("Privy browser reported sign-in failure reason=#{reason}")
     :telemetry.execute([:ash_template, :privy, :browser_failure], %{count: 1}, %{reason: reason})
-
-    if sentry_configured?() do
-      Sentry.capture_message("Privy browser sign-in failure",
-        level: :warning,
-        tags: %{reason: reason},
-        fingerprint: ["privy_browser_failure", reason]
-      )
-    end
-  end
-
-  defp sentry_configured? do
-    dsn = Application.get_env(:sentry, :dsn)
-    is_binary(dsn) and String.trim(dsn) != ""
   end
 
   # Privy is verified before the row lock, so only the transition itself is

@@ -1,6 +1,7 @@
 defmodule AshTemplateWeb.Router do
   @moduledoc "Every route, with the pipeline and live session that admit it."
   use AshTemplateWeb, :router
+  use ErrorTracker.Web, :router
 
   alias AshTemplateWeb.{ContentSecurityPolicy, Live.Session, Showcase}
 
@@ -56,6 +57,23 @@ defmodule AshTemplateWeb.Router do
       "content-security-policy" => ContentSecurityPolicy.reading(),
       "referrer-policy" => "no-referrer"
     }
+  end
+
+  # The saved errors: Credits admins only. Anyone else gets the not-found page under
+  # the reading policy; an admin's page replaces it with one carrying this
+  # request's nonce (AshTemplateWeb.ErrorsAdmin).
+  pipeline :errors_admin do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :enforce_session_authority
+    plug :protect_from_forgery
+
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => ContentSecurityPolicy.reading(),
+      "referrer-policy" => "no-referrer"
+    }
+
+    plug AshTemplateWeb.ErrorsAdmin
   end
 
   def enforce_session_authority(conn, _opts),
@@ -260,6 +278,15 @@ defmodule AshTemplateWeb.Router do
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
     end
+  end
+
+  scope "/admin" do
+    pipe_through :errors_admin
+
+    error_tracker_dashboard("/errors",
+      on_mount: [AshTemplateWeb.ErrorsAdmin],
+      csp_nonce_assign_key: %{script: :csp_nonce, style: :csp_nonce}
+    )
   end
 
   # The motion lab: public once the site opens, unless the showcase is off.

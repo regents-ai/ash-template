@@ -6,7 +6,8 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   Privy's wallet sign-in loads, from Privy's published policy and the bundled Privy
   and WalletConnect code; Privy's sign-in window writes its own style elements, so
   only that profile allows them. `showcase/0` is `sign_in/0` for the showcase
-  catalog, which frames its own preview page. A site that loads anything else adds
+  catalog, which frames its own preview page. `errors/1` is the baseline plus one
+  request's nonce, for the saved-errors page. A site that loads anything else adds
   each origin to the one directive and the one profile that needs it; the only
   wildcard is Privy's own `*.rpc.privy.systems`, from its published policy.
   """
@@ -69,6 +70,16 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
     |> add(%{"frame-src" => ["'self'"]})
     |> List.keyreplace("frame-ancestors", 0, {"frame-ancestors", ["'self'"]})
     |> render()
+  end
+
+  @doc """
+  The baseline plus the one style element and one script element the saved-errors
+  page writes inline, each admitted by this request's nonce
+  (`AshTemplateWeb.ErrorsAdmin`). It never starts sign-in.
+  """
+  def errors(nonce) do
+    nonce = "'nonce-#{nonce}'"
+    @baseline |> add(%{"script-src" => [nonce], "style-src" => [nonce]}) |> render()
   end
 
   defp add(directives, additions) do
