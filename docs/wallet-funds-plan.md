@@ -165,7 +165,8 @@ Checked at desktop and phone widths, in light and dark, and with the keyboard, a
 - Limits first: Sean names which actions, recipients, tokens, chains, cap and expiry an approved agent gets. No code is written before that.
 - The limits are held by Privy's own wallet rules, which it checks inside its secure hardware before signing. Rules kept only in our command-line tool are not limits, because any program holding the approval can ignore them. Whether Privy's rules hold an approved agent is not stated in Privy's docs, so a live check proves it before any page ships; if they do not, the work stops and goes back to Sean.
 - Order: the limits, then the payments wallet (template first, with the limits attached), then the live check, then a page of its own at https://regents.sh/authorize with a list of approvals and Revoke on Account, then `wallet connect` in regents-cli keeping its tokens in the Mac keychain. Each release has its own go.
-- Before the page ships, a real approval's token is checked against `RegentPrivy.verify_token` to learn whether a site would take it as a browser sign-in; the result goes to Sentinel.
+- Before the page ships, a real approval's token is checked against `RegentPrivy.verify_token` to learn whether a site would take it as a browser sign-in; the result goes to Sentinel. The approval is made with Sean's own account only and revoked straight after. Sentinel gets the token's claim names (never values) and whether the approval could fetch an identity token (from `users/me` or a session refresh).
+- If the approval's token carries a session id and can fetch an identity token, and no claim tells it apart from a browser token, the approval page does not ship and the question goes back to Sean (Sentinel, 12 Oct, risk R1). Requiring the identity token's session id to match is not the fix: Privy does not document a session id on identity tokens.
 
 ## Order of work
 
