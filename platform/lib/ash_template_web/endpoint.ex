@@ -15,6 +15,10 @@ defmodule AshTemplateWeb.Endpoint do
     "referrer-policy" => "no-referrer"
   }
 
+  # Chrome's WebMCP origin trial, issued to https://template.regents.sh and valid
+  # until 30 Mar 2027. The token is public; Chrome ignores it on any other host.
+  @webmcp_origin_trial "Anjl5/zD6iF9O/lRuJbhbnuaTCH/1+x83KMsVLt4KEl5eI5kKV0yqXI+xOxti+nzSe7uQ0UUj1Ot3fi/WVyczwEAAABTeyJvcmlnaW4iOiJodHRwczovL3RlbXBsYXRlLnJlZ2VudHMuc2g6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMH0="
+
   @rate_limit RegentAgentAccess.RateLimit.init(
                 policy: "default",
                 limit: 120,
@@ -49,7 +53,8 @@ defmodule AshTemplateWeb.Endpoint do
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   # Every answer, including the Markdown and refusals the next plug gives before
-  # the router, lets browser agents use the tools this site's pages register.
+  # the router, lets browser agents use the tools this site's pages register and
+  # carries the origin-trial token, so Chrome knows it before reading `tools`.
   plug :allow_page_tools
 
   # One budget per client address, shared by the health check and every /api path,
@@ -75,8 +80,11 @@ defmodule AshTemplateWeb.Endpoint do
   plug :runtime_session
   plug AshTemplateWeb.Router
 
-  defp allow_page_tools(conn, _opts),
-    do: Plug.Conn.put_resp_header(conn, "permissions-policy", "tools=(self)")
+  defp allow_page_tools(conn, _opts) do
+    conn
+    |> Plug.Conn.put_resp_header("permissions-policy", "tools=(self)")
+    |> Plug.Conn.put_resp_header("origin-trial", @webmcp_origin_trial)
+  end
 
   defp limit_rate(%Plug.Conn{path_info: ["healthz"]} = conn, _opts),
     do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
