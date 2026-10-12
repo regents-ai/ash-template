@@ -1,9 +1,8 @@
 defmodule AshTemplateWeb.AccountLive do
   @moduledoc """
-  The signed-in person's Account, one tab each: Account (their profile, the
-  agents they paired, their Credits and this browser's session), Wallets (the
-  wallets their sign-in verified) and Connections (the accounts they have
-  connected). Points has its own tab (`AshTemplateWeb.PointsLive`).
+  The signed-in person's Account, one tab each: Account (their profile, their
+  Credits and the agents they paired), Wallets (the wallets their sign-in
+  verified) and Connections (the accounts they have connected). Points has its own tab (`AshTemplateWeb.PointsLive`).
 
   Everything here is read from the sign-in the shell already holds; nothing on
   the page asks the visitor to sign in again.
