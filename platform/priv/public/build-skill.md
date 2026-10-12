@@ -5,7 +5,7 @@ description: Build a Phoenix LiveView and Ash site the way Regent's sites are bu
 
 # Building with Ash Template
 
-Ash Template is the starter kit Regent's sites are built from: Phoenix LiveView, Ash, wallet sign-in with Privy and one shared look. This site shows it working. Your person asked you to build or change a site like it; this guide tells you where the build skills are and what this site can and can't do for you. Follow it in order.
+Ash Template is the starter kit Regent's sites are built from: Phoenix LiveView, Ash, sign-in with Privy and one shared look. This site shows it working. Your person asked you to build or change a site like it; this guide tells you where the build skills are and what this site can and can't do for you. Follow it in order.
 
 ## 1. Get the skills
 
@@ -31,7 +31,7 @@ Start with `ash-stack`: it says which of the others a task needs. Every file can
 ## 2. See them working
 
 - {{origin}}/showcase: every shared component, in light and dark, with the page layouts they build.
-- {{origin}}/showcase/privy: wallet sign-in with Privy, as a product page runs it.
+- {{origin}}/showcase/privy: sign-in with Privy, as a product page runs it.
 - {{origin}}/showcase/wallet: the wallet buttons the `onchain-buttons` skill describes, on Base Sepolia, a test network.
 - {{origin}}/showcase/payments: how a payment the `payments` skill describes looks to the payer, with sample figures and paying switched off.
 - {{origin}}/showcase/funds: how a person's wallet funds, commitments, card purchases, sends and cash-outs look, with sample figures and every money button switched off.

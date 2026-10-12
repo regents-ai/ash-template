@@ -601,9 +601,14 @@ defmodule AshTemplateWeb.CreditsPanel do
     micro = Chains.micro(dollars)
 
     cond do
-      is_integer(latest[:usdc]) and latest.usdc < micro -> "Not enough USDC on Base"
-      is_integer(latest[:allowance]) and latest.allowance < micro -> "Approve first"
-      true -> nil
+      is_integer(latest[:usdc]) and latest.usdc < micro ->
+        "Send USDC on Base to your wallet address first"
+
+      is_integer(latest[:allowance]) and latest.allowance < micro ->
+        "Approve first"
+
+      true ->
+        nil
     end
   end
 

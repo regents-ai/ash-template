@@ -1,6 +1,6 @@
 # Ash Template
 
-The Ash Template monorepo: a public website with wallet sign-in and a small
+The Ash Template monorepo: a public website with sign-in and a small
 account area, a public HTTP API, a command-line tool, and room for contracts
 and runtime plugins.
 
@@ -28,7 +28,7 @@ digest, run the gate.
 
 | Component | What it holds | Check |
 | --- | --- | --- |
-| [platform/](platform/README.md) | The Phoenix/Ash web application: home page, Privy wallet sign-in, the signed-in Overview and Account pages, public pages, health and metrics, and the served API. | `make check-platform` |
+| [platform/](platform/README.md) | The Phoenix/Ash web application: home page, Privy sign-in, the signed-in Overview and Account pages, public pages, health and metrics, and the served API. | `make check-platform` |
 | [cli/](cli/README.md) | `commands.json`, the description of every `regents ash-template` command: the pattern each site copies for its own commands, run by [regents-cli](https://github.com/regents-ai/regents-cli), which does not carry this site itself. | `make check-cli` |
 | [contracts/](contracts/README.md) | An optional Foundry workspace. Empty until the product needs contracts. | `make check-contracts` |
 | [plugins/](plugins/README.md) | Standalone runtime plugin packages. None yet. | None |

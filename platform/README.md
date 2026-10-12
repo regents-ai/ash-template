@@ -6,7 +6,7 @@
 [![Ash 3.34](https://img.shields.io/badge/ash-3.34-lightgrey)](https://ash-hq.org)
 
 The Phoenix/Ash web application of Ash Template. It serves the public home
-page, Privy wallet sign-in, the signed-in Overview (`/app`) and Account
+page, Privy sign-in, the signed-in Overview (`/app`) and Account
 (`/account`) pages, the public pages, a health check, the public HTTP API, and
 Prometheus metrics on a private port.
 
@@ -203,7 +203,7 @@ security policy; the router's pipelines choose one.
 | Profile | Pipelines | What it allows |
 | --- | --- | --- |
 | `reading` | `:public_documents` | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
-| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy wallet sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
+| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
 | `showcase` | `:framed_preview` | `sign_in` that may frame its own preview page, for `/showcase` and `/showcase/preview`. |
 
 A site that loads something else (an RPC, an image host, an embedded wallet)

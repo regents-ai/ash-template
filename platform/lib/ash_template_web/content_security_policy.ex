@@ -3,7 +3,7 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   The content security policies the site's pages are served under. `reading/0` is
   the strict baseline: everything comes from this site, no page frames another site
   or is framed itself, and forms submit only here. `sign_in/0` adds exactly what
-  Privy's wallet sign-in loads, from Privy's published policy and the bundled Privy
+  Privy's sign-in loads, from Privy's published policy and the bundled Privy
   and WalletConnect code; Privy's sign-in window writes its own style elements, so
   only that profile allows them. `showcase/0` is `sign_in/0` for the showcase
   catalog, which frames its own preview page. `errors/1` is the baseline plus one
@@ -60,7 +60,7 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   @doc "The strict baseline, for pages that never start sign-in."
   def reading, do: render(@baseline)
 
-  @doc "The baseline plus Privy wallet sign-in, for pages that can sign someone in."
+  @doc "The baseline plus Privy sign-in, for pages that can sign someone in."
   def sign_in, do: @baseline |> add(@sign_in) |> render()
 
   @doc "Sign-in plus framing its own pages, for the showcase catalog's preview."

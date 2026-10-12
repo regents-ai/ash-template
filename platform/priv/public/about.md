@@ -1,12 +1,12 @@
 # About Ash Template
 
-Ash Template is the starting point for a new Regent website. Wallet sign-in, one account page, Credits, Points and paired agents already work together.
+Ash Template is the starting point for a new Regent website. Sign-in, one account page, Credits, Points and paired agents already work together.
 
 ## What it does
 
-### Sign in with a wallet
+### One sign-in
 
-One sign-in works across every Regent site. There is no password to remember.
+One sign-in works across every Regent site, and every account gets its own wallet. There is no password to remember.
 
 ### One account page
 

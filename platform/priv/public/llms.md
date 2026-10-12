@@ -1,6 +1,6 @@
 # Ash Template
 
-> A product where people sign in with a wallet, keep a small account and read plain documentation.
+> A product where people sign in, keep a small account and read plain documentation.
 
 {{key_facts}}
 

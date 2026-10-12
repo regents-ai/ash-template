@@ -23,7 +23,7 @@ We may treat an action taken through your authenticated session, wallet, browser
 
 ## 3. Accounts, sign-in, wallets, and credentials
 
-Some features are public and do not require an account. Other features require you to sign in with a wallet through a third-party authentication provider such as Privy.
+Some features are public and do not require an account. Other features require you to sign in through a third-party authentication provider such as Privy.
 
 You agree to provide accurate information and keep it current. You may not impersonate another person or entity or access another user's account or profile.
 

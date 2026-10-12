@@ -17,7 +17,7 @@ defmodule AshTemplateWeb.HomeLive do
     """
     # Ash Template
 
-    A starting point for your next product: wallet sign-in, an account page, Credits, Points and paired agents.
+    A starting point for your next product: sign-in, an account page, Credits, Points and paired agents.
 
     #{chapters}
 
@@ -378,14 +378,14 @@ defmodule AshTemplateWeb.HomeLive do
         index: "01",
         anchor: "signin",
         eyebrow: "Wallet",
-        line: "One wallet sign-in. Connect other accounts later.",
-        title: "Sign in with your wallet.",
+        line: "One sign-in. Connect other accounts later.",
+        title: "Sign in. Your wallet comes with it.",
         description: "No password to keep. Connect X, GitHub or Farcaster once you are in.",
         href: "/app",
         cta: "Try sign-in",
         diagrams: 0,
         proofs: [
-          {"Wallet first.", "No password to keep."},
+          {"Your own wallet.", "Every account gets one."},
           {"Connections.", "Add X, GitHub or Farcaster."},
           {"Sessions.", "Sign out ends this browser only."}
         ]

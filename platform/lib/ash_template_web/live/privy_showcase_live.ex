@@ -115,7 +115,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           <h2 id="privy-setup-heading">Set up your own copy</h2>
           <ol>
             <li>
-              In your Privy dashboard, turn on wallet sign-in and add your site's exact web address to the allowed list.
+              In your Privy dashboard, choose how people sign in, give every new account a wallet, and add your site's exact web address to the allowed list.
             </li>
             <li>
               Give your copy of the site its Privy app ID and verification key, named

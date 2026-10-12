@@ -16,7 +16,7 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
     plug :protect_from_forgery
 
-    # These pages can start wallet sign-in.
+    # These pages can start sign-in.
     plug :put_secure_browser_headers, %{
       "content-security-policy" => ContentSecurityPolicy.sign_in()
     }
@@ -94,7 +94,7 @@ defmodule AshTemplateWeb.Router do
 
   # The showcase pages are HTML; only the catalog also answers JSON. Each pipeline
   # negotiates its formats first, so a refusal carries no page headers, and sends
-  # the headers of a page that can start wallet sign-in.
+  # the headers of a page that can start sign-in.
   @showcase_headers %{"content-security-policy" => ContentSecurityPolicy.sign_in()}
 
   pipeline :showcase_browser do

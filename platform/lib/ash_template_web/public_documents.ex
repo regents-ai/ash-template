@@ -24,7 +24,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
   @security_contact "mailto:build@regents.sh"
-  @description "Ash Template: sign in with a wallet, manage your account and read the developer documentation."
+  @description "Ash Template: sign in, manage your account and read the developer documentation."
 
   # The browser-tab title and search description of every page. A title names
   # the page alone; `metadata/3` adds the site name once.
@@ -61,8 +61,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Showcase",
        "Every shared Ash Template component, in light and dark, with the page layouts they build."},
     "/showcase/privy" =>
-      {"Sign in with Privy",
-       "Wallet sign-in with Privy, working as an Ash Template page runs it."},
+      {"Sign in with Privy", "Sign-in with Privy, working as an Ash Template page runs it."},
     "/skills" =>
       {"Build skills",
        "The guides Ash Template's builders follow, written for coding agents and open to everyone."},
