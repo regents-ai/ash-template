@@ -603,7 +603,7 @@ defmodule AshTemplateWeb.Components.Shell do
   """
   def account_control(assigns) do
     ~H"""
-    <div id="account-control" class="account-control">
+    <div id="account-control" class="account-control" data-account-wallet={@account_control.wallet}>
       <Regent.Primitives.button
         :if={@account_control.kind == :sign_in}
         type="button"

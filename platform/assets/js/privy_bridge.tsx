@@ -27,6 +27,7 @@ import {
   recoverOnce,
   reportSignInFailure,
   reloadDocumentOnce,
+  returnedFromOAuth,
   sessionLifecycleError,
   showAccountAuthFailure,
   IDENTITY_STATE_EVENT,
@@ -480,6 +481,10 @@ export function createProviderSessionReconciler({
 const showsSignedInAccount = () =>
   document.querySelector("#account-control [data-account-target='profile']") !== null
 
+// The wallet the server signed the account in with, as the page was drawn.
+const accountWallet = () =>
+  document.querySelector<HTMLElement>("#account-control")?.dataset.accountWallet?.toLowerCase() ?? null
+
 type PrivySessionCompletionOptions = {
   acquireTokens: () => Promise<PrivyTokenPair>
   fetcher?: typeof fetch
@@ -606,6 +611,9 @@ export function createPrivyLoginCallbacks({
 }
 
 type AccountBridgeProps = {
+  // The page is Privy's return from a Google or other redirect sign-in, which
+  // the person started from the sign-in window on the page before.
+  oauthReturn: boolean
   mode: "ordinary" | "sign-out-only"
   lifetime: AbortSignal
   providerState?: PrivyBridgeProviderState
@@ -633,7 +641,7 @@ export type PrivyBridgeProviderState = {
   connectWallet?: ReturnType<typeof useConnectWallet>["connectWallet"]
 }
 
-function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: AccountBridgeProps) {
+function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler, lifetime}: AccountBridgeProps) {
   const privy = usePrivy()
   const providerWallets = useWallets()
   const providerActiveWallet = useActiveWallet()
@@ -715,7 +723,9 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
       finishWalletConnection()
     }
   }, [completeExplicitLogin, finishWalletConnection, lifetime])
-  const loginOpen = React.useRef(false)
+  // A redirect return finishes the sign-in window the person opened, so it
+  // speaks for the page and its own sign-in clears an earlier Disconnect.
+  const loginOpen = React.useRef(oauthReturn)
   const loginCallbacks = React.useMemo(
     () =>
       createPrivyLoginCallbacks({
@@ -733,15 +743,18 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
   // discarded — which is why this is written after the commit and before the
   // effect that publishes the handler.
   const subject = providerState?.userId ?? privy.user?.id ?? null
-  const provider = React.useRef({authenticated, login, logout, ready, subject})
+  // A person who signs in with email or Google gets their Privy wallet just
+  // after Privy signs them in, and the site's sign-in needs a wallet.
+  const hasWallet = linkedWallets !== ""
+  const provider = React.useRef({authenticated, hasWallet, login, logout, ready, subject})
   // Counts the times the signed-in person changed, so work started for one
   // never finishes on behalf of the next.
   const identityGeneration = React.useRef(0)
   React.useEffect(() => {
     const changed = provider.current.authenticated !== authenticated || provider.current.subject !== subject
-    provider.current = {authenticated, login, logout, ready, subject}
+    provider.current = {authenticated, hasWallet, login, logout, ready, subject}
     if (changed) identityGeneration.current += 1
-  }, [authenticated, login, logout, ready, subject])
+  }, [authenticated, hasWallet, login, logout, ready, subject])
   const signIn = React.useMemo(
     () =>
       createSignInRequest({
@@ -753,11 +766,12 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
       }),
     [lifetime],
   )
-  // Adoption only ever asks the server.
+  // Adoption only ever asks the server, and only once the person has a wallet:
+  // the run that follows their new wallet asks then.
   const completeAutomaticLogin = React.useCallback(
     () =>
       lifetime.aborted || !provider.current.ready || !provider.current.authenticated ||
-        walletDisconnected() || signOutOnly
+        !provider.current.hasWallet || walletDisconnected() || signOutOnly
         ? Promise.resolve() : completeExplicitLogin(),
     [completeExplicitLogin, signOutOnly, lifetime],
   )
@@ -835,10 +849,10 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
   )
 
   React.useEffect(() => {
-    if (signOutOnly || !ready || !authenticated) return
+    if (signOutOnly || !ready || !authenticated || !hasWallet) return
 
     void completeAutomaticLogin().catch(() => undefined)
-  }, [authenticated, completeAutomaticLogin, ready, signOutOnly])
+  }, [authenticated, completeAutomaticLogin, hasWallet, ready, signOutOnly])
 
   // The active selection is published alongside the connected set and depends on
   // it, so a selection change with an unchanged wallets array still runs this and
@@ -888,15 +902,20 @@ function AccountBridge({mode, providerState, publishRequestHandler, lifetime}: A
     }
     // Privy names no wallet after a sign-in that skipped its window, or in a new
     // tab. The signed-in wallet then sends as this tab has it connected: the one
-    // connected wallet the account is linked to. Two such wallets are no wallet;
-    // the press opens Privy's connect window and the customer picks.
+    // connected wallet the account is linked to, or, when this tab has several,
+    // the account's own wallet the page was drawn for. Several and none of them
+    // the account's own is no wallet; the press opens Privy's connect window.
     if (!selectedWallet && !pendingSelection && ready && walletsReady && linkedWallets) {
       const linked = linkedWallets.split(",")
       const signedIn = wallets.filter(wallet =>
         wallet.type === "ethereum" && linked.includes(wallet.address.toLowerCase()),
       )
-      if (signedIn.length === 1) {
-        selectedWallet = signedIn[0]
+      const own = accountWallet()
+      const chosen = signedIn.length === 1
+        ? signedIn
+        : signedIn.filter(wallet => wallet.address.toLowerCase() === own)
+      if (chosen.length === 1) {
+        selectedWallet = chosen[0]
         setActiveWallet(selectedWallet)
       }
     }
@@ -1095,6 +1114,8 @@ export function startPrivyBridge(
     providerState?.appId ??
     document.querySelector<HTMLMetaElement>("meta[name='privy-app-id']")?.content
   if (!appId) return Promise.reject(new Error("Privy app is unavailable"))
+  // Read before Privy finishes the return and clears these from the address.
+  const oauthReturn = returnedFromOAuth(window.location.search)
   const host = document.createElement("div")
   host.hidden = true
   document.body.append(host)
@@ -1160,8 +1181,16 @@ export function startPrivyBridge(
     }
 
     root.render(
-      <PrivyProvider appId={appId} config={{loginMethods: ["wallet"], appearance: {logo: "/mark.png"}}}>
+      // The sign-in choices come from the Privy dashboard, which also gives every
+      // account an Ethereum wallet of its own. Privy's own list of networks covers
+      // every network a step goes to, through Privy's own nodes, and a person
+      // always sees Privy's confirm window before their Privy wallet signs.
+      <PrivyProvider
+        appId={appId}
+        config={{appearance: {logo: "/mark.png"}, embeddedWallets: {showWalletUIs: true}}}
+      >
         <AccountBridge
+          oauthReturn={oauthReturn}
           mode={mode}
           lifetime={controller.signal}
           providerState={providerState}
