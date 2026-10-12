@@ -117,9 +117,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         %{id: :note, label: "Write your first note", path: "/notes", done?: false}
       ]}
       unread={2}
-      jobs_running={0}
       healthy={true}
-      version="sample"
       search={AshTemplateWeb.ShellLive.unsearched()}
     >
       <:content>

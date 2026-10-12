@@ -57,9 +57,7 @@ defmodule AshTemplateWeb.Components.Shell do
     default: nil,
     doc: "The account's Credits reading (`state` and `value`); nil when signed out."
 
-  attr :jobs_running, :integer, required: true
   attr :healthy, :boolean, required: true
-  attr :version, :string, required: true
   attr :search, :map, required: true, doc: "`%{query, results}` for the search dialog."
   attr :assistant, :map, default: nil, doc: "The assistant box's last question and reply."
   slot :content, required: true
@@ -376,9 +374,6 @@ defmodule AshTemplateWeb.Components.Shell do
           <span class="shell-footer__dot" aria-hidden="true"></span>
           {if @healthy, do: "All systems working", else: "Some things aren’t answering"}
         </p>
-        <p class="shell-footer__jobs">
-          {jobs_label(@jobs_running)}
-        </p>
         <nav class="shell-footer__links" aria-label="Site links">
           <a :for={{label, path} <- footer_links()} href={path}>{label}</a>
         </nav>
@@ -386,7 +381,6 @@ defmodule AshTemplateWeb.Components.Shell do
           <RegentLinks.header_links id="shell-token-menu" />
         </div>
         <.theme_toggle id="theme-control" />
-        <p class="shell-footer__version">Version {@version}</p>
       </footer>
 
       <dialog
@@ -558,10 +552,6 @@ defmodule AshTemplateWeb.Components.Shell do
   defp bell_label(0), do: "Activity, nothing new"
   defp bell_label(1), do: "Activity, 1 new"
   defp bell_label(unread), do: "Activity, #{unread} new"
-
-  defp jobs_label(0), do: "No background jobs running"
-  defp jobs_label(1), do: "1 background job running"
-  defp jobs_label(count), do: "#{count} background jobs running"
 
   defp section_label(section),
     do: Enum.find_value(RouteCatalog.sections(), "Page", &(&1.id == section && &1.label))

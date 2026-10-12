@@ -15,9 +15,8 @@ any navigation, event, message or result:
   and says the sign-in ended, and every later message or result meets the same check.
   A navigation (`:handle_params`) goes to the public root instead. No timer, no
   polling.
-- A broadcast that reaches every open page often and carries no account data (the
-  template's `{:jobs_running, count}`) goes straight through, so it costs no reads.
-  Only such a message may skip the check.
+- A broadcast that reaches every open page often and carries no account data may go
+  straight through, so it costs no reads. Only such a message may skip the check.
 - Background work goes through `start_async/3`: `assign_async` and `stream_async`
   results never reach `:handle_async` hooks, so they would skip the check.
 

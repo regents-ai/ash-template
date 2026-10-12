@@ -1548,7 +1548,6 @@ details[open] > summary .shell-chevron {
     border-inline: 0;
   }
 
-  .shell-footer__jobs,
   .shell-footer__links,
   #shell-footer .rl-header-links {
     display: none;

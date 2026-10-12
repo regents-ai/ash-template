@@ -1154,3 +1154,19 @@ Operations
 - The running jobs count in the bottom bar is the one message that skips the
   check: it says nothing about any account and reaches every open page on each
   job start and stop.
+
+## 2026-10-12 — Review fixes before the template release
+
+- Buy is held back only by a figure read at the latest block for the wallet
+  shown. A new read, a read past the allowance or a failed read leaves the shown
+  figures on screen but lets Buy be pressed until a new read lands. Opening Buy
+  Credits reads the funds again.
+- The bottom bar no longer shows the background-jobs count or the version.
+  `AshTemplate.JobsRunning`, its broadcast and the session's pass-through for it
+  are gone, so every message a signed-in page receives is re-checked.
+- `/developers` no longer redirects to `/docs`. Note jobs no longer carry an
+  authority version; the pairing check stays. Only signed tools are passed to the
+  signed-request client.
+- The route handoff names the account tab "Account".
+- elixir-utils `1f6ce01` (the ENS avatar check no longer follows redirects) and
+  design-system `57d2f98` (Credits summary slot, the account heading once).

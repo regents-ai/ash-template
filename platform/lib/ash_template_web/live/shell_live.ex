@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   require Ash.Query
 
-  alias AshTemplate.{Accounts, Activity, Chat, JobsRunning, Notes, Rooms}
+  alias AshTemplate.{Accounts, Activity, Chat, Notes, Rooms}
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
@@ -57,10 +57,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket) do
-      subscribe_to_own_topics(socket.assigns.access_context)
-      Phoenix.PubSub.subscribe(AshTemplate.PubSub, JobsRunning.topic())
-    end
+    if connected?(socket), do: subscribe_to_own_topics(socket.assigns.access_context)
 
     {:ok,
      socket
@@ -79,9 +76,7 @@ defmodule AshTemplateWeb.ShellLive do
        connection_outcome: nil,
        notifications: %Read{},
        progress: progress(human_actor(socket)),
-       jobs_running: JobsRunning.count(),
        healthy: AshTemplate.Health.database_ready?(),
-       version: version(),
        search: unsearched(),
        assistant: nil
      )
@@ -227,9 +222,6 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
-  def handle_info({:jobs_running, count}, socket),
-    do: {:noreply, assign(socket, :jobs_running, count)}
-
   # A room's posts, edits and deletes reach only the room on screen, so one
   # still in the mailbox from the room just left is dropped.
   def handle_info(%{topic: "rooms:" <> _, event: event, payload: %Message{} = message}, socket) do
@@ -296,9 +288,7 @@ defmodule AshTemplateWeb.ShellLive do
       checklist={checklist(@progress)}
       unread={@unread}
       credits={signed_in_credits(@access_context, @credits_read)}
-      jobs_running={@jobs_running}
       healthy={@healthy}
-      version={@version}
       search={@search}
       assistant={@assistant}
     >
@@ -672,11 +662,6 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp assistant_conversation(%{conversation_id: id}), do: %{conversation_id: id}
   defp assistant_conversation(nil), do: %{}
-
-  defp version do
-    commit = Application.fetch_env!(:ash_template, :running_version)[:commit]
-    "#{Application.spec(:ash_template, :vsn)} (#{commit})"
-  end
 
   # The NFT tier is read from Base once per page open, never on each award notice.
   defp load_points(socket, %{route_id: :points}) do
