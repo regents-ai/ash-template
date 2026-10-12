@@ -164,11 +164,7 @@ defmodule AshTemplate.Notes.Note do
         action :send_webhook
         where expr(webhook_state == :pending)
 
-        extra_args &%{
-                     revision: &1.revision,
-                     pairing_id: &1.changed_by_pairing_id,
-                     authority_version: 1
-                   }
+        extra_args &%{revision: &1.revision, pairing_id: &1.changed_by_pairing_id}
 
         queue :outside_calls
         max_attempts 5

@@ -236,20 +236,18 @@ defmodule AshTemplate.SignedToolsTest do
     saved =
       AshTemplate.Notes.get_my_note!(id, actor: AshTemplate.Actors.Human.for_account(account))
 
-    for {args, reason} <- [
-          {%{"revision" => saved.revision}, :legacy_authority_requires_review},
-          {%{"revision" => saved.revision, "pairing_id" => paired.id, "authority_version" => 1},
-           :pairing_revoked}
-        ] do
-      assert {:error, error} =
-               saved
-               |> Ash.Changeset.for_update(:send_webhook, %{},
-                 context: %{ash_oban: %{job: %Oban.Job{args: args}}}
-               )
-               |> Ash.update(authorize?: false)
+    assert {:error, error} =
+             saved
+             |> Ash.Changeset.for_update(:send_webhook, %{},
+               context: %{
+                 ash_oban: %{
+                   job: %Oban.Job{args: %{"revision" => saved.revision, "pairing_id" => paired.id}}
+                 }
+               }
+             )
+             |> Ash.update(authorize?: false)
 
-      assert inspect(error) =~ to_string(reason)
-    end
+    assert inspect(error) =~ "pairing_revoked"
 
     assert request(:get, "/tools/notes/" <> id).status in [401, 403]
     assert request(:post, "/tools/notes", body).status in [401, 403]

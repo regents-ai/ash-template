@@ -17,27 +17,15 @@ defmodule AshTemplate.Notes.Decision.AskJev do
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
-      args = get_in(changeset.context, [:ash_oban, :job, Access.key(:args)]) || %{}
+      pairing_id = changeset.data.pairing_id
 
-      cond do
-        args["authority_version"] != 1 ->
-          Ash.Changeset.force_change_attributes(changeset, %{
-            state: :failed,
-            failure: "Legacy authority requires review"
-          })
-
-        changeset.data.pairing_id &&
-            not RegentAgents.Authority.active_episode?(
-              AshTemplate.Repo,
-              changeset.data.pairing_id
-            ) ->
-          Ash.Changeset.force_change_attributes(changeset, %{
-            state: :failed,
-            failure: "Agent pairing revoked"
-          })
-
-        true ->
-          ask(changeset)
+      if pairing_id && not RegentAgents.Authority.active_episode?(AshTemplate.Repo, pairing_id) do
+        Ash.Changeset.force_change_attributes(changeset, %{
+          state: :failed,
+          failure: "Agent pairing revoked"
+        })
+      else
+        ask(changeset)
       end
     end)
   end

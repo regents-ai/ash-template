@@ -38,9 +38,6 @@ defmodule AshTemplate.Notes.Note.DeliverWebhook do
     pairing_id = args["pairing_id"]
 
     cond do
-      args["authority_version"] != 1 ->
-        {:cancel, :legacy_authority_requires_review}
-
       pairing_id && not RegentAgents.Authority.active_episode?(AshTemplate.Repo, pairing_id) ->
         {:cancel, :pairing_revoked}
 

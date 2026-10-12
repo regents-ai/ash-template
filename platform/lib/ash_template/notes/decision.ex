@@ -112,7 +112,6 @@ defmodule AshTemplate.Notes.Decision do
     triggers do
       trigger :ask_jev do
         action :ask_jev
-        extra_args &%{authority_version: 1, pairing_id: &1.pairing_id}
         where expr(state == :pending)
         queue :outside_calls
         max_attempts 3

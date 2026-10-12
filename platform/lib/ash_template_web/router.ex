@@ -152,7 +152,6 @@ defmodule AshTemplateWeb.Router do
 
   scope "/", AshTemplateWeb do
     get "/healthz", HealthController, :show
-    get "/developers", PublicPagesController, :developers
     get "/openapi.json", PublicPagesController, :openapi
     get "/sitemap.xml", PublicPagesController, :sitemap
     get "/robots.txt", PublicPagesController, :robots

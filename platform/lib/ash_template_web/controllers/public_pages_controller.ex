@@ -7,8 +7,6 @@ defmodule AshTemplateWeb.PublicPagesController do
 
   def skills(conn, _params), do: show_document(conn, PublicDocuments.skills_page())
 
-  def developers(conn, _params), do: conn |> put_status(301) |> redirect(to: "/docs")
-
   def agents(conn, _params), do: send_cached(conn, "text/markdown", PublicDocuments.agents())
 
   def build_skill(conn, _params),
