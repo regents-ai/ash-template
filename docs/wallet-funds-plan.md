@@ -168,6 +168,22 @@ Checked at desktop and phone widths, in light and dark, and with the keyboard, a
 - Before the page ships, a real approval's token is checked against `RegentPrivy.verify_token` to learn whether a site would take it as a browser sign-in; the result goes to Sentinel. The approval is made with Sean's own account only and revoked straight after. Sentinel gets the token's claim names (never values) and whether the approval could fetch an identity token (from `users/me` or a session refresh).
 - If the approval's token carries a session id and can fetch an identity token, and no claim tells it apart from a browser token, the approval page does not ship and the question goes back to Sean (Sentinel, 12 Oct, risk R1). Requiring the identity token's session id to match is not the fix: Privy does not document a session id on identity tokens.
 
+### The limits (Sean, 12 Oct 2026, 88 a) and why the work stopped
+
+- Limits: USDC on Base only; sends and x402 payments only; only to Regent sites' published payment addresses; 10 USDC a payment and 50 USDC a day for each wallet, shared by every agent the person approves; approvals last 7 days.
+- Stopped before any code (88.1 a). In Privy's docs an approved agent signs as the wallet's owner, so the wallet's rules would bind the person as tightly as the agent; Privy's daily totals do not count x402 payments; the owner may change the rules and export the key, and the docs do not say whether an approved agent can; and an approval has no id, so Revoke cannot name one agent.
+- Put to Sean as item 90: agents become limited co-signers instead (Privy's "user-owned wallets with agent signers"). The person owns the wallet with no limits on themselves; each agent is a separate signer with its own rules; signers cannot change signers, owners or rules, or export the key. The agent's key stays in its Mac keychain, its requests reach Privy only through our server (Privy needs our app secret), and our server keeps the daily total with x402 counted. Privy's agent approval switch would go off.
+
+Sentinel's conditions for the co-signer design, each shown live on https://template.regents.sh before release:
+
+1. Every agent signer is created with its rules attached; none exists without them.
+2. Privy refuses an agent's send to an address outside the rules and one over 10 USDC.
+3. Our server refuses a request that would take the day past 50 USDC, x402 included. It records the payment, then signs; the total is held by a database constraint or one locked update, never a read and then a check in code.
+4. An agent signer is refused when it tries to add a signer, change the owner or rules, or export the key; one refused attempt of each is shown.
+5. The app secret is only on the server and the agent's key only in the Mac keychain; neither appears in logs or on any page.
+6. Privy's agent approval switch is off, with no `device_verify` call and no page that approves a user code.
+7. Revoke removes the signer at Privy, and that signer's next request is refused.
+
 ## Order of work
 
 1. Done: this plan; the Offers escrow proposal goes to Sean.
