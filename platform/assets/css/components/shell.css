@@ -89,7 +89,7 @@
 }
 
 .shell-brand,
-.account-control summary,
+#app-shell .account-chip,
 #app-shell .mobile-menu-button {
   display: flex;
   align-items: center;
@@ -102,8 +102,8 @@
   border-radius: 0;
   background: transparent;
   color: inherit;
+  font: inherit;
   cursor: pointer;
-  list-style: none;
   user-select: none;
 }
 
@@ -229,13 +229,13 @@
   }
 
   .shell-brand:hover,
-  .account-control summary:hover,
+  #app-shell .account-chip:hover,
   #app-shell .mobile-menu-button:hover {
     background: color-mix(in oklch, var(--color-fg) 6%, transparent);
   }
 }
 
-#shell-aside-button[aria-expanded="true"],
+#app-shell [data-aside-toggle][aria-expanded="true"],
 #app-shell:has(#shell-apps:popover-open) #shell-apps-button {
   background: var(--ash-panel-strong);
   color: var(--color-fg);
@@ -315,27 +315,25 @@
 }
 
 .account-control,
-.theme-control,
-.account-control details {
+.theme-control {
   position: relative;
 }
 
-.account-control {
+.account-control,
+.account-chip {
   display: flex;
+  align-items: center;
+}
+
+.account-chip {
+  gap: 0.55rem;
+  min-width: 0;
 }
 
 /* The shared prism control draws its own box and hover; the bar only centres it. */
 .theme-control {
   display: flex;
   align-items: center;
-}
-
-.account-control summary::-webkit-details-marker {
-  display: none;
-}
-
-.account-control details[open] summary {
-  background: color-mix(in oklch, var(--color-fg) 6%, transparent);
 }
 
 .account-avatar {
@@ -387,83 +385,6 @@
   }
 }
 
-.shell-chevron {
-  margin-left: 0.25rem;
-  color: var(--color-fg-muted);
-  font-family: var(--font-family-ui);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-details[open] > summary .shell-chevron {
-  transform: rotate(180deg);
-}
-
-.shell-popover {
-  position: absolute;
-  top: 100%;
-  z-index: 6;
-  display: grid;
-  min-width: 13rem;
-  border: 1px solid var(--ash-line-strong);
-  background: var(--color-surface);
-}
-
-.account-menu__content > a {
-  min-height: 2.75rem;
-  padding: 0.7rem 0.85rem;
-}
-
-@media (hover: hover) {
-  .account-menu__content > a:hover {
-    background: color-mix(in oklch, var(--color-fg) 8%, transparent);
-  }
-}
-
-.theme-control .shell-popover,
-.account-menu__content {
-  right: 0;
-}
-
-.account-menu__content {
-  min-width: 14rem;
-}
-
-.account-menu__row {
-  display: grid;
-  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  min-height: 3rem;
-  padding: 0.8rem 0.85rem;
-  border: 0;
-  border-block-end: 1px solid var(--color-border);
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-}
-
-@media (hover: hover) {
-  .account-menu__row:hover {
-    background: color-mix(in oklch, var(--color-fg) 8%, transparent);
-  }
-}
-
-.account-menu__icon {
-  width: 1.4rem;
-  height: 1.4rem;
-}
-
-#account-menu .account-menu__row--account {
-  color: var(--ash-accent-warm);
-}
-
-.account-menu__row--danger {
-  border-block-end: 0;
-  color: var(--ash-accent-warm);
-}
-
 .account-control > .rg-button {
   height: auto;
   margin: var(--space-1);
@@ -472,9 +393,10 @@ details[open] > summary .shell-chevron {
 
 /* ---- Regents apps ---- */
 
-/* The button sits straight in the top bar rather than in the tools group, so it
-   centres itself as the groups beside it do. */
-#app-shell #shell-apps-button {
+/* These buttons sit straight in the top bar rather than in the tools group, so
+   they centre themselves as the groups beside them do. */
+#app-shell #shell-apps-button,
+#app-shell #shell-aside-button {
   align-self: center;
 }
 
@@ -913,6 +835,30 @@ details[open] > summary .shell-chevron {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.shell-account__name {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.shell-account__name .account-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-account__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.shell-account__actions .rg-button {
+  width: 100%;
+  justify-content: center;
 }
 
 #shell-aside .shell-promo {
@@ -1414,14 +1360,14 @@ details[open] > summary .shell-chevron {
     min-width: 0;
   }
 
-  .account-control summary {
+  #app-shell .account-chip {
     max-width: 6rem;
     padding-inline: 0.5rem;
     overflow: hidden;
     white-space: nowrap;
   }
 
-  .account-control summary [data-account-target="profile"] {
+  #app-shell .account-chip .account-name {
     flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
@@ -1429,7 +1375,7 @@ details[open] > summary .shell-chevron {
   }
 
   /* With a picture, the name is for screen readers only. */
-  .account-avatar + [data-account-target="profile"] {
+  #app-shell .account-chip .account-avatar + .account-name {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -1438,16 +1384,13 @@ details[open] > summary .shell-chevron {
     white-space: nowrap;
   }
 
-  .account-control summary .shell-chevron {
-    display: none;
-  }
-
   /* Narrower presses keep every header tool on one row on phones. */
   #app-shell .shell-tool {
     width: 2.25rem;
   }
 
-  #app-shell #shell-apps-button {
+  #app-shell #shell-apps-button,
+  #app-shell #shell-aside-button {
     flex: 0 0 auto;
   }
 
@@ -1538,16 +1481,6 @@ details[open] > summary .shell-chevron {
     width: auto;
   }
 
-  .shell-popover {
-    position: fixed;
-    top: 3.5rem;
-    right: 0;
-    left: 0;
-    max-height: calc(100dvh - 3.5rem);
-    overflow: auto;
-    border-inline: 0;
-  }
-
   .shell-footer__links,
   #shell-footer .rl-header-links {
     display: none;
@@ -1570,13 +1503,14 @@ details[open] > summary .shell-chevron {
     letter-spacing: 0.04em;
   }
 
-  .account-control summary {
-    padding-inline: 0.25rem;
+  /* The side panel button beside it opens the same panel, so the name gives
+     way to it. */
+  #app-shell .account-chip {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shell-chevron,
   .shell-tool__tip {
     transition: none;
   }

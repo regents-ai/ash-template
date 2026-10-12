@@ -629,8 +629,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
         </.card>
         <.card>
           <h3>Privy <small>Real sign-in</small></h3>
-          <div data-sc-privy-mode={@privy_mode}>
-            <div id="account-control" class="sc-row">
+          <div id="account-control" data-sc-privy-mode={@privy_mode}>
+            <div class="sc-row">
               <P.button
                 :if={@privy_mode == :configured && @account_control.kind == :sign_in}
                 data-account-target="sign-in"
@@ -643,7 +643,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
               <P.button :if={@privy_mode != :configured} disabled aria-describedby="privy-unavailable">Sign in with Privy</P.button>
             </div>
             <p :if={@privy_mode == :configured && @account_control.kind == :signed_in}>
-              Signed in as {@account_control.label}.
+              Signed in as <span data-account-target="profile">{@account_control.label}</span>.
             </p>
             <p :if={@privy_mode == :unconfigured} id="privy-unavailable">
               Sign-in isn't available on this copy of the site.

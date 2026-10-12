@@ -49,7 +49,11 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             else: "This page only reads your wallet"}
         </span>
         <%!-- Same markup and event markers as the site header. No second auth handler. --%>
-        <Shell.account_control account_control={@account_control} enabled={@mode == :configured} />
+        <Shell.account_control
+          account_control={@account_control}
+          enabled={@mode == :configured}
+          panel={false}
+        />
         <Shell.theme_toggle id="privy-reference-theme" />
       </header>
 

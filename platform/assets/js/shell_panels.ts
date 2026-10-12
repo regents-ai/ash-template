@@ -62,8 +62,10 @@ export function installShellPanels(shell: HTMLElement) {
     button.dataset.unseen = String(!asideOpen() && seenDigest() !== digest)
   }
 
+  // The side panel's own button and the account name in the header both open it.
   const syncAside = () => {
-    asideButton()?.setAttribute("aria-expanded", String(asideOpen()))
+    shell.querySelectorAll("[data-aside-toggle]").forEach(toggle =>
+      toggle.setAttribute("aria-expanded", String(asideOpen())))
     syncPulse()
   }
 
@@ -148,7 +150,7 @@ export function installShellPanels(shell: HTMLElement) {
     const target = event.target instanceof Element ? event.target : null
     if (!target) return
 
-    if (target.closest("#shell-aside-button")) return setAside(!asideOpen())
+    if (target.closest("[data-aside-toggle]")) return setAside(!asideOpen())
     if (target.closest("[data-aside-close]")) {
       setAside(false)
       return asideButton()?.focus()

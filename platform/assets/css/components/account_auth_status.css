@@ -49,6 +49,7 @@
 }
 
 #account-control [aria-busy="true"],
+#shell-account [aria-busy="true"],
 [data-account-target="connect-wallet"][aria-busy="true"] {
   cursor: progress;
   opacity: 0.7;

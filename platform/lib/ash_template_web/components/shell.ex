@@ -140,20 +140,6 @@ defmodule AshTemplateWeb.Components.Shell do
             </span>
             <span class="shell-tool__tip" aria-hidden="true">Activity</span>
           </.link>
-          <button
-            id="shell-aside-button"
-            class="shell-tool"
-            type="button"
-            aria-controls="shell-aside"
-            aria-expanded="false"
-            aria-label="Side panel"
-            data-aside-digest={@aside_digest}
-            phx-mounted={JS.ignore_attributes(["aria-expanded", "data-unseen"])}
-          >
-            <.icon name={:panel} />
-            <span class="shell-pulse" aria-hidden="true"></span>
-            <span class="shell-tool__tip" aria-hidden="true">Side panel</span>
-          </button>
         </div>
 
         <.apps_menu />
@@ -173,6 +159,22 @@ defmodule AshTemplateWeb.Components.Shell do
         </button>
 
         <.account_control account_control={@account_control} />
+
+        <button
+          id="shell-aside-button"
+          class="shell-tool"
+          type="button"
+          aria-controls="shell-aside"
+          aria-expanded="false"
+          aria-label="Side panel"
+          data-aside-toggle
+          data-aside-digest={@aside_digest}
+          phx-mounted={JS.ignore_attributes(["aria-expanded", "data-unseen"])}
+        >
+          <.icon name={:panel} />
+          <span class="shell-pulse" aria-hidden="true"></span>
+          <span class="shell-tool__tip" aria-hidden="true">Side panel</span>
+        </button>
       </header>
 
       <div id="shell-drawer" data-panel="drawer" tabindex="-1">
@@ -295,6 +297,25 @@ defmodule AshTemplateWeb.Components.Shell do
             <.icon name={:close} />
           </button>
         </div>
+
+        <section
+          :if={@account_control.kind in [:signed_in, :preview]}
+          id="shell-account"
+          class="shell-account"
+          aria-label="Your account"
+        >
+          <p class="shell-account__name"><.account_name account_control={@account_control} /></p>
+          <div class="shell-account__actions">
+            <.link patch="/account" class="rg-button rg-button--secondary">Account</.link>
+            <Regent.Primitives.button
+              variant="secondary"
+              type="button"
+              data-account-target="sign-out"
+            >
+              Sign out
+            </Regent.Primitives.button>
+          </div>
+        </section>
 
         <section class="shell-promo" aria-labelledby="shell-promo-title">
           <p class="shell-promo__kicker">New</p>
@@ -569,6 +590,13 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
   attr :enabled, :boolean, default: true
 
+  attr :panel, :boolean,
+    default: true,
+    doc: """
+    Signed in, the name opens the side panel, which holds Account and Sign out.
+    A page without the side panel (the workshop pages) shows Sign out beside the name.
+    """
+
   @doc """
   The account control. auth_lazy.ts drives its `data-account-target` markers;
   the component itself never authenticates anyone.
@@ -584,40 +612,29 @@ defmodule AshTemplateWeb.Components.Shell do
       >
         {@account_control.label}
       </Regent.Primitives.button>
-      <details :if={@account_control.kind in [:signed_in, :preview]} id="account-menu">
-        <summary>
-          <img
-            :if={@account_control.avatar_src}
-            class="account-avatar"
-            src={@account_control.avatar_src}
-            referrerpolicy="no-referrer"
-            width="36"
-            height="36"
-            alt=""
-          />
-          <span data-account-target="profile">{@account_control.label}</span>
-          <span class="shell-chevron" aria-hidden="true">⌄</span>
-        </summary>
-        <div class="account-menu__content shell-popover" data-panel="menu">
-          <.link
-            patch="/account"
-            class="account-menu__row account-menu__row--account"
-            data-account-menu-item="account"
-          >
-            <.icon name={:settings} class="account-menu__icon" /><span>Account</span>
-          </.link>
-          <Regent.Primitives.button
-            variant="quiet"
-            type="button"
-            disabled={!@enabled}
-            class="account-menu__row account-menu__row--danger"
-            data-account-menu-item="disconnect"
-            data-account-target="sign-out"
-          >
-            <.icon name={:logout} class="account-menu__icon" /><span>Sign out</span>
-          </Regent.Primitives.button>
-        </div>
-      </details>
+      <button
+        :if={@panel and @account_control.kind in [:signed_in, :preview]}
+        id="account-chip"
+        class="account-chip"
+        type="button"
+        aria-controls="shell-aside"
+        aria-expanded="false"
+        data-aside-toggle
+        phx-mounted={JS.ignore_attributes(["aria-expanded"])}
+      >
+        <.account_name account_control={@account_control} />
+      </button>
+      <%= if !@panel and @account_control.kind in [:signed_in, :preview] do %>
+        <span class="account-chip"><.account_name account_control={@account_control} /></span>
+        <Regent.Primitives.button
+          variant="quiet"
+          type="button"
+          disabled={!@enabled}
+          data-account-target="sign-out"
+        >
+          Sign out
+        </Regent.Primitives.button>
+      <% end %>
       <p
         id="account-auth-status"
         class="account-auth-status"
@@ -629,6 +646,30 @@ defmodule AshTemplateWeb.Components.Shell do
       >
       </p>
     </div>
+    """
+  end
+
+  attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
+
+  # The account's picture and name. The `profile` marker tells the browser the
+  # page was drawn for a signed-in account; the workshop's sample account has none.
+  defp account_name(assigns) do
+    ~H"""
+    <img
+      :if={@account_control.avatar_src}
+      class="account-avatar"
+      src={@account_control.avatar_src}
+      referrerpolicy="no-referrer"
+      width="36"
+      height="36"
+      alt=""
+    />
+    <span
+      class="account-name"
+      data-account-target={@account_control.kind == :signed_in && "profile"}
+    >
+      {@account_control.label}
+    </span>
     """
   end
 

@@ -29,7 +29,11 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
       <header class="sc-header wallet-page-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
-        <Shell.account_control account_control={@account_control} enabled={@mode == :configured} />
+        <Shell.account_control
+          account_control={@account_control}
+          enabled={@mode == :configured}
+          panel={false}
+        />
         <Shell.theme_toggle id="wallet-page-theme" />
       </header>
 

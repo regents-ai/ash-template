@@ -41,8 +41,6 @@ type ShellHook = Hook & {
   syncPanels?: () => void
   shellState?: ShellState
   restoreState?: () => void
-  openPopoverIds?: string[]
-  destinationBeforeUpdate?: string
 }
 
 let cachedShellState: ShellState | undefined
@@ -179,9 +177,6 @@ const shellBehavior: Hook = {
       }
 
       if (target?.closest("#shell-drawer a")) closeMenu()
-      if (target?.closest("#account-menu a")) {
-        target.closest("details")?.removeAttribute("open")
-      }
     }
 
     const onKeydown = (event: KeyboardEvent) => {
@@ -248,15 +243,6 @@ const shellBehavior: Hook = {
     }
   },
 
-  beforeUpdate(this: ShellHook) {
-    this.destinationBeforeUpdate = this.el.dataset.destination ?? ""
-    this.openPopoverIds = [
-      ...this.el.querySelectorAll<HTMLDetailsElement>("#account-control details[open]"),
-    ]
-      .map(details => details.parentElement?.id)
-      .filter((id): id is string => Boolean(id))
-  },
-
   updated(this: ShellHook) {
     document.documentElement.dataset.brand = brandForShellApp(this.el.dataset.app)
     const incoming = {
@@ -275,11 +261,6 @@ const shellBehavior: Hook = {
     this.syncPanels?.()
     if (menuWasOpen && this.shellState?.menuOpen === false) {
       this.el.querySelector<HTMLButtonElement>("#mobile-menu-button")?.focus()
-    }
-    if (this.destinationBeforeUpdate === incoming.destination) {
-      this.openPopoverIds?.forEach(id => {
-        this.el.querySelector<HTMLDetailsElement>(`#${id} > details`)?.setAttribute("open", "")
-      })
     }
     this.el.dataset.behaviorReady = "true"
     // A new page starts at its top, with focus on its heading, so a screen

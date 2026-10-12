@@ -947,7 +947,7 @@ export function installAccountAuthLazyLoader(
   }
   const onWalletFocus = () => {
     if (documentRoot.visibilityState !== "hidden" && walletDisconnected() &&
-        documentRoot.querySelector("#account-control [data-account-target='sign-out']")) observePeerLogout()
+        documentRoot.querySelector("#account-control [data-account-target='profile']")) observePeerLogout()
   }
   const onStatusResize = () => {
     const status = documentRoot.querySelector<HTMLElement>("#account-auth-status")
@@ -1085,7 +1085,7 @@ export function installAccountAuthLazyLoader(
       if (anonymous) await loader.request("sign-out").catch(() => undefined)
       loader.finishHandoff()
     })
-  } else if (documentRoot.querySelector("#account-control [data-account-target='sign-out']")) {
+  } else if (documentRoot.querySelector("#account-control [data-account-target='profile']")) {
     reconcileSignedInStartup()
   }
   return () => {
