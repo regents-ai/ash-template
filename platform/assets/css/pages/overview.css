@@ -1,16 +1,27 @@
 @layer regents-product {
-/* The Overview: a title, then one card per place, each a name and a short line. */
+/* The Overview: a title, then one card per place, each a name and a short line.
+   Five places sit in one column, then three, then one row, so no card is ever
+   left alone on a row. */
 
 .overview-page {
   display: grid;
   gap: 1.5rem;
   min-width: 0;
+  container-type: inline-size;
 }
 
 .overview-places {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-2);
+}
+
+@container (min-width: 36rem) {
+  .overview-places { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@container (min-width: 56rem) {
+  .overview-places { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
 .overview-place {
