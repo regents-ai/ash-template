@@ -131,9 +131,15 @@ export function installShellPanels(shell: HTMLElement) {
 
   const closeSearch = () => search()?.close()
 
+  // Opening Buy Credits reads the wallet's funds again, so Buy is held back
+  // only by what the chain says now.
   const openCredits = () => {
     const dialog = credits()
-    if (dialog && !dialog.open) dialog.showModal()
+    if (!dialog || dialog.open) return
+    dialog.showModal()
+    dialog
+      .querySelectorAll("[data-refresh-funds]")
+      .forEach(panel => panel.dispatchEvent(new CustomEvent("ash:refresh-funds")))
   }
 
   const closeCredits = () => credits()?.close()

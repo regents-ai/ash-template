@@ -49,6 +49,7 @@ defmodule AshTemplateWeb.CreditsPanel do
        numbers: %{},
        usdc: nil,
        allowance: nil,
+       latest: %{},
        purchases: %{}
      )}
   end
@@ -182,11 +183,18 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   # Each read answers with the wallet it was for, and lands only while that
   # wallet is still the one shown: the check before it can move the panel to
-  # another.
+  # another. Only a figure read now may hold Buy back.
   def handle_async(figure, result, socket) when figure in [:usdc, :allowance] do
     case read(result, socket.assigns.wallet) do
-      :other_wallet -> {:noreply, socket}
-      micro -> {:noreply, assign(socket, figure, micro)}
+      :other_wallet ->
+        {:noreply, socket}
+
+      :unread ->
+        {:noreply, assign(socket, figure, :unread)}
+
+      micro ->
+        {:noreply,
+         assign(socket, [{figure, micro}, latest: Map.put(socket.assigns.latest, figure, micro)])}
     end
   end
 
@@ -237,7 +245,7 @@ defmodule AshTemplateWeb.CreditsPanel do
         do: assign(socket, signer: signer),
         else:
           socket
-          |> assign(signer: signer, wallet: wallet, usdc: nil, allowance: nil)
+          |> assign(signer: signer, wallet: wallet, usdc: nil, allowance: nil, latest: %{})
           |> read_funds()
 
     socket
@@ -305,12 +313,14 @@ defmodule AshTemplateWeb.CreditsPanel do
     do: assign(socket, purchases: Map.put(socket.assigns.purchases, hash, shown))
 
   # The shown wallet's USDC on Base, and what REGENT staking may take of it,
-  # both at the latest block. Each account has a read allowance; past it, the
-  # figures already shown stay, and a wallet not read yet shows them unavailable.
+  # both at the latest block. The figures already shown stay on screen, but from
+  # here until each new read lands none of them holds Buy back. Each account has
+  # a read allowance; past it, a wallet not read yet shows them unavailable.
   defp read_funds(%{assigns: %{wallet: nil}} = socket), do: socket
 
   defp read_funds(socket) do
     %{usdc: usdc, allowance: allowance} = socket.assigns
+    socket = assign(socket, latest: %{})
 
     case Limits.spend(:wallet_read, {:human, socket.assigns.account.id}) do
       :ok -> start_reads(socket)
@@ -579,16 +589,17 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   defp covered?(_allowance, _dollars), do: false
 
-  # Why Buy is certain to fail right now, from the chain at the latest block; nil
-  # when it may go through. An unread figure is never a reason.
+  # Why Buy is certain to fail right now, from the shown wallet's last read at
+  # the latest block; nil when it may go through. A figure still being read,
+  # unread or past the read allowance is never a reason.
   defp blocked(_assigns, nil), do: nil
 
-  defp blocked(%{usdc: usdc, allowance: allowance}, dollars) do
+  defp blocked(%{latest: latest}, dollars) do
     micro = Chains.micro(dollars)
 
     cond do
-      is_integer(usdc) and usdc < micro -> "Not enough USDC on Base"
-      is_integer(allowance) and allowance < micro -> "Approve first"
+      is_integer(latest[:usdc]) and latest.usdc < micro -> "Not enough USDC on Base"
+      is_integer(latest[:allowance]) and latest.allowance < micro -> "Approve first"
       true -> nil
     end
   end
