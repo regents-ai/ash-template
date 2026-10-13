@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.PageToolsController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.{FormErrors, NotesJSON}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
   alias RegentPoints.{Amount, Rules}
@@ -65,8 +65,8 @@ defmodule AshTemplateWeb.PageToolsController do
         answer = %{credits: RegentCredits.balance(actor.privy_user_id), spending_grant: budget}
         json(conn, with_note(answer, not RegentCredits.agent_grants_enabled?(), @spending_off))
 
-      {:error, _} ->
-        refuse(conn, "unavailable")
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
@@ -79,7 +79,7 @@ defmodule AshTemplateWeb.PageToolsController do
 
     case RegentCredits.history(args, actor: credit_actor(conn)) do
       {:ok, history} -> json(conn, history)
-      {:error, _} -> refuse(conn, "unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
@@ -111,15 +111,15 @@ defmodule AshTemplateWeb.PageToolsController do
 
         json(conn, with_note(answer, Rules.active() == [], @points_off))
 
-      {:error, _} ->
-        refuse(conn, "unavailable")
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
   def notes(conn, _params) do
     case Notes.list_my_notes(actor: conn.assigns.actor) do
       {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
-      {:error, _error} -> refuse(conn, "unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
@@ -132,7 +132,7 @@ defmodule AshTemplateWeb.PageToolsController do
          ) do
       {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_search")
-      {:error, _error} -> refuse(conn, "unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
@@ -147,7 +147,7 @@ defmodule AshTemplateWeb.PageToolsController do
       {:ok, %Note{} = earlier} -> json(conn, %{note: NotesJSON.note(earlier)})
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, _error} -> refuse(conn, "unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
@@ -158,7 +158,7 @@ defmodule AshTemplateWeb.PageToolsController do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, %Ash.Error.Invalid{} = error} -> refuse_pin(conn, error)
         {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-        {:error, _error} -> refuse(conn, "unavailable")
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
       end
     end)
   end
@@ -175,7 +175,7 @@ defmodule AshTemplateWeb.PageToolsController do
       case Notes.unpin_note(note, actor: conn.assigns.actor) do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-        {:error, _error} -> refuse(conn, "unavailable")
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
       end
     end)
   end
@@ -186,7 +186,7 @@ defmodule AshTemplateWeb.PageToolsController do
       {:ok, nil} -> refuse(conn, "note_not_found")
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, _error} -> refuse(conn, "unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 

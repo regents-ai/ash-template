@@ -13,9 +13,5 @@ defmodule AshTemplate.Agents do
       define :record_backing, action: :record_backing, args: [:human_id, :agent_count]
       define :use_post_before_pairing, action: :use_post_before_pairing
     end
-
-    resource AshTemplate.Agents.Pairing do
-      define :get_pairing, action: :by_wallet, args: [:wallet], not_found_error?: false
-    end
   end
 end

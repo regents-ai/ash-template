@@ -6,10 +6,11 @@ defmodule AshTemplate.Repo do
   # that read tables owned elsewhere name their schema themselves.
   @schema "ash_template_app"
 
-  # Keep this at 14 even though the server runs 17: at 17 AshPostgres writes
-  # upserts as MERGE statements, which drop the schema prefix and fail with
-  # "relation ... does not exist".
-  def min_pg_version, do: %Version{major: 14, minor: 0, patch: 0}
+  # The shared database runs PostgreSQL 17. Upserts stay on INSERT ... ON CONFLICT
+  # (`upsert_with_merge?: false` in config.exs): AshPostgres 2.13.0's MERGE names
+  # the table without `default_prefix/0`, so it fails here with "relation ... does
+  # not exist". `Ash.update_many` is written the same way; nothing here calls it.
+  def min_pg_version, do: %Version{major: 17, minor: 0, patch: 0}
   def installed_extensions, do: ["ash-functions"]
   def default_prefix, do: @schema
 

@@ -35,9 +35,6 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Activity", "What has happened for you lately: mentions in rooms, newest first."},
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
-    "/chat/original" =>
-      {"Chat in Ash AI's look",
-       "The same chat with the assistant, in the look Ash AI's chat generator gives it."},
     "/account" => {"Account", "Your profile, agents, Credits and the session on this browser."},
     "/account/points" => {"Points", "Your points and activity."},
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},

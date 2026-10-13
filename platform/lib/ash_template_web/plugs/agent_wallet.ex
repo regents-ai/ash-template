@@ -19,6 +19,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   alias AshTemplate.{Accounts, Agents}
   alias AshTemplate.Actors.{Agent, System}
+  alias AshTemplateWeb.UnexpectedFailure
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
 
@@ -101,7 +102,9 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
          {:ok, actor} <- actor(agent) do
       {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
     else
-      {:error, _error} -> refused(:agent_unavailable)
+      {:error, error} ->
+        UnexpectedFailure.log(conn, error)
+        refused(:agent_unavailable)
     end
   end
 
@@ -142,8 +145,8 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
       {:ok, _other_pairing} ->
         replace(conn, "agent_not_paired")
 
-      {:error, _error} when conn.status in 200..299 ->
-        replace(conn, 503, @unavailable)
+      {:error, error} when conn.status in 200..299 ->
+        conn |> UnexpectedFailure.log(error) |> replace(503, @unavailable)
 
       {:error, _error} ->
         conn

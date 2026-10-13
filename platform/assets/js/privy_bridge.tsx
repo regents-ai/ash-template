@@ -61,7 +61,7 @@ type AccountRequestHandlerOptions = {
   synchronizeWallets: () => Promise<void>
 }
 
-export function createAccountRequestHandler({
+function createAccountRequestHandler({
   connectWallet,
   signIn,
   providerLogout,
@@ -125,7 +125,7 @@ type SignInRequestOptions = {
 // Privy's window, so the wallet the visitor proves is the one their wallet app
 // is on now. A Privy session this browser still remembers belongs to whoever
 // signed in before; it is logged out first, never reused.
-export function createSignInRequest({
+function createSignInRequest({
   authenticated,
   providerLogout,
   openLogin,
@@ -165,13 +165,13 @@ type IdentityRequestHandlerOptions = {
 
 // Privy names the account kind it linked; only the three the page offers are
 // ours to report on.
-export function identityProviderFor(linkMethod: string): IdentityProvider | null {
+function identityProviderFor(linkMethod: string): IdentityProvider | null {
   if (linkMethod === "twitter") return "x"
   if (linkMethod === "github" || linkMethod === "farcaster") return linkMethod
   return null
 }
 
-export function createIdentityRequestHandler({
+function createIdentityRequestHandler({
   linkX,
   linkGithub,
   linkFarcaster,
@@ -209,7 +209,7 @@ type SignOutOnlyBridgeOptions = {
   onTerminal?: () => void
 }
 
-export function createSignOutOnlyBridgeState({
+function createSignOutOnlyBridgeState({
   ordinaryRequest,
   ordinaryIdentity,
   onTerminal = () => undefined,
@@ -270,7 +270,7 @@ export {clearLocalSession, csrfToken}
 // Privy's two tokens have two different jobs: the access token proves this
 // browser's Privy session and the identity token carries the signed accounts
 // that session is entitled to. Regent needs both, so they travel together.
-export type PrivyTokenPair = {accessToken: string; identityToken: string}
+type PrivyTokenPair = {accessToken: string; identityToken: string}
 
 type PrivyTokenSources = {
   getIdentityToken: () => Promise<string | null>
@@ -282,7 +282,7 @@ type PrivyTokenSources = {
 // never older than the evidence it is offered with. A half pair is never sent:
 // if either read fails or comes back empty, nothing is requested at all and any
 // local session this browser already holds is left exactly as it is.
-export function createPrivyTokenPairSource({
+function createPrivyTokenPairSource({
   getIdentityToken: identity,
   getAccessToken: access,
   capture = () => () => true,
@@ -303,7 +303,7 @@ export function createPrivyTokenPairSource({
   }
 }
 
-export async function createLocalSession(
+async function createLocalSession(
   tokens: PrivyTokenPair,
   fetcher: typeof fetch = fetch,
   sessionMutations: SessionMutationCoordinator = browserSessionMutations,
@@ -425,7 +425,7 @@ function sameConnectedWallet(
 // customer had selected there. Anything else is not a switch: the selected
 // account still listed, that app gone entirely, several of its accounts to
 // choose between, or an account from a different app.
-export function switchedAccountOf(
+function switchedAccountOf(
   previous: ConnectedWallet | null,
   wallets: readonly ConnectedWallet[],
 ): ConnectedWallet | null {
@@ -456,7 +456,7 @@ type ProviderSessionReconcilerOptions = {
 // session event: this can end a local session the provider no longer supports,
 // but it can never establish or refresh one, so an ordinary signed-in load
 // advances no generation, renews no cookie and rotates no CSRF state.
-export function createProviderSessionReconciler({
+function createProviderSessionReconciler({
   clearSession,
   disconnectWallets = async () => undefined,
   providerAuthenticated,
@@ -496,7 +496,7 @@ type PrivySessionCompletionOptions = {
 // The pair is acquired inside the attempt, so every entry point — a granted
 // token, an explicit sign in, a same-account refresh — asks Privy for one
 // complete, current pair and sends nothing when it cannot get one.
-export function createPrivySessionCompletion({
+function createPrivySessionCompletion({
   acquireTokens,
   fetcher = fetch,
   localSessionNeeded,
@@ -534,7 +534,7 @@ export function createPrivySessionCompletion({
   }
 }
 
-export function createPrivyTokenCallbacks(completeLogin: () => Promise<void>) {
+function createPrivyTokenCallbacks(completeLogin: () => Promise<void>) {
   return {
     onAccessTokenGranted: () => completeLogin().catch(() => undefined),
     onAccessTokenRemoved: () => undefined,
@@ -557,7 +557,7 @@ const privyLoginFailureDiagnostics: Partial<Record<string, SignInFailureDiagnost
   unable_to_sign: "unable_to_sign",
 }
 
-export function privyLoginFailureDiagnostic(error: unknown): SignInFailureDiagnostic {
+function privyLoginFailureDiagnostic(error: unknown): SignInFailureDiagnostic {
   return privyLoginFailureDiagnostics[typeof error === "string" ? error : ""] ?? "provider_error"
 }
 
@@ -628,7 +628,7 @@ type AccountBridgeProps = {
   ) => void
 }
 
-export type PrivyBridgeProviderState = {
+type PrivyBridgeProviderState = {
   userId?: string
   appId: string
   authenticated: boolean

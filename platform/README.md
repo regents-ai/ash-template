@@ -120,7 +120,7 @@ production.
 | `PORT` | No | HTTP port. Defaults to `4000`. |
 | `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the Credits admins. Only they can open the saved errors at `/admin/errors`; anyone else gets the not-found page. |
 | `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. There is no default; each role admits only its own database hosts. |
-| `DATABASE_POOLED_URL` | Yes in production | Pooled PostgreSQL connection string for an approved host. |
+| `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's direct host. |
 | `DATABASE_DIRECT_URL` | Only when migrating | Direct PostgreSQL connection string used by the migration release command. |
 | `ASH_TEMPLATE_DATABASE_TARGET_MODE` | Only when migrating | Must be `production` for the production migration command. |
 | `ASH_TEMPLATE_DATABASE_CLUSTER_ID` | For a remote target | Must match the approved cluster. Set neither this nor the name to stay on the loopback database. |

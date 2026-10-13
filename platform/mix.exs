@@ -130,9 +130,6 @@ defmodule AshTemplate.MixProject do
 
   defp local_dependency(dep, _paths, _root), do: dep
 
-  # The stylesheet of the one page in Ash AI's own look (`assets/ash_ai_chat/`).
-  @ash_ai_chat_css "node_modules/.bin/tailwindcss -i assets/ash_ai_chat/ash_ai_chat.css -o priv/static/assets/css/ash_ai_chat.css"
-
   # `mix usage_rules.sync` writes the marked block at the end of AGENTS.md: how to
   # read the installed version's docs, and links to each package's own rules in deps/.
   defp usage_rules do
@@ -159,15 +156,13 @@ defmodule AshTemplate.MixProject do
         "regent_ui.assets",
         "regent_identity.assets",
         "regent_agent_access.assets",
-        "esbuild ash_template",
-        "cmd #{@ash_ai_chat_css}"
+        "esbuild ash_template"
       ],
       "assets.deploy": [
         "regent_ui.assets",
         "regent_identity.assets",
         "regent_agent_access.assets",
         "esbuild ash_template --minify",
-        "cmd #{@ash_ai_chat_css} --minify",
         "phx.digest"
       ],
       precommit: [

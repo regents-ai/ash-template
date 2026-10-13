@@ -1449,3 +1449,29 @@ Operations
   carries the same change. Nothing new is stored, and the sign-in service is
   unchanged.
 - Needs elixir-utils with `RegentAgents.Activity.recent/3`.
+
+## 2026-10-13 — An agent's "try again" leaves a trace
+
+- Every agent request the site answers only with "try again" (a 503 from notes,
+  rooms, the `/tools` doors or agent sign-in) now logs the request and what failed
+  first, through `AshTemplateWeb.UnexpectedFailure`. Nothing the agent sees changes.
+- Each trace is one line with its cause on it, and a refused room post logs the
+  refusal alone, never what was posted or who posted it.
+
+## 2026-10-13 — Dead code removed
+
+- The second chat page at `/chat/original` is gone, with its link on the Chat page, its
+  layout, and the Tailwind, DaisyUI and Heroicons packages only it used. `/chat` is the
+  one chat page.
+- The unused `AshTemplate.Agents.Pairing` resource is gone; pairing is read through
+  `RegentAgents`, as before.
+- `assets/js/privy_bridge.tsx` exports only what another file imports.
+- The Points settings are written once in `config/config.exs`.
+- The README no longer calls the serving database connection pooled.
+
+## 2026-10-13 — The database version is the true one
+
+- The site tells Ash the database is PostgreSQL 17, which it is, instead of 14.
+  Upserts keep their current statement through AshPostgres's own setting
+  (`upsert_with_merge?: false`), because its newer one leaves out the site's schema.
+  Nothing a visitor or an agent sees changes.

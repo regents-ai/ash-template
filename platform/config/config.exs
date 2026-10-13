@@ -4,18 +4,6 @@ config :mdex_native, syntax_highlighter: :lumis
 # The chat page's free stand-in model (`AshTemplate.Chat.StandIn`).
 config :req_llm, custom_providers: [AshTemplate.Chat.StandIn]
 
-config :regent_points,
-  repo: AshTemplate.Repo,
-  pubsub: AshTemplate.PubSub,
-  ash_domains: [RegentPoints],
-  accounts: AshTemplate.Points.Accounts,
-  chain_client: AshTemplate.ChainClient,
-  program_id: "regents-points-v1",
-  starts_at: nil,
-  unified_activity_starts_at: nil,
-  approved_rules: [],
-  adapters: %{}
-
 config :regent_identity, repo: AshTemplate.Repo, ash_domains: [RegentIdentity]
 
 # Regent Credits: one prepaid balance per Privy account, shared by every Regent
@@ -42,6 +30,10 @@ config :regent_credits,
 # (`:mixed`) do not, because one grapheme can carry unbounded combining marks
 # (CVE-2026-82752).
 config :ash, default_string_length_count: :codepoints
+
+# AshPostgres 2.13.0 writes a PostgreSQL 17 upsert as MERGE, which leaves out the
+# Repo's default schema. Upserts stay on INSERT ... ON CONFLICT, which keeps it.
+config :ash_postgres, upsert_with_merge?: false
 
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
@@ -207,8 +199,6 @@ config :error_tracker,
 
 config :phoenix, :json_library, Jason
 
-import_config "#{config_env()}.exs"
-
 # Points launch is explicit: nothing earns until Sean sets the rules and start time.
 # Every site reads the one shared regent_points schema; Regents owns its migrations.
 config :regent_points,
@@ -219,8 +209,11 @@ config :regent_points,
   ash_domains: [RegentPoints],
   program_id: "regents-points-v1",
   starts_at: nil,
+  unified_activity_starts_at: nil,
   approved_rules: [],
   adapters: %{
     "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
     "#{site}.first_agent_note" => AshTemplate.Points.AgentNote
   }
+
+import_config "#{config_env()}.exs"
