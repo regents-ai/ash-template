@@ -31,7 +31,10 @@ A push or a result is held against `lapses_at` on the clock:
   that changed or withdrew the account's wallets, a component reporting its lease
   lapsed) always re-reads. The account resource publishes its sign-in refresh on the
   account's own topic for this, so a sign-in elsewhere that leaves the account without
-  a wallet signs its other open pages out at once.
+  a wallet signs its other open pages out at once. That notice reaches only this
+  site's own open pages; another site learns at its own next read. It is an early
+  notice, not the guarantee: it is sent after the write is saved and can be lost. The
+  guarantee stays that every navigation and every event reads the session again.
 - Background work goes through `start_async/3`: `assign_async` and `stream_async`
   results never reach `:handle_async` hooks, so they would skip the check.
 
