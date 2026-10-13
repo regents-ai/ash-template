@@ -13,7 +13,10 @@ export type CrownOptions = CanvasIslandOptions<CrownRenderer> & {
 }
 
 export type CrownController = CanvasIslandController & {
-  /** Reads the crown's look again and hands it to the crown already on screen. */
+  /**
+   * Reads the crown's look again and hands it to the crown already on screen.
+   * For a site whose look follows something the page can change, such as a theme.
+   */
   restyle(): void
 }
 
@@ -37,7 +40,8 @@ const clampUnit = (value: number): number => Math.min(1, Math.max(0, value))
  *
  * The island is a layer behind the stage it decorates and takes no pointer
  * events itself, so the pointer is read from that stage: it turns the camera a
- * little and swings the beams. A touch is not a hover, so on a phone the crown
+ * little, swings the beams and, in a look with quadrants, tints them by the
+ * quarter of the stage it is over. A touch is not a hover, so on a phone the crown
  * takes its aim from how far the stage has travelled up the screen. Without
  * WebGPU, or for a visitor who asked for less motion, none of this runs and the
  * still picture the server rendered stays.
@@ -60,8 +64,13 @@ export const createCrownController = (
       const stage = () => layer.parentElement!
       const onPointerMove = (event: PointerEvent) => {
         if (event.isPrimary === false) return
+        const current = renderer()
+        if (!current) return
         const {left, top, width, height} = stage().getBoundingClientRect()
-        renderer()?.aim((event.clientX - left) / width, (event.clientY - top) / height)
+        const x = (event.clientX - left) / width
+        const y = (event.clientY - top) / height
+        current.aim(x, y)
+        current.point(x, y)
         nudge()
       }
       const onPointerLeave = () => {
@@ -122,10 +131,6 @@ export const Crown = {
   mounted(this: CrownHook) {
     this.controller = createCrownController(this.el)
     this.controller.mount()
-  },
-  // The server names the look; a new name restyles the crown already drawn.
-  updated(this: CrownHook) {
-    this.controller?.restyle()
   },
   disconnected(this: CrownHook) {
     this.controller?.pause()

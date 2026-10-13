@@ -9,27 +9,9 @@ defmodule AshTemplateWeb.CrownLive do
 
   alias AshTemplateWeb.Components.Crown
 
-  # The beam colours on offer: the look's name in `assets/js/crown_looks.ts`,
-  # the word the visitor sees for it and the colour of its swatch.
-  @looks [
-    %{name: "white", label: "White", swatch: "#FFFFFF"},
-    %{name: "orange", label: "Orange", swatch: "#FF5B19"},
-    %{name: "blue", label: "Blue", swatch: "#AECACD"},
-    %{name: "sand", label: "Sand", swatch: "#B9B7A6"}
-  ]
-  @look_names Enum.map(@looks, & &1.name)
-
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(AshTemplateWeb.PublicDocuments.page("/animations/crown"))
-     |> assign(looks: @looks, look: "white")}
-  end
-
-  @impl true
-  def handle_event("look", %{"look" => look}, socket) when look in @look_names do
-    {:noreply, assign(socket, look: look)}
+    {:ok, assign(socket, AshTemplateWeb.PublicDocuments.page("/animations/crown"))}
   end
 
   @impl true
@@ -42,23 +24,21 @@ defmodule AshTemplateWeb.CrownLive do
         </p>
         <h1>Crown</h1>
         <p class="motion-lab__lede">
-          Thirteen glass cubes and three beams of light. Move the pointer to swing the light.
+          Thirteen glass cubes and three beams of light. Move the pointer to swing the light;
+          each quarter of the stage gives it a colour of its own.
         </p>
       </header>
       <div class="crown-stage">
-        <Crown.crown id="crown" look={@look} />
-      </div>
-      <div class="crown-looks" role="group" aria-label="Light colour">
-        <button
-          :for={look <- @looks}
-          type="button"
-          phx-click="look"
-          phx-value-look={look.name}
-          aria-pressed={to_string(@look == look.name)}
-          style={"--crown-swatch: #{look.swatch}"}
-        >
-          {look.label}
-        </button>
+        <Crown.crown id="crown" look="hero">
+          <img
+            class="crown__still"
+            src={~p"/images/home/hero-bg-dark.svg"}
+            width="1700"
+            height="1200"
+            alt=""
+            fetchpriority="high"
+          />
+        </Crown.crown>
       </div>
     </main>
     """

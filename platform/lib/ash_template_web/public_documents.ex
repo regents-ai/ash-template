@@ -48,7 +48,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/animations/crown" =>
       {"Crown",
-       "The glass crown: thirteen cubes and three beams of light that follow the pointer."},
+       "The glass crown: thirteen cubes and three beams of light that follow the pointer and take its colour."},
     "/animations/cube" =>
       {"World cube", "A turning cube with a room behind every side, each one a door to a site."},
     "/animations/foil" =>

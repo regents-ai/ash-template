@@ -6,7 +6,15 @@
  * a file like this one and nothing else of its own.
  */
 
-import {beamOf, type CrownBackdrop, type CrownLook, type CrownRoom, type Rgba, type Vec3} from "./crown/look"
+import {
+  beamOf,
+  tintOf,
+  type CrownBackdrop,
+  type CrownLook,
+  type CrownRoom,
+  type Rgba,
+  type Vec3,
+} from "./crown/look"
 
 /** Cells across the canvas height, and the hash offset that chooses lit cells. */
 const FIELD_SCALE = 12.05
@@ -96,18 +104,19 @@ const place = (aspect: number, room: CrownRoom) => {
   return [Math.min(0.46 * landscape, room.right), Math.max(-0.55 * narrow, room.down)] as const
 }
 
-/** The beam colours a visitor can choose, each as bright as white in its brightest channel. */
-const BEAMS: Record<string, Vec3> = {
-  white: [1, 1, 1],
-  orange: [1, 0.104616, 0.009721],
-  blue: [0.693318, 0.967442, 1],
-  sand: [1, 0.976052, 0.785996],
-}
+/**
+ * The beam is white at rest. Each quarter of the stage leans it a little toward a
+ * colour of its own: enough to notice, never enough to stop reading as white light.
+ */
+const WHITE: Vec3 = [1, 1, 1]
+const ICE: Vec3 = [0.56, 0.86, 1]
+const SAND: Vec3 = [1, 0.88, 0.58]
+const MINT: Vec3 = [0.66, 1, 0.8]
+const AMBER: Vec3 = [1, 0.66, 0.42]
 
 /** The look for the name the page gives its crown in `data-crown-look`. */
 export function crownLook(name: string): CrownLook {
-  const beam = BEAMS[name]
-  if (!beam) throw new Error(`No crown look is named "${name}".`)
+  if (name !== "hero") throw new Error(`No crown look is named "${name}".`)
 
   return {
     framing: {scale: 1, distance: 1.31, margin: 0.08, place},
@@ -139,7 +148,13 @@ export function crownLook(name: string): CrownLook {
       internalIntensity: 0.1,
       spectralIntensity: 0.72,
     },
-    colors: beamOf(beam),
+    colors: beamOf(WHITE),
+    quadrants: {
+      topLeft: tintOf(ICE),
+      topRight: tintOf(SAND),
+      bottomLeft: tintOf(MINT),
+      bottomRight: tintOf(AMBER),
+    },
     backdrop: field,
   }
 }
