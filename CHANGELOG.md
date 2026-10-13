@@ -1286,3 +1286,9 @@ Operations
   unpaired it, or paired it again, while the request ran, the answer becomes 403
   `agent_not_paired` and none of the person's data is sent. Copied from Regents
   (`RegentsWeb.Plugs.PairedAgent`).
+
+## 2026-10-13 — Pairing has its own budget
+
+- `POST /api/agents/v1/pair` counts against a `"pair"` budget of 10 a minute per client
+  address as well as the default 120, both named in the `RateLimit` headers. Past it, 429
+  with `Retry-After`. Copied from Regents (`RegentsWeb.Plugs.AgentRateLimit`).
