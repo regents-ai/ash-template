@@ -1388,3 +1388,12 @@ Operations
 - `scripts/deploy.sh` builds the image with its commit (`SOURCE_COMMIT`); a build without
   one stops. `make readiness` checks the new list against the API description, `/docs`,
   `/llms.txt` and the page's script.
+
+## 2026-10-13 — Each command says who may run it, from the capability list
+
+- `cli/commands.json` gives each command its operation's authority from
+  `/capabilities.json`: `signed_agent` for `agents whoami`, `agents pair` and
+  `rooms post`, `paired_agent` for the rest, and `notes pin` adds the
+  `spending_allowed` condition. `wallet-proof` is gone.
+- `make check-cli` runs regents-cli 41da314, which also checks that each
+  command sends exactly its operation's body fields.
