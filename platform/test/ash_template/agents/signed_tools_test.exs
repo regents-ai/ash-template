@@ -199,7 +199,8 @@ defmodule AshTemplate.SignedToolsTest do
     body = Jason.encode!(%{title: "Paired note", operation_id: id})
     created = request(:post, "/tools/notes", body)
     assert created.status == 201, created.resp_body
-    assert_receive {:proof_checked, %{"path" => "/tools/notes", "body" => ^body}}
+    digest = Siwa.content_digest_for_body(body)
+    assert_receive {:proof_checked, %{"path" => "/tools/notes", "body_digest" => ^digest}}
     refute_receive {:proof_checked, _}
     note = Jason.decode!(created.resp_body)["note"]
     assert note["id"] == id
@@ -238,7 +239,9 @@ defmodule AshTemplate.SignedToolsTest do
              |> Ash.Changeset.for_update(:send_webhook, %{},
                context: %{
                  ash_oban: %{
-                   job: %Oban.Job{args: %{"revision" => saved.revision, "pairing_id" => paired.id}}
+                   job: %Oban.Job{
+                     args: %{"revision" => saved.revision, "pairing_id" => paired.id}
+                   }
                  }
                }
              )
