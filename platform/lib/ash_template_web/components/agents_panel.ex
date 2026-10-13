@@ -377,8 +377,9 @@ defmodule AshTemplateWeb.AgentsPanel do
 
   # What the agent has done and its registry listing are read from the sign-in
   # service in the background, and what it has spent from the person's Credits.
-  # What is already on screen for this agent stays until the new reading lands. Once the person has asked for older activity,
-  # the list stays as they are reading it.
+  # What is already on screen for this agent stays until the new reading lands.
+  # Once the person has asked for older activity, the list stays as they are
+  # reading it.
   defp show_agent(socket, id) do
     with {:ok, id} <- Ecto.UUID.cast(id),
          {:ok, %PairedAgent{} = agent} <-
@@ -414,7 +415,9 @@ defmodule AshTemplateWeb.AgentsPanel do
     credits = socket.assigns.credits
 
     socket
-    |> start_async({:agent_activity, agent.id}, fn -> Activity.recent(agent) end)
+    |> start_async({:agent_activity, agent.id}, fn ->
+      Activity.recent(agent, Capabilities.requests())
+    end)
     |> start_async({:agent_spent, agent.id}, fn -> Credits.spent_by(credits, agent.wallet) end)
   end
 
@@ -426,7 +429,9 @@ defmodule AshTemplateWeb.AgentsPanel do
        when is_binary(next) and more != :loading do
     socket
     |> assign(detail: %{detail | more: :loading, paged: true})
-    |> start_async({:more_agent_activity, id}, fn -> Activity.recent(agent, next) end)
+    |> start_async({:more_agent_activity, id}, fn ->
+      Activity.recent(agent, Capabilities.requests(), next)
+    end)
   end
 
   defp load_more_activity(socket, _id), do: socket

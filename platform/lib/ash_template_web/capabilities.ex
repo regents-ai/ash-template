@@ -9,8 +9,9 @@ defmodule AshTemplateWeb.Capabilities do
   from `priv/tool_manifest.json` (the file the pages register them from) and the
   command from `cli/commands.json`. The four are checked against each other when
   this module compiles. Whether an operation is open is read from the site's
-  switch on every request, never written down. Each agent operation also says
-  what it lets an agent do in its person's words, which the account page shows.
+  switch on every request, never written down. Each agent operation also says,
+  in its person's words, what it lets an agent do and what a request to it did,
+  which the account page shows.
   """
 
   alias AshTemplateWeb.Plugs.LaunchGate
@@ -64,7 +65,7 @@ defmodule AshTemplateWeb.Capabilities do
                      row["switch"] && row["switch"] not in switches ->
                        "an unknown switch"
 
-                     row["may"] && row["authority"] not in @agents ->
+                     (row["may"] || row["done"]) && row["authority"] not in @agents ->
                        "words for a person on an operation no agent runs"
 
                      tool && tool["route"] != http ->
@@ -101,6 +102,7 @@ defmodule AshTemplateWeb.Capabilities do
                    conditions: row["conditions"],
                    switch: row["switch"],
                    person_page: row["person_page"],
+                   done: row["done"],
                    interfaces: %{
                      browser_tool: tool && tool["name"],
                      hosted_mcp: nil,
@@ -117,6 +119,18 @@ defmodule AshTemplateWeb.Capabilities do
   @doc "What a paired agent may do on this site, in its person's words, a line each."
   @spec may() :: [String.t()]
   def may, do: @may
+
+  @requests (for %{done: done, interfaces: %{http: http}} <- @operations, done do
+               [method, path] = String.split(http, " ")
+               %{method: method, path: path, words: done}
+             end)
+
+  @doc """
+  This site's agent requests and what each did, in its person's words, as
+  `RegentAgents.Activity.recent/3` takes them.
+  """
+  @spec requests() :: [RegentAgents.Activity.operation()]
+  def requests, do: @requests
 
   @doc "The whole document, with each operation's gate as the site's switches stand now."
   @spec document() :: map()
@@ -139,7 +153,7 @@ defmodule AshTemplateWeb.Capabilities do
       gate = gate(row.switch)
 
       row
-      |> Map.delete(:switch)
+      |> Map.drop([:switch, :done])
       |> Map.merge(%{gate: gate, agent_use: agent_use(gate, row.authority), last_test: nil})
     end)
   end

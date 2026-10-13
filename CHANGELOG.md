@@ -1398,3 +1398,13 @@ Operations
 - The agents list's tip says what a paired agent may do, and each agent row
   has Unpair beside "See what it has done".
 - Needs the design-system commit with `agent_detail`'s `may` and `spent`.
+
+## 2026-10-13 — An agent's activity says what each request did
+
+- The agent view's recent activity names each request to this site the way its
+  person would say it ("Read your Credits history", "Pinned a note"), from the
+  capability rows' own words. A read sent as POST no longer shows as a change.
+- A request to another Regent site is worded from its method until that site
+  carries the same change. Nothing new is stored, and the sign-in service is
+  unchanged.
+- Needs elixir-utils with `RegentAgents.Activity.recent/3`.
