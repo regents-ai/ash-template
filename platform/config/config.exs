@@ -64,11 +64,10 @@ config :ash_template, AshTemplate.Repo,
   pool_size: 1,
   migration_default_prefix: "ash_template_app"
 
-# Background jobs live in the site's own schema, beside its tables. The serving
-# connection goes through a pooler that drops LISTEN/NOTIFY, so queues hear about
-# new jobs through Erlang process groups instead. `outside_calls` keeps slow calls
-# to other websites from holding up the default queue; `regent_credits` checks
-# Credits purchases on chain. AshOban adds each trigger's sweep to `cron`.
+# Background jobs live in the site's own schema, beside its tables. Queues hear
+# about new jobs through Erlang process groups. `outside_calls` keeps slow calls
+# to other websites from holding up the default queue. AshOban adds each
+# trigger's sweep to `cron`.
 config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
@@ -79,10 +78,10 @@ config :ash_template, Oban,
     points_chain: 2,
     outside_calls: 3,
     chat_responses: [limit: 10],
-    conversations: [limit: 10],
-    regent_credits: 3
+    conversations: [limit: 10]
   ],
-  # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end.
+  # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end,
+  # and Regent Credits' purchase checks and deposit reads (AshTemplate.Application).
   cron: [crontab: [{"17 4 * * *", AshTemplate.ErrorPruner}]],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]

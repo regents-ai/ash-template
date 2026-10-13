@@ -32,11 +32,12 @@ defmodule AshTemplate.Application do
     :ok
   end
 
-  # AshOban adds a queue and a sweep for every trigger in the site's domains and
-  # in Regent Credits, whose purchase checks run on this site's Oban.
+  # AshOban adds a sweep for every trigger in the site's domains. Regents alone
+  # runs Regent Credits' purchase checks and Base deposit reads, for every site:
+  # they share one ledger, so a second site's sweep would only repeat its reads.
   defp oban_config do
     AshOban.config(
-      Application.fetch_env!(:ash_template, :ash_domains) ++ [RegentCredits],
+      Application.fetch_env!(:ash_template, :ash_domains),
       Application.fetch_env!(:ash_template, Oban)
     )
   end
