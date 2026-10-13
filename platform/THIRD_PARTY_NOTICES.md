@@ -11,6 +11,15 @@ that material: `mix regent_ui.assets` stages the module from the pinned design-s
 revision at build time, and the attribution and licence text live in the design system's
 `THIRD_PARTY_NOTICES.md`. The renderer runs on the `vgpu` 0.6.0 this repository pins, with `@vgpu/wgsl` 0.6.0 preparing its shader.
 
+## vgpu — world cube
+
+The turning cube under `assets/js/world_cube/`, with its `WorldCube` hook and component,
+is this repository's own scene and shader; no third-party source was adapted for it. It
+draws through Vercel's `vgpu`, which is bundled into the script the site serves, with
+`@vgpu/wgsl` preparing its one shader in the browser when the cube first draws. Nothing is
+downloaded at runtime. The packages, their versions and the licence are those listed under
+the crown renderer below.
+
 ## vgpu — crown renderer
 
 The glass crown under `assets/js/crown/` began as the prism scene from Vercel's `vgpu`
