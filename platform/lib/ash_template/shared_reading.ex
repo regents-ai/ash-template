@@ -150,8 +150,9 @@ defmodule AshTemplate.SharedReading do
     )
   rescue
     # The poller drops a measurement that raises for good. No table for the
-    # instant its owner restarts: skip this tick.
-    ArgumentError -> :ok
+    # instant its owner restarts, which can fall between the two reads above
+    # (the size then reads :undefined): skip this tick.
+    [ArgumentError, ArithmeticError] -> :ok
   end
 
   @impl true

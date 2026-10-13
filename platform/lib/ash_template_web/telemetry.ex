@@ -64,15 +64,20 @@ defmodule AshTemplateWeb.Telemetry do
        period: 10_000,
        name: :ash_template_site_poller}
 
-  # The poller drops a measurement that raises for good, so a database that
-  # cannot answer this tick skips it; the next tick measures again.
+  # The poller drops for good a measurement that raises or exits, and the row
+  # would then keep its last number. So whatever stops this tick (a database
+  # that cannot answer, a queue too busy to say whether it runs, Oban or the
+  # repo restarting) is logged and skipped; the next tick measures again.
   @doc false
   def oldest_unfinished_jobs do
     measure_oldest_unfinished_jobs()
   rescue
-    error in [DBConnection.ConnectionError, Postgrex.Error] ->
-      Logger.warning("background job age not measured: #{Exception.message(error)}")
+    error -> not_measured(Exception.message(error))
+  catch
+    :exit, reason -> not_measured(Exception.format_exit(reason))
   end
+
+  defp not_measured(why), do: Logger.warning("background job age not measured: #{why}")
 
   # Only running queues are measured: a paused queue holds its jobs on purpose,
   # and its age would only grow. Where no queue runs (tests), nothing is read.
@@ -134,7 +139,8 @@ defmodule AshTemplateWeb.Telemetry do
         measurement: :age_ms,
         unit: {:millisecond, :second},
         tags: [:queue],
-        description: "Age of the oldest unfinished background job in the queue"
+        description:
+          "Age of the oldest unfinished background job in the queue, counted from when it was added"
       ),
       counter("ash_template.jobs.finished.total",
         event_name: [:oban, :job, :stop],

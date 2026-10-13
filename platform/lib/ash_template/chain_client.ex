@@ -52,7 +52,8 @@ defmodule AshTemplate.ChainClient do
         params,
         scope \\ "wallet",
         timeouts \\ [receive_timeout: 5_000]
-      ) do
+      )
+      when is_binary(scope) and is_list(timeouts) do
     url = :ash_template |> Application.fetch_env!(:chain_nodes) |> Map.fetch!(chain_id)
     chain = %{chain_id: chain_id, scope: scope}
 

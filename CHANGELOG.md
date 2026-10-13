@@ -1587,3 +1587,17 @@ Operations
 - The site's own periodic measurements (this one and the shared figures') run in
   one poller started after the background jobs. A tick the database or the table
   cannot answer is skipped, and the next tick measures again.
+
+## 2026-10-13 — The site's own measurements can no longer stop for good
+
+- The background-job age was dropped until the next restart when a queue was too
+  busy to answer within five seconds, or when the database pool was restarting,
+  and its row then kept its last number: the alarm went blind when it mattered.
+  Whatever stops a reading now is logged and that reading is skipped; the next
+  one, ten seconds later, measures again. Fly Sentinel found it.
+- The shared figures' measurement is skipped the same way when its table goes
+  away between its two reads.
+- `AshTemplate.ChainClient.rpc/5` refuses a caller's name that is not text, so
+  timeouts handed over in its place cannot end up as a measurement label.
+- The job-age row's description says the age counts from when the job was added,
+  so a job waiting out a long retry reads as old.
