@@ -52,12 +52,13 @@ defmodule AshTemplate.ChainHead do
 
   # Connecting and the answer each get a third of the interval. These connect
   # options give the reads a connection pool of their own, so they never wait
-  # behind another caller. A failed request is already counted by the client.
+  # behind another caller. A failed request is counted by the client under the
+  # reader's own name, apart from the wallet's.
   defp newest(chain_id, wait_ms) do
     timeouts = [connect_options: [timeout: wait_ms], receive_timeout: wait_ms]
 
     with {:ok, "0x" <> hex} <-
-           ChainClient.rpc(%{chain_id: chain_id}, "eth_blockNumber", [], timeouts),
+           ChainClient.rpc(%{chain_id: chain_id}, "eth_blockNumber", [], "chain_head", timeouts),
          {block, ""} <- Integer.parse(hex, 16) do
       {:ok, block}
     else

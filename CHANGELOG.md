@@ -1546,3 +1546,22 @@ Operations
   `ash_template.shared_reading.keys`, `.table.bytes` and `.refused.total`.
 - The template's own room messages still send the whole message to open pages;
   the guide says so and that it is not the example to copy.
+
+## 2026-10-13 — Shared figures: five faults from Fly Sentinel's read, fixed before any site copies it
+
+- A measurement taken in the instant the shared figures' table is being restarted
+  is skipped, where before it would have stopped being measured for good.
+- New measurement `health.shared_reading.never_read.keys`, by kind: keys that have
+  had no reading since the site started. Their age read as 0, which looked
+  healthy. Every kind is now reported every ten seconds, so a kind whose keys are
+  all gone reads 0 instead of keeping its last number.
+- A reading is checked where its producer hands it over, so a reading that cannot
+  be checked stops its own producer and never the table everyone reads.
+- A failed read of the newest block is counted under its own name, `chain_head`,
+  where before it counted as wallet trouble. `AshTemplate.ChainClient.rpc/5`
+  takes the caller's name.
+- A page that subscribes with a key the site does not have is refused at once,
+  the same as a fetch.
+- The guide adds: a kind built from rows names the resource and the read a
+  signed-out visitor is allowed; and the first figure that is reread on notice
+  lands in the template before any site builds one.

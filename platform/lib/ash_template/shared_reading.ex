@@ -44,7 +44,8 @@ defmodule AshTemplate.SharedReading do
   ## Measurements
 
   `measure/0` runs with the site's other periodic measurements and reports, for
-  each kind, how many keys it holds and how long ago its oldest was read
+  each kind, how many keys it holds, how many of them have never been read and
+  how long ago its oldest reading was taken
   (`[:ash_template, :shared_reading, :kind]`), and the table's size in memory
   (`[:ash_template, :shared_reading, :table]`). Every `degraded/1` is counted
   (`[:ash_template, :shared_reading, :degraded]`), as is every refused reading
@@ -85,7 +86,7 @@ defmodule AshTemplate.SharedReading do
 
   @doc "Hear `{:shared_reading, key}` whenever the reading for `key` changes."
   @spec subscribe(key()) :: :ok
-  def subscribe(key), do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, topic(key))
+  def subscribe(key), do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, topic(checked(key)))
 
   @doc """
   Stores `reading` as read just now. Answers `{:error, :too_large}`,
@@ -93,14 +94,26 @@ defmodule AshTemplate.SharedReading do
   reading held before then stays.
   """
   @spec put(key(), term()) :: :ok | {:error, :too_large | :not_plain | :too_many_keys}
-  def put(key, reading), do: GenServer.call(__MODULE__, {:put, checked(key), reading})
+  def put(key, reading) do
+    {kind, _id} = checked(key)
+
+    # Checked here, in the producer, so a reading that cannot be checked fails
+    # its producer and never the table's owner.
+    with :ok <- fits(kind, reading) do
+      GenServer.call(__MODULE__, {:put, key, reading})
+    end
+    |> counted(kind)
+  end
 
   @doc """
   Marks `key` as not read this time. The last reading stays, marked `degraded?`;
   a key that never had one holds `reading: nil`.
   """
   @spec degraded(key()) :: :ok | {:error, :too_many_keys}
-  def degraded(key), do: GenServer.call(__MODULE__, {:degraded, checked(key)})
+  def degraded(key) do
+    {kind, _id} = checked(key)
+    counted(GenServer.call(__MODULE__, {:degraded, key}), kind)
+  end
 
   @doc "Forgets `key`, when the row or setting it stood for has ended."
   @spec delete(key()) :: :ok
@@ -110,14 +123,22 @@ defmodule AshTemplate.SharedReading do
   def measure do
     now = DateTime.utc_now()
 
-    for {kind, entries} <-
-          Enum.group_by(:ets.tab2list(@table), fn {{kind, _id}, _entry} -> kind end) do
+    held = Enum.group_by(:ets.tab2list(@table), fn {{kind, _id}, _entry} -> kind end)
+
+    # Every kind each tick, so a kind whose keys are all gone reads 0.
+    for {kind, _limits} <- @kinds do
+      entries = Map.get(held, kind, [])
+
       read =
         for {_key, %{at: %DateTime{} = at}} <- entries, do: DateTime.diff(now, at, :millisecond)
 
       :telemetry.execute(
         [:ash_template, :shared_reading, :kind],
-        %{keys: length(entries), oldest_seconds: Enum.max(read, fn -> 0 end) / 1_000},
+        %{
+          keys: length(entries),
+          never_read: length(entries) - length(read),
+          oldest_seconds: Enum.max(read, fn -> 0 end) / 1_000
+        },
         %{kind: kind}
       )
     end
@@ -127,6 +148,10 @@ defmodule AshTemplate.SharedReading do
       %{bytes: :ets.info(@table, :memory) * :erlang.system_info(:wordsize)},
       %{}
     )
+  rescue
+    # The poller drops a measurement that raises for good. No table for the
+    # instant its owner restarts: skip this tick.
+    ArgumentError -> :ok
   end
 
   @impl true
@@ -136,22 +161,14 @@ defmodule AshTemplate.SharedReading do
   end
 
   @impl true
-  def handle_call({:put, {kind, _id} = key, reading}, _from, state) do
+  def handle_call({:put, key, reading}, _from, state) do
     held = held(key)
 
-    with :ok <- fits(kind, reading),
-         :ok <- room(key, held) do
-      store(key, held, %{reading: reading, at: DateTime.utc_now(), degraded?: false})
-      {:reply, :ok, state}
-    else
-      {:error, reason} = refused ->
-        :telemetry.execute([:ash_template, :shared_reading, :refused], %{count: 1}, %{
-          kind: kind,
-          reason: reason
-        })
+    reply =
+      with :ok <- room(key, held),
+           do: store(key, held, %{reading: reading, at: DateTime.utc_now(), degraded?: false})
 
-        {:reply, refused, state}
-    end
+    {:reply, reply, state}
   end
 
   def handle_call({:degraded, {kind, _id} = key}, _from, state) do
@@ -198,6 +215,17 @@ defmodule AshTemplate.SharedReading do
 
   defp topic({kind, id}), do: "shared_reading:#{kind}:#{id}"
 
+  defp counted(:ok, _kind), do: :ok
+
+  defp counted({:error, reason} = refused, kind) do
+    :telemetry.execute([:ash_template, :shared_reading, :refused], %{count: 1}, %{
+      kind: kind,
+      reason: reason
+    })
+
+    refused
+  end
+
   defp fits(kind, reading) do
     cond do
       :erlang.external_size(reading) > @kinds[kind].bytes -> {:error, :too_large}
@@ -219,7 +247,8 @@ defmodule AshTemplate.SharedReading do
   defp plain?(map) when is_map(map),
     do: Enum.all?(map, fn {key, value} -> plain?(key) and plain?(value) end)
 
-  defp plain?(list) when is_list(list), do: Enum.all?(list, &plain?/1)
+  defp plain?([]), do: true
+  defp plain?([head | tail]), do: plain?(head) and plain?(tail)
   defp plain?(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> plain?()
   defp plain?(term), do: is_number(term) or is_binary(term) or is_atom(term)
 

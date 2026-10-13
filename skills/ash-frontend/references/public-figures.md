@@ -116,7 +116,9 @@ What it holds, and what it refuses:
   fixed list and `id` a value the site already holds in its own rows or settings.
   Never a key, or any part of one, taken from a request.
 - **A kind is a reviewed entry.** It states why a signed-out visitor may see the
-  reading, the most keys it may hold and the largest reading it accepts. A
+  reading, the most keys it may hold and the largest reading it accepts. For a
+  kind built from rows, that reason names the resource and the read a signed-out
+  visitor is allowed. A
   reading over the size, a key past the count and a reading that is not small
   plain data are refused and counted; the reading held before stays.
 - **A reading is small plain data**: numbers, strings, atoms, dates, `Decimal`s,
@@ -151,13 +153,21 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 - **A supervised reader of an outside clock**, such as `AshTemplate.ChainHead`.
 - **A reread on notice**, for a reading built from the site's own rows: the
   producer subscribes to the rows' notices, rereads at most once a second however
-  many arrive, and holds nothing but "a reread is due".
+  many arrive, and holds nothing but "a reread is due". The template has no
+  kind of this shape yet. Its first one lands in the template before any site
+  builds one, and settles two things there: what heals a notice that was lost,
+  and how a kind states whether it has an expected freshness, since a quiet
+  market rightly leaves an old reading and must not read as a stopped producer.
 
 ### Measurements
 
 `health.shared_reading.oldest.seconds` (by kind) is how long ago the oldest key
 of a kind was read: a producer that has stopped shows as a number that only
-grows. `health.shared_reading.degraded.total` counts failed readings by kind.
+grows. `health.shared_reading.never_read.keys` counts the keys that have had no
+reading since the site started, which the age cannot show.
+`health.shared_reading.degraded.total` counts failed readings by kind, and a
+reader's failed requests count in `health.chain_request_failures.total` under
+its own `scope`, apart from the wallet's.
 `<app>.shared_reading.keys`, `.table.bytes` and `.refused.total` watch the
 bounds.
 
