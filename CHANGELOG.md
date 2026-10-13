@@ -1415,3 +1415,8 @@ Operations
 - The notes notice, the Buy Credits press notes and the wallet lab's press notes sit in
   room kept for them, so nothing below moves when one appears.
 - Page links in the shell, the overview and the footer are checked against the router.
+
+## 2026-10-13 — Buy Credits buttons never move
+
+- The amount problem, the wallet line and the wallet-mismatch note above the Buy
+  Credits buttons keep their room whether or not they show, so the buttons stay put.

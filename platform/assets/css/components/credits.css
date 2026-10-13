@@ -44,6 +44,14 @@
   color: var(--color-fg-muted);
 }
 
+.credits-panel__wallet[data-empty] {
+  visibility: hidden;
+}
+
+.credits-panel__mismatch {
+  min-block-size: 2lh;
+}
+
 .credits-panel__press-notes {
   min-block-size: 3lh;
 }
@@ -148,6 +156,7 @@
 }
 
 .credits-panel__problem {
+  min-block-size: 1lh;
   color: var(--color-error);
   font-size: 0.85rem;
 }

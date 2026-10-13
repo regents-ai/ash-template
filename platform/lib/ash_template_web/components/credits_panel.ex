@@ -452,20 +452,19 @@ defmodule AshTemplateWeb.CreditsPanel do
           role="alert"
           phx-hook="MotionRefusal"
           data-refused
-          hidden={!@problem}
         >
           {@problem}
         </p>
       </form>
 
-      <%!-- Lines above the buttons stay in the page and are only hidden, so one
-           appearing never replaces the button a person has just pressed. --%>
-      <div class="credits-panel__wallet" hidden={!@wallet}>
+      <%!-- Lines above the buttons stay in the page with their room kept, so one
+           appearing never moves or replaces the button a person is about to press. --%>
+      <div class="credits-panel__wallet" data-empty={is_nil(@wallet)}>
         <span class="credits-panel__muted">{if @signer, do: "Paying from", else: "Wallet"}</span>
         <code>{@wallet && RegentFormat.short_address(@wallet)}</code>
         <span class="credits-panel__usdc">{usdc(@usdc)}</span>
       </div>
-      <p class="credits-panel__note" hidden={!@mismatch}>{@mismatch}</p>
+      <p class="credits-panel__note credits-panel__mismatch">{@mismatch}</p>
 
       <ol class="credits-panel__steps">
         <li class="credits-panel__step" data-state={@approve.state}>
