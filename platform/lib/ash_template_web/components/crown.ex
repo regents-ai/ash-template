@@ -38,6 +38,7 @@ defmodule AshTemplateWeb.Components.Crown do
         width="1700"
         height="1200"
         alt=""
+        fetchpriority="high"
       />
       <canvas id={"#{@id}-canvas"} phx-update="ignore" data-crown-canvas></canvas>
     </div>
