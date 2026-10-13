@@ -45,7 +45,12 @@ config :ash, default_string_length_count: :codepoints
 
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
+# The name this site goes by in Regent Credits and Regent Points. A site copied
+# from the template changes it here and nowhere else.
+site = "template"
+
 config :ash_template,
+  site: site,
   ash_domains: [
     AshTemplate.Activity,
     AshTemplate.Chat,
@@ -212,5 +217,5 @@ config :regent_points,
   approved_rules: [],
   adapters: %{
     "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
-    "template.first_agent_note" => AshTemplate.Points.AgentNote
+    "#{site}.first_agent_note" => AshTemplate.Points.AgentNote
   }

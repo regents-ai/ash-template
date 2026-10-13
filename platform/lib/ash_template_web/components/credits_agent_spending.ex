@@ -6,9 +6,9 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   Credits library saves it only for a person signed in there.
 
   The host passes `account` (the signed-in account), its `session_lease` as
-  `lease`, `agents` (the wallet addresses of the agents linked to the
-  account in the agents panel) and `sites` (`{site, label}` pairs an agent may
-  spend on).
+  `lease`, `site` (the site the person is signed in at, `AshTemplate.site/0`),
+  `agents` (the wallet addresses of the agents linked to the account in the
+  agents panel) and `sites` (`{site, label}` pairs an agent may spend on).
   """
   use AshTemplateWeb, :live_component
 
@@ -24,7 +24,9 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   @impl true
   def update(assigns, socket) do
     socket =
-      socket |> assign(Map.take(assigns, [:id, :lease, :sites])) |> take_account(assigns.account)
+      socket
+      |> assign(Map.take(assigns, [:id, :lease, :site, :sites]))
+      |> take_account(assigns.account)
 
     actor = socket.assigns.actor
     saved = Map.new(RegentCredits.agent_permissions!(actor: actor), &{&1.agent_address, &1})
@@ -69,7 +71,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
   defp take_account(socket, account),
     do:
       assign(socket,
-        actor: Actor.person(account.privy_user_id, account.wallet_addresses, "regents")
+        actor: Actor.person(account.privy_user_id, account.wallet_addresses, socket.assigns.site)
       )
 
   # The account and agent come from the page, never the form; sites only from the list offered.

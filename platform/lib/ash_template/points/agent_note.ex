@@ -38,7 +38,7 @@ defmodule AshTemplate.Points.AgentNote do
 
   defp facts(note, pairing) do
     %{
-      source_app: "template",
+      source_app: AshTemplate.site(),
       source_kind: "note",
       source_event_key: note.id,
       account_id: note.human_account_id,

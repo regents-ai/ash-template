@@ -57,7 +57,7 @@ defmodule AshTemplate.Notes.Note.Pin do
       RegentCredits.Actor.agent(
         agent.privy_user_id,
         agent.wallet_address,
-        Credits.site(),
+        AshTemplate.site(),
         agent.pairing_id
       )
 end

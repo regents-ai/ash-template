@@ -203,7 +203,7 @@ defmodule AshTemplateWeb.PageToolsController do
     RegentCredits.Actor.agent(
       actor.privy_user_id,
       actor.wallet_address,
-      AshTemplate.Credits.site(),
+      AshTemplate.site(),
       actor.pairing_id
     )
   end
