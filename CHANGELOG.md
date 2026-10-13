@@ -1503,10 +1503,12 @@ Operations
 - Background results and notices are held against the instant the sign-in ends,
   read when the page opened. From that instant each one is re-read as before, and a
   sign-in that has ended drops it and the page shows signed out.
-- Signing out still closes that browser's open pages at once. On a site running
-  more than one server that are not joined together, a page served by another
-  server keeps receiving background updates until the person's next press or
-  navigation, which signs it out; before, the next background update did.
+- Signing out still closes that browser's open pages at once, through the notice
+  the site already sends them. So this rule is for a site whose servers all
+  receive that notice: a site running one server does, and a site joins its
+  servers together before it runs a second one.
+- A sign-in elsewhere that changes or withdraws the account's wallets now reaches
+  the account's other open pages at once, and each reads the session again.
 - `SessionAuthority.resolve/1` answers `{lineage, account, lapses_at}`.
 - The shared note `skills/ash-security/references/component-session-check.md`
   describes the rule every site copies.

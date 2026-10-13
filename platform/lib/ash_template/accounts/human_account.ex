@@ -4,7 +4,8 @@ defmodule AshTemplate.Accounts.HumanAccount do
   use Ash.Resource,
     domain: AshTemplate.Accounts,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "platform_human_users"
@@ -98,6 +99,22 @@ defmodule AshTemplate.Accounts.HumanAccount do
       change load([:display_name, :ens_name, :ens_avatar_url])
     end
   end
+
+  # A sign-in that changes or withdraws the account's wallets reaches the
+  # account's open pages, which read the session again. Nothing about the
+  # account travels with it.
+  pub_sub do
+    module Phoenix.PubSub
+    name AshTemplate.PubSub
+    prefix "human_account"
+    broadcast_type :broadcast
+    transform fn _notification -> nil end
+
+    publish :refresh_verified, [:id]
+  end
+
+  @doc "The topic a sign-in's change to account `id` is published on."
+  def topic(id), do: "human_account:#{id}"
 
   policies do
     policy action([

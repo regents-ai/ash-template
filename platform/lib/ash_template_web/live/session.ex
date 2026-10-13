@@ -5,7 +5,7 @@ defmodule AshTemplateWeb.Live.Session do
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1, get_connect_info: 2, redirect: 2]
 
   alias AshTemplate.AccessContext
-  alias AshTemplate.Accounts.{EnsIdentity, SessionAuthority}
+  alias AshTemplate.Accounts.{EnsIdentity, HumanAccount, SessionAuthority}
   alias AshTemplateWeb.ClientAddress
 
   @public_root "/"
@@ -88,13 +88,15 @@ defmodule AshTemplateWeb.Live.Session do
   # authority, and a page that stays open says the sign-in ended
   # (`signed_out_reason: :expired`) rather than that no one signed in. A
   # finished ENS lookup reads the account again, so the header shows the name
-  # and picture it found.
+  # and picture it found, and so does a sign-in that changed or withdrew the
+  # account's wallets, so its other open pages follow at once.
   #
   # Every other message and every background result can arrive after the
   # sign-in has outlived its lifetime with no navigation or event between, so
   # each is held against `lapses_at`, the instant the mount read that sign-in
   # ending. Before it they cost no read: a sign-out closes the socket through
-  # the lineage's `disconnect`. From it on, each is re-read as an event is, and
+  # the lineage's `disconnect`, which is why every machine of the site must
+  # receive it. From it on, each is re-read as an event is, and
   # a lapsed lease drops it and the page renders signed out. Components receive
   # the lease as `session_lease` and check it the same way on their own events
   # and results (`check_component_lease/2`); one that finds it lapsed asks the
@@ -102,7 +104,8 @@ defmodule AshTemplateWeb.Live.Session do
   defp hold(socket, lineage, account, lapses_at) do
     lease = %{lineage: lineage, account_id: account.id, lapses_at: lapses_at}
     ens_topic = EnsIdentity.topic(account.id)
-    Phoenix.PubSub.subscribe(AshTemplate.PubSub, ens_topic)
+    account_topic = HumanAccount.topic(account.id)
+    Enum.each([ens_topic, account_topic], &Phoenix.PubSub.subscribe(AshTemplate.PubSub, &1))
 
     socket
     |> assign_principal(account)
@@ -115,12 +118,13 @@ defmodule AshTemplateWeb.Live.Session do
     end)
     |> attach_hook(:session_authority_info, :handle_info, fn
       %{topic: ^ens_topic}, socket ->
-        {_cont_or_halt, socket} = recheck(socket, lease, & &1)
-        {:halt, socket}
+        account_changed(socket, lease)
+
+      %{topic: ^account_topic}, socket ->
+        account_changed(socket, lease)
 
       {__MODULE__, :component_lease_lapsed}, socket ->
-        {_cont_or_halt, socket} = recheck(socket, lease, & &1)
-        {:halt, socket}
+        account_changed(socket, lease)
 
       _message, socket ->
         recheck_once_lapsed(socket, lease)
@@ -158,7 +162,7 @@ defmodule AshTemplateWeb.Live.Session do
       _name, _result, %{assigns: %{lease: %{} = lease}} = socket ->
         if running?(lease), do: {:cont, socket}, else: component_result(socket, take_account)
 
-      _name, _result, socket ->
+      _name, _result, %{assigns: %{lease: nil}} = socket ->
         {:cont, socket}
     end)
   end
@@ -185,6 +189,11 @@ defmodule AshTemplateWeb.Live.Session do
 
   defp take(socket, _take_account, :signed_out), do: socket
   defp take(socket, take_account, account), do: take_account.(socket, account)
+
+  defp account_changed(socket, lease) do
+    {_cont_or_halt, socket} = recheck(socket, lease, & &1)
+    {:halt, socket}
+  end
 
   defp running?(%{lapses_at: lapses_at}), do: DateTime.before?(DateTime.utc_now(), lapses_at)
 

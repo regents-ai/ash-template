@@ -27,8 +27,11 @@ A push or a result is held against `lapses_at` on the clock:
 - From it on: the same re-read an event makes, every time, with the same two outcomes.
   A later sign-in on the same browser only ever moves the true end later, so the
   instant the mount read is never too late.
-- A message that names the account as changed (the ENS lookup finishing, a component
-  reporting its lease lapsed) always re-reads.
+- A message that names the account as changed (the ENS lookup finishing, a sign-in
+  that changed or withdrew the account's wallets, a component reporting its lease
+  lapsed) always re-reads. The account resource publishes its sign-in refresh on the
+  account's own topic for this, so a sign-in elsewhere that leaves the account without
+  a wallet signs its other open pages out at once.
 - Background work goes through `start_async/3`: `assign_async` and `stream_async`
   results never reach `:handle_async` hooks, so they would skip the check.
 
@@ -73,8 +76,8 @@ reference is ash-template `AshTemplateWeb.Live.Session.check_component_lease/2`.
    `account` from its page, never a prebuilt actor or wallet list.
 4. **Every call site passes it:** `lease={@session_lease}`, through any function
    component in between (`attr :lease, :map, required: true`). A component given no
-   lease fails on its first event instead of acting, so a missed call site shows at
-   once. A page whose component acts for a stand-in account (a local lab) passes
+   lease fails on its first event or result instead of acting, so a missed call site
+   shows at once. A page whose component acts for a stand-in account (a local lab) passes
    `lease={nil}`: the session is not the account it acts for.
 
 Check: `grep -rl ":live_component" lib` lists every component; each one with a
@@ -88,7 +91,16 @@ sign-in's lifetime ends, once those seconds have gone (halt, principal withdrawn
 `signed_out_reason: :expired`; for a component, halted and the page told). Run it once
 against the old code to see it fail.
 
-The page's disconnect broadcast on sign-out reaches only the node that handled it
-unless the site's nodes are clustered. A socket on another node keeps receiving pushes
-and results until the person's next navigation or event, which re-reads and signs it
-out; nothing can be done from it in between.
+## Precondition: every machine receives the sign-out
+
+This rule is for a site whose machines all receive the lineage's `disconnect`
+broadcast. Before the instant a sign-in ends, that broadcast is the only thing that
+closes a signed-out socket which nobody presses anything on; such a socket would
+otherwise keep receiving pushes and results, private ones included, until the person's
+next navigation or event.
+
+- A site that runs one machine meets the precondition.
+- A site joins its machines before it runs a second one (`dns_cluster` on Fly's
+  private network), so the broadcast the page already sends reaches all of them. It
+  never builds its own relay for that one message.
+- A second machine on an unjoined site that follows this rule is a security finding.
