@@ -22,11 +22,14 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
 
-  @not_paired %{
-    code: "agent_not_paired",
-    message: "This agent is not paired with an account.",
-    hint:
-      "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."
+  # What an agent that is not acting as its person is told, the same at every door.
+  @not_person %{
+    "agent_not_paired" =>
+      {403, "This agent is not paired with an account.",
+       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."},
+    "person_not_here" =>
+      {403, "The person this agent is paired with has no account on this site yet.",
+       "Ask your person to sign in on this website once, then send the request again."}
   }
   @unavailable %{
     code: "unavailable",
@@ -134,10 +137,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
         conn
 
       {:error, :not_paired} ->
-        replace(conn, 403, @not_paired)
+        replace(conn, "agent_not_paired")
 
       {:ok, _other_pairing} ->
-        replace(conn, 403, @not_paired)
+        replace(conn, "agent_not_paired")
 
       {:error, _error} when conn.status in 200..299 ->
         replace(conn, 503, @unavailable)
@@ -147,10 +150,21 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     end
   end
 
+  defp replace(conn, code) do
+    {status, message, hint} = Map.fetch!(@not_person, code)
+    replace(conn, status, %{code: code, message: message, hint: hint})
+  end
+
   defp replace(conn, status, body) do
     %{conn | status: status, resp_body: Jason.encode_to_iodata!(%{error: body})}
     |> put_resp_content_type("application/json")
   end
+
+  @doc """
+  The `{status, message, hint}` of each refusal `not_person_code/1` names, for a
+  door's own table of refusals.
+  """
+  def not_person_refusals, do: @not_person
 
   @doc """
   The refusal code for an agent that acts as itself where only an agent acting as

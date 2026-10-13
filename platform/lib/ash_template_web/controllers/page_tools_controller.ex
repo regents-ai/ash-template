@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.PageToolsController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.NotesJSON
+  alias AshTemplateWeb.{FormErrors, NotesJSON}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
   alias RegentPoints.{Amount, Rules}
@@ -24,12 +24,6 @@ defmodule AshTemplateWeb.PageToolsController do
     "authentication_required" =>
       {401, "A signed request from a paired agent is required.",
        "Prepare the request, sign its exact bytes with your SIWA signer, then send the request and proof."},
-    "agent_not_paired" =>
-      {403, "This agent is not paired with an account.",
-       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you at POST /api/agents/v1/pair (regents ash-template agents pair), then retry with fresh proof."},
-    "person_not_here" =>
-      {403, "The person this agent is paired with has no account on this site yet.",
-       "Ask your person to sign in at /account on this site, then retry with fresh proof."},
     "note_not_found" =>
       {404, "There is no note of yours with that id.",
        "List your person's notes and use an id from there."},
@@ -58,6 +52,7 @@ defmodule AshTemplateWeb.PageToolsController do
        "account_balances shows what is left over the last 24 hours. Retry once enough is left, or ask your person to raise the limit."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
+  @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   @points_off "Earning Points is off on this site."
   @spending_off "Approving agent spending is off on this site."
@@ -232,20 +227,7 @@ defmodule AshTemplateWeb.PageToolsController do
   defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)
     body = %{code: code, message: message, hint: hint}
-    body = if error, do: Map.put(body, :details, details(error)), else: body
+    body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
     conn |> put_status(status) |> json(%{error: body})
   end
-
-  # Each refused field and why, worded as the page's own form shows it.
-  defp details(%Ash.Error.Invalid{errors: errors}) do
-    errors
-    |> Enum.filter(&AshPhoenix.FormData.Error.impl_for/1)
-    |> Enum.flat_map(&List.wrap(AshPhoenix.FormData.Error.to_form_error(&1)))
-    |> Enum.map(fn {field, message, vars} ->
-      %{field: field, message: Enum.reduce(vars, message, &interpolate/2)}
-    end)
-  end
-
-  defp interpolate({key, value}, message),
-    do: String.replace(message, "%{#{key}}", fn _placeholder -> to_string(value) end)
 end

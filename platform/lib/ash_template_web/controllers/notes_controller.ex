@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.NotesController do
   alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.{NotesJSON, PrivyProof}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof}
   alias AshTemplateWeb.Plugs.AgentWallet
 
   plug :authenticate
@@ -26,20 +26,15 @@ defmodule AshTemplateWeb.NotesController do
        "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."},
     "account_required" =>
       {403, "This sign-in has no account here yet.", "Sign in on the website once, then retry."},
-    "agent_not_paired" =>
-      {403, "Only an agent paired with this account can use its notes.",
-       "Ask your person for a pairing code from their account page, then pair with POST /api/agents/v1/pair."},
-    "person_not_here" =>
-      {403, "The person this agent is paired with has no account on this site yet.",
-       "Ask your person to sign in on this website once, then send the request again."},
     "note_not_found" =>
       {404, "You have no note with that id.", "List your notes with GET /api/v1/notes."},
     "invalid_note" =>
       {422, "The note could not be saved.",
-       "Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. Agent creates also require operation_id, a UUID retained when retrying with fresh proof; omit it for updates."},
+       "details says why. Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. Agent creates also require operation_id, a UUID retained when retrying with fresh proof; omit it for updates."},
     "notes_unavailable" =>
       {503, "Your notes could not be reached right now.", "Try again in a moment."}
   }
+  @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   def index(conn, _params) do
     case Notes.list_my_notes(actor: conn.assigns.actor) do
@@ -116,11 +111,13 @@ defmodule AshTemplateWeb.NotesController do
     end
   end
 
-  defp refuse_change(conn, %Ash.Error.Invalid{}), do: refuse(conn, "invalid_note")
+  defp refuse_change(conn, %Ash.Error.Invalid{} = error), do: refuse(conn, "invalid_note", error)
   defp refuse_change(conn, _error), do: refuse(conn, "notes_unavailable")
 
-  defp refuse(conn, code) do
+  defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)
-    conn |> put_status(status) |> json(%{error: %{code: code, message: message, hint: hint}})
+    body = %{code: code, message: message, hint: hint}
+    body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
+    conn |> put_status(status) |> json(%{error: body})
   end
 end

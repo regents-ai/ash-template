@@ -99,10 +99,10 @@ A paired agent acts for the person and is marked as itself. It can never use the
 Every JSON error has one shape:
 
 ```json
-{"error": {"code": "not_found", "message": "Not Found", "hint": "See {{origin}}/docs and {{origin}}/openapi.json for supported requests."}}
+{"error": {"code": "not_found", "message": "There is nothing at this address.", "hint": "List the rooms with GET {{origin}}/api/v1/rooms. Every endpoint is described at {{origin}}/openapi.json. Sending the same request again will not help."}}
 ```
 
-Branch on the status and `code`, never on `message`; `hint` says what to do next. An unknown `/api` address answers JSON 404. The [OpenAPI specification]({{origin}}/openapi.json) lists every status each operation can return.
+Branch on the status and `code`, never on `message`; `hint` says what to do next. Input that broke a rule (`invalid_note`, `invalid_message`) also carries `details`: one `{"field", "message"}` per rule it broke. An unknown `/api` address answers JSON 404. The [OpenAPI specification]({{origin}}/openapi.json) lists every status each operation can return.
 
 ## Rate limits
 

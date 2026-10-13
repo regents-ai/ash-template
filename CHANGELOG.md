@@ -1292,3 +1292,15 @@ Operations
 - `POST /api/agents/v1/pair` counts against a `"pair"` budget of 10 a minute per client
   address as well as the default 120, both named in the `RateLimit` headers. Past it, 429
   with `Retry-After`. Copied from Regents (`RegentsWeb.Plugs.AgentRateLimit`).
+
+## 2026-10-13 — Agent refusals say the same thing everywhere
+
+- `agent_not_paired` and `person_not_here` carry one message and hint on every signed
+  door (rooms, notes, browser tools, the pairing re-check), from `AgentWallet`.
+- `invalid_note` and `invalid_message` also carry `details`: one `{"field", "message"}`
+  per rule the input broke, worded as the page's own form shows it. Both contracts list
+  `details` as optional on the error.
+- An unknown address answered as JSON says "There is nothing at this address." and points
+  to the rooms list and `/openapi.json`.
+- The browser tools hand back `retry_after` in seconds on a 429, and `room_read` refuses
+  `.` and `..` as a room. Copied from Autolaunch (`public_tools.ts`).

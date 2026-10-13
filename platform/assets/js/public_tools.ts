@@ -39,7 +39,7 @@ type Refusal = {code: string; message: string; hint?: string; details?: unknown}
 
 type Reply =
   | {ok: true; status: number; data: unknown}
-  | {ok: false; status?: number; outcome?: "unknown"; error: Refusal}
+  | {ok: false; status?: number; outcome?: "unknown"; retry_after?: number; error: Refusal}
 
 type Request = (input: Input, signal: AbortSignal | undefined) => Promise<Reply>
 
@@ -48,7 +48,11 @@ const requests: Record<string, Request> = {
   about: (_input, signal) => markdown("/about", signal),
   docs: (_input, signal) => markdown("/docs", signal),
   rooms_list: (_input, signal) => call("/api/v1/rooms", signal),
-  room_read: ({room, ...page}, signal) => {
+  room_read: async ({room, ...page}, signal) => {
+    // URL parsing drops these segments even when their dots are percent-encoded.
+    if (room === "." || room === "..") {
+      return {ok: false, error: {code: "invalid_input", message: "room must be a room's slug, such as general."}}
+    }
     const query = new URLSearchParams(Object.entries(page).map(([key, value]) => [key, String(value)])).toString()
     const path = `/api/v1/rooms/${encodeURIComponent(String(room))}/messages`
     return call(query ? `${path}?${query}` : path, signal)
@@ -85,7 +89,11 @@ async function call(path: string, signal: AbortSignal | undefined): Promise<Repl
 async function reply(response: Response): Promise<Reply> {
   const answer = response.status === 204 ? null : await response.json()
   if (response.ok) return {ok: true, status: response.status, data: answer}
-  return {ok: false, status: response.status, error: answer.error}
+  // Past a rate limit the agent is told how many seconds to wait.
+  const retryAfter = Number(response.headers.get("retry-after"))
+  return response.status === 429 && retryAfter > 0
+    ? {ok: false, status: response.status, retry_after: retryAfter, error: answer.error}
+    : {ok: false, status: response.status, error: answer.error}
 }
 
 // The browser does not check input against the schema, so each public call is

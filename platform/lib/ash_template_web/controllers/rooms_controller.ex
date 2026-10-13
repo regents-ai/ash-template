@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Room}
-  alias AshTemplateWeb.ClientAddress
+  alias AshTemplateWeb.{ClientAddress, FormErrors}
   alias AshTemplateWeb.Plugs.AgentWallet
 
   plug :paired_agent when action in [:post, :update, :delete]
@@ -29,18 +29,13 @@ defmodule AshTemplateWeb.RoomsController do
     "message_not_found" =>
       {404, "Your person has no message with that id in this room.",
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
-    "agent_not_paired" =>
-      {403, "Only an actively paired agent can change its account’s messages.",
-       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."},
-    "person_not_here" =>
-      {403, "The person this agent is paired with has no account on this site yet.",
-       "Ask your person to sign in on this website once, then send the request again."},
     "invalid_message" =>
       {422, "The message could not be saved.",
-       "A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. If that operation_id was used before, the message exists: read the room. An edit sends only body. After several quick posts, wait a minute."},
+       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. If that operation_id was used before, the message exists: read the room. An edit sends only body. After several quick posts, wait a minute."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
+  @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
 
@@ -80,7 +75,7 @@ defmodule AshTemplateWeb.RoomsController do
       conn |> put_status(:created) |> json(%{message: present(message)})
     else
       :error -> refuse(conn, "room_not_found")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_message")
+      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
       {:error, _error} -> refuse(conn, "rooms_unavailable")
     end
   end
@@ -91,7 +86,7 @@ defmodule AshTemplateWeb.RoomsController do
              actor: conn.assigns.actor
            ) do
         {:ok, message} -> json(conn, %{message: present(message)})
-        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_message")
+        {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
         {:error, _error} -> refuse(conn, "rooms_unavailable")
       end
     end)
@@ -176,11 +171,10 @@ defmodule AshTemplateWeb.RoomsController do
   defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
   defp human_backed?(_message), do: false
 
-  defp refuse(conn, code) do
+  defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)
-
-    conn
-    |> put_status(status)
-    |> json(%{error: %{code: code, message: message, hint: hint}})
+    body = %{code: code, message: message, hint: hint}
+    body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
+    conn |> put_status(status) |> json(%{error: body})
   end
 end

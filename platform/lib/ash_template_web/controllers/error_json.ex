@@ -3,6 +3,18 @@ defmodule AshTemplateWeb.ErrorJSON do
 
   alias AshTemplateWeb.PublicDocuments
 
+  # An address that names nothing says so, and where to find what exists.
+  def render("404.json", _assigns) do
+    %{
+      error: %{
+        code: "not_found",
+        message: "There is nothing at this address.",
+        hint:
+          "List the rooms with GET #{PublicDocuments.url("/api/v1/rooms")}. Every endpoint is described at #{PublicDocuments.url("/openapi.json")}. Sending the same request again will not help."
+      }
+    }
+  end
+
   def render(template, _assigns) do
     hint =
       "See #{PublicDocuments.url("/docs")} and #{PublicDocuments.url("/openapi.json")} for supported requests."
