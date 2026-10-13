@@ -24,6 +24,7 @@ import {
 } from "./shell_state"
 import {installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
+import {Crown} from "./hooks/crown"
 import {HolographicCard} from "./hooks/holographic_card"
 import {InfoDialog} from "./hooks/info_dialog"
 import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
@@ -288,6 +289,7 @@ const hooks = {
   ...labHooks,
   ...colocatedHooks,
   AccountPicture,
+  Crown,
   HolographicCard,
   InfoDialog,
   MotionCascade,

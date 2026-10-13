@@ -1,0 +1,75 @@
+@layer regents-product {
+/* The glass crown: a layer that fills the stage it is put in and sits behind
+   everything else there. The still picture is the crown until a live one has
+   really been drawn (`data-crown-ready`), and stays wherever one cannot be.
+   Neither the canvas nor the picture gives the stage its size. */
+
+.crown {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.crown canvas,
+.crown__still {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.crown__still {
+  object-fit: cover;
+}
+
+.crown canvas {
+  opacity: 0;
+}
+
+.crown[data-crown-ready="true"] canvas {
+  opacity: 1;
+}
+
+.crown[data-crown-ready="true"] .crown__still {
+  visibility: hidden;
+}
+
+/* The stage on the crown's own page at /animations/crown: night in either
+   theme, so its colour is its own. */
+.crown-stage {
+  position: relative;
+  isolation: isolate;
+  height: clamp(22rem, 62svh, 40rem);
+  background: #0b0b0b;
+}
+
+/* The light colours on offer there. Each button carries its colour as a swatch,
+   and the chosen one is underlined in it. */
+.crown-looks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.crown-looks button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: 0.8rem/1 var(--font-family-mono);
+}
+
+.crown-looks button::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--crown-swatch);
+}
+
+.crown-looks button[aria-pressed="true"] {
+  box-shadow: inset 0 -3px 0 var(--crown-swatch);
+}
+}
