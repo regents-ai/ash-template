@@ -1304,3 +1304,14 @@ Operations
   to the rooms list and `/openapi.json`.
 - The browser tools hand back `retry_after` in seconds on a 429, and `room_read` refuses
   `.` and `..` as a room. Copied from Autolaunch (`public_tools.ts`).
+
+## 2026-10-13 — Agent guide on regents-cli 1.10.1
+
+- `/agents.md`, `/llms.txt`, `cli/COMMANDS.md`, `cli/README.md` and the tool manifest name
+  regents-cli 1.10.1 (source commit `aab300eed326d1cc37bcc25d03f98ae256fd2638`, wheel SHA256
+  `2029c4f63e84aefb4d2df5442c9b0bfa5d8dafd5900fdc726342953b3983db3e`). Its copy of the
+  template's command list is the same as this one.
+- What to do when a command fails now points at `next_steps`, which ends every answer and
+  every refusal from 1.10.0: run it again only after changing what the message names,
+  otherwise take the refusal as the answer.
+- `make check-cli` checks the command list with regents-cli `aab300e`.

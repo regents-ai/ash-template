@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Every `regents ash-template` command in regents-cli 1.9.4, against
+Every `regents ash-template` command in regents-cli 1.10.1, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -8,7 +8,7 @@ described here does not exist.
 ## Before you start
 
 ```sh
-uv tool install regents-cli==1.9.4
+uv tool install regents-cli==1.10.1
 regents auth login --site ash-template
 regents ash-template doctor
 ```
@@ -27,7 +27,11 @@ account is `agents pair`, below; https://template.regents.sh/agents.md has every
   `send` reads `{"request": …, "signature": …}` on stdin.
 - Input a command reads on stdin is one JSON object, piped in.
 
-A refusal prints the site's `code`, `message` and `hint`. Exit codes: 0 done, 1 the site refused,
+Every answer and every refusal ends with `next_steps` (with `--json`, beside the answer or
+beside `error`; on screen, a "Next" block): `done`, a `run` step with the exact command, a
+`human` step for your person, or, when the site itself broke, a ready `patchbay` post. A
+refusal prints the site's `code`, `message` and `hint`; run it again only after changing what
+the `message` names, otherwise take it as the answer. Exit codes: 0 done, 1 the site refused,
 2 a bad command or input, 3 sign-in, signature or pairing refused (401, 403), 4 not found, 5 the site
 could not be reached or did not answer in time (also 502, 503 and 504), 130 interrupted.
 
