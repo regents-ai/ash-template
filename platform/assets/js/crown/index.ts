@@ -11,7 +11,6 @@
 
 import {init, surface} from "vgpu"
 
-import type {IslandRenderer} from "../canvas_island"
 import {
   CAMERA_ORBIT_LERP,
   quantizeCrownAim,
@@ -21,13 +20,20 @@ import {
 } from "./look"
 import {createCrownScene} from "./scene"
 
-export type CrownRenderer = IslandRenderer & {
+export interface CrownRenderer {
   /** Pointer position over the crown's stage, both components in [0, 1]. */
   aim(x: number, y: number): void
   /** The pointer left: ease everything back to the composed shot. */
   rest(): void
   /** Changes glass, bloom and beams without rebuilding the crown. */
   restyle(style: CrownStyle): void
+  resize(width: number, height: number): void
+  /** Advances the easing one frame, or snaps it home. True when the picture moved. */
+  step(snap: boolean): boolean
+  present(): void
+  /** Resolves once the work submitted so far has finished on the GPU. */
+  settled(): Promise<void>
+  dispose(): void
 }
 
 const AT_REST: Vec2 = [0, 0]
