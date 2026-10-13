@@ -3,13 +3,20 @@
  *
  * Every pixel casts a ray at a cube. The face the ray enters is a window, and
  * behind each window is a room far larger than the cube that holds it: the ray
- * is carried into that face's own space and marched through the room there. So
+ * is carried into that face's own space and walked through the room there. So
  * turning the cube slides each room behind its frame, and flying the camera
  * through a window is the same picture with the frame left behind.
  *
+ * Every room is built of blocks, the way the crown is. A room is described as
+ * plain shapes, and the walk through it asks only whether the middle of each
+ * block-sized cell is inside one: a cell that is becomes a block, in one of
+ * three sizes, so curves and slopes come out as steps. Behind each room hangs a
+ * sheet of squares in the palette's gradient.
+ *
  * Rooms are indexed by the face they sit behind: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z,
  * 5 -z. In a room's own space the window is the square at z = 1, x runs right,
- * y runs up and the floor is y = -1.
+ * y runs up and the floor is y = -1. Rooms are laid out in blocks: one block is
+ * a twelfth of that, so the window is 24 blocks across.
  */
 export const worldCubeWgsl = /* wgsl */ `
 struct Params {
@@ -32,14 +39,13 @@ struct Params {
 @group(0) @binding(0) var<uniform> params: Params;
 
 const PI = 3.14159265;
+// One block: the smallest of the three sizes a room is built in.
+const U = 0.0833333333;
 // The palette, in linear light.
 const TANGERINE = vec3f(1.0, 0.105, 0.010);
 const POWDER = vec3f(0.423, 0.591, 0.610);
 const PLATINUM = vec3f(0.783, 0.767, 0.646);
 const GOLD = vec3f(1.0, 0.62, 0.18);
-
-// Light given off around the point the last map() call was asked about.
-var<private> gEmit: vec3f;
 
 fn rot(a: f32) -> mat2x2f {
   let c = cos(a);
@@ -58,14 +64,15 @@ fn hash21(p: vec2f) -> f32 {
   return fract(q.x * q.y);
 }
 
+fn hash31(p: vec3f) -> f32 {
+  var q = fract(p * vec3f(0.1031, 0.1030, 0.0973));
+  q += dot(q, q.yzx + 33.33);
+  return fract((q.x + q.y) * q.z);
+}
+
 fn sdBox(p: vec3f, b: vec3f) -> f32 {
   let q = abs(p) - b;
   return length(max(q, vec3f(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
-}
-
-fn sdCyl(p: vec3f, r: f32, h: f32) -> f32 {
-  let d = vec2f(length(p.xz) - r, abs(p.y) - h);
-  return min(max(d.x, d.y), 0.0) + length(max(d, vec2f(0.0)));
 }
 
 fn sdCapsule(p: vec3f, a: vec3f, b: vec3f, r: f32) -> f32 {
@@ -75,15 +82,9 @@ fn sdCapsule(p: vec3f, a: vec3f, b: vec3f, r: f32) -> f32 {
   return length(pa - ba * h) - r;
 }
 
-// A cone with rounded ends standing on the origin: r1 below, r2 at height h.
-fn sdRoundCone(p: vec3f, r1: f32, r2: f32, h: f32) -> f32 {
-  let q = vec2f(length(p.xz), p.y);
-  let b = (r1 - r2) / h;
-  let a = sqrt(1.0 - b * b);
-  let k = dot(q, vec2f(-b, a));
-  if (k < 0.0) { return length(q) - r1; }
-  if (k > a * h) { return length(q - vec2f(0.0, h)) - r2; }
-  return dot(q, vec2f(a, b)) - r1;
+// A box given by its two opposite corners, in blocks.
+fn slab(p: vec3f, lo: vec3f, hi: vec3f) -> f32 {
+  return sdBox(p - (lo + hi) * (0.5 * U), (hi - lo) * (0.5 * U));
 }
 
 fn pick(a: vec2f, d: f32, m: f32) -> vec2f {
@@ -91,357 +92,525 @@ fn pick(a: vec2f, d: f32, m: f32) -> vec2f {
   return a;
 }
 
+// The same, for loose blocks that only ever fill open air.
+fn pickLoose(a: vec2f, d: f32, m: f32) -> vec2f {
+  if (a.x > 0.0 && d < a.x) { return vec2f(d, m); }
+  return a;
+}
+
+// Keeps a shape in the smallest blocks however thick it is.
+fn fine(d: f32) -> f32 {
+  return max(d, -0.2 * U);
+}
+
+// A shape repeated along a row knows only its own copy. This keeps its distance
+// honest by never promising more room than there is to the next copy's ground.
+fn fence(d: f32, edge: f32) -> f32 {
+  return select(d, min(d, edge + 0.7 * U), d > 0.0);
+}
+
 // A falling edge: 1 below low, 0 above high.
 fn fade(high: f32, low: f32, x: f32) -> f32 {
   return 1.0 - smoothstep(low, high, x);
 }
 
-// How much of a lamp's light reaches a point d away from it.
-fn lamp(d: f32, r: f32) -> f32 {
-  let k = r / (r + max(d, 0.0));
-  return k * k;
+fn brandWeight(phase: f32, centre: f32) -> f32 {
+  return max(0.0, 1.0 - abs(fract(phase - centre + 0.5) - 0.5) * 3.0);
+}
+
+// The palette's gradient, as the foil card runs it: tangerine, powder blue,
+// platinum, and round again.
+fn brand(phase: f32) -> vec3f {
+  return TANGERINE * brandWeight(phase, 0.0)
+    + POWDER * brandWeight(phase, 1.0 / 3.0)
+    + PLATINUM * brandWeight(phase, 2.0 / 3.0);
+}
+
+// Blocks adrift far behind a room: one cell in eleven holds one, whole or an eighth.
+fn drift(p: vec3f, seed: f32) -> f32 {
+  let g = p / (4.0 * U);
+  let id = floor(g);
+  let h = hash31(id + seed);
+  let local = (g - id - 0.5) * (4.0 * U);
+  let edge = 2.0 * U - max(abs(local.x), max(abs(local.y), abs(local.z)));
+  var d = 1e3;
+  if (h > 0.955) {
+    d = sdBox(local, vec3f(2.0 * U));
+  } else if (h > 0.91) {
+    let corner = sign(vec3f(fract(h * 31.0), fract(h * 57.0), fract(h * 91.0)) - 0.5);
+    d = sdBox(local - corner * U, vec3f(U));
+  }
+  return fence(d, edge);
 }
 
 // ---------------------------------------------------------------- Autolaunch
-// A launch silo: a rocket holding over its pad, and bid steps climbing the walls.
+// A launch pad at dawn: a rocket holding over its pad, bids stacking up beside it.
 
-const LAUNCH_ROCKET = vec3f(0.0, -0.25, -1.0);
-// Where the first bid step stands, and how far apart the steps are.
-const LAUNCH_STEP = vec2f(0.3, 0.6);
+// Where the rocket stands, across and deep, in blocks.
+const LAUNCH_AT = vec2f(0.0, -18.0);
 
-fn launchLift() -> f32 {
-  return 0.06 * sin(params.time * 0.9);
+// Which bid stack a depth belongs to, counted back from the window.
+fn launchStack(z: f32) -> f32 {
+  return clamp(round((-14.0 - z) / 8.0), 0.0, 3.0);
 }
 
-// Which bid step a depth belongs to, counted back from the window.
-fn launchStep(z: f32) -> f32 {
-  return clamp(round((LAUNCH_STEP.x - z) / LAUNCH_STEP.y), 0.0, 5.0);
-}
+fn fillLaunch(p: vec3f, loose: bool) -> vec2f {
+  let b = p / U;
+  var res = vec2f(slab(p, vec3f(-32.0, -16.0, -52.0), vec3f(32.0, -12.0, 12.0)), 1.0);
+  res = pick(res, slab(p, vec3f(-8.0, -12.0, -26.0), vec3f(8.0, -10.0, -10.0)), 2.0);
 
-fn mapLaunch(p: vec3f) -> vec2f {
-  let t = params.time;
-  var res = vec2f(min(min(2.3 - abs(p.x), p.y + 1.0), min(2.8 - p.y, p.z + 3.6)), 1.0);
+  let q = vec3f(b.x - LAUNCH_AT.x, b.y, b.z - LAUNCH_AT.y);
+  let wide = max(abs(q.x), abs(q.z));
+  let thin = min(abs(q.x), abs(q.z));
+  var rocket = max(wide - 2.0, abs(q.y) - 6.0);
+  rocket = min(rocket, max(wide - (11.0 - q.y) * 0.5, 6.0 - q.y));
+  rocket = min(rocket, max(max(thin - 1.0, wide - 4.0), max(-6.0 - q.y, q.y + 0.75 + wide)));
+  res = pick(res, rocket * U * 0.85, 3.0);
+  res = pick(res, max(wide - 1.0, abs(q.y + 6.5) - 0.5) * U, 8.0);
 
-  let q = p - LAUNCH_ROCKET - vec3f(0.0, launchLift(), 0.0);
-  var body = sdCyl(q - vec3f(0.0, 0.05, 0.0), 0.2, 0.42);
-  body = min(body, sdRoundCone(q - vec3f(0.0, 0.47, 0.0), 0.2, 0.03, 0.5));
-  let f = vec3f(abs(q.x), q.y, abs(q.z));
-  let fins = min(
-    sdBox(f - vec3f(0.3, -0.3, 0.0), vec3f(0.12, 0.13, 0.015)),
-    sdBox(f - vec3f(0.0, -0.3, 0.3), vec3f(0.015, 0.13, 0.12)));
-  res = pick(res, min(body, fins), 2.0);
-  res = pick(res, sdRoundCone(q - vec3f(0.0, -0.52, 0.0), 0.13, 0.08, 0.12), 3.0);
+  var gantry = slab(p, vec3f(-14.0, -12.0, -19.0), vec3f(-12.0, 8.0, -17.0));
+  gantry = min(gantry, slab(p, vec3f(-12.0, 2.0, -19.0), vec3f(-2.0, 3.0, -17.0)));
+  res = pick(res, gantry, 4.0);
+  res = pick(res, slab(p, vec3f(-14.0, 8.0, -19.0), vec3f(-12.0, 10.0, -17.0)), 5.0);
 
-  // Bid steps: each one further back stands a little taller.
-  let sx = abs(p.x) - 1.55;
-  let id = launchStep(p.z);
-  let hgt = 0.2 + 0.19 * id;
-  res = pick(res, sdBox(vec3f(sx, p.y + 1.0 - hgt, p.z - LAUNCH_STEP.x + LAUNCH_STEP.y * id), vec3f(0.17, hgt, 0.17)), 4.0);
+  // Bid stacks down both sides: each one further back stands a block taller.
+  let side = abs(b.x);
+  let id = launchStack(b.z);
+  let zc = -14.0 - 8.0 * id;
+  let top = -12.0 + 4.0 * (id + 1.0);
+  let dz = abs(b.z - zc);
+  let edge = select((4.0 - dz) * U, 1e3, dz > 4.0);
+  let stack = sdBox(vec3f(side - 14.0, b.y - (top - 12.0) * 0.5, b.z - zc), vec3f(2.0, (top + 12.0) * 0.5, 2.0)) * U;
+  res = pick(res, fence(stack, edge), 6.0);
 
-  // The gantry beside the rocket.
-  let g = p - vec3f(-0.62, 0.0, LAUNCH_ROCKET.z);
-  var gantry = sdBox(g - vec3f(0.0, -0.2, 0.0), vec3f(0.035, 0.8, 0.035));
-  gantry = min(gantry, sdBox(g - vec3f(0.2, 0.25, 0.0), vec3f(0.2, 0.02, 0.02)));
-  res = pick(res, gantry, 5.0);
+  // The skyline along the back edge.
+  let ahead = -44.0 * U - p.z;
+  if (ahead < 0.3) {
+    let col = floor(b.x / 4.0);
+    let h = 4.0 * (1.0 + floor(hash21(vec2f(col, 3.0)) * 4.0));
+    let lx = b.x - col * 4.0 - 2.0;
+    let tower = sdBox(vec3f(lx, b.y + 12.0 - h * 0.5, b.z + 48.0), vec3f(2.0, h * 0.5, 4.0)) * U;
+    res = pick(res, max(fence(tower, (2.0 - abs(lx)) * U), (side - 32.0) * U), 7.0);
+  } else {
+    res.x = min(res.x, ahead);
+  }
 
-  let flicker = 0.8 + 0.2 * sin(t * 23.0 + q.y * 31.0);
-  let flame = sdCapsule(q, vec3f(0.0, -0.6, 0.0), vec3f(0.0, -0.82, 0.0), 0.02);
-  gEmit += vec3f(1.0, 0.3, 0.04) * lamp(flame, 0.07) * 7.0 * flicker;
-  let pad = length(vec2f(length(p.xz - LAUNCH_ROCKET.xz) - 0.62, p.y + 1.0));
-  gEmit += TANGERINE * lamp(pad, 0.02) * 2.5;
-  gEmit += vec3f(1.0, 0.05, 0.03) * lamp(length(g - vec3f(0.0, 0.64, 0.0)), 0.02) * 3.0 * step(0.0, sin(t * 3.0));
+  if (loose) {
+    res = pickLoose(res, fine(max(wide - 2.0, abs(q.y + 8.5) - 1.5) * U), 10.0);
+    res = pickLoose(res, max(max(wide - 12.0, 2.0 - wide), abs(q.y + 9.5) - 2.5) * U, 11.0);
+    let bid = sdBox(vec3f(side - 15.0, b.y - top - 3.0, b.z - zc + 1.0), vec3f(1.0)) * U;
+    res = pickLoose(res, fence(bid, edge), 12.0);
+  }
   return res;
 }
 
 // ------------------------------------------------------------------ Techtree
-// A night greenhouse around one luminous tree that keeps branching.
+// One luminous tree on its mound, branching and branching again.
 
-const TREE_BASE = vec3f(0.0, -0.84, -1.5);
+// The foot of the trunk, in blocks.
+const TREE_AT = vec3f(0.0, -8.0, -18.0);
 
-fn mapTree(p: vec3f) -> vec2f {
-  let t = params.time;
-  var res = vec2f(min(min(2.4 - abs(p.x), p.y + 1.0), min(2.8 - p.y, p.z + 3.6)), 1.0);
-  res = pick(res, sdCyl(p - vec3f(TREE_BASE.x, -0.92, TREE_BASE.z), 0.55, 0.08), 2.0);
+fn fillTree(p: vec3f, loose: bool) -> vec2f {
+  var res = vec2f(slab(p, vec3f(-28.0, -16.0, -48.0), vec3f(28.0, -12.0, 12.0)), 1.0);
+  var mound = slab(p, vec3f(-10.0, -12.0, -28.0), vec3f(10.0, -10.0, -8.0));
+  mound = min(mound, slab(p, vec3f(-6.0, -10.0, -24.0), vec3f(6.0, -8.0, -12.0)));
+  res = pick(res, mound, 2.0);
 
-  var q = p - TREE_BASE;
-  var s = 1.0;
-  var wood = sdCapsule(q, vec3f(0.0), vec3f(0.0, 0.62, 0.0), 0.07);
-  var nodes = 1e3;
-  for (var i = 0; i < 5; i++) {
-    q.y -= 0.62;
-    nodes = min(nodes, (length(q) - 0.085) / s);
-    q = vec3f(abs(q.x), q.y, abs(q.z));
-    let sway = 0.03 * sin(t * 0.7 + f32(i) * 1.7);
-    let xy = rot(0.6 + sway) * q.xy;
-    let zy = rot(0.42 - sway) * vec2f(q.z, xy.y);
-    q = vec3f(xy.x, zy.y, zy.x) * 1.38;
-    s *= 1.38;
-    wood = min(wood, sdCapsule(q, vec3f(0.0), vec3f(0.0, 0.62, 0.0), 0.055) / s);
+  // Four standing stones at the corners of the grove.
+  let stone = vec3f(abs(p.x) - 20.0 * U, p.y + 8.0 * U, abs(p.z + 18.0 * U) - 16.0 * U);
+  res = pick(res, sdBox(stone, vec3f(2.0, 4.0, 2.0) * U), 5.0);
+
+  var q = p - TREE_AT * U;
+  let near = length(q - vec3f(0.0, 0.85, 0.0)) - 1.5;
+  if (near < 0.3) {
+    var s = 1.0;
+    var wood = sdCapsule(q, vec3f(0.0), vec3f(0.0, 0.5, 0.0), 0.09);
+    var nodes = 1e3;
+    for (var i = 0; i < 4; i++) {
+      q.y -= 0.5;
+      nodes = min(nodes, length(q) / s - 0.07);
+      q = vec3f(abs(q.x), q.y, abs(q.z));
+      let xy = rot(0.62) * q.xy;
+      let zy = rot(0.44) * vec2f(q.z, xy.y);
+      q = vec3f(xy.x, zy.y, zy.x) * 1.3;
+      s *= 1.3;
+      wood = min(wood, sdCapsule(q, vec3f(0.0), vec3f(0.0, 0.5, 0.0), 0.062 * s) / s);
+    }
+    res = pick(res, wood, 3.0);
+    res = pick(res, nodes, 4.0);
+    if (loose) {
+      res = pickLoose(res, length(q - vec3f(0.0, 0.5, 0.0)) / s - 0.13, 10.0);
+    }
+  } else {
+    res.x = min(res.x, near);
   }
-  res = pick(res, wood, 3.0);
-  res = pick(res, nodes, 4.0);
-
-  let leaves = (length(q - vec3f(0.0, 0.62, 0.0)) - 0.1) / s;
-  gEmit += vec3f(0.5, 0.86, 1.0) * lamp(leaves, 0.025) * 2.2;
-  gEmit += vec3f(0.5, 0.86, 1.0) * lamp(nodes, 0.03) * 0.8;
   return res;
 }
 
 // ------------------------------------------------------------------ Patchbay
 // A switchboard room: a wall of sockets, and cables carrying signals between them.
 
-const PATCH_PANEL = vec3f(0.0, 0.3, -1.7);
-const PATCH_BULB = vec3f(0.0, 1.12, -0.7);
-
-fn mapPatch(p: vec3f) -> vec2f {
-  let t = params.time;
-  var res = vec2f(min(min(2.3 - abs(p.x), p.y + 1.0), min(1.6 - p.y, p.z - PATCH_PANEL.z + 0.12)), 1.0);
-  res = pick(res, sdBox(p - PATCH_PANEL, vec3f(1.8, 0.95, 0.07)) - 0.02, 2.0);
-  res = pick(res, sdBox(p - vec3f(0.0, -0.82, -1.0), vec3f(1.4, 0.18, 0.3)) - 0.02, 4.0);
-
-  // Each cable: its two sockets, then how far it sags and which colour it carries.
+// The cable nearest a point: how far, which one, and how far along it.
+fn patchCable(p: vec3f) -> vec3f {
+  // Each cable: its two sockets, then how far it sags.
   var ends = array<vec4f, 6>(
-    vec4f(-1.5, 0.95, -0.3, 0.6),
-    vec4f(-1.2, 0.35, 0.6, 0.95),
-    vec4f(-0.6, 0.95, 1.5, 0.35),
-    vec4f(0.0, 0.3, 1.5, 0.95),
-    vec4f(-1.5, 0.05, 0.9, -0.25),
-    vec4f(0.3, 0.65, 1.2, -0.25));
-  var sags = array<f32, 6>(0.4, 0.55, 0.65, 0.45, 0.35, 0.4);
-  var cable = 1e3;
+    vec4f(-16.0, 9.0, -4.0, 5.0),
+    vec4f(-12.0, 1.0, 8.0, 9.0),
+    vec4f(-8.0, 9.0, 16.0, 1.0),
+    vec4f(0.0, 1.0, 16.0, 9.0),
+    vec4f(-16.0, -3.0, 12.0, -3.0),
+    vec4f(4.0, 5.0, 12.0, 1.0));
+  var sags = array<f32, 6>(5.0, 6.0, 7.0, 5.0, 3.0, 3.0);
+  let b = p / U;
+  var best = vec3f(1e3, 0.0, 0.0);
   for (var i = 0; i < 6; i++) {
     let e = ends[i];
-    let x = clamp(p.x, e.x, e.z);
+    let x = clamp(b.x, e.x, e.z);
     let u = (x - e.x) / (e.z - e.x);
     let droop = 4.0 * u * (1.0 - u);
     let y = mix(e.y, e.w, u) - sags[i] * droop;
     let slope = (e.w - e.y - sags[i] * 4.0 * (1.0 - 2.0 * u)) / (e.z - e.x);
-    let z = PATCH_PANEL.z + 0.12 + 0.22 * droop;
-    let d = length(vec3f(p.x - x, (p.y - y) / sqrt(1.0 + slope * slope), p.z - z)) - 0.032;
-    let hue = i % 3;
-    var c = TANGERINE;
-    if (hue == 1) { c = PLATINUM; }
-    if (hue == 2) { c = vec3f(0.25, 0.62, 0.9); }
-    cable = min(cable, d);
-    let pulse = fract(t * 0.22 + f32(i) * 0.37);
-    let near = (u - pulse) * 7.0;
-    gEmit += c * lamp(d, 0.03) * exp(-near * near) * 6.0;
+    let z = -22.5 + 3.0 * droop;
+    let d = (length(vec3f(b.x - x, (b.y - y) / sqrt(1.0 + slope * slope), b.z - z)) - 0.75) * U;
+    if (d < best.x) { best = vec3f(d, f32(i), u); }
   }
-  res = pick(res, cable, 3.0);
+  return best;
+}
 
-  let bulb = p - PATCH_BULB;
-  res = pick(res, min(length(bulb) - 0.1, sdCapsule(bulb, vec3f(0.0, 0.1, 0.0), vec3f(0.0, 0.5, 0.0), 0.012)), 5.0);
-  gEmit += vec3f(1.0, 0.78, 0.5) * lamp(length(bulb) - 0.1, 0.07) * 0.9;
+fn fillPatch(p: vec3f, loose: bool) -> vec2f {
+  let side = vec3f(abs(p.x), p.y, p.z);
+  var res = vec2f(slab(p, vec3f(-28.0, -16.0, -28.0), vec3f(28.0, -12.0, 12.0)), 1.0);
+  var walls = slab(p, vec3f(-28.0, -12.0, -28.0), vec3f(28.0, 16.0, -24.0));
+  walls = min(walls, slab(side, vec3f(24.0, -12.0, -24.0), vec3f(28.0, 4.0, 0.0)));
+  walls = min(walls, slab(side, vec3f(24.0, 4.0, -24.0), vec3f(28.0, 10.0, -12.0)));
+  res = pick(res, walls, 2.0);
+  res = pick(res, slab(p, vec3f(-18.0, -4.0, -24.0), vec3f(18.0, 12.0, -23.0)), 3.0);
+  res = pick(res, slab(p, vec3f(-14.0, -12.0, -14.0), vec3f(14.0, -8.0, -8.0)), 4.0);
+  res = pick(res, slab(p, vec3f(-12.0, -8.0, -13.0), vec3f(12.0, -7.0, -9.0)), 5.0);
+  res = pick(res, slab(p, vec3f(-2.0, 12.0, -10.0), vec3f(2.0, 16.0, -6.0)), 6.0);
+
+  let near = slab(p, vec3f(-18.0, -8.0, -24.0), vec3f(18.0, 11.0, -18.0));
+  if (near < 0.3) {
+    res = pick(res, patchCable(p).x, 7.0);
+  } else {
+    res.x = min(res.x, near);
+  }
   return res;
 }
 
-// The colour of the cable nearest a point on the switchboard.
-fn patchTint(p: vec3f) -> vec3f {
-  let band = floor((p.x + p.y * 0.7 + 2.3) * 1.3);
-  let hue = i32(band) % 3;
-  if (hue == 1) { return PLATINUM; }
-  if (hue == 2) { return vec3f(0.25, 0.62, 0.9); }
-  return TANGERINE;
-}
-
 // ----------------------------------------------------------------- Regents X
-// A black observatory: two crossed beams sending rings out, and posts wheeling round them.
+// A black observatory: a great X sending rings out, and posts wheeling round it.
 
-const SIGNAL_CENTRE = vec3f(0.0, 0.45, -1.5);
+// The middle of the X, in blocks.
+const SIGNAL_AT = vec3f(0.0, 5.0, -18.0);
 
-fn mapSignal(p: vec3f) -> vec2f {
-  let t = params.time;
-  var res = vec2f(p.y + 1.0, 1.0);
-  let m = p - SIGNAL_CENTRE;
+fn fillSignal(p: vec3f, loose: bool) -> vec2f {
+  var res = vec2f(slab(p, vec3f(-32.0, -16.0, -52.0), vec3f(32.0, -12.0, 12.0)), 1.0);
+  var plinth = slab(p, vec3f(-8.0, -12.0, -26.0), vec3f(8.0, -10.0, -10.0));
+  plinth = min(plinth, slab(p, vec3f(-4.0, -10.0, -22.0), vec3f(4.0, -8.0, -14.0)));
+  res = pick(res, plinth, 2.0);
+
+  let m = p - SIGNAL_AT * U;
   let a = rot(PI * 0.25) * m.xy;
-  let b = rot(-PI * 0.25) * m.xy;
+  let c = rot(-PI * 0.25) * m.xy;
   let bars = min(
-    sdBox(vec3f(a, m.z), vec3f(0.09, 0.85, 0.08)),
-    sdBox(vec3f(b, m.z), vec3f(0.09, 0.85, 0.08))) - 0.015;
-  res = pick(res, bars, 2.0);
-  res = pick(res, sdCyl(p - vec3f(SIGNAL_CENTRE.x, -0.93, SIGNAL_CENTRE.z), 0.55, 0.07), 3.0);
-
-  // Seven posts wheeling slowly round the beams, each at its own depth.
-  let sector = 2.0 * PI / 7.0;
-  let angle = atan2(m.y, m.x) + t * 0.08;
-  let id = round(angle / sector);
-  let local = angle - sector * id;
-  let radius = length(m.xy);
-  let pane = vec3f(radius * cos(local) - 1.2, radius * sin(local), m.z - 0.5 * sin(id * 2.4));
-  res = pick(res, sdBox(pane, vec3f(0.17, 0.25, 0.012)) - 0.01, 4.0);
-
-  gEmit += vec3f(1.0) * lamp(bars, 0.05) * 0.7;
-  for (var i = 0; i < 3; i++) {
-    let grow = fract(t * 0.11 + f32(i) / 3.0);
-    let ring = length(vec2f(length(m.xy) - grow * 2.8, m.z));
-    gEmit += vec3f(1.0) * lamp(ring, 0.014) * (1.0 - grow) * 2.4;
-  }
+    sdBox(vec3f(a, m.z), vec3f(1.25, 9.5, 1.0) * U),
+    sdBox(vec3f(c, m.z), vec3f(1.25, 9.5, 1.0) * U));
+  res = pick(res, bars, 3.0);
   return res;
 }
 
 // ------------------------------------------------------------- Regents stake
-// A hall of columns leading to the crown, with staked blocks circling it.
+// A hall of gates leading to the crown, with stakes piling up before it.
 
-const HALL_CROWN = vec3f(0.0, 0.3, -1.6);
-const CROWN_PITCH = 0.245;
-const CROWN_HALF = 0.11;
-const CROWN_SCALE = 1.25;
+// Where the crown hangs, in blocks.
+const HALL_CROWN = vec3f(0.0, 4.0, -22.0);
+const CROWN_PITCH = 0.2;
+const CROWN_HALF = 0.086;
 
-// The Regents crown, block for block: three blocks over two rows of five.
-fn sdCrown(p: vec3f) -> f32 {
-  let c = p / CROWN_SCALE;
-  let lower = vec3f(
-    c.x - CROWN_PITCH * clamp(round(c.x / CROWN_PITCH), -2.0, 2.0),
-    c.y - CROWN_PITCH * clamp(round(c.y / CROWN_PITCH), -1.0, 0.0),
-    c.z);
-  let upper = vec3f(
-    c.x - 2.0 * CROWN_PITCH * clamp(round(c.x / (2.0 * CROWN_PITCH)), -1.0, 1.0),
-    c.y - CROWN_PITCH,
-    c.z);
-  let block = vec3f(CROWN_HALF - 0.014);
-  return (min(sdBox(lower, block), sdBox(upper, block)) - 0.014) * CROWN_SCALE;
+// How tall each pile of stakes stands right now, in blocks: it grows a block at
+// a time, then starts again.
+fn stakeHeight(pile: f32) -> f32 {
+  return 1.0 + 9.0 * fract(params.time * 0.045 + pile * 0.31);
 }
 
-fn crownSpace(p: vec3f) -> vec3f {
-  let t = params.time;
-  let c = p - HALL_CROWN - vec3f(0.0, 0.05 * sin(t * 0.8), 0.0);
-  let xz = rot(0.32 * sin(t * 0.35)) * c.xz;
-  return vec3f(xz.x, c.y, xz.y);
+// Which pile a block belongs to, from how deep it sits.
+fn stakePile(z: f32) -> f32 {
+  if (z < -16.0) { return 0.0; }
+  if (z < -8.0) { return 1.0; }
+  return 2.0;
 }
 
-fn mapHall(p: vec3f) -> vec2f {
-  let t = params.time;
-  var res = vec2f(min(min(2.0 - abs(p.x), p.y + 1.0), min(3.2 - p.y, p.z + 4.6)), 1.0);
+fn fillHall(p: vec3f, loose: bool) -> vec2f {
+  let b = p / U;
+  let side = abs(b.x);
+  var res = vec2f(slab(p, vec3f(-24.0, -16.0, -56.0), vec3f(24.0, -12.0, 12.0)), 1.0);
 
-  let sx = abs(p.x) - 1.45;
-  let bay = clamp(round((p.z + 0.3) / 1.1), -3.0, 0.0) * 1.1 - 0.3;
-  var column = sdCyl(vec3f(sx, p.y - 1.1, p.z - bay), 0.15, 2.1);
-  column = min(column, sdBox(vec3f(sx, p.y + 0.9, p.z - bay), vec3f(0.21, 0.1, 0.21)));
-  res = pick(res, column, 2.0);
+  // The gates: two columns and the beam across them, bay after bay.
+  let bay = clamp(round((-2.0 - b.z) / 12.0), 0.0, 3.0);
+  let lz = b.z + 2.0 + 12.0 * bay;
+  var gate = sdBox(vec3f(side - 18.0, b.y - 2.0, lz), vec3f(2.0, 14.0, 2.0));
+  gate = min(gate, sdBox(vec3f(side - 18.0, b.y + 11.0, lz), vec3f(3.0, 1.0, 3.0)));
+  gate = min(gate, sdBox(vec3f(side, b.y - 18.0, lz), vec3f(22.0, 2.0, 2.0)));
+  res = pick(res, fence(gate * U, select((6.0 - abs(lz)) * U, 1e3, abs(lz) > 6.0)), 2.0);
 
-  var dais = sdBox(p - vec3f(0.0, -0.94, -1.8), vec3f(1.15, 0.06, 0.85));
-  dais = min(dais, sdBox(p - vec3f(0.0, -0.82, -1.9), vec3f(0.9, 0.06, 0.66)));
-  dais = min(dais, sdBox(p - vec3f(0.0, -0.7, -2.0), vec3f(0.65, 0.06, 0.48)));
+  var dais = slab(p, vec3f(-12.0, -12.0, -30.0), vec3f(12.0, -10.0, -14.0));
+  dais = min(dais, slab(p, vec3f(-9.0, -10.0, -28.0), vec3f(9.0, -8.0, -16.0)));
+  dais = min(dais, slab(p, vec3f(-6.0, -8.0, -26.0), vec3f(6.0, -6.0, -18.0)));
   res = pick(res, dais, 3.0);
 
-  let crown = sdCrown(crownSpace(p));
-  res = pick(res, crown, 4.0);
+  // The end wall, and the stepped arch cut through it.
+  let wall = slab(p, vec3f(-24.0, -12.0, -56.0), vec3f(24.0, 28.0, -52.0));
+  let arch = max(side - 8.0, b.y - 16.0 + max(side - 4.0, 0.0)) * U * 0.7;
+  res = pick(res, max(wall, -arch), 4.0);
 
-  // Ten staked blocks in a ring around the crown.
-  let o = p - HALL_CROWN;
-  let sector = 2.0 * PI / 10.0;
-  let angle = atan2(o.z, o.x) + t * 0.22;
-  let id = round(angle / sector);
-  let local = angle - sector * id;
-  let radius = length(o.xz);
-  let stake = vec3f(radius * cos(local) - 1.2, o.y + 0.45 - 0.07 * sin(id * 1.9 + t), radius * sin(local));
-  let block = sdBox(stake, vec3f(0.06)) - 0.008;
-  res = pick(res, block, 5.0);
-
-  gEmit += PLATINUM * lamp(crown, 0.06) * 0.3;
-  gEmit += TANGERINE * lamp(block, 0.03) * 1.6;
-  // The shaft of light the crown hangs in.
-  gEmit += vec3f(1.0, 0.9, 0.72) * lamp(length(o.xz) - 0.35, 0.3) * 0.05 * smoothstep(-1.0, 2.6, p.y);
+  if (loose) {
+    var piles = sdBox(vec3f(side - 11.0, b.y + 5.0, b.z + 23.0), vec3f(1.0, 5.0, 1.0));
+    piles = min(piles, sdBox(vec3f(side - 7.0, b.y + 7.0, b.z + 11.0), vec3f(1.0, 5.0, 1.0)));
+    piles = min(piles, sdBox(vec3f(side - 9.0, b.y + 7.0, b.z + 5.0), vec3f(1.0, 5.0, 1.0)));
+    res = pickLoose(res, piles * U, 10.0);
+  }
   return res;
 }
 
 // ------------------------------------------------------------------ Keyfleet
-// A harbour at night: a great key over the water, a lighthouse, lantern boats.
+// A harbour at dusk: a great key over the water, a lighthouse, lantern boats.
 
-const HARBOUR_LIGHT = vec3f(1.0, -0.72, -2.6);
-const HARBOUR_KEY = vec3f(-0.3, -0.05, -1.0);
-// The middle berth of the fleet.
-const HARBOUR_BERTH = -1.6;
+// The lighthouse lamp, in blocks.
+const HARBOUR_LAMP = vec3f(14.0, 10.0, -30.0);
+// Where the key hangs, in blocks.
+const HARBOUR_KEY = vec3f(-5.0, 0.0, -13.0);
 
-fn mapHarbour(p: vec3f) -> vec2f {
-  let t = params.time;
-  var res = vec2f(p.y + 1.0, 1.0);
+// How far round the lighthouse beam has swept.
+fn harbourSweep() -> f32 {
+  return params.time * 0.45;
+}
 
-  let rock = (p - vec3f(HARBOUR_LIGHT.x, -1.0, HARBOUR_LIGHT.z)) / vec3f(0.85, 0.36, 0.65);
-  res = pick(res, (length(rock) - 1.0) * 0.36, 2.0);
+// How squarely the beam, which shines both ways, falls on a point: 1 in its path.
+fn harbourBeam(b: vec3f) -> f32 {
+  let angle = atan2(b.z - HARBOUR_LAMP.z, b.x - HARBOUR_LAMP.x) - harbourSweep();
+  let off = abs(fract(angle / PI + 0.5) - 0.5) * PI;
+  return fade(0.2, 0.04, off);
+}
 
-  let l = p - HARBOUR_LIGHT;
-  var tower = sdRoundCone(l, 0.2, 0.13, 1.25);
-  tower = min(tower, sdCyl(l - vec3f(0.0, 1.33, 0.0), 0.2, 0.025));
-  tower = min(tower, sdRoundCone(l - vec3f(0.0, 1.56, 0.0), 0.13, 0.02, 0.12));
-  res = pick(res, tower, 3.0);
-  let beacon = l - vec3f(0.0, 1.45, 0.0);
-  res = pick(res, length(beacon) - 0.1, 4.0);
+fn fillHarbour(p: vec3f, loose: bool) -> vec2f {
+  let b = p / U;
+  var res = vec2f(slab(p, vec3f(-40.0, -16.0, -60.0), vec3f(40.0, -12.0, 12.0)), 1.0);
 
-  // The key: a ring for a bow, a shaft, two teeth.
-  let k0 = p - HARBOUR_KEY - vec3f(0.0, 0.06 * sin(t * 0.7), 0.0);
-  let kxz = rot(0.5 * sin(t * 0.3)) * k0.xz;
-  let k = vec3f(kxz.x, k0.y, kxz.y);
-  var key = length(vec2f(length(k.xy - vec2f(0.0, 0.42)) - 0.2, k.z)) - 0.055;
-  key = min(key, sdCapsule(k, vec3f(0.0, 0.2, 0.0), vec3f(0.0, -0.55, 0.0), 0.05));
-  key = min(key, sdBox(k - vec3f(0.11, -0.5, 0.0), vec3f(0.09, 0.035, 0.04)));
-  key = min(key, sdBox(k - vec3f(0.09, -0.33, 0.0), vec3f(0.07, 0.035, 0.04)));
-  res = pick(res, key, 5.0);
+  let ashore = slab(p, vec3f(4.0, -12.0, -40.0), vec3f(24.0, 13.0, -22.0));
+  if (ashore < 0.3) {
+    var rock = slab(p, vec3f(4.0, -12.0, -40.0), vec3f(24.0, -10.0, -22.0));
+    rock = min(rock, slab(p, vec3f(8.0, -10.0, -36.0), vec3f(20.0, -8.0, -24.0)));
+    res = pick(res, rock, 2.0);
+    var tower = slab(p, vec3f(12.0, -8.0, -32.0), vec3f(16.0, 4.0, -28.0));
+    tower = min(tower, slab(p, vec3f(13.0, 4.0, -31.0), vec3f(15.0, 8.0, -29.0)));
+    tower = min(tower, slab(p, vec3f(11.0, 8.0, -33.0), vec3f(17.0, 9.0, -27.0)));
+    tower = min(tower, slab(p, vec3f(12.0, 11.0, -32.0), vec3f(16.0, 12.0, -28.0)));
+    tower = min(tower, slab(p, vec3f(13.0, 12.0, -31.0), vec3f(15.0, 13.0, -29.0)));
+    res = pick(res, tower, 3.0);
+    res = pick(res, slab(p, vec3f(13.0, 9.0, -31.0), vec3f(15.0, 11.0, -29.0)), 4.0);
+  } else {
+    res.x = min(res.x, ashore);
+  }
 
-  // The fleet: one boat to a berth, each riding the swell on its own beat.
-  let berth = vec2f(clamp(round(p.x / 1.3), -2.0, 2.0), clamp(round((p.z - HARBOUR_BERTH) / 1.5), -2.0, 0.0));
-  let h = hash21(berth + 7.0);
-  let drift = vec2f(h - 0.5, fract(h * 7.3) - 0.5) * 0.3;
-  let b = vec3f(
-    p.x - berth.x * 1.3 - drift.x,
-    p.y + 0.95 - 0.02 * sin(t * 1.3 + h * 20.0),
-    p.z - HARBOUR_BERTH - berth.y * 1.5 - drift.y);
-  var boat = sdBox(b, vec3f(0.2, 0.045, 0.07)) - 0.03;
-  boat = min(boat, sdBox(b - vec3f(-0.03, 0.2, 0.0), vec3f(0.09, 0.13, 0.006)));
-  res = pick(res, boat, 6.0);
-  let lantern = length(b - vec3f(0.17, 0.16, 0.0)) - 0.035;
-  res = pick(res, lantern, 7.0);
+  // The pier running in from the window, on its posts.
+  var pier = slab(p, vec3f(-26.0, -11.0, -12.0), vec3f(-20.0, -10.0, 12.0));
+  pier = min(pier, slab(p, vec3f(-21.0, -12.0, -12.0), vec3f(-20.0, -8.0, -11.0)));
+  pier = min(pier, slab(p, vec3f(-26.0, -12.0, -12.0), vec3f(-25.0, -8.0, -11.0)));
+  res = pick(res, pier, 5.0);
 
-  gEmit += GOLD * lamp(lantern, 0.035) * 1.3;
-  gEmit += GOLD * lamp(key, 0.05) * 0.9;
-  gEmit += vec3f(1.0, 0.9, 0.7) * lamp(length(beacon) - 0.1, 0.06) * 1.6;
-  // The lighthouse beam, sweeping both ways.
-  let sweep = t * 0.45;
-  let aim = vec3f(cos(sweep), 0.0, sin(sweep));
-  let along = dot(beacon, aim);
-  let off = length(beacon - aim * along);
-  let width = 0.05 + 0.11 * abs(along);
-  gEmit += vec3f(1.0, 0.9, 0.7) * exp(-(off * off) / (width * width)) * 0.42 / (1.0 + abs(along) * 0.5);
+  // The fleet: one boat to a berth, where the berth is open water.
+  let afloat = p.y + 4.0 * U;
+  if (afloat < 0.3) {
+    let cell = floor(b.xz / 16.0);
+    let h = hash21(cell + 5.0);
+    let moored = h > 0.3 && cell.x > -2.5 && cell.x < 1.5 && cell.y > -3.5 && cell.y < -0.5
+      && !(cell.x > -0.5 && cell.y < -1.5);
+    let at = cell * 16.0 + 8.0 + floor(vec2f(h, fract(h * 7.3)) * 5.0) - 2.0;
+    let l = vec3f(b.x - at.x, b.y, b.z - at.y);
+    let reach = (8.0 - max(abs(b.x - cell.x * 16.0 - 8.0), abs(b.z - cell.y * 16.0 - 8.0))) * U;
+    var hull = 1e3;
+    var sail = 1e3;
+    var lantern = 1e3;
+    if (moored) {
+      hull = sdBox(l - vec3f(0.0, -11.5, 0.0), vec3f(3.0, 0.5, 1.0));
+      hull = min(hull, sdBox(l - vec3f(0.0, -10.5, 0.0), vec3f(2.0, 0.5, 1.0)));
+      hull = min(hull, sdBox(l - vec3f(-0.5, -7.0, 0.5), vec3f(0.5, 3.0, 0.5)));
+      sail = max(max(-l.x, l.x - (-4.0 - l.y) * 0.5), max(abs(l.z - 0.5) - 0.5, -9.0 - l.y));
+      lantern = sdBox(l - vec3f(-2.5, -9.5, -0.5), vec3f(0.5));
+    }
+    res = pick(res, fence(hull * U, reach), 6.0);
+    res = pick(res, fence(sail * U * 0.85, reach), 8.0);
+    res = pick(res, fence(lantern * U, reach), 7.0);
+  } else {
+    res.x = min(res.x, afloat);
+  }
+
+  if (loose) {
+    // The beam: a wheel of motes round the lamp, lit where the light is passing.
+    let spoke = length(b.xz - HARBOUR_LAMP.xz);
+    let wheel = max(abs(b.y - HARBOUR_LAMP.y) - 1.0, max(spoke - 34.0, 5.0 - spoke)) * U;
+    res = pickLoose(res, fine(wheel), 10.0);
+  }
   return res;
 }
 
 // ----------------------------------------------------------------- Every room
 
-fn map(p: vec3f, room: i32) -> vec2f {
-  gEmit = vec3f(0.0);
+// How far a point is from the nearest block of a room, and what that block is
+// made of. Loose blocks (smoke, leaves, motes) are left out when asking about
+// shade, which only the standing parts of a room cast.
+fn fill(room: i32, p: vec3f, loose: bool) -> vec2f {
+  var res: vec2f;
   switch room {
-    case 0 { return mapLaunch(p); }
-    case 1 { return mapTree(p); }
-    case 2 { return mapPatch(p); }
-    case 3 { return mapSignal(p); }
-    case 4 { return mapHall(p); }
-    default { return mapHarbour(p); }
+    case 0 { res = fillLaunch(p, loose); }
+    case 1 { res = fillTree(p, loose); }
+    case 2 { res = fillPatch(p, loose); }
+    case 3 { res = fillSignal(p, loose); }
+    case 4 { res = fillHall(p, loose); }
+    default { res = fillHarbour(p, loose); }
+  }
+  if (loose && room != 2) {
+    // Blocks adrift in the distance, up where the room leaves the sky clear.
+    let far = max(p.z + 40.0 * U, 2.0 * U - p.y);
+    if (far < 0.3) {
+      let band = max(max(far, p.y - 28.0 * U), max(abs(p.x) - 44.0 * U, -64.0 * U - p.z));
+      res = pickLoose(res, max(drift(p, f32(room) * 7.0), band), 20.0);
+    } else {
+      res.x = min(res.x, far);
+    }
+  }
+  return res;
+}
+
+// How much of its cell a block fills. Standing blocks fill it; loose ones
+// swell, shrink and vanish, which is how smoke rolls and a beam sweeps.
+fn grow(room: i32, mat: i32, c: vec3f, h: f32) -> f32 {
+  let t = params.time;
+  let b = c / U;
+  if (mat == 20) { return 0.62 + 0.26 * sin(t * 0.5 + h * 30.0); }
+  switch room {
+    case 0 {
+      let wide = max(abs(b.x - LAUNCH_AT.x), abs(b.z - LAUNCH_AT.y));
+      if (mat == 10) {
+        let down = clamp((-7.0 - b.y) / 3.0, 0.0, 1.0);
+        let flicker = 0.5 + 0.5 * sin(t * 17.0 + h * 40.0 + b.y * 2.0);
+        return (0.95 - 0.5 * down) * (0.55 + 0.45 * flicker) * step(wide, 2.0 - down * 0.9);
+      }
+      if (mat == 11) {
+        let roll = 0.5 + 0.25 * sin(b.x * 0.6 + t * 0.9 + b.z * 0.3)
+          + 0.25 * sin(b.z * 0.7 - t * 0.7 + b.y * 0.9 + h * 6.0);
+        let room1 = fade(12.0, 5.0, wide) * fade(-7.0, -11.0, b.y);
+        return smoothstep(0.3, 0.75, roll * (0.45 + 0.75 * room1)) * 0.9;
+      }
+      if (mat == 12) { return 0.5 + 0.35 * sin(t * 1.6 + launchStack(b.z) * 1.3); }
+    }
+    case 1 {
+      if (mat == 10) { return select(0.0, 0.62 + 0.28 * sin(t * 0.7 + h * 40.0), h > 0.35); }
+    }
+    case 2 {
+      if (mat == 5) {
+        let key = floor(b.xz);
+        let press = step(0.82, fract(hash21(key) * 9.0 + t * 0.35));
+        return select(0.0, 0.8 - 0.25 * press, fract((key.x + key.y) * 0.5) < 0.25);
+      }
+    }
+    case 4 {
+      if (mat == 10) {
+        let floor1 = select(-12.0, -10.0, b.z < -16.0);
+        return clamp(stakeHeight(stakePile(b.z)) - (b.y - floor1) + 0.5, 0.0, 1.0) * 0.86;
+      }
+    }
+    case 5 {
+      if (mat == 10) { return harbourBeam(b) * step(0.45, h) * 0.5; }
+    }
+    default {}
+  }
+  return 1.0;
+}
+
+// --------------------------------------------------------------- The backdrop
+
+// Three colours laid end to end, and a fourth to fade out into.
+fn ramp(a: vec3f, b: vec3f, c: vec3f, d: vec3f, x: f32) -> vec3f {
+  let ab = mix(a, b, smoothstep(0.0, 0.34, x));
+  let abc = mix(ab, c, smoothstep(0.3, 0.68, x));
+  return mix(abc, d, smoothstep(0.62, 1.0, x));
+}
+
+// The wash of colour behind a room, at a point on the far sheet.
+fn wash(room: i32, v: vec2f) -> vec3f {
+  switch room {
+    case 0 {
+      // Dawn: tangerine on the horizon, clearing to powder blue.
+      let x = clamp(v.y * 1.1 + 0.25 + v.x * 0.15, 0.0, 1.0);
+      return ramp(TANGERINE, PLATINUM * 0.5, POWDER * 0.3, vec3f(0.015, 0.03, 0.075), x);
+    }
+    case 1 {
+      // A cool glow gathered behind the tree.
+      let x = length(v - vec2f(0.0, 0.25)) * 0.75;
+      return ramp(PLATINUM * 0.6, POWDER * 0.36, vec3f(0.015, 0.06, 0.08), vec3f(0.003, 0.012, 0.022), x);
+    }
+    case 2 {
+      // Lamplight: cream falling to tangerine and rust.
+      let x = clamp(0.45 - v.y * 0.4 - v.x * 0.22, 0.0, 1.0);
+      return ramp(PLATINUM * 0.7, vec3f(1.0, 0.45, 0.14) * 0.6, TANGERINE * 0.4, vec3f(0.08, 0.014, 0.01), x);
+    }
+    case 3 {
+      // Night, with one lane of the gradient across it.
+      let lane = (v.y - 0.3 - v.x * 0.45) * 3.2;
+      return vec3f(0.004, 0.005, 0.008)
+        + brand(v.x * 0.35 + v.y * 0.2 + params.time * 0.01) * 0.3 * exp(-lane * lane);
+    }
+    case 4 {
+      // The arch's light: gold at the heart, then ember, then plum.
+      let x = length((v - vec2f(0.0, 0.3)) * vec2f(1.0, 0.8)) * 0.75;
+      return ramp(GOLD * 0.5, TANGERINE * 0.32, vec3f(0.09, 0.012, 0.03), vec3f(0.02, 0.006, 0.02), x);
+    }
+    default {
+      // Dusk at sea: an ember on the horizon under powder blue and deep night.
+      let x = abs(v.y * 1.2 + 0.15);
+      return ramp(TANGERINE * 0.85, POWDER * 0.3, vec3f(0.012, 0.035, 0.1), vec3f(0.003, 0.007, 0.022), x);
+    }
   }
 }
 
-fn stars(rd: vec3f, density: f32) -> f32 {
-  let g = vec2f(atan2(rd.x, -rd.z), rd.y) * 22.0;
-  let id = floor(g);
-  let h = hash21(id);
-  let centre = vec2f(fract(h * 13.7), fract(h * 91.3)) * 0.7 + 0.15;
-  let d = length(fract(g) - centre);
-  return step(1.0 - density, h) * fade(0.07, 0.0, d) * (0.4 + 0.6 * fract(h * 51.0));
+// Where a ray meets the sheet hanging far behind a room.
+fn sheet(rd: vec3f) -> vec2f {
+  return rd.xy / max(-rd.z, 0.3);
 }
 
-// What a ray sees when it leaves a room that has no walls.
+// What a ray sees when it leaves a room: the wash, cut into squares.
 fn sky(room: i32, rd: vec3f) -> vec3f {
-  if (room == 3) {
-    let lane = (rd.y - 0.35 - rd.x * 0.3) * 4.0;
-    let band = exp(-lane * lane);
-    return vec3f(0.004) + vec3f(0.03) * band + vec3f(1.0) * stars(rd, 0.3);
+  let t = params.time;
+  let v = sheet(rd);
+  let cells = v * 8.0;
+  let id = floor(cells);
+  let f = abs(fract(cells) - 0.5);
+  let at = (id + 0.5) / 8.0;
+  let h = hash21(id + f32(room) * 17.0 + 0.5);
+  let body = fade(0.48, 0.44, max(f.x, f.y));
+  var col = wash(room, mix(v, at, 0.8)) * (0.84 + 0.32 * h);
+  let lit = step(0.6, h) * body;
+  col *= 1.0 + lit * (0.3 + 0.2 * sin(t * (0.3 + h) + h * 40.0));
+  col *= mix(0.78, 1.0, body);
+
+  // The lights in the sky are squares too.
+  if (room == 0) {
+    let sun = max(abs(v.x - 0.3), abs(v.y + 0.02));
+    col = mix(col, PLATINUM * 2.6 + TANGERINE * 0.8, fade(0.2, 0.19, sun));
+  } else if (room == 3) {
+    col += vec3f(1.0, 0.98, 0.92) * step(0.9, h) * fade(0.16, 0.12, max(f.x, f.y))
+      * (0.5 + 0.5 * sin(t * (0.5 + h * 2.0) + h * 60.0));
+  } else if (room == 5) {
+    let moon = max(abs(v.x + 0.42), abs(v.y - 0.5));
+    col = mix(col, PLATINUM * 1.5, fade(0.075, 0.07, moon));
+    col += vec3f(0.9, 0.95, 1.0) * step(0.86, h) * step(0.25, v.y) * fade(0.12, 0.08, max(f.x, f.y)) * 0.8;
   }
-  let up = clamp(rd.y, 0.0, 1.0);
-  var col = mix(vec3f(0.02, 0.07, 0.11), vec3f(0.003, 0.007, 0.03), pow(up, 0.45));
-  col += vec3f(0.9, 0.95, 1.0) * stars(rd, 0.16) * smoothstep(0.02, 0.2, rd.y);
-  let moon = dot(rd, normalize(vec3f(-0.42, 0.44, -1.0)));
-  col += vec3f(1.0, 0.96, 0.85) * (smoothstep(0.9985, 0.9992, moon) * 1.4 + pow(max(moon, 0.0), 60.0) * 0.12);
   return col;
 }
+
+// ------------------------------------------------------------------ Materials
 
 struct Surface {
   albedo: vec3f,
@@ -449,216 +618,261 @@ struct Surface {
   gloss: f32,
 }
 
-fn grid(p: vec2f, width: f32) -> f32 {
-  let g = abs(fract(p) - 0.5);
-  return smoothstep(0.5 - width, 0.5, max(g.x, g.y));
-}
-
-fn surface(room: i32, m: f32, p: vec3f, n: vec3f, rd: vec3f) -> Surface {
+// What a block is painted. A block is one flat colour, chosen from where its
+// middle sits (c), how big it is (girth) and its own number (h); only the
+// writing on a post is drawn across a face.
+fn paint(room: i32, mat: i32, c: vec3f, girth: f32, h: f32, local: vec3f, face: vec3f) -> Surface {
   let t = params.time;
+  let b = c / U;
   var s = Surface(vec3f(0.03), vec3f(0.0), 0.0);
-  let mat = i32(m + 0.5);
+  if (mat == 20) {
+    s.albedo = brand(h * 7.0 + f32(room) * 0.21);
+    s.emit = s.albedo * 0.35;
+    s.gloss = 0.7;
+    return s;
+  }
   switch room {
     // Autolaunch
     case 0 {
+      let q = vec3f(b.x - LAUNCH_AT.x, b.y, b.z - LAUNCH_AT.y);
+      let wide = max(abs(q.x), abs(q.z));
       if (mat == 1) {
-        s.albedo = vec3f(0.022, 0.022, 0.026);
-        if (n.y > 0.5) {
-          s.emit = TANGERINE * grid(p.xz * 2.0, 0.03) * 0.5 * exp(-length(p.xz - LAUNCH_ROCKET.xz) * 0.5);
-          s.gloss = 0.5;
-        } else if (n.z > 0.5) {
-          // The hatch in the back wall, open on a dusk sky.
-          let h = p.xy - vec2f(0.0, 0.7);
-          let r = length(h);
-          let dusk = mix(vec3f(1.0, 0.22, 0.03), vec3f(0.05, 0.03, 0.2), smoothstep(-0.9, 0.9, h.y));
-          s.emit = dusk * 0.8 * fade(1.15, 1.1, r)
-            + vec3f(1.0, 0.5, 0.15) * fade(0.05, 0.0, abs(r - 1.15)) * 1.2;
-        } else {
-          s.albedo *= 0.6 + 0.4 * smoothstep(0.42, 0.46, abs(fract(p.z * 1.6) - 0.5));
-        }
-      } else if (mat == 2) {
-        let q = p - LAUNCH_ROCKET - vec3f(0.0, launchLift(), 0.0);
-        s.albedo = PLATINUM;
-        if ((q.y > 0.12 && q.y < 0.24) || q.y < -0.16 || q.y > 0.82) { s.albedo = TANGERINE; }
-        s.gloss = 0.8;
-      } else if (mat == 3) {
-        s.albedo = vec3f(0.02);
-        s.emit = vec3f(1.0, 0.25, 0.03) * 0.6;
-      } else if (mat == 4) {
-        let id = launchStep(p.z);
-        let top = -1.0 + 2.0 * (0.2 + 0.19 * id);
-        s.albedo = vec3f(0.035, 0.03, 0.03);
-        s.emit = TANGERINE * (fade(0.05, 0.0, top - p.y) * 1.6
-          + 0.25 * smoothstep(0.46, 0.5, abs(fract(p.y * 5.0) - 0.5)));
-      } else {
-        s.albedo = vec3f(0.09);
+        s.albedo = vec3f(0.06, 0.05, 0.055);
+        let ring = fade(1.9, 0.9, abs(wide - 11.0));
+        s.emit = TANGERINE * ring * (0.45 + 0.35 * sin(t * 2.0 + (q.x - q.z) * 0.5));
         s.gloss = 0.4;
+      } else if (mat == 2) {
+        s.albedo = PLATINUM * 0.3;
+        if (wide > 6.0) {
+          let stripe = step(0.5, fract((b.x + b.z) * 0.25));
+          s.albedo = mix(vec3f(0.03), TANGERINE * 0.8, stripe);
+          s.emit = TANGERINE * stripe * 0.25;
+        }
+        s.gloss = 0.3;
+      } else if (mat == 3) {
+        s.albedo = PLATINUM;
+        if ((q.y > 0.0 && q.y < 2.0) || q.y > 8.0 || wide > 2.0) {
+          s.albedo = TANGERINE;
+          s.emit = TANGERINE * 0.12;
+        }
+        if (q.y > 3.0 && q.y < 5.0 && abs(q.x) < 1.0) {
+          s.albedo = POWDER;
+          s.emit = POWDER * 0.9;
+        }
+        s.gloss = 0.8;
+      } else if (mat == 4) {
+        let lattice = fract((floor(b.x) + floor(b.y) + floor(b.z)) * 0.5) * 2.0;
+        s.albedo = mix(vec3f(0.05), vec3f(0.16), lattice);
+        s.gloss = 0.5;
+      } else if (mat == 5) {
+        s.albedo = vec3f(0.05);
+        s.emit = vec3f(1.0, 0.06, 0.03) * 4.0 * step(0.0, sin(t * 3.0));
+      } else if (mat == 6) {
+        let id = launchStack(b.z);
+        let tall = 4.0 * (id + 1.0);
+        let tick = fract(t * 0.35 + id * 0.17);
+        let wave = exp(-pow((b.y + 12.0) / tall - tick, 2.0) * 60.0);
+        s.albedo = vec3f(0.05, 0.04, 0.045);
+        s.emit = TANGERINE * (0.03 + 0.6 * wave);
+        if (b.y + 12.0 + girth / U * 0.5 > tall - 0.1) { s.emit = TANGERINE * (1.1 + 0.4 * sin(t * 2.0 + id)); }
+      } else if (mat == 7) {
+        s.albedo = vec3f(0.03, 0.028, 0.045);
+        if (girth < U * 1.5 && h > 0.6) { s.emit = mix(TANGERINE, PLATINUM, step(0.8, h)) * 1.2; }
+      } else if (mat == 8) {
+        s.albedo = vec3f(0.03);
+        s.emit = vec3f(1.0, 0.3, 0.05) * 0.8;
+      } else if (mat == 10) {
+        let down = clamp((-7.0 - b.y) / 3.0, 0.0, 1.0);
+        s.emit = mix(vec3f(1.0, 0.75, 0.3), vec3f(1.0, 0.16, 0.02), down) * 3.5;
+      } else if (mat == 11) {
+        s.albedo = PLATINUM * 0.8;
+        s.emit = vec3f(1.0, 0.4, 0.12) * 0.3 * fade(10.0, 2.0, wide);
+      } else {
+        s.albedo = TANGERINE;
+        s.emit = TANGERINE * 2.4;
       }
     }
     // Techtree
     case 1 {
+      let q = b - TREE_AT;
+      let wide = max(abs(q.x), abs(q.z));
+      // Light climbing the tree from the root, over and over.
+      let rise = exp(-pow(q.y - fract(t * 0.22) * 26.0 + 4.0, 2.0) * 0.25);
       if (mat == 1) {
-        s.albedo = vec3f(0.008, 0.02, 0.026);
-        if (n.y > 0.5) {
-          let r = length(p.xz - TREE_BASE.xz);
-          let ring = smoothstep(0.42, 0.5, abs(fract(r * 2.2 - t * 0.25) - 0.5));
-          s.emit = POWDER * ring * 0.35 * exp(-r * 0.7);
-          s.gloss = 0.6;
-        } else {
-          // Greenhouse ribs.
-          let ribs = max(
-            smoothstep(0.47, 0.5, abs(fract(p.y * 1.2 + 0.2) - 0.5)),
-            smoothstep(0.47, 0.5, abs(fract((p.x + p.z) * 1.1) - 0.5)));
-          s.emit = POWDER * ribs * 0.09;
-        }
+        let ring = smoothstep(0.3, 0.5, abs(fract(wide * 0.2 - t * 0.2) - 0.5));
+        s.albedo = vec3f(0.02, 0.05, 0.06);
+        s.emit = POWDER * ring * 0.4 * exp(-wide * 0.06);
+        s.gloss = 0.6;
       } else if (mat == 2) {
-        s.albedo = vec3f(0.05, 0.07, 0.08);
-        s.emit = POWDER * fade(0.04, 0.0, abs(length(p.xz - TREE_BASE.xz) - 0.5)) * 0.8;
-        s.gloss = 0.5;
+        s.albedo = vec3f(0.07, 0.1, 0.11);
+        if (min(abs(q.x), abs(q.z)) < 1.0) { s.emit = TANGERINE * (0.35 + 0.9 * rise); }
+        s.gloss = 0.4;
       } else if (mat == 3) {
-        s.albedo = vec3f(0.2, 0.3, 0.32);
-        s.emit = POWDER * 0.12;
+        s.albedo = vec3f(0.25, 0.33, 0.35);
+        s.emit = POWDER * 0.14 + TANGERINE * rise * 1.3;
+      } else if (mat == 4) {
+        s.albedo = TANGERINE;
+        s.emit = TANGERINE * (1.5 + 1.5 * rise);
+      } else if (mat == 5) {
+        s.albedo = vec3f(0.05, 0.08, 0.09);
+        if (b.y > -6.0) { s.emit = POWDER * (0.5 + 0.3 * sin(t * 0.9 + b.x + b.z)); }
+        s.gloss = 0.5;
       } else {
-        s.albedo = vec3f(0.3);
-        s.emit = mix(vec3f(0.6, 0.92, 1.0), TANGERINE * 1.6, step(0.3, p.y) * step(p.y, 0.75)) * 1.3;
+        s.albedo = vec3f(0.3, 0.5, 0.55);
+        s.emit = mix(vec3f(0.3, 0.75, 0.9), PLATINUM, step(0.75, h)) * (0.55 + 0.3 * sin(t * 0.8 + h * 30.0));
       }
     }
     // Patchbay
     case 2 {
       if (mat == 1) {
-        s.albedo = vec3f(0.5, 0.47, 0.37);
-        if (n.y > 0.5) {
-          let c = floor(p.xz * 1.6);
-          s.albedo = mix(vec3f(0.06, 0.05, 0.045), vec3f(0.2, 0.18, 0.14), fract((c.x + c.y) * 0.5) * 2.0);
-          s.gloss = 0.5;
-        } else if (p.y < -0.35) {
-          s.albedo = vec3f(0.16, 0.14, 0.11);
-          s.emit = TANGERINE * fade(0.03, 0.0, -0.35 - p.y) * 0.5;
-        } else if (n.y > -0.5) {
-          // Panelled walls: a seam every so often, along whichever way the wall runs.
-          let along = p.x * abs(n.z) + p.z * abs(n.x);
-          s.albedo *= 0.55 + 0.45 * fade(0.5, 0.47, abs(fract(along * 1.25) - 0.5));
-        }
-      } else if (mat == 2) {
-        // Sockets in rows, a signal lamp over each.
-        let cell = (p.xy - PATCH_PANEL.xy) / 0.3;
-        let f = fract(cell) - 0.5;
-        let id = floor(cell);
-        let ringD = abs(length(f + vec2f(0.0, 0.08)) - 0.2);
-        s.albedo = mix(vec3f(0.012), PLATINUM * 0.7, fade(0.05, 0.02, ringD));
-        s.albedo = mix(s.albedo, vec3f(0.0), fade(0.17, 0.14, length(f + vec2f(0.0, 0.08))));
-        let h = hash21(id);
-        let on = step(0.35, h) * (0.4 + 0.6 * step(0.0, sin(t * (1.0 + h * 3.0) + h * 40.0)));
-        var led = TANGERINE;
-        if (h > 0.6) { led = vec3f(0.25, 0.62, 0.9); }
-        if (h > 0.82) { led = PLATINUM; }
-        s.emit = led * on * fade(0.07, 0.03, length(f - vec2f(0.0, 0.33))) * 2.2 * step(0.5, n.z);
-        s.gloss = 0.4;
-      } else if (mat == 3) {
-        s.albedo = patchTint(p) * 0.5;
+        let tile = floor(b.xz / 4.0);
+        s.albedo = mix(vec3f(0.07, 0.055, 0.05), vec3f(0.3, 0.26, 0.2), fract((tile.x + tile.y) * 0.5) * 2.0);
         s.gloss = 0.5;
-      } else if (mat == 4) {
-        s.albedo = vec3f(0.03, 0.028, 0.026);
-        if (n.y > 0.5) {
-          let cell = p.xz * vec2f(7.0, 9.0);
-          let f = fract(cell) - 0.5;
-          let h = hash21(floor(cell));
-          s.emit = mix(TANGERINE, PLATINUM, step(0.5, h)) * step(0.45, h)
-            * fade(0.28, 0.2, length(f)) * 0.9;
+      } else if (mat == 2) {
+        s.albedo = PLATINUM * 0.75;
+        if (b.y < -4.0) { s.albedo = vec3f(0.2, 0.17, 0.13); }
+        if (b.y > -6.0 && b.y < -4.0) {
+          s.albedo = TANGERINE * 0.7;
+          s.emit = TANGERINE * 0.2;
         }
-        s.gloss = 0.3;
+      } else if (mat == 3) {
+        // The board: four blocks to a socket, a dark hole and a lamp over it.
+        let cell = floor(b.xy - vec2f(-18.0, -4.0));
+        let tile = floor(cell / 4.0);
+        let at = cell - tile * 4.0;
+        let th = hash21(tile + 2.0);
+        let across = at.x > 0.5 && at.x < 2.5;
+        s.albedo = vec3f(0.04, 0.036, 0.034);
+        s.gloss = 0.4;
+        if (across && at.y < 1.5) {
+          s.albedo = vec3f(0.004);
+          s.gloss = 0.9;
+        } else if (across && at.y > 2.5) {
+          var lamp = TANGERINE;
+          if (th > 0.6) { lamp = POWDER * 1.4; }
+          if (th > 0.82) { lamp = PLATINUM; }
+          let on = step(0.3, th) * (0.25 + 0.75 * step(0.0, sin(t * (1.0 + th * 3.0) + th * 40.0)));
+          s.emit = lamp * on * 2.0;
+        }
+      } else if (mat == 4) {
+        s.albedo = vec3f(0.04, 0.035, 0.03);
+        if (b.y > -9.0 && b.z > -9.0) { s.emit = TANGERINE * 0.5; }
+        s.gloss = 0.4;
+      } else if (mat == 5) {
+        let key = floor(b.xz);
+        let kh = hash21(key);
+        let press = step(0.82, fract(kh * 9.0 + t * 0.35));
+        s.albedo = mix(PLATINUM, TANGERINE, step(0.7, kh));
+        s.emit = s.albedo * (0.25 + 1.8 * press);
+      } else if (mat == 6) {
+        s.albedo = vec3f(1.0, 0.78, 0.5);
+        s.emit = vec3f(1.0, 0.78, 0.5) * 2.2;
       } else {
-        s.albedo = vec3f(0.2);
-        s.emit = vec3f(1.0, 0.78, 0.5) * 2.0 * step(p.y, 1.24);
+        let cable = patchCable(c);
+        let hue = i32(cable.y + 0.5) % 3;
+        var tint = TANGERINE;
+        if (hue == 1) { tint = PLATINUM; }
+        if (hue == 2) { tint = POWDER * 1.3; }
+        let pulse = fract(t * 0.22 + cable.y * 0.37);
+        let along = (cable.z - pulse) * 7.0;
+        s.albedo = tint * 0.5;
+        s.emit = tint * (0.08 + 3.5 * exp(-along * along));
+        s.gloss = 0.5;
       }
     }
     // Regents X
     case 3 {
+      let wide = max(abs(b.x - SIGNAL_AT.x), abs(b.z - SIGNAL_AT.z));
       if (mat == 1) {
-        let r = length(p.xz - SIGNAL_CENTRE.xz);
-        let ring = smoothstep(0.46, 0.5, abs(fract(r * 1.4 - t * 0.11) - 0.5));
-        s.albedo = vec3f(0.004);
-        s.emit = vec3f(1.0) * ring * 0.3 * exp(-r * 0.45) + sky(3, reflect(rd, n)) * 0.5;
+        let ring = fade(0.16, 0.0, fract(wide / 14.0 - t * 0.11));
+        s.albedo = vec3f(0.01);
+        s.emit = vec3f(1.0, 0.98, 0.94) * ring * 0.55 * exp(-wide * 0.035);
         s.gloss = 1.0;
       } else if (mat == 2) {
-        s.albedo = vec3f(0.6);
-        s.emit = vec3f(1.0) * 1.1;
-      } else if (mat == 3) {
-        s.albedo = vec3f(0.02);
-        s.emit = vec3f(1.0) * fade(0.04, 0.0, abs(length(p.xz - SIGNAL_CENTRE.xz) - 0.5)) * 0.9;
+        s.albedo = vec3f(0.04);
+        s.emit = vec3f(0.35) * step(2.0, wide) * step(-10.0, b.y);
         s.gloss = 0.8;
+      } else if (mat == 3) {
+        s.albedo = vec3f(0.6);
+        s.emit = vec3f(1.0, 0.98, 0.94) * (1.0 + 0.3 * sin(t * 1.3 + h * 20.0));
       } else {
         // A post: a few lines of writing on dark glass.
-        let lines = smoothstep(0.3, 0.38, abs(fract(p.y * 9.0) - 0.5));
-        let across = fract(p.x * 2.6 + floor(p.y * 9.0) * 0.37);
+        let row = floor(local.y * 3.0 + 3.0);
+        let line = step(0.3, abs(fract(local.y * 3.0) - 0.5));
+        let length1 = 0.75 - 0.9 * hash21(vec2f(row, h * 50.0));
         s.albedo = vec3f(0.02);
-        s.emit = vec3f(0.9) * lines * step(across, 0.72) * 0.55 + vec3f(0.05);
+        s.emit = vec3f(0.9) * (1.0 - line) * step(local.x, length1) * step(-0.8, local.x) * 0.7 * abs(face.z) + vec3f(0.04);
         s.gloss = 0.9;
       }
     }
     // Regents stake
     case 4 {
+      let side = abs(b.x);
       if (mat == 1) {
-        s.albedo = vec3f(0.03, 0.03, 0.032);
-        if (n.y > 0.5) {
-          s.albedo = mix(vec3f(0.018), PLATINUM * 0.5, grid(p.xz / 1.1 + vec2f(0.5, 0.27), 0.02));
-          if (abs(p.x) < 0.42 && p.z > -0.95) { s.albedo = TANGERINE * 0.55; }
-          s.gloss = 0.7;
-        } else if (n.z > 0.5) {
-          // The tall window behind the dais.
-          let arch = max(abs(p.x) - 0.75, p.y - 2.3 + 0.6 * p.x * p.x);
-          s.emit = vec3f(1.0, 0.84, 0.6) * fade(0.05, -0.05, arch) * 0.5;
-        } else {
-          s.albedo *= 0.6 + 0.4 * smoothstep(0.44, 0.47, abs(fract(p.z / 1.1 + 0.77) - 0.5));
+        s.albedo = vec3f(0.05, 0.046, 0.05);
+        if (side < 6.0 && b.z > -14.0) { s.albedo = PLATINUM * 0.4; }
+        if (side < 4.0 && b.z > -14.0) {
+          s.albedo = TANGERINE * 0.6;
+          s.emit = TANGERINE * 0.08;
         }
+        s.gloss = 0.7;
       } else if (mat == 2) {
-        s.albedo = PLATINUM * 0.55;
+        s.albedo = PLATINUM * 0.3;
+        if (b.y > 14.0 && b.y < 16.0) { s.emit = GOLD * 0.6; }
         s.gloss = 0.3;
       } else if (mat == 3) {
-        s.albedo = vec3f(0.07, 0.068, 0.062);
+        s.albedo = vec3f(0.1, 0.092, 0.08);
+        if (b.y > -8.0 && (side > 5.0 || abs(b.z + 22.0) > 3.0)) { s.emit = GOLD * 0.45; }
         s.gloss = 0.5;
       } else if (mat == 4) {
-        s.albedo = PLATINUM;
-        s.emit = PLATINUM * 0.1;
-        s.gloss = 1.0;
-      } else {
+        let hole = max(side - 8.0, b.y - 16.0 + max(side - 4.0, 0.0));
+        s.albedo = vec3f(0.06, 0.045, 0.05);
+        s.emit = GOLD * 0.45 * fade(2.6, 0.6, hole);
+      } else if (mat == 10) {
         s.albedo = TANGERINE;
-        s.emit = TANGERINE * 1.4;
+        s.emit = TANGERINE * 1.3;
+      } else {
+        // The crown.
+        s.albedo = PLATINUM;
+        s.emit = PLATINUM * 0.3;
+        s.gloss = 1.0;
       }
     }
     // Keyfleet
     default {
       if (mat == 1) {
-        let ripple = vec3f(
-          sin(p.x * 9.0 + t * 1.1) + sin(p.z * 13.0 - t * 0.7),
-          0.0,
-          sin(p.z * 8.0 + t * 0.9) + sin(p.x * 11.0 + t * 0.6)) * 0.035;
-        let wn = normalize(n + ripple);
-        let fres = pow(1.0 - max(dot(-rd, wn), 0.0), 3.0);
-        let mirror = reflect(rd, wn);
-        s.albedo = vec3f(0.003, 0.012, 0.02);
-        // The moon is too bright to mirror whole: the swell would scatter it in blots.
-        s.emit = min(sky(5, vec3f(mirror.x, abs(mirror.y), mirror.z)), vec3f(0.3)) * (0.1 + 0.5 * fres);
-        // The lighthouse lamp, drawn out across the water.
-        let toLight = normalize(HARBOUR_LIGHT + vec3f(0.0, 1.45, 0.0) - p);
-        s.emit += vec3f(1.0, 0.85, 0.6) * pow(max(dot(mirror, toLight), 0.0), 220.0) * 0.9;
+        let swell = 0.5 + 0.5 * sin(b.x * 0.35 + t * 0.9 + sin(b.z * 0.3 + t * 0.4) * 1.5);
+        let path = -0.42 * (10.8 - b.z);
+        let glint = fade(3.5, 0.5, abs(b.x - path)) * (0.5 + 0.5 * sin(t * 2.0 + h * 30.0));
+        s.albedo = mix(vec3f(0.004, 0.02, 0.04), vec3f(0.02, 0.07, 0.1), swell);
+        s.emit = POWDER * 0.05 * swell + PLATINUM * 0.3 * glint
+          + vec3f(1.0, 0.85, 0.6) * 0.3 * harbourBeam(b) * fade(40.0, 4.0, length(b.xz - HARBOUR_LAMP.xz));
         s.gloss = 1.0;
       } else if (mat == 2) {
-        s.albedo = vec3f(0.02, 0.024, 0.03);
+        s.albedo = vec3f(0.04, 0.045, 0.055);
       } else if (mat == 3) {
-        let band = step(0.5, fract((p.y - HARBOUR_LIGHT.y) * 2.4));
-        s.albedo = mix(PLATINUM, TANGERINE, band);
-        s.emit = s.albedo * 0.04;
+        s.albedo = mix(PLATINUM, TANGERINE, step(0.5, fract((b.y + 8.0) / 8.0)));
+        if (b.y > 8.0) { s.albedo = vec3f(0.05); }
+        s.emit = s.albedo * 0.05;
       } else if (mat == 4) {
-        s.emit = vec3f(1.0, 0.9, 0.7) * 3.0;
+        s.emit = vec3f(1.0, 0.9, 0.7) * 3.5;
       } else if (mat == 5) {
-        s.albedo = GOLD;
-        s.emit = GOLD * 0.55;
-        s.gloss = 1.0;
+        s.albedo = vec3f(0.1, 0.065, 0.045);
       } else if (mat == 6) {
-        s.albedo = mix(vec3f(0.05, 0.035, 0.03), PLATINUM * 0.7, step(-0.86, p.y));
+        s.albedo = select(vec3f(0.07, 0.045, 0.04), PLATINUM * 0.5, b.y > -11.0);
+      } else if (mat == 7) {
+        s.albedo = GOLD;
+        s.emit = GOLD * 1.6;
+      } else if (mat == 8) {
+        s.albedo = PLATINUM * 0.85;
+        s.emit = PLATINUM * 0.05;
+      } else if (mat == 10) {
+        s.emit = vec3f(1.0, 0.9, 0.7) * 1.5;
       } else {
-        s.emit = GOLD * 3.0;
+        // The key.
+        s.albedo = vec3f(1.0, 0.5, 0.08);
+        s.emit = vec3f(1.0, 0.45, 0.05) * 0.3;
+        s.gloss = 1.0;
       }
     }
   }
@@ -672,7 +886,8 @@ struct Rig {
   fill: vec3f,
   fillColor: vec3f,
   ambient: vec3f,
-  haze: vec3f,
+  // How much of the backdrop's colour falls on the blocks.
+  bounce: f32,
   thickness: f32,
   reach: f32,
 }
@@ -680,77 +895,333 @@ struct Rig {
 fn rig(room: i32) -> Rig {
   switch room {
     case 0 {
-      return Rig(vec3f(0.0, -0.75, -1.0), vec3f(1.0, 0.3, 0.06) * 2.2, vec3f(0.2, 1.4, 0.2), vec3f(0.5, 0.55, 0.75) * 1.6,
-        vec3f(0.03, 0.03, 0.04), vec3f(0.05, 0.015, 0.008), 0.07, 9.0);
+      return Rig(vec3f(0.0, -8.0, -18.0) * U, vec3f(1.0, 0.34, 0.07) * 1.0, vec3f(0.6, 2.0, 0.6), vec3f(0.62, 0.66, 0.8) * 2.0,
+        vec3f(0.05, 0.045, 0.05), 0.5, 0.05, 9.0);
     }
     case 1 {
-      return Rig(vec3f(0.0, 1.5, -1.2), vec3f(0.55, 0.85, 1.0) * 2.4, vec3f(-1.6, -0.5, -0.2), TANGERINE * 1.1,
-        vec3f(0.015, 0.03, 0.035), vec3f(0.006, 0.024, 0.03), 0.08, 9.0);
+      return Rig(vec3f(0.0, 1.3, -1.2), vec3f(0.55, 0.85, 1.0) * 2.4, vec3f(-1.6, -0.3, 0.2), TANGERINE * 0.9,
+        vec3f(0.03, 0.05, 0.055), 0.45, 0.06, 9.0);
     }
     case 2 {
-      return Rig(vec3f(0.0, 1.1, -0.7), vec3f(1.0, 0.8, 0.55) * 2.2, vec3f(0.0, 0.3, 0.8), vec3f(0.6, 0.66, 0.7) * 1.4,
-        vec3f(0.1, 0.09, 0.07), vec3f(0.1, 0.085, 0.06), 0.04, 7.0);
+      return Rig(vec3f(0.0, 0.85, -0.65), vec3f(1.0, 0.8, 0.55) * 1.9, vec3f(0.0, 0.3, 0.8), vec3f(0.6, 0.66, 0.7) * 1.3,
+        vec3f(0.08, 0.068, 0.055), 0.3, 0.03, 7.0);
     }
     case 3 {
-      return Rig(vec3f(-1.5, 2.2, -0.8), vec3f(1.0) * 2.4, SIGNAL_CENTRE, vec3f(1.0) * 0.9,
-        vec3f(0.012), vec3f(0.004), 0.03, 16.0);
+      return Rig(vec3f(-1.5, 2.2, -0.8), vec3f(1.0) * 2.0, SIGNAL_AT * U, vec3f(1.0) * 1.3,
+        vec3f(0.015), 0.4, 0.03, 12.0);
     }
     case 4 {
-      return Rig(vec3f(0.0, 2.3, -0.2), vec3f(1.0, 0.9, 0.74) * 2.8, vec3f(0.0, -0.3, -1.6), TANGERINE * 1.6,
-        vec3f(0.035, 0.035, 0.04), vec3f(0.03, 0.022, 0.016), 0.06, 11.0);
+      return Rig(vec3f(0.0, 2.2, -0.7), vec3f(1.0, 0.9, 0.74) * 2.0, HALL_CROWN * U, GOLD * 1.1,
+        vec3f(0.03, 0.026, 0.024), 0.3, 0.045, 11.0);
     }
     default {
-      return Rig(vec3f(-2.6, 2.6, -5.0), vec3f(0.55, 0.7, 1.0) * 5.0, vec3f(-0.3, 0.0, -0.4), GOLD * 0.9,
-        vec3f(0.01, 0.018, 0.03), vec3f(0.012, 0.035, 0.055), 0.035, 18.0);
+      return Rig(vec3f(-2.6, 2.6, -5.0), vec3f(0.55, 0.7, 1.0) * 3.2, HARBOUR_KEY * U, GOLD * 1.1,
+        vec3f(0.02, 0.03, 0.05), 0.45, 0.035, 12.0);
     }
   }
 }
 
-fn normalAt(p: vec3f, room: i32) -> vec3f {
-  let e = vec2f(0.0015, -0.0015);
-  return normalize(
-    e.xyy * map(p + e.xyy, room).x + e.yyx * map(p + e.yyx, room).x
-    + e.yxy * map(p + e.yxy, room).x + e.xxx * map(p + e.xxx, room).x);
+// Light scattered toward the eye by the air round a lamp, summed along a ray
+// as far as it runs.
+fn halo(ro: vec3f, rd: vec3f, reach: f32, at: vec3f, radius: f32) -> f32 {
+  let o = ro - at;
+  let h = dot(o, rd);
+  let k = sqrt(max(dot(o, o) - h * h, 0.0) + radius * radius);
+  return (atan((reach + h) / k) - atan(h / k)) / PI * radius * radius / (k * k);
 }
 
-fn renderRoom(ro: vec3f, rd: vec3f, room: i32) -> vec3f {
+fn halos(room: i32, ro: vec3f, rd: vec3f, reach: f32) -> vec3f {
+  let t = params.time;
+  switch room {
+    case 0 {
+      return vec3f(1.0, 0.32, 0.05) * halo(ro, rd, reach, vec3f(0.0, -8.5, -18.0) * U, 0.16) * (0.5 + 0.08 * sin(t * 19.0));
+    }
+    case 1 {
+      return vec3f(0.4, 0.8, 1.0) * halo(ro, rd, reach, vec3f(0.0, 5.0, -18.0) * U, 0.6) * 0.14;
+    }
+    case 2 {
+      return vec3f(1.0, 0.78, 0.5) * halo(ro, rd, reach, vec3f(0.0, 14.0, -8.0) * U, 0.22) * 0.28;
+    }
+    case 3 {
+      return vec3f(1.0) * halo(ro, rd, reach, SIGNAL_AT * U, 0.5) * 0.12;
+    }
+    case 4 {
+      return PLATINUM * halo(ro, rd, reach, HALL_CROWN * U, 0.55) * 0.05
+        + GOLD * halo(ro, rd, reach, vec3f(0.0, 4.0, -50.0) * U, 0.8) * 0.06;
+    }
+    default {
+      return vec3f(1.0, 0.9, 0.7) * halo(ro, rd, reach, HARBOUR_LAMP * U, 0.14) * 0.5
+        + GOLD * halo(ro, rd, reach, (HARBOUR_KEY + vec3f(0.0, 2.0, 0.0)) * U, 0.4) * 0.1;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- The walk
+
+// The block a ray lands on.
+struct Hit {
+  // How far along the ray; under zero for a ray that lands on nothing.
+  t: f32,
+  // The face it lands on, in the block's own frame, and where on the block,
+  // from -1 to 1 along each side.
+  face: vec3f,
+  local: vec3f,
+  centre: vec3f,
+  half: vec3f,
+  mat: f32,
+  // 1 for a block standing shoulder to shoulder with its neighbours.
+  joined: f32,
+  // How far the block's frame is turned about the upright.
+  yaw: f32,
+}
+
+fn miss() -> Hit {
+  return Hit(-1.0, vec3f(0.0), vec3f(0.0), vec3f(0.0), vec3f(0.0), 0.0, 0.0, 0.0);
+}
+
+// Where a ray enters and leaves a box about a centre: x in, y out, and the
+// side it enters by.
+struct Span {
+  near: f32,
+  far: f32,
+  face: vec3f,
+}
+
+fn span(ro: vec3f, inv: vec3f, way: vec3f, centre: vec3f, half: vec3f) -> Span {
+  let a = (centre - ro) * inv;
+  let k = abs(inv) * half;
+  let tn = a - k;
+  let tf = a + k;
+  return Span(
+    max(tn.x, max(tn.y, tn.z)),
+    min(tf.x, min(tf.y, tf.z)),
+    -way * step(tn.yzx, tn.xyz) * step(tn.zxy, tn.xyz));
+}
+
+// Walks a ray through a room cell by cell. Each step asks first about the
+// largest cell the ray is in: far from everything, it strides on; deep inside
+// something, that whole cell is one large block; near a surface, it asks again
+// at the next size down. Which solid cells stay whole and which break into
+// smaller blocks is settled by each cell's own number, so a wall is a mix.
+fn trace(ro: vec3f, rd: vec3f, room: i32, reach: f32) -> Hit {
+  var hit = miss();
+  let safe = select(rd, vec3f(1e-6), abs(rd) < vec3f(1e-6));
+  let inv = 1.0 / safe;
+  let way = sign(safe);
+  var t = 0.0;
+  var nudge = vec3f(0.0);
+  for (var i = 0; i < 110; i++) {
+    let p = ro + rd * t + nudge;
+    var size = 4.0 * U;
+    var centre = (floor(p / size) + 0.5) * size;
+    var f = fill(room, centre, true);
+    let leap = f.x - size * 1.75;
+    if (leap > size) {
+      t += leap;
+      nudge = vec3f(0.0);
+      if (t > reach) { break; }
+      continue;
+    }
+    var m = 0.0;
+    if (f.x < -size * (0.3 + 0.35 * hash31(centre / U))) {
+      m = f.y;
+    } else if (f.x < size * 0.65) {
+      size = 2.0 * U;
+      centre = (floor(p / size) + 0.5) * size;
+      f = fill(room, centre, true);
+      if (f.x < -size * (0.3 + 0.35 * hash31(centre / U))) {
+        m = f.y;
+      } else if (f.x < size * 0.44) {
+        size = U;
+        centre = (floor(p / size) + 0.5) * size;
+        f = fill(room, centre, true);
+        if (f.x < 0.0) { m = f.y; }
+      }
+    }
+    if (m > 0.5) {
+      let h = hash31(centre / U + 0.37);
+      let g = grow(room, i32(m + 0.5), centre, h);
+      if (g > 0.03) {
+        let half = vec3f(size * 0.5 * g);
+        let s = span(ro, inv, way, centre, half);
+        if (s.near < s.far && s.far > 0.0) {
+          hit.t = max(s.near, 0.0);
+          hit.face = s.face;
+          hit.local = (ro + rd * hit.t - centre) / half;
+          hit.centre = centre;
+          hit.half = half;
+          hit.mat = m;
+          hit.joined = step(0.999, g);
+          break;
+        }
+      }
+    }
+    let edge = (centre + way * (size * 0.5) - ro) * inv;
+    t = min(edge.x, min(edge.y, edge.z));
+    nudge = way * step(edge, vec3f(t)) * (U * 0.02);
+    if (t > reach) { break; }
+  }
+  return hit;
+}
+
+// ----------------------------------------------------------- Blocks set free
+// A few blocks are not part of a room's grid: they hang in the air and move
+// smoothly. Each room's set shares one frame, which may turn about the upright.
+
+// The frame: where it hangs, and how far it is turned.
+fn freeFrame(room: i32) -> vec4f {
+  let t = params.time;
+  if (room == 4) { return vec4f(HALL_CROWN * U + vec3f(0.0, 0.05 * sin(t * 0.8), 0.0), 0.32 * sin(t * 0.35)); }
+  if (room == 5) { return vec4f(HARBOUR_KEY * U + vec3f(0.0, 0.06 * sin(t * 0.7), 0.0), 0.5 * sin(t * 0.3)); }
+  return vec4f(SIGNAL_AT * U, 0.0);
+}
+
+fn freeCount(room: i32) -> i32 {
+  if (room == 3) { return 7; }
+  if (room == 4) { return 13; }
+  if (room == 5) { return 14; }
+  return 0;
+}
+
+// One free block in its frame: its middle in xyz and its material in w, then
+// its half-size.
+struct Free {
+  at: vec4f,
+  half: vec3f,
+}
+
+fn freeBlock(room: i32, i: i32) -> Free {
+  let t = params.time;
+  if (room == 4) {
+    // The Regents crown, block for block: three blocks over two rows of five.
+    var at = vec2f(f32(i % 5) - 2.0, -f32(i / 5));
+    if (i >= 10) { at = vec2f(f32(i - 11) * 2.0, 1.0); }
+    return Free(vec4f(at * CROWN_PITCH, 0.0, 30.0), vec3f(CROWN_HALF));
+  }
+  if (room == 5) {
+    // The key: a ring of eight for a bow, a shaft of four, two teeth.
+    var cells = array<vec2f, 14>(
+      vec2f(-1.0, 4.0), vec2f(0.0, 4.0), vec2f(1.0, 4.0),
+      vec2f(-1.0, 3.0), vec2f(1.0, 3.0),
+      vec2f(-1.0, 2.0), vec2f(0.0, 2.0), vec2f(1.0, 2.0),
+      vec2f(0.0, 1.0), vec2f(0.0, 0.0), vec2f(0.0, -1.0), vec2f(0.0, -2.0),
+      vec2f(1.0, 0.0), vec2f(1.0, -2.0));
+    return Free(vec4f(cells[i] * 0.17, 0.0, 31.0), vec3f(0.074));
+  }
+  // The posts, wheeling slowly round the X, each at its own depth.
+  let angle = f32(i) * (2.0 * PI / 7.0) + t * 0.08;
+  return Free(
+    vec4f(vec2f(cos(angle), sin(angle)) * 11.5 * U, 5.0 * U * sin(f32(i) * 2.4), 32.0),
+    vec3f(2.2, 3.2, 0.4) * U);
+}
+
+fn traceFree(ro: vec3f, rd: vec3f, room: i32) -> Hit {
+  var hit = miss();
+  let count = freeCount(room);
+  if (count == 0) { return hit; }
+  let frame = freeFrame(room);
+  let turn = rot(-frame.w);
+  let o3 = ro - frame.xyz;
+  let oxz = turn * o3.xz;
+  let dxz = turn * rd.xz;
+  let o = vec3f(oxz.x, o3.y, oxz.y);
+  let d = vec3f(dxz.x, rd.y, dxz.y);
+  let safe = select(d, vec3f(1e-6), abs(d) < vec3f(1e-6));
+  let inv = 1.0 / safe;
+  let way = sign(safe);
+  var best = 1e9;
+  for (var i = 0; i < count; i++) {
+    let block = freeBlock(room, i);
+    let s = span(o, inv, way, block.at.xyz, block.half);
+    if (s.near < s.far && s.near > 0.0 && s.near < best) {
+      best = s.near;
+      hit.t = s.near;
+      hit.face = s.face;
+      hit.local = (o + d * s.near - block.at.xyz) / block.half;
+      hit.half = block.half;
+      hit.mat = block.at.w;
+      hit.yaw = frame.w;
+      let back = rot(frame.w) * block.at.xz;
+      hit.centre = frame.xyz + vec3f(back.x, block.at.y, back.y);
+    }
+  }
+  return hit;
+}
+
+// ------------------------------------------------------------------ The room
+
+// How much of the key light reaches a point past the standing blocks.
+fn shade(room: i32, p: vec3f, toward: vec3f, far: f32) -> f32 {
+  var s = 1.0;
+  var t = 0.1;
+  for (var i = 0; i < 8; i++) {
+    let d = fill(room, p + toward * t, false).x + 0.03;
+    s = min(s, 7.0 * d / t);
+    t += clamp(d, 0.05, 0.35);
+    if (s < 0.02 || t > far) { break; }
+  }
+  return clamp(s, 0.0, 1.0);
+}
+
+// footprint: how far the eye is from where the ray starts, and how wide a
+// pixel grows for each unit the ray travels.
+fn renderRoom(ro: vec3f, rd: vec3f, room: i32, footprint: vec2f) -> vec3f {
   let g = rig(room);
-  var t = 0.02;
-  var m = 0.0;
-  var glow = vec3f(0.0);
-  for (var i = 0; i < 72; i++) {
-    let r = map(ro + rd * t, room);
-    let stride = clamp(r.x, 0.004, 0.4);
-    glow += gEmit * stride * exp(-t * g.thickness);
-    if (r.x < 0.0015 * (1.0 + t)) {
-      m = r.y;
-      break;
-    }
-    t += stride * 0.92;
-    if (t > g.reach) { break; }
-  }
+  var hit = trace(ro, rd, room, g.reach);
+  let free = traceFree(ro, rd, room);
+  if (free.t >= 0.0 && (hit.t < 0.0 || free.t < hit.t)) { hit = free; }
 
-  var col: vec3f;
-  if (m < 0.5) {
-    col = mix(sky(room, rd), g.haze, select(1.0, 0.0, room == 3 || room == 5));
-  } else {
-    let p = ro + rd * t;
-    let n = normalAt(p, room);
-    let s = surface(room, m, p, n, rd);
-    let open = clamp(map(p + n * 0.12, room).x / 0.12, 0.0, 1.0) * 0.75 + 0.25;
+  var col = sky(room, rd);
+  var reach = g.reach;
+  if (hit.t >= 0.0) {
+    reach = hit.t;
+    let p = ro + rd * hit.t;
+    let pixel = (footprint.x + hit.t) * footprint.y;
+    let girth = 2.0 * min(hit.half.x, min(hit.half.y, hit.half.z));
+    let h = hash31(hit.centre / U * 1.7 + girth * 40.0);
+
+    // How near the edge of its face the ray lands: the seam between blocks is a
+    // dark groove there, and the block's corner is rounded just inside it.
+    let away = (vec3f(1.0) - abs(hit.local)) * hit.half + abs(hit.face) * 1e3;
+    let rim = min(away.x, min(away.y, away.z));
+    let seam = 0.0025 + 0.02 * girth;
+    let groove = (1.0 - smoothstep(seam, seam + pixel, rim)) * min(1.0, seam * 2.0 / max(pixel, 1e-4)) * hit.joined;
+    let round = (1.0 - smoothstep(seam, seam * 3.5 + pixel, rim)) * min(1.0, seam * 5.0 / max(pixel, 1e-4));
+    let lean = sign(hit.local) * step(away, vec3f(rim + 1e-5));
+    let tilted = normalize(hit.face + lean * round * 0.55);
+    let turn = rot(hit.yaw);
+    let nxz = turn * hit.face.xz;
+    let bxz = turn * tilted.xz;
+    let n = vec3f(nxz.x, hit.face.y, nxz.y);
+    let nb = vec3f(bxz.x, tilted.y, bxz.y);
+
+    let s = paint(room, i32(hit.mat + 0.5), hit.centre, girth, h, hit.local, hit.face);
+    let tone = 0.84 + 0.32 * h;
+    let open = clamp((fill(room, p + n * 0.14, false).x + 0.02) / 0.14, 0.0, 1.0) * 0.7 + 0.3;
+
     let toKey = g.key - p;
     let keyD = length(toKey);
     let keyL = toKey / keyD;
     let toFill = g.fill - p;
     let fillD = length(toFill);
     let key = g.keyColor / (1.0 + 0.16 * keyD * keyD);
-    let fill = g.fillColor / (1.0 + 0.16 * fillD * fillD);
-    let lit = g.ambient + key * max(dot(n, keyL), 0.0) + fill * max(dot(n, toFill / fillD), 0.0);
-    let shine = pow(max(dot(n, normalize(keyL - rd)), 0.0), 48.0) * s.gloss;
-    col = s.albedo * lit * open + s.emit + key * shine * 0.6;
-    col = mix(g.haze, col, exp(-t * g.thickness));
+    let fill1 = g.fillColor / (1.0 + 0.16 * fillD * fillD);
+    let facing = max(dot(nb, keyL), 0.0);
+    var shadow = 1.0;
+    if (facing > 0.0) { shadow = 0.25 + 0.75 * shade(room, p + n * 0.03, keyL, keyD); }
+    let bounce = wash(room, n.xy * 0.6 + vec2f(0.0, 0.25)) * (0.3 + 0.7 * max(n.y, 0.0)) * g.bounce;
+    let lit = g.ambient + bounce * open + key * facing * shadow + fill1 * max(dot(nb, toFill / fillD), 0.0);
+    let shine = pow(max(dot(nb, normalize(keyL - rd)), 0.0), 40.0) * s.gloss * shadow;
+    let mirror = reflect(rd, nb);
+    let glance = pow(1.0 - max(dot(-rd, nb), 0.0), 3.0);
+    let env = wash(room, mirror.xy / max(abs(mirror.z), 0.4)) * s.gloss * (0.05 + 0.45 * glance);
+
+    col = s.albedo * tone * lit * open * (1.0 - 0.8 * groove)
+      + s.emit * (0.9 + 0.2 * h) * (1.0 - 0.55 * groove)
+      + key * shine * 0.6 + env * (1.0 - groove);
+    col = mix(wash(room, sheet(rd)), col, exp(-hit.t * g.thickness));
   }
-  return col + glow;
+  return col + halos(room, ro, rd, reach);
 }
 
 // ------------------------------------------------------------------ The cube
@@ -791,15 +1262,23 @@ fn edgeDistance(ro: vec3f, rd: vec3f) -> f32 {
   return d;
 }
 
+// The stage the cube turns on: night, with the palette's gradient drifting
+// through a band of squares behind it.
 fn backdrop(sp: vec2f) -> vec3f {
+  let t = params.time;
   let r = length(sp);
-  var col = mix(vec3f(0.018, 0.02, 0.034), vec3f(0.004, 0.004, 0.007), smoothstep(0.0, 1.9, r));
-  let g = sp * 15.0;
-  let id = floor(g);
-  let h = hash21(id);
-  let centre = vec2f(fract(h * 13.7), fract(h * 91.3)) * 0.7 + 0.15;
-  let twinkle = 0.65 + 0.35 * sin(params.time * (0.6 + h * 1.6) + h * 50.0);
-  col += vec3f(0.8, 0.85, 1.0) * step(0.86, h) * fade(0.05, 0.0, length(fract(g) - centre)) * fract(h * 51.0) * twinkle;
+  var col = mix(vec3f(0.02, 0.022, 0.034), vec3f(0.005, 0.005, 0.008), smoothstep(0.0, 1.9, r));
+  let cells = sp * 6.5;
+  let id = floor(cells);
+  let f = abs(fract(cells) - 0.5);
+  let at = (id + 0.5) / 6.5;
+  let h = hash21(id + 3.0);
+  let band = (1.0 - smoothstep(0.05, 1.0, abs(at.x * 0.55 + 0.08 - at.y))) * fade(0.98, 0.55, abs(at.y));
+  let body = fade(0.46, 0.43, max(f.x, f.y));
+  let phase = at.x * 0.3 - at.y * 0.12 + t * 0.012;
+  let lit = step(h, 0.6) * band * body;
+  col += brand(phase + h * 0.07) * lit * (0.035 + 0.075 * h) * (0.75 + 0.25 * sin(t * (0.4 + h) + h * 30.0));
+  col += brand(sp.x * 0.3 - sp.y * 0.12 + t * 0.012) * (1.0 - smoothstep(0.0, 0.9, abs(sp.x * 0.55 + 0.08 - sp.y))) * 0.012;
   return col;
 }
 
@@ -811,6 +1290,7 @@ fn aces(x: vec3f) -> vec3f {
 fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
   let res = max(params.resolution, vec2f(1.0));
   let sp = vec2f((uv.x - 0.5) * 2.0 * res.x / res.y, (0.5 - uv.y) * 2.0);
+  let spread = 2.0 * params.lens / res.y;
 
   var rd = normalize(vec3f(sp * params.lens, -1.0));
   let yz = rot(params.look.y) * rd.yz;
@@ -834,7 +1314,7 @@ fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
   var col = backdrop(sp);
   if (within) {
     let face = i32(params.face + 0.5);
-    col = renderRoom(toRoom(face, ro), toRoom(face, dir), face);
+    col = renderRoom(toRoom(face, ro), toRoom(face, dir), face, vec2f(0.0, spread));
   } else if (enter < leave && enter > 0.0) {
     var face = 4;
     if (near.x >= near.y && near.x >= near.z) {
@@ -846,7 +1326,7 @@ fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
     }
     let start = toRoom(face, ro + dir * enter);
     let local = toRoom(face, dir);
-    col = renderRoom(start, local, face);
+    col = renderRoom(start, local, face, vec2f(enter, spread));
 
     let lit = params.glow * select(0.0, 1.0, i32(params.hover + 0.5) == face && params.hover > -0.5);
     col *= 1.0 + 0.18 * lit;
@@ -861,8 +1341,8 @@ fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
     col = mix(col, vec3f(1.0, 0.97, 0.84) * (1.5 + 0.8 * lit), frame);
   } else {
     let d = edgeDistance(ro, dir);
-    let halo = 0.03 / (d + 0.03);
-    col += vec3f(1.0, 0.95, 0.8) * halo * halo * (0.85 + 0.4 * params.glow);
+    let halo1 = 0.03 / (d + 0.03);
+    col += vec3f(1.0, 0.95, 0.8) * halo1 * halo1 * (0.85 + 0.4 * params.glow);
   }
 
   col = pow(aces(col), vec3f(1.0 / 2.2));

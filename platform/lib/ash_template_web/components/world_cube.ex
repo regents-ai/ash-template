@@ -40,9 +40,10 @@ defmodule AshTemplateWeb.Components.WorldCube do
         <li :for={world <- @worlds} class="world-cube__world" data-world={world.face}>
           <h3>{world.name}</h3>
           <p>{world.line}</p>
-          <a href={world.href} class="rg-button">
+          <a href={world.href} class="rg-button" target="_blank" rel="noopener noreferrer">
             <span class="rg-button__label">
-              Visit <span class="world-cube__visit-name">{world.name}</span>
+              Visit
+              <span class="world-cube__visit-name">{world.name}</span><span class="visually-hidden">, opens in a new tab</span>
             </span>
           </a>
         </li>
