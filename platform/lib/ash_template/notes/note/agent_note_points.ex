@@ -2,7 +2,7 @@ defmodule AshTemplate.Notes.Note.AgentNotePoints do
   @moduledoc """
   When an agent acting as its person writes a note, asks Regent Points to
   consider it, inside the note's transaction, so a note that rolls back asks
-  nothing. Points decides whether it earns (`template.first_agent_note`, once per
+  nothing. Points decides whether it earns (`<site>.first_agent_note`, once per
   person); while that rule is off nothing is queued.
   """
 
@@ -14,8 +14,8 @@ defmodule AshTemplate.Notes.Note.AgentNotePoints do
   def change(changeset, _opts, _context) do
     Ash.Changeset.after_action(changeset, fn _changeset, note ->
       reference = %{
-        rule_id: "template.first_agent_note",
-        source_app: "template",
+        rule_id: AshTemplate.site() <> ".first_agent_note",
+        source_app: AshTemplate.site(),
         source_kind: "note",
         source_event_key: note.id
       }

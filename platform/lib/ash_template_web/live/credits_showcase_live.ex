@@ -122,7 +122,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
       end
 
     agent =
-      Actor.agent(@account.privy_user_id, hd(@agents), AshTemplate.Credits.site(), pairing_id)
+      Actor.agent(@account.privy_user_id, hd(@agents), AshTemplate.site(), pairing_id)
 
     result =
       RegentCredits.hold(Ecto.UUID.generate(), @account.privy_user_id, 3, "lab bid", actor: agent)
@@ -285,10 +285,12 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="lab-agents-heading">
           <h2 id="lab-agents-heading">Agent spending, as on regents.sh/account</h2>
+          <%!-- Credits saves these only for a person signed in at regents.sh, so the lab stands in for it. --%>
           <.live_component
             module={AshTemplateWeb.CreditsAgentSpending}
             id="credits-agents"
             lease={nil}
+            site="regents"
             account={@account}
             agents={@agents}
             sites={@agent_sites}

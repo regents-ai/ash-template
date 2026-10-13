@@ -250,6 +250,8 @@ From the monorepo root, `make check-platform` runs this component's gate and
 
 ```sh
 mix precommit
+mix test
+mix regent_agent_access.assets
 npm run typecheck
 npm test
 ```
