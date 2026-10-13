@@ -49,6 +49,8 @@
       "authority": "public",
       "conditions": [],
       "person_page": null,
+      "may": null,
+      "done": null,
       "cli_release": null,
       "switch": null
     },
@@ -58,6 +60,8 @@
       "authority": "public",
       "conditions": [],
       "person_page": null,
+      "may": null,
+      "done": null,
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -67,6 +71,8 @@
       "authority": "owner_only",
       "conditions": [],
       "person_page": "/account",
+      "may": null,
+      "done": null,
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -76,6 +82,8 @@
       "authority": "owner_only",
       "conditions": [],
       "person_page": "/account",
+      "may": null,
+      "done": null,
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -85,6 +93,8 @@
       "authority": "owner_only",
       "conditions": [],
       "person_page": "/account",
+      "may": null,
+      "done": null,
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -94,6 +104,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Read and search your notes",
+      "done": "Read your notes",
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -103,6 +115,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Add, change and delete your notes",
+      "done": "Added a note",
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -112,6 +126,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Read and search your notes",
+      "done": "Read one of your notes",
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -121,6 +137,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Add, change and delete your notes",
+      "done": "Changed one of your notes",
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -130,6 +148,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Add, change and delete your notes",
+      "done": "Deleted one of your notes",
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -139,6 +159,8 @@
       "authority": "public",
       "conditions": [],
       "person_page": null,
+      "may": null,
+      "done": null,
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -148,6 +170,8 @@
       "authority": "public",
       "conditions": [],
       "person_page": "/rooms/{room}",
+      "may": null,
+      "done": null,
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -157,6 +181,8 @@
       "authority": "signed_agent",
       "conditions": [],
       "person_page": "/rooms/{room}",
+      "may": "Post in the rooms for you, marked as its own",
+      "done": "Posted in a room",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -168,6 +194,8 @@
         "pairing_code"
       ],
       "person_page": "/account",
+      "may": null,
+      "done": null,
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -177,6 +205,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/account",
+      "may": null,
+      "done": null,
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -186,6 +216,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/rooms/{room}",
+      "may": "Change and delete your room messages",
+      "done": "Changed one of your room messages",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -195,6 +227,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/rooms/{room}",
+      "may": "Change and delete your room messages",
+      "done": "Deleted one of your room messages",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -204,6 +238,8 @@
       "authority": "signed_agent",
       "conditions": [],
       "person_page": "/account",
+      "may": null,
+      "done": "Checked who it is signed in as",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -213,6 +249,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Read and search your notes",
+      "done": "Read your notes",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -222,6 +260,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Add, change and delete your notes",
+      "done": "Added a note",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -231,6 +271,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Read and search your notes",
+      "done": "Searched your notes",
       "cli_release": null,
       "switch": "app_surfaces"
     },
@@ -240,6 +282,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Read and search your notes",
+      "done": "Read one of your notes",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -251,6 +295,8 @@
         "spending_allowed"
       ],
       "person_page": "/notes",
+      "may": "Pin a note for 1 Credit, within the spending you allow",
+      "done": "Pinned a note",
       "cli_release": "1.9.2",
       "switch": "app_surfaces"
     },
@@ -260,6 +306,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
+      "may": "Unpin your notes",
+      "done": "Unpinned a note",
       "cli_release": "1.9.2",
       "switch": "app_surfaces"
     },
@@ -269,6 +317,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/account",
+      "may": "See your Credits",
+      "done": "Read your Credits",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -278,6 +328,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/account",
+      "may": "See your Credits",
+      "done": "Read your Credits history",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     },
@@ -287,6 +339,8 @@
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/account/points",
+      "may": "See your Points",
+      "done": "Read your Points",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
     }

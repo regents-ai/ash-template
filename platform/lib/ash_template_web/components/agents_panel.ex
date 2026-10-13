@@ -6,9 +6,9 @@ defmodule AshTemplateWeb.AgentsPanel do
   what it has done across the Regent sites (`RegentAgents.Activity`) and
   Unpair.
 
-  Pairing immediately lets an agent read and change the person's notes and
-  post, edit and delete their room messages, each marked as its own. World ID
-  is optional. It never touches their wallet (`AshTemplateWeb.Plugs.AgentWallet`).
+  Pairing immediately lets an agent do what `AshTemplateWeb.Capabilities.may/0`
+  lists, which the list's tip and the agent's view show the person, and the
+  agent's view adds what it has spent of their Credits. World ID is optional. It never touches their wallet (`AshTemplateWeb.Plugs.AgentWallet`).
   Pairing is shared by every Regent site, so an agent paired on another one is
   listed here too.
 
@@ -18,6 +18,8 @@ defmodule AshTemplateWeb.AgentsPanel do
   """
   use AshTemplateWeb, :live_component
 
+  alias AshTemplate.Credits
+  alias AshTemplateWeb.Capabilities
   alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
 
@@ -33,22 +35,6 @@ defmodule AshTemplateWeb.AgentsPanel do
 
   # Stands in for a code before one is made, so the message keeps its size.
   @no_code String.duplicate("X", 24)
-
-  @logos %{
-    hermes: "/images/agents/hermes.png",
-    grok_bot: "/images/agents/grok-bot.png",
-    muse: "/images/agents/muse.png",
-    openclaw: "/images/agents/openclaw.png",
-    nemoclaw: "/images/agents/nemoclaw.png",
-    ironclaw: "/images/agents/ironclaw.png",
-    pi: "/images/agents/pi.svg",
-    claude_code: "/images/agents/claude-code.png",
-    codex: "/images/agents/codex.png",
-    cursor: "/images/agents/cursor.png",
-    gemini_cli: "/images/agents/gemini-cli.png",
-    dots: "/images/agents/dots.png",
-    other: "/images/agents/other.svg"
-  }
 
   @impl true
   def mount(socket),
@@ -72,7 +58,11 @@ defmodule AshTemplateWeb.AgentsPanel do
   # The account as the page gave it, or as it reads now before each event and
   # each background result (`Session.check_component_lease/2`).
   defp take_account(socket, account),
-    do: assign(socket, person: %Person{privy_user_id: account.privy_user_id})
+    do:
+      assign(socket,
+        person: %Person{privy_user_id: account.privy_user_id},
+        credits: Credits.person(account)
+      )
 
   # Choosing an agent, or asking again for the chosen one, makes a code with that
   # agent's message; codes made before keep working until they expire.
@@ -137,6 +127,20 @@ defmodule AshTemplateWeb.AgentsPanel do
     end
   end
 
+  # What the open agent has spent, landing only while that agent is still open.
+  def handle_async({:agent_spent, id}, result, socket) do
+    case socket.assigns.detail do
+      %{agent: %{id: ^id}} = detail ->
+        {:noreply, assign(socket, detail: %{detail | spent: spent(result)})}
+
+      _moved_on ->
+        {:noreply, socket}
+    end
+  end
+
+  defp spent({:ok, {:ok, amount}}), do: RegentCredits.Amount.format(amount)
+  defp spent(_failed), do: :unavailable
+
   defp first_page(detail, {:ok, {:ok, page}}),
     do: %{detail | activity: page.entries, next: page.next, listing: page.listing}
 
@@ -156,6 +160,7 @@ defmodule AshTemplateWeb.AgentsPanel do
         agents={rows(@agents, @now)}
         notice={if is_nil(@detail), do: notice_text(@notice)}
       >
+        <:about>Once paired, an agent may: {may_words()}.</:about>
         <:actions :let={agent}>
           <P.button
             type="button"
@@ -166,6 +171,17 @@ defmodule AshTemplateWeb.AgentsPanel do
             aria-label={"See what #{agent.name} has done"}
           >
             See what it has done
+          </P.button>
+          <P.button
+            type="button"
+            variant="quiet"
+            phx-click="unpair_agent"
+            phx-value-id={agent.id}
+            phx-target={@myself}
+            aria-label={"Unpair #{agent.name}"}
+            data-confirm={"Unpair #{agent.name}? It will need a new code to pair again."}
+          >
+            Unpair
           </P.button>
         </:actions>
         <:footer>
@@ -185,6 +201,8 @@ defmodule AshTemplateWeb.AgentsPanel do
             verified={HumanBacking.describe(@detail.agent).human_backed}
             same_person_count={HumanBacking.describe(@detail.agent).same_person_agent_count}
             same_person={same_person(@agents, @detail.agent)}
+            may={Capabilities.may()}
+            spent={@detail.spent}
             activity={activity(@detail.activity)}
             more={if is_list(@detail.activity) and is_binary(@detail.next), do: @detail.more}
             notice={@notice}
@@ -222,6 +240,7 @@ defmodule AshTemplateWeb.AgentsPanel do
       %{
         id: agent.id,
         name: agent.name,
+        kind: to_string(agent.harness),
         harness: Harness.label(agent.harness),
         backed: HumanBacking.describe(agent).human_backed,
         last_contact_iso: DateTime.to_iso8601(agent.last_contact_at),
@@ -230,6 +249,16 @@ defmodule AshTemplateWeb.AgentsPanel do
     end)
   end
 
+  # The tip's one sentence: each line, lower-cased, apart by semicolons since
+  # some lines hold commas of their own.
+  defp may_words,
+    do:
+      Enum.map_join(
+        Capabilities.may(),
+        "; ",
+        &(String.downcase(String.first(&1)) <> String.slice(&1, 1..-1//1))
+      )
+
   defp notice_text({_role, text}), do: text
   defp notice_text(nil), do: nil
 
@@ -237,7 +266,7 @@ defmodule AshTemplateWeb.AgentsPanel do
     do:
       for(
         harness <- Harness.values(),
-        do: %{value: to_string(harness), label: Harness.label(harness), logo: @logos[harness]}
+        do: %{value: to_string(harness), label: Harness.label(harness)}
       )
 
   # The pairing box's state. Every agent's message is drawn, the chosen one shown,
@@ -279,8 +308,8 @@ defmodule AshTemplateWeb.AgentsPanel do
     %{
       id: agent.id,
       name: agent.name,
+      kind: to_string(agent.harness),
       harness: Harness.label(agent.harness),
-      logo: @logos[agent.harness],
       wallet: agent.wallet,
       listing: listing,
       paired_at: moment(agent.paired_at),
@@ -347,9 +376,10 @@ defmodule AshTemplateWeb.AgentsPanel do
   end
 
   # What the agent has done and its registry listing are read from the sign-in
-  # service in the background. What is already on screen for this agent stays
-  # until the new reading lands. Once the person has asked for older activity,
-  # the list stays as they are reading it.
+  # service in the background, and what it has spent from the person's Credits.
+  # What is already on screen for this agent stays until the new reading lands.
+  # Once the person has asked for older activity, the list stays as they are
+  # reading it.
   defp show_agent(socket, id) do
     with {:ok, id} <- Ecto.UUID.cast(id),
          {:ok, %PairedAgent{} = agent} <-
@@ -359,7 +389,7 @@ defmodule AshTemplateWeb.AgentsPanel do
           assign(socket, detail: %{shown | agent: agent})
 
         %{agent: %{id: ^id}} = shown ->
-          socket |> assign(detail: %{shown | agent: agent}) |> read_activity(agent)
+          socket |> assign(detail: %{shown | agent: agent}) |> read_detail(agent)
 
         _other ->
           socket
@@ -370,18 +400,26 @@ defmodule AshTemplateWeb.AgentsPanel do
               next: nil,
               more: :idle,
               paged: false,
-              listing: nil
+              listing: nil,
+              spent: :loading
             }
           )
-          |> read_activity(agent)
+          |> read_detail(agent)
       end
     else
       _missing -> assign(socket, detail: nil)
     end
   end
 
-  defp read_activity(socket, agent),
-    do: start_async(socket, {:agent_activity, agent.id}, fn -> Activity.recent(agent) end)
+  defp read_detail(socket, agent) do
+    credits = socket.assigns.credits
+
+    socket
+    |> start_async({:agent_activity, agent.id}, fn ->
+      Activity.recent(agent, Capabilities.requests())
+    end)
+    |> start_async({:agent_spent, agent.id}, fn -> Credits.spent_by(credits, agent.wallet) end)
+  end
 
   defp load_more_activity(
          %{assigns: %{detail: %{agent: %{id: id} = agent, next: next, more: more} = detail}} =
@@ -391,7 +429,9 @@ defmodule AshTemplateWeb.AgentsPanel do
        when is_binary(next) and more != :loading do
     socket
     |> assign(detail: %{detail | more: :loading, paged: true})
-    |> start_async({:more_agent_activity, id}, fn -> Activity.recent(agent, next) end)
+    |> start_async({:more_agent_activity, id}, fn ->
+      Activity.recent(agent, Capabilities.requests(), next)
+    end)
   end
 
   defp load_more_activity(socket, _id), do: socket

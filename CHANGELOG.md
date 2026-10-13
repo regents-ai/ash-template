@@ -1429,3 +1429,23 @@ Operations
   `spending_allowed` condition. `wallet-proof` is gone.
 - `make check-cli` runs regents-cli 41da314, which also checks that each
   command sends exactly its operation's body fields.
+
+## 2026-10-13 — An agent's view says what it may do and what it cost
+
+- The account page's agent view answers the questions every Regent site asks
+  in the same words: "What may happen next" lists what a paired agent may do
+  here, from the capability rows' own words for a person, and "What it cost"
+  shows the Credits it has spent for its person on Regent sites.
+- The agents list's tip says what a paired agent may do, and each agent row
+  has Unpair beside "See what it has done".
+- Needs the design-system commit with `agent_detail`'s `may` and `spent`.
+
+## 2026-10-13 — An agent's activity says what each request did
+
+- The agent view's recent activity names each request to this site the way its
+  person would say it ("Read your Credits history", "Pinned a note"), from the
+  capability rows' own words. A read sent as POST no longer shows as a change.
+- A request to another Regent site is worded from its method until that site
+  carries the same change. Nothing new is stored, and the sign-in service is
+  unchanged.
+- Needs elixir-utils with `RegentAgents.Activity.recent/3`.
