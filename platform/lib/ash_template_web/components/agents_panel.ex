@@ -34,22 +34,6 @@ defmodule AshTemplateWeb.AgentsPanel do
   # Stands in for a code before one is made, so the message keeps its size.
   @no_code String.duplicate("X", 24)
 
-  @logos %{
-    hermes: "/images/agents/hermes.png",
-    grok_bot: "/images/agents/grok-bot.png",
-    muse: "/images/agents/muse.png",
-    openclaw: "/images/agents/openclaw.png",
-    nemoclaw: "/images/agents/nemoclaw.png",
-    ironclaw: "/images/agents/ironclaw.png",
-    pi: "/images/agents/pi.svg",
-    claude_code: "/images/agents/claude-code.png",
-    codex: "/images/agents/codex.png",
-    cursor: "/images/agents/cursor.png",
-    gemini_cli: "/images/agents/gemini-cli.png",
-    dots: "/images/agents/dots.png",
-    other: "/images/agents/other.svg"
-  }
-
   @impl true
   def mount(socket),
     do:
@@ -222,6 +206,7 @@ defmodule AshTemplateWeb.AgentsPanel do
       %{
         id: agent.id,
         name: agent.name,
+        kind: to_string(agent.harness),
         harness: Harness.label(agent.harness),
         backed: HumanBacking.describe(agent).human_backed,
         last_contact_iso: DateTime.to_iso8601(agent.last_contact_at),
@@ -237,7 +222,7 @@ defmodule AshTemplateWeb.AgentsPanel do
     do:
       for(
         harness <- Harness.values(),
-        do: %{value: to_string(harness), label: Harness.label(harness), logo: @logos[harness]}
+        do: %{value: to_string(harness), label: Harness.label(harness)}
       )
 
   # The pairing box's state. Every agent's message is drawn, the chosen one shown,
@@ -279,8 +264,8 @@ defmodule AshTemplateWeb.AgentsPanel do
     %{
       id: agent.id,
       name: agent.name,
+      kind: to_string(agent.harness),
       harness: Harness.label(agent.harness),
-      logo: @logos[agent.harness],
       wallet: agent.wallet,
       listing: listing,
       paired_at: moment(agent.paired_at),
