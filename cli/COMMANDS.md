@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Every `regents ash-template` command in regents-cli 1.9.3, against
+Every `regents ash-template` command in regents-cli 1.9.4, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -8,7 +8,7 @@ described here does not exist.
 ## Before you start
 
 ```sh
-uv tool install regents-cli==1.9.3
+uv tool install regents-cli==1.9.4
 regents auth login --site ash-template
 regents ash-template doctor
 ```

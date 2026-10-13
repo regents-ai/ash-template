@@ -81,7 +81,7 @@
         "cli": {
           "command": "regents ash-template rooms list",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "effect": "read"
@@ -132,7 +132,7 @@
         "cli": {
           "command": "regents ash-template rooms messages <room>",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "effect": "read"
@@ -187,7 +187,7 @@
         "cli": {
           "command": "regents ash-template agents whoami",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -303,7 +303,7 @@
         "cli": {
           "command": "regents ash-template notes list",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -372,7 +372,7 @@
         "cli": {
           "command": "regents ash-template notes get <id>",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -532,7 +532,7 @@
         "cli": {
           "command": "regents ash-template notes create",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -948,7 +948,7 @@
         "cli": {
           "command": "regents ash-template rooms post <room>",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -1049,7 +1049,7 @@
         "cli": {
           "command": "regents ash-template rooms edit <room> <id>",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -1142,7 +1142,7 @@
         "cli": {
           "command": "regents ash-template rooms delete <room> <id>",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -1216,7 +1216,7 @@
         "cli": {
           "command": "regents ash-template account balances",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -1283,7 +1283,7 @@
         "cli": {
           "command": "regents ash-template account credits-history",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {
@@ -1350,7 +1350,7 @@
         "cli": {
           "command": "regents ash-template account points",
           "package": "regents-cli",
-          "version": "1.9.3"
+          "version": "1.9.4"
         }
       },
       "operation_input_schema": {

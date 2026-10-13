@@ -1272,3 +1272,10 @@ Operations
 - The X and GitHub icons point at x.com/regents_sh and github.com/regents-ai; every contact
   address on the Contact, Terms and Privacy pages is build@regents.sh (Sean, 13 Oct).
 - regent-workflow carries the founder rule that ash-template is the golden generic baseline.
+
+## 2026-10-13 — Agent guide on regents-cli 1.9.4
+
+- `/agents.md`, `/llms.txt`, `cli/COMMANDS.md`, `cli/README.md` and the tool manifest name
+  regents-cli 1.9.4 (source commit `e66027f2ba7784f674481c3778c671cc3f1108e2`, wheel SHA256
+  `55a1fe2915231cfd27b5ad2725b4236c3bbad0171c2f02f7c3a182464fba2f7f`). The template's
+  command list is the same in 1.9.4, and pairing still reads `~/pair.json`.
