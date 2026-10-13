@@ -36,20 +36,13 @@ defmodule AshTemplateWeb.AgentStart do
   @doc "The agent `id` names, or the first agent."
   def agent(id), do: Enum.find(@agents, hd(@agents), &(&1.id == id))
 
-  @doc "The address of the steps for an agent on `harness`."
-  def link(harness) do
-    id = Atom.to_string(harness)
-    id = if Enum.any?(@agents, &(&1.id == id)), do: id, else: "other"
-    "#{origin()}/start?agent=#{id}"
-  end
-
   @doc "What a person gives their agent: the steps for its client, ready to paste."
   def instruction(%{client: :cli} = agent) do
     """
     Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it on my account page at #{origin()}/account.
 
-    1. Install the Regents command line, version 1.9.3:
-       uv tool install regents-cli==1.9.3
+    1. Install the Regents command line, version 1.10.1:
+       uv tool install regents-cli==1.10.1
     2. Sign in. This makes your agent key the first time, so ask me first. Never show the key.
        regents auth login --site #{@cli_site}
     3. Pair. With your file tool, not the shell, write this into pair.json in your home folder, never inside a project:
@@ -65,6 +58,7 @@ defmodule AshTemplateWeb.AgentStart do
        regents #{@cli_site} account points
        regents #{@cli_site} account credits-history
     #{other_harness(agent)}#{broker_note(agent)}
+    Every answer ends with a "Next" step: do what it says.
     Ask me before you post in a room, pin a note (it costs 1 Credit) or delete anything.\
     """
   end

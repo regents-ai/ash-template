@@ -1347,3 +1347,5 @@ Operations
   (siwa-agent-client 2.10, served by the sign-in service since 13 Oct).
 - The page stays open while the site is closed, is in the Account menu and search, and the
   "Pair your agent" card, `/agents.md` and `/llms.txt` link to it.
+- The command-line steps install regents-cli 1.10.1 and tell the agent to follow the "Next"
+  step every answer ends with.
