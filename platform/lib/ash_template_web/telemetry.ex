@@ -7,7 +7,11 @@ defmodule AshTemplateWeb.Telemetry do
   `[:ash_template, :chain, :failure]` for each chain request that got no answer
   (`AshTemplate.ChainClient`), and `[:ash_template, :wallet, :failure]` for each
   press the browser reported as not sent or not confirmed (`wallet_failed/2`).
-  Background jobs report each run's outcome and time from Oban's own events.
+  Background jobs report each run's outcome and time from Oban's own events, and
+  `[:ash_template, :jobs, :oldest_unfinished]` carries `age_ms` of the oldest
+  available, running or retrying job in each running `queue`, 0 when there is
+  none, every ten seconds. A paused queue keeps its jobs waiting on purpose, so it
+  is not measured.
   The engine's memory, run queues and process counts come from telemetry_poller's
   default poller, every 10 seconds (`config/config.exs`).
   Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
@@ -17,7 +21,10 @@ defmodule AshTemplateWeb.Telemetry do
   the oldest was read, each reading that could not be taken and each one refused.
   """
 
+  import Ecto.Query, only: [from: 2]
   import Telemetry.Metrics
+
+  require Logger
 
   # The reasons the wallet hook reports (`Failure` in send_step.ts). Only these
   # are counted, so a label never holds whatever a browser chose to send.
@@ -46,6 +53,64 @@ defmodule AshTemplateWeb.Telemetry do
 
   def wallet_failed(_flow, _reason), do: :ok
 
+  @doc "The poller for the measurements the site takes itself, started after Oban."
+  def site_poller,
+    do:
+      {:telemetry_poller,
+       measurements: [
+         {AshTemplate.SharedReading, :measure, []},
+         {__MODULE__, :oldest_unfinished_jobs, []}
+       ],
+       period: 10_000,
+       name: :ash_template_site_poller}
+
+  # The poller drops a measurement that raises for good, so a database that
+  # cannot answer this tick skips it; the next tick measures again.
+  @doc false
+  def oldest_unfinished_jobs do
+    measure_oldest_unfinished_jobs()
+  rescue
+    error in [DBConnection.ConnectionError, Postgrex.Error] ->
+      Logger.warning("background job age not measured: #{Exception.message(error)}")
+  end
+
+  # Only running queues are measured: a paused queue holds its jobs on purpose,
+  # and its age would only grow. Where no queue runs (tests), nothing is read.
+  defp measure_oldest_unfinished_jobs do
+    case for %{queue: queue, paused: false} <- Oban.check_all_queues(), do: queue do
+      [] -> :ok
+      running -> report_oldest(running)
+    end
+  end
+
+  defp report_oldest(running) do
+    %{prefix: prefix} = Oban.config()
+
+    oldest =
+      from(j in Oban.Job,
+        where: j.state in ["available", "executing", "retryable"],
+        group_by: j.queue,
+        select: {j.queue, min(j.inserted_at)}
+      )
+      # Oban's job table has no Ash resource; this only reads it.
+      |> AshTemplate.Repo.all(prefix: prefix)
+      |> Map.new()
+
+    now = DateTime.utc_now()
+
+    for queue <- running do
+      age_ms =
+        case oldest[queue] do
+          nil -> 0
+          inserted_at -> DateTime.diff(now, inserted_at, :millisecond)
+        end
+
+      :telemetry.execute([:ash_template, :jobs, :oldest_unfinished], %{age_ms: age_ms}, %{
+        queue: queue
+      })
+    end
+  end
+
   defp metrics do
     [
       counter("ash_template.privy.browser_failure.total", tags: [:reason]),
@@ -63,6 +128,13 @@ defmodule AshTemplateWeb.Telemetry do
         event_name: [:ash_template, :chain, :failure],
         tags: [:method, :class, :chain_id, :scope],
         description: "Chain requests that got no answer"
+      ),
+      last_value("health.job.oldest_age.seconds",
+        event_name: [:ash_template, :jobs, :oldest_unfinished],
+        measurement: :age_ms,
+        unit: {:millisecond, :second},
+        tags: [:queue],
+        description: "Age of the oldest unfinished background job in the queue"
       ),
       counter("ash_template.jobs.finished.total",
         event_name: [:oban, :job, :stop],

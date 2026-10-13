@@ -16,13 +16,14 @@ defmodule AshTemplate.Application do
         # Each reader stores its first reading as it starts, so every key is
         # there before the endpoint below serves a page.
         AshTemplate.SharedReading,
-        shared_reading_children(),
+        chain_head_children(),
         # After the repository and PubSub: a Credits balance changed on any
         # Regent site reaches the pages showing it.
         RegentCredits.Listener,
         # A pairing made or ended anywhere reaches the person's account page.
         RegentAgents.Listener,
         {Oban, oban_config()},
+        AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Endpoint,
         metrics_child()
       ]
@@ -53,16 +54,10 @@ defmodule AshTemplate.Application do
     if serving?(), do: AshTemplateWeb.Metrics
   end
 
-  # The shared readings are measured wherever the table is. The chain is read
-  # only where pages are served, so a task or a test never calls a node.
-  defp shared_reading_children do
-    measured =
-      {:telemetry_poller,
-       measurements: [{AshTemplate.SharedReading, :measure, []}],
-       period: 10_000,
-       name: AshTemplate.SharedReading.Poller}
-
-    if serving?(), do: [measured | AshTemplate.ChainHead.children()], else: [measured]
+  # The chain is read only where pages are served, so a task or a test never
+  # calls a node.
+  defp chain_head_children do
+    if serving?(), do: AshTemplate.ChainHead.children(), else: []
   end
 
   defp serving?, do: Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint)

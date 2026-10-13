@@ -1576,3 +1576,14 @@ Operations
   (its chief's measurement, 13 October 2026). Nothing a visitor sees changes.
 - `skills/ash-frontend/references/public-figures.md` names it as the standard for
   every site's endpoint.
+
+## 2026-10-13 — How long the oldest background job has waited
+
+- New measurement `health.job.oldest_age.seconds`, by queue: the age of the
+  oldest waiting, running or retrying background job in each running queue, 0
+  when there is none, taken every ten seconds. A paused queue is left out,
+  because it holds its jobs on purpose. It is the row Fly Sentinel's site watch
+  reads on every site, in the same name and shape Autolaunch already sends.
+- The site's own periodic measurements (this one and the shared figures') run in
+  one poller started after the background jobs. A tick the database or the table
+  cannot answer is skipped, and the next tick measures again.
