@@ -39,15 +39,19 @@ defmodule AshTemplate.ChainClient do
     end
   end
 
-  @doc "One JSON-RPC request to the node; one that gets no answer counts in `health.chain_request_failures.total`."
+  @doc """
+  One JSON-RPC request to the node; one that gets no answer counts in
+  `health.chain_request_failures.total`. `timeouts` are Req's own options, for a
+  caller that must hear back sooner than five seconds (`AshTemplate.ChainHead`).
+  """
   @impl RegentPoints.ChainClient
-  def rpc(%{chain_id: chain_id} = chain, method, params) do
+  def rpc(%{chain_id: chain_id} = chain, method, params, timeouts \\ [receive_timeout: 5_000]) do
     url = :ash_template |> Application.fetch_env!(:chain_nodes) |> Map.fetch!(chain_id)
 
-    case Req.post(url,
-           json: %{jsonrpc: "2.0", id: 1, method: method, params: params},
-           retry: false,
-           receive_timeout: 5_000
+    case Req.post(
+           url,
+           [json: %{jsonrpc: "2.0", id: 1, method: method, params: params}, retry: false] ++
+             timeouts
          ) do
       {:ok, %{status: 200, body: %{"result" => result}}} -> {:ok, result}
       {:ok, %{body: %{"error" => error}}} -> failed(chain, method, {:rpc, error})

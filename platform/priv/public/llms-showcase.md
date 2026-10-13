@@ -10,4 +10,5 @@ This site is also the public demo of the Ash Template starter kit, the one Regen
 - [Pay with USDC]({{origin}}/showcase/payments): how paying looks on every Regent site, with sample figures and paying switched off.
 - [Your funds]({{origin}}/showcase/funds): how money looks on every Regent site: what's in your wallet, what you've committed, adding funds with a card, sending and cashing out, with sample figures and every money button switched off.
 - [A discussion thread]({{origin}}/showcase/discussion): how a question and its replies read on a Regent site, with sample posts; likes are not kept.
+- [Live figures]({{origin}}/showcase/figures): a figure that is the same for everyone, read once and shown on every open page: Base's newest block.
 - [Motion lab]({{origin}}/animations): every motion the kit uses.

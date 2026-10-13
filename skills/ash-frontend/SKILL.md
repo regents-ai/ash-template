@@ -15,6 +15,10 @@ pipeline around them. Verify generated helper signatures against the installed v
   route; late answers dropped; loading, ready, empty, stale and error kept apart.
   Every page read goes through the template's `Read`; never stop one with
   `cancel_async`, which takes the read's database connection down with it.
+- [Public figures](references/public-figures.md): a figure every visitor sees
+  alike is read once and shared by every open page, through the row's own
+  publication or `AshTemplate.SharedReading`; quiet pages; memory for each open
+  page.
 - [UI review](references/ui-review.md): accessibility, responsive states and hooks.
 
 Reuse Regent UI primitives while retaining each product's theme, navigation and

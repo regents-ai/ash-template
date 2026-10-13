@@ -36,6 +36,7 @@ Start with `ash-stack`: it says which of the others a task needs. Every file can
 - {{origin}}/showcase/payments: how a payment the `payments` skill describes looks to the payer, with sample figures and paying switched off.
 - {{origin}}/showcase/funds: how a person's wallet funds, commitments, card purchases, sends and cash-outs look, with sample figures and every money button switched off.
 - {{origin}}/showcase/discussion: the forum thread the `discussions` skill describes, with sample posts; likes are not kept.
+- {{origin}}/showcase/figures: the figure every visitor sees alike that the `ash-frontend` skill describes: Base's newest block, read once and shown on every open page.
 - {{origin}}/animations: every motion the kit uses, side by side.
 - {{origin}}/showcase/catalog: the components and their attributes as JSON.
 

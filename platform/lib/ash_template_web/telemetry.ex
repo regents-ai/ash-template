@@ -12,6 +12,9 @@ defmodule AshTemplateWeb.Telemetry do
   default poller, every 10 seconds (`config/config.exs`).
   Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
   by outcome, with its tokens, what OpenRouter charged and how long it took.
+  The figures every visitor sees alike (`AshTemplate.SharedReading`) report, for
+  each kind, how many keys are held, how long ago the oldest was read, each
+  reading that could not be taken and each one refused.
   """
 
   import Telemetry.Metrics
@@ -107,6 +110,30 @@ defmodule AshTemplateWeb.Telemetry do
         unit: {:native, :second},
         tags: [:outcome],
         reporter_options: [buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30]]
+      ),
+      last_value("health.shared_reading.oldest.seconds",
+        event_name: [:ash_template, :shared_reading, :kind],
+        measurement: :oldest_seconds,
+        tags: [:kind],
+        description: "Seconds since the oldest shared reading of each kind was read"
+      ),
+      counter("health.shared_reading.degraded.total",
+        event_name: [:ash_template, :shared_reading, :degraded],
+        tags: [:kind],
+        description: "Shared readings that could not be taken"
+      ),
+      last_value("ash_template.shared_reading.keys",
+        event_name: [:ash_template, :shared_reading, :kind],
+        measurement: :keys,
+        tags: [:kind]
+      ),
+      last_value("ash_template.shared_reading.table.bytes",
+        event_name: [:ash_template, :shared_reading, :table],
+        measurement: :bytes
+      ),
+      counter("ash_template.shared_reading.refused.total",
+        event_name: [:ash_template, :shared_reading, :refused],
+        tags: [:kind, :reason]
       ),
       last_value("vm.memory.total.bytes", event_name: [:vm, :memory], measurement: :total),
       last_value("vm.memory.processes.bytes",

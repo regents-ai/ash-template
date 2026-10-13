@@ -130,6 +130,11 @@ config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0
 # 10 seconds by telemetry_poller's default poller and exported as `vm.*` metrics.
 config :telemetry_poller, :default, period: 10_000
 
+# The chains whose newest block the site's pages show, each with how often it is
+# read, in milliseconds: Base, every two seconds, for /showcase/figures. The
+# readers run only where the site serves pages (`AshTemplate.ChainHead`).
+config :ash_template, :chain_heads, %{8453 => 2_000}
+
 # The chain the wallet page at /showcase/wallet sends on: Base Sepolia, a test
 # network, so nothing it sends moves value.
 config :ash_template, :wallet_chain, %{

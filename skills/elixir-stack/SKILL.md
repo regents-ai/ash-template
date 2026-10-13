@@ -32,6 +32,28 @@ jobs, unique jobs, `max_attempts` with backoff, `scheduled_at`, `cron:`, queue
 limits and `lifeline:`. If Oban truly cannot express a requirement, write down why
 and get the lane owner's agreement before building anything.
 
+## Processes that may reread on their own
+
+Two shapes are allowed beside the rules above, because neither is work: nothing is
+queued, nothing is retried and nothing they hold must survive a restart. Both write
+only through `AshTemplate.SharedReading`, which shares one reading with every open
+page (ash-frontend, [public figures](../ash-frontend/references/public-figures.md)).
+
+- **A supervised reader of an outside clock**, such as a chain's newest block
+  (`AshTemplate.ChainHead`). It holds no queue and no copy of database rows, and it
+  never writes the database. Nothing is retried: a missed read is replaced by the
+  next one. The next read is scheduled when the last has finished, never on a fixed
+  interval. Its Req call has `retry: false` and gives up well inside one tick. One
+  runs per chain per machine, with telemetry for the age of its reading and for each
+  failed read.
+- **A reread on notice.** The producer of a reading built from the site's own rows
+  subscribes to those rows' notices and rereads at most once a second however many
+  arrive. It holds nothing but "a reread is due".
+
+The watcher that records chain events keeps its own rules in `chain-events`. Anything
+else that loops, polls or schedules itself is Oban's, and a third shape needs the lane
+owner's agreement before it is built.
+
 ## Design check: before building, and before reviewing
 
 1. List the moving parts: what is stored, what runs later, what retries, what talks

@@ -36,7 +36,10 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
    Inside a transaction, create with `return_notifications?: true` and call
    `Ash.Notifier.notify/1` after it commits. The notice only says "read again".
 9. **Pages read through code interfaces with the viewer as actor**, subscribe only when
-   connected, and re-read at most once a second however many notices arrive.
+   connected, and re-read at most once a second however many notices arrive. A figure
+   every visitor sees alike (the newest block, a market's latest trades) is not reread
+   by each page: one producer rereads it and every page shares the copy, by
+   `ash-frontend` [public figures](../ash-frontend/references/public-figures.md).
 10. **Say when the record is behind.** Show a "catching up" notice while the head was read
     more than 120 seconds ago or the record is more than 300 blocks behind it.
 11. **All four sites share one production database.** A new table or column needs the

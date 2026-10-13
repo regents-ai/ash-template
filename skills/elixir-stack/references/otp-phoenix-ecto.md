@@ -12,6 +12,11 @@
   and `timeout`, or `Task.Supervisor.async_nolink/2` when a crash must not take the
   caller down.
 - Read-mostly lookups go in ETS or `:persistent_term`, not behind `GenServer.call`.
+  `:persistent_term` is for a value that never changes while the site runs; every
+  change to one makes all processes collect garbage. A value that changes goes in
+  ETS, written by its one owner.
+- The only processes that reread on their own are the two named in the skill
+  ("Processes that may reread on their own") and the chain-events watcher.
 - Turn a string into an atom only through an explicit map of allowed values.
   `String.to_existing_atom/1` fails when the module that defines the atom has not
   been loaded yet, which happens in development and tests.
@@ -23,6 +28,9 @@
   and the broadcast only wakes readers up.
 - LiveView loads data in `mount` and `handle_params`; slow loads use `assign_async`
   or `start_async`. Lists use streams.
+- A figure every visitor sees alike is read once and shared, never reread by each
+  page: ash-frontend, [public figures](../../ash-frontend/references/public-figures.md),
+  which also sets the memory budget for an open page.
 - Controllers stay thin: parse the request, call an Ash action or domain function,
   render. A route carrying secrets or private addresses is declared with
   `log: false`.

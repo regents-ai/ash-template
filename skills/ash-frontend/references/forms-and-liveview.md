@@ -52,6 +52,9 @@ Keep one owner for URL parameters, one owner for form state, and one owner for e
 JS-controlled island. Separate temporary UI preferences from server-authoritative data.
 Do not fetch data during render. For updates from other actors, requery under the
 viewer's scope; do not trust that the broadcast producer chose safe fields for them.
+The one exception is a figure a signed-out read answers, the same for every visitor:
+it reaches pages without a reread each, by the rules in [public figures](public-figures.md).
+Anything that could differ by viewer stays with the reread.
 
 For async results, follow [async state](async-state.md): each read is owned by the
 account, wallet or route that started it. Check reversed completion order. For

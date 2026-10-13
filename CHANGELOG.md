@@ -1512,3 +1512,37 @@ Operations
 - `SessionAuthority.resolve/1` answers `{lineage, account, lapses_at}`.
 - The shared note `skills/ash-security/references/component-session-check.md`
   describes the rule every site copies.
+
+## 2026-10-13 — Figures every visitor sees alike are read once and shared
+
+- New rule for all five sites, in `skills/ash-frontend/references/public-figures.md`:
+  a figure that is the same for every visitor is read once and handed to every open
+  page, instead of each page reading it again on every notice. A public saved row
+  sends its public fields, named one by one, through its own publication. A figure
+  no saved row carries, or one built from many rows, goes through the new
+  `AshTemplate.SharedReading`. Anything that differs by viewer is still reread for
+  that viewer, as before.
+- `AshTemplate.SharedReading` holds one copy of each such figure with when it was
+  read and whether the last attempt failed, and wakes a page only when the figure
+  or that mark changes. Each kind of figure is a reviewed entry stating why
+  everyone may see it, how many it may hold and how large one may be. It never
+  disables or delays a wallet button.
+- `AshTemplate.ChainHead` reads Base's newest block every two seconds, once for
+  everyone, and `/showcase/figures` ("Live figures") shows it as the worked
+  example. It reads "Live" with the block number, or "Behind" with the last block
+  it had while Base cannot be read. The readers run only where the site serves
+  pages, and the site starts whether or not Base answers.
+- The same guide sets the memory budget for an open page (0.5 MB, so 2,000 pages
+  fit a 2 GB machine with half kept free), how to measure it and what fills it;
+  the rule for pages that ignore notices not meant for them; and what a second
+  machine needs first.
+- `skills/elixir-stack` names the two processes that may reread on their own: a
+  supervised reader of an outside clock, and a reread on notice at most once a
+  second.
+- `AshTemplate.ChainClient.rpc/4` takes the caller's own time limits. As before,
+  it never retries.
+- New measurements: `health.shared_reading.oldest.seconds` and
+  `health.shared_reading.degraded.total` by kind, and
+  `ash_template.shared_reading.keys`, `.table.bytes` and `.refused.total`.
+- The template's own room messages still send the whole message to open pages;
+  the guide says so and that it is not the example to copy.
