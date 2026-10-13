@@ -12,6 +12,10 @@ defmodule AshTemplateWeb.UnexpectedFailure do
     conn
   end
 
-  defp describe(error) when is_exception(error), do: Exception.message(error)
-  defp describe(error), do: inspect(error)
+  # One line: the log feed keeps only an error's first line, and an Ash error
+  # names its cause on a later one.
+  defp describe(error), do: error |> text() |> String.replace(~r/\s*\n\s*/, " ") |> String.trim()
+
+  defp text(error) when is_exception(error), do: Exception.message(error)
+  defp text(error), do: inspect(error)
 end

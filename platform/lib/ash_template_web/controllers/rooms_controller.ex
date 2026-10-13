@@ -90,7 +90,7 @@ defmodule AshTemplateWeb.RoomsController do
       {:ok, %Message{} = earlier} -> json(conn, %{message: present(earlier)})
       :error -> refuse(conn, "room_not_found")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
-      {:error, %Ash.Error.Forbidden{errors: errors}} -> refuse_forbidden(conn, errors)
+      {:error, %Ash.Error.Forbidden{} = error} -> refuse_forbidden(conn, error)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
@@ -105,7 +105,7 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
-  defp refuse_forbidden(conn, errors) do
+  defp refuse_forbidden(conn, %Ash.Error.Forbidden{errors: errors} = error) do
     cond do
       Enum.any?(errors, &is_struct(&1, PostedBeforePairing)) ->
         refuse(conn, "posted_before_pairing")
@@ -116,7 +116,7 @@ defmodule AshTemplateWeb.RoomsController do
         |> refuse("guest_posts_limited")
 
       true ->
-        conn |> UnexpectedFailure.log(errors) |> refuse("rooms_unavailable")
+        conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
 
