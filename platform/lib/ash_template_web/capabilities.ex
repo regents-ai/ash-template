@@ -9,7 +9,8 @@ defmodule AshTemplateWeb.Capabilities do
   from `priv/tool_manifest.json` (the file the pages register them from) and the
   command from `cli/commands.json`. The four are checked against each other when
   this module compiles. Whether an operation is open is read from the site's
-  switch on every request, never written down.
+  switch on every request, never written down. Each agent operation also says
+  what it lets an agent do in its person's words, which the account page shows.
   """
 
   alias AshTemplateWeb.Plugs.LaunchGate
@@ -63,6 +64,9 @@ defmodule AshTemplateWeb.Capabilities do
                      row["switch"] && row["switch"] not in switches ->
                        "an unknown switch"
 
+                     row["may"] && row["authority"] not in @agents ->
+                       "words for a person on an operation no agent runs"
+
                      tool && tool["route"] != http ->
                        "a browser tool on another route"
 
@@ -107,6 +111,12 @@ defmodule AshTemplateWeb.Capabilities do
                    cli_release: row["cli_release"]
                  }
                end)
+
+  @may @source["operations"] |> Enum.map(& &1["may"]) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+
+  @doc "What a paired agent may do on this site, in its person's words, a line each."
+  @spec may() :: [String.t()]
+  def may, do: @may
 
   @doc "The whole document, with each operation's gate as the site's switches stand now."
   @spec document() :: map()

@@ -1388,3 +1388,13 @@ Operations
 - `scripts/deploy.sh` builds the image with its commit (`SOURCE_COMMIT`); a build without
   one stops. `make readiness` checks the new list against the API description, `/docs`,
   `/llms.txt` and the page's script.
+
+## 2026-10-13 — An agent's view says what it may do and what it cost
+
+- The account page's agent view answers the questions every Regent site asks
+  in the same words: "What may happen next" lists what a paired agent may do
+  here, from the capability rows' own words for a person, and "What it cost"
+  shows the Credits it has spent for its person on Regent sites.
+- The agents list's tip says what a paired agent may do, and each agent row
+  has Unpair beside "See what it has done".
+- Needs the design-system commit with `agent_detail`'s `may` and `spent`.
