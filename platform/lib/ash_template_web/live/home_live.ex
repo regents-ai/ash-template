@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.HomeLive do
         proofs =
           Enum.map_join(chapter.proofs, "\n", fn {title, copy} -> "- **#{title}** #{copy}" end)
 
-        Enum.join(["## #{chapter.title}", chapter.description, proofs], "\n\n")
+        Enum.join(["## #{chapter.title}", chapter.line, proofs], "\n\n")
       end)
 
     """
@@ -150,7 +150,7 @@ defmodule AshTemplateWeb.HomeLive do
     """
   end
 
-  # A chapter carries one numbered part of the story.
+  # A chapter carries one numbered part of the story; its button is on its hero card.
   defp chapter(assigns) do
     ~H"""
     <section
@@ -163,13 +163,6 @@ defmodule AshTemplateWeb.HomeLive do
         <div>
           <p class="rl-overline">{@chapter.eyebrow}</p>
           <h2 id={"#{@chapter.anchor}-title"}>{@chapter.title}</h2>
-          <p>{@chapter.description}</p>
-
-          <div class="rl-chapter-actions">
-            <.action href={@chapter.href} class="rg-button--secondary rl-action">
-              {@chapter.cta}
-            </.action>
-          </div>
         </div>
       </header>
 
@@ -379,7 +372,6 @@ defmodule AshTemplateWeb.HomeLive do
         eyebrow: "Wallet",
         line: "One sign-in. Connect other accounts later.",
         title: "Sign in. Your wallet comes with it.",
-        description: "No password to keep. Connect X, GitHub or Farcaster once you are in.",
         href: "/app",
         cta: "Try sign-in",
         diagrams: 0,
@@ -395,7 +387,6 @@ defmodule AshTemplateWeb.HomeLive do
         eyebrow: "Account",
         line: "Wallets, Credits and Points on one page.",
         title: "Everything you hold, on one page.",
-        description: "Your wallets, Credits, Points and connected accounts.",
         href: "/account",
         cta: "See your account",
         diagrams: 3,
@@ -411,7 +402,6 @@ defmodule AshTemplateWeb.HomeLive do
         eyebrow: "Agents",
         line: "Pair an agent and work side by side.",
         title: "Built for people and their agents.",
-        description: "Pair an agent from your account. It signs in with its own key.",
         href: "/agents.md",
         cta: "Read the agent guide",
         diagrams: 6,

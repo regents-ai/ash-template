@@ -1397,3 +1397,9 @@ Operations
   refused.
 - The OpenAPI documents, agent guide, skill, docs page, tool list and command notes
   say so.
+
+## 2026-10-13 — Home sections say each thing once
+
+- Each home section now has its number, its name, its heading and its three cards. The
+  extra line and button under each heading repeated the hero card above, so they are gone;
+  the hero cards keep the buttons. The page's Markdown uses the hero card line.

@@ -50,22 +50,20 @@
 
   .rl-hero-card > p { font-size: .875rem; line-height: 1.45; }
   .rl-card-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
-  .rl-chapter-actions, .rl-closing-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .rl-closing-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .rl-chapter, .rl-closing { padding: var(--rg-panel-padding); }
   .rl-chapter-intro { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: var(--space-3); }
   .rl-chapter-intro > div:only-child { grid-column: 2; }
   .rl-chapter-index { font-family: var(--font-family-mono); font-size: .8125rem; border-block-start: 1px solid var(--rl-line); padding-block-start: var(--space-2); }
   .rl-overline { font-family: var(--font-family-ui); font-size: .6875rem; letter-spacing: .16em; text-transform: uppercase; }
   .rl-chapter-intro h2, .rl-closing h2 { max-width: 22ch; margin-block: var(--space-3); font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.1; letter-spacing: -.035em; }
-  .rl-chapter-intro p { max-width: 68ch; }
-  .rl-chapter-intro div > p:not(.rl-overline) { margin-block-start: var(--space-3); color: var(--rl-muted); }
   .rl-proof-grid { margin-block-start: var(--space-4); }
   .rl-proof-card { --rl-proof-fill: var(--palette-platinum); --color-accent: var(--palette-charcoal); --color-fg-on-accent: var(--palette-platinum); }
   .rl-proof-card[data-card-color="orange"] { --rl-proof-fill: var(--palette-tangerine-tango); }
   .rl-proof-card[data-card-color="blue"] { --rl-proof-fill: var(--palette-powder-blue); }
   .rl-card-diagram { pointer-events: none; }
   .rl-proof-card .rg-feature__caption { display: flex; flex-direction: column; }
-  .rl-chapter-actions, .rl-closing-actions { margin-block-start: var(--space-4); }
+  .rl-closing-actions { margin-block-start: var(--space-4); }
   .rl-closing { padding-inline-start: calc(var(--rg-panel-padding) + 4rem + var(--space-3)); }
   .rl-closing > p { max-width: 60ch; }
   .rl-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); padding: var(--rg-panel-padding); font-size: .8125rem; }
