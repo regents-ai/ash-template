@@ -62,7 +62,7 @@ defmodule AshTemplateWeb.ErrorsAdmin do
 
   defp admin(session) do
     case session |> SessionAuthority.claim() |> SessionAuthority.resolve() do
-      {lineage, %{privy_user_id: id} = account} when is_binary(lineage) ->
+      {lineage, %{privy_user_id: id} = account, _lapses_at} when is_binary(lineage) ->
         if admin_id?(id), do: {lineage, account}
 
       _signed_out ->

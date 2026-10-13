@@ -1,22 +1,34 @@
-# Pages and components re-check the session before every push and result
+# Pages and components check the session before every event, push and result
 
 A server push (`handle_info`: a PubSub notification such as a points award or a
 Credits change) and a background result (`handle_async`) arrive with no navigation or
 event in between. A socket idle past the sign-in lifetime would otherwise read and show
 fresh private data with the actor it saved at mount. The session module that holds a
 signed-in socket attaches `:handle_params`, `:handle_event`, `:handle_info` and
-`:handle_async` hooks that re-read the lease (`leased_account/2`) before the page sees
-any navigation, event, message or result:
+`:handle_async` hooks, and its lease carries `lapses_at`, the instant the mount read
+that sign-in ending (`%{lineage: ..., account_id: ..., lapses_at: ...}`).
+
+A navigation or an event is a person acting, so each one re-reads the lease
+(`leased_account/2`):
 
 - Current: `{:cont, socket}` with the principal rebuilt from the account that read
   returned, so the page's handler builds its actor from the refreshed account.
 - Lapsed: `{:halt, socket}` with the principal withdrawn and
   `signed_out_reason: :expired`. What arrived is dropped, the page renders signed out
-  and says the sign-in ended, and every later message or result meets the same check.
-  A navigation (`:handle_params`) goes to the public root instead. No timer, no
-  polling.
-- A broadcast that reaches every open page often and carries no account data may go
-  straight through, so it costs no reads. Only such a message may skip the check.
+  and says the sign-in ended. A navigation (`:handle_params`) goes to the public root
+  instead. No timer, no polling.
+
+A push or a result is held against `lapses_at` on the clock:
+
+- Before it: `{:cont, socket}` with no read. A page that receives twenty results and
+  notices reads the session for none of them. A sign-out reaches the socket through
+  the lineage's `disconnect` broadcast, and the person's next navigation or event
+  re-reads in any case.
+- From it on: the same re-read an event makes, every time, with the same two outcomes.
+  A later sign-in on the same browser only ever moves the true end later, so the
+  instant the mount read is never too late.
+- A message that names the account as changed (the ENS lookup finishing, a component
+  reporting its lease lapsed) always re-reads.
 - Background work goes through `start_async/3`: `assign_async` and `stream_async`
   results never reach `:handle_async` hooks, so they would skip the check.
 
@@ -34,11 +46,14 @@ reference is ash-template `AshTemplateWeb.Live.Session.check_component_lease/2`.
 
 1. **The page keeps its lease.** The `on_mount` that loads the person assigns
    `session_lease: nil`, and the code that holds a signed-in session assigns the lease
-   it already re-reads on its own events (`%{lineage: ..., account_id: ...}`).
+   it already re-reads on its own events
+   (`%{lineage: ..., account_id: ..., lapses_at: ...}`).
 2. **One shared check.** The session module exposes a function that attaches a
    `:handle_event` hook and a `:handle_async` hook to the component socket. LiveView
    allows `:handle_event`, `:after_render` and `:handle_async` hooks on components.
    - `lease: nil` (signed out): `{:cont, socket}`.
+   - A result before the lease's `lapses_at`: `{:cont, socket}` with no read. Every
+     event, and a result from `lapses_at` on, makes the read below.
    - The lease still resolves (the same `leased_account/2` read the page uses):
      `{:cont, take_account.(socket, account)}` with the account that read returned.
      The check never reduces that account to a truth test.
@@ -65,11 +80,15 @@ reference is ash-template `AshTemplateWeb.Live.Session.check_component_lease/2`.
 Check: `grep -rl ":live_component" lib` lists every component; each one with a
 `handle_event` or `handle_async` that reads or writes for a person needs steps 3 and 4.
 Verify with a scratch test, inside a sandbox that rolls back, that runs the hooks
-through `Phoenix.LiveView.Lifecycle` on a socket mounted by the session module: a push
-and a result while current (continue, with the account as it reads now), after a
-same-account refresh (unchanged), and after the sign-in's `updated_at` is moved past
-its lifetime (halt, principal withdrawn, `signed_out_reason: :expired`; for a component,
-halted and the page told). Run it once against the old code to see it fail.
+through `Phoenix.LiveView.Lifecycle` on a socket mounted by the session module, counting
+the repository's queries: an event while current (continue, with the account as it
+reads now), a push and a result while current (continue, no query), after a
+same-account refresh (unchanged), and on a socket mounted two seconds before the
+sign-in's lifetime ends, once those seconds have gone (halt, principal withdrawn,
+`signed_out_reason: :expired`; for a component, halted and the page told). Run it once
+against the old code to see it fail.
 
 The page's disconnect broadcast on sign-out reaches only the node that handled it
-unless the site's nodes are clustered; this check covers every event either way.
+unless the site's nodes are clustered. A socket on another node keeps receiving pushes
+and results until the person's next navigation or event, which re-reads and signs it
+out; nothing can be done from it in between.

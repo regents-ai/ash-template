@@ -1492,3 +1492,21 @@ Operations
   was connected." The button stays ready for another press, as it did.
 - A sign-in that fails for any other reason still says so and offers "Retry
   sign-in".
+
+## 2026-10-13 — Signed-in pages stop re-reading the session for every background update
+
+- A signed-in page read the same session and account rows from the database again
+  for every background result and every live notice it received, three reads each
+  time. It now reads them when the page opens, on every navigation and on every
+  press, which is when a person acts. In a trial, five results and five notices on a
+  page and five results in a panel cost 45 reads before and none after.
+- Background results and notices are held against the instant the sign-in ends,
+  read when the page opened. From that instant each one is re-read as before, and a
+  sign-in that has ended drops it and the page shows signed out.
+- Signing out still closes that browser's open pages at once. On a site running
+  more than one server that are not joined together, a page served by another
+  server keeps receiving background updates until the person's next press or
+  navigation, which signs it out; before, the next background update did.
+- `SessionAuthority.resolve/1` answers `{lineage, account, lapses_at}`.
+- The shared note `skills/ash-security/references/component-session-check.md`
+  describes the rule every site copies.

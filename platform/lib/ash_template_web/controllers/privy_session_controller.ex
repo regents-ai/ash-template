@@ -83,7 +83,9 @@ defmodule AshTemplateWeb.PrivySessionController do
   """
   def enforce_authority(conn) do
     session = get_session(conn)
-    {lineage, account} = session |> SessionAuthority.claim() |> SessionAuthority.resolve()
+
+    {lineage, account, _lapses_at} =
+      session |> SessionAuthority.claim() |> SessionAuthority.resolve()
 
     conn
     |> assign(:current_lineage, lineage)

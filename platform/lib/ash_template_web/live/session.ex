@@ -43,7 +43,9 @@ defmodule AshTemplateWeb.Live.Session do
     if connected?(socket) do
       connected(socket, session, get_connect_info(socket, :session))
     else
-      {_lineage, account} = session |> SessionAuthority.claim() |> SessionAuthority.resolve()
+      {_lineage, account, _lapses_at} =
+        session |> SessionAuthority.claim() |> SessionAuthority.resolve()
+
       {:cont, assign_principal(socket, account)}
     end
   end
@@ -66,36 +68,39 @@ defmodule AshTemplateWeb.Live.Session do
   defp admit(socket, _rendered, _route, nil), do: {:halt, redirect(socket, to: @public_root)}
 
   defp admit(socket, rendered, route, %{lineage: lineage} = claim) do
-    with {^lineage, account} <- SessionAuthority.resolve(claim),
+    with {^lineage, account, lapses_at} <- SessionAuthority.resolve(claim),
          ^rendered <- SessionAuthority.topic(lineage) do
-      {:cont, hold(socket, lineage, account)}
+      {:cont, hold(socket, lineage, account, lapses_at)}
     else
-      {nil, nil} -> {:halt, redirect(socket, to: @public_root)}
+      {nil, nil, nil} -> {:halt, redirect(socket, to: @public_root)}
       _other_session -> {:halt, redirect(socket, to: route)}
     end
   end
 
-  defp hold(socket, _lineage, nil), do: assign_principal(socket, nil)
+  defp hold(socket, _lineage, nil, _lapses_at), do: assign_principal(socket, nil)
 
   # The lease holds no generation, because a same-account refresh advances it
-  # beneath a live socket. Lineage, account binding, revocation, sign-in age and
-  # the account's own provider evidence are re-read every time, and the
-  # principal is rebuilt from that read rather than from the struct the mount
-  # captured. A lapsed lease withdraws the principal, so nothing downstream can
-  # still present it as authority, and a page that stays open says the sign-in
-  # ended (`signed_out_reason: :expired`) rather than that no one signed in. A
+  # beneath a live socket. On every navigation and every event, which is when a
+  # person acts, lineage, account binding, revocation, sign-in age and the
+  # account's own provider evidence are re-read, and the principal is rebuilt
+  # from that read rather than from the struct the mount captured. A lapsed
+  # lease withdraws the principal, so nothing downstream can still present it as
+  # authority, and a page that stays open says the sign-in ended
+  # (`signed_out_reason: :expired`) rather than that no one signed in. A
   # finished ENS lookup reads the account again, so the header shows the name
   # and picture it found.
   #
-  # Every other message and every background result is re-read the same way
-  # before the page sees it, because a notification or a read can arrive after
-  # the sign-in has outlived its lifetime with no navigation or event between.
-  # A lapsed lease then drops it and the page renders signed out. Components
-  # receive the lease as `session_lease` and check it on their own events and
-  # results (`check_component_lease/2`); one that finds it lapsed asks the page
-  # to withdraw the principal here.
-  defp hold(socket, lineage, account) do
-    lease = %{lineage: lineage, account_id: account.id}
+  # Every other message and every background result can arrive after the
+  # sign-in has outlived its lifetime with no navigation or event between, so
+  # each is held against `lapses_at`, the instant the mount read that sign-in
+  # ending. Before it they cost no read: a sign-out closes the socket through
+  # the lineage's `disconnect`. From it on, each is re-read as an event is, and
+  # a lapsed lease drops it and the page renders signed out. Components receive
+  # the lease as `session_lease` and check it the same way on their own events
+  # and results (`check_component_lease/2`); one that finds it lapsed asks the
+  # page to withdraw the principal here.
+  defp hold(socket, lineage, account, lapses_at) do
+    lease = %{lineage: lineage, account_id: account.id, lapses_at: lapses_at}
     ens_topic = EnsIdentity.topic(account.id)
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, ens_topic)
 
@@ -118,26 +123,28 @@ defmodule AshTemplateWeb.Live.Session do
         {:halt, socket}
 
       _message, socket ->
-        recheck(socket, lease, & &1)
+        recheck_once_lapsed(socket, lease)
     end)
     |> attach_hook(:session_authority_async, :handle_async, fn _name, _result, socket ->
-      recheck(socket, lease, & &1)
+      recheck_once_lapsed(socket, lease)
     end)
   end
 
   @doc """
   A LiveComponent's events and background results never reach the page's own
   hooks, so every component that acts calls this from `mount/1`, and its page
-  passes it the page's `session_lease` as `lease`. Each event and each result
-  first re-reads that lease, as the page does for its own. A current lease
-  hands `take_account`, the component's own function (the one its `update/2`
-  uses too), the account as it reads now, and the component rebuilds from it
-  the wallets and actor it acts with, so nothing acts on a wallet list or actor
-  captured earlier. A lapsed lease refuses the event with an empty reply, so a
-  wallet step it was asked for is not sent, or drops the result unseen, and
-  tells the page, which withdraws the principal and renders signed out. A page
-  with no signed-in session, or one whose component acts for a stand-in
-  account, passes a nil lease and the component acts on what the page gave it.
+  passes it the page's `session_lease` as `lease`. Each event first re-reads
+  that lease, as the page does for its own, and so does each result that
+  arrives from the instant the lease lapses; a result before it costs no read.
+  A lease that reads current hands `take_account`, the component's own function
+  (the one its `update/2` uses too), the account as it reads now, and the
+  component rebuilds from it the wallets and actor it acts with, so no event
+  acts on a wallet list or actor captured earlier. A lapsed lease refuses the
+  event with an empty reply, so a wallet step it was asked for is not sent, or
+  drops the result unseen, and tells the page, which withdraws the principal
+  and renders signed out. A page with no signed-in session, or one whose
+  component acts for a stand-in account, passes a nil lease and the component
+  acts on what the page gave it.
   """
   def check_component_lease(socket, take_account) do
     socket
@@ -147,12 +154,20 @@ defmodule AshTemplateWeb.Live.Session do
         account -> {:cont, take(socket, take_account, account)}
       end
     end)
-    |> attach_hook(:session_authority_async, :handle_async, fn _name, _result, socket ->
-      case component_account(socket) do
-        :lapsed -> {:halt, socket}
-        account -> {:cont, take(socket, take_account, account)}
-      end
+    |> attach_hook(:session_authority_async, :handle_async, fn
+      _name, _result, %{assigns: %{lease: %{} = lease}} = socket ->
+        if running?(lease), do: {:cont, socket}, else: component_result(socket, take_account)
+
+      _name, _result, socket ->
+        {:cont, socket}
     end)
+  end
+
+  defp component_result(socket, take_account) do
+    case component_account(socket) do
+      :lapsed -> {:halt, socket}
+      account -> {:cont, take_account.(socket, account)}
+    end
   end
 
   defp component_account(%{assigns: %{lease: nil}}), do: :signed_out
@@ -170,6 +185,11 @@ defmodule AshTemplateWeb.Live.Session do
 
   defp take(socket, _take_account, :signed_out), do: socket
   defp take(socket, take_account, account), do: take_account.(socket, account)
+
+  defp running?(%{lapses_at: lapses_at}), do: DateTime.before?(DateTime.utc_now(), lapses_at)
+
+  defp recheck_once_lapsed(socket, lease),
+    do: if(running?(lease), do: {:cont, socket}, else: recheck(socket, lease, & &1))
 
   defp recheck(socket, lease, lapsed) do
     case SessionAuthority.leased_account(lease.lineage, lease.account_id) do

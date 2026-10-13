@@ -201,22 +201,23 @@ defmodule AshTemplate.Accounts.SessionAuthority do
   def revoke(nil), do: nil
 
   @doc """
-  The lineage and verified account an exactly current claim resolves to:
-  `{nil, nil}` when the claim is not current, `{lineage, nil}` when it is but
-  confers no verified account.
+  The lineage and verified account an exactly current claim resolves to, and
+  the instant that sign-in lapses: `{nil, nil, nil}` when the claim is not
+  current, `{lineage, nil, nil}` when it is but no one has signed in on it.
   """
-  @spec resolve(claim() | nil) :: {String.t() | nil, Ash.Resource.record() | nil}
+  @spec resolve(claim() | nil) ::
+          {String.t() | nil, Ash.Resource.record() | nil, DateTime.t() | nil}
   def resolve(%{lineage: lineage} = claim) do
     row = row(lineage)
 
     case state(row, claim) do
-      :exact -> {lineage, verified(row.human_account_id)}
-      :ensurable -> {lineage, nil}
-      _lifecycle -> {nil, nil}
+      :exact -> {lineage, verified(row.human_account_id), lapses_at(row)}
+      :ensurable -> {lineage, nil, nil}
+      _lifecycle -> {nil, nil, nil}
     end
   end
 
-  def resolve(nil), do: {nil, nil}
+  def resolve(nil), do: {nil, nil, nil}
 
   @doc """
   The verified account a mounted lease still resolves to, or `nil`. A refresh
@@ -256,9 +257,12 @@ defmodule AshTemplate.Accounts.SessionAuthority do
   # sign-in, so a bound row's `updated_at` is when the person last signed in.
   # An unbound row confers nothing, so it has no lifetime to outlive.
   defp lapsed?(%{human_account_id: nil}), do: false
+  defp lapsed?(row), do: not DateTime.before?(DateTime.utc_now(), lapses_at(row))
 
-  defp lapsed?(%{updated_at: signed_in_at}),
-    do: DateTime.diff(DateTime.utc_now(), signed_in_at) >= @sign_in_lifetime_seconds
+  defp lapses_at(%{human_account_id: nil}), do: nil
+
+  defp lapses_at(%{updated_at: signed_in_at}),
+    do: DateTime.add(signed_in_at, @sign_in_lifetime_seconds)
 
   # Exhaustion is terminal rather than wrapping: the lineage is revoked and the
   # browser bootstraps a fresh one.
