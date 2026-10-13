@@ -195,7 +195,6 @@ defmodule AshTemplateWeb.HomeLive do
         class="rl-proof-card"
         data-card-color={Enum.at(~w(orange blue platinum), index)}
         phx-hook="HolographicCard"
-        data-holo-crown="false"
         data-holo-ink
         data-holo-tilt="0"
       >

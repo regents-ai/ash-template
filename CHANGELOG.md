@@ -1250,3 +1250,12 @@ Operations
   end (security chief request).
 - The motion page ignores a dismiss for a note that is not on screen; a
   non-number id used to crash the page.
+
+## 2026-10-13 — The Regents crown is back
+
+- The favicons, `mark.png` (the picture in the sign-in window) and the flat
+  marks in the header are the Regents crown again, the same files Regents and
+  Keyfleet serve. The plain square from 2026-09-22 is gone, and `AGENTS.md` no
+  longer asks a new site to replace the logo (Sean, 13 Oct: "do not change the
+  logo").
+- The account card engraves the crown again, as on regents.sh.

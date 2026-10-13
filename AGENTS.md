@@ -8,10 +8,11 @@ product.
 
 After renaming, a new site must still replace, by hand:
 
-1. Brand files in `platform/priv/static`: `favicon.svg`, `favicon.ico`,
-   `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`, `mark.png`,
-   `images/brand/mark-flat-dark.svg`, `images/brand/mark-flat-light.svg`, and
-   the homepage art `images/home/hero-bg-dark.svg`. Keep the file names.
+1. The homepage art `platform/priv/static/images/home/hero-bg-dark.svg`. Keep
+   the file name. The logo files in `platform/priv/static` (`favicon.svg`,
+   `favicon.ico`, `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`,
+   `mark.png`, `images/brand/mark-flat-dark.svg`,
+   `images/brand/mark-flat-light.svg`) are the Regents crown. Keep them.
 2. The legal operator named in `platform/priv/legal/terms.md` and
    `privacy.md`.
 3. Every `example.com` contact address in `platform/priv/legal`,
