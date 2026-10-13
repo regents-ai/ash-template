@@ -219,6 +219,10 @@ defmodule AshTemplateWeb.Telemetry do
         event_name: [:ash_template, :shared_reading, :refused],
         tags: [:kind, :reason]
       ),
+      counter("ash_template.shared_reading.woken.total",
+        event_name: [:ash_template, :shared_reading, :woken],
+        tags: [:kind]
+      ),
       last_value("vm.memory.total.bytes", event_name: [:vm, :memory], measurement: :total),
       last_value("vm.memory.processes.bytes",
         event_name: [:vm, :memory],

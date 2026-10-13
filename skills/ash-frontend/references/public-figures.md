@@ -133,7 +133,10 @@ What it holds, and what it refuses:
   Writes go through the one owner process; reads never do.
 - **Pages are woken only when the reading or the mark differs** from what is held,
   never because time went by. The message is `{:shared_reading, key}` and carries
-  nothing; the page fetches.
+  nothing; the page fetches. A field that says when a reading was taken, not what
+  it is ("as of block N"), would wake every page on every pass. The producer
+  compares the new reading to the held one without those fields and, when the
+  rest is the same, puts the held reading back: `at` moves and nobody wakes.
 - **A shared reading never disables or delays an on-chain button.** Stale,
   degraded or absent, every button stays live. Only the chain's own state at the
   latest block, read for that press, may block one.
@@ -151,6 +154,8 @@ with every key answered one way or the other, and a provider being down never
 keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 
 - **A supervised reader of an outside clock**, such as `AshTemplate.ChainHead`.
+  One that also records what it read writes its rows first and stores the
+  reading after, so a page never shows a figure the database does not hold.
 - **A reread on notice**, for a reading built from the site's own rows: the
   producer subscribes to the rows' notices, rereads at most once a second however
   many arrive, and holds nothing but "a reread is due". The template has no
@@ -158,6 +163,11 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
   builds one, and settles two things there: what heals a notice that was lost,
   and how a kind states whether it has an expected freshness, since a quiet
   market rightly leaves an old reading and must not read as a stopped producer.
+
+A producer's cost no longer grows with the pages open, but it does not stop when
+nobody is looking: it is keys times passes, every pass, with no visitor on the
+site. Bound it on purpose and say the bound beside the kind (Autolaunch reads at
+most 100 open auctions a pass, about 17 chain requests each).
 
 ### Measurements
 
@@ -169,7 +179,7 @@ reading since the site started, which the age cannot show.
 reader's failed requests count in `health.chain_request_failures.total` under
 its own `scope`, apart from the wallet's.
 `<app>.shared_reading.keys`, `.table.bytes` and `.refused.total` watch the
-bounds.
+bounds, and `.woken.total` counts the wake-ups sent to pages, by kind.
 
 ## Quiet pages
 

@@ -1612,3 +1612,15 @@ Operations
   the stored picture stays and the sign-in's background job tries again.
 - No change to the site's own code beyond the note on the lookup; the fix is in
   the shared library this release pins.
+
+## 2026-10-13 — Shared figures: four things from Autolaunch's first use
+
+- Measuring the shared figures every ten seconds no longer copies them: it reads
+  each key's kind and when it was read, nothing else. With thousands of large
+  readings the copy was the cost.
+- New measurement `ash_template.shared_reading.woken.total`, by kind: wake-ups
+  sent to open pages.
+- The guide adds: a producer that records what it reads writes its rows before
+  it stores the reading; a producer's cost is keys times passes whether or not
+  anyone is looking, and is bounded on purpose; and a field that only says when
+  a reading was taken is compared out by the producer so it wakes nobody.
