@@ -1601,3 +1601,14 @@ Operations
   timeouts handed over in its place cannot end up as a measurement label.
 - The job-age row's description says the age counts from when the job was added,
   so a job waiting out a long retry reads as old.
+
+## 2026-10-13 — An ENS picture no longer goes missing after a quiet hour
+
+- A person's ENS picture was replaced by the generated one whenever the ENS
+  picture service was slow to answer at sign-in, which it is for any name it has
+  not been asked about in the last hour (4.3 seconds measured for one picture;
+  the check gave up at two). The shared ENS library now waits ten seconds, and a
+  service that does not answer counts as "ask again" instead of "no picture", so
+  the stored picture stays and the sign-in's background job tries again.
+- No change to the site's own code beyond the note on the lookup; the fix is in
+  the shared library this release pins.

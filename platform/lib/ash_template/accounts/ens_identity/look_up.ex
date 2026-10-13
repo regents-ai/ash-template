@@ -6,7 +6,9 @@ defmodule AshTemplate.Accounts.EnsIdentity.LookUp do
   kept only when it resolves back to the same wallet, and a picture only when
   the ENS avatar service answers with one (`AgentEns.PrimaryName`). A failed
   read fails the action, so the job retries with backoff; a server with no
-  Ethereum endpoint cancels it.
+  Ethereum endpoint cancels it. The avatar service not answering in time is a
+  failed read too, never "no picture": it is slow for a name it has not been
+  asked about lately, and the picture already stored must outlast that.
 
   The answer is written only while the row still names the wallet it was read
   for. A sign-in with another wallet while the read runs can't queue a second
