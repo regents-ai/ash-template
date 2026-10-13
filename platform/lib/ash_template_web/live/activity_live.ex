@@ -14,6 +14,7 @@ defmodule AshTemplateWeb.ActivityLive do
 
   attr :account, :map, default: nil
   attr :notifications, Read, required: true
+  attr :mark_read_failed?, :boolean, default: false
 
   def page(assigns) do
     ~H"""
@@ -29,6 +30,9 @@ defmodule AshTemplateWeb.ActivityLive do
       <section :if={@account} class="account-panel activity-panel" aria-labelledby="activity-title">
         <div class="activity-panel__head">
           <h2 id="activity-title">Latest</h2>
+          <p :if={@mark_read_failed?} class="activity-panel__failed" role="alert">
+            Some stayed unread. Try again.
+          </p>
           <Primitives.button
             :if={unread?(@notifications)}
             type="button"

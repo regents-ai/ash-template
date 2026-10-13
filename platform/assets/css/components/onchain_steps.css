@@ -37,6 +37,10 @@
   color: var(--color-fg-muted);
 }
 
+.onchain-example-press-notes {
+  min-block-size: 3lh;
+}
+
 .onchain-example-sent {
   display: grid;
   gap: 0.75rem;

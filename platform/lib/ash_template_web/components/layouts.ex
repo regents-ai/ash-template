@@ -31,7 +31,7 @@ defmodule AshTemplateWeb.Layouts do
       <div class="rl-header-links">
         <AshTemplateWeb.Components.RegentLinks.header_links id="footer-token-menu" />
       </div>
-      <a href="/llms.txt">For agents</a>
+      <a href={~p"/llms.txt"}>For agents</a>
     </footer>
     """
   end

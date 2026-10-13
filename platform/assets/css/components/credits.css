@@ -44,6 +44,10 @@
   color: var(--color-fg-muted);
 }
 
+.credits-panel__press-notes {
+  min-block-size: 3lh;
+}
+
 /* Figures: the balance and what bids hold, as a two-by-two table, then the
    history link. */
 

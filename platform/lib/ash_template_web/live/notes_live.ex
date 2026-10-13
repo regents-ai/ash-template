@@ -211,7 +211,8 @@ defmodule AshTemplateWeb.NotesLive do
 
         <section class="account-panel" aria-labelledby="notes-list-title">
           <h2 id="notes-list-title">Your notes</h2>
-          <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
+          <%!-- Always one line tall, so the list below never moves. --%>
+          <p class="notes-notice" aria-live="polite">{@notice}</p>
           <Primitives.notice :if={@notes.state in [:error, :stale]} tone="error">
             Your notes couldn’t be loaded. Refresh the page to try again.
           </Primitives.notice>

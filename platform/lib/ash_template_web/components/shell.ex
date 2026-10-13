@@ -12,6 +12,7 @@ defmodule AshTemplateWeb.Components.Shell do
   """
 
   use Phoenix.Component
+  use AshTemplateWeb, :verified_routes
 
   alias AshTemplateWeb.Components.RegentLinks
   alias AshTemplateWeb.RouteCatalog
@@ -60,6 +61,7 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :healthy, :boolean, required: true
   attr :search, :map, required: true, doc: "`%{query, results}` for the search dialog."
   attr :assistant, :map, default: nil, doc: "The assistant box's last question and reply."
+  attr :assistant_refused?, :boolean, default: false, doc: "The last question was not sent."
   slot :content, required: true
   slot :credits_panel, doc: "The Buy Credits panel, opened from the header's balance."
 
@@ -131,7 +133,7 @@ defmodule AshTemplateWeb.Components.Shell do
             :if={@unread}
             id="shell-bell"
             class="shell-tool"
-            patch="/app/activity"
+            patch={~p"/app/activity"}
             aria-label={bell_label(@unread)}
           >
             <.icon name={:bell} />
@@ -204,7 +206,7 @@ defmodule AshTemplateWeb.Components.Shell do
           </ul>
           <.link
             :if={@account_control.kind in [:signed_in, :preview]}
-            patch="/account"
+            patch={~p"/account"}
             class="shell-rail__you"
             aria-label={"Your profile, #{@account_control.label}"}
           >
@@ -306,7 +308,7 @@ defmodule AshTemplateWeb.Components.Shell do
         >
           <p class="shell-account__name"><.account_name account_control={@account_control} /></p>
           <div class="shell-account__actions">
-            <.link patch="/account" class="rg-button rg-button--secondary">Account</.link>
+            <.link patch={~p"/account"} class="rg-button rg-button--secondary">Account</.link>
             <Regent.Primitives.button
               variant="secondary"
               type="button"
@@ -371,6 +373,15 @@ defmodule AshTemplateWeb.Components.Shell do
             />
             <Regent.Primitives.button type="submit" variant="secondary">Ask</Regent.Primitives.button>
           </form>
+          <%!-- Always one line tall, so the reply below never moves. --%>
+          <p
+            :if={@account_control.kind == :signed_in}
+            id="shell-assistant-note"
+            class="shell-assistant__note"
+            aria-live="polite"
+          >
+            {if @assistant_refused?, do: "Not sent. Wait a moment and try again."}
+          </p>
           <p :if={@account_control.kind != :signed_in} class="rg-muted">
             Sign in to ask the assistant.
           </p>

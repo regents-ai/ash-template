@@ -221,10 +221,13 @@ defmodule AshTemplateWeb.OnchainExample do
         <P.button variant="secondary" data-onchain-step="sign"><span data-press-label>Sign</span></P.button>
       </div>
 
-      <p :if={@press_note} class="onchain-example-note" role="status">{@press_note}</p>
-      <p class="onchain-example-note" role="status" data-onchain-lost hidden>
-        This page lost its connection, so nothing was sent. Press again once it's back.
-      </p>
+      <%!-- Room for three lines is kept, so a note never moves what follows. --%>
+      <div class="onchain-example-press-notes">
+        <p :if={@press_note} class="onchain-example-note" role="status">{@press_note}</p>
+        <p class="onchain-example-note" role="status" data-onchain-lost hidden>
+          This page lost its connection, so nothing was sent. Press again once it's back.
+        </p>
+      </div>
 
       <p :if={@signed} class="onchain-example-signed" role="status">
         Signed by <code>{RegentFormat.short_address(@signed.review.signer)}</code>

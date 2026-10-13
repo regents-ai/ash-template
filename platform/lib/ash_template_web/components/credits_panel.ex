@@ -512,10 +512,13 @@ defmodule AshTemplateWeb.CreditsPanel do
         </li>
       </ol>
 
-      <p :if={@press_note} class="credits-panel__note" role="status">{@press_note}</p>
-      <p class="credits-panel__note" role="status" data-onchain-lost hidden>
-        Connection lost, so nothing was sent. Press again once it's back.
-      </p>
+      <%!-- Room for three lines is kept, so a note never moves the links below. --%>
+      <div class="credits-panel__press-notes">
+        <p :if={@press_note} class="credits-panel__note" role="status">{@press_note}</p>
+        <p class="credits-panel__note" role="status" data-onchain-lost hidden>
+          Connection lost, so nothing was sent. Press again once it's back.
+        </p>
+      </div>
 
       <footer class="credits-panel__legal">
         <a href="https://regents.sh/terms" target="_blank" rel="noopener">Terms of Service</a>

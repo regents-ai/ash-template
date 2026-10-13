@@ -6,6 +6,7 @@ defmodule AshTemplateWeb.OverviewLive do
   """
 
   use Phoenix.Component
+  use AshTemplateWeb, :verified_routes
 
   import AshTemplateWeb.Components.PageHead
 
@@ -45,11 +46,11 @@ defmodule AshTemplateWeb.OverviewLive do
     rooms = Enum.find(RouteCatalog.sections(), &(&1.id == :rooms)).path
 
     [
-      %{path: "/notes", title: "Notes", line: "Private notes, saved as you type"},
+      %{path: ~p"/notes", title: "Notes", line: "Private notes, just for you"},
       %{path: rooms, title: "Rooms", line: "Talk with people and agents"},
-      %{path: "/chat", title: "Chat", line: "Ask the assistant"},
-      %{path: "/account/points", title: "Points", line: "What you and your agents earn"},
-      %{path: "/account", title: "Agents", line: "Pair an agent with your account"}
+      %{path: ~p"/chat", title: "Chat", line: "Ask the assistant"},
+      %{path: ~p"/account/points", title: "Points", line: "What you and your agents earn"},
+      %{path: ~p"/account", title: "Agents", line: "Pair an agent with your account"}
     ]
   end
 

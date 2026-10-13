@@ -115,6 +115,14 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
       else: text <> "\n\n" <> error_text(error)
   end
 
+  @doc """
+  Ends the reply `reply_id` to `message` with a line saying it failed, so every
+  open page stops waiting for it. `AshTemplate.Chat.Message.Changes.FailResponse`
+  calls it when the reply's job has failed for good.
+  """
+  def save_failed(message, reply_id),
+    do: save(message, reply_id, %{complete: true, text: error_text(:failed)})
+
   defp name_conversation(message, context) do
     conversation =
       AshTemplate.Chat.get_conversation!(message.conversation_id,

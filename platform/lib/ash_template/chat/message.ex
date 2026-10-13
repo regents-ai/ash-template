@@ -88,6 +88,14 @@ defmodule AshTemplate.Chat.Message do
       change AshTemplate.Chat.Message.Changes.Respond
     end
 
+    # Called by the `:respond` trigger once its job has failed for good.
+    update :fail_response do
+      accept []
+      argument :error, :term
+      require_atomic? false
+      change AshTemplate.Chat.Message.Changes.FailResponse
+    end
+
     create :upsert_response do
       upsert? true
       accept [:id, :response_to_id, :conversation_id]
@@ -222,6 +230,7 @@ defmodule AshTemplate.Chat.Message do
       trigger :respond do
         actor_persister AshTemplate.Chat.ActorPersister
         action :respond
+        on_error :fail_response
         queue :chat_responses
         lock_for_update? false
         scheduler_cron false

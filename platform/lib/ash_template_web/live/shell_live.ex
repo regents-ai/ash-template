@@ -75,10 +75,12 @@ defmodule AshTemplateWeb.ShellLive do
        verified_connections_notice: nil,
        connection_outcome: nil,
        notifications: %Read{},
+       mark_read_failed?: false,
        progress: progress(human_actor(socket)),
        healthy: AshTemplate.Health.database_ready?(),
        search: unsearched(),
-       assistant: nil
+       assistant: nil,
+       assistant_refused?: false
      )
      |> count_unread()
      |> read_credits()}
@@ -98,7 +100,7 @@ defmodule AshTemplateWeb.ShellLive do
      |> load_points(route_spec)
      |> load_verified_connections(route_spec)
      |> load_notifications(route_spec)
-     |> assign(:search, unsearched())
+     |> assign(search: unsearched(), mark_read_failed?: false)
      |> enter_room(room)
      |> open_conversation(conversation)}
   end
@@ -135,11 +137,13 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   def handle_event("mark_all_read", _params, socket) do
-    with %Human{} = actor <- human_actor(socket) do
-      Activity.mark_all_read(actor: actor)
-    end
+    failed? =
+      case human_actor(socket) do
+        %Human{} = actor -> Activity.mark_all_read(actor: actor).status != :success
+        nil -> false
+      end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, mark_read_failed?: failed?)}
   end
 
   # A search of the saved notes and messages spends the address's search
@@ -170,9 +174,11 @@ defmodule AshTemplateWeb.ShellLive do
          question: text,
          reply: ""
        })
+       |> assign(:assistant_refused?, false)
        |> sync_chat_topics()}
     else
-      _refused -> {:noreply, socket}
+      {:error, _refused} -> {:noreply, assign(socket, :assistant_refused?, true)}
+      nil -> {:noreply, socket}
     end
   end
 
@@ -291,6 +297,7 @@ defmodule AshTemplateWeb.ShellLive do
       healthy={@healthy}
       search={@search}
       assistant={@assistant}
+      assistant_refused?={@assistant_refused?}
     >
       <:credits_panel :if={signed_in_credits(@access_context, @credits_read)}>
         <.live_component
@@ -312,6 +319,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :activity}
           account={current_account(@access_context)}
           notifications={@notifications}
+          mark_read_failed?={@mark_read_failed?}
         />
 
         <.live_component

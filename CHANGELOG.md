@@ -1403,3 +1403,15 @@ Operations
 - Each home section now has its number, its name, its heading and its three cards. The
   extra line and button under each heading repeated the hero card above, so they are gone;
   the hero cards keep the buttons. The page's Markdown uses the hero card line.
+
+## 2026-10-13 — Small page fixes
+
+- Overview: Notes says "Private notes, just for you"; it never saved as you typed.
+- The side assistant says "Not sent. Wait a moment and try again." when a question is
+  refused, instead of nothing.
+- Chat: when the assistant's reply fails for good, the reply ends with a line saying so;
+  the page no longer shows "The assistant is writing…" forever.
+- Activity: "Mark all as read" says when some stayed unread.
+- The notes notice, the Buy Credits press notes and the wallet lab's press notes sit in
+  room kept for them, so nothing below moves when one appears.
+- Page links in the shell, the overview and the footer are checked against the router.
