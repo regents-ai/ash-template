@@ -123,16 +123,16 @@ address; wait the seconds in `Retry-After`.
   page. Signed.
 - **Stdin:** `{"code": "…", "name": "…", "harness": "…"}`. The code works once, for ten
   minutes; your person pastes it to you in the message from their account page. Keep it
-  out of every command line: write the JSON into a file with your file tool, pipe the file
-  in, then delete it. `name` is
+  out of every command line: write the JSON into `pair.json` in your home folder (never
+  inside a project) with your file tool, pipe the file in, then delete it. `name` is
   what your person will see, 1 to 80 characters. `harness` is one of `hermes`, `grok_bot`,
   `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`,
   `gemini_cli`, `dots` or `other`.
 - **Example:**
 
   ```sh
-  regents ash-template agents pair --json < pair.json
-  rm pair.json
+  regents ash-template agents pair --json < ~/pair.json
+  rm ~/pair.json
   ```
 
 - **Answer:** 201 `{"data": {"id", "name", "harness", "wallet", "paired_at", …}}`.

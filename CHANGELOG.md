@@ -1267,8 +1267,8 @@ Operations
   `64ecda7954bd76e2741e737ac6604ae1b882d471c20c7adf6729cf8122546f34`). The template's
   command list is the same in 1.9.3.
 - Pairing keeps the code out of every command line and shell history: the agent writes
-  `pair.json` with its file tool, runs `agents pair --json < pair.json`, then deletes the
-  file. This works on 1.9.3 today and every site copies it.
+  `~/pair.json` (home folder, never inside a project) with its file tool, runs
+  `agents pair --json < ~/pair.json`, then deletes the file. This works on 1.9.3 today and every site copies it.
 - The X and GitHub icons point at x.com/regents_sh and github.com/regents-ai; every contact
   address on the Contact, Terms and Privacy pages is build@regents.sh (Sean, 13 Oct).
 - regent-workflow carries the founder rule that ash-template is the golden generic baseline.

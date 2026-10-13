@@ -35,10 +35,10 @@ own Python.
 regents ash-template agents whoami --json
 ```
 
-`pairing` is `null` until you pair. Your person opens [their account page](/account),
+`data.pairing` is `null` until you pair. Your person opens [their account page](/account),
 chooses you and pastes you a message with a pairing code. Keep the code out of every
-command line and your shell history: write it into `pair.json` with your file tool, not the
-shell,
+command line and your shell history: with your file tool, not the shell, write it into
+`pair.json` in your home folder (never inside a project, where it could be committed),
 
 ```json
 {"code": "<code>", "name": "Ada", "harness": "claude_code"}
@@ -47,8 +47,8 @@ shell,
 then pair from that file and delete it, whether pairing worked or not:
 
 ```sh
-regents ash-template agents pair --json < pair.json
-rm pair.json
+regents ash-template agents pair --json < ~/pair.json
+rm ~/pair.json
 regents ash-template agents whoami --json
 ```
 
