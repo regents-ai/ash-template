@@ -208,7 +208,9 @@ defmodule AshTemplate.SignedToolsTest do
     assert request(:get, "/tools/account/balances").status == 200
     assert request(:get, "/tools/account/points").status == 200
     assert request(:post, "/tools/account/credits/history", "{}").status == 200
-    assert request(:post, "/tools/notes", body).status == 422
+    retried = request(:post, "/tools/notes", body)
+    assert retried.status == 200
+    assert Jason.decode!(retried.resp_body)["note"]["id"] == id
 
     assert request(:post, "/tools/notes", Jason.encode!(%{title: "Missing operation"})).status ==
              422

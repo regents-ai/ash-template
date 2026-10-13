@@ -29,7 +29,7 @@ defmodule AshTemplateWeb.PageToolsController do
        "List your person's notes and use an id from there."},
     "invalid_note" =>
       {422, "The note could not be saved.",
-       "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying. If that operation_id was used before, the note exists: read it with notes_get."},
+       "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
@@ -136,9 +136,15 @@ defmodule AshTemplateWeb.PageToolsController do
     end
   end
 
+  # A retry with the operation_id of a note already made answers that note (200).
   def create_note(conn, _params) do
-    case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
-      {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
+    actor = conn.assigns.actor
+
+    with {:ok, nil} <- Notes.earlier_note(conn.body_params["operation_id"], actor: actor),
+         {:ok, note} <- Notes.create_note(conn.body_params, actor: actor) do
+      conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
+    else
+      {:ok, %Note{} = earlier} -> json(conn, %{note: NotesJSON.note(earlier)})
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, _error} -> refuse(conn, "unavailable")

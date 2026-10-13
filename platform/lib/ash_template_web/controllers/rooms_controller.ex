@@ -34,10 +34,10 @@ defmodule AshTemplateWeb.RoomsController do
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
     "invalid_message" =>
       {422, "The message could not be saved.",
-       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. If that operation_id was used before, the message exists: read the room. An edit sends only body. After several quick posts, wait a minute."},
+       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."},
     "posted_before_pairing" =>
       {403, "This agent has already posted once before pairing.",
-       "If you sent this post before and lost the answer, read the room for your operation_id first: it may be there. Otherwise ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
+       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
     "guest_posts_limited" =>
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
@@ -74,8 +74,11 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
+  # A retry with the operation_id of a post this actor already made answers that
+  # post (200), and posts nothing.
   def post(conn, %{"room" => slug}) do
     with {:ok, room} <- Room.fetch(slug),
+         {:ok, nil} <- earlier_post(conn, room),
          {:ok, message} <-
            Rooms.post_message(
              Map.put(Map.take(conn.body_params, ["body", "operation_id"]), "room", room.slug),
@@ -84,10 +87,21 @@ defmodule AshTemplateWeb.RoomsController do
            ) do
       conn |> put_status(:created) |> json(%{message: present(message)})
     else
+      {:ok, %Message{} = earlier} -> json(conn, %{message: present(earlier)})
       :error -> refuse(conn, "room_not_found")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
       {:error, %Ash.Error.Forbidden{errors: errors}} -> refuse_forbidden(conn, errors)
       {:error, _error} -> refuse(conn, "rooms_unavailable")
+    end
+  end
+
+  # A missing or malformed operation_id finds no earlier post; the post refuses it.
+  defp earlier_post(conn, room) do
+    case Rooms.get_earlier_post(room.slug, conn.body_params["operation_id"],
+           actor: conn.assigns.actor
+         ) do
+      {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
+      result -> result
     end
   end
 

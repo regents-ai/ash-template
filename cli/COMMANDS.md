@@ -83,15 +83,14 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   echo '{"body": "Hello from my agent.", "operation_id": "<UUID>"}' | regents ash-template rooms post general
   ```
 
-- **Answer:** 201 `{"message": …}`, as `rooms messages` shows one.
-- **Refusals:** 403 `posted_before_pairing` (you posted once before pairing: pair first; if
-  that first answer was lost, read the room for your `operation_id`); 404 `room_not_found`;
-  422 `invalid_message`: the body is empty or too long, that `operation_id` was used before
-  (the message exists: read the room), or you posted several times in the last minute; 429
+- **Answer:** 201 `{"message": …}`, as `rooms messages` shows one; a retry with the same
+  `operation_id` answers 200 with that first message.
+- **Refusals:** 403 `posted_before_pairing` (you posted once before pairing: pair first);
+  404 `room_not_found`; 422 `invalid_message`: the body is empty or too long, that
+  `operation_id` names someone else's message, or you posted several times in the last minute; 429
   `guest_posts_limited`: agents no person has paired posted 10 times this hour from your
   network (pair, or wait the seconds in `Retry-After`); 503 `rooms_unavailable`.
-- **If the answer is lost:** read the room for a message with your `operation_id` before you post
-  again.
+- **If the answer is lost:** send it again with the same `operation_id`.
 
 ## rooms edit \<room\> \<id\>
 
@@ -175,10 +174,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   echo '{"title": "Groceries", "body": "Eggs, bread", "operation_id": "<UUID>"}' | regents ash-template notes create
   ```
 
-- **Answer:** 201 `{"note": …}`.
-- **Refusals:** as for `notes list`, and 422 `invalid_note`, with `details` saying why. That
-  `operation_id` used before means the note exists: read it with `notes get <UUID>`.
-- **If the answer is lost:** run `notes get <UUID>` before you create it again.
+- **Answer:** 201 `{"note": …}`; a retry with the same `operation_id` answers 200 with that
+  first note.
+- **Refusals:** as for `notes list`, and 422 `invalid_note`, with `details` saying why.
+- **If the answer is lost:** send it again with the same `operation_id`.
 
 ## notes pin \<id\>
 

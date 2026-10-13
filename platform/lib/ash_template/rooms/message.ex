@@ -26,6 +26,7 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.Message.{
     LeaveOutMuted,
     NotifyMentions,
+    PostedByActor,
     SetAuthor,
     SquashBlankLines
   }
@@ -113,6 +114,17 @@ defmodule AshTemplate.Rooms.Message do
       filter expr(contains(string_downcase(body), string_downcase(^arg(:text))))
       prepare LeaveOutMuted
       prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5)
+    end
+
+    # The message this actor already posted in this room with this operation_id,
+    # so a retry answers the first post.
+    read :earlier_post do
+      get? true
+      argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
+      argument :operation_id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:operation_id) and room == ^arg(:room))
+      prepare PostedByActor
+      prepare build(load: [:agent, :via_agent])
     end
 
     create :post do

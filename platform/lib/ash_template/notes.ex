@@ -42,4 +42,18 @@ defmodule AshTemplate.Notes do
       define :rate_label, action: :report, args: [:report]
     end
   end
+
+  @doc """
+  The note the actor's person already has under this `operation_id`, which is
+  the note's id, so a retry answers the first create: `{:ok, note}`, or
+  `{:ok, nil}` when there is none or the id is missing or malformed.
+  """
+  def earlier_note(nil, _opts), do: {:ok, nil}
+
+  def earlier_note(operation_id, opts) do
+    case get_my_note(operation_id, opts) do
+      {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
+      result -> result
+    end
+  end
 end

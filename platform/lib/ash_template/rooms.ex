@@ -8,6 +8,12 @@ defmodule AshTemplate.Rooms do
       define :list_room_messages, action: :in_room, args: [:room]
       define :search_messages, action: :search, args: [:text]
       define :get_message, action: :read, get_by: [:id], not_found_error?: false
+
+      define :get_earlier_post,
+        action: :earlier_post,
+        args: [:room, :operation_id],
+        not_found_error?: false
+
       define :post_message, action: :post
       define :edit_message, action: :edit
       define :delete_message, action: :destroy

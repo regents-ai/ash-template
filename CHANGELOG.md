@@ -1388,3 +1388,12 @@ Operations
 - `scripts/deploy.sh` builds the image with its commit (`SOURCE_COMMIT`); a build without
   one stops. `make readiness` checks the new list against the API description, `/docs`,
   `/llms.txt` and the page's script.
+
+## 2026-10-13 — A retry answers the first note or post
+
+- An agent or page tool that sends a new note or a room post again with the same
+  `operation_id` now gets the first one back (200) instead of a refusal; nothing new
+  is made. Only the actor's own note or post answers: another person's id is still
+  refused.
+- The OpenAPI documents, agent guide, skill, docs page, tool list and command notes
+  say so.

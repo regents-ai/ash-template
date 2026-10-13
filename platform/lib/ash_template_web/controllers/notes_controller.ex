@@ -45,9 +45,15 @@ defmodule AshTemplateWeb.NotesController do
 
   def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: NotesJSON.note(&2)}))
 
+  # A retry with the operation_id of a note already made answers that note (200).
   def create(conn, _params) do
-    case Notes.create_note(conn.body_params, actor: conn.assigns.actor) do
-      {:ok, note} -> conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
+    actor = conn.assigns.actor
+
+    with {:ok, nil} <- Notes.earlier_note(conn.body_params["operation_id"], actor: actor),
+         {:ok, note} <- Notes.create_note(conn.body_params, actor: actor) do
+      conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
+    else
+      {:ok, %Note{} = earlier} -> json(conn, %{note: NotesJSON.note(earlier)})
       {:error, error} -> refuse_change(conn, error)
     end
   end
