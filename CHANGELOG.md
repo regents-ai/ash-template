@@ -1861,3 +1861,20 @@ Operations
 - A page that set colour variables on a button only to get past the default
   look can use plain colours instead. Sites copy the two changes in
   `app.css`.
+## 2026-10-13 — Three worked examples on vgpu 0.6 (local, unreleased)
+
+- `/animations/cube`: a slowly turning cube with a room behind each of its six sides, one
+  per world. Drag to turn it, click a side to step in, and follow the room's link in a new
+  tab. It keeps turning while the pointer rests and holds still only while pressed.
+- `/animations/foil`: five foil cards side by side, each catching the light as the pointer
+  crosses it.
+- `/animations/crown`: the glass crown every site shares, in `platform/assets/js/crown/`.
+  A site copies that folder, the `Crown` hook and component, and keeps one file of its own
+  (`platform/assets/js/crown_looks.ts`) for where the crown sits, its glass, its beams and
+  what is drawn behind it.
+- The crown's beams lean a little toward a colour of their own for the quarter of the stage
+  the pointer is in, and ease back when it leaves. A look names the four colours; a look
+  without them keeps one colour.
+- A visitor who asked for less motion gets the crown as one composed shot, drawn once and
+  left alone. Where the browser cannot draw it, the still picture stays.
+- `vgpu` and `@vgpu/wgsl` are 0.6.0.

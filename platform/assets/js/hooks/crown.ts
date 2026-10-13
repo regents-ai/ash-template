@@ -42,9 +42,11 @@ const clampUnit = (value: number): number => Math.min(1, Math.max(0, value))
  * events itself, so the pointer is read from that stage: it turns the camera a
  * little, swings the beams and, in a look with quadrants, tints them by the
  * quarter of the stage it is over. A touch is not a hover, so on a phone the crown
- * takes its aim from how far the stage has travelled up the screen. Without
- * WebGPU, or for a visitor who asked for less motion, none of this runs and the
- * still picture the server rendered stays.
+ * takes its aim from how far the stage has travelled up the screen.
+ *
+ * A visitor who asked for less motion gets the crown as one composed shot: it is
+ * drawn, and then left alone. Without WebGPU nothing is drawn, and the still
+ * picture the server rendered stays.
  */
 export const createCrownController = (
   root: HTMLElement,
@@ -52,13 +54,15 @@ export const createCrownController = (
 ): CrownController => {
   const pointerQuery = options.pointerQuery ?? (() => window.matchMedia("(pointer: fine)"))
   const viewportHeight = options.viewportHeight ?? (() => window.innerHeight)
+  const motionQuery =
+    options.motionQuery ?? (() => window.matchMedia("(prefers-reduced-motion: reduce)"))
   let restyle = () => {}
 
   const island = createCanvasIsland(root, options, {
     canvasSelector: "[data-crown-canvas]",
     readyFlag: "crownReady",
     browserLoad: browserLoadCrown(root),
-    motionSensitive: true,
+    motionSensitive: false,
     continuous: false,
     interact({root: layer, canvas, renderer, nudge, onReady}) {
       const stage = () => layer.parentElement!
@@ -97,24 +101,36 @@ export const createCrownController = (
       }
 
       const fine = pointerQuery().matches
-      if (fine) {
-        stage().addEventListener("pointermove", onPointerMove, {passive: true})
-        stage().addEventListener("pointerleave", onPointerLeave, {passive: true})
-      } else {
-        document.addEventListener("scroll", onScroll, {passive: true})
-        // The visitor may arrive part-way down the page, so the first shot is
-        // composed for where the stage already is.
-        onReady(onScroll)
+      const calm = motionQuery()
+      const follow = () => {
+        if (fine) {
+          stage().addEventListener("pointermove", onPointerMove, {passive: true})
+          stage().addEventListener("pointerleave", onPointerLeave, {passive: true})
+        } else {
+          document.addEventListener("scroll", onScroll, {passive: true})
+        }
       }
+      const unfollow = () => {
+        stage().removeEventListener("pointermove", onPointerMove)
+        stage().removeEventListener("pointerleave", onPointerLeave)
+        document.removeEventListener("scroll", onScroll)
+      }
+      const onCalmChange = () => {
+        unfollow()
+        if (calm.matches) onPointerLeave()
+        else follow()
+      }
+
+      if (!calm.matches) follow()
+      calm.addEventListener("change", onCalmChange)
+      // The visitor may arrive part-way down the page, so the first shot is
+      // composed for where the stage already is.
+      if (!fine) onReady(() => void (calm.matches || onScroll()))
 
       return () => {
         restyle = () => {}
-        if (fine) {
-          stage().removeEventListener("pointermove", onPointerMove)
-          stage().removeEventListener("pointerleave", onPointerLeave)
-        } else {
-          document.removeEventListener("scroll", onScroll)
-        }
+        calm.removeEventListener("change", onCalmChange)
+        unfollow()
       }
     },
   })

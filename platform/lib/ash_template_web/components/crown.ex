@@ -3,11 +3,12 @@ defmodule AshTemplateWeb.Components.Crown do
   The glass crown: thirteen cubes and three beams of light, drawn behind the
   stage it decorates.
 
-  Where the crown can be drawn live, the `Crown` hook draws it on the canvas.
-  Where it cannot (no WebGPU, no JavaScript, or a visitor who asked for less
-  motion) the stage shows what the page put inside the component: a still
-  picture marked `class="crown__still"`, which steps aside once a live crown
-  has really been drawn. A page that gives none shows its bare stage.
+  Where the crown can be drawn live, the `Crown` hook draws it on the canvas; for
+  a visitor who asked for less motion it is drawn once, at rest, and left alone.
+  Where it cannot be drawn (no WebGPU, no JavaScript) the stage shows what the
+  page put inside the component: a still picture marked `class="crown__still"`,
+  which steps aside once a live crown has really been drawn. A page that gives
+  none shows its bare stage.
 
   Put it first inside a positioned stage. It fills that stage, sits behind what
   follows it and takes no pointer events; the pointer over the stage turns it.
