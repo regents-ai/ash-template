@@ -212,7 +212,24 @@ measurement, 13 October 2026), 2.94 MB a page in all:
 | A nested live view (a ticker, a search box) | about 3 KB |
 
 So the page's own data was not where the memory was, and a guess would have
-trimmed the wrong thing. What still holds for any page:
+trimmed the wrong thing.
+
+**Every site's LiveView websocket sets `fullsweep_after: 0`**, as the template's
+endpoint does:
+
+```elixir
+socket "/live", Phoenix.LiveView.Socket,
+  websocket: [connect_info: [...], fullsweep_after: 0]
+```
+
+The connection process builds the page's first payload once and then holds on to
+that memory, because a process that does little is rarely swept in full. With the
+setting it is swept each time. In the same trial the connection process went from
+1.67 MB to 0.09 MB and a whole page from 2.94 MB to 1.43 MB, with no processor
+cost that could be told from noise. It is Phoenix's own documented setting
+(`Phoenix.Endpoint.socket/3`).
+
+What still holds for any page:
 
 - **Assign what the page renders.** An Ash record carries its metadata and every
   loaded relationship; assign the fields as a map, or one record with nothing

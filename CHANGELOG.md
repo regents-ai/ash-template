@@ -1565,3 +1565,14 @@ Operations
 - The guide adds: a kind built from rows names the resource and the read a
   signed-out visitor is allowed; and the first figure that is reread on notice
   lands in the template before any site builds one.
+
+## 2026-10-13 — Each open page's connection gives its memory back
+
+- The site's live-page connection now sets Phoenix's `fullsweep_after: 0`. The
+  process behind each open page's connection kept the memory it used to send the
+  page for as long as the page stayed open. On Autolaunch's practice site with 50
+  pages open, that process went from 1.67 MB to 0.09 MB and a whole open page
+  from 2.94 MB to 1.43 MB, with no processor cost that could be told from noise
+  (its chief's measurement, 13 October 2026). Nothing a visitor sees changes.
+- `skills/ash-frontend/references/public-figures.md` names it as the standard for
+  every site's endpoint.
