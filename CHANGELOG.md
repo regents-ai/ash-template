@@ -1439,3 +1439,10 @@ Operations
 - `assets/js/privy_bridge.tsx` exports only what another file imports.
 - The Points settings are written once in `config/config.exs`.
 - The README no longer calls the serving database connection pooled.
+
+## 2026-10-13 — The database version is the true one
+
+- The site tells Ash the database is PostgreSQL 17, which it is, instead of 14.
+  Upserts keep their current statement through AshPostgres's own setting
+  (`upsert_with_merge?: false`), because its newer one leaves out the site's schema.
+  Nothing a visitor or an agent sees changes.
