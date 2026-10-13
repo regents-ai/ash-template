@@ -43,6 +43,7 @@ COPY platform/rel rel
 COPY platform/assets assets
 COPY platform/contracts contracts
 COPY skills /app/skills
+COPY cli/commands.json /app/cli/commands.json
 COPY --from=assets /app/node_modules node_modules
 RUN mix compile && mix assets.deploy && mix release
 
@@ -88,6 +89,12 @@ RUN groupadd --system --gid 1001 app \
   && useradd --system --uid 1001 --gid app --home-dir /app app
 
 COPY --from=build --chown=app:app /app/platform/_build/prod/rel/ash_template ./
+
+# The commit this image is built from, which /capabilities.json names.
+# scripts/deploy.sh passes it; a build without it stops here.
+ARG SOURCE_COMMIT
+RUN test -n "$SOURCE_COMMIT"
+ENV SOURCE_COMMIT=$SOURCE_COMMIT
 
 USER app
 

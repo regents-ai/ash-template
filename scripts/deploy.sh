@@ -7,8 +7,9 @@
 # origin/main, so what runs is always what the repository holds. The app is named
 # here, never in fly.toml, so the same configuration serves every site built
 # from the template. The image is labelled with the short commit it was built
-# from. The build runs on Fly's builders from the repository root, where
-# .dockerignore admits only platform/ and skills/.
+# from and carries the full commit, which /capabilities.json names. The build
+# runs on Fly's builders from the repository root, where .dockerignore admits
+# only platform/, skills/ and cli/commands.json.
 set -euo pipefail
 
 if [[ $# -ne 1 || -z $1 ]]; then
@@ -38,4 +39,5 @@ exec fly deploy . \
   --app "$app" \
   --ha=false \
   --remote-only \
+  --build-arg SOURCE_COMMIT="$commit" \
   --image-label "${commit:0:7}"

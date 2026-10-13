@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.PublicPagesController do
   @moduledoc "Public documentation and discovery; no account or database reads."
   use AshTemplateWeb, :controller
-  alias AshTemplateWeb.{AgentSkills, PublicDocuments}
+  alias AshTemplateWeb.{AgentSkills, Capabilities, PublicDocuments}
 
   def show(conn, _params), do: show_document(conn, PublicDocuments.document(conn.request_path))
 
@@ -35,7 +35,7 @@ defmodule AshTemplateWeb.PublicPagesController do
   def llms(conn, _params), do: send_cached(conn, "text/plain", PublicDocuments.llms())
 
   def capabilities(conn, _params),
-    do: send_cached(conn, "application/json", Jason.encode!(AshTemplate.Capabilities.manifest()))
+    do: send_cached(conn, "application/json", Jason.encode!(Capabilities.document()))
 
   def robots(conn, _params) do
     body = "User-agent: *\nAllow: /\n\nSitemap: #{PublicDocuments.url("/sitemap.xml")}\n"

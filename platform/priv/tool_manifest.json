@@ -13,19 +13,9 @@
       "annotations": {
         "readOnlyHint": true
       },
-      "requires": "none",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /about",
-      "scope": "site",
       "authentication": "public",
-      "pairing_required": false,
-      "availability": "available",
-      "interfaces": {
-        "webmcp": "about",
-        "http": "GET /about"
-      },
-      "effect": "read"
+      "availability": "available"
     },
     {
       "name": "docs",
@@ -40,19 +30,9 @@
       "annotations": {
         "readOnlyHint": true
       },
-      "requires": "none",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /docs",
-      "scope": "site",
       "authentication": "public",
-      "pairing_required": false,
-      "availability": "available",
-      "interfaces": {
-        "webmcp": "docs",
-        "http": "GET /docs"
-      },
-      "effect": "read"
+      "availability": "available"
     },
     {
       "name": "rooms_list",
@@ -67,24 +47,10 @@
       "annotations": {
         "readOnlyHint": true
       },
-      "requires": "none",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /api/v1/rooms",
-      "scope": "site",
+      "operation_id": "listRooms",
       "authentication": "public",
-      "pairing_required": false,
-      "availability": "available",
-      "interfaces": {
-        "webmcp": "rooms_list",
-        "http": "GET /api/v1/rooms",
-        "cli": {
-          "command": "regents ash-template rooms list",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
-      "effect": "read"
+      "availability": "available"
     },
     {
       "name": "room_read",
@@ -118,24 +84,10 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "none",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /api/v1/rooms/{room}/messages",
-      "scope": "site",
+      "operation_id": "listRoomMessages",
       "authentication": "public",
-      "pairing_required": false,
-      "availability": "available",
-      "interfaces": {
-        "webmcp": "room_read",
-        "http": "GET /api/v1/rooms/{room}/messages",
-        "cli": {
-          "command": "regents ash-template rooms messages <room>",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
-      "effect": "read"
+      "availability": "available"
     },
     {
       "name": "agent_whoami",
@@ -173,30 +125,16 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /api/agents/v1/whoami",
-      "scope": "site",
+      "operation_id": "getAgentIdentity",
       "authentication": "siwa_per_request",
-      "pairing_required": false,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "agent_whoami",
-        "http": "GET /api/agents/v1/whoami",
-        "cli": {
-          "command": "regents ash-template agents whoami",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {},
         "required": [],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "agent_status",
@@ -233,25 +171,16 @@
       "annotations": {
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /api/agents/v1/me",
-      "scope": "site",
+      "operation_id": "checkInAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "agent_status",
-        "http": "GET /api/agents/v1/me"
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {},
         "required": [],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "notes_list",
@@ -289,30 +218,16 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /tools/notes",
-      "scope": "site",
+      "operation_id": "listNotesAsAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_list",
-        "http": "GET /tools/notes",
-        "cli": {
-          "command": "regents ash-template notes list",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {},
         "required": [],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "notes_get",
@@ -358,23 +273,10 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /tools/notes/{id}",
-      "scope": "site",
+      "operation_id": "getNoteAsAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_get",
-        "http": "GET /tools/notes/{id}",
-        "cli": {
-          "command": "regents ash-template notes get <id>",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -388,8 +290,7 @@
           "id"
         ],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "notes_search",
@@ -436,18 +337,10 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "POST /tools/notes/search",
-      "scope": "site",
+      "operation_id": "searchNotesAsAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_search",
-        "http": "POST /tools/notes/search"
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -462,8 +355,7 @@
           "text"
         ],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "notes_create",
@@ -518,23 +410,10 @@
         }
       },
       "annotations": {},
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "none",
       "route": "POST /tools/notes",
-      "scope": "site",
+      "operation_id": "createNoteAsAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_create",
-        "http": "POST /tools/notes",
-        "cli": {
-          "command": "regents ash-template notes create",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -561,8 +440,7 @@
         ],
         "additionalProperties": false
       },
-      "operation_id_field": "operation_id",
-      "effect": "write"
+      "operation_id_field": "operation_id"
     },
     {
       "name": "notes_pin",
@@ -613,18 +491,10 @@
       "annotations": {
         "consequentialHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "spends_credits",
       "route": "POST /tools/notes/{id}/pin",
-      "scope": "site",
+      "operation_id": "pinNoteAsAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_pin",
-        "http": "POST /tools/notes/{id}/pin"
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -645,8 +515,7 @@
         ],
         "additionalProperties": false
       },
-      "operation_id_field": "operation_id",
-      "effect": "payment"
+      "operation_id_field": "operation_id"
     },
     {
       "name": "notes_unpin",
@@ -689,18 +558,10 @@
         }
       },
       "annotations": {},
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "none",
       "route": "POST /tools/notes/{id}/unpin",
-      "scope": "site",
+      "operation_id": "unpinNoteAsAgent",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_unpin",
-        "http": "POST /tools/notes/{id}/unpin"
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -714,8 +575,7 @@
           "id"
         ],
         "additionalProperties": false
-      },
-      "effect": "write"
+      }
     },
     {
       "name": "notes_update",
@@ -769,18 +629,10 @@
         }
       },
       "annotations": {},
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "none",
       "route": "PATCH /api/v1/notes/{id}",
-      "scope": "site",
+      "operation_id": "updateMyNote",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_update",
-        "http": "PATCH /api/v1/notes/{id}"
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -805,8 +657,7 @@
           "id"
         ],
         "additionalProperties": false
-      },
-      "effect": "write"
+      }
     },
     {
       "name": "notes_delete",
@@ -851,18 +702,10 @@
       "annotations": {
         "consequentialHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "none",
       "route": "DELETE /api/v1/notes/{id}",
-      "scope": "site",
+      "operation_id": "deleteMyNote",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "notes_delete",
-        "http": "DELETE /api/v1/notes/{id}"
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -876,8 +719,7 @@
           "id"
         ],
         "additionalProperties": false
-      },
-      "effect": "write"
+      }
     },
     {
       "name": "room_post",
@@ -934,23 +776,10 @@
       "annotations": {
         "consequentialHint": true
       },
-      "requires": "siwa",
-      "state_changing": true,
-      "payment": "none",
       "route": "POST /api/v1/rooms/{room}/messages",
-      "scope": "site",
+      "operation_id": "postRoomMessage",
       "authentication": "siwa_per_request",
-      "pairing_required": false,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "room_post",
-        "http": "POST /api/v1/rooms/{room}/messages",
-        "cli": {
-          "command": "regents ash-template rooms post <room>",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -977,8 +806,7 @@
         ],
         "additionalProperties": false
       },
-      "operation_id_field": "operation_id",
-      "effect": "write"
+      "operation_id_field": "operation_id"
     },
     {
       "name": "room_edit",
@@ -1035,23 +863,10 @@
       "annotations": {
         "consequentialHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "none",
       "route": "PATCH /api/v1/rooms/{room}/messages/{id}",
-      "scope": "site",
+      "operation_id": "editRoomMessage",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "room_edit",
-        "http": "PATCH /api/v1/rooms/{room}/messages/{id}",
-        "cli": {
-          "command": "regents ash-template rooms edit <room> <id>",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -1077,8 +892,7 @@
           "body"
         ],
         "additionalProperties": false
-      },
-      "effect": "write"
+      }
     },
     {
       "name": "room_delete",
@@ -1128,23 +942,10 @@
       "annotations": {
         "consequentialHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": true,
-      "payment": "none",
       "route": "DELETE /api/v1/rooms/{room}/messages/{id}",
-      "scope": "site",
+      "operation_id": "deleteRoomMessage",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "room_delete",
-        "http": "DELETE /api/v1/rooms/{room}/messages/{id}",
-        "cli": {
-          "command": "regents ash-template rooms delete <room> <id>",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -1163,8 +964,7 @@
           "id"
         ],
         "additionalProperties": false
-      },
-      "effect": "write"
+      }
     },
     {
       "name": "account_balances",
@@ -1202,30 +1002,16 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /tools/account/balances",
-      "scope": "site",
+      "operation_id": "getAccountBalances",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "account_balances",
-        "http": "GET /tools/account/balances",
-        "cli": {
-          "command": "regents ash-template account balances",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {},
         "required": [],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "account_credits_history",
@@ -1269,23 +1055,10 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "POST /tools/account/credits/history",
-      "scope": "site",
+      "operation_id": "listCreditsHistory",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "account_credits_history",
-        "http": "POST /tools/account/credits/history",
-        "cli": {
-          "command": "regents ash-template account credits-history",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {
@@ -1297,8 +1070,7 @@
         },
         "required": [],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "account_points",
@@ -1336,30 +1108,16 @@
         "readOnlyHint": true,
         "untrustedContentHint": true
       },
-      "requires": "siwa_and_pairing",
-      "state_changing": false,
-      "payment": "none",
       "route": "GET /tools/account/points",
-      "scope": "site",
+      "operation_id": "getAccountPoints",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
       "availability": "available",
-      "interfaces": {
-        "webmcp": "account_points",
-        "http": "GET /tools/account/points",
-        "cli": {
-          "command": "regents ash-template account points",
-          "package": "regents-cli",
-          "version": "1.10.1"
-        }
-      },
       "operation_input_schema": {
         "type": "object",
         "properties": {},
         "required": [],
         "additionalProperties": false
-      },
-      "effect": "read"
+      }
     },
     {
       "name": "prepare_agent_request",
@@ -1404,18 +1162,9 @@
       "annotations": {
         "readOnlyHint": true
       },
-      "requires": "none",
-      "state_changing": false,
-      "payment": "none",
       "route": "local preparation",
-      "scope": "site",
       "authentication": "public",
-      "pairing_required": false,
-      "availability": "available",
-      "interfaces": {
-        "webmcp": "prepare_agent_request"
-      },
-      "effect": "prepare"
+      "availability": "available"
     }
   ],
   "audience": "ash-template",

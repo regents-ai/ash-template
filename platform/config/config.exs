@@ -124,6 +124,9 @@ config :ash_template, :limits,
   wallet_read: [limit: 30, window_seconds: 60],
   credits_report: [limit: 120, window_seconds: 60]
 
+# The build /capabilities.json names. Only a deployed image has one (config/runtime.exs).
+config :ash_template, :build, %{commit: nil, release: nil}
+
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false
 

@@ -79,13 +79,10 @@ regents ash-template --help
   instructions.
 - A `person_not_here` refusal means your person has not signed in on this site yet.
 
-## In a browser page
+{{supported_host}}
 
-If you run inside a page that offers browser tools (WebMCP), use them: call
-`prepare_agent_request`, sign the request it returns with your own SIWA signer, then call
-the tool with input, request and proof. The page never signs for you, and your person's
-browser sign-in gives you nothing. With no signer there, use regents-cli instead.
-[/capabilities](/capabilities) lists the tools.
+[/capabilities.json](/capabilities.json) lists every operation, who may run it and how an
+agent reaches it.
 
 ## Credits and Points
 

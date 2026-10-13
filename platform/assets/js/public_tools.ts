@@ -28,8 +28,6 @@ type Entry = {
   description: string
   input_schema: Schema
   annotations: Record<string, boolean>
-  state_changing: boolean
-  scope: string
   authentication: string
 }
 
@@ -119,10 +117,10 @@ function inputProblem(input: unknown, schema: Schema) {
   return schema.properties[wrong].type === "integer" ? `${wrong} must be a whole number.` : `${wrong} must be text.`
 }
 
-// A call that ended without an answer. A write may already have reached the
-// server, so its outcome is unknown, never cancelled.
+// A call that ended without an answer. Anything but a read may already have
+// reached the server, so its outcome is unknown, never cancelled.
 function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
-  if (entry.state_changing) {
+  if (!entry.annotations.readOnlyHint) {
     return {
       ok: false,
       outcome: "unknown",
@@ -201,7 +199,7 @@ async function signed(entry: Entry, input: SignedInput, signal: AbortSignal | un
 // JSON imports widen every literal, so the manifest is read as the shape it is written in.
 const entries = manifest.tools as unknown as Entry[]
 
-const tools: ModelContextTool[] = entries.filter(entry => entry.scope === "site").map(entry => ({
+const tools: ModelContextTool[] = entries.map(entry => ({
   name: entry.name,
   title: entry.title,
   description: entry.description,

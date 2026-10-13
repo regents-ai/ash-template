@@ -1366,3 +1366,25 @@ Operations
   (the `:launch_gate_events` hook, carried from Regents).
 - Where the side bar covers the page (below 64rem), a page link inside it closes it and
   opening it moves focus into it; before, that held only below 48rem.
+
+## 2026-10-13 — One capability list for agents
+
+- `/capabilities.json` lists every operation in the API description, one row each: who may
+  run it (anyone, a signed agent, a paired agent, the person signed in, or the person's
+  wallet), what it needs, whether it is open now and why not, its browser tool, its
+  regents-cli command and the earliest release with it, the page where the person sees it,
+  and what an agent does with it (runs it, hands it to its person, or waits while it is
+  closed). It names the commit the site was built from. `/capabilities`, the old browser
+  tool list, is gone.
+- The rows come from `priv/capabilities.json`, checked against the API description, the
+  browser tool list and `cli/commands.json` when the site compiles; a row that disagrees
+  with any of them stops the build. The tool list keeps only what the pages register.
+- `/llms.txt` draws its "What an agent may do" table from the same rows, and `/docs` its
+  browser tool table.
+- "Where you run" is one section, kept in `priv/public/supported-host.md` and the same on
+  every Regent site: a shell uses regents-cli, a page with browser tools uses them, and an
+  agent with neither tells its person what to do. `/llms.txt`, `/agents.md` and `/skill.md`
+  carry it.
+- `scripts/deploy.sh` builds the image with its commit (`SOURCE_COMMIT`); a build without
+  one stops. `make readiness` checks the new list against the API description, `/docs`,
+  `/llms.txt` and the page's script.

@@ -1,8 +1,10 @@
 # The image is built from the repository root (platform/Dockerfile). Only the
-# app in platform/ and the build skills in skills/ enter the context.
+# app in platform/, the build skills in skills/ and the command list the
+# capability list reads enter the context.
 *
 !platform/
 !skills/
+!cli/commands.json
 
 # Build output, fetched dependencies and local state stay out of the image
 # context; the build fetches dependencies itself from mix.lock and

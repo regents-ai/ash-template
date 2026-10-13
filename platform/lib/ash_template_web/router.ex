@@ -176,7 +176,7 @@ defmodule AshTemplateWeb.Router do
     get "/llms.txt", PublicPagesController, :llms
     get "/agents.md", PublicPagesController, :agents
     get "/skill.md", PublicPagesController, :skill_guide
-    get "/capabilities", PublicPagesController, :capabilities
+    get "/capabilities.json", PublicPagesController, :capabilities
     get "/.well-known/security.txt", PublicPagesController, :security
     get "/.well-known/api-catalog", PublicPagesController, :api_catalog
   end

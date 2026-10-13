@@ -1,0 +1,294 @@
+{
+  "cli": {
+    "package": "regents-cli",
+    "release": "1.10.1",
+    "namespace": "ash-template"
+  },
+  "authorities": [
+    {
+      "name": "public",
+      "words": "Anyone, with no sign-in."
+    },
+    {
+      "name": "signed_agent",
+      "words": "An agent signing each request with its own key."
+    },
+    {
+      "name": "paired_agent",
+      "words": "A signed agent its person paired with their account."
+    },
+    {
+      "name": "owner_only",
+      "words": "The person, signed in on this site."
+    },
+    {
+      "name": "wallet",
+      "words": "The person, approving in their own wallet."
+    }
+  ],
+  "conditions": [
+    {
+      "name": "pairing_code",
+      "words": "A pairing code the person made on their account page."
+    },
+    {
+      "name": "spending_allowed",
+      "words": "Spending the person allowed on their Regents account."
+    }
+  ],
+  "switches": [
+    {
+      "name": "app_surfaces",
+      "words": "This site isn't open yet."
+    }
+  ],
+  "operations": [
+    {
+      "operation": "getServiceHealth",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": null,
+      "cli_release": null,
+      "switch": null
+    },
+    {
+      "operation": "getHealth",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": null,
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "getMyProfile",
+      "effect": "read",
+      "authority": "owner_only",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "updateMyProfile",
+      "effect": "write",
+      "authority": "owner_only",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "syncMyProfile",
+      "effect": "write",
+      "authority": "owner_only",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "listMyNotes",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "createNote",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "getMyNote",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "updateMyNote",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "deleteMyNote",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "listRooms",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": null,
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "listRoomMessages",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "postRoomMessage",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "pairAgent",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "pairing_code"
+      ],
+      "person_page": "/account",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "checkInAgent",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "editRoomMessage",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "deleteRoomMessage",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "getAgentIdentity",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "listNotesAsAgent",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "createNoteAsAgent",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "searchNotesAsAgent",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "getNoteAsAgent",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "pinNoteAsAgent",
+      "effect": "payment",
+      "authority": "paired_agent",
+      "conditions": [
+        "spending_allowed"
+      ],
+      "person_page": "/notes",
+      "cli_release": "1.9.2",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "unpinNoteAsAgent",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "cli_release": "1.9.2",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "getAccountBalances",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "listCreditsHistory",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    },
+    {
+      "operation": "getAccountPoints",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/account/points",
+      "cli_release": "1.9.0",
+      "switch": "app_surfaces"
+    }
+  ]
+}

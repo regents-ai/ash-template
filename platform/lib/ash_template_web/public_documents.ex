@@ -2,11 +2,11 @@ defmodule AshTemplateWeb.PublicDocuments do
   @moduledoc "Public documents only; never projects a signed-in page or account."
 
   alias AshTemplate.Rooms.Room
-  alias AshTemplateWeb.AgentSkills
+  alias AshTemplateWeb.{AgentSkills, Capabilities}
 
   @directory Application.app_dir(:ash_template, "priv/public")
   @files Enum.map(
-           ~w(docs about contact changelog llms llms-showcase skill skills agents build-skill),
+           ~w(docs about contact changelog llms llms-showcase skill skills agents build-skill supported-host),
            &Path.join(@directory, &1 <> ".md")
          )
   for file <- @files, do: @external_resource(file)
@@ -114,7 +114,7 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   def llms, do: source("llms")
 
-  def agents, do: Map.fetch!(@sources, "agents")
+  def agents, do: source("agents")
   def build_skill, do: source("build-skill")
 
   @doc "The agent guide served at `/skill.md`."
@@ -250,14 +250,16 @@ defmodule AshTemplateWeb.PublicDocuments do
   end
 
   # The `{{showcase}}` line and the blank line after it become the showcase
-  # section only when the showcase is public. `{{origin}}` goes last, since the
-  # other sections all name it.
+  # section only when the showcase is public. `{{supported_host}}` is the one
+  # section every Regent site's guide carries word for word. `{{origin}}` goes
+  # last, since the other sections all name it.
   defp source(name) do
     @sources[name]
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
     |> String.replace("{{key_facts}}", @key_facts)
-    |> String.replace("{{tools}}", AshTemplate.Capabilities.markdown_table())
-    |> String.replace("{{tool_summary}}", AshTemplate.Capabilities.summary_table())
+    |> String.replace("{{supported_host}}", String.trim_trailing(@sources["supported-host"]))
+    |> String.replace("{{tools}}", Capabilities.markdown_table())
+    |> String.replace("{{tool_summary}}", Capabilities.summary_table())
     |> String.replace("{{skills}}", skills_table())
     |> String.replace("{{skill_list}}", skill_list())
     |> String.replace("{{origin}}", url(""))

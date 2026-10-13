@@ -61,9 +61,10 @@ Headers and browsers:
 ## How the pieces fit in an Ash site
 
 ```
-priv/tool_manifest.json ──► MyApp.Capabilities (compile time)
-        │                      ├─► /capabilities JSON, developers table, hosted MCP list
-        │                      └─► llms.txt and docs pages
+priv/capabilities.json ─┐
+priv/public/openapi.json ┼─► MyAppWeb.Capabilities (compile time, cross-checked)
+cli/commands.json ───────┤      ├─► /capabilities.json (one row per operation)
+priv/tool_manifest.json ─┘      └─► llms.txt and docs tables
         └─► assets/js/webmcp/tools.ts ──► document.modelContext.registerTool
                                               │ execute(input, {signal})
                                               ▼
@@ -75,30 +76,29 @@ priv/tool_manifest.json ──► MyApp.Capabilities (compile time)
                                          Ash policies decide
 ```
 
-### 1. One manifest is the source of truth
+### 1. One capability row per operation
 
-Keep every tool the site registers in one JSON file, read by Elixir at compile time
-and imported by the browser code. Registration, docs and machine lists are derived
-from it; nothing is typed twice. Patchbay's `platform/priv/tool_manifest.json` with
-`Patchbay.Forum.Capabilities` is the working reference.
+The browser tools live in one JSON manifest, imported by the browser code; nothing
+about them is typed twice. Who may run each operation lives in one more file,
+`priv/capabilities.json`, with one row per OpenAPI `operationId`: `effect` (read,
+write, payment, prepare), `authority` (`public`, `signed_agent`, `paired_agent`,
+`owner_only`, `wallet`), `conditions`, `person_page`, `cli_release` and the site
+`switch` that can close it. A compile-time module reads it with the OpenAPI
+document, the manifest and `cli/commands.json`, refuses to compile when any of them
+disagree (route, signing, read-only hint, effect, missing or extra operations), and
+serves `/capabilities.json` with the build commit and each row's live gate and
+`agent_use` (`run`, `hand_to_person`, `closed`). Owner-only and wallet rows are
+never an agent's to run. The `llms.txt` and docs tables are drawn from the same
+rows. ash-template's `platform/priv/capabilities.json` and
+`AshTemplateWeb.Capabilities` are the reference; copy them.
 
-Each entry: `name`, `title`, `description`, `input_schema`, `annotations`, plus the
-facts docs need: `requires` (`none`, `siwa_and_pairing`),
-`state_changing`, `payment` (`none`, `moves_usdc`), the HTTP route behind it, and
-`scope` (`site` or the page that registers it). Include page-scoped tools and the
-shared profile tools too, so the published list never denies a tool a page registers.
-
-```elixir
-defmodule MyApp.Capabilities do
-  # Read once at compile time from the project tree.
-  @manifest_path "priv/tool_manifest.json"
-  @external_resource @manifest_path
-  @manifest Jason.decode!(File.read!(@manifest_path))
-  def manifest, do: @manifest
-  def tools, do: @manifest["tools"]
-  def site_tools, do: Enum.filter(tools(), &(&1["scope"] == "site"))
-end
-```
+Each manifest entry: `name`, `title`, `description`, `input_schema`, `annotations`,
+and for a tool that calls an operation, `route` and `operation_id`; signed tools also
+carry what the shared signing transport reads (`authentication`, `availability`,
+`request_body`, `operation_id_field`, `operation_input_schema`). A site with tools only
+some pages register adds `scope` (`site` or that page). Include page-scoped tools and
+the shared profile tools too, so the published list never denies a tool a page
+registers.
 
 The browser side keeps only the `execute` functions; the definition comes from the
 manifest:
@@ -194,7 +194,7 @@ Patchbay, relative to `repos/patchbay/platform`:
 
 | What | Where |
 | --- | --- |
-| Manifest and its Elixir reader | `priv/tool_manifest.json`, `lib/patchbay/forum/capabilities.ex` |
+| Manifest and its Elixir reader (older shape; the capability rows are ash-template's) | `priv/tool_manifest.json`, `lib/patchbay/forum/capabilities.ex` |
 | Site-wide tools and executors | `assets/js/webmcp/forum_tools.js`, `forum_lifecycle.js` |
 | Scoped registration with rollback | `assets/js/webmcp/webmcpify.js` (`createToolScope`) |
 | Page-scoped tools in a LiveView hook | `assets/js/webmcp/room_hook.js`, `invocation_bridge.js` |
