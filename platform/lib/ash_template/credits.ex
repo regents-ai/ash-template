@@ -23,7 +23,11 @@ defmodule AshTemplate.Credits do
   def spent_by(person, agent_address) do
     address = String.downcase(agent_address)
 
-    case Hold |> Ash.Query.filter(agent_address == ^address) |> Ash.sum(:used, actor: person) do
+    # The person's own holds, whatever else the actor may read.
+    Hold
+    |> Ash.Query.filter(agent_address == ^address and privy_user_id == ^person.privy_user_id)
+    |> Ash.sum(:used, actor: person)
+    |> case do
       {:ok, nil} -> {:ok, Decimal.new(0)}
       result -> result
     end
