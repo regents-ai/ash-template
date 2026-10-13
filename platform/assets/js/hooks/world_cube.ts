@@ -35,7 +35,7 @@ const LENS_IN = Math.tan((34 * Math.PI) / 180)
 /** Narrower than this and the cube steps back so its corners stay on the canvas. */
 const FITTED_ASPECT = 0.92
 
-/** The slow turn the cube keeps while nobody is touching it, in radians a second. */
+/** The slow turn the cube keeps while nobody is holding it, in radians a second. */
 const TUMBLE_SPEED = 0.24
 /** How far the turn leans over, and how slowly it sways there, so every face comes round. */
 const TUMBLE_LEAN = 0.85
@@ -59,8 +59,9 @@ const clamp = (speed: number) => Math.max(-COAST_LIMIT, Math.min(COAST_LIMIT, sp
 /**
  * The world cube: a turning cube whose six faces are windows onto six rooms.
  *
- * It turns by itself and under a drag, comes closer while the pointer rests on
- * a face, and flies through the face that is clicked. Inside, the pointer looks
+ * It turns by itself until it is pressed, and under a drag while it is held. It
+ * keeps turning as it comes closer for a pointer resting on a face, and flies
+ * through the face that is clicked. Inside, the pointer looks
  * around the room, the room's card offers its link, and the leave button or
  * Escape flies back out. Without WebGPU, or for a visitor who asked for less
  * motion, none of this runs and the six worlds stay the plain list the server
@@ -129,7 +130,7 @@ export const createWorldCubeController = (
 
     if (mode === "entering") {
       rotation = slerp(from, to, camera.turn)
-    } else if (mode === "orbit" && !dragging) {
+    } else if (mode === "orbit" && !press) {
       const lean = TUMBLE_LEAN * Math.sin(time * TUMBLE_SWAY)
       rotation = normalize(
         multiply(aboutAxis([lean, 1, 0.2], TUMBLE_SPEED * camera.spin * dt), rotation),
@@ -153,10 +154,10 @@ export const createWorldCubeController = (
       hover = pointer && !dragging ? faceAt(view, aspect, pointer[0], pointer[1]) : -1
       if (hover >= 0 && !rested && now - movedAt > REST_MS) {
         rested = true
-        steer?.approach!(1).spin!(0).glow!(1)
+        steer?.approach!(1).glow!(1)
       } else if (hover < 0 && rested) {
         rested = false
-        steer?.approach!(0).spin!(1).glow!(0)
+        steer?.approach!(0).glow!(0)
       }
     }
     view.hover = hover
@@ -286,10 +287,10 @@ export const createWorldCubeController = (
         const dy = event.clientY - press.y
         if (!dragging) {
           if (Math.hypot(dx, dy) < CLICK_SLOP) return
-          // A drag takes the cube in hand: it stops turning by itself and steps back.
+          // The press already holds the cube still; a drag also steps it back.
           dragging = true
           rested = false
-          steer!.approach!(0).spin!(1).glow!(0)
+          steer!.approach!(0).glow!(0)
         }
         turnBy(dx * DRAG_TURN, dy * DRAG_TURN)
         // The cube keeps the speed it was let go at, and slows from there.
