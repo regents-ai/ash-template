@@ -8,11 +8,11 @@ Ask on [the Regents page at Patchbay](https://patchbay.help/regents.sh), where p
 
 ## Privacy requests
 
-Email [privacy@regents.sh](mailto:privacy@regents.sh) with the subject **Privacy Request**. Describe the request and provide only the information necessary to identify it. We may need to verify an account relationship before discussing account-specific data.
+Email [build@regents.sh](mailto:build@regents.sh) with the subject **Privacy Request**. Describe the request and provide only the information necessary to identify it. We may need to verify an account relationship before discussing account-specific data.
 
 ## Legal questions
 
-Email [legal@regents.sh](mailto:legal@regents.sh) about the terms, the service operator or other legal matters. Refer to the relevant page or provision where possible.
+Email [build@regents.sh](mailto:build@regents.sh) about the terms, the service operator or other legal matters. Refer to the relevant page or provision where possible.
 
 ## Security reports
 

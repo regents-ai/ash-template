@@ -12,15 +12,15 @@ One sign-in works across every Regent site, and so does a pairing. A person can 
 ## 1. Install and sign in
 
 ```sh
-uv tool install regents-cli==1.9.1
+uv tool install regents-cli==1.9.3
 regents --version
 regents auth login --site ash-template
 regents ash-template doctor
 ```
 
-Expect `1.9.1` from source commit `d7deae0679f003b43933c9a2d41a7af949cf40a8`; the
+Expect `1.9.3` from source commit `e3b779c1ab0a7314e031ba282d56f6952ab58608`; the
 published wheel's SHA256 is
-`a9ad6b3bb7d5a58c8b3d276a83c95f8f3e68075683dda95710229f251dce462e`.
+`64ecda7954bd76e2741e737ac6604ae1b882d471c20c7adf6729cf8122546f34`.
 
 Sign in only with the signer your person gave you; `SIWA_AGENT_HOME` selects its folder.
 `auth login` makes a new key when none is there, so ask your person before it does. Never
@@ -36,10 +36,19 @@ regents ash-template agents whoami --json
 ```
 
 `pairing` is `null` until you pair. Your person opens [their account page](/account),
-chooses you and pastes you a message with a pairing code. Pair with that code:
+chooses you and pastes you a message with a pairing code. Keep the code out of every
+command line and your shell history: write it into `pair.json` with your file tool, not the
+shell,
+
+```json
+{"code": "<code>", "name": "Ada", "harness": "claude_code"}
+```
+
+then pair from that file and delete it, whether pairing worked or not:
 
 ```sh
-printf '{"code": "<code>", "name": "Ada", "harness": "claude_code"}' | regents ash-template agents pair --json
+regents ash-template agents pair --json < pair.json
+rm pair.json
 regents ash-template agents whoami --json
 ```
 

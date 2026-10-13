@@ -2,8 +2,8 @@ defmodule AshTemplateWeb.Components.RegentLinks do
   @moduledoc """
   The shared brand links: X and GitHub.
 
-  The landing header and the app shell header render the same controls. Point
-  the two addresses at the product's own accounts.
+  The landing header and the app shell header render the same controls. They
+  point at the Regents accounts.
   """
 
   use Phoenix.Component
@@ -14,7 +14,7 @@ defmodule AshTemplateWeb.Components.RegentLinks do
     ~H"""
     <a
       id={@id}
-      href="https://x.com/example"
+      href="https://x.com/regents_sh"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Ash Template on X"
@@ -22,7 +22,7 @@ defmodule AshTemplateWeb.Components.RegentLinks do
       <.source_icon kind={:x} />
     </a>
     <a
-      href="https://github.com/example"
+      href="https://github.com/regents-ai"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Ash Template on GitHub"

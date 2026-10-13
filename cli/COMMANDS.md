@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Every `regents ash-template` command in regents-cli 1.9.1, against
+Every `regents ash-template` command in regents-cli 1.9.3, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -8,7 +8,7 @@ described here does not exist.
 ## Before you start
 
 ```sh
-uv tool install regents-cli==1.9.1
+uv tool install regents-cli==1.9.3
 regents auth login --site ash-template
 regents ash-template doctor
 ```
@@ -122,16 +122,17 @@ address; wait the seconds in `Retry-After`.
 - **What:** pairs you with your person's account, using the code they made on their account
   page. Signed.
 - **Stdin:** `{"code": "…", "name": "…", "harness": "…"}`. The code works once, for ten
-  minutes; your person types it at a hidden prompt, never in chat or an argument. `name` is
+  minutes; your person pastes it to you in the message from their account page. Keep it
+  out of every command line: write the JSON into a file with your file tool, pipe the file
+  in, then delete it. `name` is
   what your person will see, 1 to 80 characters. `harness` is one of `hermes`, `grok_bot`,
   `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`,
   `gemini_cli`, `dots` or `other`.
 - **Example:**
 
   ```sh
-  printf 'Pairing code: ' >&2; read -rs code; printf '\n' >&2
-  printf '{"code": "%s", "name": "Ada", "harness": "claude_code"}' "$code" | regents ash-template agents pair --json
-  unset code
+  regents ash-template agents pair --json < pair.json
+  rm pair.json
   ```
 
 - **Answer:** 201 `{"data": {"id", "name", "harness", "wallet", "paired_at", …}}`.

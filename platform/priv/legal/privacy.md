@@ -14,7 +14,7 @@ Regents Labs is the controller of personal information covered by this Policy, e
 Contact:
 
 **Regents Labs, Inc.**  
-Privacy email: **[privacy@regents.sh](mailto:privacy@regents.sh)**
+Email: **[build@regents.sh](mailto:build@regents.sh)**
 
 ## 2. Important privacy facts
 
@@ -146,7 +146,7 @@ The Services and service providers may process information in countries other th
 
 Depending on where you live, you may have the right to know whether we process your personal information; access or receive a copy of it; correct inaccurate information; delete information; obtain portable information you provided; restrict or object to certain processing; withdraw consent; opt out of sale, targeted advertising, or certain profiling; appeal a denied privacy request; and complain to a data-protection authority.
 
-To make a request, email **[privacy@regents.sh](mailto:privacy@regents.sh)** with the subject "Privacy Request."
+To make a request, email **[build@regents.sh](mailto:build@regents.sh)** with the subject "Privacy Request."
 
 We may need to verify your identity and authority. For a wallet-linked account, verification may include asking you to sign a message that moves nothing or to authenticate through the same method used for the account. We will not ask for a private key or recovery phrase.
 
@@ -162,7 +162,7 @@ If a state law gives you a right to appeal our decision, you may appeal by reply
 
 ## 15. Children
 
-The Services are not directed to people under 18, and we do not knowingly collect personal information from them. If you believe a person under 18 has provided personal information, contact **[privacy@regents.sh](mailto:privacy@regents.sh)**.
+The Services are not directed to people under 18, and we do not knowingly collect personal information from them. If you believe a person under 18 has provided personal information, contact **[build@regents.sh](mailto:build@regents.sh)**.
 
 ## 16. Changes to this Policy
 
@@ -173,7 +173,6 @@ We may update this Policy as the Services and law change. We will post the updat
 Questions, requests, or complaints may be sent to:
 
 **Regents Labs, Inc.**  
-Privacy email: **[privacy@regents.sh](mailto:privacy@regents.sh)**  
-Legal email: **[legal@regents.sh](mailto:legal@regents.sh)**
+Email: **[build@regents.sh](mailto:build@regents.sh)**
 
 You may also have the right to lodge a complaint with the data-protection or privacy authority where you live.

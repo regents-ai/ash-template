@@ -131,7 +131,7 @@ We may control the defense of a covered claim, and you agree to cooperate. You m
 
 ## 17. Governing law and disputes
 
-Contact **[legal@regents.sh](mailto:legal@regents.sh)** for the current governing law and venue.
+Contact **[build@regents.sh](mailto:build@regents.sh)** for the current governing law and venue.
 
 Before filing a claim, you and Regents Labs agree to attempt in good faith to resolve the dispute by written notice and 30 days of informal discussion.
 
@@ -150,6 +150,6 @@ Sections that by their nature should survive termination will survive, including
 ## 20. Contact
 
 **Regents Labs, Inc.**  
-Email: **[legal@regents.sh](mailto:legal@regents.sh)**
+Email: **[build@regents.sh](mailto:build@regents.sh)**
 
-For security reports, use **[build@regents.sh](mailto:build@regents.sh)**. Do not include private keys, recovery phrases, or unnecessary personal data.
+Security reports go to the same address. Do not include private keys, recovery phrases, or unnecessary personal data.

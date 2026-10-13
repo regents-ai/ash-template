@@ -15,13 +15,13 @@ After renaming, a new site must still replace, by hand:
    `images/brand/mark-flat-light.svg`) are the Regents crown. Keep them.
 2. The legal operator named in `platform/priv/legal/terms.md` and
    `privacy.md`.
-3. Every `example.com` contact address in `platform/priv/legal`,
-   `platform/priv/public/contact.md` and
-   `platform/lib/ash_template_web/public_documents.ex`, and the site's
-   Patchbay page (`https://patchbay.help/<domain>`) in `contact.md`. Security
-   reports go to `build@regents.sh` on every Regent site.
-4. The `x.com/example` and `github.com/example` links in
-   `platform/lib/ash_template_web/components/regent_links.ex`.
+3. The site's Patchbay page (`https://patchbay.help/<domain>`) in
+   `platform/priv/public/contact.md`. Every contact address stays
+   `build@regents.sh`, as on every Regent site.
+4. The X and GitHub links in
+   `platform/lib/ash_template_web/components/regent_links.ex` and `twitter_site`
+   in `platform/lib/ash_template_web/components/layouts/root.html.heex` point at
+   the Regents accounts; keep them unless the product has its own.
 5. The Fly app names: `app` in `platform/fly.staging.toml`, and the production
    app, which `platform/fly.toml` leaves to the deploy command.
 6. The database cluster, hosts and refused identities in

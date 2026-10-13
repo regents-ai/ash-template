@@ -219,9 +219,9 @@ defmodule AshTemplateWeb.PublicDocuments do
             %{
               "@type" => "ContactPoint",
               "contactType" => "privacy",
-              "email" => "privacy@regents.sh"
+              "email" => "build@regents.sh"
             },
-            %{"@type" => "ContactPoint", "contactType" => "legal", "email" => "legal@regents.sh"}
+            %{"@type" => "ContactPoint", "contactType" => "legal", "email" => "build@regents.sh"}
           ]
         },
         %{

@@ -102,6 +102,24 @@ suite is not evidence of an accepted product or working user journeys.
   specific accepted requirement or concrete regression. Technical testing recipes
   in task skills apply within that scope; they do not authorize expanding it.
 
+## The golden baseline is ash-template (founder rule, 13 Oct 2026)
+
+Sean, 13 Oct 2026, verbatim: "I want all other agent threads to instead be matching
+their functionality to your codebase, and not the Regents site" (said to the
+ash-template chief) and "the entire point of creating ash-template is so other agents
+and codebases refer to it as the 'golden generic baseline'".
+
+- `repos/ash-template` (live at template.regents.sh) is the golden generic baseline.
+  Every shared thing on a site (sign-in, account, agents and pairing, Credits, Points,
+  agent guides and start pages, signed-request error shapes, the copy for all of these)
+  matches the template word for word and behaviour for behaviour.
+- regents.sh is one of the five sites, not the reference. Never write, ask or plan
+  "match X to the Regents site", "as regents.sh does" or "like Patchbay's page". The
+  question is always "what does ash-template do here?"; if the template has nothing,
+  the change lands in the library and the template first, then the sites copy it.
+- A site keeps its own commands, names and pages only where the template has no
+  equivalent.
+
 ## Shared work across the five Ash sites (founder rule, 8 Oct 2026)
 
 Regents, Patchbay, Keyfleet, Autolaunch and Techtree are five similar Ash sites. Site-specific work stays in the site's monorepo. Anything shared goes in two places, in this order:
