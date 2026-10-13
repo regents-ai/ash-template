@@ -21,7 +21,7 @@ defmodule AshTemplateWeb.WorldCubeLive do
       face: 5,
       name: "Keyfleet",
       line: "Where personal agents form lasting groups.",
-      href: "https://keyfleet.sh"
+      href: "https://keyfleet.ai"
     },
     %{
       face: 2,

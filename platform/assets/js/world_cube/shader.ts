@@ -374,12 +374,14 @@ fn fillHall(p: vec3f, loose: bool) -> vec2f {
 }
 
 // ------------------------------------------------------------------ Keyfleet
-// A harbour at dusk: a great key over the water, a lighthouse, lantern boats.
+// A harbour at dusk: keys standing guard round the harbour wall, a lighthouse,
+// lantern boats on the water.
 
 // The lighthouse lamp, in blocks.
 const HARBOUR_LAMP = vec3f(14.0, 10.0, -30.0);
-// Where the key hangs, in blocks.
-const HARBOUR_KEY = vec3f(-5.0, 0.0, -13.0);
+// How far apart a key's blocks sit, and half a block's width.
+const KEY_PITCH = 0.1;
+const KEY_HALF = 0.043;
 
 // How far round the lighthouse beam has swept.
 fn harbourSweep() -> f32 {
@@ -397,10 +399,15 @@ fn fillHarbour(p: vec3f, loose: bool) -> vec2f {
   let b = p / U;
   var res = vec2f(slab(p, vec3f(-40.0, -16.0, -60.0), vec3f(40.0, -12.0, 12.0)), 1.0);
 
-  let ashore = slab(p, vec3f(4.0, -12.0, -40.0), vec3f(24.0, 13.0, -22.0));
+  // The harbour wall: down both sides and across the back, open at the mouth.
+  var wall = slab(vec3f(abs(p.x), p.y, p.z), vec3f(18.0, -12.0, -48.0), vec3f(22.0, -10.0, 12.0));
+  wall = min(wall, max(slab(p, vec3f(-22.0, -12.0, -52.0), vec3f(22.0, -10.0, -48.0)), 4.0 * U - abs(p.x)));
+  res = pick(res, wall, 9.0);
+
+  let ashore = slab(p, vec3f(4.0, -12.0, -40.0), vec3f(18.0, 13.0, -22.0));
   if (ashore < 0.3) {
-    var rock = slab(p, vec3f(4.0, -12.0, -40.0), vec3f(24.0, -10.0, -22.0));
-    rock = min(rock, slab(p, vec3f(8.0, -10.0, -36.0), vec3f(20.0, -8.0, -24.0)));
+    var rock = slab(p, vec3f(4.0, -12.0, -40.0), vec3f(18.0, -10.0, -22.0));
+    rock = min(rock, slab(p, vec3f(8.0, -10.0, -36.0), vec3f(18.0, -8.0, -24.0)));
     res = pick(res, rock, 2.0);
     var tower = slab(p, vec3f(12.0, -8.0, -32.0), vec3f(16.0, 4.0, -28.0));
     tower = min(tower, slab(p, vec3f(13.0, 4.0, -31.0), vec3f(15.0, 8.0, -29.0)));
@@ -413,10 +420,10 @@ fn fillHarbour(p: vec3f, loose: bool) -> vec2f {
     res.x = min(res.x, ashore);
   }
 
-  // The pier running in from the window, on its posts.
-  var pier = slab(p, vec3f(-26.0, -11.0, -12.0), vec3f(-20.0, -10.0, 12.0));
-  pier = min(pier, slab(p, vec3f(-21.0, -12.0, -12.0), vec3f(-20.0, -8.0, -11.0)));
-  pier = min(pier, slab(p, vec3f(-26.0, -12.0, -12.0), vec3f(-25.0, -8.0, -11.0)));
+  // The jetty running out from the wall, on its posts.
+  var pier = slab(p, vec3f(-18.0, -11.0, -10.0), vec3f(-8.0, -10.0, -6.0));
+  pier = min(pier, slab(p, vec3f(-9.0, -12.0, -10.0), vec3f(-8.0, -8.0, -9.0)));
+  pier = min(pier, slab(p, vec3f(-9.0, -12.0, -7.0), vec3f(-8.0, -8.0, -6.0)));
   res = pick(res, pier, 5.0);
 
   // The fleet: one boat to a berth, where the berth is open water.
@@ -424,7 +431,7 @@ fn fillHarbour(p: vec3f, loose: bool) -> vec2f {
   if (afloat < 0.3) {
     let cell = floor(b.xz / 16.0);
     let h = hash21(cell + 5.0);
-    let moored = h > 0.3 && cell.x > -2.5 && cell.x < 1.5 && cell.y > -3.5 && cell.y < -0.5
+    let moored = h > 0.3 && cell.x > -1.5 && cell.x < 0.5 && cell.y > -3.5 && cell.y < -0.5
       && !(cell.x > -0.5 && cell.y < -1.5);
     let at = cell * 16.0 + 8.0 + floor(vec2f(h, fract(h * 7.3)) * 5.0) - 2.0;
     let l = vec3f(b.x - at.x, b.y, b.z - at.y);
@@ -845,7 +852,9 @@ fn paint(room: i32, mat: i32, c: vec3f, girth: f32, h: f32, local: vec3f, face: 
         let path = -0.42 * (10.8 - b.z);
         let glint = fade(3.5, 0.5, abs(b.x - path)) * (0.5 + 0.5 * sin(t * 2.0 + h * 30.0));
         s.albedo = mix(vec3f(0.004, 0.02, 0.04), vec3f(0.02, 0.07, 0.1), swell);
-        s.emit = POWDER * 0.05 * swell + PLATINUM * 0.3 * glint
+        // Gold off the keys lies on the water under the wall.
+        let gilt = fade(5.0, 0.5, abs(abs(b.x) - 17.0)) * step(abs(b.x), 18.0) * (0.5 + 0.5 * sin(t * 1.3 + b.z * 0.9 + h * 20.0));
+        s.emit = POWDER * 0.05 * swell + PLATINUM * 0.3 * glint + GOLD * 0.22 * gilt
           + vec3f(1.0, 0.85, 0.6) * 0.3 * harbourBeam(b) * fade(40.0, 4.0, length(b.xz - HARBOUR_LAMP.xz));
         s.gloss = 1.0;
       } else if (mat == 2) {
@@ -866,12 +875,15 @@ fn paint(room: i32, mat: i32, c: vec3f, girth: f32, h: f32, local: vec3f, face: 
       } else if (mat == 8) {
         s.albedo = PLATINUM * 0.85;
         s.emit = PLATINUM * 0.05;
+      } else if (mat == 9) {
+        s.albedo = vec3f(0.07, 0.08, 0.1);
+        s.gloss = 0.3;
       } else if (mat == 10) {
         s.emit = vec3f(1.0, 0.9, 0.7) * 1.5;
       } else {
-        // The key.
+        // A key.
         s.albedo = vec3f(1.0, 0.5, 0.08);
-        s.emit = vec3f(1.0, 0.45, 0.05) * 0.3;
+        s.emit = vec3f(1.0, 0.45, 0.05) * 0.6;
         s.gloss = 1.0;
       }
     }
@@ -915,7 +927,7 @@ fn rig(room: i32) -> Rig {
         vec3f(0.03, 0.026, 0.024), 0.3, 0.045, 11.0);
     }
     default {
-      return Rig(vec3f(-2.6, 2.6, -5.0), vec3f(0.55, 0.7, 1.0) * 3.2, HARBOUR_KEY * U, GOLD * 1.1,
+      return Rig(vec3f(-2.6, 2.6, -5.0), vec3f(0.55, 0.7, 1.0) * 3.2, vec3f(0.0, -4.0, -20.0) * U, GOLD * 0.8,
         vec3f(0.02, 0.03, 0.05), 0.45, 0.035, 12.0);
     }
   }
@@ -950,8 +962,7 @@ fn halos(room: i32, ro: vec3f, rd: vec3f, reach: f32) -> vec3f {
         + GOLD * halo(ro, rd, reach, vec3f(0.0, 4.0, -50.0) * U, 0.8) * 0.06;
     }
     default {
-      return vec3f(1.0, 0.9, 0.7) * halo(ro, rd, reach, HARBOUR_LAMP * U, 0.14) * 0.5
-        + GOLD * halo(ro, rd, reach, (HARBOUR_KEY + vec3f(0.0, 2.0, 0.0)) * U, 0.4) * 0.1;
+      return vec3f(1.0, 0.9, 0.7) * halo(ro, rd, reach, HARBOUR_LAMP * U, 0.14) * 0.5;
     }
   }
 }
@@ -1066,25 +1077,47 @@ fn trace(ro: vec3f, rd: vec3f, room: i32, reach: f32) -> Hit {
 
 // ----------------------------------------------------------- Blocks set free
 // A few blocks are not part of a room's grid: they hang in the air and move
-// smoothly. Each room's set shares one frame, which may turn about the upright.
+// smoothly. They come in groups (the crown, each key, the ring of posts), and
+// each group has its own frame, which may turn about the upright.
 
-// The frame: where it hangs, and how far it is turned.
-fn freeFrame(room: i32) -> vec4f {
-  let t = params.time;
-  if (room == 4) { return vec4f(HALL_CROWN * U + vec3f(0.0, 0.05 * sin(t * 0.8), 0.0), 0.32 * sin(t * 0.35)); }
-  if (room == 5) { return vec4f(HARBOUR_KEY * U + vec3f(0.0, 0.06 * sin(t * 0.7), 0.0), 0.5 * sin(t * 0.3)); }
-  return vec4f(SIGNAL_AT * U, 0.0);
+// How many groups a room has, and how many blocks are in each.
+fn freeGroups(room: i32) -> i32 {
+  if (room == 3 || room == 4) { return 1; }
+  if (room == 5) { return 10; }
+  return 0;
 }
 
 fn freeCount(room: i32) -> i32 {
   if (room == 3) { return 7; }
   if (room == 4) { return 13; }
-  if (room == 5) { return 14; }
-  return 0;
+  return 14;
 }
 
-// One free block in its frame: its middle in xyz and its material in w, then
-// its half-size.
+// A group's frame: where it hangs, and how far it is turned.
+fn freeFrame(room: i32, group: i32) -> vec4f {
+  let t = params.time;
+  if (room == 4) { return vec4f(HALL_CROWN * U + vec3f(0.0, 0.05 * sin(t * 0.8), 0.0), 0.32 * sin(t * 0.35)); }
+  if (room == 5) {
+    // The keys stand guard round the harbour wall: four down each side and two
+    // at the mouth, each turning and bobbing in its own time.
+    let g = f32(group);
+    let side = f32(group % 2) * 2.0 - 1.0;
+    var at = vec2f(side * 20.0, -2.0 - 12.0 * f32(group / 2));
+    if (group >= 8) { at = vec2f(side * 9.0, -50.0); }
+    return vec4f(vec3f(at.x, -5.5 + 0.5 * sin(t * 0.9 + g * 2.1), at.y) * U, t * 0.5 + g * 1.7);
+  }
+  return vec4f(SIGNAL_AT * U, 0.0);
+}
+
+// The box, about its frame, that holds a whole group.
+fn freeBound(room: i32) -> vec3f {
+  if (room == 4) { return vec3f(2.0 * CROWN_PITCH + CROWN_HALF, CROWN_PITCH + CROWN_HALF, CROWN_HALF); }
+  if (room == 5) { return vec3f(KEY_PITCH + KEY_HALF, 3.0 * KEY_PITCH + KEY_HALF, KEY_HALF); }
+  return vec3f(15.0, 15.0, 6.0) * U;
+}
+
+// One free block in its group's frame: its middle in xyz and its material in
+// w, then its half-size.
 struct Free {
   at: vec4f,
   half: vec3f,
@@ -1099,14 +1132,14 @@ fn freeBlock(room: i32, i: i32) -> Free {
     return Free(vec4f(at * CROWN_PITCH, 0.0, 30.0), vec3f(CROWN_HALF));
   }
   if (room == 5) {
-    // The key: a ring of eight for a bow, a shaft of four, two teeth.
+    // A key: a ring of eight for a bow, a shaft of four, two teeth.
     var cells = array<vec2f, 14>(
-      vec2f(-1.0, 4.0), vec2f(0.0, 4.0), vec2f(1.0, 4.0),
-      vec2f(-1.0, 3.0), vec2f(1.0, 3.0),
-      vec2f(-1.0, 2.0), vec2f(0.0, 2.0), vec2f(1.0, 2.0),
-      vec2f(0.0, 1.0), vec2f(0.0, 0.0), vec2f(0.0, -1.0), vec2f(0.0, -2.0),
-      vec2f(1.0, 0.0), vec2f(1.0, -2.0));
-    return Free(vec4f(cells[i] * 0.17, 0.0, 31.0), vec3f(0.074));
+      vec2f(-1.0, 3.0), vec2f(0.0, 3.0), vec2f(1.0, 3.0),
+      vec2f(-1.0, 2.0), vec2f(1.0, 2.0),
+      vec2f(-1.0, 1.0), vec2f(0.0, 1.0), vec2f(1.0, 1.0),
+      vec2f(0.0, 0.0), vec2f(0.0, -1.0), vec2f(0.0, -2.0), vec2f(0.0, -3.0),
+      vec2f(1.0, -1.0), vec2f(1.0, -3.0));
+    return Free(vec4f(cells[i] * KEY_PITCH, 0.0, 31.0), vec3f(KEY_HALF));
   }
   // The posts, wheeling slowly round the X, each at its own depth.
   let angle = f32(i) * (2.0 * PI / 7.0) + t * 0.08;
@@ -1117,32 +1150,37 @@ fn freeBlock(room: i32, i: i32) -> Free {
 
 fn traceFree(ro: vec3f, rd: vec3f, room: i32) -> Hit {
   var hit = miss();
+  let groups = freeGroups(room);
   let count = freeCount(room);
-  if (count == 0) { return hit; }
-  let frame = freeFrame(room);
-  let turn = rot(-frame.w);
-  let o3 = ro - frame.xyz;
-  let oxz = turn * o3.xz;
-  let dxz = turn * rd.xz;
-  let o = vec3f(oxz.x, o3.y, oxz.y);
-  let d = vec3f(dxz.x, rd.y, dxz.y);
-  let safe = select(d, vec3f(1e-6), abs(d) < vec3f(1e-6));
-  let inv = 1.0 / safe;
-  let way = sign(safe);
+  let bound = freeBound(room);
   var best = 1e9;
-  for (var i = 0; i < count; i++) {
-    let block = freeBlock(room, i);
-    let s = span(o, inv, way, block.at.xyz, block.half);
-    if (s.near < s.far && s.near > 0.0 && s.near < best) {
-      best = s.near;
-      hit.t = s.near;
-      hit.face = s.face;
-      hit.local = (o + d * s.near - block.at.xyz) / block.half;
-      hit.half = block.half;
-      hit.mat = block.at.w;
-      hit.yaw = frame.w;
-      let back = rot(frame.w) * block.at.xz;
-      hit.centre = frame.xyz + vec3f(back.x, block.at.y, back.y);
+  for (var g = 0; g < groups; g++) {
+    let frame = freeFrame(room, g);
+    let turn = rot(-frame.w);
+    let o3 = ro - frame.xyz;
+    let oxz = turn * o3.xz;
+    let dxz = turn * rd.xz;
+    let o = vec3f(oxz.x, o3.y, oxz.y);
+    let d = vec3f(dxz.x, rd.y, dxz.y);
+    let safe = select(d, vec3f(1e-6), abs(d) < vec3f(1e-6));
+    let inv = 1.0 / safe;
+    let way = sign(safe);
+    let whole = span(o, inv, way, vec3f(0.0), bound);
+    if (whole.near >= whole.far || whole.far < 0.0 || whole.near > best) { continue; }
+    for (var i = 0; i < count; i++) {
+      let block = freeBlock(room, i);
+      let s = span(o, inv, way, block.at.xyz, block.half);
+      if (s.near < s.far && s.near > 0.0 && s.near < best) {
+        best = s.near;
+        hit.t = s.near;
+        hit.face = s.face;
+        hit.local = (o + d * s.near - block.at.xyz) / block.half;
+        hit.half = block.half;
+        hit.mat = block.at.w;
+        hit.yaw = frame.w;
+        let back = rot(frame.w) * block.at.xz;
+        hit.centre = frame.xyz + vec3f(back.x, block.at.y, back.y);
+      }
     }
   }
   return hit;
