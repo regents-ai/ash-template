@@ -1349,3 +1349,9 @@ Operations
   "Pair your agent" card, `/agents.md` and `/llms.txt` link to it.
 - The command-line steps install regents-cli 1.10.1 and tell the agent to follow the "Next"
   step every answer ends with.
+
+## 2026-10-13 — The side bar opens on a phone only when opened there
+
+- On a phone or tablet, where the side bar covers the page, it opens only when the person
+  opens it on that page. Opening it on a wide screen no longer covers the next page on a
+  narrow one; on a wide screen it still stays open from page to page.

@@ -1314,6 +1314,11 @@
     border-inline-start: 1px solid var(--ash-line-strong);
   }
 
+  /* Covering the page, it opens only when opened on this page, never on arrival. */
+  :root:not([data-aside-here]) #shell-aside {
+    display: none;
+  }
+
   #app-shell .shell-search-button {
     min-width: 0;
   }

@@ -3,7 +3,8 @@
 // the Buy Credits dialog. Open and hidden states live
 // on <html data-aside data-sidebar>, which the server first draws from the
 // cookies written here (AshTemplateWeb.Plugs.Panels), so LiveView never patches
-// them away.
+// them away. Where the side bar covers the page, it opens only when the person
+// opens it on that page (<html data-aside-here>), never from the remembered state.
 
 const yearInSeconds = 60 * 60 * 24 * 365
 const seenKey = "ash_template_aside_seen"
@@ -39,7 +40,9 @@ function markSeen(digest: string) {
 }
 
 const root = () => document.documentElement
-export const asideOpen = () => root().dataset.aside === "open"
+const covering = window.matchMedia("(max-width: 63.99rem)")
+const asideOpen = () =>
+  root().dataset.aside === "open" && (!covering.matches || root().dataset.asideHere !== undefined)
 
 /**
  * Wires the panels inside `shell`. Returns `sync`, to run after every LiveView
@@ -72,6 +75,8 @@ export function installShellPanels(shell: HTMLElement) {
   const setAside = (open: boolean) => {
     const value = open ? "open" : "closed"
     root().dataset.aside = value
+    if (open) root().dataset.asideHere = ""
+    else delete root().dataset.asideHere
     remember("aside", value)
     syncAside()
 
@@ -217,6 +222,7 @@ export function installShellPanels(shell: HTMLElement) {
   shell.addEventListener("click", onClick)
   shell.addEventListener("pointermove", onPointerMove)
   document.addEventListener("keydown", onKeydown)
+  covering.addEventListener("change", syncAside)
 
   // A list the page put in the sidebar marks the page it is on, as the
   // server-drawn links do.
@@ -238,6 +244,7 @@ export function installShellPanels(shell: HTMLElement) {
       shell.removeEventListener("click", onClick)
       shell.removeEventListener("pointermove", onPointerMove)
       document.removeEventListener("keydown", onKeydown)
+      covering.removeEventListener("change", syncAside)
     },
   }
 }
