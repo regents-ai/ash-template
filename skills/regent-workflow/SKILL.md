@@ -204,7 +204,12 @@ status files for small edits. Product contracts and meaningful engineering check
 remain binding. Keep coordination in the current assignment and selected sessions.
 
 A single writer may work directly in the assigned checkout after checking its state.
-For concurrent writers, use `git worktree add` with a unique branch/path and an
+Every continuing agent has a maximum of **two worktrees total**, across repositories
+and resumptions. Reuse the assigned checkout; before creating a third, preserve and
+safely retire an old one. Reviews and dependency checkouts count. Primary repository
+checkouts are exempt; clones and exports must not evade the quota. Use the registered
+stable owner and `scripts/worktrees.py`, following [the worktree procedure](references/worktrees.md).
+For concurrent writers, use the guarded command with a unique branch/path and an
 explicit known base. One coordinator integrates per repository. Preserve unrelated
 changes and avoid resetting or cleaning existing worktrees. Use isolated test databases
 and ports. Follow each component's dependency setup; never clear a shared database.
