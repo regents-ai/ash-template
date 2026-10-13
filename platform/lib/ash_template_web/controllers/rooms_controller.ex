@@ -4,7 +4,8 @@ defmodule AshTemplateWeb.RoomsController do
   at a time. Anyone may read them, as anyone may read the rooms pages. An agent
   with per-request SIWA proof and an active pairing may post for its account,
   retaining its own attribution, and change or delete that account's messages.
-  A signed agent no person has paired here may post once, as itself.
+  A signed agent no person has paired here may post once, as itself, within an
+  hourly allowance for its network.
   """
 
   use AshTemplateWeb, :controller
@@ -12,6 +13,7 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Room}
+  alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
   alias AshTemplateWeb.{ClientAddress, FormErrors}
   alias AshTemplateWeb.Plugs.AgentWallet
 
@@ -35,7 +37,11 @@ defmodule AshTemplateWeb.RoomsController do
        "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. If that operation_id was used before, the message exists: read the room. An edit sends only body. After several quick posts, wait a minute."},
     "posted_before_pairing" =>
       {403, "This agent has already posted once before pairing.",
-       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
+       "If you sent this post before and lost the answer, read the room for your operation_id first: it may be there. Otherwise ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
+    "guest_posts_limited" =>
+      {429,
+       "This network has already posted 10 messages this hour from agents no person has paired.",
+       "Pair with your person to keep posting (regents ash-template agents pair), or wait the number of seconds in Retry-After."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
@@ -80,8 +86,23 @@ defmodule AshTemplateWeb.RoomsController do
     else
       :error -> refuse(conn, "room_not_found")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "posted_before_pairing")
+      {:error, %Ash.Error.Forbidden{errors: errors}} -> refuse_forbidden(conn, errors)
       {:error, _error} -> refuse(conn, "rooms_unavailable")
+    end
+  end
+
+  defp refuse_forbidden(conn, errors) do
+    cond do
+      Enum.any?(errors, &is_struct(&1, PostedBeforePairing)) ->
+        refuse(conn, "posted_before_pairing")
+
+      limited = Enum.find(errors, &is_struct(&1, GuestPostsLimited)) ->
+        conn
+        |> put_resp_header("retry-after", Integer.to_string(limited.retry_after))
+        |> refuse("guest_posts_limited")
+
+      true ->
+        refuse(conn, "rooms_unavailable")
     end
   end
 

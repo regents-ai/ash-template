@@ -10,7 +10,7 @@ defmodule AshTemplate.Repo.Migrations.AgentLastSeenAndOnePost do
 
   def up do
     alter table(:agents) do
-      add(:last_seen_at, :utc_datetime_usec)
+      add(:last_seen_at, :utc_datetime_usec, null: false, default: fragment("now()"))
       add(:posted_before_pairing_at, :utc_datetime_usec)
     end
 
@@ -24,10 +24,6 @@ defmodule AshTemplate.Repo.Migrations.AgentLastSeenAndOnePost do
           WHERE agent_id IS NOT NULL GROUP BY agent_id) AS first_post
     WHERE #{prefix()}.agents.id = first_post.agent_id
     """)
-
-    alter table(:agents) do
-      modify(:last_seen_at, :utc_datetime_usec, null: false)
-    end
   end
 
   def down do

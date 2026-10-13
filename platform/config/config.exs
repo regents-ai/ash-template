@@ -112,10 +112,12 @@ config :ash_template, :note_labels,
   person_daily_questions: 50
 
 # How often one person or agent may save each kind of writing, and how often one
-# client address may post or search, each window (AshTemplate.Limits).
+# client address may post or search, each window (AshTemplate.Limits). A guest
+# post is one no person stands behind: an unpaired agent's one post.
 config :ash_template, :limits,
   room_post: [limit: 10, window_seconds: 60],
   room_post_address: [limit: 30, window_seconds: 60],
+  guest_post_address: [limit: 10, window_seconds: 3600],
   note: [limit: 30, window_seconds: 60],
   chat_message: [limit: 10, window_seconds: 60],
   search_address: [limit: 300, window_seconds: 60],

@@ -22,6 +22,10 @@ defmodule AshTemplate.Agents.Agent do
     table "agents"
     repo(AshTemplate.Repo)
 
+    # The database fills it too, so a release that does not know the column can
+    # still add agents while an older and a newer release run side by side.
+    migration_defaults(last_seen_at: "fragment(\"now()\")")
+
     check_constraints do
       check_constraint(:world_id_human_id, "world_id_whole",
         check: "(world_id_human_id IS NULL) = (world_id_agent_count IS NULL)",
