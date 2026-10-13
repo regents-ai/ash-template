@@ -279,7 +279,11 @@ defmodule AshTemplateWeb.Router do
       live "/account/points", ShellLive, :points
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
-      live "/start", ShellLive, :agent_start
+    end
+
+    # Open while the site is closed (AshTemplateWeb.Plugs.LaunchGate lets GET /start through).
+    live_session :agent_start do
+      live "/start", AgentStartLive, :show
     end
   end
 

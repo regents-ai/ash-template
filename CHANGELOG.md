@@ -1355,3 +1355,14 @@ Operations
 - On a phone or tablet, where the side bar covers the page, it opens only when the person
   opens it on that page. Opening it on a wide screen no longer covers the next page on a
   narrow one; on a wide screen it still stays open from page to page.
+
+## 2026-10-13 — /start stands on its own while the site is closed
+
+- `/start` is now its own page in the documentation pages' frame, outside the signed-in
+  frame, so while the site is closed it shows the steps and nothing else: no search, chat,
+  notifications or Credits. It is still in the Account menu and search.
+- While the site is closed, a product page left open from before, or reached by live
+  navigation, now refuses every event it handles itself, as well as every navigation
+  (the `:launch_gate_events` hook, carried from Regents).
+- Where the side bar covers the page (below 64rem), a page link inside it closes it and
+  opening it moves focus into it; before, that held only below 48rem.

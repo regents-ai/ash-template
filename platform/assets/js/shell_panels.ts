@@ -53,7 +53,6 @@ export function installShellPanels(shell: HTMLElement) {
   const asideButton = () => shell.querySelector<HTMLButtonElement>("#shell-aside-button")
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
   const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
-  const phone = () => window.matchMedia("(max-width: 47.99rem)").matches
 
   // The light pulses while the panel is closed and holds something the person
   // has not opened it to see; opening it, or having it open, marks it seen.
@@ -80,7 +79,7 @@ export function installShellPanels(shell: HTMLElement) {
     remember("aside", value)
     syncAside()
 
-    if (open && phone()) {
+    if (open && covering.matches) {
       aside()?.focus()
     }
   }
@@ -169,8 +168,8 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()
     // A press on the dialog's own backdrop lands on the dialog itself.
     if (target === search()) return closeSearch()
-    // On a phone the side bar covers the page, so a page link inside it closes it.
-    if (phone() && target.closest("#shell-aside a")) setAside(false)
+    // Where the side bar covers the page, a page link inside it closes it.
+    if (covering.matches && target.closest("#shell-aside a")) setAside(false)
   }
 
   const onKeydown = (event: KeyboardEvent) => {
