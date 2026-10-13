@@ -5,7 +5,9 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   signs every request after that over its exact method, path and body. The service
   checks the signature and the sign-in (`Siwa.AgentAuthPlug`), so only a wallet
   it vouches for becomes the actor, as itself (`AshTemplate.Actors.Agent`).
-  Cookies grant nothing here. Every refusal answers
+  Cookies grant nothing here. A paired agent's pairing is checked again just
+  before the answer leaves, so an unpairing during the request never sends the
+  person's data. Every refusal answers
   `{"error": {"code", "message", "hint"}}`, with the service's own words when it
   refused.
   """
@@ -19,6 +21,18 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   alias AshTemplate.Actors.{Agent, System}
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
+
+  @not_paired %{
+    code: "agent_not_paired",
+    message: "This agent is not paired with an account.",
+    hint:
+      "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."
+  }
+  @unavailable %{
+    code: "unavailable",
+    message: "The paired account could not be read.",
+    hint: "Try again in a moment."
+  }
 
   # Refusals made here or by the shared plug, before or after the sign-in service
   # answered.
@@ -82,7 +96,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}),
          {:ok, agent} <- record_backing(agent, book),
          {:ok, actor} <- actor(agent) do
-      {:ok, assign(conn, :actor, actor)}
+      {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
     else
       {:error, _error} -> refused(:agent_unavailable)
     end
@@ -102,6 +116,40 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
       {:ok, nil} -> {:ok, Agent.for_agent(agent, :person_not_here)}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp recheck_before_send(conn, %Agent{pairing: :active} = actor),
+    do: register_before_send(conn, &recheck(&1, actor))
+
+  defp recheck_before_send(conn, _actor), do: conn
+
+  # The request ran after the pairing was read. Before anything is sent, the
+  # wallet's current pairing must still be this one, with the same person;
+  # otherwise the answer is replaced, so an unpairing or a new pairing during
+  # the request never sends the former person's data.
+  defp recheck(conn, %Agent{} = actor) do
+    case RegentAgents.Authority.resolve(AshTemplate.Repo, actor.wallet_address) do
+      {:ok, %{id: id, privy_user_id: person}}
+      when id == actor.pairing_id and person == actor.privy_user_id ->
+        conn
+
+      {:error, :not_paired} ->
+        replace(conn, 403, @not_paired)
+
+      {:ok, _other_pairing} ->
+        replace(conn, 403, @not_paired)
+
+      {:error, _error} when conn.status in 200..299 ->
+        replace(conn, 503, @unavailable)
+
+      {:error, _error} ->
+        conn
+    end
+  end
+
+  defp replace(conn, status, body) do
+    %{conn | status: status, resp_body: Jason.encode_to_iodata!(%{error: body})}
+    |> put_resp_content_type("application/json")
   end
 
   @doc """

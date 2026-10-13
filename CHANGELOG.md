@@ -1279,3 +1279,10 @@ Operations
   regents-cli 1.9.4 (source commit `e66027f2ba7784f674481c3778c671cc3f1108e2`, wheel SHA256
   `55a1fe2915231cfd27b5ad2725b4236c3bbad0171c2f02f7c3a182464fba2f7f`). The template's
   command list is the same in 1.9.4, and pairing still reads `~/pair.json`.
+
+## 2026-10-13 — Pairing checked again before an agent's answer leaves
+
+- A paired agent's pairing is read again just before the site answers it. If the person
+  unpaired it, or paired it again, while the request ran, the answer becomes 403
+  `agent_not_paired` and none of the person's data is sent. Copied from Regents
+  (`RegentsWeb.Plugs.PairedAgent`).
