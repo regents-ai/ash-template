@@ -1428,3 +1428,14 @@ Operations
   first, through `AshTemplateWeb.UnexpectedFailure`. Nothing the agent sees changes.
 - Each trace is one line with its cause on it, and a refused room post logs the
   refusal alone, never what was posted or who posted it.
+
+## 2026-10-13 — Dead code removed
+
+- The second chat page at `/chat/original` is gone, with its link on the Chat page, its
+  layout, and the Tailwind, DaisyUI and Heroicons packages only it used. `/chat` is the
+  one chat page.
+- The unused `AshTemplate.Agents.Pairing` resource is gone; pairing is read through
+  `RegentAgents`, as before.
+- `assets/js/privy_bridge.tsx` exports only what another file imports.
+- The Points settings are written once in `config/config.exs`.
+- The README no longer calls the serving database connection pooled.

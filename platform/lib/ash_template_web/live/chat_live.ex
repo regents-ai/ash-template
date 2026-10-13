@@ -8,8 +8,7 @@ defmodule AshTemplateWeb.ChatLive do
   of the assistant's reply are published by the message's PubSub notifier; the
   shell holds the open conversation's subscription and hands each one on here
   as `send_update(ChatLive, id: "chat", change: message)`, and a conversation
-  that is started or named arrives as `conversation_change:`. The same page in
-  the generator's own look is `AshTemplateWeb.ChatOriginalLive`.
+  that is started or named arrives as `conversation_change:`.
   """
 
   use AshTemplateWeb, :live_component
@@ -145,9 +144,6 @@ defmodule AshTemplateWeb.ChatLive do
           This assistant is a free stand-in: it doesn’t read what you write, but its replies
           arrive a few words at a time, the way a real one’s do.
         </:tip>
-        <:actions>
-          <.link navigate={~p"/chat/original"}>Ash AI’s own look</.link>
-        </:actions>
       </.page_head>
 
       <.signed_out :if={is_nil(@actor)} id="chat-signed-out">

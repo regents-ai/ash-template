@@ -22,11 +22,6 @@ defmodule AshTemplateWeb.Router do
     }
   end
 
-  # The chat page in `mix ash_ai.gen.chat`'s own look loads its own stylesheet.
-  pipeline :ash_ai_chat do
-    plug :put_root_layout, html: {AshTemplateWeb.Layouts, :ash_ai_chat}
-  end
-
   pipeline :api do
     plug :accepts, ["json"]
     plug AshTemplateWeb.Plugs.LaunchGate
@@ -239,18 +234,6 @@ defmodule AshTemplateWeb.Router do
     get "/notes/:id", PageToolsController, :note
     post "/notes/:id/pin", PageToolsController, :pin_note
     post "/notes/:id/unpin", PageToolsController, :unpin_note
-  end
-
-  # Before the product shell, whose `/chat/:conversation_id` would take `original`.
-  scope "/chat/original", AshTemplateWeb do
-    pipe_through [:browser, :ash_ai_chat]
-
-    live_session :ash_ai_chat,
-      session: {Session, :render_context, []},
-      on_mount: [AshTemplateWeb.Live.LaunchGateHook, {Session, :load_human}] do
-      live "/", ChatOriginalLive, :index
-      live "/:conversation_id", ChatOriginalLive, :conversation
-    end
   end
 
   scope "/", AshTemplateWeb do

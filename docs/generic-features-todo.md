@@ -38,9 +38,8 @@ recipes are in `skills/elixir-stack/references/oban.md`.
 To do:
 - [x] Add `oban` and `ash_oban`; one Oban instance in the site's own schema
       (`prefix: "ash_template_app"`), its migration with the same prefix, top-level
-      `pruner:` and `lifeline:`. Queues hear of new jobs through `Oban.Notifiers.PG`,
-      since the serving connection's pooler drops LISTEN/NOTIFY. The template has no
-      test environment, so there is no `testing: :manual` setting.
+      `pruner:` and `lifeline:`. Queues hear of new jobs through `Oban.Notifiers.PG`.
+      The template has no test environment, so there is no `testing: :manual` setting.
 - [x] One AshOban trigger on the note resource (`send_webhook`): every create and edit
       queues one job in its own transaction while the address is set, with
       `max_attempts 5` and an `on_error` action (`webhook_failed`) that records the final
