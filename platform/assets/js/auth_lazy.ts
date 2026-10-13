@@ -3,8 +3,7 @@ import {disconnectEveryEthereumWallet, invalidateWalletWork, rememberWalletDisco
 
 export type AccountRequest = "connect-wallet" | "sign-in" | "sign-out" | "sync"
 
-export type SignInFailureKind = "closed" | "provider" | "session" | "startup"
-type TerminalSignInFailureKind = Exclude<SignInFailureKind, "closed">
+export type SignInFailureKind = "provider" | "session" | "startup"
 
 export type SignInFailureDiagnostic =
   | "bridge_startup"
@@ -89,7 +88,7 @@ const signOutHandoffKey = "regent:privy-sign-out-handoff:v1"
 const signOutHandoffMaxAgeMs = 30_000
 const consumedHandoffDocuments = new WeakSet<Document>()
 const reloadedDocuments = new WeakSet<Document>()
-const terminalSignInFailures = new WeakMap<Document, TerminalSignInFailureKind>()
+const terminalSignInFailures = new WeakMap<Document, SignInFailureKind>()
 const walletSignOuts = new WeakMap<Document, Promise<void>>()
 
 // Called only after server revocation/anonymous truth. Cleanup is shared by
@@ -502,7 +501,7 @@ export function showAccountAuthFailure(
   signInFailure: SignInFailureKind = "startup",
 ): void {
   if (!documentRoot) return
-  if (request === "sign-in" && signInFailure !== "closed") {
+  if (request === "sign-in") {
     terminalSignInFailures.set(documentRoot, signInFailure)
     disableSignInControls(documentRoot)
   }
@@ -511,7 +510,6 @@ export function showAccountAuthFailure(
   status.textContent =
     request === "sign-in"
       ? {
-          closed: "Sign-in closed before completion. No account was connected.",
           provider: "Sign-in didn’t finish. Reload this page, then try again.",
           session: "We couldn’t sign you in. Reload this page, then try again.",
           startup: "Sign-in isn’t available right now. Reload this page.",
@@ -522,7 +520,7 @@ export function showAccountAuthFailure(
           sync: "Account connection couldn’t refresh. Try again.",
         }[request]
   status.hidden = false
-  if (request === "sign-in" && signInFailure !== "closed" &&
+  if (request === "sign-in" &&
       typeof documentRoot.createElement === "function" && typeof status.append === "function") {
     const retry = documentRoot.createElement("button")
     retry.type = "button"

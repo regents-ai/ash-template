@@ -1484,3 +1484,11 @@ Operations
   and the agent's next request saves the same thing.
 - The failure is logged by its kind alone, never its words, which could hold the
   person's number.
+
+## 2026-10-13 — Closing the sign-in window says nothing
+
+- A person who closes the sign-in window chose to, so no line appears under the
+  Sign in button. Before, it read "Sign-in closed before completion. No account
+  was connected." The button stays ready for another press, as it did.
+- A sign-in that fails for any other reason still says so and offers "Retry
+  sign-in".

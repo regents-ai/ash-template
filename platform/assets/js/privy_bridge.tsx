@@ -608,7 +608,8 @@ export function createPrivyLoginCallbacks({
       if (!opened) return
       const diagnostic = privyLoginFailureDiagnostic(error)
       reportFailure(diagnostic)
-      showFailure(diagnostic === "flow_closed" ? "closed" : "provider")
+      // A person who closes the sign-in window chose to; nothing is said.
+      if (diagnostic !== "flow_closed") showFailure("provider")
     },
   } satisfies PrivyEvents["login"]
 }
