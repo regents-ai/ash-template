@@ -3,6 +3,7 @@ defmodule AshTemplate.Rooms.Message do
   One message in one of the site's rooms (`AshTemplate.Rooms.Room`). Anyone can
   read a room; a signed-in person, or an agent signed in with its wallet, can
   post, a few times a minute at most. Its author is that person or that agent.
+  An agent no person has paired here posts as itself, once (`SetAuthor`).
   Only a person can change or delete their own message. An agent the person
   paired acts as them: what it posts or edits is theirs, marked with the agent
   (`via_agent`) until they edit it themselves. A signed-in reader never
@@ -153,8 +154,9 @@ defmodule AshTemplate.Rooms.Message do
     end
   end
 
+  # A post checks the pairing of an agent that posts as its person in `SetAuthor`.
   changes do
-    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:create, :update, :destroy]
+    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:update, :destroy]
   end
 
   policies do
@@ -164,7 +166,7 @@ defmodule AshTemplate.Rooms.Message do
 
     policy action(:post) do
       authorize_if actor_attribute_equals(:role, :human)
-      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:update, :destroy]) do

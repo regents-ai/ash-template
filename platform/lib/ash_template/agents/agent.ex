@@ -1,7 +1,10 @@
 defmodule AshTemplate.Agents.Agent do
   @moduledoc """
   An agent known by the wallet it signs every request with (`AshTemplateWeb.Plugs.AgentWallet`).
-  Its first signed request adds it; it acts on the site as itself, never as a person.
+  Its first signed request adds it, and every signed request marks when it was last seen.
+  It acts on the site as itself, never as a person, until a person pairs it; its pairing
+  is found by the same wallet, so this record stays the agent's before and after.
+  Before it is paired it may post one room message, as itself.
 
   When a person verified with World ID stands behind the wallet in World's AgentBook,
   and the wallet has accepted that person, the sign-in service says so on every signed
@@ -46,6 +49,12 @@ defmodule AshTemplate.Agents.Agent do
       constraints min: 1
     end
 
+    # Its latest signed request.
+    attribute :last_seen_at, :utc_datetime_usec, allow_nil?: false, public?: true
+
+    # When it used its one room post before being paired; nil until then.
+    attribute :posted_before_pairing_at, :utc_datetime_usec, public?: true
+
     create_timestamp :inserted_at, public?: true
   end
 
@@ -56,13 +65,23 @@ defmodule AshTemplate.Agents.Agent do
   actions do
     defaults [:read]
 
-    # The wallet's agent, added on its first signed request.
+    # The wallet's agent, added on its first signed request and seen on every one.
     create :sign_in do
       argument :wallet_address, :string, allow_nil?: false
       upsert? true
       upsert_identity :unique_wallet_address
-      upsert_fields []
+      upsert_fields [:last_seen_at]
       change set_attribute(:wallet_address, arg(:wallet_address))
+      change set_attribute(:last_seen_at, &DateTime.utc_now/0)
+    end
+
+    # Uses the agent's one room post before pairing. The check and the mark are one
+    # statement, so two posts at once cannot both use it.
+    update :use_post_before_pairing do
+      validate absent(:posted_before_pairing_at),
+        message: "has already posted once before pairing"
+
+      change atomic_update(:posted_before_pairing_at, expr(now()))
     end
 
     # The World ID person a signed request names. Both expressions read the row as
@@ -93,7 +112,7 @@ defmodule AshTemplate.Agents.Agent do
   end
 
   policies do
-    policy action([:sign_in, :record_backing]) do
+    policy action([:sign_in, :record_backing, :use_post_before_pairing]) do
       authorize_if actor_attribute_equals(:role, :system)
     end
 

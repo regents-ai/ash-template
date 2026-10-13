@@ -4,6 +4,7 @@ defmodule AshTemplateWeb.RoomsController do
   at a time. Anyone may read them, as anyone may read the rooms pages. An agent
   with per-request SIWA proof and an active pairing may post for its account,
   retaining its own attribution, and change or delete that account's messages.
+  A signed agent no person has paired here may post once, as itself.
   """
 
   use AshTemplateWeb, :controller
@@ -14,7 +15,7 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplateWeb.{ClientAddress, FormErrors}
   alias AshTemplateWeb.Plugs.AgentWallet
 
-  plug :paired_agent when action in [:post, :update, :delete]
+  plug :paired_agent when action in [:update, :delete]
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
@@ -32,6 +33,9 @@ defmodule AshTemplateWeb.RoomsController do
     "invalid_message" =>
       {422, "The message could not be saved.",
        "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. If that operation_id was used before, the message exists: read the room. An edit sends only body. After several quick posts, wait a minute."},
+    "posted_before_pairing" =>
+      {403, "This agent has already posted once before pairing.",
+       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
@@ -76,6 +80,7 @@ defmodule AshTemplateWeb.RoomsController do
     else
       :error -> refuse(conn, "room_not_found")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "posted_before_pairing")
       {:error, _error} -> refuse(conn, "rooms_unavailable")
     end
   end

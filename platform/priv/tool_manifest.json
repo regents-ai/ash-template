@@ -882,7 +882,7 @@
     {
       "name": "room_post",
       "title": "Post in a room",
-      "description": "Post in a room for your person, marked as written by you. Everyone can read it at once, so ask your person first. Keep operation_id when retrying. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "description": "Post in a room for your person, marked as written by you. Everyone can read it at once, so ask your person first. Keep operation_id when retrying. Before you are paired it works once, as you. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
       "input_schema": {
         "type": "object",
         "additionalProperties": false,
@@ -934,13 +934,13 @@
       "annotations": {
         "consequentialHint": true
       },
-      "requires": "siwa_and_pairing",
+      "requires": "siwa",
       "state_changing": true,
       "payment": "none",
       "route": "POST /api/v1/rooms/{room}/messages",
       "scope": "site",
       "authentication": "siwa_per_request",
-      "pairing_required": true,
+      "pairing_required": false,
       "availability": "available",
       "interfaces": {
         "webmcp": "room_post",
