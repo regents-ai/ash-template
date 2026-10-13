@@ -14,7 +14,7 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
-  alias AshTemplateWeb.{ClientAddress, FormErrors}
+  alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
 
   plug :paired_agent when action in [:update, :delete]
@@ -70,7 +70,7 @@ defmodule AshTemplateWeb.RoomsController do
       :error -> refuse(conn, "room_not_found")
       {:error, :invalid_limit} -> refuse(conn, "invalid_limit")
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
-      {:error, _error} -> refuse(conn, "rooms_unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
 
@@ -91,7 +91,7 @@ defmodule AshTemplateWeb.RoomsController do
       :error -> refuse(conn, "room_not_found")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
       {:error, %Ash.Error.Forbidden{errors: errors}} -> refuse_forbidden(conn, errors)
-      {:error, _error} -> refuse(conn, "rooms_unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
 
@@ -116,7 +116,7 @@ defmodule AshTemplateWeb.RoomsController do
         |> refuse("guest_posts_limited")
 
       true ->
-        refuse(conn, "rooms_unavailable")
+        conn |> UnexpectedFailure.log(errors) |> refuse("rooms_unavailable")
     end
   end
 
@@ -127,7 +127,7 @@ defmodule AshTemplateWeb.RoomsController do
            ) do
         {:ok, message} -> json(conn, %{message: present(message)})
         {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
-        {:error, _error} -> refuse(conn, "rooms_unavailable")
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)
   end
@@ -136,7 +136,7 @@ defmodule AshTemplateWeb.RoomsController do
     with_message(conn, slug, id, fn conn, message ->
       case Rooms.delete_message(message, actor: conn.assigns.actor) do
         :ok -> json(conn, %{deleted: true, id: message.id})
-        {:error, _error} -> refuse(conn, "rooms_unavailable")
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)
   end
@@ -159,7 +159,7 @@ defmodule AshTemplateWeb.RoomsController do
         refuse(conn, "room_not_found")
 
       {:error, error} when not is_struct(error, Ash.Error.Invalid) ->
-        refuse(conn, "rooms_unavailable")
+        conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
 
       _absent ->
         refuse(conn, "message_not_found")

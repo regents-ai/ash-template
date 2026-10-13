@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.NotesController do
   alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
 
   plug :authenticate
@@ -39,7 +39,7 @@ defmodule AshTemplateWeb.NotesController do
   def index(conn, _params) do
     case Notes.list_my_notes(actor: conn.assigns.actor) do
       {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
-      {:error, _error} -> refuse(conn, "notes_unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
     end
   end
 
@@ -71,7 +71,7 @@ defmodule AshTemplateWeb.NotesController do
     with_note(conn, id, fn conn, note ->
       case Notes.destroy_note(note, actor: conn.assigns.actor) do
         :ok -> send_resp(conn, :no_content, "")
-        {:error, _error} -> refuse(conn, "notes_unavailable")
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
       end
     end)
   end
@@ -100,10 +100,17 @@ defmodule AshTemplateWeb.NotesController do
          {:ok, account} <- VerifiedSession.account(verified) do
       assign(conn, :actor, Human.for_account(account))
     else
-      {:error, :account_required} -> conn |> refuse("account_required") |> halt()
-      {:error, {:configuration, _reason}} -> conn |> refuse("notes_unavailable") |> halt()
-      {:error, {_stage, _reason}} -> conn |> refuse("authentication_required") |> halt()
-      {:error, _account_read} -> conn |> refuse("notes_unavailable") |> halt()
+      {:error, :account_required} ->
+        conn |> refuse("account_required") |> halt()
+
+      {:error, {:configuration, _reason} = error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable") |> halt()
+
+      {:error, {_stage, _reason}} ->
+        conn |> refuse("authentication_required") |> halt()
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable") |> halt()
     end
   end
 
@@ -113,12 +120,14 @@ defmodule AshTemplateWeb.NotesController do
       {:ok, %Note{} = note} -> respond.(conn, note)
       {:ok, nil} -> refuse(conn, "note_not_found")
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "note_not_found")
-      {:error, _error} -> refuse(conn, "notes_unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
     end
   end
 
   defp refuse_change(conn, %Ash.Error.Invalid{} = error), do: refuse(conn, "invalid_note", error)
-  defp refuse_change(conn, _error), do: refuse(conn, "notes_unavailable")
+
+  defp refuse_change(conn, error),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
 
   defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)

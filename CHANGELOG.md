@@ -1420,3 +1420,9 @@ Operations
 
 - The amount problem, the wallet line and the wallet-mismatch note above the Buy
   Credits buttons keep their room whether or not they show, so the buttons stay put.
+
+## 2026-10-13 — An agent's "try again" leaves a trace
+
+- Every agent request the site answers only with "try again" (a 503 from notes,
+  rooms, the `/tools` doors or agent sign-in) now logs the request and what failed
+  first, through `AshTemplateWeb.UnexpectedFailure`. Nothing the agent sees changes.
