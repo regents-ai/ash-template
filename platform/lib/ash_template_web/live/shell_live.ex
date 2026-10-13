@@ -23,6 +23,7 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplateWeb.{
     AccountLive,
     ActivityLive,
+    AgentStartLive,
     ChatLive,
     NotesLive,
     NotFoundError,
@@ -95,6 +96,7 @@ defmodule AshTemplateWeb.ShellLive do
      socket
      |> assign(PublicDocuments.page(page_path(action, uri)))
      |> assign(:route_spec, route_spec)
+     |> assign(:start_agent, params["agent"])
      |> load_points(route_spec)
      |> load_verified_connections(route_spec)
      |> load_notifications(route_spec)
@@ -359,6 +361,8 @@ defmodule AshTemplateWeb.ShellLive do
           bonus={@points_bonus}
           earning={@points_earning}
         />
+
+        <AgentStartLive.page :if={@route_spec.route_id == :agent_start} agent={@start_agent} />
 
         <AccountLive.wallets
           :if={@route_spec.route_id == :wallets}

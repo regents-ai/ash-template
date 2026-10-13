@@ -320,7 +320,7 @@ defmodule AshTemplateWeb.Components.Shell do
         <section class="shell-promo" aria-labelledby="shell-promo-title">
           <p class="shell-promo__kicker">New</p>
           <h3 id="shell-promo-title">Pair your agent</h3>
-          <a href="/agents.md">How it works</a>
+          <.link navigate="/start">How it works</.link>
         </section>
 
         <section id="shell-checklist" aria-labelledby="shell-checklist-title">

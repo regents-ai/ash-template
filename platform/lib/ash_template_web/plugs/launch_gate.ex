@@ -3,8 +3,8 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
   Closes every non-marketing surface while the launch gate is closed.
 
   The setting is read on each request, so a deploy opens or closes surfaces
-  without rebuilding the release. The marketing page, the Privacy Policy, the
-  Terms of Use and signing out stay open in either state.
+  without rebuilding the release. The marketing page, the agent start page, the
+  Privacy Policy, the Terms of Use and signing out stay open in either state.
   """
 
   import Phoenix.Controller, only: [get_format: 1, json: 2, put_secure_browser_headers: 2]
@@ -12,7 +12,7 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
 
   alias AshTemplateWeb.{ContentSecurityPolicy, HoldingController}
 
-  @open_pages [[], ["privacy"], ["terms"]]
+  @open_pages [[], ["start"], ["privacy"], ["terms"]]
 
   @doc "True while the product surfaces are open."
   def app_surfaces_enabled?, do: Application.fetch_env!(:ash_template, :app_surfaces)

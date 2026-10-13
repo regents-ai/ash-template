@@ -279,6 +279,7 @@ defmodule AshTemplateWeb.Router do
       live "/account/points", ShellLive, :points
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
+      live "/start", ShellLive, :agent_start
     end
   end
 

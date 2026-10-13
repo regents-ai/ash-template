@@ -17,7 +17,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi_path Path.join(@directory, "openapi.json")
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
-  @documents ~w(/ /docs /about /contact /changelog /privacy /terms)
+  @documents ~w(/ /start /docs /about /contact /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
   @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /animations /skills)
   @site_name "Ash Template"
@@ -43,6 +43,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
+    "/start" =>
+      {"Connect your agent",
+       "The steps that pair your agent with your Ash Template account, for each agent."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/docs" =>
       {"Developer documentation",
@@ -104,6 +107,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   def document(_path), do: nil
 
   defp markdown("/"), do: AshTemplateWeb.HomeLive.agent_markdown()
+  defp markdown("/start"), do: AshTemplateWeb.AgentStart.markdown()
   defp markdown("/privacy"), do: AshTemplate.Legal.markdown(:privacy)
   defp markdown("/terms"), do: AshTemplate.Legal.markdown(:terms)
   defp markdown(path), do: source(String.trim_leading(path, "/"))

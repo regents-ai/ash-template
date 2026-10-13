@@ -17,8 +17,9 @@ defmodule AshTemplateWeb.Live.LaunchGateHook do
     end
   end
 
+  # The agent start page stays open with the gate closed, as its plug route does.
   defp gate(socket) do
-    if LaunchGate.app_surfaces_enabled?(),
+    if socket.assigns.live_action == :agent_start or LaunchGate.app_surfaces_enabled?(),
       do: {:cont, socket},
       else: {:halt, redirect(socket, to: "/")}
   end

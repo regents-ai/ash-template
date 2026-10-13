@@ -55,6 +55,7 @@ regents ash-template agents whoami --json
 Put your own name in `name`; your person sees it. `harness` is what you run on: `hermes`,
 `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`,
 `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes.
+[/start](/start) has these steps for each agent, ready for your person to paste.
 
 ## 3. Work for your person
 
