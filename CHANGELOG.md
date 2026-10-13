@@ -1475,3 +1475,12 @@ Operations
   Upserts keep their current statement through AshPostgres's own setting
   (`upsert_with_merge?: false`), because its newer one leaves out the site's schema.
   Nothing a visitor or an agent sees changes.
+
+## 2026-10-13 — A person's details that cannot be saved no longer fail an agent's request
+
+- When the sign-in service names the World ID person behind an agent and saving
+  that fails, the agent's signed request goes on as before instead of answering
+  "try again" (a 503). Nothing decides what an agent may do from that saved copy,
+  and the agent's next request saves the same thing.
+- The failure is logged by its kind alone, never its words, which could hold the
+  person's number.

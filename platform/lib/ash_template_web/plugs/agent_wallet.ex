@@ -17,6 +17,8 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   import Plug.Conn
 
+  require Logger
+
   alias AshTemplate.{Accounts, Agents}
   alias AshTemplate.Actors.{Agent, System}
   alias AshTemplateWeb.UnexpectedFailure
@@ -98,8 +100,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   defp sign_in(conn, address, book) do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}),
-         {:ok, agent} <- record_backing(agent, book),
-         {:ok, actor} <- actor(agent) do
+         {:ok, actor} <- agent |> with_backing(book) |> actor() do
       {:ok, conn |> assign(:actor, actor) |> recheck_before_send(actor)}
     else
       {:error, error} ->
@@ -178,10 +179,30 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   # The person World ID says stands behind the wallet, once the wallet has accepted
   # them. Null names nobody and changes nothing: the link, once made, stays.
-  defp record_backing(agent, %{"humanId" => human_id, "agentCount" => count}),
-    do: Agents.record_backing(agent, human_id, count, actor: %System{})
+  #
+  # Nothing here decides what the agent may do, so a save that fails never fails
+  # the request: the agent goes on as it was read, and its next request saves the
+  # same thing.
+  defp with_backing(agent, %{"humanId" => human_id, "agentCount" => count}) do
+    case Agents.record_backing(agent, human_id, count, actor: %System{}) do
+      {:ok, agent} -> agent
+      {:error, error} -> backing_not_saved(agent, error)
+    end
+  end
 
-  defp record_backing(agent, nil), do: {:ok, agent}
+  defp with_backing(agent, nil), do: agent
+
+  # Logged by the kind of failure alone: its words can hold the person's number.
+  defp backing_not_saved(agent, error) do
+    Logger.warning(
+      "Saving the World ID person of agent #{agent.wallet_address} failed: #{inspect(failure_kinds(error))}"
+    )
+
+    agent
+  end
+
+  defp failure_kinds(%{errors: [_ | _] = errors}), do: Enum.map(errors, & &1.__struct__)
+  defp failure_kinds(error), do: [error.__struct__]
 
   @impl Siwa.AgentAuthPlug.Hooks
   def deny(conn, %{reason: reason}) when is_map_key(@refusals, reason) do
