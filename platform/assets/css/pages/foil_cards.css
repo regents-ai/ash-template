@@ -1,0 +1,48 @@
+@layer regents-product {
+/* The foil cards at /animations/foil: five of the shared foil card, each the
+   shape of a playing card. The crown stands in the middle of a face this
+   narrow, so the note keeps above it and the words below. */
+
+.foil-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.foil-card {
+  --rg-panel-padding: var(--space-2);
+}
+
+.foil-card .rg-holo__content {
+  display: grid;
+  align-content: space-between;
+  gap: var(--space-3);
+  aspect-ratio: 0.8;
+}
+
+.foil-card__note {
+  color: color-mix(in srgb, var(--rg-holo-ink) 70%, transparent);
+  font: 0.72rem/1 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+.foil-card__words {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.foil-card__words h2 {
+  font-size: var(--type-title-size);
+  line-height: 1.1;
+}
+
+.foil-card__words p {
+  color: color-mix(in srgb, var(--rg-holo-ink) 78%, transparent);
+  font-size: var(--type-caption-size);
+  line-height: 1.4;
+}
+}

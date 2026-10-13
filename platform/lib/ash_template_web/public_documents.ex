@@ -48,6 +48,8 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/animations/cube" =>
       {"World cube", "A turning cube with a room behind every side, each one a door to a site."},
+    "/animations/foil" =>
+      {"Foil cards", "Five foil cards that light up under the pointer, one for each site."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

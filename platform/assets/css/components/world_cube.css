@@ -5,43 +5,6 @@
    the card of the room the visitor is standing in shows. The stage is night
    in either theme, so its colours are its own. */
 
-.world-cube-lab {
-  display: grid;
-  gap: var(--space-5);
-  max-width: 72rem;
-  margin-inline: auto;
-  padding: var(--space-5) var(--rg-page-gutter) var(--space-8);
-}
-
-.world-cube-lab__head {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.world-cube-lab__head h1 {
-  margin: 0;
-  font-family: var(--font-family-title);
-  font-size: var(--type-display-size);
-  font-weight: 400;
-  line-height: var(--type-display-line);
-}
-
-.world-cube-lab__head p {
-  margin: 0;
-  max-width: 40rem;
-  color: var(--color-fg-muted);
-}
-
-.world-cube-lab__kicker {
-  font: 0.72rem/1 var(--font-family-mono);
-  letter-spacing: var(--tracking-microlabel);
-  text-transform: uppercase;
-}
-
-.world-cube-lab__kicker a {
-  color: inherit;
-}
-
 .world-cube {
   --world-cube-ink: #e5e3d2;
   --world-cube-night: #07080c;

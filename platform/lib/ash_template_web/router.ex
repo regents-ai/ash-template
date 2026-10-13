@@ -294,6 +294,7 @@ defmodule AshTemplateWeb.Router do
       on_mount: [{Showcase, :motion_lab}, AshTemplateWeb.Live.LaunchGateHook] do
       live "/animations", AnimationsLive, :index
       live "/animations/cube", WorldCubeLive, :index
+      live "/animations/foil", FoilCardsLive, :index
     end
   end
 end

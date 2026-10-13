@@ -60,13 +60,15 @@ defmodule AshTemplateWeb.WorldCubeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <main id="world-cube-lab" class="world-cube-lab">
-      <header class="world-cube-lab__head">
-        <p class="world-cube-lab__kicker">
+    <main id="world-cube-lab" class="motion-lab">
+      <header class="motion-lab__head">
+        <p class="motion-lab__kicker">
           <a href={~p"/"}>Ash Template</a> / <a href={~p"/animations"}>Motion lab</a> / World cube
         </p>
         <h1>World cube</h1>
-        <p>Six rooms in one cube. Turn it, rest on a side to bring it closer, click to step in.</p>
+        <p class="motion-lab__lede">
+          Six rooms in one cube. Turn it, rest on a side to bring it closer, click to step in.
+        </p>
       </header>
       <WorldCube.cube id="world-cube" label="The six worlds" worlds={@worlds} />
     </main>
