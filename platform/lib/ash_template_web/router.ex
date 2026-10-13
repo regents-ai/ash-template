@@ -293,6 +293,7 @@ defmodule AshTemplateWeb.Router do
       session: {Session, :render_context, []},
       on_mount: [{Showcase, :motion_lab}, AshTemplateWeb.Live.LaunchGateHook] do
       live "/animations", AnimationsLive, :index
+      live "/animations/cube", WorldCubeLive, :index
     end
   end
 end

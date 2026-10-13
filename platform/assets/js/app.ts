@@ -32,6 +32,7 @@ import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
+import {WorldCube} from "./hooks/world_cube"
 import {mountMotion} from "./motion"
 import {installCopyButtons} from "./copy_buttons"
 import {installPublicTools} from "./public_tools"
@@ -299,6 +300,7 @@ const hooks = {
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
   VerifiedConnections,
+  WorldCube,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")
 
