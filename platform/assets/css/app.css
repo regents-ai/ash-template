@@ -20,6 +20,7 @@
 @import "./pages/chat.css";
 @import "./pages/animations.css";
 @import "./pages/foil_cards.css";
+@import "./pages/crown.css";
 @import "./components/crown.css";
 @import "./components/world_cube.css";
 @import "./components/account_auth_status.css";
