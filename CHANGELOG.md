@@ -2031,3 +2031,12 @@ Operations
   template's page (CREDITS-USES-HOME b).
 - A site copying the page keeps the other sites' rows and puts its own uses
   in place of the template's pinned note.
+
+## 2026-10-14 — A balanced footer
+
+- The home page footer sits on one line: the site links on the left, the social
+  links centred on the page, © on the right, all on the same middle line, with
+  slightly larger text (15px). On a phone the three stack, each centred, with
+  even gaps. Sean's ask of 14 October ("the footer looks off in its spacing /
+  symmetry. the text can be larger"). The markup is unchanged; the rules are in
+  `platform/assets/css/pages/home.css`, and regents.sh copies them as they are.
