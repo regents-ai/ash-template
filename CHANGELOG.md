@@ -1740,3 +1740,10 @@ Operations
   mentioned.
 - The listing and the refusal read one list, so they cannot disagree. `none`
   now means the release has nothing to apply and nothing to wait for.
+
+## 2026-10-14 — The local release rehearsal builds again
+
+- `make release` stopped at the image build since the capability list began
+  reading the command list when the app compiles: the rehearsal handed the
+  build the app and the skills but not that one file. It now hands over the
+  same three things a real release does. A real release was never affected.

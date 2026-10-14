@@ -3,12 +3,13 @@
 # Run it through `make release`, which runs every gate on that same tree first.
 # Load this site's Privy settings with `direnv exec platform make release`.
 #
-# The build context is `git archive` of HEAD's platform/ and skills/ folders (the
-# app reads the build skills it serves from skills/ when it compiles), so
-# nothing uncommitted, ignored or outside this repository enters the image. The build
-# reuses no cached layers, and the Dockerfile fetches every dependency at the
-# version the lockfiles pin; the shared libraries' repositories are public, so
-# the build takes no credentials.
+# The build context is `git archive` of HEAD's platform/ and skills/ folders and
+# cli/commands.json (the app reads the build skills it serves and the command
+# list its capability list names when it compiles), so nothing uncommitted,
+# ignored or outside this repository enters the image. The build reuses no
+# cached layers, and the Dockerfile fetches every dependency at the version the
+# lockfiles pin; the shared libraries' repositories are public, so the build
+# takes no credentials.
 #
 # The smoke check starts the image against a throwaway PostgreSQL 17 on its own
 # Docker network and removes both afterwards. It runs the staging release
@@ -66,7 +67,7 @@ fail() {
 }
 
 echo "==> Building $image from commit $commit"
-git archive --format=tar "$commit" .dockerignore platform skills |
+git archive --format=tar "$commit" .dockerignore platform skills cli/commands.json |
   docker build --no-cache --file platform/Dockerfile \
     --label "org.opencontainers.image.revision=$commit" --tag "$image" -
 digest="$(docker image inspect --format '{{.Id}}' "$image")"

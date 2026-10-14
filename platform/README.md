@@ -299,9 +299,9 @@ change the release needs that is not applied yet (a deployment is refused while
 one is listed; only Regents applies those), or `none`.
 
 The image is built from `Dockerfile` with the repository root as its context:
-the app is in `platform/`, and the build skills it serves are read from
-`skills/` when it compiles (`.dockerignore` at the root admits only those two
-folders). The build fetches every dependency at the version the lockfiles pin.
+the app is in `platform/`, and when it compiles it reads the build skills it
+serves from `skills/` and the commands its capability list names from
+`cli/commands.json` (`.dockerignore` at the root admits only those). The build fetches every dependency at the version the lockfiles pin.
 The shared libraries' repositories are public, so the build takes no
 credentials. The Fly configuration lives in `fly.toml` and `fly.staging.toml`;
 `fly.toml` names no app, so every site deploys it under its own name.
@@ -342,8 +342,8 @@ not a completed Privy sign-in.
 
 It stops unless every change is committed, then runs `make check`; a failing
 gate stops it before anything is built. `../scripts/release.sh` then builds
-the image from `git archive` of HEAD's `platform/` and `skills/` folders,
-reusing no cached layers, so nothing uncommitted or outside the repository
+the image from `git archive` of HEAD's `platform/` and `skills/` folders and
+`cli/commands.json`, reusing no cached layers, so nothing uncommitted or outside the repository
 enters it, and tags it `ash-template:<commit>`. The smoke check starts a throwaway PostgreSQL 17 on
 its own Docker network, answering to the staging database hostname, and runs
 the image as staging with the showcase `public` against it:
