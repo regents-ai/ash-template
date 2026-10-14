@@ -108,7 +108,8 @@ def handle_info({:shared_reading, key}, socket),
 ```
 
 Subscribe first, then fetch, so a reading that lands between the two still wakes
-the page.
+the page. A page that stays open while what it shows changes (one live view
+across many lists) calls `unsubscribe/1` for each key it stops showing.
 
 What it holds, and what it refuses:
 
@@ -130,6 +131,9 @@ What it holds, and what it refuses:
   with no reading, and pages hear it the same way.
 - **One producer owns each key.** Only it calls `put/2`, `degraded/1` and
   `delete/1`, and it deletes the key when the row or setting behind it ends.
+  A producer whose keys come and go asks `ids/1` on each pass what is held and
+  deletes what its fresh read no longer has. It never keeps its own list, which
+  a restart of the producer alone would lose while the table keeps the keys.
   Writes go through the one owner process; reads never do.
 - **Pages are woken only when the reading or the mark differs** from what is held,
   never because time went by. The message is `{:shared_reading, key}` and carries
@@ -137,6 +141,10 @@ What it holds, and what it refuses:
   it is ("as of block N"), would wake every page on every pass. The producer
   compares the new reading to the held one without those fields and, when the
   rest is the same, puts the held reading back: `at` moves and nobody wakes.
+  Words every visitor sees alike that age with the clock ("last check-in 3
+  minutes ago") are what the page shows, so the producer writes the words into
+  the reading on its pass, and pages wake when the words change. The times
+  behind them stay out of the reading, and no page redraws them on a timer.
 - **A shared reading never disables or delays an on-chain button.** Stale,
   degraded or absent, every button stays live. Only the chain's own state at the
   latest block, read for that press, may block one.

@@ -106,6 +106,10 @@ defmodule AshTemplate.SharedReading do
   @spec subscribe(key()) :: :ok
   def subscribe(key), do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, topic(checked(key)))
 
+  @doc "Stops hearing `key`, for a page that stays open and no longer shows it."
+  @spec unsubscribe(key()) :: :ok
+  def unsubscribe(key), do: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, topic(checked(key)))
+
   @doc """
   Stores `reading` as read just now. Answers `{:error, :too_large}`,
   `{:error, :not_plain}` or `{:error, :too_many_keys}` when it is refused; the
@@ -149,6 +153,20 @@ defmodule AshTemplate.SharedReading do
   @doc "Forgets `key`, when the row or setting it stood for has ended."
   @spec delete(key()) :: :ok
   def delete(key), do: GenServer.call(__MODULE__, {:delete, checked(key)})
+
+  @doc """
+  The ids of every key held for `kind`. A producer whose keys come and go reads
+  this on each pass and deletes the ones its fresh read no longer has, so it
+  keeps no list of its own, and a restart of the producer alone leaves no key
+  behind.
+  """
+  @spec ids(atom()) :: [integer() | String.t()]
+  def ids(kind) when is_map_key(@kinds, kind) do
+    :ets.select(@table, [{{{kind, :"$1"}, :_}, [], [:"$1"]}])
+  rescue
+    # No table for the instant its owner restarts: nothing is held.
+    ArgumentError -> []
+  end
 
   @doc false
   def measure do

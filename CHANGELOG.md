@@ -1765,3 +1765,15 @@ Operations
   now left out as it arrives. Before, it showed until the page was reloaded.
 - Sites that copy the template's rooms take the topic name
   (`public:room:<room>`) and the page together.
+
+## 2026-10-14 — Shared figures: a page can stop listening, and a producer can see what it holds
+
+- `AshTemplate.SharedReading.unsubscribe/1`: a page that stays open while it
+  moves between lists stops being woken for a figure it no longer shows.
+- `AshTemplate.SharedReading.ids/1`: the keys held for one kind, so a producer
+  whose keys come and go deletes the ones that ended without keeping its own
+  list. Before, a producer that restarted alone could leave a key behind for
+  good, counted as late.
+- The rule page now says how a figure in words that age with the clock is
+  shared: the producer writes the words, and pages wake when they change.
+  Asked for by Keyfleet's chief for its fleet pages.
