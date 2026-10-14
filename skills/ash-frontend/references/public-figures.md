@@ -165,7 +165,8 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
     `AshTemplate.SharedReading.Heal` once a minute for each such kind (one line
     in `cron`), which asks every machine's producer of that kind to read all
     its keys again (`SharedReading.heal/1`, heard after `subscribe_heal/1`).
-    The producer never schedules this itself.
+    The producer never schedules this itself. A schedule line naming a kind
+    the module does not hold fails its job each minute into saved errors.
   - **Every kind states `within`**, the seconds inside which a working producer
     reads each key again whether or not anything changed. The minute's pass
     puts back a reading that is the same, so its `at` moves and nobody wakes: a
@@ -283,6 +284,8 @@ What still holds for any page:
 Each machine keeps its own table and runs its own producers, and a wake-up reaches
 that machine's pages only. A reader of an outside clock needs nothing more. A
 producer that rereads on a row's notice must hear that notice on every machine,
+and the minute's heal reaches the other machines the same way (unjoined, their
+keys go late and `health.shared_reading.late.keys` says so),
 and a public row's publication must reach every machine's pages, so a site joins
 its machines into one cluster before it runs a second one. No Regent site runs a
 second machine today; adding one is a release condition to check against this

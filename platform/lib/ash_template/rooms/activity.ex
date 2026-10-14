@@ -50,12 +50,13 @@ defmodule AshTemplate.Rooms.Activity do
     {:ok, MapSet.new()}
   end
 
-  # An edit changes neither figure.
   @impl true
   def handle_info(%{event: event, payload: %{room: room}}, due) when event in ~w(post destroy),
     do: {:noreply, due(due, room)}
 
-  def handle_info(%{event: "edit"}, due), do: {:noreply, due}
+  # An edit changes neither figure. An event added to a room's topic later is
+  # ignored here too, so one that changes a figure needs a clause above.
+  def handle_info(%Phoenix.Socket.Broadcast{}, due), do: {:noreply, due}
 
   def handle_info({:shared_reading_heal, @kind}, due),
     do: {:noreply, Enum.reduce(Room.slugs(), due, &due(&2, &1))}

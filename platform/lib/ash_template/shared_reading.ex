@@ -79,7 +79,7 @@ defmodule AshTemplate.SharedReading do
         "a room's messages are open to a signed-out read (AshTemplate.Rooms.Message, " <>
           "read policy); the figures count every message, never what one reader's mutes leave",
       keys: 16,
-      bytes: 256,
+      bytes: 384,
       within: 150
     }
   }
