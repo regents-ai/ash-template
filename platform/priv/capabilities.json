@@ -176,6 +176,17 @@
       "switch": "app_surfaces"
     },
     {
+      "operation": "getSiteTools",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": null,
+      "may": null,
+      "done": null,
+      "cli_release": null,
+      "switch": "app_surfaces"
+    },
+    {
       "operation": "postRoomMessage",
       "effect": "write",
       "authority": "signed_agent",

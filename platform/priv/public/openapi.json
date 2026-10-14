@@ -1860,6 +1860,119 @@
         }
       }
     },
+    "/api/v1/site-tools/{site}": {
+      "get": {
+        "operationId": "getSiteTools",
+        "summary": "Read a Regent site's browser tools, or how to connect an agent",
+        "description": "The browser tools regents.sh, patchbay.help, techtree.sh, autolaunch.sh or keyfleet.ai offers on its home page (every Patchbay tool), as the site published them within the last day; the tool text is the site's own words. For siwa, the steps to connect an agent through siwa-server. Anyone may read them; no sign-in.",
+        "parameters": [
+          {
+            "name": "site",
+            "in": "path",
+            "required": true,
+            "description": "Which site's tools, or siwa for how to connect an agent.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "regents",
+                "patchbay",
+                "techtree",
+                "autolaunch",
+                "keyfleet",
+                "siwa"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The site's tools, or for siwa the steps to connect an agent",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteTools"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no site with that name (site_not_found)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "That site's tools could not be read right now (site_unreachable)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests from this client address in the current window",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Any other error, such as an unknown address or method",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/agents/v1/pair": {
       "post": {
         "operationId": "pairAgent",
@@ -3716,7 +3829,9 @@
                   "method_not_allowed",
                   "not_found",
                   "too_many_requests",
-                  "internal_server_error"
+                  "internal_server_error",
+                  "site_not_found",
+                  "site_unreachable"
                 ]
               },
               "message": {
@@ -3993,6 +4108,100 @@
             "description": "A UUID you make for this message. Keep it when retrying; it becomes the message's id."
           }
         }
+      },
+      "SiteTools": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "site",
+              "tools"
+            ],
+            "properties": {
+              "site": {
+                "type": "string",
+                "description": "The site's address, such as patchbay.help."
+              },
+              "tools": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "name",
+                    "title",
+                    "description"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "site",
+              "connection"
+            ],
+            "properties": {
+              "site": {
+                "type": "string",
+                "enum": [
+                  "siwa-server"
+                ]
+              },
+              "connection": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "guide",
+                  "steps"
+                ],
+                "properties": {
+                  "guide": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "title",
+                        "copy",
+                        "command"
+                      ],
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "copy": {
+                          "type": "string"
+                        },
+                        "command": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "headers": {
