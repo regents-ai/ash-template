@@ -21,18 +21,20 @@ defmodule AshTemplateWeb.Components.CodeCube do
   # Each face and the site it stands for. The face fixes the code the renderer
   # draws on it: 0 amber, 1 magenta hex, 2 cyan binary, 3 gold dots on blue,
   # 4 green, 5 ice blue.
+  # A site's card opens its agent guide; siwa-server's opens its code.
   @faces [
-    %{face: 4, site: "regents", name: "regents.sh"},
-    %{face: 0, site: "patchbay", name: "patchbay.help"},
-    %{face: 2, site: "techtree", name: "techtree.sh"},
-    %{face: 1, site: "autolaunch", name: "autolaunch.sh"},
-    %{face: 3, site: "keyfleet", name: "keyfleet.ai"},
-    %{face: 5, site: "siwa", name: "siwa-server"}
+    %{face: 4, site: "regents", name: "regents.sh", link: "regents.sh/agents.md"},
+    %{face: 0, site: "patchbay", name: "patchbay.help", link: "patchbay.help/agents.md"},
+    %{face: 2, site: "techtree", name: "techtree.sh", link: "techtree.sh/agents.md"},
+    %{face: 1, site: "autolaunch", name: "autolaunch.sh", link: "autolaunch.sh/agents.md"},
+    %{face: 3, site: "keyfleet", name: "keyfleet.ai", link: "keyfleet.ai/agents.md"},
+    %{face: 5, site: "siwa", name: "siwa-server", link: "github.com/regents-ai/siwa-server"}
   ]
 
   @doc """
   The six faces, each a map with `:face` (the cube face), `:site` (sent with a
-  click as `site`) and `:name`, the site's address as people know it.
+  click as `site`), `:name`, the site's address as people know it, and `:link`,
+  the page its card opens, without `https://`.
   """
   def faces, do: @faces
 
@@ -109,10 +111,16 @@ defmodule AshTemplateWeb.Components.CodeCube do
       data-close-event={@close}
     >
       <header class="code-card__head">
-        <div>
-          <p class="code-card__kicker">{kicker(@face, @state, @tools)}</p>
-          <h2 id={"#{@id}-title"}>{@face.name}</h2>
-        </div>
+        <h2 id={"#{@id}-title"}>{title(@face, @state, @tools)}</h2>
+        <a
+          href={"https://#{@face.link}"}
+          class="code-card__link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {link_label(@face)}
+          <span aria-hidden="true">↗</span><span class="visually-hidden">, opens in a new tab</span>
+        </a>
         <form method="dialog">
           <button type="submit" class="code-card__close" aria-label="Close">
             <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -188,7 +196,10 @@ defmodule AshTemplateWeb.Components.CodeCube do
     """
   end
 
-  defp kicker(%{site: "siwa"}, _state, _tools), do: "Connect an agent"
-  defp kicker(_face, :ready, tools), do: "#{length(tools)} WebMCP tools"
-  defp kicker(_face, _state, _tools), do: "WebMCP tools"
+  defp title(%{site: "siwa"} = face, _state, _tools), do: "#{face.name} : Connect an agent"
+  defp title(face, :ready, tools), do: "#{face.name} : #{length(tools)} WebMCP Tools"
+  defp title(face, _state, _tools), do: "#{face.name} : WebMCP Tools"
+
+  defp link_label(%{site: "siwa"}), do: "Open GitHub"
+  defp link_label(_face), do: "Open agents.md"
 end

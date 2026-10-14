@@ -1951,3 +1951,15 @@ Operations
   their still picture. The pin also lets the design system's own showcase run
   locally. Sites that move to vgpu 0.6 and use the foil card need this pin or
   later in the same release.
+
+## 2026-10-14 — A twin-cube card names its count in its title and opens the site's guide
+
+- A code-cube card's title is now the site and its count in one line, for
+  example "techtree.sh : 11 WebMCP Tools" ("siwa-server : Connect an agent" for
+  siwa-server); the small line above the title is gone.
+- Beside the close button, a small "Open agents.md ↗" opens that site's agent
+  guide (for example https://techtree.sh/agents.md) in a new tab; siwa-server's
+  says "Open GitHub ↗" and opens https://github.com/regents-ai/siwa-server.
+  Each face carries the page its card opens (`CodeCube.faces/0`, `:link`).
+- The card is a little wider (46rem) so the title stays on one line beside the
+  two buttons; on a phone the title sits under them. Sean's notes of 14 October.
