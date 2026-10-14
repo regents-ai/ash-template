@@ -1892,3 +1892,24 @@ Operations
 - The motion lab links the cube, foil and crown pages, and the sitemap lists them wherever
   it lists the motion lab.
 - `vgpu` and `@vgpu/wgsl` are 0.6.0.
+
+## 2026-10-14 — Twin cubes
+
+- `/animations/twin-cube`: the world cube on the left of the stage and a code cube beside it
+  on the right. Each of the code cube's six sides runs its own falling code, in its own
+  colours, glyphs and background: regents.sh, patchbay.help, techtree.sh, autolaunch.sh,
+  keyfleet.ai and siwa-server.
+- A click on a side opens a card that scrolls: the browser tools that site offers on its
+  home page (every Patchbay tool), or, for siwa-server, the four steps to connect an agent.
+  The X or Escape closes it.
+- While the pointer is on either cube, "Human Browsing" and "Agentic WebMCP" show over
+  them. Where nothing hovers, both names stay shown.
+- The page offers six browser tools, `show_<site>_webmcp_tools` for the five sites and
+  `show_siwa_connection_help`, each opening the same card a click would.
+- `GET /api/v1/site-tools/:site` answers with a site's tool list, read from that site's
+  capabilities and kept for 24 hours, or with the siwa-server steps.
+- The world cube can sit off the stage's centre: `--world-cube-centre` on `.world-cube`.
+- A site that shows the code cube copies `CodeCube` (the cube, its six faces and their card),
+  `code_cube.css`, `platform/assets/js/code_cube/`, the `CodeCube` and `TwinCube` hooks and
+  `SiteTools`, and lists the six tools in its own tool list with the scope of the page that
+  shows them. The page places the cubes and owns the read behind the card.

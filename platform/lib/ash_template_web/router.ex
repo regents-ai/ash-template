@@ -208,6 +208,7 @@ defmodule AshTemplateWeb.Router do
     delete "/notes/:id", AshTemplateWeb.NotesController, :delete
     get "/rooms", AshTemplateWeb.RoomsController, :index
     get "/rooms/:room/messages", AshTemplateWeb.RoomsController, :messages
+    get "/site-tools/:site", AshTemplateWeb.SiteToolsController, :show
   end
 
   # An agent pairs with the person who gave it a code, and checks in; both are
@@ -296,6 +297,7 @@ defmodule AshTemplateWeb.Router do
       live "/animations/crown", CrownLive, :index
       live "/animations/cube", WorldCubeLive, :index
       live "/animations/foil", FoilCardsLive, :index
+      live "/animations/twin-cube", TwinCubeLive, :index
     end
   end
 end

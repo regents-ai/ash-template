@@ -150,6 +150,9 @@ defmodule AshTemplateWeb.WorldCubeLive do
     }
   ]
 
+  @doc "The six worlds, for another page that shows the cube."
+  def worlds, do: @worlds
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,

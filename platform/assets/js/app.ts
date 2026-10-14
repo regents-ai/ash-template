@@ -26,6 +26,7 @@ import {installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
 import {Crown} from "./hooks/crown"
 import {HolographicCard} from "./hooks/holographic_card"
+import {CodeCube} from "./hooks/code_cube"
 import {InfoDialog} from "./hooks/info_dialog"
 import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
@@ -33,6 +34,7 @@ import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
+import {TwinCube} from "./hooks/twin_cube"
 import {WorldCube} from "./hooks/world_cube"
 import {mountMotion} from "./motion"
 import {installCopyButtons} from "./copy_buttons"
@@ -289,6 +291,7 @@ const hooks = {
   ...labHooks,
   ...colocatedHooks,
   AccountPicture,
+  CodeCube,
   Crown,
   HolographicCard,
   InfoDialog,
@@ -301,6 +304,7 @@ const hooks = {
   OnchainSteps,
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
+  TwinCube,
   VerifiedConnections,
   WorldCube,
 }

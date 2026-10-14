@@ -23,6 +23,8 @@
 @import "./pages/crown.css";
 @import "./components/crown.css";
 @import "./components/world_cube.css";
+@import "./components/code_cube.css";
+@import "./components/twin_cube.css";
 @import "./components/account_auth_status.css";
 
 :root {

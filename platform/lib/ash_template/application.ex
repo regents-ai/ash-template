@@ -9,6 +9,7 @@ defmodule AshTemplate.Application do
       [
         AshTemplateWeb.Telemetry,
         AshTemplate.Accounts.RequestRateLimiter,
+        AshTemplate.SiteTools,
         AshTemplate.Repo,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
         AshTemplateWeb.Presence,

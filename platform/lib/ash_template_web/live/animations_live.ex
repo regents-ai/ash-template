@@ -200,6 +200,7 @@ defmodule AshTemplateWeb.AnimationsLive do
         </p>
         <nav class="motion-lab__kicker" aria-label="More of the motion lab">
           <.link navigate={~p"/animations/cube"}>World cube</.link>
+          / <.link navigate={~p"/animations/twin-cube"}>Twin cubes</.link>
           / <.link navigate={~p"/animations/foil"}>Foil cards</.link>
           / <.link navigate={~p"/animations/crown"}>Crown</.link>
         </nav>

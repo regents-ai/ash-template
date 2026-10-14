@@ -1,0 +1,103 @@
+@layer regents-product {
+/* The twin cubes: the world cube for people and the code cube for agents, on
+   one night stage. On a wide screen they share it, the world cube drawn on the
+   left and the code cube over the right half; on a narrow one the code cube
+   has a stage of its own below. A room fills the whole stage, so the code cube
+   steps aside while the visitor is in one. "Human Browsing" and "Agentic
+   WebMCP" hang over the two while the pointer is on either. The stage is night
+   in either theme, so its colours are its own, as the world cube's are. */
+
+.twin-cube {
+  --twin-cube-ink: #e5e3d2;
+  --twin-cube-night: #07080c;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  background: var(--twin-cube-night);
+  color: var(--twin-cube-ink);
+}
+
+.twin-cube__labels {
+  display: contents;
+}
+
+.twin-cube__label {
+  position: relative;
+  z-index: 2;
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: center;
+  margin: 0;
+  padding-top: var(--space-4);
+  color: color-mix(in srgb, var(--twin-cube-ink) 74%, transparent);
+  font: 0.75rem/1.4 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.twin-cube__label:nth-child(2) {
+  grid-area: 2 / 1;
+}
+
+.twin-cube .world-cube {
+  grid-area: 1 / 1;
+}
+
+.twin-cube .code-cube {
+  grid-area: 2 / 1;
+}
+
+/* Where nothing hovers, the two names stay shown. */
+@media (hover: none) {
+  .twin-cube__label {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 48rem) {
+  .twin-cube {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .twin-cube .world-cube {
+    --world-cube-centre: 0.25;
+    grid-area: 1 / 1 / 2 / 3;
+    /* The list and the hint keep to the world cube's half of the stage. */
+    padding-inline-end: calc(50% + var(--space-5));
+  }
+
+  .twin-cube .world-cube__worlds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .twin-cube .world-cube__hint {
+    right: 50%;
+  }
+
+  .twin-cube__label:nth-child(2) {
+    grid-area: 1 / 2;
+  }
+
+  .twin-cube .code-cube {
+    grid-area: 1 / 2;
+    min-height: 0;
+    padding: var(--space-5);
+    background: transparent;
+    transition: opacity 500ms ease-out, visibility 0s;
+  }
+
+  .twin-cube:has(
+      .world-cube:is(
+        [data-world-state="entering"],
+        [data-world-state="inside"],
+        [data-world-state="leaving"]
+      )
+    )
+    .code-cube {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 320ms ease-in, visibility 0s 320ms;
+  }
+}
+}

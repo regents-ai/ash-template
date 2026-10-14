@@ -28,6 +28,7 @@ type Entry = {
   description: string
   input_schema: Schema
   annotations: Record<string, boolean>
+  scope: string
   authentication: string
 }
 
@@ -197,7 +198,8 @@ async function signed(entry: Entry, input: SignedInput, signal: AbortSignal | un
 }
 
 // JSON imports widen every literal, so the manifest is read as the shape it is written in.
-const entries = manifest.tools as unknown as Entry[]
+// Every page offers the site's tools; a page's own tools are offered by that page.
+const entries = (manifest.tools as unknown as Entry[]).filter(entry => entry.scope === "site")
 
 const tools: ModelContextTool[] = entries.map(entry => ({
   name: entry.name,
