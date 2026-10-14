@@ -1845,3 +1845,19 @@ Operations
   the person sees it.
 - The entries and their words come from Regent Credits, so every site that
   copies the page shows the same thing the same way.
+
+## 2026-10-14 — A component's own button and field styles always apply
+
+- The site's default look for buttons and text fields (a box with a border)
+  now sits in the lowest style layer, `regents-base`, declared first in
+  `platform/assets/css/app.css`. Before, it sat outside every layer and beat
+  every component rule in `regents-product`, so some buttons lost their own
+  colours.
+- Plain buttons look exactly as before. These now show their own design:
+  the motion lab's choice strips (the chosen one is filled in), its tabs,
+  menu, close and notice buttons; the showcase's "Reset this palette" and
+  "Use automatic color" text buttons; the account panel's other-sign-in
+  links; and the "Retry sign-in" button.
+- A page that set colour variables on a button only to get past the default
+  look can use plain colours instead. Sites copy the two changes in
+  `app.css`.
