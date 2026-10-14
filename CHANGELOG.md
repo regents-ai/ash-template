@@ -1861,7 +1861,7 @@ Operations
 - A page that set colour variables on a button only to get past the default
   look can use plain colours instead. Sites copy the two changes in
   `app.css`.
-## 2026-10-13 — Three worked examples on vgpu 0.6 (local, unreleased)
+## 2026-10-13 — Three worked examples on vgpu 0.6
 
 - `/animations/cube`: a slowly turning cube with a room behind each of its six sides, one
   per world. Drag to turn it, click a side to step in, and follow the room's link in a new
