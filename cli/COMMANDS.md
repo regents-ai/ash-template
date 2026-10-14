@@ -221,7 +221,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 ## account credits-history
 
 - **What:** your person's Credits history, 50 entries a page. Signed; needs a pairing.
-- **Stdin (optional):** `{"after": "…"}`, the previous page's `next_cursor`, for older entries.
+- **Flag (optional):** `--after CURSOR`, the previous page's `pagination.next_cursor`, for
+  older entries. The tool signs the body `{}` without it and `{"after": "CURSOR"}` with it.
 - **Answer:** `{"entries": […], "pagination": {"has_more", "next_cursor"}}`, paged as `rooms messages` is.
 - **Example:** `regents ash-template account credits-history`
 - **Refusals:** as for `notes list`.

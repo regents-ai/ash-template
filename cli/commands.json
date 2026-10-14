@@ -316,14 +316,21 @@
       "path": "/tools/account/credits/history",
       "authority": "paired_agent",
       "effect": "read",
-      "stdin_fields": [
+      "flags": [
         {
-          "field": "after",
+          "name": "after",
           "type": "string",
+          "in": "body",
+          "field": "after",
           "required": false,
-          "description": "The previous page's next_cursor, unchanged, for older entries."
+          "description": "The previous page's pagination.next_cursor, unchanged. Omit for the first page."
         }
-      ]
+      ],
+      "pagination": {
+        "has_more": "pagination.has_more",
+        "cursor": "pagination.next_cursor",
+        "flag": "after"
+      }
     },
     {
       "command": "account points",

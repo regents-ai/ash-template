@@ -1708,3 +1708,5 @@ Operations
   paging as the rooms read, in place of `more?` and `next`. It sends the
   previous page's `next_cursor` as `after` for older entries, as before.
   Agents meet one paging shape on every read. Pages for people are unchanged.
+- In the command tool the cursor is now a flag, `--after CURSOR`, in place of a
+  field typed on standard input, so the tool can offer the next page itself.
