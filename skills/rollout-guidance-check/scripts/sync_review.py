@@ -68,6 +68,7 @@ def sync(repo, source, check):
                     "source_path": "skills/rollout-guidance-check",
                     "files": {f: digest(data) for f, data in payload.items()}}
         if target.exists():
+            regular_path(target / "SOURCE.json")
             previous = json.loads((target / "SOURCE.json").read_text())
             if previous.get("source_repository") != manifest["source_repository"]:
                 raise ValueError(f"Unrecognized package at {target}")
