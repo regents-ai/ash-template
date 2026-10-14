@@ -1907,12 +1907,14 @@ Operations
 - The page offers six browser tools, `show_<site>_webmcp_tools` for the five sites and
   `show_siwa_connection_help`, each opening the same card a click would.
 - `GET /api/v1/site-tools/:site` answers with a site's tool list, read from that site's
-  capabilities and kept for 24 hours, or with the siwa-server steps.
+  capabilities and kept for 24 hours, or with the siwa-server steps. Only one read of a site
+  is ever under way; requests that arrive meanwhile wait for its answer, so a burst of
+  requests asks each site once.
 - The world cube can sit off the stage's centre: `--world-cube-centre` on `.world-cube`.
 - Either cube can draw smaller than its stage: `--world-cube-size` on `.world-cube` and
   `--code-cube-size` on `.code-cube`, 1 by default. regents.sh draws both at .85, and at .66
   on wide screens, to leave room for their names above them.
 - A site that shows the code cube copies `CodeCube` (the cube, its six faces and their card),
   `code_cube.css`, `platform/assets/js/code_cube/`, the `CodeCube` and `TwinCube` hooks and
-  `SiteTools`, and lists the six tools in its own tool list with the scope of the page that
+  `SiteTools` with its `SiteTools.Reads` task supervisor, and lists the six tools in its own tool list with the scope of the page that
   shows them. The page places the cubes and owns the read behind the card.
