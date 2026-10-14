@@ -1811,3 +1811,16 @@ Operations
   looked detached wherever the button was not there. Sean's word of 14 October.
 - The tile that read "Protocol" now reads "$REGENT Staking". Its link is
   unchanged.
+
+## 2026-10-14 — Sign in with Google and the other choices the Privy dashboard offers
+
+- Someone who signs in with Google, email, a phone number, another social
+  account or a passkey now gets a Privy Ethereum wallet of their own at once,
+  linked to their account, so they can do everything a wallet sign-in can. The
+  site never limited the choices; this makes sure every account has a wallet,
+  whatever the dashboard's own wallet setting says. Sean's decision of
+  14 October ("1. a").
+- It is an ordinary wallet, never a Privy smart wallet, so SIWA checks its
+  signatures without asking the chain.
+- Sites that copy this drop any `loginMethods: ["wallet"]` they pass to Privy
+  and add the same `embeddedWallets.ethereum.createOnLogin`.

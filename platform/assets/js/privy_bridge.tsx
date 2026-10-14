@@ -1185,13 +1185,19 @@ export function startPrivyBridge(
     }
 
     root.render(
-      // The sign-in choices come from the Privy dashboard, which also gives every
-      // account an Ethereum wallet of its own. Privy's own list of networks covers
+      // The sign-in choices (a wallet, Google and the others) come from the Privy
+      // dashboard. Someone who signs in without a wallet gets a Privy Ethereum
+      // wallet of their own at once, linked to their account, so every account
+      // can act. It is an ordinary wallet, never a smart wallet: SIWA checks its
+      // signatures without asking the chain. Privy's own list of networks covers
       // every network a step goes to, through Privy's own nodes, and a person
       // always sees Privy's confirm window before their Privy wallet signs.
       <PrivyProvider
         appId={appId}
-        config={{appearance: {logo: "/mark.png"}, embeddedWallets: {showWalletUIs: true}}}
+        config={{
+          appearance: {logo: "/mark.png"},
+          embeddedWallets: {showWalletUIs: true, ethereum: {createOnLogin: "users-without-wallets"}},
+        }}
       >
         <AccountBridge
           oauthReturn={oauthReturn}
