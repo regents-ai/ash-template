@@ -158,12 +158,8 @@ defmodule AshTemplateWeb.PointsLive do
             <h3>Daily limits</h3>
             <dl>
               <div>
-                <dt>You</dt>
-                <dd>Up to {whole(Rules.daily_cap("activity:human"))} a day on {names(@apps)}</dd>
-              </div>
-              <div>
-                <dt>Your agents, together</dt>
-                <dd>Up to {whole(Rules.daily_cap("activity:agent"))} a day on {names(@apps)}</dd>
+                <dt>You and your agents</dt>
+                <dd>Up to {whole(Rules.daily_cap("activity:account"))} a day on {names(@apps)}</dd>
               </div>
             </dl>
           </div>
@@ -261,6 +257,4 @@ defmodule AshTemplateWeb.PointsLive do
 
   defp scope_name("activity:account"), do: "You and your agents"
   defp scope_name("credits"), do: "Credits purchases"
-  defp scope_name("activity:human"), do: "Your actions"
-  defp scope_name("activity:agent"), do: "Your agents’ actions"
 end

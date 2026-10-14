@@ -12,15 +12,9 @@ defmodule AshTemplate.SignedToolsTest do
     # Accepted invariant: transport/actor changes cannot create another reward allowance.
     alias RegentPoints, as: Points
     alias RegentPoints.{Rules, Store}
-    keys = [:starts_at, :unified_activity_starts_at]
-    previous = Map.new(keys, &{&1, Application.get_env(:regent_points, &1)})
-
-    on_exit(fn ->
-      Enum.each(previous, fn {key, value} -> Application.put_env(:regent_points, key, value) end)
-    end)
-
+    starts_at = Application.get_env(:regent_points, :starts_at)
+    on_exit(fn -> Application.put_env(:regent_points, :starts_at, starts_at) end)
     Application.put_env(:regent_points, :starts_at, ~U[2020-01-01 00:00:00Z])
-    Application.put_env(:regent_points, :unified_activity_starts_at, ~U[2020-01-02 00:00:00Z])
 
     account =
       AshTemplate.Accounts.register_verified!("did:privy:points-test", @wallet, [@wallet],
@@ -29,10 +23,11 @@ defmodule AshTemplate.SignedToolsTest do
 
     Points.open_account!(%{id: account.id}, actor: Store.system())
     at = ~U[2020-01-03 12:00:00Z]
-    rule = Enum.find(Rules.catalog(at), &(&1["id"] == "patchbay.reply_published"))
+    reply = "patchbay.reply_published"
 
-    event = fn kind, time ->
+    event = fn rule_id, kind, time ->
       id = Ecto.UUID.generate()
+      rule = Enum.find(Rules.catalog(), &(&1["id"] == rule_id))
 
       Points.create_event!(
         %{
@@ -40,7 +35,7 @@ defmodule AshTemplate.SignedToolsTest do
           source_app: "patchbay",
           source_kind: "reply",
           source_event_key: id,
-          rule_id: rule["id"],
+          rule_id: rule_id,
           account_id: account.id,
           actor_kind: kind,
           actor_id: id,
@@ -56,26 +51,26 @@ defmodule AshTemplate.SignedToolsTest do
       )
     end
 
-    first = event.("human", at)
-    second = event.("agent", at)
-    third = event.("agent", at)
+    first = event.(reply, "human", at)
+    second = event.(reply, "agent", at)
 
-    for e <- [first, second],
-        do:
-          assert({:ok, %{status: :confirmed}} = Points.process_event(e.id, actor: Store.system()))
-
-    assert {:ok, %{status: :capped}} = Points.process_event(third.id, actor: Store.system())
     assert {:ok, %{status: :confirmed}} = Points.process_event(first.id, actor: Store.system())
-    assert length(Points.read_entries!(actor: Store.system())) == 3
+    assert {:ok, %{status: :capped}} = Points.process_event(second.id, actor: Store.system())
+    assert {:ok, %{status: :confirmed}} = Points.process_event(first.id, actor: Store.system())
+    assert length(Points.read_entries!(actor: Store.system())) == 2
     day_two = DateTime.add(at, 1, :day)
     cap = Store.cap(account.id, Rules.program(), "activity:account", Rules.window("day", day_two))
     Points.consume_cap!(cap, 95_000_000, actor: Store.system())
 
     assert {:ok, %{status: :confirmed}} =
-             Points.process_event(event.("agent", day_two).id, actor: Store.system())
+             Points.process_event(event.(reply, "agent", day_two).id, actor: Store.system())
 
+    # Another rule, another actor: the day's limit is the account's, so it is spent.
     assert {:ok, %{status: :capped}} =
-             Points.process_event(event.("human", day_two).id, actor: Store.system())
+             Points.process_event(
+               event.("patchbay.report_published", "human", day_two).id,
+               actor: Store.system()
+             )
 
     assert Store.cap(
              account.id,

@@ -1627,7 +1627,7 @@ Operations
 
 ## 2026-10-13 — ENS lookups run in their own queue
 
-- A person's ENS lookup at sign-in now runs in its own queue, `ens_lookups`
+- A person's ENS lookup at sign-in now runs in its own queue, `ens`
   (three at a time), instead of sharing `outside_calls` with the site's other
   slow calls. A crowd signing in at once, each lookup taking seconds for a name
   with a picture, no longer makes those other jobs wait behind it. Lookups
@@ -1641,3 +1641,21 @@ Operations
 - On-chain buttons skill, rule 10: a step that names several items names only
   the ones the contract will take, since one refused item reverts the whole
   call.
+
+## 2026-10-14 — Shared libraries moved up; a release refuses while a shared database change is missing
+
+- The site now uses the shared libraries as pushed on 14 October: the ENS
+  picture fix (a slow or refusing picture service is a failed read that is
+  tried again, never "no picture"), Credits history as one entry for each
+  thing that happened, the Credits team's view of one person, and Sean's
+  13 October Points rules.
+- A release now refuses to start while the shared Credits or Points tables are
+  behind the code it carries, and names every missing change. Before this, a
+  site could go live on new library code against old tables and fail every
+  Credits hold. Regents applies those shared changes; every other site only
+  checks. This release needs Credits change 20261013202732 in production first.
+- Points page, "Daily limits": one row, "You and your agents", with the one
+  shared daily limit, in place of the two rows for the old separate limits.
+- Credits team page: the sentence for a refund refused because the account had
+  used Credits is gone; the library no longer gives that reason.
+- The ENS lookup queue is named `ens`, the name Keyfleet already runs.
