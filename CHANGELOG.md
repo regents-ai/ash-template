@@ -1744,6 +1744,7 @@ Operations
 ## 2026-10-14 — The local release rehearsal builds again
 
 - `make release` stopped at the image build since the capability list began
-  reading the command list when the app compiles: the rehearsal handed the
-  build the app and the skills but not that one file. It now hands over the
-  same three things a real release does. A real release was never affected.
+  reading the command list when the app compiles and naming the commit it was
+  built from: the rehearsal handed the build the app and the skills but not
+  that one file, and not the commit. It now hands over what a real release
+  (`scripts/deploy.sh`) does. A real release was never affected.

@@ -69,6 +69,7 @@ fail() {
 echo "==> Building $image from commit $commit"
 git archive --format=tar "$commit" .dockerignore platform skills cli/commands.json |
   docker build --no-cache --file platform/Dockerfile \
+    --build-arg SOURCE_COMMIT="$commit" \
     --label "org.opencontainers.image.revision=$commit" --tag "$image" -
 digest="$(docker image inspect --format '{{.Id}}' "$image")"
 
