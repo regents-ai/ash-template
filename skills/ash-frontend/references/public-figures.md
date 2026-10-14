@@ -167,7 +167,16 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 A producer's cost no longer grows with the pages open, but it does not stop when
 nobody is looking: it is keys times passes, every pass, with no visitor on the
 site. Bound it on purpose and say the bound beside the kind (Autolaunch reads at
-most 100 open auctions a pass, about 17 chain requests each).
+most 100 open auctions a pass, plus up to 100 finished ones every fourth pass,
+at about 29 chain requests an auction).
+
+Measure a producer at a production provider's pace, not at a local node's. At
+25 ms a request, Autolaunch's pass took longer than one two-second block; its
+check that the pass's block was still the newest then failed every pass, and
+the figures stayed stale for good. Nothing showed it at local speed. A chain
+producer pins every read of a pass to one block by its hash and, before it
+stores, asks whether that block is still part of the chain, never whether it is
+still the newest.
 
 ### Measurements
 
@@ -246,7 +255,12 @@ What still holds for any page:
   loaded. A list the page only renders goes in a stream, which the server does
   not keep.
 - **The same figure on every page is held once**, in `SharedReading` or a
-  publication's payload, and each page keeps only what it renders.
+  publication's payload, and each page keeps only what it renders. A shared
+  reading saves the reads, not the copy: a page that assigns what it fetched
+  holds its own copy (Autolaunch measured 282,496 bytes a page for a
+  1,000-price ladder). So a kind's byte limit is also a cost per viewer, the
+  limit times the pages showing that key, and a page assigns only the part it
+  draws.
 - **A page that is sent a message every block never rests.** Waking a page only
   when a figure it shows has changed is what lets it sit idle between changes.
 

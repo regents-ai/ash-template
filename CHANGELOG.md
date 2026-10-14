@@ -1632,3 +1632,12 @@ Operations
   slow calls. A crowd signing in at once, each lookup taking seconds for a name
   with a picture, no longer makes those other jobs wait behind it. Lookups
   already waiting in `outside_calls` at release still run from there.
+
+## 2026-10-13 — Guides: three lessons from Autolaunch and Keyfleet
+
+- Shared figures guide: measure a producer at a production provider's pace and
+  pin each pass to one block by its hash; a kind's size limit is also a cost
+  for every page showing it; Autolaunch's pass numbers corrected.
+- On-chain buttons skill, rule 10: a step that names several items names only
+  the ones the contract will take, since one refused item reverts the whole
+  call.

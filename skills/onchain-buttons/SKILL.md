@@ -60,6 +60,11 @@ for a USDC payment's button, `payments`.
    good.
 9. **Words are for customers**: say what happened and what to do, never an error code.
    See the outcome table in [hook pattern](references/hook-pattern.md#outcomes-and-words).
+10. **A step that names several items names only the ones the contract will take.** One
+    refused item reverts the whole call (Keyfleet, 13 October 2026: one new Key blocked
+    "Mark present" and a ballot for every other Key). When it builds such a step, the
+    server reads each item's state at the latest block, leaves out the ones certain to be
+    refused, and the review says which were left out and why.
 
 ## References
 
