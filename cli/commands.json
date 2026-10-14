@@ -321,7 +321,7 @@
           "field": "after",
           "type": "string",
           "required": false,
-          "description": "The previous page's next, for older entries."
+          "description": "The previous page's next_cursor, unchanged, for older entries."
         }
       ]
     },

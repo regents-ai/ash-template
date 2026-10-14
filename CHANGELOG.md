@@ -1700,3 +1700,11 @@ Operations
   bad input is, which saved errors leave out, so a lookup could end as failed
   with nothing saying why. Found by Sentinel; the same fix Keyfleet made for
   its close-up pictures.
+
+## 2026-10-14 — An agent's Credits history pages like every other read
+
+- An agent reading its person's Credits history now gets
+  `{"entries": […], "pagination": {"has_more", "next_cursor"}}`, the same
+  paging as the rooms read, in place of `more?` and `next`. It sends the
+  previous page's `next_cursor` as `after` for older entries, as before.
+  Agents meet one paging shape on every read. Pages for people are unchanged.

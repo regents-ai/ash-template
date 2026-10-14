@@ -78,8 +78,14 @@ defmodule AshTemplateWeb.PageToolsController do
       end
 
     case RegentCredits.history(args, actor: credit_actor(conn)) do
-      {:ok, history} -> json(conn, history)
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+      {:ok, history} ->
+        json(conn, %{
+          entries: history.entries,
+          pagination: %{has_more: history.more?, next_cursor: history.next}
+        })
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
