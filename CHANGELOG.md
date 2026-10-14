@@ -1777,3 +1777,10 @@ Operations
 - The rule page now says how a figure in words that age with the clock is
   shared: the producer writes the words, and pages wake when they change.
   Asked for by Keyfleet's chief for its fleet pages.
+
+## 2026-10-14 — The privacy page names the ENS picture service
+
+- When a wallet has an ENS name with a picture, the visitor's browser loads it
+  from the ENS avatar service, which can see their internet address and ENS
+  name. The privacy page now says so (version 1.2). Sean's decision of 14
+  October.

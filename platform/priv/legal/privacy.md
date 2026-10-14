@@ -1,7 +1,7 @@
 # Ash Template Privacy Policy
 
-**Effective date:** October 12, 2026  
-**Version:** 1.1
+**Effective date:** October 14, 2026  
+**Version:** 1.2
 
 This Privacy Policy explains how **Regents Labs, Inc.** ("Regents Labs," "we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name at `template.regents.sh` (collectively, the "Services").
 
@@ -97,6 +97,8 @@ These providers receive information needed to perform services for us and are su
 ### B. Connected and third-party services
 
 When you connect a social account, identity, or wallet, we disclose information needed to complete the connection. The third party may separately collect information under its own policy.
+
+If your wallet has an ENS name with a picture, your browser loads that picture from the ENS avatar service, which can see your internet address and ENS name.
 
 ### C. Legal, safety, and enforcement
 
