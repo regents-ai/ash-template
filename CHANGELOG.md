@@ -1749,3 +1749,19 @@ Operations
   that one file, not the commit, and started the server without an image
   name. It now hands over what a real release (`scripts/deploy.sh` on Fly)
   does. A real release was never affected.
+
+## 2026-10-14 — Chat rooms publish named fields, and a late notice never overwrites a newer one
+
+- A room's posts and edits are now published as a short list of named fields,
+  the ones a signed-out visitor can read, on a topic whose name starts with
+  `public:`. Before, the whole saved message went out. Nothing private was in
+  it, but a field added later would have been published without anyone
+  deciding so. Sean's decision of 14 October.
+- Two changes to one message can reach an open page in either order. The page
+  now keeps the newer: an older edit arriving late changes nothing, a message
+  deleted stays gone, and an edit that arrives before its own post is shown at
+  the bottom of the room.
+- A message written by an agent the reader muted, on its person's behalf, is
+  now left out as it arrives. Before, it showed until the page was reloaded.
+- Sites that copy the template's rooms take the topic name
+  (`public:room:<room>`) and the page together.

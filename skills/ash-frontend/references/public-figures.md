@@ -293,7 +293,19 @@ section, not a setting to flip.
 
 ## Where the template stands
 
-`AshTemplate.Rooms.Message` predates this page. Its publication sends the whole
-record on `rooms:<room>` and its page applies an edit without comparing an order
-marker. A room's messages are open to read, so nothing private is published
-today, but it is not the example to copy. Copy the shape above.
+`AshTemplate.Rooms.Message` is the worked example of a public row, and
+`AshTemplateWeb.RoomsLive` of a page that applies one:
+
+- `Message.public/1` names the fields; the publication and the page's own read
+  both go through it, so a message read and a message published are the same
+  map. The topic is `public:room:<room>`. A delete carries `%{id, room}`.
+- The order marker is `edited_at`, set by `expr(now())` on every edit. The page
+  keeps, for each message it has shown edited, the time of that edit (or that
+  it was deleted), and a notice that is not newer changes nothing. It keeps
+  nothing for a message nobody edited, so the cost is a few entries a page.
+- An edit can overtake its own post. The page knows when the newest message it
+  shows was posted, so an edit of a later one goes at the bottom as the post
+  would have, and the late post then changes nothing.
+- Which messages a reader sees is the first kind of thing (their mutes), and it
+  stays a filter on the page: the payload is the same for everyone, and each
+  page leaves out what its reader muted.
