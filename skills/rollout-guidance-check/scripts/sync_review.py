@@ -52,10 +52,14 @@ def sync(repo, source, check):
     if Path(top) != repo:
         raise ValueError(f"Not a repository root: {repo}")
     canonical = repo == source.parents[1]
+    origin = subprocess.run(["git", "-C", str(repo), "remote", "get-url", "origin"],
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True).stdout.strip()
+    videocontrol = origin.removesuffix(".git").replace(":", "/").endswith("github.com/regents-ai/videocontrol")
     relative = "skills/rollout-guidance-check" if canonical else (
-        "review/rollout-guidance-check" if repo.name == "videocontrol" else
+        "review/rollout-guidance-check" if videocontrol else
         ".agents/skills/rollout-guidance-check")
     planned = {}
+    retired = []
     if not canonical:
         target = repo / relative
         regular_path(target)
@@ -73,6 +77,8 @@ def sync(repo, source, check):
                     rel = str(path.relative_to(target))
                     if rel not in previous["files"] or digest(path.read_bytes()) != previous["files"][rel]:
                         raise ValueError(f"Preserve independently edited package file: {path}")
+                    if rel not in payload:
+                        retired.append(path)
         planned.update({target / f: data for f, data in payload.items()})
         planned[target / "SOURCE.json"] = (json.dumps(manifest, indent=2) + "\n").encode()
     agents = repo / "AGENTS.md"
@@ -88,7 +94,7 @@ def sync(repo, source, check):
     else:
         updated = old + ("\n" if old.endswith("\n") else "\n\n" if old else "") + block
     planned[agents] = updated.encode()
-    changed = []
+    changed = [str(path.relative_to(repo)) for path in retired]
     for path, data in planned.items():
         regular_path(path)
         if not path.exists() or path.read_bytes() != data:
@@ -101,6 +107,8 @@ def sync(repo, source, check):
             if str(path.relative_to(repo)) in changed:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
+        for path in retired:
+            path.unlink()
     print(json.dumps({"repo": str(repo), "mode": "check" if check else "sync",
                       "changed_or_stale": changed}))
     return bool(changed)
