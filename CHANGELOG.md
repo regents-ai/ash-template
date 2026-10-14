@@ -2052,3 +2052,10 @@ Operations
   panel uses the same function.
 - The link shows once the shared account history (design-system `ba76912`,
   "a row may carry one link") is pinned; until then the rows read as before.
+
+## 2026-10-14 — No View link on a purchase without a saved payment
+
+- Credits bought before signing in, and a purchase whose payment record is
+  missing, have no chain or payment hash. Their history rows now show without a
+  View link, where before the Credits page failed for that account. Found by the
+  orchestrator's check of the View link before release.

@@ -136,7 +136,10 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
     })
   end
 
-  defp payment(%{kind: :bought, chain: chain, tx_hash: tx_hash}) do
+  # Credits bought before sign-in, or a purchase whose row is gone, carry no
+  # payment, so their rows have no link.
+  defp payment(%{kind: :bought, chain: chain, tx_hash: tx_hash})
+       when is_map_key(@explorers, chain) and is_binary(tx_hash) do
     %{
       link: %{
         href: transaction_url(chain, tx_hash),
