@@ -275,9 +275,13 @@ Not all of a page's memory sits in its processes. With 2,000 idle Patchbay forum
 pages (the siwa chief's measurement, 14 October 2026), the setting took a page
 from 0.44 MB to 0.37 MB, and 0.34 MB of what was left was a buffer the network
 driver holds for each open connection, outside every process, which no process
-setting reaches. A fixed receive size on the web server's connections did not
-change it on a Mac. Measure it on the server the site really runs on before
-counting it as the floor of a page.
+setting reaches. That figure was taken on a Mac. On Fly (2,000 open pages of a
+copy of Autolaunch through Fly's edge, performance-2x, the siwa chief, 14
+October 2026) the same buffer was about 0.13 MB a connection: about 0.05 MB in
+the engine's binary memory and about 0.08 MB outside the engine's own count. So
+a Mac overstates each page by about 0.2 MB, and capacity is worked out from
+the Fly figure. It belongs to the engine's network driver, so it should be the
+same on every site, though only Autolaunch has been measured.
 
 The page process itself needs no setting: LiveView compacts a page's memory
 once it has been idle for 15 seconds (`hibernate_after` under the endpoint's
