@@ -271,6 +271,14 @@ setting it is swept each time. In the same trial the connection process went fro
 cost that could be told from noise. It is Phoenix's own documented setting
 (`Phoenix.Endpoint.socket/3`).
 
+Not all of a page's memory sits in its processes. With 2,000 idle Patchbay forum
+pages (the siwa chief's measurement, 14 October 2026), the setting took a page
+from 0.44 MB to 0.37 MB, and 0.34 MB of what was left was a buffer the network
+driver holds for each open connection, outside every process, which no process
+setting reaches. A fixed receive size on the web server's connections did not
+change it on a Mac. Measure it on the server the site really runs on before
+counting it as the floor of a page.
+
 What still holds for any page:
 
 - **Assign what the page renders.** An Ash record carries its metadata and every
