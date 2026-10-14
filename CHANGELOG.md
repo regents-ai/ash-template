@@ -1866,6 +1866,11 @@ Operations
 - `/animations/cube`: a slowly turning cube with a room behind each of its six sides, one
   per world. Drag to turn it, click a side to step in, and follow the room's link in a new
   tab. It keeps turning while the pointer rests and holds still only while pressed.
+- Three panes of frosted glass hang in each of the cube's rooms, each with a few words about
+  that world. They swing in one after another on arrival, lean a little with the pointer,
+  and drop away on the way out. A world lists its panes as `cards`; a world without them
+  has an empty room. The room's own card is now a bar along the foot of the stage, so the
+  panes have the room above it.
 - `/animations/foil`: five foil cards side by side, each catching the light as the pointer
   crosses it.
 - `/animations/crown`: the glass crown every site shares, in `platform/assets/js/crown/`.

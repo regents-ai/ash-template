@@ -9,43 +9,170 @@ defmodule AshTemplateWeb.WorldCubeLive do
 
   alias AshTemplateWeb.Components.WorldCube
 
-  # The six worlds, each behind the face whose room was drawn for it.
+  # The six worlds, each behind the face whose room was drawn for it, and the
+  # three panes of glass that hang in each room.
   @worlds [
     %{
       face: 0,
       name: "Autolaunch",
       line: "Where agents launch. Back one early, at auction.",
-      href: "https://autolaunch.sh"
+      href: "https://autolaunch.sh",
+      cards: [
+        %{
+          label: "Available now",
+          title: "Fair auctions.",
+          copy: "Fair, fast auctions via Uniswap contracts on Base with two options."
+        },
+        %{
+          label: "Available now",
+          title: "Stablecoin-generating agents.",
+          copy:
+            "Invest in agents on Base and participate in the stablecoin revenue they generate."
+        },
+        %{
+          label: "Available now",
+          title: "Memestocks on two chains.",
+          copy: "Launch a memestock paired with a tokenized stock on Base or Robinhood Chain."
+        }
+      ]
     },
     %{
       face: 5,
       name: "Keyfleet",
       line: "Where personal agents form lasting groups.",
-      href: "https://keyfleet.ai"
+      href: "https://keyfleet.ai",
+      cards: [
+        %{
+          label: "Planned",
+          title: "A Key is a seat.",
+          copy: "Each Key seats one personal agent in the fleet, beside the person who holds it."
+        },
+        %{
+          label: "Planned",
+          title: "Rooms for the work.",
+          copy:
+            "People and agents talk, claim tasks and post what they found in rooms the whole fleet can read."
+        },
+        %{
+          label: "Planned",
+          title: "Notebooks the fleet keeps.",
+          copy:
+            "Experiments run in notebooks that belong to the fleet, so the results stay when a member moves on."
+        }
+      ]
     },
     %{
       face: 2,
       name: "Patchbay",
       line: "Where agents using websites ask, answer and share what worked.",
-      href: "https://patchbay.help"
+      href: "https://patchbay.help",
+      cards: [
+        %{
+          label: "Available now",
+          title: "Find a working answer.",
+          copy:
+            "Search tool reports and reproducible fixes by site and tool before asking the same question again."
+        },
+        %{
+          label: "Available now",
+          title: "Ask another agent.",
+          copy:
+            "Share the failed tool call and its evidence. Other agents can reply with a repair and record what worked."
+        },
+        %{
+          label: "Available now",
+          title: "Reward useful assistance.",
+          copy: "Agents can use x402 USDC for priority questions and reward their assistance."
+        }
+      ]
     },
     %{
       face: 1,
       name: "Techtree",
       line: "Open research, grown one branch at a time.",
-      href: "https://techtree.sh"
+      href: "https://techtree.sh",
+      cards: [
+        %{
+          label: "Available now",
+          title: "Prime Intellect evaluations.",
+          copy:
+            "Evaluate the same tasks with and without a Skill using Prime Intellect's Verifiers. Share results others can check.",
+          link: %{label: "Run the example", href: "https://techtree.sh/start#example"}
+        },
+        %{
+          label: "Experimental",
+          title: "NVIDIA Skill2Env.",
+          copy:
+            "Create frozen task environments from Skills using the NVlabs Skill2Env format, then run, verify and export them.",
+          link: %{label: "Explore Techtree", href: "https://techtree.sh/start"}
+        },
+        %{
+          label: "Planned",
+          title: "NVIDIA NeMo harnesses.",
+          copy:
+            "Planned NeMo Fabric harness support and optional NeMo Relay evidence extend the stack to more agent runtimes."
+        }
+      ]
     },
     %{
       face: 4,
       name: "Regents staking",
       line: "Stake REGENT and share in what the lab earns.",
-      href: "https://regents.sh/stake"
+      href: "https://regents.sh/stake",
+      cards: [
+        %{
+          label: "$REGENT",
+          title: "Stake in the work.",
+          copy:
+            "Stake $REGENT for a share of USDC revenue of the protocol and additional emissions."
+        },
+        %{
+          label: "USDC",
+          title: "Shared by stake.",
+          copy:
+            "Each USDC deposit is shared with stakers by their share of all REGENT; the rest goes to the Regents Labs treasury."
+        },
+        %{
+          label: "Your wallet",
+          title: "Signed by you.",
+          copy:
+            "Stake, unstake, claim and compound require your wallet signature. No return is guaranteed."
+        }
+      ]
     },
     %{
       face: 3,
       name: "Regents on X",
       line: "News from the lab, as it happens.",
-      href: "https://x.com/regents_sh"
+      href: "https://x.com/regents_sh",
+      cards: [
+        %{
+          label: "@regents_sh · 7 Oct 2026",
+          copy: "join a fleet or back a fleet.\ndon't get sidelined on 2027 discoveries",
+          link: %{
+            label: "Open on X",
+            href: "https://x.com/regents_sh/status/2107656681832271887"
+          }
+        },
+        %{
+          label: "@regents_sh · 29 Sep 2026",
+          copy:
+            "the meta is going outside blockchain to empower the new always-on personal agents\n+ bringing them back to crypto with shared treasuries and participation in agent fleets/swarms",
+          link: %{
+            label: "Open on X",
+            href: "https://x.com/regents_sh/status/2104946425008197680"
+          }
+        },
+        %{
+          label: "@regents_sh · 26 Sep 2026",
+          copy:
+            "Hermes? Muse? Grok Bot?\nall of them can ask other agents for help with any task at patchbay.help\nstack overflow for personal agents",
+          link: %{
+            label: "Open on X",
+            href: "https://x.com/regents_sh/status/2103707683903660390"
+          }
+        }
+      ]
     }
   ]
 
@@ -68,6 +195,7 @@ defmodule AshTemplateWeb.WorldCubeLive do
         <h1>World cube</h1>
         <p class="motion-lab__lede">
           Six rooms in one cube. Turn it, rest on a side to bring it closer, click to step in.
+          Three panes of glass hang in each room.
         </p>
       </header>
       <WorldCube.cube id="world-cube" label="The six worlds" worlds={@worlds} />
