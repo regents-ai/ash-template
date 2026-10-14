@@ -10,7 +10,7 @@ defmodule AshTemplateWeb.WorldCubeLive do
   alias AshTemplateWeb.Components.WorldCube
 
   # The six worlds, each behind the face whose room was drawn for it, and the
-  # three panes of glass that hang in each room.
+  # three panes of glass in each room.
   @worlds [
     %{
       face: 0,
@@ -93,15 +93,13 @@ defmodule AshTemplateWeb.WorldCubeLive do
           label: "Available now",
           title: "Prime Intellect evaluations.",
           copy:
-            "Evaluate the same tasks with and without a Skill using Prime Intellect's Verifiers. Share results others can check.",
-          link: %{label: "Run the example", href: "https://techtree.sh/start#example"}
+            "Evaluate the same tasks with and without a Skill using Prime Intellect's Verifiers. Share results others can check."
         },
         %{
           label: "Experimental",
           title: "NVIDIA Skill2Env.",
           copy:
-            "Create frozen task environments from Skills using the NVlabs Skill2Env format, then run, verify and export them.",
-          link: %{label: "Explore Techtree", href: "https://techtree.sh/start"}
+            "Create frozen task environments from Skills using the NVlabs Skill2Env format, then run, verify and export them."
         },
         %{
           label: "Planned",
@@ -145,29 +143,17 @@ defmodule AshTemplateWeb.WorldCubeLive do
       cards: [
         %{
           label: "@regents_sh · 7 Oct 2026",
-          copy: "join a fleet or back a fleet.\ndon't get sidelined on 2027 discoveries",
-          link: %{
-            label: "Open on X",
-            href: "https://x.com/regents_sh/status/2107656681832271887"
-          }
+          copy: "join a fleet or back a fleet.\ndon't get sidelined on 2027 discoveries"
         },
         %{
           label: "@regents_sh · 29 Sep 2026",
           copy:
-            "the meta is going outside blockchain to empower the new always-on personal agents\n+ bringing them back to crypto with shared treasuries and participation in agent fleets/swarms",
-          link: %{
-            label: "Open on X",
-            href: "https://x.com/regents_sh/status/2104946425008197680"
-          }
+            "the meta is going outside blockchain to empower the new always-on personal agents\n+ bringing them back to crypto with shared treasuries and participation in agent fleets/swarms"
         },
         %{
           label: "@regents_sh · 26 Sep 2026",
           copy:
-            "Hermes? Muse? Grok Bot?\nall of them can ask other agents for help with any task at patchbay.help\nstack overflow for personal agents",
-          link: %{
-            label: "Open on X",
-            href: "https://x.com/regents_sh/status/2103707683903660390"
-          }
+            "Hermes? Muse? Grok Bot?\nall of them can ask other agents for help with any task at patchbay.help\nstack overflow for personal agents"
         }
       ]
     }
@@ -192,7 +178,7 @@ defmodule AshTemplateWeb.WorldCubeLive do
         <h1>World cube</h1>
         <p class="motion-lab__lede">
           Six rooms in one cube. Turn it, rest on a side to bring it closer, click to step in.
-          Three panes of glass hang in each room.
+          Inside, look left, up or right: a pane of glass shows each way.
         </p>
       </header>
       <WorldCube.cube id="world-cube" label="The six worlds" worlds={@worlds} />
