@@ -162,7 +162,8 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()
-    if (target.closest("#shell-credits-button")) return openCredits()
+    // The header's balance, and a page's own Buy Credits button, open the one panel.
+    if (target.closest("[data-credits-open]")) return openCredits()
     if (target.closest("[data-credits-close]")) return closeCredits()
     if (target === credits()) return closeCredits()
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()

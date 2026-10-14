@@ -154,6 +154,7 @@ defmodule AshTemplateWeb.Components.Shell do
           aria-haspopup="dialog"
           aria-controls="shell-credits"
           aria-label={credits_label(@credits)}
+          data-credits-open
           phx-hook="MotionCount"
           data-variant="flash"
         >

@@ -4,7 +4,8 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
   and returned on each Regent site, and refunds, newest first, each with its
   date and time. The entries and their words come from Regent Credits
   (`RegentCredits.History`, `RegentCredits.History.Words`), so every site
-  shows the same thing the same way.
+  shows the same thing the same way. Buy Credits opens the header's own Buy
+  Credits panel.
   """
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
@@ -22,6 +23,17 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
     <article id="credits-history-page" class="account-page">
       <.page_head title="Credits history">
         <:tip>Everything that changed your Credits, on every Regent site.</:tip>
+        <:actions :if={@account}>
+          <Regent.Primitives.button
+            id="credits-history-buy"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="shell-credits"
+            data-credits-open
+          >
+            Buy Credits
+          </Regent.Primitives.button>
+        </:actions>
       </.page_head>
       <Regent.Account.signed_out
         :if={is_nil(@account)}

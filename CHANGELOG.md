@@ -2000,3 +2000,11 @@ Operations
 - `ash-stack` routes to it, and the site serves it with the other build skills.
 - The template's shared libraries move from a844a83 to elixir-utils 9db13eb,
   where they run on Ash 3.36 and Credits sends its signals.
+
+## 2026-10-14 — A Buy Credits button on the Credits page
+
+- The Credits page (`/account/credits`) shows a "Buy Credits" button beside its
+  title while signed in. It opens the header's own Buy Credits panel, the same
+  one the header balance opens, so there is one way to buy. Sean's ask of 14
+  October, from the Regents Credits page.
+- Any button marked `data-credits-open` opens that panel (`shell_panels.ts`).
