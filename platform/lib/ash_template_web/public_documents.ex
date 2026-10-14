@@ -82,7 +82,7 @@ defmodule AshTemplateWeb.PublicDocuments do
        "How a question and its replies read on a Regent site, with sample posts; likes are not kept."},
     "/showcase/figures" =>
       {"Live figures",
-       "How a figure that is the same for everyone reaches every open page: Base's newest block, read once and shown to all."},
+       "How a figure that is the same for everyone reaches every open page: Base's newest block and each room's activity, read once and shown to all."},
     "/showcase/onchain" =>
       {"Wallet lab", "Wallet buttons against a practice network on this machine."},
     "/showcase/credits" =>

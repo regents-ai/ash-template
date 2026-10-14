@@ -1,15 +1,17 @@
 defmodule AshTemplateWeb.FiguresShowcaseLive do
   @moduledoc """
-  A figure every visitor sees alike, working: Base's newest block. One reader
-  (`AshTemplate.ChainHead`) asks Base for it; every open copy of this page shows
-  what `AshTemplate.SharedReading` holds and is told when it changes. The page
-  reads nothing from the chain or the database itself, so a thousand open
-  copies cost the one read. The `ash-frontend` skill's `public-figures.md` says
+  Figures every visitor sees alike, working. Base's newest block: one reader
+  (`AshTemplate.ChainHead`) asks Base for it. Each room's activity: one counter
+  (`AshTemplate.Rooms.Activity`) counts a room again when someone posts in it.
+  Every open copy of this page shows what `AshTemplate.SharedReading` holds and
+  is told when it changes. The page reads nothing from the chain or the
+  database itself, so a thousand open copies cost the one read. The `ash-frontend` skill's `public-figures.md` says
   when a product page uses this and when it must not.
   """
   use AshTemplateWeb, :live_view
 
   alias AshTemplate.{ChainHead, SharedReading}
+  alias AshTemplate.Rooms.{Activity, Room}
   alias AshTemplateWeb.Components.Shell
   alias Regent.Primitives, as: P
 
@@ -18,16 +20,22 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   # Subscribed before the first fetch, so no change between the two is missed.
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: SharedReading.subscribe(@key)
+    if connected?(socket) do
+      SharedReading.subscribe(@key)
+      for room <- Room.slugs(), do: SharedReading.subscribe(Activity.key(room))
+    end
 
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/figures"))
-     |> assign(head: head()), layout: false}
+     |> assign(head: head(), rooms: rooms()), layout: false}
   end
 
   @impl true
   def handle_info({:shared_reading, @key}, socket), do: {:noreply, assign(socket, head: head())}
+
+  def handle_info({:shared_reading, {:room_activity, _room}}, socket),
+    do: {:noreply, assign(socket, rooms: rooms())}
 
   # No reading yet is shown as the reader being behind, never as a block.
   defp head do
@@ -36,6 +44,24 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
       :error -> %{block: nil, behind?: true}
     end
   end
+
+  # Only what a row draws is kept: the room's name and its two figures.
+  defp rooms do
+    for %{slug: slug, name: name} <- Room.all() do
+      case SharedReading.fetch(Activity.key(slug)) do
+        {:ok, %{reading: %{messages: messages, latest_at: latest_at}, degraded?: behind?}} ->
+          %{slug: slug, name: name, messages: messages, latest_at: latest_at, behind?: behind?}
+
+        _no_count_yet ->
+          %{slug: slug, name: name, messages: nil, latest_at: nil, behind?: true}
+      end
+    end
+  end
+
+  defp messages(1), do: "1 message"
+
+  defp messages(count),
+    do: "#{count |> Integer.to_string() |> RegentFormat.add_delimiters()} messages"
 
   @impl true
   def render(assigns) do
@@ -71,6 +97,24 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
               do: "Base can't be read right now. This page catches up by itself.",
               else: "Read from Base every two seconds, once for everyone."}
           </p>
+        </section>
+
+        <section class="rg-panel rg-panel--surface" aria-labelledby="figures-rooms-heading">
+          <h2 id="figures-rooms-heading">Room activity</h2>
+          <dl id="figures-rooms" class="payments-terms">
+            <div :for={room <- @rooms} id={"figures-room-#{room.slug}"}>
+              <dt>{room.name}</dt>
+              <dd>
+                <span :if={room.messages}>{messages(room.messages)}</span>
+                <span :if={!room.messages}>No count yet</span>
+                <time :if={room.latest_at} datetime={DateTime.to_iso8601(room.latest_at)}>
+                  · latest {Calendar.strftime(room.latest_at, "%-d %b, %H:%M UTC")}
+                </time>
+                <P.status :if={room.behind?} tone="warning">Behind</P.status>
+              </dd>
+            </div>
+          </dl>
+          <p id="figures-rooms-state">Counted once for everyone, when someone posts.</p>
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="figures-rules-heading">

@@ -41,11 +41,18 @@ defmodule AshTemplate.SharedReading do
   `Decimal`s, and maps, lists or tuples of them. An Ash record or any other
   struct is refused, as is a reading over its kind's size.
 
+  Every kind also states `within`: the seconds inside which a working producer
+  reads each of its keys again, whether or not anything changed. A reader of an
+  outside clock does so on its own interval. A producer that rereads on notice
+  does so when `heal/1` asks, each minute (`AshTemplate.SharedReading.Heal`),
+  which is also what mends a notice that was lost. A key older than its kind's
+  `within` is late, whatever the kind.
+
   ## Measurements
 
   `measure/0` runs with the site's other periodic measurements and reports, for
-  each kind, how many keys it holds, how many of them have never been read and
-  how long ago its oldest reading was taken
+  each kind, how many keys it holds, how many of them have never been read, how
+  many are late and how long ago its oldest reading was taken
   (`[:ash_template, :shared_reading, :kind]`), and the table's size in memory
   (`[:ash_template, :shared_reading, :table]`). Every `degraded/1` is counted
   (`[:ash_template, :shared_reading, :degraded]`), as is every refused reading
@@ -59,11 +66,21 @@ defmodule AshTemplate.SharedReading do
 
   # open: why a signed-out visitor may see it. keys: the most this kind holds.
   # bytes: the largest reading, measured as `:erlang.external_size/1`.
+  # within: the seconds inside which a working producer reads every key again.
   @kinds %{
     chain_head: %{
       open: "a chain's newest block number is public on the chain itself",
       keys: 8,
-      bytes: 64
+      bytes: 64,
+      within: 30
+    },
+    room_activity: %{
+      open:
+        "a room's messages are open to a signed-out read (AshTemplate.Rooms.Message, " <>
+          "read policy); the figures count every message, never what one reader's mutes leave",
+      keys: 16,
+      bytes: 256,
+      within: 150
     }
   }
 
@@ -116,6 +133,19 @@ defmodule AshTemplate.SharedReading do
     counted(GenServer.call(__MODULE__, {:degraded, key}), kind)
   end
 
+  @doc """
+  Asks the producer of `kind`, on every machine, to read all its keys again.
+  The producer hears `{:shared_reading_heal, kind}` after `subscribe_heal/1`.
+  """
+  @spec heal(atom()) :: :ok
+  def heal(kind) when is_map_key(@kinds, kind) do
+    Phoenix.PubSub.broadcast(AshTemplate.PubSub, heal_topic(kind), {:shared_reading_heal, kind})
+  end
+
+  @spec subscribe_heal(atom()) :: :ok
+  def subscribe_heal(kind) when is_map_key(@kinds, kind),
+    do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, heal_topic(kind))
+
   @doc "Forgets `key`, when the row or setting it stood for has ended."
   @spec delete(key()) :: :ok
   def delete(key), do: GenServer.call(__MODULE__, {:delete, checked(key)})
@@ -131,7 +161,7 @@ defmodule AshTemplate.SharedReading do
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
 
     # Every kind each tick, so a kind whose keys are all gone reads 0.
-    for {kind, _limits} <- @kinds do
+    for {kind, %{within: within}} <- @kinds do
       ats = Map.get(held, kind, [])
       read = for %DateTime{} = at <- ats, do: DateTime.diff(now, at, :millisecond)
 
@@ -140,6 +170,7 @@ defmodule AshTemplate.SharedReading do
         %{
           keys: length(ats),
           never_read: length(ats) - length(read),
+          late: Enum.count(read, &(&1 > within * 1_000)),
           oldest_seconds: Enum.max(read, fn -> 0 end) / 1_000
         },
         %{kind: kind}
@@ -220,6 +251,7 @@ defmodule AshTemplate.SharedReading do
   end
 
   defp topic({kind, id}), do: "shared_reading:#{kind}:#{id}"
+  defp heal_topic(kind), do: "shared_reading_heal:#{kind}"
 
   defp counted(:ok, _kind), do: :ok
 

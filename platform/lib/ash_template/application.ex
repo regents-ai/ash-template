@@ -17,6 +17,7 @@ defmodule AshTemplate.Application do
         # there before the endpoint below serves a page.
         AshTemplate.SharedReading,
         chain_head_children(),
+        room_activity_child(),
         # After the repository and PubSub: a Credits balance changed on any
         # Regent site reaches the pages showing it.
         RegentCredits.Listener,
@@ -59,6 +60,12 @@ defmodule AshTemplate.Application do
   # calls a node.
   defp chain_head_children do
     if serving?(), do: AshTemplate.ChainHead.children(), else: []
+  end
+
+  # Rooms are counted only where pages are served, so a task or a test never
+  # reads the database before it asks to.
+  defp room_activity_child do
+    if serving?(), do: AshTemplate.Rooms.Activity
   end
 
   defp serving?, do: Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint)

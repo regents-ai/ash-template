@@ -16,6 +16,11 @@ defmodule AshTemplateWeb.Live.OpenPages do
   The error dashboard's pages are the library's own and admin-only, and are not
   counted.
 
+  A live view drawn inside another (`live_render(@socket, …)`) is part of its
+  parent's page and is not counted. One drawn inside a plain page
+  (`live_render(@conn, …)`) is a page of its own: it is counted, and the plain
+  page passes it `session: AshTemplateWeb.Live.Session.render_context(@conn)`.
+
   The count is this machine's: an address spread over several machines holds up
   to the limit on each. A page that moves to another page leaves and joins in
   quick succession, so an address holding exactly the limit can be refused a
@@ -29,7 +34,7 @@ defmodule AshTemplateWeb.Live.OpenPages do
   def child_spec(_opts), do: Registry.child_spec(keys: :duplicate, name: __MODULE__)
 
   def on_mount(:default, _params, session, socket) do
-    if connected?(socket),
+    if connected?(socket) and is_nil(socket.parent_pid),
       do: admit(socket, Map.fetch!(session, "client_key")),
       else: {:cont, socket}
   end

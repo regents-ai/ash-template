@@ -1710,3 +1710,23 @@ Operations
   Agents meet one paging shape on every read. Pages for people are unchanged.
 - In the command tool the cursor is now a flag, `--after CURSOR`, in place of a
   field typed on standard input, so the tool can offer the next page itself.
+
+## 2026-10-14 — Room activity: a live figure counted from the site's own rows
+
+- The Live figures page (`/showcase/figures`) now shows each chat room's
+  message count and the time of its newest message. One counter counts a room
+  again within a second of a post or a delete, once for everyone; every open
+  page shows that one copy. Sean's decision of 14 October.
+- It is the worked example of the second way to keep a shared figure: counted
+  again when the site's own rows change. Before, the template only had the
+  first way (a figure read from outside on a timer).
+- A change notice can be lost, so once a minute the site's schedule asks for
+  every room to be counted again. The same pass keeps a quiet room's figure
+  fresh, so a quiet room never looks like a stopped counter.
+- Every kind of shared figure now states how soon a working reader refreshes
+  it, and `health.shared_reading.late.keys` counts the figures older than
+  that, so one alarm serves every kind.
+- The count is of every message in the room, as a signed-out visitor could
+  count them. It does not change with what one reader has muted.
+- A live view drawn inside another is not counted as an open page of its own
+  (the 40-page limit); one drawn inside a plain page is.

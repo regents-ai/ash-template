@@ -48,7 +48,9 @@ page (ash-frontend, [public figures](../ash-frontend/references/public-figures.m
   failed read.
 - **A reread on notice.** The producer of a reading built from the site's own rows
   subscribes to those rows' notices and rereads at most once a second however many
-  arrive. It holds nothing but "a reread is due".
+  arrive. It holds nothing but "a reread is due" (`AshTemplate.Rooms.Activity`). A
+  lost notice is healed by an Oban schedule line, once a minute for each kind
+  (`AshTemplate.SharedReading.Heal`); the producer never schedules that itself.
 
 The watcher that records chain events keeps its own rules in `chain-events`. Anything
 else that loops, polls or schedules itself is Oban's, and a third shape needs the lane

@@ -195,6 +195,12 @@ defmodule AshTemplateWeb.Telemetry do
         tags: [:kind],
         description: "Seconds since the oldest shared reading of each kind was read"
       ),
+      last_value("health.shared_reading.late.keys",
+        event_name: [:ash_template, :shared_reading, :kind],
+        measurement: :late,
+        tags: [:kind],
+        description: "Keys of the kind last read longer ago than the kind's producer should allow"
+      ),
       last_value("health.shared_reading.never_read.keys",
         event_name: [:ash_template, :shared_reading, :kind],
         measurement: :never_read,

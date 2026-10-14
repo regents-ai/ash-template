@@ -158,11 +158,24 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
   reading after, so a page never shows a figure the database does not hold.
 - **A reread on notice**, for a reading built from the site's own rows: the
   producer subscribes to the rows' notices, rereads at most once a second however
-  many arrive, and holds nothing but "a reread is due". The template has no
-  kind of this shape yet. Its first one lands in the template before any site
-  builds one, and settles two things there: what heals a notice that was lost,
-  and how a kind states whether it has an expected freshness, since a quiet
-  market rightly leaves an old reading and must not read as a stopped producer.
+  many arrive, and holds nothing but "a reread is due". `AshTemplate.Rooms.Activity`
+  is the worked example: each room's message count and newest message time, on
+  `/showcase/figures`. Two things come with this shape:
+  - **A lost notice is healed each minute.** The site's Oban schedule runs
+    `AshTemplate.SharedReading.Heal` once a minute for each such kind (one line
+    in `cron`), which asks every machine's producer of that kind to read all
+    its keys again (`SharedReading.heal/1`, heard after `subscribe_heal/1`).
+    The producer never schedules this itself.
+  - **Every kind states `within`**, the seconds inside which a working producer
+    reads each key again whether or not anything changed. The minute's pass
+    puts back a reading that is the same, so its `at` moves and nobody wakes: a
+    quiet room keeps a young reading and never reads as a stopped producer.
+    `health.shared_reading.late.keys` counts the keys older than their kind's
+    `within`, so one alarm ("late above 0") serves every kind.
+
+  A reading counted over many rows costs a pass over those rows each time. A
+  count over a room of thousands is fine; past that, keep the figure on a row
+  of its own and publish that row (the section above).
 
 A producer's cost no longer grows with the pages open, but it does not stop when
 nobody is looking: it is keys times passes, every pass, with no visitor on the
@@ -182,7 +195,8 @@ still the newest.
 
 `health.shared_reading.oldest.seconds` (by kind) is how long ago the oldest key
 of a kind was read: a producer that has stopped shows as a number that only
-grows. `health.shared_reading.never_read.keys` counts the keys that have had no
+grows. `health.shared_reading.late.keys` counts the keys read longer ago than
+their kind's `within`. `health.shared_reading.never_read.keys` counts the keys that have had no
 reading since the site started, which the age cannot show.
 `health.shared_reading.degraded.total` counts failed readings by kind, and a
 reader's failed requests count in `health.chain_request_failures.total` under

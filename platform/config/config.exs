@@ -81,7 +81,13 @@ config :ash_template, Oban,
   ],
   # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end,
   # and Regent Credits' purchase checks and deposit reads (AshTemplate.Application).
-  cron: [crontab: [{"17 4 * * *", AshTemplate.ErrorPruner}]],
+  cron: [
+    crontab: [
+      {"17 4 * * *", AshTemplate.ErrorPruner},
+      # One line for each kind of shared reading a producer rereads on notice.
+      {"* * * * *", AshTemplate.SharedReading.Heal, args: %{kind: "room_activity"}}
+    ]
+  ],
   pruner: [max_age: {7, :days}],
   lifeline: [rescue_after: {10, :minutes}]
 
