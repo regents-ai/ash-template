@@ -2065,3 +2065,8 @@ Operations
 - The template uses design-system `ba76912` ("Account history: a row may carry
   one link"), so each Credits purchase with a saved payment now shows its View
   link.
+
+## 2026-10-14 — Compact world cube on phones
+
+- Bound the phone world-cube stage to 32–38rem using the stable viewport height.
+- Keep fallback links in a scrollable list within the same stage; retain desktop sizing.
