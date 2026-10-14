@@ -198,6 +198,11 @@ defmodule AshTemplateWeb.AnimationsLive do
           Little movements, side by side. The version marked standard is the one the real pages
           use; the others stay here to compare. Press things and switch between them.
         </p>
+        <nav class="motion-lab__kicker" aria-label="More of the motion lab">
+          <.link navigate={~p"/animations/cube"}>World cube</.link>
+          / <.link navigate={~p"/animations/foil"}>Foil cards</.link>
+          / <.link navigate={~p"/animations/crown"}>Crown</.link>
+        </nav>
         <div class="motion-lab__row">
           <P.button variant="secondary" phx-click={JS.dispatch("lab:replay")}>Replay everything</P.button>
           <P.button variant="secondary" phx-click="reduced" aria-pressed={to_string(@reduced?)}>

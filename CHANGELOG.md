@@ -1874,6 +1874,8 @@ Operations
   empty room.
 - The room's own card is a bar along the foot of the stage with the world's link, and
   stays for as long as the visitor is in the room.
+- With the cube drawn, Tab still reaches every world's link; the card of the link in focus
+  shows over the stage.
 - The Patchbay room is a great hall: a switchboard filling the far wall with cords slung
   across it, rows of desks facing it, and a planet in the night beyond the glass above.
 - `/animations/foil`: five foil cards side by side, each catching the light as the pointer
@@ -1887,4 +1889,6 @@ Operations
   without them keeps one colour.
 - A visitor who asked for less motion gets the crown as one composed shot, drawn once and
   left alone. Where the browser cannot draw it, the still picture stays.
+- The motion lab links the cube, foil and crown pages, and the sitemap lists them wherever
+  it lists the motion lab.
 - `vgpu` and `@vgpu/wgsl` are 0.6.0.
