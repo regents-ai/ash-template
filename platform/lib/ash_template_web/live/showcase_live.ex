@@ -598,6 +598,31 @@ defmodule AshTemplateWeb.ShowcaseLive do
           This preview shows the frame around every signed-in page: the top bar, the sections, each section's list, the side panel and the bottom bar.
         </p>
       </.disclosure>
+      <.disclosure id="article-table-detail" summary="Readable article tables">
+        <div class="rg-blog rg-blog__prose">
+          <p>Example content. On phones, scroll the table sideways to read every column.</p>
+          <div class="rg-blog-table" tabindex="0" role="region" aria-label="Example article table">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Method</th>
+                  <th scope="col">Observation</th>
+                  <th scope="col">Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Shared presentation</td>
+                  <td>Readable words stay together while long identifiers can wrap.</td>
+                  <td>
+                    example0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </.disclosure>
     </.section>
     """
   end
