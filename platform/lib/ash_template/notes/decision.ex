@@ -2,8 +2,8 @@ defmodule AshTemplate.Notes.Decision do
   @moduledoc """
   One question Jev was asked about one save of a note: which label fits it.
 
-  Saving a note creates a pending decision in the same transaction
-  (`AshTemplate.Notes.Note.AskForLabel`), and an AshOban trigger then asks Jev
+  Saving a note creates a pending decision in the same transaction, on the
+  notes' `:note_saved` signal (`RequestLabel`), and an AshOban trigger then asks Jev
   outside any transaction (`AskJev`). The row records what Jev chose, the model
   that answered, the tokens and what OpenRouter charged. A request that does
   not get through retries with backoff, then records its failure. The writer
@@ -22,7 +22,14 @@ defmodule AshTemplate.Notes.Decision do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
 
-  alias AshTemplate.Notes.Decision.{AskJev, RateOnce, RecordFailure, UnderDailyBudget}
+  alias AshTemplate.Notes.Decision.{
+    AskJev,
+    RateOnce,
+    RecordFailure,
+    RequestLabel,
+    UnderDailyBudget
+  }
+
   alias AshTemplate.Notes.Labels
 
   postgres do
@@ -77,8 +84,19 @@ defmodule AshTemplate.Notes.Decision do
     end
   end
 
+  signals_in do
+    from AshTemplate.Notes.Signals do
+      on :note_saved, :request_label
+    end
+  end
+
   actions do
     defaults [:read]
+
+    action :request_label do
+      argument :signal, AshTemplate.Notes.Signals.NoteSaved, allow_nil?: false
+      run fn input, context -> RequestLabel.ask(input.arguments.signal, context) end
+    end
 
     create :ask do
       accept [:note_id]
@@ -128,7 +146,7 @@ defmodule AshTemplate.Notes.Decision do
       authorize_if always()
     end
 
-    policy action(:ask) do
+    policy action([:request_label, :ask]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end

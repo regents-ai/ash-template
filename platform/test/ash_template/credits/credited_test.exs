@@ -1,8 +1,8 @@
 defmodule AshTemplate.Credits.CreditedTest do
-  # Crediting a purchase tells the site through `on_credited` inside the credit
-  # itself. A site without that setting, or whose module fails, never credits a
-  # purchase, and nothing shows it until a person pays. This credits one, as the
-  # site's purchase check does once the chain shows the payment.
+  # Crediting a purchase tells the site's listeners of `RegentCredits.Signals`
+  # inside the credit itself, so a listener that fails rolls the credit back,
+  # and nothing shows it until a person pays. This credits one, as the site's
+  # purchase check does once the chain shows the payment.
   use ExUnit.Case, async: true
 
   @person "did:privy:credits-test"
@@ -13,7 +13,7 @@ defmodule AshTemplate.Credits.CreditedTest do
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
   end
 
-  test "a purchase credits with the site's on_credited module" do
+  test "a purchase credits with the site listening" do
     {:ok, purchase} =
       RegentCredits.Purchase
       |> Ash.Changeset.for_create(

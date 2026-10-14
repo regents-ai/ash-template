@@ -1,13 +1,12 @@
-defmodule AshTemplate.Rooms.Message.NotifyMentions do
+defmodule AshTemplate.Activity.Notification.NotifyMentions do
   @moduledoc """
-  Tells each person a new message mentions. A mention is `@` followed by the
-  name a person has posted under in that room, in any case. Nobody is told about
-  their own message, or about one from someone they muted. The notifications
-  are written in the post's own transaction, so a post that fails tells nobody,
-  and they are published once it commits.
+  Tells each person a new message mentions, on the rooms' `:message_posted`
+  signal. A mention is `@` followed by the name a person has posted under in
+  that room, in any case. Nobody is told about their own message, or about one
+  from someone they muted. The notifications are written in the post's own
+  transaction, so a post that fails tells nobody, and they are published once
+  it commits.
   """
-
-  use Ash.Resource.Change
 
   require Ash.Query
 
@@ -17,26 +16,27 @@ defmodule AshTemplate.Rooms.Message.NotifyMentions do
 
   @excerpt 140
 
-  @impl true
-  def change(changeset, _opts, _context), do: Ash.Changeset.after_action(changeset, &notify/2)
+  @doc "Writes the notifications for the message `signal` names; `:ok` or `{:error, errors}`."
+  def notify(%{message_id: id}) do
+    # The post's own bookkeeping: the message was just written in this transaction.
+    message = Ash.get!(Message, id, authorize?: false)
 
-  defp notify(_changeset, message) do
     case message |> mentioned() |> Enum.map(&notification(message, &1)) do
       [] ->
-        {:ok, message}
+        :ok
 
       notifications ->
+        # Ash holds the notices until the post's transaction commits.
         result =
           Ash.bulk_create(notifications, Notification, :notify,
             actor: %System{},
             notify?: true,
-            return_notifications?: true,
             return_errors?: true,
             stop_on_error?: true
           )
 
         case result do
-          %Ash.BulkResult{status: :success, notifications: sent} -> {:ok, message, sent}
+          %Ash.BulkResult{status: :success} -> :ok
           %Ash.BulkResult{errors: errors} -> {:error, errors}
         end
     end

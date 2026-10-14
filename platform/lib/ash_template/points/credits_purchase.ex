@@ -38,7 +38,7 @@ defmodule AshTemplate.Points.CreditsPurchase do
 
   defp facts(purchase, account) do
     %{
-      # The same source as Credited: Credits is one Regents ledger on every site.
+      # The same source as AshTemplate.Points.Award: Credits is one Regents ledger on every site.
       source_app: "regents",
       source_kind: "credits_purchase",
       source_event_key: purchase.id,

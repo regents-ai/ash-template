@@ -279,8 +279,8 @@ browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
 - `mix test` signs a person in and back in, because sign-in once failed for three
   days unnoticed, and walks a new person from an email sign-in without a wallet,
   through the wallet Privy gives them, to the same account at every sign-in.
-- It credits a Credits purchase through the site's `on_credited` module, because
-  a site without one never credits a purchase.
+- It credits a Credits purchase with the site listening to Credits' signals,
+  because a listener that fails rolls the credit back.
 - It checks that a paired agent's tools accept only signed proof, never a cookie.
 - It races two agents on two sites for a person's last Credits, retries a lost
   pin answer, and revokes an allowance mid-session: an agent never spends more

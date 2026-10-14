@@ -17,7 +17,7 @@ defmodule AshTemplate.MixProject do
       start_permanent: false,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      compilers: [:ash_signals, :phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
       usage_rules: usage_rules()
     ]
@@ -37,11 +37,11 @@ defmodule AshTemplate.MixProject do
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
-      {:ash, "~> 3.34 and >= 3.34.6"},
+      {:ash, "~> 3.36"},
       {:ash_postgres, "== 2.13.0"},
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
-      {:ash_oban, "~> 0.9.0"},
+      {:ash_oban, "~> 0.10.0"},
       {:ash_ai, "~> 1.1.1"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},

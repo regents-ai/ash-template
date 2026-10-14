@@ -1963,3 +1963,23 @@ Operations
   Each face carries the page its card opens (`CodeCube.faces/0`, `:link`).
 - The card is a little wider (46rem) so the title stays on one line beside the
   two buttons; on a phone the title sits under them. Sean's notes of 14 October.
+
+## 2026-10-14 — Ash 3.36, AshOban 0.10, and site events as Ash signals
+
+- Ash moves to 3.36 and AshOban to 0.10. Oban stays on 2.24.
+- What one part of the site tells the rest is now an Ash signal, and each part
+  that cares listens for it, inside the same transaction, so something that
+  rolls back tells nobody:
+  - a room post is `:message_posted` (`AshTemplate.Rooms.Signals`), and
+    Activity writes the mention notifications;
+  - a note save is `:note_saved` and a new note `:note_created`
+    (`AshTemplate.Notes.Signals`); a label question listens to the first and
+    Points to the second;
+  - Credits purchases reach Points through `RegentCredits.Signals`
+    (`:purchase_credited`, `:purchase_attributed`) instead of the
+    `on_credited` setting, which is gone.
+- Points listens through `AshTemplate.Points.Award`, in its own small domain.
+- `mix ash.signals` lists who sends and who listens; the dev server reloads
+  signal changes (`reloadable_compilers`).
+- The template now needs the shared Elixir libraries at their Ash 3.36 commit.
+  Sites copy this after the template is released.

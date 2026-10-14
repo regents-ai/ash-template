@@ -19,7 +19,6 @@ config :regent_credits,
   ash_domains: [RegentCredits],
   admins: [],
   chain_client: AshTemplate.ChainClient,
-  on_credited: AshTemplate.Credits.Credited,
   chains: %{
     base: %{chain_id: 8453, name: "Base", rpc_url: "https://mainnet.base.org"},
     ethereum: %{chain_id: 1, name: "Ethereum", rpc_url: "https://ethereum-rpc.publicnode.com"}
@@ -49,6 +48,7 @@ config :ash_template,
     AshTemplate.Accounts,
     AshTemplate.Agents,
     AshTemplate.Notes,
+    AshTemplate.Points,
     AshTemplate.Rooms
   ],
   ecto_repos: [AshTemplate.Repo],

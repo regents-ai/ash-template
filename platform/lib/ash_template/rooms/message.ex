@@ -10,8 +10,9 @@ defmodule AshTemplate.Rooms.Message do
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A room's
   messages, and every new post, come with their agent, if an agent wrote them, so its
   World ID mark shows as it stands now, and with the picture its author's
-  account shows. A post that
-  mentions someone by name tells them (`NotifyMentions`). Every post,
+  account shows. Every post is told to the rest of the site as
+  `:message_posted` (`AshTemplate.Rooms.Signals`), so a post that mentions
+  someone by name tells them. Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once. What is published is `public/1`, the fields a
   signed-out reader sees, never the record.
@@ -28,7 +29,6 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.Message.{
     AuthorPicture,
     LeaveOutMuted,
-    NotifyMentions,
     PostedByActor,
     SetAuthor,
     SquashBlankLines
@@ -159,7 +159,7 @@ defmodule AshTemplate.Rooms.Message do
       change {LimitWrites,
               allowance: :room_post, address_allowance: :room_post_address, field: :body}
 
-      change NotifyMentions
+      emit AshTemplate.Rooms.Signals, :message_posted, fields: [message_id: :id]
       change load(@shown)
     end
 

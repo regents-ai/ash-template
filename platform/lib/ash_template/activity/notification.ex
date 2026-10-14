@@ -1,8 +1,9 @@
 defmodule AshTemplate.Activity.Notification do
   @moduledoc """
   One thing a signed-in person should know about, such as someone mentioning
-  them in a room. It is written in the same transaction as the thing it reports
-  (`AshTemplate.Rooms.Message.NotifyMentions`), only its person can read it or
+  them in a room. It is written in the same transaction as the thing it reports,
+  on that thing's signal (`NotifyMentions` on the rooms' `:message_posted`),
+  only its person can read it or
   mark it read, and each change is published on their own topic, so the bell on
   every page they have open counts it at once.
   """
@@ -12,6 +13,8 @@ defmodule AshTemplate.Activity.Notification do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
+
+  alias AshTemplate.Activity.Notification.NotifyMentions
 
   postgres do
     table "notifications"
@@ -39,8 +42,19 @@ defmodule AshTemplate.Activity.Notification do
     end
   end
 
+  signals_in do
+    from AshTemplate.Rooms.Signals do
+      on :message_posted, :notify_mentions
+    end
+  end
+
   actions do
     defaults [:read]
+
+    action :notify_mentions do
+      argument :signal, AshTemplate.Rooms.Signals.MessagePosted, allow_nil?: false
+      run fn input, _context -> NotifyMentions.notify(input.arguments.signal) end
+    end
 
     read :mine do
       prepare build(sort: [inserted_at: :desc, id: :desc], limit: 50)
@@ -60,6 +74,12 @@ defmodule AshTemplate.Activity.Notification do
   end
 
   policies do
+    # Reached only through the rooms' signal, after the post itself was allowed;
+    # it writes each notification as the system.
+    policy action(:notify_mentions) do
+      authorize_if always()
+    end
+
     policy action(:notify) do
       authorize_if actor_attribute_equals(:role, :system)
     end

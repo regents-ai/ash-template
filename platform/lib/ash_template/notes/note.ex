@@ -10,14 +10,15 @@ defmodule AshTemplate.Notes.Note do
   (`AshTemplate.Notes.Webhook`). A save that rolls back queues nothing. The job
   retries with backoff and records its last failure on the note.
 
-  When the server can ask Jev, each save also asks which label fits the note
+  When the server can ask Jev, each save is told as `:note_saved`
+  (`AshTemplate.Notes.Signals`), and a question asks which label fits the note
   (`AshTemplate.Notes.Decision`); `label_decision` is the latest one.
 
   A pinned note comes first among its writer's notes. An agent pinning one
   costs that person one Regent Credit (`Pin`); unpinning is free.
 
-  A note an agent writes for its person is offered to Regent Points
-  (`AgentNotePoints`).
+  Each new note is told as `:note_created`, and one an agent wrote for its
+  person is offered to Regent Points (`AshTemplate.Points.Award`).
   """
 
   use Ash.Resource,
@@ -28,8 +29,6 @@ defmodule AshTemplate.Notes.Note do
     extensions: [AshOban]
 
   alias AshTemplate.Notes.Note.{
-    AgentNotePoints,
-    AskForLabel,
     AskingJev,
     DeliverWebhook,
     Pin,
@@ -131,8 +130,8 @@ defmodule AshTemplate.Notes.Note do
       change set_attribute(:created_by_pairing_id, actor(:pairing_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
-      change AskForLabel, where: [AskingJev]
-      change AgentNotePoints, where: [present(:changed_by_agent_id)]
+      emit AshTemplate.Notes.Signals, :note_saved, fields: [note_id: :id], where: [AskingJev]
+      emit AshTemplate.Notes.Signals, :note_created, fields: [note_id: :id]
     end
 
     # The save allowance is counted before the statement, so an edit is not a
@@ -148,7 +147,7 @@ defmodule AshTemplate.Notes.Note do
       change set_attribute(:changed_by_pairing_id, actor(:pairing_id))
       change set_attribute(:webhook_state, :pending), where: [WebhookAddressSet]
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
-      change AskForLabel, where: [AskingJev]
+      emit AshTemplate.Notes.Signals, :note_saved, fields: [note_id: :id], where: [AskingJev]
     end
 
     update :pin do
