@@ -1624,3 +1624,11 @@ Operations
   it stores the reading; a producer's cost is keys times passes whether or not
   anyone is looking, and is bounded on purpose; and a field that only says when
   a reading was taken is compared out by the producer so it wakes nobody.
+
+## 2026-10-13 — ENS lookups run in their own queue
+
+- A person's ENS lookup at sign-in now runs in its own queue, `ens_lookups`
+  (three at a time), instead of sharing `outside_calls` with the site's other
+  slow calls. A crowd signing in at once, each lookup taking seconds for a name
+  with a picture, no longer makes those other jobs wait behind it. Lookups
+  already waiting in `outside_calls` at release still run from there.

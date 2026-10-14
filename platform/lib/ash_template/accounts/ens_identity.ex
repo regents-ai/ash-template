@@ -82,7 +82,7 @@ defmodule AshTemplate.Accounts.EnsIdentity do
       trigger :look_up do
         action :look_up
         where expr(lookup_state == :pending)
-        queue :outside_calls
+        queue :ens_lookups
         max_attempts 3
         on_error :lookup_failed
         lock_for_update? false

@@ -63,8 +63,9 @@ config :ash_template, AshTemplate.Repo,
 
 # Background jobs live in the site's own schema, beside its tables. Queues hear
 # about new jobs through Erlang process groups. `outside_calls` keeps slow calls
-# to other websites from holding up the default queue. AshOban adds each
-# trigger's sweep to `cron`.
+# to other websites from holding up the default queue, and `ens_lookups` keeps a
+# crowd signing in at once (one lookup each, seconds long for a name with a
+# picture) from holding up those. AshOban adds each trigger's sweep to `cron`.
 config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
@@ -74,6 +75,7 @@ config :ash_template, Oban,
     points: 5,
     points_chain: 2,
     outside_calls: 3,
+    ens_lookups: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10]
   ],
