@@ -100,6 +100,7 @@ docker run --detach --name "$run-app" "${release_env[@]}" \
   --publish 127.0.0.1::4000 \
   --env PRIVY_APP_ID --env PRIVY_VERIFICATION_KEY \
   --env DATABASE_POOLED_URL="$database_url" \
+  --env FLY_IMAGE_REF="$image" \
   --env PHX_HOST=localhost \
   --env SECRET_KEY_BASE="$(openssl rand -base64 48)" \
   "$image" >/dev/null

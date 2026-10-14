@@ -56,7 +56,7 @@ defmodule AshTemplate.Rooms.Activity do
 
   # An edit changes neither figure. An event added to a room's topic later is
   # ignored here too, so one that changes a figure needs a clause above.
-  def handle_info(%Phoenix.Socket.Broadcast{}, due), do: {:noreply, due}
+  def handle_info(%{event: _edit_or_unknown}, due), do: {:noreply, due}
 
   def handle_info({:shared_reading_heal, @kind}, due),
     do: {:noreply, Enum.reduce(Room.slugs(), due, &due(&2, &1))}
