@@ -38,14 +38,11 @@ defmodule AshTemplateWeb.AccountLive do
         >
           <p class="account-kicker">Your account</p>
           <div class="account-identity__who">
-            <img
-              :if={@account_control.avatar_src}
+            <AshTemplateWeb.Components.Shell.account_picture
+              id="account-identity-picture"
               class="account-identity__avatar"
-              src={@account_control.avatar_src}
-              referrerpolicy="no-referrer"
-              width="64"
-              height="64"
-              alt=""
+              account_control={@account_control}
+              size={64}
             />
             <div class="account-identity__name">
               <h2>{@account_control.label}</h2>

@@ -1667,3 +1667,12 @@ Operations
   wallet acts can now leave it out (`names_sender={false}` on the wallet
   example), as Keyfleet does on its Key pages; the balance is then not read
   either. Sean's decision of 14 October: on by default, off for a page.
+
+## 2026-10-14 — Your picture's place is never empty while an ENS picture arrives
+
+- In the top bar, the side rail and on the account page, the coloured squares
+  drawn from your wallet now show the moment the page does. Your ENS picture
+  arrives from another website (a large one can take seconds) and covers the
+  squares when it is there. Before, the place stayed empty until it arrived.
+- A see-through ENS picture never shows the squares behind it: they are hidden
+  once the picture has arrived.

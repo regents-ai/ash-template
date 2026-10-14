@@ -31,7 +31,8 @@ defmodule AshTemplate.AccessContext do
     %AccountControl{
       kind: :signed_in,
       label: PublicIdentity.label(account),
-      avatar_src: PublicIdentity.avatar_src(account),
+      squares: PublicIdentity.squares(account),
+      picture: PublicIdentity.picture(account),
       wallet: own_wallet(context)
     }
   end

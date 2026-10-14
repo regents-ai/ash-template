@@ -341,7 +341,31 @@
   height: 1.75rem;
   flex: 0 0 auto;
   border: 1px solid var(--ash-line-strong);
+}
+
+/* The squares drawn from the wallet are there at once. The ENS picture lies
+   over them and, once it has arrived, takes their place, so a see-through
+   picture never shows squares behind it. */
+.account-picture {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.account-picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+}
+
+.account-picture img + img {
+  position: absolute;
+  inset: 0;
+}
+
+.account-picture[data-shown] img:first-child {
+  visibility: hidden;
 }
 
 .shell-brand__mark {
@@ -620,10 +644,9 @@
   text-decoration: none;
 }
 
-.shell-rail__you img {
+.shell-rail__you .account-picture {
   width: 100%;
   height: 100%;
-  object-fit: cover;
 }
 
 /* Each scrolling panel holds its own positioned content, so nothing in it can

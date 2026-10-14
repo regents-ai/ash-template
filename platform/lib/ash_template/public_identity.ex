@@ -3,8 +3,8 @@ defmodule AshTemplate.PublicIdentity do
   The public name and picture of a signed-in account.
 
   The name is its display name, else its wallet's ENS name, else its shortened
-  wallet address. The picture is its ENS name's picture, else one generated
-  from its wallet address.
+  wallet address. Its squares are a picture generated from its wallet address;
+  its picture is its ENS name's, when it has one.
   """
 
   @wallet ~r/\A0x[0-9a-fA-F]{40}\z/
@@ -14,10 +14,10 @@ defmodule AshTemplate.PublicIdentity do
       present(Map.get(account, :display_name)) || present(Map.get(account, :ens_name)) ||
         short_wallet(Map.get(account, :wallet_address))
 
-  def avatar_src(account),
-    do:
-      present(Map.get(account, :ens_avatar_url)) ||
-        account |> Map.get(:wallet_address) |> normalize_wallet() |> avatar()
+  def picture(account), do: present(Map.get(account, :ens_avatar_url))
+
+  def squares(account),
+    do: account |> Map.get(:wallet_address) |> normalize_wallet() |> identicon()
 
   def short_wallet(wallet) when is_binary(wallet) do
     if Regex.match?(@wallet, wallet), do: RegentFormat.short_address(wallet), else: "Account"
@@ -42,9 +42,9 @@ defmodule AshTemplate.PublicIdentity do
   defp normalize_wallet(_wallet), do: nil
 
   # A 5×5 identicon mirrored around its middle column, coloured from the hash.
-  defp avatar(nil), do: nil
+  defp identicon(nil), do: nil
 
-  defp avatar(wallet) do
+  defp identicon(wallet) do
     <<red, green, blue, red2, green2, blue2, cells::binary>> = :crypto.hash(:sha256, wallet)
     primary = color(red, green, blue)
     secondary = color(red2, green2, blue2)

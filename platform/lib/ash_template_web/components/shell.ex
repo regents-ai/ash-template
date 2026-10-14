@@ -210,15 +210,8 @@ defmodule AshTemplateWeb.Components.Shell do
             class="shell-rail__you"
             aria-label={"Your profile, #{@account_control.label}"}
           >
-            <img
-              :if={@account_control.avatar_src}
-              src={@account_control.avatar_src}
-              referrerpolicy="no-referrer"
-              width="32"
-              height="32"
-              alt=""
-            />
-            <span :if={!@account_control.avatar_src} aria-hidden="true">
+            <.account_picture id="shell-rail-picture" account_control={@account_control} size={32} />
+            <span :if={!@account_control.squares} aria-hidden="true">
               {initials(@account_control.label)}
             </span>
           </.link>
@@ -306,7 +299,9 @@ defmodule AshTemplateWeb.Components.Shell do
           class="shell-account"
           aria-label="Your account"
         >
-          <p class="shell-account__name"><.account_name account_control={@account_control} /></p>
+          <p class="shell-account__name">
+            <.account_name id="shell-account-picture" account_control={@account_control} />
+          </p>
           <div class="shell-account__actions">
             <.link patch={~p"/account"} class="rg-button rg-button--secondary">Account</.link>
             <Regent.Primitives.button
@@ -633,10 +628,12 @@ defmodule AshTemplateWeb.Components.Shell do
         data-aside-toggle
         phx-mounted={JS.ignore_attributes(["aria-expanded"])}
       >
-        <.account_name account_control={@account_control} />
+        <.account_name id="account-chip-picture" account_control={@account_control} />
       </button>
       <%= if !@panel and @account_control.kind in [:signed_in, :preview] do %>
-        <span class="account-chip"><.account_name account_control={@account_control} /></span>
+        <span class="account-chip">
+          <.account_name id="account-name-picture" account_control={@account_control} />
+        </span>
         <Regent.Primitives.button
           variant="quiet"
           type="button"
@@ -660,26 +657,53 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
+  attr :id, :string, required: true
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
 
   # The account's picture and name. The `profile` marker tells the browser the
   # page was drawn for a signed-in account; the workshop's sample account has none.
   defp account_name(assigns) do
     ~H"""
-    <img
-      :if={@account_control.avatar_src}
-      class="account-avatar"
-      src={@account_control.avatar_src}
-      referrerpolicy="no-referrer"
-      width="36"
-      height="36"
-      alt=""
-    />
+    <.account_picture id={@id} class="account-avatar" account_control={@account_control} size={36} />
     <span
       class="account-name"
       data-account-target={@account_control.kind == :signed_in && "profile"}
     >
       {@account_control.label}
+    </span>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
+  attr :size, :integer, required: true
+  attr :class, :string, default: nil
+
+  @doc """
+  The account's picture. The squares drawn from its wallet are there as soon
+  as the page is; its ENS picture, which arrives from another website, lies
+  over them and takes their place once it has arrived (`AccountPicture` in
+  `assets/js/hooks/account_picture.ts`). A changed picture is a new element,
+  so the squares show again while it arrives. Nothing is drawn for an account
+  with no wallet.
+  """
+  def account_picture(assigns) do
+    ~H"""
+    <span
+      :if={@account_control.squares}
+      id={"#{@id}-#{:erlang.phash2(@account_control.picture)}"}
+      class={["account-picture", @class]}
+      phx-hook={@account_control.picture && "AccountPicture"}
+    >
+      <img src={@account_control.squares} width={@size} height={@size} alt="" />
+      <img
+        :if={@account_control.picture}
+        src={@account_control.picture}
+        referrerpolicy="no-referrer"
+        width={@size}
+        height={@size}
+        alt=""
+      />
     </span>
     """
   end
