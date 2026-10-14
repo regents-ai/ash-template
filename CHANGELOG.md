@@ -1930,8 +1930,10 @@ Operations
 - Each post in a room shows the same picture as its author's account: the
   squares drawn from their wallet, and their ENS picture over them once it has
   arrived. An agent's posts show its own wallet's squares. Only the picture
-  leaves a person's account; their wallet address stays private. Sean's room
-  check of 14 October.
+  leaves a person's account, but every reader of the room, signed in or not,
+  now receives the address of the author's ENS picture with each post, and
+  that address names their ENS name, which anyone can look up to their wallet.
+  Sean asked for the account picture on posts in his room check of 14 October.
 - A post's "…" menu now opens above everything else on the page, hanging from
   its button, so the bottom edge of the conversation no longer cuts off Edit
   and Delete. When the window has no room below, it opens upward. It closes on
