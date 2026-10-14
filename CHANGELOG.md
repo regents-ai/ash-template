@@ -1909,6 +1909,9 @@ Operations
 - `GET /api/v1/site-tools/:site` answers with a site's tool list, read from that site's
   capabilities and kept for 24 hours, or with the siwa-server steps.
 - The world cube can sit off the stage's centre: `--world-cube-centre` on `.world-cube`.
+- Either cube can draw smaller than its stage: `--world-cube-size` on `.world-cube` and
+  `--code-cube-size` on `.code-cube`, 1 by default. regents.sh draws both at .85, and at .66
+  on wide screens, to leave room for their names above them.
 - A site that shows the code cube copies `CodeCube` (the cube, its six faces and their card),
   `code_cube.css`, `platform/assets/js/code_cube/`, the `CodeCube` and `TwinCube` hooks and
   `SiteTools`, and lists the six tools in its own tool list with the scope of the page that

@@ -63,6 +63,9 @@ export const createCodeCubeController = (
   let time = 0
   let last = performance.now()
   let aspect = 1
+  // How large the page wants the cube, against the most its canvas fits, read with each new shape.
+  let size = 1
+  let measured = 0
   let scope: Scope | undefined
 
   // Drawn in the middle of its own canvas.
@@ -103,7 +106,7 @@ export const createCodeCubeController = (
 
     const fit = Math.max(1, FITTED_ASPECT / aspect)
     view.rotation = rotation
-    view.distance = (REST + (NEAR - REST) * camera.approach) * fit
+    view.distance = ((REST + (NEAR - REST) * camera.approach) * fit) / size
     view.time = time
     view.glow = camera.glow
 
@@ -172,11 +175,16 @@ export const createCodeCubeController = (
         dragging = false
         press = undefined
         last = performance.now()
+        measured = 0
         const current = renderer()
         if (!current) return
         const draw = current.present.bind(current)
         current.present = () => {
           aspect = current.aspect()
+          if (aspect !== measured) {
+            measured = aspect
+            size = Number(getComputedStyle(cube).getPropertyValue("--code-cube-size"))
+          }
           draw()
         }
       })

@@ -116,7 +116,9 @@ export const createWorldCubeController = (
   let aspect = 1
   // Where across its canvas the page wants the cube, as a fraction of the width.
   let centre = 0.5
-  // The canvas shape the centre was last read for.
+  // How large the page wants the cube at rest, against the most its part of the canvas fits.
+  let size = 1
+  // The canvas shape the centre and size were last read for.
   let measured = 0
   let pointing = false
   let scope: Scope | undefined
@@ -166,7 +168,7 @@ export const createWorldCubeController = (
 
     // The cube fits the part of the canvas it is drawn in, which is all of it when centred.
     const fit = Math.max(1, FITTED_ASPECT / (aspect * 2 * Math.min(centre, 1 - centre)))
-    const outside = (REST + (NEAR - REST) * camera.approach) * fit
+    const outside = ((REST + (NEAR - REST) * camera.approach) * fit) / size
     view.rotation = rotation
     view.distance = outside * (INSIDE / outside) ** camera.zoom
     view.lens = LENS_OUT + (LENS_IN - LENS_OUT) * camera.zoom
@@ -350,7 +352,9 @@ export const createWorldCubeController = (
           aspect = current.aspect()
           if (aspect !== measured) {
             measured = aspect
-            centre = Number(getComputedStyle(cube).getPropertyValue("--world-cube-centre"))
+            const style = getComputedStyle(cube)
+            centre = Number(style.getPropertyValue("--world-cube-centre"))
+            size = Number(style.getPropertyValue("--world-cube-size"))
           }
           draw()
           lean()

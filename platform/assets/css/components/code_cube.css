@@ -8,6 +8,8 @@
    aside but stay in reach of the keyboard, and one with focus shows at the foot. */
 .code-cube {
   --code-cube-ink: #e5e3d2;
+  /* How large the cube is drawn, against the most its stage fits. */
+  --code-cube-size: 1;
   position: relative;
   z-index: 1;
   display: grid;
