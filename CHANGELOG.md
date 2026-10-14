@@ -1906,12 +1906,16 @@ Operations
   them. Where nothing hovers, both names stay shown.
 - The page offers six browser tools, `show_<site>_webmcp_tools` for the five sites and
   `show_siwa_connection_help`, each opening the same card a click would.
+- Each tool in `priv/tool_manifest.json` now carries a `scope`: `site` for the tools every
+  page offers, `/animations/twin-cube` for the six that only that page offers. Every page
+  registers only the `site` tools; the twin-cube page registers its own six.
 - `GET /api/v1/site-tools/:site` answers with a site's tool list, read from that site's
   capabilities and kept for 24 hours, or with the siwa-server steps. Only one read of a site
   is ever under way; requests that arrive meanwhile wait for its answer, so a burst of
   requests asks each site once. A read still under way after 10 seconds is stopped and
-  counts as a failed one. The address is in `/openapi.json` and the API contract, with its
-  `site_not_found` (404) and `site_unreachable` (503) answers.
+  counts as a failed one. The address is in `/openapi.json`, the API contract and
+  `priv/capabilities.json` (`getSiteTools`, a public read), with its `site_not_found` (404)
+  and `site_unreachable` (503) answers.
 - The world cube can sit off the stage's centre: `--world-cube-centre` on `.world-cube`.
 - Either cube can draw smaller than its stage: `--world-cube-size` on `.world-cube` and
   `--code-cube-size` on `.code-cube`, 1 by default. regents.sh draws both at .85, and at .66

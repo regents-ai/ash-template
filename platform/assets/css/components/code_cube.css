@@ -77,15 +77,14 @@
   list-style: none;
 }
 
-/* Each face's button in the colours of its code. The site's own button rule
-   draws the border and the words in --color-fg; the screen behind them is a
-   layer of its own. */
+/* Each face's button in the colours of its code: the border and the words in
+   its ink, the screen behind them a layer of its own. */
 .code-cube__face {
   --code-face-top: #001b08;
   --code-face-foot: #000502;
   --code-face-ink: #2ff07a;
-  --color-fg: var(--code-face-ink);
-  --color-surface-elevated: transparent;
+  color: var(--code-face-ink);
+  background: transparent;
   position: relative;
   isolation: isolate;
   width: 100%;
@@ -244,10 +243,10 @@
   text-transform: uppercase;
 }
 
-/* The site's own button rule draws it, in the card's colours. */
+/* The close button, in the card's colours. */
 .code-card__close {
-  --color-fg: var(--code-card-ink);
-  --color-surface-elevated: transparent;
+  color: var(--code-card-ink);
+  background: transparent;
   display: grid;
   flex: none;
   place-items: center;
