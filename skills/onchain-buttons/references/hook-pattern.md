@@ -147,6 +147,9 @@ and only when the signed-in account links it.
   panel. Signed out, it is the active wallet. The line naming it says "Paying from" or
   "Sending from" only for the signer; any other shown wallet is just "Wallet", so the
   panel never names a wallet nothing will send from beside the note asking to switch.
+  A page that already says which wallet acts (a Key page naming its holder) passes
+  `names_sender={false}`: the line is then not drawn and its balance not read. It is
+  drawn by default, since elsewhere nothing else says which wallet pays.
 - Every figure read for the shown wallet counts against a read allowance
   (`Limits.spend(:wallet_read, who)`). A panel that also shows figures signed out, where
   the wallet can be one the browser reports, counts every read against the visitor's

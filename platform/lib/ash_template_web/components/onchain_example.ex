@@ -8,7 +8,9 @@ defmodule AshTemplateWeb.OnchainExample do
   turns down, and "Sign" asks for an EIP-712 signature. None of it moves value.
   The parent passes `account` (the signed-in account, `nil` signed out), `chain`,
   its `session_lease` as `lease` and its `client_key`; the hook reports Privy's
-  active wallet, which acts only when the account links it.
+  active wallet, which acts only when the account links it. A page that already
+  says which wallet acts passes `names_sender={false}`, and the line naming the
+  wallet and its balance is neither drawn nor read.
   """
   use AshTemplateWeb, :live_component
 
@@ -30,14 +32,15 @@ defmodule AshTemplateWeb.OnchainExample do
      socket
      |> Session.check_component_lease(&take_account/2)
      |> OnchainSteps.init()
-     |> assign(active: nil, amount: "1", balance: nil, signer: nil, wallet: nil, signed: nil)}
+     |> assign(active: nil, amount: "1", balance: nil, signer: nil, wallet: nil, signed: nil)
+     |> assign(names_sender: true)}
   end
 
   @impl true
   def update(assigns, socket) do
     {:ok,
      socket
-     |> assign(Map.take(assigns, [:id, :lease, :chain, :client_key]))
+     |> assign(Map.take(assigns, [:id, :lease, :chain, :client_key, :names_sender]))
      |> take_account(assigns.account)}
   end
 
@@ -171,6 +174,7 @@ defmodule AshTemplateWeb.OnchainExample do
   end
 
   defp read_balance(%{assigns: %{wallet: nil}} = socket), do: socket
+  defp read_balance(%{assigns: %{names_sender: false}} = socket), do: socket
 
   # Signed out the shown wallet is whatever the browser reports, so every read
   # counts against the visitor's address allowance; past it, the figure already
@@ -205,7 +209,7 @@ defmodule AshTemplateWeb.OnchainExample do
       <p class="onchain-example-review" aria-live="polite" hidden={!@review}>
         {@review && review_line(@review)}
       </p>
-      <p class="onchain-example-from" hidden={!@wallet}>
+      <p :if={@names_sender} class="onchain-example-from" hidden={!@wallet}>
         <%= if @wallet do %>
           {if @signer, do: "Sending from", else: "Wallet"}
           <code>{RegentFormat.short_address(@wallet)}</code> on {@chain.name} · {balance(@balance)}

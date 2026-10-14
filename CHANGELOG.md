@@ -1659,3 +1659,11 @@ Operations
 - Credits team page: the sentence for a refund refused because the account had
   used Credits is gone; the library no longer gives that reason.
 - The ENS lookup queue is named `ens`, the name Keyfleet already runs.
+
+## 2026-10-14 — A page can leave out the "Sending from" line
+
+- Under wallet buttons, the line naming the wallet a press is sent from, with
+  its balance, is still shown by default. A page that already says which
+  wallet acts can now leave it out (`names_sender={false}` on the wallet
+  example), as Keyfleet does on its Key pages; the balance is then not read
+  either. Sean's decision of 14 October: on by default, off for a page.
