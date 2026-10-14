@@ -1831,3 +1831,17 @@ Operations
   the site's `:name_first` setting puts first: `:chosen` (the template's
   choice) or `:ens`. With only one of them, that one; with neither, the short
   wallet address. Sean's word of 14 October: both, and each site chooses.
+
+## 2026-10-14 — Credits history, for each person and for the team
+
+- A new Credits tab under Account (/account/credits) lists everything that
+  changed the person's Credits on every Regent site, newest first: purchases,
+  gifts, Credits set aside, spent and returned (each with the site's name), and
+  refunds, each with its date and time. Fifty show at first; "Show older"
+  adds the next fifty. The list follows every change as it lands. Sean's
+  decision of 14 October ("3. a").
+- The Credits admin page has a new part, "A person's Credits history": a Credits
+  admin enters a Privy account id and reads that person's history exactly as
+  the person sees it.
+- The entries and their words come from Regent Credits, so every site that
+  copies the page shows the same thing the same way.

@@ -1,8 +1,9 @@
 defmodule AshTemplateWeb.CreditsAdmin do
   @moduledoc """
   The Credits admin page's parts, shown at regents.sh/admin/credits: give
-  Credits, find a person's purchases and start a refund, then close each
-  refund with the Treasury Safe's USDC transfer.
+  Credits, find a person's purchases and start a refund, close each refund
+  with the Treasury Safe's USDC transfer, and read a person's Credits history
+  as they see it on their own account.
 
   The host passes `account`, the signed-in account, and its `session_lease` as
   `lease`; the panel acts as `AshTemplate.Credits.admin/1` of it, and the
@@ -13,6 +14,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
   require Ash.Query
 
   alias AshTemplate.Credits
+  alias AshTemplateWeb.{CreditsHistoryLive, Read}
   alias AshTemplateWeb.Live.Session
   alias Regent.Primitives, as: P
   alias RegentCredits.{Amount, Chains, Purchase, Refund}
@@ -32,7 +34,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
        search: "",
        purchases: nil,
        refunded: %{},
-       refund_note: nil
+       refund_note: nil,
+       history_of: "",
+       history: %Read{}
      )}
   end
 
@@ -100,6 +104,33 @@ defmodule AshTemplateWeb.CreditsAdmin do
 
     {:noreply, socket |> assign(refund_note: note) |> find() |> read_refunds()}
   end
+
+  def handle_event("history_of", %{"privy_user_id" => id}, socket) do
+    id = String.trim(id)
+    {:noreply, assign(socket, history_of: id, history: history_of(socket, id, %{}))}
+  end
+
+  def handle_event("credits_history_older", _params, socket) do
+    %{history_of: id, history: %Read{value: history}} = socket.assigns
+
+    {:noreply,
+     assign(socket,
+       history:
+         CreditsHistoryLive.older(
+           history,
+           &RegentCredits.history_of(id, &1, actor: socket.assigns.actor)
+         )
+         |> landed()
+     )}
+  end
+
+  defp history_of(_socket, "", _args), do: %Read{}
+
+  defp history_of(socket, id, args),
+    do: landed(RegentCredits.history_of(id, args, actor: socket.assigns.actor))
+
+  defp landed({:ok, history}), do: %Read{state: :ready, value: history}
+  defp landed({:error, error}), do: %Read{state: :error, error: error}
 
   defp parsed({amount, ""}), do: {:ok, amount}
   defp parsed(_other), do: {:error, Refused.exception(reason: :invalid_amount)}
@@ -172,6 +203,11 @@ defmodule AshTemplateWeb.CreditsAdmin do
 
   defp refund_words(%Ash.Error.Forbidden{}), do: "Only a Credits admin can refund."
   defp refund_words(_other), do: "Nothing changed. Try again."
+
+  defp history_words(%Ash.Error.Forbidden{}),
+    do: "Only a Credits admin can read a person's history."
+
+  defp history_words(_other), do: nil
 
   defp state(_purchase, %{status: :locked}), do: "refund started"
   defp state(_purchase, %{status: :sent}), do: "refunded"
@@ -288,6 +324,25 @@ defmodule AshTemplateWeb.CreditsAdmin do
             </form>
           </li>
         </ul>
+      </section>
+
+      <section class="credits-admin__part" aria-labelledby={"#{@id}-history"}>
+        <h2 id={"#{@id}-history"}>A person's Credits history</h2>
+        <form id={"#{@id}-history-form"} phx-submit="history_of" phx-target={@myself}>
+          <P.field :let={field} id={"#{@id}-history-of"} label="Privy account id">
+            <input id={field.id} name="privy_user_id" value={@history_of} autocomplete="off" />
+          </P.field>
+          <P.button type="submit" variant="secondary">Show history</P.button>
+        </form>
+        <CreditsHistoryLive.entries
+          :if={@history_of != ""}
+          id={"#{@id}-history-entries"}
+          title={@history_of}
+          history={@history}
+          empty_message="Nothing has changed this person's Credits yet."
+          message={history_words(@history.error)}
+          target={@myself}
+        />
       </section>
     </div>
     """

@@ -24,6 +24,7 @@ defmodule AshTemplateWeb.ShellLive do
     AccountLive,
     ActivityLive,
     ChatLive,
+    CreditsHistoryLive,
     NotesLive,
     NotFoundError,
     OverviewLive,
@@ -70,6 +71,7 @@ defmodule AshTemplateWeb.ShellLive do
        verified_connections: %Read{},
        points: %Read{},
        credits_read: %Read{},
+       credits_history: %Read{},
        points_bonus: %Read{},
        points_earning: [],
        verified_connections_notice: nil,
@@ -98,6 +100,7 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(PublicDocuments.page(page_path(action, uri)))
      |> assign(:route_spec, route_spec)
      |> load_points(route_spec)
+     |> load_credits_history(route_spec)
      |> load_verified_connections(route_spec)
      |> load_notifications(route_spec)
      |> assign(search: unsearched(), mark_read_failed?: false)
@@ -148,6 +151,20 @@ defmodule AshTemplateWeb.ShellLive do
 
   # A search of the saved notes and messages spends the address's search
   # allowance; past it, the last results stay.
+  def handle_event("credits_history_older", _params, socket) do
+    with %Read{value: %{more?: true} = history} <- socket.assigns.credits_history,
+         account when account != nil <- current_account(socket.assigns.access_context) do
+      actor = AshTemplate.Credits.person(account)
+
+      {:noreply,
+       Read.start(socket, :credits_history, account.privy_user_id, fn ->
+         CreditsHistoryLive.older(history, &RegentCredits.history(&1, actor: actor))
+       end)}
+    else
+      _no_more -> {:noreply, socket}
+    end
+  end
+
   def handle_event("search", %{"q" => query}, socket) do
     query = String.trim(query)
 
@@ -217,8 +234,11 @@ defmodule AshTemplateWeb.ShellLive do
   def handle_info(%{topic: "points:" <> _}, socket), do: {:noreply, socket}
 
   # The balance changed on this or any Regent site: a purchase, a gift, a spend.
-  # The header, the Buy Credits panel and the Account page follow.
-  def handle_info(:credits_changed, socket), do: {:noreply, read_credits(socket)}
+  # The header, the Buy Credits panel, the Account page and the Credits history
+  # follow.
+  def handle_info(:credits_changed, socket) do
+    {:noreply, socket |> read_credits() |> load_credits_history(socket.assigns.route_spec)}
+  end
 
   # An agent paired, checked in or was unpaired, here or on another Regent site.
   def handle_info(:agents_changed, socket) do
@@ -366,6 +386,13 @@ defmodule AshTemplateWeb.ShellLive do
           points={@points}
           bonus={@points_bonus}
           earning={@points_earning}
+        />
+
+        <CreditsHistoryLive.page
+          :if={@route_spec.route_id == :credits}
+          signed_out_reason={@signed_out_reason}
+          account={current_account(@access_context)}
+          history={@credits_history}
         />
 
         <AccountLive.wallets
@@ -554,6 +581,23 @@ defmodule AshTemplateWeb.ShellLive do
         end)
     end
   end
+
+  # The newest page of the account's Credits history, read again on each change.
+  defp load_credits_history(socket, %{route_id: :credits}) do
+    case current_account(socket.assigns.access_context) do
+      nil ->
+        Read.clear(socket, :credits_history)
+
+      account ->
+        actor = AshTemplate.Credits.person(account)
+
+        Read.start(socket, :credits_history, account.privy_user_id, fn ->
+          RegentCredits.history(%{}, actor: actor)
+        end)
+    end
+  end
+
+  defp load_credits_history(socket, _route_spec), do: Read.clear(socket, :credits_history)
 
   defp count_unread(socket) do
     with %Human{} = actor <- human_actor(socket),

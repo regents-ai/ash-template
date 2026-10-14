@@ -63,6 +63,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     settings: [
       %RouteTarget{route_id: :account, label: "Account", path: "/account"},
       %RouteTarget{route_id: :points, label: "Points", path: "/account/points"},
+      %RouteTarget{route_id: :credits, label: "Credits", path: "/account/credits"},
       %RouteTarget{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
       %RouteTarget{route_id: :connections, label: "Connections", path: "/account/connections"}
     ]
@@ -110,6 +111,9 @@ defmodule AshTemplateWeb.RouteCatalog do
     points:
       {:settings,
        %{route_id: :points, destination: "/account/points", page_display_label: "Points"}},
+    credits:
+      {:settings,
+       %{route_id: :credits, destination: "/account/credits", page_display_label: "Credits"}},
     wallets:
       {:settings,
        %{route_id: :wallets, destination: "/account/wallets", page_display_label: "Wallets"}},
@@ -147,6 +151,7 @@ defmodule AshTemplateWeb.RouteCatalog do
            [
              %{label: "Chat", path: "/chat"},
              %{label: "Account", path: "/account"},
+             %{label: "Credits history", path: "/account/credits"},
              %{label: "Wallets", path: "/account/wallets"},
              %{label: "Connections", path: "/account/connections"},
              %{label: "Connect your agent", path: "/start"},

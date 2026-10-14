@@ -37,6 +37,8 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
     "/account" => {"Account", "Your profile, agents, Credits and the session on this browser."},
     "/account/points" => {"Points", "Your points and activity."},
+    "/account/credits" =>
+      {"Credits history", "Everything that changed your Credits, on every Regent site."},
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
