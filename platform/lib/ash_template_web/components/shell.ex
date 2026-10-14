@@ -210,7 +210,12 @@ defmodule AshTemplateWeb.Components.Shell do
             class="shell-rail__you"
             aria-label={"Your profile, #{@account_control.label}"}
           >
-            <.account_picture id="shell-rail-picture" account_control={@account_control} size={32} />
+            <.account_picture
+              id="shell-rail-picture"
+              squares={@account_control.squares}
+              picture={@account_control.picture}
+              size={32}
+            />
             <span :if={!@account_control.squares} aria-hidden="true">
               {initials(@account_control.label)}
             </span>
@@ -664,7 +669,13 @@ defmodule AshTemplateWeb.Components.Shell do
   # page was drawn for a signed-in account; the workshop's sample account has none.
   defp account_name(assigns) do
     ~H"""
-    <.account_picture id={@id} class="account-avatar" account_control={@account_control} size={36} />
+    <.account_picture
+      id={@id}
+      class="account-avatar"
+      squares={@account_control.squares}
+      picture={@account_control.picture}
+      size={36}
+    />
     <span
       class="account-name"
       data-account-target={@account_control.kind == :signed_in && "profile"}
@@ -675,12 +686,13 @@ defmodule AshTemplateWeb.Components.Shell do
   end
 
   attr :id, :string, required: true
-  attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
+  attr :squares, :string, required: true, doc: "`AshTemplate.PublicIdentity.squares/1`"
+  attr :picture, :string, required: true, doc: "`AshTemplate.PublicIdentity.picture/1`"
   attr :size, :integer, required: true
   attr :class, :string, default: nil
 
   @doc """
-  The account's picture. The squares drawn from its wallet are there as soon
+  An account's picture, wherever it is shown. The squares drawn from its wallet are there as soon
   as the page is; its ENS picture, which arrives from another website, lies
   over them and takes their place once it has arrived (`AccountPicture` in
   `assets/js/hooks/account_picture.ts`). A changed picture is a new element,
@@ -690,15 +702,15 @@ defmodule AshTemplateWeb.Components.Shell do
   def account_picture(assigns) do
     ~H"""
     <span
-      :if={@account_control.squares}
-      id={"#{@id}-#{:erlang.phash2(@account_control.picture)}"}
+      :if={@squares}
+      id={"#{@id}-#{:erlang.phash2(@picture)}"}
       class={["account-picture", @class]}
-      phx-hook={@account_control.picture && "AccountPicture"}
+      phx-hook={@picture && "AccountPicture"}
     >
-      <img src={@account_control.squares} width={@size} height={@size} alt="" />
+      <img src={@squares} width={@size} height={@size} alt="" />
       <img
-        :if={@account_control.picture}
-        src={@account_control.picture}
+        :if={@picture}
+        src={@picture}
         referrerpolicy="no-referrer"
         width={@size}
         height={@size}

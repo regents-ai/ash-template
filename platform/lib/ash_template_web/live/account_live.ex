@@ -41,7 +41,8 @@ defmodule AshTemplateWeb.AccountLive do
             <AshTemplateWeb.Components.Shell.account_picture
               id="account-identity-picture"
               class="account-identity__avatar"
-              account_control={@account_control}
+              squares={@account_control.squares}
+              picture={@account_control.picture}
               size={64}
             />
             <div class="account-identity__name">

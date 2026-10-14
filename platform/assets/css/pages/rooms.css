@@ -156,53 +156,38 @@
   display: none;
 }
 
-.rooms-menu {
-  position: relative;
-}
-
 /* A message's menu button shows when the message is pointed at or reached by
-   keyboard, and always on a touch screen. */
+   keyboard, while its menu is open, and always on a touch screen. */
 @media (hover: hover) {
-  .rooms-menu:not([open]) {
+  .rooms-menu {
     opacity: 0;
   }
 
-  .rooms-message:is(:hover, :focus-within) .rooms-menu {
+  .rooms-message:is(:hover, :focus-within) .rooms-menu,
+  .rooms-menu:has(:popover-open) {
     opacity: 1;
   }
 }
 
-.rooms-menu summary {
-  display: grid;
-  place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
-  list-style: none;
-  cursor: pointer;
-  color: var(--color-fg-muted);
-  font-weight: 600;
-}
-
-.rooms-menu summary::-webkit-details-marker {
-  display: none;
-}
-
-.rooms-menu summary:hover,
-.rooms-menu[open] summary {
-  color: var(--color-fg);
-  background: color-mix(in oklch, var(--color-fg) 8%, transparent);
-}
-
+/* The choices hang from the button, their right edge lined up with its right
+   edge, and open upward when the window has no room below. The browser places
+   them above everything else, so the conversation's scrolling edge never cuts
+   them off. */
 .rooms-menu__items {
-  position: absolute;
-  inset-block-start: 100%;
-  inset-inline-end: 0;
-  z-index: 5;
-  display: grid;
+  position: fixed;
+  inset: anchor(bottom) anchor(right) auto auto;
+  position-try-fallbacks: flip-block;
   min-inline-size: 10rem;
+  margin: 0.25rem 0;
+  padding: 0;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
+  color: var(--color-fg);
   box-shadow: var(--shadow-md);
+}
+
+.rooms-menu__items:popover-open {
+  display: grid;
 }
 
 .rooms-signed-out {
@@ -281,8 +266,30 @@
 }
 }
 
-/* The menu's choices and "Show more" are plain buttons. The site's base button
-   rule is outside any layer, so these sit outside the product layer too. */
+/* The menu's button and choices and "Show more" are plain buttons. The site's
+   base button rule is outside any layer, so these sit outside the product layer
+   too. */
+.rooms-menu .rooms-menu__button {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-fg-muted);
+  font: inherit;
+  font-weight: 600;
+}
+
+.rooms-menu .rooms-menu__button:hover,
+.rooms-menu:has(:popover-open) .rooms-menu__button {
+  color: var(--color-fg);
+  background: color-mix(in oklch, var(--color-fg) 8%, transparent);
+}
+
 .rooms-menu .rooms-menu__item {
   min-block-size: 2.75rem;
   padding: 0.6rem 0.85rem;

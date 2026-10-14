@@ -9,7 +9,8 @@ defmodule AshTemplate.Rooms.Message do
   (`via_agent`) until they edit it themselves. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A room's
   messages, and every new post, come with their agent, if an agent wrote them, so its
-  World ID mark shows as it stands now. A post that
+  World ID mark shows as it stands now, and with the picture its author's
+  account shows. A post that
   mentions someone by name tells them (`NotifyMentions`). Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once. What is published is `public/1`, the fields a
@@ -25,6 +26,7 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Limits.LimitWrites
 
   alias AshTemplate.Rooms.Message.{
+    AuthorPicture,
     LeaveOutMuted,
     NotifyMentions,
     PostedByActor,
@@ -33,6 +35,9 @@ defmodule AshTemplate.Rooms.Message do
   }
 
   alias AshTemplate.Rooms.{Mute, Room}
+
+  # What every room read and write loads for `public/1`.
+  @shown [:agent, :via_agent, :author_picture]
 
   postgres do
     table "room_messages"
@@ -92,6 +97,10 @@ defmodule AshTemplate.Rooms.Message do
     end
   end
 
+  calculations do
+    calculate :author_picture, :map, AuthorPicture
+  end
+
   actions do
     defaults [:read]
 
@@ -105,7 +114,7 @@ defmodule AshTemplate.Rooms.Message do
       argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
       filter expr(room == ^arg(:room))
       prepare LeaveOutMuted
-      prepare build(sort: [inserted_at: :desc, id: :desc], load: [:agent, :via_agent])
+      prepare build(sort: [inserted_at: :desc, id: :desc], load: @shown)
       pagination keyset?: true, default_limit: 50
     end
 
@@ -125,7 +134,7 @@ defmodule AshTemplate.Rooms.Message do
       argument :operation_id, :uuid, allow_nil?: false
       filter expr(id == ^arg(:operation_id) and room == ^arg(:room))
       prepare PostedByActor
-      prepare build(load: [:agent, :via_agent])
+      prepare build(load: @shown)
     end
 
     create :post do
@@ -151,7 +160,7 @@ defmodule AshTemplate.Rooms.Message do
               allowance: :room_post, address_allowance: :room_post_address, field: :body}
 
       change NotifyMentions
-      change load([:agent, :via_agent])
+      change load(@shown)
     end
 
     # Squashing the empty lines reads the new text, so an edit is not a single
@@ -163,7 +172,7 @@ defmodule AshTemplate.Rooms.Message do
       change SquashBlankLines
       change atomic_update(:edited_at, expr(now()))
       change set_attribute(:via_agent_id, actor(:acting_agent_id))
-      change load([:agent, :via_agent])
+      change load(@shown)
     end
   end
 
@@ -196,7 +205,7 @@ defmodule AshTemplate.Rooms.Message do
   # %{event: "post" | "edit", payload: public(message)}, or %{event: "destroy",
   # payload: %{id: id, room: room}}. `edited_at` is the order marker: the
   # database sets it on every edit, and a page keeps the newer. Post and edit
-  # load `agent` and `via_agent` themselves, so no publication reads them again.
+  # load what `public/1` reads themselves, so no publication reads it again.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
@@ -218,8 +227,9 @@ defmodule AshTemplate.Rooms.Message do
   What a signed-out reader may see of a message, named one by one: what a room's
   page shows and what its topic carries. `backed_agents` is how many agents the
   World ID person behind the writing agent backs, `nil` when nobody does.
-  `agent` and `via_agent` must be loaded, as every room read and write loads
-  them.
+  `author_squares` and `author_picture` are the picture the author's account
+  shows (`AuthorPicture`). What `@shown` names must be loaded, as every room
+  read and write loads it.
   """
   def public(message) do
     %{
@@ -233,7 +243,9 @@ defmodule AshTemplate.Rooms.Message do
       inserted_at: message.inserted_at,
       edited_at: message.edited_at,
       backed_agents: message.agent && message.agent.world_id_agent_count,
-      via_agent_address: message.via_agent && message.via_agent.wallet_address
+      via_agent_address: message.via_agent && message.via_agent.wallet_address,
+      author_squares: message.author_picture.squares,
+      author_picture: message.author_picture.picture
     }
   end
 end

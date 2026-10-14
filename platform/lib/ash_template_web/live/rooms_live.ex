@@ -25,6 +25,7 @@ defmodule AshTemplateWeb.RoomsLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Mute}
+  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
@@ -261,7 +262,16 @@ defmodule AshTemplateWeb.RoomsLive do
                 data-at={DateTime.to_unix(message.inserted_at)}
                 phx-mounted={JS.ignore_attributes(["data-continued"])}
               >
+                <Shell.account_picture
+                  :if={message.author_squares}
+                  id={"#{dom_id}-picture"}
+                  class="rooms-avatar"
+                  squares={message.author_squares}
+                  picture={message.author_picture}
+                  size={36}
+                />
                 <span
+                  :if={!message.author_squares}
                   class="rooms-avatar"
                   data-tone={:erlang.phash2(author(message), 3)}
                   aria-hidden="true"
@@ -394,23 +404,44 @@ defmodule AshTemplateWeb.RoomsLive do
   attr :actor, Human, required: true
   attr :myself, :any, required: true
 
-  # The author's own message offers Edit and Delete; anyone else's, Mute.
+  # The author's own message offers Edit and Delete; anyone else's, Mute. The
+  # browser opens the choices above everything else (`popover`), hanging from
+  # the button, so the conversation's scrolling edge never cuts them off; they
+  # open upward when there is no room below. Each choice closes them.
   defp message_menu(assigns) do
     assigns =
-      assign(assigns, :own?, assigns.message.human_account_id == assigns.actor.human_account_id)
+      assign(assigns,
+        own?: assigns.message.human_account_id == assigns.actor.human_account_id,
+        menu: "#{assigns.id}-menu",
+        anchor: "--#{assigns.id}-menu"
+      )
 
     ~H"""
-    <details class="rooms-menu">
-      <summary>
+    <div class="rooms-menu">
+      <button
+        type="button"
+        class="rooms-menu__button"
+        popovertarget={@menu}
+        style={"anchor-name: #{@anchor}"}
+      >
         <span aria-hidden="true">…</span>
         <span class="visually-hidden">Options for this message</span>
-      </summary>
-      <div class="rooms-menu__items" role="group" aria-label="Message options">
+      </button>
+      <div
+        id={@menu}
+        class="rooms-menu__items"
+        popover
+        role="group"
+        aria-label="Message options"
+        style={"position-anchor: #{@anchor}"}
+      >
         <button
           :if={@own?}
           type="button"
           class="rooms-menu__item"
-          phx-click={choose("edit", @message.id, @myself)}
+          popovertarget={@menu}
+          popovertargetaction="hide"
+          phx-click={JS.push("edit", value: %{id: @message.id}, target: @myself)}
         >
           Edit
         </button>
@@ -418,7 +449,9 @@ defmodule AshTemplateWeb.RoomsLive do
           :if={@own?}
           type="button"
           class="rooms-menu__item"
-          phx-click={choose("delete", @message.id, @myself)}
+          popovertarget={@menu}
+          popovertargetaction="hide"
+          phx-click={JS.push("delete", value: %{id: @message.id}, target: @myself)}
           data-confirm="Delete this message?"
         >
           Delete
@@ -427,21 +460,16 @@ defmodule AshTemplateWeb.RoomsLive do
           :if={!@own?}
           type="button"
           class="rooms-menu__item"
-          phx-click={choose("mute", @message.id, @myself)}
+          popovertarget={@menu}
+          popovertargetaction="hide"
+          phx-click={JS.push("mute", value: %{id: @message.id}, target: @myself)}
           data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
         >
           Mute <bdi>{@message.author_name}</bdi>
         </button>
       </div>
-    </details>
+    </div>
     """
-  end
-
-  # Runs the choice and closes the menu it was chosen from.
-  defp choose(event, id, target) do
-    event
-    |> JS.push(value: %{id: id}, target: target)
-    |> JS.remove_attribute("open", to: {:closest, "details"})
   end
 
   defp owner(%{assigns: %{room: room, actor: actor}}),

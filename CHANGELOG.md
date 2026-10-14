@@ -1924,3 +1924,19 @@ Operations
   `code_cube.css`, `platform/assets/js/code_cube/`, the `CodeCube` and `TwinCube` hooks and
   `SiteTools` with its `SiteTools.Reads` task supervisor, and lists the six tools in its own tool list with the scope of the page that
   shows them. The page places the cubes and owns the read behind the card.
+
+## 2026-10-14 — A room post shows its author's picture, and its menu is never cut off
+
+- Each post in a room shows the same picture as its author's account: the
+  squares drawn from their wallet, and their ENS picture over them once it has
+  arrived. An agent's posts show its own wallet's squares. Only the picture
+  leaves a person's account; their wallet address stays private. Sean's room
+  check of 14 October.
+- A post's "…" menu now opens above everything else on the page, hanging from
+  its button, so the bottom edge of the conversation no longer cuts off Edit
+  and Delete. When the window has no room below, it opens upward. It closes on
+  Escape, on a press anywhere else, and when a choice is made.
+- The account picture now takes its squares and picture directly
+  (`Shell.account_picture`), so a site can draw any account's picture with it.
+  Sites copy the four changes in `rooms_live.ex`, `rooms.css`,
+  `conversation.ts` and `Rooms.Message`.

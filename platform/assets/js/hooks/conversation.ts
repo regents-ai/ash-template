@@ -6,7 +6,6 @@ type ConversationHook = Hook & {
   observer?: MutationObserver
   keydown?: (event: KeyboardEvent) => void
   submitted?: () => void
-  pointerdown?: (event: PointerEvent) => void
 }
 
 // A message from the same person within five minutes of their last one sits
@@ -19,8 +18,8 @@ const GROUP_SECONDS = 5 * 60
  * patches by the message's `JS.ignore_attributes`), sends the message box with
  * Enter (Shift+Enter, and Enter on a touch screen, start a new line), shows the
  * newest message after a send, puts the cursor at the end of a message chosen
- * for editing once its text is in the box, and closes a message's menu on
- * Escape or a press anywhere else.
+ * for editing once its text is in the box. A message's menu is the browser's
+ * own pop-up, which closes itself on Escape or a press anywhere else.
  */
 export const Conversation: Hook = {
   mounted(this: ConversationHook) {
@@ -32,7 +31,6 @@ export const Conversation: Hook = {
     }
 
     this.keydown = event => {
-      if (event.key === "Escape") closeMenus(this.el, null, true)
       const box = event.target
       if (!(box instanceof HTMLTextAreaElement) || !box.form || !this.el.contains(box)) return
       if (event.key !== "Enter" || event.shiftKey || event.isComposing) return
@@ -49,9 +47,6 @@ export const Conversation: Hook = {
     }
     this.el.addEventListener("submit", this.submitted)
 
-    this.pointerdown = event => closeMenus(this.el, event.target as Node | null, false)
-    document.addEventListener("pointerdown", this.pointerdown)
-
     // Sent after the page holds the message's text, so focusing cannot keep the
     // box from receiving it.
     this.handleEvent("conversation:edit", () => {
@@ -66,7 +61,6 @@ export const Conversation: Hook = {
     this.observer?.disconnect()
     if (this.keydown) this.el.removeEventListener("keydown", this.keydown)
     if (this.submitted) this.el.removeEventListener("submit", this.submitted)
-    if (this.pointerdown) document.removeEventListener("pointerdown", this.pointerdown)
   },
 }
 
@@ -75,16 +69,6 @@ export function group(list: HTMLElement): void {
   for (const message of list.querySelectorAll<HTMLElement>(":scope > [data-author]")) {
     message.toggleAttribute("data-continued", continues(previous, message))
     previous = message
-  }
-}
-
-// Closes every open message menu except the one `inside` falls in; on Escape,
-// focus goes back to the menu's own button.
-function closeMenus(root: HTMLElement, inside: Node | null, refocus: boolean): void {
-  for (const menu of root.querySelectorAll<HTMLDetailsElement>("details.rooms-menu[open]")) {
-    if (inside && menu.contains(inside)) continue
-    menu.open = false
-    if (refocus) menu.querySelector("summary")?.focus()
   }
 }
 
