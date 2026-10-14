@@ -279,6 +279,12 @@ setting reaches. A fixed receive size on the web server's connections did not
 change it on a Mac. Measure it on the server the site really runs on before
 counting it as the floor of a page.
 
+The page process itself needs no setting: LiveView compacts a page's memory
+once it has been idle for 15 seconds (`hibernate_after` under the endpoint's
+`live_view` settings; the template keeps the default). A burst of wakes grows
+its heap for that long and no longer. Never raise it. Measure a page at rest
+more than 15 seconds after its last message, or the figure includes that heap.
+
 What still holds for any page:
 
 - **Assign what the page renders.** An Ash record carries its metadata and every
