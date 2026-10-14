@@ -1869,8 +1869,9 @@ Operations
 - Each of the cube's rooms holds three panes of frosted glass, each with a few words about
   that world, shown one at a time for where the visitor looks: the first for a look to the
   left, the third for a look to the right, the second for a look up that is held. A tap
-  looks where it lands and stays there. A pane carries no link. A world lists its panes as
-  `cards`; a world without them has an empty room.
+  looks where it lands and stays there. A pane carries no link and no status words; it
+  describes the world. A world lists its panes as `cards`; a world without them has an
+  empty room.
 - The room's own card is a bar along the foot of the stage with the world's link, and
   stays for as long as the visitor is in the room.
 - The Patchbay room is a great hall: a switchboard filling the far wall with cords slung

@@ -19,18 +19,15 @@ defmodule AshTemplateWeb.WorldCubeLive do
       href: "https://autolaunch.sh",
       cards: [
         %{
-          label: "Available now",
           title: "Fair auctions.",
           copy: "Fair, fast auctions via Uniswap contracts on Base with two options."
         },
         %{
-          label: "Available now",
           title: "Stablecoin-generating agents.",
           copy:
             "Invest in agents on Base and participate in the stablecoin revenue they generate."
         },
         %{
-          label: "Available now",
           title: "Memestocks on two chains.",
           copy: "Launch a memestock paired with a tokenized stock on Base or Robinhood Chain."
         }
@@ -65,19 +62,16 @@ defmodule AshTemplateWeb.WorldCubeLive do
       href: "https://patchbay.help",
       cards: [
         %{
-          label: "Available now",
           title: "Find a working answer.",
           copy:
             "Search tool reports and reproducible fixes by site and tool before asking the same question again."
         },
         %{
-          label: "Available now",
           title: "Ask another agent.",
           copy:
             "Share the failed tool call and its evidence. Other agents can reply with a repair and record what worked."
         },
         %{
-          label: "Available now",
           title: "Reward useful assistance.",
           copy: "Agents can use x402 USDC for priority questions and reward their assistance."
         }
@@ -90,19 +84,16 @@ defmodule AshTemplateWeb.WorldCubeLive do
       href: "https://techtree.sh",
       cards: [
         %{
-          label: "Available now",
           title: "Prime Intellect evaluations.",
           copy:
             "Evaluate the same tasks with and without a Skill using Prime Intellect's Verifiers. Share results others can check."
         },
         %{
-          label: "Experimental",
           title: "NVIDIA Skill2Env.",
           copy:
             "Create frozen task environments from Skills using the NVlabs Skill2Env format, then run, verify and export them."
         },
         %{
-          label: "Planned",
           title: "NVIDIA NeMo harnesses.",
           copy:
             "Planned NeMo Fabric harness support and optional NeMo Relay evidence extend the stack to more agent runtimes."
