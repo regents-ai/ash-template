@@ -1802,3 +1802,12 @@ Operations
 - A label holding a line break is now written as `\n`. Before, it broke the line.
 - Sites that copy this take all four renames together and update any alarm or
   chart that reads them.
+
+## 2026-10-14 — The apps menu hangs from its button, and "$REGENT Staking"
+
+- The Regents Labs apps panel now opens straight under the nine-dot button,
+  its right edge lined up with the button's; on a phone it spans the screen,
+  still under the button. Before, it sat at a fixed spot near the corner and
+  looked detached wherever the button was not there. Sean's word of 14 October.
+- The tile that read "Protocol" now reads "$REGENT Staking". Its link is
+  unchanged.

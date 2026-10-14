@@ -40,7 +40,7 @@ defmodule AshTemplateWeb.Components.Shell do
     %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
     %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet"},
     %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
-    %{name: "Protocol", url: "https://regents.sh/stake", tone: "protocol"},
+    %{name: "$REGENT Staking", url: "https://regents.sh/stake", tone: "protocol"},
     %{name: "Account", url: "https://regents.sh/account", tone: "account"}
   ]
 

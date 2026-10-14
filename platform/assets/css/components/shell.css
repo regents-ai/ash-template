@@ -424,14 +424,20 @@
   align-self: center;
 }
 
-/* The panel sits under the top bar's right end; the browser places it above
-   everything else and closes it on Escape or a press outside. */
+#app-shell #shell-apps-button {
+  anchor-name: --shell-apps-button;
+}
+
+/* The panel hangs from the nine-dot button: straight under it, its right edge
+   lined up with the button's. The browser places it above everything else and
+   closes it on Escape or a press outside. */
 .shell-apps {
   position: fixed;
-  inset: 3.75rem 1rem auto auto;
+  position-anchor: --shell-apps-button;
+  inset: anchor(bottom) anchor(right) auto auto;
   width: min(21rem, calc(100% - 2rem));
   max-height: calc(100dvh - 5rem);
-  margin: 0;
+  margin: 0.25rem 0 0;
   padding: 1rem;
   overflow: auto;
   border: 1px solid var(--ash-line-strong);
@@ -1550,8 +1556,9 @@
     padding: 1rem;
   }
 
+  /* On a phone the panel spans the screen, still straight under the button. */
   .shell-apps {
-    inset: 3.5rem 0.5rem auto;
+    inset: anchor(bottom) 0.5rem auto;
     width: auto;
   }
 
