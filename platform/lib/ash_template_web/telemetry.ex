@@ -19,10 +19,17 @@ defmodule AshTemplateWeb.Telemetry do
   The figures every visitor sees alike (`AshTemplate.SharedReading`) report, for
   each kind, how many keys are held, how many have never been read, how long ago
   the oldest was read, each reading that could not be taken and each one refused.
+
+  The reporter, Peep, keeps a fixed set of counters for each series and holds
+  no observation between scrapes. It adds each observation to a running total
+  as a whole number, so times are measured in whole microseconds and Jev's
+  charges in billionths of a dollar, and every total stays exact.
   """
 
   import Ecto.Query, only: [from: 2]
   import Telemetry.Metrics
+
+  alias AshTemplateWeb.Telemetry.Buckets
 
   require Logger
 
@@ -30,15 +37,15 @@ defmodule AshTemplateWeb.Telemetry do
   # are counted, so a label never holds whatever a browser chose to send.
   @wallet_failures ~w(step_unknown wallet_unavailable network_mismatch wallet_declined insufficient_funds send_unconfirmed)
 
+  @reporter :ash_template_prometheus
+
   def child_spec(_arg) do
-    TelemetryMetricsPrometheus.Core.child_spec(
-      metrics: metrics(),
-      name: prometheus_reporter(),
-      start_async: false
-    )
+    Peep.child_spec(metrics: metrics(), name: @reporter)
   end
 
-  def prometheus_reporter, do: :ash_template_prometheus
+  @doc "Every measurement as Prometheus text, as the metrics listener answers it."
+  def scrape,
+    do: @reporter |> Peep.get_all_metrics() |> Peep.Prometheus.export() |> IO.iodata_to_binary()
 
   @doc """
   Counts one press the browser reported as not sent or not confirmed, for the
@@ -122,12 +129,17 @@ defmodule AshTemplateWeb.Telemetry do
       counter("ash_template.privy.session_refused.total", tags: [:stage, :reason]),
       counter("ash_template.session_bootstrap.rate_limited.total", tags: [:source]),
       counter("ash_template.session_authority.absent_row.total"),
-      distribution("health.db_queue.seconds",
+      distribution("health.db_queue.microseconds",
         event_name: [:ash_template, :repo, :query],
         measurement: :queue_time,
-        unit: {:native, :second},
-        description: "Seconds a query waited for a database connection",
-        reporter_options: [buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5]]
+        unit: {:native, :microsecond},
+        description: "Microseconds a query waited for a database connection",
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets:
+            [1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000] ++
+              [1_000_000, 2_500_000, 5_000_000]
+        ]
       ),
       counter("health.chain_request_failures.total",
         event_name: [:ash_template, :chain, :failure],
@@ -152,12 +164,24 @@ defmodule AshTemplateWeb.Telemetry do
         tags: [:queue, :worker, :state],
         description: "Job runs that failed; state says whether the job will retry"
       ),
-      distribution("ash_template.jobs.duration.seconds",
+      distribution("ash_template.jobs.duration.microseconds",
         event_name: [:oban, :job, :stop],
         measurement: :duration,
-        unit: {:native, :second},
+        unit: {:native, :microsecond},
         tags: [:queue, :worker],
-        reporter_options: [buckets: [0.01, 0.05, 0.1, 0.5, 1, 5, 15, 60]]
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets: [
+            10_000,
+            50_000,
+            100_000,
+            500_000,
+            1_000_000,
+            5_000_000,
+            15_000_000,
+            60_000_000
+          ]
+        ]
       ),
       counter("ash_template.jev.questions.total",
         event_name: [:regent_jev, :decide],
@@ -174,20 +198,28 @@ defmodule AshTemplateWeb.Telemetry do
         measurement: :output_tokens,
         description: "Output tokens Jev was billed for"
       ),
-      # A Prometheus sum adds whole numbers only, so the dollars are a histogram;
-      # its `_sum` series is the running total.
-      distribution("ash_template.jev.cost.usd",
+      # The dollars are a histogram, so its `_sum` series is the running total.
+      # Jev reports a float of dollars; billionths keep that total exact.
+      distribution("ash_template.jev.cost.nanodollars",
         event_name: [:regent_jev, :decide],
-        measurement: :cost_usd,
-        description: "US dollars OpenRouter charged per Jev question",
-        reporter_options: [buckets: [0.00001, 0.0001, 0.001, 0.01, 0.1]]
+        measurement: &round(&1.cost_usd * 1_000_000_000),
+        description: "Billionths of a US dollar OpenRouter charged per Jev question",
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets: [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
+        ]
       ),
-      distribution("ash_template.jev.duration.seconds",
+      distribution("ash_template.jev.duration.microseconds",
         event_name: [:regent_jev, :decide],
         measurement: :duration,
-        unit: {:native, :second},
+        unit: {:native, :microsecond},
         tags: [:outcome],
-        reporter_options: [buckets: [0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30]]
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets:
+            [100_000, 250_000, 500_000, 1_000_000, 2_500_000, 5_000_000, 10_000_000] ++
+              [30_000_000]
+        ]
       ),
       last_value("health.shared_reading.oldest.seconds",
         event_name: [:ash_template, :shared_reading, :kind],

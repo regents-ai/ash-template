@@ -22,11 +22,9 @@ defmodule AshTemplateWeb.Metrics do
 
   @impl Plug
   def call(%Plug.Conn{method: "GET", path_info: ["metrics"]} = conn, _opts) do
-    body = TelemetryMetricsPrometheus.Core.scrape(AshTemplateWeb.Telemetry.prometheus_reporter())
-
     conn
     |> put_resp_content_type("text/plain")
-    |> send_resp(:ok, body)
+    |> send_resp(:ok, AshTemplateWeb.Telemetry.scrape())
   end
 
   def call(conn, _opts), do: send_resp(conn, :not_found, "")

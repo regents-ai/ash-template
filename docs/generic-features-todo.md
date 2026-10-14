@@ -131,8 +131,8 @@ To do:
 - [x] Feedback: one "fits / doesn't fit" report per decision, stored on the row; a second
       report is refused inside the `UPDATE` (`RateOnce`, an atomic validation).
 - [x] `:telemetry` on every Jev call (duration, outcome, tokens, cost) feeding the
-      existing Prometheus reporter (`ash_template_jev_*`; cost is a histogram, since a
-      Prometheus sum adds whole numbers only).
+      existing Prometheus reporter (`ash_template_jev_*`; cost is a histogram in
+      billionths of a dollar, so its running total is exact).
 - Done when: saving a note queues exactly one Jev job, a browser agent can read the
   chosen label through WebMCP while signed in, the decision row shows the model, tokens
   and cost, a forced failure retries and then records the failure, and a rolled-back

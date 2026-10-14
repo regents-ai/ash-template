@@ -227,6 +227,14 @@ reads it, and not from the internet. Locally it listens on loopback, on a port t
 system picks (`config/config.exs`), so sites run side by side without sharing 9091.
 `/healthz` stays public on the site's own port.
 
+The reporter is Peep (`AshTemplateWeb.Telemetry`). It keeps fixed counters for
+each series and holds nothing between scrapes, and it adds every observation to
+a running total as a whole number. So times are measured in whole microseconds
+(`*_microseconds`) and Jev's charges in billionths of a dollar
+(`ash_template_jev_cost_nanodollars`), and every total is exact. Histogram
+buckets count observations at or below their bound
+(`AshTemplateWeb.Telemetry.Buckets`).
+
 ## Repository layout
 
 ```text

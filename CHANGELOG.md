@@ -1784,3 +1784,21 @@ Operations
   from the ENS avatar service, which can see their internet address and ENS
   name. The privacy page now says so (version 1.2). Sean's decision of 14
   October.
+
+## 2026-10-14 — Measurements: a reporter that holds nothing between reads, and exact totals
+
+- The site's measurements now go through Peep, which keeps a fixed set of
+  counters for each series. Before, the reporter kept every timing in memory
+  until something read the measurements, so a site nobody read grew without
+  limit. Sentinel's finding; Sean's decision of 14 October.
+- Four series are renamed to whole-number units so their running totals are
+  exact: `health_db_queue_seconds` is now `health_db_queue_microseconds`,
+  `ash_template_jobs_duration_seconds` is `ash_template_jobs_duration_microseconds`,
+  `ash_template_jev_duration_seconds` is `ash_template_jev_duration_microseconds`,
+  and `ash_template_jev_cost_usd` is `ash_template_jev_cost_nanodollars`
+  (billionths of a dollar). A $0.50042 total reads 500420000. Bucket bounds are
+  the same amounts in the new units. Every other series keeps its name and value.
+- A bucket counts an observation equal to its bound, as Prometheus defines it.
+- A label holding a line break is now written as `\n`. Before, it broke the line.
+- Sites that copy this take all four renames together and update any alarm or
+  chart that reads them.
