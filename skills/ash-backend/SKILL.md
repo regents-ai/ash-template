@@ -19,7 +19,7 @@ Ecto remains appropriate for migrations, diagnostics and justified data-layer wo
 - [Integrations](references/integrations.md): jobs, external effects and adapters.
   Durable, retried or scheduled work is Oban; see [elixir-stack](../elixir-stack/SKILL.md).
   One resource reacting to another's action is an Ash signal, chosen from the table
-  there.
+  there; [ash-signals](../ash-signals/SKILL.md) covers adopting and writing them.
 
 Generic persistent idempotency or outbox guidance never authorizes blocking a Regent
 user-signed wallet transaction. Every distinct button press reaches the wallet.

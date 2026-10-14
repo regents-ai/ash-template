@@ -1985,3 +1985,18 @@ Operations
   with the rules for each.
 - The template now needs the shared Elixir libraries at their Ash 3.36 commit.
   Sites copy this after the template is released.
+
+## 2026-10-14 — An `ash-signals` skill: how a site moves onto signals
+
+- `skills/ash-signals` is the guide a site follows to adopt Ash signals as the
+  template has: the template's signals and who hears each, the order to adopt
+  them in (versions, the compiler, Credits' signals in place of
+  `on_credited`, each site event, policies, the walk that checks them), a
+  listener copied from `AshTemplate.Points.Award`, and the rules for writing
+  one. Sean's ask of 14 October.
+- The rules for writing a signal move there from `ash-backend`'s
+  integrations guide, which keeps the table for choosing between a signal, a
+  direct call, a trigger, a notifier and an event log.
+- `ash-stack` routes to it, and the site serves it with the other build skills.
+- The template's shared libraries move from a844a83 to elixir-utils 9db13eb,
+  where they run on Ash 3.36 and Credits sends its signals.

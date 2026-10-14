@@ -29,6 +29,7 @@ Then, before building a feature in a site monorepo: **check whether ash-template
 | Policies, actors and data exposure | [ash-security](../ash-security/SKILL.md) |
 | Regression design or test cleanup | [ash-testing](../ash-testing/SKILL.md) |
 | Agent readiness, shared discovery metadata, and building or adopting WebMCP tools | [ash-webmcp](../ash-webmcp/SKILL.md) |
+| One resource reacting to another's action: Ash signals, their listeners, and moving a site onto them | [ash-signals](../ash-signals/SKILL.md) |
 | Background, retried or scheduled work, webhooks, polling, GenServers, PubSub, HTTP clients and shared Elixir libraries | [elixir-stack](../elixir-stack/SKILL.md) |
 
 For uncertain APIs, use the app's actual Mix root, lockfile and installed dependency

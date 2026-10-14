@@ -35,34 +35,8 @@ listens. Choose by what the reaction needs:
 | Tell open pages something changed, at most once, after commit | A notifier: `Ash.Notifier.PubSub` |
 | Every subscriber gets every event, in order, never skipping a failed one | The event-log recipe in [Oban recipes](../../elixir-stack/references/oban.md#ordered-delivery-to-subscribers-webhooks-event-feeds); a signal is not an ordered feed |
 
-Rules (ash-template, 14 Oct 2026):
-
-- Declare signals in a signal module per domain (`MyApp.Notes.Signals`); emitter
-  and listeners depend on it, never on each other. Keep payloads small: ids, not
-  records. The listener reads what it needs.
-- The listener owns its reaction: the Activity domain writes mention
-  notifications, Points records points. The emitting resource names neither.
-- Inline listeners run with the emitter's actor and `authorize?`; the listener's
-  policy must allow that actor, and it says in a comment that the action is
-  reached only through the signal.
-- A listener returns nothing the emitter needs. A bulk write in a listener passes
-  `notify?: true` and Ash sends the notices after the outer commit; do not return
-  notifications from the listener.
-- A job delivery stores the actor, so the site needs an actor persister (a module
-  implementing `AshOban.PersistActor`, set with `config :ash_oban, :actor_persister`)
-  before any listener runs in a job.
-- Job delivery is transactional only when the emitter and Oban use the same Repo
-  and the signal is emitted `:after_action`.
-- `signal_id` is not a business idempotency key. Effects that must happen once
-  still key on the record (for example Points' `source_event_key` is the note id).
-- Before renaming or removing a signal, a field or a job-delivered listener,
-  drain its queued jobs or give the listener an `upgrader`.
-- A shared library emits its own signals (`RegentCredits.Signals`); each site
-  listens with its own resource. No library ships a listener that runs on every
-  site.
-- Setup: `compilers: [:ash_signals, ...]` in `mix.exs`, and `:ash_signals` in the
-  endpoint's `reloadable_compilers` in `config/dev.exs`. Test with
-  `Ash.Signals.Test` (`assert_emits_signal/4`), within the agreed test budget.
+Adopting signals in a site, the template's signals and listeners, and the rules for
+writing one are in [ash-signals](../../ash-signals/SKILL.md).
 
 ## Authentication: AshAuthentication / AshAuthenticationPhoenix
 
