@@ -1979,7 +1979,9 @@ Operations
     (`:purchase_credited`, `:purchase_attributed`) instead of the
     `on_credited` setting, which is gone.
 - Points listens through `AshTemplate.Points.Award`, in its own small domain.
-- `mix ash.signals` lists who sends and who listens; the dev server reloads
-  signal changes (`reloadable_compilers`).
+- The dev server reloads signal changes (`reloadable_compilers`).
+- The build skills (`skills/ash-backend`) carry a table for choosing a direct
+  call, a signal, a signal run as a job, an AshOban trigger or a PubSub notice,
+  with the rules for each.
 - The template now needs the shared Elixir libraries at their Ash 3.36 commit.
   Sites copy this after the template is released.

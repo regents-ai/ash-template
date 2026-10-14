@@ -1,12 +1,13 @@
 # Oban recipes
 
-Versions current in Regent: `oban` 2.24, `ash_oban` 0.9 (the first AshOban that
-understands Oban 2.24's top-level `cron:`, `pruner:` and `lifeline:` keys). Check the
-site's lockfile and read the installed version's docs before relying on an option.
+Versions current in Regent: `oban` 2.24, `ash_oban` 0.10 (with Ash 3.36: it
+understands Oban 2.24's top-level `cron:`, `pruner:` and `lifeline:` keys, and adds
+`AshOban.Signals`, which runs a signal's listener in a job). Check the site's lockfile
+and read the installed version's docs before relying on an option.
 
 ## Add Oban to a site
 
-1. Add `{:oban, "~> 2.24"}`, and `{:ash_oban, "~> 0.9"}` when Ash resources will
+1. Add `{:oban, "~> 2.24"}`, and `{:ash_oban, "~> 0.10"}` when Ash resources will
    own jobs. The `oban.install` and `ash_oban.install` Igniter tasks set up the same
    pieces when the site uses Igniter.
 2. Migration, in the site's own schema (Autolaunch:
