@@ -159,6 +159,10 @@ defmodule AshTemplate.SharedReading do
   this on each pass and deletes the ones its fresh read no longer has, so it
   keeps no list of its own, and a restart of the producer alone leaves no key
   behind.
+
+  It is for a producer's pass only, never a page's mount or each event: it walks
+  the whole table. Never count with it either: it answers `[]` in the instant
+  the table's owner restarts, which a measurement would show as a healthy zero.
   """
   @spec ids(atom()) :: [integer() | String.t()]
   def ids(kind) when is_map_key(@kinds, kind) do
