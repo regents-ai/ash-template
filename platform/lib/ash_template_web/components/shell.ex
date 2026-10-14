@@ -83,7 +83,7 @@ defmodule AshTemplateWeb.Components.Shell do
     >
       <a class="shell-skip" href="#route-content">Skip to content</a>
       <header id="shell-header">
-        <.link id="shell-brand" class="shell-brand" href="/">
+        <.link id="shell-brand" class="shell-brand" href="/" aria-label="Ash Template home">
           <span class="shell-brand__mark" aria-hidden="true">
             <img
               :for={tone <- ~w(light dark)}
@@ -112,6 +112,7 @@ defmodule AshTemplateWeb.Components.Shell do
           type="button"
           aria-haspopup="dialog"
           aria-controls="shell-search"
+          aria-label="Search"
           aria-keyshortcuts="Meta+K Control+K"
         >
           <.icon name={:search} />
