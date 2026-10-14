@@ -2021,3 +2021,13 @@ Operations
   the site's 404.
 - `AshTemplateWeb.RouteCatalog.design_pages/0` holds the list, and the route
   handoff (`priv/handoff/route-catalog.json`) carries the new route.
+
+## 2026-10-14 — What Credits buy, on the Credits page
+
+- The Credits page lists what Credits buy, for everyone: Patchbay, a bid for
+  an Agent Offer (linked to Patchbay's how-it-works page), and on this site a
+  note your agent pins. Each row names its site and links to where it happens.
+  Sean's ask of 14 October, and his choice that the list lives on the
+  template's page (CREDITS-USES-HOME b).
+- A site copying the page keeps the other sites' rows and puts its own uses
+  in place of the template's pinned note.

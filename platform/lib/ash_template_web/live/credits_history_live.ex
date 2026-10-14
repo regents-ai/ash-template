@@ -5,11 +5,22 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
   date and time. The entries and their words come from Regent Credits
   (`RegentCredits.History`, `RegentCredits.History.Words`), so every site
   shows the same thing the same way. Buy Credits opens the header's own Buy
-  Credits panel.
+  Credits panel. What Credits buy lists each place to spend them, for everyone:
+  the other Regent sites' uses, and this site's own (here, a pinned note). A
+  site keeps the other sites' rows and puts its own in place of the template's.
   """
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   alias RegentCredits.{Amount, History.Words}
+
+  @uses [
+    %{
+      site: "Patchbay",
+      words: "Bid for an Agent Offer",
+      url: "https://patchbay.help/offers/how-it-works"
+    },
+    %{site: "Ash Template", words: "Let your agent pin a note", url: "/notes"}
+  ]
 
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
@@ -19,6 +30,8 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
     doc: "the entries read so far, with `more?` and `next` for older ones"
 
   def page(assigns) do
+    assigns = assign(assigns, :uses, @uses)
+
     ~H"""
     <article id="credits-history-page" class="account-page">
       <.page_head title="Credits history">
@@ -54,6 +67,15 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
           empty_message="Nothing has changed your Credits yet."
         />
       </div>
+      <section id="credits-uses" class="account-panel credits-uses">
+        <h2>What Credits buy</h2>
+        <ul>
+          <li :for={use <- @uses}>
+            <span class="account-kicker">{use.site}</span>
+            <a href={use.url}>{use.words}</a>
+          </li>
+        </ul>
+      </section>
     </article>
     """
   end
