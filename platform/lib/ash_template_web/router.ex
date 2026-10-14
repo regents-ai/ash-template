@@ -264,6 +264,7 @@ defmodule AshTemplateWeb.Router do
       live "/rooms/:room", ShellLive, :room
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
+      live "/design", ShellLive, :design
       live "/account", ShellLive, :account
       live "/account/points", ShellLive, :points
       live "/account/credits", ShellLive, :credits

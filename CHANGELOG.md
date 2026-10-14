@@ -2008,3 +2008,16 @@ Operations
   one the header balance opens, so there is one way to buy. Sean's ask of 14
   October, from the Regents Credits page.
 - Any button marked `data-credits-open` opens that panel (`shell_panels.ts`).
+
+## 2026-10-14 — A Design section in the left column
+
+- The left column has a Design section, before Account. Its page (`/design`)
+  and its sidebar list the design pages: Components (`/showcase`), the motion
+  lab (`/animations`), World cube, Twin cubes, Foil cards and Crown. Each opens
+  its own full page. Sean's ask of 14 October ("they should be in the sidebar
+  under 'Design'"); the motion lab is the "animation studio" he meant.
+- The section is there while the design pages are: a site with the showcase
+  off (`ASH_TEMPLATE_SHOWCASE=off`) shows no Design entry, and `/design` is
+  the site's 404.
+- `AshTemplateWeb.RouteCatalog.design_pages/0` holds the list, and the route
+  handoff (`priv/handoff/route-catalog.json`) carries the new route.

@@ -35,6 +35,9 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Activity", "What has happened for you lately: mentions in rooms, newest first."},
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
+    "/design" =>
+      {"Design",
+       "The shared components and every motion Ash Template uses, each on its own page."},
     "/account" => {"Account", "Your profile, agents, Credits and the session on this browser."},
     "/account/points" => {"Points", "Your points and activity."},
     "/account/credits" =>

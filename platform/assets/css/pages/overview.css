@@ -24,6 +24,18 @@
   .overview-places { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
+/* The Design page uses the same cards for its six pages: one column, then two
+   rows of three. */
+.design-places {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
+@container (min-width: 36rem) {
+  .design-places { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 .overview-place {
   display: grid;
   gap: 0.35rem;

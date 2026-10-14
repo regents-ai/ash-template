@@ -25,6 +25,7 @@ defmodule AshTemplateWeb.ShellLive do
     ActivityLive,
     ChatLive,
     CreditsHistoryLive,
+    DesignLive,
     NotesLive,
     NotFoundError,
     OverviewLive,
@@ -32,7 +33,8 @@ defmodule AshTemplateWeb.ShellLive do
     PublicDocuments,
     Read,
     RoomsLive,
-    RouteCatalog
+    RouteCatalog,
+    Showcase
   }
 
   @actions %{"link" => :link, "unlink" => :unlink}
@@ -91,6 +93,7 @@ defmodule AshTemplateWeb.ShellLive do
   @impl true
   def handle_params(params, uri, socket) do
     action = socket.assigns.live_action
+    open!(action)
     room = room_in(action, params)
     conversation = conversation_in(action, params, human_actor(socket))
     route_spec = RouteCatalog.fetch!(action, params)
@@ -370,6 +373,8 @@ defmodule AshTemplateWeb.ShellLive do
           conversation={@conversation}
         />
 
+        <DesignLive.page :if={@route_spec.route_id == :design} />
+
         <AccountLive.profile
           :if={@route_spec.route_id == :account}
           signed_out_reason={@signed_out_reason}
@@ -424,6 +429,10 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp subscribe_to_own_topics(_access_context), do: :ok
+
+  # The Design page exists while the design pages do.
+  defp open!(:design), do: Showcase.linked?() or raise(NotFoundError)
+  defp open!(_action), do: true
 
   defp room_in(:room, %{"room" => slug}) do
     case Room.fetch(slug) do

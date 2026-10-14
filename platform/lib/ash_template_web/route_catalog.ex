@@ -13,6 +13,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :notes, label: "Notes", path: "/notes", icon: :notes},
     %{id: :rooms, label: "Rooms", path: @first_room, icon: :rooms},
     %{id: :chat, label: "Chat", path: "/chat", icon: :chat},
+    %{id: :design, label: "Design", path: "/design", icon: :design},
     %{id: :settings, label: "Account", path: "/account", icon: :settings}
   ]
 
@@ -42,6 +43,18 @@ defmodule AshTemplateWeb.RouteCatalog do
         )
     },
     chat: %{id: :chat, title: "Your chats", targets: []},
+    design: %{
+      id: :design,
+      title: "Design",
+      targets: [
+        %RouteTarget{route_id: :showcase, label: "Components", path: "/showcase"},
+        %RouteTarget{route_id: :motion_lab, label: "Motion lab", path: "/animations"},
+        %RouteTarget{route_id: :world_cube, label: "World cube", path: "/animations/cube"},
+        %RouteTarget{route_id: :twin_cube, label: "Twin cubes", path: "/animations/twin-cube"},
+        %RouteTarget{route_id: :foil_cards, label: "Foil cards", path: "/animations/foil"},
+        %RouteTarget{route_id: :crown, label: "Crown", path: "/animations/crown"}
+      ]
+    },
     settings: %{
       id: :settings,
       title: "Help",
@@ -106,6 +119,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     conversation:
       {:chat,
        %{route_id: :chat, destination: "/chat/:conversation_id", page_display_label: "Chat"}},
+    design: {:design, %{route_id: :design, destination: "/design", page_display_label: "Design"}},
     account:
       {:settings, %{route_id: :account, destination: "/account", page_display_label: "Account"}},
     points:
@@ -173,8 +187,18 @@ defmodule AshTemplateWeb.RouteCatalog do
   @live_destinations for {_action, %{app_id: :product} = route} <- @routes,
                          do: String.split(route.destination, "/")
 
-  @doc "The rail's sections, in order."
-  def sections, do: @sections
+  @doc """
+  The rail's sections, in order. Design is there while the design pages are
+  (`AshTemplateWeb.Showcase.linked?/0`).
+  """
+  def sections do
+    if AshTemplateWeb.Showcase.linked?(),
+      do: @sections,
+      else: Enum.reject(@sections, &(&1.id == :design))
+  end
+
+  @doc "The design pages the Design section lists, in order."
+  def design_pages, do: @sidebars.design.targets
 
   @doc "The pages and actions search offers, as `{group, [%{label, path}]}`."
   def search_entries, do: [{"Pages", @pages}, {"Actions", @actions}]

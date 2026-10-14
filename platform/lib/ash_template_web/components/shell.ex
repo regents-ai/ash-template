@@ -818,6 +818,10 @@ defmodule AshTemplateWeb.Components.Shell do
       <path :if={@name == :home} d="M4 11 12 4l8 7M6 9.5V20h12V9.5M10 20v-6h4v6" />
       <path :if={@name == :notes} d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7" />
       <path :if={@name == :rooms} d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" />
+      <g :if={@name == :design}>
+        <path d="M4 4h7v7H4zM17.5 13l3.5 7h-7z" /><circle cx="17.5" cy="7.5" r="3.5" />
+        <path d="M4 14h7v6H4z" />
+      </g>
       <path
         :if={@name == :chat}
         d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"
