@@ -2,16 +2,22 @@ defmodule AshTemplate.PublicIdentity do
   @moduledoc """
   The public name and picture of a signed-in account.
 
-  The name is its display name, else its wallet's ENS name, else its shortened
-  wallet address. Its squares are a picture generated from its wallet address;
-  its picture is its ENS name's, when it has one.
+  The name is its display name or its wallet's ENS name, whichever the site's
+  `:name_first` setting puts first (`:chosen` or `:ens`), else the other, else
+  its shortened wallet address. Its squares are a picture generated from its
+  wallet address; its picture is its ENS name's, when it has one.
   """
 
   @wallet ~r/\A0x[0-9a-fA-F]{40}\z/
 
+  @name_fields (case Application.compile_env!(:ash_template, :name_first) do
+                  :chosen -> [:display_name, :ens_name]
+                  :ens -> [:ens_name, :display_name]
+                end)
+
   def label(account),
     do:
-      present(Map.get(account, :display_name)) || present(Map.get(account, :ens_name)) ||
+      Enum.find_value(@name_fields, &present(Map.get(account, &1))) ||
         short_wallet(Map.get(account, :wallet_address))
 
   def picture(account), do: present(Map.get(account, :ens_avatar_url))

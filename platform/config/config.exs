@@ -127,6 +127,10 @@ config :ash_template, :limits,
 # The build /capabilities.json names. Only a deployed image has one (config/runtime.exs).
 config :ash_template, :build, %{commit: nil, release: nil}
 
+# Which name a signed-in person is shown by when they have both: `:chosen`, the
+# display name they chose, or `:ens`, their wallet's ENS name. Each site picks one.
+config :ash_template, :name_first, :chosen
+
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false
 

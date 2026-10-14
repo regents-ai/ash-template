@@ -1824,3 +1824,10 @@ Operations
   signatures without asking the chain.
 - Sites that copy this drop any `loginMethods: ["wallet"]` they pass to Privy
   and add the same `embeddedWallets.ethereum.createOnLogin`.
+
+## 2026-10-14 — Each site chooses which name a person is shown by
+
+- A person with both a chosen display name and an ENS name is shown by the one
+  the site's `:name_first` setting puts first: `:chosen` (the template's
+  choice) or `:ens`. With only one of them, that one; with neither, the short
+  wallet address. Sean's word of 14 October: both, and each site chooses.
