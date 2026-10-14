@@ -12,7 +12,8 @@ defmodule AshTemplate.Rooms.Message do
   World ID mark shows as it stands now. A post that
   mentions someone by name tells them (`NotifyMentions`). Every post,
   edit and delete is published on the room's topic, so each open page of that
-  room shows it at once.
+  room shows it at once. What is published is `public/1`, the fields a
+  signed-out reader sees, never the record.
   """
 
   use Ash.Resource,
@@ -191,20 +192,48 @@ defmodule AshTemplate.Rooms.Message do
     end
   end
 
-  # Delivered after the transaction commits, as %{event: "post" | "edit" |
-  # "destroy", payload: message}, to `topic/1` of the message's room.
+  # Delivered after the transaction commits to `topic/1` of the message's room:
+  # %{event: "post" | "edit", payload: public(message)}, or %{event: "destroy",
+  # payload: %{id: id, room: room}}. `edited_at` is the order marker: the
+  # database sets it on every edit, and a page keeps the newer. Post and edit
+  # load `agent` and `via_agent` themselves, so no publication reads them again.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
-    prefix "rooms"
+    prefix "public:room"
     broadcast_type :broadcast
-    transform & &1.data
 
-    publish :post, [:room]
-    publish :edit, [:room]
-    publish :destroy, [:room]
+    publish :post, [:room], returns: :map, transform: &__MODULE__.public(&1.data)
+    publish :edit, [:room], returns: :map, transform: &__MODULE__.public(&1.data)
+
+    publish :destroy, [:room],
+      returns: :map,
+      transform: &%{id: &1.data.id, room: &1.data.room}
   end
 
   @doc "The topic every post, edit and delete in `room` is published on."
-  def topic(room), do: "rooms:#{room}"
+  def topic(room), do: "public:room:#{room}"
+
+  @doc """
+  What a signed-out reader may see of a message, named one by one: what a room's
+  page shows and what its topic carries. `backed_agents` is how many agents the
+  World ID person behind the writing agent backs, `nil` when nobody does.
+  `agent` and `via_agent` must be loaded, as every room read and write loads
+  them.
+  """
+  def public(message) do
+    %{
+      id: message.id,
+      room: message.room,
+      body: message.body,
+      author_name: message.author_name,
+      human_account_id: message.human_account_id,
+      agent_id: message.agent_id,
+      via_agent_id: message.via_agent_id,
+      inserted_at: message.inserted_at,
+      edited_at: message.edited_at,
+      backed_agents: message.agent && message.agent.world_id_agent_count,
+      via_agent_address: message.via_agent && message.via_agent.wallet_address
+    }
+  end
 end

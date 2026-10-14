@@ -230,7 +230,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   # A room's posts, edits and deletes reach only the room on screen, so one
   # still in the mailbox from the room just left is dropped.
-  def handle_info(%{topic: "rooms:" <> _, event: event, payload: %Message{} = message}, socket) do
+  def handle_info(%{topic: "public:room:" <> _, event: event, payload: message}, socket) do
     if on_room?(socket, message.room),
       do: send_update(RoomsLive, id: "rooms", change: {event, message})
 

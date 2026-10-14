@@ -11,6 +11,11 @@ defmodule AshTemplateWeb.RoomsLive do
   subscription and hands it on here as `send_update(RoomsLive, id: "rooms",
   change: {event, message})`. The shell also tracks who is here
   (`AshTemplateWeb.Presence`) and passes the list in as `people`.
+
+  A message on the page is `Message.public/1`, the same map the notifier
+  publishes, so a message read and a message published are drawn alike. Which
+  messages a reader sees is theirs alone (their mutes); what each one says is
+  the same for everyone.
   """
 
   use AshTemplateWeb, :live_component
@@ -18,7 +23,6 @@ defmodule AshTemplateWeb.RoomsLive do
   import AshTemplateWeb.Components.PageHead
 
   alias AshTemplate.Actors.Human
-  alias AshTemplate.Agents.Agent
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Mute}
   alias AshTemplateWeb.FormErrors
@@ -45,6 +49,8 @@ defmodule AshTemplateWeb.RoomsLive do
        page: nil,
        mutes: [],
        muted: MapSet.new(),
+       shown: %{},
+       latest: nil,
        form: nil,
        editing: nil,
        notice: nil,
@@ -266,16 +272,16 @@ defmodule AshTemplateWeb.RoomsLive do
                   <p class="rooms-message__meta">
                     <bdi class="rooms-message__author">{message.author_name}</bdi>
                     <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
-                    <span :if={human_backed?(message)} class="rooms-message__human">
+                    <span :if={message.backed_agents} class="rooms-message__human">
                       <span class="rooms-message__agent">Human-backed</span>
                       <Primitives.tip id={"#{dom_id}-human"} label="About human-backed agents">
-                        {backing(message.agent.world_id_agent_count)}
+                        {backing(message.backed_agents)}
                       </Primitives.tip>
                     </span>
-                    <span :if={message.via_agent} class="rooms-message__human">
+                    <span :if={message.via_agent_address} class="rooms-message__human">
                       <span class="rooms-message__agent">Via agent</span>
                       <Primitives.tip id={"#{dom_id}-via"} label="About this agent">
-                        Written by {RegentFormat.short_address(message.via_agent.wallet_address)}, an agent {message.author_name} paired with their account.
+                        Written by {RegentFormat.short_address(message.via_agent_address)}, an agent {message.author_name} paired with their account.
                       </Primitives.tip>
                     </span>
                     <time datetime={DateTime.to_iso8601(message.inserted_at)}>
@@ -384,7 +390,7 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   attr :id, :string, required: true
-  attr :message, Message, required: true
+  attr :message, :map, required: true
   attr :actor, Human, required: true
   attr :myself, :any, required: true
 
@@ -464,13 +470,17 @@ defmodule AshTemplateWeb.RoomsLive do
   # A failed read keeps the messages already on the page, so only a read that
   # landed replaces them.
   defp show_messages(%{assigns: %{messages: %Read{state: :ready, value: value}}} = socket) do
+    messages = Enum.map(value.page.results, &Message.public/1)
+
     socket
     |> assign(
       page: value.page,
       mutes: value.mutes,
-      muted: MapSet.new(value.mutes, &muted_author/1)
+      muted: MapSet.new(value.mutes, &muted_author/1),
+      shown: edits(messages),
+      latest: with([newest | _] <- messages, do: newest.inserted_at)
     )
-    |> stream(:messages, Enum.reverse(value.page.results), reset: true)
+    |> stream(:messages, Enum.reverse(messages), reset: true)
   end
 
   defp show_messages(socket), do: socket
@@ -478,24 +488,79 @@ defmodule AshTemplateWeb.RoomsLive do
   # A page of older messages comes newest first, so putting each one at the top
   # in turn leaves them in order above the ones already shown.
   defp show_older(%{assigns: %{older: %Read{state: :ready, value: page}}} = socket) do
+    messages = Enum.map(page.results, &Message.public/1)
+
     socket
-    |> assign(:page, page)
-    |> stream(:messages, page.results, at: 0)
+    |> assign(page: page, shown: Map.merge(socket.assigns.shown, edits(messages)))
+    |> stream(:messages, messages, at: 0)
   end
 
   defp show_older(socket), do: socket
 
-  defp apply_change(socket, "destroy", message) do
-    socket = stream_delete(socket, :messages, message)
-    if socket.assigns.editing == message.id, do: new_form(socket), else: socket
+  # Two notices about one message can arrive in either order, so the page keeps
+  # the newer. `shown` holds, for each message the page has shown edited, the
+  # time the database gave that edit, or `:deleted`; a notice that is not newer
+  # changes nothing. `latest` is when the newest message shown was posted: an
+  # edit of a message posted after it has overtaken its own post, and goes at
+  # the bottom as the post would have.
+  defp apply_change(socket, "destroy", %{id: id}) do
+    socket = socket |> stream_delete(:messages, %{id: id}) |> shown(id, :deleted)
+    if socket.assigns.editing == id, do: new_form(socket), else: socket
   end
 
   defp apply_change(socket, event, message) do
     cond do
-      MapSet.member?(socket.assigns.muted, author(message)) -> socket
-      event == "post" -> stream_insert(socket, :messages, message, at: -1)
-      event == "edit" -> stream_insert(socket, :messages, message, update_only: true)
+      muted?(socket, message) ->
+        socket
+
+      stale?(socket, message) ->
+        socket
+
+      event == "post" or after_latest?(socket, message) ->
+        append(socket, message)
+
+      event == "edit" ->
+        socket |> stream_insert(:messages, message, update_only: true) |> shown(message)
     end
+  end
+
+  defp append(socket, message) do
+    latest =
+      if after_latest?(socket, message), do: message.inserted_at, else: socket.assigns.latest
+
+    socket
+    |> stream_insert(:messages, message, at: -1)
+    |> assign(:latest, latest)
+    |> shown(message)
+  end
+
+  defp stale?(%{assigns: %{shown: shown}}, %{id: id, edited_at: edited_at}) do
+    case shown do
+      %{^id => :deleted} -> true
+      %{^id => at} -> is_nil(edited_at) or DateTime.compare(edited_at, at) != :gt
+      _never_shown_edited -> false
+    end
+  end
+
+  defp after_latest?(%{assigns: %{latest: nil}}, _message), do: true
+
+  defp after_latest?(%{assigns: %{latest: latest}}, message),
+    do: DateTime.compare(message.inserted_at, latest) == :gt
+
+  defp shown(socket, %{edited_at: nil}), do: socket
+  defp shown(socket, %{id: id, edited_at: at}), do: shown(socket, id, at)
+
+  defp shown(socket, id, mark),
+    do: assign(socket, :shown, Map.put(socket.assigns.shown, id, mark))
+
+  defp edits(messages),
+    do: for(%{id: id, edited_at: %DateTime{} = at} <- messages, into: %{}, do: {id, at})
+
+  # The read leaves out a muted author's messages and those a muted agent wrote
+  # for its person (`LeaveOutMuted`); a notice is left out the same way.
+  defp muted?(%{assigns: %{muted: muted}}, message) do
+    MapSet.member?(muted, author(message)) or
+      MapSet.member?(muted, "agent-#{message.via_agent_id}")
   end
 
   # A message or mute that is gone (deleted elsewhere, or never this person's)
@@ -525,11 +590,6 @@ defmodule AshTemplateWeb.RoomsLive do
     if opening == body, do: nil, else: String.trim_trailing(opening) <> "…"
   end
 
-  # Who wrote a message, the same for every message by that person or agent.
-  # A person verified with World ID stands behind the agent that wrote it.
-  defp human_backed?(%Message{agent: %Agent{world_id_human_id: id}}), do: is_binary(id)
-  defp human_backed?(_message), do: false
-
   defp backing(1),
     do:
       "A person verified with World ID stands behind this agent. It is the only agent they back."
@@ -537,8 +597,9 @@ defmodule AshTemplateWeb.RoomsLive do
   defp backing(count),
     do: "A person verified with World ID stands behind this agent. They back #{count} agents."
 
-  defp author(%Message{agent_id: nil, human_account_id: id}), do: "person-#{id}"
-  defp author(%Message{agent_id: id}), do: "agent-#{id}"
+  # Who wrote a message, the same for every message by that person or agent.
+  defp author(%{agent_id: nil, human_account_id: id}), do: "person-#{id}"
+  defp author(%{agent_id: id}), do: "agent-#{id}"
 
   # What the page groups a person's messages by: the same for each of their
   # messages on this page, and unrelated to their account or agent number or
