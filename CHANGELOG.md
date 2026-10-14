@@ -1942,3 +1942,12 @@ Operations
   (`Shell.account_picture`), so a site can draw any account's picture with it.
   Sites copy the four changes in `rooms_live.ex`, `rooms.css`,
   `conversation.ts` and `Rooms.Message`.
+
+## 2026-10-14 — The foil cards draw on vgpu 0.6
+
+- The design system pin moves from `10a05c4` to `8ecffe8`. Its foil card
+  (`holographic_card.mjs`) now prepares its shader the way vgpu 0.6 asks, so the
+  five cards on `/animations/foil` draw again; at `10a05c4` they quietly kept
+  their still picture. The pin also lets the design system's own showcase run
+  locally. Sites that move to vgpu 0.6 and use the foil card need this pin or
+  later in the same release.
