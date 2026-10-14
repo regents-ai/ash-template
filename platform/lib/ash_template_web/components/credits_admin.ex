@@ -21,7 +21,6 @@ defmodule AshTemplateWeb.CreditsAdmin do
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
 
   @hash ~r/0x[0-9a-fA-F]{64}/
-  @explorers %{base: "https://basescan.org/tx/", ethereum: "https://etherscan.io/tx/"}
 
   @impl true
   def mount(socket) do
@@ -232,7 +231,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, treasury: Chains.treasury(), explorers: @explorers)
+    assigns = assign(assigns, treasury: Chains.treasury())
 
     ~H"""
     <div id={@id} class="credits-admin">
@@ -279,7 +278,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
               No account yet. These Credits wait until someone signs in with this wallet.
             </p>
             <p>From <code>{purchase.wallet}</code></p>
-            <p><a href={@explorers[purchase.chain] <> purchase.tx_hash}>Transaction</a></p>
+            <p>
+              <a href={CreditsHistoryLive.transaction_url(purchase.chain, purchase.tx_hash)}>Transaction</a>
+            </p>
             <P.button
               :if={
                 purchase.status == :credited and purchase.privy_user_id != nil and

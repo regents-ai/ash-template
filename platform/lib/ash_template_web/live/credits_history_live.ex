@@ -4,7 +4,8 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
   and returned on each Regent site, and refunds, newest first, each with its
   date and time. The entries and their words come from Regent Credits
   (`RegentCredits.History`, `RegentCredits.History.Words`), so every site
-  shows the same thing the same way. Buy Credits opens the header's own Buy
+  shows the same thing the same way. A purchase's View opens its payment on
+  its chain's explorer. Buy Credits opens the header's own Buy
   Credits panel. What Credits buy lists each place to spend them, for everyone:
   the other Regent sites' uses, and this site's own (here, a pinned note). A
   site keeps the other sites' rows and puts its own in place of the template's.
@@ -21,6 +22,11 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
     },
     %{site: "Ash Template", words: "Let your agent pin a note", url: "/notes"}
   ]
+
+  @explorers %{
+    base: %{name: "Basescan", tx: "https://basescan.org/tx/"},
+    ethereum: %{name: "Etherscan", tx: "https://etherscan.io/tx/"}
+  }
 
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
@@ -121,12 +127,33 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
   defp rows(%{entries: entries}), do: Enum.map(entries, &row/1)
 
   defp row(entry) do
-    %{
+    entry
+    |> payment()
+    |> Map.merge(%{
       label: Words.line(entry),
       amount: signed(entry.direction) <> Amount.format(entry.amount),
       occurred_at: Calendar.strftime(entry.at, "%d %b %Y %H:%M UTC")
+    })
+  end
+
+  defp payment(%{kind: :bought, chain: chain, tx_hash: tx_hash}) do
+    %{
+      link: %{
+        href: transaction_url(chain, tx_hash),
+        label: "View",
+        description: "View this transaction on #{@explorers[chain].name}"
+      }
     }
   end
+
+  defp payment(_entry), do: %{}
+
+  @doc """
+  A payment's page on its chain's explorer: the explorer's address and the
+  transaction hash, which the purchase table holds only as `0x` and 64
+  lowercase hex characters.
+  """
+  def transaction_url(chain, tx_hash), do: @explorers[chain].tx <> tx_hash
 
   defp signed(:in), do: "+"
   defp signed(:out), do: "−"

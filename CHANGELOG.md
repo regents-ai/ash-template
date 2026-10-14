@@ -2040,3 +2040,15 @@ Operations
   even gaps. Sean's ask of 14 October ("the footer looks off in its spacing /
   symmetry. the text can be larger"). The markup is unchanged; the rules are in
   `platform/assets/css/pages/home.css`, and regents.sh copies them as they are.
+
+## 2026-10-14 — A View link on each Credits purchase
+
+- On the Credits page, each Credits purchase in the history has a "View" link
+  after its time. It opens that payment on its chain's explorer (Basescan or
+  Etherscan) in a new tab. Sean's choice of 14 October (CREDITS-PAGE-MOVE a),
+  so regents.sh can take this page whole.
+- `AshTemplateWeb.CreditsHistoryLive.transaction_url/2` builds the address from
+  the purchase's chain and its saved payment hash, and the operator Credits
+  panel uses the same function.
+- The link shows once the shared account history (design-system `ba76912`,
+  "a row may carry one link") is pinned; until then the rows read as before.
