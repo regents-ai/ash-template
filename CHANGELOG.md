@@ -1676,3 +1676,19 @@ Operations
   squares when it is there. Before, the place stayed empty until it arrived.
 - A see-through ENS picture never shows the squares behind it: they are hidden
   once the picture has arrived.
+
+## 2026-10-14 — One connection can hold 40 live pages open
+
+- Every open page of the site keeps a little of the server's memory for as
+  long as its tab stays connected. One internet address can now hold 40 open
+  at a time. The next one is sent to a plain page that says "Too many pages
+  open from this connection. Close one and try again." Closing a tab frees its
+  place at once. Sean's decision of 14 October (40, with these words).
+- Before this, one address could open pages without end and take the server's
+  memory from everyone else.
+- The count is kept on each server, so an address spread across two servers
+  can hold 40 on each. Each refusal is counted
+  (`health.open_pages.refused.total`).
+- Every live page now carries the visitor's address key from its first
+  render; the homepage, the agent start page and the motion lab did not
+  before. A page added without it fails to open rather than going uncounted.

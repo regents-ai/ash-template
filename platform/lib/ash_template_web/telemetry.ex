@@ -201,6 +201,10 @@ defmodule AshTemplateWeb.Telemetry do
         tags: [:kind],
         description: "Keys of the kind that have had no reading since the site started"
       ),
+      counter("health.open_pages.refused.total",
+        event_name: [:ash_template, :open_pages, :refused],
+        description: "Live pages refused because their address already held the limit open"
+      ),
       counter("health.shared_reading.degraded.total",
         event_name: [:ash_template, :shared_reading, :degraded],
         tags: [:kind],

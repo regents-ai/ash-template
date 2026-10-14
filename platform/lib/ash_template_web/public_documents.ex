@@ -57,6 +57,9 @@ defmodule AshTemplateWeb.PublicDocuments do
        "How Ash Template collects, uses, shares and protects personal information."},
     "/terms" => {"Terms of Use", "The terms that apply when you use Ash Template."},
     :holding => {"Not open yet", "This part of Ash Template isn't open to visitors yet."},
+    :too_many_pages =>
+      {"Too many pages open",
+       "Too many pages are open from this connection. Close one and try again."},
     "/showcase" =>
       {"Showcase",
        "Every shared Ash Template component, in light and dark, with the page layouts they build."},

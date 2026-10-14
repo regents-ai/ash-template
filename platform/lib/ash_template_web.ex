@@ -37,6 +37,8 @@ defmodule AshTemplateWeb do
     quote do
       use Phoenix.LiveView, layout: {AshTemplateWeb.Layouts, :app}
 
+      on_mount AshTemplateWeb.Live.OpenPages
+
       unquote(html_helpers())
     end
   end

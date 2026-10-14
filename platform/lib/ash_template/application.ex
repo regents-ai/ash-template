@@ -24,6 +24,7 @@ defmodule AshTemplate.Application do
         RegentAgents.Listener,
         {Oban, oban_config()},
         AshTemplateWeb.Telemetry.site_poller(),
+        AshTemplateWeb.Live.OpenPages,
         AshTemplateWeb.Endpoint,
         metrics_child()
       ]

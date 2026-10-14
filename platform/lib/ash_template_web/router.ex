@@ -240,7 +240,11 @@ defmodule AshTemplateWeb.Router do
   scope "/", AshTemplateWeb do
     pipe_through :browser
 
-    live "/", HomeLive, :home
+    live_session :home, session: {Session, :render_context, []} do
+      live "/", HomeLive, :home
+    end
+
+    get "/too-many-pages", TooManyPagesController, :show
     get "/privacy", LegalController, :privacy
     get "/terms", LegalController, :terms
 
@@ -266,7 +270,7 @@ defmodule AshTemplateWeb.Router do
     end
 
     # Open while the site is closed (AshTemplateWeb.Plugs.LaunchGate lets GET /start through).
-    live_session :agent_start do
+    live_session :agent_start, session: {Session, :render_context, []} do
       live "/start", AgentStartLive, :show
     end
   end
@@ -285,6 +289,7 @@ defmodule AshTemplateWeb.Router do
     pipe_through [:motion_lab, :browser]
 
     live_session :motion_lab,
+      session: {Session, :render_context, []},
       on_mount: [{Showcase, :motion_lab}, AshTemplateWeb.Live.LaunchGateHook] do
       live "/animations", AnimationsLive, :index
     end
