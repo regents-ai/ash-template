@@ -5,8 +5,9 @@ defmodule AshTemplate.Accounts.EnsIdentity.LookUp do
   The chain is read before the update and outside any transaction. A name is
   kept only when it resolves back to the same wallet, and a picture only when
   the ENS avatar service answers with one (`AgentEns.PrimaryName`). A failed
-  read fails the action, so the job retries with backoff; a server with no
-  Ethereum endpoint cancels it. The avatar service not answering in time is a
+  read fails the action as a server fault, so the job retries with backoff and
+  the reason reaches saved errors (`AshTemplate.ErrorIgnorer` leaves out invalid
+  input); a server with no Ethereum endpoint cancels it. The avatar service not answering in time is a
   failed read too, never "no picture": it is slow for a name it has not been
   asked about lately, and the picture already stored must outlast that.
 
@@ -21,6 +22,7 @@ defmodule AshTemplate.Accounts.EnsIdentity.LookUp do
   require Ash.Expr
 
   alias AgentEns.PrimaryName
+  alias Ash.Error.Unknown.UnknownError
   alias AshOban.Errors.CancelJob
   alias AshTemplate.Accounts.EnsIdentity
 
@@ -42,7 +44,10 @@ defmodule AshTemplate.Accounts.EnsIdentity.LookUp do
           Ash.Changeset.add_error(changeset, CancelJob.exception(reason: reason))
 
         {:error, reason} ->
-          Ash.Changeset.add_error(changeset, "ENS lookup failed: #{inspect(reason)}")
+          Ash.Changeset.add_error(
+            changeset,
+            UnknownError.exception(error: "ENS lookup failed: #{inspect(reason)}")
+          )
       end
     end)
   end

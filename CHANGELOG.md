@@ -1692,3 +1692,11 @@ Operations
 - Every live page now carries the visitor's address key from its first
   render; the homepage, the agent start page and the motion lab did not
   before. A page added without it fails to open rather than going uncounted.
+
+## 2026-10-14 — A failed ENS lookup leaves a saved record of why
+
+- When the ENS name or picture cannot be read after three tries, the reason
+  now reaches the site's saved errors. Before, it was filed the way a visitor's
+  bad input is, which saved errors leave out, so a lookup could end as failed
+  with nothing saying why. Found by Sentinel; the same fix Keyfleet made for
+  its close-up pictures.
