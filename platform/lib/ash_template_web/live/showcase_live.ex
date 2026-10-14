@@ -118,6 +118,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         %{id: :note, label: "Write your first note", path: "/notes", done?: false}
       ]}
       unread={2}
+      credits={%{state: :ready, value: %{available: Decimal.new("10.00")}}}
       healthy={true}
       search={AshTemplateWeb.ShellLive.unsearched()}
     >
@@ -125,6 +126,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <div style="padding: 32px">
           <h1>Page frame preview</h1>
           <p>The top bar, sections, lists, side panel and bottom bar around every signed-in page.</p>
+          <p>The account and Credits shown here are examples, not a signed-in session.</p>
           <a href="/showcase" target="_top">Back to showcase</a>
         </div>
       </:content>
