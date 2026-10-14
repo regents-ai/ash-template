@@ -293,7 +293,10 @@ database migrations. Every deployment names its venue in
 hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `ASH_TEMPLATE_SHOWCASE`, `PHX_HOST` and a 64-byte `SECRET_KEY_BASE` are set.
 `/app/bin/pending-migrations` reports what a deployed database and the release
-image disagree about, without applying anything.
+image disagree about, without applying anything: `pending:`,
+`applied-without-file:`, and `shared-pending:` for each shared Credits or Points
+change the release needs that is not applied yet (a deployment is refused while
+one is listed; only Regents applies those), or `none`.
 
 The image is built from `Dockerfile` with the repository root as its context:
 the app is in `platform/`, and the build skills it serves are read from

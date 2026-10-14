@@ -31,22 +31,25 @@ defmodule AshTemplate.Release do
   # from every migration its pinned library ships, so each must already be in
   # that schema's own ledger. Every missing version is named at once.
   defp require_shared_migrations!(repo) do
-    unapplied =
-      for {app, schema} <- [regent_credits: "regent_credits", regent_points: "regent_points"],
-          {:down, version, _name} <-
-            Ecto.Migrator.migrations(repo, [Application.app_dir(app, "priv/repo/migrations")],
-              prefix: schema,
-              skip_table_creation: true,
-              migration_lock: false
-            ),
-          do: "#{schema} #{version}"
+    case unapplied_shared_migrations(repo) do
+      [] ->
+        :ok
 
-    if unapplied != [] do
-      raise "These separately approved shared migrations must be applied before deployment: " <>
-              Enum.join(unapplied, ", ")
+      unapplied ->
+        raise "These separately approved shared migrations must be applied before deployment: " <>
+                Enum.join(unapplied, ", ")
     end
+  end
 
-    :ok
+  defp unapplied_shared_migrations(repo) do
+    for {app, schema} <- [regent_credits: "regent_credits", regent_points: "regent_points"],
+        {:down, version, _name} <-
+          Ecto.Migrator.migrations(repo, [Application.app_dir(app, "priv/repo/migrations")],
+            prefix: schema,
+            skip_table_creation: true,
+            migration_lock: false
+          ),
+        do: "#{schema} #{version}"
   end
 
   @doc """
@@ -78,19 +81,27 @@ defmodule AshTemplate.Release do
 
   @doc """
   Prints what a deployed database and the release disagree about: the migrations
-  the release carries that the database has not applied (`pending:`), and the
+  the release carries that the database has not applied (`pending:`), the
   versions the database has applied whose file the release does not carry
-  (`applied-without-file:`), or `none`. It applies nothing, creates nothing, and
-  takes no migration lock.
+  (`applied-without-file:`), and the shared Credits and Points changes the
+  release needs that their own ledgers do not hold (`shared-pending:`, each as
+  schema and version; a deployment is refused while one is listed), or `none`.
+  It applies nothing, creates nothing, and takes no migration lock.
   """
   def pending_migrations do
-    {pending, applied_without_file} = with_release_repo(&disagreements/1)
+    {pending, applied_without_file, shared} =
+      with_release_repo(fn repo ->
+        {pending, applied_without_file} = disagreements(repo)
+        {pending, applied_without_file, unapplied_shared_migrations(repo)}
+      end)
 
-    if pending == [] and applied_without_file == [], do: IO.puts("none")
+    if pending == [] and applied_without_file == [] and shared == [], do: IO.puts("none")
     if pending != [], do: IO.puts("pending: #{Enum.join(pending, " ")}")
 
     if applied_without_file != [],
       do: IO.puts("applied-without-file: #{Enum.join(applied_without_file, " ")}")
+
+    if shared != [], do: IO.puts("shared-pending: #{Enum.join(shared, ", ")}")
   end
 
   defp disagreements(repo) do

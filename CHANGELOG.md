@@ -1730,3 +1730,13 @@ Operations
   count them. It does not change with what one reader has muted.
 - A live view drawn inside another is not counted as an open page of its own
   (the 40-page limit); one drawn inside a plain page is.
+
+## 2026-10-14 — The pre-release listing names shared changes that are not applied yet
+
+- `/app/bin/pending-migrations` now also prints `shared-pending:` with each
+  shared Credits or Points change the release needs that the shared database
+  does not hold yet, as schema and version. Before, the listing could print
+  `none` and the release would then be refused for a shared change it had not
+  mentioned.
+- The listing and the refusal read one list, so they cannot disagree. `none`
+  now means the release has nothing to apply and nothing to wait for.
