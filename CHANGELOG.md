@@ -2059,3 +2059,9 @@ Operations
   missing, have no chain or payment hash. Their history rows now show without a
   View link, where before the Credits page failed for that account. Found by the
   orchestrator's check of the View link before release.
+
+## 2026-10-14 — The shared account history carries the View link
+
+- The template uses design-system `ba76912` ("Account history: a row may carry
+  one link"), so each Credits purchase with a saved payment now shows its View
+  link.
