@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.1",
+    "release": "1.10.2",
     "namespace": "ash-template"
   },
   "authorities": [
@@ -152,7 +152,8 @@
       "may": "Add, change and delete your notes",
       "done": "Deleted one of your notes",
       "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "listRooms",

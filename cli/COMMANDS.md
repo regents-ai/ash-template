@@ -248,9 +248,9 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **Answer:** the saved note. Saving follows the existing label-request and daily-budget behavior; it is not a cost-free label-feedback action.
 - **Refusals:** pairing refusals, 404 `note_not_found` for missing or another owner's note, 422 `invalid_note`, 503 `notes_unavailable`. Read back after an unknown outcome before retrying.
 
-## Pending: notes delete <id> (CLI 204 support required)
+## notes delete <id> (source only; CLI publication pending)
 
-This definition is held outside commands.json until the CLI owner supports successful empty HTTP 204 responses; published 1.10.2 reports them as invalid_response.
+The local CLI candidate supports successful empty HTTP 204 responses and has checked this source definition. It is not in published 1.10.2, which reports empty success as invalid_response. Do not advertise it as installed until the CLI release is published and verified.
 
 - **What:** permanently delete an owned note using signed DELETE `/api/v1/notes/{id}`. Ask the person first. No stdin body.
 - **Answer:** HTTP 204, no content.

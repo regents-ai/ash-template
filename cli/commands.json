@@ -441,6 +441,24 @@
       "path": "/tools/activity",
       "authority": "paired_agent",
       "effect": "read"
+    },
+    {
+      "command": "notes delete <id>",
+      "description": "Permanently delete an owned note. Ask the person first; the change cannot be undone. Sends no body; successful HTTP 204 has no content.",
+      "operation_id": "deleteMyNote",
+      "method": "DELETE",
+      "path": "/api/v1/notes/{id}",
+      "authority": "paired_agent",
+      "effect": "write",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "in": "path",
+          "field": "id",
+          "description": "The owned note ID."
+        }
+      ]
     }
   ]
 }
