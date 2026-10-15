@@ -310,7 +310,7 @@
     },
     {
       "command": "account credits-history",
-      "description": "Read your person's Credits history, 50 entries a page.",
+      "description": "Read your person's Credits history, up to 50 transfers grouped into complete entries per page.",
       "operation_id": "listCreditsHistory",
       "method": "POST",
       "path": "/tools/account/credits/history",
