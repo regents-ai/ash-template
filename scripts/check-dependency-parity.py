@@ -6,6 +6,7 @@ Arguments are repository roots. Product-only packages remain site-owned.
 """
 
 import argparse
+from itertools import combinations
 import json
 from pathlib import Path
 import re
@@ -58,7 +59,7 @@ def compare(baseline, candidate, label):
     shared = sorted(baseline.keys() & candidate.keys())
     for name in shared:
         if baseline[name] != candidate[name]:
-            differences.append(f"  {label} {name}: differs from template")
+            differences.append(f"  {label} {name}: locked versions or sources differ")
         elif label == "npm" and candidate[name][0] != candidate[name][1]:
             differences.append(f"  npm {name}: declaration must pin the locked version")
     return shared, differences
@@ -70,17 +71,19 @@ def main():
     parser.add_argument("sites", type=Path, nargs="+")
     args = parser.parse_args()
     try:
-        baseline_mix = mix_packages(args.template)
-        baseline_npm = npm_packages(args.template)
+        roots = [args.template, *args.sites]
+        packages = {root: (mix_packages(root), npm_packages(root)) for root in roots}
         failed = False
-        for site in args.sites:
-            common_mix, mix_diff = compare(baseline_mix, mix_packages(site), "Mix")
-            common_npm, npm_diff = compare(baseline_npm, npm_packages(site), "npm")
+        for reference, site in combinations(roots, 2):
+            reference_mix, reference_npm = packages[reference]
+            site_mix, site_npm = packages[site]
+            common_mix, mix_diff = compare(reference_mix, site_mix, "Mix")
+            common_npm, npm_diff = compare(reference_npm, site_npm, "npm")
             differences = mix_diff + npm_diff
-            if not common_mix or not common_npm:
+            if reference == args.template and (not common_mix or not common_npm):
                 differences.append("  No shared packages found; check the supplied roots")
-            print(f"{site}: {len(common_mix)} shared Mix, {len(common_npm)} shared direct npm")
-            print("\n".join(differences) if differences else "  Versions match template")
+            print(f"{reference} ↔ {site}: {len(common_mix)} shared Mix, {len(common_npm)} shared direct npm")
+            print("\n".join(differences) if differences else "  Shared versions match")
             failed |= bool(differences)
         return int(failed)
     except (OSError, ValueError, KeyError) as error:

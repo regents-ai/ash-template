@@ -18,7 +18,10 @@ make check-dependency-parity SITES="../regents ../autolaunch ../patchbay ../keyf
 
 The read-only check compares complete common Mix lock entries (including Git
 source and commit), and common direct npm dependencies (exact declaration,
-resolved version and integrity). It supports browser packages in either
+resolved version and integrity), across every pair of supplied repositories.
+This includes packages shared by two sites even when the template does not use
+them; it does not require adding those packages to the template. Supply all five
+site checkouts together to verify those overlaps. It supports browser packages in either
 `platform/` or `platform/assets/`. It fails on stale declarations, unreadable
 locks or mismatches. It does not install, edit, fetch, push or deploy anything.
 Supply the actual candidate checkouts, not stale primary checkouts. Nested Mix
