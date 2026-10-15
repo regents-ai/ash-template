@@ -1025,24 +1025,107 @@ paths:
                       type: object
                       required:
                       - id
+                      - kind
                       - at
-                      - operation
-                      - available_delta
-                      - held_delta
+                      - amount
+                      - direction
+                      - site
+                      - purpose
+                      - reason
+                      - agent_address
+                      - pairing_id
+                      - key
+                      - tool
+                      - request
+                      - note
+                      - chain
+                      - tx_hash
+                      - refund_status
+                      - refund_sent_at
                       properties:
                         id:
                           type: string
+                        kind:
+                          type: string
+                          enum:
+                          - bought
+                          - gift
+                          - refund
+                          - set_aside
+                          - returned
+                          - spent
+                          - received
                         at:
                           type: string
                           format: date-time
-                        operation:
+                        amount:
                           type: string
-                        available_delta:
+                          description: Positive decimal Credits amount, summed for this event.
+                        direction:
                           type: string
-                          description: Signed decimal Credits amount.
-                        held_delta:
-                          type: string
-                          description: Signed decimal Credits amount.
+                          enum:
+                          - in
+                          - out
+                          - none
+                        site:
+                          type:
+                          - string
+                          - 'null'
+                        purpose:
+                          type:
+                          - string
+                          - 'null'
+                        reason:
+                          type:
+                          - string
+                          - 'null'
+                        agent_address:
+                          type:
+                          - string
+                          - 'null'
+                        pairing_id:
+                          type:
+                          - string
+                          - 'null'
+                        key:
+                          type:
+                          - string
+                          - 'null'
+                        tool:
+                          type:
+                          - string
+                          - 'null'
+                        request:
+                          type:
+                          - string
+                          - 'null'
+                          description: Present only when allowed for this reader; an agent receives request text only for its own hold.
+                        note:
+                          type:
+                          - string
+                          - 'null'
+                        chain:
+                          type:
+                          - string
+                          - 'null'
+                        tx_hash:
+                          type:
+                          - string
+                          - 'null'
+                        refund_status:
+                          type:
+                          - string
+                          - 'null'
+                          enum:
+                          - locked
+                          - sent
+                          - null
+                        refund_sent_at:
+                          type:
+                          - string
+                          - 'null'
+                          format: date-time
+                      description: Grouped history event. Inapplicable facts are null; received payments do not identify the payer.
                   pagination:
                     type: object
                     required:
