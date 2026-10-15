@@ -32,8 +32,11 @@ Create only through the guarded command, using your registered owner and an expl
 ```sh
 python3 /Users/sean/Documents/regent/repos/ash-template/skills/regent-workflow/scripts/worktrees.py add \
   --owner keyfleet --repo /Users/sean/Documents/regent/repos/keyfleet \
-  --name example --branch feat/example --ref origin/main --dry-run
+  --name example --branch wt/example --ref origin/main --dry-run
 ```
+
+The worktree's branch is short-lived: its commits go to main once checked, and the
+branch and worktree are removed the same day.
 
 Inspect the dry run, then omit `--dry-run` to create. One operating-system file lock
 spans the actual Git count, creation and registration. Failed creation does not

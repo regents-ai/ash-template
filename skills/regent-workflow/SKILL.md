@@ -145,7 +145,8 @@ cancelled work.
 
 ## Rules in force (founder, 15 Oct 2026)
 
-- No feature branches. Work goes to main, and main is production.
+- No feature branches. Work goes to main; main goes to production after its checks and
+  Sentinel's read.
 - The protected list is sign-in, secrets, production data, wallets, staking and money
   movement. A change there lands only after Sean's go naming the action.
 - Contessa is not a gate.
@@ -160,8 +161,9 @@ cancelled work.
 1. Say in one line what you are about to do, then write one line saying where main is
    and where live is (main's commit, and the deployed commit the site's health endpoint
    reports). Inspect the assigned repository's instructions, working changes and
-   relevant code, including files the request does not name: `docs/decisions.md` in the
-   workspace root, the site's backlog in `docs/backlogs/<site>.md`, the last handoff, and
+   relevant code, including files the request does not name:
+   `/Users/sean/Documents/regent/docs/decisions.md`, the site's backlog in
+   `/Users/sean/Documents/regent/docs/backlogs/<site>.md`, the last handoff, and
    the shared-library pins the change depends on. On a fresh checkout, run
    `mix deps.get` before judging any of its checks. State the observable result and the checks
    that define done, keep that list, and tick it as you go. Infer reasonable criteria
@@ -174,12 +176,13 @@ cancelled work.
    is advisory, so keep your own limit), relevant context and authority limits. Tell
    writers they share a workspace and must preserve others' edits. Run at most **two
    coding subagents at once**; that is the limit, not a count of repositories or
-   worktrees. A writer that needs its own checkout works in a worktree whose commits
+   worktrees, and the worktree guard separately refuses a third checkout per owner. A writer that needs its own checkout works in a worktree whose commits
    go to main once checked; a merged worktree is cleaned up straight away. Serialize
    work that touches the same surface.
 3. Record the changed files, checks actually run, failures and remaining work.
    Follow-ups and unrelated work you notice are written down in Claude memory and the
-   project's backlog file, not folded into the current change.
+   project's backlog file (`/Users/sean/Documents/regent/docs/backlogs/<site>.md`), not
+   folded into the current change.
    For delegated work, retain the session/worktree reference and verify the returned
    results before integration.
 4. Every review, of your own work or a peer's, starts with elixir-stack's design check
@@ -198,20 +201,21 @@ cancelled work.
    prefers otherwise, a list of decisions none of which blocks the rest, or a report
    because a milestone is done. Put status notes and recommendations in the same message
    as the next tool call and carry on with whatever does not depend on an answer.
-   Confirmation before a push, release, payment, signature or destructive action is
+   Ordinary work is pushed to main and released after its checks and Sentinel's read.
+   Confirmation before a protected change, payment, signature or destructive action is
    unchanged.
 
 ## Release checklist
 
-Read `docs/decisions.md` in the workspace root again before a release.
+Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
 
 1. **Where main and live are.** Every site reports its deployed commit on its health
    endpoint. Read it before the release and again after it.
 2. **Suite against live.** Run the suite and report pass and fail counts beside the
    live commit's counts. Any failure that live already has gets a named owner before
    the release goes out.
-3. **Sentinel.** Ask Sentinel for a read before production on a protected change, and
-   after every release. Every request has the same shape: repository, previous released
+3. **Sentinel.** Ask Sentinel for a read before every production release, and again
+   after it. Every request has the same shape: repository, previous released
    commit, candidate commit, release number, migrations (yes or no), protected area
    (yes or no), and who receives the verdict.
 4. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
@@ -239,8 +243,9 @@ or proof of finished work there, follow [regent-notion](../regent-notion/SKILL.m
 ## Keep coordination light
 
 The founder request and the working conversation are the work record. Follow-ups live
-in Claude memory and in each project's backlog file (`docs/backlogs/<site>.md`). For a
-long task, write a handoff in the shape `docs/handoff-format.md` sets out. No mandatory
+in Claude memory and in each project's backlog file
+(`/Users/sean/Documents/regent/docs/backlogs/<site>.md`). For a long task, write a
+handoff in the shape `/Users/sean/Documents/regent/docs/handoff-format.md` sets out. No mandatory
 status files for small edits. Product contracts and meaningful engineering checks
 remain binding. Keep coordination in the current assignment and selected sessions.
 
@@ -286,8 +291,10 @@ server host.
 
 Investigate and prepare billing, authentication, contracts, wallets and production
 changes within scope. Record the relevant invariants and verification for risky work.
-External writes, pushes, releases, deployments, destructive operations, production
-data changes, signing and value movement need explicit applicable founder authority.
+Ordinary work is pushed to main and released after its checks and Sentinel's read.
+Protected changes (sign-in, secrets, production data, wallets, staking and money
+movement), destructive operations, signing and value movement need explicit applicable
+founder authority naming the action.
 Authority belongs to the explicitly authorized action and actor. Do not repeat
 permission questions when the current session already authorizes the exact action.
 
