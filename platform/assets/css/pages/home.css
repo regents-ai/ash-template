@@ -101,22 +101,17 @@
   }
 }
 
-/* Rectangular navigation uses the shared button's interaction sheen, with
-   page-owned sizing and muted paint. The header/background remains unchanged. */
+/* Product navigation keeps its muted paint and compact sizing. */
 .rg-button.rl-product-tab {
-  --rg-cut-control: 0px;
-  --rg-p-accent: color-mix(in srgb, var(--rl-ink) 16%, var(--rl-bg));
-  --rg-p-on-accent: var(--rl-ink);
-  --rg-button-border-color: color-mix(in srgb, var(--rl-ink) 30%, transparent);
-  --rg-shimmer-color: color-mix(in srgb, var(--palette-tangerine-tango) 40%, transparent);
-  --rg-shimmer-duration: 1.6s;
+  --rg-cta-fill: color-mix(in srgb, var(--rl-ink) 16%, var(--rl-bg));
+  color: var(--rl-ink);
   min-width: 0; min-height: 3.25rem; padding: .75rem .5rem;
   border-radius: 0; font-size: clamp(.8125rem, 1.1vw, .9375rem);
   font-weight: 400; letter-spacing: .045em; text-transform: uppercase;
   text-align: center; justify-content: center; white-space: nowrap;
 }
-.rg-button.rl-product-tab::before { transition: background-color 150ms ease; }
-.rg-button.rl-product-tab:is(:hover, :focus-visible) { --rg-p-accent: color-mix(in srgb, var(--rl-ink) 21%, var(--rl-bg)); }
+.rg-button.rl-product-tab::before { background: var(--rg-cta-fill); transition: background-color 150ms ease; }
+.rg-button.rl-product-tab:is(:hover, :focus-visible) { --rg-cta-fill: color-mix(in srgb, var(--rl-ink) 21%, var(--rl-bg)); }
 @media (min-width: 80rem) {
   .rl-header-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 36rem) minmax(0, 1fr); }
   .rl-product-tabs { order: 0; max-width: none; }
@@ -126,11 +121,11 @@
   .rl-product-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rg-button.rl-product-tab::before { transition: none; }
+  .rg-button.rl-product-tab::before { background: var(--rg-cta-fill); transition: none; }
 }
 
 /* Local compact sizing overrides only shared geometry, never its 150ms cut
-   outline or interaction sheen. Keep the actual target at least 44px tall. */
+   outline or press feedback. Keep the actual target at least 44px tall. */
 .rl-card-actions .rg-button { min-height: 2.75rem; padding: var(--space-1); font-size: .75rem; }
 /* Per-card stock/ink pairs use the shared panel's public color properties. */
 .rl-proof-card > .rg-panel { --rg-panel-fill: var(--rl-proof-fill); --rg-panel-ink: var(--palette-charcoal); }

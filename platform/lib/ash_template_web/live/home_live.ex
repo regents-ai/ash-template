@@ -83,7 +83,7 @@ defmodule AshTemplateWeb.HomeLive do
             :for={{label, anchor} <- nav_links()}
             id={"home-nav-#{anchor}"}
             href={"##{anchor}"}
-            class="rg-button rl-product-tab"
+            class="rg-button rg-button--quiet rl-product-tab"
           >
             {label}
           </a>
