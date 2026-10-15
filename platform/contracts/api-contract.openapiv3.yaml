@@ -81,39 +81,90 @@ paths:
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/notes/{id}:
     parameters:
-      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     get:
       operationId: getMyNote
-      security: [{privyAccessToken: [], privyIdentityToken: []}, {siwaProof: []}]
+      security:
+      - privyAccessToken: []
+        privyIdentityToken: []
+      - siwaProof: []
       responses:
-        "200": {$ref: "#/components/responses/Note"}
-        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
-        "403": {$ref: "#/components/responses/NotesAccountRequired"}
-        "404": {$ref: "#/components/responses/NoteNotFound"}
-        "503": {$ref: "#/components/responses/NotesUnavailable"}
-        "429": {$ref: "#/components/responses/TooManyRequests"}
+        '200':
+          $ref: '#/components/responses/Note'
+        '401':
+          $ref: '#/components/responses/NotesAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotesAccountRequired'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+        '503':
+          $ref: '#/components/responses/NotesUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
     patch:
       operationId: updateMyNote
-      security: [{privyAccessToken: [], privyIdentityToken: []}, {siwaProof: []}]
-      requestBody: {$ref: "#/components/requestBodies/NoteInput"}
+      security:
+      - privyAccessToken: []
+        privyIdentityToken: []
+      - siwaProof: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              description: A new note needs a title; a change sends either field or both.
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                body:
+                  type:
+                  - string
+                  - 'null'
+                  maxLength: 10000
+              required: []
       responses:
-        "200": {$ref: "#/components/responses/Note"}
-        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
-        "403": {$ref: "#/components/responses/NotesAccountRequired"}
-        "404": {$ref: "#/components/responses/NoteNotFound"}
-        "422": {$ref: "#/components/responses/NoteInvalid"}
-        "503": {$ref: "#/components/responses/NotesUnavailable"}
-        "429": {$ref: "#/components/responses/TooManyRequests"}
+        '200':
+          $ref: '#/components/responses/Note'
+        '401':
+          $ref: '#/components/responses/NotesAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotesAccountRequired'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+        '422':
+          $ref: '#/components/responses/NoteInvalid'
+        '503':
+          $ref: '#/components/responses/NotesUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
     delete:
       operationId: deleteMyNote
-      security: [{privyAccessToken: [], privyIdentityToken: []}, {siwaProof: []}]
+      security:
+      - privyAccessToken: []
+        privyIdentityToken: []
+      - siwaProof: []
       responses:
-        "204": {description: The note is deleted}
-        "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
-        "403": {$ref: "#/components/responses/NotesAccountRequired"}
-        "404": {$ref: "#/components/responses/NoteNotFound"}
-        "503": {$ref: "#/components/responses/NotesUnavailable"}
-        "429": {$ref: "#/components/responses/TooManyRequests"}
+        '204':
+          description: The note is deleted
+        '401':
+          $ref: '#/components/responses/NotesAuthenticationRequired'
+        '403':
+          $ref: '#/components/responses/NotesAccountRequired'
+        '404':
+          $ref: '#/components/responses/NoteNotFound'
+        '503':
+          $ref: '#/components/responses/NotesUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/v1/rooms:
     get:
       operationId: listRooms

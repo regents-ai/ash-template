@@ -85,7 +85,7 @@ defmodule AshTemplateWeb.Capabilities do
                      command && command["effect"] != row["effect"] ->
                        "a command with another effect"
 
-                     !!command != !!row["cli_release"] ->
+                     !!command != (!!row["cli_release"] or row["cli_pending"] == true) ->
                        "a cli_release without its command, or a command without one"
 
                      true ->
@@ -225,6 +225,8 @@ defmodule AshTemplateWeb.Capabilities do
   defp use_words(%{agent_use: "closed", gate: gate}), do: "Closed: #{gate.reason}"
 
   defp command(%{interfaces: %{cli: nil}}), do: "none"
+  defp command(%{cli_release: nil} = row), do: "`#{row.interfaces.cli}` (not yet released)"
+
   defp command(row), do: "`#{row.interfaces.cli}` (#{row.cli_release} and later)"
 
   defp code(nil), do: "none"

@@ -1148,7 +1148,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NoteInput"
+                "type": "object",
+                "additionalProperties": false,
+                "description": "A new note needs a title; a change sends either field or both.",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "body": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  }
+                },
+                "required": []
               }
             }
           }

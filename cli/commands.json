@@ -389,24 +389,6 @@
           "description": "The text, up to 10,000 characters."
         }
       ]
-    },
-    {
-      "command": "notes delete <id>",
-      "description": "Permanently delete your person's note. Ask your person first; a successful deletion returns no content.",
-      "operation_id": "deleteMyNote",
-      "method": "DELETE",
-      "path": "/api/v1/notes/{id}",
-      "authority": "paired_agent",
-      "effect": "write",
-      "arguments": [
-        {
-          "name": "id",
-          "type": "uuid",
-          "in": "path",
-          "field": "id",
-          "description": "The note id from notes list or search."
-        }
-      ]
     }
   ]
 }

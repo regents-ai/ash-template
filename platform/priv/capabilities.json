@@ -140,7 +140,8 @@
       "may": "Add, change and delete your notes",
       "done": "Changed one of your notes",
       "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "deleteMyNote",
@@ -285,7 +286,8 @@
       "may": "Read and search your notes",
       "done": "Searched your notes",
       "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "getNoteAsAgent",
