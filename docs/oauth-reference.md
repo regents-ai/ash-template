@@ -31,8 +31,8 @@ All shared packages use one reviewed `elixir-utils` Git commit, including OAuth.
 The template's existing `REGENT_ELIXIR_UTILS_PATH` development override also covers
 OAuth; production refuses that override. Normal local integration checks fetch the
 exact pins from the local shared repository without changing the recorded URLs.
-The new shared commit is local and needs a separately authorized publication before
-release builds elsewhere can fetch it.
+Publish the reviewed shared commit before a separately authorized consumer release
+so its builds can fetch the exact pin.
 Site-owned additive migrations create the OAuth tables; this change does not run
 production migrations. Keep the feature off until the site has completed consent,
 callback, refresh, disconnect and host checks.
@@ -45,7 +45,8 @@ existing committed event stream remains canonical.
 
 Local checks use stand-in accounts and an isolated loopback database. They cannot
 establish real Privy or ChatGPT acceptance. Money tests and Points activation are
-outside this work. Publishing and deployment remain unperformed.
+outside this integration. Publishing and deployment require applicable authority;
+live consent and event delivery require their own verification.
 
 ## Integration verified on 14 October
 
@@ -67,3 +68,26 @@ cross-client revocation, refresh/revoke races and old revoked credentials affect
 fresh consent. Representative local checks covered each failure. The template
 retains its existing Signals compiler and supervision; it adds no event producer.
 See [the server security update](server-security-2026-10-14.md) for the Bandit fix.
+
+## Consent browser repair — 15 October
+
+The reference now carries shared commit
+`28783ed77b4c6f5240f35a77146e06611abb23a6`, on the complete dependency baseline.
+All Hex locks, the AshPostgres hold and the Bandit security pin remain unchanged.
+OAuth remains off on the template, which has no MCP endpoint.
+
+Consent uses the existing same-origin stylesheet and shared controls, with the
+site's configured brand and theme. Only its consent document permits the
+preauthorized registered callback origin in form-action; Chromium also checks
+the redirect following approval. Other directives and independent browser
+policies are preserved. Exact callback/account/scope/PKCE/CSRF/nonce/lifetime
+checks remain required. Consumed or expired requests return a readable HTTP401
+restart page, never a new grant.
+
+The signed-cookie and actual-browser local exercise reproduced the old blocked
+return and verified the corrected return to another origin. Independent security
+review closed a combined-policy preservation finding. These are representative
+checks, not real Privy/ChatGPT acceptance. Adopters must begin a fresh connection
+from their client, then verify consent, token exchange, event subscription,
+callback challenge, genuine delivery and unsubscribe separately. This correction
+adds no migration, grant, queue or event producer. Money tests and Points stay off.
