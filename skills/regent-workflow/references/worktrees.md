@@ -1,9 +1,14 @@
-# Two worktrees per continuing agent
+# Worktree procedure
 
-Work in an assigned existing checkout whenever possible. Primary repositories are
-exempt. Implementation, review and dependency checkouts count together across all
+The working limit is two coding subagents at once, not a count of worktrees. Work in
+the assigned checkout on main whenever possible. When a writer needs its own checkout,
+create it here and retire it as soon as its commits are on main.
+
+The guard below still counts checkouts per registered owner and refuses a third, so
+retire merged worktrees before asking for another. Primary repositories are exempt.
+Implementation, review and dependency checkouts count together across all
 repositories; restarting, changing models or naming a new task does not reset ownership.
-Sean controls owner registration. Do not create clones or exports to evade the rule.
+Sean controls owner registration. Do not create clones or exports to evade the guard.
 
 Sean may record a larger `limit` on one owner for a named purpose; the guard reads it.
 The only one so far is `ui-standardization` (UI-3 b, 11 October 2026): two working

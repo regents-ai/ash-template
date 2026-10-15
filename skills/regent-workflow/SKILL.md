@@ -143,12 +143,27 @@ fixture preview from a real configured product. New founder corrections override
 historical rollout reports; delayed agent notifications do not reopen completed or
 cancelled work.
 
+## Rules in force (founder, 15 Oct 2026)
+
+- No feature branches. Work goes to main, and main is production.
+- The protected list is sign-in, secrets, production data, wallets, staking and money
+  movement. A change there lands only after Sean's go naming the action.
+- Contessa is not a gate.
+- Agents get WebMCP first. The CLI follows and never blocks a site change.
+- A site change that uses a new shared-library pin is not done until that pin is on
+  main.
+- Hard cutover: no shims, aliases or compatibility branches. Every review checks
+  **no dual-shape responses** by name.
+
 ## Execute
 
-1. Say in one line what you are about to do, then inspect the assigned repository's
-   instructions, working changes and relevant code, including files the request does
-   not name: the site's backlog in `docs/backlogs/<site>.md`, the last handoff, and the
-   shared-library pins the change depends on. State the observable result and the checks
+1. Say in one line what you are about to do, then write one line saying where main is
+   and where live is (main's commit, and the deployed commit the site's health endpoint
+   reports). Inspect the assigned repository's instructions, working changes and
+   relevant code, including files the request does not name: `docs/decisions.md` in the
+   workspace root, the site's backlog in `docs/backlogs/<site>.md`, the last handoff, and
+   the shared-library pins the change depends on. On a fresh checkout, run
+   `mix deps.get` before judging any of its checks. State the observable result and the checks
    that define done, keep that list, and tick it as you go. Infer reasonable criteria
    from the founder's request. A short task does not need a separate plan.
    Before writing code, run elixir-stack's design check: name the standard tool for each
@@ -157,10 +172,14 @@ cancelled work.
    it the objective, absolute repository/worktree path, owned files or component,
    acceptance checks, a time budget for the subtask (a delegate paces itself to one; it
    is advisory, so keep your own limit), relevant context and authority limits. Tell
-   writers they share a workspace and must preserve others' edits. Parallel writers use
-   separate Git worktrees and branches;
-   serialize work that touches the same surface. Use ordinary Git for branches and integration.
+   writers they share a workspace and must preserve others' edits. Run at most **two
+   coding subagents at once**; that is the limit, not a count of repositories or
+   worktrees. A writer that needs its own checkout works in a worktree whose commits
+   go to main once checked; a merged worktree is cleaned up straight away. Serialize
+   work that touches the same surface.
 3. Record the changed files, checks actually run, failures and remaining work.
+   Follow-ups and unrelated work you notice are written down in Claude memory and the
+   project's backlog file, not folded into the current change.
    For delegated work, retain the session/worktree reference and verify the returned
    results before integration.
 4. Every review, of your own work or a peer's, starts with elixir-stack's design check
@@ -182,6 +201,25 @@ cancelled work.
    Confirmation before a push, release, payment, signature or destructive action is
    unchanged.
 
+## Release checklist
+
+Read `docs/decisions.md` in the workspace root again before a release.
+
+1. **Where main and live are.** Every site reports its deployed commit on its health
+   endpoint. Read it before the release and again after it.
+2. **Suite against live.** Run the suite and report pass and fail counts beside the
+   live commit's counts. Any failure that live already has gets a named owner before
+   the release goes out.
+3. **Sentinel.** Ask Sentinel for a read before production on a protected change, and
+   after every release. Every request has the same shape: repository, previous released
+   commit, candidate commit, release number, migrations (yes or no), protected area
+   (yes or no), and who receives the verdict.
+4. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
+   task.
+5. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
+   or route, old shape, new shape, defining commit, live commit.
+6. **Holds.** A hold names who lifts it and what the release check looks for.
+
 ## Decisions for the founder
 
 Every numbered decision put to the founder stands on its own, because earlier context
@@ -190,6 +228,9 @@ what changes and in which product or repository; what happens on yes and what ha
 on hold; the recommendation. Then the lettered options. Repeat the bullets each time
 the decision is listed again; never a bare "Push X? a) yes b) hold".
 
+Never re-letter or renumber a question once it is posted; the founder may already be
+answering by its number and letter. A correction goes in a new message.
+
 ## Project pages in Notion
 
 Regent builds in public in Notion. Before adding plans, open decisions, done-criteria
@@ -197,20 +238,18 @@ or proof of finished work there, follow [regent-notion](../regent-notion/SKILL.m
 
 ## Keep coordination light
 
-The founder request and the working conversation are the work record. For a long task,
-write a concise handoff in the owning repository with objective, current branch and
-worktree, completed work, checks, remaining steps and actual blockers. No mandatory
+The founder request and the working conversation are the work record. Follow-ups live
+in Claude memory and in each project's backlog file (`docs/backlogs/<site>.md`). For a
+long task, write a handoff in the shape `docs/handoff-format.md` sets out. No mandatory
 status files for small edits. Product contracts and meaningful engineering checks
 remain binding. Keep coordination in the current assignment and selected sessions.
 
-A single writer may work directly in the assigned checkout after checking its state.
-Every continuing agent has a maximum of **two worktrees total**, across repositories
-and resumptions. Reuse the assigned checkout; before creating a third, preserve and
-safely retire an old one. Reviews and dependency checkouts count. Primary repository
-checkouts are exempt; clones and exports must not evade the quota. Use the registered
-stable owner and `scripts/worktrees.py`, following [the worktree procedure](references/worktrees.md).
-For concurrent writers, use the guarded command with a unique branch/path and an
-explicit known base. One coordinator integrates per repository. Preserve unrelated
+A single writer works directly in the assigned checkout, on main, after checking its
+state. The working limit is two coding subagents at once (Execute, step 2). When a
+writer needs its own checkout, create it with the registered stable owner and
+`scripts/worktrees.py`, following [the worktree procedure](references/worktrees.md),
+with a unique path and an explicit known base; once its commits are on main, retire
+it. One coordinator integrates per repository. Preserve unrelated
 changes and avoid resetting or cleaning existing worktrees. Use isolated test databases
 and ports. Follow each component's dependency setup; never clear a shared database.
 
