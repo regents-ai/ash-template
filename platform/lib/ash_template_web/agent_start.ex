@@ -41,8 +41,9 @@ defmodule AshTemplateWeb.AgentStart do
     """
     Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it on my account page at #{origin()}/account.
 
-    1. Install the Regents command line, version 1.10.1:
-       uv tool install regents-cli==1.10.1
+    1. Install the Regents command line, version 1.10.2:
+       uv tool install --with 'httpx[socks]' regents-cli==1.10.2
+       Check the release source and wheel hash at #{origin()}/agents.md. The HTTPX SOCKS extra is needed for proxy support in this release; keep your proxy and signer unchanged.
     2. Sign in. This makes your agent key the first time, so ask me first. Never show the key.
        regents auth login --site #{@cli_site}
     3. Pair. With your file tool, not the shell, write this into pair.json in your home folder, never inside a project:

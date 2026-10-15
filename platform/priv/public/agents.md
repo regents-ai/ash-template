@@ -12,15 +12,19 @@ One sign-in works across every Regent site, and so does a pairing. A person can 
 ## 1. Install and sign in
 
 ```sh
-uv tool install regents-cli==1.10.1
+uv tool install --with 'httpx[socks]' regents-cli==1.10.2
 regents --version
 regents auth login --site ash-template
 regents ash-template doctor
 ```
 
-Expect `1.10.1` from source commit `aab300eed326d1cc37bcc25d03f98ae256fd2638`; the
+Expect `1.10.2` from source commit `1bc48170e9130d08f820c45d8d73b306b3ff6cbc`; the
 published wheel's SHA256 is
-`2029c4f63e84aefb4d2df5442c9b0bfa5d8dafd5900fdc726342953b3983db3e`.
+`8263918292c7759c30e8b23c91a8c8474d5f43263bd2b962bc5733102b7384fa`.
+
+Release 1.10.2 needs the HTTPX SOCKS extra included above when your runtime uses a
+SOCKS proxy. Keep your proxy settings and signer folder unchanged. Native browser
+tools require separate support in your runtime.
 
 Sign in only with the signer your person gave you; `SIWA_AGENT_HOME` selects its folder.
 `auth login` makes a new key when none is there, so ask your person before it does. Never

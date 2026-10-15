@@ -39,7 +39,9 @@ Observed entry points include `/api/v1/auctions`, `/api/v1/auctions/:id`,
 Trace controller semantics before classifying the POST quote as a write: HTTP method
 alone does not establish side effects. The public browser tools deliberately omit
 credentials and do not use wallet hooks; preserve that boundary and cancellation.
-The shared profile tools on the same pages do use the Privy session.
+Do not expose a person's Privy session through an agent tool. Check the current
+signed-agent manifest and registrations; human profile APIs are a separate interface.
+An agent uses its own SIWA proof, with pairing where the operation requires it.
 
 Keep `Autolaunch.Prelaunch`, signed-in session authority, profile APIs, drafts,
 wallet interactions, chain/currency context and frozen `contracts/v1` gates intact.
