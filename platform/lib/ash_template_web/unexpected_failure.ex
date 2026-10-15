@@ -5,6 +5,8 @@ defmodule AshTemplateWeb.UnexpectedFailure do
 
   @doc "Logs bounded error classes and a hashed request correlation; returns `conn`."
   def log(conn, error) do
+    # Clear inherited error_type on this event; do not add it to emitted logger metadata.
+    # credo:disable-for-next-line Credo.Check.Warning.MissedMetadataKeyInLoggerConfig
     Logger.error(
       "Request answered try again: class=#{class(error)} causes=#{causes(error)} correlation=#{correlation()}",
       request_id: nil,
