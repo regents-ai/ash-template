@@ -1,5 +1,6 @@
 {
   "managed": [
+    {"app": "regent_mcp_agents", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "mcp_agents"},
     {"app": "regent_oauth", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "oauth"},
     {"app": "bandit", "repository": "https://github.com/mtrudel/bandit.git", "sparse": null},
     {"app": "regent_privy", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "privy"},
