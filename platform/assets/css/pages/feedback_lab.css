@@ -63,7 +63,7 @@
 .flair-gradient-still { background: linear-gradient(160deg, var(--palette-charcoal), color-mix(in srgb, var(--flair-color) 72%, var(--palette-charcoal))); }
 .flair-gradient-still::after { position: absolute; content: ""; inset: 0; background: linear-gradient(160deg, transparent 65.8%, color-mix(in srgb, var(--palette-platinum) 40%, transparent) 66%, transparent 66.5%); }
 .flair-gradient-island canvas { opacity: 0; }
-.flair-gradient-island[data-gradient-ready] canvas { opacity: 1; }
+.flair-gradient-island[data-gradient-ready="true"] canvas { opacity: 1; }
 .flair-material-caption { position: absolute; left: .75rem; bottom: .75rem; padding: .35rem .5rem; background: var(--palette-charcoal); color: var(--palette-platinum); font: .625rem/1.4 var(--font-family-mono); }
 .flair-edge-card { position: relative; display: grid; min-width: 0; padding: 2px; background: var(--color-border); }
 .flair-edge-skin { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(135deg, var(--flair-color), var(--color-border) 45%, var(--color-border) 65%, var(--flair-color)); }

@@ -135,6 +135,32 @@
   outline-color: var(--code-face-ink);
 }
 
+/* Until the page knows whether the cube draws here, the stage is night and
+   nothing else: the buttons would only flash before the cube took their place.
+   Where the cube cannot draw (`data-code-ready="false"`) they fade in. Without
+   scripts, or for a visitor who asked for less motion, the cube is never
+   drawn, so the buttons show from the start. A page still undecided after
+   2.5 seconds, whose scripts never connected or whose cube is still loading,
+   shows them anyway. */
+.code-cube__faces {
+  transition: opacity 320ms ease-out;
+}
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .code-cube:not([data-code-ready]) .code-cube__faces {
+    opacity: 0;
+    visibility: hidden;
+    animation: code-cube-undecided 320ms ease-out 2.5s forwards;
+  }
+}
+
+@keyframes code-cube-undecided {
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
 .code-cube[data-code-ready="true"] .code-cube__stage {
   opacity: 1;
 }
