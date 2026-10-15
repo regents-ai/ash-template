@@ -2070,3 +2070,11 @@ Operations
 
 - Bound the phone world-cube stage to 32–38rem using the stable viewport height.
 - Keep fallback links in a scrollable list within the same stage; retain desktop sizing.
+
+## 2026-10-15 — A sign-in ends 30 days after it was made
+
+- A sign-in now ends 30 days after the person signed in, however often they come
+  back in between. Before, each visit that refreshed the sign-in started the 30 days
+  again, so an account used every week stayed signed in indefinitely (Sean, 15 Oct,
+  decision 2a: every site follows this rule).
+- Sign-ins already open when this ships count from their most recent refresh.
