@@ -1,13 +1,13 @@
 /**
  * The Keyfleet hero in the motion lab: the hex field behind the hero and the
- * Club's map, the foil and the turn of the next Key's card, and the lab's
+ * Club's map, the turn of the next Key's card, and the lab's
  * replay of the entrance. Every one only presents; the page is complete and
  * readable before any of it loads, and none of it gates the Buy button.
  */
 import {createAnimatable, createScope, type AnimatableObject, type Scope} from "animejs"
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
 import {EASE_OUT, still} from "./motion/shared"
-import type {FieldRenderer, FoilRenderer, Rgb} from "../keyfleet_hero/renderer"
+import type {FieldRenderer, Rgb} from "../keyfleet_hero/renderer"
 
 /** Any colour the page can state, as the three 0..1 sRGB channels a shader takes. */
 const swatch = document.createElement("canvas").getContext("2d", {willReadFrequently: true})!
@@ -148,12 +148,12 @@ export const KeyfleetField = {
   },
 }
 
-type KeyCardHook = IslandHook & {scope?: Scope; release?: () => void}
+type KeyCardHook = {el: HTMLElement; scope?: Scope; release?: () => void}
 
 /**
  * The next Key's card. Under a mouse it turns a little toward the pointer and
- * a foil light follows it across the face; it settles flat when the pointer
- * leaves. A finger, a keyboard or less motion gets the card as it is.
+ * settles flat when the pointer leaves. A finger, a keyboard or less motion
+ * gets the card as it is.
  */
 export const KeyfleetKeyCard = {
   mounted(this: KeyCardHook) {
@@ -168,45 +168,6 @@ export const KeyfleetKeyCard = {
       return () => { turn = undefined }
     })
 
-    this.controller = createCanvasIsland<FoilRenderer>(root, {}, {
-      canvasSelector: "[data-foil-canvas]",
-      readyFlag: "foilReady",
-      motionSensitive: true,
-      continuous: false,
-      browserLoad: async (canvas, size, lost) => {
-        const {createFoilRenderer} = await import("../keyfleet_hero/renderer")
-        return createFoilRenderer(canvas, size, lost)
-      },
-      interact: ({canvas, renderer, nudge, onReady}) => {
-        const retone = () => {
-          renderer()?.tone(tone(root, "--kf-foil-light"))
-          nudge()
-        }
-        onReady(retone)
-        if (!finePointer()) return watchTheme(retone)
-
-        const onMove = (event: PointerEvent) => {
-          if (!event.isPrimary || still(root)) return
-          const [x, y] = across(event, canvas().getBoundingClientRect())
-          renderer()?.point(x, y)
-          nudge()
-        }
-        const onLeave = () => {
-          renderer()?.rest()
-          nudge()
-        }
-        const events = new AbortController()
-        root.addEventListener("pointermove", onMove, {signal: events.signal, passive: true})
-        root.addEventListener("pointerleave", onLeave, {signal: events.signal, passive: true})
-        const forget = watchTheme(retone)
-        return () => {
-          events.abort()
-          forget()
-        }
-      },
-    })
-
-    // The turn is the card's own, so it plays even where the GPU never draws.
     const onTurn = (event: PointerEvent) => {
       if (!turn || !event.isPrimary || still(root)) return
       const [x, y] = across(event, root.getBoundingClientRect())
@@ -223,13 +184,9 @@ export const KeyfleetKeyCard = {
       root.removeEventListener("pointermove", onTurn)
       root.removeEventListener("pointerleave", onSettle)
     }
-    this.controller.mount()
   },
-  disconnected(this: KeyCardHook) { this.controller?.pause() },
-  reconnected(this: KeyCardHook) { this.controller?.resume() },
   destroyed(this: KeyCardHook) {
     this.release?.()
-    this.controller?.destroy()
     this.scope?.revert()
   },
 }
