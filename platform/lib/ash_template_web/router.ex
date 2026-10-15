@@ -261,6 +261,7 @@ defmodule AshTemplateWeb.Router do
     get "/account/balances", PageToolsController, :balances
     post "/account/credits/history", PageToolsController, :credits_history
     get "/account/points", PageToolsController, :points
+    get "/activity", PageToolsController, :activity
     get "/notes", PageToolsController, :notes
     post "/notes", PageToolsController, :create_note
     post "/notes/search", PageToolsController, :search_notes

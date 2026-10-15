@@ -377,6 +377,18 @@
       "may": "Search public room messages",
       "cli_pending": true,
       "switch": "app_surfaces"
+    },
+    {
+      "operation": "listActivityAsAgent",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/activity",
+      "may": "Read your latest activity without marking it read",
+      "done": null,
+      "cli_release": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
     }
   ]
 }

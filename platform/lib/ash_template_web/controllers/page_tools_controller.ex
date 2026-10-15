@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.PageToolsController do
   @moduledoc """
   The agent doors under `/tools` that the browser tools (`priv/tool_manifest.json`,
   `assets/js/public_tools.ts`) and regents-cli share: notes and the account's
-  Credits and Points.
+  Credits, Points and activity.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -10,8 +10,8 @@ defmodule AshTemplateWeb.PageToolsController do
 
   use AshTemplateWeb, :controller
 
+  alias AshTemplate.{Activity, Notes, Rooms}
   alias AshTemplate.Actors.Agent
-  alias AshTemplate.{Notes, Rooms}
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
@@ -38,6 +38,12 @@ defmodule AshTemplateWeb.PageToolsController do
     "invalid_cursor" =>
       {422, "That history cursor is invalid.",
        "Send after as the previous page's pagination.next_cursor, unchanged, or omit it for the newest entries."},
+    "invalid_activity_request" =>
+      {422, "Activity takes no input.",
+       "Send GET /tools/activity without a query string or body."},
+    "activity_too_large" =>
+      {422, "The activity response is too large.",
+       "View activity on /activity. This endpoint returns at most 262144 encoded bytes and does not truncate notifications."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
@@ -145,6 +151,54 @@ defmodule AshTemplateWeb.PageToolsController do
         conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
+
+  # Listing never marks a notification read. The existing Ash action bounds and owns the read.
+  def activity(conn, params) do
+    empty_body_params? =
+      conn.body_params == %{} or match?(%Plug.Conn.Unfetched{}, conn.body_params)
+
+    if params == %{} and conn.query_string == "" and empty_body_params? and
+         conn.assigns[:raw_body] in [nil, ""] do
+      case read_body(conn, length: 1, read_length: 1, read_timeout: 1_000) do
+        {:ok, "", conn} ->
+          activity_result(conn, Activity.list_my_notifications(actor: conn.assigns.actor))
+
+        {_status, _body, conn} ->
+          refuse(conn, "invalid_activity_request")
+
+        {:error, _reason} ->
+          refuse(conn, "invalid_activity_request")
+      end
+    else
+      refuse(conn, "invalid_activity_request")
+    end
+  end
+
+  defp activity_result(conn, {:ok, notifications}) do
+    body =
+      Jason.encode_to_iodata!(%{
+        notifications:
+          Enum.map(notifications, fn notification ->
+            %{
+              id: notification.id,
+              title: notification.title,
+              body: notification.body,
+              path: notification.path,
+              read_at: notification.read_at && DateTime.to_iso8601(notification.read_at),
+              inserted_at: DateTime.to_iso8601(notification.inserted_at)
+            }
+          end)
+      })
+
+    if IO.iodata_length(body) <= 262_144 do
+      conn |> put_resp_content_type("application/json") |> send_resp(200, body)
+    else
+      refuse(conn, "activity_too_large")
+    end
+  end
+
+  defp activity_result(conn, {:error, error}),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
 
   def notes(conn, _params) do
     case Notes.list_my_notes(actor: conn.assigns.actor) do
