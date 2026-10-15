@@ -3459,6 +3459,139 @@
           }
         }
       }
+    },
+    "/tools/note-labels/{id}/report": {
+      "post": {
+        "operationId": "reportNoteLabelAsAgent",
+        "summary": "Rate a specific answered note label once without requesting a model call.",
+        "description": "Signed; needs a pairing. A browser sign-in does not work here.",
+        "security": [
+          {
+            "siwaProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiwaReceipt"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaKeyId"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentWallet"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentChainId"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignatureInput"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignature"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDigest"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Label rating recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "label"
+                  ],
+                  "properties": {
+                    "label": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "rating"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "rating": {
+                          "type": "string",
+                          "enum": [
+                            "fits",
+                            "does_not_fit"
+                          ],
+                          "description": "Whether this specific answered label fits."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AgentVerificationFailed"
+          },
+          "404": {
+            "description": "No owned label with this id (label_not_found)."
+          },
+          "429": {
+            "$ref": "#/components/responses/AgentRateLimited"
+          },
+          "409": {
+            "$ref": "#/components/responses/AgentRequestReplayed"
+          },
+          "503": {
+            "$ref": "#/components/responses/AgentVerificationUnavailable"
+          },
+          "default": {
+            "$ref": "#/components/responses/AgentSignInRefused"
+          },
+          "403": {
+            "description": "The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in at /account and pair you, then send the request again."
+          },
+          "422": {
+            "description": "Invalid, unanswered or already rated label (invalid_label_report). Read the note; report must be fits or does_not_fit."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "report": {
+                    "type": "string",
+                    "enum": [
+                      "fits",
+                      "does_not_fit"
+                    ],
+                    "description": "Whether this specific answered label fits."
+                  }
+                },
+                "required": [
+                  "report"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3785,7 +3918,8 @@
           "state",
           "choice",
           "confidence",
-          "rating"
+          "rating",
+          "id"
         ],
         "description": "Which label fits the note, chosen automatically after each save.",
         "properties": {
@@ -3833,6 +3967,11 @@
               null
             ],
             "description": "Whether the writer said the label fits, once rated on the notes page."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The specific label.id returned with your note."
           }
         }
       },

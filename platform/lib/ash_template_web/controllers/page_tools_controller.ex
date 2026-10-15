@@ -12,7 +12,7 @@ defmodule AshTemplateWeb.PageToolsController do
 
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes
-  alias AshTemplate.Notes.Note
+  alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
@@ -30,6 +30,11 @@ defmodule AshTemplateWeb.PageToolsController do
     "invalid_note" =>
       {422, "The note could not be saved.",
        "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying."},
+    "label_not_found" =>
+      {404, "There is no label of yours with that id.", "Read the note and use its label.id."},
+    "invalid_label_report" =>
+      {422, "That label could not be rated.",
+       "Send report as fits or does_not_fit. Only an answered label can be rated, once. Read the note before retrying."},
     "invalid_cursor" =>
       {422, "That history cursor is invalid.",
        "Send after as the previous page's pagination.next_cursor, unchanged, or omit it for the newest entries."},
@@ -149,6 +154,20 @@ defmodule AshTemplateWeb.PageToolsController do
   end
 
   def note(conn, %{"id" => id}), do: for_note(conn, id, &json(conn, %{note: NotesJSON.note(&1)}))
+
+  def report_label(conn, %{"id" => id}) do
+    actor = conn.assigns.actor
+
+    with {:ok, %Decision{} = decision} <- Notes.get_label_decision(id, actor: actor),
+         {:ok, decision} <- Notes.rate_label(decision, conn.body_params["report"], actor: actor) do
+      json(conn, %{label: %{id: decision.id, rating: decision.report}})
+    else
+      {:ok, nil} -> refuse(conn, "label_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_label_report")
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
 
   def search_notes(conn, _params) do
     case Notes.search_my_notes(conn.body_params["text"],

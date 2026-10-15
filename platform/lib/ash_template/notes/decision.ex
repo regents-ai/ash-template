@@ -120,6 +120,8 @@ defmodule AshTemplate.Notes.Decision do
     end
 
     update :report do
+      require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:report]
       validate present(:report)
       validate RateOnce
@@ -153,6 +155,11 @@ defmodule AshTemplate.Notes.Decision do
 
     policy action(:ask) do
       authorize_if UnderDailyBudget
+    end
+
+    policy action(:report) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy action_type([:read, :update]) do

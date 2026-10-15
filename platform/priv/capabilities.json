@@ -356,6 +356,17 @@
       "done": "Read your Points",
       "cli_release": "1.9.0",
       "switch": "app_surfaces"
+    },
+    {
+      "operation": "reportNoteLabelAsAgent",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "may": "Rate your note labels",
+      "done": "Rated a note label",
+      "cli_pending": true,
+      "switch": "app_surfaces"
     }
   ]
 }

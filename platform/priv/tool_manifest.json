@@ -1169,7 +1169,8 @@
               "room_delete",
               "account_balances",
               "account_credits_history",
-              "account_points"
+              "account_points",
+              "notes_report_label"
             ],
             "description": "The signed tool to prepare."
           },
@@ -1299,6 +1300,85 @@
       "scope": "/animations/twin-cube",
       "authentication": "public",
       "availability": "available"
+    },
+    {
+      "name": "notes_report_label",
+      "title": "Rate a note label",
+      "description": "Say once whether a specific answered label fits your person's note. Does not save the note or request a model call. Needs current pairing. Prepare and sign the exact request with your own SIWA signer. Read back before retrying an unknown outcome.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "request",
+          "proof"
+        ],
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The specific label.id returned with your note."
+              },
+              "report": {
+                "type": "string",
+                "enum": [
+                  "fits",
+                  "does_not_fit"
+                ],
+                "description": "Whether this specific answered label fits."
+              }
+            },
+            "required": [
+              "id",
+              "report"
+            ],
+            "additionalProperties": false
+          },
+          "request": {
+            "type": "object",
+            "description": "The exact request prepare_agent_request returned."
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The proof headers your SIWA signer made for that request."
+          }
+        }
+      },
+      "annotations": {},
+      "route": "POST /tools/note-labels/{id}/report",
+      "scope": "site",
+      "operation_id": "reportNoteLabelAsAgent",
+      "authentication": "siwa_per_request",
+      "availability": "available",
+      "operation_input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The specific label.id returned with your note."
+          },
+          "report": {
+            "type": "string",
+            "enum": [
+              "fits",
+              "does_not_fit"
+            ],
+            "description": "Whether this specific answered label fits."
+          }
+        },
+        "required": [
+          "id",
+          "report"
+        ],
+        "additionalProperties": false
+      }
     }
   ],
   "audience": "ash-template",

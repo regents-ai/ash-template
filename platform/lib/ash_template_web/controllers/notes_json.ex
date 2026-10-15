@@ -26,6 +26,7 @@ defmodule AshTemplateWeb.NotesJSON do
 
   defp label(%Decision{} = decision) do
     %{
+      id: decision.id,
       state: decision.state,
       choice: decision.choice,
       confidence: decision.confidence,

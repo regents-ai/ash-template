@@ -263,6 +263,7 @@ defmodule AshTemplateWeb.Router do
     get "/notes", PageToolsController, :notes
     post "/notes", PageToolsController, :create_note
     post "/notes/search", PageToolsController, :search_notes
+    post "/note-labels/:id/report", PageToolsController, :report_label
     get "/notes/:id", PageToolsController, :note
     post "/notes/:id/pin", PageToolsController, :pin_note
     post "/notes/:id/unpin", PageToolsController, :unpin_note

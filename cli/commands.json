@@ -389,6 +389,32 @@
           "description": "The text, up to 10,000 characters."
         }
       ]
+    },
+    {
+      "command": "notes rate-label <id>",
+      "description": "Rate a specific answered note label once. Pipe report (fits or does_not_fit) on stdin. No model call. Read back before retrying.",
+      "operation_id": "reportNoteLabelAsAgent",
+      "method": "POST",
+      "path": "/tools/note-labels/{id}/report",
+      "authority": "paired_agent",
+      "effect": "write",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "in": "path",
+          "field": "id",
+          "description": "The note label.id, not the note id."
+        }
+      ],
+      "stdin_fields": [
+        {
+          "field": "report",
+          "type": "string",
+          "required": true,
+          "description": "fits or does_not_fit; answered labels can be rated once."
+        }
+      ]
     }
   ]
 }

@@ -256,6 +256,12 @@ This definition is held outside commands.json until the CLI owner supports succe
 - **Answer:** HTTP 204, no content.
 - **Refusals:** pairing refusals, 404 `note_not_found` for missing or another owner's note, 503 `notes_unavailable`.
 
+## notes rate-label <id>
+
+- **What:** rate the specific `label.id` from a note, once, with signed POST `/tools/note-labels/{id}/report`. Pipe `{"report":"fits"}` or `{"report":"does_not_fit"}` on stdin. Requires current pairing and ownership. It does not save the note or call a model.
+- **Answer:** `{"label":{"id":"…","rating":"fits"}}`.
+- **Refusals:** missing/other-owner label404; invalid, unanswered or already rated label422 `invalid_label_report`; pairing403; service503. Read the note after an unknown outcome before retrying. This command awaits CLI publication.
+
 ## Changes
 
 - 2026-10-15: add note search, edit and delete definitions for existing signed routes; published CLI adoption pending.
