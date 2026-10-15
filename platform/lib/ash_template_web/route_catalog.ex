@@ -52,7 +52,12 @@ defmodule AshTemplateWeb.RouteCatalog do
         %RouteTarget{route_id: :world_cube, label: "World cube", path: "/animations/cube"},
         %RouteTarget{route_id: :twin_cube, label: "Twin cubes", path: "/animations/twin-cube"},
         %RouteTarget{route_id: :foil_cards, label: "Foil cards", path: "/animations/foil"},
-        %RouteTarget{route_id: :crown, label: "Crown", path: "/animations/crown"}
+        %RouteTarget{route_id: :crown, label: "Crown", path: "/animations/crown"},
+        %RouteTarget{
+          route_id: :keyfleet_home,
+          label: "Keyfleet home",
+          path: "/animations/keyfleet"
+        }
       ]
     },
     settings: %{

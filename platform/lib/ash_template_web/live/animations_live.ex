@@ -203,6 +203,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/twin-cube"}>Twin cubes</.link>
           / <.link navigate={~p"/animations/foil"}>Foil cards</.link>
           / <.link navigate={~p"/animations/crown"}>Crown</.link>
+          / <.link navigate={~p"/animations/keyfleet"}>Keyfleet home</.link>
         </nav>
         <div class="motion-lab__row">
           <P.button variant="secondary" phx-click={JS.dispatch("lab:replay")}>Replay everything</P.button>

@@ -17,7 +17,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/cube" => "A room behind every side",
     "/animations/twin-cube" => "One for people, one for agents",
     "/animations/foil" => "A card for each site",
-    "/animations/crown" => "Glass cubes that follow you"
+    "/animations/crown" => "Glass cubes that follow you",
+    "/animations/keyfleet" => "A fleet's front door, in motion"
   }
 
   def page(assigns) do
