@@ -2124,8 +2124,9 @@ components:
     PairedAgent:
       type: object
       additionalProperties: false
-      required: [name, harness, wallet, paired_at, last_contact_at, registry_listing, human_backed, same_person_agent_count]
+      required: [id, name, harness, wallet, paired_at, last_contact_at, registry_listing, human_backed, same_person_agent_count]
       properties:
+        id: {type: string, format: uuid}
         name: {type: string, minLength: 1, maxLength: 80}
         harness: {$ref: "#/components/schemas/AgentHarness"}
         wallet: {type: string, pattern: "^0x[0-9a-f]{40}$"}
@@ -2143,8 +2144,9 @@ components:
     CheckedInAgent:
       type: object
       additionalProperties: false
-      required: [name, harness, wallet, paired_at, last_contact_at, registry_listing, human_backed, same_person_agent_count, account]
+      required: [id, name, harness, wallet, paired_at, last_contact_at, registry_listing, human_backed, same_person_agent_count, account]
       properties:
+        id: {type: string, format: uuid}
         name: {type: string, minLength: 1, maxLength: 80}
         harness: {$ref: "#/components/schemas/AgentHarness"}
         wallet: {type: string, pattern: "^0x[0-9a-f]{40}$"}
