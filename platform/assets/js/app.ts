@@ -288,9 +288,13 @@ const showcaseHooks = window.location.pathname.startsWith("/showcase")
   ? (await import("./showcase")).hooks : {}
 const labHooks = window.location.pathname === "/animations"
   ? (await import("./motion_lab")).hooks : {}
+// Every lab page shares one live session, so the buttons study can be reached from any of them.
+const buttonHooks = window.location.pathname.startsWith("/animations")
+  ? (await import("./site_buttons_lab")).hooks : {}
 const hooks = {
   ...showcaseHooks,
   ...labHooks,
+  ...buttonHooks,
   ...colocatedHooks,
   AccountPicture,
   CodeCube,

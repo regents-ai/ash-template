@@ -1,0 +1,180 @@
+/* Study 02: each site's main button today beside the template's motion, in that
+   site's own colours. Page layout lives in the product layer. */
+@layer regents-product {
+.sb { display: grid; gap: 3rem; min-width: 0; }
+.sb-tag { border: 1px solid var(--color-border); padding: .3rem .5rem; color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-mono); }
+.sb-index { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sb-notes { max-width: 52rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); color: var(--color-fg-muted); font-size: .875rem; }
+.sb-notes strong { color: var(--color-fg); font-weight: 500; }
+
+/* Each site's own colours, from its brand tokens. light-dark() follows the page theme. */
+.sb-site[data-site="regents"], .sb-site[data-site="keyfleet"] {
+  --color-accent: light-dark(#ffffff, #161616); --color-fg-on-accent: light-dark(#161616, #e5e3d2);
+  --color-bg: light-dark(#f6f4ea, #0b0b0b); --color-surface: light-dark(#ffffff, #141414);
+  --color-fg: light-dark(#161616, #e5e3d2); --color-border: light-dark(#dad8c7, #2a2a2a);
+  --sb-light: #ff5b19;
+}
+.sb-site[data-site="autolaunch"] {
+  --color-accent: #ff5b19; --color-fg-on-accent: #161616;
+  --color-bg: light-dark(#e5e3d2, #0e0e0e); --color-surface: light-dark(#f6f4ea, #161616);
+  --color-fg: light-dark(#161616, #e5e3d2); --color-border: light-dark(#cfcdbd, #2a2a2a);
+  --sb-light: #ff5b19;
+}
+/* Techtree's copy line sits in a charcoal panel in both themes. */
+.sb-site[data-site="techtree"] {
+  --color-bg: light-dark(#e5e3d2, #0e0e0e); --color-surface: #161616;
+  --color-fg: light-dark(#161616, #e5e3d2); --color-border: light-dark(#cfcdbd, #2a2a2a);
+  --sb-light: #aecacd;
+}
+.sb-site[data-site="patchbay"] {
+  --color-accent: light-dark(#ff5b19, #b9b7a6); --color-fg-on-accent: #161616;
+  --color-bg: light-dark(#e5e3d2, #0f0f10); --color-surface: light-dark(#aecacd, #1b1c1e);
+  --color-fg: light-dark(#161616, #e5e3d2); --color-border: light-dark(#a9b9b8, #2c2d30); --sb-light: #ff5b19;
+}
+.sb-site {
+  --color-fg-muted: color-mix(in srgb, var(--color-fg) 64%, var(--color-bg));
+  display: grid; gap: 1.5rem; min-width: 0; padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-fg);
+}
+.sb-site-head { display: grid; gap: .5rem; }
+.sb-site-head h3 { font-size: 1.375rem; line-height: 1.2; }
+.sb-site-head p, .sb-col h4 { color: var(--color-fg-muted); font-size: .875rem; }
+.sb-col h4 { font: .6875rem/1.4 var(--font-family-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sb-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.sb-col { display: grid; align-content: start; gap: .75rem; min-width: 0; }
+
+.sb-stage {
+  position: relative; isolation: isolate; display: grid; place-items: center; min-height: 13rem;
+  padding: clamp(1rem, 4vw, 2.5rem); border: 1px solid var(--color-border); background: var(--color-bg); overflow: hidden;
+}
+.sb-light-island {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-color: var(--color-bg); color: var(--sb-light);
+  background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--sb-light) 14%, transparent), transparent 62%);
+}
+.sb-light-island canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 200ms cubic-bezier(.23, 1, .32, 1); }
+.sb-light-island[data-light-ready="true"] canvas { opacity: 1; }
+
+.sb-context {
+  position: relative; z-index: 1; display: grid; gap: .75rem; width: min(100%, 26rem); min-width: 0;
+  padding: 1rem 1.25rem; border: 1px solid var(--color-border); background: var(--color-surface);
+}
+.sb-context p { color: var(--color-fg-muted); font-size: .875rem; overflow-wrap: anywhere; }
+.sb-context--form .sb-button { width: 100%; }
+.sb-context--panel { --sb-panel-ink: #e5e3d2; border-color: color-mix(in srgb, #e5e3d2 22%, #161616); color: var(--sb-panel-ink); }
+.sb-context--panel p { color: var(--sb-panel-ink); font-family: var(--font-family-mono); }
+.sb-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.sb-panel-label { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+.sb-context--header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.sb-brand { font-weight: 600; }
+.sb-preview-post { color: var(--color-fg) !important; font-size: 1rem !important; }
+.sb-context--preview .sb-button { justify-self: start; }
+
+.sb-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.sb-specs > li { display: grid; align-content: start; gap: .625rem; min-width: 0; padding: .875rem; border: 1px solid var(--color-border); background: var(--color-surface); }
+.sb-site[data-site="techtree"] .sb-specs > li { color: #e5e3d2; border-color: color-mix(in srgb, #e5e3d2 22%, #161616); }
+.sb-spec-name { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sb-site[data-site="techtree"] .sb-spec-name { color: color-mix(in srgb, #e5e3d2 70%, #161616); }
+.sb-spec-body { display: grid; justify-items: start; gap: .375rem; min-width: 0; }
+.sb-site:is([data-site="regents"], [data-site="autolaunch"]) .sb-spec-body { justify-items: stretch; }
+.sb-reason, .sb-spec-note { font-size: .8125rem; overflow-wrap: anywhere; }
+.sb-spec-note { color: var(--color-fg-muted); font-style: italic; }
+.sb-site[data-site="techtree"] .sb-spec-note { color: color-mix(in srgb, #e5e3d2 70%, #161616); }
+.sb-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (max-width: 60rem) {
+  .sb-compare { grid-template-columns: minmax(0, 1fr); }
+}
+}
+
+/* The buttons below must outrank the shared button primitive, which is not in a
+   layer; the page's id gives every rule here that weight. Both columns are the
+   shared button with the site's motion kit: the paint and words give a little on
+   press and the arrow nudges on hover. */
+
+/* One cell holds every step's words, so the button keeps its widest width. */
+#site-buttons .sb-words { display: inline-grid; place-items: center; }
+#site-buttons .sb-words > [data-word] { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: .6em; }
+#site-buttons .sb-button .sb-words > [data-word] { visibility: hidden; }
+#site-buttons .sb-button:is([data-state="idle"]) [data-word="idle"],
+#site-buttons .sb-button:is([data-state="wait0"]) [data-word="wait0"],
+#site-buttons .sb-button:is([data-state="wait1"]) [data-word="wait1"],
+#site-buttons .sb-button:is([data-state="done"]) [data-word="done"] { visibility: visible; }
+
+#site-buttons .sb-spinner { flex: none; display: inline-block; width: .95em; height: .95em; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; }
+#site-buttons .sb-tick { font-weight: 700; }
+
+/* Each site's own button sizing and words. */
+#site-buttons .sb-site[data-site="regents"] .sb-button { letter-spacing: .1em; text-transform: uppercase; }
+#site-buttons .sb-site[data-site="autolaunch"] .sb-button { min-height: 3.5rem; font-size: 1.0625rem; }
+#site-buttons .sb-site[data-site="techtree"] .sb-button {
+  --color-accent: #aecacd; --color-fg-on-accent: #161616; --color-fg: #e5e3d2; --color-surface: #161616;
+  min-height: 2.75rem; font-size: .8125rem; line-height: 1.6;
+}
+#site-buttons .sb-site[data-site="patchbay"] .sb-button { font-size: 18px; }
+
+/* The frozen specimens: hover and focus draw the full cut outline, as the shared button does. */
+#site-buttons .sb-button:not(:disabled):is([data-show="hover"], [data-show="focus"])::before,
+#site-buttons .sb-motion .sb-button:not(:disabled):is([data-state="wait0"], [data-state="wait1"], [data-state="done"])::before {
+  --rg-button-edge-ink: var(--rg-button-active-border);
+  --rg-button-cut-ink: var(--rg-button-active-border);
+  --rg-button-cut-gap: 0px;
+  background-size:
+    var(--rg-cut-control) var(--rg-cut-control), var(--rg-cut-control) var(--rg-cut-control),
+    calc(100% - var(--rg-cut-control) + 1px) 1px, 1px calc(100% - var(--rg-cut-control) + 1px),
+    calc(100% - var(--rg-cut-control) + 1px) 1px, 1px calc(100% - var(--rg-cut-control) + 1px);
+}
+#site-buttons .sb-button[data-show="hover"] { --rg-chevron-x: 4px; }
+#site-buttons .sb-button[data-show="press"] { --rg-press-scale: .97; }
+#site-buttons .sb-button[data-show="focus"] { outline: 2px solid var(--rg-p-text); outline-offset: 4px; }
+
+/* ---- Today: the shared button as every site gets it now. ---- */
+@media (prefers-reduced-motion: no-preference) {
+  /* A spinner turns only while its words are the ones showing. */
+  #site-buttons .sb-today :is(.sb-button[data-state="wait0"] [data-word="wait0"], .sb-button[data-state="wait1"] [data-word="wait1"]) .sb-spinner { animation: sb-spin .8s linear infinite; }
+}
+
+/* ---- With motion: the light, a steady outline while waiting, and words that swap in place. ---- */
+/* Keyboard focus answers at once: the ring and the outline are simply there. */
+#site-buttons .sb-motion .sb-button:focus-visible::before { transition: none; }
+/* Done draws the outline in the words' own colour. */
+#site-buttons .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
+  --rg-button-edge-ink: var(--rg-p-on-accent); --rg-button-cut-ink: var(--rg-p-on-accent);
+}
+#site-buttons .sb-site:is([data-site="regents"], [data-site="keyfleet"]) .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
+  --rg-button-edge-ink: var(--rg-p-text); --rg-button-cut-ink: var(--rg-p-text);
+}
+/* Words change by a short blur and fade, in place. Keyboard presses swap them at once. */
+@media (prefers-reduced-motion: no-preference) {
+  #site-buttons .sb-motion .sb-words > [data-word] {
+    transition: opacity 200ms cubic-bezier(.23, 1, .32, 1), filter 200ms cubic-bezier(.23, 1, .32, 1), visibility 0s linear 200ms;
+  }
+  #site-buttons .sb-motion .sb-button .sb-words > [data-word] { opacity: 0; filter: blur(2px); }
+  #site-buttons .sb-motion .sb-button:is([data-state="idle"]) [data-word="idle"],
+  #site-buttons .sb-motion .sb-button:is([data-state="wait0"]) [data-word="wait0"],
+  #site-buttons .sb-motion .sb-button:is([data-state="wait1"]) [data-word="wait1"],
+  #site-buttons .sb-motion .sb-button:is([data-state="done"]) [data-word="done"] { opacity: 1; filter: none; transition-delay: 0s; }
+  #site-buttons[data-input="key"] .sb-motion .sb-words > [data-word] { transition: none; }
+  #site-buttons .sb-motion :is(.sb-button[data-state="wait0"] [data-word="wait0"], .sb-button[data-state="wait1"] [data-word="wait1"]) .sb-spinner { animation: sb-spin .7s linear infinite; }
+}
+
+/* Less motion, from the page's switch or the system: every state still reads, nothing moves. */
+.motion-lab[data-motion="reduced"] #site-buttons :is(.sb-words > [data-word], .sb-light-island canvas),
+.motion-lab[data-motion="reduced"] #site-buttons .sb-button::before { transition: none !important; }
+.motion-lab[data-motion="reduced"] #site-buttons .sb-spinner { animation: none !important; }
+.motion-lab[data-motion="reduced"] #site-buttons .sb-motion .sb-words > [data-word] { opacity: 1; filter: none; }
+.motion-lab[data-motion="reduced"] #site-buttons .sb-motion .sb-button .sb-words > [data-word] { visibility: hidden; }
+.motion-lab[data-motion="reduced"] #site-buttons .sb-button:is([data-state="idle"]) [data-word="idle"],
+.motion-lab[data-motion="reduced"] #site-buttons .sb-button:is([data-state="wait0"]) [data-word="wait0"],
+.motion-lab[data-motion="reduced"] #site-buttons .sb-button:is([data-state="wait1"]) [data-word="wait1"],
+.motion-lab[data-motion="reduced"] #site-buttons .sb-button:is([data-state="done"]) [data-word="done"] { visibility: visible; }
+.motion-lab[data-motion="reduced"] #site-buttons .sb-light-island canvas { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  #site-buttons .sb-light-island canvas { display: none; }
+}
+@media (forced-colors: active) {
+  #site-buttons .sb-light-island { display: none; }
+  #site-buttons .sb-button[data-show="focus"] { outline-color: Highlight; }
+}
+
+@keyframes sb-spin { to { rotate: 1turn; } }

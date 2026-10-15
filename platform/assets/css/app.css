@@ -29,6 +29,7 @@
 @import "./components/twin_cube.css";
 @import "./pages/feedback_lab.css";
 @import "./pages/patchbay_palettes.css";
+@import "./pages/site_buttons_lab.css";
 @import "./components/account_auth_status.css";
 
 :root {
