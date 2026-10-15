@@ -27,6 +27,24 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
+  # API credentials never use cookies; consent uses the verified browser and CSRF pipeline.
+  scope "/", AshTemplateWeb do
+    pipe_through :api
+    get "/.well-known/oauth-protected-resource", OAuthController, :resource_metadata
+    get "/.well-known/oauth-authorization-server", OAuthController, :server_metadata
+    post "/oauth/register", OAuthController, :register, log: false
+    post "/oauth/token", OAuthController, :token, log: false
+    post "/oauth/revoke", OAuthController, :revoke, log: false
+  end
+
+  scope "/oauth", AshTemplateWeb do
+    pipe_through :browser
+    get "/authorize", OAuthController, :authorize, log: false
+    post "/authorize", OAuthController, :approve, log: false
+    get "/connections", OAuthController, :connections, log: false
+    post "/connections/revoke", OAuthController, :revoke_connection, log: false
+  end
+
   # An agent's request, signed with its wallet; the signature is its only sign-in.
   pipeline :agent_api do
     plug :accepts, ["json"]

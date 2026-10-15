@@ -1,5 +1,9 @@
 import Config
 
+# Reference remains off until the consuming site authorizes release and setup.
+config :ash_template, AshTemplate.OAuth,
+  enabled?: System.get_env("ASH_TEMPLATE_OAUTH_ENABLED") == "true"
+
 require Logger
 
 # Tests sign in to their own app id (config/test.exs), whatever the shell sets.
