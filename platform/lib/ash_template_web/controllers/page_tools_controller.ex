@@ -30,6 +30,9 @@ defmodule AshTemplateWeb.PageToolsController do
     "invalid_note" =>
       {422, "The note could not be saved.",
        "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying."},
+    "invalid_cursor" =>
+      {422, "That history cursor is invalid.",
+       "Send after as the previous page's pagination.next_cursor, unchanged, or omit it for the newest entries."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
@@ -70,6 +73,10 @@ defmodule AshTemplateWeb.PageToolsController do
     end
   end
 
+  def credits_history(%{body_params: %{"after" => cursor}} = conn, _params)
+      when not is_binary(cursor),
+      do: refuse(conn, "invalid_cursor")
+
   def credits_history(conn, _params) do
     args =
       case conn.body_params do
@@ -85,9 +92,21 @@ defmodule AshTemplateWeb.PageToolsController do
         })
 
       {:error, error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+        if cursor_error?(error) do
+          refuse(conn, "invalid_cursor")
+        else
+          conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+        end
     end
   end
+
+  defp cursor_error?(%Ash.Error.Action.InvalidArgument{field: :after}), do: true
+  defp cursor_error?(%Ash.Error.Page.InvalidKeyset{}), do: true
+
+  defp cursor_error?(%Ash.Error.Invalid{errors: [_ | _] = errors}),
+    do: Enum.all?(errors, &cursor_error?/1)
+
+  defp cursor_error?(_error), do: false
 
   # Points as decimal text, as the Points page shows them.
   def points(conn, _params) do
