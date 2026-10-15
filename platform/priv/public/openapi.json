@@ -3122,7 +3122,65 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "required": [
+                    "entries",
+                    "pagination"
+                  ],
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "at",
+                          "operation",
+                          "available_delta",
+                          "held_delta"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "operation": {
+                            "type": "string"
+                          },
+                          "available_delta": {
+                            "type": "string",
+                            "description": "Signed decimal Credits amount."
+                          },
+                          "held_delta": {
+                            "type": "string",
+                            "description": "Signed decimal Credits amount."
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "required": [
+                        "has_more",
+                        "next_cursor"
+                      ],
+                      "properties": {
+                        "has_more": {
+                          "type": "boolean"
+                        },
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Pass unchanged as after for the next page. Null when no further page exists."
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3147,6 +3205,41 @@
           },
           "403": {
             "description": "The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in at /account and pair you, then send the request again."
+          },
+          "422": {
+            "description": "Invalid after cursor (invalid_cursor). Use the previous pagination.next_cursor unchanged, or omit after for the newest entries; do not send null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "required": [
+                        "code",
+                        "message",
+                        "hint"
+                      ],
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "const": "invalid_cursor"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "hint": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -3159,7 +3252,7 @@
                   "after": {
                     "type": "string",
                     "maxLength": 2048,
-                    "description": "Previous page cursor."
+                    "description": "Previous pagination.next_cursor unchanged, at most 2048 characters. Omit for the newest entries; do not send null."
                   }
                 },
                 "required": [],

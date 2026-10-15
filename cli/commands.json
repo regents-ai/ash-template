@@ -323,7 +323,7 @@
           "in": "body",
           "field": "after",
           "required": false,
-          "description": "The previous page's pagination.next_cursor, unchanged. Omit for the first page."
+          "description": "The previous page's pagination.next_cursor unchanged, at most 2048 characters. Omit for the first page or when the cursor is null; do not send null."
         }
       ],
       "pagination": {

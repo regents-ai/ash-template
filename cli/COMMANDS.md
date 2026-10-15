@@ -222,10 +222,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 - **What:** your person's Credits history, 50 entries a page. Signed; needs a pairing.
 - **Flag (optional):** `--after CURSOR`, the previous page's `pagination.next_cursor`, for
-  older entries. The tool signs the body `{}` without it and `{"after": "CURSOR"}` with it.
+  older entries, at most 2048 characters. Omit it for the first page or when the cursor is null; never send null. The tool signs the body `{}` without it and `{"after": "CURSOR"}` with it.
 - **Answer:** `{"entries": […], "pagination": {"has_more", "next_cursor"}}`, paged as `rooms messages` is.
 - **Example:** `regents ash-template account credits-history`
-- **Refusals:** as for `notes list`.
+- **Refusals:** as for `notes list`, plus HTTP 422 `invalid_cursor` for an invalid `after`. The JSON `error` contains `code`, `message` and `hint`. Use the previous `pagination.next_cursor` unchanged, or omit `after` for the newest entries. Unrelated service failures remain HTTP 503.
 
 ## account points
 
@@ -237,6 +237,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **Refusals:** as for `notes list`.
 
 ## Changes
+
+- 2026-10-15: `account credits-history` documents the 2048-character cursor limit, omit-null recovery, typed response and HTTP 422 `invalid_cursor` refusal.
 
 - 2026-10-12: `notes pin <id>` (1 Credit) and `notes unpin <id>` (free).
 - 2026-10-11: `account balances` no longer answers `account_id` or `pairing_id`, and
