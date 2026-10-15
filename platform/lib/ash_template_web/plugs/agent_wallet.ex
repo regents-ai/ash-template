@@ -192,10 +192,12 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   defp with_backing(agent, nil), do: agent
 
-  # Logged by the kind of failure alone: its words can hold the person's number.
+  # Logged by the agent's id and the kind of failure alone: the wallet address
+  # beside a World ID person would tie the two together in the log, and the
+  # failure's words can hold the person's number.
   defp backing_not_saved(agent, error) do
     Logger.warning(
-      "Saving the World ID person of agent #{agent.wallet_address} failed: #{inspect(failure_kinds(error))}"
+      "Saving the World ID person of agent #{agent.id} failed: #{inspect(failure_kinds(error))}"
     )
 
     agent
