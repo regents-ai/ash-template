@@ -8,7 +8,7 @@ import subprocess
 
 START = "<!-- BEGIN REGENT ROLLOUT REVIEW -->"
 END = "<!-- END REGENT ROLLOUT REVIEW -->"
-FILES = ("SKILL.md", "agents/openai.yaml", "scripts/inventory.py",
+FILES = ("SKILL.md", "agents/openai.yaml",
          "references/surface-map.md", "references/impact-checklist.md",
          "references/openai-review.md")
 
