@@ -266,6 +266,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/twin-cube"}>Twin cubes</.link>
           / <.link navigate={~p"/animations/foil"}>Foil cards</.link>
           / <.link navigate={~p"/animations/crown"}>Crown</.link>
+          / <.link navigate={~p"/animations/keyfleet"}>Keyfleet home</.link>
         </nav>
         <div :if={@lab_tab != "palettes"} class="motion-lab__row">
           <P.button
