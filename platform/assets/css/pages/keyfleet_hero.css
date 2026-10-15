@@ -1,14 +1,13 @@
 /* The Keyfleet homepage hero in the motion lab at /animations/keyfleet: Classic
    #1 with "Buy Next Key", the box saying how a fleet runs itself, the Regents
    Club and what a fleet can use. The layout follows Keyfleet's own homepage;
-   the hex field, the card's turn and its foil are the lab's additions. Every
+   the hex field and the card's turn are the lab's additions. Every
    move is a transform or an opacity, so nothing on the page shifts. */
 @layer regents-product {
   .kf-lab {
     /* The colours the GPU pictures read, per theme. */
     --kf-field-line: var(--color-fg);
     --kf-field-light: var(--ash-accent-warm);
-    --kf-foil-light: var(--palette-platinum);
     --kf-ease: cubic-bezier(.23, 1, .32, 1);
     min-block-size: 100vh;
     padding-block-end: var(--space-8);
@@ -77,7 +76,6 @@
     box-shadow: 0 1.5rem 3rem -1.5rem rgb(0 0 0 / .6);
   }
   .kf-buy__tilt img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
-  .kf-buy__foil { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
   /* The price on the card itself, in its corner. The card's art is dark in
      both themes, so the chip keeps light ink on charcoal in both. */
   .kf-buy__tag {

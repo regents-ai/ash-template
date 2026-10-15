@@ -203,7 +203,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
         class="kf-buy__card"
         phx-hook="KeyfleetKeyCard"
         phx-update="ignore"
-        phx-mounted={JS.ignore_attributes(["data-foil-ready"])}
         aria-hidden="true"
         data-key-card
       >
@@ -215,7 +214,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
             alt=""
             fetchpriority="high"
           />
-          <canvas class="kf-buy__foil" data-foil-canvas></canvas>
           <span class="kf-buy__tag">Key 1 · 10 USDC</span>
         </div>
       </div>
