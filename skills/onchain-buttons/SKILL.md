@@ -53,7 +53,7 @@ for a USDC payment's button, `payments`.
    Each report names the review it was sent from, and `handleEvent` payloads carry the
    component's DOM id, since every hook on the page hears every `push_event`.
 8. **The server checks the result at the latest block** (founder decision, 2026-09-26):
-   read the receipt every 2 s, confirm the transaction's sender, target and calldata are
+   read the receipt every quarter second (Sean, 15 Oct), confirm the transaction's sender, target and calldata are
    the step's, and show pending, done or reverted. Stop after a set number of reads and
    offer "Check again". Never use `safe` or `finalized`, never count confirmations, never
    store pending transactions. The chain watcher (`chain-events`) records the outcome for

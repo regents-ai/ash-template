@@ -193,7 +193,7 @@ and checks Privy has not swapped the wallet meanwhile. The hook then reports:
 (`chain-events`) and the page's normal reads show what landed.
 
 - `OnchainSteps.sent/2` finds the review by `review_id` and starts reading at once, then
-  every 2 s, with `start_async({:onchain_step, hash}, …)`. Each read is
+  every quarter second, with `start_async({:onchain_step, hash}, …)`. Each read is
   `RegentChain.Outcome.of(ChainClient, review, step, hash)` at `latest`.
 - `Outcome.of/4` answers `:pending` until the receipt exists, then `:confirmed` or
   `:reverted`. A hash whose chain, sender, target, calldata or value is not the step's
