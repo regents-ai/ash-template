@@ -38,3 +38,7 @@ migration against its separate shared ledger. A site moving from an older
 shared-library pin may need separately authorized migrations, including
 `regent_agents` version `20261014150000` for agent pictures. The prerequisite
 only reports/refuses missing migrations; it never applies them.
+
+`ex_hash_ring` is held at 6.0.4: Cachex 4.1.1 in consuming sites requires 6.x,
+while the template's Nebulex Distributed 3.0.0 accepts 6.x or 7.x. The explicit
+constraint keeps the shared baseline compatible with both, without an override.
