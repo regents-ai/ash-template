@@ -31,11 +31,7 @@ defmodule AshTemplateWeb.AccountLive do
     >
       <:tip>Your profile, your Credits and your agents.</:tip>
       <div class="account-grid">
-        <Regent.HolographicCard.card
-          id="account-identity"
-          class="account-identity"
-          phx-hook="HolographicCard"
-        >
+        <section id="account-identity" class="account-identity" aria-label="Your account">
           <p class="account-kicker">Your account</p>
           <div class="account-identity__who">
             <AshTemplateWeb.Components.Shell.account_picture
@@ -52,7 +48,7 @@ defmodule AshTemplateWeb.AccountLive do
               </p>
             </div>
           </div>
-        </Regent.HolographicCard.card>
+        </section>
 
         <section class="account-panel account-details" aria-labelledby="account-details-title">
           <h2 id="account-details-title">Profile</h2>
@@ -160,7 +156,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   defp settings_page(assigns) do
     ~H"""
-    <article id={@id} class="account-page">
+    <article id={@id} class="account-page rg-utility">
       <.page_head title={@title}>
         <:tip>{render_slot(@tip)}</:tip>
       </.page_head>
