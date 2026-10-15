@@ -26,7 +26,9 @@
   --shell-sidebar: 0px;
 }
 
-:root:not([data-aside="open"]) #app-shell {
+/* Closed, or signed out with no side bar at all, it keeps no room. */
+:root:not([data-aside="open"]) #app-shell,
+#app-shell:not(:has(#shell-aside)) {
   --shell-aside: 0px;
 }
 
@@ -969,16 +971,6 @@
 #shell-checklist li[data-done="true"] .shell-checklist__mark {
   border-color: var(--ash-accent);
   color: var(--ash-accent);
-}
-
-#app-shell .shell-checklist__action {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .shell-assistant__form {

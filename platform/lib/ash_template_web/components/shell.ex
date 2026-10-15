@@ -9,6 +9,10 @@ defmodule AshTemplateWeb.Components.Shell do
   `<html data-aside data-sidebar>`), so the server never stores them. A page puts its own parts
   into the sidebar and the right side bar with `<.portal>` into
   `#shell-sidebar-page` and `#shell-aside-page`.
+
+  The right side bar and its button are there only for someone signed in, so a
+  page signed out has nothing beside the Sign in button. A page's part for the
+  side bar is likewise drawn only for someone signed in.
   """
 
   use Phoenix.Component
@@ -165,6 +169,7 @@ defmodule AshTemplateWeb.Components.Shell do
         <.account_control account_control={@account_control} />
 
         <button
+          :if={@account_control.kind in [:signed_in, :preview]}
           id="shell-aside-button"
           class="shell-tool"
           type="button"
@@ -286,7 +291,12 @@ defmodule AshTemplateWeb.Components.Shell do
         </main>
       </div>
 
-      <aside id="shell-aside" aria-labelledby="shell-aside-title" tabindex="-1">
+      <aside
+        :if={@account_control.kind in [:signed_in, :preview]}
+        id="shell-aside"
+        aria-labelledby="shell-aside-title"
+        tabindex="-1"
+      >
         <div class="shell-aside__head">
           <h2 id="shell-aside-title">For you</h2>
           <button
@@ -300,12 +310,7 @@ defmodule AshTemplateWeb.Components.Shell do
           </button>
         </div>
 
-        <section
-          :if={@account_control.kind in [:signed_in, :preview]}
-          id="shell-account"
-          class="shell-account"
-          aria-label="Your account"
-        >
+        <section id="shell-account" class="shell-account" aria-label="Your account">
           <p class="shell-account__name">
             <.account_name id="shell-account-picture" account_control={@account_control} />
           </p>
@@ -338,15 +343,7 @@ defmodule AshTemplateWeb.Components.Shell do
                 {if step.done?, do: "✓", else: ""}
               </span>
               <span :if={step.done?}>{step.label}<span class="visually-hidden">, done</span></span>
-              <button
-                :if={!step.done? and step.id == :sign_in}
-                type="button"
-                class="shell-checklist__action"
-                data-account-target="sign-in"
-              >
-                {step.label}
-              </button>
-              <.link :if={!step.done? and step.id != :sign_in} patch={step.path}>
+              <.link :if={!step.done?} patch={step.path}>
                 {step.label}
               </.link>
             </li>
