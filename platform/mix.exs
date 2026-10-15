@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "9db13eb6e8475326626860721d082e90cb0f93fc"
+  @elixir_utils_ref "edb97f1c1bb7cc9ce1aa02f4646eea18f7f8923d"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "cf05816a4e75616ea0cdfbc7aeee6daf8067670a"
 
@@ -32,6 +32,7 @@ defmodule AshTemplate.MixProject do
 
   defp deps do
     [
+      {:regent_oauth, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth"},
       {:lumis, "~> 0.1"},
       {:req_llm, "~> 1.18"},
       {:phoenix, "~> 1.8.9"},
@@ -82,7 +83,11 @@ defmodule AshTemplate.MixProject do
       {:decimal, "== 3.1.2"},
       {:jason, "~> 1.2"},
       {:req, "== 0.7.4"},
-      {:bandit, "~> 1.12.1"},
+      # CVE-2026-105659: upstream fix is not in a Hex release yet.
+      {:bandit,
+       git: "https://github.com/mtrudel/bandit.git",
+       ref: "d88b21953c65061f21136ea76a89a4f95a2ac7a1",
+       override: true},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
@@ -107,6 +112,7 @@ defmodule AshTemplate.MixProject do
 
       {_, root} ->
         paths = %{
+          regent_oauth: "oauth",
           regent_agents: "ash_components/agents",
           regent_identity: "ash_components/identity",
           regent_points: "points",

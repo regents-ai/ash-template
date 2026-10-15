@@ -171,8 +171,13 @@ counts it runs on every request.
 ## 5. Sign-in for connected apps (ChatGPT, Codex, Claude): held
 
 Held 12 Oct 2026 until Sean accepts the template account system (Sean's rulings of
-12 Oct and 76 b; recorded by the orchestrator as CONNECTOR-AUTH-1 b). Nothing is built.
+12 Oct and 76 b; recorded by the orchestrator as CONNECTOR-AUTH-1 b). Nothing had been built at that time.
 Techtree's first milestone does not wait on it.
+
+14 Oct 2026: Sean authorized “Build the shared Boruta/Privy service locally” for
+the Patchbay plugin. A bounded, disabled reference now lives in
+[oauth-reference.md](oauth-reference.md). This does not release the broader
+connected-app backlog or authorize publishing.
 
 To do, once released from hold:
 - [ ] An OAuth sign-in service in the template on Boruta, with Privy sign-in as its

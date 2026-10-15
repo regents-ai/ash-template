@@ -5,6 +5,8 @@ defmodule AshTemplate.Application do
 
   @impl true
   def start(_type, _args) do
+    :ok = RegentOAuth.configure(AshTemplate.OAuth)
+
     children =
       [
         AshTemplateWeb.Telemetry,
@@ -12,6 +14,7 @@ defmodule AshTemplate.Application do
         {Task.Supervisor, name: AshTemplate.SiteTools.Reads},
         AshTemplate.SiteTools,
         AshTemplate.Repo,
+        if(RegentOAuth.enabled?(), do: RegentOAuth.Repo),
         {Phoenix.PubSub, name: AshTemplate.PubSub},
         AshTemplateWeb.Presence,
         # The figures every visitor sees alike, then the readers that keep them.

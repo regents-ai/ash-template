@@ -232,4 +232,24 @@ config :regent_points,
     "#{site}.first_agent_note" => AshTemplate.Points.AgentNote
   }
 
+# Reference audience only: adopting sites set their exact MCP URL in config and migration.
+# The template does not expose an MCP endpoint. OAuth remains off until a site opts in.
+config :ash_template, AshTemplate.OAuth,
+  enabled?: false,
+  issuer: "https://template.regents.sh",
+  resource: "https://template.regents.sh",
+  scope: "mcp.events.read",
+  permission_description: "Watch updates for your account through this site's MCP service."
+
+config :phoenix, :filter_parameters, [
+  "password",
+  "payment_signature",
+  "code",
+  "code_verifier",
+  "access_token",
+  "refresh_token",
+  "client_secret",
+  "id_token"
+]
+
 import_config "#{config_env()}.exs"
