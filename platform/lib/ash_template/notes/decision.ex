@@ -124,7 +124,7 @@ defmodule AshTemplate.Notes.Decision do
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:report]
       validate present(:report)
-      validate RateOnce
+      validate RateOnce, always_atomic?: true
     end
   end
 
