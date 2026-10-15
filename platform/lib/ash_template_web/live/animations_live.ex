@@ -92,11 +92,66 @@ defmodule AshTemplateWeb.AnimationsLive do
        next_id: 100,
        count: 1_284,
        done?: false,
+       lab_tab: "library",
+       flair_name: "",
+       flair_valid: "empty",
+       flair_receipt: 0,
+       flair_state: "ready",
+       flair_messages: [],
        tab: "recent"
      )}
   end
 
   @impl true
+  def handle_params(params, _uri, socket) do
+    tab = if params["lab"] in ~w(feedback palettes), do: params["lab"], else: "library"
+
+    {:noreply,
+     assign(socket,
+       lab_tab: tab,
+       palette: AshTemplateWeb.PatchbayPaletteLab.palette(params["palette"]),
+       palette_view: AshTemplateWeb.PatchbayPaletteLab.view(params["view"])
+     )}
+  end
+
+  # These are transient lab examples: no Ash action, account, or external write.
+  @impl true
+  def handle_event("flair_validate", %{"demo" => %{"name" => name}}, socket) do
+    {:noreply, assign(socket, flair_name: name, flair_valid: flair_validity(name))}
+  end
+
+  def handle_event("flair_submit", %{"demo" => %{"name" => name}}, socket) do
+    valid = flair_validity(name)
+
+    socket =
+      assign(socket,
+        flair_name: name,
+        flair_valid: if(valid == "valid", do: valid, else: "invalid")
+      )
+
+    {:noreply, if(valid == "valid", do: update(socket, :flair_receipt, &(&1 + 1)), else: socket)}
+  end
+
+  def handle_event("flair_state", %{"state" => state}, socket)
+      when state in ~w(ready working confirmed attention),
+      do: {:noreply, assign(socket, flair_state: state)}
+
+  def handle_event("flair_chat", %{"chat" => %{"message" => message}}, socket) do
+    submitted = message
+    message = message |> String.trim() |> String.slice(0, 280)
+
+    if message == "" do
+      {:noreply, socket}
+    else
+      messages = Enum.take(socket.assigns.flair_messages ++ [message], -3)
+
+      {:noreply,
+       socket
+       |> assign(flair_messages: messages)
+       |> push_event("flair:sent", %{id: "feedback-lab", message: submitted})}
+    end
+  end
+
   def handle_event("pick", %{"part" => part, "variant" => variant}, socket) do
     if variant in Map.get(@choices, part, []) do
       {:noreply, update(socket, :variants, &Map.put(&1, part, variant))}
@@ -170,6 +225,14 @@ defmodule AshTemplateWeb.AnimationsLive do
   def handle_info({:drop, key, id}, socket),
     do: {:noreply, update(socket, key, &Enum.reject(&1, fn item -> item.id == id end))}
 
+  defp flair_validity(name) do
+    case name |> String.trim() |> String.length() do
+      0 -> "empty"
+      n when n >= 3 and n <= 40 -> "valid"
+      _ -> "invalid"
+    end
+  end
+
   # An item is hidden first, so it can fade out while its neighbours close
   # the gap, and dropped once that is over.
   defp leave(socket, key, id) do
@@ -190,11 +253,11 @@ defmodule AshTemplateWeb.AnimationsLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <main id="motion-lab" class="motion-lab" data-motion={@reduced? && "reduced"}>
+    <main id="motion-lab" class="motion-lab" data-lab={@lab_tab} data-motion={@reduced? && "reduced"}>
       <header class="motion-lab__head">
         <p class="motion-lab__kicker"><a href={~p"/"}>Ash Template</a> / Motion lab</p>
         <h1>Motion lab</h1>
-        <p class="motion-lab__lede">
+        <p :if={@lab_tab != "palettes"} class="motion-lab__lede">
           Little movements, side by side. The version marked standard is the one the real pages
           use; the others stay here to compare. Press things and switch between them.
         </p>
@@ -204,233 +267,257 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/foil"}>Foil cards</.link>
           / <.link navigate={~p"/animations/crown"}>Crown</.link>
         </nav>
-        <div class="motion-lab__row">
-          <P.button variant="secondary" phx-click={JS.dispatch("lab:replay")}>Replay everything</P.button>
+        <div :if={@lab_tab != "palettes"} class="motion-lab__row">
+          <P.button
+            :if={@lab_tab == "library"}
+            variant="secondary"
+            phx-click={JS.dispatch("lab:replay")}
+          >Replay everything</P.button>
           <P.button variant="secondary" phx-click="reduced" aria-pressed={to_string(@reduced?)}>
             Less motion
           </P.button>
         </div>
       </header>
 
-      <.section number="1" id="presses" title="Presses">
-        <:lede>
-          A mouse or finger press gets a small answer. Pressing Enter or Space works the same,
-          just without the show. Every button squishes, and one that says no shakes its head.
-        </:lede>
-        <div id="lab-presses" class="motion-lab__row" phx-hook="LabPress">
-          <P.button :for={press <- @presses} variant="secondary" data-press={press}>
-            {String.capitalize(press)}<.standard :if={press in ~w(squish nope)} />
-          </P.button>
-        </div>
-      </.section>
-
-      <.section number="2" id="slides" title="Panels that slide">
-        <:lede>Open and close each one a few times. Escape closes the one on top.</:lede>
-        <dl class="motion-lab__pickers">
-          <div :for={{part, label} <- @panels}>
-            <dt>{label}</dt>
-            <dd><.picker part={part} variants={@variants} /></dd>
+      <nav class="flair-tabs" aria-label="Motion lab sections">
+        <.link patch={~p"/animations"} aria-current={@lab_tab == "library" && "page"}>Motion library</.link>
+        <.link patch={~p"/animations?lab=feedback"} aria-current={@lab_tab == "feedback" && "page"}>Feedback &amp; gradients</.link>
+        <.link patch={~p"/animations?lab=palettes"} aria-current={@lab_tab == "palettes" && "page"}>Patchbay palettes</.link>
+      </nav>
+      <AshTemplateWeb.PatchbayPaletteLab.content
+        :if={@lab_tab == "palettes"}
+        palette={@palette}
+        view={@palette_view}
+      />
+      <AshTemplateWeb.FeedbackLab.content
+        :if={@lab_tab == "feedback"}
+        name={@flair_name}
+        validity={@flair_valid}
+        receipt={@flair_receipt}
+        state={@flair_state}
+        messages={@flair_messages}
+      />
+      <div :if={@lab_tab == "library"} class="flair-library">
+        <.section number="1" id="presses" title="Presses">
+          <:lede>
+            A mouse or finger press gets a small answer. Pressing Enter or Space works the same,
+            just without the show. Every button squishes, and one that says no shakes its head.
+          </:lede>
+          <div id="lab-presses" class="motion-lab__row" phx-hook="LabPress">
+            <P.button :for={press <- @presses} variant="secondary" data-press={press}>
+              {String.capitalize(press)}<.standard :if={press in ~w(squish nope)} />
+            </P.button>
           </div>
-        </dl>
-        <.slides variants={@variants} />
-      </.section>
+        </.section>
 
-      <.section number="3" id="changes" title="Things that change">
-        <:lede>
-          Each of these waits for the page to decide, then moves from the old picture to the new one.
-        </:lede>
-        <div class="motion-lab__grid">
-          <.card title="Notes that pop up" part="toast" variants={@variants}>
-            <div class="motion-lab__stage">
-              <P.button variant="secondary" phx-click="toast">Send a note</P.button>
-              <div class="motion-lab__toast-dock">
-                <ol
-                  id="lab-toasts"
-                  class="motion-lab__toasts"
-                  phx-hook="LabList"
-                  data-layout-id="lab-toasts"
-                  data-children="[data-toast]"
-                  data-variant={@variants["toast"]}
-                  aria-live="polite"
-                >
-                  <li
-                    :for={toast <- @toasts}
-                    id={"lab-toast-#{toast.id}"}
-                    class="motion-lab__toast"
-                    data-toast
-                    data-layout-id={"lab-toast-#{toast.id}"}
-                    hidden={toast.leaving?}
+        <.section number="2" id="slides" title="Panels that slide">
+          <:lede>Open and close each one a few times. Escape closes the one on top.</:lede>
+          <dl class="motion-lab__pickers">
+            <div :for={{part, label} <- @panels}>
+              <dt>{label}</dt>
+              <dd><.picker part={part} variants={@variants} /></dd>
+            </div>
+          </dl>
+          <.slides variants={@variants} />
+        </.section>
+
+        <.section number="3" id="changes" title="Things that change">
+          <:lede>
+            Each of these waits for the page to decide, then moves from the old picture to the new one.
+          </:lede>
+          <div class="motion-lab__grid">
+            <.card title="Notes that pop up" part="toast" variants={@variants}>
+              <div class="motion-lab__stage">
+                <P.button variant="secondary" phx-click="toast">Send a note</P.button>
+                <div class="motion-lab__toast-dock">
+                  <ol
+                    id="lab-toasts"
+                    class="motion-lab__toasts"
+                    phx-hook="LabList"
+                    data-layout-id="lab-toasts"
+                    data-children="[data-toast]"
+                    data-variant={@variants["toast"]}
+                    aria-live="polite"
                   >
-                    <span>{toast.name}</span>
-                    <button
-                      type="button"
-                      phx-click="dismiss"
-                      phx-value-id={toast.id}
-                      aria-label="Dismiss"
+                    <li
+                      :for={toast <- @toasts}
+                      id={"lab-toast-#{toast.id}"}
+                      class="motion-lab__toast"
+                      data-toast
+                      data-layout-id={"lab-toast-#{toast.id}"}
+                      hidden={toast.leaving?}
                     >
-                      ×
-                    </button>
-                  </li>
-                </ol>
+                      <span>{toast.name}</span>
+                      <button
+                        type="button"
+                        phx-click="dismiss"
+                        phx-value-id={toast.id}
+                        aria-label="Dismiss"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  </ol>
+                </div>
               </div>
-            </div>
-          </.card>
+            </.card>
 
-          <.card title="A list that rearranges" part="list" variants={@variants}>
-            <div class="motion-lab__row motion-lab__row--tight">
-              <P.button
-                :for={{event, label} <- @controls}
-                variant="secondary"
-                phx-click={to_string(event)}
-              >
-                {label}
-              </P.button>
-            </div>
-            <ul
-              id="lab-items"
-              class="motion-lab__items"
-              phx-hook="LabList"
-              data-layout-id="lab-items"
-              data-children="[data-item-chip]"
-              data-variant={@variants["list"]}
-            >
-              <li
-                :for={item <- @items}
-                id={"lab-item-#{item.id}"}
-                data-item-chip
-                data-layout-id={"lab-item-#{item.id}"}
-                hidden={item.leaving?}
-              >
-                {item.name}
-              </li>
-            </ul>
-          </.card>
-
-          <.card title="A number that turns over" part="count" variants={@variants}>
-            <p
-              id="lab-count"
-              class="motion-lab__count"
-              phx-hook="LabCount"
-              data-variant={@variants["count"]}
-            >
-              <span data-count>{commas(@count)}</span>
-              <span class="motion-lab__count-label">visits this week</span>
-            </p>
-            <div class="motion-lab__row motion-lab__row--tight">
-              <P.button
-                :for={{by, label} <- @counts}
-                variant="secondary"
-                phx-click="count"
-                phx-value-by={by}
-              >
-                {label}
-              </P.button>
-            </div>
-          </.card>
-
-          <.card title="Work marked done" part="stamp" variants={@variants}>
-            <div
-              id="lab-stamp"
-              class="motion-lab__task"
-              phx-hook="LabStamp"
-              data-variant={@variants["stamp"]}
-            >
-              <p class="motion-lab__kicker">Task</p>
-              <h4>Send the monthly report</h4>
-              <p>2 comments · due Friday</p>
-              <div :if={@done?} class="motion-lab__stamp" data-stamp>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path data-tick d="M4 12.5l5 5L20 6.5" /></svg>
-                Done
+            <.card title="A list that rearranges" part="list" variants={@variants}>
+              <div class="motion-lab__row motion-lab__row--tight">
+                <P.button
+                  :for={{event, label} <- @controls}
+                  variant="secondary"
+                  phx-click={to_string(event)}
+                >
+                  {label}
+                </P.button>
               </div>
-              <P.button variant="secondary" phx-click={if @done?, do: "reopen", else: "finish"}>
-                {if @done?, do: "Reopen", else: "Mark as done"}
-              </P.button>
-            </div>
-          </.card>
-        </div>
-      </.section>
-
-      <.section number="4" id="views" title="Moving between views">
-        <:lede>
-          The underline travels to the tab you pick and the new view slides in the same way.
-        </:lede>
-        <.picker part="tabs" variants={@variants} />
-        <div
-          id="lab-tabs"
-          class="motion-lab__tabs"
-          phx-hook="LabTabs"
-          data-active={@tab}
-          data-variant={@variants["tabs"]}
-        >
-          <div class="motion-lab__tablist" role="tablist" aria-label="Library views">
-            <button
-              :for={{key, label} <- @tabs}
-              type="button"
-              role="tab"
-              id={"lab-tab-#{key}"}
-              data-tab={key}
-              aria-selected={to_string(@tab == key)}
-              aria-controls={@tab == key && "lab-tabpanel-#{key}"}
-              phx-click="tab"
-              phx-value-tab={key}
-            >
-              {label}
-            </button>
-            <span
-              class="motion-lab__ink"
-              data-ink
-              aria-hidden="true"
-              phx-mounted={JS.ignore_attributes(["style"])}
-            ></span>
-          </div>
-          <div
-            id={"lab-tabpanel-#{@tab}"}
-            class="motion-lab__tabpanel"
-            role="tabpanel"
-            aria-labelledby={"lab-tab-#{@tab}"}
-          >
-            <ul>
-              <li :for={line <- @views[@tab]}>{line}</li>
-            </ul>
-          </div>
-        </div>
-      </.section>
-
-      <.section number="5" id="arriving" title="Arriving">
-        <:lede>How a headline and a page of cards first appear.</:lede>
-        <div class="motion-lab__grid motion-lab__grid--wide">
-          <.card title="Headline" part="headline" variants={@variants}>
-            <div
-              id="lab-headline"
-              class="motion-lab__headline"
-              phx-hook="LabHeadline"
-              phx-update="ignore"
-              data-variant={@variants["headline"]}
-            >
-              <p data-headline>Build something people love.</p>
-              <P.button variant="secondary" data-replay>Replay</P.button>
-            </div>
-          </.card>
-
-          <.card title="Cards" part="grid" variants={@variants}>
-            <div
-              id="lab-cards"
-              class="motion-lab__cascade"
-              phx-hook="LabCascade"
-              phx-update="ignore"
-              data-variant={@variants["grid"]}
-            >
-              <ul>
-                <li :for={card <- @cards} data-card>
-                  <span aria-hidden="true">{card |> String.first() |> String.upcase()}</span>
-                  {String.capitalize(card)}
+              <ul
+                id="lab-items"
+                class="motion-lab__items"
+                phx-hook="LabList"
+                data-layout-id="lab-items"
+                data-children="[data-item-chip]"
+                data-variant={@variants["list"]}
+              >
+                <li
+                  :for={item <- @items}
+                  id={"lab-item-#{item.id}"}
+                  data-item-chip
+                  data-layout-id={"lab-item-#{item.id}"}
+                  hidden={item.leaving?}
+                >
+                  {item.name}
                 </li>
               </ul>
-              <P.button variant="secondary" data-replay>Replay</P.button>
+            </.card>
+
+            <.card title="A number that turns over" part="count" variants={@variants}>
+              <p
+                id="lab-count"
+                class="motion-lab__count"
+                phx-hook="LabCount"
+                data-variant={@variants["count"]}
+              >
+                <span data-count>{commas(@count)}</span>
+                <span class="motion-lab__count-label">visits this week</span>
+              </p>
+              <div class="motion-lab__row motion-lab__row--tight">
+                <P.button
+                  :for={{by, label} <- @counts}
+                  variant="secondary"
+                  phx-click="count"
+                  phx-value-by={by}
+                >
+                  {label}
+                </P.button>
+              </div>
+            </.card>
+
+            <.card title="Work marked done" part="stamp" variants={@variants}>
+              <div
+                id="lab-stamp"
+                class="motion-lab__task"
+                phx-hook="LabStamp"
+                data-variant={@variants["stamp"]}
+              >
+                <p class="motion-lab__kicker">Task</p>
+                <h4>Send the monthly report</h4>
+                <p>2 comments · due Friday</p>
+                <div :if={@done?} class="motion-lab__stamp" data-stamp>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path data-tick d="M4 12.5l5 5L20 6.5" /></svg>
+                  Done
+                </div>
+                <P.button variant="secondary" phx-click={if @done?, do: "reopen", else: "finish"}>
+                  {if @done?, do: "Reopen", else: "Mark as done"}
+                </P.button>
+              </div>
+            </.card>
+          </div>
+        </.section>
+
+        <.section number="4" id="views" title="Moving between views">
+          <:lede>
+            The underline travels to the tab you pick and the new view slides in the same way.
+          </:lede>
+          <.picker part="tabs" variants={@variants} />
+          <div
+            id="lab-tabs"
+            class="motion-lab__tabs"
+            phx-hook="LabTabs"
+            data-active={@tab}
+            data-variant={@variants["tabs"]}
+          >
+            <div class="motion-lab__tablist" role="tablist" aria-label="Library views">
+              <button
+                :for={{key, label} <- @tabs}
+                type="button"
+                role="tab"
+                id={"lab-tab-#{key}"}
+                data-tab={key}
+                aria-selected={to_string(@tab == key)}
+                aria-controls={@tab == key && "lab-tabpanel-#{key}"}
+                phx-click="tab"
+                phx-value-tab={key}
+              >
+                {label}
+              </button>
+              <span
+                class="motion-lab__ink"
+                data-ink
+                aria-hidden="true"
+                phx-mounted={JS.ignore_attributes(["style"])}
+              ></span>
             </div>
-          </.card>
-        </div>
-      </.section>
+            <div
+              id={"lab-tabpanel-#{@tab}"}
+              class="motion-lab__tabpanel"
+              role="tabpanel"
+              aria-labelledby={"lab-tab-#{@tab}"}
+            >
+              <ul>
+                <li :for={line <- @views[@tab]}>{line}</li>
+              </ul>
+            </div>
+          </div>
+        </.section>
+
+        <.section number="5" id="arriving" title="Arriving">
+          <:lede>How a headline and a page of cards first appear.</:lede>
+          <div class="motion-lab__grid motion-lab__grid--wide">
+            <.card title="Headline" part="headline" variants={@variants}>
+              <div
+                id="lab-headline"
+                class="motion-lab__headline"
+                phx-hook="LabHeadline"
+                phx-update="ignore"
+                data-variant={@variants["headline"]}
+              >
+                <p data-headline>Build something people love.</p>
+                <P.button variant="secondary" data-replay>Replay</P.button>
+              </div>
+            </.card>
+
+            <.card title="Cards" part="grid" variants={@variants}>
+              <div
+                id="lab-cards"
+                class="motion-lab__cascade"
+                phx-hook="LabCascade"
+                phx-update="ignore"
+                data-variant={@variants["grid"]}
+              >
+                <ul>
+                  <li :for={card <- @cards} data-card>
+                    <span aria-hidden="true">{card |> String.first() |> String.upcase()}</span>
+                    {String.capitalize(card)}
+                  </li>
+                </ul>
+                <P.button variant="secondary" data-replay>Replay</P.button>
+              </div>
+            </.card>
+          </div>
+        </.section>
+      </div>
 
       <div id="motion-lab-fx" class="motion-lab__fx" phx-update="ignore" aria-hidden="true"></div>
     </main>

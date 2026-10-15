@@ -45,7 +45,7 @@ After renaming, a new site must still replace, by hand:
   `ash-backend`, `ash-frontend`, `ash-data`, `ash-security`, `ash-testing` and
   `ash-webmcp` (agent readiness and WebMCP tools), and `ash-signals` covers
   one resource reacting to another's action. `animejs` covers Anime.js in
-  LiveView hooks, `onchain-buttons` wallet and on-chain buttons, and
+  LiveView hooks, `vgpu-island` every GPU picture (vgpu inside the shared canvas island), `onchain-buttons` wallet and on-chain buttons, and
   `chain-events` watching a chain and saving its events; load `ash-stack` and
   `ash-frontend` before each. Change a skill here, never through a copy in
   another repository. The web app serves the `ash-*`, `animejs`,

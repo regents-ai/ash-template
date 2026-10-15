@@ -1,3 +1,4 @@
+import {LabFeedback, LabGradient} from "./feedback_lab"
 /**
  * The motion lab at /animations: every version of each kind of movement that
  * was tried, side by side, so a site can compare them before it changes the
@@ -546,6 +547,8 @@ const entrance = <T>(versions: Record<string, (targets: T) => unknown>, pieces: 
 })
 
 export const hooks = {
+  LabFeedback,
+  LabGradient,
   LabPress,
   LabSlides,
   LabList: listHook(LAB_LAYOUTS),
