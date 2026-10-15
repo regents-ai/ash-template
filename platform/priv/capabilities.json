@@ -367,6 +367,16 @@
       "done": "Rated a note label",
       "cli_pending": true,
       "switch": "app_surfaces"
+    },
+    {
+      "operation": "searchRoomMessagesAsAgent",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": "Search public room messages",
+      "cli_pending": true,
+      "switch": "app_surfaces"
     }
   ]
 }

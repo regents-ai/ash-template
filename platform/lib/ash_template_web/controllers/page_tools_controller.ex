@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.PageToolsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
-  alias AshTemplate.Notes
+  alias AshTemplate.{Notes, Rooms}
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
@@ -166,6 +166,26 @@ defmodule AshTemplateWeb.PageToolsController do
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_label_report")
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  # The agent reads public message content; human mute preferences do not apply.
+  def search_rooms(conn, _params) do
+    case Rooms.search_messages(conn.body_params["text"], actor: conn.assigns.actor) do
+      {:ok, messages} ->
+        json(conn, %{
+          messages:
+            Enum.map(
+              messages,
+              &Map.take(&1, [:id, :room, :body, :author_name, :inserted_at, :edited_at])
+            )
+        })
+
+      {:error, %Ash.Error.Invalid{}} ->
+        refuse(conn, "invalid_search")
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 

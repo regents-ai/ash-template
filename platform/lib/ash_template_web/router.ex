@@ -257,6 +257,7 @@ defmodule AshTemplateWeb.Router do
 
   scope "/tools", AshTemplateWeb do
     pipe_through :page_tools
+    post "/rooms/search", PageToolsController, :search_rooms
     get "/account/balances", PageToolsController, :balances
     post "/account/credits/history", PageToolsController, :credits_history
     get "/account/points", PageToolsController, :points
