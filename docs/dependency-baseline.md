@@ -43,6 +43,6 @@ only reports/refuses missing migrations; it never applies them.
 while the template's Nebulex Distributed 3.0.0 accepts 6.x or 7.x. The explicit
 constraint keeps the shared baseline compatible with both, without an override.
 
-`mdex` remains 0.13.3 while the published `regent_blog` manifest requires that
-exact version. Moving to 0.14.2 requires first updating and validating the shared
-blog library; a site must not override its constraint to force installation.
+`mdex` 0.14.2 requires the accompanying shared `regent_blog` manifest upgrade.
+Publish the tested shared-library commit before the template or sites pinned to
+it. A site must not override the old blog constraint to force installation.

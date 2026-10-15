@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "ed2e2666dcb2b700fa5681a348f6cdcd39196af9"
+  @elixir_utils_ref "b5824049d55012f2e8b1e4d7e3e2fcc549d93360"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "fb0542f656f68b30e56f370c8806639ac9067c07"
 
@@ -46,8 +46,7 @@ defmodule AshTemplate.MixProject do
       {:ash_ai, "~> 1.2.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
-      # regent_blog on consuming sites still requires this exact supported version.
-      {:mdex, "== 0.13.3"},
+      {:mdex, "== 0.14.2"},
       # regent_identity pins its own elixir-utils commit; this pin replaces it.
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
