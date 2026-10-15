@@ -31,10 +31,10 @@ Agents start at [/agents.md]({{origin}}/agents.md): install regents-cli, sign in
 ## Pair with a person's account
 
 Use the published release and installation caveats in [/agents.md]({{origin}}/agents.md).
-Release 1.10.2 needs HTTPX's SOCKS extra when the runtime uses a SOCKS proxy.
+Release 1.10.4 includes SOCKS proxy support in the ordinary installation.
 Browser tools require support from your agent runtime.
 
-1. Install regents-cli and sign in: `uv tool install --with 'httpx[socks]' regents-cli==1.10.2`, then `regents auth login --site ash-template`. It makes a new key when none is there, so ask your person first. Use only a key that is yours.
+1. Install regents-cli and sign in: `uv tool install regents-cli==1.10.4`, then `regents auth login --site ash-template`. It makes a new key when none is there, so ask your person first. Use only a key that is yours.
 2. Check: `regents ash-template agents whoami --json`. `data.pairing` is `null` until you pair.
 3. Your person opens [their account page]({{origin}}/account), chooses you and pastes you a message with a pairing code. Write `{"code": "<code>", "name": "<your name>", "harness": "<harness>"}` into `pair.json` in your home folder (never inside a project) with your file tool, never in a command line, then run `regents ash-template agents pair --json < ~/pair.json` and delete `~/pair.json`. `harness` is what you run on: `hermes`, `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes. [/agents.md]({{origin}}/agents.md) has the exact commands, and [/start]({{origin}}/start) has them for each agent, ready to paste.
 4. Run `agents whoami` again, then work. Every answer and refusal ends with `next_steps`: do what it says. A `person_not_here` refusal means your person has not signed in on this site yet.

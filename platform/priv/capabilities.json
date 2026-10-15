@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.2",
+    "release": "1.10.4",
     "namespace": "ash-template"
   },
   "authorities": [
@@ -139,9 +139,8 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "done": "Changed one of your notes",
-      "cli_release": null,
-      "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.4",
+      "switch": "app_surfaces"
     },
     {
       "operation": "deleteMyNote",
@@ -151,9 +150,8 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "done": "Deleted one of your notes",
-      "cli_release": null,
-      "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.4",
+      "switch": "app_surfaces"
     },
     {
       "operation": "listRooms",
@@ -286,9 +284,8 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "done": "Searched your notes",
-      "cli_release": null,
-      "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.4",
+      "switch": "app_surfaces"
     },
     {
       "operation": "getNoteAsAgent",
@@ -366,8 +363,8 @@
       "person_page": "/notes",
       "may": "Rate your note labels",
       "done": "Rated a note label",
-      "cli_pending": true,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_release": "1.10.4"
     },
     {
       "operation": "searchRoomMessagesAsAgent",
@@ -376,8 +373,8 @@
       "conditions": [],
       "person_page": "/rooms/general",
       "may": "Search public room messages",
-      "cli_pending": true,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_release": "1.10.4"
     },
     {
       "operation": "listActivityAsAgent",
@@ -387,9 +384,8 @@
       "person_page": "/activity",
       "may": "Read your latest activity without marking it read",
       "done": null,
-      "cli_release": null,
-      "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.4",
+      "switch": "app_surfaces"
     }
   ]
 }
