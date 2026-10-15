@@ -332,6 +332,7 @@ defmodule AshTemplateWeb.Router do
       live "/animations/cube", WorldCubeLive, :index
       live "/animations/foil", FoilCardsLive, :index
       live "/animations/twin-cube", TwinCubeLive, :index
+      live "/animations/keyfleet", KeyfleetHeroLive, :index
     end
   end
 end
