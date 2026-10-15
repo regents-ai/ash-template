@@ -4,9 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "4f98592813abe4d28c5d1c5b7f597b7d232f3f43"
+  @elixir_utils_ref "ed2e2666dcb2b700fa5681a348f6cdcd39196af9"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "cf05816a4e75616ea0cdfbc7aeee6daf8067670a"
+  @design_system_ref "fb0542f656f68b30e56f370c8806639ac9067c07"
 
   def project do
     [
@@ -43,10 +43,10 @@ defmodule AshTemplate.MixProject do
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
       {:ash_oban, "~> 0.10.0"},
-      {:ash_ai, "~> 1.1.1"},
+      {:ash_ai, "~> 1.2.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
-      {:mdex, "== 0.13.3"},
+      {:mdex, "== 0.14.2"},
       # regent_identity pins its own elixir-utils commit; this pin replaces it.
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
@@ -80,9 +80,9 @@ defmodule AshTemplate.MixProject do
       {:telemetry_poller, "~> 1.3"},
       {:error_tracker, "~> 0.9"},
       # 3.1.1 has the EEF-CVE-2026-97853 advisory in Decimal.round/3.
-      {:decimal, "== 3.1.2"},
+      {:decimal, "== 3.2.0"},
       {:jason, "~> 1.2"},
-      {:req, "== 0.7.4"},
+      {:req, "== 0.7.5"},
       # CVE-2026-105659: upstream fix is not in a Hex release yet.
       {:bandit,
        git: "https://github.com/mtrudel/bandit.git",
@@ -92,7 +92,7 @@ defmodule AshTemplate.MixProject do
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
-      {:sobelow, "~> 0.14", only: :dev, runtime: false}
+      {:sobelow, "~> 0.16", only: :dev, runtime: false}
     ]
     |> local_shared_dependencies()
   end

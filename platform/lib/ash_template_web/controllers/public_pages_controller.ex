@@ -51,6 +51,8 @@ defmodule AshTemplateWeb.PublicPagesController do
     send_cached(conn, type, Jason.encode!(PublicDocuments.api_catalog()), nil)
   end
 
+  # XML from fixed page paths; PublicDocuments.sitemap/0 escapes every location.
+  # sobelow_skip ["XSS.SendResp"]
   def sitemap(conn, _params),
     do:
       conn

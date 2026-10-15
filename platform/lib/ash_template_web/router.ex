@@ -5,6 +5,8 @@ defmodule AshTemplateWeb.Router do
 
   alias AshTemplateWeb.{ContentSecurityPolicy, Live.Session, Showcase}
 
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -58,6 +60,8 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
   pipeline :public_documents do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -75,6 +79,8 @@ defmodule AshTemplateWeb.Router do
   # The saved errors: Credits admins only. Anyone else gets the not-found page under
   # the reading policy; an admin's page replaces it with one carrying this
   # request's nonce (AshTemplateWeb.ErrorsAdmin).
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
   pipeline :errors_admin do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -110,12 +116,16 @@ defmodule AshTemplateWeb.Router do
   # the headers of a page that can start sign-in.
   @showcase_headers %{"content-security-policy" => ContentSecurityPolicy.sign_in()}
 
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
   pipeline :showcase_browser do
     plug :accepts, ["html"]
     plug :showcase_page
     plug :put_secure_browser_headers, @showcase_headers
   end
 
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
   pipeline :showcase_catalog do
     plug :accepts, ["html", "json"]
     plug :showcase_page
@@ -133,6 +143,8 @@ defmodule AshTemplateWeb.Router do
   end
 
   # The catalog also frames its own preview, so its policy replaces the one above.
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
   pipeline :framed_preview do
     plug :put_secure_browser_headers, %{
       "content-security-policy" => ContentSecurityPolicy.showcase()

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-required-fixes check-cli check-contracts release drift readiness
+.PHONY: help check check-platform check-required-fixes check-cli check-contracts check-dependency-parity release drift readiness
 help:
 	@echo "Run make check for every gate, or check-platform, check-required-fixes, check-cli or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
@@ -24,6 +24,11 @@ check-cli:
 	  python -m regents_cli.check_commands cli/commands.json platform/priv/public/openapi.json platform/priv/static/api-contract.openapiv3.yaml
 check-contracts:
 	@echo "contracts/ is empty; add a Foundry project there and replace this target with its checks."
+# Read-only comparison with explicitly selected local site checkouts.
+# Example: make check-dependency-parity SITES="../regents ../patchbay"
+check-dependency-parity:
+	@test -n "$(SITES)" || { echo 'Set SITES to the site repository paths to compare.' >&2; exit 2; }
+	python3 scripts/check-dependency-parity.py . $(SITES)
 # The release checks and builds exactly the committed tree, so every change must
 # be committed first. A failing gate stops it before anything is built.
 release:

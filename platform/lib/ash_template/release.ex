@@ -27,7 +27,7 @@ defmodule AshTemplate.Release do
     RegentCredits.Migrator.require_pairing_grants!(repo)
   end
 
-  # The Credits and Points code this release carries reads tables and columns
+  # The Agents, Credits and Points code this release carries reads tables and columns
   # from every migration its pinned library ships, so each must already be in
   # that schema's own ledger. Every missing version is named at once.
   defp require_shared_migrations!(repo) do
@@ -42,7 +42,11 @@ defmodule AshTemplate.Release do
   end
 
   defp unapplied_shared_migrations(repo) do
-    for {app, schema} <- [regent_credits: "regent_credits", regent_points: "regent_points"],
+    for {app, schema} <- [
+          regent_agents: "regent_agents",
+          regent_credits: "regent_credits",
+          regent_points: "regent_points"
+        ],
         {:down, version, _name} <-
           Ecto.Migrator.migrations(repo, [Application.app_dir(app, "priv/repo/migrations")],
             prefix: schema,
