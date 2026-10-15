@@ -46,7 +46,8 @@ defmodule AshTemplate.MixProject do
       {:ash_ai, "~> 1.2.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
-      {:mdex, "== 0.14.2"},
+      # regent_blog on consuming sites still requires this exact supported version.
+      {:mdex, "== 0.13.3"},
       # regent_identity pins its own elixir-utils commit; this pin replaces it.
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
