@@ -1,7 +1,8 @@
 defmodule AshTemplate.Agents.PairedAccount do
   @moduledoc """
   How an agent's check-in (`GET /api/agents/v1/me`) names the account it is
-  paired with, the way this site's pages name it.
+  paired with, including its verified wallet fields. This callback runs after
+  the shared signed check-in; it is not a passive identity probe.
   """
 
   alias AshTemplate.Accounts
@@ -9,6 +10,12 @@ defmodule AshTemplate.Agents.PairedAccount do
 
   def account(privy_user_id) do
     account = Accounts.get_by_privy_did!(privy_user_id, actor: %System{})
-    %{display_name: account.display_name, ens_name: account.ens_name}
+
+    %{
+      display_name: account.display_name,
+      ens_name: account.ens_name,
+      wallet_address: account.wallet_address,
+      wallet_addresses: account.wallet_addresses || []
+    }
   end
 end

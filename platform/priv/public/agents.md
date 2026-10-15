@@ -97,3 +97,7 @@ earning Points or approving agent spending is off on this site.
 
 More: [/skill.md](/skill.md), [/docs](/docs), [/openapi.json](/openapi.json) and
 [/llms.txt](/llms.txt).
+
+## Existing agent check-in
+
+Signed `GET /api/agents/v1/me` checks in an already paired agent and updates check-in metadata; it is not a passive read. Its `data.account` contains `display_name`, `ens_name`, nullable `wallet_address` and `wallet_addresses` (an empty list when none are available). These are account facts, not permission to use a wallet. No owner World verification timestamp is included. Use `agents whoami` for the passive identity/pairing probe.

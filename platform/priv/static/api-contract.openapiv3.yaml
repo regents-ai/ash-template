@@ -2156,10 +2156,12 @@ components:
         account:
           type: object
           additionalProperties: false
-          required: [display_name, ens_name]
+          required: [display_name, ens_name, wallet_address, wallet_addresses]
           properties:
             display_name: {type: [string, "null"], maxLength: 80}
             ens_name: {type: [string, "null"]}
+            wallet_address: {type: [string, "null"], description: "Account wallet address, or null; no wallet authority is granted."}
+            wallet_addresses: {type: array, items: {type: string}, description: "Verified linked wallet addresses; empty when none are available."}
     CheckedInAgentEnvelope:
       type: object
       additionalProperties: false
