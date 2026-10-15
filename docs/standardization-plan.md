@@ -153,7 +153,7 @@ Order, closest first, so the checklist is proven on the easy sites:
 | Regents | Near | Delete the leftover `material.css` alias; add the missing ignore line for `priv/static/images/regent-ui/`; take the template's newer parts; rename the app from `ash_platform` (decision 5) |
 | Autolaunch | Medium | Adopt the template's sign-in; move `core_tests` into the standard layout; add a `Makefile` and `skills/`; read the theme instead of fixing it; one short-address helper instead of six copies |
 | Patchbay | Far | Move from Tailwind and daisyUI onto the design system (decision 3); JavaScript to TypeScript (decision 4); newer Privy session; the full precommit |
-| Techtree | Far | After its v0.3.0 release: JavaScript to TypeScript; a full `mix precommit`; remove the stale 365-line `platform/AGENTS.md` and the tracked `.beads/` folder; drop the alias token layer; its commands move into `regents-cli` |
+| Techtree | Far | After its v0.3.0 release: JavaScript to TypeScript; a full `mix precommit`; remove the stale 365-line `platform/AGENTS.md`; drop the alias token layer; its commands move into `regents-cli` |
 
 Each site's list goes into its `docs/backlogs/<site>.md` as small steps, each one
 shippable and checked in a browser.
