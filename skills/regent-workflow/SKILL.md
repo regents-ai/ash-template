@@ -223,6 +223,10 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
 5. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
    or route, old shape, new shape, defining commit, live commit.
 6. **Holds.** A hold names who lifts it and what the release check looks for.
+7. **Browser checks stay in the background** (decisions, 15 Oct 23:15Z). Run them
+   headless through Playwright. Never open a web address with `open` or `osascript`,
+   and never use Sean's Chrome. A visible browser is only a Playwright-launched
+   Chromium with its own profile, said in the thread first.
 
 ## Decisions for the founder
 
