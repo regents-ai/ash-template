@@ -6,7 +6,9 @@ defmodule AshTemplateWeb.UnexpectedFailure do
   @doc "Logs bounded error classes and a hashed request correlation; returns `conn`."
   def log(conn, error) do
     Logger.error(
-      "Request answered try again: class=#{class(error)} causes=#{causes(error)} correlation=#{correlation()}"
+      "Request answered try again: class=#{class(error)} causes=#{causes(error)} correlation=#{correlation()}",
+      request_id: nil,
+      error_type: nil
     )
 
     conn
