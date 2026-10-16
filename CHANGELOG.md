@@ -2161,3 +2161,13 @@ Operations
   the name against `priv/tool_manifest.json` when it compiles.
 - New command `agents status` for `checkInAgent` (`GET /api/agents/v1/me`, the
   `agent_status` tool). It is marked `cli_pending` until regents-cli releases it.
+
+## 2026-10-16 — Shared libraries: Porcelain palette and hosted signing
+
+- regent_ui is pinned to design-system `c59303b`: Phoenix 1.8.15, LiveView 1.2.12
+  and PubSub 2.4.1 (`d45f054`), the approved Porcelain and cobalt palette
+  (`a9bed5f`, `6224b50`), and pairing words that say "<name> paired with your
+  account." without pointing at a list, since the side panel has none above it.
+- The elixir-utils packages are pinned to `17141b2`: ChatGPT identities through
+  shared OAuth and SIWA, hosted signing with the site's own key, and the MCP door on
+  2026-07-28 only.
