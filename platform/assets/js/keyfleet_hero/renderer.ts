@@ -5,6 +5,9 @@
  * for a few frames and stops; a wake or a ring fades within the island's
  * easing frames, so the field is always still again shortly after the last
  * touch. Loaded only once a field is really going to be shown.
+
+The tiles under the hero's buy words rise out of the field and turn near
+black, by as much as the page's own animation says, one frame at a time.
  *
  * Each value reaches the shader when it changes: the size when the canvas is
  * resized, the colours when the theme changes, the pointer on each frame.
@@ -56,9 +59,21 @@ const advance = (values: Eased[], snap: boolean) => {
   return moved
 }
 
+/** A box, left top right bottom, in CSS pixels across the canvas. */
+export type Box = Vec4
+
 export type FieldRenderer = IslandRenderer & {
-  /** The lines' colour and the preview's light, from the page's theme. */
-  tones(line: Rgb, light: Rgb): void
+  /**
+   * The lines' colour, the preview's light, the page's ground, the near black
+   * the raised tiles turn, and how dark their shadow is, from the page's theme.
+   */
+  tones(line: Rgb, light: Rgb, ground: Rgb, deep: Rgb, shadow: number): void
+  /** The fade toward the edges: centre and radii 0..1 across the canvas, where it starts and ends along the radius. */
+  fade(x: number, y: number, width: number, height: number, from: number, to: number): void
+  /** The box the raised tiles stand under, and how high they stand at most, in CSS pixels. */
+  group(box: Box, lift: number): void
+  /** How far the raised tiles have risen, 0..1. */
+  raise(amount: number): void
   /** Where the pointer stands, 0..1 across the canvas. */
   point(x: number, y: number): void
   /** The pointer left. */
@@ -84,6 +99,12 @@ export async function createFieldRenderer(
   let ratio = 1
   let key: Vec4 = [0.5, 0.5, 0, 0]
   const placed = (): Vec4 => [key[0], key[1], key[2] * ratio, 0]
+  let box: Box = [0, 0, 0, 0]
+  let lift = 0
+  let raised = 0
+  let shadow = 0
+  const grouped = (): Vec4 => [box[0] * ratio, box[1] * ratio, box[2] * ratio, box[3] * ratio]
+  const raising = (): Vec4 => [lift * ratio, raised, shadow, 0]
 
   const gpu = await init()
   let disposed = false
@@ -105,6 +126,12 @@ export async function createFieldRenderer(
           light: [1, 1, 1, 1],
           pointer: [0.5, 0.5, 0, 0],
           key: placed(),
+          fade: [0.5, 0.5, 1, 1],
+          stops: [1, 1, 0, 0],
+          ground: [0, 0, 0, 1],
+          deep: [0, 0, 0, 1],
+          group: grouped(),
+          raise: raising(),
           marks: Array.from({length: MARKS}, () => unmarked),
         },
       },
@@ -112,7 +139,7 @@ export async function createFieldRenderer(
     await shader.compile({colors: [stage.format]})
     const unsubscribe = stage.onResize(({width, height}) => {
       ratio = width / Math.max(1, canvas.clientWidth)
-      shader.set({params: {size: [width, height, cell * ratio, 0], key: placed()}})
+      shader.set({params: {size: [width, height, cell * ratio, 0], key: placed(), group: grouped(), raise: raising()}})
     })
 
     const x = eased(0.5)
@@ -137,8 +164,21 @@ export async function createFieldRenderer(
     }
 
     return {
-      tones(line, light) {
-        shader.set({params: {line: [...line, 1], light: [...light, 1]}})
+      tones(line, light, ground, deep, dark) {
+        shadow = dark
+        shader.set({params: {line: [...line, 1], light: [...light, 1], ground: [...ground, 1], deep: [...deep, 1], raise: raising()}})
+      },
+      fade(fx, fy, width, height, from, to) {
+        shader.set({params: {fade: [fx, fy, width, height], stops: [from, to, 0, 0]}})
+      },
+      group(next, most) {
+        box = next
+        lift = most
+        shader.set({params: {group: grouped(), raise: raising()}})
+      },
+      raise(amount) {
+        raised = amount
+        shader.set({params: {raise: raising()}})
       },
       point(px, py) {
         jump(x, px)
