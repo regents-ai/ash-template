@@ -1,7 +1,31 @@
 defmodule AshTemplateWeb.UnexpectedFailure do
-  @moduledoc "Logs failure classes without request content or exception values."
+  @moduledoc """
+  Logs failure classes without request content or exception values: one line for
+  a request answered "try again", and one line for a background job that has run
+  out of attempts. A job's earlier attempts log nothing, so a job that recovers on
+  a retry leaves no error line.
+  """
 
   require Logger
+
+  @doc "Logs each job that gives up, from Oban's own event; called once at start."
+  def attach_jobs,
+    do:
+      :telemetry.attach(
+        "ash-template-job-gave-up",
+        [:oban, :job, :exception],
+        &__MODULE__.job_failed/4,
+        nil
+      )
+
+  @doc false
+  def job_failed(_event, _measurements, %{state: :discard, job: job, reason: error}, _config) do
+    Logger.error(
+      "Job gave up: worker=#{job.worker} id=#{job.id} attempt=#{job.attempt} class=#{class(error)} causes=#{causes(error)}"
+    )
+  end
+
+  def job_failed(_event, _measurements, _metadata, _config), do: :ok
 
   @doc "Logs bounded error classes and a hashed request correlation; returns `conn`."
   def log(conn, error) do

@@ -105,6 +105,9 @@ defmodule AshTemplate.Chat.Conversation do
       trigger :name_conversation do
         actor_persister AshTemplate.Chat.ActorPersister
         action :generate_name
+        # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
+        log_errors? false
+        log_final_error? false
         queue :conversations
         lock_for_update? false
         scheduler_cron false

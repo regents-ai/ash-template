@@ -136,6 +136,10 @@ defmodule AshTemplate.Notes.Decision do
         queue :outside_calls
         max_attempts 3
         on_error :failed
+        on_error_fails_job? true
+        # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
+        log_errors? false
+        log_final_error? false
         lock_for_update? false
         scheduler_cron false
         worker_module_name AshTemplate.Notes.Decision.Workers.AskJev

@@ -231,6 +231,10 @@ defmodule AshTemplate.Chat.Message do
         actor_persister AshTemplate.Chat.ActorPersister
         action :respond
         on_error :fail_response
+        on_error_fails_job? true
+        # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
+        log_errors? false
+        log_final_error? false
         queue :chat_responses
         lock_for_update? false
         scheduler_cron false
