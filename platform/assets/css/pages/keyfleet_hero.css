@@ -19,6 +19,26 @@
     background: var(--color-bg);
     color: var(--color-fg);
   }
+  /* The lab's Blueprint switch: the agent harbour's paper and ink, blue lines
+     on near white in light and pale blue lines on navy in dark, for the whole
+     page and the hex field on it. */
+  .kf-lab[data-palette="blueprint"] {
+    --kf-blueprint-paper: light-dark(#f2f5f7, #12264d);
+    --kf-blueprint-ink: light-dark(#1f4d9e, #a8d6ff);
+    --color-bg: var(--kf-blueprint-paper);
+    --color-fg: var(--kf-blueprint-ink);
+    --color-fg-muted: color-mix(in oklab, var(--kf-blueprint-ink) 72%, var(--kf-blueprint-paper));
+    --hairline: color-mix(in oklab, var(--kf-blueprint-ink) 28%, var(--kf-blueprint-paper));
+    --hairline-strong: color-mix(in oklab, var(--kf-blueprint-ink) 45%, var(--kf-blueprint-paper));
+    --color-surface: light-dark(#fff, color-mix(in oklab, var(--kf-blueprint-paper) 90%, var(--kf-blueprint-ink)));
+    --kf-field-line: var(--kf-blueprint-ink);
+    --kf-field-light: var(--kf-blueprint-ink);
+    --kf-field-deep: light-dark(
+      color-mix(in oklab, var(--kf-blueprint-paper) 84%, var(--kf-blueprint-ink)),
+      color-mix(in oklab, var(--kf-blueprint-paper) 62%, #000)
+    );
+  }
+
 
   /* The lab's own bar: where this is, and the switches to try it with. */
   .kf-lab__bar {

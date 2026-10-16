@@ -26,11 +26,16 @@ const tone = (root: HTMLElement, property: string): Rgb => {
   return [red / 255, green / 255, blue / 255]
 }
 
-/** Calls `retone` whenever the page's light or dark changes. */
-const watchTheme = (retone: () => void) => {
+/**
+ * Calls `retone` whenever the page's light or dark changes, or the palette
+ * chosen on the element around `root` that carries `data-palette`.
+ */
+const watchTheme = (root: HTMLElement, retone: () => void) => {
   const scheme = matchMedia("(prefers-color-scheme: dark)")
   const observer = new MutationObserver(retone)
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]})
+  const palette = root.closest("[data-palette]")
+  if (palette) observer.observe(palette, {attributes: true, attributeFilter: ["data-palette"]})
   scheme.addEventListener("change", retone)
   return () => {
     observer.disconnect()
@@ -310,7 +315,7 @@ export const KeyfleetField = {
           card?.addEventListener("pointerenter", onEnter, options)
           card?.addEventListener("pointerleave", onExit, options)
         }
-        const forget = watchTheme(retone)
+        const forget = watchTheme(root, retone)
         const resized = new ResizeObserver(() => {
           refade()
           aim()

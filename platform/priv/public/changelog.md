@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Blueprint colours.** The Keyfleet home lab page has a Blueprint switch: blue lines on
+  near white in light mode, and pale blue lines on navy in dark mode.
 - **Raised tiles keep their outline.** In light mode the tiles that rise on the Keyfleet
   home lab page keep a darker outline, like the flat tiles around them.
 - **Header and footer in the Motion Lab.** A new lab page shows one header for every

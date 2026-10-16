@@ -74,6 +74,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
      |> assign(AshTemplateWeb.PublicDocuments.page("/animations/keyfleet"))
      |> assign(
        reduced?: false,
+       blueprint?: false,
        charter: @charter,
        instruction: @instruction,
        integrations: @integrations
@@ -85,10 +86,19 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   def handle_event("reduced", _params, socket),
     do: {:noreply, update(socket, :reduced?, &(!&1))}
 
+  # A lab switch: the hex field in the agent harbour's blueprint colours.
+  def handle_event("blueprint", _params, socket),
+    do: {:noreply, update(socket, :blueprint?, &(!&1))}
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div id="keyfleet-lab" class="kf-lab" data-motion={@reduced? && "reduced"}>
+    <div
+      id="keyfleet-lab"
+      class="kf-lab"
+      data-motion={@reduced? && "reduced"}
+      data-palette={if @blueprint?, do: "blueprint", else: "standard"}
+    >
       <header class="kf-lab__bar">
         <p class="kf-lab__crumb">
           <a href={~p"/animations"}>Motion lab</a> <span aria-hidden="true">/</span> Keyfleet home
@@ -99,6 +109,9 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
           </P.button>
           <P.button variant="secondary" phx-click="reduced" aria-pressed={to_string(@reduced?)}>
             Less motion
+          </P.button>
+          <P.button variant="secondary" phx-click="blueprint" aria-pressed={to_string(@blueprint?)}>
+            Blueprint
           </P.button>
           <Shell.theme_toggle id="keyfleet-lab-theme" />
         </div>

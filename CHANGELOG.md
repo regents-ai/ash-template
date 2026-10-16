@@ -2381,3 +2381,13 @@ Operations
 - In light mode a raised tile on `/animations/keyfleet` keeps a darker hairline rim, the
   field's line at the strength of the rims lit around the pointer, over its off-white
   face, and its top edge is no longer lightened (Sean, 16 Oct 15:42Z). Dark is unchanged.
+
+## 2026-10-16 — Keyfleet home: Blueprint colours
+
+- `/animations/keyfleet` gains a Blueprint switch beside Less motion. It gives the page
+  and its hex field the agent harbour's colours (`dm/agent-harbour-1016`,
+  `assets/js/harbour/shaders.ts`): blue lines on near white in light (paper `#f2f5f7`,
+  ink `#1f4d9e`) and pale blue lines on navy in dark (paper `#12264d`, ink `#a8d6ff`),
+  set as `--kf-blueprint-paper` and `--kf-blueprint-ink` on `.kf-lab[data-palette]`.
+  The field retones when the switch changes (Sean, 16 Oct 16:06Z). No glowing borders
+  (Sean, 16 Oct 16:07Z).
