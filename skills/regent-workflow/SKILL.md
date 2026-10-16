@@ -153,7 +153,10 @@ cancelled work.
 - Agents get WebMCP first. The CLI follows and never blocks a site change.
 - Simplicity is golden (16 Oct): each route, and each tab in a route, has one purpose a
   person can say in a sentence and share by link ("try this page, it lets you do X").
-  Keep the page simple; move the complexity behind it or into its WebMCP tools.
+  Keep the page simple; move the complexity behind it or into its WebMCP tools. A web UI
+  that would not fit in a Stripe or Coinbase dashboard, a simple pill form or a small
+  trade widget is too complicated. The hard engineering is hiding the complexity behind
+  beautiful UIs and vgpu graphics, and every agent does it.
 - A site change that uses a new shared-library pin is not done until that pin is on
   main.
 - Hard cutover: no shims, aliases or compatibility branches. Every review checks

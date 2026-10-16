@@ -109,7 +109,7 @@ Rules for every stage:
 | Area | The template's standard |
 | --- | --- |
 | Layout | `platform/`, `cli/` (the site's command descriptions; the code lives in `regents-cli`), `plugins/`, `contracts/`, `skills/`, a `Makefile` whose `make check` runs every gate |
-| Pages | Each route, and each tab in a route, has one purpose a person can say in a sentence and share by link: "try this page, it lets you do X". The page stays simple; the complexity sits behind it or in its WebMCP tools |
+| Pages | Each route, and each tab in a route, has one purpose a person can say in a sentence and share by link: "try this page, it lets you do X". The page stays simple; the complexity sits behind it or in its WebMCP tools. A page that would not fit in a Stripe or Coinbase dashboard, a simple pill form or a small trade widget is too complicated |
 | Agent tools | The bottom bar, and the home page beside its first action, say "Agents see N WebMCP Tools", N counted from the site's own tool list. Pressing it opens a list of every tool with its description and a "Copy as Markdown" button (`AgentTools`, Sean 16 Oct). A phone shows "N WebMCP Tools" |
 | Design | `regent_ui` components; product CSS in `@layer regents-product` with BEM names on the design-system tokens; page CSS in `assets/css/pages/`, parts in `assets/css/components/` |
 | Browser code | TypeScript, strict, typechecked; hooks in `assets/js/hooks/`, combined with `composeHooks`; page-only code lazy-loaded; size budgets (175 KiB script, 60 KiB style, compressed) |
