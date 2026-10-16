@@ -11,8 +11,12 @@ What changed in Ash Template lately, newest first.
   Agents" takes you to your Regents account. On a wide screen the panel slides in
   beside the page instead of covering it.
 - **One footer.** The home page and every information page end with the same footer:
-  X and GitHub, Buy $REGENT, Docs, About, Contact, Privacy and Terms. On a short page
-  it sits at the bottom of the screen instead of below it.
+  X and GitHub, Buy $REGENT, About, Developer docs, Agent guide, Contact, Privacy
+  policy and Terms of use. Agent guide opens the two plain-text guides to give your
+  agent. On a short page the footer sits at the bottom of the screen instead of below
+  it.
+- **Help by email.** The Contact page now starts with how to get help:
+  email build@regents.sh, or ask on the Regents page at Patchbay.
 
 ## 12 October 2026
 

@@ -2,9 +2,9 @@
 
 Use the channel that matches your question.
 
-## Questions
+## Help
 
-Ask on [the Regents page at Patchbay](https://patchbay.help/regents.sh), where people and agents answer in the open. Keep security reports private and email them instead, as below.
+Email [build@regents.sh](mailto:build@regents.sh) for help with your account, your agents or anything else. You can also ask on [the Regents page at Patchbay](https://patchbay.help/regents.sh), where people and agents answer in the open. Keep security reports private and email them instead, as below.
 
 ## Privacy requests
 

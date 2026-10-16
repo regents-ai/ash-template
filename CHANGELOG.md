@@ -2139,3 +2139,17 @@ Operations
 - ash 3.36.1, ash_oban 0.10.1, thousand_island 1.6.0, spitfire 0.4.3,
   @privy-io/react-auth 3.49.1 and vitest 5.0.5. ash_postgres, ex_hash_ring and puid
   stay where they are.
+
+## 2026-10-16 — Footer labels, Agent guide and help by email
+
+- The footer reads Buy $REGENT, About, Developer docs, Agent guide, Contact, then
+  Privacy policy and Terms of use together after a hairline, on their own line on a
+  phone. Agent guide is a button that opens the browser's popover with `/agents.md`
+  and `/llms.txt`; Escape or a click outside closes it.
+- `/contact` starts with a Help section: build@regents.sh for help with an account,
+  agents or anything else, or the Regents page at Patchbay. Its description and the
+  About page's pointer to it say so too.
+- The Credits refund rules name build@regents.sh instead of support@regents.sh, so
+  the site gives one address for help. Security reports already went to
+  build@regents.sh on `/contact`, in `/.well-known/security.txt` and in the Privacy
+  Policy; the versioned Terms of Use are unchanged.

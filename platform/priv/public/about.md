@@ -32,4 +32,4 @@ You pair your own agents with your account. They can read and write your notes a
 
 ## Who operates the service
 
-The operator is named in the [Privacy Policy]({{origin}}/privacy) and [Terms of Use]({{origin}}/terms). Those documents describe responsibilities, data practices and service boundaries. For privacy, legal or security questions, use the [contact page]({{origin}}/contact).
+The operator is named in the [Privacy Policy]({{origin}}/privacy) and [Terms of Use]({{origin}}/terms). Those documents describe responsibilities, data practices and service boundaries. For help, or for privacy, legal or security questions, use the [contact page]({{origin}}/contact).

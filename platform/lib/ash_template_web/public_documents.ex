@@ -66,7 +66,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/changelog" => {"What's new", "What changed in Ash Template lately, newest first."},
     "/contact" =>
       {"Contact",
-       "How to reach Ash Template about privacy requests, legal questions and security reports."},
+       "How to get help with Ash Template, and where to send privacy requests, legal questions and security reports."},
     "/privacy" =>
       {"Privacy Policy",
        "How Ash Template collects, uses, shares and protects personal information."},
