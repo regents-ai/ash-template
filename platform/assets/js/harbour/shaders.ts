@@ -7,7 +7,52 @@
  * and the present pass inks every edge from it.
  */
 
-/** Keep in step with MAX_SHIPS, MAX_RIPPLES and the five islands in ISLANDS in sim.ts. */
+/** The square of sea the ripples run on, centred on the harbour, in world units, and its cells across. */
+export const RIPPLE_REACH = 13
+export const RIPPLE_CELLS = 576
+/** How far a ripple travels in one step, in cells: under 0.7 or the sea blows up. */
+export const RIPPLE_COURANT = 0.5
+/** Seconds the sea moves on in one step: with the numbers above, ripples spread about 1.4 world units a second. */
+export const RIPPLE_STEP = 1 / 62
+/** Ripple drops one step of the sea takes in at most. */
+export const MAX_DROPS = 4
+
+/**
+ * The ripple field as the scene shaders read it: its height at any point on the
+ * sea, and a ship lifted and tilted by the ripples under it.
+ */
+const rippleField = /* wgsl */ `
+@group(0) @binding(4) var ripples: texture_2d<f32>;
+@group(0) @binding(5) var rippleSampler: sampler;
+
+fn rippleHeight(p: vec2f) -> f32 {
+  let uv = (p + ${RIPPLE_REACH}.0) / ${RIPPLE_REACH * 2}.0;
+  return textureSampleLevel(ripples, rippleSampler, uv, 0.0).r;
+}
+
+// A ship rides the ripples it sits on, lifted and turned to their slope. The
+// slope is measured across about half a hull, so a short ripple rocks a ship
+// less than a long one.
+fn riding(p: vec3f, origin: vec3f) -> vec3f {
+  let reach = 0.3;
+  let at = origin.xz;
+  let slope = clamp(
+    vec2f(
+      rippleHeight(at + vec2f(reach, 0.0)) - rippleHeight(at - vec2f(reach, 0.0)),
+      rippleHeight(at + vec2f(0.0, reach)) - rippleHeight(at - vec2f(0.0, reach)),
+    ) / (2.0 * reach),
+    vec2f(-0.35),
+    vec2f(0.35),
+  );
+  // A small turn that takes straight up to the ripple's slope: masts lean
+  // downhill and the deck follows the water.
+  let d = p - origin;
+  let tilted = vec3f(-slope.x * d.y, slope.x * d.x + slope.y * d.z, -slope.y * d.y);
+  return p + tilted + vec3f(0.0, rippleHeight(at), 0.0);
+}
+`
+
+/** Keep in step with MAX_SHIPS and the five islands in ISLANDS in sim.ts. */
 const shared = /* wgsl */ `
 struct Camera {
   viewProjection: mat4x4f,
@@ -28,8 +73,6 @@ struct Scene {
   islands: array<vec4f, 5>,
   // x, z, heading, speed from 0 to 1.
   ships: array<vec4f, 16>,
-  // x, z, the time it began, 1 while in use.
-  ripples: array<vec4f, 6>,
 }
 
 @group(0) @binding(0) var<uniform> camera: Camera;
@@ -107,9 +150,9 @@ fn swayed(position: vec3f, material: u32, sway: f32, phase: f32) -> vec3f {
 /**
  * Islands, buildings, ships and smoke: every mesh vertex names its material.
  * Sails and pennants keep their agent's colour, and lit windows and the forge
- * glow at night.
+ * glow at night. Ships also ride the ripples.
  */
-export const partsWgsl = /* wgsl */ `${shared}
+const parts = (ride: boolean) => /* wgsl */ `${shared}${ride ? rippleField : ""}
 struct PartInput {
   @location(0) position: vec3f,
   @location(1) material: f32,
@@ -135,7 +178,8 @@ fn vs_main(input: PartInput) -> PartVarying {
   let material = u32(input.material + 0.5);
   let local = swayed(input.position, material, input.sway, input.style.w);
   var output: PartVarying;
-  output.world = (model * vec4f(local, 1.0)).xyz;
+  let world = (model * vec4f(local, 1.0)).xyz;
+  output.world = ${ride ? "riding(world, input.world3.xyz)" : "world"};
   output.material = material;
   output.style = input.style;
   output.clip = camera.viewProjection * vec4f(output.world, 1.0);
@@ -157,63 +201,28 @@ fn fs_main(input: PartVarying) -> @location(0) vec4f {
 }
 `
 
+export const partsWgsl = parts(false)
+export const shipWgsl = parts(true)
+
 /**
  * The sea as a chart: a grid riding the swell, soundings rolling out from each
- * beach, wakes in ink, ripples spreading from each click, and shadows hatched.
+ * beach, wakes in ink, ripples drawn as contours of the ripple field, and
+ * shadows hatched.
  */
-export const waterWgsl = /* wgsl */ `${shared}
+export const waterWgsl = /* wgsl */ `${shared}${rippleField}
 struct WaterVarying {
   @builtin(position) clip: vec4f,
   @location(0) world: vec3f,
 }
 
-// Same numbers as in sim.ts.
-const RIPPLE_SPEED: f32 = 1.4;
-const RIPPLE_LIFE: f32 = 4.0;
-const RIPPLE_SWELL: f32 = 0.9;
-const RIPPLE_LIFT: f32 = 0.08;
-// Distance between the rings of one ripple.
-const RIPPLE_GAP: f32 = 0.3;
-
-// How far a ripple's front has passed a point, and how strong it still is.
-fn rippleAt(p: vec2f, i: u32) -> vec2f {
-  let ripple = scene.ripples[i];
-  let age = scene.time - ripple.z;
-  if (ripple.w == 0.0 || age < 0.0 || age > RIPPLE_LIFE) {
-    return vec2f(-1.0, 0.0);
-  }
-  let fade = 1.0 - smoothstep(RIPPLE_LIFE * 0.35, RIPPLE_LIFE, age);
-  return vec2f(age * RIPPLE_SPEED - length(p - ripple.xy), fade);
-}
-
-// Same sum as rippleLift in sim.ts, so a ship rides the swell it is drawn on.
-fn rippleLift(p: vec2f) -> f32 {
-  var lift = 0.0;
-  for (var i = 0u; i < 6u; i++) {
-    let wave = rippleAt(p, i);
-    if (wave.x > 0.0 && wave.x < RIPPLE_SWELL) {
-      lift += RIPPLE_LIFT * sin(3.14159265 * wave.x / RIPPLE_SWELL) * wave.y;
-    }
-  }
-  return lift;
-}
-
-// The rings in ink: a short train behind each front, one line wide on screen.
-fn rippleInk(p: vec2f, perPixel: f32) -> f32 {
-  var line = 0.0;
-  for (var i = 0u; i < 6u; i++) {
-    let wave = rippleAt(p, i);
-    let train = smoothstep(-0.04, 0.04, wave.x) * (1.0 - smoothstep(0.5, 1.4, wave.x));
-    let ring = abs(fract(wave.x / RIPPLE_GAP + 0.5) - 0.5) * RIPPLE_GAP / perPixel;
-    line = max(line, (1.0 - min(ring / 2.0, 1.0)) * train * wave.y);
-  }
-  return line;
-}
+// Ripple heights between two ink lines, and the most lines one ripple draws on either side of still water.
+const RIPPLE_LEVEL: f32 = 0.0045;
+const RIPPLE_LINES: f32 = 3.0;
 
 @vertex
 fn vs_main(@location(0) position: vec3f) -> WaterVarying {
   var output: WaterVarying;
-  output.world = vec3f(position.x, waveHeight(position.xz, scene.time) + rippleLift(position.xz), position.z);
+  output.world = vec3f(position.x, waveHeight(position.xz, scene.time) + rippleHeight(position.xz), position.z);
   output.clip = camera.viewProjection * vec4f(output.world, 1.0);
   return output;
 }
@@ -251,7 +260,10 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
   let grid = p.xz / 0.7;
   let gridStep = fwidth(grid);
   let shoreStep = fwidth(shore);
-  let perPixel = max(length(fwidth(p.xz)) * 0.7071, 1e-4);
+  // Ripples as a chart's contours: a line at each step of height, crests in full
+  // ink and troughs fainter, still water left blank.
+  let level = rippleHeight(p.xz) / RIPPLE_LEVEL;
+  let levelStep = max(fwidth(level), 1e-4);
 
   let cell = abs(fract(grid - 0.5) - 0.5) / max(gridStep, vec2f(1e-4));
   let gridLine = 1.0 - min(min(cell.x, cell.y), 1.0);
@@ -260,7 +272,10 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
   let ringLine = (1.0 - min(ring, 1.0)) * (1.0 - smoothstep(1.5, 4.0, shore)) * step(0.0, shore);
   let coast = 1.0 - min(abs(shore) / max(shoreStep, 1e-4), 1.0);
   let wake = smoothstep(0.3, 0.5, wakes(p.xz));
-  let ripple = rippleInk(p.xz, perPixel) * step(0.0, shore);
+  let line = round(level);
+  let contour = 1.0 - min(abs(level - line) / levelStep / 1.5, 1.0);
+  let counted = step(0.5, abs(line)) * step(abs(line), RIPPLE_LINES + 0.5);
+  let ripple = contour * counted * select(0.7, 1.0, line > 0.0) * step(0.0, shore);
   let hatched = hatch(input.clip.xy) * (1.0 - sunShadow(p, vec3f(0.0, 1.0, 0.0))) * 0.55;
   let drawn = mix(paper(), ink(), max(max(max(gridLine * 0.3, ringLine * 0.8), ripple), max(max(coast, wake), hatched)));
 
@@ -270,8 +285,8 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
 }
 `
 
-/** Depth from the sun, for every mesh that casts a shadow. */
-export const shadowWgsl = /* wgsl */ `
+/** Depth from the sun, for every mesh that casts a shadow. Ships ride the ripples here too. */
+const shadow = (ride: boolean) => /* wgsl */ `${ride ? rippleField : ""}
 struct Scene {
   lightViewProjection: mat4x4f,
   sunDirection: vec3f,
@@ -281,7 +296,6 @@ struct Scene {
   shipCount: u32,
   islands: array<vec4f, 5>,
   ships: array<vec4f, 16>,
-  ripples: array<vec4f, 6>,
 }
 
 @group(0) @binding(1) var<uniform> scene: Scene;
@@ -305,12 +319,81 @@ fn vs_main(input: ShadowInput) -> @builtin(position) vec4f {
   if (material == 10u) {
     p.x += input.sway * (0.075 + 0.02 * sin(scene.time * 1.7 + input.style.w));
   }
-  return scene.lightViewProjection * model * vec4f(p, 1.0);
+  let world = (model * vec4f(p, 1.0)).xyz;
+  return scene.lightViewProjection * vec4f(${ride ? "riding(world, input.world3.xyz)" : "world"}, 1.0);
 }
 
 @fragment
 fn fs_main() -> @location(0) vec4f {
   return vec4f(0.0);
+}
+`
+
+export const shadowWgsl = shadow(false)
+export const shipShadowWgsl = shadow(true)
+
+/**
+ * One step of the ripples: each cell of sea moves toward its neighbours, as
+ * water does, and keeps a little less of its height each time. The islands are
+ * walls: their beaches soak a wave up rather than send it back, so the water
+ * behind an island stays still apart from what bends round it. The sea's edge
+ * soaks up everything, and new drops land in the first step after a click.
+ */
+export const rippleStepWgsl = /* wgsl */ `
+struct Ripples {
+  // x, z, radius, unused.
+  islands: array<vec4f, 5>,
+  // x, z, height, unused; an empty slot has no height.
+  drops: array<vec4f, ${MAX_DROPS}>,
+}
+
+@group(0) @binding(0) var<uniform> sea: Ripples;
+// r: height now, g: height a step ago.
+@group(0) @binding(1) var field: texture_2d<f32>;
+
+const CELLS: i32 = ${RIPPLE_CELLS};
+const REACH: f32 = ${RIPPLE_REACH}.0;
+const CELL: f32 = ${(RIPPLE_REACH * 2) / RIPPLE_CELLS};
+// How far a wave travels each step, in cells, squared.
+const COURANT: f32 = ${RIPPLE_COURANT ** 2};
+const KEEP: f32 = 0.996;
+// A drop lands as a few rings at once, this far apart and spread over this
+// much sea, in world units, so it leaves as a short train of ripples.
+const DROP_GAP: f32 = 0.5;
+const DROP_SPREAD: f32 = 0.32;
+
+fn heightAt(cell: vec2i) -> f32 {
+  return textureLoad(field, clamp(cell, vec2i(0), vec2i(CELLS - 1)), 0).r;
+}
+
+@fragment
+fn fs_main(@builtin(position) position: vec4f) -> @location(0) vec4f {
+  let cell = vec2i(position.xy);
+  let p = (vec2f(cell) + 0.5) * CELL - REACH;
+  var shore = 100.0;
+  for (var i = 0u; i < 5u; i++) {
+    let island = sea.islands[i];
+    shore = min(shore, length(p - island.xy) - island.z);
+  }
+  if (shore <= 0.0) {
+    return vec4f(0.0);
+  }
+
+  let here = textureLoad(field, cell, 0);
+  let around = heightAt(cell + vec2i(1, 0)) + heightAt(cell - vec2i(1, 0))
+    + heightAt(cell + vec2i(0, 1)) + heightAt(cell - vec2i(0, 1));
+  let edge = REACH - max(abs(p.x), abs(p.y));
+  let keep = KEEP * mix(0.9, 1.0, smoothstep(0.0, 1.5, edge)) * mix(0.93, 1.0, smoothstep(0.0, 0.4, shore));
+  var next = (2.0 * here.r - here.g + COURANT * (around - 4.0 * here.r)) * keep;
+
+  // A drop lifts the water without setting it moving, so it falls back as rings.
+  var lift = 0.0;
+  for (var i = 0u; i < ${MAX_DROPS}u; i++) {
+    let drop = sea.drops[i];
+    let away = length(p - drop.xy);
+    lift += drop.z * cos(away * 6.2831853 / DROP_GAP) * exp(-away * away / (2.0 * DROP_SPREAD * DROP_SPREAD));
+  }
+  return vec4f(next + lift, here.r * keep + lift, 0.0, 1.0);
 }
 `
 
