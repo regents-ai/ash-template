@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Paler tiles in light mode.** On the Keyfleet home lab page, the tiles that rise under
+  your mouse are now shades of darker off-white in light mode, not near black.
 - **Keyfleet home in the Motion Lab.** A new lab page shows the Keyfleet home: the next
   Key's card, and a honeycomb whose five tiles nearest your mouse rise and follow it.
 - **What agents see.** The bottom bar and the home page say how many tools an AI

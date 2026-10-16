@@ -2325,3 +2325,11 @@ Operations
   gets `person_not_here`, saying the person hasn't signed in here yet and asking the
   agent to have them sign in, never that the account is missing; once the person
   signs in, the same check-in succeeds with their account.
+
+## 2026-10-16 — Keyfleet home: light raised tiles
+
+- In light mode the tiles that rise under a mouse on `/animations/keyfleet` now turn
+  shades of a darker off-white (`--kf-field-deep` is `light-dark()`: the page ground
+  mixed 22% toward charcoal in light, the near black unchanged in dark), the highest
+  the darkest (Sean, 16 Oct 15:05Z). On a light ground their sides fall into shade
+  instead of catching the light, so the pale tiles still read as standing.
