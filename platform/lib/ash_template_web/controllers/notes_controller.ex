@@ -25,7 +25,8 @@ defmodule AshTemplateWeb.NotesController do
       {401, "Sign in to read or change your notes.",
        "Send the access token as a Bearer token and the identity token in privy-id-token, both from the same sign-in."},
     "account_required" =>
-      {403, "This sign-in has no account here yet.", "Sign in on the website once, then retry."},
+      {403, "This sign-in hasn't been used on this website yet.",
+       "Sign in on the website once, then retry."},
     "note_not_found" =>
       {404, "You have no note with that id.", "List your notes with GET /api/v1/notes."},
     "invalid_note" =>

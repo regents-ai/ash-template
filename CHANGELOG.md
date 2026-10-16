@@ -2274,3 +2274,14 @@ Operations
   to 24 raised or sinking tiles). Touch screens and Less motion keep the field flat.
 - The same field sits behind the Club map lower on the page. Presentation only: no
   resources, routes outside the lab, or data changes.
+
+## 2026-10-16 — Agents are never told the account is missing
+
+- Pins elixir-utils 3ae5c7d: the check-in before a person's first sign-in answers
+  `person_not_here` (403), the code the rest of the site already gives, in place of
+  `person_sign_in_needed` from "Check-in asks for the person's first sign-in". One code, one meaning.
+- Every account exists on every site; a person may only need to sign in once (Sean,
+  16 Oct). So `person_not_here` now says "The person this agent is paired with hasn't
+  signed in on this site yet.", `account_required` says "This sign-in hasn't been used
+  on this website yet.", and the API descriptions say the person has not signed in on
+  this site yet, never that they have no account here.

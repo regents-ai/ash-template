@@ -31,7 +31,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
       {403, "This agent is not paired with an account.",
        "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."},
     "person_not_here" =>
-      {403, "The person this agent is paired with has no account on this site yet.",
+      {403, "The person this agent is paired with hasn't signed in on this site yet.",
        "Ask your person to sign in on this website once, then send the request again."}
   }
   @unavailable %{
