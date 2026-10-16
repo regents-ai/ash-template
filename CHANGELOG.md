@@ -2879,3 +2879,14 @@ Operations
 - The design-system pin moves to `fb26ac3a` (tpl/ds-names-on-lime-1019): the profile
   and address work replayed on Techtree's Canopy palette, its lime buttons' outline in
   light and the plainer Touch ID page, after the slimmer buttons.
+
+## 2026-10-16 — Agent harbour
+
+- `/animations/harbour`: an isometric sea drawn with vgpu, with three islands and one ship
+  for each agent. The inn is a chat, the forge is work and the castle is a proposal. Each
+  ship sails to the island of its agent's last action and circles it slowly.
+- The six agents are samples. While the page is connected, one of them does something new
+  every seven seconds; the legend under the sea lists who is where. A crew is a list of
+  `%{id, place, color}`, so real activity can feed the same page later.
+- Reduced motion draws one calm frame; a hidden tab draws nothing. Listed in the Motion
+  lab, the Design page and the route catalog.
