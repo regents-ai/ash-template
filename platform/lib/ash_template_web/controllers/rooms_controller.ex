@@ -37,7 +37,7 @@ defmodule AshTemplateWeb.RoomsController do
        "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."},
     "posted_before_pairing" =>
       {403, "This agent has already posted once before pairing.",
-       "Ask your person to sign in at /account and choose you under Agents. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
+       "Ask your person to open Pair Agent in the side panel, on any page of this site, and choose you. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then post again."},
     "guest_posts_limited" =>
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",

@@ -38,7 +38,7 @@ each page (its sidebar, header controls and scroll rule).
 | Sidebar | The open section's own list. Home: shortcuts (write a note, start a chat, the General room, connect an account). Notes: the person's notes. Rooms: the rooms. Chat: the conversations and "New chat" (the Ash AI chat page's list lives here). Settings: help links (the account pages are its tabs). It can be hidden to give the content more room, and stays hidden until shown again. |
 | Tabs | Views of the open section. Home: Overview, Activity. Settings: Profile, Wallets, Connections. A section with one view shows no tabs. |
 | Main content | The page itself, as today. |
-| Right side bar | Context for the page. Closed until the person opens it, and remembered open or closed; a light on its top-bar icon pulses while it holds something new the person has not opened it to see. It holds one promotional card, a "Get started" checklist worked out from the person's real data (signed in, wallet linked, first note, first room post, first chat), the page's own part ("Here now" and muted people on a room page), the assistant box (talks to the chat page's free stand-in) and help links. |
+| Side panel | Signed in only, on every page, closed until the person opens it and remembered open or closed. It holds the account's name and picture, Sign out, Manage Account, Pair Agent and the agents paired with the account. A room's "Here now" and muted people sit below the room. |
 | Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Help, API, What's new, For agents, Privacy, Terms) and the running version with its commit. |
 
 ### Phones and small screens
@@ -61,9 +61,7 @@ The standard tool for each part (elixir-stack design check):
 - **Open/closed panels:** browser state on `<html data-aside data-sidebar>`, set by
   `assets/js/shell_panels.ts` and kept in the cookies `ash_template_aside` and
   `ash_template_sidebar`, which `AshTemplateWeb.Plugs.Panels` reads so the first paint is
-  right. LiveView never patches them. Nothing is stored server-side. The pulsing light
-  compares a digest of the side bar's content (`data-aside-digest`) with the last one seen
-  in this browser.
+  right. LiveView never patches them. Nothing is stored server-side.
 - **Search:** Ash read actions on the domains (pages and actions from `RouteCatalog`; the
   person's notes and room messages through their own policies), opened as a dialog.
 - **Notifications:** a `Notification` Ash resource on AshPostgres, per person, written in the
@@ -82,8 +80,8 @@ template.regents.sh.
 
 1. **Frame:** top bar with the icons and person menu, left rail, section sidebars, bottom bar
    links, version and status dot. Rooms and the chat page move their lists into the sidebar.
-2. **Tabs and right side bar:** section tabs, collapsible right side bar with the Get started
-   checklist, "Here now" and the promotional card.
+2. **Tabs and side panel:** section tabs, and the collapsible side panel with the account,
+   Pair Agent and the paired agents.
 3. **Search:** the ⌘K dialog over pages, actions, notes and room messages.
 4. **Live parts:** notifications and the bell, the background-jobs count, the assistant box.
 

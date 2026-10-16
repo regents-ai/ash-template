@@ -188,7 +188,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
   defp refund_words(%Ash.Error.Invalid{errors: [error | _]}), do: refund_words(error)
 
   defp refund_words(%Refused{reason: :no_account}),
-    do: "No account holds these Credits yet, so there is nothing to refund."
+    do: "Nobody has signed in with this wallet yet, so there is nothing to refund."
 
   defp refund_words(%Refused{reason: :not_credited}),
     do: "This purchase never added Credits, so there is nothing to refund."
@@ -238,7 +238,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
       <section class="credits-admin__part" aria-labelledby={"#{@id}-give"}>
         <h2 id={"#{@id}-give"}>Give Credits</h2>
         <p>
-          Given Credits never expire and are never refunded. A gift to a wallet with no account waits until that wallet signs in.
+          Given Credits never expire and are never refunded. A gift to a wallet nobody has signed in with yet waits until someone does.
         </p>
         <form id={"#{@id}-give-form"} phx-submit="give" phx-target={@myself}>
           <P.field :let={field} id={"#{@id}-to"} label="Wallet addresses or Privy account ids">
@@ -275,7 +275,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
             </p>
             <p :if={purchase.privy_user_id}>Account <code>{purchase.privy_user_id}</code></p>
             <p :if={!purchase.privy_user_id}>
-              No account yet. These Credits wait until someone signs in with this wallet.
+              Nobody has signed in with this wallet yet. These Credits wait until someone does.
             </p>
             <p>From <code>{purchase.wallet}</code></p>
             <p>

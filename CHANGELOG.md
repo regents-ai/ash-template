@@ -2351,3 +2351,27 @@ Operations
   follows the content. The page keeps one root (`.hf-page`, rows `auto 1fr`) inside
   `[data-phx-main]`'s single `1fr` row. Presentation only: no resources, routes outside
   the lab, or data changes.
+
+## 2026-10-16 — CLI 1.10.12, and Pair Agent named in every pairing hint
+
+- Names regents-cli 1.10.12 (source `6dacddd52797115125738177a3a0dee914724ab1`, wheel
+  SHA256 `8d4058c83381cd2a99e78547fa4a95b2c130b44bd418d3fb494e54c5d3f9e2fd`) in
+  `agents.md`, `llms.md`, `/start`'s steps (`AgentStart`), `cli/COMMANDS.md`,
+  `cli/README.md` and `priv/capabilities.json`. `REGENTS_CLI_REV` moves to `6dacddd`, so
+  `make check-cli` runs that release's checker.
+- `agents status` is released: `checkInAgent` carries `cli_release` 1.10.12 in place of
+  `cli_pending`, `cli/COMMANDS.md` describes it, and the check-in step after pairing runs
+  it. `agents whoami` stays the look-only check.
+- Both API documents give `GET /api/agents/v1/me` its 403 `person_not_here`.
+- The `agent_not_paired` and `posted_before_pairing` hints, the 403 descriptions and
+  examples in both API documents, the site tools' pairing step and `/start`'s steps say
+  the code comes from Pair Agent in the side panel, not the account page (Sentinel's v93
+  notes).
+- The `/me` 403 in both YAML API documents carries a `personNotHere` example with the
+  shared check-in's own message and hint. `llms.md` says public documentation needs no
+  sign-in, and the Credits admin and agent-spending lines say nobody has signed in with
+  a wallet yet, or that an agent is paired with Pair Agent, instead of naming a missing
+  account (Sentinel's v95 notes).
+- Removes the side panel's leftover pulsing-light comment in `components/shell.ex`;
+  `docs/standardization-plan.md` and `docs/app-shell-structure-plan.md` describe the
+  panel as it is.

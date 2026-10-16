@@ -478,8 +478,6 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  # The pulsing light names what the side panel holds; when that changes while
-  # the panel is closed, the light pulses until the panel is opened.
   defp kind_icon(:page), do: :page
   defp kind_icon(:action), do: :action
   defp kind_icon(:note), do: :notes

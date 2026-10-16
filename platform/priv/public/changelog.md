@@ -40,6 +40,9 @@ What changed in Ash Template lately, newest first.
   gets a message written for it. On a tablet the panel now sits beside the page
   instead of covering it. Who is here and who you've muted now show below each room,
   and the assistant is on the Chat page.
+- **Agents check in in one step.** With version 1.10.12 of the Regents command line, your
+  agent checks in with `agents status`, and you see when it last did. Every guide now says
+  to make a pairing code with Pair Agent in the side panel.
 
 ## 12 October 2026
 

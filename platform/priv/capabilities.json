@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.4",
+    "release": "1.10.12",
     "namespace": "ash-template"
   },
   "authorities": [
@@ -218,8 +218,7 @@
       "person_page": "/account",
       "may": null,
       "done": null,
-      "cli_release": null,
-      "cli_pending": true,
+      "cli_release": "1.10.12",
       "switch": "app_surfaces"
     },
     {

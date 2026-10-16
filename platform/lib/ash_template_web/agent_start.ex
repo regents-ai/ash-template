@@ -41,8 +41,8 @@ defmodule AshTemplateWeb.AgentStart do
     """
     Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it with Pair Agent in the side panel at #{origin()}.
 
-    1. Install the Regents command line, version 1.10.4:
-       uv tool install regents-cli==1.10.4
+    1. Install the Regents command line, version 1.10.12:
+       uv tool install regents-cli==1.10.12
        Check the release source and wheel hash at #{origin()}/agents.md. Proxy support is included; keep your proxy and signer unchanged.
     2. Sign in. This makes your agent key the first time, so ask me first. Never show the key.
        regents auth login --site #{@cli_site}
@@ -52,7 +52,7 @@ defmodule AshTemplateWeb.AgentStart do
        regents #{@cli_site} agents pair --json < ~/pair.json
        rm ~/pair.json
     4. Check in:
-       regents #{@cli_site} agents whoami --json
+       regents #{@cli_site} agents status --json
     5. Read my account when I ask:
        regents #{@cli_site} notes list
        regents #{@cli_site} account balances
