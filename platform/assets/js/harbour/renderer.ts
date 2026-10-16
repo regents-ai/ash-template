@@ -48,6 +48,8 @@ import {
   syncFleet,
   waveHeight,
   type Agent,
+  type Island,
+  type Place,
   type Ship,
 } from "./sim"
 
@@ -64,6 +66,13 @@ export type ShipMark = {
   readonly v: number
 }
 
+/** An island under the pointer, and the point just above its buildings, both across the canvas from 0 to 1. */
+export type IslandMark = {
+  readonly place: Place
+  readonly u: number
+  readonly v: number
+}
+
 export type HarbourRenderer = IslandRenderer & {
   setAgents(agents: readonly Agent[]): void
   setLook(look: HarbourLook): void
@@ -71,6 +80,8 @@ export type HarbourRenderer = IslandRenderer & {
   setCalm(calm: boolean): void
   /** The ship drawn nearest a point on the canvas (0 to 1 across, 0 to 1 down), if one is there. */
   shipAt(u: number, v: number): ShipMark | null
+  /** The island drawn under a point on the canvas, its buildings included, if one is there. */
+  islandAt(u: number, v: number): IslandMark | null
   /** Starts a ripple on the sea under a point on the canvas. A calm harbour stays still. */
   ripple(u: number, v: number): void
 }
@@ -84,6 +95,14 @@ const SHIP_MIDDLE = 0.35
 const SHIP_TOP = 0.95
 /** How far from a ship's middle a press still picks it, in world units. */
 const SHIP_REACH = 0.62
+/**
+ * The buildings on each island, for picking: levels above the water checked for
+ * a press, how far from the island's middle they stand, and the top, where the
+ * island's card sits.
+ */
+const BUILDING_LEVELS = [0.6, 1, 1.4, 1.8]
+const BUILDING_REACH = 0.9
+const BUILDING_TOP = 2.1
 const PUFFS = {forge: 8, inn: 4}
 /** The moment a calm harbour is shown at: flags and sails mid-wave. */
 const STILL_TIME = 2.4
@@ -277,11 +296,11 @@ async function build(
     return [(ndcX + 1) / 2, (1 - ndcY) / 2]
   }
 
-  /** Where a point on the canvas meets the still sea. */
-  const onSea = (u: number, v: number): [number, number] => {
+  /** Where a point on the canvas meets the level `y` above the still sea. */
+  const onLevel = (u: number, v: number, y: number): [number, number] => {
     const m = camera.matrices.viewProjection
-    const ndcX = u * 2 - 1 - m[12]!
-    const ndcY = 1 - v * 2 - m[13]!
+    const ndcX = u * 2 - 1 - m[4]! * y - m[12]!
+    const ndcY = 1 - v * 2 - m[5]! * y - m[13]!
     const det = m[0]! * m[9]! - m[8]! * m[1]!
     return [(ndcX * m[9]! - m[8]! * ndcY) / det, (m[0]! * ndcY - m[1]! * ndcX) / det]
   }
@@ -443,9 +462,22 @@ async function build(
       const [markU, markV] = onCanvas(nearest.x, seaHeight(nearest.x, nearest.z) + SHIP_TOP, nearest.z)
       return {id: nearest.id, u: markU, v: markV}
     },
+    islandAt(u, v) {
+      const near = (island: Island, y: number, reach: number) => {
+        const [x, z] = onLevel(u, v, y)
+        return Math.hypot(x - island.x, z - island.z) < reach
+      }
+      const hit = (Object.entries(PLACES) as [Place, Island][]).find(
+        ([, island]) => near(island, 0, island.radius) || BUILDING_LEVELS.some(y => near(island, y, BUILDING_REACH)),
+      )
+      if (!hit) return null
+      const [place, island] = hit
+      const [markU, markV] = onCanvas(island.x, BUILDING_TOP, island.z)
+      return {place, u: markU, v: markV}
+    },
     ripple(u, v) {
       if (calm) return
-      const [x, z] = onSea(u, v)
+      const [x, z] = onLevel(u, v, 0)
       if (Math.max(Math.abs(x), Math.abs(z)) > RIPPLE_REACH - 1) return
       drops = [...drops, [x, z] as [number, number]].slice(-MAX_DROPS)
     },
