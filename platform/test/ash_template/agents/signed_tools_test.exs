@@ -141,6 +141,39 @@ defmodule AshTemplate.SignedToolsTest do
     |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
   end
 
+  test "an agent whose person has not signed in here yet is asked for that sign-in, never told the account is missing" do
+    # Founder rule (16 Oct 2026): every account exists on every site; an agent is
+    # only ever told its person hasn't signed in here yet, then checks in once they have.
+    person = %RegentAgents.Person{privy_user_id: "did:privy:first-visit"}
+    code = RegentAgents.issue_pairing_code!(actor: person)
+
+    RegentAgents.pair_agent!(code.code, "Fixture", :hermes,
+      actor: %RegentAgents.Agent{wallet: @wallet}
+    )
+
+    refused = request(:get, "/api/agents/v1/me")
+    assert refused.status == 403
+    error = Jason.decode!(refused.resp_body)["error"]
+    assert error["code"] == "person_not_here"
+    assert error["message"] =~ "hasn't signed in on this site yet"
+    assert error["hint"] =~ "Ask your person to sign in"
+    refute refused.resp_body =~ ~r/no account|account (is )?missing/i
+
+    assert {:ok, _account, []} =
+             VerifiedSession.establish(%RegentPrivy.Session{
+               app_id: "test-app",
+               session_id: "test-session",
+               privy_user_id: person.privy_user_id,
+               wallet_address: "0x3333333333333333333333333333333333333333",
+               wallet_addresses: ["0x3333333333333333333333333333333333333333"],
+               linked_socials: []
+             })
+
+    checked_in = request(:get, "/api/agents/v1/me")
+    assert checked_in.status == 200, checked_in.resp_body
+    assert Jason.decode!(checked_in.resp_body)["data"]["account"] != nil
+  end
+
   test "private note flow preserves the agent, exact signed bytes and revocation boundary without World ID" do
     # Mock broker verification, real shared probe and product refusal; not live SIWA acceptance.
     probe = request(:get, "/api/agents/v1/whoami")

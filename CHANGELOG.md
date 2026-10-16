@@ -2317,3 +2317,11 @@ Operations
   button its tangerine marks back in light mode).
 - The agent guides, the build skill and the CLI command list (`cli/commands.json`,
   `cli/COMMANDS.md`) say the pairing code is made with Pair Agent in the side panel.
+
+## 2026-10-16 — One test keeps agents from hearing the account is missing
+
+- `test/ash_template/agents/signed_tools_test.exs` adds one test (Sean agreed, 16 Oct):
+  an agent paired with a person who has not signed in on this site yet checks in and
+  gets `person_not_here`, saying the person hasn't signed in here yet and asking the
+  agent to have them sign in, never that the account is missing; once the person
+  signs in, the same check-in succeeds with their account.
