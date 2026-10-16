@@ -173,11 +173,12 @@ export const KeyfleetField = {
         }
 
         // The raised tiles, by where they sit, until each has sunk back and
-        // stopped shining. The highest, then the brightest, are drawn first.
+        // stopped shining. The field reads their heights and borders once a
+        // frame; it hears of the list itself only when tiles come or go.
         const standing = new Map<string, Standing>()
         const draw = () => {
           for (const [key, tile] of standing) if (tile.h === 0 && tile.to === 0 && tile.shine === 0) standing.delete(key)
-          renderer()?.stand([...standing.values()].sort((a, b) => b.h - a.h || b.shine - a.shine), cell * LIFT)
+          renderer()?.stand([...standing.values()], cell * LIFT)
           nudge()
         }
         const motion = createScope({root})
@@ -188,13 +189,13 @@ export const KeyfleetField = {
               h: to,
               duration,
               ease: to > tile.h ? EASE_OUT : EASE_IN_OUT,
-              onUpdate: draw,
+              onUpdate: nudge,
               onComplete: draw,
             })
           })
           // The border starts bright and fades evenly to nothing.
           motion.add("shine", (tile: Standing, from: number, duration: number) => {
-            animate(tile, {shine: [from, 0], duration, ease: "linear", onUpdate: draw, onComplete: draw})
+            animate(tile, {shine: [from, 0], duration, ease: "linear", onUpdate: nudge, onComplete: draw})
           })
         })
         const stand = (tile: Standing, to: number) => {
@@ -208,6 +209,7 @@ export const KeyfleetField = {
           const box = canvas().getBoundingClientRect()
           const near = nearest((clientX - box.left) / cell, (clientY - box.top) / cell, RAISED)
           const keys = new Set<string>()
+          let added = false
           near.forEach((centre, rank) => {
             const key = `${centre.x * 2},${Math.round((centre.y * 2) / ROW)}`
             keys.add(key)
@@ -215,10 +217,12 @@ export const KeyfleetField = {
             if (!tile) {
               tile = {key, x: centre.x * cell, y: centre.y * cell, h: 0, to: 0, shine: 0}
               standing.set(key, tile)
+              added = true
             }
             stand(tile, heightAt(centre.away, rank === 0))
           })
           for (const tile of standing.values()) if (!keys.has(tile.key)) stand(tile, 0)
+          if (added) draw()
         }
         const sink = () => {
           for (const tile of standing.values()) stand(tile, 0)

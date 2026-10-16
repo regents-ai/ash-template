@@ -7,8 +7,8 @@
  * touch. Loaded only once a field is really going to be shown.
  *
  * The tiles nearest a mouse stand raised, each as high as the page's own
- * animation says, one frame at a time, and each tile that rises wears a
- * shining border for as long as the page's animation keeps it bright.
+ * animation says, and each tile that rises wears a shining border for as long
+ * as the page's animation keeps it bright; both are read once a frame.
  *
  * Each value reaches the shader when it changes: the size when the canvas is
  * resized, the colours when the theme changes, the pointer on each frame.
@@ -76,7 +76,11 @@ export type FieldRenderer = IslandRenderer & {
   tones(line: Rgb, light: Rgb, ground: Rgb, deep: Rgb, shine: Rgb, shadow: number): void
   /** The fade toward the edges: centre and radii 0..1 across the canvas, where it starts and ends along the radius. */
   fade(x: number, y: number, width: number, height: number, from: number, to: number): void
-  /** The raised and shining tiles, and how high a tile stands at most, in CSS pixels. */
+  /**
+   * The raised and shining tiles, and how high a tile stands at most, in CSS
+   * pixels. Each tile's height and border are read again on every frame, so
+   * the page changes them in place and only calls this when tiles come or go.
+   */
   stand(tiles: readonly Tile[], most: number): void
   /** Where the pointer stands, 0..1 across the canvas. */
   point(x: number, y: number): void
@@ -107,11 +111,15 @@ export async function createFieldRenderer(
   let lift = 0
   let shadow = 0
   const lifting = (): Vec4 => [lift * ratio, shadow, 0, 0]
-  const standing = () =>
-    Array.from({length: TILES}, (_, i) => {
-      const tile = raised[i]
+  // The highest tiles, then the brightest, are the ones kept when more are
+  // raised or shining than the shader holds.
+  const standing = () => {
+    const order = [...raised].sort((a, b) => b.h - a.h || b.shine - a.shine)
+    return Array.from({length: TILES}, (_, i) => {
+      const tile = order[i]
       return tile ? [tile.x * ratio, tile.y * ratio, tile.h, tile.shine] : unraised
     })
+  }
 
   const gpu = await init()
   let disposed = false
@@ -147,7 +155,7 @@ export async function createFieldRenderer(
     await shader.compile({colors: [stage.format]})
     const unsubscribe = stage.onResize(({width, height}) => {
       ratio = width / Math.max(1, canvas.clientWidth)
-      shader.set({params: {size: [width, height, cell * ratio, 0], key: placed(), lift: lifting(), tiles: standing()}})
+      shader.set({params: {size: [width, height, cell * ratio, 0], key: placed(), lift: lifting()}})
     })
 
     const x = eased(0.5)
@@ -184,7 +192,7 @@ export async function createFieldRenderer(
       stand(tiles, most) {
         raised = tiles
         lift = most
-        shader.set({params: {lift: lifting(), tiles: standing()}})
+        shader.set({params: {lift: lifting()}})
       },
       point(px, py) {
         jump(x, px)
@@ -220,6 +228,7 @@ export async function createFieldRenderer(
         shader.set({
           params: {
             pointer: [x.value, y.value, presence.value, glow.value],
+            tiles: standing(),
             marks: Array.from({length: MARKS}, (_, i) => {
               const m = marks[i]
               return m ? [m.x, m.y, strength(m), m.ring ? m.age * RING_SPREAD : -1] : unmarked

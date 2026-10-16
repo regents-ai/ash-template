@@ -2391,3 +2391,7 @@ Operations
   `--kf-field-shine`; each tile's brightness rides in the fourth component of the
   shader's tile list, which now holds 48 tiles. Less motion drops the borders with the
   raised tiles.
+- The field reads every tile's height and border once a frame, when it draws, and hears
+  of the tile list only when tiles come or go; the page no longer rebuilds and resends
+  the whole list once per moving tile per frame, which slowed the page during long
+  sweeps (Sean, 16 Oct 16:02Z).
