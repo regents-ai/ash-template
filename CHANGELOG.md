@@ -2188,3 +2188,17 @@ Operations
   `harness_unknown` hint lists only those, so the template refuses `chatgpt` there too.
 - The consent page asks to "watch updates for your account on this site", without
   naming the connection's protocol.
+
+## 2026-10-16 — Side panel takes focus on opening; Agent guide gets its edge
+
+- The side panel was still hidden at the moment it opened, because its visibility
+  waited out the same transition used for closing, so focus stayed on the button and
+  Escape did nothing. It now shows at once on opening (on a narrow screen only its
+  slide is animated), and hides only once it has slid shut.
+- Opening it moves focus into it at every width; Escape closes it and returns focus
+  to the side panel button. Found by Autolaunch while porting the panel.
+- The footer's Agent guide popover sat outside the shared tip, so the tip's colours
+  were never defined there and its border dropped out. It now sits inside `.rg-tip`
+  and shows its edge on both themes.
+- The Agent guide button no longer squishes on press: it reads as one of the footer
+  links beside it, which keep still. Both found by Sentinel on Techtree.

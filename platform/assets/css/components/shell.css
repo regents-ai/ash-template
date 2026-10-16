@@ -862,8 +862,13 @@
   overflow: hidden auto;
   border-inline-start: 1px solid var(--color-border);
   background: var(--color-bg);
-  /* Shown at once on opening, hidden only once it has slid shut. */
+  /* Hidden only once it has slid shut. */
   transition: visibility var(--duration-slow);
+}
+
+/* Shown at once on opening, so focus can move into it. */
+:root[data-aside="open"] #shell-aside {
+  transition: none;
 }
 
 /* Its parts keep their width while it slides, so nothing inside rewraps. */
@@ -1372,6 +1377,10 @@
     transform: translateX(100%);
   }
 
+  :root[data-aside="open"][data-aside-here] #shell-aside {
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
   #app-shell .shell-search-button {
     min-width: 0;
   }
@@ -1621,7 +1630,8 @@
 @media (prefers-reduced-motion: reduce) {
   .shell-tool__tip,
   #app-shell,
-  #shell-aside {
+  #shell-aside,
+  :root[data-aside="open"][data-aside-here] #shell-aside {
     transition: none;
   }
 }

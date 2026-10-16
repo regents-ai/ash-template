@@ -79,9 +79,9 @@ export function installShellPanels(shell: HTMLElement) {
     remember("aside", value)
     syncAside()
 
-    if (open && covering.matches) {
-      aside()?.focus()
-    }
+    // Opened, focus moves into it, so Escape closes it and returns focus to the
+    // button that opened it.
+    if (open) aside()?.focus()
   }
 
   const setSidebar = (shown: boolean) => {

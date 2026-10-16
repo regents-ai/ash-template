@@ -18,6 +18,10 @@ What changed in Ash Template lately, newest first.
   your agent.
 - **Help by email.** The Contact page now starts with how to get help:
   email build@regents.sh, or ask on the Regents page at Patchbay.
+- **Side panel by keyboard.** Opening the side panel moves you into it, and Escape
+  closes it and takes you back to the button that opened it.
+- **Agent guide, easier to see.** The Agent guide in the footer now opens in a box
+  with a clear edge, and its label stays the same size.
 
 ## 12 October 2026
 
