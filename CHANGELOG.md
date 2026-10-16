@@ -2723,3 +2723,10 @@ Operations
   name under the harbour, opens that agent's card: its Key and its last few actions, newest
   first, kept up to date while it is open. `?agent=` names the agent, so each card has its
   own link, and the browser's back button closes it.
+
+## 2026-10-16 — Harbour ripples stop at the islands
+
+- Ripples at `/animations/harbour` now move like water: each press sends out a short train of
+  rings that runs into the islands instead of through them. A beach soaks a ripple up, so
+  the water behind an island stays still apart from what bends round it, and ships rise,
+  fall and lean as the rings pass under them.
