@@ -2208,3 +2208,18 @@ Operations
 - The Account page has its own pairing box, so the side panel no longer draws a
   second one beside it there; the side panel's "Pair your agent" section shows only
   when a page gives it a box. Found by Sentinel on the template and Autolaunch.
+
+## 2026-10-16 — Note: button paint changed with the design-system c59303b pin
+
+- The design-system pin moved from fb0542f to c59303b (live since v85) carries three
+  button paint changes, measured per brand from those commits' stylesheets:
+  - 2c99787 (15 Oct, CTA restyle): in dark mode every brand's main button is now
+    near-white (#F5F5F5) with a charcoal label, in place of the brand's own colour.
+    Light mode keeps each brand's colour.
+  - 16ecdff (15 Oct, account and recovery presentation): on the platform brand
+    (template, Regents, Keyfleet), main buttons on account and recovery surfaces are
+    charcoal with a white label in light mode, where they were white before.
+  - a9bed5f (15 Oct, approved): Patchbay only, cobalt in light mode.
+- No founder approval was found for 2c99787 or 16ecdff. Both wait on the button shape
+  decision (BTN-SHAPE); the template keeps the pin until Sean answers.
+
