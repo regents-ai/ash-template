@@ -28,9 +28,11 @@ import {
   CRUISE_SPEED,
   ISLANDS,
   ISLETS,
+  MAX_RIPPLES,
   MAX_SHIPS,
   PLACES,
   parkFleet,
+  rippleLift,
   stepFleet,
   syncFleet,
   waveHeight,
@@ -44,17 +46,33 @@ export type HarbourLook = {
   readonly haze: string
 }
 
+/** A ship under the pointer, and the point just above its masthead, both across the canvas from 0 to 1. */
+export type ShipMark = {
+  readonly id: string
+  readonly u: number
+  readonly v: number
+}
+
 export type HarbourRenderer = IslandRenderer & {
   setAgents(agents: readonly Agent[]): void
   setLook(look: HarbourLook): void
   /** A visitor who asked for less motion gets one composed, unmoving harbour. */
   setCalm(calm: boolean): void
+  /** The ship drawn nearest a point on the canvas (0 to 1 across, 0 to 1 down), if one is there. */
+  shipAt(u: number, v: number): ShipMark | null
+  /** Starts a ripple on the sea under a point on the canvas. A calm harbour stays still. */
+  ripple(u: number, v: number): void
 }
 
 const SHADOW_SIZE = 2048
 const SEA_SIZE = 44
 const SEA_SEGMENTS = 132
 const SHIP_SCALE = 0.95
+/** Where a ship is picked from (its middle) and where its name sits (over the masthead), above the water. */
+const SHIP_MIDDLE = 0.35
+const SHIP_TOP = 0.95
+/** How far from a ship's middle a press still picks it, in world units. */
+const SHIP_REACH = 0.62
 const PUFFS = {forge: 8, inn: 4}
 /** The moment a calm harbour is shown at: flags and sails mid-wave. */
 const STILL_TIME = 2.4
@@ -132,6 +150,9 @@ async function build(
   const islandRows = new Float32Array(ISLANDS.length * 4)
   ISLANDS.forEach((island, index) => islandRows.set([island.x, island.z, island.radius, 0], index * 4))
   const shipRows = new Float32Array(MAX_SHIPS * 4)
+  const rippleRows = new Float32Array(MAX_RIPPLES * 4)
+  const ripples = rows(rippleRows)
+  let nextRipple = 0
   const sceneValues = {
     lightViewProjection: new Float32Array(16),
     sunDirection: [...DAY_SUN],
@@ -141,6 +162,7 @@ async function build(
     shipCount: 0,
     islands: rows(islandRows),
     ships: rows(shipRows),
+    ripples,
   }
   const sceneUniforms = uniforms(gpu, sceneValues)
 
@@ -191,6 +213,24 @@ async function build(
   let lastStep: number | undefined
   let clear: [number, number, number, number] = [0.9, 0.89, 0.82, 1]
   const world = new Float32Array(16)
+  const seaHeight = (x: number, z: number) => waveHeight(x, z, time) + rippleLift(x, z, time, ripples)
+
+  /** A point in the world, across the canvas from 0 to 1. The view is orthographic. */
+  const onCanvas = (x: number, y: number, z: number): [number, number] => {
+    const m = camera.matrices.viewProjection
+    const ndcX = m[0]! * x + m[4]! * y + m[8]! * z + m[12]!
+    const ndcY = m[1]! * x + m[5]! * y + m[9]! * z + m[13]!
+    return [(ndcX + 1) / 2, (1 - ndcY) / 2]
+  }
+
+  /** Where a point on the canvas meets the still sea. */
+  const onSea = (u: number, v: number): [number, number] => {
+    const m = camera.matrices.viewProjection
+    const ndcX = u * 2 - 1 - m[12]!
+    const ndcY = 1 - v * 2 - m[13]!
+    const det = m[0]! * m[9]! - m[8]! * m[1]!
+    return [(ndcX * m[9]! - m[8]! * ndcY) / det, (m[0]! * ndcY - m[1]! * ndcX) / det]
+  }
 
   const fitCamera = () => {
     const [width, height] = stage.size
@@ -242,7 +282,7 @@ async function build(
     let row = 0
     for (const ship of ships) {
       const id = shipIds.get(ship.id)!
-      fleet.setWorld(id, shipWorld(ship, time, world))
+      fleet.setWorld(id, shipWorld(ship, seaHeight, world))
       shipRows.set([ship.x, ship.z, ship.heading, Math.min(1, ship.speed / CRUISE_SPEED)], row * 4)
       row += 1
     }
@@ -304,6 +344,30 @@ async function build(
       night = nightGoal
       light()
       parkFleet(ships)
+    },
+    shipAt(u, v) {
+      // The reach as a share of the canvas, across and down.
+      const reachU = (SHIP_REACH * Math.abs(camera.projection[0]!)) / 2
+      const reachV = (SHIP_REACH * Math.abs(camera.projection[5]!)) / 2
+      let nearest: Ship | undefined
+      let nearestMiss = 1
+      for (const ship of ships) {
+        const [shipU, shipV] = onCanvas(ship.x, seaHeight(ship.x, ship.z) + SHIP_MIDDLE, ship.z)
+        const miss = ((u - shipU) / reachU) ** 2 + ((v - shipV) / reachV) ** 2
+        if (miss < nearestMiss) {
+          nearest = ship
+          nearestMiss = miss
+        }
+      }
+      if (!nearest) return null
+      const [markU, markV] = onCanvas(nearest.x, seaHeight(nearest.x, nearest.z) + SHIP_TOP, nearest.z)
+      return {id: nearest.id, u: markU, v: markV}
+    },
+    ripple(u, v) {
+      if (calm) return
+      const [x, z] = onSea(u, v)
+      ripples[nextRipple]!.set([x, z, time, 1])
+      nextRipple = (nextRipple + 1) % MAX_RIPPLES
     },
     resize(width, height) {
       stage.resize([width, height])
@@ -414,13 +478,13 @@ function seaGeometry(gpu: Gpu): Geometry {
   })
 }
 
-/** A ship riding the wave under it: pitched by the swell, heeled into its turn. */
-function shipWorld(ship: Ship, time: number, out: Float32Array): Float32Array {
+/** A ship riding the sea under it: pitched by the swell and the ripples, heeled into its turn. */
+function shipWorld(ship: Ship, height: (x: number, z: number) => number, out: Float32Array): Float32Array {
   const fx = Math.cos(ship.heading)
   const fz = Math.sin(ship.heading)
-  const y = waveHeight(ship.x, ship.z, time)
-  const along = (waveHeight(ship.x + fx * 0.3, ship.z + fz * 0.3, time) - waveHeight(ship.x - fx * 0.3, ship.z - fz * 0.3, time)) / 0.6
-  const across = (waveHeight(ship.x - fz * 0.2, ship.z + fx * 0.2, time) - waveHeight(ship.x + fz * 0.2, ship.z - fx * 0.2, time)) / 0.4
+  const y = height(ship.x, ship.z)
+  const along = (height(ship.x + fx * 0.3, ship.z + fz * 0.3) - height(ship.x - fx * 0.3, ship.z - fz * 0.3)) / 0.6
+  const across = (height(ship.x - fz * 0.2, ship.z + fx * 0.2) - height(ship.x + fz * 0.2, ship.z - fx * 0.2)) / 0.4
   const pitch = Math.atan(along) * 0.9
   const roll = Math.atan(across) * 0.9 - ship.turn * ship.speed * 0.5
   // Bow along heading, mast up, beam across; then pitch about the beam and roll about the keel.
