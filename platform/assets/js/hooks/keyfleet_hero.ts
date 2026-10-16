@@ -1,14 +1,13 @@
 /**
  * The Keyfleet hero in the motion lab: the hex field behind the hero and the
- * Club's map, with the tiles under the buy words rising out of it, the turn
+ * Club's map, with the tiles nearest a mouse standing up out of it, the turn
  * of the next Key's card, and the lab's replay of the entrance. Every one
- * only presents; the page is complete and readable before any of it loads,
- * and none of it gates the Buy button.
+ * only presents; the page is complete and readable before any of it loads.
  */
 import {animate, createAnimatable, createScope, type AnimatableObject, type Scope} from "animejs"
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
 import {EASE_IN_OUT, EASE_OUT, still} from "./motion/shared"
-import type {Box, FieldRenderer, Rgb} from "../keyfleet_hero/renderer"
+import type {FieldRenderer, Rgb, Tile} from "../keyfleet_hero/renderer"
 
 /** Any colour the page can state, as the three 0..1 sRGB channels a shader takes. */
 const swatch = document.createElement("canvas").getContext("2d", {willReadFrequently: true})!
@@ -42,17 +41,6 @@ const watchTheme = (retone: () => void) => {
 /** A number the stylesheet states in a custom property. */
 const measure = (el: HTMLElement, property: string) => parseFloat(getComputedStyle(el).getPropertyValue(property)) || 0
 
-/** Where an element sits inside an ancestor, in CSS pixels, before any transform moves it. */
-const within = (el: HTMLElement, ancestor: HTMLElement): [number, number] => {
-  let left = 0
-  let top = 0
-  for (let at: HTMLElement | null = el; at && at !== ancestor; at = at.offsetParent as HTMLElement | null) {
-    left += at.offsetLeft
-    top += at.offsetTop
-  }
-  return [left, top]
-}
-
 /** Where a pointer stands across an element's box, 0..1 on each axis. */
 const across = (event: PointerEvent, box: DOMRect): [number, number] => [
   (event.clientX - box.left) / box.width,
@@ -67,37 +55,57 @@ type IslandHook = {el: HTMLElement; controller?: CanvasIslandController}
 const WAKE_SPACING = 0.5
 const WAKE_MARKS_PER_MOVE = 12
 
-/** How high the tiles under the buy words stand once risen, in CSS pixels. */
-const LIFT = 14
-/** How far past the words the risen tiles reach, in tiles: across, and up and down. */
-const GROUP_PAD = [0.45, 0.4] as const
-/** How long the tiles take to rise out of the field, and to sink back into it. */
-const RISE = 460
-const SINK = 380
-/** The middle tiles lead the rise; how far along they are when the group is `amount` of the way up. */
-const middle = (amount: number) => {
-  const t = Math.min(1, Math.max(0, amount * 1.5))
-  return t * t * (3 - 2 * t)
+/** How many of the tiles nearest a mouse stand raised. */
+const RAISED = 5
+/** How high the tile under a mouse stands, in tiles. */
+const LIFT = 0.4
+/** How long a tile takes to stand up, and to sink back. */
+const STAND = 300
+
+/**
+ * How far apart the field's rows are, in tiles. The tiles' centres lie on two
+ * grids: whole tiles across on every row, and half a tile across, half a row
+ * down, between them.
+ */
+const ROW = Math.sqrt(3)
+
+/** The `count` tiles whose centres are nearest x, y (in tiles across the field), nearest first. */
+const nearest = (x: number, y: number, count: number) => {
+  const column = Math.floor(x)
+  const down = Math.floor(y / ROW)
+  const centres: {x: number; y: number; away: number}[] = []
+  for (let k = column - 1; k <= column + 2; k += 1) {
+    for (let m = down - 1; m <= down + 2; m += 1) {
+      for (const [cx, cy] of [[k, m * ROW], [k + 0.5, (m + 0.5) * ROW]] as const) {
+        centres.push({x: cx, y: cy, away: Math.hypot(cx - x, cy - y)})
+      }
+    }
+  }
+  return centres.sort((a, b) => a.away - b.away).slice(0, count)
 }
 
 /**
+ * How high a tile `away` tiles from the mouse stands: the one under it
+ * highest, the others lower the further off they are.
+ */
+const heightAt = (away: number, nearestFirst: boolean) =>
+  nearestFirst ? 1 : Math.min(0.7, Math.max(0.25, 0.95 - 0.45 * away))
+
+/** A raised tile and the height it is on its way to. */
+type Standing = Tile & {key: string; to: number}
+
+/**
  * The hex field. `data-field-cell` is the distance between neighbouring tiles
- * in CSS pixels. Anywhere in the element marked `data-field-scope`, a mouse
- * lights the tiles near it, and a mouse or a finger leaves a wake of lit tiles
- * that fades behind it; scrolling under a resting mouse draws the wake along
- * the tiles passing beneath it. A press or a tap sends a ring out across the
- * tiles. Inside a hero, previewing the Key, by pointing or by tabbing to Buy,
- * lights the tiles around the card. Nothing moves unless someone does, and
- * the field is still again shortly after. Less motion keeps the picture and
- * drops the pointer's light, the wake and the ring.
- *
- * Inside a hero, the tiles under the words marked `data-field-raise` rise out
- * of the field while the Key is previewed, from the middle out, their faces
- * and rims turning near black, and the words ride up on them in light ink.
- * When the preview ends they sink back into the field. A finger has nothing
- * to point with, so for a finger they stand risen from the start. A keyboard
- * gets the risen tiles at once, and Less motion sets them without moving.
- * Without WebGPU the words sit on the stylesheet's still drawing.
+ * in CSS pixels. Anywhere in the element marked `data-field-scope`, the five
+ * tiles nearest a mouse stand up out of the field, the one under it highest,
+ * and follow it as it moves, each rising and sinking in 0.3 seconds. A mouse
+ * also lights the tiles near it, and a mouse or a finger leaves a wake of lit
+ * tiles that fades behind it; scrolling under a resting mouse moves all of it
+ * to the tiles passing beneath. A press or a tap sends a ring out across the
+ * tiles. Inside a hero, pointing at the Key's card lights the tiles around it.
+ * Nothing moves unless someone does, and the field is still again shortly
+ * after. Less motion keeps the picture and drops the raised tiles, the
+ * pointer's light, the wake and the ring.
  */
 export const KeyfleetField = {
   mounted(this: IslandHook) {
@@ -105,10 +113,7 @@ export const KeyfleetField = {
     const scope = root.closest<HTMLElement>("[data-field-scope]") ?? root
     const buy = scope.querySelector<HTMLElement>("[data-key-preview]")
     const card = buy?.querySelector<HTMLElement>("[data-key-card]")
-    const words = scope.querySelector<HTMLElement>("[data-field-raise]")
     const cell = Number(root.dataset.fieldCell ?? 40)
-    const state = {raise: 0}
-    let risen = false
 
     this.controller = createCanvasIsland<FieldRenderer>(root, {}, {
       canvasSelector: "[data-field-canvas]",
@@ -144,30 +149,6 @@ export const KeyfleetField = {
           )
           nudge()
         }
-        // The box the risen tiles stand under: the words, a little past them,
-        // where the layout puts them before the hero's entrance or their own
-        // lift moves them.
-        const place = () => {
-          if (!words) return
-          const [left, top] = within(words, scope)
-          const [x, y] = within(canvas(), scope)
-          const box: Box = [
-            left - x - cell * GROUP_PAD[0],
-            top - y - cell * GROUP_PAD[1],
-            left - x + words.offsetWidth + cell * GROUP_PAD[0],
-            top - y + words.offsetHeight + cell * GROUP_PAD[1],
-          ]
-          renderer()?.group(box, LIFT)
-          nudge()
-        }
-        // The words stand on the middle tiles, so they rise and darken with them.
-        const push = () => {
-          renderer()?.raise(state.raise)
-          const up = middle(state.raise)
-          words?.style.setProperty("--kf-raise", `${up}`)
-          words?.style.setProperty("--kf-raise-lift", `${-LIFT * up}px`)
-          nudge()
-        }
         // The Key's light is centred on the card wherever the layout has put it.
         const aim = () => {
           if (!card) return
@@ -180,46 +161,71 @@ export const KeyfleetField = {
           )
         }
         let hovering = false
-        let focused = false
-        const pointing = finePointer()
-        const raised = () => (!pointing || hovering || focused ? 1 : 0)
+        const preview = () => {
+          aim()
+          renderer()?.lit(hovering)
+          nudge()
+        }
 
+        // The raised tiles, by where they sit, until each has sunk back.
+        const standing = new Map<string, Standing>()
+        const draw = () => {
+          for (const [key, tile] of standing) if (tile.h === 0 && tile.to === 0) standing.delete(key)
+          renderer()?.stand([...standing.values()].sort((a, b) => b.h - a.h), cell * LIFT)
+          nudge()
+        }
         const motion = createScope({root})
         motion.add(() => {
-          // A new move takes over from one still running, from wherever it got to.
-          motion.add("raise", (to: number, duration: number, delay: number) => {
-            const instant = still(root)
-            animate(state, {
-              raise: to,
-              duration: instant ? 0 : duration,
-              delay: instant ? 0 : delay,
-              ease: to > state.raise ? EASE_OUT : EASE_IN_OUT,
-              onUpdate: push,
+          // A new height takes over from the one a tile is still moving to, from wherever it got to.
+          motion.add("stand", (tile: Standing, to: number, duration: number) => {
+            animate(tile, {
+              h: to,
+              duration,
+              ease: to > tile.h ? EASE_OUT : EASE_IN_OUT,
+              onUpdate: draw,
+              onComplete: draw,
             })
           })
         })
-        const raise = (duration: number, delay = 0) => {
-          if (words) motion.methods.raise!(raised(), duration, delay)
+        const stand = (tile: Standing, to: number) => {
+          if (Math.abs(tile.to - to) < 0.02) return
+          tile.to = to
+          motion.methods.stand!(tile, to, STAND)
+        }
+        // The tiles nearest the mouse stand; every other tile sinks.
+        const follow = (clientX: number, clientY: number) => {
+          const box = canvas().getBoundingClientRect()
+          const near = nearest((clientX - box.left) / cell, (clientY - box.top) / cell, RAISED)
+          const keys = new Set<string>()
+          near.forEach((centre, rank) => {
+            const key = `${centre.x * 2},${Math.round((centre.y * 2) / ROW)}`
+            keys.add(key)
+            let tile = standing.get(key)
+            if (!tile) {
+              tile = {key, x: centre.x * cell, y: centre.y * cell, h: 0, to: 0}
+              standing.set(key, tile)
+            }
+            stand(tile, heightAt(centre.away, rank === 0))
+          })
+          for (const tile of standing.values()) if (!keys.has(tile.key)) stand(tile, 0)
+        }
+        const sink = () => {
+          for (const tile of standing.values()) stand(tile, 0)
+        }
+        // Less motion: the raised tiles are back in the field at once.
+        const flatten = () => {
+          for (const tile of standing.values()) {
+            tile.to = 0
+            motion.methods.stand!(tile, 0, 0)
+          }
         }
 
-        const preview = (duration: number) => {
-          aim()
-          renderer()?.lit(hovering || focused)
-          raise(duration)
-          nudge()
-        }
         onReady(() => {
           retone()
           refade()
-          place()
           aim()
-          renderer()?.lit(hovering || focused)
-          if (risen) {
-            push()
-            return
-          }
-          risen = true
-          raise(RISE)
+          renderer()?.lit(hovering)
+          draw()
         })
 
         // The last place the wake reached, in CSS pixels across the canvas, so a
@@ -244,10 +250,15 @@ export const KeyfleetField = {
         }
 
         const onMove = (event: PointerEvent) => {
-          if (!event.isPrimary || event.pointerType === "touch" || still(root)) return
+          if (!event.isPrimary || event.pointerType === "touch") return
+          if (still(root)) {
+            if (standing.size > 0) flatten()
+            return
+          }
           const [x, y] = across(event, canvas().getBoundingClientRect())
           renderer()?.point(x, y)
           mouse = [event.clientX, event.clientY]
+          follow(event.clientX, event.clientY)
           leave(event.clientX, event.clientY)
           nudge()
         }
@@ -255,6 +266,7 @@ export const KeyfleetField = {
           if (event.pointerType === "touch") return
           mouse = undefined
           trail = undefined
+          sink()
           renderer()?.rest()
           nudge()
         }
@@ -271,29 +283,18 @@ export const KeyfleetField = {
           nudge()
         }
         const onLift = () => { trail = undefined }
-        // The page moves under a resting mouse, so the pointer's light moves
-        // to the tiles now beneath it, and the wake follows.
+        // The page moves under a resting mouse, so the raised tiles and the
+        // pointer's light move to the tiles now beneath it, and the wake follows.
         const onScroll = () => {
           if (!mouse || still(root)) return
           const box = canvas().getBoundingClientRect()
           renderer()?.point((mouse[0] - box.left) / box.width, (mouse[1] - box.top) / box.height)
+          follow(mouse[0], mouse[1])
           leave(mouse[0], mouse[1])
           nudge()
         }
-        const onEnter = () => { hovering = true; preview(RISE) }
-        const onExit = () => { hovering = false; preview(SINK) }
-        // A key press answers at once.
-        const onFocus = (event: FocusEvent) => {
-          focused = (event.target as Element).matches(":focus-visible")
-          preview(0)
-        }
-        const onBlur = () => { focused = false; preview(0) }
-        // The lab's replay plays the hero's entrance, which waits 180 ms for the Key.
-        const onReplay = () => {
-          state.raise = 0
-          push()
-          raise(RISE, 180)
-        }
+        const onEnter = () => { hovering = true; preview() }
+        const onExit = () => { hovering = false; preview() }
 
         const events = new AbortController()
         const options = {signal: events.signal, passive: true}
@@ -306,22 +307,17 @@ export const KeyfleetField = {
         scope.addEventListener("touchcancel", onLift, options)
         window.addEventListener("scroll", onScroll, options)
         if (finePointer()) {
-          buy?.addEventListener("pointerenter", onEnter, options)
-          buy?.addEventListener("pointerleave", onExit, options)
+          card?.addEventListener("pointerenter", onEnter, options)
+          card?.addEventListener("pointerleave", onExit, options)
         }
-        buy?.addEventListener("focusin", onFocus, options)
-        buy?.addEventListener("focusout", onBlur, options)
-        scope.addEventListener("kf:replay", onReplay, options)
         const forget = watchTheme(retone)
         const resized = new ResizeObserver(() => {
           refade()
-          place()
           aim()
           nudge()
         })
         resized.observe(root)
         if (card) resized.observe(card)
-        if (words) resized.observe(words)
 
         return () => {
           events.abort()
