@@ -38,8 +38,8 @@
     letter-spacing: .14em; text-transform: uppercase;
   }
 
-  /* The hero. Wide: the headline and the instruction on the left, the Key
-     and its buy words on the right. Narrow: the headline, then the Key and
+  /* The hero. Wide: the headline and the instruction in the left half, the Key
+     and its buy words centred in the right half. Narrow: the headline, then the Key and
      its words, then the instruction. The hex field sits behind all of it. */
   .kf-hero {
     position: relative; isolation: isolate; overflow: hidden;
@@ -157,12 +157,12 @@
 
   @media (min-width: 64rem) {
     .kf-hero {
-      grid-template-columns: minmax(0, 1fr) 22rem; grid-template-rows: auto 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto 1fr;
       grid-template-areas: "head buy" "give buy"; align-items: start;
     }
     .kf-give { align-self: end; }
     .kf-hero__field {
-      --kf-fade-x: .82; --kf-fade-y: .5; --kf-fade-width: .55; --kf-fade-height: .95;
+      --kf-fade-x: .75; --kf-fade-y: .5; --kf-fade-width: .6; --kf-fade-height: .95;
       --kf-fade-from: .25; --kf-fade-to: .8;
     }
   }
