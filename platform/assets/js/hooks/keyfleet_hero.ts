@@ -48,11 +48,20 @@ const finePointer = () => matchMedia("(hover: hover) and (pointer: fine)").match
 
 type IslandHook = {el: HTMLElement; controller?: CanvasIslandController}
 
+/** How many tiles apart the marks of a wake are laid, and the most one move may lay. */
+const WAKE_SPACING = 0.5
+const WAKE_MARKS_PER_MOVE = 12
+
 /**
  * The hex field. `data-field-cell` is the distance between neighbouring tiles
- * in CSS pixels. The pointer anywhere in the element marked `data-field-scope`
- * lights the tiles near it; inside a hero, previewing the Key lights the tiles
- * around the card. Less motion keeps the picture and drops the pointer's light.
+ * in CSS pixels. Anywhere in the element marked `data-field-scope`, a mouse
+ * lights the tiles near it, and a mouse or a finger leaves a wake of lit tiles
+ * that fades behind it; scrolling under a resting mouse draws the wake along
+ * the tiles passing beneath it. A press or a tap sends a ring out across the
+ * tiles. Inside a hero, previewing the Key, by pointing or by tabbing to Buy,
+ * lights the tiles around the card. Nothing moves unless someone does, and
+ * the field is still again shortly after. Less motion keeps the picture and
+ * drops the pointer's light, the wake and the ring.
  */
 export const KeyfleetField = {
   mounted(this: IslandHook) {
@@ -99,14 +108,62 @@ export const KeyfleetField = {
           preview()
         })
 
+        // The last place the wake reached, in CSS pixels across the canvas, so a
+        // fast move or a scroll still leaves an unbroken line of tiles.
+        let trail: [number, number] | undefined
+        let mouse: [number, number] | undefined
+        const leave = (clientX: number, clientY: number) => {
+          const field = renderer()
+          if (!field) return
+          const box = canvas().getBoundingClientRect()
+          const to: [number, number] = [clientX - box.left, clientY - box.top]
+          const from = trail ?? to
+          const spacing = cell * WAKE_SPACING
+          const gap = Math.hypot(to[0] - from[0], to[1] - from[1])
+          if (trail && gap < spacing) return
+          const count = Math.min(WAKE_MARKS_PER_MOVE, Math.max(1, Math.round(gap / spacing)))
+          for (let i = 1; i <= count; i += 1) {
+            const t = i / count
+            field.wake((from[0] + (to[0] - from[0]) * t) / box.width, (from[1] + (to[1] - from[1]) * t) / box.height)
+          }
+          trail = to
+        }
+
         const onMove = (event: PointerEvent) => {
-          if (!event.isPrimary || still(root)) return
+          if (!event.isPrimary || event.pointerType === "touch" || still(root)) return
           const [x, y] = across(event, canvas().getBoundingClientRect())
           renderer()?.point(x, y)
+          mouse = [event.clientX, event.clientY]
+          leave(event.clientX, event.clientY)
           nudge()
         }
-        const onLeave = () => {
+        const onLeave = (event: PointerEvent) => {
+          if (event.pointerType === "touch") return
+          mouse = undefined
+          trail = undefined
           renderer()?.rest()
+          nudge()
+        }
+        const onPress = (event: PointerEvent) => {
+          if (!event.isPrimary || still(root)) return
+          const [x, y] = across(event, canvas().getBoundingClientRect())
+          renderer()?.ring(x, y)
+          nudge()
+        }
+        const onTouch = (event: TouchEvent) => {
+          const touch = event.touches[0]
+          if (!touch || still(root)) return
+          leave(touch.clientX, touch.clientY)
+          nudge()
+        }
+        const onLift = () => { trail = undefined }
+        // The page moves under a resting mouse, so the pointer's light moves
+        // to the tiles now beneath it, and the wake follows.
+        const onScroll = () => {
+          if (!mouse || still(root)) return
+          const box = canvas().getBoundingClientRect()
+          renderer()?.point((mouse[0] - box.left) / box.width, (mouse[1] - box.top) / box.height)
+          leave(mouse[0], mouse[1])
           nudge()
         }
         const onEnter = () => { hovering = true; preview() }
@@ -119,9 +176,15 @@ export const KeyfleetField = {
 
         const events = new AbortController()
         const options = {signal: events.signal, passive: true}
+        scope.addEventListener("pointermove", onMove, options)
+        scope.addEventListener("pointerleave", onLeave, options)
+        scope.addEventListener("pointerdown", onPress, options)
+        scope.addEventListener("touchstart", onTouch, options)
+        scope.addEventListener("touchmove", onTouch, options)
+        scope.addEventListener("touchend", onLift, options)
+        scope.addEventListener("touchcancel", onLift, options)
+        window.addEventListener("scroll", onScroll, options)
         if (finePointer()) {
-          scope.addEventListener("pointermove", onMove, options)
-          scope.addEventListener("pointerleave", onLeave, options)
           buy?.addEventListener("pointerenter", onEnter, options)
           buy?.addEventListener("pointerleave", onExit, options)
         }
