@@ -8,7 +8,7 @@
     "typecheck": "tsc --project assets/tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@privy-io/react-auth": "3.49.0",
+    "@privy-io/react-auth": "3.49.1",
     "@solana-program/system": "0.15.0",
     "@solana-program/token": "0.17.0",
     "@solana/kit": "8.5.0",
@@ -24,7 +24,7 @@
     "@types/react-dom": "19.3.0",
     "@webgpu/types": "0.1.74",
     "typescript": "7.0.2",
-    "vitest": "5.0.4"
+    "vitest": "5.0.5"
   },
   "overrides": {
     "ws@^8.0.0": "8.22.0",

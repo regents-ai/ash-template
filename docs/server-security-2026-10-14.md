@@ -5,13 +5,12 @@ Bandit 1.12.5. A client could keep a blocked HTTP/2 response alive with tiny
 WINDOW_UPDATE increments or empty SETTINGS frames. Connection and stream send
 windows both need the progress-based deadline fix.
 
-The template pins the official upstream commit
-`d88b21953c65061f21136ea76a89a4f95a2ac7a1`. Its application version still says
-1.12.5; the locked Git source is the evidence of the fix. No fixed Hex release
-was available when checked on 14 October. No advisory is suppressed. The shared
-required-fixes registry enforces this source and commit ancestry for consumers.
-When a fixed Hex version is available, replace the temporary managed Git entry
-with a verified Hex minimum and update consumers together.
+On 14 October the template pinned the official upstream commit
+`d88b21953c65061f21136ea76a89a4f95a2ac7a1`, because no fixed Hex release existed.
+Bandit 1.13.0 and 1.13.1, published on 15 October, contain that commit. On 16 October
+the template moved to Hex `{:bandit, "~> 1.13"}`, locked at 1.13.1, and the shared
+required-fixes registry now requires Bandit 1.13.0 or later from Hex. No advisory is
+suppressed.
 
 The four upstream regression cases passed locally: connection-window byte
 trickles, empty SETTINGS trickles, stream-window byte trickles, and a slow client

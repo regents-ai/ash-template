@@ -30,9 +30,8 @@ Site-only packages and the full transitive npm graph remain outside this
 comparison; each site's compiler, typecheck, audit and product checks still apply.
 
 `security/required-fixes.json` separately enforces security provenance and known
-safe version requirements. Keep Bandit's fixed Git source until a proven fixed
-release replaces it. Keep the AshPostgres 2.13.0 schema-prefix hold until a newer
-version passes an isolated real upsert check using the Repo's default prefix.
+safe version requirements, such as Bandit 1.13.0 or later for its HTTP/2 fix.
+Keep the AshPostgres 2.13.0 schema-prefix hold until a newer version passes an isolated real upsert check using the Repo's default prefix.
 An upgrade must never enable Points earning or change production data as a
 side effect of package alignment.
 

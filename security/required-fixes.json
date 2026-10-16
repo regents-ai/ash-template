@@ -2,7 +2,6 @@
   "managed": [
     {"app": "regent_mcp_agents", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "mcp_agents"},
     {"app": "regent_oauth", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "oauth"},
-    {"app": "bandit", "repository": "https://github.com/mtrudel/bandit.git", "sparse": null},
     {"app": "regent_privy", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "privy"},
     {"app": "regent_agent_access", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "agent_access"},
     {"app": "regent_format", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "format"},
@@ -28,10 +27,10 @@
   "fixes": [
     {
       "id": "EEF-CVE-2026-105659",
-      "summary": "Bandit HTTP/2 blocked sends could be kept alive indefinitely with tiny WINDOW_UPDATE or empty SETTINGS frames. Until a fixed Hex release exists, require the upstream progress-based deadline fix.",
-      "kind": "git",
-      "commit": "d88b21953c65061f21136ea76a89a4f95a2ac7a1",
-      "apps": ["bandit"]
+      "summary": "Bandit HTTP/2 blocked sends could be kept alive indefinitely with tiny WINDOW_UPDATE or empty SETTINGS frames, until the progress-based deadline fix released in 1.13.0.",
+      "kind": "hex",
+      "package": "bandit",
+      "requirement": ">= 1.13.0"
     },
     {
       "id": "2026-10-09-agent-payment-pairing",

@@ -2128,3 +2128,14 @@ Operations
 
 - Account is no longer in the Regents Products menu: it is not a product, and the
   signed-in side panel already has Account beside Sign out, and Manage Agents.
+
+## 2026-10-16 — Dependency wave 1: Bandit from Hex
+
+- Bandit comes from Hex again, `{:bandit, "~> 1.13"}` at 1.13.1, which carries the
+  HTTP/2 fix (EEF-CVE-2026-105659) the template had pinned from upstream Git. The
+  required-fixes registry now asks every site for Hex Bandit 1.13.0 or later and no
+  longer lists Bandit's Git source, so a site still on the Git pin fails
+  `make check-required-fixes` until it copies this change.
+- ash 3.36.1, ash_oban 0.10.1, thousand_island 1.6.0, spitfire 0.4.3,
+  @privy-io/react-auth 3.49.1 and vitest 5.0.5. ash_postgres, ex_hash_ring and puid
+  stay where they are.
