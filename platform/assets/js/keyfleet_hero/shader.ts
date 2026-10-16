@@ -7,8 +7,9 @@
  * the Key while it is previewed. The field fades out toward its edges here
  * rather than in the stylesheet, so a raised tile fades with the tiles around
  * it. The tiles nearest a mouse stand up out of the field, each to its own
- * height, their faces turning from the field's own look toward near black the
- * higher they stand, and sink back into it.
+ * height, their faces turning from the field's own look toward the deep tone
+ * the higher they stand (near black in dark, a darker off-white in light), and
+ * sink back into it.
  */
 
 /** How many marks of a wake or a ring the field holds at once. */
@@ -28,7 +29,7 @@ struct Params {
   // canvas, and where along the radius it starts and ends.
   fade: vec4f,
   stops: vec4f,
-  // The page's ground, and the near black the raised tiles turn.
+  // The page's ground, and the deep tone the raised tiles turn.
   ground: vec4f,
   deep: vec4f,
   // How high a tile stands at most in device pixels, and how dark the shadow
@@ -48,8 +49,8 @@ struct Params {
 const STEPS = 14;
 // Where a tile's face ends and its rim runs, from its centre toward its edge.
 const EDGE = 0.44;
-// The light the raised tiles catch on their seams, sides and top edges, the
-// same in both themes so the near black reads as standing.
+// The light the raised tiles catch on their seams and top edges, and on their
+// sides in dark, where the near black reads as standing by its lit sides.
 const LIT = vec3f(0.9, 0.89, 0.82);
 
 // Pointy-top hexagons, one unit between neighbouring centres across a row.
@@ -156,8 +157,10 @@ fn height(c: vec2f) -> f32 {
   // whose column passes this pixel there. A tile further down the screen
   // stands nearer, so it is drawn later, over the ones behind it. Where the
   // height reaches the tile's top the pixel is on its face; below, its side.
-  // Each starts as the field's own tile and turns toward near black the
-  // higher it stands.
+  // Each starts as the field's own tile and turns toward the deep tone the
+  // higher it stands. On a light ground a tile's sides fall into shade
+  // instead of catching the light, so an off-white tile still reads as standing.
+  let daylight = dot(params.ground.rgb, vec3f(0.2126, 0.7152, 0.0722)) > 0.5;
   let step = lift / f32(STEPS);
   for (var k = 0; k <= STEPS; k += 1) {
     let t = step * f32(k);
@@ -181,10 +184,11 @@ fn height(c: vec2f) -> f32 {
       let deep = params.deep.rgb + LIT * top * 0.18;
       rgb = mix(mix(fieldFace, deep, r), mix(fieldRim, mix(params.deep.rgb, LIT, 0.07), r), edged);
     } else {
-      // The side, a little lighter than the face so the tile reads as
-      // standing, darker toward the field.
+      // The side, lighter than the face in dark and darker in light, either
+      // way darkest toward the field.
       let low = t / max(tall, 0.001);
-      rgb = mix(fieldRim, mix(params.deep.rgb, LIT, 0.03 + 0.17 * low * low), r);
+      let side = select(mix(params.deep.rgb, LIT, 0.03 + 0.17 * low * low), params.deep.rgb * (0.8 + 0.1 * low), daylight);
+      rgb = mix(fieldRim, side, r);
     }
     color = over(color, rgb, shape * shown(c));
   }

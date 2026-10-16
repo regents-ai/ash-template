@@ -65,7 +65,7 @@ const unraised = [0, 0, 0, 0] as const
 
 export type FieldRenderer = IslandRenderer & {
   /**
-   * The lines' colour, the preview's light, the page's ground, the near black
+   * The lines' colour, the preview's light, the page's ground, the deep tone
    * the raised tiles turn, and how dark their shadow is, from the page's theme.
    */
   tones(line: Rgb, light: Rgb, ground: Rgb, deep: Rgb, shadow: number): void
