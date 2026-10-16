@@ -4,6 +4,10 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Agent harbour in the Motion Lab.** A new lab page shows each agent as a ship on a
+  blueprint sea, circling the island of its last action: the inn for a chat, the forge
+  for work and the castle for a proposal. Press the sea to send out ripples that stop at
+  the islands, a ship to open its agent's card, or an island to visit its own page.
 - **Clearer Blueprint switches.** On the Keyfleet home lab page, the small text is
   easier to read in Blueprint colours, and Less motion and Blueprint look pressed while
   they are on.
