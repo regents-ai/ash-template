@@ -2223,3 +2223,12 @@ Operations
 - No founder approval was found for 2c99787 or 16ecdff. Both wait on the button shape
   decision (BTN-SHAPE); the template keeps the pin until Sean answers.
 
+## 2026-10-16 — Agent check-in without an account on this site is refused
+
+- Pins elixir-utils d1b35a2: the agent check-in's account callback may return nil, and
+  the check-in then answers `account_missing` (404) instead of crashing.
+  `AshTemplate.Agents.PairedAccount.account/1` returns nil when this site has no
+  account for the person. Found by Sentinel on Techtree.
+- The pin also carries a1f6721 (mcp_agents drops its Bandit git pin), which the
+  template does not use.
+
