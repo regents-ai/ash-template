@@ -2563,3 +2563,13 @@ Operations
   rings that runs into the islands instead of through them. A beach soaks a ripple up, so
   the water behind an island stays still apart from what bends round it, and ships rise,
   fall and lean as the rings pass under them.
+
+## 2026-10-16 — Harbour islands have their own pages
+
+- A mouse over the inn, the forge or the castle at `/animations/harbour` shows a small card
+  above its buildings with a link to that island's page. Pressing the island, or its name
+  under the harbour, goes there too.
+- `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`
+  show the same harbour under the island's name, with the island marked in the list below.
+  The harbour keeps sailing when moving between them, and an agent's card opens on the
+  island's page without leaving it.
