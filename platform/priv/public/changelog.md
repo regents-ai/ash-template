@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Clearer Blueprint switches.** On the Keyfleet home lab page, the small text is
+  easier to read in Blueprint colours, and Less motion and Blueprint look pressed while
+  they are on.
 - **Pair New Agent from the start page.** The first step on the start page for agents
   now opens Pair New Agent in the side panel.
 - **Agents on the Regents mobile app.** What your agents do through the Regents mobile
