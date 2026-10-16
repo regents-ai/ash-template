@@ -151,6 +151,9 @@ cancelled work.
   movement. A change there lands only after Sean's go naming the action.
 - Contessa is not a gate.
 - Agents get WebMCP first. The CLI follows and never blocks a site change.
+- Simplicity is golden (16 Oct): each route, and each tab in a route, has one purpose a
+  person can say in a sentence and share by link ("try this page, it lets you do X").
+  Keep the page simple; move the complexity behind it or into its WebMCP tools.
 - A site change that uses a new shared-library pin is not done until that pin is on
   main.
 - Hard cutover: no shims, aliases or compatibility branches. Every review checks

@@ -13,6 +13,24 @@ constraint. Define normalization and null semantics. For a rename, preserve data
 references instead of accepting a generated destructive replacement. For a removed
 resource, verify code generation does not accidentally drop a table still in use.
 
+### A new required value on a large table
+
+One migration that adds a column, fills it and checks it holds an `ACCESS EXCLUSIVE`
+lock on the table for the whole fill. On a bluegreen release the old machine keeps
+writing rows without the new value, so a check added in the same release turns its
+writes into errors. On a large table that is not pruned (sessions, events, ledgers):
+
+1. Release 1: add the column with no check, and make every write set it.
+2. Fill existing rows in bounded batches outside the DDL transaction
+   (`@disable_ddl_transaction true`, or a release task), each batch its own commit.
+3. Add the check as `NOT VALID`: new and updated rows must pass, existing rows are not
+   scanned, and the lock is brief.
+4. Release 2: `VALIDATE CONSTRAINT`, which scans under a lock that lets reads and writes
+   carry on.
+
+The template's 30-day sign-in change (935fc63) did all of this in one migration because
+its sign-in table is small and pruned; a site copying it onto a large table splits it.
+
 Concurrent index creation and constraint validation have PostgreSQL/Ecto-specific
 transaction and locking requirements. Inspect the installed migration APIs and DB
 version before choosing them. Do not paste a raw SQL pattern from another version
