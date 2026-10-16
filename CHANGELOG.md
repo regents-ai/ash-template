@@ -2202,3 +2202,9 @@ Operations
   and shows its edge on both themes.
 - The Agent guide button no longer squishes on press: it reads as one of the footer
   links beside it, which keep still. Both found by Sentinel on Techtree.
+
+## 2026-10-16 — One pairing box on the Account page
+
+- The Account page has its own pairing box, so the side panel no longer draws a
+  second one beside it there; the side panel's "Pair your agent" section shows only
+  when a page gives it a box. Found by Sentinel on the template and Autolaunch.

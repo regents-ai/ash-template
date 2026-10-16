@@ -22,6 +22,8 @@ What changed in Ash Template lately, newest first.
   closes it and takes you back to the button that opened it.
 - **Agent guide, easier to see.** The Agent guide in the footer now opens in a box
   with a clear edge, and its label stays the same size.
+- **One pairing box on Account.** The Account page shows its pairing box once, not
+  again in the side panel.
 
 ## 12 October 2026
 

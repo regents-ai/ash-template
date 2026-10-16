@@ -15,7 +15,8 @@ defmodule AshTemplateWeb.Components.Shell do
   page signed out has nothing beside the Sign in button. A page's part for the
   side bar is likewise drawn only for someone signed in. It holds the box to
   pair an agent (the `pairing` slot) and a link to manage agents on the Regents
-  account page, where the person signs in again.
+  account page, where the person signs in again. A page that shows its own
+  pairing box leaves the slot out, and the side bar then has neither.
   """
 
   use Phoenix.Component
@@ -64,7 +65,9 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :assistant_refused?, :boolean, default: false, doc: "The last question was not sent."
   slot :content, required: true
   slot :credits_panel, doc: "The Buy Credits panel, opened from the header's balance."
-  slot :pairing, doc: "The box to pair an agent, in the right side bar."
+
+  slot :pairing,
+    doc: "The box to pair an agent, in the right side bar; left out on a page with its own."
 
   def shell(assigns) do
     assigns = assign(assigns, :aside_digest, aside_digest(assigns.checklist))
@@ -323,7 +326,7 @@ defmodule AshTemplateWeb.Components.Shell do
           </div>
         </section>
 
-        <section id="shell-pairing" aria-labelledby="shell-pairing-title">
+        <section :if={@pairing != []} id="shell-pairing" aria-labelledby="shell-pairing-title">
           <h3 id="shell-pairing-title">Pair your agent</h3>
           {render_slot(@pairing)}
           <a href="https://regents.sh/account#account-agents">Manage Agents</a>

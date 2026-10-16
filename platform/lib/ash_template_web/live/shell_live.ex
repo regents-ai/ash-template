@@ -246,13 +246,13 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # An agent paired, checked in or was unpaired, here or on another Regent site.
-  # The side bar's pairing box is on every page; the Account page adds its own.
+  # The side bar's pairing box is on every page but Account, which has its own.
   def handle_info(:agents_changed, socket) do
-    send_update(PairingBox, id: "shell-pairing-box", agents_changed: true)
-
     if socket.assigns.route_spec.route_id == :account do
       send_update(AgentsPanel, id: "account-agents", agents_changed: true)
       send_update(PairingBox, id: "account-agents-pair", agents_changed: true)
+    else
+      send_update(PairingBox, id: "shell-pairing-box", agents_changed: true)
     end
 
     {:noreply, socket}
@@ -338,7 +338,7 @@ defmodule AshTemplateWeb.ShellLive do
           credits={@credits_read}
         />
       </:credits_panel>
-      <:pairing :if={current_account(@access_context)}>
+      <:pairing :if={current_account(@access_context) && @route_spec.route_id != :account}>
         <.live_component
           module={PairingBox}
           id="shell-pairing-box"
