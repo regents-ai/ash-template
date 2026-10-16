@@ -1,10 +1,19 @@
 /* The app shell: one hairline grid of top bar, rail, sidebar, page, right side
    bar and bottom bar. Which side panels show is the visitor's, on
    <html data-aside data-sidebar>. */
+
+/* The right side bar's width slides, so the page beside it gives way smoothly. */
+@property --shell-aside {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 #app-shell {
   --shell-rail: 4.25rem;
   --shell-sidebar: 15rem;
-  --shell-aside: 20rem;
+  --shell-aside-open: 20rem;
+  --shell-aside: var(--shell-aside-open);
   position: relative;
   isolation: isolate;
   display: grid;
@@ -20,6 +29,7 @@
   color: var(--color-fg);
   font-family: var(--font-family-ui);
   line-height: 1.55;
+  transition: --shell-aside var(--duration-slow) var(--ease-out);
 }
 
 :root[data-sidebar="hidden"] #app-shell {
@@ -854,13 +864,20 @@
   align-content: start;
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden auto;
   border-inline-start: 1px solid var(--color-border);
   background: var(--color-bg);
+  /* Shown at once on opening, hidden only once it has slid shut. */
+  transition: visibility var(--duration-slow);
+}
+
+/* Its parts keep their width while it slides, so nothing inside rewraps. */
+#shell-aside > * {
+  min-inline-size: calc(var(--shell-aside-open) - 1px);
 }
 
 :root:not([data-aside="open"]) #shell-aside {
-  display: none;
+  visibility: hidden;
 }
 
 .shell-aside__head {
@@ -928,19 +945,7 @@
 .shell-account__actions .rg-button {
   width: 100%;
   justify-content: center;
-}
-
-#shell-aside .shell-promo {
-  margin: 1rem;
-  border: 1px solid var(--ash-line-strong);
-  background: var(--ash-panel-strong);
-}
-
-.shell-promo__kicker {
-  color: var(--ash-accent-warm);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .shell-checklist__count {
@@ -1355,11 +1360,21 @@
     z-index: 6;
     width: min(22rem, 100%);
     border-inline-start: 1px solid var(--ash-line-strong);
+    transition:
+      transform var(--duration-slow) var(--ease-out),
+      visibility var(--duration-slow);
   }
 
-  /* Covering the page, it opens only when opened on this page, never on arrival. */
+  #shell-aside > * {
+    min-inline-size: 0;
+  }
+
+  /* Covering the page, it slides in from the edge, and opens only when opened
+     on this page, never on arrival. */
+  :root:not([data-aside="open"]) #shell-aside,
   :root:not([data-aside-here]) #shell-aside {
-    display: none;
+    visibility: hidden;
+    transform: translateX(100%);
   }
 
   #app-shell .shell-search-button {
@@ -1609,7 +1624,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shell-tool__tip {
+  .shell-tool__tip,
+  #app-shell,
+  #shell-aside {
     transition: none;
   }
 }

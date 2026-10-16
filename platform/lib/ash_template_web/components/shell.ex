@@ -13,7 +13,9 @@ defmodule AshTemplateWeb.Components.Shell do
 
   The right side bar and its button are there only for someone signed in, so a
   page signed out has nothing beside the Sign in button. A page's part for the
-  side bar is likewise drawn only for someone signed in.
+  side bar is likewise drawn only for someone signed in. It holds the box to
+  pair an agent (the `pairing` slot) and a link to manage agents on the Regents
+  account page, where the person signs in again.
   """
 
   use Phoenix.Component
@@ -23,13 +25,6 @@ defmodule AshTemplateWeb.Components.Shell do
   alias AshTemplateWeb.Components.RegentLinks
   alias AshTemplateWeb.RouteCatalog
   alias Phoenix.LiveView.JS
-
-  @help [
-    {"Documentation", "/docs"},
-    {"Agent guide", "/llms.txt"},
-    {"What's new", "/changelog"},
-    {"Contact", "/contact"}
-  ]
 
   @footer_links [
     {"Help", "/docs"},
@@ -70,6 +65,7 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :assistant_refused?, :boolean, default: false, doc: "The last question was not sent."
   slot :content, required: true
   slot :credits_panel, doc: "The Buy Credits panel, opened from the header's balance."
+  slot :pairing, doc: "The box to pair an agent, in the right side bar."
 
   def shell(assigns) do
     assigns = assign(assigns, :aside_digest, aside_digest(assigns.checklist))
@@ -328,10 +324,10 @@ defmodule AshTemplateWeb.Components.Shell do
           </div>
         </section>
 
-        <section class="shell-promo" aria-labelledby="shell-promo-title">
-          <p class="shell-promo__kicker">New</p>
-          <h3 id="shell-promo-title">Pair your agent</h3>
-          <.link navigate="/start">How it works</.link>
+        <section id="shell-pairing" aria-labelledby="shell-pairing-title">
+          <h3 id="shell-pairing-title">Pair your agent</h3>
+          {render_slot(@pairing)}
+          <a href="https://regents.sh/account#account-agents">Manage Agents</a>
         </section>
 
         <section id="shell-checklist" aria-labelledby="shell-checklist-title">
@@ -392,13 +388,6 @@ defmodule AshTemplateWeb.Components.Shell do
             <p :if={@assistant.reply != ""} class="shell-assistant__reply">{@assistant.reply}</p>
             <.link patch={"/chat/#{@assistant.conversation_id}"}>Open in Chat</.link>
           </div>
-        </section>
-
-        <section id="shell-aside-help" aria-labelledby="shell-help-title">
-          <h3 id="shell-help-title">Help</h3>
-          <ul>
-            <li :for={{label, path} <- help()}><a href={path}>{label}</a></li>
-          </ul>
         </section>
       </aside>
 
@@ -585,7 +574,6 @@ defmodule AshTemplateWeb.Components.Shell do
 
   defp escape(text), do: Phoenix.HTML.Engine.html_escape(text)
 
-  defp help, do: @help
   defp footer_links, do: @footer_links
 
   defp bell_label(0), do: "Activity, nothing new"

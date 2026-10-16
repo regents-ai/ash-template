@@ -115,6 +115,7 @@ Rules for every stage:
 | Browser code | TypeScript, strict, typechecked; hooks in `assets/js/hooks/`, combined with `composeHooks`; page-only code lazy-loaded; size budgets (175 KiB script, 60 KiB style, compressed) |
 | Motion | The kit in `assets/js/hooks/motion/` and `assets/js/motion.ts`, versions in `Motion.standard/1`, the lab at `/animations` |
 | Shell | The shell component, route catalog, launch gate, Privy session and signed-in wallet handling (the account's own wallets from `AccessContext.linked_wallets/1`) |
+| Side panel | Signed in only. On a wide screen it slides in beside the page and the page narrows to make room; on a narrower screen it slides in over the page's edge. It holds the account, the box to pair an agent (the Account page's own `PairingBox`: choose the agent, copy the message, make a new code, and the agent's name once it pairs), a "Manage Agents" link to `https://regents.sh/account#account-agents`, Get started and the assistant |
 | Server | Ash resources behind code interfaces, health and metrics endpoints, `mix precommit` with Credo, Sobelow, xref, format and codegen checks |
 | Tests | A small named set that each protects a stated rule, plus browser checks of real flows |
 | Skills | `skills/` in the template, linked into the workspace; the ten build skills are published at template.regents.sh (`/skills`, `/skill.md`, `/.well-known/agent-skills/index.json`) |

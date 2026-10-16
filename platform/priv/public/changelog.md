@@ -6,6 +6,10 @@ What changed in Ash Template lately, newest first.
 
 - **What agents see.** The bottom bar and the home page say how many tools an AI
   assistant can use here. Press it to read what each one does, and copy the whole list.
+- **Pair an agent from any page.** The side panel now gives you a pairing message to
+  copy, a button for a fresh code, and your agent's name the moment it pairs. "Manage
+  Agents" takes you to your Regents account. On a wide screen the panel slides in
+  beside the page instead of covering it.
 
 ## 12 October 2026
 

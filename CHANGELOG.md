@@ -2097,3 +2097,17 @@ Operations
   page is still deciding whether the cube draws (Sean's call on regents.sh, which
   shipped without it in v188). The list still fades in where the cube cannot draw,
   and shows from the start without scripts or for a visitor who asked for less motion.
+
+## 2026-10-16 — The side panel pairs agents and slides in
+
+- The right side panel now holds the box to pair an agent, the same one the Account
+  page shows: choose the agent, copy the message with its code, "Make a new code",
+  and the agent's name in place of the code as soon as it pairs, on any Regent site.
+  Below it, "Manage Agents" opens the Regents account page at its agents (Sean, 16 Oct).
+  The link carries no wallet or sign-in, so Regents asks the person to sign in there.
+- The Help section and the "Pair your agent / How it works" card are gone from the
+  panel; Help stays in the bottom bar.
+- On a wide screen the panel slides in beside the page, which narrows to make room,
+  and slides out the same way. On a narrower screen it slides in over the page's edge.
+  A visitor who asked for less motion sees it open and close at once.
+- The Account and Sign out buttons in the panel no longer break mid-word.
