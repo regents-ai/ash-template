@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Keyfleet home in the Motion Lab.** A new lab page shows the Keyfleet home: the next
+  Key's card, and a honeycomb whose five tiles nearest your mouse rise and follow it.
 - **What agents see.** The bottom bar and the home page say how many tools an AI
   assistant can use here. Press it to read what each one does, and copy the whole list.
 - **Pair an agent from any page.** The side panel now gives you a pairing message to
