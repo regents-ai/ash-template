@@ -178,11 +178,14 @@ fn height(c: vec2f) -> f32 {
     let fieldRim = over(params.ground, params.line.rgb, shown(c) * 0.16).rgb;
     var rgb: vec3f;
     if (t >= tall - step * 0.5) {
-      // The face, its rim a shade lighter, lit a little along its top edge.
+      // The face. In dark its rim is a shade lighter and its top edge lit a
+      // little; in light it keeps a darker hairline rim, as dark as the rims
+      // lit around the pointer.
       let edged = smoothstep(edge - aa * 2.4, edge - aa * 1.2, g.z);
       let top = clamp(-g.y * 2.4, 0.0, 1.0) * smoothstep(edge - 0.1, edge, g.z);
-      let deep = params.deep.rgb + LIT * top * 0.18;
-      rgb = mix(mix(fieldFace, deep, r), mix(fieldRim, mix(params.deep.rgb, LIT, 0.07), r), edged);
+      let deep = params.deep.rgb + select(LIT * top * 0.18, vec3f(0.0), daylight);
+      let border = select(mix(params.deep.rgb, LIT, 0.07), over(vec4f(params.deep.rgb, 1.0), params.line.rgb, 0.4).rgb, daylight);
+      rgb = mix(mix(fieldFace, deep, r), mix(fieldRim, border, r), edged);
     } else {
       // The side, lighter than the face in dark and darker in light, either
       // way darkest toward the field.
