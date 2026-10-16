@@ -2446,3 +2446,11 @@ Operations
   set as `--kf-blueprint-paper` and `--kf-blueprint-ink` on `.kf-lab[data-palette]`.
   The field retones when the switch changes (Sean, 16 Oct 16:06Z). No glowing borders
   (Sean, 16 Oct 16:07Z).
+
+## 2026-10-16 — Header and footer: Docs on every phone
+
+- On phones Docs stays in the header beside Products, with tighter link padding; below
+  360 px wide the crown stands for "Ash Template", which screen readers still hear
+  (`.site-header__name`). Docs no longer waits in the footer.
+- The lab's lede is one line shorter, so the short page fits a 320 × 844 phone without
+  scrolling (Sentinel's v94 read, 16 Oct).

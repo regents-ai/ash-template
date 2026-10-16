@@ -154,7 +154,7 @@
 
 /* ---- Phones ---- */
 
-/* The menu spans the header, and Docs waits in the footer. */
+/* The menu spans the header. */
 @media (max-width: 40rem) {
   .site-products {
     position: static;
@@ -173,11 +173,29 @@
   }
 
   .site-header__brand {
+    gap: 0.5rem;
     margin-inline-end: auto;
   }
 
-  .site-header__nav > a.site-header__link {
-    display: none;
+  .site-header__nav {
+    gap: 0;
+  }
+
+  .site-header__link {
+    padding-inline: 0.5rem;
+  }
+}
+
+/* On the narrowest phones the crown stands for the name, which screen readers
+   still hear, so Docs keeps its place beside Products. */
+@media (max-width: 22.49rem) {
+  .site-header__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

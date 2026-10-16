@@ -22,7 +22,7 @@ defmodule AshTemplateWeb.Components.SiteHeader do
     <header id={@id} class="site-header">
       <a class="site-header__brand" href={~p"/"}>
         <span class="shell-apps__tile" data-tone="protocol"><Shell.crown /></span>
-        <span>Ash Template</span>
+        <span class="site-header__name">Ash Template</span>
       </a>
       <nav class="site-header__nav" aria-label="Ash Template">
         <details
