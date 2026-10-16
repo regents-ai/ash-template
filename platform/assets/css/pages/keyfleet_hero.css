@@ -95,12 +95,15 @@
   /* The plate: a slab of hex tiles in Keyfleet's tangerine, raised off the
      page, with charcoal words on it. The stylesheet draws it flat, a tangerine
      face with its tiles traced on it; once the GPU's picture has landed, that
-     picture takes over and the tiles stand up under the words. The picture's
+     picture takes over and the tiles stand up. The group of tiles under the
+     words rises higher and turns dark when the Key is previewed (always, for
+     a finger), and the words, standing on it, turn light. The picture's
      canvas reaches past the plate on every side, for the tiles' edge, their
      lift and their shadow. */
   .kf-plate {
     --kf-plate-face: var(--palette-tangerine-tango);
     --kf-plate-side: color-mix(in oklab, var(--palette-tangerine-tango) 80%, var(--palette-charcoal));
+    --kf-plate-deep: color-mix(in oklab, var(--palette-tangerine-tango) 40%, var(--palette-charcoal));
     position: relative; isolation: isolate;
     color: var(--palette-charcoal);
     transition: transform 140ms var(--kf-ease);
@@ -111,7 +114,7 @@
     background: var(--kf-plate-side); opacity: .45;
     mask: url("/images/lab/keyfleet/hex.svg") 0 0 / var(--kf-plate-cell) calc(var(--kf-plate-cell) * 1.7320508) repeat;
   }
-  .kf-plate__stage { position: absolute; inset: -1rem -1.25rem -1.75rem; z-index: -1; pointer-events: none; }
+  .kf-plate__stage { position: absolute; inset: -2rem -1.25rem -1.75rem; z-index: -1; pointer-events: none; }
   .kf-plate__canvas { display: block; inline-size: 100%; block-size: 100%; opacity: 0; transition: opacity 240ms ease; }
   .kf-plate[data-plate-ready]::before, .kf-plate[data-plate-ready]::after { opacity: 0; }
   .kf-plate[data-plate-ready] .kf-plate__canvas { opacity: 1; }
@@ -123,12 +126,15 @@
     padding: var(--space-4) var(--space-3);
     text-align: center;
   }
-  .kf-plate[data-plate-ready] .kf-plate__content { transform: translateY(var(--kf-plate-lift, 0)); }
+  .kf-plate[data-plate-ready] .kf-plate__content {
+    transform: translateY(var(--kf-plate-lift, 0));
+    color: color-mix(in oklab, var(--palette-platinum) calc(var(--kf-plate-raised, 0) * 100%), var(--palette-charcoal));
+  }
   .kf-plate__buy {
     display: grid; justify-items: center; gap: .125rem;
     margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: default;
   }
-  .kf-plate__buy:focus-visible, .kf-plate__split a:focus-visible { outline: 2px solid var(--palette-charcoal); outline-offset: 3px; }
+  .kf-plate__buy:focus-visible, .kf-plate__split a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
   .kf-plate__title { font-size: 1.125rem; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; }
   .kf-plate__members { font-size: .875rem; font-variant-numeric: tabular-nums; }
   .kf-plate__split { font-size: .8125rem; font-variant-numeric: tabular-nums; }
