@@ -2936,3 +2936,6 @@ Operations
   show the same harbour under the island's name, with the island marked in the list below.
   The harbour keeps sailing when moving between them, and an agent's card opens on the
   island's page without leaving it.
+- `platform/priv/public/changelog.md` notes the agent harbour for visitors, and
+  `platform/README.md` names the harbour and its island pages among the motion lab pages
+  that follow `ASH_TEMPLATE_SHOWCASE`.
