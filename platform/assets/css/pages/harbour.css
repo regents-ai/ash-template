@@ -72,35 +72,6 @@
   display: none;
 }
 
-/* The art style switch, a row of tabs like the lab's others. Links take
-   their colour and type from the row, so both are set here. */
-.harbour__looks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 1.25rem;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-fg);
-  font: 0.8rem/1 var(--font-family-mono);
-}
-
-.harbour__looks a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  opacity: 0.65;
-  text-decoration: none;
-}
-
-.harbour__looks a[aria-current="true"] {
-  opacity: 1;
-  box-shadow: inset 0 -2px var(--ash-accent);
-}
-
-.harbour__looks a:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
 .harbour__legend {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
