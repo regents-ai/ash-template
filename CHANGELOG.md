@@ -2468,3 +2468,21 @@ Operations
 - Pins design-system `288888391e47f5becd86a38c0a53c7b11a6599b3` and imports its
   `pill_select.mjs` in `app.ts`: an open `details` filter pill closes on Escape and on
   a press or tap outside it, iPhones included, the same on every site (Patchbay's R5 read).
+
+## 2026-10-16 — A bad activity day ends only its own read; /start opens Pair New Agent
+
+- Pins elixir-utils `03433b80e7b8b0d7fa0ae5d58cdfab6cbf8af668`, whose
+  `RegentAgents.Activity.recent/1` answers `{:error, :bad_day}` for a day from the
+  sign-in service with a missing field or an unreadable value, instead of raising
+  (Sentinel's regents.sh v193 finding F2).
+- `AshTemplateWeb.PanelAgents` reads each agent through
+  `Task.Supervisor.async_stream_nolink` under the new `AshTemplate.Agents.Reads`
+  supervisor. A read that crashes ends only itself and that agent's line stays empty;
+  before, its crash reached the page, which closed. Walked locally with a stand-in
+  sign-in service sending a bad day to half the agents: on the old library the four
+  crashing reads left the page open and the other four lines in place, and on the new
+  one nothing crashed.
+- `/start`'s first step links "Pair New Agent" (was "Open Account") to
+  `/account#shell-pairing`, and the shell opens the side panel on arrival when the
+  address names its Pair New Agent section, on a phone too. `/start` has no side panel
+  of its own, so a panel-opening button there could not do it (Sentinel's v193 N2).

@@ -58,7 +58,7 @@ defmodule AshTemplateWeb.AgentStartLive do
                 <p>
                   Sign in, then open Pair New Agent in the side panel and choose your agent. The code works once, for ten minutes.
                 </p>
-                <.link href={~p"/account"}>Open Account</.link>
+                <.link href={"#{~p"/account"}#shell-pairing"}>Pair New Agent</.link>
               </li>
               <li>
                 <h3>Your agent pairs</h3>

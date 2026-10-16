@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Pair New Agent from the start page.** The first step on the start page for agents
+  now opens Pair New Agent in the side panel.
 - **Agents on the Regents mobile app.** What your agents do through the Regents mobile
   app now shows beside them in the side panel and on your Account page.
 - **Docs on phones.** On a phone, Docs now stays in the header beside Products, and the

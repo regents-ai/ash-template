@@ -213,6 +213,11 @@ export function installShellPanels(shell: HTMLElement) {
 
   sync()
 
+  // A link from a page without the panel, such as /start's Pair New Agent, arrives
+  // with the panel's section in its address and opens the panel on it.
+  if (window.location.hash === "#shell-pairing" && shell.querySelector("#shell-pairing"))
+    setAside(true)
+
   return {
     sync,
     cleanup: () => {
