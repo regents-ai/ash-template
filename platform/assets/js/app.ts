@@ -25,7 +25,7 @@ import {
 import {installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
 import {Crown} from "./hooks/crown"
-import {KeyfleetField, KeyfleetKeyCard, KeyfleetPlate, KeyfleetReplay} from "./hooks/keyfleet_hero"
+import {KeyfleetField, KeyfleetKeyCard, KeyfleetReplay} from "./hooks/keyfleet_hero"
 import {HolographicCard} from "./hooks/holographic_card"
 import {CodeCube} from "./hooks/code_cube"
 import {InfoDialog} from "./hooks/info_dialog"
@@ -299,7 +299,6 @@ const hooks = {
   InfoDialog,
   KeyfleetField,
   KeyfleetKeyCard,
-  KeyfleetPlate,
   KeyfleetReplay,
   MotionCascade,
   MotionCount,

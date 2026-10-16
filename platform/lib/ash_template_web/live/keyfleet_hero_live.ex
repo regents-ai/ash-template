@@ -5,9 +5,10 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   It follows Keyfleet's homepage from top to bottom: Keyfleet Classic #1 with
   "Buy Agent Fleet Access Key", the box saying how a fleet runs itself, the
   Regents Club, and what a fleet can use. Classic is shown as it stands today,
-  with sales not yet open: the button stays on the page, off, on its raised
-  plate of hex tiles, with how many members the fleet has and where each sale
-  goes. Nothing here reads or changes anything outside the page.
+  with sales not yet open: the button stays on the page, off, with how many
+  members the fleet has and where each sale goes, on tiles of the hero's hex
+  field that rise under it. Nothing here reads or changes anything outside
+  the page.
   """
 
   use AshTemplateWeb, :live_view
@@ -192,10 +193,10 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   attr :treasury, :string, required: true
   attr :regent_swap, :string, required: true
 
-  # The next Key's card over the plate the button stands on: a raised slab of
-  # hex tiles in a colour of its own, holding the button, the fleet's members,
-  # and where each sale goes. Pointing at the card or the plate, or tabbing to
-  # the button, previews the Key: the card comes forward and shows its price.
+  # The next Key's card over the button, the fleet's members and where each
+  # sale goes. Pointing at the card or the words, or tabbing to the button,
+  # previews the Key: the card comes forward and shows its price, and the hex
+  # field's tiles under the words rise and darken, with the words on them.
   # The button is off while sales are closed and stays reachable by keyboard,
   # so the preview is too; a screen reader hears why it is off.
   defp buy_next_key(assigns) do
@@ -222,37 +223,26 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
       </div>
 
       <div
-        id="home-buy-plate"
-        class="kf-plate"
-        phx-hook="KeyfleetPlate"
-        phx-mounted={JS.ignore_attributes(["data-plate-ready"])}
-        data-plate-cell="20"
-        style="--kf-plate-cell: 20px"
+        id="home-buy-words"
+        class="kf-rise"
+        phx-mounted={JS.ignore_attributes(["style"])}
+        data-field-raise
       >
-        <div id="home-buy-plate-stage" class="kf-plate__stage" phx-update="ignore" aria-hidden="true">
-          <canvas class="kf-plate__canvas" data-plate-canvas></canvas>
-        </div>
-        <div
-          class="kf-plate__content"
-          phx-mounted={JS.ignore_attributes(["style"])}
-          data-plate-content
+        <button
+          id="home-buy-next-key"
+          type="button"
+          class="kf-rise__buy"
+          aria-disabled="true"
+          aria-describedby="home-buy-why"
         >
-          <button
-            id="home-buy-next-key"
-            type="button"
-            class="kf-plate__buy"
-            aria-disabled="true"
-            aria-describedby="home-buy-why"
-          >
-            <span class="kf-plate__title">Buy Agent Fleet Access Key</span>
-            <span id="home-buy-members" class="kf-plate__members">{members(@members)}</span>
-          </button>
-          <p id="home-buy-split" class="kf-plate__split">
-            90% <a id="home-buy-treasury" href={@treasury}>Treasury</a>
-            / 10%
-            <a id="home-buy-regent" href={@regent_swap} target="_blank" rel="noopener noreferrer">$REGENT</a>
-          </p>
-        </div>
+          <span class="kf-rise__title">Buy Agent Fleet Access Key</span>
+          <span id="home-buy-members" class="kf-rise__members">{members(@members)}</span>
+        </button>
+        <p id="home-buy-split" class="kf-rise__split">
+          90% <a id="home-buy-treasury" href={@treasury}>Treasury</a>
+          / 10%
+          <a id="home-buy-regent" href={@regent_swap} target="_blank" rel="noopener noreferrer">$REGENT</a>
+        </p>
         <p id="home-buy-why" hidden>Sales open soon</p>
       </div>
     </div>
