@@ -19,7 +19,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/foil" => "A card for each site",
     "/animations/buttons" => "Each site's main button, in motion",
     "/animations/crown" => "Glass cubes that follow you",
-    "/animations/keyfleet" => "A fleet's front door, in motion"
+    "/animations/keyfleet" => "A fleet's front door, in motion",
+    "/animations/header-footer" => "Every product under one menu"
   }
 
   def page(assigns) do

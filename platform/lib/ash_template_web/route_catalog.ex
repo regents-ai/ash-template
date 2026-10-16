@@ -58,6 +58,11 @@ defmodule AshTemplateWeb.RouteCatalog do
           route_id: :keyfleet_home,
           label: "Keyfleet home",
           path: "/animations/keyfleet"
+        },
+        %RouteTarget{
+          route_id: :header_footer,
+          label: "Header and footer",
+          path: "/animations/header-footer"
         }
       ]
     },

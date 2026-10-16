@@ -2333,3 +2333,21 @@ Operations
   mixed 22% toward charcoal in light, the near black unchanged in dark), the highest
   the darkest (Sean, 16 Oct 15:05Z). On a light ground their sides fall into shade
   instead of catching the light, so the pale tiles still read as standing.
+
+## 2026-10-16 — Header and footer in the Motion Lab
+
+- New Motion Lab pages `/animations/header-footer` and `/animations/header-footer/long`
+  (`AshTemplateWeb.HeaderFooterLive`): one header for every public page, with the brand,
+  a Products menu of every Regents product and Docs, over the shared footer
+  (`Layouts.product_links/1`).
+- `AshTemplateWeb.Components.SiteHeader.header/1` and the `ProductsMenu` hook
+  (`hooks/products_menu.ts`): a mouse opens the menu by resting on Products for 70 ms
+  and closes it 160 ms after leaving, with a short fade through the motion kit's
+  `play()`. A tap or a key toggles it; Escape, a press elsewhere and tabbing out close
+  it. Keys and Less motion open it with no motion.
+- `Shell.regents_products/0` lists the products in the order every menu shows them, and
+  `Shell.crown/1` is public, so the header and the apps menu read one list.
+- On the short page the footer sits at the foot of the screen; on the long page it
+  follows the content. The page keeps one root (`.hf-page`, rows `auto 1fr`) inside
+  `[data-phx-main]`'s single `1fr` row. Presentation only: no resources, routes outside
+  the lab, or data changes.

@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Header and footer in the Motion Lab.** A new lab page shows one header for every
+  page, with every Regents product under one menu, and the footer at the foot of the
+  screen on short pages.
 - **Paler tiles in light mode.** On the Keyfleet home lab page, the tiles that rise under
   your mouse are now shades of darker off-white in light mode, not near black.
 - **Keyfleet home in the Motion Lab.** A new lab page shows the Keyfleet home: the next
