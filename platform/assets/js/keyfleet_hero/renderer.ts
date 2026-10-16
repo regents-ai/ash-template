@@ -7,7 +7,8 @@
  * touch. Loaded only once a field is really going to be shown.
  *
  * The tiles nearest a mouse stand raised, each as high as the page's own
- * animation says, one frame at a time.
+ * animation says, one frame at a time, and each tile that rises wears a
+ * shining border for as long as the page's animation keeps it bright.
  *
  * Each value reaches the shader when it changes: the size when the canvas is
  * resized, the colours when the theme changes, the pointer on each frame.
@@ -59,19 +60,23 @@ const advance = (values: Eased[], snap: boolean) => {
   return moved
 }
 
-/** A raised tile: its centre in CSS pixels across the canvas, and how high it stands, 0..1 of the most. */
-export type Tile = {x: number; y: number; h: number}
+/**
+ * A raised tile: its centre in CSS pixels across the canvas, how high it
+ * stands, 0..1 of the most, and how bright its shining border still is, 0..1.
+ */
+export type Tile = {x: number; y: number; h: number; shine: number}
 const unraised = [0, 0, 0, 0] as const
 
 export type FieldRenderer = IslandRenderer & {
   /**
    * The lines' colour, the preview's light, the page's ground, the deep tone
-   * the raised tiles turn, and how dark their shadow is, from the page's theme.
+   * the raised tiles turn, the colour of a risen tile's shining border, and
+   * how dark their shadow is, from the page's theme.
    */
-  tones(line: Rgb, light: Rgb, ground: Rgb, deep: Rgb, shadow: number): void
+  tones(line: Rgb, light: Rgb, ground: Rgb, deep: Rgb, shine: Rgb, shadow: number): void
   /** The fade toward the edges: centre and radii 0..1 across the canvas, where it starts and ends along the radius. */
   fade(x: number, y: number, width: number, height: number, from: number, to: number): void
-  /** The raised tiles, and how high a tile stands at most, in CSS pixels. */
+  /** The raised and shining tiles, and how high a tile stands at most, in CSS pixels. */
   stand(tiles: readonly Tile[], most: number): void
   /** Where the pointer stands, 0..1 across the canvas. */
   point(x: number, y: number): void
@@ -105,7 +110,7 @@ export async function createFieldRenderer(
   const standing = () =>
     Array.from({length: TILES}, (_, i) => {
       const tile = raised[i]
-      return tile ? [tile.x * ratio, tile.y * ratio, tile.h, 0] : unraised
+      return tile ? [tile.x * ratio, tile.y * ratio, tile.h, tile.shine] : unraised
     })
 
   const gpu = await init()
@@ -132,6 +137,7 @@ export async function createFieldRenderer(
           stops: [1, 1, 0, 0],
           ground: [0, 0, 0, 1],
           deep: [0, 0, 0, 1],
+          shine: [1, 1, 1, 1],
           lift: lifting(),
           marks: Array.from({length: MARKS}, () => unmarked),
           tiles: standing(),
@@ -166,9 +172,11 @@ export async function createFieldRenderer(
     }
 
     return {
-      tones(line, light, ground, deep, dark) {
+      tones(line, light, ground, deep, shine, dark) {
         shadow = dark
-        shader.set({params: {line: [...line, 1], light: [...light, 1], ground: [...ground, 1], deep: [...deep, 1], lift: lifting()}})
+        shader.set({
+          params: {line: [...line, 1], light: [...light, 1], ground: [...ground, 1], deep: [...deep, 1], shine: [...shine, 1], lift: lifting()},
+        })
       },
       fade(fx, fy, width, height, from, to) {
         shader.set({params: {fade: [fx, fy, width, height], stops: [from, to, 0, 0]}})

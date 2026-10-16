@@ -61,6 +61,8 @@ const RAISED = 5
 const LIFT = 0.4
 /** How long a tile takes to stand up, and to sink back. */
 const STAND = 300
+/** How long a risen tile's border takes to fade. */
+const SHINE = 2000
 
 /**
  * How far apart the field's rows are, in tiles. The tiles' centres lie on two
@@ -98,14 +100,16 @@ type Standing = Tile & {key: string; to: number}
  * The hex field. `data-field-cell` is the distance between neighbouring tiles
  * in CSS pixels. Anywhere in the element marked `data-field-scope`, the five
  * tiles nearest a mouse stand up out of the field, the one under it highest,
- * and follow it as it moves, each rising and sinking in 0.3 seconds. A mouse
+ * and follow it as it moves, each rising and sinking in 0.3 seconds. A tile
+ * that rises wears a glossy border that fades over 2 seconds, from full again
+ * each time it rises. A mouse
  * also lights the tiles near it, and a mouse or a finger leaves a wake of lit
  * tiles that fades behind it; scrolling under a resting mouse moves all of it
  * to the tiles passing beneath. A press or a tap sends a ring out across the
  * tiles. Inside a hero, pointing at the Key's card lights the tiles around it.
  * Nothing moves unless someone does, and the field is still again shortly
- * after. Less motion keeps the picture and drops the raised tiles, the
- * pointer's light, the wake and the ring.
+ * after. Less motion keeps the picture and drops the raised tiles, their
+ * borders, the pointer's light, the wake and the ring.
  */
 export const KeyfleetField = {
   mounted(this: IslandHook) {
@@ -133,6 +137,7 @@ export const KeyfleetField = {
             tone(root, "--kf-field-light"),
             ground,
             tone(root, "--kf-field-deep"),
+            tone(root, "--kf-field-shine"),
             light ? 0.18 : 0.32,
           )
           nudge()
@@ -167,11 +172,12 @@ export const KeyfleetField = {
           nudge()
         }
 
-        // The raised tiles, by where they sit, until each has sunk back.
+        // The raised tiles, by where they sit, until each has sunk back and
+        // stopped shining. The highest, then the brightest, are drawn first.
         const standing = new Map<string, Standing>()
         const draw = () => {
-          for (const [key, tile] of standing) if (tile.h === 0 && tile.to === 0) standing.delete(key)
-          renderer()?.stand([...standing.values()].sort((a, b) => b.h - a.h), cell * LIFT)
+          for (const [key, tile] of standing) if (tile.h === 0 && tile.to === 0 && tile.shine === 0) standing.delete(key)
+          renderer()?.stand([...standing.values()].sort((a, b) => b.h - a.h || b.shine - a.shine), cell * LIFT)
           nudge()
         }
         const motion = createScope({root})
@@ -186,9 +192,14 @@ export const KeyfleetField = {
               onComplete: draw,
             })
           })
+          // The border starts bright and fades evenly to nothing.
+          motion.add("shine", (tile: Standing, from: number, duration: number) => {
+            animate(tile, {shine: [from, 0], duration, ease: "linear", onUpdate: draw, onComplete: draw})
+          })
         })
         const stand = (tile: Standing, to: number) => {
           if (Math.abs(tile.to - to) < 0.02) return
+          if (tile.to === 0 && to > 0) motion.methods.shine!(tile, 1, SHINE)
           tile.to = to
           motion.methods.stand!(tile, to, STAND)
         }
@@ -202,7 +213,7 @@ export const KeyfleetField = {
             keys.add(key)
             let tile = standing.get(key)
             if (!tile) {
-              tile = {key, x: centre.x * cell, y: centre.y * cell, h: 0, to: 0}
+              tile = {key, x: centre.x * cell, y: centre.y * cell, h: 0, to: 0, shine: 0}
               standing.set(key, tile)
             }
             stand(tile, heightAt(centre.away, rank === 0))
@@ -212,11 +223,12 @@ export const KeyfleetField = {
         const sink = () => {
           for (const tile of standing.values()) stand(tile, 0)
         }
-        // Less motion: the raised tiles are back in the field at once.
+        // Less motion: the raised tiles are back in the field at once, and dark.
         const flatten = () => {
           for (const tile of standing.values()) {
             tile.to = 0
             motion.methods.stand!(tile, 0, 0)
+            motion.methods.shine!(tile, 0, 0)
           }
         }
 

@@ -13,6 +13,7 @@
       color-mix(in oklab, var(--palette-charcoal) 45%, #000)
     );
     --kf-field-light: var(--ash-accent-warm);
+    --kf-field-shine: light-dark(var(--palette-powder-blue), var(--palette-tangerine-tango));
     --kf-ease: cubic-bezier(.23, 1, .32, 1);
     min-block-size: 100vh;
     padding-block-end: var(--space-8);

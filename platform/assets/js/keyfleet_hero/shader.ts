@@ -9,13 +9,14 @@
  * it. The tiles nearest a mouse stand up out of the field, each to its own
  * height, their faces turning from the field's own look toward the deep tone
  * the higher they stand (near black in dark, a darker off-white in light), and
- * sink back into it.
+ * sink back into it. A tile that rises wears a glossy border, powder blue in
+ * light and orange in dark, that fades whether it stands or has sunk.
  */
 
 /** How many marks of a wake or a ring the field holds at once. */
 export const MARKS = 32
-/** How many tiles can stand raised, or still be sinking, at once. */
-export const TILES = 24
+/** How many tiles can stand raised, be sinking, or still shine, at once. */
+export const TILES = 48
 
 export const fieldWgsl = /* wgsl */ `
 struct Params {
@@ -29,17 +30,20 @@ struct Params {
   // canvas, and where along the radius it starts and ends.
   fade: vec4f,
   stops: vec4f,
-  // The page's ground, and the deep tone the raised tiles turn.
+  // The page's ground, the deep tone the raised tiles turn, and the colour of
+  // a risen tile's shining border.
   ground: vec4f,
   deep: vec4f,
+  shine: vec4f,
   // How high a tile stands at most in device pixels, and how dark the shadow
   // of a raised tile is.
   lift: vec4f,
   // Each mark: where it is (0..1 across the canvas), how strong it still is,
   // and, for a ring, how far it has spread in tiles (below zero for a wake).
   marks: array<vec4f, ${MARKS}>,
-  // Each raised tile: its centre in device pixels and how high it stands,
-  // 0..1 of the most (0 for an empty place).
+  // Each raised or shining tile: its centre in device pixels, how high it
+  // stands, 0..1 of the most, and how bright its border still is, 0..1
+  // (both 0 for an empty place).
   tiles: array<vec4f, ${TILES}>,
 }
 @group(0) @binding(0) var<uniform> params: Params;
@@ -81,15 +85,42 @@ fn shown(p: vec2f) -> f32 {
   return clamp((params.stops.y - d) / max(params.stops.y - params.stops.x, 0.001), 0.0, 1.0);
 }
 
-// How high the tile centred at c stands, 0..1 of the most.
-fn height(c: vec2f) -> f32 {
+// How high the tile centred at c stands, 0..1 of the most, and how bright
+// its border still is.
+fn standing(c: vec2f) -> vec2f {
   for (var i = 0u; i < ${TILES}u; i += 1u) {
     let tile = params.tiles[i];
-    if (tile.z > 0.0 && distance(tile.xy, c) < params.size.z * 0.25) {
-      return tile.z;
+    if ((tile.z > 0.0 || tile.w > 0.0) && distance(tile.xy, c) < params.size.z * 0.25) {
+      return tile.zw;
     }
   }
-  return 0.0;
+  return vec2f(0.0);
+}
+
+// A glossy border in the shine colour around a tile, g being the point's
+// offset from the tile's centre: deeper on the side away from the light,
+// paler toward it, with a bright glint where the light falls on the top left.
+// On a light ground the deep side is a stronger, darker blue and the pale side
+// stays the colour itself, so a pale blue still shows on off-white.
+fn glossy(g: vec2f) -> vec3f {
+  let toward = dot(normalize(g + vec2f(0.0001)), vec2f(-0.6, -0.8)) * 0.5 + 0.5;
+  let luma = dot(params.ground.rgb, vec3f(0.2126, 0.7152, 0.0722));
+  let daylight = luma > 0.5;
+  let grey = vec3f(dot(params.shine.rgb, vec3f(0.2126, 0.7152, 0.0722)));
+  let strong = clamp(grey + (params.shine.rgb - grey) * 3.0, vec3f(0.0), vec3f(1.0)) * 0.62;
+  let rich = select(params.shine.rgb * 0.62, strong, daylight);
+  let pale = select(mix(params.shine.rgb, vec3f(1.0), 0.25), params.shine.rgb, daylight);
+  let base = mix(rich, pale, toward);
+  return mix(base, vec3f(1.0), pow(toward, 10.0) * 0.75);
+}
+
+// How much of the border band a point is in, h being how far it is from its
+// tile's centre toward the edge, inner where the band starts and outer
+// where it ends: a bright line along the edge with a soft bloom inside it.
+fn band(h: f32, inner: f32, outer: f32, aa: f32) -> f32 {
+  let line = smoothstep(inner - aa, inner, h) * (1.0 - smoothstep(outer, outer + aa, h));
+  let bloom = smoothstep(inner - aa * 7.0, inner, h) * (1.0 - smoothstep(outer, outer + aa, h));
+  return max(line, bloom * 0.35);
 }
 
 @fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
@@ -135,6 +166,13 @@ fn height(c: vec2f) -> f32 {
   color = over(color, params.light.rgb, fade * (face * lit * (0.10 + grain(p - h.xy) * 0.08) + rim * lit * 0.45));
   color = over(color, params.light.rgb, fade * (face * wake * (0.30 + grain(p - h.xy) * 0.12) + rim * wake * 0.85));
 
+  // A tile that rose shines along its rim while its border fades, and keeps
+  // shining once it has sunk back into the field.
+  let shining = standing(centre).y;
+  if (shining > 0.0) {
+    color = over(color, glossy(h.xy), fade * shining * band(h.z, EDGE - aa * 2.4, EDGE + aa * 1.0, aa));
+  }
+
   // The raised tiles, and their shadows on the field, further and softer the
   // higher a tile stands. Only pixels near a raised tile can show either.
   let lift = params.lift.x;
@@ -167,7 +205,8 @@ fn height(c: vec2f) -> f32 {
     let q = (px + vec2f(0.0, t)) / cell;
     let g = hex(q);
     let c = (q - g.xy) * cell;
-    let r = height(c);
+    let found = standing(c);
+    let r = found.x;
     let tall = lift * r;
     if (r <= 0.0 || t > tall + step * 0.5) {
       continue;
@@ -186,6 +225,7 @@ fn height(c: vec2f) -> f32 {
       let deep = params.deep.rgb + select(LIT * top * 0.18, vec3f(0.0), daylight);
       let border = select(mix(params.deep.rgb, LIT, 0.07), over(vec4f(params.deep.rgb, 1.0), params.line.rgb, 0.4).rgb, daylight);
       rgb = mix(mix(fieldFace, deep, r), mix(fieldRim, border, r), edged);
+      rgb = mix(rgb, glossy(g.xy), found.y * band(g.z, edge - aa * 3.2, edge, aa));
     } else {
       // The side, lighter than the face in dark and darker in light, either
       // way darkest toward the field.

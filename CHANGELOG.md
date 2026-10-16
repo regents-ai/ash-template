@@ -2381,3 +2381,13 @@ Operations
 - In light mode a raised tile on `/animations/keyfleet` keeps a darker hairline rim, the
   field's line at the strength of the rims lit around the pointer, over its off-white
   face, and its top edge is no longer lightened (Sean, 16 Oct 15:42Z). Dark is unchanged.
+
+## 2026-10-16 — Keyfleet home: shining borders on risen tiles
+
+- A tile that rises on `/animations/keyfleet` wears a glossy border, powder blue in light
+  and orange in dark, deeper on the side away from the light with a glint at the top
+  left, that fades evenly over 2 seconds and starts full again whenever the tile rises
+  again; it keeps fading after the tile sinks (Sean, 16 Oct 15:43Z). The colour is
+  `--kf-field-shine`; each tile's brightness rides in the fourth component of the
+  shader's tile list, which now holds 48 tiles. Less motion drops the borders with the
+  raised tiles.

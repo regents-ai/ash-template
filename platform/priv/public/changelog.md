@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Shining borders on risen tiles.** On the Keyfleet home lab page each tile that rises
+  under the mouse gets a glossy border, powder blue in light mode and orange in dark,
+  that fades over two seconds and lights up again when the tile rises again.
 - **Raised tiles keep their outline.** In light mode the tiles that rise on the Keyfleet
   home lab page keep a darker outline, like the flat tiles around them.
 - **Header and footer in the Motion Lab.** A new lab page shows one header for every
