@@ -2153,3 +2153,11 @@ Operations
   the site gives one address for help. Security reports already went to
   build@regents.sh on `/contact`, in `/.well-known/security.txt` and in the Privacy
   Policy; the versioned Terms of Use are unchanged.
+
+## 2026-10-16 — Commands name their WebMCP tool; agents status
+
+- Each command in `cli/commands.json` that a WebMCP tool also runs names that tool in
+  `webmcp` (21 of 23; `health` and `agents pair` have none). `Capabilities` checks
+  the name against `priv/tool_manifest.json` when it compiles.
+- New command `agents status` for `checkInAgent` (`GET /api/agents/v1/me`, the
+  `agent_status` tool). It is marked `cli_pending` until regents-cli releases it.

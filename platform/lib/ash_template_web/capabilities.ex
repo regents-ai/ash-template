@@ -85,6 +85,9 @@ defmodule AshTemplateWeb.Capabilities do
                      command && command["effect"] != row["effect"] ->
                        "a command with another effect"
 
+                     command && command["webmcp"] != (tool && tool["name"]) ->
+                       "a command naming another browser tool"
+
                      !!command != (!!row["cli_release"] or row["cli_pending"] == true) ->
                        "a cli_release without its command, or a command without one"
 

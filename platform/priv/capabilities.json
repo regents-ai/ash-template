@@ -219,6 +219,7 @@
       "may": null,
       "done": null,
       "cli_release": null,
+      "cli_pending": true,
       "switch": "app_surfaces"
     },
     {
