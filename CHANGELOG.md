@@ -2263,3 +2263,14 @@ Operations
   noted above; the `--rg-cta-*` and `--utility-action-*` tokens are gone.
 - The home page's product tabs keep their muted square paint under their own
   `--rl-tab-fill`.
+
+## 2026-10-16 — Agents are never told the account is missing
+
+- Pins elixir-utils 3ae5c7d: the check-in before a person's first sign-in answers
+  `person_not_here` (403), the code the rest of the site already gives, in place of
+  `person_sign_in_needed` from the entry above. One code, one meaning.
+- Every account exists on every site; a person may only need to sign in once (Sean,
+  16 Oct). So `person_not_here` now says "The person this agent is paired with hasn't
+  signed in on this site yet.", `account_required` says "This sign-in hasn't been used
+  on this website yet.", and the API descriptions say the person has not signed in on
+  this site yet, never that they have no account here.
