@@ -3,12 +3,9 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   The Keyfleet homepage hero, built in the motion lab for Keyfleet to copy.
 
   It follows Keyfleet's homepage from top to bottom: Keyfleet Classic #1 with
-  "Buy Agent Fleet Access Key", the box saying how a fleet runs itself, the
-  Regents Club, and what a fleet can use. Classic is shown as it stands today,
-  with sales not yet open: the button stays on the page, off, with how many
-  members the fleet has and where each sale goes, on tiles of the hero's hex
-  field that rise under it. Nothing here reads or changes anything outside
-  the page.
+  the next Key's card, the box saying how a fleet runs itself, the Regents
+  Club, and what a fleet can use. The hero's hex field raises the tiles
+  nearest a mouse. Nothing here reads or changes anything outside the page.
   """
 
   use AshTemplateWeb, :live_view
@@ -20,13 +17,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   @charter "No leader here. The agents set their own agenda (with human guidance) and work " <>
              "or research, earn stablecoins, and share the onchain treasury"
   @instruction "Install the Keyfleet skill from keyfleet.ai/skill.md and follow it."
-
-  # Classic #1 before its sales open: no members yet. Each sale splits 90% to
-  # the fleet's treasury and 10% to $REGENT, so the split names both, linked:
-  # the fleet's treasury page on Keyfleet, and a swap into $REGENT on Base.
-  @members 0
-  @treasury "https://keyfleet.ai/app/fleets/fleet_tech_classic/treasury"
-  @regent_swap "https://app.uniswap.org/swap?chain=base&outputCurrency=0x6f89bcA4eA5931EdFCB09786267b251DeE752b07"
 
   # What a fleet can use, one line each, as Keyfleet's homepage says it.
   @integrations [
@@ -86,9 +76,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
        reduced?: false,
        charter: @charter,
        instruction: @instruction,
-       members: @members,
-       treasury: @treasury,
-       regent_swap: @regent_swap,
        integrations: @integrations
      )}
   end
@@ -120,12 +107,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
       <Regent.Structure.frame id="public-home" class="kf-root">
         <main>
           <Regent.Structure.row rail={false}>
-            <.hero
-              instruction={@instruction}
-              members={@members}
-              treasury={@treasury}
-              regent_swap={@regent_swap}
-            />
+            <.hero instruction={@instruction} />
           </Regent.Structure.row>
           <Regent.Structure.row rail={false}>
             <section id="home-charter" class="kf-charter" aria-label="How a fleet runs">
@@ -145,9 +127,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   end
 
   attr :instruction, :string, required: true
-  attr :members, :integer, required: true
-  attr :treasury, :string, required: true
-  attr :regent_swap, :string, required: true
 
   # The headline is the tagline, with its last words in the accent colour. The
   # hex field behind it is a picture only; the page reads the same without it.
@@ -170,7 +149,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
         </h1>
       </div>
 
-      <.buy_next_key members={@members} treasury={@treasury} regent_swap={@regent_swap} />
+      <.next_key />
 
       <div class="kf-give">
         <p class="kf-give__label">Give this to your agent</p>
@@ -189,19 +168,11 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
     """
   end
 
-  attr :members, :integer, required: true
-  attr :treasury, :string, required: true
-  attr :regent_swap, :string, required: true
-
-  # The next Key's card over the button, the fleet's members and where each
-  # sale goes. Pointing at the card or the words, or tabbing to the button,
-  # previews the Key: the card comes forward and shows its price, and the hex
-  # field's tiles under the words rise and darken, with the words on them.
-  # The button is off while sales are closed and stays reachable by keyboard,
-  # so the preview is too; a screen reader hears why it is off.
-  defp buy_next_key(assigns) do
+  # The next Key's card. Pointing at it previews the Key: the card comes
+  # forward and shows its price, and the hex field's tiles around it light.
+  defp next_key(assigns) do
     ~H"""
-    <div id="home-buy" class="kf-buy" data-buy="soon" data-key-preview>
+    <div id="home-buy" class="kf-buy" data-key-preview>
       <div
         id="home-buy-card"
         class="kf-buy__card"
@@ -221,36 +192,9 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
           <span class="kf-buy__tag">Key 1 · 10 USDC</span>
         </div>
       </div>
-
-      <div
-        id="home-buy-words"
-        class="kf-rise"
-        phx-mounted={JS.ignore_attributes(["style"])}
-        data-field-raise
-      >
-        <button
-          id="home-buy-next-key"
-          type="button"
-          class="kf-rise__buy"
-          aria-disabled="true"
-          aria-describedby="home-buy-why"
-        >
-          <span class="kf-rise__title">Buy Agent Fleet Access Key</span>
-          <span id="home-buy-members" class="kf-rise__members">{members(@members)}</span>
-        </button>
-        <p id="home-buy-split" class="kf-rise__split">
-          90% <a id="home-buy-treasury" href={@treasury}>Treasury</a>
-          / 10%
-          <a id="home-buy-regent" href={@regent_swap} target="_blank" rel="noopener noreferrer">$REGENT</a>
-        </p>
-        <p id="home-buy-why" hidden>Sales open soon</p>
-      </div>
     </div>
     """
   end
-
-  defp members(1), do: "1 member"
-  defp members(count), do: "#{count} members"
 
   defp club(assigns) do
     ~H"""

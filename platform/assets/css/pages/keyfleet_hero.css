@@ -1,8 +1,8 @@
 /* The Keyfleet homepage hero in the motion lab at /animations/keyfleet:
-   Keyfleet Classic #1 with "Buy Agent Fleet Access Key", the box saying how a
-   fleet runs itself, the Regents Club and what a fleet can use. The layout
-   follows Keyfleet's own homepage; the hex field, its tiles rising under the
-   buy words, and the card's turn are the lab's additions. Every move is a
+   Keyfleet Classic #1 with the next Key's card, the box saying how a fleet
+   runs itself, the Regents Club and what a fleet can use. The layout follows
+   Keyfleet's own homepage; the hex field, its tiles rising under a mouse, and
+   the card's turn are the lab's additions. Every move is a
    transform or an opacity, so nothing on the page shifts. */
 @layer regents-product {
   .kf-lab {
@@ -38,9 +38,9 @@
     letter-spacing: .14em; text-transform: uppercase;
   }
 
-  /* The hero. Wide: the headline and the instruction in the left half, the Key
-     and its buy words centred in the right half. Narrow: the headline, then the Key and
-     its words, then the instruction. The hex field sits behind all of it. */
+  /* The hero. Wide: the headline and the instruction in the left half, the
+     Key's card centred in the right half. Narrow: the headline, then the card,
+     then the instruction. The hex field sits behind all of it. */
   .kf-hero {
     position: relative; isolation: isolate; overflow: hidden;
     display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "buy" "give";
@@ -54,7 +54,7 @@
   }
   .kf-hero__accent { color: var(--ash-accent-warm); }
 
-  /* The next Key's card over "Buy Agent Fleet Access Key". */
+  /* The next Key's card. */
   .kf-buy { grid-area: buy; display: grid; gap: var(--space-4); justify-self: center; inline-size: min(100%, 22rem); }
   .kf-buy__card {
     position: relative; aspect-ratio: 600 / 767; perspective: 60rem;
@@ -78,43 +78,17 @@
     transition: transform 200ms var(--kf-ease), opacity 200ms var(--kf-ease);
   }
   /* Under a mouse the card waits a step back, with its price hidden. Pointing
-     at the card or the words, or tabbing to the button, brings it forward
-     and shows its price. It only moves and fades, so nothing around it shifts.
-     A finger gets the card as it is, price showing. */
+     at it brings it forward and shows its price. It only moves and fades, so
+     nothing around it shifts. A finger gets the card as it is, price showing. */
   @media (hover: hover) and (pointer: fine) {
     .kf-buy__card { opacity: .82; transform: scale(.97); }
     .kf-buy__tag { opacity: 0; transform: translateY(.25rem); }
-    .kf-buy:has(.kf-buy__card:hover, .kf-rise:hover, .kf-rise__buy:focus-visible) .kf-buy__card { opacity: 1; transform: translateY(-.375rem); }
-    .kf-buy:has(.kf-buy__card:hover, .kf-rise:hover, .kf-rise__buy:focus-visible) .kf-buy__tag { opacity: 1; transform: none; }
+    .kf-buy__card:hover { opacity: 1; transform: translateY(-.375rem); }
+    .kf-buy__card:hover .kf-buy__tag { opacity: 1; transform: none; }
   }
   @media (hover: none), (pointer: coarse) {
     .kf-buy__tag { opacity: 1; }
   }
-  /* Keyboard focus previews the Key on any device. */
-  .kf-buy:has(.kf-rise__buy:focus-visible) .kf-buy__tag { opacity: 1; transform: none; }
-
-  /* The buy words sit on the hero's hex field. Once the GPU's picture has
-     landed, the field's tiles under them rise and turn near black while the
-     Key is previewed (always, for a finger), and the words ride up on them
-     in light ink, set from the field's own animation. */
-  .kf-rise {
-    justify-self: center; display: grid; justify-items: center; gap: var(--space-1);
-    padding: var(--space-2) var(--space-3);
-    text-align: center;
-  }
-  .kf-hero:has(.kf-hero__field[data-field-ready]) .kf-rise {
-    transform: translateY(var(--kf-raise-lift, 0));
-    color: color-mix(in oklab, var(--palette-platinum) calc(var(--kf-raise, 0) * 100%), var(--color-fg));
-  }
-  .kf-rise__buy {
-    display: grid; justify-items: center; gap: .125rem;
-    margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: default;
-  }
-  .kf-rise__buy:focus-visible, .kf-rise__split a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-  .kf-rise__title { font-size: 1.125rem; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; }
-  .kf-rise__members { font-size: .875rem; font-variant-numeric: tabular-nums; }
-  .kf-rise__split { font-size: .8125rem; font-variant-numeric: tabular-nums; }
-  .kf-rise__split a { color: inherit; text-decoration: underline; text-underline-offset: .2em; }
 
   .kf-give { grid-area: give; display: grid; align-content: start; gap: var(--space-1); min-width: 0; max-inline-size: 38rem; }
   .kf-give__label { color: var(--color-fg-muted); font-size: .875rem; }
@@ -131,7 +105,7 @@
      ground. The fade is stated once, as numbers 0..1 across the field: its
      centre, its radii, and where along them it starts and ends. The still
      drawing is masked with it; the GPU's picture reads the same numbers and
-     fades itself, so the tiles that rise stand whole. */
+     fades itself the same way. */
   .kf-field { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
   .kf-field__still, .kf-field__canvas { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
   .kf-field__still {
@@ -260,10 +234,9 @@
     .kf-integration-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 
-  /* On a phone the card stays small enough that its buy words show with it. */
+  /* On a phone the card stays small enough to leave the instruction in view. */
   @media (max-width: 39.99rem) {
     .kf-buy { inline-size: min(100%, 17rem); }
-    .kf-rise__title { font-size: 1.0625rem; }
   }
 
   @media (max-width: 47.99rem) {

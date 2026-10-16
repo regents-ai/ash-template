@@ -5,9 +5,9 @@
  * for a few frames and stops; a wake or a ring fades within the island's
  * easing frames, so the field is always still again shortly after the last
  * touch. Loaded only once a field is really going to be shown.
-
-The tiles under the hero's buy words rise out of the field and turn near
-black, by as much as the page's own animation says, one frame at a time.
+ *
+ * The tiles nearest a mouse stand raised, each as high as the page's own
+ * animation says, one frame at a time.
  *
  * Each value reaches the shader when it changes: the size when the canvas is
  * resized, the colours when the theme changes, the pointer on each frame.
@@ -16,7 +16,7 @@ import {prepareShader} from "@vgpu/wgsl/prepare"
 import {effect, frame, init, surface} from "vgpu"
 
 import {EASING_FRAME_LIMIT, type IslandRenderer} from "../canvas_island"
-import {fieldWgsl, MARKS} from "./shader"
+import {fieldWgsl, MARKS, TILES} from "./shader"
 
 export type Rgb = readonly [number, number, number]
 type Vec4 = [number, number, number, number]
@@ -59,8 +59,9 @@ const advance = (values: Eased[], snap: boolean) => {
   return moved
 }
 
-/** A box, left top right bottom, in CSS pixels across the canvas. */
-export type Box = Vec4
+/** A raised tile: its centre in CSS pixels across the canvas, and how high it stands, 0..1 of the most. */
+export type Tile = {x: number; y: number; h: number}
+const unraised = [0, 0, 0, 0] as const
 
 export type FieldRenderer = IslandRenderer & {
   /**
@@ -70,10 +71,8 @@ export type FieldRenderer = IslandRenderer & {
   tones(line: Rgb, light: Rgb, ground: Rgb, deep: Rgb, shadow: number): void
   /** The fade toward the edges: centre and radii 0..1 across the canvas, where it starts and ends along the radius. */
   fade(x: number, y: number, width: number, height: number, from: number, to: number): void
-  /** The box the raised tiles stand under, and how high they stand at most, in CSS pixels. */
-  group(box: Box, lift: number): void
-  /** How far the raised tiles have risen, 0..1. */
-  raise(amount: number): void
+  /** The raised tiles, and how high a tile stands at most, in CSS pixels. */
+  stand(tiles: readonly Tile[], most: number): void
   /** Where the pointer stands, 0..1 across the canvas. */
   point(x: number, y: number): void
   /** The pointer left. */
@@ -99,12 +98,15 @@ export async function createFieldRenderer(
   let ratio = 1
   let key: Vec4 = [0.5, 0.5, 0, 0]
   const placed = (): Vec4 => [key[0], key[1], key[2] * ratio, 0]
-  let box: Box = [0, 0, 0, 0]
+  let raised: readonly Tile[] = []
   let lift = 0
-  let raised = 0
   let shadow = 0
-  const grouped = (): Vec4 => [box[0] * ratio, box[1] * ratio, box[2] * ratio, box[3] * ratio]
-  const raising = (): Vec4 => [lift * ratio, raised, shadow, 0]
+  const lifting = (): Vec4 => [lift * ratio, shadow, 0, 0]
+  const standing = () =>
+    Array.from({length: TILES}, (_, i) => {
+      const tile = raised[i]
+      return tile ? [tile.x * ratio, tile.y * ratio, tile.h, 0] : unraised
+    })
 
   const gpu = await init()
   let disposed = false
@@ -130,16 +132,16 @@ export async function createFieldRenderer(
           stops: [1, 1, 0, 0],
           ground: [0, 0, 0, 1],
           deep: [0, 0, 0, 1],
-          group: grouped(),
-          raise: raising(),
+          lift: lifting(),
           marks: Array.from({length: MARKS}, () => unmarked),
+          tiles: standing(),
         },
       },
     })
     await shader.compile({colors: [stage.format]})
     const unsubscribe = stage.onResize(({width, height}) => {
       ratio = width / Math.max(1, canvas.clientWidth)
-      shader.set({params: {size: [width, height, cell * ratio, 0], key: placed(), group: grouped(), raise: raising()}})
+      shader.set({params: {size: [width, height, cell * ratio, 0], key: placed(), lift: lifting(), tiles: standing()}})
     })
 
     const x = eased(0.5)
@@ -166,19 +168,15 @@ export async function createFieldRenderer(
     return {
       tones(line, light, ground, deep, dark) {
         shadow = dark
-        shader.set({params: {line: [...line, 1], light: [...light, 1], ground: [...ground, 1], deep: [...deep, 1], raise: raising()}})
+        shader.set({params: {line: [...line, 1], light: [...light, 1], ground: [...ground, 1], deep: [...deep, 1], lift: lifting()}})
       },
       fade(fx, fy, width, height, from, to) {
         shader.set({params: {fade: [fx, fy, width, height], stops: [from, to, 0, 0]}})
       },
-      group(next, most) {
-        box = next
+      stand(tiles, most) {
+        raised = tiles
         lift = most
-        shader.set({params: {group: grouped(), raise: raising()}})
-      },
-      raise(amount) {
-        raised = amount
-        shader.set({params: {raise: raising()}})
+        shader.set({params: {lift: lifting(), tiles: standing()}})
       },
       point(px, py) {
         jump(x, px)
