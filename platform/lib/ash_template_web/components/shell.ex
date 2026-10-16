@@ -2,7 +2,8 @@ defmodule AshTemplateWeb.Components.Shell do
   @moduledoc """
   The app shell: the top bar, the rail of sections, the open section's sidebar
   and tabs, the page, the right side bar and the bottom bar, plus the search
-  dialog, the Regents apps menu, the account control and the theme switch.
+  dialog, the list of tools agents see, the Regents apps menu, the account
+  control and the theme switch.
 
   The panels' open and closed states are the browser's (`assets/js/shell_panels.ts`
   and the `ash_template_aside` and `ash_template_sidebar` cookies, read into
@@ -18,6 +19,7 @@ defmodule AshTemplateWeb.Components.Shell do
   use Phoenix.Component
   use AshTemplateWeb, :verified_routes
 
+  alias AshTemplateWeb.Components.AgentTools
   alias AshTemplateWeb.Components.RegentLinks
   alias AshTemplateWeb.RouteCatalog
   alias Phoenix.LiveView.JS
@@ -405,6 +407,7 @@ defmodule AshTemplateWeb.Components.Shell do
           <span class="shell-footer__dot" aria-hidden="true"></span>
           {if @healthy, do: "All systems working", else: "Some things aren’t answering"}
         </p>
+        <AgentTools.button id="shell-agent-tools-button" dialog="shell-agent-tools" />
         <nav class="shell-footer__links" aria-label="Site links">
           <a :for={{label, path} <- footer_links()} href={path}>{label}</a>
         </nav>
@@ -514,6 +517,8 @@ defmodule AshTemplateWeb.Components.Shell do
         </Regent.Primitives.button>
         {render_slot(@credits_panel)}
       </dialog>
+
+      <AgentTools.dialog id="shell-agent-tools" />
     </div>
     """
   end

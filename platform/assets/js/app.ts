@@ -37,6 +37,7 @@ import {VerifiedConnections} from "./hooks/verified_connections"
 import {TwinCube} from "./hooks/twin_cube"
 import {WorldCube} from "./hooks/world_cube"
 import {mountMotion} from "./motion"
+import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
 import {installPublicTools} from "./public_tools"
 
@@ -329,5 +330,6 @@ liveSocket.connect()
 installAccountAuthLazyLoader()
 installCrossTabCsrf()
 installCopyButtons()
+installAgentTools()
 mountMotion(document)
 window.liveSocket = liveSocket

@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.HomeLive do
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.Components.RegentLinks
+  alias AshTemplateWeb.Components.{AgentTools, RegentLinks}
   alias AshTemplateWeb.{Motion, PublicDocuments, RouteCatalog, Showcase}
 
   @doc "A public text representation using the same copy as the page."
@@ -119,7 +119,9 @@ defmodule AshTemplateWeb.HomeLive do
           <p class="rl-hero-description">A starting point for your next product</p>
           <div class="rl-hero-actions">
             <.action href={~p"/app"}>Open the app</.action>
+            <AgentTools.button id="home-agent-tools-button" dialog="home-agent-tools" />
           </div>
+          <AgentTools.dialog id="home-agent-tools" />
         </div>
         <div class="rl-hero-products">
           <ul

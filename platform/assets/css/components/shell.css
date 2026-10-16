@@ -1062,8 +1062,9 @@
   height: 0.95rem;
 }
 
-/* The footer holds the 2.75rem theme press without growing past it. */
-#shell-footer .theme-control {
+/* The footer holds the 2.75rem theme press and tool count without growing past
+   them. */
+#shell-footer :is(.theme-control, .agent-tools-button) {
   margin-block: -0.25rem;
 }
 
@@ -1576,9 +1577,15 @@
   #shell-footer .theme-control {
     margin-inline-start: auto;
   }
+
+  /* Status, tool count and theme share one row. */
+  #shell-footer {
+    column-gap: 0.5rem;
+  }
 }
 
-/* The narrowest phones: tighter presses keep the whole header on one row at 360px. */
+/* The narrowest phones: tighter presses keep the whole header, and the bottom
+   bar, on one row at 360px. */
 @media (max-width: 23.75rem) {
   #app-shell .shell-tool,
   #app-shell .shell-search-button {
@@ -1594,6 +1601,10 @@
      way to it. */
   #app-shell .account-chip {
     display: none;
+  }
+
+  #shell-footer {
+    padding-inline: 0.5rem;
   }
 }
 

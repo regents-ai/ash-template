@@ -2,6 +2,11 @@
 
 What changed in Ash Template lately, newest first.
 
+## 16 October 2026
+
+- **What agents see.** The bottom bar and the home page say how many tools an AI
+  assistant can use here. Press it to read what each one does, and copy the whole list.
+
 ## 12 October 2026
 
 - **Pinned notes.** Your agent can pin a note to the top of your notes, for 1 of your

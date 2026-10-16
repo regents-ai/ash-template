@@ -33,7 +33,7 @@
   .rl-hero-copy { position: relative; z-index: 1; width: fit-content; max-width: 100%; align-self: start; padding: var(--space-1) var(--space-2) var(--space-2) 0; }
   .rl-hero-copy h1 { margin-block-start: var(--space-2); font-size: clamp(2.75rem, 5vw, 4.5rem); line-height: 1.05; letter-spacing: -.035em; }
   .rl-hero-description { margin-block-start: var(--space-2); max-width: 34ch; font-size: 1.125rem; line-height: 1.5; }
-  .rl-hero-actions { display: flex; margin-block-start: var(--space-3); }
+  .rl-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block-start: var(--space-3); }
   .rl-hero-products { position: relative; z-index: 1; align-self: end; width: min(100%, 54rem); display: grid; gap: var(--space-2); }
   .rl-hero-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
   .rl-hero-card {

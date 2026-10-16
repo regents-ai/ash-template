@@ -2078,3 +2078,10 @@ Operations
   again, so an account used every week stayed signed in indefinitely (Sean, 15 Oct,
   decision 2a: every site follows this rule).
 - Sign-ins already open when this ships count from their most recent refresh.
+
+## 2026-10-16 — Agents see N WebMCP Tools
+
+- The app's bottom bar, and the home page beside "Open the app", now say "Agents see
+  24 WebMCP Tools", counted from the site's own tool list (Sean, 16 Oct). Pressing it
+  opens a list of every tool with its description and a "Copy as Markdown" button,
+  closed with its X, Escape or a press beside it. A phone shows "24 WebMCP Tools".
