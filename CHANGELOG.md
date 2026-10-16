@@ -2238,3 +2238,9 @@ Operations
   records contact, so an `account_missing` refusal no longer marks the agent as in
   contact. Asked for by Sentinel.
 
+## 2026-10-16 — Check-in touches only the pairing it read
+
+- Pins elixir-utils 97cc964: the check-in records contact only when the agent is
+  still paired with the person whose account it looked up, and answers `not_paired`
+  otherwise. Asked for by Sentinel.
+
