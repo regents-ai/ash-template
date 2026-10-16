@@ -2253,3 +2253,13 @@ Operations
   account is not on this site.
 - `AshTemplate.Agents.PairedAccount.account/1` comment reworded to match. The entries
   above that name `account_missing` describe the earlier code.
+
+## 2026-10-16 — Main buttons cut two corners again
+
+- Pins design-system 9e93f14 (Sean, 16 Oct 13:26Z, BTN-SHAPE "a"): main buttons cut
+  top-left and bottom-right with Powder Blue and Tangerine marks, in each site's own
+  colour in light and dark, and keep the hover arrow and the press. This undoes the
+  rectangular near-white button (2c99787) and the charcoal account button (16ecdff)
+  noted above; the `--rg-cta-*` and `--utility-action-*` tokens are gone.
+- The home page's product tabs keep their muted square paint under their own
+  `--rl-tab-fill`.

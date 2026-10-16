@@ -24,6 +24,8 @@ What changed in Ash Template lately, newest first.
   with a clear edge, and its label stays the same size.
 - **One pairing box on Account.** The Account page shows its pairing box once, not
   again in the side panel.
+- **Buttons with cut corners.** Main buttons are back to their cut corners in each
+  site's own colour, and the arrow still moves when you point at them.
 - **Agents know what to ask.** An agent that checks in before you have signed in here
   asks you to sign in once, then carries on.
 
