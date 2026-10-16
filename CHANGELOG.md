@@ -2527,3 +2527,13 @@ Operations
   `%{id, place, color}`, so real activity can feed the same page later.
 - Reduced motion draws one calm frame; a hidden tab draws nothing. Listed in the Motion
   lab, the Design page and the route catalog.
+
+## 2026-10-16 — Harbour art styles
+
+- `/animations/harbour` has six looks for the water and the buildings, picked from a row of
+  tabs above the sea and linkable with `?look=`: Toy (the first look), Studio (soft light,
+  long shadows and glossy water, like vgpu's robot dogs), Cartoon (inked outlines, flat
+  bands and curling foam), Paper (cut-paper layers stepping out from each beach), Blueprint
+  (drafting lines on a grid with depth rings) and Pixel (chunky dithered pixels).
+- Each look has its own still pictures for light and dark, shown until the first frame is
+  drawn and wherever the sea cannot be drawn live.

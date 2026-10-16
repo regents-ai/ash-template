@@ -4,11 +4,11 @@ import {
   type CanvasIslandOptions,
   type LoadRenderer,
 } from "../canvas_island"
-import type {HarbourLook, HarbourRenderer} from "../harbour/renderer"
+import type {HarbourLook, HarbourRenderer, HarbourStyle} from "../harbour/renderer"
 import type {Agent} from "../harbour/sim"
 
 export type HarbourController = CanvasIslandController & {
-  /** Hands the crew the page shows now to the harbour on screen. */
+  /** Hands the crew and the style the page shows now to the harbour on screen. */
   sync(): void
 }
 
@@ -19,6 +19,9 @@ const browserLoadHarbour: LoadRenderer<HarbourRenderer> = async (canvas, size, o
 
 /** The agents as the server wrote them: who, the place of their last action, and their colour. */
 const crewOf = (root: HTMLElement): Agent[] => JSON.parse(root.dataset.harbourCrew!) as Agent[]
+
+/** The art style the page asked for. */
+const styleOf = (root: HTMLElement): HarbourStyle => root.dataset.harbourStyle as HarbourStyle
 
 /** Dark unless the page or the device asks for light, the same reading as the theme switch. */
 const lookOf = (root: HTMLElement, light: MediaQueryList): HarbourLook => {
@@ -67,9 +70,11 @@ export const createHarbourController = (
         const harbour = renderer()!
         harbour.setCalm(calm.matches)
         harbour.setLook(lookOf(root, light))
+        harbour.setStyle(styleOf(root))
         harbour.setAgents(crewOf(root))
       })
       sync = () => {
+        renderer()?.setStyle(styleOf(root))
         renderer()?.setAgents(crewOf(root))
         nudge()
       }
