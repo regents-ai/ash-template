@@ -538,11 +538,6 @@
   color: var(--palette-tangerine-tango);
 }
 
-.shell-apps__tile[data-tone="account"] {
-  background: var(--palette-charcoal);
-  color: var(--palette-platinum);
-}
-
 /* ---- Rail and sidebar ---- */
 
 #shell-drawer {

@@ -2123,3 +2123,8 @@ Operations
   it was a full screen tall by itself. The page and its footer now fill the screen
   together and the page grows to meet the footer, so it sits at the bottom of the screen
   however short the page is. The app's bottom bar is unchanged.
+
+## 2026-10-16 — Regents Products lists products only
+
+- Account is no longer in the Regents Products menu: it is not a product, and the
+  signed-in side panel already has Account beside Sign out, and Manage Agents.
