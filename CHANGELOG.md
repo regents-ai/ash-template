@@ -2274,3 +2274,14 @@ Operations
   signed in on this site yet.", `account_required` says "This sign-in hasn't been used
   on this website yet.", and the API descriptions say the person has not signed in on
   this site yet, never that they have no account here.
+
+## 2026-10-16 — Keyfleet home hero in the Motion Lab
+
+- New Motion Lab page `/animations/keyfleet` (`AshTemplateWeb.KeyfleetHeroLive`): the
+  Keyfleet home hero with the next Key's card centred in the right half, over one hex
+  field drawn by a vgpu island (`hooks/keyfleet_hero.ts`, `keyfleet_hero/`).
+- The five tiles nearest a mouse stand up over 0.3 s, the nearest highest, and sink
+  over 0.3 s as the mouse moves on (Anime.js on the tile heights; the shader draws up
+  to 24 raised or sinking tiles). Touch screens and Less motion keep the field flat.
+- The same field sits behind the Club map lower on the page. Presentation only: no
+  resources, routes outside the lab, or data changes.
