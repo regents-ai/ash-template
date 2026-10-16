@@ -2,12 +2,13 @@
  * Draws the agent harbour with WebGPU through vgpu: an isometric blueprint of a
  * sea of islands, one ship for each agent. Loaded only once the harbour is really going to be shown.
  *
- * Each frame the sun draws its shadow map, the scene is drawn into a multisampled
- * target, and a last pass lays it on the page. Every mesh is instanced; the
- * islands and buildings are one instance, the ships and the smoke one each.
+ * Each frame the ripples take their steps, the sun draws its shadow map, the
+ * scene is drawn into a multisampled target, and a last pass lays it on the page.
+ * Every mesh is instanced; the islands and buildings are one instance, the ships
+ * and the smoke one each.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
-import {draw, effect, frame, geometry, init, sampler, surface, target, uniforms, type Geometry, type Gpu} from "vgpu"
+import {draw, effect, frame, geometry, init, pingPong, sampler, surface, target, uniforms, type Geometry, type Gpu} from "vgpu"
 import {
   group,
   instances,
@@ -23,16 +24,26 @@ import {instanceGeometry} from "vgpu/scene/gpu"
 
 import type {IslandRenderer} from "../canvas_island"
 import {FORGE_SMOKE, INN_SMOKE, harbourMesh, puffMesh, shipMesh, VERTEX_FLOATS} from "./meshes"
-import {partsWgsl, presentWgsl, shadowWgsl, waterWgsl} from "./shaders"
+import {
+  MAX_DROPS,
+  RIPPLE_CELLS,
+  RIPPLE_REACH,
+  RIPPLE_STEP,
+  partsWgsl,
+  presentWgsl,
+  rippleStepWgsl,
+  shadowWgsl,
+  shipShadowWgsl,
+  shipWgsl,
+  waterWgsl,
+} from "./shaders"
 import {
   CRUISE_SPEED,
   ISLANDS,
   ISLETS,
-  MAX_RIPPLES,
   MAX_SHIPS,
   PLACES,
   parkFleet,
-  rippleLift,
   stepFleet,
   syncFleet,
   waveHeight,
@@ -78,6 +89,9 @@ const PUFFS = {forge: 8, inn: 4}
 const STILL_TIME = 2.4
 /** Longest step the ships take, so a tab coming back does not jump the fleet. */
 const MAX_STEP = 1 / 20
+/** How high a click lifts the water, in world units, and the most steps the ripples take in one frame. */
+const DROP_HEIGHT = 0.12
+const MAX_RIPPLE_STEPS = 4
 
 /** Where the sun shines from: it casts the hatched shade. */
 const DAY_SUN = normalize([0.55, 0.9, -0.35])
@@ -118,9 +132,12 @@ async function build(
   stage.resize([size[0], size[1]])
 
   const parts = prepareShader(partsWgsl, "harbour_parts.wgsl")
+  const shipParts = prepareShader(shipWgsl, "harbour_ship.wgsl")
   const water = prepareShader(waterWgsl, "harbour_water.wgsl")
   const shadow = prepareShader(shadowWgsl, "harbour_shadow.wgsl")
+  const shipShadow = prepareShader(shipShadowWgsl, "harbour_ship_shadow.wgsl")
   const presentShader = prepareShader(presentWgsl, "harbour_present.wgsl")
+  const rippleShader = prepareShader(rippleStepWgsl, "harbour_ripples.wgsl")
 
   // The islands and buildings never move: one instance at the origin. Its tint
   // is the castle's banner colour.
@@ -150,9 +167,6 @@ async function build(
   const islandRows = new Float32Array(ISLANDS.length * 4)
   ISLANDS.forEach((island, index) => islandRows.set([island.x, island.z, island.radius, 0], index * 4))
   const shipRows = new Float32Array(MAX_SHIPS * 4)
-  const rippleRows = new Float32Array(MAX_RIPPLES * 4)
-  const ripples = rows(rippleRows)
-  let nextRipple = 0
   const sceneValues = {
     lightViewProjection: new Float32Array(16),
     sunDirection: [...DAY_SUN],
@@ -162,7 +176,6 @@ async function build(
     shipCount: 0,
     islands: rows(islandRows),
     ships: rows(shipRows),
-    ripples,
   }
   const sceneUniforms = uniforms(gpu, sceneValues)
 
@@ -177,21 +190,54 @@ async function build(
   })
   const lit = {camera: cameraUniforms, scene: sceneUniforms, shadowMap: shadowTarget, shadowSampler}
 
-  const passes = bridges.map((bridge, index) => ({
-    bridge,
-    shadow: draw(gpu, {
-      shader: shadow,
-      geometry: bridge.geometry,
-      targets: [shadowTarget],
-      writeMask: [],
-      depth: {bias: 2, biasSlopeScale: 2.5},
-      cull: "none",
-      set: {scene: sceneUniforms},
-      label: `harbour.shadow.${index}`,
-    }),
-    color: draw(gpu, {shader: parts, geometry: bridge.geometry, targets: [sceneTarget], cull: "none", set: lit, label: `harbour.parts.${index}`}),
-  }))
-  const sea = draw(gpu, {shader: water, geometry: seaGeometry(gpu), targets: [sceneTarget], cull: "none", set: lit, label: "harbour.sea"})
+  // The ripples: the sea's height a cell at a time, stepped on the GPU from one
+  // target into the other.
+  const field = pingPong(gpu, RIPPLE_CELLS, RIPPLE_CELLS, {format: "rgba16float", label: "harbour.ripples"})
+  const rippleSampler = sampler(gpu, {
+    minFilter: "linear",
+    magFilter: "linear",
+    addressModeU: "clamp-to-edge",
+    addressModeV: "clamp-to-edge",
+  })
+  const dropRows = new Float32Array(MAX_DROPS * 4)
+  const rippleValues = {islands: rows(islandRows), drops: rows(dropRows)}
+  const rippleStep = effect(gpu, rippleShader, {set: {sea: rippleValues, field: field.read}, label: "harbour.ripples"})
+  const riding = () => ({ripples: field.read, rippleSampler})
+
+  const passes = bridges.map((bridge, index) => {
+    // The fleet's bridge: only ships ride the ripples.
+    const ships = bridge === bridges[1]
+    return {
+      bridge,
+      ships,
+      shadow: draw(gpu, {
+        shader: ships ? shipShadow : shadow,
+        geometry: bridge.geometry,
+        targets: [shadowTarget],
+        writeMask: [],
+        depth: {bias: 2, biasSlopeScale: 2.5},
+        cull: "none",
+        set: ships ? {scene: sceneUniforms, ...riding()} : {scene: sceneUniforms},
+        label: `harbour.shadow.${index}`,
+      }),
+      color: draw(gpu, {
+        shader: ships ? shipParts : parts,
+        geometry: bridge.geometry,
+        targets: [sceneTarget],
+        cull: "none",
+        set: ships ? {...lit, ...riding()} : lit,
+        label: `harbour.parts.${index}`,
+      }),
+    }
+  })
+  const sea = draw(gpu, {
+    shader: water,
+    geometry: seaGeometry(gpu),
+    targets: [sceneTarget],
+    cull: "none",
+    set: {...lit, ...riding()},
+    label: "harbour.sea",
+  })
   const presentValues = {
     resolution: [size[0], size[1]],
     vignette: 0.1,
@@ -202,7 +248,12 @@ async function build(
     set: {present: presentValues, sceneColor: sceneTarget, linearSampler: sampler(gpu, {minFilter: "linear", magFilter: "linear"})},
     label: "harbour.present",
   })
-  await Promise.all([...passes.flatMap(pass => [pass.shadow.compile(shadowTarget), pass.color.compile(sceneTarget)]), sea.compile(sceneTarget), present.compile(stage)])
+  await Promise.all([
+    ...passes.flatMap(pass => [pass.shadow.compile(shadowTarget), pass.color.compile(sceneTarget)]),
+    sea.compile(sceneTarget),
+    present.compile(stage),
+    rippleStep.compile(field.write),
+  ])
 
   let ships: Ship[] = []
   const shipIds = new Map<string, InstanceId>()
@@ -211,9 +262,12 @@ async function build(
   let nightGoal = 0
   let calm = false
   let lastStep: number | undefined
+  /** Seconds the ripples are owed, and the clicks waiting to land in their next step. */
+  let rippleClock = 0
+  let drops: [number, number][] = []
   let clear: [number, number, number, number] = [0.9, 0.89, 0.82, 1]
   const world = new Float32Array(16)
-  const seaHeight = (x: number, z: number) => waveHeight(x, z, time) + rippleLift(x, z, time, ripples)
+  const seaHeight = (x: number, z: number) => waveHeight(x, z, time)
 
   /** A point in the world, across the canvas from 0 to 1. The view is orthographic. */
   const onCanvas = (x: number, y: number, z: number): [number, number] => {
@@ -310,6 +364,31 @@ async function build(
     })
   }
 
+  /** Moves the ripples on by the steps they are owed. Each step is its own submission, so it sees its own drops. */
+  const stepRipples = () => {
+    for (let steps = 0; steps < MAX_RIPPLE_STEPS && rippleClock >= RIPPLE_STEP; steps++) {
+      dropRows.fill(0)
+      drops.forEach(([x, z], index) => dropRows.set([x, z, DROP_HEIGHT, 0], index * 4))
+      drops = []
+      rippleStep.set({sea: rippleValues, field: field.read})
+      frame(gpu, current => current.pass(field.write, rippleStep))
+      field.swap()
+      rippleClock -= RIPPLE_STEP
+    }
+    // A slow frame drops the time it could not catch up on rather than carrying it.
+    rippleClock = Math.min(rippleClock, RIPPLE_STEP)
+  }
+
+  /** Flattens the sea, for a calm harbour. */
+  const stillRipples = () => {
+    drops = []
+    rippleClock = 0
+    frame(gpu, current => {
+      current.pass({target: field.read, clear: [0, 0, 0, 0]}, () => {})
+      current.pass({target: field.write, clear: [0, 0, 0, 0]}, () => {})
+    })
+  }
+
   const renderer: HarbourRenderer = {
     setAgents(agents) {
       const next = syncFleet(ships, agents)
@@ -344,6 +423,7 @@ async function build(
       night = nightGoal
       light()
       parkFleet(ships)
+      stillRipples()
     },
     shipAt(u, v) {
       // The reach as a share of the canvas, across and down.
@@ -366,8 +446,8 @@ async function build(
     ripple(u, v) {
       if (calm) return
       const [x, z] = onSea(u, v)
-      ripples[nextRipple]!.set([x, z, time, 1])
-      nextRipple = (nextRipple + 1) % MAX_RIPPLES
+      if (Math.max(Math.abs(x), Math.abs(z)) > RIPPLE_REACH - 1) return
+      drops = [...drops, [x, z] as [number, number]].slice(-MAX_DROPS)
     },
     resize(width, height) {
       stage.resize([width, height])
@@ -384,6 +464,7 @@ async function build(
       const dt = lastStep === undefined ? 0 : Math.min(MAX_STEP, now - lastStep)
       lastStep = now
       time += dt
+      rippleClock += dt
       stepFleet(ships, dt)
       if (night !== nightGoal) {
         night += (nightGoal - night) * Math.min(1, dt * 2.5)
@@ -401,6 +482,14 @@ async function build(
       presentValues.vignette = 0.1 + 0.16 * night
       presentValues.ink = mix3(DAY_INK, NIGHT_INK, night)
       present.set({present: presentValues})
+      stepRipples()
+      const ripples = riding()
+      sea.set(ripples)
+      for (const pass of passes) {
+        if (!pass.ships) continue
+        pass.shadow.set(ripples)
+        pass.color.set(ripples)
+      }
       frame(gpu, current => {
         current.pass({target: shadowTarget, clear: [0, 0, 0, 0]}, pass => {
           passes.forEach((each, index) => {
@@ -478,7 +567,7 @@ function seaGeometry(gpu: Gpu): Geometry {
   })
 }
 
-/** A ship riding the sea under it: pitched by the swell and the ripples, heeled into its turn. */
+/** A ship riding the swell under it: pitched by the swell and heeled into its turn. The shaders add the ripples. */
 function shipWorld(ship: Ship, height: (x: number, z: number) => number, out: Float32Array): Float32Array {
   const fx = Math.cos(ship.heading)
   const fz = Math.sin(ship.heading)
