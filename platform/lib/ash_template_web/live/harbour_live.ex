@@ -11,17 +11,39 @@ defmodule AshTemplateWeb.HarbourLive do
   The harbour is drawn as a blueprint. Pressing a ship, or an agent's name under
   the harbour, opens that agent's card; `?agent=` names the agent, so each card
   has its own link.
+
+  Each island has its own page at `/animations/harbour/<island>`, with the same
+  harbour. A mouse over an island shows a card with the link; pressing the
+  island, or its name under the harbour, follows it.
   """
 
   use AshTemplateWeb, :live_view
 
+  alias AshTemplateWeb.{NotFoundError, PublicDocuments}
   alias Phoenix.LiveView.JS
 
-  # Each island, the action that sends a ship there, and what the legend calls it.
+  # Each island, the action that sends a ship there, what the legend calls it,
+  # and what its own page says about it.
   @places [
-    %{id: "inn", name: "Inn", action: "Chat"},
-    %{id: "forge", name: "Forge", action: "Work"},
-    %{id: "castle", name: "Castle", action: "Proposal"}
+    %{
+      id: "inn",
+      name: "Inn",
+      action: "Chat",
+      about: "Where agents chat. A ship circles the inn while its agent's last action is a chat."
+    },
+    %{
+      id: "forge",
+      name: "Forge",
+      action: "Work",
+      about: "Where agents work. A ship circles the forge while its agent's last action is work."
+    },
+    %{
+      id: "castle",
+      name: "Castle",
+      action: "Proposal",
+      about:
+        "Where agents make proposals. A ship circles the castle while its agent's last action is a proposal."
+    }
   ]
 
   @place_ids Enum.map(@places, & &1.id)
@@ -49,9 +71,7 @@ defmodule AshTemplateWeb.HarbourLive do
     now = DateTime.utc_now()
 
     {:ok,
-     socket
-     |> assign(AshTemplateWeb.PublicDocuments.page("/animations/harbour"))
-     |> assign(
+     assign(socket,
        places: @places,
        crew: Enum.with_index(@crew, &with_history(&1, &2, now)),
        now: now
@@ -75,9 +95,22 @@ defmodule AshTemplateWeb.HarbourLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
+    place = place!(params["place"])
     agent_id = if Enum.any?(socket.assigns.crew, &(&1.id == params["agent"])), do: params["agent"]
-    {:noreply, assign(socket, agent_id: agent_id)}
+
+    {:noreply,
+     socket
+     |> assign(PublicDocuments.page(harbour_path(place)))
+     |> assign(place: place, agent_id: agent_id)}
   end
+
+  defp place!(nil), do: nil
+  defp place!(id), do: Map.get(@places_by_id, id) || raise(NotFoundError)
+
+  # The harbour's own page, or an island's.
+  defp harbour_path(place, query \\ [])
+  defp harbour_path(nil, query), do: ~p"/animations/harbour?#{query}"
+  defp harbour_path(place, query), do: ~p"/animations/harbour/#{place.id}?#{query}"
 
   # One agent, chosen at random, does something at a different place.
   @impl true
@@ -99,11 +132,11 @@ defmodule AshTemplateWeb.HarbourLive do
 
   @impl true
   def handle_event("show_agent", %{"id" => id}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/animations/harbour?#{[agent: id]}")}
+    {:noreply, push_patch(socket, to: harbour_path(socket.assigns.place, agent: id))}
   end
 
   def handle_event("close_agent", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/animations/harbour")}
+    {:noreply, push_patch(socket, to: harbour_path(socket.assigns.place))}
   end
 
   @impl true
@@ -111,13 +144,21 @@ defmodule AshTemplateWeb.HarbourLive do
     ~H"""
     <main id="harbour-lab" class="motion-lab">
       <header class="motion-lab__head">
-        <p class="motion-lab__kicker">
+        <p :if={!@place} class="motion-lab__kicker">
           <a href={~p"/"}>Ash Template</a> / <a href={~p"/animations"}>Motion lab</a> / Harbour
         </p>
-        <h1>Agent harbour</h1>
+        <p :if={@place} class="motion-lab__kicker">
+          <a href={~p"/"}>Ash Template</a>
+          / <a href={~p"/animations"}>Motion lab</a>
+          / <.link patch={~p"/animations/harbour"}>Harbour</.link>
+          / {@place.name}
+        </p>
+        <h1>{if @place, do: @place.name, else: "Agent harbour"}</h1>
         <p class="motion-lab__lede">
-          Each ship is an agent. It sails to the island of its last action and circles there
-          until it does something new.
+          {if @place,
+            do: @place.about,
+            else:
+              "Each ship is an agent. It sails to the island of its last action and circles there until it does something new."}
         </p>
       </header>
       <div
@@ -144,17 +185,36 @@ defmodule AshTemplateWeb.HarbourLive do
           height="581"
           alt=""
         />
-        <div id="harbour-stage" class="harbour__stage" phx-update="ignore">
+        <div id="harbour-stage" class="harbour__stage" phx-update="ignore" data-harbour-stage>
           <canvas id="harbour-canvas" data-harbour-canvas></canvas>
           <span class="harbour__tag" data-harbour-tag hidden></span>
+          <.link
+            :for={place <- @places}
+            patch={~p"/animations/harbour/#{place.id}"}
+            class="harbour__isle"
+            data-harbour-isle={place.id}
+            tabindex="-1"
+            hidden
+          >
+            <strong>{place.name}</strong>
+            <span>Visit</span>
+          </.link>
         </div>
       </div>
       <ul class="harbour__legend" aria-label="Where each agent is">
         <li :for={place <- @places}>
-          <p><strong>{place.name}</strong> {place.action}</p>
+          <p>
+            <.link
+              patch={~p"/animations/harbour/#{place.id}"}
+              aria-current={@place == place && "page"}
+            >
+              <strong>{place.name}</strong>
+            </.link>
+            {place.action}
+          </p>
           <ul>
             <li :for={agent <- @crew} :if={agent.place == place.id} style={"--sail: #{agent.color}"}>
-              <.link patch={~p"/animations/harbour?#{[agent: agent.id]}"}>{agent.name}</.link>
+              <.link patch={harbour_path(@place, agent: agent.id)}>{agent.name}</.link>
             </li>
           </ul>
         </li>

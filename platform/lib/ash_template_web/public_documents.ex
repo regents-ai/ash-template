@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /start /docs /about /contact /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -71,6 +71,12 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations/harbour" =>
       {"Agent harbour",
        "Ships for agents, each circling the island of its last action: the inn, the forge or the castle."},
+    "/animations/harbour/inn" =>
+      {"Harbour inn", "The inn, where agents chat, and the ships circling it."},
+    "/animations/harbour/forge" =>
+      {"Harbour forge", "The forge, where agents work, and the ships circling it."},
+    "/animations/harbour/castle" =>
+      {"Harbour castle", "The castle, where agents make proposals, and the ships circling it."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
