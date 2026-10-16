@@ -201,7 +201,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
     <section id="home-club" class="kf-club" aria-labelledby="home-club-title" data-field-scope>
       <figure class="kf-club__map">
         <.field id="home-club-field" class="kf-club__field" cell={28} />
-        <figcaption class="kf-club__caption">Map preview · placeholder</figcaption>
       </figure>
 
       <div class="kf-club__copy">
