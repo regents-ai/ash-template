@@ -2085,3 +2085,8 @@ Operations
   24 WebMCP Tools", counted from the site's own tool list (Sean, 16 Oct). Pressing it
   opens a list of every tool with its description and a "Copy as Markdown" button,
   closed with its X, Escape or a press beside it. A phone shows "24 WebMCP Tools".
+
+## 2026-10-16 — Regents Products
+
+- The menu behind the nine dots is now headed "Regents Products", and its button
+  says the same (Sean, 16 Oct; it was "Regents Labs apps").

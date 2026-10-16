@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.Components.Shell do
   @moduledoc """
   The app shell: the top bar, the rail of sections, the open section's sidebar
   and tabs, the page, the right side bar and the bottom bar, plus the search
-  dialog, the list of tools agents see, the Regents apps menu, the account
+  dialog, the list of tools agents see, the Regents Products menu, the account
   control and the theme switch.
 
   The panels' open and closed states are the browser's (`assets/js/shell_panels.ts`
@@ -40,7 +40,7 @@ defmodule AshTemplateWeb.Components.Shell do
     {"Terms", "/terms"}
   ]
 
-  # The Regents Labs apps, each shown with the crown in its own pair of brand colours.
+  # The Regents Products, each shown with the crown in its own pair of brand colours.
   @regents_apps [
     %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
     %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
@@ -767,13 +767,13 @@ defmodule AshTemplateWeb.Components.Shell do
       class="shell-tool"
       type="button"
       popovertarget="shell-apps"
-      aria-label="Regents apps"
+      aria-label="Regents Products"
     >
       <.icon name={:apps} class="shell-icon shell-icon--apps" />
-      <span class="shell-tool__tip" aria-hidden="true">Regents apps</span>
+      <span class="shell-tool__tip" aria-hidden="true">Regents Products</span>
     </button>
     <nav id="shell-apps" class="shell-apps" popover aria-labelledby="shell-apps-title">
-      <h2 id="shell-apps-title">Regents Labs apps</h2>
+      <h2 id="shell-apps-title">Regents Products</h2>
       <ul>
         <li :for={app <- @apps}>
           <a href={app.url} target="_blank" rel="noopener">
