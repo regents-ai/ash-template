@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Docs on phones.** On a phone, Docs now stays in the header beside Products, and the
+  header and footer lab page fits a small phone screen without scrolling.
 - **Shining borders on risen tiles.** On the Keyfleet home lab page each tile that rises
   under the mouse gets a glossy border, powder blue in light mode and orange in dark,
   that fades over two seconds and lights up again when the tile rises again.

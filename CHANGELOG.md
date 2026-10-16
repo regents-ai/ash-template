@@ -2391,3 +2391,11 @@ Operations
   `--kf-field-shine`; each tile's brightness rides in the fourth component of the
   shader's tile list, which now holds 48 tiles. Less motion drops the borders with the
   raised tiles.
+
+## 2026-10-16 — Header and footer: Docs on every phone
+
+- On phones Docs stays in the header beside Products, with tighter link padding; below
+  360 px wide the crown stands for "Ash Template", which screen readers still hear
+  (`.site-header__name`). Docs no longer waits in the footer.
+- The lab's lede is one line shorter, so the short page fits a 320 × 844 phone without
+  scrolling (Sentinel's v94 read, 16 Oct).

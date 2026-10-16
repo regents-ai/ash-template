@@ -35,8 +35,7 @@ defmodule AshTemplateWeb.HeaderFooterLive do
           </p>
           <h1>Header and footer</h1>
           <p class="motion-lab__lede">
-            Rest on Products, or tap it on a phone. On a short page the footer stays at the foot of
-            the screen; on a long one it follows the page.
+            Rest on Products, or tap it. The footer keeps to the foot of the screen.
           </p>
         </header>
 
