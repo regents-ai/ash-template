@@ -2537,3 +2537,12 @@ Operations
   (drafting lines on a grid with depth rings) and Pixel (chunky dithered pixels).
 - Each look has its own still pictures for light and dark, shown until the first frame is
   drawn and wherever the sea cannot be drawn live.
+
+## 2026-10-16 — Harbour drawn as a blueprint
+
+- `/animations/harbour` now shows only the Blueprint look: blue ink lines on pale drafting
+  paper by day, pale ink on navy by night, with a grid on the sea, depth rings rolling out
+  from each beach, hatched shade and coloured sails. The row of style tabs and the
+  `?look=` link are gone.
+- One pair of still pictures, light and dark, stands in until the first frame is drawn and
+  wherever the sea cannot be drawn live.

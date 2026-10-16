@@ -1,6 +1,6 @@
 /**
- * Draws the agent harbour with WebGPU through vgpu: an isometric sea of islands,
- * one ship for each agent. Loaded only once the harbour is really going to be shown.
+ * Draws the agent harbour with WebGPU through vgpu: an isometric blueprint of a
+ * sea of islands, one ship for each agent. Loaded only once the harbour is really going to be shown.
  *
  * Each frame the sun draws its shadow map, the scene is drawn into a multisampled
  * target, and a last pass lays it on the page. Every mesh is instanced; the
@@ -38,10 +38,6 @@ import {
   type Ship,
 } from "./sim"
 
-/** The harbour's looks, in the order the shaders number them. */
-export const HARBOUR_STYLES = ["toy", "studio", "cartoon", "paper", "blueprint", "pixel"] as const
-export type HarbourStyle = (typeof HARBOUR_STYLES)[number]
-
 export type HarbourLook = {
   readonly night: boolean
   /** The page colour the sea fades into, as #rrggbb. */
@@ -51,7 +47,6 @@ export type HarbourLook = {
 export type HarbourRenderer = IslandRenderer & {
   setAgents(agents: readonly Agent[]): void
   setLook(look: HarbourLook): void
-  setStyle(style: HarbourStyle): void
   /** A visitor who asked for less motion gets one composed, unmoving harbour. */
   setCalm(calm: boolean): void
 }
@@ -66,34 +61,12 @@ const STILL_TIME = 2.4
 /** Longest step the ships take, so a tab coming back does not jump the fleet. */
 const MAX_STEP = 1 / 20
 
-const DAY = {
-  sun: normalize([0.55, 0.9, -0.35]),
-  sunColor: [2.55, 2.4, 2.15],
-  sky: [0.5, 0.6, 0.74],
-  exposure: 1.0,
-}
-/** The studio's sun sits lower and whiter, for long soft shadows. */
-const STUDIO_DAY = {
-  sun: normalize([0.72, 0.6, -0.55]),
-  sunColor: [2.3, 2.26, 2.18],
-  sky: [0.6, 0.64, 0.7],
-  exposure: 1.0,
-}
-const NIGHT = {
-  sun: normalize([-0.35, 0.85, -0.45]),
-  sunColor: [0.36, 0.44, 0.7],
-  sky: [0.07, 0.1, 0.19],
-  exposure: 1.15,
-}
-
-type Outline = {day: number[]; night: number[]; strength: number; edge: number; line: number}
-
-/** The looks that ink their edges: colour by day and night, strength, and how fine. */
-const OUTLINES: Partial<Record<HarbourStyle, Outline>> = {
-  cartoon: {day: [0.13, 0.17, 0.22], night: [0.01, 0.02, 0.05], strength: 0.92, edge: 0.05, line: 1.4},
-  paper: {day: [0.36, 0.31, 0.25], night: [0, 0, 0.02], strength: 0.35, edge: 0.03, line: 1.0},
-  blueprint: {day: [0.12, 0.3, 0.62], night: [0.66, 0.84, 1.0], strength: 1, edge: 0.015, line: 1.0},
-}
+/** Where the sun shines from: it casts the hatched shade. */
+const DAY_SUN = normalize([0.55, 0.9, -0.35])
+const NIGHT_SUN = normalize([-0.35, 0.85, -0.45])
+/** The ink of the outlines, as INK_DAY and INK_NIGHT in the shaders. */
+const DAY_INK = [0.12, 0.3, 0.62]
+const NIGHT_INK = [0.66, 0.84, 1.0]
 
 export async function createHarbourRenderer(
   canvas: HTMLCanvasElement,
@@ -135,7 +108,7 @@ async function build(
   // is the castle's banner colour.
   const tint = {style: {format: "float32x4", default: [0, 0, 0, 0]}} as const
   const land = instances({capacity: 1, attributes: tint})
-  land.add({style: [...linearColor("#d8453a"), 0]})
+  land.add({style: [...displayColor("#d8453a"), 0]})
   const fleet = instances({capacity: MAX_SHIPS, attributes: tint})
   const smoke = instances({capacity: PUFFS.forge + PUFFS.inn, attributes: tint})
   const puffIds = Array.from({length: PUFFS.forge + PUFFS.inn}, (_, index) => smoke.add({style: [0, 0, 0, index]}))
@@ -161,15 +134,11 @@ async function build(
   const shipRows = new Float32Array(MAX_SHIPS * 4)
   const sceneValues = {
     lightViewProjection: new Float32Array(16),
-    sunDirection: [...DAY.sun],
+    sunDirection: [...DAY_SUN],
     time: STILL_TIME,
-    sunColor: [...DAY.sunColor],
-    night: 0,
-    skyColor: [...DAY.sky],
-    shipCount: 0,
     haze: [0.9, 0.89, 0.82],
-    exposure: DAY.exposure,
-    style: 0,
+    night: 0,
+    shipCount: 0,
     islands: rows(islandRows),
     ships: rows(shipRows),
   }
@@ -203,13 +172,9 @@ async function build(
   const sea = draw(gpu, {shader: water, geometry: seaGeometry(gpu), targets: [sceneTarget], cull: "none", set: lit, label: "harbour.sea"})
   const presentValues = {
     resolution: [size[0], size[1]],
-    vignette: 0.14,
-    style: 0,
-    ink: [0, 0, 0],
-    inkStrength: 0,
+    vignette: 0.1,
     line: 1,
-    edge: 0.05,
-    pixel: 6,
+    ink: [...DAY_INK],
   }
   const present = effect(gpu, presentShader, {
     set: {present: presentValues, sceneColor: sceneTarget, linearSampler: sampler(gpu, {minFilter: "linear", magFilter: "linear"})},
@@ -223,7 +188,6 @@ async function build(
   let night = 0
   let nightGoal = 0
   let calm = false
-  let style: HarbourStyle = "toy"
   let lastStep: number | undefined
   let clear: [number, number, number, number] = [0.9, 0.89, 0.82, 1]
   const world = new Float32Array(16)
@@ -268,12 +232,8 @@ async function build(
   }
 
   const light = () => {
-    const day = style === "studio" ? STUDIO_DAY : DAY
-    const sun = normalize(mix3(day.sun, NIGHT.sun, night))
+    const sun = normalize(mix3(DAY_SUN, NIGHT_SUN, night))
     sceneValues.sunDirection = sun
-    sceneValues.sunColor = mix3(day.sunColor, NIGHT.sunColor, night)
-    sceneValues.skyColor = mix3(day.sky, NIGHT.sky, night)
-    sceneValues.exposure = day.exposure + (NIGHT.exposure - day.exposure) * night
     sceneValues.night = night
     sceneValues.lightViewProjection.set(sunViewProjection(sun))
   }
@@ -319,7 +279,7 @@ async function build(
         shipIds.delete(ship.id)
       }
       next.forEach((ship, index) => {
-        const colour = [...linearColor(ship.color), index * 1.37] as const
+        const colour = [...displayColor(ship.color), index * 1.37] as const
         const id = shipIds.get(ship.id)
         if (id === undefined) shipIds.set(ship.id, fleet.add({style: colour}))
         else fleet.set(id, {style: colour})
@@ -337,12 +297,6 @@ async function build(
         light()
       }
     },
-    setStyle(next) {
-      style = next
-      sceneValues.style = HARBOUR_STYLES.indexOf(next)
-      presentValues.style = sceneValues.style
-      light()
-    },
     setCalm(next) {
       calm = next
       if (!calm) return
@@ -355,8 +309,8 @@ async function build(
       stage.resize([width, height])
       sceneTarget.resize([width, height])
       presentValues.resolution = [width, height]
-      // Pixels keep the same size on the page at any resolution.
-      presentValues.pixel = Math.max(3, Math.round(height / 140))
+      // Outlines keep the same width on the page at any resolution.
+      presentValues.line = Math.max(1, height / 640)
       present.set({present: presentValues})
       fitCamera()
     },
@@ -381,14 +335,7 @@ async function build(
       sceneUniforms.set(sceneValues)
       const counts = passes.map(pass => pass.bridge.publish())
       presentValues.vignette = 0.1 + 0.16 * night
-      const outline = OUTLINES[style]
-      presentValues.inkStrength = outline?.strength ?? 0
-      if (outline) {
-        presentValues.ink = mix3(outline.day, outline.night, night)
-        presentValues.edge = outline.edge
-        // Outlines keep the same width on the page at any resolution.
-        presentValues.line = Math.max(1, stage.size[1] / 640) * outline.line
-      }
+      presentValues.ink = mix3(DAY_INK, NIGHT_INK, night)
       present.set({present: presentValues})
       frame(gpu, current => {
         current.pass({target: shadowTarget, clear: [0, 0, 0, 0]}, pass => {
@@ -506,20 +453,10 @@ function rows(packed: Float32Array): Float32Array[] {
   return Array.from({length: packed.length / 4}, (_, index) => packed.subarray(index * 4, index * 4 + 4))
 }
 
-function hexChannels(hex: string): [number, number, number] {
+/** #rrggbb as the page shows it. */
+function displayColor(hex: string): [number, number, number] {
   const value = Number.parseInt(hex.slice(1), 16)
   return [((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255]
-}
-
-/** #rrggbb as linear light, for colours the shader lights. */
-function linearColor(hex: string): [number, number, number] {
-  const [r, g, b] = hexChannels(hex)
-  return [r ** 2.2, g ** 2.2, b ** 2.2]
-}
-
-/** #rrggbb as the page shows it, for colours mixed after tone mapping. */
-function displayColor(hex: string): [number, number, number] {
-  return hexChannels(hex)
 }
 
 function normalize(vector: readonly number[]): [number, number, number] {
