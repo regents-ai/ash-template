@@ -2,9 +2,13 @@
  * The Keyfleet hero's hex field, one fullscreen pass over a clear canvas with
  * premultiplied alpha, so the page's own ground shows through and only the
  * lines and the light are the shader's: pointy-top hex tiles behind the hero
- * and the Club's map, a hairline rim on each, lit near the pointer and around
+ * and the Club's map, a hairline rim on each, lit near the pointer, along the
+ * wake a pointer or a finger leaves, in the ring a press sends out, and around
  * the Key while it is previewed.
  */
+
+/** How many marks of a wake or a ring the field holds at once. */
+export const MARKS = 32
 
 export const fieldWgsl = /* wgsl */ `
 struct Params {
@@ -13,6 +17,9 @@ struct Params {
   light: vec4f,
   pointer: vec4f,
   key: vec4f,
+  // Each mark: where it is (0..1 across the canvas), how strong it still is,
+  // and, for a ring, how far it has spread in tiles (below zero for a wake).
+  marks: array<vec4f, ${MARKS}>,
 }
 @group(0) @binding(0) var<uniform> params: Params;
 
@@ -56,9 +63,25 @@ fn grain(cell: vec2f) -> f32 {
   let toKey = distance(centre, params.key.xy * params.size.xy) / max(params.key.z, 1.0);
   let lit = (1.0 - smoothstep(0.15, 1.0, toKey)) * params.pointer.w;
 
+  // A wake lights whole tiles along its path; a ring lights the tiles it is
+  // passing through.
+  var wake = 0.0;
+  for (var i = 0u; i < ${MARKS}u; i += 1u) {
+    let mark = params.marks[i];
+    if (mark.z <= 0.0) { continue; }
+    let d = distance(centre, mark.xy * params.size.xy) / cell;
+    let reach = select(
+      1.0 - smoothstep(0.0, 0.9, abs(d - mark.w)),
+      1.0 - smoothstep(0.35, 1.3, d),
+      mark.w < 0.0,
+    );
+    wake = max(wake, mark.z * reach);
+  }
+
   var color = vec4f(0.0);
   color = over(color, params.line.rgb, face * (0.025 + grain(p - h.xy) * 0.035 + near * 0.08));
   color = over(color, params.line.rgb, rim * (0.16 + near * 0.32));
   color = over(color, params.light.rgb, face * lit * (0.10 + grain(p - h.xy) * 0.08) + rim * lit * 0.45);
+  color = over(color, params.light.rgb, face * wake * (0.30 + grain(p - h.xy) * 0.12) + rim * wake * 0.85);
   return color;
 }`

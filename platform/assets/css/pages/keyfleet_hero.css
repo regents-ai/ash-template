@@ -66,20 +66,21 @@
      price, and under them the reason it can't be pressed yet. */
   .kf-buy { grid-area: buy; display: grid; gap: var(--space-2); justify-self: center; inline-size: min(100%, 22rem); }
   .kf-buy__card {
-    position: relative; aspect-ratio: 600 / 765; perspective: 60rem;
+    position: relative; aspect-ratio: 600 / 767; perspective: 60rem;
     transition: transform 240ms var(--kf-ease), opacity 240ms var(--kf-ease);
   }
-  .kf-buy__tilt {
-    position: absolute; inset: 0;
-    clip-path: polygon(var(--rg-cut-panel) 0, 100% 0, 100% calc(100% - var(--rg-cut-panel)), calc(100% - var(--rg-cut-panel)) 100%, 0 100%, 0 var(--rg-cut-panel));
-    background: var(--palette-charcoal);
-    box-shadow: 0 1.5rem 3rem -1.5rem rgb(0 0 0 / .6);
+  /* The pass is cut out of its studio backdrop, so it stands on the hex field
+     itself; its shadow follows its own outline. */
+  .kf-buy__tilt { position: absolute; inset: 0; }
+  .kf-buy__tilt img {
+    display: block; inline-size: 100%; block-size: 100%;
+    filter: drop-shadow(0 .75rem 1rem rgb(0 0 0 / .32));
   }
-  .kf-buy__tilt img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
-  /* The price on the card itself, in its corner. The card's art is dark in
-     both themes, so the chip keeps light ink on charcoal in both. */
+  /* The price on the card itself, beside the crown in the pass's lower corner:
+     on the 714 × 913 picture the crown ends 196 across and 54 above the bottom.
+     The pass is dark in both themes, so the chip keeps light ink on charcoal in both. */
   .kf-buy__tag {
-    position: absolute; inset-inline-start: var(--space-2); inset-block-end: var(--space-2);
+    position: absolute; inset-inline-start: calc(100% * 214 / 714); inset-block-end: calc(100% * 54 / 913);
     padding: .25rem .5rem; background: rgb(22 22 22 / .82); color: var(--palette-platinum);
     font-family: var(--font-family-mono); font-size: .75rem; font-variant-numeric: tabular-nums;
     border: 1px solid rgb(229 227 210 / .18);
