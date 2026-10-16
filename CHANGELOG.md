@@ -2506,3 +2506,13 @@ Operations
   and ship; the Mac session runs the suites, pushes main and deploys, Sentinel reads
   every head, main stays production and nothing ships from a branch. The "No feature
   branches" rule names it as its one exception.
+
+## 2026-10-16 — Keyfleet home lab: readable Blueprint small text, pressed switches
+
+- In Blueprint, `--color-fg-muted` on `.kf-lab[data-palette="blueprint"]` is 88% ink
+  instead of 72%, so the crumb, eyebrow, "Give this to your agent" and the club lines
+  reach at least 4.5:1 on the paper in both modes (light 5.55:1, dark 7.71:1, measured
+  headless). Sentinel's v97 read put them at 3.84:1 and 3.54:1.
+- A lab-bar switch that is on (Less motion, Blueprint) fills with the ink, the way the
+  lab's other on/off buttons do (`.flair-states`), and in forced colours carries a
+  Highlight outline (Sentinel's v97 read).
