@@ -2180,3 +2180,11 @@ Operations
   for an agent that is not offered does nothing.
 - The reference OAuth settings carry a `consent_note`: the connection only reads
   updates and cannot post, spend Credits, make payments or change wallets.
+
+## 2026-10-16 — Pair request takes only offered agents; plain consent wording
+
+- The elixir-utils packages are pinned to `5235a54`: the agent pair request
+  (`POST /api/agents/v1/pair`) accepts only the harnesses the site offers, and its
+  `harness_unknown` hint lists only those, so the template refuses `chatgpt` there too.
+- The consent page asks to "watch updates for your account on this site", without
+  naming the connection's protocol.
