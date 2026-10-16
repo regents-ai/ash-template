@@ -11,6 +11,10 @@ defmodule AshTemplate.Agents.ActivityReading do
 
   A reading is kept under the agent's wallet and pairing time, so an agent paired
   again starts a fresh one.
+
+  Each read that gives no reading is counted in `health.agent_activity_unread.total`
+  by its reason, such as `bad_day` for a day from the service in a shape it does not
+  send.
   """
   use Nebulex.Cache, otp_app: :ash_template, adapter: Nebulex.Adapters.Local
 
@@ -32,9 +36,25 @@ defmodule AshTemplate.Agents.ActivityReading do
   defp read_and_keep(key, agent) do
     reading = Activity.recent(agent)
     put!(key, reading, ttl: kept(reading))
+    measure(reading)
     reading
   end
 
   defp kept({:ok, _reading}), do: @kept
   defp kept({:error, _reason}), do: @failure_kept
+
+  defp measure({:ok, _reading}), do: :ok
+
+  defp measure({:error, reason}),
+    do:
+      :telemetry.execute([:ash_template, :agents, :activity_unread], %{count: 1}, %{
+        reason: reason(reason)
+      })
+
+  defp reason(reason)
+       when reason in [:bad_day, :bad_days, :registration_unreadable, :not_configured],
+       do: reason
+
+  defp reason({:unexpected_status, _status}), do: :unexpected_status
+  defp reason(_unanswered), do: :unanswered
 end

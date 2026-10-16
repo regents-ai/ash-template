@@ -2486,3 +2486,15 @@ Operations
   `/account#shell-pairing`, and the shell opens the side panel on arrival when the
   address names its Pair New Agent section, on a phone too. `/start` has no side panel
   of its own, so a panel-opening button there could not do it (Sentinel's v193 N2).
+
+## 2026-10-16 — Failed agent activity reads are counted
+
+- Pins elixir-utils `72ccfea10551436a9b7aaad29d3ec6b5462d423f`, whose
+  `RegentAgents.Activity.recent/1` answers `{:error, :bad_days}` for a 200 answer
+  without a list of days, where it said `{:unexpected_status, 200}` (Sentinel's note a
+  on `03433b80`).
+- `AshTemplate.Agents.ActivityReading` counts each read that gives no reading in
+  `health.agent_activity_unread.total`, tagged by reason (`bad_day`, `bad_days`,
+  `registration_unreadable`, `not_configured`, `unexpected_status` or `unanswered`), so
+  a bad answer from the sign-in service is no longer silent (Sentinel's note b). A
+  local walk with four bad-day agents counted `bad_day` 4.

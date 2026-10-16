@@ -243,6 +243,11 @@ defmodule AshTemplateWeb.Telemetry do
         event_name: [:ash_template, :open_pages, :refused],
         description: "Live pages refused because their address already held the limit open"
       ),
+      counter("health.agent_activity_unread.total",
+        event_name: [:ash_template, :agents, :activity_unread],
+        tags: [:reason],
+        description: "Agents' activity reads from the sign-in service that gave no reading"
+      ),
       counter("health.shared_reading.degraded.total",
         event_name: [:ash_template, :shared_reading, :degraded],
         tags: [:kind],
