@@ -159,6 +159,14 @@ cancelled work.
   beautiful UIs and vgpu graphics, and every agent does it.
 - A site change that uses a new shared-library pin is not done until that pin is on
   main.
+- Push to GitHub main with notes (16 Oct, Sean: "make sure the agents are pushing to
+  github main, with helpful comments and updating the changelog, and updating readme or
+  sub-readmes if needed"). Checked work goes up to GitHub main; no finished commit sits
+  on a local head (a protected change still waits for Sean's named go). Every commit
+  message says what changed and why. Every commit or release adds its changelog entry.
+  When behaviour, setup, settings or commands change, the same commit updates the
+  README or the folder's own README. This holds in every site repository, ash-template,
+  elixir-utils and design-system.
 - Hard cutover: no shims, aliases or compatibility branches. Every review checks
   **no dual-shape responses** by name.
 

@@ -2375,3 +2375,12 @@ Operations
 - Removes the side panel's leftover pulsing-light comment in `components/shell.ex`;
   `docs/standardization-plan.md` and `docs/app-shell-structure-plan.md` describe the
   panel as it is.
+
+## 2026-10-16 — Workflow guide: push to GitHub main with notes
+
+- `skills/regent-workflow/SKILL.md` adds Sean's rule of 16 Oct to its rules in force:
+  checked work goes up to GitHub main with no finished commit left on a local head,
+  every commit message says what changed and why, every commit or release adds its
+  changelog entry, and a change to behaviour, setup, settings or commands updates the
+  README or the folder's own README in the same commit. It covers every site
+  repository, ash-template, elixir-utils and design-system.
