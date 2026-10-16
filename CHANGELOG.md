@@ -2430,3 +2430,9 @@ Operations
   `personNotHere` example as the YAML documents (Sentinel's v95 after-read notes).
 - `platform/README.md` lists `SIWA_ACTIVITY_READ_TOKEN`, the sign-in service reader key
   behind both activity views, and says neither shows activity without it.
+
+## 2026-10-16 — Keyfleet home: raised tiles keep their border
+
+- In light mode a raised tile on `/animations/keyfleet` keeps a darker hairline rim, the
+  field's line at the strength of the rims lit around the pointer, over its off-white
+  face, and its top edge is no longer lightened (Sean, 16 Oct 15:42Z). Dark is unchanged.
