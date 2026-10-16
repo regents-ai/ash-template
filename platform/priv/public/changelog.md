@@ -24,6 +24,8 @@ What changed in Ash Template lately, newest first.
   with a clear edge, and its label stays the same size.
 - **One pairing box on Account.** The Account page shows its pairing box once, not
   again in the side panel.
+- **Agents know what to ask.** An agent that checks in before you have signed in here
+  asks you to sign in once, then carries on.
 
 ## 12 October 2026
 

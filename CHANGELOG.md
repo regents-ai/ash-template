@@ -2244,3 +2244,12 @@ Operations
   still paired with the person whose account it looked up, and answers `not_paired`
   otherwise. Asked for by Sentinel.
 
+## 2026-10-16 — Check-in asks for the person's first sign-in
+
+- Pins elixir-utils b77ad77: a check-in before the person's first sign-in on the site
+  answers `person_sign_in_needed` (409), "Your person has one step left on this site
+  before you can check in.", in place of `account_missing` (404). Every account exists
+  on every site; the person may only need to sign in once. Sean, 16 Oct: never say the
+  account is not on this site.
+- `AshTemplate.Agents.PairedAccount.account/1` comment reworded to match. The entries
+  above that name `account_missing` describe the earlier code.

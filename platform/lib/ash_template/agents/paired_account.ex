@@ -8,7 +8,7 @@ defmodule AshTemplate.Agents.PairedAccount do
   alias AshTemplate.Accounts
   alias AshTemplate.Actors.System
 
-  # Nil when this site has no account for the person; the check-in is then refused.
+  # Nil until the person first signs in here; the check-in then asks for that sign-in.
   def account(privy_user_id) do
     case Accounts.get_by_privy_did(privy_user_id, actor: %System{}) do
       {:ok, %{} = account} ->
