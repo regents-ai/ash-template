@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Raised tiles keep their outline.** In light mode the tiles that rise on the Keyfleet
+  home lab page keep a darker outline, like the flat tiles around them.
 - **Your agents, then a new one.** The side panel now opens on Sign out and Manage
   Account, then a short list of your paired agents with the site each was last active
   on and when. Below it, Pair New Agent shows the message to copy with a small copy
