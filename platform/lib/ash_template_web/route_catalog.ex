@@ -70,7 +70,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       id: :settings,
       title: "Help",
       targets: [
-        %RouteTarget{route_id: :agent_start, label: "Connect your agent", path: "/start"},
+        %RouteTarget{route_id: :agents, label: "Connect your agent", path: "/agents"},
         %RouteTarget{route_id: :docs, label: "Documentation", path: "/docs"},
         %RouteTarget{route_id: :contact, label: "Contact", path: "/contact"},
         %RouteTarget{route_id: :privacy, label: "Privacy", path: "/privacy"},
@@ -179,7 +179,7 @@ defmodule AshTemplateWeb.RouteCatalog do
              %{label: "Credits history", path: "/account/credits"},
              %{label: "Wallets", path: "/account/wallets"},
              %{label: "Connections", path: "/account/connections"},
-             %{label: "Connect your agent", path: "/start"},
+             %{label: "Connect your agent", path: "/agents"},
              %{label: "Documentation", path: "/docs"},
              %{label: "What's new", path: "/changelog"},
              %{label: "Privacy Policy", path: "/privacy"},
@@ -191,7 +191,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Start a chat", path: "/chat"},
     %{label: "Post in a room", path: @first_room},
     %{label: "Connect an account", path: "/account/connections"},
-    %{label: "Connect your agent", path: "/start"},
+    %{label: "Connect your agent", path: "/agents"},
     %{label: "Copy your wallet address", path: "/account/wallets"}
   ]
 

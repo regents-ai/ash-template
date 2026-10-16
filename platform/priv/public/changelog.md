@@ -4,6 +4,13 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **A page for each agent.** The new Agents page lists the ten agents you can pair,
+  and each has its own page: how to set it up, answers to common questions, and a link
+  to its help on Patchbay. It replaces the start page for agents.
+- **Help while you pair.** In Pair New Agent, a small help icon under the copy icon
+  opens the chosen agent's page.
+- **Your agents opens your Account.** The "Your agents" heading in the side panel is
+  underlined and opens your Account page.
 - **Pair New Agent from the start page.** The first step on the start page for agents
   now opens Pair New Agent in the side panel.
 - **Agents on the Regents mobile app.** What your agents do through the Regents mobile

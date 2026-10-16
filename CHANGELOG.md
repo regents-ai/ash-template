@@ -2506,3 +2506,31 @@ Operations
   and ship; the Mac session runs the suites, pushes main and deploys, Sentinel reads
   every head, main stays production and nothing ships from a branch. The "No feature
   branches" rule names it as its one exception.
+
+## 2026-10-16 — A page for each agent; /agents replaces /start
+
+- `/agents` lists the ten agents the side panel offers, after three steps to pair one.
+  Each has its own page at `/agents/<agent>` (`grok_bot` is `grok-bot`, "Any agent" is
+  `other`): how it pairs, its set-up notes, common questions and troubleshooting ending
+  with its Patchbay help link, `https://patchbay.help/<agent>/troubleshooting`. Sean,
+  16 Oct: "each harness needs a custom page / skill / faq / link to its patchbay.help
+  for troubleshooting".
+- `/agents/<agent>/skill.md` is that agent's skill: the agent guide with its set-up
+  notes added under "On <Agent>".
+- Each agent is one Markdown file in `platform/priv/public/agents/`, read when the code
+  compiles (`AshTemplateWeb.AgentGuides`). The build stops if the files and
+  `RegentAgents.Harness.featured/0` name different agents. The files are the same
+  shape on every Regent site, so Keyfleet copies them as they are.
+- The pages answer `Accept: text/markdown` like the other reading pages and stay open
+  while the rest of the site is closed.
+- `/start` is retired: `/agents` does its job, and the route catalog, `llms.md` and
+  `agents.md` point there. `AshTemplateWeb.AgentStart`, `AgentStartLive` and their
+  stylesheet are deleted.
+- The side panel's pairing box shows a help icon under the copy and new-code icons once
+  an agent is chosen, linking to that agent's page (design-system 14a2b78, which also
+  underlines the "Your agents" heading link at rest). The heading leads to the Account
+  page.
+- Every pairing hint now reads "Ask your person to sign in on this site and pair you
+  with Pair New Agent in the side panel, then send the request again." (`posted_before_pairing`
+  ends "then post again."), in the plug, the rooms controller and both copies of the API
+  contract.

@@ -2,9 +2,10 @@ defmodule AshTemplateWeb.PairingBox do
   @moduledoc """
   Pairing an agent (`RegentAgents`), under "Pair New Agent" in the side panel on
   every page, in the shared pairing box (`Regent.Account.pairing`): the message to
-  paste with its code in a short box with icons to copy it and make a new code,
-  then the ten agents in `RegentAgents.Harness.featured/0` to choose from by
-  their pictures. Once the agent uses the code, the box names it.
+  paste with its code in a short box with icons to copy it, make a new code and
+  open the chosen agent's page (`AshTemplateWeb.AgentGuides`), then the ten agents
+  in `RegentAgents.Harness.featured/0` to choose from by their pictures. Once the
+  agent uses the code, the box names it.
 
   The parent passes `account` (the signed-in account), its `session_lease` as
   `lease` and `id`, and sends `agents_changed: true` when an agent pairs, checks
@@ -12,6 +13,7 @@ defmodule AshTemplateWeb.PairingBox do
   """
   use AshTemplateWeb, :live_component
 
+  alias AshTemplateWeb.AgentGuides
   alias AshTemplateWeb.Live.Session
   alias RegentAgents.{Harness, PairingCode, PairingMessage, Person}
 
@@ -79,6 +81,7 @@ defmodule AshTemplateWeb.PairingBox do
   defp pairing(%{harness: harness, code: %PairingCode.Issued{} = code}) do
     %{
       chosen: to_string(harness),
+      guide: AgentGuides.path(harness),
       message: agent_message(code.code, harness),
       expires_iso: DateTime.to_iso8601(code.expires_at),
       expires: Calendar.strftime(code.expires_at, "%H:%M UTC")
@@ -86,10 +89,14 @@ defmodule AshTemplateWeb.PairingBox do
   end
 
   defp pairing(%{harness: harness, code: {:paired, agent}}),
-    do: %{chosen: to_string(harness), outcome: {:paired, agent.name}}
+    do: %{
+      chosen: to_string(harness),
+      guide: AgentGuides.path(harness),
+      outcome: {:paired, agent.name}
+    }
 
   defp pairing(%{harness: harness, code: :unavailable}),
-    do: %{chosen: to_string(harness), outcome: :unavailable}
+    do: %{chosen: to_string(harness), guide: AgentGuides.path(harness), outcome: :unavailable}
 
   defp pairing(nil), do: %{}
 
