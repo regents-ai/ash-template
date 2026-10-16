@@ -2,8 +2,9 @@
  * Draws the Keyfleet hero's hex field with WebGPU through vgpu, behind the hero
  * and the Club's map, only when something changed. There is no clock and no
  * idle loop. A pointer or a preview sets a target, the picture eases toward it
- * for a few frames and stops. Loaded only once a field is really going to be
- * shown.
+ * for a few frames and stops; a wake or a ring fades within the island's
+ * easing frames, so the field is always still again shortly after the last
+ * touch. Loaded only once a field is really going to be shown.
  *
  * Each value reaches the shader when it changes: the size when the canvas is
  * resized, the colours when the theme changes, the pointer on each frame.
@@ -11,8 +12,8 @@
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {effect, frame, init, surface} from "vgpu"
 
-import type {IslandRenderer} from "../canvas_island"
-import {fieldWgsl} from "./shader"
+import {EASING_FRAME_LIMIT, type IslandRenderer} from "../canvas_island"
+import {fieldWgsl, MARKS} from "./shader"
 
 export type Rgb = readonly [number, number, number]
 type Vec4 = [number, number, number, number]
@@ -20,6 +21,24 @@ type Vec4 = [number, number, number, number]
 /** How far one frame closes the gap to a target, and when the gap counts as closed. */
 const EASE = 0.2
 const CLOSE = 0.002
+
+/**
+ * How many frames a wake or a ring lasts, and how many tiles a ring spreads
+ * each frame. A mark is gone before the island's easing frames run out, so
+ * the frame that snaps home has nothing left to remove.
+ */
+const LIFE = EASING_FRAME_LIMIT - 2
+const RING_SPREAD = 0.3
+
+/** A wake or a ring laid at x, y (0..1 across the canvas), `age` frames ago. */
+type Mark = {x: number; y: number; age: number; ring: boolean}
+const unmarked = [0, 0, 0, -1] as const
+
+/** Full strength at first, easing out to nothing at the end of its life. */
+const strength = (m: Mark) => {
+  const t = Math.min(1, m.age / LIFE)
+  return (m.ring ? 0.9 : 1) * (1 - t * t * (3 - 2 * t))
+}
 
 /** One eased value: where it is, and where it is going. */
 const eased = (value = 0) => ({value, target: value})
@@ -48,6 +67,10 @@ export type FieldRenderer = IslandRenderer & {
   key(x: number, y: number, reach: number): void
   /** Whether the Key is being previewed. */
   lit(on: boolean): void
+  /** A pointer or a finger passed over x, y (0..1 across the canvas). */
+  wake(x: number, y: number): void
+  /** A press at x, y sends a ring out across the tiles. */
+  ring(x: number, y: number): void
 }
 
 export async function createFieldRenderer(
@@ -82,6 +105,7 @@ export async function createFieldRenderer(
           light: [1, 1, 1, 1],
           pointer: [0.5, 0.5, 0, 0],
           key: placed(),
+          marks: Array.from({length: MARKS}, () => unmarked),
         },
       },
     })
@@ -95,6 +119,16 @@ export async function createFieldRenderer(
     const y = eased(0.5)
     const presence = eased()
     const glow = eased()
+    // The newest marks win once the field holds as many as it can draw.
+    let marks: Mark[] = []
+    const mark = (next: Mark) => {
+      marks.push(next)
+      if (marks.length > MARKS) marks.shift()
+    }
+    const age = () => {
+      for (const m of marks) m.age += 1
+      marks = marks.filter(m => m.age < LIFE)
+    }
     // The pointer's first position is taken as it is, so the light appears
     // where the pointer is instead of sliding in from the last place it left.
     const jump = (value: Eased, to: number) => {
@@ -121,12 +155,31 @@ export async function createFieldRenderer(
       lit(on) {
         glow.target = on ? 1 : 0
       },
+      wake(mx, my) {
+        mark({x: mx, y: my, age: 0, ring: false})
+      },
+      ring(mx, my) {
+        mark({x: mx, y: my, age: 0, ring: true})
+      },
       resize(width, height) {
         stage.resize([width, height])
       },
-      step: snap => advance([x, y, presence, glow], snap),
+      step(snap) {
+        const marked = marks.length > 0
+        if (snap) marks = []
+        else age()
+        return advance([x, y, presence, glow], snap) || marked
+      },
       present() {
-        shader.set({params: {pointer: [x.value, y.value, presence.value, glow.value]}})
+        shader.set({
+          params: {
+            pointer: [x.value, y.value, presence.value, glow.value],
+            marks: Array.from({length: MARKS}, (_, i) => {
+              const m = marks[i]
+              return m ? [m.x, m.y, strength(m), m.ring ? m.age * RING_SPREAD : -1] : unmarked
+            }),
+          },
+        })
         frame(gpu, current => current.pass(stage, shader))
       },
       async settled() {

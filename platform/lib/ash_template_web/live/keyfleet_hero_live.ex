@@ -210,7 +210,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
           <img
             src={~p"/images/lab/keyfleet/next-key-pass.webp"}
             width="600"
-            height="765"
+            height="767"
             alt=""
             fetchpriority="high"
           />
