@@ -2375,3 +2375,9 @@ Operations
 - Removes the side panel's leftover pulsing-light comment in `components/shell.ex`;
   `docs/standardization-plan.md` and `docs/app-shell-structure-plan.md` describe the
   panel as it is.
+
+## 2026-10-16 — Keyfleet home: raised tiles keep their border
+
+- In light mode a raised tile on `/animations/keyfleet` keeps a darker hairline rim, the
+  field's line at the strength of the rims lit around the pointer, over its off-white
+  face, and its top edge is no longer lightened (Sean, 16 Oct 15:42Z). Dark is unchanged.
