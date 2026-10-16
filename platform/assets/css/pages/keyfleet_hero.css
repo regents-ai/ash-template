@@ -27,7 +27,7 @@
     --kf-blueprint-ink: light-dark(#1f4d9e, #a8d6ff);
     --color-bg: var(--kf-blueprint-paper);
     --color-fg: var(--kf-blueprint-ink);
-    --color-fg-muted: color-mix(in oklab, var(--kf-blueprint-ink) 72%, var(--kf-blueprint-paper));
+    --color-fg-muted: color-mix(in oklab, var(--kf-blueprint-ink) 88%, var(--kf-blueprint-paper));
     --hairline: color-mix(in oklab, var(--kf-blueprint-ink) 28%, var(--kf-blueprint-paper));
     --hairline-strong: color-mix(in oklab, var(--kf-blueprint-ink) 45%, var(--kf-blueprint-paper));
     --color-surface: light-dark(#fff, color-mix(in oklab, var(--kf-blueprint-paper) 90%, var(--kf-blueprint-ink)));
@@ -51,6 +51,8 @@
   .kf-lab__crumb { margin: 0; color: var(--color-fg-muted); font-family: var(--font-family-mono); }
   .kf-lab__crumb a { color: var(--color-fg); text-underline-offset: .2em; }
   .kf-lab__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+  /* A switch that is on fills with the ink, as the lab's other switches do. */
+  .kf-lab__controls [aria-pressed="true"] { --rg-local-fill: var(--color-fg); --rg-local-ink: var(--color-bg); }
 
   .kf-root { margin-block-start: var(--space-5); }
   .kf-root :is(h1, h2, h3, p, figure, dl, dd) { margin: 0; }
@@ -259,5 +261,9 @@
   @media (max-width: 47.99rem) {
     .kf-give__command { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: var(--space-2); }
     .kf-give__text { font-size: .8125rem; }
+  }
+
+  @media (forced-colors: active) {
+    .kf-lab__controls [aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: -4px; }
   }
 }

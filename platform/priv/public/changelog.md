@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Clearer Blueprint switches.** On the Keyfleet home lab page, the small text is
+  easier to read in Blueprint colours, and Less motion and Blueprint look pressed while
+  they are on.
 - **Docs on phones.** On a phone, Docs now stays in the header beside Products, and the
   header and footer lab page fits a small phone screen without scrolling.
 - **Blueprint colours.** The Keyfleet home lab page has a Blueprint switch: blue lines on

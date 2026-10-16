@@ -2454,3 +2454,13 @@ Operations
   (`.site-header__name`). Docs no longer waits in the footer.
 - The lab's lede is one line shorter, so the short page fits a 320 × 844 phone without
   scrolling (Sentinel's v94 read, 16 Oct).
+
+## 2026-10-16 — Keyfleet home lab: readable Blueprint small text, pressed switches
+
+- In Blueprint, `--color-fg-muted` on `.kf-lab[data-palette="blueprint"]` is 88% ink
+  instead of 72%, so the crumb, eyebrow, "Give this to your agent" and the club lines
+  reach at least 4.5:1 on the paper in both modes (light 5.55:1, dark 7.71:1, measured
+  headless). Sentinel's v97 read put them at 3.84:1 and 3.54:1.
+- A lab-bar switch that is on (Less motion, Blueprint) fills with the ink, the way the
+  lab's other on/off buttons do (`.flair-states`), and in forced colours carries a
+  Highlight outline (Sentinel's v97 read).
