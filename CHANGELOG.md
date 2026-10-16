@@ -2815,3 +2815,14 @@ Operations
   foil cards stay flat, and the light that follows the pointer shows only on a 12px
   frame round each card; inside it the face stays still graphite with the crown's
   outline. The home page's foil drawing still lights wherever it is.
+
+## 2026-10-16 — Agent harbour
+
+- `/animations/harbour`: an isometric sea drawn with vgpu, with three islands and one ship
+  for each agent. The inn is a chat, the forge is work and the castle is a proposal. Each
+  ship sails to the island of its agent's last action and circles it slowly.
+- The six agents are samples. While the page is connected, one of them does something new
+  every seven seconds; the legend under the sea lists who is where. A crew is a list of
+  `%{id, place, color}`, so real activity can feed the same page later.
+- Reduced motion draws one calm frame; a hidden tab draws nothing. Listed in the Motion
+  lab, the Design page and the route catalog.
