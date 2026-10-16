@@ -1,11 +1,12 @@
 /**
- * The plate "Buy Agent Fleet Access Key" stands on: a slab of small hex tiles
- * in a colour of its own, raised off the page. One fullscreen pass over a
- * clear canvas a little larger than the plate, with premultiplied alpha, so
- * the room around the slab holds its jagged edge and its shadow. Each tile is
- * a short hex prism: its face lifted by `raise.x`, its side showing below the
- * face, the slab's floor in the gaps. `raise.y` brings the tiles up one after
- * another from the left as the plate first appears.
+ * The plate "Buy Agent Fleet Access Key" stands on: a slab of hex tiles in a
+ * colour of its own, raised off the page. One fullscreen pass over a clear
+ * canvas a little larger than the plate, with premultiplied alpha, so the room
+ * around the slab holds its jagged edge and its shadow. Each tile is a short
+ * hex prism standing on the slab's floor. `raise.y` brings the tiles up one
+ * after another from the left as the plate first appears. The tiles under the
+ * words form a group that `group.x` lifts higher still, from the middle out,
+ * their faces turning to the deeper colour as they go.
  */
 export const plateWgsl = /* wgsl */ `
 struct Params {
@@ -16,10 +17,19 @@ struct Params {
   // How high the faces stand in device pixels, how far the tiles have risen
   // (0..1), how much light the faces take, and how dark the shadow is.
   raise: vec4f,
+  // The words' box, left top right bottom, in device pixels.
+  words: vec4f,
+  // How much higher the group under the words stands in device pixels, how
+  // far it has risen (0..1), and the most any tile can stand.
+  group: vec4f,
   face: vec4f,
   side: vec4f,
+  deep: vec4f,
 }
 @group(0) @binding(0) var<uniform> params: Params;
+
+// How many heights a pixel is looked through, from the floor to the highest face.
+const STEPS = 18;
 
 // Pointy-top hexagons, one unit between neighbouring centres across a row:
 // the point's offset from its cell's centre, and how far it is toward the
@@ -54,11 +64,29 @@ fn onSlab(c: vec2f) -> bool {
   return all(c >= params.slab.xy - vec2f(e)) && all(c <= params.slab.zw + vec2f(e));
 }
 
-// How high this tile stands: the tiles nearer the left rise first.
+fn ease(t: f32) -> f32 {
+  let s = clamp(t, 0.0, 1.0);
+  return s * s * (3.0 - 2.0 * s);
+}
+
+// How far this tile belongs to the raised group, 0..1: every tile under the
+// words, the middle ones first.
+fn grouped(c: vec2f) -> f32 {
+  let e = params.size.z * 0.25;
+  if (any(c < params.words.xy - vec2f(e)) || any(c > params.words.zw + vec2f(e))) {
+    return 0.0;
+  }
+  let mid = (params.words.xy + params.words.zw) * 0.5;
+  let half = max((params.words.zw - params.words.xy) * 0.5, vec2f(1.0));
+  let away = clamp(length((c - mid) / half) / 1.4142, 0.0, 1.0);
+  return ease(params.group.y * 1.5 - away * 0.5);
+}
+
+// How high this tile stands: the tiles nearer the left rise first, and the
+// group under the words stands higher.
 fn height(c: vec2f) -> f32 {
   let order = clamp((c.x - params.slab.x) / max(params.slab.z - params.slab.x, 1.0), 0.0, 1.0);
-  let t = clamp(params.raise.y * 1.6 - order * 0.6, 0.0, 1.0);
-  return params.raise.x * t * t * (3.0 - 2.0 * t);
+  return params.raise.x * ease(params.raise.y * 1.6 - order * 0.6) + params.group.x * grouped(c);
 }
 
 fn sdBox(p: vec2f, half: vec2f, radius: f32) -> f32 {
@@ -72,7 +100,7 @@ fn sdBox(p: vec2f, half: vec2f, radius: f32) -> f32 {
   let ratio = params.size.w;
   let lift = params.raise.x;
   let aa = 1.0 / cell;
-  let floorRgb = params.side.rgb * 0.84;
+  let step = params.group.z / f32(STEPS);
 
   var color = vec4f(0.0);
 
@@ -84,35 +112,38 @@ fn sdBox(p: vec2f, half: vec2f, radius: f32) -> f32 {
   color = over(color, vec3f(0.0), params.raise.w * shade);
 
   // The floor between the tiles.
-  let base = tile(p);
-  if (onSlab(centre(p, base))) {
-    color = over(color, floorRgb, 1.0);
+  if (onSlab(centre(p, tile(p)))) {
+    color = over(color, params.side.rgb * 0.84, 1.0);
   }
 
-  // The tiles' sides, below each face down to the floor, darker lower down.
-  for (var k = 1; k <= 6; k += 1) {
-    let t = lift * f32(k) / 6.0;
+  // Looking through the heights from the floor up: at each height, the tile
+  // whose column passes this pixel there. A tile further down the screen
+  // stands nearer, so it is drawn later, over the ones behind it. Where the
+  // height reaches the tile's top the pixel is on its face; below, its side.
+  for (var k = 0; k <= STEPS; k += 1) {
+    let t = step * f32(k);
     let q = p + vec2f(0.0, t);
     let h = tile(q);
     let c = centre(q, h);
-    if (onSlab(c) && t <= height(c) + 0.5) {
-      let m = 1.0 - smoothstep(0.47 - aa, 0.47, h.z);
-      color = over(color, params.side.rgb * (0.82 + 0.18 * f32(k) / 6.0), m);
+    let tall = height(c);
+    if (!onSlab(c) || t > tall + step * 0.5) {
+      continue;
     }
-  }
-
-  // The faces, lit from above: a brighter top edge, a darker bottom edge.
-  let guess = p + vec2f(0.0, lift);
-  let near = tile(guess);
-  let q = p + vec2f(0.0, height(centre(guess, near)));
-  let h = tile(q);
-  if (onSlab(centre(q, h))) {
     let m = 1.0 - smoothstep(0.47 - aa, 0.47, h.z);
-    let edge = smoothstep(0.36, 0.47, h.z);
-    let top = clamp(-h.y * 2.4, -1.0, 1.0);
-    var rgb = params.face.rgb * (1.0 + edge * 0.18 * top);
-    rgb = mix(rgb, vec3f(1.0), params.raise.z * 0.10);
-    color = over(color, min(rgb, vec3f(1.0)), m);
+    let g = grouped(c);
+    if (t >= tall - step * 0.5) {
+      // The face, lit from above: a brighter top edge, a darker bottom edge.
+      let edge = smoothstep(0.36, 0.47, h.z);
+      let lit = clamp(-h.y * 2.4, -1.0, 1.0);
+      var rgb = mix(params.face.rgb, params.deep.rgb, g) * (1.0 + edge * 0.18 * lit);
+      rgb = mix(rgb, vec3f(1.0), params.raise.z * 0.10 * (1.0 - g));
+      color = over(color, min(rgb, vec3f(1.0)), m);
+    } else {
+      // The side, darker toward the floor.
+      let low = t / max(tall, 0.001);
+      let rgb = mix(params.side.rgb, params.deep.rgb * 0.72, g) * (0.82 + 0.18 * low);
+      color = over(color, rgb, m);
+    }
   }
 
   return color;

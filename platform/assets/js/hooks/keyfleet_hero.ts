@@ -6,7 +6,7 @@
  */
 import {animate, createAnimatable, createScope, type AnimatableObject, type Scope} from "animejs"
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
-import {BASE, EASE_OUT, FAST, still} from "./motion/shared"
+import {BASE, EASE_OUT, FAST, SLOW, still} from "./motion/shared"
 import type {PlateRenderer} from "../keyfleet_hero/plate_renderer"
 import type {FieldRenderer, Rgb} from "../keyfleet_hero/renderer"
 
@@ -256,29 +256,35 @@ export const KeyfleetKeyCard = {
 }
 
 /** How high the plate's tiles stand, in CSS pixels: at rest, previewed and pressed. */
-const LIFT = {rest: 5, up: 8, down: 2}
+const LIFT = {rest: 5, up: 7, down: 2}
+/** How much higher the group of tiles under the words stands once raised, in CSS pixels. */
+const GROUP_LIFT = 10
 /** How long the tiles take to rise as the plate first appears, and after a replay. */
 const RISE = 520
 
-type PlateMove = {lift?: number; rise?: number; glow?: number}
+type PlateMove = {lift?: number; rise?: number; glow?: number; up?: number}
 
 /**
  * The plate "Buy Agent Fleet Access Key" stands on. Once the GPU's picture has
- * landed, its tiles rise from the left, and the button's words ride up on
- * them. Pointing at the plate lifts the tiles a little higher and lights
- * them; pressing pushes them down; tabbing to the button lifts them at once.
- * The button is off, so none of this does anything but answer the hand. Less
- * motion sets each height without moving. Without WebGPU the stylesheet's
- * flat plate is what shows.
+ * landed, its tiles rise from the left. Pointing at the Key's card or the
+ * plate, or tabbing to the button, raises the group of tiles under the words
+ * higher than the rest, from the middle out, their faces turning dark, and
+ * the words ride up on them in light ink. Pressing pushes the tiles down. A
+ * finger has nothing to point with, so for a finger the group stands raised
+ * from the start. The button is off, so none of this does anything but answer
+ * the hand. Less motion sets each height without moving. Without WebGPU the
+ * stylesheet's flat plate is what shows.
  */
 export const KeyfleetPlate = {
   mounted(this: IslandHook) {
     const root = this.el
     const hero = root.closest<HTMLElement>("[data-field-scope]")
+    const buy = root.closest<HTMLElement>("[data-key-preview]") ?? root
     const content = root.querySelector<HTMLElement>("[data-plate-content]")!
     const button = root.querySelector<HTMLElement>("button")!
+    const words = [...content.children] as HTMLElement[]
     const cell = Number(root.dataset.plateCell ?? 20)
-    const state = {lift: LIFT.rest, rise: 0, glow: 0}
+    const state = {lift: LIFT.rest, rise: 0, glow: 0, up: 0}
     let risen = false
 
     this.controller = createCanvasIsland<PlateRenderer>(root, {}, {
@@ -291,27 +297,49 @@ export const KeyfleetPlate = {
         return createPlateRenderer(canvas, size, lost, cell)
       },
       interact: ({canvas, renderer, nudge, onReady}) => {
-        // The words stand on the tiles, so they rise as far as the tiles do.
+        // The words stand on the tiles, so they rise as far as the tiles under them do.
         const push = () => {
-          renderer()?.raise(state.lift, state.rise, state.glow)
-          content.style.setProperty("--kf-plate-lift", `${-state.lift * state.rise}px`)
+          const plate = renderer()
+          plate?.raise(state.lift, state.rise, state.glow)
+          plate?.group(GROUP_LIFT, state.up)
+          content.style.setProperty("--kf-plate-lift", `${-(state.lift * state.rise + GROUP_LIFT * state.up)}px`)
+          content.style.setProperty("--kf-plate-raised", `${state.up}`)
           nudge()
         }
         // The plate's box inside the canvas, half a tile in from each side so
-        // the tiles' jagged edge lands on the box itself. Offsets, so the
-        // hero's entrance moving everything together does not count.
+        // the tiles' jagged edge lands on the box itself, and the box the
+        // words cover, a little over half a tile out, for the group under
+        // them. Offsets, so the hero's entrance and the words' own lift,
+        // which move everything together, do not count.
         const place = () => {
           const stage = canvas().parentElement!
           const inset = cell * 0.5
           const left = -stage.offsetLeft
           const top = -stage.offsetTop
-          renderer()?.slab(left + inset, top + inset, left + root.offsetWidth - inset, top + root.offsetHeight - inset)
+          const frame = content.getBoundingClientRect()
+          const boxes = words.map(word => word.getBoundingClientRect())
+          const x = left + content.offsetLeft - frame.left
+          const y = top + content.offsetTop - frame.top
+          renderer()?.slab(
+            [left + inset, top + inset, left + root.offsetWidth - inset, top + root.offsetHeight - inset],
+            [
+              x + Math.min(...boxes.map(box => box.left)) - cell * 0.6,
+              y + Math.min(...boxes.map(box => box.top)) - cell * 0.4,
+              x + Math.max(...boxes.map(box => box.right)) + cell * 0.6,
+              y + Math.max(...boxes.map(box => box.bottom)) + cell * 0.4,
+            ],
+          )
           nudge()
         }
         const retone = () => {
           const [red, green, blue] = tone(root, "--color-bg")
           const light = 0.2126 * red + 0.7152 * green + 0.0722 * blue > 0.5
-          renderer()?.tones(tone(root, "--kf-plate-face"), tone(root, "--kf-plate-side"), light ? 0.22 : 0.45)
+          renderer()?.tones(
+            tone(root, "--kf-plate-face"),
+            tone(root, "--kf-plate-side"),
+            tone(root, "--kf-plate-deep"),
+            light ? 0.22 : 0.45,
+          )
           nudge()
         }
 
@@ -328,17 +356,23 @@ export const KeyfleetPlate = {
         })
         const move = (to: PlateMove, duration: number, delay = 0) => scope.methods.move!(to, duration, delay)
 
+        const pointing = finePointer()
         let hovering = false
         let focused = false
         let pressed = false
+        const raised = () => !pointing || hovering || focused
         const settle = (duration: number) => {
           const previewed = hovering || focused
-          move({lift: pressed ? LIFT.down : previewed ? LIFT.up : LIFT.rest, glow: previewed ? 1 : 0}, duration)
+          move(
+            {lift: pressed ? LIFT.down : previewed ? LIFT.up : LIFT.rest, glow: previewed ? 1 : 0, up: raised() ? 1 : 0},
+            duration,
+          )
         }
         const rise = (delay: number) => {
           state.rise = 0
+          state.up = 0
           push()
-          move({rise: 1}, RISE, delay)
+          move({rise: 1, up: raised() ? 1 : 0}, RISE, delay)
         }
 
         onReady(() => {
@@ -352,7 +386,7 @@ export const KeyfleetPlate = {
           rise(0)
         })
 
-        const onEnter = () => { hovering = true; settle(BASE) }
+        const onEnter = () => { hovering = true; settle(SLOW) }
         const onExit = () => { hovering = false; pressed = false; settle(BASE) }
         const onDown = (event: PointerEvent) => {
           if (!event.isPrimary) return
@@ -375,9 +409,9 @@ export const KeyfleetPlate = {
 
         const events = new AbortController()
         const options = {signal: events.signal, passive: true}
-        if (finePointer()) {
-          root.addEventListener("pointerenter", onEnter, options)
-          root.addEventListener("pointerleave", onExit, options)
+        if (pointing) {
+          buy.addEventListener("pointerenter", onEnter, options)
+          buy.addEventListener("pointerleave", onExit, options)
         }
         root.addEventListener("pointerdown", onDown, options)
         root.addEventListener("pointerup", onUp, options)
