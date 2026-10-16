@@ -27,7 +27,7 @@ defmodule AshTemplateWeb.CreditsRefundRules do
         Only you and the Regent team can read your post, and only the team replies. The team
         sees your Credits purchases and spending beside your post.
       </p>
-      <p>You can also write to <a href="mailto:build@regents.sh">build@regents.sh</a>.</p>
+      <p>You can also write to <a href="mailto:support@regents.sh">support@regents.sh</a>.</p>
       <h2>Agents</h2>
       <p>
         Your agents can spend your Credits only within the limits you set at <a href="https://regents.sh/account">regents.sh/account</a>. If an agent spent Credits

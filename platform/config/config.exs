@@ -240,7 +240,9 @@ config :ash_template, AshTemplate.OAuth,
   issuer: "https://template.regents.sh",
   resource: "https://template.regents.sh",
   scope: "mcp.events.read",
-  permission_description: "watch updates for your account through this site's MCP service"
+  permission_description: "watch updates for your account through this site's MCP service",
+  consent_note:
+    "This connection only reads updates. It cannot post, spend your Credits, make payments or change your wallets."
 
 config :phoenix, :filter_parameters, [
   "password",

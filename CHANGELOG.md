@@ -2148,11 +2148,12 @@ Operations
   and `/llms.txt`; Escape or a click outside closes it.
 - `/contact` starts with a Help section: build@regents.sh for help with an account,
   agents or anything else, or the Regents page at Patchbay. Its description and the
-  About page's pointer to it say so too.
-- The Credits refund rules name build@regents.sh instead of support@regents.sh, so
-  the site gives one address for help. Security reports already went to
+  About page's pointer to it say so too. Security reports already went to
   build@regents.sh on `/contact`, in `/.well-known/security.txt` and in the Privacy
-  Policy; the versioned Terms of Use are unchanged.
+  Policy. The Credits refund rules keep support@regents.sh, Sean's 13 October wording,
+  and the versioned Terms of Use are unchanged.
+- The public changelog keeps its released "One footer" bullet and adds "Clearer
+  footer" for the new labels.
 
 ## 2026-10-16 — Commands name their WebMCP tool; agents status
 
@@ -2162,12 +2163,20 @@ Operations
 - New command `agents status` for `checkInAgent` (`GET /api/agents/v1/me`, the
   `agent_status` tool). It is marked `cli_pending` until regents-cli releases it.
 
-## 2026-10-16 — Shared libraries: Porcelain palette and hosted signing
+## 2026-10-16 — Shared libraries: Patchbay palette, hosted signing, ChatGPT opt-in
 
 - regent_ui is pinned to design-system `c59303b`: Phoenix 1.8.15, LiveView 1.2.12
-  and PubSub 2.4.1 (`d45f054`), the approved Porcelain and cobalt palette
-  (`a9bed5f`, `6224b50`), and pairing words that say "<name> paired with your
+  and PubSub 2.4.1 (`d45f054`), Patchbay's own Porcelain and cobalt palette
+  (`a9bed5f`, `6224b50`; only `data-brand="patchbay"` changes, so the template and
+  the other sites keep their colours), and pairing words that say "<name> paired with your
   account." without pointing at a list, since the side panel has none above it.
-- The elixir-utils packages are pinned to `17141b2`: ChatGPT identities through
-  shared OAuth and SIWA, hosted signing with the site's own key, and the MCP door on
-  2026-07-28 only.
+- The elixir-utils packages are pinned to `59784c1`: ChatGPT identities through
+  shared OAuth and SIWA, hosted signing with the site's own key, the MCP door on
+  2026-07-28 only, the wave 1 dependency updates, ChatGPT offered only where a site
+  sets `chatgpt_pairing: true`, and a consent page in the site's own words.
+- The pairing box (side panel and Account) lists `RegentAgents.Harness.offered/0`.
+  ChatGPT pairs through a plugin and identity tools the template does not serve, so
+  the template leaves `chatgpt_pairing` off and ChatGPT is not offered. Making a code
+  for an agent that is not offered does nothing.
+- The reference OAuth settings carry a `consent_note`: the connection only reads
+  updates and cannot post, spend Credits, make payments or change wallets.
