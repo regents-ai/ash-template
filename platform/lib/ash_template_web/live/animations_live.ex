@@ -268,6 +268,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/crown"}>Crown</.link>
           / <.link navigate={~p"/animations/keyfleet"}>Keyfleet home</.link>
           / <.link navigate={~p"/animations/buttons"}>Site buttons</.link>
+          / <.link navigate={~p"/animations/header-footer"}>Header and footer</.link>
         </nav>
         <div :if={@lab_tab != "palettes"} class="motion-lab__row">
           <P.button

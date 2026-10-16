@@ -33,6 +33,7 @@ import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
+import {ProductsMenu} from "./hooks/products_menu"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {TwinCube} from "./hooks/twin_cube"
@@ -308,6 +309,7 @@ const hooks = {
   MotionCount,
   MotionList,
   MotionPanels,
+  ProductsMenu,
   MotionRefusal,
   MotionTabs,
   OnchainSteps,

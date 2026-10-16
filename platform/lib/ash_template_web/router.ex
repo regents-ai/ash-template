@@ -334,6 +334,8 @@ defmodule AshTemplateWeb.Router do
       live "/animations/buttons", SiteButtonsLive, :index
       live "/animations/twin-cube", TwinCubeLive, :index
       live "/animations/keyfleet", KeyfleetHeroLive, :index
+      live "/animations/header-footer", HeaderFooterLive, :short
+      live "/animations/header-footer/long", HeaderFooterLive, :long
     end
   end
 end

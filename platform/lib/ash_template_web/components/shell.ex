@@ -44,6 +44,9 @@ defmodule AshTemplateWeb.Components.Shell do
     %{name: "$REGENT Staking", url: "https://regents.sh/stake", tone: "protocol"}
   ]
 
+  @doc "The Regents Products, in the order every menu of them lists them."
+  def regents_products, do: @regents_apps
+
   attr :route_spec, :map, required: true
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
   attr :shell_instance, :integer, required: true
@@ -708,7 +711,7 @@ defmodule AshTemplateWeb.Components.Shell do
   end
 
   # The Regents crown: thirteen blocks, drawn in the current text colour.
-  defp crown(assigns) do
+  def crown(assigns) do
     ~H"""
     <svg class="shell-apps__crown" viewBox="31 46 178 106" fill="currentColor" aria-hidden="true">
       <rect :for={{x, y} <- crown_blocks()} x={x} y={y} width="34" height="34" />
