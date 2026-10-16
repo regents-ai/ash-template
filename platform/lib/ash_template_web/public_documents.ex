@@ -57,7 +57,8 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations/foil" =>
       {"Foil cards", "Five foil cards that light up under the pointer, one for each site."},
     "/animations/keyfleet" =>
-      {"Keyfleet home", "The Keyfleet homepage hero, fleets and tools, in motion."},
+      {"Keyfleet home",
+       "The Keyfleet home: the next Key's card over a honeycomb that rises under your mouse."},
     "/animations/twin-cube" =>
       {"Twin cubes",
        "Two cubes side by side: one for people browsing the sites, one for the tools each site offers agents."},
