@@ -1,12 +1,13 @@
 /**
  * The Keyfleet hero in the motion lab: the hex field behind the hero and the
- * Club's map, the turn of the next Key's card, and the lab's
- * replay of the entrance. Every one only presents; the page is complete and
+ * Club's map, the turn of the next Key's card, the raised plate the button
+ * stands on, and the lab's replay of the entrance. Every one only presents; the page is complete and
  * readable before any of it loads, and none of it gates the Buy button.
  */
-import {createAnimatable, createScope, type AnimatableObject, type Scope} from "animejs"
+import {animate, createAnimatable, createScope, type AnimatableObject, type Scope} from "animejs"
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
-import {EASE_OUT, still} from "./motion/shared"
+import {BASE, EASE_OUT, FAST, still} from "./motion/shared"
+import type {PlateRenderer} from "../keyfleet_hero/plate_renderer"
 import type {FieldRenderer, Rgb} from "../keyfleet_hero/renderer"
 
 /** Any colour the page can state, as the three 0..1 sRGB channels a shader takes. */
@@ -251,6 +252,158 @@ export const KeyfleetKeyCard = {
   destroyed(this: KeyCardHook) {
     this.release?.()
     this.scope?.revert()
+  },
+}
+
+/** How high the plate's tiles stand, in CSS pixels: at rest, previewed and pressed. */
+const LIFT = {rest: 5, up: 8, down: 2}
+/** How long the tiles take to rise as the plate first appears, and after a replay. */
+const RISE = 520
+
+type PlateMove = {lift?: number; rise?: number; glow?: number}
+
+/**
+ * The plate "Buy Agent Fleet Access Key" stands on. Once the GPU's picture has
+ * landed, its tiles rise from the left, and the button's words ride up on
+ * them. Pointing at the plate lifts the tiles a little higher and lights
+ * them; pressing pushes them down; tabbing to the button lifts them at once.
+ * The button is off, so none of this does anything but answer the hand. Less
+ * motion sets each height without moving. Without WebGPU the stylesheet's
+ * flat plate is what shows.
+ */
+export const KeyfleetPlate = {
+  mounted(this: IslandHook) {
+    const root = this.el
+    const hero = root.closest<HTMLElement>("[data-field-scope]")
+    const content = root.querySelector<HTMLElement>("[data-plate-content]")!
+    const button = root.querySelector<HTMLElement>("button")!
+    const cell = Number(root.dataset.plateCell ?? 20)
+    const state = {lift: LIFT.rest, rise: 0, glow: 0}
+    let risen = false
+
+    this.controller = createCanvasIsland<PlateRenderer>(root, {}, {
+      canvasSelector: "[data-plate-canvas]",
+      readyFlag: "plateReady",
+      motionSensitive: false,
+      continuous: false,
+      browserLoad: async (canvas, size, lost) => {
+        const {createPlateRenderer} = await import("../keyfleet_hero/plate_renderer")
+        return createPlateRenderer(canvas, size, lost, cell)
+      },
+      interact: ({canvas, renderer, nudge, onReady}) => {
+        // The words stand on the tiles, so they rise as far as the tiles do.
+        const push = () => {
+          renderer()?.raise(state.lift, state.rise, state.glow)
+          content.style.setProperty("--kf-plate-lift", `${-state.lift * state.rise}px`)
+          nudge()
+        }
+        // The plate's box inside the canvas, half a tile in from each side so
+        // the tiles' jagged edge lands on the box itself. Offsets, so the
+        // hero's entrance moving everything together does not count.
+        const place = () => {
+          const stage = canvas().parentElement!
+          const inset = cell * 0.5
+          const left = -stage.offsetLeft
+          const top = -stage.offsetTop
+          renderer()?.slab(left + inset, top + inset, left + root.offsetWidth - inset, top + root.offsetHeight - inset)
+          nudge()
+        }
+        const retone = () => {
+          const [red, green, blue] = tone(root, "--color-bg")
+          const light = 0.2126 * red + 0.7152 * green + 0.0722 * blue > 0.5
+          renderer()?.tones(tone(root, "--kf-plate-face"), tone(root, "--kf-plate-side"), light ? 0.22 : 0.45)
+          nudge()
+        }
+
+        const scope = createScope({root})
+        scope.add(() => {
+          scope.add("move", (to: PlateMove, duration: number, delay = 0) => {
+            if (still(root)) {
+              Object.assign(state, to)
+              push()
+              return
+            }
+            animate(state, {...to, duration, delay, ease: EASE_OUT, onUpdate: push})
+          })
+        })
+        const move = (to: PlateMove, duration: number, delay = 0) => scope.methods.move!(to, duration, delay)
+
+        let hovering = false
+        let focused = false
+        let pressed = false
+        const settle = (duration: number) => {
+          const previewed = hovering || focused
+          move({lift: pressed ? LIFT.down : previewed ? LIFT.up : LIFT.rest, glow: previewed ? 1 : 0}, duration)
+        }
+        const rise = (delay: number) => {
+          state.rise = 0
+          push()
+          move({rise: 1}, RISE, delay)
+        }
+
+        onReady(() => {
+          retone()
+          place()
+          if (risen) {
+            push()
+            return
+          }
+          risen = true
+          rise(0)
+        })
+
+        const onEnter = () => { hovering = true; settle(BASE) }
+        const onExit = () => { hovering = false; pressed = false; settle(BASE) }
+        const onDown = (event: PointerEvent) => {
+          if (!event.isPrimary) return
+          pressed = true
+          settle(FAST)
+        }
+        const onUp = () => {
+          if (!pressed) return
+          pressed = false
+          settle(BASE)
+        }
+        // A key press answers at once.
+        const onFocus = () => {
+          focused = button.matches(":focus-visible")
+          settle(0)
+        }
+        const onBlur = () => { focused = false; settle(0) }
+        // The lab's replay plays the hero's entrance, which waits 180 ms for the Key.
+        const onReplay = () => rise(180)
+
+        const events = new AbortController()
+        const options = {signal: events.signal, passive: true}
+        if (finePointer()) {
+          root.addEventListener("pointerenter", onEnter, options)
+          root.addEventListener("pointerleave", onExit, options)
+        }
+        root.addEventListener("pointerdown", onDown, options)
+        root.addEventListener("pointerup", onUp, options)
+        root.addEventListener("pointercancel", onUp, options)
+        button.addEventListener("focus", onFocus, options)
+        button.addEventListener("blur", onBlur, options)
+        hero?.addEventListener("kf:replay", onReplay, options)
+        const forget = watchTheme(retone)
+        const resized = new ResizeObserver(place)
+        resized.observe(root)
+
+        return () => {
+          events.abort()
+          forget()
+          resized.disconnect()
+          scope.revert()
+        }
+      },
+    })
+    this.controller.mount()
+  },
+  disconnected(this: IslandHook) { this.controller?.pause() },
+  reconnected(this: IslandHook) { this.controller?.resume() },
+  destroyed(this: IslandHook) {
+    this.controller?.destroy()
+    this.controller = undefined
   },
 }
 
