@@ -10,6 +10,9 @@ What changed in Ash Template lately, newest first.
   copy, a button for a fresh code, and your agent's name the moment it pairs. "Manage
   Agents" takes you to your Regents account. On a wide screen the panel slides in
   beside the page instead of covering it.
+- **One footer.** The home page and every information page end with the same footer:
+  X and GitHub, Buy $REGENT, Docs, About, Contact, Privacy and Terms. On a short page
+  it sits at the bottom of the screen instead of below it.
 
 ## 12 October 2026
 

@@ -2111,3 +2111,15 @@ Operations
   and slides out the same way. On a narrower screen it slides in over the page's edge.
   A visitor who asked for less motion sees it open and close at once.
 - The Account and Sign out buttons in the panel no longer break mid-word.
+
+## 2026-10-16 — One footer, at the foot of the screen
+
+- The home page and every public page share one footer, Autolaunch's (Sean, 16 Oct):
+  X and GitHub, Buy $REGENT, Docs, About, Contact, Privacy, Terms and "© 2026 Regents
+  Labs" (`Layouts.product_links/1`, class `regent-footer`). Public pages keep the theme
+  switch beside the social links; the home page, always dark, has none. The home page's
+  own footer and the old "Project links" footer are gone.
+- On a short public page the footer sat just below the screen, because the page above
+  it was a full screen tall by itself. The page and its footer now fill the screen
+  together and the page grows to meet the footer, so it sits at the bottom of the screen
+  however short the page is. The app's bottom bar is unchanged.

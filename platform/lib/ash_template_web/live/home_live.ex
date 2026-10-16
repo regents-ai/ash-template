@@ -59,7 +59,9 @@ defmodule AshTemplateWeb.HomeLive do
         </Regent.Structure.row>
       </main>
 
-      <Regent.Structure.row rail={false}><.landing_footer /></Regent.Structure.row>
+      <Regent.Structure.row rail={false}>
+        <AshTemplateWeb.Layouts.product_links theme_toggle={false} />
+      </Regent.Structure.row>
     </Regent.Structure.frame>
     """
   end
@@ -320,24 +322,6 @@ defmodule AshTemplateWeb.HomeLive do
         </.action>
       </div>
     </section>
-    """
-  end
-
-  defp landing_footer(assigns) do
-    ~H"""
-    <footer class="rl-footer">
-      <nav class="rl-document-links" aria-label="Site information">
-        <a href={~p"/docs"}>Docs</a>
-        <a href={~p"/about"}>About</a>
-        <a href={~p"/contact"}>Contact</a>
-        <a href={~p"/privacy"}>Privacy</a>
-        <a href={~p"/terms"}>Terms</a>
-      </nav>
-      <nav class="rl-footer-links" aria-label="Social links">
-        <RegentLinks.header_links id="footer-brand-links" />
-      </nav>
-      <p>© 2026 Ash Template</p>
-    </footer>
     """
   end
 
