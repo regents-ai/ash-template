@@ -121,8 +121,8 @@
     transition: opacity 240ms ease;
   }
   .kf-field__canvas { opacity: 0; transition: opacity 240ms ease; }
-  .kf-field[data-field-ready] .kf-field__still { opacity: 0; }
-  .kf-field[data-field-ready] .kf-field__canvas { opacity: 1; }
+  .kf-field[data-field-ready="true"] .kf-field__still { opacity: 0; }
+  .kf-field[data-field-ready="true"] .kf-field__canvas { opacity: 1; }
 
   .kf-hero__field {
     --kf-fade-x: .5; --kf-fade-y: .62; --kf-fade-width: .85; --kf-fade-height: .6;
@@ -178,8 +178,7 @@
     background: var(--ash-accent-warm);
   }
 
-  /* The Regents Club: its map beside what it is and when it opens. The map
-     is a labelled placeholder until Keyfleet's own map is drawn here. */
+  /* The Regents Club: its hex field beside what it is and when it opens. */
   .kf-club {
     position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4);
     padding: var(--rg-panel-padding);
@@ -191,11 +190,6 @@
   .kf-club__field {
     --kf-fade-x: .5; --kf-fade-y: .5; --kf-fade-width: .75; --kf-fade-height: .75;
     --kf-fade-from: .35; --kf-fade-to: .9;
-  }
-  .kf-club__caption {
-    position: absolute; inset-inline-start: var(--space-2); inset-block-end: var(--space-2);
-    padding: .25rem .5rem; border: 1px dashed var(--hairline-strong); background: var(--color-bg);
-    color: var(--color-fg-muted); font-family: var(--font-family-mono); font-size: .75rem;
   }
   .kf-club__copy { display: grid; align-content: start; gap: var(--space-2); min-width: 0; }
   .kf-club__copy > h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.1; letter-spacing: -.03em; }
