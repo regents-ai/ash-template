@@ -2285,3 +2285,35 @@ Operations
   signed in on this site yet.", `account_required` says "This sign-in hasn't been used
   on this website yet.", and the API descriptions say the person has not signed in on
   this site yet, never that they have no account here.
+
+## 2026-10-16 — Side panel: account, Pair Agent and agents only
+
+- The side panel holds, in order: the account's name and picture, Sign out,
+  Manage Account (regents.sh/account, in a new tab), Pair Agent and the agents
+  paired with the account. The Get started checklist, the assistant box, the Account
+  link and the page slot (`#shell-aside-page`) are gone, with the light that
+  pulsed on the panel button.
+- Pair Agent offers the five agents in `RegentAgents.Harness.featured/0` (any
+  agent, Codex, Grok Bot, Muse, Hermes) as pictures (`Regent.Account.pairing`
+  `layout={:icons}`), each with its own message. The pairing box is on every page,
+  Account included; the Account page's agents list opens it with Pair Agent
+  (`data-aside-open`) instead of holding its own.
+- The panel's agents list is `AshTemplateWeb.PanelAgents`, the shared agents list
+  with no actions; Unpair and each agent's activity stay on the Account page.
+- Between a phone and a wide screen the open panel now sits beside the page, and
+  the section's list makes way while it is open; only on a phone does it cover
+  the page.
+- A room's "Here now" and "People you've muted" moved from the panel to below the
+  room.
+- Sign out and Manage Account sit one above the other. Manage Account opens in a
+  new tab, so its arrow points up and to the right (design-system styles every
+  `rg-button` with `target="_blank"` this way).
+- Each picture's name shows above it on hover or keyboard focus, and the chosen
+  agent's name shows below the pictures ("Pairing Hermes") for touch.
+- The motion kit names the main-button selector once (`CTA` in
+  `assets/js/hooks/motion/buttons.ts`), and the press handler uses it.
+- Pins elixir-utils `a8b83589c5e348cb2b3d23ceec8b04317c1dede1` and design-system
+  `e97099285c20186fae5f6b4340b589168a4d122a` (which also gives Patchbay's main
+  button its tangerine marks back in light mode).
+- The agent guides, the build skill and the CLI command list (`cli/commands.json`,
+  `cli/COMMANDS.md`) say the pairing code is made with Pair Agent in the side panel.

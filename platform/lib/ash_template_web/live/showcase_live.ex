@@ -113,15 +113,35 @@ defmodule AshTemplateWeb.ShowcaseLive do
       route_spec={@route_spec}
       account_control={@account}
       shell_instance={0}
-      checklist={[
-        %{id: :sign_in, label: "Sign in", path: nil, done?: true},
-        %{id: :note, label: "Write your first note", path: "/notes", done?: false}
-      ]}
       unread={2}
       credits={%{state: :ready, value: %{available: Decimal.new("10.00")}}}
       healthy={true}
       search={AshTemplateWeb.ShellLive.unsearched()}
     >
+      <:pairing>
+        <Regent.Account.pairing
+          id="preview-pairing"
+          harnesses={AshTemplateWeb.PairingBox.choices()}
+          messages={AshTemplateWeb.PairingBox.stand_in_messages()}
+          layout={:icons}
+        />
+      </:pairing>
+      <:agents>
+        <Regent.Account.agents
+          id="preview-agents"
+          agents={[
+            %{
+              id: "sample",
+              name: "Sample agent",
+              kind: "hermes",
+              harness: "Hermes",
+              backed: false,
+              last_contact_iso: "2026-10-16T12:00:00Z",
+              last_contact: "2 minutes ago"
+            }
+          ]}
+        />
+      </:agents>
       <:content>
         <div style="padding: 32px">
           <h1>Page frame preview</h1>

@@ -1,9 +1,10 @@
 defmodule AshTemplateWeb.AgentsPanel do
   @moduledoc """
-  The agents a person has paired with their account (`RegentAgents`), in the
-  shared agents list (`Regent.Account.agents`), the box to pair another
-  (`AshTemplateWeb.PairingBox`), and a larger view of one agent with what it has
-  done across the Regent sites (`RegentAgents.Activity`) and Unpair.
+  The agents a person has paired with their account (`RegentAgents`), on the
+  Account page, in the shared agents list (`Regent.Account.agents`), with Pair
+  Agent opening the side panel's pairing box (`AshTemplateWeb.PairingBox`), and a
+  larger view of one agent with what it has done across the Regent sites
+  (`RegentAgents.Activity`) and Unpair.
 
   Pairing immediately lets an agent do what `AshTemplateWeb.Capabilities.may/0`
   lists, which the list's tip and the agent's view show the person, and the
@@ -12,16 +13,14 @@ defmodule AshTemplateWeb.AgentsPanel do
   listed here too.
 
   The parent passes `account` (the signed-in account), its `session_lease` as
-  `lease` and `id`, and sends `agents_changed: true`, to this panel and to its
-  pairing box (`"\#{id}-pair"`), when an agent pairs, checks in or is unpaired
-  anywhere.
+  `lease` and `id`, and sends `agents_changed: true` when an agent pairs, checks
+  in or is unpaired anywhere.
   """
   use AshTemplateWeb, :live_component
 
   alias AshTemplate.Credits
   alias AshTemplateWeb.Capabilities
   alias AshTemplateWeb.Live.Session
-  alias AshTemplateWeb.PairingBox
   alias Regent.Primitives, as: P
   alias RegentAgents.{Activity, Harness, HumanBacking, PairedAgent, Person}
 
@@ -166,7 +165,7 @@ defmodule AshTemplateWeb.AgentsPanel do
           </P.button>
         </:actions>
         <:footer>
-          <.live_component module={PairingBox} id={"#{@id}-pair"} lease={@lease} account={@account} />
+          <P.button type="button" variant="secondary" data-aside-open>Pair Agent</P.button>
 
           <Regent.Account.agent_detail
             :if={@detail}
@@ -206,10 +205,10 @@ defmodule AshTemplateWeb.AgentsPanel do
     """
   end
 
-  # Each agent as the shared list shows it, newest first as the account reads them.
-  defp rows(:unavailable, _now), do: :unavailable
+  @doc "Each agent as the shared list shows it, newest first as the account reads them."
+  def rows(:unavailable, _now), do: :unavailable
 
-  defp rows(agents, now) do
+  def rows(agents, now) do
     Enum.map(agents, fn agent ->
       %{
         id: agent.id,

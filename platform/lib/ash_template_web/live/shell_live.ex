@@ -3,8 +3,8 @@ defmodule AshTemplateWeb.ShellLive do
   One LiveView holds the frame (`AshTemplateWeb.Components.Shell`) across every
   in-app route and patches between them, so the frame never remounts on
   navigation. Besides the page, it keeps the frame's own parts current: the
-  Get started checklist, the bell's unread count, the background jobs running,
-  search and the assistant box.
+  side panel's pairing box and agents, the bell's unread count, the background
+  jobs running, and search.
   """
 
   use AshTemplateWeb, :live_view
@@ -31,6 +31,7 @@ defmodule AshTemplateWeb.ShellLive do
     NotFoundError,
     OverviewLive,
     PairingBox,
+    PanelAgents,
     Presence,
     PublicDocuments,
     Read,
@@ -45,19 +46,6 @@ defmodule AshTemplateWeb.ShellLive do
     message: "That connection couldn’t be updated. Refresh the page and try again."
   }
 
-  @steps [
-    sign_in: "Sign in",
-    wallet: "Link a wallet",
-    note: "Write your first note",
-    room: "Post in a room",
-    chat: "Start a chat"
-  ]
-  @step_paths %{
-    wallet: "/account/wallets",
-    note: "/notes",
-    room: "/rooms/#{hd(Room.all()).slug}",
-    chat: "/chat"
-  }
   @kinds %{"Pages" => :page, "Actions" => :action}
 
   @impl true
@@ -82,11 +70,8 @@ defmodule AshTemplateWeb.ShellLive do
        connection_outcome: nil,
        notifications: %Read{},
        mark_read_failed?: false,
-       progress: progress(human_actor(socket)),
        healthy: AshTemplate.Health.database_ready?(),
-       search: unsearched(),
-       assistant: nil,
-       assistant_refused?: false
+       search: unsearched()
      )
      |> count_unread()
      |> read_credits()}
@@ -180,30 +165,6 @@ defmodule AshTemplateWeb.ShellLive do
       else: {:noreply, socket}
   end
 
-  # The first question starts a conversation; the next ones continue it. The
-  # reply arrives a piece at a time on the conversation's topic.
-  def handle_event("assistant_ask", %{"text" => text}, socket) do
-    with %Human{} = actor <- human_actor(socket),
-         {:ok, message} <-
-           Chat.create_message(%{text: text},
-             actor: actor,
-             private_arguments: assistant_conversation(socket.assigns.assistant)
-           ) do
-      {:noreply,
-       socket
-       |> assign(:assistant, %{
-         conversation_id: message.conversation_id,
-         question: text,
-         reply: ""
-       })
-       |> assign(:assistant_refused?, false)
-       |> sync_chat_topics()}
-    else
-      {:error, _refused} -> {:noreply, assign(socket, :assistant_refused?, true)}
-      nil -> {:noreply, socket}
-    end
-  end
-
   @impl true
   def handle_async({Read, :credits_read, _generation} = name, result, socket) do
     {:noreply, Read.settle(socket, name, result)}
@@ -220,7 +181,7 @@ defmodule AshTemplateWeb.ShellLive do
     if socket.assigns.route_spec.route_id == :notes,
       do: send_update(NotesLive, id: "notes", change: {event, note})
 
-    {:noreply, if(event == "create", do: step_done(socket, :note), else: socket)}
+    {:noreply, socket}
   end
 
   # A notification arriving or being read anywhere recounts the bell, and
@@ -246,14 +207,14 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # An agent paired, checked in or was unpaired, here or on another Regent site.
-  # The side bar's pairing box is on every page but Account, which has its own.
+  # The side panel's pairing box and agents are on every page; the Account page
+  # also lists the agents.
   def handle_info(:agents_changed, socket) do
-    if socket.assigns.route_spec.route_id == :account do
-      send_update(AgentsPanel, id: "account-agents", agents_changed: true)
-      send_update(PairingBox, id: "account-agents-pair", agents_changed: true)
-    else
-      send_update(PairingBox, id: "shell-pairing-box", agents_changed: true)
-    end
+    send_update(PairingBox, id: "shell-pairing-box", agents_changed: true)
+    send_update(PanelAgents, id: "shell-agents", agents_changed: true)
+
+    if socket.assigns.route_spec.route_id == :account,
+      do: send_update(AgentsPanel, id: "account-agents", agents_changed: true)
 
     {:noreply, socket}
   end
@@ -264,9 +225,7 @@ defmodule AshTemplateWeb.ShellLive do
     if on_room?(socket, message.room),
       do: send_update(RoomsLive, id: "rooms", change: {event, message})
 
-    if event == "post" and own?(socket, message),
-      do: {:noreply, step_done(socket, :room)},
-      else: {:noreply, socket}
+    {:noreply, socket}
   end
 
   def handle_info(%{topic: "room_people:" <> room, event: "presence_diff"}, socket) do
@@ -284,18 +243,11 @@ defmodule AshTemplateWeb.ShellLive do
 
   # Each piece of the assistant's reply, and the person's own message, reach only
   # the conversation on screen.
-  # The assistant box shows the reply to its own conversation as it is written.
   def handle_info(%{topic: "chat:messages:" <> id, payload: message}, socket) do
     if on_conversation?(socket, id),
       do: send_update(ChatLive, id: "chat", change: message)
 
-    case socket.assigns.assistant do
-      %{conversation_id: ^id} when message.source == :agent ->
-        {:noreply, update(socket, :assistant, &%{&1 | reply: message.text})}
-
-      _other ->
-        {:noreply, socket}
-    end
+    {:noreply, socket}
   end
 
   # A conversation started or named on any of the person's pages joins their
@@ -303,8 +255,6 @@ defmodule AshTemplateWeb.ShellLive do
   def handle_info(%{topic: "chat:conversations:" <> _, payload: conversation}, socket) do
     if socket.assigns.route_spec.route_id == :chat,
       do: send_update(ChatLive, id: "chat", conversation_change: conversation)
-
-    socket = step_done(socket, :chat)
 
     if on_conversation?(socket, conversation.id),
       do: {:noreply, assign(socket, :conversation, conversation)},
@@ -321,13 +271,10 @@ defmodule AshTemplateWeb.ShellLive do
       route_spec={@route_spec}
       account_control={@account_control}
       shell_instance={@shell_instance}
-      checklist={checklist(@progress)}
       unread={@unread}
       credits={signed_in_credits(@access_context, @credits_read)}
       healthy={@healthy}
       search={@search}
-      assistant={@assistant}
-      assistant_refused?={@assistant_refused?}
     >
       <:credits_panel :if={signed_in_credits(@access_context, @credits_read)}>
         <.live_component
@@ -338,7 +285,7 @@ defmodule AshTemplateWeb.ShellLive do
           credits={@credits_read}
         />
       </:credits_panel>
-      <:pairing :if={current_account(@access_context) && @route_spec.route_id != :account}>
+      <:pairing :if={current_account(@access_context)}>
         <.live_component
           module={PairingBox}
           id="shell-pairing-box"
@@ -346,6 +293,14 @@ defmodule AshTemplateWeb.ShellLive do
           account={current_account(@access_context)}
         />
       </:pairing>
+      <:agents :if={current_account(@access_context)}>
+        <.live_component
+          module={PanelAgents}
+          id="shell-agents"
+          lease={@session_lease}
+          account={current_account(@access_context)}
+        />
+      </:agents>
       <:content>
         <OverviewLive.page
           :if={@route_spec.route_id == :app}
@@ -487,17 +442,13 @@ defmodule AshTemplateWeb.ShellLive do
   defp open_conversation(socket, conversation),
     do: socket |> assign(:conversation, conversation) |> sync_chat_topics()
 
-  # The page hears the conversation on screen and the assistant box's own, each
-  # once even when they are the same conversation.
+  # The page hears the conversation on screen.
   defp sync_chat_topics(socket) do
     wanted =
-      [socket.assigns.conversation, socket.assigns.assistant]
-      |> Enum.flat_map(fn
-        %{id: id} -> ["chat:messages:#{id}"]
-        %{conversation_id: id} -> ["chat:messages:#{id}"]
-        nil -> []
-      end)
-      |> MapSet.new()
+      case socket.assigns.conversation do
+        %{id: id} -> MapSet.new(["chat:messages:#{id}"])
+        nil -> MapSet.new()
+      end
 
     if connected?(socket) do
       held = socket.assigns.chat_topics
@@ -562,37 +513,6 @@ defmodule AshTemplateWeb.ShellLive do
     do: Human.for_account(account)
 
   defp human_actor(_socket), do: nil
-
-  defp own?(socket, message) do
-    case human_actor(socket) do
-      %Human{human_account_id: id} -> message.human_account_id == id
-      nil -> false
-    end
-  end
-
-  # What the Get started checklist shows as done, read from the person's own
-  # records once, then kept current by the events the page already hears.
-  defp progress(nil), do: %{}
-
-  defp progress(%Human{} = actor) do
-    %{
-      sign_in: true,
-      wallet: actor.wallet_addresses != [],
-      note: Ash.exists?(Note, actor: actor),
-      room:
-        Message
-        |> Ash.Query.filter(human_account_id == ^actor.human_account_id)
-        |> Ash.exists?(actor: actor),
-      chat: Ash.exists?(AshTemplate.Chat.Conversation, actor: actor)
-    }
-  end
-
-  defp step_done(socket, step), do: update(socket, :progress, &Map.put(&1, step, true))
-
-  defp checklist(progress) do
-    for {id, label} <- @steps,
-        do: %{id: id, label: label, path: @step_paths[id], done?: Map.get(progress, id, false)}
-  end
 
   defp read_credits(socket) do
     case current_account(socket.assigns.access_context) do
@@ -735,9 +655,6 @@ defmodule AshTemplateWeb.ShellLive do
     tail = if start + @excerpt_length < length, do: "…", else: ""
     lead <> String.slice(text, start, @excerpt_length) <> tail
   end
-
-  defp assistant_conversation(%{conversation_id: id}), do: %{conversation_id: id}
-  defp assistant_conversation(nil), do: %{}
 
   # The NFT tier is read from Base once per page open, never on each award notice.
   defp load_points(socket, %{route_id: :points}) do

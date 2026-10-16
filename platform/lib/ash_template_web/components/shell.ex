@@ -8,15 +8,14 @@ defmodule AshTemplateWeb.Components.Shell do
   The panels' open and closed states are the browser's (`assets/js/shell_panels.ts`
   and the `ash_template_aside` and `ash_template_sidebar` cookies, read into
   `<html data-aside data-sidebar>`), so the server never stores them. A page puts its own parts
-  into the sidebar and the right side bar with `<.portal>` into
-  `#shell-sidebar-page` and `#shell-aside-page`.
+  into the sidebar with `<.portal>` into `#shell-sidebar-page`.
 
-  The right side bar and its button are there only for someone signed in, so a
-  page signed out has nothing beside the Sign in button. A page's part for the
-  side bar is likewise drawn only for someone signed in. It holds the box to
-  pair an agent (the `pairing` slot) and a link to manage agents on the Regents
-  account page, where the person signs in again. A page that shows its own
-  pairing box leaves the slot out, and the side bar then has neither.
+  The right side panel and its button are there only for someone signed in, so a
+  page signed out has nothing beside the Sign in button. It is the same on every
+  page: the person's name and picture, Sign out, Manage Account on regents.sh,
+  the box to pair an agent (the `pairing` slot) and the agents paired with the
+  account (the `agents` slot). Opened, it slides in and the page beside it gives
+  way; only on a phone, too narrow for both, does it cover the page.
   """
 
   use Phoenix.Component
@@ -49,10 +48,6 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
   attr :shell_instance, :integer, required: true
 
-  attr :checklist, :list,
-    required: true,
-    doc: "The Get started steps, each `%{id, label, path, done?}`."
-
   attr :unread, :integer, default: nil, doc: "Unread notifications; nil when signed out."
 
   attr :credits, :map,
@@ -61,17 +56,13 @@ defmodule AshTemplateWeb.Components.Shell do
 
   attr :healthy, :boolean, required: true
   attr :search, :map, required: true, doc: "`%{query, results}` for the search dialog."
-  attr :assistant, :map, default: nil, doc: "The assistant box's last question and reply."
-  attr :assistant_refused?, :boolean, default: false, doc: "The last question was not sent."
   slot :content, required: true
   slot :credits_panel, doc: "The Buy Credits panel, opened from the header's balance."
 
-  slot :pairing,
-    doc: "The box to pair an agent, in the right side bar; left out on a page with its own."
+  slot :pairing, doc: "The box to pair an agent, in the side panel."
+  slot :agents, doc: "The agents paired with the account, in the side panel."
 
   def shell(assigns) do
-    assigns = assign(assigns, :aside_digest, aside_digest(assigns.checklist))
-
     ~H"""
     <div
       id="app-shell"
@@ -177,11 +168,9 @@ defmodule AshTemplateWeb.Components.Shell do
           aria-expanded="false"
           aria-label="Side panel"
           data-aside-toggle
-          data-aside-digest={@aside_digest}
-          phx-mounted={JS.ignore_attributes(["aria-expanded", "data-unseen"])}
+          phx-mounted={JS.ignore_attributes(["aria-expanded"])}
         >
           <.icon name={:panel} />
-          <span class="shell-pulse" aria-hidden="true"></span>
           <span class="shell-tool__tip" aria-hidden="true">Side panel</span>
         </button>
       </header>
@@ -298,7 +287,9 @@ defmodule AshTemplateWeb.Components.Shell do
         tabindex="-1"
       >
         <div class="shell-aside__head">
-          <h2 id="shell-aside-title">For you</h2>
+          <h2 id="shell-aside-title" class="shell-account__name">
+            <.account_name id="shell-account-picture" account_control={@account_control} />
+          </h2>
           <button
             class="shell-tool"
             type="button"
@@ -310,87 +301,30 @@ defmodule AshTemplateWeb.Components.Shell do
           </button>
         </div>
 
-        <section id="shell-account" class="shell-account" aria-label="Your account">
-          <p class="shell-account__name">
-            <.account_name id="shell-account-picture" account_control={@account_control} />
-          </p>
-          <div class="shell-account__actions">
-            <.link patch={~p"/account"} class="rg-button rg-button--secondary">Account</.link>
-            <Regent.Primitives.button
-              variant="secondary"
-              type="button"
-              data-account-target="sign-out"
-            >
-              Sign out
-            </Regent.Primitives.button>
-          </div>
+        <section id="shell-account" class="shell-account__actions" aria-label="Your account">
+          <Regent.Primitives.button
+            variant="secondary"
+            type="button"
+            data-account-target="sign-out"
+          >
+            Sign out
+          </Regent.Primitives.button>
+          <a
+            href="https://regents.sh/account"
+            class="rg-button rg-button--secondary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Manage Account
+          </a>
         </section>
 
         <section :if={@pairing != []} id="shell-pairing" aria-labelledby="shell-pairing-title">
-          <h3 id="shell-pairing-title">Pair your agent</h3>
+          <h3 id="shell-pairing-title">Pair Agent</h3>
           {render_slot(@pairing)}
-          <a href="https://regents.sh/account#account-agents">Manage Agents</a>
         </section>
 
-        <section id="shell-checklist" aria-labelledby="shell-checklist-title">
-          <h3 id="shell-checklist-title">Get started</h3>
-          <p class="shell-checklist__count">
-            {Enum.count(@checklist, & &1.done?)} of {length(@checklist)} done
-          </p>
-          <ol>
-            <li :for={step <- @checklist} data-done={to_string(step.done?)}>
-              <span class="shell-checklist__mark" aria-hidden="true">
-                {if step.done?, do: "✓", else: ""}
-              </span>
-              <span :if={step.done?}>{step.label}<span class="visually-hidden">, done</span></span>
-              <.link :if={!step.done?} patch={step.path}>
-                {step.label}
-              </.link>
-            </li>
-          </ol>
-        </section>
-
-        <div id="shell-aside-page"></div>
-
-        <section id="shell-aside-assistant" aria-labelledby="shell-assistant-title">
-          <h3 id="shell-assistant-title">Assistant</h3>
-          <form
-            :if={@account_control.kind == :signed_in}
-            id="shell-assistant-form"
-            class="shell-assistant__form"
-            phx-submit="assistant_ask"
-          >
-            <label for="shell-assistant-input" class="visually-hidden">Ask the assistant</label>
-            <input
-              id="shell-assistant-input"
-              name="text"
-              type="text"
-              maxlength="4000"
-              autocomplete="off"
-              placeholder="Ask the assistant"
-              required
-            />
-            <Regent.Primitives.button type="submit" variant="secondary">Ask</Regent.Primitives.button>
-          </form>
-          <%!-- Always one line tall, so the reply below never moves. --%>
-          <p
-            :if={@account_control.kind == :signed_in}
-            id="shell-assistant-note"
-            class="shell-assistant__note"
-            aria-live="polite"
-          >
-            {if @assistant_refused?, do: "Not sent. Wait a moment and try again."}
-          </p>
-          <p :if={@account_control.kind != :signed_in} class="rg-muted">
-            Sign in to ask the assistant.
-          </p>
-          <div :if={@assistant} class="shell-assistant__exchange" aria-live="polite">
-            <p class="shell-assistant__question">{@assistant.question}</p>
-            <p :if={@assistant.reply == ""} class="rg-muted">The assistant is writing…</p>
-            <p :if={@assistant.reply != ""} class="shell-assistant__reply">{@assistant.reply}</p>
-            <.link patch={"/chat/#{@assistant.conversation_id}"}>Open in Chat</.link>
-          </div>
-        </section>
+        {render_slot(@agents)}
       </aside>
 
       <footer id="shell-footer">
@@ -543,9 +477,6 @@ defmodule AshTemplateWeb.Components.Shell do
 
   # The pulsing light names what the side panel holds; when that changes while
   # the panel is closed, the light pulses until the panel is opened.
-  defp aside_digest(checklist),
-    do: checklist |> Enum.map(&{&1.id, &1.done?}) |> :erlang.phash2() |> Integer.to_string(36)
-
   defp kind_icon(:page), do: :page
   defp kind_icon(:action), do: :action
   defp kind_icon(:note), do: :notes

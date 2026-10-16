@@ -1,9 +1,8 @@
 defmodule AshTemplateWeb.RoomsLive do
   @moduledoc """
   One chat room: its messages oldest at the top and newest at the bottom above
-  the message box, a form bound to the message's own Ash actions, who is here
-  now and the people the reader has muted, which it puts in the shell's right
-  side bar for someone signed in.
+  the message box, a form bound to the message's own Ash actions, and below it,
+  for someone signed in, who is here now and the people the reader has muted.
 
   Posting never touches the list directly. Every post, edit and delete reaches
   each open page of the room the same way: the message's PubSub notifier
@@ -172,40 +171,6 @@ defmodule AshTemplateWeb.RoomsLive do
   def render(assigns) do
     ~H"""
     <article id="rooms-page" class="account-page">
-      <.portal :if={@actor} id="rooms-aside" target="#shell-aside-page">
-        <div class="rooms-side">
-          <section aria-labelledby="room-people-title">
-            <h3 id="room-people-title">Here now</h3>
-            <ul :if={here(@people, @muted) != []} class="rooms-people">
-              <li :for={person <- here(@people, @muted)}><bdi>{person.name}</bdi></li>
-            </ul>
-            <p :if={here(@people, @muted) == []} class="rg-muted">
-              Nobody signed in has this room open.
-            </p>
-          </section>
-
-          <section aria-labelledby="room-mutes-title">
-            <h3 id="room-mutes-title">People you’ve muted</h3>
-            <p class="rg-muted">
-              You don’t see their messages in any room. They aren’t told.
-            </p>
-            <ul :if={@mutes != []} class="rooms-mutes">
-              <li :for={mute <- @mutes}>
-                <bdi>{mute.muted_name}</bdi>
-                <Primitives.button
-                  type="button"
-                  variant="quiet"
-                  phx-click="unmute"
-                  phx-value-id={mute.id}
-                  phx-target={@myself}
-                >
-                  Unmute
-                </Primitives.button>
-              </li>
-            </ul>
-          </section>
-        </div>
-      </.portal>
       <.page_head title={@room.name}>
         <:tip>{@room.about}</:tip>
       </.page_head>
@@ -366,6 +331,39 @@ defmodule AshTemplateWeb.RoomsLive do
           </div>
         </.form>
       </section>
+
+      <div :if={@actor} class="rooms-side">
+        <section class="account-panel" aria-labelledby="room-people-title">
+          <h2 id="room-people-title">Here now</h2>
+          <ul :if={here(@people, @muted) != []} class="rooms-people">
+            <li :for={person <- here(@people, @muted)}><bdi>{person.name}</bdi></li>
+          </ul>
+          <p :if={here(@people, @muted) == []} class="rg-muted">
+            Nobody signed in has this room open.
+          </p>
+        </section>
+
+        <section class="account-panel" aria-labelledby="room-mutes-title">
+          <h2 id="room-mutes-title">People you’ve muted</h2>
+          <p class="rg-muted">
+            You don’t see their messages in any room. They aren’t told.
+          </p>
+          <ul :if={@mutes != []} class="rooms-mutes">
+            <li :for={mute <- @mutes}>
+              <bdi>{mute.muted_name}</bdi>
+              <Primitives.button
+                type="button"
+                variant="quiet"
+                phx-click="unmute"
+                phx-value-id={mute.id}
+                phx-target={@myself}
+              >
+                Unmute
+              </Primitives.button>
+            </li>
+          </ul>
+        </section>
+      </div>
     </article>
     """
   end

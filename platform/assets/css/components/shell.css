@@ -289,43 +289,6 @@
   text-align: center;
 }
 
-/* The side panel's light: still until the panel holds something not yet seen,
-   then a slow pulse of its glow while the panel stays closed. */
-.shell-pulse {
-  position: absolute;
-  inset-block-start: 0.55rem;
-  inset-inline-end: 0.55rem;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--ash-accent-warm);
-  opacity: 0;
-}
-
-#shell-aside-button[data-unseen="true"] .shell-pulse {
-  opacity: 1;
-  animation: shell-pulse 1.6s var(--ease-out) infinite;
-}
-
-@keyframes shell-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--ash-accent-warm) 60%, transparent);
-  }
-
-  50% {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 0.35rem color-mix(in oklch, var(--ash-accent-warm) 0%, transparent);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #shell-aside-button[data-unseen="true"] .shell-pulse {
-    animation: none;
-  }
-}
-
 .account-control,
 .theme-control {
   position: relative;
@@ -892,10 +855,8 @@
 .shell-aside__head h2 {
   margin: 0;
   font-family: var(--font-family-ui);
-  font-size: 0.68rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 #shell-aside section {
@@ -930,6 +891,11 @@
   min-width: 0;
 }
 
+/* The account's own name heads the panel; the close button keeps its place. */
+.shell-aside__head .shell-account__name {
+  flex: 1;
+}
+
 .shell-account__name .account-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -938,7 +904,6 @@
 
 .shell-account__actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -946,65 +911,6 @@
   width: 100%;
   justify-content: center;
   white-space: nowrap;
-}
-
-.shell-checklist__count {
-  color: var(--color-fg-muted);
-  font-size: 0.85rem;
-}
-
-#shell-checklist li {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.shell-checklist__mark {
-  display: grid;
-  place-items: center;
-  width: 1.2rem;
-  height: 1.2rem;
-  flex: 0 0 auto;
-  border: 1px solid var(--ash-line-strong);
-  font-size: 0.75rem;
-}
-
-#shell-checklist li[data-done="true"] {
-  color: var(--color-fg-muted);
-}
-
-#shell-checklist li[data-done="true"] .shell-checklist__mark {
-  border-color: var(--ash-accent);
-  color: var(--ash-accent);
-}
-
-.shell-assistant__form {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.shell-assistant__form input {
-  flex: 1;
-  min-width: 0;
-}
-
-.shell-assistant__note {
-  min-block-size: 1lh;
-  margin: 0;
-  color: var(--color-error);
-  font-size: 0.8125rem;
-}
-
-.shell-assistant__exchange {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.shell-assistant__question {
-  justify-self: end;
-  max-width: 90%;
-  padding: 0.4rem 0.6rem;
-  background: var(--ash-panel-strong);
 }
 
 /* ---- Bottom bar ---- */
@@ -1347,40 +1253,19 @@
   }
 }
 
-/* ---- Below a wide screen the right side bar covers the page's edge ---- */
+/* ---- Below a wide screen the open side panel takes the list's place ---- */
+
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  :root[data-aside="open"] #app-shell {
+    --shell-sidebar: 0px;
+  }
+
+  :root[data-aside="open"] #shell-sidebar {
+    display: none;
+  }
+}
 
 @media (max-width: 63.99rem) {
-  #app-shell {
-    --shell-aside: 0px;
-  }
-
-  #shell-aside {
-    position: fixed;
-    inset: 3.5rem 0 0 auto;
-    z-index: 6;
-    width: min(22rem, 100%);
-    border-inline-start: 1px solid var(--ash-line-strong);
-    transition:
-      transform var(--duration-slow) var(--ease-out),
-      visibility var(--duration-slow);
-  }
-
-  #shell-aside > * {
-    min-inline-size: 0;
-  }
-
-  /* Covering the page, it slides in from the edge, and opens only when opened
-     on this page, never on arrival. */
-  :root:not([data-aside="open"]) #shell-aside,
-  :root:not([data-aside-here]) #shell-aside {
-    visibility: hidden;
-    transform: translateX(100%);
-  }
-
-  :root[data-aside="open"][data-aside-here] #shell-aside {
-    transition: transform var(--duration-slow) var(--ease-out);
-  }
-
   #app-shell .shell-search-button {
     min-width: 0;
   }
@@ -1553,10 +1438,31 @@
     display: none;
   }
 
+  /* Too narrow for both, the side panel covers the page: it slides in from the
+     edge, and opens only when opened on this page, never on arrival. */
   #shell-aside {
+    position: fixed;
     inset: 3.5rem 0 0;
+    z-index: 6;
     width: 100%;
     border-inline-start: 0;
+    transition:
+      transform var(--duration-slow) var(--ease-out),
+      visibility var(--duration-slow);
+  }
+
+  #shell-aside > * {
+    min-inline-size: 0;
+  }
+
+  :root:not([data-aside="open"]) #shell-aside,
+  :root:not([data-aside-here]) #shell-aside {
+    visibility: hidden;
+    transform: translateX(100%);
+  }
+
+  :root[data-aside="open"][data-aside-here] #shell-aside {
+    transition: transform var(--duration-slow) var(--ease-out);
   }
 
   /* Four tabs fit a 320px phone without the strip scrolling. */

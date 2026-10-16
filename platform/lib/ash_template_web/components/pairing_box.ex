@@ -1,9 +1,9 @@
 defmodule AshTemplateWeb.PairingBox do
   @moduledoc """
-  Pairing an agent (`RegentAgents`): choosing it, the message to paste it with
-  its code, "Make a new code", and the agent's name once it uses the code, in the
-  shared pairing box (`Regent.Account.pairing`). The Account page's agents and
-  the right side panel each hold one.
+  Pairing an agent (`RegentAgents`), in the side panel on every page: choosing
+  one of the five agents in `RegentAgents.Harness.featured/0` by its picture, the
+  message to paste it with its code, "Make a new code", and the agent's name once
+  it uses the code, in the shared pairing box (`Regent.Account.pairing`).
 
   The parent passes `account` (the signed-in account), its `session_lease` as
   `lease` and `id`, and sends `agents_changed: true` when an agent pairs, checks
@@ -41,7 +41,7 @@ defmodule AshTemplateWeb.PairingBox do
   @impl true
   def handle_event("issue_pairing_code", %{"harness" => harness}, socket) do
     with {:ok, harness} <- Harness.match(harness),
-         true <- harness in Harness.offered() do
+         true <- harness in Harness.featured() do
       {:noreply, issue(socket, harness)}
     else
       _not_offered -> {:noreply, socket}
@@ -54,7 +54,8 @@ defmodule AshTemplateWeb.PairingBox do
     <div>
       <Regent.Account.pairing
         id={@id}
-        harnesses={harnesses()}
+        harnesses={choices()}
+        layout={:icons}
         phx-change="issue_pairing_code"
         phx-submit="issue_pairing_code"
         phx-target={@myself}
@@ -64,12 +65,17 @@ defmodule AshTemplateWeb.PairingBox do
     """
   end
 
-  defp harnesses,
+  @doc "The five agents to choose from, as the shared pairing box takes them."
+  def choices,
     do:
       for(
-        harness <- Harness.offered(),
-        do: %{value: to_string(harness), label: Harness.label(harness)}
+        harness <- Harness.featured(),
+        do: %{value: to_string(harness), label: label(harness)}
       )
+
+  defp label(:other), do: "Any agent"
+  defp label(:codex), do: "OpenAI Codex"
+  defp label(harness), do: Harness.label(harness)
 
   # The pairing box's state. Every agent's message is drawn, the chosen one shown,
   # so the box keeps one size; before a code is made a stand-in holds its place.
@@ -86,17 +92,20 @@ defmodule AshTemplateWeb.PairingBox do
   defp pairing(%{harness: harness, code: {:paired, agent}}),
     do: %{
       chosen: to_string(harness),
-      messages: messages(@no_code),
+      messages: stand_in_messages(),
       outcome: {:paired, agent.name}
     }
 
   defp pairing(%{harness: harness, code: :unavailable}),
-    do: %{chosen: to_string(harness), messages: messages(@no_code), outcome: :unavailable}
+    do: %{chosen: to_string(harness), messages: stand_in_messages(), outcome: :unavailable}
 
-  defp pairing(nil), do: %{messages: messages(@no_code)}
+  defp pairing(nil), do: %{messages: stand_in_messages()}
+
+  @doc "Every agent's message with a stand-in for the code, before one is made."
+  def stand_in_messages, do: messages(@no_code)
 
   defp messages(code),
-    do: Harness.offered() |> Enum.map(&agent_message(code, &1)) |> Enum.uniq()
+    do: Harness.featured() |> Enum.map(&agent_message(code, &1)) |> Enum.uniq()
 
   # A code on screen gives way to the agent that used it, so a spent code is
   # never left there to send again.

@@ -3,11 +3,11 @@
 // the Buy Credits dialog. Open and hidden states live
 // on <html data-aside data-sidebar>, which the server first draws from the
 // cookies written here (AshTemplateWeb.Plugs.Panels), so LiveView never patches
-// them away. Where the side bar covers the page, it opens only when the person
-// opens it on that page (<html data-aside-here>), never from the remembered state.
+// them away. On a phone, where the side panel covers the page, it opens only when
+// the person opens it on that page (<html data-aside-here>), never from the
+// remembered state.
 
 const yearInSeconds = 60 * 60 * 24 * 365
-const seenKey = "ash_template_aside_seen"
 
 type Panel = "aside" | "sidebar"
 const cookies: Record<Panel, {name: string; kept: string}> = {
@@ -23,24 +23,8 @@ function remember(panel: Panel, value: string) {
   document.cookie = `${name}=${value}; Path=/; Max-Age=${age}; SameSite=Lax${secure}`
 }
 
-function seenDigest(): string | null {
-  try {
-    return window.localStorage.getItem(seenKey)
-  } catch {
-    return null
-  }
-}
-
-function markSeen(digest: string) {
-  try {
-    window.localStorage.setItem(seenKey, digest)
-  } catch {
-    // Without storage the light simply pulses again on the next page.
-  }
-}
-
 const root = () => document.documentElement
-const covering = window.matchMedia("(max-width: 63.99rem)")
+const covering = window.matchMedia("(max-width: 47.99rem)")
 const asideOpen = () =>
   root().dataset.aside === "open" && (!covering.matches || root().dataset.asideHere !== undefined)
 
@@ -54,21 +38,10 @@ export function installShellPanels(shell: HTMLElement) {
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
   const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
 
-  // The light pulses while the panel is closed and holds something the person
-  // has not opened it to see; opening it, or having it open, marks it seen.
-  const syncPulse = () => {
-    const button = asideButton()
-    const digest = button?.dataset.asideDigest
-    if (!button || !digest) return
-    if (asideOpen()) markSeen(digest)
-    button.dataset.unseen = String(!asideOpen() && seenDigest() !== digest)
-  }
-
   // The side panel's own button and the account name in the header both open it.
   const syncAside = () => {
     shell.querySelectorAll("[data-aside-toggle]").forEach(toggle =>
       toggle.setAttribute("aria-expanded", String(asideOpen())))
-    syncPulse()
   }
 
   const setAside = (open: boolean) => {
@@ -155,6 +128,8 @@ export function installShellPanels(shell: HTMLElement) {
     if (!target) return
 
     if (target.closest("[data-aside-toggle]")) return setAside(!asideOpen())
+    // A page's own Pair Agent button opens the panel, and leaves it open.
+    if (target.closest("[data-aside-open]")) return setAside(true)
     if (target.closest("[data-aside-close]")) {
       setAside(false)
       return asideButton()?.focus()
@@ -169,7 +144,7 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()
     // A press on the dialog's own backdrop lands on the dialog itself.
     if (target === search()) return closeSearch()
-    // Where the side bar covers the page, a page link inside it closes it.
+    // On a phone, where the side panel covers the page, a link inside it closes it.
     if (covering.matches && target.closest("#shell-aside a")) setAside(false)
   }
 

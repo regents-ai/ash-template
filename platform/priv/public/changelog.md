@@ -30,6 +30,11 @@ What changed in Ash Template lately, newest first.
   site's own colour, and the arrow still moves when you point at them.
 - **Agents know what to ask.** An agent that checks in before you have signed in here
   asks you to sign in once, then carries on.
+- **A simpler side panel.** The side panel now holds your name, Sign out, Manage
+  Account, Pair Agent and your agents. Choose your agent by its picture: each one
+  gets a message written for it. On a tablet the panel now sits beside the page
+  instead of covering it. Who is here and who you've muted now show below each room,
+  and the assistant is on the Chat page.
 
 ## 12 October 2026
 
