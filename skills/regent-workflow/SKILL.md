@@ -146,7 +146,7 @@ cancelled work.
 ## Rules in force (founder, 15 Oct 2026)
 
 - No feature branches. Work goes to main; main goes to production after its checks and
-  Sentinel's read.
+  Sentinel's read. The one exception is a cloud thread's side branch, below.
 - The protected list is sign-in, secrets, production data, wallets, staking and money
   movement. A change there lands only after Sean's go naming the action.
 - Contessa is not a gate.
@@ -167,6 +167,11 @@ cancelled work.
   When behaviour, setup, settings or commands change, the same commit updates the
   README or the folder's own README. This holds in every site repository, ash-template,
   elixir-utils and design-system.
+- Side branches are a handoff only (16 Oct, Sean "1. a 2. a" at 20:30Z in Keyfleet's
+  Home stretch plan, ruling 2). A cloud thread may build a fix on a side branch for
+  Sean's Mac session to test and ship. The Mac session runs the suites, pushes main and
+  deploys, and Sentinel reads every head. Main stays production, and nothing ships from
+  a branch.
 - Hard cutover: no shims, aliases or compatibility branches. Every review checks
   **no dual-shape responses** by name.
 

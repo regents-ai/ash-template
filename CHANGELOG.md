@@ -2498,3 +2498,11 @@ Operations
   `registration_unreadable`, `not_configured`, `unexpected_status` or `unanswered`), so
   a bad answer from the sign-in service is no longer silent (Sentinel's note b). A
   local walk with four bad-day agents counted `bad_day` 4.
+
+## 2026-10-16 — Workflow guide: side branches are a handoff only
+
+- `skills/regent-workflow/SKILL.md` adds Sean's ruling 2 of 16 Oct under "Rules in
+  force": a cloud thread may build a fix on a side branch for Sean's Mac session to test
+  and ship; the Mac session runs the suites, pushes main and deploys, Sentinel reads
+  every head, main stays production and nothing ships from a branch. The "No feature
+  branches" rule names it as its one exception.
