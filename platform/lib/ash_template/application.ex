@@ -22,6 +22,7 @@ defmodule AshTemplate.Application do
         # Each reader stores its first reading as it starts, so every key is
         # there before the endpoint below serves a page.
         AshTemplate.SharedReading,
+        AshTemplate.Agents.ActivityReading,
         chain_head_children(),
         room_activity_child(),
         # After the repository and PubSub: a Credits balance changed on any

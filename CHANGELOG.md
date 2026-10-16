@@ -2384,3 +2384,49 @@ Operations
   changelog entry, and a change to behaviour, setup, settings or commands updates the
   README or the folder's own README in the same commit. It covers every site
   repository, ash-template, elixir-utils and design-system.
+
+## 2026-10-16 — Side panel: your agents, then Pair New Agent
+
+- The side panel opens on one short row, Sign out and Manage Account; the name row and
+  the close button are gone, since the header's panel button closes it. The `:close`
+  shell icon and the `[data-aside-close]` handler go with them.
+- "Your agents" lists every agent paired with the account (`PanelAgents`, through the
+  shared `Regent.Account.agents_brief`), each with its picture, name, the Regent site
+  it was last active on ("Active on Patchbay") and how long ago
+  (`RegentFormat.short_relative_time`). The list takes at most a quarter of the panel
+  and scrolls: `#shell-aside` is a size container and the list is `25cqb`.
+- Where each agent was last active is asked for only while the panel is open: the new
+  `PanelAgents` hook asks on arrival with the panel open and on each opening, four
+  agents at a time with an 8-second limit, and an opening while a read is still out
+  asks nothing. A pairing, check-in or unpairing updates the list at once; the lines
+  follow on the next opening.
+- `AshTemplate.Agents.ActivityReading` (a Nebulex local cache, now a direct
+  dependency with `nebulex_local`, supervised beside `SharedReading`) keeps each
+  agent's reading from the sign-in service for five minutes, under its wallet and
+  pairing time, shared by every page on the machine: the side panel and the Account
+  page read the service at most once per agent in that time, well inside its 600 reads
+  a minute per site machine. A failed read is not kept.
+- The sign-in service now answers with a line per site and day, so
+  `RegentAgents.Activity.recent/1` reads that (hard cutover): the Account page's agent
+  view lists each site and day with the hours of its first and last request, newest
+  first, and Load more is gone with its paging. `Capabilities.requests/0` and every
+  operation's `done` words in `priv/capabilities.json` go with the request-by-request
+  wording.
+- The button and every hint, guide and command note say "Pair New Agent", the side
+  panel's heading: the refusal hints, the agent start page, `/agents.md`, `/llms.txt`,
+  the developer docs, the skill guide, the three API documents, the capabilities list,
+  `cli/commands.json` and `cli/COMMANDS.md`, and the Account page's button.
+- "Pair New Agent" puts the message first, in a short box that scrolls, with a copy
+  icon and a new-code icon in its corner (`Regent.Primitives.copy_icon`), then the
+  expiry line, then ten agents to choose from, five to a row, each named on hover:
+  Dots, NemoClaw, OpenClaw, Claude Code and Pi join the five before
+  (`RegentAgents.Harness.featured/0`). The box no longer renders every agent's
+  stand-in message.
+- Pins elixir-utils `1b73b6c2eb42e4691c67b5bd9f12682201c08eeb` and design-system
+  `df44fc3416df05cdbf8116523447f19f1a38b6db`.
+- Every refusal and guide says "this site": the `person_not_here` hint on signed tool
+  routes, `account_required` on the notes API, the 403 descriptions in all three API
+  documents, `llms.md` and `docs.md`. `/openapi.json`'s `/me` 403 carries the same
+  `personNotHere` example as the YAML documents (Sentinel's v95 after-read notes).
+- `platform/README.md` lists `SIWA_ACTIVITY_READ_TOKEN`, the sign-in service reader key
+  behind both activity views, and says neither shows activity without it.

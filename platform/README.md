@@ -115,6 +115,7 @@ production.
 | `ASH_TEMPLATE_CHAIN_NODE_URL` | No | The node the server reads the wallet chain through, such as a private node whose address carries a key. Wallets are still given the chain's public address. Unset means the node in `config/config.exs` (`:chain_nodes`). |
 | `ASH_TEMPLATE_NOTES_WEBHOOK_URL` | No | An `http` or `https` address each saved note is posted to, as `{"event": "note.saved", "note_id": …, "revision": …}` without the note's text. A failed post is retried four more times and then recorded on the note. Unset means saving a note posts nothing. Any other kind of address stops the boot. |
 | `ASH_TEMPLATE_SIWA_BROKER_URL` | No | The sign-in service that checks agents' signed requests, such as one running on this machine. Unset means `https://siwa.regents.sh` (`config/config.exs`, `config :regent_agents, siwa: [url: ..., audience: "ash-template"]`). |
+| `SIWA_ACTIVITY_READ_TOKEN` | No | The reader key for the sign-in service's agent activity, which gives the side panel each agent's last active site and the Account page each agent's sites by day. `AshTemplate.Agents.ActivityReading` keeps each agent's reading for five minutes. Unset means neither shows activity. |
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. |
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
 | `PORT` | No | HTTP port. Defaults to `4000`. |

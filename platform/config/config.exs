@@ -61,6 +61,12 @@ config :ash_template, AshTemplate.Repo,
   pool_size: 1,
   migration_default_prefix: "ash_template_app"
 
+# Each paired agent's reading from the sign-in service, kept five minutes. Older
+# readings leave with the generation the collector drops every ten minutes.
+config :ash_template, AshTemplate.Agents.ActivityReading,
+  gc_interval: :timer.minutes(10),
+  max_size: 10_000
+
 # Background jobs live in the site's own schema, beside its tables. Queues hear
 # about new jobs through Erlang process groups. `outside_calls` keeps slow calls
 # to other websites from holding up the default queue, and `ens` keeps a

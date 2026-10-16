@@ -138,10 +138,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## agents pair
 
-- **What:** pairs you with your person's account, using the code they made with Pair Agent
+- **What:** pairs you with your person's account, using the code they made with Pair New Agent
   in the side panel, on any page of the site. Signed.
 - **Stdin:** `{"code": "…", "name": "…", "harness": "…"}`. The code works once, for ten
-  minutes; your person pastes it to you in the message Pair Agent gives them. Keep it
+  minutes; your person pastes it to you in the message Pair New Agent gives them. Keep it
   out of every command line: write the JSON into `pair.json` in your home folder (never
   inside a project) with your file tool, pipe the file in, then delete it. `name` is
   what your person will see, 1 to 80 characters. `harness` is one of `hermes`, `grok_bot`,

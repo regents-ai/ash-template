@@ -38,7 +38,7 @@ each page (its sidebar, header controls and scroll rule).
 | Sidebar | The open section's own list. Home: shortcuts (write a note, start a chat, the General room, connect an account). Notes: the person's notes. Rooms: the rooms. Chat: the conversations and "New chat" (the Ash AI chat page's list lives here). Settings: help links (the account pages are its tabs). It can be hidden to give the content more room, and stays hidden until shown again. |
 | Tabs | Views of the open section. Home: Overview, Activity. Settings: Profile, Wallets, Connections. A section with one view shows no tabs. |
 | Main content | The page itself, as today. |
-| Side panel | Signed in only, on every page, closed until the person opens it and remembered open or closed. It holds the account's name and picture, Sign out, Manage Account, Pair Agent and the agents paired with the account. A room's "Here now" and muted people sit below the room. |
+| Side panel | Signed in only, on every page, closed until the person opens it and remembered open or closed. It holds Sign out, Manage Account, the agents paired with the account, then Pair New Agent. A room's "Here now" and muted people sit below the room. |
 | Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Help, API, What's new, For agents, Privacy, Terms) and the running version with its commit. |
 
 ### Phones and small screens
@@ -81,7 +81,7 @@ template.regents.sh.
 1. **Frame:** top bar with the icons and person menu, left rail, section sidebars, bottom bar
    links, version and status dot. Rooms and the chat page move their lists into the sidebar.
 2. **Tabs and side panel:** section tabs, and the collapsible side panel with the account,
-   Pair Agent and the paired agents.
+   the paired agents and Pair New Agent.
 3. **Search:** the ⌘K dialog over pages, actions, notes and room messages.
 4. **Live parts:** notifications and the bell, the background-jobs count, the assistant box.
 

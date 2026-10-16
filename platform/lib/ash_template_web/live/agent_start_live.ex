@@ -56,7 +56,7 @@ defmodule AshTemplateWeb.AgentStartLive do
               <li>
                 <h3>Make a code</h3>
                 <p>
-                  Sign in, then open Pair Agent in the side panel and choose your agent. The code works once, for ten minutes.
+                  Sign in, then open Pair New Agent in the side panel and choose your agent. The code works once, for ten minutes.
                 </p>
                 <.link href={~p"/account"}>Open Account</.link>
               </li>

@@ -57,8 +57,7 @@
   clip-path: inset(50%);
 }
 
-#route-content h1:focus,
-#shell-aside h3:focus {
+#route-content h1:focus {
   outline: none;
 }
 
@@ -814,9 +813,11 @@
 
 /* ---- Right side bar ---- */
 
+/* A size container, so the agents list can take a quarter of its height. */
 #shell-aside {
   position: relative;
   z-index: 3;
+  container-type: size;
   display: grid;
   grid-area: aside;
   align-content: start;
@@ -843,20 +844,22 @@
   visibility: hidden;
 }
 
+/* Sign out and Manage Account share one short row; the header's panel button
+   closes the panel. */
 .shell-aside__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   min-height: 3rem;
-  padding-inline-start: 1rem;
+  padding-inline: 1rem;
   border-block-end: 1px solid var(--color-border);
 }
 
-.shell-aside__head h2 {
-  margin: 0;
-  font-family: var(--font-family-ui);
-  font-size: 0.95rem;
-  font-weight: 600;
+.shell-aside__head .rg-button {
+  min-height: 2rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
 }
 
 #shell-aside section {
@@ -866,9 +869,11 @@
   border-block-end: 1px solid var(--color-border);
 }
 
-#shell-aside h3 {
+#shell-aside h2 {
   margin: 0;
+  font-family: var(--font-family-ui);
   font-size: 0.95rem;
+  font-weight: 600;
 }
 
 #shell-aside p {
@@ -884,33 +889,9 @@
   list-style: none;
 }
 
-.shell-account__name {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-width: 0;
-}
-
-/* The account's own name heads the panel; the close button keeps its place. */
-.shell-aside__head .shell-account__name {
-  flex: 1;
-}
-
-.shell-account__name .account-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.shell-account__actions {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.shell-account__actions .rg-button {
-  width: 100%;
-  justify-content: center;
-  white-space: nowrap;
+/* The agents list keeps its own rows; the panel's list spacing is for its other lists. */
+#shell-aside .rg-account__brief-list {
+  gap: 0;
 }
 
 /* ---- Bottom bar ---- */

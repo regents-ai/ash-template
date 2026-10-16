@@ -122,22 +122,20 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <Regent.Account.pairing
           id="preview-pairing"
           harnesses={AshTemplateWeb.PairingBox.choices()}
-          messages={AshTemplateWeb.PairingBox.stand_in_messages()}
           layout={:icons}
         />
       </:pairing>
       <:agents>
-        <Regent.Account.agents
+        <Regent.Account.agents_brief
           id="preview-agents"
           agents={[
             %{
               id: "sample",
               name: "Sample agent",
               kind: "hermes",
-              harness: "Hermes",
-              backed: false,
-              last_contact_iso: "2026-10-16T12:00:00Z",
-              last_contact: "2 minutes ago"
+              last_action: "Active on Patchbay",
+              last_action_iso: "2026-10-16T12:00:00Z",
+              last_action_at: "2m"
             }
           ]}
         />

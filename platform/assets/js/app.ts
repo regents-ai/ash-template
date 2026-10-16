@@ -33,6 +33,7 @@ import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
+import {PanelAgents} from "./hooks/panel_agents"
 import {ProductsMenu} from "./hooks/products_menu"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
@@ -313,6 +314,7 @@ const hooks = {
   MotionRefusal,
   MotionTabs,
   OnchainSteps,
+  PanelAgents,
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
   TwinCube,

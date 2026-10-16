@@ -25,7 +25,7 @@ function remember(panel: Panel, value: string) {
 
 const root = () => document.documentElement
 const covering = window.matchMedia("(max-width: 47.99rem)")
-const asideOpen = () =>
+export const asideOpen = () =>
   root().dataset.aside === "open" && (!covering.matches || root().dataset.asideHere !== undefined)
 
 /**
@@ -53,8 +53,12 @@ export function installShellPanels(shell: HTMLElement) {
     syncAside()
 
     // Opened, focus moves into it, so Escape closes it and returns focus to the
-    // button that opened it.
-    if (open) aside()?.focus()
+    // button that opened it, and what it shows is read again.
+    if (!open) return
+    aside()?.focus()
+    aside()
+      ?.querySelectorAll("[data-read-on-open]")
+      .forEach(reader => reader.dispatchEvent(new CustomEvent("ash:aside-opened")))
   }
 
   const setSidebar = (shown: boolean) => {
@@ -128,12 +132,8 @@ export function installShellPanels(shell: HTMLElement) {
     if (!target) return
 
     if (target.closest("[data-aside-toggle]")) return setAside(!asideOpen())
-    // A page's own Pair Agent button opens the panel, and leaves it open.
+    // A page's own Pair New Agent button opens the panel, and leaves it open.
     if (target.closest("[data-aside-open]")) return setAside(true)
-    if (target.closest("[data-aside-close]")) {
-      setAside(false)
-      return asideButton()?.focus()
-    }
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()

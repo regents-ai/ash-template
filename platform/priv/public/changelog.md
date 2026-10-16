@@ -4,6 +4,13 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Your agents, then a new one.** The side panel now opens on Sign out and Manage
+  Account, then a short list of your paired agents with the site each was last active
+  on and when. Below it, Pair New Agent shows the message to copy with a small copy
+  icon, and ten agents to choose from, now with Dots, NemoClaw, OpenClaw, Claude Code
+  and Pi. Point at a picture to see its name. The panel button in the header closes the
+  panel. Open an agent on your Account page to see each Regent site it used, a day at
+  a time.
 - **Header and footer in the Motion Lab.** A new lab page shows one header for every
   page, with every Regents product under one menu, and the footer at the foot of the
   screen on short pages.

@@ -39,7 +39,7 @@ defmodule AshTemplateWeb.AgentStart do
   @doc "What a person gives their agent: the steps for its client, ready to paste."
   def instruction(%{client: :cli} = agent) do
     """
-    Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it with Pair Agent in the side panel at #{origin()}.
+    Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it with Pair New Agent in the side panel at #{origin()}.
 
     1. Install the Regents command line, version 1.10.12:
        uv tool install regents-cli==1.10.12
@@ -66,7 +66,7 @@ defmodule AshTemplateWeb.AgentStart do
 
   def instruction(%{client: :siwa} = agent) do
     """
-    Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it with Pair Agent in the side panel at #{origin()}.
+    Connect to my #{@site_name} account. I'll paste you a message with a pairing code; I make it with Pair New Agent in the side panel at #{origin()}.
 
     1. Get the Regent sign-in client:
        curl -fsSO https://siwa.regents.sh/agent/siwa_agent.py
@@ -108,7 +108,7 @@ defmodule AshTemplateWeb.AgentStart do
 
     Your agent pairs with your #{@site_name} account and works for you: it reads and writes your notes, posts in rooms and reads your Credits and Points. It can never use your wallet, change your account or pair other agents.
 
-    1. Your person makes a pairing code with Pair Agent in the side panel, on any page of #{origin()}. A code works once, for ten minutes.
+    1. Your person makes a pairing code with Pair New Agent in the side panel, on any page of #{origin()}. A code works once, for ten minutes.
     2. Follow the steps for your agent below, with that code.
     3. Your agent then shows under its name in their side panel and on their account page.
 

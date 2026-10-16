@@ -29,10 +29,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   @not_person %{
     "agent_not_paired" =>
       {403, "This agent is not paired with an account.",
-       "Ask your person to open Pair Agent in the side panel, on any page of this site, and choose you. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."},
+       "Ask your person to open Pair New Agent in the side panel, on any page of this site, and choose you. Redeem the code they paste you with regents ash-template agents pair (POST /api/agents/v1/pair), then send the request again."},
     "person_not_here" =>
       {403, "The person this agent is paired with hasn't signed in on this site yet.",
-       "Ask your person to sign in on this website once, then send the request again."}
+       "Ask your person to sign in on this site once, then send the request again."}
   }
   @unavailable %{
     code: "unavailable",

@@ -286,25 +286,10 @@ defmodule AshTemplateWeb.Components.Shell do
       <aside
         :if={@account_control.kind in [:signed_in, :preview]}
         id="shell-aside"
-        aria-labelledby="shell-aside-title"
+        aria-label="Your account and agents"
         tabindex="-1"
       >
-        <div class="shell-aside__head">
-          <h2 id="shell-aside-title" class="shell-account__name">
-            <.account_name id="shell-account-picture" account_control={@account_control} />
-          </h2>
-          <button
-            class="shell-tool"
-            type="button"
-            aria-controls="shell-aside"
-            aria-label="Close the side panel"
-            data-aside-close
-          >
-            <.icon name={:close} />
-          </button>
-        </div>
-
-        <section id="shell-account" class="shell-account__actions" aria-label="Your account">
+        <div id="shell-account" class="shell-aside__head">
           <Regent.Primitives.button
             variant="secondary"
             type="button"
@@ -320,14 +305,14 @@ defmodule AshTemplateWeb.Components.Shell do
           >
             Manage Account
           </a>
-        </section>
-
-        <section :if={@pairing != []} id="shell-pairing" aria-labelledby="shell-pairing-title">
-          <h3 id="shell-pairing-title">Pair Agent</h3>
-          {render_slot(@pairing)}
-        </section>
+        </div>
 
         {render_slot(@agents)}
+
+        <section :if={@pairing != []} id="shell-pairing" aria-labelledby="shell-pairing-title">
+          <h2 id="shell-pairing-title">Pair New Agent</h2>
+          {render_slot(@pairing)}
+        </section>
       </aside>
 
       <footer id="shell-footer">
@@ -763,7 +748,6 @@ defmodule AshTemplateWeb.Components.Shell do
       <path :if={@name == :panel} d="M3 4h18v16H3zM15 4v16" />
       <path :if={@name == :collapse} d="M3 4h18v16H3zM9 4v16M15 10l-2 2 2 2" />
       <path :if={@name == :expand} d="M3 4h18v16H3zM9 4v16M13 10l2 2-2 2" />
-      <path :if={@name == :close} d="M6 6l12 12M18 6 6 18" />
       <g :if={@name == :apps} fill="currentColor" stroke="none">
         <rect :for={{x, y} <- nine_dots()} x={x} y={y} width="4.5" height="4.5" />
       </g>
