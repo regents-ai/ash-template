@@ -8,8 +8,7 @@ defmodule AshTemplateWeb.HarbourLive do
   something new every few seconds, so a ship sets sail for another island.
   Nothing here reads or changes anything outside the page.
 
-  The harbour can be drawn in several art styles; `?look=` picks one, so each
-  look has its own link.
+  The harbour is drawn as a blueprint.
   """
 
   use AshTemplateWeb, :live_view
@@ -33,18 +32,6 @@ defmodule AshTemplateWeb.HarbourLive do
     %{id: "fern", name: "Fern", color: "#2e86de", place: "castle"}
   ]
 
-  # The art styles, in the order the switch shows them. The first is the default.
-  @looks [
-    %{id: "toy", name: "Toy"},
-    %{id: "studio", name: "Studio"},
-    %{id: "cartoon", name: "Cartoon"},
-    %{id: "paper", name: "Paper"},
-    %{id: "blueprint", name: "Blueprint"},
-    %{id: "pixel", name: "Pixel"}
-  ]
-
-  @look_ids Enum.map(@looks, & &1.id)
-
   @every :timer.seconds(7)
 
   @impl true
@@ -54,13 +41,7 @@ defmodule AshTemplateWeb.HarbourLive do
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/animations/harbour"))
-     |> assign(places: @places, crew: @crew, looks: @looks)}
-  end
-
-  @impl true
-  def handle_params(params, _uri, socket) do
-    look = if params["look"] in @look_ids, do: params["look"], else: hd(@look_ids)
-    {:noreply, assign(socket, look: look)}
+     |> assign(places: @places, crew: @crew)}
   end
 
   # One agent, chosen at random, does something at a different place.
@@ -89,36 +70,26 @@ defmodule AshTemplateWeb.HarbourLive do
           until it does something new.
         </p>
       </header>
-      <nav class="harbour__looks" aria-label="Art style">
-        <.link
-          :for={look <- @looks}
-          patch={look_path(look.id)}
-          aria-current={if look.id == @look, do: "true"}
-        >
-          {look.name}
-        </.link>
-      </nav>
       <div
         id="harbour"
         class="harbour"
         phx-hook="Harbour"
         phx-mounted={JS.ignore_attributes(["data-harbour-ready"])}
         data-harbour-crew={Jason.encode!(Enum.map(@crew, &Map.take(&1, [:id, :place, :color])))}
-        data-harbour-style={@look}
         aria-hidden="true"
       >
         <img
           class="harbour__still harbour__still--light"
-          src={~p"/images/animations/harbour/#{@look}/light.webp"}
-          width="957"
-          height="537"
+          src={~p"/images/animations/harbour-light.webp"}
+          width="1035"
+          height="581"
           alt=""
         />
         <img
           class="harbour__still harbour__still--dark"
-          src={~p"/images/animations/harbour/#{@look}/dark.webp"}
-          width="957"
-          height="537"
+          src={~p"/images/animations/harbour-dark.webp"}
+          width="1035"
+          height="581"
           alt=""
         />
         <canvas id="harbour-canvas" phx-update="ignore" data-harbour-canvas></canvas>
@@ -136,7 +107,4 @@ defmodule AshTemplateWeb.HarbourLive do
     </main>
     """
   end
-
-  defp look_path("toy"), do: ~p"/animations/harbour"
-  defp look_path(look), do: ~p"/animations/harbour?#{[look: look]}"
 end
