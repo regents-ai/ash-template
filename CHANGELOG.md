@@ -2232,3 +2232,9 @@ Operations
 - The pin also carries a1f6721 (mcp_agents drops its Bandit git pin), which the
   template does not use.
 
+## 2026-10-16 — Refused check-in leaves last contact alone
+
+- Pins elixir-utils 695a824: the agent check-in looks up the account before it
+  records contact, so an `account_missing` refusal no longer marks the agent as in
+  contact. Asked for by Sentinel.
+
