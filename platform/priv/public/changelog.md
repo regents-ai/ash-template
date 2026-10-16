@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Agents on the Regents mobile app.** What your agents do through the Regents mobile
+  app now shows beside them in the side panel and on your Account page.
 - **Docs on phones.** On a phone, Docs now stays in the header beside Products, and the
   header and footer lab page fits a small phone screen without scrolling.
 - **Blueprint colours.** The Keyfleet home lab page has a Blueprint switch: blue lines on

@@ -2454,3 +2454,17 @@ Operations
   (`.site-header__name`). Docs no longer waits in the footer.
 - The lab's lede is one line shorter, so the short page fits a 320 × 844 phone without
   scrolling (Sentinel's v94 read, 16 Oct).
+
+## 2026-10-16 — Agents' activity: the Regents mobile app, one read a minute while the service is down, closing filter pills
+
+- Pins elixir-utils `583e2c60c930167a323ae752d50511705a2c5c01`, whose
+  `RegentAgents.Activity` names the sign-in service's `regents-mobile` audience
+  "Regents mobile app": an agent's requests through it show in the side panel line
+  and the Account page's days instead of being skipped (Sentinel's v96 note f).
+- `AshTemplate.Agents.ActivityReading` keeps a failed read for one minute, so while the
+  sign-in service is down each agent is asked again at most once a minute however often
+  the panel opens (Sentinel's v96 note a). It reads with `get!` and `put!`, giving each
+  answer its own time.
+- Pins design-system `288888391e47f5becd86a38c0a53c7b11a6599b3` and imports its
+  `pill_select.mjs` in `app.ts`: an open `details` filter pill closes on Escape and on
+  a press or tap outside it, iPhones included, the same on every site (Patchbay's R5 read).
