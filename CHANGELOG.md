@@ -2713,3 +2713,13 @@ Operations
   `?look=` link are gone.
 - One pair of still pictures, light and dark, stands in until the first frame is drawn and
   wherever the sea cannot be drawn live.
+
+## 2026-10-16 — Harbour ripples and agent cards
+
+- Pressing the sea at `/animations/harbour` sends out a ripple: inked rings spread from the
+  spot and a low swell rocks the ships as it passes. A visitor who asked for less motion
+  gets no ripples.
+- A mouse over a ship shows its agent's name above the mast. Pressing a ship, or an agent's
+  name under the harbour, opens that agent's card: its Key and its last few actions, newest
+  first, kept up to date while it is open. `?agent=` names the agent, so each card has its
+  own link, and the browser's back button closes it.
