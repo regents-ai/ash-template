@@ -1,0 +1,141 @@
+@layer regents-product {
+/* The agent harbour at /animations/harbour. The far sea fades into
+   `--harbour-haze`, the page's own ground in each theme; the harbour reads it
+   as a hex colour. */
+.harbour {
+  --harbour-haze: #161616;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--harbour-haze);
+}
+
+:root[data-theme="light"] .harbour {
+  --harbour-haze: #e5e3d2;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .harbour {
+    --harbour-haze: #e5e3d2;
+  }
+}
+
+@media (max-width: 40rem) {
+  .harbour {
+    aspect-ratio: 5 / 4;
+  }
+}
+
+.harbour canvas,
+.harbour__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.harbour canvas {
+  display: block;
+  visibility: hidden;
+}
+
+.harbour__still {
+  object-fit: cover;
+}
+
+/* The still picture for the theme showing, until a live harbour has been drawn. */
+.harbour__still--light,
+:root[data-theme="light"] .harbour__still--dark {
+  display: none;
+}
+
+:root[data-theme="light"] .harbour__still--light {
+  display: block;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .harbour__still--light {
+    display: block;
+  }
+
+  :root:not([data-theme]) .harbour__still--dark {
+    display: none;
+  }
+}
+
+.harbour[data-harbour-ready="true"] canvas {
+  visibility: visible;
+}
+
+.harbour[data-harbour-ready="true"] .harbour__still {
+  display: none;
+}
+
+.harbour__legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.harbour__legend > li {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.harbour__legend p {
+  display: grid;
+  justify-items: start;
+}
+
+.harbour__legend strong {
+  font-family: var(--font-family-title);
+  font-weight: 400;
+}
+
+.harbour__legend p,
+.harbour__legend ul {
+  color: var(--color-fg-muted);
+  font: 0.72rem/1.4 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+.harbour__legend strong {
+  color: var(--color-fg);
+  font-size: 1.1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.harbour__legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  min-height: 2.8em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.harbour__legend ul li {
+  display: flex;
+  gap: 0.4em;
+  align-items: center;
+}
+
+.harbour__legend ul li::before {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--sail);
+  content: "";
+}
+}
