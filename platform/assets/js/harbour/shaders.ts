@@ -7,7 +7,7 @@
  * and the present pass inks every edge from it.
  */
 
-/** Keep in step with MAX_SHIPS in sim.ts and the five islands in ISLANDS. */
+/** Keep in step with MAX_SHIPS, MAX_RIPPLES and the five islands in ISLANDS in sim.ts. */
 const shared = /* wgsl */ `
 struct Camera {
   viewProjection: mat4x4f,
@@ -28,6 +28,8 @@ struct Scene {
   islands: array<vec4f, 5>,
   // x, z, heading, speed from 0 to 1.
   ships: array<vec4f, 16>,
+  // x, z, the time it began, 1 while in use.
+  ripples: array<vec4f, 6>,
 }
 
 @group(0) @binding(0) var<uniform> camera: Camera;
@@ -157,7 +159,7 @@ fn fs_main(input: PartVarying) -> @location(0) vec4f {
 
 /**
  * The sea as a chart: a grid riding the swell, soundings rolling out from each
- * beach, wakes in ink, and shadows hatched.
+ * beach, wakes in ink, ripples spreading from each click, and shadows hatched.
  */
 export const waterWgsl = /* wgsl */ `${shared}
 struct WaterVarying {
@@ -165,10 +167,53 @@ struct WaterVarying {
   @location(0) world: vec3f,
 }
 
+// Same numbers as in sim.ts.
+const RIPPLE_SPEED: f32 = 1.4;
+const RIPPLE_LIFE: f32 = 4.0;
+const RIPPLE_SWELL: f32 = 0.9;
+const RIPPLE_LIFT: f32 = 0.08;
+// Distance between the rings of one ripple.
+const RIPPLE_GAP: f32 = 0.3;
+
+// How far a ripple's front has passed a point, and how strong it still is.
+fn rippleAt(p: vec2f, i: u32) -> vec2f {
+  let ripple = scene.ripples[i];
+  let age = scene.time - ripple.z;
+  if (ripple.w == 0.0 || age < 0.0 || age > RIPPLE_LIFE) {
+    return vec2f(-1.0, 0.0);
+  }
+  let fade = 1.0 - smoothstep(RIPPLE_LIFE * 0.35, RIPPLE_LIFE, age);
+  return vec2f(age * RIPPLE_SPEED - length(p - ripple.xy), fade);
+}
+
+// Same sum as rippleLift in sim.ts, so a ship rides the swell it is drawn on.
+fn rippleLift(p: vec2f) -> f32 {
+  var lift = 0.0;
+  for (var i = 0u; i < 6u; i++) {
+    let wave = rippleAt(p, i);
+    if (wave.x > 0.0 && wave.x < RIPPLE_SWELL) {
+      lift += RIPPLE_LIFT * sin(3.14159265 * wave.x / RIPPLE_SWELL) * wave.y;
+    }
+  }
+  return lift;
+}
+
+// The rings in ink: a short train behind each front, one line wide on screen.
+fn rippleInk(p: vec2f, perPixel: f32) -> f32 {
+  var line = 0.0;
+  for (var i = 0u; i < 6u; i++) {
+    let wave = rippleAt(p, i);
+    let train = smoothstep(-0.04, 0.04, wave.x) * (1.0 - smoothstep(0.5, 1.4, wave.x));
+    let ring = abs(fract(wave.x / RIPPLE_GAP + 0.5) - 0.5) * RIPPLE_GAP / perPixel;
+    line = max(line, (1.0 - min(ring / 2.0, 1.0)) * train * wave.y);
+  }
+  return line;
+}
+
 @vertex
 fn vs_main(@location(0) position: vec3f) -> WaterVarying {
   var output: WaterVarying;
-  output.world = vec3f(position.x, waveHeight(position.xz, scene.time), position.z);
+  output.world = vec3f(position.x, waveHeight(position.xz, scene.time) + rippleLift(position.xz), position.z);
   output.clip = camera.viewProjection * vec4f(output.world, 1.0);
   return output;
 }
@@ -206,6 +251,7 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
   let grid = p.xz / 0.7;
   let gridStep = fwidth(grid);
   let shoreStep = fwidth(shore);
+  let perPixel = max(length(fwidth(p.xz)) * 0.7071, 1e-4);
 
   let cell = abs(fract(grid - 0.5) - 0.5) / max(gridStep, vec2f(1e-4));
   let gridLine = 1.0 - min(min(cell.x, cell.y), 1.0);
@@ -214,8 +260,9 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
   let ringLine = (1.0 - min(ring, 1.0)) * (1.0 - smoothstep(1.5, 4.0, shore)) * step(0.0, shore);
   let coast = 1.0 - min(abs(shore) / max(shoreStep, 1e-4), 1.0);
   let wake = smoothstep(0.3, 0.5, wakes(p.xz));
+  let ripple = rippleInk(p.xz, perPixel) * step(0.0, shore);
   let hatched = hatch(input.clip.xy) * (1.0 - sunShadow(p, vec3f(0.0, 1.0, 0.0))) * 0.55;
-  let drawn = mix(paper(), ink(), max(max(gridLine * 0.3, ringLine * 0.8), max(max(coast, wake), hatched)));
+  let drawn = mix(paper(), ink(), max(max(max(gridLine * 0.3, ringLine * 0.8), ripple), max(max(coast, wake), hatched)));
 
   // Far water melts into the page.
   let far = smoothstep(9.5, 16.0, length(p.xz));
@@ -234,6 +281,7 @@ struct Scene {
   shipCount: u32,
   islands: array<vec4f, 5>,
   ships: array<vec4f, 16>,
+  ripples: array<vec4f, 6>,
 }
 
 @group(0) @binding(1) var<uniform> scene: Scene;
