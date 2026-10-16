@@ -2090,3 +2090,10 @@ Operations
 
 - The menu behind the nine dots is now headed "Regents Products", and its button
   says the same (Sean, 16 Oct; it was "Regents Labs apps").
+
+## 2026-10-16 — The home cubes no longer show their list after 2.5 seconds
+
+- The home cubes' lists no longer appear on their own after 2.5 seconds while the
+  page is still deciding whether the cube draws (Sean's call on regents.sh, which
+  shipped without it in v188). The list still fades in where the cube cannot draw,
+  and shows from the start without scripts or for a visitor who asked for less motion.

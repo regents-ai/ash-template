@@ -46,8 +46,7 @@ clamp or `frameLoop` inside an island renderer.
    after the next state change. The flag is `"true"` once a first frame is drawn and
    `"false"` once the island knows it will not draw, and absent while that is open.
    CSS shows the canvas only under `[data-<name>-ready="true"]` and the still face
-   otherwise; a still face hidden while the flag is absent comes back on its own
-   after a short wait, so a page whose scripts never connect still shows it. Text never sits under the shader.
+   otherwise. Text never sits under the shader.
 2. **Hook.** Calls `createCanvasIsland(root, {}, kind)` and maps the LiveView lifecycle:
    `mounted` → `mount()`, `disconnected` → `pause()`, `reconnected` → `resume()`,
    `destroyed` → `destroy()`, `updated` → hand new `data-*` state to the renderer and

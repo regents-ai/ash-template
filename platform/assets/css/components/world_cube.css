@@ -142,9 +142,7 @@
    nothing else: the list would only flash before the cube took its place.
    Where the cube cannot draw (`data-world-ready="false"`) the list fades in.
    Without scripts, or for a visitor who asked for less motion, the cube is
-   never drawn, so the list shows from the start. A page still undecided after
-   2.5 seconds, whose scripts never connected or whose cube is still loading,
-   shows it anyway. */
+   never drawn, so the list shows from the start. */
 .world-cube__worlds {
   transition: opacity 320ms ease-out;
 }
@@ -153,14 +151,6 @@
   .world-cube:not([data-world-ready]) .world-cube__worlds {
     opacity: 0;
     visibility: hidden;
-    animation: world-cube-undecided 320ms ease-out 2.5s forwards;
-  }
-}
-
-@keyframes world-cube-undecided {
-  to {
-    opacity: 1;
-    visibility: visible;
   }
 }
 
