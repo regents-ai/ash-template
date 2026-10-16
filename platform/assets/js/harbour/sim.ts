@@ -185,3 +185,31 @@ export const waveHeight = (x: number, z: number, time: number): number =>
 
 /** Fastest a ship sails, for the wake's strength. */
 export const CRUISE_SPEED = CRUISE
+
+/** Ripples the sea holds at once; a new one replaces the oldest. */
+export const MAX_RIPPLES = 6
+/**
+ * How ripples spread, in world units and seconds. The water shader keeps the
+ * same numbers as RIPPLE_SPEED, RIPPLE_LIFE, RIPPLE_SWELL and RIPPLE_LIFT.
+ */
+const RIPPLE_SPEED = 1.4
+const RIPPLE_LIFE = 4
+const RIPPLE_SWELL = 0.9
+const RIPPLE_LIFT = 0.08
+
+/**
+ * How far the ripples lift the sea at a point: a swell riding each ring's front
+ * outward, fading as the ripple ages. Each row is x, z, the time it began, and 1
+ * while it is in use.
+ */
+export const rippleLift = (x: number, z: number, time: number, ripples: readonly Float32Array[]): number => {
+  let lift = 0
+  for (const ripple of ripples) {
+    const age = time - ripple[2]!
+    if (ripple[3] === 0 || age < 0 || age > RIPPLE_LIFE) continue
+    const behind = age * RIPPLE_SPEED - Math.hypot(x - ripple[0]!, z - ripple[1]!)
+    if (behind <= 0 || behind >= RIPPLE_SWELL) continue
+    lift += RIPPLE_LIFT * Math.sin((Math.PI * behind) / RIPPLE_SWELL) * (1 - smoothstep(RIPPLE_LIFE * 0.35, RIPPLE_LIFE, age))
+  }
+  return lift
+}
