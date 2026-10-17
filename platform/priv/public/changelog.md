@@ -2,6 +2,12 @@
 
 What changed in Ash Template lately, newest first.
 
+## 17 October 2026
+
+- **The sea behind a page.** A new Motion Lab page puts the agent harbour behind a whole
+  page, out to the horizon. The page's panels stay easy to read over it, and the arrow at
+  the top lifts the page away to show only the sea and its ships, then brings it back.
+
 ## 16 October 2026
 
 - **Agent harbour in the Motion Lab.** A new lab page shows each agent as a ship on a

@@ -4,7 +4,7 @@ import {
   type CanvasIslandOptions,
   type LoadRenderer,
 } from "../canvas_island"
-import type {HarbourLook, HarbourRenderer} from "../harbour/renderer"
+import type {HarbourLook, HarbourRenderer, HarbourView} from "../harbour/renderer"
 import type {Agent, Place} from "../harbour/sim"
 
 export type HarbourController = CanvasIslandController & {
@@ -12,10 +12,13 @@ export type HarbourController = CanvasIslandController & {
   sync(): void
 }
 
-const browserLoadHarbour: LoadRenderer<HarbourRenderer> = async (canvas, size, onDeviceLost) => {
-  const {createHarbourRenderer} = await import("../harbour/renderer")
-  return createHarbourRenderer(canvas, size, onDeviceLost)
-}
+/** The harbour in the view the server named on its root. */
+const browserLoadHarbour =
+  (view: HarbourView): LoadRenderer<HarbourRenderer> =>
+  async (canvas, size, onDeviceLost) => {
+    const {createHarbourRenderer} = await import("../harbour/renderer")
+    return createHarbourRenderer(canvas, size, onDeviceLost, view)
+  }
 
 /** One agent as the server wrote it, with the name its ship shows under the pointer. */
 type CrewMember = Agent & {readonly name: string}
@@ -62,7 +65,7 @@ export const createHarbourController = (
   const island = createCanvasIsland(root, options, {
     canvasSelector: "[data-harbour-canvas]",
     readyFlag: "harbourReady",
-    browserLoad: browserLoadHarbour,
+    browserLoad: browserLoadHarbour(root.dataset.harbourView as HarbourView),
     motionSensitive: false,
     continuous: true,
     interact({renderer, nudge, onReady}) {

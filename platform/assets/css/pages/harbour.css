@@ -323,4 +323,252 @@
   color: var(--color-fg);
   font-size: 1.1rem;
 }
+
+/* The sea behind a page at /animations/harbour/sea: the harbour fills the
+   screen behind everything, seen from low down so the water runs out to the
+   horizon, and fades into the page's own ground. The page sits on solid paper
+   over it; clicks on the open sea reach the harbour. */
+.sea {
+  --harbour-haze: #0b0b0b;
+  --sea-lift: 560ms;
+  position: relative;
+  display: block;
+  min-height: 100dvh;
+}
+
+:root[data-theme="light"] .sea {
+  --harbour-haze: #f6f4ea;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .sea {
+    --harbour-haze: #f6f4ea;
+  }
+}
+
+.sea__harbour {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: var(--harbour-haze);
+}
+
+.sea__harbour canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.sea__harbour[data-harbour-ready="true"] canvas {
+  opacity: 1;
+}
+
+/* The button that lifts the page away and brings it back. It stays at the top
+   whichever way the page is. */
+.sea__lift {
+  position: fixed;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--color-fg);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  cursor: pointer;
+}
+
+.sea__lift svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: rotate 300ms ease;
+}
+
+.sea__lift[aria-pressed="true"] svg {
+  rotate: 180deg;
+}
+
+.sea__page {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-areas:
+    "head head"
+    "places room";
+  grid-template-columns: minmax(11rem, 15rem) minmax(0, 40rem);
+  gap: var(--space-3);
+  align-content: start;
+  padding: var(--space-3);
+  pointer-events: none;
+  transition:
+    translate var(--sea-lift) cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity var(--sea-lift) ease,
+    visibility 0s;
+}
+
+.sea__page > * {
+  pointer-events: auto;
+}
+
+/* Lifted: the page rises off the top and the whole sea is left. Hidden once it
+   has gone, so the keyboard skips it. */
+.sea--lifted {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.sea--lifted .sea__page {
+  translate: 0 -100%;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    translate var(--sea-lift) cubic-bezier(0.5, 0, 0.75, 0),
+    opacity var(--sea-lift) ease,
+    visibility 0s var(--sea-lift);
+}
+
+.sea__head,
+.sea__panel {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.sea__head {
+  grid-area: head;
+  justify-self: start;
+  max-width: 46rem;
+  padding: var(--space-3) calc(2.75rem + var(--space-4)) var(--space-3) var(--space-4);
+}
+
+.sea__head h1 {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-family-title);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.sea__lede {
+  margin: var(--space-2) 0 0;
+  color: var(--color-fg-muted);
+}
+
+.sea__places {
+  display: grid;
+  grid-area: places;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.sea__places h2,
+.sea__room h2 {
+  margin: 0;
+  font-family: var(--font-family-title);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.sea__places a {
+  text-decoration: none;
+  text-underline-offset: 0.25em;
+}
+
+.sea__places a:is(:hover, :focus-visible) {
+  text-decoration: underline;
+}
+
+.sea__places ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  min-height: 1.4em;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-fg-muted);
+  font: 0.72rem/1.4 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+.sea__places li,
+.sea__who {
+  display: flex;
+  gap: 0.4em;
+  align-items: center;
+}
+
+.sea__places li::before,
+.sea__who::before {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--sail);
+  content: "";
+}
+
+.sea__room {
+  grid-area: room;
+  padding: var(--space-3) var(--space-4);
+}
+
+.sea__room ol {
+  display: grid;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sea__room li {
+  padding: var(--space-3) 0;
+}
+
+.sea__room li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.sea__room li p {
+  margin: 0;
+}
+
+.sea__who {
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+
+.sea__who span {
+  color: var(--color-fg-muted);
+  font: 0.72rem/1.4 var(--font-family-mono);
+  font-weight: 400;
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+@media (max-width: 48rem) {
+  .sea__page {
+    grid-template-areas:
+      "head"
+      "room"
+      "places";
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sea__harbour canvas,
+  .sea__lift svg,
+  .sea__page,
+  .sea--lifted .sea__page {
+    transition: none;
+  }
+}
 }

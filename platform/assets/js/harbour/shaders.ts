@@ -56,7 +56,7 @@ fn riding(p: vec3f, origin: vec3f) -> vec3f {
 const shared = /* wgsl */ `
 struct Camera {
   viewProjection: mat4x4f,
-  // Unit vector from the scene toward the camera; the view is orthographic.
+  // Unit vector from the middle of the harbour toward the camera.
   toEye: vec3f,
 }
 
@@ -207,9 +207,11 @@ export const shipWgsl = parts(true)
 /**
  * The sea as a chart: a grid riding the swell, soundings rolling out from each
  * beach, wakes in ink, ripples drawn as contours of the ripple field, and
- * shadows hatched.
+ * shadows hatched. On the chart the grid runs along the world and the sea melts
+ * into the page just past the islands. On the horizon the grid is turned to lie
+ * square to the page, and the sea melts into the sky far out.
  */
-export const waterWgsl = /* wgsl */ `${shared}${rippleField}
+const sea = (horizon: boolean) => /* wgsl */ `${shared}${rippleField}
 struct WaterVarying {
   @builtin(position) clip: vec4f,
   @location(0) world: vec3f,
@@ -257,7 +259,7 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
     shore = min(shore, length(p.xz - island.xy) - island.z);
   }
   // Lines keep one width on screen: each is measured against its own step per pixel.
-  let grid = p.xz / 0.7;
+  let grid = ${horizon ? "vec2f(p.x - p.z, p.x + p.z) * 0.70710678" : "p.xz"} / 0.7;
   let gridStep = fwidth(grid);
   let shoreStep = fwidth(shore);
   // Ripples as a chart's contours: a line at each step of height, crests in full
@@ -280,10 +282,13 @@ fn fs_main(input: WaterVarying) -> @location(0) vec4f {
   let drawn = mix(paper(), ink(), max(max(max(gridLine * 0.3, ringLine * 0.8), ripple), max(max(coast, wake), hatched)));
 
   // Far water melts into the page.
-  let far = smoothstep(9.5, 16.0, length(p.xz));
+  let far = smoothstep(${horizon ? "16.0, 90.0" : "9.5, 16.0"}, length(p.xz));
   return vec4f(mix(drawn, scene.haze, far), WATER_KEY);
 }
 `
+
+export const seaChartWgsl = sea(false)
+export const seaHorizonWgsl = sea(true)
 
 /** Depth from the sun, for every mesh that casts a shadow. Ships ride the ripples here too. */
 const shadow = (ride: boolean) => /* wgsl */ `${ride ? rippleField : ""}

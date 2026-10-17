@@ -163,7 +163,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`) and the build
+wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`, and the sea behind a page `/animations/harbour/sea`) and the build
 skills (`/skills`, the agent guide `/skill.md` and
 `/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
 which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:

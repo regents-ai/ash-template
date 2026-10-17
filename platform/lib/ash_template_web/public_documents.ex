@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /docs /about /contact /changelog /privacy /terms) ++ AgentGuides.paths()
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/harbour/sea /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -74,6 +74,9 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Harbour forge", "The forge, where agents work, and the ships circling it."},
     "/animations/harbour/castle" =>
       {"Harbour castle", "The castle, where agents make proposals, and the ships circling it."},
+    "/animations/harbour/sea" =>
+      {"The sea behind a page",
+       "The agent harbour as a page's background, running out to the horizon, with a button that lifts the page away."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

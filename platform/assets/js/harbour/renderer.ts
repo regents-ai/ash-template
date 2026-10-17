@@ -1,6 +1,11 @@
 /**
- * Draws the agent harbour with WebGPU through vgpu: an isometric blueprint of a
- * sea of islands, one ship for each agent. Loaded only once the harbour is really going to be shown.
+ * Draws the agent harbour with WebGPU through vgpu: a blueprint of a sea of
+ * islands, one ship for each agent. Loaded only once the harbour is really going to be shown.
+ *
+ * Two views of the same harbour: the chart, isometric from above and framed on
+ * the islands, and the horizon, looking across the sea from low down with the
+ * islands square to the page and the water running out to the sky, for a page
+ * background.
  *
  * Each frame the ripples take their steps, the sun draws its shadow map, the
  * scene is drawn into a multisampled target, and a last pass lays it on the page.
@@ -14,6 +19,7 @@ import {
   instances,
   orbitRig,
   orthographic,
+  perspective,
   rigPose,
   viewMatrices,
   type CameraMatrices,
@@ -32,10 +38,11 @@ import {
   partsWgsl,
   presentWgsl,
   rippleStepWgsl,
+  seaChartWgsl,
+  seaHorizonWgsl,
   shadowWgsl,
   shipShadowWgsl,
   shipWgsl,
-  waterWgsl,
 } from "./shaders"
 import {
   CRUISE_SPEED,
@@ -52,6 +59,9 @@ import {
   type Place,
   type Ship,
 } from "./sim"
+
+/** The chart from above, or the horizon from low down. */
+export type HarbourView = "chart" | "horizon"
 
 export type HarbourLook = {
   readonly night: boolean
@@ -87,8 +97,20 @@ export type HarbourRenderer = IslandRenderer & {
 }
 
 const SHADOW_SIZE = 2048
-const SEA_SIZE = 44
+/** The sea's middle, where the waves and ripples are drawn finely: its half-width in world units, and its cells across. */
+const SEA_REACH = 22
 const SEA_SEGMENTS = 132
+/** How far the horizon's sea runs out, and how much longer each cell beyond the middle is than the one before. */
+const HORIZON_REACH = 320
+const HORIZON_GROWTH = 1.09
+/**
+ * The horizon's camera: its lens (degrees, top to bottom), how far it looks down
+ * at the sea, and the turn that sets the islands across the page with the castle
+ * at the back. The horizon sits a little over three quarters of the way up.
+ */
+const HORIZON_FOV = 40
+const HORIZON_PITCH = (11 * Math.PI) / 180
+const HORIZON_YAW = Math.PI / 4
 const SHIP_SCALE = 0.95
 /** Where a ship is picked from (its middle) and where its name sits (over the masthead), above the water. */
 const SHIP_MIDDLE = 0.35
@@ -123,6 +145,7 @@ export async function createHarbourRenderer(
   canvas: HTMLCanvasElement,
   size: readonly [number, number],
   onDeviceLost: () => void,
+  view: HarbourView,
 ): Promise<HarbourRenderer> {
   const gpu = await init()
   let disposed = false
@@ -132,7 +155,7 @@ export async function createHarbourRenderer(
     if (!disposed) onDeviceLost()
   })
   try {
-    return await build(gpu, canvas, size, () => disposed, () => void (disposed = true))
+    return await build(gpu, canvas, size, view, () => disposed, () => void (disposed = true))
   } catch (error) {
     disposed = true
     gpu.dispose()
@@ -144,6 +167,7 @@ async function build(
   gpu: Gpu,
   canvas: HTMLCanvasElement,
   size: readonly [number, number],
+  view: HarbourView,
   isDisposed: () => boolean,
   markDisposed: () => void,
 ): Promise<HarbourRenderer> {
@@ -152,7 +176,7 @@ async function build(
 
   const parts = prepareShader(partsWgsl, "harbour_parts.wgsl")
   const shipParts = prepareShader(shipWgsl, "harbour_ship.wgsl")
-  const water = prepareShader(waterWgsl, "harbour_water.wgsl")
+  const water = view === "chart" ? prepareShader(seaChartWgsl, "harbour_sea_chart.wgsl") : prepareShader(seaHorizonWgsl, "harbour_sea_horizon.wgsl")
   const shadow = prepareShader(shadowWgsl, "harbour_shadow.wgsl")
   const shipShadow = prepareShader(shipShadowWgsl, "harbour_ship_shadow.wgsl")
   const presentShader = prepareShader(presentWgsl, "harbour_present.wgsl")
@@ -178,9 +202,15 @@ async function build(
     projection: new Float32Array(16),
     matrices: {view: new Float32Array(16), viewProjection: new Float32Array(16)},
   }
-  // A true isometric view: from the corner of a cube, looking at the middle of the harbour.
-  rigPose(orbitRig({target: [0, 0, 0], yaw: Math.PI / 4, pitch: Math.atan(Math.SQRT1_2), distance: 40}), camera.pose)
-  const cameraValues = {viewProjection: camera.matrices.viewProjection, toEye: normalize([1, 1, 1])}
+  // The chart is truly isometric: from the corner of a cube, looking at the
+  // middle of the harbour. The horizon's distance is set as it is framed.
+  const pitch = view === "chart" ? Math.atan(Math.SQRT1_2) : HORIZON_PITCH
+  const poseAt = (distance: number) =>
+    rigPose(orbitRig({target: [0, 0, 0], yaw: view === "chart" ? Math.PI / 4 : HORIZON_YAW, pitch, distance}), camera.pose)
+  poseAt(40)
+  const cameraValues = {viewProjection: camera.matrices.viewProjection, toEye: normalize([...camera.pose.position])}
+  /** The view's inverse, to send a point on the canvas back into the world. */
+  const unview = new Float32Array(16)
   const cameraUniforms = uniforms(gpu, cameraValues)
 
   const islandRows = new Float32Array(ISLANDS.length * 4)
@@ -251,7 +281,7 @@ async function build(
   })
   const sea = draw(gpu, {
     shader: water,
-    geometry: seaGeometry(gpu),
+    geometry: seaGeometry(gpu, view === "chart" ? SEA_REACH : HORIZON_REACH),
     targets: [sceneTarget],
     cull: "none",
     set: {...lit, ...riding()},
@@ -288,24 +318,72 @@ async function build(
   const world = new Float32Array(16)
   const seaHeight = (x: number, z: number) => waveHeight(x, z, time)
 
-  /** A point in the world, across the canvas from 0 to 1. The view is orthographic. */
-  const onCanvas = (x: number, y: number, z: number): [number, number] => {
+  /** A point in the world, across the canvas from 0 to 1, and how far in front of the camera it is. */
+  const onCanvas = (x: number, y: number, z: number): [number, number, number] => {
     const m = camera.matrices.viewProjection
-    const ndcX = m[0]! * x + m[4]! * y + m[8]! * z + m[12]!
-    const ndcY = m[1]! * x + m[5]! * y + m[9]! * z + m[13]!
-    return [(ndcX + 1) / 2, (1 - ndcY) / 2]
+    const w = m[3]! * x + m[7]! * y + m[11]! * z + m[15]!
+    const ndcX = (m[0]! * x + m[4]! * y + m[8]! * z + m[12]!) / w
+    const ndcY = (m[1]! * x + m[5]! * y + m[9]! * z + m[13]!) / w
+    return [(ndcX + 1) / 2, (1 - ndcY) / 2, w]
   }
 
-  /** Where a point on the canvas meets the level `y` above the still sea. */
-  const onLevel = (u: number, v: number, y: number): [number, number] => {
-    const m = camera.matrices.viewProjection
-    const ndcX = u * 2 - 1 - m[4]! * y - m[12]!
-    const ndcY = 1 - v * 2 - m[5]! * y - m[13]!
-    const det = m[0]! * m[9]! - m[8]! * m[1]!
-    return [(ndcX * m[9]! - m[8]! * ndcY) / det, (m[0]! * ndcY - m[1]! * ndcX) / det]
+  /** Where a point on the canvas meets the level `y` above the still sea, if it does in front of the camera. */
+  const onLevel = (u: number, v: number, y: number): [number, number] | null => {
+    const near = unproject(unview, u * 2 - 1, 1 - v * 2, 0)
+    const far = unproject(unview, u * 2 - 1, 1 - v * 2, 1)
+    const along = (y - near[1]) / (far[1] - near[1])
+    if (!(along >= 0 && along <= 1)) return null
+    return [near[0] + (far[0] - near[0]) * along, near[2] + (far[2] - near[2]) * along]
   }
+
+  /** The points a frame must hold: each island's buildings and the rings its ships sail. */
+  const framed = (): [number, number, number][] => [
+    ...Object.values(PLACES).flatMap(island => [
+      [island.x, 2.4, island.z] as [number, number, number],
+      ...Array.from({length: 16}, (_, i): [number, number, number] => {
+        const angle = (i / 16) * Math.PI * 2
+        return [island.x + Math.cos(angle) * (island.radius + 1.9), 0, island.z + Math.sin(angle) * (island.radius + 1.9)]
+      }),
+    ]),
+    ...ISLETS.map((islet): [number, number, number] => [islet.x, 0, islet.z]),
+  ]
 
   const fitCamera = () => {
+    if (view === "chart") fitChart()
+    else fitHorizon()
+    invert(camera.matrices.viewProjection, unview)
+    cameraUniforms.set(cameraValues)
+  }
+
+  /**
+   * The horizon: the camera backs away until every island and its rings are in
+   * the frame, the rings allowed a little past the sides of a narrow one.
+   */
+  const fitHorizon = () => {
+    const [width, height] = stage.size
+    const aspect = width / height
+    perspective({fov: HORIZON_FOV, near: 0.5, far: HORIZON_REACH * 2}, aspect, camera.projection)
+    const across = aspect < 1.3 ? 1 / 0.84 : 0.94
+    const points = framed()
+    const fits = (distance: number) => {
+      poseAt(distance)
+      viewMatrices(camera.pose, camera.projection, camera.matrices)
+      return points.every(([x, y, z]) => {
+        const [u, v, w] = onCanvas(x, y, z)
+        return w > 0 && Math.abs(u * 2 - 1) <= across && v <= 0.96
+      })
+    }
+    let [low, high] = [4, 400]
+    for (let step = 0; step < 24; step++) {
+      const middle = (low + high) / 2
+      if (fits(middle)) high = middle
+      else low = middle
+    }
+    fits(high)
+    cameraValues.toEye = normalize([...camera.pose.position])
+  }
+
+  const fitChart = () => {
     const [width, height] = stage.size
     const aspect = width / height
     const identity = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
@@ -320,14 +398,7 @@ async function build(
       bottom = Math.min(bottom, vy)
       top = Math.max(top, vy)
     }
-    for (const island of Object.values(PLACES)) {
-      reach(island.x, 2.4, island.z)
-      for (let i = 0; i < 16; i++) {
-        const angle = (i / 16) * Math.PI * 2
-        reach(island.x + Math.cos(angle) * (island.radius + 1.9), 0, island.z + Math.sin(angle) * (island.radius + 1.9))
-      }
-    }
-    for (const islet of ISLETS) reach(islet.x, 0, islet.z)
+    for (const [x, y, z] of framed()) reach(x, y, z)
     // A narrow frame crops the outer rings a little rather than shrinking the harbour.
     const crop = aspect < 1.3 ? 0.84 : 1
     const middleX = (left + right) / 2
@@ -341,7 +412,6 @@ async function build(
       camera.projection,
     )
     viewMatrices(camera.pose, camera.projection, camera.matrices)
-    cameraUniforms.set(cameraValues)
   }
 
   const light = () => {
@@ -445,13 +515,13 @@ async function build(
       stillRipples()
     },
     shipAt(u, v) {
-      // The reach as a share of the canvas, across and down.
-      const reachU = (SHIP_REACH * Math.abs(camera.projection[0]!)) / 2
-      const reachV = (SHIP_REACH * Math.abs(camera.projection[5]!)) / 2
       let nearest: Ship | undefined
       let nearestMiss = 1
       for (const ship of ships) {
-        const [shipU, shipV] = onCanvas(ship.x, seaHeight(ship.x, ship.z) + SHIP_MIDDLE, ship.z)
+        const [shipU, shipV, w] = onCanvas(ship.x, seaHeight(ship.x, ship.z) + SHIP_MIDDLE, ship.z)
+        // The reach as a share of the canvas, across and down, at the ship's distance.
+        const reachU = (SHIP_REACH * Math.abs(camera.projection[0]!)) / (2 * w)
+        const reachV = (SHIP_REACH * Math.abs(camera.projection[5]!)) / (2 * w)
         const miss = ((u - shipU) / reachU) ** 2 + ((v - shipV) / reachV) ** 2
         if (miss < nearestMiss) {
           nearest = ship
@@ -464,8 +534,8 @@ async function build(
     },
     islandAt(u, v) {
       const near = (island: Island, y: number, reach: number) => {
-        const [x, z] = onLevel(u, v, y)
-        return Math.hypot(x - island.x, z - island.z) < reach
+        const hit = onLevel(u, v, y)
+        return hit !== null && Math.hypot(hit[0] - island.x, hit[1] - island.z) < reach
       }
       const hit = (Object.entries(PLACES) as [Place, Island][]).find(
         ([, island]) => near(island, 0, island.radius) || BUILDING_LEVELS.some(y => near(island, y, BUILDING_REACH)),
@@ -477,7 +547,9 @@ async function build(
     },
     ripple(u, v) {
       if (calm) return
-      const [x, z] = onLevel(u, v, 0)
+      const hit = onLevel(u, v, 0)
+      if (!hit) return
+      const [x, z] = hit
       if (Math.max(Math.abs(x), Math.abs(z)) > RIPPLE_REACH - 1) return
       drops = [...drops, [x, z] as [number, number]].slice(-MAX_DROPS)
     },
@@ -572,21 +644,34 @@ function meshGeometry(gpu: Gpu, vertices: Float32Array<ArrayBuffer>, label: stri
   })
 }
 
-/** A square of sea, centred on the harbour, flat until the shader lifts it. */
-function seaGeometry(gpu: Gpu): Geometry {
-  const side = SEA_SEGMENTS + 1
+/**
+ * A square of sea, centred on the harbour, flat until the shader lifts it: fine
+ * cells across the middle, and beyond it, out to `reach`, cells each a little
+ * longer than the last.
+ */
+function seaGeometry(gpu: Gpu, reach: number): Geometry {
+  const middle = Array.from({length: SEA_SEGMENTS + 1}, (_, index) => (index / SEA_SEGMENTS - 0.5) * SEA_REACH * 2)
+  const beyond: number[] = []
+  for (let cell = (SEA_REACH * 2) / SEA_SEGMENTS, at = SEA_REACH; at < reach; ) {
+    cell *= HORIZON_GROWTH
+    at = Math.min(reach, at + cell)
+    beyond.push(at)
+  }
+  const lines = [...beyond.map(at => -at).reverse(), ...middle, ...beyond]
+  const side = lines.length
   const positions = new Float32Array(side * side * 3)
   for (let row = 0; row < side; row++) {
     for (let column = 0; column < side; column++) {
       const at = (row * side + column) * 3
-      positions[at] = (column / SEA_SEGMENTS - 0.5) * SEA_SIZE
-      positions[at + 2] = (row / SEA_SEGMENTS - 0.5) * SEA_SIZE
+      positions[at] = lines[column]!
+      positions[at + 2] = lines[row]!
     }
   }
-  const indices = new Uint32Array(SEA_SEGMENTS * SEA_SEGMENTS * 6)
+  const cells = side - 1
+  const indices = new Uint32Array(cells * cells * 6)
   let at = 0
-  for (let row = 0; row < SEA_SEGMENTS; row++) {
-    for (let column = 0; column < SEA_SEGMENTS; column++) {
+  for (let row = 0; row < cells; row++) {
+    for (let column = 0; column < cells; column++) {
       const a = row * side + column
       indices.set([a, a + side, a + 1, a + 1, a + side, a + side + 1], at)
       at += 6
@@ -631,6 +716,54 @@ function sunViewProjection(sun: readonly number[]): Float32Array {
   const matrices: CameraMatrices = {view: new Float32Array(16), viewProjection: new Float32Array(16)}
   viewMatrices(pose, projection, matrices)
   return matrices.viewProjection
+}
+
+/** The inverse of a 4x4 matrix, columns first. */
+function invert(m: Float32Array, out: Float32Array): Float32Array {
+  const [a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33] = m
+  const b00 = a00 * a11 - a01 * a10
+  const b01 = a00 * a12 - a02 * a10
+  const b02 = a00 * a13 - a03 * a10
+  const b03 = a01 * a12 - a02 * a11
+  const b04 = a01 * a13 - a03 * a11
+  const b05 = a02 * a13 - a03 * a12
+  const b06 = a20 * a31 - a21 * a30
+  const b07 = a20 * a32 - a22 * a30
+  const b08 = a20 * a33 - a23 * a30
+  const b09 = a21 * a32 - a22 * a31
+  const b10 = a21 * a33 - a23 * a31
+  const b11 = a22 * a33 - a23 * a32
+  const det = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06)
+  out.set([
+    (a11 * b11 - a12 * b10 + a13 * b09) * det,
+    (a02 * b10 - a01 * b11 - a03 * b09) * det,
+    (a31 * b05 - a32 * b04 + a33 * b03) * det,
+    (a22 * b04 - a21 * b05 - a23 * b03) * det,
+    (a12 * b08 - a10 * b11 - a13 * b07) * det,
+    (a00 * b11 - a02 * b08 + a03 * b07) * det,
+    (a32 * b02 - a30 * b05 - a33 * b01) * det,
+    (a20 * b05 - a22 * b02 + a23 * b01) * det,
+    (a10 * b10 - a11 * b08 + a13 * b06) * det,
+    (a01 * b08 - a00 * b10 - a03 * b06) * det,
+    (a30 * b04 - a31 * b02 + a33 * b00) * det,
+    (a21 * b02 - a20 * b04 - a23 * b00) * det,
+    (a11 * b07 - a10 * b09 - a12 * b06) * det,
+    (a00 * b09 - a01 * b07 + a02 * b06) * det,
+    (a31 * b01 - a30 * b03 - a32 * b00) * det,
+    (a20 * b03 - a21 * b01 + a22 * b00) * det,
+  ])
+  return out
+}
+
+/** A point of the canvas, at a depth from 0 (near) to 1 (far), back in the world. */
+function unproject(inverse: Float32Array, x: number, y: number, z: number): [number, number, number] {
+  const m = inverse
+  const w = m[3]! * x + m[7]! * y + m[11]! * z + m[15]!
+  return [
+    (m[0]! * x + m[4]! * y + m[8]! * z + m[12]!) / w,
+    (m[1]! * x + m[5]! * y + m[9]! * z + m[13]!) / w,
+    (m[2]! * x + m[6]! * y + m[10]! * z + m[14]!) / w,
+  ]
 }
 
 /** Views onto a packed array, one per vec4 row of a uniform array. */

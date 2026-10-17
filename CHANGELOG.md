@@ -2605,3 +2605,18 @@ Operations
 - `platform/priv/public/changelog.md` notes the agent harbour for visitors, and
   `platform/README.md` names the harbour and its island pages among the motion lab pages
   that follow `ASH_TEMPLATE_SHOWCASE`.
+
+## 2026-10-17 — The harbour as a page's background
+
+- `/animations/harbour/sea` shows the harbour behind a whole page, seen from the side out
+  to the horizon, with the sea's grid square to the page. The page's header and panels
+  stay solid over it, the sea shows around them, and pressing the empty sea sends out
+  ripples while pressing a ship opens its agent's card.
+- A button at the top right lifts the page away so only the sea and ships show; the same
+  button brings the page back. It says which it will do, and less motion skips the slide.
+- The harbour at `/animations/harbour` keeps its chart view and links to the new page.
+- `platform/assets/js/harbour/KEYFLEET_PORT.md` now carries Sean's answers for Keyfleet:
+  home keeps its hex field, reading panels stay solid, pages outside a fleet show the most
+  recent agents across public fleets, the sea takes clicks, and every page gets the lift
+  button.
+- `platform/priv/public/changelog.md` and `platform/README.md` name the new page.
