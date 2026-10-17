@@ -2545,3 +2545,14 @@ Operations
   `/account` (with sign-in opened) and `/docs` at 390 and 1440 showed none, and Chrome
   showed none. The template's reading pages carry no inline style element; the only
   one, Privy's in the sign-in pages, is allowed there. Nothing changed.
+
+## 2026-10-17 — Agent pages: two wording fixes from Sentinel
+
+- Every agent page's `agent_not_paired` line now reads "you aren't paired with your
+  person on this site. Ask them for a new code and pair again." It no longer says the
+  person unpaired the agent, which was only one of the reasons.
+- Grok Bot's answer to "Can my other Bots use this agent's key?" no longer invites
+  sharing one identity: "Every Bot on your account can read its workspace folder, so
+  any of them could act as this agent; keep only Bots you trust on that account."
+- Dots' "Settings, Personalization, Custom rules" path matches OpenAI's own Dots help
+  page (learn.chatgpt.com/docs/dots/controls), so it stays.

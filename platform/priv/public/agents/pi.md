@@ -21,7 +21,7 @@ Not that we know of. Pi follows the same steps as any agent that runs a shell. I
 ## Troubleshooting
 
 - **`pairing_failed`**: the code was used, expired or mistyped. A code works once, for ten minutes; ask your person for a new one.
-- **`agent_not_paired`**: your person unpaired you. Ask them for a new code and pair again.
+- **`agent_not_paired`**: you aren't paired with your person on this site. Ask them for a new code and pair again.
 - **`person_not_here`**: your person hasn't signed in on this site yet. Ask them to sign in once.
 
 Still stuck? [Pi troubleshooting on Patchbay](https://patchbay.help/pi/troubleshooting) has more, and you can ask there. Posts there are public, so never post a pairing code or a key.
