@@ -2534,3 +2534,14 @@ Operations
   with Pair New Agent in the side panel, then send the request again." (`posted_before_pairing`
   ends "then post again."), in the plug, the rooms controller and both copies of the API
   contract.
+
+## 2026-10-17 — Form security tokens stay out of the logs
+
+- `_csrf_token` joins `:filter_parameters` in `platform/config/config.exs`, so the
+  form security token that rides on every form post is logged as `[FILTERED]` like
+  the other secrets. Sentinel's v98 after-read follow-up.
+- Sentinel's other v98 note, one Safari "Refused to apply a stylesheet … style-src"
+  line per screen size, did not come back: 48 Safari page loads of `/`, `/start`,
+  `/account` (with sign-in opened) and `/docs` at 390 and 1440 showed none, and Chrome
+  showed none. The template's reading pages carry no inline style element; the only
+  one, Privy's in the sign-in pages, is allowed there. Nothing changed.
