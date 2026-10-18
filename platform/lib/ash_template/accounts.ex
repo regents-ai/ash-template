@@ -19,7 +19,6 @@ defmodule AshTemplate.Accounts do
     end
 
     resource AshTemplate.Accounts.SessionAuthority
-    resource AshTemplate.Accounts.SharedProfile
 
     resource AshTemplate.Accounts.EnsIdentity do
       define :request_ens_lookup,

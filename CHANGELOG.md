@@ -2591,5 +2591,16 @@ Operations
   button itself never applied, and the template's own "controls use the interface
   font" rule then forced the interface font on top. The cube now sets its font on
   the list that holds the buttons, and that template rule is gone: everywhere else
-  it only repeated the font the controls already took from the page. Every other button, link and field on 18
-  pages, at phone and desktop width, kept exactly the font it had.
+  it only repeated the font the controls already took from the page. Every other
+  button, link and field on 18 pages, at phone and desktop width, kept exactly the
+  font it had.
+
+## 2026-10-18 — A person's shared name is read by the shared library
+
+- The name a person sets in their shared Regent profile is now read by
+  `RegentIdentity.ProfileName` from elixir-utils (e8c3e43), the same calculation
+  every site can put on its account resource. The template's own copy of the
+  profiles table (`AshTemplate.Accounts.SharedProfile`) and its calculation
+  (`AshTemplate.Accounts.HumanAccount.ProfileName`) are gone. Nothing changes on
+  screen: checked against the local database in a rolled-back transaction, a name
+  set for this site's Privy app shows, and one set for another app does not.
