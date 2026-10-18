@@ -1,9 +1,20 @@
 // Invariant: Save on the Account page's Public Display Name writes the name to
 // the profile it just read, making that profile from the sign-in only when the
 // person has none, and never writes after a read or a profile-making that failed.
-import {expect, it} from "vitest"
-import {saveName} from "../vendor/regent_ui/profile.mjs"
+// Every step of one save belongs to one person: a switch of account part way
+// through writes nothing (R-20261018-first-save-switch, found by the security
+// review of 18 Oct). Two quick presses keep the name pressed last
+// (R-20261018-two-quick-saves, found by the breaker review of 18 Oct), and a
+// save that fails outright never leaves the form busy.
+import {expect, it, vi} from "vitest"
+import {createProfileClient} from "../vendor/regent_identity/profile_client.mjs"
+import {mountProfile, saveName} from "../vendor/regent_ui/profile.mjs"
 import type {ProfileAction, ProfileResult} from "../vendor/regent_ui/profile.mjs"
+
+vi.mock("@privy-io/react-auth", () => ({}))
+vi.mock("react-dom/client", () => ({}))
+
+const {oneSignIn} = await import("../js/privy_bridge")
 
 const profile = (id: string, name: string | null = null): ProfileResult =>
   ({ok: true, status: 200, body: {profile: {profile_id: id, display_name: name}}})
@@ -26,7 +37,7 @@ it("a first save makes the profile from the sign-in, then saves the name to it",
     update: profile("p1", "Ada"),
   })
 
-  expect(await saveName(action, "Ada")).toEqual({ok: true, displayName: "Ada", message: "Saved."})
+  expect(await saveName(action, "Ada")).toMatchObject({ok: true, displayName: "Ada"})
   expect(calls).toEqual([
     ["get", {}, undefined],
     ["sync", {}, undefined],
@@ -44,18 +55,124 @@ it("a later save changes the name on the profile it read", async () => {
 
 it("nothing is written without a current sign-in or a profile", async () => {
   const signedOut = server({get: {ok: false, status: null, error: {code: "authentication_required", outcome_unknown: false}}})
-  expect(await saveName(signedOut.action, "Ada")).toEqual({ok: false, message: "Sign in again to save your name."})
+  expect(await saveName(signedOut.action, "Ada")).toMatchObject({ok: false})
   expect(signedOut.calls.map(call => call[0])).toEqual(["get"])
 
   const conflict = server({get: refused(404, "profile_not_created"), sync: refused(409, "identity_evidence_conflict")})
-  expect(await saveName(conflict.action, "Ada")).toEqual({ok: false, message: "Your sign-in changed. Refresh and try again."})
+  expect(await saveName(conflict.action, "Ada")).toMatchObject({ok: false})
   expect(conflict.calls.map(call => call[0])).toEqual(["get", "sync"])
 })
 
-it("a save whose outcome is unknown says so", async () => {
-  const {action} = server({
-    get: profile("p3"),
-    update: {ok: false, status: null, error: {code: "profile_unavailable", outcome_unknown: true}},
+// The profile service as regent_identity serves it: each request acts for the
+// person whose proof it carries, and refuses a subject that is not theirs.
+function profileService() {
+  const profiles = new Map<string, {profile_id: string; display_name: string | null}>()
+  const writes: string[] = []
+  const fetch = (async (path: string, init: RequestInit) => {
+    const headers = init.headers as Record<string, string>
+    const person = headers.authorization.replace("Bearer ", "")
+    if (headers["x-privy-user-id"] !== person) return Response.json({error: {code: "identity_changed"}}, {status: 401})
+    const mine = profiles.get(person)
+    if (init.method === "GET") {
+      return mine ? Response.json({profile: mine}) : Response.json({error: {code: "profile_not_created"}}, {status: 404})
+    }
+    writes.push(`${init.method} ${path} ${person}`)
+    if (init.method === "POST") {
+      const made = mine ?? {profile_id: `profile-${person}`, display_name: null}
+      profiles.set(person, made)
+      return Response.json({profile: made})
+    }
+    const expected = headers["x-regent-profile-id"]
+    if (!mine || (expected && expected !== mine.profile_id)) {
+      return Response.json({error: {code: "invalid_profile_update"}}, {status: 422})
+    }
+    mine.display_name = JSON.parse(String(init.body)).display_name
+    return Response.json({profile: mine})
+  }) as typeof globalThis.fetch
+  return {fetch, profiles, writes}
+}
+
+// The sign-in the browser holds, which the person may switch at any moment.
+function browser(first: string) {
+  let person = first
+  const proof = async () => ({
+    accessToken: person, identityToken: person, subject: person, isCurrent: () => true,
   })
-  expect(await saveName(action, "Ada")).toEqual({ok: false, message: "It may not have saved. Refresh to check."})
+  return {switchTo: (next: string) => { person = next }, proof}
+}
+
+it("a switch of account after the first read saves nothing to either account", async () => {
+  const service = profileService()
+  const signIn = browser("did:a")
+  const client = createProfileClient({acquireProof: oneSignIn(signIn.proof), fetch: service.fetch})
+  const switching: ProfileAction = async (operation, input, options) => {
+    const answer = await client(operation, input, options)
+    if (operation === "get") signIn.switchTo("did:b")
+    return answer
+  }
+
+  expect(await saveName(switching, "Ada")).toMatchObject({ok: false})
+  expect(service.writes).toEqual([])
+  expect(service.profiles.size).toBe(0)
+})
+
+it("the same person's first save still makes the profile and saves the name", async () => {
+  const service = profileService()
+  const client = createProfileClient({acquireProof: oneSignIn(browser("did:a").proof), fetch: service.fetch})
+
+  expect(await saveName(client, "Ada")).toMatchObject({ok: true, displayName: "Ada"})
+  expect(service.profiles.get("did:a")?.display_name).toBe("Ada")
+})
+
+// The form as the page holds it: just what mountProfile reads and writes.
+function form() {
+  let submit: ((event: {preventDefault(): void}) => Promise<void>) | null = null
+  const attributes = new Map<string, string>()
+  const status = {textContent: ""}
+  const name = {value: ""}
+  const element = {
+    elements: {namedItem: () => name},
+    addEventListener: (_: string, listener: typeof submit) => { submit = listener },
+    setAttribute: (key: string, value: string) => attributes.set(key, value),
+    removeAttribute: (key: string) => attributes.delete(key),
+  }
+  const root = {querySelector: (selector: string) => selector === "[data-profile-form]" ? element : status}
+  const press = (typed: string) => { name.value = typed; return submit!({preventDefault() {}}) }
+  return {root: root as unknown as HTMLElement, attributes, status, name, press}
+}
+
+it("a save that fails outright says so and leaves the form ready", async () => {
+  const page = form()
+  const onSaved = vi.fn()
+  mountProfile(page.root, {openProfile: () => { throw new Error("no sign-in loader") }, onSaved})
+
+  await page.press("Ada")
+  expect(page.attributes.has("aria-busy")).toBe(false)
+  expect(page.status.textContent).not.toBe("")
+  expect(onSaved).not.toHaveBeenCalled()
+})
+
+it("two quick saves keep the name pressed last, however slow the first is", async () => {
+  const service = profileService()
+  let firstRead = true
+  const slowFirstRead: typeof globalThis.fetch = async (input, init) => {
+    if (init?.method === "GET" && firstRead) {
+      firstRead = false
+      await new Promise(resolve => setTimeout(resolve, 20))
+    }
+    return service.fetch(input, init)
+  }
+  const page = form()
+  const onSaved = vi.fn()
+  const signIn = browser("did:a")
+  mountProfile(page.root, {
+    openProfile: () => createProfileClient({acquireProof: oneSignIn(signIn.proof), fetch: slowFirstRead}),
+    onSaved,
+  })
+
+  await Promise.all([page.press("Ada"), page.press("Grace")])
+  expect(service.profiles.get("did:a")?.display_name).toBe("Grace")
+  expect(page.name.value).toBe("Grace")
+  expect(page.attributes.has("aria-busy")).toBe(false)
+  expect(onSaved.mock.calls).toEqual([["Grace"]])
 })

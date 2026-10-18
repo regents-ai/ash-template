@@ -1,6 +1,7 @@
 # The browser walk's person: a local account on the walk's own database, signed
 # in through the site's own sign-in step with a fresh session, one chat of their
-# own, and the signed cookie the walk sends. Run by playwright.config.ts before
+# own, the longest unbroken Public Display Name the site takes (so every signed-in
+# page proves a long name fits the screen), and the signed cookie the walk sends. Run by playwright.config.ts before
 # the server starts; it refuses any database but the walk's local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
 alias AshTemplate.Actors.Human
@@ -14,10 +15,11 @@ unless to_string(repo[:hostname]) in ["127.0.0.1", "::1"] and
 AshTemplate.LocalDatabaseFixture.ensure_human_accounts!()
 
 wallet = "0x" <> String.duplicate("b", 40)
+app_id = Keyword.fetch!(Application.fetch_env!(:ash_template, :privy), :app_id)
 
 {:ok, account, _conflicts} =
   VerifiedSession.establish(%RegentPrivy.Session{
-    app_id: Keyword.fetch!(Application.fetch_env!(:ash_template, :privy), :app_id),
+    app_id: app_id,
     privy_user_id: "did:privy:browser-walk",
     session_id: "browser-walk",
     wallet_address: wallet,
@@ -26,6 +28,18 @@ wallet = "0x" <> String.duplicate("b", 40)
   })
 
 person = Human.for_account(account)
+
+Ash.Seed.upsert!(
+  RegentIdentity.Profile,
+  %{
+    app_id: app_id,
+    privy_user_id: "did:privy:browser-walk",
+    display_name: String.duplicate("W", 80),
+    wallet_addresses: [wallet],
+    proof_issued_at: System.system_time(:second)
+  },
+  identity: :privy_subject
+)
 
 if AshTemplate.Chat.my_conversations!(actor: person) == [],
   do: AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)

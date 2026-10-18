@@ -1,5 +1,5 @@
 import {mountProfile} from "../../vendor/regent_ui/profile.mjs"
-import {profileAction} from "../auth_lazy"
+import {openProfile} from "../auth_lazy"
 import type {Hook} from "../hook_composition"
 
 type PublicNameHook = {
@@ -14,7 +14,7 @@ type PublicNameHook = {
 export const PublicName: Hook = {
   mounted(this: PublicNameHook) {
     this.stop = mountProfile(this.el, {
-      profile: (...args) => profileAction(document)(...args),
+      openProfile: () => openProfile(document),
       onSaved: () => this.pushEvent("public_name_saved", {}),
     })
   },

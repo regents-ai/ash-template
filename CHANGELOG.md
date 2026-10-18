@@ -2659,15 +2659,27 @@ Operations
   first save makes the profile from the sign-in. After a save, the name at the top
   of the page and in the shell updates.
 - The form is design-system `Regent.Profile.panel` and `mountProfile` (pin
-  `23c76287`, branch `tpl/ds-public-name-1018`). It no longer offers sign-in, a
+  `f82c4a74`, branch `tpl/ds-public-name-1018`). It no longer offers sign-in, a
   wallet choice, Connect X or account details: wallets and connections have their
   own Account tabs. The form takes its spacing from the Account panel around it.
-- The page's Privy bridge hands the save its proof (`privy_bridge.tsx`,
-  `auth_lazy.ts`, the `PublicName` hook); the shell refreshes the account after a
-  save (`public_name_saved`).
+- One save is one person's: each Save opens its own profile client
+  (`openProfile` in `auth_lazy.ts` and `privy_bridge.tsx`), and `oneSignIn` hands on
+  only proofs for the person the save started with, so a switch of account part way
+  through sends nothing more (security review). Saves run one after another, so two
+  quick presses keep the name pressed last, and a save that fails outright never
+  stays on "Saving…" (breaker review).
+- A long name ends in "…" in the top bar instead of pushing the page sideways
+  (breaker review: an 80-letter name made the page 690px too wide at 1280).
 - Checks: `platform/test/ash_template_web/public_name_test.exs` saves a name with
   Privy-signed test tokens and reads it back on `/account`, and a forged token is
   refused; `platform/assets/test/public_name.test.ts` covers a first save, a later
-  save, a refused sign-in and an unknown outcome; `platform/test/browser/public_name.spec.ts`
-  presses Save at 390 and 1280 wide without the browser's sign-in and checks it
-  refuses, sends no change and moves nothing. `docs/feature-map.md` lists them.
+  save, refusals, a switch of account part way through (against a profile service
+  that follows the server's rules), two quick saves and a save that fails outright;
+  the walk's person now has an 80-letter name, so every signed-in page proves a long
+  name fits; `platform/test/browser/public_name.spec.ts` presses Save at 390 and 1280
+  wide without the browser's sign-in and checks it finishes, sends no change and
+  moves nothing. Each regression check was run once without its fix and failed.
+  `docs/feature-map.md` lists them.
+- `skills/regent-workflow/SKILL.md`: the two verification sections are now one,
+  pointing at `control/verification/standard.md`, with Sean's 18 Oct 23:34Z rule that
+  agents add meaningful tests without asking.

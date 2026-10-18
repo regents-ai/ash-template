@@ -26,10 +26,11 @@ headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac.
 | --- | --- |
 | Sign in, and sign in again with a wallet added; sign in with email and keep one account | `platform/test/ash_template/accounts/verified_session_test.exs` |
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
-| Each account shows the name its person set for this site, never one set on another site, in the order asked | `platform/test/ash_template/accounts/display_name_test.exs` (property test) |
+| Each account shows the name its person saved with this site's sign-in, never a name saved under another sign-in, in the order asked | `platform/test/ash_template/accounts/display_name_test.exs` (property test) |
 | A name saved on the Account page with the person's own sign-in shows there, in the form and as the account's name; a forged sign-in changes nothing | `platform/test/ash_template_web/public_name_test.exs` |
-| Save makes the person's profile on their first save, saves only to the profile it read, and says when it did not save | `platform/assets/test/public_name.test.ts` |
-| Save on the Account page without the browser's sign-in refuses, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
+| Save makes the person's profile on their first save and saves only to the profile it read; a switch of account part way through saves nothing; two quick saves keep the name pressed last; a failed save never leaves the form busy | `platform/assets/test/public_name.test.ts` |
+| Save on the Account page without the browser's sign-in finishes, says why, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
+| The longest name the site takes, with no spaces, fits every signed-in page at both widths | `pages.spec.ts`; the walk's person has an 80-letter name (`platform/test/browser/support/sign_in.exs`) |
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code, and each choice a new code | same |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |

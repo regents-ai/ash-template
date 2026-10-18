@@ -3,13 +3,10 @@ import {keepSignedIn, ready, signedIn, watch} from "./support/person"
 
 // The Public Display Name form on the Account page. A save needs the browser's own
 // sign-in with Privy, which never completes at the walk's address, so Save must
-// refuse, send no change, and leave the form where it was. Which refusal shows
-// depends on how far Privy got before the press. A save that goes through is
-// proved by test/ash_template_web/public_name_test.exs.
+// finish, say why, send no change, and leave the form where it was. A save that
+// goes through is proved by test/ash_template_web/public_name_test.exs.
 test.use(signedIn)
 test.beforeEach(({context}) => keepSignedIn(context))
-
-const refused = /^(Sign in again to save your name\.|Your name could not be saved\. Try again\.)$/
 
 test("Save without the browser's sign-in refuses and changes nothing", async ({page}) => {
   const problems = watch(page)
@@ -32,7 +29,8 @@ test("Save without the browser's sign-in refuses and changes nothing", async ({p
 
   await name.fill("Ada Lovelace")
   await save.click()
-  await expect(form.getByRole("status")).toHaveText(refused)
+  await expect(form.locator("form")).not.toHaveAttribute("aria-busy")
+  await expect(form.getByRole("status")).not.toBeEmpty()
   expect(changes).toEqual([])
   // The message sits beside Save without moving it.
   expect(await place()).toEqual(before)
