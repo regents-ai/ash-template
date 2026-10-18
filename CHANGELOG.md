@@ -2604,3 +2604,11 @@ Operations
   (`AshTemplate.Accounts.HumanAccount.ProfileName`) are gone. Nothing changes on
   screen: checked against the local database in a rolled-back transaction, a name
   set for this site's Privy app shows, and one set for another app does not.
+
+## 2026-10-18 — Account page sections match
+
+- The Profile heading on the Account page is the same size as Agents and Credits
+  beside it (it was a fifth larger), and so are the section headings on the
+  Wallets and Connections pages. A details list draws its rules between rows
+  only, so Profile no longer has a second rule under its heading. Checked
+  headless at desktop and phone width, light and dark.
