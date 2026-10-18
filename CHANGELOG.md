@@ -2577,3 +2577,19 @@ Operations
   signed-in claim is revoked on the server), and a guest's posting allowance belongs
   to the network address, not to the browser, so nothing of the signed-in person
   survives. No change was needed.
+
+## 2026-10-18 — The two cube labs: "Visit" stays on one line, the code cube's faces in mono
+
+- /animations/cube: where the six worlds show as a grid of cards (before the cube
+  draws, or where it can't), each card's button now says "Visit" alone under the
+  world's name, as on a phone. Between 48rem and 64rem "Visit Autolaunch" broke onto
+  two lines inside the button. The single card shown beside the drawn cube still
+  says "Visit Autolaunch".
+- /animations/twin-cube: the six face buttons now show in the mono font their code
+  screens were drawn with. The design system's base and the template's both give a
+  button the font of what holds it, unlayered, so the font a component set on the
+  button itself never applied, and the template's own "controls use the interface
+  font" rule then forced the interface font on top. The cube now sets its font on
+  the list that holds the buttons, and that template rule is gone: everywhere else
+  it only repeated the font the controls already took from the page. Every other button, link and field on 18
+  pages, at phone and desktop width, kept exactly the font it had.
