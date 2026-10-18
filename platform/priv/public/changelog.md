@@ -2,6 +2,16 @@
 
 What changed in Ash Template lately, newest first.
 
+## 18 October 2026
+
+- **Account in a clearer order.** Your account and your agents come first, across
+  the page. Below them, Credits and your profile sit side by side on a wide screen,
+  and one above the other on a phone.
+- **A clearer Pair New Agent.** Before you choose, the box says "Choose type of agent
+  below to get pairing message." Each agent's picture has a single frame and stays
+  readable in dark mode, the buttons beside the message never cover it, and the
+  section is more compact.
+
 ## 16 October 2026
 
 - **A page for each agent.** The new Agents page lists the ten agents you can pair,

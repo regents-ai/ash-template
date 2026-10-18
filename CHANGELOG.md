@@ -2556,3 +2556,24 @@ Operations
   any of them could act as this agent; keep only Bots you trust on that account."
 - Dots' "Settings, Personalization, Custom rules" path matches OpenAI's own Dots help
   page (learn.chatgpt.com/docs/dots/controls), so it stays.
+
+## 2026-10-18 — Account panels in a sensible order; a cleaner Pair New Agent
+
+- /account: the account card and Your agents run the full width at the top. Below
+  them, on a wide page, Credits sits in the left column and Profile in the right, and
+  each column stacks its own panels, so a tall panel never leaves a gap beside a short
+  one. A narrow page shows one column in that same order. The page is a size
+  container and the columns start at 46rem of its width, as on regents.sh (Sean, 17
+  Oct: "the ordering of the containers on the account site is very bad").
+- Pair New Agent in the side panel (design-system 347a370; Sean, 18 Oct): before an
+  agent is chosen the box reads "Choose type of agent below to get pairing message.";
+  each picture has one frame, and every agent picture sits on white in both themes,
+  so NVIDIA's lettering reads in dark mode; the copy, new-code and help icons have
+  their own column beside the message; the pictures follow the box more closely,
+  "The code works once, until …" moves under them, and a picture's name on hover
+  never covers that line.
+- Sign-out was checked against Sean's ruling that it must start the browser fresh:
+  it already throws the whole session away (the browser's cookie is cleared, and the
+  signed-in claim is revoked on the server), and a guest's posting allowance belongs
+  to the network address, not to the browser, so nothing of the signed-in person
+  survives. No change was needed.

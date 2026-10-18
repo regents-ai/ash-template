@@ -50,34 +50,38 @@ defmodule AshTemplateWeb.AccountLive do
           </div>
         </section>
 
-        <section class="account-panel account-details" aria-labelledby="account-details-title">
-          <h2 id="account-details-title">Profile</h2>
-          <dl>
-            <div>
-              <dt>Display name</dt>
-              <dd>{@account.display_name || "Not set"}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <Regent.Account.credits_summary
-          :if={@account}
-          id="account-credits"
-          available={
-            @credits_read.value && RegentCredits.Amount.format(@credits_read.value.available)
-          }
-          held={@credits_read.value && RegentCredits.Amount.format(@credits_read.value.held)}
-          state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
-        >
-          <a href="https://regents.sh/account">Manage Credits on regents.sh</a>
-        </Regent.Account.credits_summary>
-
         <.live_component
           module={AshTemplateWeb.AgentsPanel}
           id="account-agents"
           lease={@lease}
           account={@account}
         />
+
+        <div class="account-column">
+          <Regent.Account.credits_summary
+            :if={@account}
+            id="account-credits"
+            available={
+              @credits_read.value && RegentCredits.Amount.format(@credits_read.value.available)
+            }
+            held={@credits_read.value && RegentCredits.Amount.format(@credits_read.value.held)}
+            state={if @credits_read.state in [:idle, :empty], do: :loading, else: @credits_read.state}
+          >
+            <a href="https://regents.sh/account">Manage Credits on regents.sh</a>
+          </Regent.Account.credits_summary>
+        </div>
+
+        <div class="account-column">
+          <section class="account-panel account-details" aria-labelledby="account-details-title">
+            <h2 id="account-details-title">Profile</h2>
+            <dl>
+              <div>
+                <dt>Display name</dt>
+                <dd>{@account.display_name || "Not set"}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
       </div>
     </.settings_page>
     """
