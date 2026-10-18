@@ -267,6 +267,10 @@ npm run typecheck
 npm test
 ```
 
+`make check-browser` runs the browser walk (`npm run test:browser`), and `make
+check` runs it too. Start it with the site's settings loaded, as the server
+needs them.
+
 `make check` also runs the required-fixes check (see
 [Shared dependencies](#shared-dependencies)) and the command description check
 (see [cli/README.md](../cli/README.md)).
@@ -275,9 +279,9 @@ npm test
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
 compile-connected `xref` graph under its limit, and verifies the Ash codegen
 and route handoff are current. `npm run typecheck` type-checks the TypeScript
-assets. The template keeps a few automated tests, each for a costly failure a
-browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
-2026-10-12):
+assets, the browser walk's included. Every change proves itself (Sean, 18 Oct
+2026); [docs/feature-map.md](../docs/feature-map.md) lists what a person or agent
+can do and the check that proves it. Among them:
 
 - `mix test` signs a person in and back in, because sign-in once failed for three
   days unnoticed, and walks a new person from an email sign-in without a wallet,
@@ -292,9 +296,16 @@ browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
   database.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
+- A property test checks that each account shows the name its person set for this
+  site, never one set on another site.
+- The browser walk (`test/browser`) opens every page and document at 390 and 1280
+  wide in headless Chromium, signed out and signed in, and pairs an agent the way a
+  person does. It starts its own server on port 4098 and its own database,
+  `ash_template_browser_dev`, and signs in a local person first. Every page it opens
+  is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
+  that is not.
 
-`mix test` first brings the local `ash_template_test` database up to date. Check
-every other change in a browser against the development server.
+`mix test` first brings the local `ash_template_test` database up to date.
 
 ## Deployment
 

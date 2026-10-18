@@ -92,7 +92,9 @@ defmodule AshTemplate.MixProject do
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
-      {:sobelow, "~> 0.16", only: :dev, runtime: false}
+      {:sobelow, "~> 0.16", only: :dev, runtime: false},
+      # Property tests. Ash already ships it in every environment, so it cannot be test-only.
+      {:stream_data, "~> 1.4"}
     ]
     |> local_shared_dependencies()
   end

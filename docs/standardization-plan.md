@@ -77,7 +77,8 @@ and for 10 "0x1234..abcd, first four and last four"). Written 2026-09-26.
   6. The five 2026-09-22 template branches are closed (kept in the workspace archive
      `artifacts/ash-template-closed-branches-2026-09-27/`).
   7. The template's `--ash-*` colour aliases are gone; it uses the design system's names.
-  8. The template has no automated tests.
+  8. The template has no automated tests. Superseded 18 Oct 2026: every change proves
+     itself (the Checks row below).
   9. Autolaunch's leftover launch countdown is removed.
   10. v0.1.0 is for Regent's own sites first; a public launch comes later.
   11. No WebMCP example tool in v0.1.0. Superseded 2026-09-28 by founder "1 b" (below).
@@ -119,7 +120,7 @@ Rules for every stage:
 | Footer | One footer on the home page and every public page (`Layouts.product_links/1`, `regent-footer`): X and GitHub, the theme switch off the home page, Buy $REGENT, About, Developer docs, Agent guide (the browser's popover with `/agents.md` and `/llms.txt`), Contact, then Privacy policy and Terms of use together after a hairline (their own line on a phone), "© 2026 Regents Labs". The body is a column at least a screen tall and the page grows to meet the footer, so a short page's footer sits at the bottom of the screen |
 | Connected apps | The OAuth consent page (`RegentOAuth`) asks in the site's own plain words: `permission_description` (the template's: "watch updates for your account on this site") and an optional `consent_note` saying what the connection cannot do; the button reads "Allow connection" |
 | Server | Ash resources behind code interfaces, health and metrics endpoints, `mix precommit` with Credo, Sobelow, xref, format and codegen checks |
-| Tests | A small named set that each protects a stated rule, plus browser checks of real flows |
+| Checks | Every change proves itself (Sean, 18 Oct 2026; `regent-workflow`). `make check` runs everything, including the browser walk (`make check-browser`: headless Chromium at 390 and 1280, every page signed out and in, the paths a person takes). `docs/feature-map.md` lists what a person or agent can do, the check that proves it, and the gaps. Property tests where a rule must hold for every input; a lasting check for every real failure; a separate review that tries to break each change before Sentinel's read. Test code stays out of site code |
 | Skills | `skills/` in the template, linked into the workspace; the ten build skills are published at template.regents.sh (`/skills`, `/skill.md`, `/.well-known/agent-skills/index.json`) |
 | Showcase | One setting, `ASH_TEMPLATE_SHOWCASE`: `local` in development, `public` only on template.regents.sh, `off` on every site's production |
 

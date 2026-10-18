@@ -5,7 +5,8 @@
   "scripts": {
     "assets:build": "mix assets.build",
     "test": "vitest run",
-    "typecheck": "tsc --project assets/tsconfig.json --noEmit"
+    "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@privy-io/react-auth": "3.49.1",
@@ -20,6 +21,7 @@
     "viem": "2.57.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@webgpu/types": "0.1.74",

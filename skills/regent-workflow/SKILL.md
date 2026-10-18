@@ -77,30 +77,45 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 
-## Product acceptance before test maintenance
+## Every change proves itself (founder rule, 18 Oct 2026)
 
-Do not spend substantial time maintaining implementation-level tests before
-establishing that the website works the way the founder wants. A large passing
-suite is not evidence of an accepted product or working user journeys.
+Sean, 18 Oct 2026 22:35Z, verbatim in part: "Give your agent a way to verify its
+work." and "Delegate the code checking work to your automated tests, scale your
+approvals based on risk, and turn your test failures into living evaluations." This
+replaces the earlier rule that each new test needed his agreement first.
 
-- Prioritize a usable website and the founder's manual functional review. Do not
-  make rebuilding, expanding or repairing the broad test suite a prerequisite to
-  that review. Report actual behavior and gaps, not test counts as a readiness claim.
-- Do not add tests that mirror product-level functionality, smoke tests, or tests
-  that merely preserve internal callbacks, mock choreography or component structure.
-  Do not invent an automation backlog during implementation or review.
-- Keep automated coverage deliberately small and justified by specific costly
-  failures that manual review is unlikely to catch. Each retained test must name
-  the invariant it protects; an auth/wallet/security filename is not justification
-  for retaining a whole file or suite. Keep compilation and typechecking separate
-  from the behavioral-test budget.
-- When reducing a suite, use an explicit named allowlist and the founder's agreed
-  budget. Preserve an archive of dirty/untracked tests before removing them from
-  normal discovery. Do not hide the old suite behind default hooks or replace it
-  with equally large generated or parameterized coverage.
-- Add new automated behavioral coverage only when agreed with the founder for a
-  specific accepted requirement or concrete regression. Technical testing recipes
-  in task skills apply within that scope; they do not authorize expanding it.
+The founder judges product intent, risk and evidence; automated checks do the code
+checking. A large passing suite is still not a readiness claim on its own: report
+what a person or agent can now do, the checks that prove it, and what is not proven.
+
+- **Fast, repeatable checks in `make check`.** Warnings as errors, format, Credo,
+  the test suite, typechecks and the browser walk all run from the repository's one
+  `make check` (and `mix precommit`). No check lives only in a person's head or a
+  scratch script.
+- **The browser walk.** Headless Chromium at 390 and 1280 wide opens every page
+  signed out and signed in, and walks the paths a person takes on each changed page.
+  It starts its own server on its own database and signs in its own local person.
+  WebKit is not run on the Mac; say so in every report.
+- **A feature map** (`docs/feature-map.md` in the site's repository): each thing a
+  person or agent can do, the check that proves it, and the gaps listed as gaps. A
+  change to a feature updates its row in the same commit. A check fails when a page
+  is added without being walked.
+- **Property tests** (StreamData) where a rule must hold for every input: money,
+  limits, ownership, names and ordering. Never for copy.
+- **An adversarial review before Sentinel.** For ordinary code, a separate helper
+  agent tries to break the change: real pages at both widths, edge cases, and the
+  elixir-stack design check. Confirmed findings are fixed before Sentinel's read.
+- **Every real failure becomes a lasting check.** A bug found by the walk, the review,
+  Sentinel or a person gets a check that fails on the old code (run it against the
+  old code once to see it fail) and passes on the fix.
+- **Tests come after the feature works,** and test real behaviour: no tests of exact
+  wording, source names, component structure or mock choreography. Test code stays
+  out of site code.
+- **Approvals by risk.** Copy, CSS and docs ship on the evidence. Ordinary code ships
+  on the evidence plus the adversarial review. Protected work (billing, sign-in,
+  contracts, wallets, production data) also needs Sean's letter.
+- **Evidence with every Sentinel request:** what behaviour changed; the commands that
+  prove it, with their results; what was not proven.
 
 ## The golden baseline is ash-template (founder rule, 13 Oct 2026)
 
@@ -208,9 +223,8 @@ cancelled work.
    before any correctness check: code that rebuilds Oban, Ecto, Phoenix, OTP or Ash is
    reported as a replacement, not repaired in place.
    The implementing agent reviews the change against acceptance, resolves integration
-   issues, and runs scoped checks on the integrated result within the testing policy above.
-   Exercise real or representative user flows; compilation alone does not prove an
-   interaction. Fix product failures without expanding into broad test maintenance.
+   issues, and runs `make check` on the integrated result. Exercise real or
+   representative user flows; compilation alone does not prove an interaction.
    Use independent security review when protected behavior needs it.
 5. Return when the requested feature works, a named missing input blocks correctness,
    or the next consequential action needs authority. Explain what changed, what was
@@ -238,7 +252,9 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
    commit, candidate commit, release number, migrations (yes or no), protected area
    (yes or no), and who receives the verdict.
 4. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
-   task.
+   task. The public changelog says only what changed for people and agents: no release
+   numbers, commits or rollback notes. Those go in a release record the site does not
+   show (the template's root `CHANGELOG.md`).
 5. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
    or route, old shape, new shape, defining commit, live commit.
 6. **Holds.** A hold names who lifts it and what the release check looks for.

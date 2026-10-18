@@ -2612,3 +2612,31 @@ Operations
   Wallets and Connections pages. A details list draws its rules between rows
   only, so Profile no longer has a second rule under its heading. Checked
   headless at desktop and phone width, light and dark.
+
+## 2026-10-18 — Every change proves itself
+
+- Sean, 18 Oct 22:35Z: "Give your agent a way to verify its work." `make check` now
+  runs a browser walk (`make check-browser`, `platform/test/browser`): headless
+  Chromium at 390 and 1280 wide opens every page signed out and signed in and every
+  document, then pairs an agent the way a person does. It starts its own server on
+  its own database (`ash_template_browser_dev`, port 4098) and signs in a local
+  person first (`platform/test/browser/support/sign_in.exs`). WebKit is not run on
+  the Mac.
+- `platform/test/ash_template_web/feature_map_test.exs` fails when the router serves
+  a page or document the walk does not open, or the walk names one the router has
+  dropped, and when an agent in the side panel has no guide page or skill in it.
+- `docs/feature-map.md` lists what a person or agent can do, the check that proves
+  it, and the gaps.
+- A property test (StreamData) checks that each account shows the name its person
+  set for this site's Privy app, never one set for another app, in the order asked.
+  `stream_data` is now named in `platform/mix.exs`; Ash already shipped it.
+- Fixed: the Account page's two columns also split the Credits history page, whose
+  one panel filled half the width. The two columns now belong to the Account page
+  alone (`.account-layout`); Notes, Points and Credits history keep the shared grid.
+  `platform/test/browser/layout.spec.ts` checks it and failed on the old rule. Found
+  by the separate review of this release. The 18 Oct heading size applies to every
+  page with account panels (Notes, Rooms, Chat, Activity, Points, Credits history),
+  not only the three named in the entry before.
+- `regent-workflow` carries the rule for every lane ("Every change proves itself"),
+  replacing the rule that each new test needed Sean's agreement; the site standard
+  (`docs/standardization-plan.md`) has the matching Checks row.

@@ -30,7 +30,7 @@ defmodule AshTemplateWeb.AccountLive do
       signed_out_reason={@signed_out_reason}
     >
       <:tip>Your profile, your Credits and your agents.</:tip>
-      <div class="account-grid">
+      <div class="account-layout">
         <section id="account-identity" class="account-identity" aria-label="Your account">
           <p class="account-kicker">Your account</p>
           <div class="account-identity__who">
@@ -59,7 +59,6 @@ defmodule AshTemplateWeb.AccountLive do
 
         <div class="account-column">
           <Regent.Account.credits_summary
-            :if={@account}
             id="account-credits"
             available={
               @credits_read.value && RegentCredits.Amount.format(@credits_read.value.available)

@@ -81,3 +81,7 @@ Thumbs.db
 /priv/static/images/regent-ui/
 
 /assets/vendor/regent_agent_access/
+
+# The browser walk's signed-in person and its failure traces.
+/test/browser/.auth/
+/test-results/
