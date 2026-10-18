@@ -298,6 +298,9 @@ can do and the check that proves it. Among them:
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this
   site, never one set on another site.
+- It saves a Public Display Name with Privy-signed test proof, the way the Account
+  page does, and checks the name then shows on that page; a forged proof changes
+  nothing.
 - The browser walk (`test/browser`) opens every page and document at 390 and 1280
   wide in headless Chromium, signed out and signed in, and pairs an agent the way a
   person does. It starts its own server on port 4098 and its own database,

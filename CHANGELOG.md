@@ -2640,3 +2640,25 @@ Operations
 - `regent-workflow` carries the rule for every lane ("Every change proves itself"),
   replacing the rule that each new test needed Sean's agreement; the site standard
   (`docs/standardization-plan.md`) has the matching Checks row.
+
+## 2026-10-18 — Public Display Name on the Account page
+
+- Sean, 18 Oct 22:36Z: "1. yes, in account 'Public Display Name'". The Account
+  page's Profile section is now one field, **Public Display Name**, with Save. It
+  saves to the shared Regents profile (`/api/v1/profile`) from the browser with the
+  person's own Privy proof; nothing on the server writes the name without it. The
+  first save makes the profile from the sign-in. After a save, the name at the top
+  of the page and in the shell updates.
+- The form is design-system `Regent.Profile.panel` and `mountProfile` (pin
+  `23c76287`, branch `tpl/ds-public-name-1018`). It no longer offers sign-in, a
+  wallet choice, Connect X or account details: wallets and connections have their
+  own Account tabs. The form takes its spacing from the Account panel around it.
+- The page's Privy bridge hands the save its proof (`privy_bridge.tsx`,
+  `auth_lazy.ts`, the `PublicName` hook); the shell refreshes the account after a
+  save (`public_name_saved`).
+- Checks: `platform/test/ash_template_web/public_name_test.exs` saves a name with
+  Privy-signed test tokens and reads it back on `/account`, and a forged token is
+  refused; `platform/assets/test/public_name.test.ts` covers a first save, a later
+  save, a refused sign-in and an unknown outcome; `platform/test/browser/public_name.spec.ts`
+  presses Save at 390 and 1280 wide without the browser's sign-in and checks it
+  refuses, sends no change and moves nothing. `docs/feature-map.md` lists them.

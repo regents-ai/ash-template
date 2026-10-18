@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 18 October 2026
 
+- **Your Public Display Name.** Set it on your Account page and press Save. It is
+  the name people see for you on every Regent site, and the name at the top of
+  your Account page.
 - **Account in a clearer order.** Your account and your agents come first, across
   the page. Below them, Credits and your profile sit side by side on a wide screen,
   and one above the other on a phone.

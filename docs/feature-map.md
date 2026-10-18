@@ -27,6 +27,9 @@ headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac.
 | Sign in, and sign in again with a wallet added; sign in with email and keep one account | `platform/test/ash_template/accounts/verified_session_test.exs` |
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
 | Each account shows the name its person set for this site, never one set on another site, in the order asked | `platform/test/ash_template/accounts/display_name_test.exs` (property test) |
+| A name saved on the Account page with the person's own sign-in shows there, in the form and as the account's name; a forged sign-in changes nothing | `platform/test/ash_template_web/public_name_test.exs` |
+| Save makes the person's profile on their first save, saves only to the profile it read, and says when it did not save | `platform/assets/test/public_name.test.ts` |
+| Save on the Account page without the browser's sign-in refuses, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code, and each choice a new code | same |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
@@ -42,7 +45,8 @@ headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac.
 
 ## Gaps
 
-- Setting a display name: no form or agent tool sets it yet, so nothing proves it.
+- Saving a name in a real browser: the walk's address has no Privy sign-in, so the
+  walk proves the refusal and the server check proves the save.
 - Writing, pinning and deleting a note; posting in a room; sending a chat message:
   the walk opens these pages but does not use them.
 - Connecting X on Connections, copying a wallet, the search dialog and the theme

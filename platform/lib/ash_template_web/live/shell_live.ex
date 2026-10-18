@@ -129,6 +129,11 @@ defmodule AshTemplateWeb.ShellLive do
      |> read_verified_connections()}
   end
 
+  # The Account page saved the person's name in the shared profile. Every event
+  # reads the account again first (`AshTemplateWeb.Live.Session`), so the page
+  # already shows the new name everywhere it appears.
+  def handle_event("public_name_saved", _params, socket), do: {:noreply, socket}
+
   def handle_event("mark_all_read", _params, socket) do
     failed? =
       case human_actor(socket) do

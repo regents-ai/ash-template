@@ -1,3 +1,4 @@
+import {loadProfileAction, type ProfileAction} from "../vendor/regent_identity/profile_client.mjs"
 import {disconnectEveryEthereumWallet, invalidateWalletWork, rememberWalletDisconnected,
   walletDisconnected, walletDisconnectedStorageKey} from "./wallet_actions/connected_wallet"
 
@@ -50,6 +51,7 @@ export type PrivyBridgeHandle = {
   dispose?: () => void
   request: (request: AccountRequest) => Promise<void>
   identity?: (request: IdentityRequest) => Promise<void>
+  profile?: ProfileAction
   finishSignOutOnly?: () => void
 }
 
@@ -871,6 +873,16 @@ export function createLazyAuthLoader(
       if (handle) return deliverPending()
       return preparing ?? prepare()
     },
+    // The page's one bridge answers, started here when nothing has started it.
+    profile(...args: Parameters<ProfileAction>): ReturnType<ProfileAction> {
+      return loadProfileAction(async () => {
+        assertActive()
+        if (state !== "ordinary") throw new Error("Provider sign out is still in progress.")
+        if (!handle) await (preparing ?? prepare())
+        if (!handle?.profile) throw new Error("Privy profile bridge is not ready")
+        return handle.profile
+      }, ...args)
+    },
     finishHandoff(): void {
       if (state !== "handoff-preterminal") return
       state = "handoff-terminal"
@@ -878,6 +890,15 @@ export function createLazyAuthLoader(
       handle?.finishSignOutOnly?.()
     },
   }
+}
+
+// The Account page's name form saves through the page's own sign-in loader.
+const profileActions = new WeakMap<Document, ProfileAction>()
+
+export function profileAction(documentRoot: Document = document): ProfileAction {
+  const action = profileActions.get(documentRoot)
+  if (!action) throw new Error("The account loader is not installed")
+  return action
 }
 
 export function installAccountAuthLazyLoader(
@@ -903,6 +924,8 @@ export function installAccountAuthLazyLoader(
     importBridge,
     consumedHandoff ? {mode: "sign-out-only"} : {},
   )
+  // Read at each save, since a retried sign-in replaces the loader.
+  profileActions.set(documentRoot, (...args) => loader.profile(...args))
   const clearStatus = () => {
     const status = documentRoot.querySelector<HTMLElement>("#account-auth-status")
     if (!status) return
@@ -1096,6 +1119,7 @@ export function installAccountAuthLazyLoader(
   }
   return () => {
     installed = false
+    profileActions.delete(documentRoot)
     loader.dispose()
 
     walletEvents.removeEventListener("storage", onWalletStorage)

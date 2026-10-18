@@ -71,15 +71,14 @@ defmodule AshTemplateWeb.AccountLive do
         </div>
 
         <div class="account-column">
-          <section class="account-panel account-details" aria-labelledby="account-details-title">
-            <h2 id="account-details-title">Profile</h2>
-            <dl>
-              <div>
-                <dt>Display name</dt>
-                <dd>{@account.display_name || "Not set"}</dd>
-              </div>
-            </dl>
-          </section>
+          <%!-- The name is saved from the browser with the sign-in's own proof. --%>
+          <div id="account-profile" phx-hook="PublicName" phx-update="ignore">
+            <Regent.Profile.panel
+              id="account-public-name"
+              class="account-panel"
+              display_name={@account.display_name}
+            />
+          </div>
         </div>
       </div>
     </.settings_page>
