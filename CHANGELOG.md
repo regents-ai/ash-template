@@ -2507,6 +2507,15 @@ Operations
   every head, main stays production and nothing ships from a branch. The "No feature
   branches" rule names it as its one exception.
 
+## 2026-10-18 — Workflow guide: verification standard
+
+- `skills/regent-workflow/SKILL.md` adds a "Verification" section from Sean's 18 Oct
+  direction. It points every agent to the shared standard in
+  `control/verification/standard.md` and names its rules: a `verification/features.yml`
+  feature map in each repo, a breaker agent's finding counts only with a failing test,
+  every bug becomes a permanent regression test, each release candidate carries an
+  evidence summary, and protected work waits for Sean's go by letter.
+
 ## 2026-10-16 — A page for each agent; /agents replaces /start
 
 - `/agents` lists the ten agents the side panel offers, after three steps to pair one.

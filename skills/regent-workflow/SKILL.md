@@ -238,6 +238,21 @@ cancelled work.
    Confirmation before a protected change, payment, signature or destructive action is
    unchanged.
 
+## Verification (founder, 18 Oct 2026)
+
+Sean, 18 Oct: "Give your agent a way to verify its work." Every agent proves its own
+change; Sean judges product intent, risk and evidence, not code. The standard is
+`/Users/sean/Documents/regent/control/verification/standard.md`; read it before
+building checks, and follow it rather than this summary where they differ.
+
+- Each repo keeps `verification/features.yml` at its root: every action, the code that
+  serves it, its risk level and the checks that prove it, with gaps listed as gaps.
+- A breaker agent's finding counts only when it comes with a failing test.
+- Every bug becomes a permanent regression test, listed in the feature map.
+- Each release candidate carries an evidence summary: what changed, the commands that
+  prove it with their output, and what was not proven.
+- Protected work waits for Sean's go by letter.
+
 ## Release checklist
 
 Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
