@@ -214,7 +214,11 @@ defmodule AshTemplateWeb.NotesLive do
               <h3>{note.title}</h3>
               <p :if={note.body}>{note.body}</p>
               <p :if={note.changed_by_agent} class="rg-muted">
-                Saved by your agent {RegentFormat.short_address(note.changed_by_agent.wallet_address)}
+                Saved by your agent
+                <Primitives.address
+                  id={"#{dom_id}-agent"}
+                  address={note.changed_by_agent.wallet_address}
+                />
               </p>
               <.label decision={note.label_decision} target={@myself} />
               <div class="notes-item__actions">

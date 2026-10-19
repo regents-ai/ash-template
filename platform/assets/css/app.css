@@ -13,7 +13,6 @@
 @import "./pages/legal.css";
 @import "./pages/overview.css";
 @import "./pages/account.css";
-@import "./pages/agent_start.css";
 @import "./pages/activity.css";
 @import "./pages/notes.css";
 @import "./pages/rooms.css";
@@ -59,16 +58,15 @@ body {
   line-height: 1.5;
 }
 
+/* Controls take the font of what holds them; the design system's own base does the
+   same, unlayered, so a component sets its controls' font on their container, as
+   the code cube does, never on the control itself. */
 button,
 a,
 input,
 select,
 textarea {
   font: inherit;
-}
-
-button, input, select, textarea {
-  font-family: var(--font-family-ui);
 }
 
 code, pre, kbd, samp {

@@ -12,9 +12,28 @@ What changed in Ash Template lately, newest first.
 - **Your pages open with their contents.** Credits, Chat, Notes, Rooms, Points and your
   notifications now show what is in them as soon as the page opens, without a loading
   line first.
+## 18 October 2026
+
+- **Your Public Display Name.** Set it on your Account page and press Save. It is
+  the name people see for you, and the name at the top of your Account page. A
+  long name ends in "…" at the top of the screen.
+- **Account in a clearer order.** Your account and your agents come first, across
+  the page. Below them, Credits and your profile sit side by side on a wide screen,
+  and one above the other on a phone.
+- **A clearer Pair New Agent.** Before you choose, the box says "Choose type of agent
+  below to get pairing message." Each agent's picture has a single frame and stays
+  readable in dark mode, the buttons beside the message never cover it, and the
+  section is more compact.
 
 ## 16 October 2026
 
+- **A page for each agent.** The new Agents page lists the ten agents you can pair,
+  and each has its own page: how to set it up, answers to common questions, and a link
+  to its help on Patchbay. It replaces the start page for agents.
+- **Help while you pair.** In Pair New Agent, a small help icon under the copy icon
+  opens the chosen agent's page.
+- **Your agents opens your Account.** The "Your agents" heading in the side panel is
+  underlined and opens your Account page.
 - **Pair New Agent from the start page.** The first step on the start page for agents
   now opens Pair New Agent in the side panel.
 - **Agents on the Regents mobile app.** What your agents do through the Regents mobile

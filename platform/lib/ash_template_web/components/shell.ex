@@ -330,7 +330,7 @@ defmodule AshTemplateWeb.Components.Shell do
         id="shell-search"
         class="shell-search"
         aria-label="Search"
-        phx-mounted={JS.ignore_attributes(["open"])}
+        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
       >
         <form id="shell-search-form" role="search" phx-change="search" phx-submit="search">
           <.icon name={:search} class="shell-icon shell-search__glass" />
@@ -413,7 +413,7 @@ defmodule AshTemplateWeb.Components.Shell do
         id="shell-credits"
         class="shell-credits-dialog"
         aria-label="Buy Credits"
-        phx-mounted={JS.ignore_attributes(["open"])}
+        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
       >
         <Regent.Primitives.button
           variant="quiet"

@@ -4,16 +4,16 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "72ccfea10551436a9b7aaad29d3ec6b5462d423f"
+  @elixir_utils_ref "f8f36fd12f4f45151835e75a81ebabedeb4d43a1"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "54500eb1a8c66313cecd078f7593ace95e231bc7"
+  @design_system_ref "fb26ac3a783eee4e85321ff3a48d69c42261f0b9"
 
   def project do
     [
       app: :ash_template,
       version: "0.1.0",
       elixir: "~> 1.15",
-      elixirc_paths: ["lib"],
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: false,
       aliases: aliases(),
       deps: deps(),
@@ -22,6 +22,11 @@ defmodule AshTemplate.MixProject do
       usage_rules: usage_rules()
     ]
   end
+
+  # The browser walk's server runs in development, with its guard against the
+  # outside world (`AshTemplate.WalkOffline`).
+  defp elixirc_paths(:dev), do: ["lib", "test/browser/support/server"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   def application do
     [
@@ -58,7 +63,9 @@ defmodule AshTemplate.MixProject do
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/agents", override: true},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
-      {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
+      # regent_identity and regent_agents name regent_format by path; this pin replaces it.
+      {:regent_format,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format", override: true},
       # regent_credits names regent_chain by a sibling path; this pin replaces it.
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},
@@ -92,7 +99,9 @@ defmodule AshTemplate.MixProject do
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
-      {:sobelow, "~> 0.16", only: :dev, runtime: false}
+      {:sobelow, "~> 0.16", only: :dev, runtime: false},
+      # Property tests. Ash already ships it in every environment, so it cannot be test-only.
+      {:stream_data, "~> 1.4"}
     ]
     |> local_shared_dependencies()
   end

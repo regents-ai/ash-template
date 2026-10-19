@@ -304,6 +304,14 @@
   min-width: 0;
 }
 
+/* A long name ends in an ellipsis on one line; Account shows it in full. */
+.account-chip .account-name {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Account and balance controls share the icon buttons' height, not the whole header. */
 #shell-header > .account-control {
   align-self: center;

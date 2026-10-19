@@ -202,6 +202,7 @@ defmodule AshTemplateWeb.Router do
     get "/llms.txt", PublicPagesController, :llms
     get "/agents.md", PublicPagesController, :agents
     get "/skill.md", PublicPagesController, :skill_guide
+    get "/agents/:agent/skill.md", PublicPagesController, :agent_skill_guide
     get "/capabilities.json", PublicPagesController, :capabilities
     get "/.well-known/security.txt", PublicPagesController, :security
     get "/.well-known/api-catalog", PublicPagesController, :api_catalog
@@ -225,6 +226,8 @@ defmodule AshTemplateWeb.Router do
     get "/about", PublicPagesController, :show
     get "/contact", PublicPagesController, :show
     get "/changelog", PublicPagesController, :show
+    get "/agents", PublicPagesController, :show
+    get "/agents/:agent", PublicPagesController, :show
   end
 
   scope "/api/v1" do
@@ -303,11 +306,6 @@ defmodule AshTemplateWeb.Router do
       live "/account/credits", ShellLive, :credits
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
-    end
-
-    # Open while the site is closed (AshTemplateWeb.Plugs.LaunchGate lets GET /start through).
-    live_session :agent_start, session: {Session, :render_context, []} do
-      live "/start", AgentStartLive, :show
     end
   end
 

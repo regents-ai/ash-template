@@ -407,7 +407,9 @@
     grid-area: auto;
   }
 
-  .world-cube__visit-name {
+  /* The single drawn card has room for "Visit Autolaunch"; the grid of six cards
+     keeps "Visit" alone, under the name each card already shows, so it never wraps. */
+  .world-cube[data-world-ready="true"] .world-cube__visit-name {
     position: static;
     width: auto;
     height: auto;

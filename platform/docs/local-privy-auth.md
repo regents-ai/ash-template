@@ -3,7 +3,6 @@
 This flow uses only a loopback PostgreSQL database named `ash_template_dev`. Database startup stays off unless explicitly enabled.
 
 ```sh
-createdb ash_template_dev
 cp .env.example .env
 touch .env.local
 printf '%s\n' 'source_env .env' 'source_env_if_exists .env.local' > .envrc
@@ -33,6 +32,7 @@ Review the files, then load them and start the app:
 
 ```sh
 direnv allow
+mix ecto.create
 mix ash_template.setup_local_auth
 mix phx.server
 ```

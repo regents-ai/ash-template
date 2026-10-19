@@ -76,11 +76,11 @@ Run these from `platform/`. You need
 Erlang, Elixir, Node and PostgreSQL at the versions pinned in `.tool-versions`.
 
 ```sh
-createdb ash_template_dev
 cp .env.example .env
 touch .env.local
 printf '%s\n' 'source_env .env' 'source_env_if_exists .env.local' > .envrc
 mix setup
+mix ecto.create
 # Put the Privy values in .env.local first (docs/local-privy-auth.md).
 direnv allow
 mix ash_template.setup_local_auth
@@ -156,6 +156,8 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/auth/csrf`, `/auth/session`, `/auth/privy/session`, `/auth/privy/failure` | GET, POST, DELETE | Browser session start, read and end. |
 | `/openapi.json`, `/llms.txt`, `/sitemap.xml`, `/robots.txt` | GET | Discovery documents. |
 | `/`, `/docs`, `/about`, `/contact`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
+| `/agents`, `/agents/<agent>` | GET | The agents people pair and a page for each, from `priv/public/agents/`; `Accept: text/markdown` returns Markdown. Open while the site is closed. |
+| `/agents/<agent>/skill.md` | GET | That agent's skill: the agent guide with its set-up notes. |
 | `/app`, `/account` | GET | The signed-in shell. |
 
 ## Showcase
@@ -267,6 +269,10 @@ npm run typecheck
 npm test
 ```
 
+`make check-browser` runs the browser walk (`npm run test:browser`), and `make
+check` runs it too. Start it with the site's settings loaded, as the server
+needs them.
+
 `make check` also runs the required-fixes check (see
 [Shared dependencies](#shared-dependencies)) and the command description check
 (see [cli/README.md](../cli/README.md)).
@@ -275,9 +281,9 @@ npm test
 locks, reports packages with security advisories, checks formatting, runs Credo in strict mode and Sobelow, holds the
 compile-connected `xref` graph under its limit, and verifies the Ash codegen
 and route handoff are current. `npm run typecheck` type-checks the TypeScript
-assets. The template keeps a few automated tests, each for a costly failure a
-browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
-2026-10-12):
+assets, the browser walk's included. Every change proves itself (Sean, 18 Oct
+2026); [docs/feature-map.md](../docs/feature-map.md) lists what a person or agent
+can do and the check that proves it. Among them:
 
 - `mix test` signs a person in and back in, because sign-in once failed for three
   days unnoticed, and walks a new person from an email sign-in without a wallet,
@@ -292,10 +298,25 @@ browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
   database.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
+- A property test checks that each account shows the name its person set for this
+  site, never one set on another site.
+- It saves a Public Display Name with Privy-signed test proof, the way the Account
+  page does, and checks the name then shows on that page; a forged proof changes
+  nothing.
+- The browser walk (`test/browser`) opens every page and document in headless
+  Chromium as a desktop 1280 wide and as a touch phone 390 wide, signed out and signed
+  in, checks every address on each page shows its copy icon, gets a pairing code the
+  way a person does, opens a paired agent's window and renames the agent, and opens and
+  copies the wallets a wallet note names.
+  It builds the pages' scripts and styles, starts its own server on a free port and a
+  database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
+  end whatever happens, even when its server never starts (`test/browser/walk.sh`),
+  and signs in a local person with three agents first. Every page it opens
+  is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
+  that is not.
 
-`mix test` first creates the local `ash_template_test` database when it is missing,
-then brings it up to date, so a fresh copy passes its first `make check`. Check
-every other change in a browser against the development server.
+`mix test` first creates the local `ash_template_test` database when it is missing
+and brings it up to date, so a fresh copy needs only `mix setup` before `make check`.
 
 ## Deployment
 

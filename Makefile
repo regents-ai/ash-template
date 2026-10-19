@@ -1,13 +1,17 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-required-fixes check-cli check-contracts check-dependency-parity release drift readiness
+.PHONY: help check check-platform check-browser check-required-fixes check-cli check-contracts check-dependency-parity release drift readiness
 help:
-	@echo "Run make check for every gate, or check-platform, check-required-fixes, check-cli or check-contracts for one component."
+	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make readiness."
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
-check: check-platform check-required-fixes check-cli check-contracts
+check: check-platform check-browser check-required-fixes check-cli check-contracts
 check-platform:
-	cd platform && mix precommit && mix test && mix regent_agent_access.assets && npm run typecheck && npm test
+	cd platform && mix precommit && mix test && mix do regent_ui.assets + regent_identity.assets + regent_agent_access.assets && npm run typecheck && npm test
+# The browser walk (platform/test/browser): every page at phone and desktop width,
+# and the paths a person takes. It starts its own server on its own database.
+check-browser:
+	cd platform && npm run test:browser
 # Every site runs the same check against ash-template's current main branch, so a
 # newly published required fix reaches every site's next gate. Needs `gh auth login`.
 TEMPLATE := repos/regents-ai/ash-template

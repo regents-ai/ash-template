@@ -258,7 +258,8 @@ config :phoenix, :filter_parameters, [
   "access_token",
   "refresh_token",
   "client_secret",
-  "id_token"
+  "id_token",
+  "_csrf_token"
 ]
 
 import_config "#{config_env()}.exs"

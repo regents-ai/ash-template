@@ -141,5 +141,5 @@ with the same name as one of the record's attributes is filled in without being 
 - Pages still hear about changes through `Ash.Notifier.PubSub`; a signal does not
   replace it. A person's on-chain action is never queued, deferred or deduplicated
   through a signal (`regent-workflow`).
-- Tests use `Ash.Signals.Test` (`assert_emits_signal/4`), but only within the test budget
-  agreed with Sean. A new behavioural test needs his word.
+- Tests use `Ash.Signals.Test` (`assert_emits_signal/4`) where a rule depends on the
+  signal, as `regent-workflow` ("Every change proves itself") sets out.

@@ -121,8 +121,8 @@ cat <<EOF
 Renamed Ash Template to $display ($snake / $module).
 Review with: git status
 Then from platform/, with the shared dependencies in place:
-  createdb ${snake}_dev
   mix setup
+  mix ecto.create
   mix format                        # shorter or longer names change line wrapping
   mix ${task_prefix}.route_handoff  # the route catalog digest includes the display name
   mix precommit

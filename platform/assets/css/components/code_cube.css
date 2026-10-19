@@ -68,12 +68,15 @@
   pointer-events: none;
 }
 
+/* The faces' buttons take their font from here: every site's base gives a button
+   the font of what holds it. */
 .code-cube__faces {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-1);
   margin: 0;
   padding: 0;
+  font: 0.875rem/1.3 var(--font-family-mono);
   list-style: none;
 }
 
@@ -89,7 +92,6 @@
   isolation: isolate;
   width: 100%;
   height: 4.5rem;
-  font: 0.875rem/1.3 var(--font-family-mono);
   text-align: left;
 }
 

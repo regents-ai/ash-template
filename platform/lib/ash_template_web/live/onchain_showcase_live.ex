@@ -130,7 +130,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
             <legend>Open wallet</legend>
             <label :for={{name, address} <- @wallets}>
               <input type="radio" name="lab-wallet" value={address} data-lab-wallet={name} />
-              {name} <code>{RegentFormat.short_address(address)}</code>
+              {name} <P.address id={"lab-wallet-#{name}"} address={address} />
               {if address in @linked, do: "(on the account)", else: "(not on the account)"}
             </label>
             <label>

@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @moduledoc "Public documents only; never projects a signed-in page or account."
 
   alias AshTemplate.Rooms.Room
-  alias AshTemplateWeb.{AgentSkills, Capabilities}
+  alias AshTemplateWeb.{AgentGuides, AgentSkills, Capabilities}
 
   @directory Application.app_dir(:ash_template, "priv/public")
   @files Enum.map(
@@ -17,7 +17,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi_path Path.join(@directory, "openapi.json")
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
-  @documents ~w(/ /start /docs /about /contact /changelog /privacy /terms)
+  @documents ~w(/ /docs /about /contact /changelog /privacy /terms) ++ AgentGuides.paths()
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
   @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /skills)
   @site_name "Ash Template"
@@ -45,9 +45,6 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
-    "/start" =>
-      {"Connect your agent",
-       "The steps that pair your agent with your Ash Template account, for each agent."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/animations/crown" =>
       {"Crown",
@@ -130,11 +127,12 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   def url(path), do: AshTemplateWeb.Endpoint.url() <> path
 
+  def document("/agents" = path), do: AgentGuides.document(path)
+  def document("/agents/" <> _slug = path), do: AgentGuides.document(path)
   def document(path) when path in @documents, do: %{title: title(path), markdown: markdown(path)}
   def document(_path), do: nil
 
   defp markdown("/"), do: AshTemplateWeb.HomeLive.agent_markdown()
-  defp markdown("/start"), do: AshTemplateWeb.AgentStart.markdown()
   defp markdown("/privacy"), do: AshTemplate.Legal.markdown(:privacy)
   defp markdown("/terms"), do: AshTemplate.Legal.markdown(:terms)
   defp markdown(path), do: source(String.trim_leading(path, "/"))
@@ -158,7 +156,9 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   @doc "The `page_title` and `page_description` assigns the root layout reads from every page."
   def page(key) do
-    {title, description} = Map.fetch!(@pages, key)
+    {title, description} =
+      if key in AgentGuides.paths(), do: AgentGuides.page(key), else: Map.fetch!(@pages, key)
+
     [page_title: title, page_description: description]
   end
 

@@ -13,9 +13,9 @@ defmodule AshTemplate.LaunchGateTest do
   defp get(path),
     do: :get |> conn(path) |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
 
-  test "the agent start page stays open while the rest of the site is closed" do
-    assert %{status: 200, resp_body: page} = get("/start")
-    assert page =~ ~s(id="agent-start-page")
+  test "the agent pages stay open while the rest of the site is closed" do
+    assert %{status: 200, resp_body: page} = get("/agents/dots")
+    assert page =~ "Pair as <code>dots</code>"
 
     # The gate really was closed for this request.
     assert %{status: 503} = closed = get("/account")
