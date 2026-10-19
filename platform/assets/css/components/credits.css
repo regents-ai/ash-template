@@ -253,7 +253,7 @@
     width: calc(100% - 1rem);
     --shell-credits-pad-top: 1rem;
     --shell-credits-pad-side: 0.75rem;
-    max-height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     padding-block-end: 0.75rem;
   }
 

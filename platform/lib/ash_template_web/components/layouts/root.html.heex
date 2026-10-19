@@ -29,7 +29,7 @@
       service_description={~p"/openapi.json"}
       structured_data={AshTemplateWeb.PublicDocuments.structured_data()}
     />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content={theme || "dark light"} />
     <meta name="csrf-token" content={get_csrf_token()} />
     <meta :if={assigns[:session_refused]} name="session-refused" content="true" />

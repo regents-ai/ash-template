@@ -146,8 +146,20 @@ const shellBehavior: Hook = {
       const menuOpen = this.shellState?.menuOpen === true
       const currentScroller = scroller()
       const currentScrim = menuScrim()
+      const currentDrawer = drawer()
       if (currentScroller) currentScroller.inert = menuOpen
       if (currentScrim) currentScrim.hidden = !menuOpen
+      // Open on a phone, the drawer is a modal menu over the page; otherwise it is
+      // the page's own rail and list.
+      if (currentDrawer && menuOpen) {
+        currentDrawer.setAttribute("role", "dialog")
+        currentDrawer.setAttribute("aria-modal", "true")
+        currentDrawer.setAttribute("aria-label", "Menu")
+      } else if (currentDrawer) {
+        currentDrawer.removeAttribute("role")
+        currentDrawer.removeAttribute("aria-modal")
+        currentDrawer.removeAttribute("aria-label")
+      }
 
       if (focusMenu && menuOpen) {
         const [first] = menuFocusables()
@@ -235,9 +247,16 @@ const shellBehavior: Hook = {
       scroller()?.scrollTo({top: 0})
     }
 
+    // The menu exists only on a phone, so a screen that widens past one closes it.
+    const wideScreen = window.matchMedia("(min-width: 48rem)")
+    const onWideScreen = () => {
+      if (wideScreen.matches && this.shellState?.menuOpen) closeMenu(false)
+    }
+
     shell.addEventListener("click", onClick)
     shell.addEventListener("keydown", onKeydown)
     window.addEventListener("popstate", onHistoryNavigation)
+    wideScreen.addEventListener("change", onWideScreen)
     const panels = installShellPanels(shell)
     this.syncPanels = panels.sync
     this.restoreState()
@@ -250,6 +269,7 @@ const shellBehavior: Hook = {
       shell.removeEventListener("click", onClick)
       shell.removeEventListener("keydown", onKeydown)
       window.removeEventListener("popstate", onHistoryNavigation)
+      wideScreen.removeEventListener("change", onWideScreen)
     }
   },
 

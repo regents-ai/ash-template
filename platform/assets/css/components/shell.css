@@ -23,7 +23,7 @@
     "footer footer footer footer" auto
     / var(--shell-rail) var(--shell-sidebar) minmax(0, 1fr) var(--shell-aside);
   min-width: 0;
-  height: 100dvh;
+  height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: visible;
   background: var(--color-bg);
   color: var(--color-fg);
@@ -420,7 +420,7 @@
   position-anchor: --shell-apps-button;
   inset: anchor(bottom) anchor(right) auto auto;
   width: min(21rem, calc(100% - 2rem));
-  max-height: calc(100dvh - 5rem);
+  max-height: calc(100dvh - 5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   margin: 0.25rem 0 0;
   padding: 1rem;
   overflow: auto;
@@ -1214,8 +1214,8 @@
   .shell-search {
     width: calc(100% - 1rem);
     max-width: none;
-    max-height: calc(100dvh - 1rem);
-    margin-block-start: 0.5rem;
+    max-height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin-block-start: calc(0.5rem + env(safe-area-inset-top));
   }
 
   .shell-search .shell-search__esc,
@@ -1280,8 +1280,10 @@
     display: none;
   }
 
-  .shell-brand {
+  #shell-header .shell-brand {
     flex: 0 0 auto;
+    justify-content: center;
+    min-width: 2.75rem;
     padding-inline: 0.45rem;
   }
 
@@ -1289,6 +1291,7 @@
     display: inline-flex;
     flex: 0 0 auto;
     justify-content: center;
+    min-width: 2.75rem;
     padding-inline: 0.5rem;
     font-family: var(--font-family-ui);
     font-size: 0.72rem;
@@ -1299,7 +1302,7 @@
   #app-shell .shell-search-button {
     flex: 0 0 auto;
     justify-content: center;
-    width: 2.25rem;
+    width: 2.75rem;
     min-height: 2.75rem;
     margin-inline-start: auto;
     padding: 0;
@@ -1318,6 +1321,7 @@
   }
 
   #app-shell .account-chip {
+    min-width: 2.75rem;
     max-width: 6rem;
     padding-inline: 0.5rem;
     overflow: hidden;
@@ -1341,11 +1345,6 @@
     white-space: nowrap;
   }
 
-  /* Narrower presses keep every header tool on one row on phones. */
-  #app-shell .shell-tool {
-    width: 2.25rem;
-  }
-
   #app-shell #shell-apps-button,
   #app-shell #shell-aside-button {
     flex: 0 0 auto;
@@ -1359,7 +1358,7 @@
 
   #shell-drawer {
     position: fixed;
-    inset: 3.5rem auto 0 0;
+    inset: calc(3.5rem + env(safe-area-inset-top)) auto 0 env(safe-area-inset-left);
     z-index: 5;
     display: none;
     grid-template:
@@ -1367,6 +1366,7 @@
       "rail sidebar" minmax(0, 1fr)
       / var(--shell-rail) minmax(0, 1fr);
     width: min(22rem, calc(100% - 3rem));
+    padding-block-end: env(safe-area-inset-bottom);
     border-inline-end: 1px solid var(--ash-line-strong);
     background: var(--color-bg);
   }
@@ -1378,7 +1378,9 @@
   #shell-drawer #shell-sidebar {
     display: block;
     border-inline-end: 0;
+    overscroll-behavior: contain;
   }
+
 
   #app-shell #shell-sidebar-button,
   #app-shell .shell-sidebar-show,
@@ -1404,7 +1406,7 @@
 
   .shell-menu-scrim {
     position: fixed;
-    inset: 3.5rem 0 0;
+    inset: calc(3.5rem + env(safe-area-inset-top)) 0 0;
     z-index: 4;
     display: block;
     min-width: 0;
@@ -1423,9 +1425,10 @@
      edge, and opens only when opened on this page, never on arrival. */
   #shell-aside {
     position: fixed;
-    inset: 3.5rem 0 0;
+    inset: calc(3.5rem + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left);
     z-index: 6;
-    width: 100%;
+    width: auto;
+    padding-block-end: env(safe-area-inset-bottom);
     border-inline-start: 0;
     transition:
       transform var(--duration-slow) var(--ease-out),
@@ -1490,16 +1493,15 @@
   }
 }
 
-/* The narrowest phones: tighter presses keep the whole header, and the bottom
-   bar, on one row at 360px. */
+/* The narrowest phones: a tighter Menu keeps the whole header, and the bottom
+   bar, on one row at 320px. */
 @media (max-width: 23.75rem) {
-  #app-shell .shell-tool,
-  #app-shell .shell-search-button {
-    width: 2rem;
+  #app-shell .mobile-menu-button,
+  #app-shell .shell-credits {
+    padding-inline: 0.35rem;
   }
 
   #app-shell .mobile-menu-button {
-    padding-inline: 0.35rem;
     letter-spacing: 0.04em;
   }
 
@@ -1511,6 +1513,22 @@
 
   #shell-footer {
     padding-inline: 0.5rem;
+  }
+}
+
+/* On touch screens every press in the rail, the list and the side panel's head
+   is at least 44px. */
+@media (hover: none), (pointer: coarse) {
+  .shell-rail__you {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  #shell-sidebar li > a,
+  #shell-sidebar li > button,
+  .shell-sidebar__new,
+  .shell-aside__head .rg-button {
+    min-height: 2.75rem;
   }
 }
 

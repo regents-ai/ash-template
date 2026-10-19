@@ -92,9 +92,11 @@
    shared button with the site's motion kit: the paint and words give a little on
    press and the arrow nudges on hover. */
 
-/* One cell holds every step's words, so the button keeps its widest width. */
-#site-buttons .sb-words { display: inline-grid; place-items: center; }
-#site-buttons .sb-words > [data-word] { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: .6em; }
+/* One cell holds every step's words, so the button keeps its widest width. On a
+   row too narrow for the widest words, the cell takes the row's width and a long
+   step's words wrap inside it. */
+#site-buttons .sb-words { display: inline-grid; grid-template-columns: minmax(0, 1fr); max-inline-size: 100%; place-items: center; }
+#site-buttons .sb-words > [data-word] { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: .6em; white-space: normal; }
 #site-buttons .sb-button .sb-words > [data-word] { visibility: hidden; }
 #site-buttons .sb-button:is([data-state="idle"]) [data-word="idle"],
 #site-buttons .sb-button:is([data-state="wait0"]) [data-word="wait0"],

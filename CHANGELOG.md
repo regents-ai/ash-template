@@ -2515,3 +2515,27 @@ Operations
   feature map in each repo, a breaker agent's finding counts only with a failing test,
   every bug becomes a permanent regression test, each release candidate carries an
   evidence summary, and protected work waits for Sean's go by letter.
+
+## 2026-10-18 — Slimmer buttons; the phone menu and header fit a phone
+
+- `platform/mix.exs` pins design-system `54500eb`: every shared button is about 40px
+  tall (8px by 16px inside, down from 58px) with its label on one line, and at least
+  44px each way on touch screens. Cut corners, colours, the hover arrow and the press
+  motion are unchanged. Sean, 18 Oct: "all sites need a slimmer button".
+- The page paints under the notch and the home bar (`viewport-fit=cover`) and the body
+  keeps its content clear of them; the phone drawer, its backdrop, the side panel, the
+  Regents Products panel and the search and Buy Credits boxes sit below the header and
+  above the home bar.
+- Every press in the phone header is 44px (search, activity, Regents Products, side
+  panel, the brand and the account picture were 32 to 42px), and on touch screens the
+  rail's profile picture, the list's links and the side panel's Sign out are too. The
+  header still fits one row at 320px.
+- The open phone menu is a named modal dialog (`role="dialog"`, `aria-modal`, "Menu"),
+  a scroll that reaches the end of its list stops there instead of carrying on to the
+  page, and a screen that widens past 48rem closes it, where the page behind used to
+  stay frozen and unclickable.
+- Site buttons lab: a step whose words are wider than a narrow row wraps inside the
+  button instead of being cut off.
+- Evidence · level ordinary · features: app shell, shared buttons · proved by headless
+  Chromium checks at 320 to 430px and screenshots at 375 and 1440px · WebKit not run
+  on the Mac; no browser test harness in this repo yet.
