@@ -4,8 +4,9 @@ defmodule AshTemplate.Points.Award do
   something that rolls back offers nothing. Points decides whether it earns;
   while a rule is off nothing is queued.
 
-    * A note an agent wrote for its person (`<site>.first_agent_note`, once per
-      person), from `AshTemplate.Notes.Signals`.
+    * A note an agent wrote for its person (`template.first_agent_note`, once
+      per person, on whichever site copies the template), from
+      `AshTemplate.Notes.Signals`.
     * A Credits purchase credited to an account, or a waiting one an account
       now holds (`credits.purchase_settled`), from `RegentCredits.Signals`.
       Credits is one Regents ledger, so every site names it "regents" and a
@@ -39,7 +40,7 @@ defmodule AshTemplate.Points.Award do
 
         %{arguments: %{signal: signal}}, _context ->
           record(%{
-            rule_id: AshTemplate.site() <> ".first_agent_note",
+            rule_id: "template.first_agent_note",
             source_app: AshTemplate.site(),
             source_kind: "note",
             source_event_key: signal.note_id

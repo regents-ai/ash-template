@@ -56,6 +56,9 @@ starts, and the server watches no files, so no page reloads under a check.
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
+| A sent Buy is followed by one job however often the page asks; however often it runs the purchase is credited once and the panel hears how it ended | `platform/test/ash_template/credits/check_purchase_test.exs` |
+| Credits history read again after a change keeps the older pages already shown, newest first with nothing twice; when the new first page no longer reaches them, only the new first page shows | `platform/test/ash_template_web/credits_history_refresh_test.exs` (property test) |
+| A person's agents' notes earn the first-note Points once, in one entry, written at once or one after another; the Points answer names the agent that earned it | `platform/test/ash_template/points/first_agent_note_test.exs` (property test) |
 
 ## Agents
 
@@ -63,7 +66,10 @@ starts, and the server watches no files, so no page reloads under a check.
 | --- | --- |
 | A cookie or an unpaired or revoked agent never reaches the account; each signed request counts once | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent pairing with a name that has a hidden character is refused with `invalid_name`, and the same code still pairs it with another name | elixir-utils `ash_components/agents/test/http_test.exs` |
-| Two agents spending a person's last Credits at once never spend more than there is; a retried pin pays once; a revoked allowance stops the next spend | `platform/test/ash_template/credits/agent_spend_test.exs` |
+| An agent's status check names its status (`not_paired`, `person_not_here` or `paired`), what it may do in it and its next step, before pairing, before its person signs in here and after; checking in before pairing is refused with `agent_not_paired` | elixir-utils `ash_components/agents/test/http_test.exs`, `platform/test/ash_template/agents/signed_tools_test.exs` |
+| `/llms.txt`, `/agents.md` and `/skill.md` list, for each status, exactly what the status check allows and its next step | `platform/test/ash_template_web/what_you_can_do_test.exs` |
+| Two agents spending a person's last Credits at once never spend more than there is; a retried pin pays once and its hold says it was a pinned note; a pin after an unpin needs a new operation_id and pays again, and reusing the old one pins and charges nothing; a revoked allowance stops the next spend; what an agent spent counts Credits used and forfeited, not those given back | `platform/test/ash_template/credits/agent_spend_test.exs` |
+| While agent spending is closed, a refused pin and the balances answer say the same thing and the note stays unpinned; a revoked pairing gets `agent_not_paired` from the balances answer | `platform/test/ash_template_web/spending_answers_test.exs` |
 
 ## Gaps
 
@@ -84,6 +90,10 @@ starts, and the server watches no files, so no page reloads under a check.
   attached to the walk.
 - Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not
   called by a check.
+- The Credits panel's Held label and its link to the Credits history, the refund
+  note on the Credits history, the header's figure staying while the balance is read
+  again, and the Points page's bonus words while earning is off: opened by the walk,
+  not checked for these words.
 - The foil cards' light keeping to a thick frame round each card, with the face inside
   it still: the walk's browser draws no GPU picture, so it sees only the still frame.
   Checked by hand in Chrome with the Mac's GPU, desktop and phone, light and dark

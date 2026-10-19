@@ -3,9 +3,13 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   # - two agents spending one person's last Credits at once, from two sites,
   #   never spend more than the person has;
   # - a pin retried after its answer was lost pays once and pins once;
+  # - each new pin of a note costs one Credit: an operation_id that already
+  #   paid an earlier pin is refused and pins nothing (Sean 2 a, 19 Oct 2026);
   # - a revoked allowance refuses the agent's next spend at once, keeps what it
   #   already bought, and the person's record says which agent spent, on which
-  #   site, for what, under which pairing, and whether the charge completed.
+  #   site, for what, under which pairing, and whether the charge completed;
+  # - what an agent spent counts the Credits it used and forfeited, never those
+  #   given back.
   #
   # The races need separate connections that really commit, as in the Credits
   # library's own concurrency tests: the rows these tests write stay in the test
@@ -82,6 +86,28 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     assert [%{status: :charged}] = holds(person)
   end
 
+  test "a pin after an unpin needs a new operation_id and pays again" do
+    person = person(5)
+    agent = agent(person, ["template"]) |> as_site_agent()
+    note = Notes.create_note!(%{title: "Again", operation_id: Ecto.UUID.generate()}, actor: agent)
+    first = Ecto.UUID.generate()
+
+    assert {:ok, pinned} = Notes.pin_note(note, first, actor: agent)
+    assert {:ok, unpinned} = Notes.unpin_note(pinned, actor: agent)
+
+    assert {:error, %Ash.Error.Invalid{errors: errors}} =
+             Notes.pin_note(unpinned, first, actor: agent)
+
+    assert Enum.any?(errors, &match?(%Ash.Error.Changes.InvalidArgument{field: :operation_id}, &1))
+    assert Decimal.eq?(RegentCredits.balance(person.did).available, 4)
+
+    assert {:ok, %{pinned_at: %DateTime{}}} =
+             Notes.pin_note(unpinned, Ecto.UUID.generate(), actor: agent)
+
+    assert Decimal.eq?(RegentCredits.balance(person.did).available, 3)
+    assert [%{status: :charged}, %{status: :charged}] = holds(person)
+  end
+
   test "a revoked allowance refuses the next pin and keeps the pin already bought" do
     person = person(5)
     agent = agent(person, ["template"])
@@ -110,9 +136,30 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     assert [hold] = holds(person)
     assert hold.agent_address == agent.wallet
     assert hold.site == "template"
-    assert hold.purpose == "Note pinned by your agent"
+    assert hold.purpose == "note_pin"
     assert hold.pairing_id == agent.pairing_id
     assert hold.status == :charged
+  end
+
+  test "what an agent spent counts Credits used and forfeited, not those given back" do
+    person = person(5)
+    agent = agent(person, ["template"])
+    key = "settled-#{agent.wallet}"
+
+    {:ok, _held} =
+      RegentCredits.hold(key, person.did, Decimal.new(4), "Settled",
+        actor: Actor.agent(person.did, agent.wallet, "template", agent.pairing_id)
+      )
+
+    {:ok, _settled} =
+      RegentCredits.settle(key, Decimal.new(1), Decimal.new(2), Decimal.new(1),
+        actor: Actor.site("template")
+      )
+
+    {:ok, spent} =
+      AshTemplate.Credits.spent_by(AshTemplate.Credits.person(person.account), agent.wallet)
+
+    assert Decimal.eq?(spent, 3)
   end
 
   defp person(credits) do

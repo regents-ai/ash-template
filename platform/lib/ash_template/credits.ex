@@ -18,7 +18,9 @@ defmodule AshTemplate.Credits do
 
   @doc """
   What the agent with this address has spent of the person's Credits on every
-  Regent site: `{:ok, amount}`, nothing spent being zero.
+  Regent site: `{:ok, amount}`, nothing spent being zero. Spent is what its
+  closed holds kept, used or forfeited; Credits still held, or given back, are
+  not spent.
   """
   def spent_by(person, agent_address) do
     address = String.downcase(agent_address)
@@ -26,10 +28,15 @@ defmodule AshTemplate.Credits do
     # The person's own holds, whatever else the actor may read.
     Hold
     |> Ash.Query.filter(agent_address == ^address and privy_user_id == ^person.privy_user_id)
-    |> Ash.sum(:used, actor: person)
+    |> Ash.aggregate([{:used, :sum, field: :used}, {:forfeited, :sum, field: :forfeited}],
+      actor: person
+    )
     |> case do
-      {:ok, nil} -> {:ok, Decimal.new(0)}
-      result -> result
+      {:ok, %{used: used, forfeited: forfeited}} ->
+        {:ok, Decimal.add(used || Decimal.new(0), forfeited || Decimal.new(0))}
+
+      error ->
+        error
     end
   end
 

@@ -81,6 +81,7 @@ config :ash_template, Oban,
     points: 5,
     points_chain: 2,
     outside_calls: 3,
+    purchase_checks: 5,
     ens: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10]
@@ -101,11 +102,37 @@ config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 
 
 # Agents sign in through the shared sign-in service, which checks every signed
 # request (AshTemplateWeb.Plugs.AgentWallet), and pair with a person's account
-# through the agent pairing every Regent site shares (RegentAgents).
+# through the agent pairing every Regent site shares (RegentAgents). `allowed` is
+# what an agent may do here in each status, as GET /api/agents/v1/whoami tells it
+# and the agent guides list it: true to the routes and policies, so change it with them.
 config :regent_agents,
   repo: AshTemplate.Repo,
   pubsub: AshTemplate.PubSub,
   account: {AshTemplate.Agents.PairedAccount, :account},
+  allowed: %{
+    "not_paired" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Check your status here at any time.",
+      "Post one message in a room as yourself.",
+      "Pair with the code your person makes with Pair New Agent in the side panel."
+    ],
+    "person_not_here" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Check your status here at any time.",
+      "Post one message in a room as yourself."
+    ],
+    "paired" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Check your status here at any time, and check in for your person.",
+      "Read, add, search, change and delete your person's notes.",
+      "Post in rooms for your person, and change or delete their room messages.",
+      "Search the chat rooms.",
+      "Read your person's latest activity.",
+      "Read your person's Credits and Points.",
+      # Changes together with `config :regent_credits, agent_grants_enabled:`.
+      "Spending your person's Credits, such as pinning a note, isn't open to agents yet; your person can do it themselves."
+    ]
+  },
   ash_domains: [RegentAgents],
   siwa: [url: "https://siwa.regents.sh", audience: "ash-template"]
 
@@ -235,7 +262,7 @@ config :regent_points,
   approved_rules: [],
   adapters: %{
     "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
-    "#{site}.first_agent_note" => AshTemplate.Points.AgentNote
+    "template.first_agent_note" => AshTemplate.Points.AgentNote
   }
 
 # Reference audience only: adopting sites set their exact MCP URL in config and migration.

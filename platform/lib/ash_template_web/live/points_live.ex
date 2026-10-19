@@ -2,6 +2,7 @@ defmodule AshTemplateWeb.PointsLive do
   @moduledoc "Private Account Points presentation; the NFT bonus is added at the end of each 30-day period."
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
+  alias AshTemplateWeb.PointsEntries
   alias RegentPoints.{Amount, Rules}
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
@@ -20,7 +21,9 @@ defmodule AshTemplateWeb.PointsLive do
     ~H"""
     <article id="points-page" class="account-page">
       <.page_head title="Points">
-        <:tip>What you and your paired agents earn here, counted in one account.</:tip>
+        <:tip>
+          What you and your paired agents earn on every Regent site, counted in one account.
+        </:tip>
       </.page_head>
       <Regent.Account.signed_out
         :if={is_nil(@account)}
@@ -49,8 +52,11 @@ defmodule AshTemplateWeb.PointsLive do
           state={summary_state(@points.state)}
           allowances={
             Enum.map(
-              if(@earning == [], do: [], else: @points.value.allowances),
-              &%{label: scope_name(&1.scope), value: "#{Amount.format(&1.remaining)} remaining"}
+              @points.value.allowances,
+              &%{
+                label: PointsEntries.allowance_name(&1.scope),
+                value: "#{Amount.format(&1.remaining)} remaining"
+              }
             )
           }
         />
@@ -63,11 +69,14 @@ defmodule AshTemplateWeb.PointsLive do
               bonus to the points you earned in that period, one-time awards included.
             </Regent.Primitives.tip>
           </h2>
-          <p :if={@bonus.state in [:idle, :loading]} role="status">Checking your NFTs…</p>
-          <p :if={@bonus.state in [:error, :stale]}>
-            Your NFTs could not be checked. Try refreshing this page.
+          <p :if={@earning == []}>Your NFTs are counted once earning opens.</p>
+          <p :if={@earning != [] and @bonus.state in [:idle, :loading]} role="status">
+            Checking your NFTs…
           </p>
-          <dl :if={@bonus.state == :ready}>
+          <p :if={@earning != [] and @bonus.state in [:error, :stale]}>
+            Your NFTs could not be checked. {retry(@bonus.error)}
+          </p>
+          <dl :if={@earning != [] and @bonus.state == :ready}>
             <div>
               <dt>NFTs held</dt>
               <dd>{@bonus.value.nft_count}</dd>
@@ -92,10 +101,10 @@ defmodule AshTemplateWeb.PointsLive do
           <ol>
             <li :for={entry <- @points.value.entries}>
               <p>
-                {Rules.label(entry.rule_id)} · {actor_name(
+                {Rules.label(entry.rule_id)} · {PointsEntries.agent_name(
                   entry,
                   @points.value.agent_names
-                )}
+                ) || "You"}
               </p>
               <p>{Amount.format(entry.points_micro_delta)} points</p>
               <Regent.Primitives.tip
@@ -108,7 +117,10 @@ defmodule AshTemplateWeb.PointsLive do
                 )} awarded. {Amount.format(entry.cap_reduction_micro)} exceeded the daily or per-action allowance.
               </Regent.Primitives.tip>
               <p>
-                {entry_status(entry)} · {Calendar.strftime(entry.earned_at, "%d %b %Y %H:%M UTC")}
+                {PointsEntries.status_label(PointsEntries.status(entry))} · {Calendar.strftime(
+                  entry.earned_at,
+                  "%d %b %Y %H:%M UTC"
+                )}
               </p>
             </li>
           </ol>
@@ -244,17 +256,11 @@ defmodule AshTemplateWeb.PointsLive do
     end)
   end
 
-  defp actor_name(%{actor_kind: "human"}, _names), do: "You"
-  defp actor_name(entry, names), do: Map.get(names, entry.actor_id, "Previously connected agent")
-
-  defp entry_status(%{reversal_of_entry_id: id}) when not is_nil(id), do: "Correction"
-  defp entry_status(%{points_micro_delta: 0}), do: "Allowance reached"
-  defp entry_status(_), do: "Confirmed"
+  # Reading again at once while limited would only be refused again.
+  defp retry(:limited), do: "Try again in a minute."
+  defp retry(_reason), do: "Try refreshing this page."
 
   defp summary_state(state) when state in [:idle, :loading], do: :loading
   defp summary_state(:empty), do: :ready
   defp summary_state(state), do: state
-
-  defp scope_name("activity:account"), do: "You and your agents"
-  defp scope_name("credits"), do: "Credits purchases"
 end

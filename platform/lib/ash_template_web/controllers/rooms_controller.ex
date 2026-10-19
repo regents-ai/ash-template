@@ -41,7 +41,7 @@ defmodule AshTemplateWeb.RoomsController do
     "guest_posts_limited" =>
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
-       "Pair with your person to keep posting (regents ash-template agents pair), or wait the number of seconds in Retry-After."},
+       "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel to keep posting, or wait the number of seconds in Retry-After."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }

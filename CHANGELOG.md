@@ -2879,3 +2879,61 @@ Operations
 - The design-system pin moves to `fb26ac3a` (tpl/ds-names-on-lime-1019): the profile
   and address work replayed on Techtree's Canopy palette, its lime buttons' outline in
   light and the plainer Touch ID page, after the slimmer buttons.
+
+## 2026-10-19 — An agent is told its status and what it may do
+
+- `agents whoami` (`GET /api/agents/v1/whoami`, the `agent_whoami` tool) answers the
+  agent's `status` (`not_paired`, `person_not_here` or `paired`), what it may do in
+  it (`allowed`, set in `platform/config/config.exs`) and its `next_step`, and no
+  longer answers `effective_access`. Its tool is titled "Check my status" and asks to
+  be called first.
+- `agents status` (`GET /api/agents/v1/me`) before pairing, or after an unpairing,
+  answers 403 `agent_not_paired` instead of 404 `not_paired`. Every refusal and hint
+  that sends an agent to pair points at Pair New Agent in the side panel on this site.
+- `/llms.txt`, `/agents.md` and `/skill.md` carry a "What you can do" list built from
+  the same settings whoami answers. The agent guides say `agent_not_paired` also means
+  the person unpaired the agent.
+- `openapi.json` and the API contract move to 5.0.0: the agent refusals are
+  documented route by route, and the notes routes name `note_not_found`.
+- Needs elixir-utils `bbca153` (eu/cop-eu-a-1019); the pin in `platform/mix.exs`
+  moves to it once it is on main.
+
+## 2026-10-19 — Points and Credits review fixes
+
+- Points: the first note an agent writes earns "First note written by your agent"
+  (`template.first_agent_note`) once per account, however many notes arrive or how
+  close together; a later note records nothing more. The daily allowances shown are
+  those of the rules earning now, so none show while earning is off, and the Points
+  page reads no NFTs until earning opens. The agent's Points answer
+  (`GET /tools/account/points`) gives each entry's label, status, allowance
+  reduction and who earned it, plus period bonuses and activity being verified, from
+  the same helpers as the page (`AshTemplateWeb.PointsEntries`).
+  `docs/points-foundation.md` now describes the catalog as the code has it.
+- Credits: agent spending refusals and the balances answer give the same hint, read
+  from the person's agent budget; a revoked pairing gets `agent_not_paired`. A pin's
+  Credits record says "Note pinned" (`note_pin`). What an agent spent counts Credits
+  used and forfeited.
+- Credits panel: one Oban job (`AshTemplate.Credits.CheckPurchase`, queue
+  `purchase_checks`) follows each sent Buy until it counts and tells the panel; the
+  panel no longer checks by itself. "Active Bids" is now "Held", and Purchase History
+  opens the Credits history page, which names support@regents.sh for refunds. The
+  refund words say Credits bought and not yet spent can be refunded. The header and
+  panel keep the last balance while it is read again, and the history keeps the older
+  pages shown when it is read again.
+- Needs the elixir-utils pin moved to the commits on `eu/cop-eu-b-1019`.
+
+## 2026-10-19 — Agent spending words and new pins
+
+- A paired agent's `allowed` list says spending its person's Credits, such as pinning
+  a note, isn't open to agents yet and the person can do it themselves. The balances
+  and spending notes in `openapi.json` and the API contract say the same. The points
+  answer is described with its current fields in `cli/COMMANDS.md`, the tool manifest
+  and `cli/commands.json`.
+- Each new pin of a note costs 1 Credit (Sean 2 a, 19 Oct 2026). An `operation_id`
+  that already paid for an earlier pin of the note, for example after an unpin, is
+  refused with 422 `invalid_pin` and pins and charges nothing; a retry of the same
+  press still pays once. The pin tool, route and CLI command say to send a new
+  `operation_id` for each pin.
+- The elixir-utils commits these changes need are all on `eu/cop-int-1019`, which
+  replaces `eu/cop-eu-a-1019` and `eu/cop-eu-b-1019` above; the pin in
+  `platform/mix.exs` moves to it once it is on main.

@@ -16,6 +16,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplate.ChainClient
+  alias AshTemplate.Credits.CheckPurchase
   alias Regent.Primitives, as: P
   alias RegentCredits.{Actor, Amount, Chains}
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
@@ -133,11 +134,17 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
   @impl true
   def handle_info(:credits_changed, socket), do: {:noreply, read_balance(socket)}
 
+  def handle_info({:credits_purchase, hash, shown}, socket) do
+    send_update(AshTemplateWeb.CreditsPanel, id: "credits-panel", purchase: {hash, shown})
+    {:noreply, socket}
+  end
+
   # The lab account's balance follows every change, as the site header's does.
   defp follow_credits(socket) do
-    if connected?(socket),
-      do:
-        Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(@account.privy_user_id))
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(@account.privy_user_id))
+      Phoenix.PubSub.subscribe(AshTemplate.PubSub, CheckPurchase.topic(@account.privy_user_id))
+    end
 
     read_balance(socket)
   end
@@ -219,7 +226,7 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
         <h1>Credits lab</h1>
         <p>
           The Buy Credits panel as it opens from the site header. Each Buy is reported as a
-          purchase and checked on the chain; the site's Oban keeps checking once a minute.
+          purchase and checked on the chain by one Oban job, which tells the panel when it counts.
         </p>
         <p :if={@local != @chains}>
           Start a local copy and point the site at it: <code>anvil --fork-url https://mainnet.base.org --port 58610</code>, then
