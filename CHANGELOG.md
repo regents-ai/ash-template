@@ -2546,3 +2546,41 @@ Operations
   only. The template pins design-system 54500eb1 again, and the side panel's Sign
   out and Manage Account keep their own 32px height. Sean, 19 Oct 04:30Z: "Normal
   desktop size".
+
+## 2026-10-19 — Speed pass
+
+- Script pieces esbuild names by their contents now live in
+  `platform/priv/static/assets/js/chunks` (`--chunk-names` and `--asset-names` in
+  `platform/config/config.exs`), served by their own `Plug.Static` in
+  `platform/lib/ash_template_web/endpoint.ex` with
+  `public, max-age=31536000, immutable`. A return visit to a public page now makes
+  one request (the page) where it made twelve; a signed-in page makes twenty where it
+  made sixty-eight.
+- The first-load script no longer carries the lab hooks (`Crown`, `CodeCube`,
+  `TwinCube`, `WorldCube`, `KeyfleetField`, `KeyfleetKeyCard`, `KeyfleetReplay`):
+  `platform/assets/js/lab_pages.ts` loads them on `/animations/*` only. The site's
+  WebMCP tools (`platform/assets/js/public_tools.ts`) load only in a browser that has
+  `document.modelContext`; any other browser records `webmcpStatus = "unsupported"`
+  as before. The home page's script drops from 224 KiB to 175 KiB compressed.
+- PROTECTED (wallet): `platform/assets/js/wallet_actions/send_step.ts` imports
+  `getAddress` from `viem/utils` and its types with `import type`, so the first-load
+  script no longer pulls in viem's whole entry point. Same function, same checks.
+- `AshTemplateWeb.Read.now/4` runs a read of the site's own database inside the
+  callback, so the first, unconnected render already shows it. Credits history,
+  Chat, Notes, Rooms, Notifications, Points and verified connections use it; chain
+  reads keep `Read.start`. The "Loading…" lines and their CSS are gone from those
+  pages. Credits history shows its table after 1.8 s instead of 6.9 s on an emulated
+  low-end phone over slow 4G. `skills/ash-frontend/references/async-state.md` says
+  when to use each.
+- `/sitemap.xml` is sent like the other public documents (`public, max-age=300` and
+  an ETag) instead of as private.
+- PROTECTED (migration, sign-in table):
+  `20261019011522_unread_and_linked_account_indexes` adds
+  `linked_identities (human_account_id)`, read on every sign-in (0.73 ms to 0.03 ms
+  at 40,000 rows), and a partial index `notifications_unread_index` on
+  `notifications (human_account_id) WHERE read_at IS NULL`, read by the bell on every
+  page (0.56 ms to 0.08 ms for a person with 5,000 read notifications).
+- New checks: `platform/test/ash_template_web/static_cache_test.exs` (year-long
+  script pieces, shared sitemap) and `platform/test/ash_template_web/read_test.exs`
+  (`Read.now` lands in the callback, a refused read is a failure never an empty list,
+  another owner's read drops a late answer). All five fail on `2d4e995`.

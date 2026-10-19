@@ -2,6 +2,17 @@
 
 What changed in Ash Template lately, newest first.
 
+## 19 October 2026
+
+- **Faster return visits.** Coming back to a page now loads it in about half the time
+  on a phone, because your browser keeps the site's scripts instead of fetching them
+  again.
+- **Lighter first visit.** The home page sends less to your browser on the first
+  visit; the animations are only sent on the pages that show them.
+- **Your pages open with their contents.** Credits, Chat, Notes, Rooms, Points and your
+  notifications now show what is in them as soon as the page opens, without a loading
+  line first.
+
 ## 16 October 2026
 
 - **Pair New Agent from the start page.** The first step on the start page for agents
