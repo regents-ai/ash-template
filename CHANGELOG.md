@@ -2575,15 +2575,24 @@ Operations
 - `/sitemap.xml` is sent like the other public documents (`public, max-age=300` and
   an ETag) instead of as private.
 - PROTECTED (migration, sign-in table):
-  `20261019011522_unread_and_linked_account_indexes` adds
+  `20261019044403_unread_and_linked_account_indexes` adds, concurrently so neither
+  table stops taking writes while it builds,
   `linked_identities (human_account_id)`, read on every sign-in (0.73 ms to 0.03 ms
   at 40,000 rows), and a partial index `notifications_unread_index` on
   `notifications (human_account_id) WHERE read_at IS NULL`, read by the bell on every
   page (0.56 ms to 0.08 ms for a person with 5,000 read notifications).
-- New checks: `platform/test/ash_template_web/static_cache_test.exs` (year-long
-  script pieces, shared sitemap) and `platform/test/ash_template_web/read_test.exs`
-  (`Read.now` lands in the callback, a refused read is a failure never an empty list,
-  another owner's read drops a late answer). All five fail on `2d4e995`.
 - The header logo (`platform/lib/ash_template_web/components/shell.ex`) uses `~p`, so
   it is sent by its digested name with the year-long cache; a signed-in return visit
   makes 18 requests instead of 20.
+- A fresh copy's first `make check` passes: `mix test` creates the local test
+  database before migrating it.
+- New checks, each failing when its change is undone:
+  `platform/test/ash_template_web/script_build_test.exs` builds the scripts as
+  `mix assets.build` does and reads esbuild's account of the build: every shared
+  piece lands under `/assets/js/chunks/` and is sent for a year, and the script
+  every page loads first holds no lab hooks, WebMCP tools or viem's whole entry
+  point and stays under 1,200,000 bytes unminified (1,149,694 today).
+  `first_render_test.exs` (a person's notes and chat are in the first render),
+  `digested_logo_test.exs`, `platform/test/ash_template/read_indexes_test.exs`
+  (both indexes exist), `read_test.exs` (`Read.now`) and the sitemap check in
+  `static_cache_test.exs`.
