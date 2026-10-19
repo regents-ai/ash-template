@@ -347,6 +347,10 @@ export function removeWithExit(layout: AutoLayout): Timeline {
 }
 ```
 
+A transform in `enterFrom` moves the entering element with an inline `translate`, which
+stays written on it as `translate: none` once it settles (4.5.0, template lab). Regent
+entrances are opacity only ([liveview-islands.md](liveview-islands.md#layout-on-server-driven-lists-lab)).
+
 ### Layout id attribute `layout/layout-id-attribute`
 
 Every recorded element gets `data-layout-id` (auto values look like `node-12`). You can set it yourself. Matching is by id, not by node identity: if two elements share an id and one is hidden (`display: none` / `visibility: hidden`) while the other is visible, the layout animates one into the other. That is how a card can morph into a copy in a modal or a different container without moving the node. Elements outside the root are only picked up when they match `children` and share an id with an element inside the root.

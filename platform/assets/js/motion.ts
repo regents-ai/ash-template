@@ -44,8 +44,10 @@ export function mountMotion(doc: Document) {
   for (const list of main.querySelectorAll<HTMLElement>("[data-cascade]"))
     onFirstSight(list, () => GRIDS.cascade([...list.children].slice(0, CASCADE)))
 
-  // A form the server sent back refused says why, and the reason shakes once.
-  for (const reason of main.querySelectorAll("[role='alert']")) deny(reason)
+  // A page the server sent back refused says why in an alert set straight in
+  // `main`, and the reason shakes once. An alert inside content that is still
+  // settling in stays still.
+  for (const reason of main.querySelectorAll(":scope > [role='alert']")) deny(reason)
 }
 
 // By the time a press reaches the document, the page has already acted on

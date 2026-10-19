@@ -3079,3 +3079,16 @@ Operations
 - The elixir-utils commits these changes need are all on `eu/cop-int-1019`, which
   replaces `eu/cop-eu-a-1019` and `eu/cop-eu-b-1019` above; the pin in
   `platform/mix.exs` moves to it once it is on main.
+## 2026-10-19 — New items fade in and leave nothing behind
+
+- A new item in a list, or a new note, only fades in where it lands, in the kit and
+  in every version in the motion lab. A slide or a scale in its entrance stayed
+  written on it as `translate: none` once it settled.
+- On a page the server draws once, only an alert set straight in `main` shakes; an
+  alert inside content that is still settling in stays still.
+- The motion kit's guide adds four rules: entrances are opacity only, a sideways row
+  that gets new items at its start never uses `scroll-snap`, a refusal shakes only its
+  slot's own alert, and a motion check also watches the stylesheet's animations.
+- The browser walk's `platform/test/browser/motion.spec.ts` checks that a new list item
+  and a new note end at rest and that only the page's own alert shakes. Each check
+  fails when its change is undone.

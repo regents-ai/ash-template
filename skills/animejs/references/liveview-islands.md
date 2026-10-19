@@ -72,7 +72,9 @@ Pages take part through markup, never through their own motion code:
   slides the drawer out, with its sibling `data-backdrop` fading in.
 - A `<details>` whose panel is `data-panel="menu"` pops open; a `<dialog>` rises as a sheet.
 - On a page the server draws once (not live), the `h1` rises word by word, the first 12
-  children of each `data-cascade` settle in and each `role="alert"` shakes once.
+  children of each `data-cascade` settle in and a `role="alert"` set straight in `main`
+  shakes once. A refusal shake belongs to its slot's own alert (`:scope > [role=alert]`),
+  never to an alert inside content that settles in (Patchbay).
 - Live parts use a hook with `data-variant={AshTemplateWeb.Motion.standard("list")}`
   (`MotionList`, `MotionCount` with `data-count` figures, `MotionTabs`). A counted
   figure may carry decimals and a unit ("12.5 USDC"); only the changed digits roll.
@@ -264,7 +266,12 @@ destroyed(this: QueueHook) { this.layout?.revert() },
 ```
 
 Reorders glide, inserted items fade in (`enterFrom`), and neighbours of a removed item slide
-over. The removed item itself disappears immediately: LiveView deletes the node before
+over. An entrance is opacity only (`enterFrom: {opacity: 0}`): a translate or scale in
+`enterFrom` leaves `translate: none` written on the item once it settles (lab, Patchbay).
+A sideways row that gets new items at its start must not use `scroll-snap`: the browser
+keeps the old snapped item in view and the new one lands out of view (Patchbay).
+
+The removed item itself disappears immediately: LiveView deletes the node before
 `updated`, and Layout only animates leaving elements that become `display: none` or
 `visibility: hidden`. For a visible exit, first render the item with the `hidden` attribute
 (Layout fades it out and its neighbours close the gap, lab), then drop it in a later render;
@@ -291,9 +298,8 @@ stream DOM id as `data-layout-id`.
 ## Checks
 
 - `npm run typecheck` and `npm test` from `platform/` (budget test included where present).
-- Unit-test only the rules around motion, as `assets/test/motion.test.ts` does: a press is
-  never stopped, keyboard and reduced motion stay still, a wallet label squishes instead of
-  its button, a move begun over another starts from rest. The browser walk opens the page.
+- The browser walk's `test/browser/motion.spec.ts` checks motion that once went wrong: a
+  new list item and a new note end at rest, and a refusal shakes only the page's own alert.
 - LiveView tests do not run hooks. Check the route in a browser: the animation plays, a
   server patch afterwards leaves the right final state, the island's teardown leaves no
   stray styles, and reduced motion behaves.
@@ -302,3 +308,6 @@ stream DOM id as `data-layout-id`.
   instead: it draws frames, so overlapping presses and end states read true.
 - End-state checks: after rapid repeated presses, replays and reopens, every moved element's
   `style` attribute is gone (or back to what the server rendered).
+- A motion check also catches stylesheet animations, not only inline styles: listen for
+  `animationstart` and `transitionstart`, and read `el.getAnimations()`, which lists the
+  stylesheet's animations and transitions as well as the script's.
