@@ -3125,3 +3125,7 @@ Operations
 ## 2026-10-19 — Workflow skill: stop what you start
 
 - The Regent Workflow skill's "Local sites" section gains Sean's rule of 19 Oct: a local chain (anvil) or lab site starts only through a script that records its pid, with a stop script beside it that stops by that pid; never `nohup … &` typed into the shell; every chain and site a session started is stopped, and its port checked free, before a walk or lab is reported done. Two left-running Base copies had filled the Mac's swap.
+
+## 2026-10-19 — Workflow skill: clean up after yourself
+
+- The Regent Workflow skill gains Sean's rule of 19 Oct, after the Mac's disk filled: every agent and subagent keeps a list of what it creates (worktrees, temporary copies, `node_modules`, `deps` and `_build`, test databases, generated files) and removes it when its task ends, retiring its worktrees through `scripts/worktrees.py retire` so the slot in `/Users/sean/Documents/regent/.agent-worktrees.json` is freed. Work not yet on main is kept and named. Nothing another session made is deleted; it is listed for Sean. Delegation briefs name the duty, and the parent checks a subagent cleaned up before integrating.

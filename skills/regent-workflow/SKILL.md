@@ -227,7 +227,8 @@ cancelled work.
 2. Implement the bounded change directly. If delegating an independent subtask, give
    it the objective, absolute repository/worktree path, owned files or component,
    acceptance checks, a time budget for the subtask (a delegate paces itself to one; it
-   is advisory, so keep your own limit), relevant context and authority limits. Tell
+   is advisory, so keep your own limit), relevant context, authority limits and its
+   duty to clean up what it makes (Clean up after yourself). Tell
    writers they share a workspace and must preserve others' edits. Run at most **two
    coding subagents at once**; that is the limit, not a count of repositories or
    worktrees, and the worktree guard separately refuses a third checkout per owner. A writer that needs its own checkout works in a worktree whose commits
@@ -238,7 +239,7 @@ cancelled work.
    project's backlog file (`/Users/sean/Documents/regent/docs/backlogs/<site>.md`), not
    folded into the current change.
    For delegated work, retain the session/worktree reference and verify the returned
-   results before integration.
+   results, and that the delegate cleaned up, before integration.
 4. Every review, of your own work or a peer's, starts with elixir-stack's design check
    before any correctness check: code that rebuilds Oban, Ecto, Phoenix, OTP or Ash is
    reported as a replacement, not repaired in place.
@@ -247,8 +248,9 @@ cancelled work.
    representative user flows; compilation alone does not prove an interaction.
    Use independent security review when protected behavior needs it.
 5. Return when the requested feature works, a named missing input blocks correctness,
-   or the next consequential action needs authority. Explain what changed, what was
-   verified and what remains. Do not call a dispatch or an untested patch completion.
+   or the next consequential action needs authority. Clean up first (Clean up after
+   yourself). Explain what changed, what was verified, what remains, and what you
+   removed or kept. Do not call a dispatch or an untested patch completion.
    Those are the only reasons to end a turn while work is still owed. Do not end one
    with a summary that announces the next step, an offer to carry on unless the founder
    prefers otherwise, a list of decisions none of which blocks the rest, or a report
@@ -316,6 +318,34 @@ with a unique path and an explicit known base; once its commits are on main, ret
 it. One coordinator integrates per repository. Preserve unrelated
 changes and avoid resetting or cleaning existing worktrees. Use isolated test databases
 and ports. Follow each component's dependency setup; never clear a shared database.
+
+## Clean up after yourself (founder rule, 19 Oct 2026)
+
+On 19 Oct 2026 the Mac's disk filled: Claude temporary copies 248 GB, Regent backups
+88 GB, worktrees 52 GB, generated artifacts 42 GB, local databases 35 GB. Every agent
+and every subagent removes what it made before its task ends.
+
+- Keep a running list of what you create: worktrees, temporary copies and scratch
+  folders, `node_modules`, `deps` and `_build`, test databases, and generated files
+  (screenshots, recordings, exports, archives, logs).
+- When the task ends, finished, dropped or handed over, remove everything on the list
+  that is no longer needed, and say in the final report what you removed and what you
+  kept and why. Work that is not on main yet is kept and named, never deleted.
+- A worktree you made: once its commits are on main, delete its `deps`, `_build`,
+  `node_modules` and other build output (the guard refuses ignored files), then retire
+  it with `scripts/worktrees.py retire` so its slot in
+  `/Users/sean/Documents/regent/.agent-worktrees.json` is freed. Never edit the
+  registry by hand.
+- A test database you created in this task: drop it by its exact name. Never a database
+  you found, a shared or development database, or production.
+- Chains, sites and watchers you started stop by pid (Local sites, "Stop what you
+  start").
+- Never delete anything you did not make. Another session's worktree, scratch folder,
+  database, backup or server stays, even when it looks abandoned; list it for the
+  founder, who answers deletes in the thread that asks.
+- Subagents follow the same rule, and every delegation brief says so. Before
+  integrating, the parent checks that the subagent's worktree, scratch, databases and
+  servers are gone, and removes what remains: the parent made the subagent.
 
 ## Local sites
 
