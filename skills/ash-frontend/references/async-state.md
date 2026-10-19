@@ -62,8 +62,26 @@ the wallet's answer are never cancelled, merged, deferred or deduplicated
 through it; each press reaches the wallet and gets its own check (see
 `onchain-buttons`). Refresh reads after a confirmed action by calling `start`.
 
-A read that finishes inside the callback (a local database read in
-`handle_params`, or a controller action) cannot race and needs no generation, but it
+## Reads of the site's own database: `Read.now`
+
+A read of the site's own database answers in milliseconds, so it runs inside the
+callback with `Read.now/4` instead of `start`. `start_async` does not run on the
+first, unconnected render, so a page built on `start` sends "Loading…" and shows its
+content only once the page has connected. On an emulated low-end phone over slow 4G
+the template's Credits history showed its table after 6.9 s with `start` and 1.8 s
+with `now` (19 Oct 2026). `now` takes the same owner, lands the same states and moves the read to a new
+generation, so an earlier `start` still running is dropped; a database that refuses
+the read lands as `:error` or `:stale`, never as empty. Keep `start` for a chain, an
+outside service, or anything else that can take longer than a database read. A page
+whose every read is `now` renders no loading line and has no `handle_async/3`.
+
+```elixir
+socket
+|> Read.now(:notes, actor.human_account_id, fn -> Notes.list_my_notes(actor: actor) end)
+|> show_notes()
+```
+
+A controller action that reads the database likewise answers in one step, but it
 still needs its own error state instead of an empty list.
 
 `Ash.count` and `Ash.exists` raise a database failure (`Postgrex.Error`,

@@ -69,25 +69,6 @@ defmodule AshTemplateWeb.ChatLive do
   end
 
   @impl true
-  def handle_async(
-        {Read, :conversations, generation} = name,
-        result,
-        %{assigns: %{conversations: %Read{generation: generation}}} = socket
-      ) do
-    {:noreply, socket |> Read.settle(name, result) |> show_conversations()}
-  end
-
-  def handle_async(
-        {Read, :messages, generation} = name,
-        result,
-        %{assigns: %{messages: %Read{generation: generation}}} = socket
-      ) do
-    {:noreply, socket |> Read.settle(name, result) |> show_messages()}
-  end
-
-  def handle_async({Read, _name, _superseded}, _result, socket), do: {:noreply, socket}
-
-  @impl true
   def handle_event("validate", %{"message" => params}, socket),
     do: {:noreply, assign(socket, :form, AshPhoenix.Form.validate(socket.assigns.form, params))}
 
@@ -116,9 +97,6 @@ defmodule AshTemplateWeb.ChatLive do
       <.portal id="chat-sidebar" target="#shell-sidebar-page">
         <div class="shell-sidebar__page">
           <.link :if={@actor} patch={~p"/chat"} class="shell-sidebar__new">New chat</.link>
-          <p :if={@conversations.state == :loading} class="shell-sidebar__empty">
-            Loading your chats…
-          </p>
           <Primitives.notice :if={@conversations.state in [:error, :stale]} tone="error">
             Your chats couldn’t be loaded. Refresh the page to try again.
           </Primitives.notice>
@@ -167,9 +145,6 @@ defmodule AshTemplateWeb.ChatLive do
           data-conversation-scroller
         >
           <div class="chat-scroller__inner">
-            <p :if={@messages.state == :loading} class="rg-muted chat-loading">
-              Loading messages…
-            </p>
             <ol
               id="chat-messages"
               class="chat-messages"
@@ -239,9 +214,11 @@ defmodule AshTemplateWeb.ChatLive do
     do: socket |> Read.clear(:conversations) |> stream(:conversations, [], reset: true)
 
   defp load_conversations(%{assigns: %{actor: actor}} = socket) do
-    Read.start(socket, :conversations, actor.human_account_id, fn ->
+    socket
+    |> Read.now(:conversations, actor.human_account_id, fn ->
       Chat.my_conversations(actor: actor)
     end)
+    |> show_conversations()
   end
 
   defp load_messages(%{assigns: %{actor: actor, conversation: conversation}} = socket)
@@ -255,9 +232,10 @@ defmodule AshTemplateWeb.ChatLive do
 
   defp load_messages(%{assigns: %{actor: actor, conversation: conversation}} = socket) do
     socket
-    |> Read.start(:messages, conversation.id, fn ->
+    |> Read.now(:messages, conversation.id, fn ->
       Chat.message_history(conversation.id, actor: actor)
     end)
+    |> show_messages()
     |> new_form()
   end
 

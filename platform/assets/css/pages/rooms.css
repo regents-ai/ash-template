@@ -31,11 +31,6 @@
   justify-self: center;
 }
 
-.rooms-loading {
-  margin: 0;
-  text-align: center;
-}
-
 .rooms-messages {
   display: grid;
   margin: 0;

@@ -171,9 +171,7 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
          do: {:ok, %{page | entries: history.entries ++ page.entries}}
   end
 
-  # Only a first read shows as loading; entries on screen stay while older ones
-  # or a fresh first page are read.
-  defp state(%{value: nil, state: state}) when state in [:idle, :loading], do: :loading
-  defp state(%{state: state}) when state in [:loading, :empty], do: :ready
+  # An empty history is a table with no rows; a failed read keeps the entries on screen.
+  defp state(%{state: :empty}), do: :ready
   defp state(%{state: state}), do: state
 end

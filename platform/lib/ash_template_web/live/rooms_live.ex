@@ -78,25 +78,6 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   @impl true
-  def handle_async(
-        {Read, :messages, generation} = name,
-        result,
-        %{assigns: %{messages: %Read{generation: generation}}} = socket
-      ) do
-    {:noreply, socket |> Read.settle(name, result) |> show_messages()}
-  end
-
-  def handle_async(
-        {Read, :older, generation} = name,
-        result,
-        %{assigns: %{older: %Read{generation: generation}}} = socket
-      ) do
-    {:noreply, socket |> Read.settle(name, result) |> show_older()}
-  end
-
-  def handle_async({Read, _name, _superseded}, _result, socket), do: {:noreply, socket}
-
-  @impl true
   def handle_event("validate", %{"message" => params}, socket),
     do: {:noreply, assign(socket, :form, AshPhoenix.Form.validate(socket.assigns.form, params))}
 
@@ -160,7 +141,8 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   def handle_event("older", _params, %{assigns: %{page: %{more?: true} = page}} = socket) do
-    {:noreply, Read.start(socket, :older, owner(socket), fn -> Ash.page(page, :next) end)}
+    {:noreply,
+     socket |> Read.now(:older, owner(socket), fn -> Ash.page(page, :next) end) |> show_older()}
   end
 
   # The account as it reads now, before each event and each background result
@@ -205,9 +187,6 @@ defmodule AshTemplateWeb.RoomsLive do
             <Primitives.notice :if={@older.state in [:error, :stale]} tone="error">
               Older messages couldn’t be loaded. Try again.
             </Primitives.notice>
-            <p :if={@messages.state == :loading} class="rg-muted rooms-loading">
-              Loading messages…
-            </p>
 
             <ol
               id="room-messages"
@@ -476,7 +455,8 @@ defmodule AshTemplateWeb.RoomsLive do
   defp load(%{assigns: %{room: room, actor: actor}} = socket) do
     socket
     |> Read.clear(:older)
-    |> Read.start(:messages, owner(socket), fn -> read_room(room, actor) end)
+    |> Read.now(:messages, owner(socket), fn -> read_room(room, actor) end)
+    |> show_messages()
     |> new_form()
   end
 

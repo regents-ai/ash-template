@@ -120,13 +120,13 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  # The outcome is judged against the connections read after the provider came
-  # back, so it waits for that read to land.
+  # The outcome is judged against the connections read after the provider came back.
   def handle_event("refresh_verified_connections", params, socket) do
     {:noreply,
      socket
      |> assign(connection_outcome: params, verified_connections_notice: nil)
-     |> read_verified_connections()}
+     |> read_verified_connections()
+     |> report_connection_outcome()}
   end
 
   def handle_event("mark_all_read", _params, socket) do
@@ -147,7 +147,7 @@ defmodule AshTemplateWeb.ShellLive do
       actor = AshTemplate.Credits.person(account)
 
       {:noreply,
-       Read.start(socket, :credits_history, account.privy_user_id, fn ->
+       Read.now(socket, :credits_history, account.privy_user_id, fn ->
          CreditsHistoryLive.older(history, &RegentCredits.history(&1, actor: actor))
        end)}
     else
@@ -166,12 +166,8 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   @impl true
-  def handle_async({Read, :credits_read, _generation} = name, result, socket) do
-    {:noreply, Read.settle(socket, name, result)}
-  end
-
   def handle_async({Read, _name, _generation} = name, result, socket) do
-    {:noreply, socket |> Read.settle(name, result) |> report_connection_outcome()}
+    {:noreply, Read.settle(socket, name, result)}
   end
 
   # Note changes are published on the writer's own topic; only the notes page
@@ -520,7 +516,7 @@ defmodule AshTemplateWeb.ShellLive do
         Read.clear(socket, :credits_read)
 
       account ->
-        Read.start(socket, :credits_read, account.privy_user_id, fn ->
+        Read.now(socket, :credits_read, account.privy_user_id, fn ->
           {:ok, RegentCredits.balance(account.privy_user_id)}
         end)
     end
@@ -535,7 +531,7 @@ defmodule AshTemplateWeb.ShellLive do
       account ->
         actor = AshTemplate.Credits.person(account)
 
-        Read.start(socket, :credits_history, account.privy_user_id, fn ->
+        Read.now(socket, :credits_history, account.privy_user_id, fn ->
           RegentCredits.history(%{}, actor: actor)
         end)
     end
@@ -556,7 +552,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp load_notifications(socket, %{route_id: :activity}) do
     case human_actor(socket) do
       %Human{} = actor ->
-        Read.start(socket, :notifications, actor.human_account_id, fn ->
+        Read.now(socket, :notifications, actor.human_account_id, fn ->
           Activity.list_my_notifications(actor: actor)
         end)
 
@@ -669,7 +665,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp read_points(socket) do
     case human_actor(socket) do
       %Human{} = actor ->
-        Read.start(socket, :points, actor.human_account_id, fn ->
+        Read.now(socket, :points, actor.human_account_id, fn ->
           RegentPoints.summary(actor: actor)
         end)
 
@@ -711,7 +707,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp read_verified_connections(socket) do
     case human_actor(socket) do
       %Human{} = actor ->
-        Read.start(socket, :verified_connections, actor.human_account_id, fn ->
+        Read.now(socket, :verified_connections, actor.human_account_id, fn ->
           Accounts.list_my_linked_identities(actor: actor)
         end)
 
@@ -744,11 +740,6 @@ defmodule AshTemplateWeb.ShellLive do
     do: "Disconnecting #{Providers.label(provider)}…"
 
   defp report_connection_outcome(%{assigns: %{connection_outcome: nil}} = socket), do: socket
-
-  defp report_connection_outcome(
-         %{assigns: %{verified_connections: %{state: :loading}}} = socket
-       ),
-       do: socket
 
   defp report_connection_outcome(%{assigns: assigns} = socket) do
     notice = connection_outcome(assigns.connection_outcome, assigns.verified_connections)

@@ -42,7 +42,6 @@ defmodule AshTemplateWeb.ActivityLive do
             Mark all as read
           </Primitives.button>
         </div>
-        <p :if={@notifications.state == :loading} class="rg-muted">Loading your activity…</p>
         <Primitives.notice :if={@notifications.state in [:error, :stale]} tone="error">
           Your activity couldn’t be loaded. Refresh the page to try again.
         </Primitives.notice>

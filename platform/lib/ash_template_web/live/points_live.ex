@@ -33,9 +33,6 @@ defmodule AshTemplateWeb.PointsLive do
           </Regent.Primitives.button>
         </:sign_in>
       </Regent.Account.signed_out>
-      <p :if={@account && is_nil(@points.value) && @points.state in [:idle, :loading]} role="status">
-        Reading your points…
-      </p>
       <Regent.Primitives.notice :if={@points.state == :error} tone="error">
         Points could not be read. Try refreshing this page.
       </Regent.Primitives.notice>
@@ -46,7 +43,7 @@ defmodule AshTemplateWeb.PointsLive do
           confirmed={Amount.format(@points.value.balance_micro)}
           today={Amount.format(@points.value.earned_today_micro)}
           pending={to_string(@points.value.pending)}
-          state={summary_state(@points.state)}
+          state={@points.state}
           allowances={
             Enum.map(
               if(@earning == [], do: [], else: @points.value.allowances),
@@ -250,10 +247,6 @@ defmodule AshTemplateWeb.PointsLive do
   defp entry_status(%{reversal_of_entry_id: id}) when not is_nil(id), do: "Correction"
   defp entry_status(%{points_micro_delta: 0}), do: "Allowance reached"
   defp entry_status(_), do: "Confirmed"
-
-  defp summary_state(state) when state in [:idle, :loading], do: :loading
-  defp summary_state(:empty), do: :ready
-  defp summary_state(state), do: state
 
   defp scope_name("activity:account"), do: "You and your agents"
   defp scope_name("credits"), do: "Credits purchases"

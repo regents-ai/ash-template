@@ -31,13 +31,8 @@
   padding-block: 0.5rem;
 }
 
-.chat-loading,
 .chat-writing {
   margin: 0;
-}
-
-.chat-loading {
-  text-align: center;
 }
 
 .chat-messages {

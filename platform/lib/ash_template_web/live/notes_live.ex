@@ -51,17 +51,6 @@ defmodule AshTemplateWeb.NotesLive do
   end
 
   @impl true
-  def handle_async(
-        {Read, :notes, generation} = name,
-        result,
-        %{assigns: %{notes: %Read{generation: generation}}} = socket
-      ) do
-    {:noreply, socket |> Read.settle(name, result) |> show_notes()}
-  end
-
-  def handle_async({Read, :notes, _superseded}, _result, socket), do: {:noreply, socket}
-
-  @impl true
   def handle_event("validate", %{"note" => params}, socket),
     do: {:noreply, assign(socket, :form, AshPhoenix.Form.validate(socket.assigns.form, params))}
 
@@ -216,7 +205,6 @@ defmodule AshTemplateWeb.NotesLive do
           <Primitives.notice :if={@notes.state in [:error, :stale]} tone="error">
             Your notes couldn’t be loaded. Refresh the page to try again.
           </Primitives.notice>
-          <p :if={@notes.state == :loading} class="rg-muted">Loading your notes…</p>
           <ul id="notes-list" class="notes-list" data-state={@notes.state} phx-update="stream">
             <li id="notes-empty" class="notes-empty rg-muted">
               No notes yet. Write your first one with the form.
@@ -321,11 +309,11 @@ defmodule AshTemplateWeb.NotesLive do
 
   defp load(socket), do: socket |> reread() |> new_form()
 
-  defp reread(%{assigns: %{actor: actor}} = socket),
-    do:
-      Read.start(socket, :notes, actor.human_account_id, fn ->
-        Notes.list_my_notes(actor: actor)
-      end)
+  defp reread(%{assigns: %{actor: actor}} = socket) do
+    socket
+    |> Read.now(:notes, actor.human_account_id, fn -> Notes.list_my_notes(actor: actor) end)
+    |> show_notes()
+  end
 
   # A failed read keeps the notes already on the page, so only a read that
   # landed replaces them.
