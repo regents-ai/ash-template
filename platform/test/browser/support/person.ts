@@ -1,16 +1,8 @@
-import {type BrowserContext, type Page, expect} from "@playwright/test"
+import {type Page} from "@playwright/test"
+import {expect} from "./test"
 
 // The walk's person, signed in by sign_in.exs before the server starts.
 export const signedIn = {storageState: "test/browser/.auth/person.json"}
-
-// The page's sign-in bridge asks the site to sign out when the browser holds no
-// sign-in of its own, which a walk never has, so that one request is stopped;
-// every other request goes through.
-export async function keepSignedIn(context: BrowserContext) {
-  await context.route("**/auth/privy/session", route =>
-    route.request().method() === "DELETE" ? route.abort() : route.continue(),
-  )
-}
 
 // The shell's buttons answer once its script has wired them, as they do for a
 // person by the time they reach for one.

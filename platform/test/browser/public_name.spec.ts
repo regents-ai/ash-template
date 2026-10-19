@@ -1,12 +1,11 @@
-import {expect, test} from "@playwright/test"
-import {keepSignedIn, ready, signedIn, watch} from "./support/person"
+import {expect, test} from "./support/test"
+import {ready, signedIn, watch} from "./support/person"
 
 // The Public Display Name form on the Account page. A save needs the browser's own
-// sign-in with Privy, which never completes at the walk's address, so Save must
-// finish, say why, send no change, and leave the form where it was. A save that
-// goes through is proved by test/ash_template_web/public_name_test.exs.
+// sign-in with Privy, which the walk's browser never holds (support/test.ts), so
+// Save must finish, say why, send no change, and leave the form where it was. A
+// save that goes through is proved by test/ash_template_web/public_name_test.exs.
 test.use(signedIn)
-test.beforeEach(({context}) => keepSignedIn(context))
 
 test("Save without the browser's sign-in refuses and changes nothing", async ({page}) => {
   const problems = watch(page)

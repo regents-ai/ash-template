@@ -1,6 +1,7 @@
-import {expect, test, type Page} from "@playwright/test"
+import type {Page} from "@playwright/test"
+import {expect, test} from "./support/test"
 import map from "./pages.json" with {type: "json"}
-import {keepSignedIn, ready, signedIn, watch} from "./support/person"
+import {ready, signedIn, watch} from "./support/person"
 
 // Every page in the feature map opens, shows what proves its purpose, raises no
 // error and fits the screen; every document answers with its type. The map lists
@@ -46,8 +47,7 @@ test.describe("visitor", () => {
 
 test.describe("signed in", () => {
   test.use(signedIn)
-  test.beforeEach(({context}) => keepSignedIn(context))
-  for (const entry of map.pages.filter(entry => "signed_in" in entry))
+    for (const entry of map.pages.filter(entry => "signed_in" in entry))
     for (const path of paths(entry)) walk(entry, path, true)
 })
 

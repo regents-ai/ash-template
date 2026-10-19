@@ -2683,3 +2683,9 @@ Operations
 - `skills/regent-workflow/SKILL.md`: the two verification sections are now one,
   pointing at `control/verification/standard.md`, with Sean's 18 Oct 23:34Z rule that
   agents add meaningful tests without asking.
+- After Sentinel's read of 9434c19 (HOLD): the account-switch check now goes through
+  the page's own save path (the account loader's `openProfile`), and fails when the
+  loader opens a new client on every call. The browser walk never leaves the machine:
+  `platform/test/browser/support/test.ts` answers for Privy with a stand-in that
+  holds no sign-in and fails any check that reaches another address; `keepSignedIn`
+  is gone, since only the real bridge asked the site to sign out.

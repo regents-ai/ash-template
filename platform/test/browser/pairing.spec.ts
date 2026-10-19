@@ -1,10 +1,10 @@
-import {expect, test, type Page} from "@playwright/test"
-import {keepSignedIn, ready, signedIn, watch} from "./support/person"
+import type {Page} from "@playwright/test"
+import {expect, test} from "./support/test"
+import {ready, signedIn, watch} from "./support/person"
 
 // Pairing an agent, the way a person does it: from the Account page or the agent
 // guide's link, into the side panel, then choosing their agent.
 test.use(signedIn)
-test.beforeEach(({context}) => keepSignedIn(context))
 
 const pairing = (page: Page) => page.locator("#shell-pairing")
 const message = (page: Page) => page.locator("#shell-pairing-box pre")

@@ -3,7 +3,8 @@
 // person has none, and never writes after a read or a profile-making that failed.
 // Every step of one save belongs to one person: a switch of account part way
 // through writes nothing (R-20261018-first-save-switch, found by the security
-// review of 18 Oct). Two quick presses keep the name pressed last
+// review of 18 Oct and checked through the page's own save path after Sentinel's
+// read of 19 Oct). Two quick presses keep the name pressed last
 // (R-20261018-two-quick-saves, found by the breaker review of 18 Oct), and a
 // save that fails outright never leaves the form busy.
 import {expect, it, vi} from "vitest"
@@ -15,6 +16,7 @@ vi.mock("@privy-io/react-auth", () => ({}))
 vi.mock("react-dom/client", () => ({}))
 
 const {oneSignIn} = await import("../js/privy_bridge")
+const {createLazyAuthLoader} = await import("../js/auth_lazy")
 
 const profile = (id: string, name: string | null = null): ProfileResult =>
   ({ok: true, status: 200, body: {profile: {profile_id: id, display_name: name}}})
@@ -101,12 +103,23 @@ function browser(first: string) {
   return {switchTo: (next: string) => { person = next }, proof}
 }
 
+// The page's own save path: the account loader starts the page's sign-in bridge,
+// and the bridge opens a profile client for one person, as privy_bridge.tsx does.
+function pageLoader(service: ReturnType<typeof profileService>, signIn: ReturnType<typeof browser>) {
+  return createLazyAuthLoader(async () => ({
+    startPrivyBridge: async () => ({
+      request: async () => {},
+      openProfile: () => createProfileClient({acquireProof: oneSignIn(signIn.proof), fetch: service.fetch}),
+    }),
+  }))
+}
+
 it("a switch of account after the first read saves nothing to either account", async () => {
   const service = profileService()
   const signIn = browser("did:a")
-  const client = createProfileClient({acquireProof: oneSignIn(signIn.proof), fetch: service.fetch})
+  const save = pageLoader(service, signIn).openProfile()
   const switching: ProfileAction = async (operation, input, options) => {
-    const answer = await client(operation, input, options)
+    const answer = await save(operation, input, options)
     if (operation === "get") signIn.switchTo("did:b")
     return answer
   }
@@ -118,9 +131,9 @@ it("a switch of account after the first read saves nothing to either account", a
 
 it("the same person's first save still makes the profile and saves the name", async () => {
   const service = profileService()
-  const client = createProfileClient({acquireProof: oneSignIn(browser("did:a").proof), fetch: service.fetch})
+  const save = pageLoader(service, browser("did:a")).openProfile()
 
-  expect(await saveName(client, "Ada")).toMatchObject({ok: true, displayName: "Ada"})
+  expect(await saveName(save, "Ada")).toMatchObject({ok: true, displayName: "Ada"})
   expect(service.profiles.get("did:a")?.display_name).toBe("Ada")
 })
 
@@ -164,11 +177,8 @@ it("two quick saves keep the name pressed last, however slow the first is", asyn
   }
   const page = form()
   const onSaved = vi.fn()
-  const signIn = browser("did:a")
-  mountProfile(page.root, {
-    openProfile: () => createProfileClient({acquireProof: oneSignIn(signIn.proof), fetch: slowFirstRead}),
-    onSaved,
-  })
+  const loader = pageLoader({...service, fetch: slowFirstRead}, browser("did:a"))
+  mountProfile(page.root, {openProfile: () => loader.openProfile(), onSaved})
 
   await Promise.all([page.press("Ada"), page.press("Grace")])
   expect(service.profiles.get("did:a")?.display_name).toBe("Grace")

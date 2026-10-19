@@ -1,9 +1,8 @@
-import {expect, test} from "@playwright/test"
-import {keepSignedIn, signedIn} from "./support/person"
+import {expect, test} from "./support/test"
+import {signedIn} from "./support/person"
 
 // Layout rules that once broke. Each test names the page it was found on.
 test.use(signedIn)
-test.beforeEach(({context}) => keepSignedIn(context))
 
 // Found by the review of 18 Oct: the Account page's two columns also split
 // Credits history, whose one panel then filled half the page.
