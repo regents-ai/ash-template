@@ -2692,3 +2692,7 @@ Operations
 - `make check` now builds all three shared library copies (`regent_ui`, `regent_identity`,
   `regent_agent_access`) before the type check. It built only the last, so the type check
   failed on a fresh clone and only ran clean in a folder that already held the others.
+- The design-system pin moves to `e4440c78`: the same four profile commits replayed on
+  Techtree's Canopy palette head `e14b7f30`, which lands on design-system main first
+  (coordinator ruling, 19 Oct). The `regent_ui` changes are line for line the ones in
+  `f82c4a74`; only the design-system changelog kept both entries.
