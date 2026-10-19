@@ -29,7 +29,7 @@ defmodule AshTemplateWeb.Components.SiteHeader do
           id={"#{@id}-products"}
           class="site-products"
           phx-hook="ProductsMenu"
-          phx-mounted={JS.ignore_attributes(["open"])}
+          phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
         >
           <summary class="site-header__link">
             Products <.chevron />

@@ -2834,3 +2834,11 @@ Operations
   at least 44px tall on a touch screen whatever the root font size.
 - The elixir-utils pin moves to `f8f36fd1` (tpl/eu-rename-1019c): six more names with
   hidden characters are refused in its HTTP check, each one a looser rule let through.
+
+## 2026-10-19 — A window says when it has settled
+
+- A dialog or header menu that opens carries `data-settled` once it rests where it
+  opens, after its rise or at once when it does not move (`platform/assets/js/motion.ts`).
+  Redraws keep the mark, as they keep `open`.
+- The browser walk measures the agent window's 44px touch targets once it carries
+  `data-settled`, instead of watching its inline style.

@@ -10,11 +10,11 @@ export async function ready(page: Page) {
   await expect(page.locator('[data-behavior-ready="true"]')).toBeAttached()
 }
 
-// A window opened by a press rises into place, and its script takes the move out of
-// the window's own style once it rests (assets/js/hooks/motion/slides.ts). Sizes are
-// measured once it rests: a window still rising measures a fraction of a pixel off.
+// A window opened by a press rises into place, and says so with `data-settled` once it
+// rests (assets/js/motion.ts). Sizes are measured then: a window still rising
+// measures a fraction of a pixel off.
 export async function resting(window: Locator) {
-  await expect(window).not.toHaveAttribute("style", /transform/)
+  await expect(window).toHaveAttribute("data-settled")
 }
 
 // The run's own server (playwright.config.ts).
