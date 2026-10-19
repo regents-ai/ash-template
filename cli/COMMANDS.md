@@ -314,6 +314,13 @@ CLI 1.10.4 handles the successful empty HTTP 204 response.
   pairing answers 403 `agent_not_paired` instead of 404 `not_paired`. The OpenAPI documents
   move to 5.0.0.
 
+- 2026-10-19: `account points` answers `activity_being_verified`, `daily_allowances` (`name`,
+  `remaining`), `entries` (`label`, `points`, `status`, `allowance_reduction`, `by`, `agent`,
+  `earned_at`) and `period_bonuses`; `pending`, `scope` and `source` are gone. `account
+  balances` gives a `note` whenever you can't spend on this site. `notes pin` needs a new
+  `operation_id` for each pin; one that already paid for an earlier pin answers 422
+  `invalid_pin`.
+
 - 2026-10-16: CLI 1.10.12 publishes `agents status`; every command names its site tool in `--help`.
 
 - 2026-10-15: CLI 1.10.4 publishes the six additions below and the Credits-history cursor flag; ordinary installation includes SOCKS proxy support.
