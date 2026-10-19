@@ -12,7 +12,7 @@ defmodule AshTemplate.Accounts.LinkedIdentity do
 
     custom_indexes do
       # Each sign-in reads the person's linked accounts by their account alone.
-      index([:human_account_id])
+      index([:human_account_id], concurrently: true)
     end
   end
 

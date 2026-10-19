@@ -293,7 +293,8 @@ browser check would miss (founder decisions 2026-09-27, 2026-10-08 and 111 a on
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 
-`mix test` first brings the local `ash_template_test` database up to date. Check
+`mix test` first creates the local `ash_template_test` database when it is missing,
+then brings it up to date, so a fresh copy passes its first `make check`. Check
 every other change in a browser against the development server.
 
 ## Deployment

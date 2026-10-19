@@ -7,11 +7,15 @@ defmodule AshTemplate.Repo.Migrations.UnreadAndLinkedAccountIndexes do
 
   use Ecto.Migration
 
+  @disable_ddl_transaction true
+  @disable_migration_lock true
+
   def up do
-    create index(:linked_identities, [:human_account_id])
+    create index(:linked_identities, [:human_account_id], concurrently: true)
 
     create index(:notifications, [:human_account_id],
              name: "notifications_unread_index",
+             concurrently: true,
              where: "read_at IS NULL"
            )
   end

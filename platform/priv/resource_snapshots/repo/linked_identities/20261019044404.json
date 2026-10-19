@@ -148,7 +148,7 @@
   "custom_indexes": [
     {
       "all_tenants?": false,
-      "concurrently": false,
+      "concurrently": true,
       "error_fields": [
         "human_account_id"
       ],
@@ -172,7 +172,7 @@
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "2B141DBF8721489A7DE7C8BEACBBC43008D12BBE6C9A9B94BA0BD5F30E98215C",
+  "hash": "8AC9CED555181A4A618F145A34519BFF546EBD9CF4115A7FB1D4F442B26CA013",
   "identities": [
     {
       "all_tenants?": false,

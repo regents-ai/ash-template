@@ -24,7 +24,11 @@ defmodule AshTemplate.Activity.Notification do
       index([:human_account_id, :inserted_at])
       # The bell counts a person's unread notifications on every page, so this
       # index holds only those.
-      index([:human_account_id], name: "notifications_unread_index", where: "read_at IS NULL")
+      index([:human_account_id],
+        name: "notifications_unread_index",
+        where: "read_at IS NULL",
+        concurrently: true
+      )
     end
   end
 
