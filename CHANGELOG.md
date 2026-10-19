@@ -2834,3 +2834,21 @@ Operations
   at least 44px tall on a touch screen whatever the root font size.
 - The elixir-utils pin moves to `f8f36fd1` (tpl/eu-rename-1019c): six more names with
   hidden characters are refused in its HTTP check, each one a looser rule let through.
+
+## 2026-10-19 — An agent is told its status and what it may do
+
+- `agents whoami` (`GET /api/agents/v1/whoami`, the `agent_whoami` tool) answers the
+  agent's `status` (`not_paired`, `person_not_here` or `paired`), what it may do in
+  it (`allowed`, set in `platform/config/config.exs`) and its `next_step`, and no
+  longer answers `effective_access`. Its tool is titled "Check my status" and asks to
+  be called first.
+- `agents status` (`GET /api/agents/v1/me`) before pairing, or after an unpairing,
+  answers 403 `agent_not_paired` instead of 404 `not_paired`. Every refusal and hint
+  that sends an agent to pair points at Pair New Agent in the side panel on this site.
+- `/llms.txt`, `/agents.md` and `/skill.md` carry a "What you can do" list built from
+  the same settings whoami answers. The agent guides say `agent_not_paired` also means
+  the person unpaired the agent.
+- `openapi.json` and the API contract move to 5.0.0: the agent refusals are
+  documented route by route, and the notes routes name `note_not_found`.
+- Needs elixir-utils `bbca153` (eu/cop-eu-a-1019); the pin in `platform/mix.exs`
+  moves to it once it is on main.

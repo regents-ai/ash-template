@@ -278,18 +278,48 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   # The `{{showcase}}` line and the blank line after it become the showcase
   # section only when the showcase is public. `{{supported_host}}` is the one
-  # section every Regent site's guide carries word for word. `{{origin}}` goes
+  # section every Regent site's guide carries word for word. `{{what_you_can_do}}`
+  # is what an agent may do in each status, as whoami tells it. `{{origin}}` goes
   # last, since the other sections all name it.
   defp source(name) do
     @sources[name]
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
     |> String.replace("{{key_facts}}", @key_facts)
     |> String.replace("{{supported_host}}", String.trim_trailing(@sources["supported-host"]))
+    |> String.replace("{{what_you_can_do}}", what_you_can_do())
     |> String.replace("{{tools}}", Capabilities.markdown_table())
     |> String.replace("{{tool_summary}}", Capabilities.summary_table())
     |> String.replace("{{skills}}", skills_table())
     |> String.replace("{{skill_list}}", skill_list())
     |> String.replace("{{origin}}", url(""))
+  end
+
+  @statuses [
+    {"not_paired", "no person has paired you with their account"},
+    {"person_not_here", "paired, but your person hasn't signed in on this site yet"},
+    {"paired", "you act for your person"}
+  ]
+
+  # One line for each status, from the same list whoami answers.
+  defp what_you_can_do do
+    allowed = Application.fetch_env!(:regent_agents, :allowed)
+
+    lines =
+      Enum.map_join(@statuses, "\n", fn {status, meaning} ->
+        next = RegentAgents.HTTP.next_step(status) || "Do what your person asks."
+
+        "- **`#{status}`** (#{meaning}): #{Enum.join(allowed[status], " ")} **Next:** #{next}"
+      end)
+
+    """
+    ## What you can do
+
+    Check your status first, with `regents ash-template agents whoami --json` or the \
+    `agent_whoami` browser tool: `status` is one of the three below, `allowed` lists what \
+    you may do in it and `next_step` says what to do next.
+
+    #{lines}\
+    """
   end
 
   defp showcase_section(false), do: ""

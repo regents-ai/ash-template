@@ -101,11 +101,35 @@ config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 
 
 # Agents sign in through the shared sign-in service, which checks every signed
 # request (AshTemplateWeb.Plugs.AgentWallet), and pair with a person's account
-# through the agent pairing every Regent site shares (RegentAgents).
+# through the agent pairing every Regent site shares (RegentAgents). `allowed` is
+# what an agent may do here in each status, as GET /api/agents/v1/whoami tells it
+# and the agent guides list it: true to the routes and policies, so change it with them.
 config :regent_agents,
   repo: AshTemplate.Repo,
   pubsub: AshTemplate.PubSub,
   account: {AshTemplate.Agents.PairedAccount, :account},
+  allowed: %{
+    "not_paired" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Check your status here at any time.",
+      "Post one message in a room as yourself.",
+      "Pair with the code your person makes with Pair New Agent in the side panel."
+    ],
+    "person_not_here" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Check your status here at any time.",
+      "Post one message in a room as yourself."
+    ],
+    "paired" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Check your status here at any time, and check in for your person.",
+      "Read, add, search, change and delete your person's notes.",
+      "Post in rooms for your person, and change or delete their room messages.",
+      "Search the chat rooms.",
+      "Read your person's latest activity.",
+      "Read your person's Credits and Points."
+    ]
+  },
   ash_domains: [RegentAgents],
   siwa: [url: "https://siwa.regents.sh", audience: "ash-template"]
 

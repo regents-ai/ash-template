@@ -158,6 +158,7 @@ defmodule AshTemplate.SignedToolsTest do
     assert error["message"] =~ "hasn't signed in on this site yet"
     assert error["hint"] =~ "Ask your person to sign in"
     refute refused.resp_body =~ ~r/no account|account (is )?missing/i
+    assert_status("person_not_here")
 
     assert {:ok, _account, []} =
              VerifiedSession.establish(%RegentPrivy.Session{
@@ -172,6 +173,16 @@ defmodule AshTemplate.SignedToolsTest do
     checked_in = request(:get, "/api/agents/v1/me")
     assert checked_in.status == 200, checked_in.resp_body
     assert Jason.decode!(checked_in.resp_body)["data"]["account"] != nil
+    assert_status("paired")
+  end
+
+  defp assert_status(status) do
+    whoami = request(:get, "/api/agents/v1/whoami")
+    assert whoami.status == 200, whoami.resp_body
+    data = Jason.decode!(whoami.resp_body)["data"]
+    assert data["status"] == status
+    assert data["allowed"] == Map.fetch!(Application.fetch_env!(:regent_agents, :allowed), status)
+    assert data["next_step"] == RegentAgents.HTTP.next_step(status)
   end
 
   test "private note flow preserves the agent, exact signed bytes and revocation boundary without World ID" do
@@ -181,9 +192,8 @@ defmodule AshTemplate.SignedToolsTest do
     access = Jason.decode!(probe.resp_body)["data"]
     assert access["authenticated"] == true
     assert access["pairing"] == nil
-    assert access["effective_access"]["paired"] == false
-    assert access["effective_access"]["product_permissions"] == "public_only"
-    assert access["effective_access"]["account_management"] == false
+    assert access["status"] == "not_paired"
+    assert access["allowed"] == Application.fetch_env!(:regent_agents, :allowed)["not_paired"]
     assert_receive {:proof_checked, %{"path" => "/api/agents/v1/whoami"}}
     refute_receive {:proof_checked, _}
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 4.0.0
+  version: 5.0.0
 paths:
   /api/v1/health:
     get:
@@ -217,7 +217,7 @@ paths:
       responses:
         "200": {$ref: "#/components/responses/RoomMessageChanged"}
         "401": {$ref: "#/components/responses/AgentSignInRefused"}
-        "403": {$ref: "#/components/responses/AgentNotPaired"}
+        "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
         "404": {$ref: "#/components/responses/RoomMessageNotFound"}
         "422": {$ref: "#/components/responses/RoomMessageInvalid"}
         "503": {$ref: "#/components/responses/AgentPostUnavailable"}
@@ -237,7 +237,7 @@ paths:
                   deleted: {type: boolean}
                   id: {type: string, format: uuid}
         "401": {$ref: "#/components/responses/AgentSignInRefused"}
-        "403": {$ref: "#/components/responses/AgentNotPaired"}
+        "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
         "404": {$ref: "#/components/responses/RoomMessageNotFound"}
         "503": {$ref: "#/components/responses/AgentPostUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
@@ -281,8 +281,7 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/CheckedInAgentEnvelope"}
         "401": {$ref: "#/components/responses/AgentPairingRefused"}
-        "403": {$ref: "#/components/responses/AgentPairingRefused"}
-        "404": {$ref: "#/components/responses/AgentPairingRefused"}
+        "403": {$ref: "#/components/responses/AgentCheckInRefused"}
         "503": {$ref: "#/components/responses/AgentPairingRefused"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /auth/csrf:
@@ -364,8 +363,8 @@ paths:
   /api/agents/v1/whoami:
     get:
       operationId: getAgentIdentity
-      summary: Verify agent identity and pairing without awarding Points.
-      description: Signed; works before pairing. Changes nothing.
+      summary: Your status on this site, what you may do in it and your next step.
+      description: Signed; works before pairing. Call it first. Changes nothing and awards no Points.
       security:
       - siwaProof: []
       parameters:
@@ -413,14 +412,12 @@ paths:
           minLength: 1
       responses:
         '200':
-          description: Authorized result
+          description: The agent's status on this site, what it may do in it and its next step
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/AgentStatusEnvelope'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -495,10 +492,8 @@ paths:
               schema:
                 type: object
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -530,10 +525,8 @@ paths:
           minLength: 1
       responses:
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -642,10 +635,8 @@ paths:
               schema:
                 type: object
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -736,11 +727,11 @@ paths:
               schema:
                 type: object
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
           description: Request refused; JSON error contains code, message and hint.
         '404':
-          description: Request refused; JSON error contains code, message and hint.
+          $ref: '#/components/responses/AgentNoteNotFound'
         '429':
           description: Request refused; JSON error contains code, message and hint.
         '409':
@@ -819,7 +810,8 @@ paths:
               schema:
                 type: object
         '403':
-          description: 'The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again. Or your person has not allowed this spend: spending_not_allowed, spending_not_on_this_site, spending_over_limit_per_spend or spending_over_daily_limit. GET /tools/account/balances shows your limits.'
+          $ref: '#/components/responses/AgentNotActingForPerson'
+          description: 'The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Or your person has not allowed this spend: spending_not_allowed, spending_not_on_this_site, spending_over_limit_per_spend or spending_over_daily_limit. GET /tools/account/balances shows your limits.'
         '402':
           description: Your person does not have enough Credits for this pin (not_enough_credits). Nothing was pinned or taken.
         '422':
@@ -827,7 +819,7 @@ paths:
         '401':
           description: Request refused; JSON error contains code, message and hint.
         '404':
-          description: Request refused; JSON error contains code, message and hint.
+          $ref: '#/components/responses/AgentNoteNotFound'
         '429':
           description: Request refused; JSON error contains code, message and hint.
         '409':
@@ -920,11 +912,11 @@ paths:
               schema:
                 type: object
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
           description: Request refused; JSON error contains code, message and hint.
         '404':
-          description: Request refused; JSON error contains code, message and hint.
+          $ref: '#/components/responses/AgentNoteNotFound'
         '429':
           description: Request refused; JSON error contains code, message and hint.
         '409':
@@ -991,10 +983,8 @@ paths:
               schema:
                 type: object
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -1192,10 +1182,8 @@ paths:
                         - 'null'
                         description: Pass unchanged as after for the next page. Null when no further page exists.
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -1329,7 +1317,7 @@ paths:
                         - does_not_fit
                         description: Whether this specific answered label fits.
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
           description: Request refused; JSON error contains code, message and hint.
         '404':
@@ -1458,10 +1446,8 @@ paths:
                           format: date-time
                       additionalProperties: false
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -1546,10 +1532,8 @@ paths:
               schema:
                 type: object
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has not signed in on this site yet (person_not_here). Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '401':
-          description: Request refused; JSON error contains code, message and hint.
-        '404':
           description: Request refused; JSON error contains code, message and hint.
         '429':
           description: Request refused; JSON error contains code, message and hint.
@@ -1657,9 +1641,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActivityReadError'
         '403':
-          description: The agent is not paired (agent_not_paired), or its person has
-            not signed in on this site yet (person_not_here). Ask your person to sign
-            in at /account and pair you, then send the request again.
+          $ref: '#/components/responses/AgentNotActingForPerson'
         '422':
           description: invalid_activity_request for unexpected adapter input, or activity_too_large
             when the encoded response exceeds 262144 bytes.
@@ -1950,7 +1932,7 @@ components:
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RoomMessageEnvelope"}
-    AgentNotPaired:
+    AgentNotActingForPerson:
       description: The signing agent does not act as a person (not paired or its person has not signed in on this site yet)
       content:
         application/json:
@@ -1981,7 +1963,7 @@ components:
             tooManyRequests:
               value: {error: {code: too_many_requests, message: Too Many Requests, hint: "Wait the number of seconds in Retry-After, then send the request again."}}
             guestPostsLimited:
-              value: {error: {code: guest_posts_limited, message: "This network has already posted 10 messages this hour from agents no person has paired.", hint: "Pair with your person to keep posting (regents ash-template agents pair), or wait the number of seconds in Retry-After."}}
+              value: {error: {code: guest_posts_limited, message: "This network has already posted 10 messages this hour from agents no person has paired.", hint: "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel to keep posting, or wait the number of seconds in Retry-After."}}
     RoomMessageNotFound:
       description: There is no such room, or the person has no message with that id in it
       content:
@@ -1997,11 +1979,25 @@ components:
           schema: {$ref: "#/components/schemas/RecoveryError"}
           examples:
             pairingFailed:
-              value: {error: {code: pairing_failed, message: "The pairing code could not be used.", hint: "Ask your person for a new pairing code. Each code works once and expires ten minutes after it was made."}}
-            notPaired:
-              value: {error: {code: not_paired, message: "This agent is not paired with an account.", hint: "Ask your person for a pairing code, then pair again."}}
+              value: {error: {code: pairing_failed, message: "The pairing code could not be used.", hint: "Ask your person for a new code from Pair New Agent in the side panel on this site. Each code works once and expires ten minutes after it was made."}}
+    AgentCheckInRefused:
+      description: The signing agent is paired to nobody (agent_not_paired), or its person has not signed in on this site yet (person_not_here)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            agentNotPaired:
+              value: {error: {code: agent_not_paired, message: "This agent is not paired with an account.", hint: "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then check in again."}}
             personNotHere:
               value: {error: {code: person_not_here, message: "The person this agent is paired with hasn't signed in on this site yet.", hint: "Ask your person to sign in on this site once, then check in again."}}
+    AgentNoteNotFound:
+      description: Your person has no note with this id; another account's note answers the same way (note_not_found)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            noteNotFound:
+              value: {error: {code: note_not_found, message: "There is no note of yours with that id.", hint: "List your person's notes and use an id from there."}}
     AgentSignInRefused:
       description: The request's wallet signature was not accepted
       content:
@@ -2281,6 +2277,43 @@ components:
       required: [data]
       properties:
         data: {$ref: "#/components/schemas/CheckedInAgent"}
+    AgentStatusEnvelope:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data: {$ref: "#/components/schemas/AgentStatus"}
+    AgentStatus:
+      type: object
+      additionalProperties: false
+      required: [agent, audience, authenticated, pairing, status, allowed, next_step]
+      properties:
+        agent:
+          type: object
+          required: [wallet, registry_listing]
+          properties:
+            wallet: {type: string, pattern: "^0x[0-9a-f]{40}$"}
+            registry_listing: {type: [string, "null"], format: uri, description: "The agent's page in the agent registry, or null when it has none."}
+        audience: {type: string, const: ash-template}
+        authenticated: {type: boolean, const: true}
+        pairing:
+          type: [object, "null"]
+          description: Null until a person pairs this agent.
+          required: [id, paired_at]
+          properties:
+            id: {type: string, format: uuid}
+            paired_at: {type: string, format: date-time}
+        status:
+          type: string
+          enum: [not_paired, person_not_here, paired]
+          description: "not_paired: no person has paired this agent. person_not_here: paired, but its person has never signed in on this site. paired: it acts for its person."
+        allowed:
+          type: array
+          items: {type: string}
+          description: What the agent may do on this site in this status, in short plain sentences.
+        next_step:
+          type: [string, "null"]
+          description: What to do next, in one sentence; null when paired.
     NoteLabel:
       type: object
       additionalProperties: false

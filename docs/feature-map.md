@@ -63,6 +63,8 @@ starts, and the server watches no files, so no page reloads under a check.
 | --- | --- |
 | A cookie or an unpaired or revoked agent never reaches the account; each signed request counts once | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent pairing with a name that has a hidden character is refused with `invalid_name`, and the same code still pairs it with another name | elixir-utils `ash_components/agents/test/http_test.exs` |
+| An agent's status check names its status (`not_paired`, `person_not_here` or `paired`), what it may do in it and its next step, before pairing, before its person signs in here and after; checking in before pairing is refused with `agent_not_paired` | elixir-utils `ash_components/agents/test/http_test.exs`, `platform/test/ash_template/agents/signed_tools_test.exs` |
+| `/llms.txt`, `/agents.md` and `/skill.md` list, for each status, exactly what the status check allows and its next step | `platform/test/ash_template_web/what_you_can_do_test.exs` |
 | Two agents spending a person's last Credits at once never spend more than there is; a retried pin pays once; a revoked allowance stops the next spend | `platform/test/ash_template/credits/agent_spend_test.exs` |
 
 ## Gaps
