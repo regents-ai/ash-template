@@ -32,4 +32,4 @@ acceptance_commands:
   - cwd: platform
     command: mix precommit
   - cwd: platform
-    command: npm run typecheck
+    command: mix test

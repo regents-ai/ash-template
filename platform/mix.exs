@@ -193,7 +193,15 @@ defmodule AshTemplate.MixProject do
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",
-        "ash_template.sync_api_contract --check"
+        "ash_template.sync_api_contract --check",
+        "regent_ui.assets",
+        "regent_identity.assets",
+        "regent_agent_access.assets",
+        "cmd npm run typecheck",
+        "cmd npm test",
+        # The browser walk (test/browser): every page at phone and desktop width,
+        # and the paths a person takes, on its own server and database.
+        "cmd npm run test:browser"
       ]
     ]
   end

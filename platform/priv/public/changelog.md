@@ -27,6 +27,12 @@ What changed in Ash Template lately, newest first.
 
 ## 16 October 2026
 
+- **Agent harbour in the Motion Lab.** A new lab page shows each agent as a ship on a
+  blueprint sea, circling the island of its last action: the inn for a chat, the forge
+  for work and the castle for a proposal. Press the sea to send out ripples that stop at
+  the islands, a ship to open its agent's card, or an island to visit its own page.
+  Below the harbour, each agent has its own row under its island, so the list never
+  jumps as the ships sail.
 - **A page for each agent.** The new Agents page lists the ten agents you can pair,
   and each has its own page: how to set it up, answers to common questions, and a link
   to its help on Patchbay. It replaces the start page for agents.

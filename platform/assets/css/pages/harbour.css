@@ -1,0 +1,319 @@
+@layer regents-product {
+/* The agent harbour at /animations/harbour. The far sea fades into
+   `--harbour-haze`, the page's own ground in each theme; the harbour reads it
+   as a hex colour. */
+.harbour {
+  --harbour-haze: #161616;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--harbour-haze);
+}
+
+:root[data-theme="light"] .harbour {
+  --harbour-haze: #e5e3d2;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .harbour {
+    --harbour-haze: #e5e3d2;
+  }
+}
+
+@media (max-width: 40rem) {
+  .harbour {
+    aspect-ratio: 5 / 4;
+  }
+}
+
+.harbour__stage,
+.harbour canvas,
+.harbour__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.harbour canvas {
+  display: block;
+  visibility: hidden;
+}
+
+.harbour__still {
+  object-fit: cover;
+}
+
+/* The still picture for the theme showing, until a live harbour has been drawn. */
+.harbour__still--light,
+:root[data-theme="light"] .harbour__still--dark {
+  display: none;
+}
+
+:root[data-theme="light"] .harbour__still--light {
+  display: block;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .harbour__still--light {
+    display: block;
+  }
+
+  :root:not([data-theme]) .harbour__still--dark {
+    display: none;
+  }
+}
+
+.harbour[data-harbour-ready="true"] canvas {
+  visibility: visible;
+}
+
+.harbour[data-harbour-ready="true"] .harbour__still {
+  display: none;
+}
+
+/* The name of the ship under the mouse, standing on its masthead. The page
+   moves it with `translate`. */
+.harbour__tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: 0.4em;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  transform: translate(-50%, calc(-100% - 0.2rem));
+  border: 1px solid var(--color-fg);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font: 0.68rem/1.2 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* An island's card under the mouse, standing on its buildings, with the link
+   to the island's page. Links take their colour from the stage. */
+.harbour__stage {
+  color: var(--color-fg);
+}
+
+.harbour__isle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0.7rem 0.5rem;
+  transform: translate(-50%, calc(-100% - 0.2rem));
+  border: 1px solid var(--color-fg);
+  background: var(--color-bg);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.harbour__isle strong {
+  font: 400 1.05rem/1.1 var(--font-family-title);
+}
+
+.harbour__isle span {
+  font: 0.68rem/1.2 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.harbour__isle span::after {
+  content: " \2192";
+}
+
+.harbour__isle:hover span {
+  text-decoration-thickness: 2px;
+}
+
+.harbour__tag[hidden],
+.harbour__isle[hidden] {
+  display: none;
+}
+
+.harbour__tag::before,
+.harbour-card__sail {
+  border-radius: 50%;
+  background: var(--sail);
+}
+
+.harbour__tag::before {
+  width: 0.55rem;
+  height: 0.55rem;
+  content: "";
+}
+
+/* The list under the harbour: the islands in a row, and below them one row for
+   each agent, standing in its island's column. An agent that sails on moves
+   across its own row, so the list keeps its height. Every name is a target at
+   least 2.75rem (44px) square. */
+.harbour__legend {
+  display: grid;
+}
+
+.harbour__legend ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.harbour__islands li {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.harbour__islands span,
+.harbour__crew a {
+  color: var(--color-fg-muted);
+  font: 0.72rem/1.4 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+.harbour__legend a {
+  display: inline-flex;
+  gap: 0.4em;
+  align-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  text-decoration: none;
+  text-underline-offset: 0.25em;
+}
+
+.harbour__islands a {
+  color: var(--color-fg);
+  font: 400 1.1rem/1.1 var(--font-family-title);
+}
+
+.harbour__crew {
+  grid-template-rows: repeat(var(--rows), auto);
+}
+
+.harbour__crew li {
+  min-width: 0;
+}
+
+.harbour__crew a::before {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--sail);
+  content: "";
+}
+
+.harbour__legend a:is(:hover, :focus-visible, [aria-current="page"]) {
+  color: var(--color-fg);
+  text-decoration: underline;
+}
+
+.harbour__legend a[aria-current="page"] {
+  text-decoration-thickness: 2px;
+}
+
+/* An agent's card: who it is, its Key, and its last few actions. */
+.harbour-card {
+  width: min(24rem, calc(100vw - 2 * var(--space-3)));
+  padding: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+.harbour-card::backdrop {
+  background: rgb(0 0 0 / 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.harbour-card__head {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.harbour-card__sail {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.harbour-card__head div {
+  flex: 1;
+  min-width: 0;
+}
+
+.harbour-card h2 {
+  margin: 0;
+  font-family: var(--font-family-title);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.harbour-card__head p,
+.harbour-card time {
+  margin: 0;
+  white-space: nowrap;
+  color: var(--color-fg-muted);
+  font: 0.72rem/1.4 var(--font-family-mono);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+
+.harbour-card__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  background: transparent;
+  color: var(--color-fg);
+}
+
+.harbour-card__close svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.harbour-card__actions {
+  display: grid;
+  margin: 0;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  list-style: none;
+}
+
+.harbour-card__actions li {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  color: var(--color-fg-muted);
+}
+
+.harbour-card__actions li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+/* The last action leads. */
+.harbour-card__actions li:first-child {
+  color: var(--color-fg);
+  font-size: 1.1rem;
+}
+}

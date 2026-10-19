@@ -96,9 +96,13 @@ Without `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` the site refuses to start. A
 worktree has no settings files of its own, so start it from the worktree's
 `platform` folder with `direnv exec <main checkout>/platform mix phx.server`.
 
-The local server talks to one loopback PostgreSQL database, `ash_template_dev`,
-on `127.0.0.1`. The only thing that leaves the machine is sign-in verification
-with Privy.
+The local server keeps its data in one loopback PostgreSQL database,
+`ash_template_dev`, on `127.0.0.1`. It leaves the machine to verify sign-in with
+Privy, to read wallets and names through the chain nodes
+(`ASH_TEMPLATE_CHAIN_NODE_URL`), to check agents' signed requests with the agent
+sign-in service (`ASH_TEMPLATE_SIWA_BROKER_URL`), and for each optional service in
+[Configuration](#configuration) whose setting is set. The browser walk runs with
+all of them off and fails if anything leaves the machine.
 
 ## Configuration
 
@@ -163,7 +167,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations`) and the build
+wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`) and the build
 skills (`/skills`, the agent guide `/skill.md` and
 `/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
 which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
@@ -264,14 +268,12 @@ From the monorepo root, `make check-platform` runs this component's gate and
 ```sh
 mix precommit
 mix test
-mix regent_agent_access.assets
-npm run typecheck
-npm test
 ```
 
-`make check-browser` runs the browser walk (`npm run test:browser`), and `make
-check` runs it too. Start it with the site's settings loaded, as the server
-needs them.
+`mix precommit` ends by copying the shared libraries' assets, then runs `npm run
+typecheck`, `npm test` and the browser walk (`npm run test:browser`). `make
+check-browser` runs the walk alone. Start either with the site's settings loaded,
+as the walk's server needs them.
 
 `make check` also runs the required-fixes check (see
 [Shared dependencies](#shared-dependencies)) and the command description check
@@ -306,8 +308,9 @@ can do and the check that proves it. Among them:
 - The browser walk (`test/browser`) opens every page and document in headless
   Chromium as a desktop 1280 wide and as a touch phone 390 wide, signed out and signed
   in, checks every address on each page shows its copy icon, gets a pairing code the
-  way a person does, opens a paired agent's window and renames the agent, and opens and
-  copies the wallets a wallet note names.
+  way a person does, opens a paired agent's window and renames the agent, opens and
+  copies the wallets a wallet note names, and opens the agent harbour's cards from its
+  list and from its ships on the sea, with WebGPU turned on for that check alone.
   It builds the pages' scripts and styles, starts its own server on a free port and a
   database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
   end whatever happens, even when its server never starts (`test/browser/walk.sh`),
