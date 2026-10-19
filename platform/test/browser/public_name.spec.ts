@@ -17,7 +17,7 @@ test("Save without the browser's sign-in refuses and changes nothing", async ({p
   await page.goto("/account")
   await ready(page)
   const form = page.locator("#account-public-name")
-  const name = form.getByLabel("Public Display Name")
+  const name = form.getByRole("textbox", {name: "Public Display Name"})
   const save = form.getByRole("button", {name: "Save"})
   await expect(name).toBeVisible()
   await expect(save).toBeVisible()

@@ -2783,3 +2783,5 @@ Operations
   beside the field and the agent keeps its name. The browser walk pairs two more
   agents and renames one at each width (`platform/test/browser/agents.spec.ts`); taking
   out the refusal or the save fails it.
+- The Public Display Name walk finds the name field by its role, since the new tip
+  beside it is also labelled with the name (`platform/test/browser/public_name.spec.ts`).
