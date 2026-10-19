@@ -10,6 +10,9 @@ export async function ready(page: Page) {
   await expect(page.locator('[data-behavior-ready="true"]')).toBeAttached()
 }
 
+// The run's own server (playwright.config.ts).
+const site = `127.0.0.1:${process.env.ASH_TEMPLATE_WALK_PORT}`
+
 // What a broken page shows: an uncaught error, a request to this site that
 // failed, or content wider than the screen.
 export function watch(page: Page, allowedStatus?: number) {
@@ -18,7 +21,7 @@ export function watch(page: Page, allowedStatus?: number) {
   page.on("response", response => {
     const url = new URL(response.url())
     const status = response.status()
-    if (url.host === "127.0.0.1:4098" && status >= 400 && status !== allowedStatus)
+    if (url.host === site && status >= 400 && status !== allowedStatus)
       problems.push(`${status} ${response.request().method()} ${url.pathname}`)
   })
   return {

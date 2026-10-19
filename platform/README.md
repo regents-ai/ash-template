@@ -303,7 +303,7 @@ can do and the check that proves it. Among them:
   nothing.
 - The browser walk (`test/browser`) opens every page and document at 390 and 1280
   wide in headless Chromium, signed out and signed in, and pairs an agent the way a
-  person does. It starts its own server on port 4098 and its own database,
+  person does. It starts its own server on a free port and its own database,
   `ash_template_browser_dev`, and signs in a local person first. Every page it opens
   is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
   that is not.

@@ -1,3 +1,4 @@
+import {execFileSync} from "node:child_process"
 import {defineConfig, devices} from "@playwright/test"
 
 // The browser walk (make check-browser). It starts its own local server on the
@@ -6,8 +7,15 @@ import {defineConfig, devices} from "@playwright/test"
 // Neither the browser nor the server leaves this machine: the browser's outside
 // requests fail the check that made them (test/browser/support/test.ts), and the
 // server, with the outside services' settings cleared, refuses its own and the walk
-// fails at the end (config/dev.exs, test/browser/support/outside_teardown.mjs).
-const port = 4098
+// fails at the end (config/dev.exs, test/browser/support/outside_teardown.ts).
+// Each run takes a port nothing on this machine is using, so two walks at once,
+// from two checkouts, never reach each other's server. The workers read this
+// file again and keep the run's port from the environment they inherit.
+process.env.ASH_TEMPLATE_WALK_PORT ??= execFileSync(process.execPath, [
+  "-e",
+  "const s = require('node:net').createServer().listen(0, '127.0.0.1', () => { console.log(s.address().port); s.close() })",
+]).toString().trim()
+const port = Number(process.env.ASH_TEMPLATE_WALK_PORT)
 const baseURL = `http://127.0.0.1:${port}`
 
 export default defineConfig({
@@ -17,7 +25,7 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   reporter: "line",
-  globalTeardown: "./test/browser/support/outside_teardown.mjs",
+  globalTeardown: "./test/browser/support/outside_teardown.ts",
   use: {
     baseURL,
     trace: "retain-on-failure",

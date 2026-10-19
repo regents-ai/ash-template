@@ -13,7 +13,9 @@ sign-in, and any other outside request fails the check that made it
 sign-in service from a closed port on the machine, starts with every outside
 service's setting cleared, and refuses any other outside request, which fails the
 walk (`platform/test/browser/support/server/walk_offline.ex`,
-`platform/test/browser/support/outside_teardown.mjs`).
+`platform/test/browser/support/outside_teardown.ts`). Each walk runs its server on a
+port nothing else on the machine is using (`platform/playwright.config.ts`), so two
+walks at once never reach each other's server; they still share the walk's database.
 
 ## Every page and document
 
@@ -37,11 +39,13 @@ walk (`platform/test/browser/support/server/walk_offline.ex`,
 | A name saved on the Account page with the person's own sign-in shows there, in the form and as the account's name; a forged sign-in changes nothing | `platform/test/ash_template_web/public_name_test.exs` |
 | Save makes the person's profile on their first save and saves only to the profile it read; a switch of account part way through the page's own save path saves nothing, and neither does a save pressed before a switch and still waiting its turn; two quick saves keep the name pressed last; a failed save never leaves the form busy | `platform/assets/test/public_name.test.ts` |
 | Save on the Account page without the browser's sign-in finishes, says why, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
-| A name with a control or text-direction character is refused, and the person is told to remove the hidden characters | elixir-utils `ash_components/identity/test/http_test.exs`; the words in `platform/assets/test/public_name.test.ts` |
+| A name with a control or text-direction character is refused, and the person is told to remove the hidden characters | elixir-utils `ash_components/identity/test/http_test.exs` and `profile_test.exs` (property tests); the words in `platform/assets/test/public_name.test.ts` |
 | The longest name the site takes, with no spaces, fits every signed-in page at both widths | `pages.spec.ts`; the walk's person has an 80-letter name (`platform/test/browser/support/sign_in.exs`) |
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code, and each choice a new code | same |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
+| An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
+| A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
 
@@ -61,6 +65,9 @@ walk (`platform/test/browser/support/server/walk_offline.ex`,
   the walk opens these pages but does not use them.
 - Connecting X on Connections, copying a wallet, the search dialog and the theme
   switch: not walked.
+- An agent's window, with its address: the walk pairs no agent, so it never opens.
+  The address's 44 px targets on a phone were measured once in headless Chromium,
+  not by a check that runs each time.
 - Wallet buttons and paying with USDC: only the showcase pages open; no chain is
   attached to the walk.
 - Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not

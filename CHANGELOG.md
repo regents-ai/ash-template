@@ -2720,3 +2720,22 @@ Operations
 - Pins: design-system `ec561f9d` (tpl/ds-address-1019, on `e4440c78`), elixir-utils
   `46ae1898` (tpl/eu-rename-1019, on `e8c3e432`), which also lets a person rename an
   agent they paired; the template does not offer it yet.
+- After the coordinator's rulings of 19 Oct on `eb2c5ec2`:
+  - The elixir-utils pin moves to `35532d74` (tpl/eu-name-1019d), two `regent_identity`
+    commits on elixir-utils main `9de2012`: names refuse hidden characters, and
+    property checks that any name holding one inside it is refused and any other name
+    saves as typed. The agent rename in `46ae1898`, named in the pins above, is left
+    out until the template offers it. The other elixir-utils packages move to
+    `9de2012` with it, which declares the bodies `Siwa.AgentAuthPlug` accepts.
+  - The design-system pin moves to `edf0bb27` (tpl/ds-address-1019c, on `ec561f9d`):
+    an address's words open the full address on a click, tap or Enter, not only on
+    hover, and on a touch screen the words and the copy icon each take a 44 px target.
+  - The browser walk's server runs on a port nothing else on the machine is using,
+    chosen when the walk starts, not always 4098, so two walks at once never reach
+    each other's server (Sentinel, 19 Oct). The outside-request check is
+    `platform/test/browser/support/outside_teardown.ts` again, with `@types/node`
+    26.6.5 for the walk's own files.
+  - A moving picture whose graphics card never starts now stops listening to the page
+    as well as showing its still picture (`platform/assets/js/canvas_island.ts`), as
+    Keyfleet `ff1146e1` found; `platform/assets/test/canvas_island.test.ts` fails
+    without it.

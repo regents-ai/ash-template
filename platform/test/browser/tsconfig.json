@@ -6,7 +6,7 @@
     "strict": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": [],
+    "types": ["node"],
     "noEmit": true
   },
   "include": ["**/*.ts", "../../playwright.config.ts"]
