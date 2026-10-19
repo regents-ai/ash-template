@@ -9,6 +9,11 @@ defmodule AshTemplate.Accounts.LinkedIdentity do
   postgres do
     table "linked_identities"
     repo(AshTemplate.Repo)
+
+    custom_indexes do
+      # Each sign-in reads the person's linked accounts by their account alone.
+      index([:human_account_id])
+    end
   end
 
   attributes do
