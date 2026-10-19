@@ -45,6 +45,8 @@
     {"route": "/animations/buttons", "purpose": "See each site's buttons.", "check": "#site-buttons"},
     {"route": "/animations/twin-cube", "purpose": "See the world and code cubes side by side.", "check": "#twin-cube"},
     {"route": "/animations/keyfleet", "purpose": "See the Keyfleet home.", "check": "#home-hero"},
+    {"route": "/animations/harbour", "purpose": "Watch the agents sail between the harbour's islands.", "check": "#harbour"},
+    {"route": "/animations/harbour/:place", "paths": ["/animations/harbour/inn", "/animations/harbour/forge", "/animations/harbour/castle"], "purpose": "See one island of the harbour and who is there.", "check": ".harbour__legend a[aria-current=\"page\"]"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

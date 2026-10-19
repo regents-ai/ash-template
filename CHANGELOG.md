@@ -2743,3 +2743,23 @@ Operations
 - `platform/priv/public/changelog.md` notes the agent harbour for visitors, and
   `platform/README.md` names the harbour and its island pages among the motion lab pages
   that follow `ASH_TEMPLATE_SHOWCASE`.
+
+## 2026-10-19 — Agent harbour moved onto the 18 Oct release, with its checks
+
+- The six harbour entries above (16 Oct) were written before the 18 Oct release and
+  are now applied on top of it unchanged; this entry adds the checks that release
+  asks of every change.
+- The browser walk opens `/animations/harbour` and each island's page at 390 and
+  1280 wide; an island's page must show its island marked in the list below the
+  harbour.
+- Checks: `platform/test/ash_template_web/harbour_live_test.exs` opens each island's
+  page and finds only its island marked, gets "not found" for an island that does not
+  exist, finds an agent's card on the page at its address (`?agent=`) and none for an
+  unknown agent, and makes thirteen moves, checking after each that one agent went to
+  another island, is listed there first and keeps four actions at most. Each check
+  was run once against a broken copy of the page (no marked island, a move that stays
+  put, more than four actions, any agent's card opening) and failed. The drawing,
+  ripples, pressing a name under the harbour and closing a card with Escape were
+  checked once in headless Chromium at 390 and 1280; pressing a ship or an island on
+  the sea is not checked. Both are listed as gaps in `docs/feature-map.md`. WebKit is
+  not run on the Mac.

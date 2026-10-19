@@ -36,6 +36,7 @@ headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac.
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
+| In the agent harbour, each island's page marks its island; an agent's address (`?agent=`) puts its card on the page; each move sends one agent to another island and lists it first, four actions at most | `platform/test/ash_template_web/harbour_live_test.exs` |
 
 ## Agents
 
@@ -56,3 +57,7 @@ headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac.
   attached to the walk.
 - Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not
   called by a check.
+- The agent harbour's drawing and ripples, pressing a name under the harbour and
+  closing a card with Escape: no check in the repo; each was checked once in
+  headless Chromium at 390 and 1280. Pressing a ship or an island on the sea is
+  not checked at all.
