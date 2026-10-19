@@ -52,12 +52,7 @@ defmodule AshTemplateWeb.PublicPagesController do
   end
 
   # XML from fixed page paths; PublicDocuments.sitemap/0 escapes every location.
-  # sobelow_skip ["XSS.SendResp"]
-  def sitemap(conn, _params),
-    do:
-      conn
-      |> put_resp_content_type("application/xml")
-      |> send_resp(200, PublicDocuments.sitemap())
+  def sitemap(conn, _params), do: send_cached(conn, "application/xml", PublicDocuments.sitemap())
 
   defp show_document(conn, document),
     do: render(conn, :show, [document: document] ++ PublicDocuments.page(conn.request_path))

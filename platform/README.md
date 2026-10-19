@@ -245,7 +245,9 @@ lib/mix/tasks/          Local setup, contract sync and route-handoff checks
 test/                   The sign-in and Credits tests (see Checks)
 contracts/              The OpenAPI contract
 config/                 Compile-time and runtime configuration
-assets/                 TypeScript and CSS, built with esbuild
+assets/                 TypeScript and CSS, built with esbuild; the hashed
+                        script pieces go in priv/static/assets/js/chunks,
+                        which browsers keep for a year
 priv/                   Migrations, public and legal Markdown, static assets
 docs/                   Local setup guides
 scripts/                Release helpers
