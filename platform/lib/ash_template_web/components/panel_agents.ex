@@ -4,8 +4,8 @@ defmodule AshTemplateWeb.PanelAgents do
   panel on every page, in the shared short list (`Regent.Account.agents_brief`):
   each agent's picture and name over the Regent site it was last active on and
   how long ago. Pairing is shared by every Regent site, so an agent paired on
-  another one is listed too. The Account page's list
-  (`AshTemplateWeb.AgentsPanel`) opens one and unpairs it.
+  another one is listed too. Its "Your agents" heading leads to the Account
+  page, whose list (`AshTemplateWeb.AgentsPanel`) opens one and unpairs it.
 
   Where each agent was last active comes from its shared reading
   (`AshTemplate.Agents.ActivityReading`), asked for only for an open panel: the
@@ -59,7 +59,11 @@ defmodule AshTemplateWeb.PanelAgents do
   def render(assigns) do
     ~H"""
     <div id={"#{@id}-reader"} phx-hook="PanelAgents" data-read-on-open>
-      <Regent.Account.agents_brief id={@id} agents={rows(@agents, @last_actions, @now)} />
+      <Regent.Account.agents_brief
+        id={@id}
+        href={~p"/account"}
+        agents={rows(@agents, @last_actions, @now)}
+      />
     </div>
     """
   end

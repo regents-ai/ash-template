@@ -212,10 +212,12 @@ defmodule AshTemplateWeb.OnchainExample do
       <p :if={@names_sender} class="onchain-example-from" hidden={!@wallet}>
         <%= if @wallet do %>
           {if @signer, do: "Sending from", else: "Wallet"}
-          <code>{RegentFormat.short_address(@wallet)}</code> on {@chain.name} · {balance(@balance)}
+          <P.address id={"#{@id}-wallet"} address={@wallet} /> on {@chain.name} · {balance(@balance)}
         <% end %>
       </p>
-      <p class="onchain-example-note" hidden={!@mismatch}>{@mismatch}</p>
+      <p class="onchain-example-note" hidden={!@mismatch}>
+        <OnchainSteps.note :if={@mismatch} id={"#{@id}-mismatch"} parts={@mismatch} />
+      </p>
 
       <div class="onchain-example-actions">
         <P.button data-onchain-step="record"><span data-press-label>Record</span></P.button>
@@ -227,14 +229,16 @@ defmodule AshTemplateWeb.OnchainExample do
 
       <%!-- Room for three lines is kept, so a note never moves what follows. --%>
       <div class="onchain-example-press-notes">
-        <p :if={@press_note} class="onchain-example-note" role="status">{@press_note}</p>
+        <p :if={@press_note} class="onchain-example-note" role="status">
+          <OnchainSteps.note id={"#{@id}-press-note"} parts={@press_note} />
+        </p>
         <p class="onchain-example-note" role="status" data-onchain-lost hidden>
           This page lost its connection, so nothing was sent. Press again once it's back.
         </p>
       </div>
 
       <p :if={@signed} class="onchain-example-signed" role="status">
-        Signed by <code>{RegentFormat.short_address(@signed.review.signer)}</code>
+        Signed by <P.address id={"#{@id}-signer"} address={@signed.review.signer} />
         for the number {@signed.review.inputs["amount"]}.
       </p>
 

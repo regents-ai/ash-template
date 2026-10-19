@@ -293,7 +293,7 @@ stream DOM id as `data-layout-id`.
 - `npm run typecheck` and `npm test` from `platform/` (budget test included where present).
 - Unit-test only the rules around motion, as `assets/test/motion.test.ts` does: a press is
   never stopped, keyboard and reduced motion stay still, a wallet label squishes instead of
-  its button, a move begun over another starts from rest. No smoke tests.
+  its button, a move begun over another starts from rest. The browser walk opens the page.
 - LiveView tests do not run hooks. Check the route in a browser: the animation plays, a
   server patch afterwards leaves the right final state, the island's teardown leaves no
   stray styles, and reduced motion behaves.

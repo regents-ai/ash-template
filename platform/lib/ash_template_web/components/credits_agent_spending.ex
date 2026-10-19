@@ -133,7 +133,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
         phx-target={@myself}
       >
         <input type="hidden" name="agent" value={agent} />
-        <h3>Agent <code>{RegentFormat.short_address(agent)}</code></h3>
+        <h3>Agent <P.address id={"#{@id}-#{index}-agent"} address={agent} /></h3>
         <label class="credits-agent__switch">
           <input type="hidden" name={@forms[agent][:enabled].name} value="false" />
           <input

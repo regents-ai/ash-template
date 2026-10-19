@@ -1,9 +1,14 @@
 defmodule AshTemplateWeb.PublicPagesController do
   @moduledoc "Public documentation and discovery; no account or database reads."
   use AshTemplateWeb, :controller
-  alias AshTemplateWeb.{AgentSkills, Capabilities, PublicDocuments}
+  alias AshTemplateWeb.{AgentGuides, AgentSkills, Capabilities, PublicDocuments}
 
-  def show(conn, _params), do: show_document(conn, PublicDocuments.document(conn.request_path))
+  def show(conn, _params) do
+    case PublicDocuments.document(conn.request_path) do
+      nil -> raise AshTemplateWeb.NotFoundError
+      document -> show_document(conn, document)
+    end
+  end
 
   def skills(conn, _params), do: show_document(conn, PublicDocuments.skills_page())
 
@@ -14,6 +19,14 @@ defmodule AshTemplateWeb.PublicPagesController do
 
   def skill_guide(conn, _params),
     do: send_cached(conn, "text/markdown", PublicDocuments.skill_guide())
+
+  @doc "One agent's skill: the agent guide with that agent's Set up section added."
+  def agent_skill_guide(conn, %{"agent" => slug}) do
+    case AgentGuides.skill(slug) do
+      nil -> raise AshTemplateWeb.NotFoundError
+      skill -> send_cached(conn, "text/markdown", skill)
+    end
+  end
 
   # Only the fixed table in AgentSkills answers; any other path is the site's 404.
   # The content type comes from that table too, never from the request.

@@ -29,8 +29,8 @@ Use [product adoption](references/adoption.md) for concrete source entry points 
 Autolaunch, Patchbay and Techtree. Use [Regents reference](references/regents.md) for
 the verified implementation and its limits. The older
 [Patchbay walkthrough](../ash-stack/references/agent-readiness.md) remains a worked
-example; its historical suite-first and test-authoring recipes do not override the
-current founder's manual-acceptance policy or authorize new tests.
+example; `regent-workflow` ("Every change proves itself") decides which checks a
+change adds.
 
 ## Procedure
 
@@ -152,8 +152,7 @@ do not fabricate native success or treat a no-op registration as acceptance.
 ## Verification and staged rollout
 
 1. Compile/format the scoped changes and build affected assets. Verify real public
-   HTTP and browser behavior before broad implementation-level test maintenance.
-   No new tests or test databases without specific authorization.
+   HTTP and browser behavior, and add checks as `regent-workflow` sets out.
 2. Compare rendered metadata and public representations when extracting shared code.
    Keep auth, claims, schemas, frozen contracts and unrelated dirty work unchanged.
 3. Commit locally after review. Local commits are not pushes or deployment

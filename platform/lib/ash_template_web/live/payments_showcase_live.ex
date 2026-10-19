@@ -8,6 +8,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.Shell
+  alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
 
   # Sample wallets, plainly not anyone's: the one paid, the one signed in with
@@ -18,24 +19,22 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    [pay_to, signed_in, other] =
-      Enum.map([@pay_to, @signed_in, @other], &RegentFormat.short_address/1)
-
-    # The words for each answer `RegentPayments.WalletPayment.pay/4` can give.
+    # The words for each answer `RegentPayments.WalletPayment.pay/4` can give, as
+    # parts for `OnchainSteps.note/1`.
     answers = [
-      {"success", "Paid", "1.00 USDC went to #{pay_to}."},
-      {"info", "Going through", "Your payment is still going through. Check again in a moment."},
-      {"warning", "Expired", "This price has expired. Start again for a fresh one."},
-      {"warning", "Other wallet",
-       "Your wallet is on #{other}, which isn't linked to this account. Switch to #{signed_in}."},
-      {"error", "Refused", "Those payment terms have changed since your wallet saw them."},
-      {"error", "Unavailable", "Payments aren't available right now. Try again shortly."}
+      {"success", "Paid", ["1.00 USDC went to ", {:address, @pay_to}, "."]},
+      {"info", "Going through",
+       ["Your payment is still going through. Check again in a moment."]},
+      {"warning", "Expired", ["This price has expired. Start again for a fresh one."]},
+      {"warning", "Other wallet", OnchainSteps.mismatch_note([@signed_in], @other)},
+      {"error", "Refused", ["Those payment terms have changed since your wallet saw them."]},
+      {"error", "Unavailable", ["Payments aren't available right now. Try again shortly."]}
     ]
 
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/payments"))
-     |> assign(pay_to: pay_to, answers: answers), layout: false}
+     |> assign(pay_to: @pay_to, answers: answers), layout: false}
   end
 
   @impl true
@@ -88,11 +87,14 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
             </div>
             <div>
               <dt>Paid to</dt>
-              <dd><code>{@pay_to}</code></dd>
+              <dd><P.address id="payments-pay-to" address={@pay_to} /></dd>
             </div>
           </dl>
           <p>Before you pay, you see exactly this:</p>
-          <blockquote>Send 1.00 USDC to {@pay_to} as a tip for Pixel Garden.</blockquote>
+          <blockquote>
+            Send 1.00 USDC to <P.address id="payments-quote-pay-to" address={@pay_to} />
+            as a tip for Pixel Garden.
+          </blockquote>
           <div class="payments-press">
             <P.button type="button" disabled aria-describedby="payments-off">Pay 1.00 USDC</P.button>
             <p id="payments-off" class="rg-muted">Paying is switched off on this copy of the site.</p>
@@ -107,9 +109,9 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-answers-heading">
           <h2 id="payments-answers-heading">What you might see next</h2>
           <ul class="payments-answers">
-            <li :for={{tone, word, text} <- @answers}>
+            <li :for={{{tone, word, parts}, index} <- Enum.with_index(@answers)}>
               <P.status tone={tone}>{word}</P.status>
-              <span>{text}</span>
+              <span><OnchainSteps.note id={"payments-answer-#{index}"} parts={parts} /></span>
             </li>
           </ul>
         </section>

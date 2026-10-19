@@ -16,8 +16,6 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    [signed_in, send_to] = Enum.map([@signed_in, @send_to], &RegentFormat.short_address/1)
-
     # What a card purchase can show, in order; only the last means it arrived.
     card_steps = [
       {"info", "Submitted", "Your card payment went to Stripe."},
@@ -38,8 +36,8 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/funds"))
      |> assign(
-       signed_in: signed_in,
-       send_to: send_to,
+       signed_in: @signed_in,
+       send_to: @send_to,
        card_steps: card_steps,
        cash_out_steps: cash_out_steps
      ), layout: false}
@@ -183,7 +181,9 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
           <dl class="payments-terms">
             <div>
               <dt>To</dt>
-              <dd>Your wallet <code>{@signed_in}</code> on Base</dd>
+              <dd>
+                Your wallet <P.address id="funds-card-wallet" address={@signed_in} /> on Base
+              </dd>
             </div>
             <div>
               <dt>You get</dt>
@@ -228,11 +228,11 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
           <dl class="payments-terms">
             <div>
               <dt>From</dt>
-              <dd>Your wallet <code>{@signed_in}</code></dd>
+              <dd>Your wallet <P.address id="funds-send-from" address={@signed_in} /></dd>
             </div>
             <div>
               <dt>To</dt>
-              <dd><code>{@send_to}</code></dd>
+              <dd><P.address id="funds-send-to" address={@send_to} /></dd>
             </div>
             <div>
               <dt>Amount</dt>
@@ -298,7 +298,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-wallet-heading">
           <h2 id="funds-wallet-heading">Which wallet</h2>
           <p>
-            <code>{@signed_in}</code>
+            <P.address id="funds-wallet" address={@signed_in} />
             <P.status tone="success">Signed in</P.status>
           </p>
           <p>The wallet you signed in with. Everything above reads from it and sends from it.</p>

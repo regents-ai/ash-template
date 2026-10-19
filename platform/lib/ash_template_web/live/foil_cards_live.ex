@@ -35,15 +35,15 @@ defmodule AshTemplateWeb.FoilCardsLive do
       id: "techtree",
       name: "Techtree",
       line: "Open research, grown one branch at a time.",
-      note: "Stays flat",
-      look: %{"data-holo-tilt" => "0"}
+      note: "Softer light",
+      look: %{"data-holo-shine" => "0.6"}
     },
     %{
       id: "keyfleet",
       name: "Keyfleet",
       line: "Where personal agents form lasting groups.",
-      note: "Turns further",
-      look: %{"data-holo-tilt" => "1.8"}
+      note: "Brightest light",
+      look: %{"data-holo-shine" => "2"}
     }
   ]
 

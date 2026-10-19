@@ -2546,3 +2546,336 @@ Operations
   only. The template pins design-system 54500eb1 again, and the side panel's Sign
   out and Manage Account keep their own 32px height. Sean, 19 Oct 04:30Z: "Normal
   desktop size".
+## 2026-10-16 — A page for each agent; /agents replaces /start
+
+- `/agents` lists the ten agents the side panel offers, after three steps to pair one.
+  Each has its own page at `/agents/<agent>` (`grok_bot` is `grok-bot`, "Any agent" is
+  `other`): how it pairs, its set-up notes, common questions and troubleshooting ending
+  with its Patchbay help link, `https://patchbay.help/<agent>/troubleshooting`. Sean,
+  16 Oct: "each harness needs a custom page / skill / faq / link to its patchbay.help
+  for troubleshooting".
+- `/agents/<agent>/skill.md` is that agent's skill: the agent guide with its set-up
+  notes added under "On <Agent>".
+- Each agent is one Markdown file in `platform/priv/public/agents/`, read when the code
+  compiles (`AshTemplateWeb.AgentGuides`). The build stops if the files and
+  `RegentAgents.Harness.featured/0` name different agents. The files are the same
+  shape on every Regent site, so Keyfleet copies them as they are.
+- The pages answer `Accept: text/markdown` like the other reading pages and stay open
+  while the rest of the site is closed.
+- `/start` is retired: `/agents` does its job, and the route catalog, `llms.md` and
+  `agents.md` point there. `AshTemplateWeb.AgentStart`, `AgentStartLive` and their
+  stylesheet are deleted.
+- The side panel's pairing box shows a help icon under the copy and new-code icons once
+  an agent is chosen, linking to that agent's page (design-system 14a2b78, which also
+  underlines the "Your agents" heading link at rest). The heading leads to the Account
+  page.
+- Every pairing hint now reads "Ask your person to sign in on this site and pair you
+  with Pair New Agent in the side panel, then send the request again." (`posted_before_pairing`
+  ends "then post again."), in the plug, the rooms controller and both copies of the API
+  contract.
+
+## 2026-10-17 — Form security tokens stay out of the logs
+
+- `_csrf_token` joins `:filter_parameters` in `platform/config/config.exs`, so the
+  form security token that rides on every form post is logged as `[FILTERED]` like
+  the other secrets. Sentinel's v98 after-read follow-up.
+- Sentinel's other v98 note, one Safari "Refused to apply a stylesheet … style-src"
+  line per screen size, did not come back: 48 Safari page loads of `/`, `/start`,
+  `/account` (with sign-in opened) and `/docs` at 390 and 1440 showed none, and Chrome
+  showed none. The template's reading pages carry no inline style element; the only
+  one, Privy's in the sign-in pages, is allowed there. Nothing changed.
+
+## 2026-10-17 — Agent pages: two wording fixes from Sentinel
+
+- Every agent page's `agent_not_paired` line now reads "you aren't paired with your
+  person on this site. Ask them for a new code and pair again." It no longer says the
+  person unpaired the agent, which was only one of the reasons.
+- Grok Bot's answer to "Can my other Bots use this agent's key?" no longer invites
+  sharing one identity: "Every Bot on your account can read its workspace folder, so
+  any of them could act as this agent; keep only Bots you trust on that account."
+- Dots' "Settings, Personalization, Custom rules" path matches OpenAI's own Dots help
+  page (learn.chatgpt.com/docs/dots/controls), so it stays.
+
+## 2026-10-18 — Account panels in a sensible order; a cleaner Pair New Agent
+
+- /account: the account card and Your agents run the full width at the top. Below
+  them, on a wide page, Credits sits in the left column and Profile in the right, and
+  each column stacks its own panels, so a tall panel never leaves a gap beside a short
+  one. A narrow page shows one column in that same order. The page is a size
+  container and the columns start at 46rem of its width, as on regents.sh (Sean, 17
+  Oct: "the ordering of the containers on the account site is very bad").
+- Pair New Agent in the side panel (design-system 347a370; Sean, 18 Oct): before an
+  agent is chosen the box reads "Choose type of agent below to get pairing message.";
+  each picture has one frame, and every agent picture sits on white in both themes,
+  so NVIDIA's lettering reads in dark mode; the copy, new-code and help icons have
+  their own column beside the message; the pictures follow the box more closely,
+  "The code works once, until …" moves under them, and a picture's name on hover
+  never covers that line.
+- Sign-out was checked against Sean's ruling that it must start the browser fresh:
+  it already throws the whole session away (the browser's cookie is cleared, and the
+  signed-in claim is revoked on the server), and a guest's posting allowance belongs
+  to the network address, not to the browser, so nothing of the signed-in person
+  survives. No change was needed.
+
+## 2026-10-18 — The two cube labs: "Visit" stays on one line, the code cube's faces in mono
+
+- /animations/cube: where the six worlds show as a grid of cards (before the cube
+  draws, or where it can't), each card's button now says "Visit" alone under the
+  world's name, as on a phone. Between 48rem and 64rem "Visit Autolaunch" broke onto
+  two lines inside the button. The single card shown beside the drawn cube still
+  says "Visit Autolaunch".
+- /animations/twin-cube: the six face buttons now show in the mono font their code
+  screens were drawn with. The design system's base and the template's both give a
+  button the font of what holds it, unlayered, so the font a component set on the
+  button itself never applied, and the template's own "controls use the interface
+  font" rule then forced the interface font on top. The cube now sets its font on
+  the list that holds the buttons, and that template rule is gone: everywhere else
+  it only repeated the font the controls already took from the page. Every other
+  button, link and field on 18 pages, at phone and desktop width, kept exactly the
+  font it had.
+
+## 2026-10-18 — A person's shared name is read by the shared library
+
+- The name a person sets in their shared Regent profile is now read by
+  `RegentIdentity.ProfileName` from elixir-utils (e8c3e43), the same calculation
+  every site can put on its account resource. The template's own copy of the
+  profiles table (`AshTemplate.Accounts.SharedProfile`) and its calculation
+  (`AshTemplate.Accounts.HumanAccount.ProfileName`) are gone. Nothing changes on
+  screen: checked against the local database in a rolled-back transaction, a name
+  set for this site's Privy app shows, and one set for another app does not.
+
+## 2026-10-18 — Account page sections match
+
+- The Profile heading on the Account page is the same size as Agents and Credits
+  beside it (it was a fifth larger), and so are the section headings on the
+  Wallets and Connections pages. A details list draws its rules between rows
+  only, so Profile no longer has a second rule under its heading. Checked
+  headless at desktop and phone width, light and dark.
+
+## 2026-10-18 — Every change proves itself
+
+- Sean, 18 Oct 22:35Z: "Give your agent a way to verify its work." `make check` now
+  runs a browser walk (`make check-browser`, `platform/test/browser`): headless
+  Chromium at 390 and 1280 wide opens every page signed out and signed in and every
+  document, then pairs an agent the way a person does. It starts its own server on
+  its own database (`ash_template_browser_dev`, port 4098) and signs in a local
+  person first (`platform/test/browser/support/sign_in.exs`). WebKit is not run on
+  the Mac.
+- `platform/test/ash_template_web/feature_map_test.exs` fails when the router serves
+  a page or document the walk does not open, or the walk names one the router has
+  dropped, and when an agent in the side panel has no guide page or skill in it.
+- `docs/feature-map.md` lists what a person or agent can do, the check that proves
+  it, and the gaps.
+- A property test (StreamData) checks that each account shows the name its person
+  set for this site's Privy app, never one set for another app, in the order asked.
+  `stream_data` is now named in `platform/mix.exs`; Ash already shipped it.
+- Fixed: the Account page's two columns also split the Credits history page, whose
+  one panel filled half the width. The two columns now belong to the Account page
+  alone (`.account-layout`); Notes, Points and Credits history keep the shared grid.
+  `platform/test/browser/layout.spec.ts` checks it and failed on the old rule. Found
+  by the separate review of this release. The 18 Oct heading size applies to every
+  page with account panels (Notes, Rooms, Chat, Activity, Points, Credits history),
+  not only the three named in the entry before.
+- `regent-workflow` carries the rule for every lane ("Every change proves itself"),
+  replacing the rule that each new test needed Sean's agreement; the site standard
+  (`docs/standardization-plan.md`) has the matching Checks row.
+
+## 2026-10-18 — Public Display Name on the Account page
+
+- Sean, 18 Oct 22:36Z: "1. yes, in account 'Public Display Name'". The Account
+  page's Profile section is now one field, **Public Display Name**, with Save. It
+  saves to the shared Regents profile (`/api/v1/profile`) from the browser with the
+  person's own Privy proof; nothing on the server writes the name without it. The
+  first save makes the profile from the sign-in. After a save, the name at the top
+  of the page and in the shell updates.
+- The form is design-system `Regent.Profile.panel` and `mountProfile` (pin
+  `f82c4a74`, branch `tpl/ds-public-name-1018`). It no longer offers sign-in, a
+  wallet choice, Connect X or account details: wallets and connections have their
+  own Account tabs. The form takes its spacing from the Account panel around it.
+- One save is one person's: each Save opens its own profile client
+  (`openProfile` in `auth_lazy.ts` and `privy_bridge.tsx`), and `oneSignIn` hands on
+  only proofs for the person the save started with, so a switch of account part way
+  through sends nothing more (security review). Saves run one after another, so two
+  quick presses keep the name pressed last, and a save that fails outright never
+  stays on "Saving…" (breaker review).
+- A long name ends in "…" in the top bar instead of pushing the page sideways
+  (breaker review: an 80-letter name made the page 690px too wide at 1280).
+- Checks: `platform/test/ash_template_web/public_name_test.exs` saves a name with
+  Privy-signed test tokens and reads it back on `/account`, and a forged token is
+  refused; `platform/assets/test/public_name.test.ts` covers a first save, a later
+  save, refusals, a switch of account part way through (against a profile service
+  that follows the server's rules), two quick saves and a save that fails outright;
+  the walk's person now has an 80-letter name, so every signed-in page proves a long
+  name fits; `platform/test/browser/public_name.spec.ts` presses Save at 390 and 1280
+  wide without the browser's sign-in and checks it finishes, sends no change and
+  moves nothing. Each regression check was run once without its fix and failed.
+  `docs/feature-map.md` lists them.
+- `skills/regent-workflow/SKILL.md`: the two verification sections are now one,
+  pointing at `control/verification/standard.md`, with Sean's 18 Oct 23:34Z rule that
+  agents add meaningful tests without asking.
+- After Sentinel's read of 9434c19 (HOLD): the account-switch check now goes through
+  the page's own save path (the account loader's `openProfile`), and fails when the
+  loader opens a new client on every call. The browser walk never leaves the machine:
+  `platform/test/browser/support/test.ts` answers for Privy with a stand-in that
+  holds no sign-in and fails any check that reaches another address; `keepSignedIn`
+  is gone, since only the real bridge asked the site to sign out.
+- `make check` now builds all three shared library copies (`regent_ui`, `regent_identity`,
+  `regent_agent_access`) before the type check. It built only the last, so the type check
+  failed on a fresh clone and only ran clean in a folder that already held the others.
+- The design-system pin moves to `e4440c78`: the same four profile commits replayed on
+  Techtree's Canopy palette head `e14b7f30`, which lands on design-system main first
+  (coordinator ruling, 19 Oct). The `regent_ui` changes are line for line the ones in
+  `f82c4a74`; only the design-system changelog kept both entries.
+- After Sentinel's read of 65dd744 (HOLD): a save pressed before a switch of account,
+  still waiting behind another save, now belongs to the person who pressed it, so it
+  saves to neither account. The page's profile client is opened at the press of Save
+  in three places: the design-system form, the account loader's `openProfile` and the
+  bridge's `oneSignIn`, which hands on a proof only for the person signed in when the
+  save was opened. `platform/assets/test/public_name.test.ts` covers it; it failed
+  before the fix, and so did each of two weakened versions of it.
+- The browser walk's server never leaves the machine either. It starts with every
+  outside service's setting cleared, reads its chains and the agent sign-in service
+  from a closed port on the machine, and refuses any other outside request
+  (`platform/test/browser/support/server/walk_offline.ex`); one refusal fails the walk
+  (`platform/test/browser/support/outside_teardown.mjs`). Pointing one chain back at
+  Base's public node made the walk fail, as it should.
+- Names with a control or text-direction character are refused when saved, with
+  "That name can't be used. Remove any hidden characters." (Sean, 19 Oct, decision 2 a;
+  elixir-utils `regent_identity`).
+- The holographic cards no longer tilt toward the pointer (Sean, 19 Oct); only the light
+  follows it. The foil showcase's two tilt samples are now two light samples.
+- The agent's address in its window shows its short form with an icon that copies the
+  full address, the shared `Regent.Primitives.address` every address will use (Sean,
+  19 Oct).
+- Pins: design-system `ec561f9d` (tpl/ds-address-1019, on `e4440c78`), elixir-utils
+  `46ae1898` (tpl/eu-rename-1019, on `e8c3e432`), which also lets a person rename an
+  agent they paired; the template does not offer it yet.
+- After the coordinator's rulings of 19 Oct on `eb2c5ec2`:
+  - The elixir-utils pin moves to `35532d74` (tpl/eu-name-1019d), two `regent_identity`
+    commits on elixir-utils main `9de2012`: names refuse hidden characters, and
+    property checks that any name holding one inside it is refused and any other name
+    saves as typed. The agent rename in `46ae1898`, named in the pins above, is left
+    out until the template offers it. The other elixir-utils packages move to
+    `9de2012` with it, which declares the bodies `Siwa.AgentAuthPlug` accepts.
+  - The design-system pin moves to `edf0bb27` (tpl/ds-address-1019c, on `ec561f9d`):
+    an address's words open the full address on a click, tap or Enter, not only on
+    hover, and on a touch screen the words and the copy icon each take a 44 px target.
+  - The browser walk's server runs on a port nothing else on the machine is using,
+    chosen when the walk starts, not always 4098, so two walks at once never reach
+    each other's server (Sentinel, 19 Oct). The outside-request check is
+    `platform/test/browser/support/outside_teardown.ts` again, with `@types/node`
+    26.6.5 for the walk's own files.
+  - A moving picture whose graphics card never starts now stops listening to the page
+    as well as showing its still picture (`platform/assets/js/canvas_island.ts`), as
+    Keyfleet `ff1146e1` found; `platform/assets/test/canvas_island.test.ts` fails
+    without it.
+- After the coordinator's ruling of 19 Oct 01:42Z on `feef62af`:
+  - The elixir-utils pin moves to `384fbb00` (tpl/eu-name-1019e, on `35532d74`): a name
+    refuses every hidden character, not only controls and text-direction marks. Line
+    and paragraph separators and all format characters are refused, among them
+    zero-width spaces, the byte-order mark, the word joiner and the soft hyphen. A
+    zero-width joiner or non-joiner stays allowed between two visible characters, and
+    tag characters inside a complete flag. Taking out any one of these rules fails a
+    check.
+  - Each browser walk makes its own database, named after its port, and drops it when
+    it ends, passed or failed (`platform/test/browser/support/drop.exs`, run by
+    `platform/test/browser/support/teardown.ts`, which now also holds the
+    outside-request check). Two walks at once no longer share data.
+  - The walk builds the pages' scripts and styles before its server starts, and its
+    server runs no file watcher, so no page is reloaded under a check and the first run
+    from a fresh copy passes.
+  - The walk's phone is a touch phone at 390 wide (Playwright's Pixel 7 with its width
+    set to 390), not a desktop browser made narrow.
+  - The walk's person has an agent, paired with a code the way the Account page and
+    the agent do it, and the walk opens its window at both widths: the address opens
+    the full address on a tap or click, Escape closes it and gives the press back to
+    the address, the icon copies the full address, and on the phone each target is at
+    least 44 px tall (`platform/test/browser/agents.spec.ts`).
+
+## 2026-10-19 — An agent's name says where it comes from, and its person can change it
+
+- Founder, 19 Oct 00:16Z: make clearer where agents' names come from and who sees
+  them, and let the person edit them, in one shared piece for every account page.
+- The design-system pin moves to `f7b4c66c` (tpl/ds-name-1019a): the agents list's tip
+  says each agent chose its own name when it paired and only the person and the agent
+  see it, and the agent's window has a Name field with Save, a line saying only the
+  person sees it and a tip on where it comes from. The Public Display Name's tip says
+  people see it beside what the person posts, the same on every Regent site.
+- The elixir-utils pin moves to `9c580f45` (tpl/eu-rename-1019a): the person may rename
+  their agent, and an agent's name follows the same rule as a Public Display Name (1
+  to 80 characters, no hidden characters). A pairing whose name breaks it is refused
+  with `invalid_name` (400), and the same code still works; `cli/COMMANDS.md` and
+  `platform/priv/public/openapi.json` list it.
+- `regent_format` is now pinned with `override: true`, since `regent_identity` and
+  `regent_agents` name it by path.
+- The Account page's agent window saves a new name
+  (`platform/lib/ash_template_web/components/agents_panel.ex`); a refused name is said
+  beside the field and the agent keeps its name. The browser walk pairs two more
+  agents and renames one at each width (`platform/test/browser/agents.spec.ts`); taking
+  out the refusal or the save fails it.
+- The Public Display Name walk finds the name field by its role, since the new tip
+  beside it is also labelled with the name (`platform/test/browser/public_name.spec.ts`).
+
+## 2026-10-19 — Every address on the site has its copy icon
+
+- Founder, 19 Oct 00:17Z: "make a standing rule where anywhere an ens name or a
+  0xaddress or abbreviated 0xaddress is shown , to show a copy icon to get the full
+  address". The rule is in `skills/regent-workflow/SKILL.md`.
+- The design-system pin moves to `30d50d8c` (tpl/ds-identity-1019b): one account card
+  for every Account page (`Regent.Account.identity`), which says the person's name
+  once, and their wallet beneath it only when the name is not the wallet's own ENS
+  name or short address, so an ENS name is never shown twice. An address's words
+  default to its short address.
+- The Account page uses that card, and its Wallets page, a room post's agent, a
+  note's agent, the Credits panel and its agent spending, the Credits admin page, the
+  on-chain example and every showcase draw each address with
+  `Regent.Primitives.address`. The template's own card styles are gone.
+- A wallet note (`OnchainSteps.failure_note/4`, `mismatch_note/2`) is now its words and
+  the wallets it names, drawn by `<OnchainSteps.note>`, so each wallet in a note opens
+  and copies its full address.
+- The browser walk fails a page that shows an address without its icon
+  (`platform/test/browser/support/addresses.ts`), and opens and copies the wallets a
+  wallet note names (`platform/test/browser/addresses.spec.ts`); a note drawn without
+  the icons, or with a space before the comma after an address, fails it.
+
+## 2026-10-19 — The foil cards shine only on a thick frame
+
+- Founder, 19 Oct 00:51Z: "5. a , but only shine on a thick border not the whole
+  card." The design-system pin moves to `c0a83f4a` (tpl/ds-holo-frame-1019a): the
+  foil cards stay flat, and the light that follows the pointer shows only on a 12px
+  frame round each card; inside it the face stays still graphite with the crown's
+  outline. The home page's foil drawing still lights wherever it is.
+
+## 2026-10-19 — Sentinel's four fixes to the name work
+
+- The browser walk is started by `platform/test/browser/walk.sh`, which takes the
+  run's port, makes its database and drops it when the walk ends, whatever happens:
+  passed, failed, stopped, or a server that never started, when Playwright skips its
+  own teardown. It prints the database's name first. A drop that cannot reach the
+  database names the database it leaves.
+- `mix test` creates the local `ash_template_test` database when it is missing, so a
+  fresh copy needs only `mix setup` before `make check`. The Quickstart, the local
+  sign-in notes and the rename script's last steps make the development database
+  with `mix ecto.create` after `mix setup`.
+- The agent window's 44px checks measure once the window has risen into place
+  (`resting` in `platform/test/browser/support/person.ts`); measured while it was
+  still rising, a target came out a fraction of a pixel short. The design-system pin
+  moves to `3599ae97` (tpl/ds-address-44-1019a): an address's words and copy icon are
+  at least 44px tall on a touch screen whatever the root font size.
+- The elixir-utils pin moves to `f8f36fd1` (tpl/eu-rename-1019c): six more names with
+  hidden characters are refused in its HTTP check, each one a looser rule let through.
+
+## 2026-10-19 — A window says when it has settled
+
+- A dialog or header menu that opens carries `data-settled` once it rests where it
+  opens, after its rise or at once when it does not move (`platform/assets/js/motion.ts`).
+  Redraws keep the mark, as they keep `open`.
+- The browser walk measures the agent window's 44px touch targets once it carries
+  `data-settled`, instead of watching its inline style.
+
+## 2026-10-19 — The name work on the slimmer buttons
+
+- The name work joins main after the slimmer buttons and their desktop size.
+- The design-system pin moves to `fb26ac3a` (tpl/ds-names-on-lime-1019): the profile
+  and address work replayed on Techtree's Canopy palette, its lime buttons' outline in
+  light and the plainer Touch ID page, after the slimmer buttons.

@@ -63,7 +63,7 @@ defmodule AshTemplateWeb.Components.AgentTools do
       class="code-card agent-tools"
       aria-labelledby={"#{@id}-title"}
       data-agent-tools
-      phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["open"])}
+      phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["open", "data-settled"])}
     >
       <header class="code-card__head">
         <h2 id={"#{@id}-title"}>{@label}</h2>

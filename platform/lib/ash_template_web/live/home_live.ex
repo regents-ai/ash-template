@@ -193,7 +193,6 @@ defmodule AshTemplateWeb.HomeLive do
         data-card-color={Enum.at(~w(orange blue platinum), index)}
         phx-hook="HolographicCard"
         data-holo-ink
-        data-holo-tilt="0"
       >
         <:media>
           <Regent.HolographicCard.foil

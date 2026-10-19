@@ -198,7 +198,6 @@ defmodule AshTemplate.SignedToolsTest do
       error = Jason.decode!(refused.resp_body)["error"]
       assert error["code"] == "agent_not_paired"
       assert error["hint"] =~ "Pair New Agent"
-      assert error["hint"] =~ "/api/agents/v1/pair"
       refute Map.has_key?(Jason.decode!(refused.resp_body), "notes")
       assert_receive {:proof_checked, _}
     end

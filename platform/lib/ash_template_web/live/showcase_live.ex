@@ -309,7 +309,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <:caption>Pixel Square / regular 400</:caption>
           </S.technical_figure>
           <p>Geist Sans · body copy and interface.</p>
-          <code>0x71C7..976F</code>
+          <P.address id="type-address" address="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" />
           <.disclosure id="type-tokens" summary="Type and spacing">
             <p>
               Titles and subtitles: Geist Pixel Square, weight 400. Body text and controls: Geist Sans. Addresses and code: Geist Mono. Space: 8 / 16 / 24 / 32 / 40 / 48 / 64 px.

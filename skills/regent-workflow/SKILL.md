@@ -77,30 +77,65 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 
-## Product acceptance before test maintenance
+## Every address has a copy icon (founder rule, 19 Oct 2026)
 
-Do not spend substantial time maintaining implementation-level tests before
-establishing that the website works the way the founder wants. A large passing
-suite is not evidence of an accepted product or working user journeys.
+Sean, 19 Oct 2026, verbatim: "make a standing rule where anywhere an ens name or a
+0xaddress or abbreviated 0xaddress is shown , to show a copy icon to get the full
+address".
 
-- Prioritize a usable website and the founder's manual functional review. Do not
-  make rebuilding, expanding or repairing the broad test suite a prerequisite to
-  that review. Report actual behavior and gaps, not test counts as a readiness claim.
-- Do not add tests that mirror product-level functionality, smoke tests, or tests
-  that merely preserve internal callbacks, mock choreography or component structure.
-  Do not invent an automation backlog during implementation or review.
-- Keep automated coverage deliberately small and justified by specific costly
-  failures that manual review is unlikely to catch. Each retained test must name
-  the invariant it protects; an auth/wallet/security filename is not justification
-  for retaining a whole file or suite. Keep compilation and typechecking separate
-  from the behavioral-test budget.
-- When reducing a suite, use an explicit named allowlist and the founder's agreed
-  budget. Preserve an archive of dirty/untracked tests before removing them from
-  normal discovery. Do not hide the old suite behind default hooks or replace it
-  with equally large generated or parameterized coverage.
-- Add new automated behavioral coverage only when agreed with the founder for a
-  specific accepted requirement or concrete regression. Technical testing recipes
-  in task skills apply within that scope; they do not authorize expanding it.
+- On all five sites, every ENS name, full `0x` address and short address a page shows
+  is drawn with `Regent.Primitives.address` from design-system: the words open the full
+  address, and its copy icon copies the full address. This holds in lists, tables,
+  windows, notes beside buttons and the account's own wallets.
+- Never print an address or ENS name as plain text beside a hand-made copy button. A
+  page that needs a new shape of address changes the primitive in design-system first.
+- Reviews treat a bare address or ENS name on screen as a defect.
+
+## Every change proves itself (founder rule, 18 Oct 2026)
+
+Sean, 18 Oct 2026 22:35Z, verbatim in part: "Give your agent a way to verify its
+work." and "Delegate the code checking work to your automated tests, scale your
+approvals based on risk, and turn your test failures into living evaluations." The
+standard is `/Users/sean/Documents/regent/control/verification/standard.md`; read it
+before building checks, and follow it rather than this summary where they differ.
+
+The founder judges product intent, risk and evidence; automated checks do the code
+checking. A large passing suite is still not a readiness claim on its own: report
+what a person or agent can now do, the checks that prove it, and what is not proven.
+
+- **Agents add tests without asking** (Sean, 18 Oct 23:34Z, "Stop asking"):
+  end-to-end walks, property tests, regression tests and health checks need no
+  approval. Tests of exact wording, source names, component structure, mock
+  choreography or anything trivial are still not written. Tests come after the
+  feature works, and test code stays out of site code.
+- **Fast, repeatable checks in `make check`.** Warnings as errors, format, Credo,
+  the test suite, typechecks and the browser walk all run from the repository's one
+  `make check` (and `mix precommit`). No check lives only in a person's head or a
+  scratch script.
+- **The browser walk.** Headless Chromium at 390 and 1280 wide opens every page
+  signed out and signed in, and walks the paths a person takes on each changed page.
+  It starts its own server on its own database and signs in its own local person.
+  WebKit is not run on the Mac; say so in every report.
+- **A feature map**: each thing a person or agent can do, the check that proves it,
+  and the gaps listed as gaps. It lives at `docs/feature-map.md` until the shared
+  verification kit moves every repository to the standard's
+  `verification/features.yml`. A change to a feature updates its row in the same
+  commit, and a check fails when a page is added without being walked.
+- **Property tests** (StreamData, or a generated-input test in TypeScript) where a
+  rule must hold for every input: money, limits, ownership, names and ordering.
+- **An adversarial review before Sentinel.** A separate helper agent tries to break
+  the change: real pages at both widths, edge cases, and the elixir-stack design
+  check. A finding counts when it comes with a failing check; confirmed findings are
+  fixed before Sentinel's read.
+- **Every real failure becomes a lasting check.** A bug found by the walk, the review,
+  Sentinel or a person gets a check that fails on the old code (run it against the
+  old code once to see it fail) and passes on the fix, listed in the feature map.
+- **Approvals by risk.** Copy, CSS and docs ship on the evidence. Ordinary code ships
+  on the evidence plus the review. Protected work (billing, sign-in, contracts,
+  wallets, production data) also waits for Sean's go by letter.
+- **Evidence with every Sentinel request:** the commit it ran on (`git rev-parse
+  HEAD`) and a clean tree at the top; what behaviour changed; the commands that prove
+  it, with their results; what was not proven.
 
 ## The golden baseline is ash-template (founder rule, 13 Oct 2026)
 
@@ -208,9 +243,8 @@ cancelled work.
    before any correctness check: code that rebuilds Oban, Ecto, Phoenix, OTP or Ash is
    reported as a replacement, not repaired in place.
    The implementing agent reviews the change against acceptance, resolves integration
-   issues, and runs scoped checks on the integrated result within the testing policy above.
-   Exercise real or representative user flows; compilation alone does not prove an
-   interaction. Fix product failures without expanding into broad test maintenance.
+   issues, and runs `make check` on the integrated result. Exercise real or
+   representative user flows; compilation alone does not prove an interaction.
    Use independent security review when protected behavior needs it.
 5. Return when the requested feature works, a named missing input blocks correctness,
    or the next consequential action needs authority. Explain what changed, what was
@@ -223,21 +257,6 @@ cancelled work.
    Ordinary work is pushed to main and released after its checks and Sentinel's read.
    Confirmation before a protected change, payment, signature or destructive action is
    unchanged.
-
-## Verification (founder, 18 Oct 2026)
-
-Sean, 18 Oct: "Give your agent a way to verify its work." Every agent proves its own
-change; Sean judges product intent, risk and evidence, not code. The standard is
-`/Users/sean/Documents/regent/control/verification/standard.md`; read it before
-building checks, and follow it rather than this summary where they differ.
-
-- Each repo keeps `verification/features.yml` at its root: every action, the code that
-  serves it, its risk level and the checks that prove it, with gaps listed as gaps.
-- A breaker agent's finding counts only when it comes with a failing test.
-- Every bug becomes a permanent regression test, listed in the feature map.
-- Each release candidate carries an evidence summary: what changed, the commands that
-  prove it with their output, and what was not proven.
-- Protected work waits for Sean's go by letter.
 
 ## Release checklist
 
@@ -253,7 +272,9 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
    commit, candidate commit, release number, migrations (yes or no), protected area
    (yes or no), and who receives the verdict.
 4. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
-   task.
+   task. The public changelog says only what changed for people and agents: no release
+   numbers, commits or rollback notes. Those go in a release record the site does not
+   show (the template's root `CHANGELOG.md`).
 5. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
    or route, old shape, new shape, defining commit, live commit.
 6. **Holds.** A hold names who lifts it and what the release check looks for.

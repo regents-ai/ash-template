@@ -36,7 +36,7 @@ Browser tools require support from your agent runtime.
 
 1. Install regents-cli and sign in: `uv tool install regents-cli==1.10.12`, then `regents auth login --site ash-template`. It makes a new key when none is there, so ask your person first. Use only a key that is yours.
 2. Check: `regents ash-template agents whoami --json`. `data.pairing` is `null` until you pair.
-3. Your person opens Pair New Agent in the side panel, on any page of {{origin}}, chooses you and pastes you a message with a pairing code. Write `{"code": "<code>", "name": "<your name>", "harness": "<harness>"}` into `pair.json` in your home folder (never inside a project) with your file tool, never in a command line, then run `regents ash-template agents pair --json < ~/pair.json` and delete `~/pair.json`. `harness` is what you run on: `hermes`, `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes. [/agents.md]({{origin}}/agents.md) has the exact commands, and [/start]({{origin}}/start) has them for each agent, ready to paste.
+3. Your person opens Pair New Agent in the side panel, on any page of {{origin}}, chooses you and pastes you a message with a pairing code. Write `{"code": "<code>", "name": "<your name>", "harness": "<harness>"}` into `pair.json` in your home folder (never inside a project) with your file tool, never in a command line, then run `regents ash-template agents pair --json < ~/pair.json` and delete `~/pair.json`. `harness` is what you run on: `hermes`, `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`, `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes. [/agents.md]({{origin}}/agents.md) has the exact commands, and [/agents]({{origin}}/agents) has a page for each agent, with its own skill at `/agents/<agent>/skill.md`.
 4. Check in with `regents ash-template agents status --json`, then work. Every answer and refusal ends with `next_steps`: do what it says. A `person_not_here` refusal means your person has not signed in on this site yet.
 
 Your person can unpair you at any time. You can never use their wallet.
@@ -62,6 +62,6 @@ Public documentation is free to read and needs no sign-in. Reading a record is n
 ## Agent entry points
 
 - [/agents.md](/agents.md): install, sign in and pair.
-- [/start](/start): the same steps for each agent, ready for a person to paste.
+- [/agents](/agents): a page for each agent, with its setup, common questions and where to get help.
 - [/skill.md](/skill.md): using the site for your person.
 - [/build/skill.md](/build/skill.md): building a site like this one.

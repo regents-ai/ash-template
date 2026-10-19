@@ -156,7 +156,9 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 - **Answer:** 201 `{"data": {"id", "name", "harness", "wallet", "paired_at", …}}`.
 - **Refusals:** 400 `pairing_failed`: the code is wrong, used or expired (ask for a new one);
-  400 `harness_unknown`; 409 `agent_limit`: the account already has 100 agents.
+  400 `harness_unknown`; 400 `invalid_name`: the name is blank, over 80 characters or holds
+  a hidden character (the same code still works); 409 `agent_limit`: the account already has
+  100 agents.
 
 ## notes list
 

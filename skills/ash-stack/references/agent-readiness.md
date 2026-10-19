@@ -4,8 +4,7 @@ How to make a Phoenix 1.8 / Ash 3 product usable by agents first and by WebMCP o
 Written from the Patchbay pass of 11 September 2026 (`repos/patchbay/platform`), which
 is the worked example for every item below. Apply to regents, autolaunch and techtree.
 
-The test recipes below apply only where the founder agreed coverage; the testing policy in
-`regent-workflow` governs. The order is the order an external readiness checker scores: failures first, then
+The test recipes below follow `regent-workflow` ("Every change proves itself"). The order is the order an external readiness checker scores: failures first, then
 warnings. Do the items in order; each one is small.
 
 ## 0. Before touching anything
