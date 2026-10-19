@@ -226,7 +226,7 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   403 `spending_not_allowed`, `spending_not_on_this_site`, `spending_over_limit_per_spend` or
   `spending_over_daily_limit`: your person has not allowed this spend; `account balances`
   shows your limits.
-- **Refusals:** as for `notes get`, and 422 `invalid_pin` when `operation_id` is missing.
+- **Refusals:** as for `notes get`, and 422 `invalid_pin` when `operation_id` is missing or already paid for an earlier pin of this note.
 - **If the answer is lost:** run `notes get <id>`; a pinned note has `pinned_at`.
 
 ## notes unpin \<id\>
@@ -242,8 +242,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **What:** your person's Credits and how much you may spend. Signed; needs a pairing; spends
   nothing.
 - **Example:** `regents ash-template account balances`
-- **Answer:** `{"credits": …, "spending_grant": …}`, and a `note` when approving agent spending is
-  off on this site.
+- **Answer:** `{"credits": …, "spending_grant": …}`, and a `note` when you can't spend on this
+  site, saying what your person can do.
 - **Refusals:** as for `notes list`.
 
 ## account credits-history
@@ -257,11 +257,15 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## account points
 
-- **What:** your person's Points, today's total and recent entries. Signed; needs a pairing.
+- **What:** your person's Points, today's total, daily allowances and recent entries, each saying
+  who earned it and whether it counted. Signed; needs a pairing.
 - **Example:** `regents ash-template account points`
-- **Answer:** `{"points": "12.5", "earned_today", "pending", "daily_allowances": [{"scope",
-  "remaining"}], "entries": [{"points", "source", "by", "earned_at"}], "more"}`. Points are
-  decimal text. A `note` says when earning Points is off on this site.
+- **Answer:** `{"points": "12.5", "earned_today", "activity_being_verified", "daily_allowances":
+  [{"name", "remaining"}], "entries": [{"label", "points", "status", "allowance_reduction", "by",
+  "agent", "earned_at"}], "period_bonuses": [{"period", "points", "nft_count", "bonus_percent"}],
+  "more"}`. Points are decimal text. `status` is `counted` or `allowance_reached`;
+  `by` is `agent` or `person`; `agent` is the agent's name, or null. A `note` says when earning
+  Points is off on this site.
 - **Refusals:** as for `notes list`.
 
 ## notes search

@@ -2876,3 +2876,19 @@ Operations
   panel keep the last balance while it is read again, and the history keeps the older
   pages shown when it is read again.
 - Needs the elixir-utils pin moved to the commits on `eu/cop-eu-b-1019`.
+
+## 2026-10-19 — Agent spending words and new pins
+
+- A paired agent's `allowed` list says spending its person's Credits, such as pinning
+  a note, isn't open to agents yet and the person can do it themselves. The balances
+  and spending notes in `openapi.json` and the API contract say the same. The points
+  answer is described with its current fields in `cli/COMMANDS.md`, the tool manifest
+  and `cli/commands.json`.
+- Each new pin of a note costs 1 Credit (Sean 2 a, 19 Oct 2026). An `operation_id`
+  that already paid for an earlier pin of the note, for example after an unpin, is
+  refused with 422 `invalid_pin` and pins and charges nothing; a retry of the same
+  press still pays once. The pin tool, route and CLI command say to send a new
+  `operation_id` for each pin.
+- The elixir-utils commits these changes need are all on `eu/cop-int-1019`, which
+  replaces `eu/cop-eu-a-1019` and `eu/cop-eu-b-1019` above; the pin in
+  `platform/mix.exs` moves to it once it is on main.

@@ -128,7 +128,9 @@ config :regent_agents,
       "Post in rooms for your person, and change or delete their room messages.",
       "Search the chat rooms.",
       "Read your person's latest activity.",
-      "Read your person's Credits and Points."
+      "Read your person's Credits and Points.",
+      # Changes together with `config :regent_credits, agent_grants_enabled:`.
+      "Spending your person's Credits, such as pinning a note, isn't open to agents yet; your person can do it themselves."
     ]
   },
   ash_domains: [RegentAgents],

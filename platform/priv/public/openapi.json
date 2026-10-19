@@ -2780,7 +2780,7 @@
                   "operation_id": {
                     "type": "string",
                     "format": "uuid",
-                    "description": "A UUID you make for this pin. Keep it when retrying; a retry never pays twice."
+                    "description": "A new UUID for each pin, including a pin after an unpin. Keep it when retrying; a retry never pays twice."
                   }
                 },
                 "required": [
@@ -2916,8 +2916,8 @@
     "/tools/account/balances": {
       "get": {
         "operationId": "getAccountBalances",
-        "summary": "Read the account's Credits and this pairing's spending allowance. note says when approving agent spending is off.",
-        "description": "Signed; needs a pairing. credits is your person's balance. spending_grant says whether your person lets you spend on this site, the limits, and what is used and left of the 24-hour allowance their agents share. note says when approving agent spending is off on this site. Reading it spends nothing.",
+        "summary": "Read the account's Credits and this pairing's spending allowance. note says what to do when you can't spend on this site.",
+        "description": "Signed; needs a pairing. credits is your person's balance. spending_grant says whether your person lets you spend on this site, the limits, and what is used and left of the 24-hour allowance their agents share. note says what your person can do when you can't spend on this site; while agent spending isn't open, that is to do it themselves. Reading it spends nothing.",
         "security": [
           {
             "siwaProof": []
@@ -3273,7 +3273,7 @@
     "/tools/account/points": {
       "get": {
         "operationId": "getAccountPoints",
-        "summary": "Read the account's Points as decimal text, today's total, daily allowances and recent entries. note says when earning is off.",
+        "summary": "Read the account's Points as decimal text, today's total, daily allowances, recent entries with who earned each and whether it counted, and period bonuses. note says when earning is off.",
         "description": "Signed; needs a pairing. A browser sign-in does not work here.",
         "security": [
           {

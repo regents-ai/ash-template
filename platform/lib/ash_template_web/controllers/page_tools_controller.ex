@@ -48,7 +48,7 @@ defmodule AshTemplateWeb.PageToolsController do
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
       {422, "The note could not be pinned.",
-       "details says why. Send operation_id, a UUID you make for this pin and keep when retrying."},
+       "details says why. Send operation_id, a new UUID for each pin that you keep when retrying."},
     "not_enough_credits" =>
       {402, "Your person does not have enough Credits for this.",
        "Ask your person to buy Credits on regents.sh, then retry with the same operation_id and fresh proof."},

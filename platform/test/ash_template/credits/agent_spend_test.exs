@@ -3,6 +3,8 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   # - two agents spending one person's last Credits at once, from two sites,
   #   never spend more than the person has;
   # - a pin retried after its answer was lost pays once and pins once;
+  # - each new pin of a note costs one Credit: an operation_id that already
+  #   paid an earlier pin is refused and pins nothing (Sean 2 a, 19 Oct 2026);
   # - a revoked allowance refuses the agent's next spend at once, keeps what it
   #   already bought, and the person's record says which agent spent, on which
   #   site, for what, under which pairing, and whether the charge completed;
@@ -82,6 +84,28 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     assert Enum.all?(retries, &match?({:ok, %{pinned_at: %DateTime{}}}, &1))
     assert Decimal.eq?(RegentCredits.balance(person.did).available, 4)
     assert [%{status: :charged}] = holds(person)
+  end
+
+  test "a pin after an unpin needs a new operation_id and pays again" do
+    person = person(5)
+    agent = agent(person, ["template"]) |> as_site_agent()
+    note = Notes.create_note!(%{title: "Again", operation_id: Ecto.UUID.generate()}, actor: agent)
+    first = Ecto.UUID.generate()
+
+    assert {:ok, pinned} = Notes.pin_note(note, first, actor: agent)
+    assert {:ok, unpinned} = Notes.unpin_note(pinned, actor: agent)
+
+    assert {:error, %Ash.Error.Invalid{errors: errors}} =
+             Notes.pin_note(unpinned, first, actor: agent)
+
+    assert Enum.any?(errors, &match?(%Ash.Error.Changes.InvalidArgument{field: :operation_id}, &1))
+    assert Decimal.eq?(RegentCredits.balance(person.did).available, 4)
+
+    assert {:ok, %{pinned_at: %DateTime{}}} =
+             Notes.pin_note(unpinned, Ecto.UUID.generate(), actor: agent)
+
+    assert Decimal.eq?(RegentCredits.balance(person.did).available, 3)
+    assert [%{status: :charged}, %{status: :charged}] = holds(person)
   end
 
   test "a revoked allowance refuses the next pin and keeps the pin already bought" do
