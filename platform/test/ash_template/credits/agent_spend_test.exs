@@ -110,7 +110,7 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     assert [hold] = holds(person)
     assert hold.agent_address == agent.wallet
     assert hold.site == "template"
-    assert hold.purpose == "Note pinned by your agent"
+    assert hold.purpose == "note_pin"
     assert hold.pairing_id == agent.pairing_id
     assert hold.status == :charged
   end

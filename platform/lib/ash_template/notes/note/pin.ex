@@ -34,9 +34,7 @@ defmodule AshTemplate.Notes.Note.Pin do
   defp pay(changeset, %Agent{} = agent) do
     key = "note-pin:#{changeset.data.id}:#{Ash.Changeset.get_argument(changeset, :operation_id)}"
 
-    case RegentCredits.hold(key, agent.privy_user_id, @price, "Note pinned by your agent",
-           actor: spender(agent)
-         ) do
+    case RegentCredits.hold(key, agent.privy_user_id, @price, "note_pin", actor: spender(agent)) do
       {:ok, _hold} ->
         Ash.Changeset.after_action(changeset, fn _changeset, note -> charge(key, note) end)
 
