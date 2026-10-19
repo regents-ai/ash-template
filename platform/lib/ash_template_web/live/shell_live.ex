@@ -550,13 +550,17 @@ defmodule AshTemplateWeb.ShellLive do
         shown = shown_history(socket.assigns.credits_history, account)
 
         Read.start(socket, :credits_history, account.privy_user_id, fn ->
-          with {:ok, page} <- RegentCredits.history(%{}, actor: actor),
-               do: {:ok, CreditsHistoryLive.refreshed(page, shown)}
+          newest_history(actor, shown)
         end)
     end
   end
 
   defp load_credits_history(socket, _route_spec), do: Read.clear(socket, :credits_history)
+
+  defp newest_history(actor, shown) do
+    with {:ok, page} <- RegentCredits.history(%{}, actor: actor),
+         do: {:ok, CreditsHistoryLive.refreshed(page, shown)}
+  end
 
   defp shown_history(%Read{owner: owner, value: %{} = history}, %{privy_user_id: owner}),
     do: history
