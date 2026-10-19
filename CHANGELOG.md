@@ -3134,3 +3134,8 @@ Operations
 
 - The ash-frontend skill gains Sean's four UI conventions of 19 Oct for every Regent site: contract addresses and transaction hashes show a copy icon and a diagonal arrow to Basescan from one shared component; no modal ships as a default square box, every one uses the shared cut-corner shell; on-chain buttons open Privy's sign-in on a signed-out first press, Approve matches the size of the button it unlocks and turns grey with a green border once its transaction succeeds, still pressable; primary buttons show their corner marks on hover instead of losing them, and two header buttons side by side are never identical.
 - The onchain-buttons skill and its hook pattern, and the Regent Workflow skill, now say a signed-out press opens Privy's sign-in, in place of the "Sign in to send this" line. The template's own code (`platform/lib/ash_template_web/onchain_steps.ex`) still shows that line; it moves when the template adopts the shared pieces.
+
+## 2026-10-19 — Pairing message names the Regents Labs account
+
+- The message a person pastes to their agent now opens "Pair with my Regents Labs account on template.regents.sh" (the site's own host), in place of "Pair with my Ash Template account.", so an agent learns the account is the person's one Regents Labs account and which site it pairs on (Sean, 19 Oct 2026). ChatGPT's opens "Connect ChatGPT to my existing Regents Labs account on <host>".
+- The elixir-utils pin moves to `62d3d040`, where `RegentAgents.PairingMessage.text/3` takes `(code, origin, harness)`; the pairing box no longer passes a site name.

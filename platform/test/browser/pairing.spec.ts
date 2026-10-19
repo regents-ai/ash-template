@@ -39,6 +39,8 @@ test("choosing an agent gives a message with a code, and each choice a new code"
   await expect(message(page)).toHaveCount(0)
 
   await choose(page, "Dots")
+  // The agent learns it pairs with the person's Regents Labs account, and on which site.
+  await expect(message(page)).toContainText(/^Pair with my Regents Labs account on localhost\n/)
   await expect(message(page)).toContainText(/Pairing code:\s*\S{12,}/)
   const first = await message(page).innerText()
 

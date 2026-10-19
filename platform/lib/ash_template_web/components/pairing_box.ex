@@ -128,5 +128,5 @@ defmodule AshTemplateWeb.PairingBox do
 
   # What the person pastes to their agent.
   defp agent_message(code, harness),
-    do: PairingMessage.text(code, "Ash Template", AshTemplateWeb.Endpoint.url(), harness)
+    do: PairingMessage.text(code, AshTemplateWeb.Endpoint.url(), harness)
 end
