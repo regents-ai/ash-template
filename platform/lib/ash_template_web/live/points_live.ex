@@ -256,5 +256,4 @@ defmodule AshTemplateWeb.PointsLive do
   # Reading again at once while limited would only be refused again.
   defp retry(:limited), do: "Try again in a minute."
   defp retry(_reason), do: "Try refreshing this page."
-
 end
