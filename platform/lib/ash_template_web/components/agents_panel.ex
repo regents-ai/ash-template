@@ -230,6 +230,7 @@ defmodule AshTemplateWeb.AgentsPanel do
       kind: to_string(agent.harness),
       harness: Harness.label(agent.harness),
       wallet: agent.wallet,
+      wallet_label: RegentFormat.short_address(agent.wallet),
       listing: listing,
       paired_at: moment(agent.paired_at),
       last_contact: RegentFormat.relative_time(agent.last_contact_at, now),

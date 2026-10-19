@@ -2696,3 +2696,27 @@ Operations
   Techtree's Canopy palette head `e14b7f30`, which lands on design-system main first
   (coordinator ruling, 19 Oct). The `regent_ui` changes are line for line the ones in
   `f82c4a74`; only the design-system changelog kept both entries.
+- After Sentinel's read of 65dd744 (HOLD): a save pressed before a switch of account,
+  still waiting behind another save, now belongs to the person who pressed it, so it
+  saves to neither account. The page's profile client is opened at the press of Save
+  in three places: the design-system form, the account loader's `openProfile` and the
+  bridge's `oneSignIn`, which hands on a proof only for the person signed in when the
+  save was opened. `platform/assets/test/public_name.test.ts` covers it; it failed
+  before the fix, and so did each of two weakened versions of it.
+- The browser walk's server never leaves the machine either. It starts with every
+  outside service's setting cleared, reads its chains and the agent sign-in service
+  from a closed port on the machine, and refuses any other outside request
+  (`platform/test/browser/support/server/walk_offline.ex`); one refusal fails the walk
+  (`platform/test/browser/support/outside_teardown.mjs`). Pointing one chain back at
+  Base's public node made the walk fail, as it should.
+- Names with a control or text-direction character are refused when saved, with
+  "That name can't be used. Remove any hidden characters." (Sean, 19 Oct, decision 2 a;
+  elixir-utils `regent_identity`).
+- The holographic cards no longer tilt toward the pointer (Sean, 19 Oct); only the light
+  follows it. The foil showcase's two tilt samples are now two light samples.
+- The agent's address in its window shows its short form with an icon that copies the
+  full address, the shared `Regent.Primitives.address` every address will use (Sean,
+  19 Oct).
+- Pins: design-system `ec561f9d` (tpl/ds-address-1019, on `e4440c78`), elixir-utils
+  `46ae1898` (tpl/eu-rename-1019, on `e8c3e432`), which also lets a person rename an
+  agent they paired; the template does not offer it yet.

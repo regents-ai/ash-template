@@ -15,6 +15,25 @@ config :ash_template, :chain_nodes, %{
   31_337 => "http://127.0.0.1:58600"
 }
 
+# The browser walk's server (playwright.config.ts) never leaves the machine. Its
+# chain nodes and sign-in service are a closed port on this machine, so their reads
+# fail at once, and any other request outside it is refused and fails the walk
+# (AshTemplate.WalkOffline).
+if System.get_env("ASH_TEMPLATE_WALK") == "true" do
+  closed = "http://127.0.0.1:9"
+
+  config :ash_template, :chain_nodes, %{
+    84_532 => closed,
+    8453 => closed,
+    1 => closed,
+    31_337 => closed
+  }
+
+  config :regent_agents, :siwa, url: closed, audience: "ash-template"
+  config :req, default_options: [adapter: AshTemplate.WalkOffline]
+  config :ash_template, :walk_outside_file, Path.expand("../tmp/walk-outside.txt", __DIR__)
+end
+
 # Several sites run side by side locally, each on the port named by PORT.
 port = String.to_integer(System.get_env("PORT", "4000"))
 

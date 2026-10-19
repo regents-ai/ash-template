@@ -564,16 +564,16 @@ function privyLoginFailureDiagnostic(error: unknown): SignInFailureDiagnostic {
 
 type ProfileProof = {accessToken: string; identityToken: string; subject: string; isCurrent: () => boolean}
 
-// One change to the shared profile belongs to one person: the first proof fixes
-// whose it is, and a proof for anyone else is never handed on, so a switch of
-// account part way through sends nothing more.
-export function oneSignIn(acquireProof: () => Promise<ProfileProof | null>): () => Promise<ProfileProof | null> {
-  let subject: string | null = null
+// One change to the shared profile belongs to the person signed in when it was
+// opened, at the press of Save: a proof for anyone else is never handed on, so a
+// switch of account before or part way through it sends nothing.
+export function oneSignIn(
+  subject: string | null,
+  acquireProof: () => Promise<ProfileProof | null>,
+): () => Promise<ProfileProof | null> {
   return async () => {
     const proof = await acquireProof()
-    if (!proof) return null
-    subject ??= proof.subject
-    return proof.subject === subject ? proof : null
+    return proof && proof.subject === subject ? proof : null
   }
 }
 
@@ -823,7 +823,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   const openProfile = React.useCallback(
     () =>
       createProfileClient({
-        acquireProof: oneSignIn(async () => {
+        acquireProof: oneSignIn(provider.current.subject, async () => {
           const state = provider.current
           if (signOutOnly || lifetime.aborted || !state.ready || !state.authenticated || !state.subject) {
             return null

@@ -4,7 +4,10 @@
 // Every step of one save belongs to one person: a switch of account part way
 // through writes nothing (R-20261018-first-save-switch, found by the security
 // review of 18 Oct and checked through the page's own save path after Sentinel's
-// read of 19 Oct). Two quick presses keep the name pressed last
+// read of 19 Oct). A save waiting its turn belongs to the person signed in at its
+// press, so a switch of account before it starts writes nothing
+// (R-20261019-queued-save-switch, found by Sentinel's read of 19 Oct). Two quick
+// presses keep the name pressed last
 // (R-20261018-two-quick-saves, found by the breaker review of 18 Oct), and a
 // save that fails outright never leaves the form busy.
 import {expect, it, vi} from "vitest"
@@ -65,6 +68,17 @@ it("nothing is written without a current sign-in or a profile", async () => {
   expect(conflict.calls.map(call => call[0])).toEqual(["get", "sync"])
 })
 
+// regent_identity refuses a name holding control or text-direction characters
+// with its own code (founder, 19 Oct); the person is told what to change.
+it("a name the profile service refuses says what to change", async () => {
+  const {action} = server({get: profile("p3", "Ada"), update: refused(422, "invalid_display_name")})
+
+  expect(await saveName(action, "Ada‮gnp.exe")).toEqual({
+    ok: false,
+    message: "That name can't be used. Remove any hidden characters.",
+  })
+})
+
 // The profile service as regent_identity serves it: each request acts for the
 // person whose proof it carries, and refuses a subject that is not theirs.
 function profileService() {
@@ -100,16 +114,18 @@ function browser(first: string) {
   const proof = async () => ({
     accessToken: person, identityToken: person, subject: person, isCurrent: () => true,
   })
-  return {switchTo: (next: string) => { person = next }, proof}
+  return {switchTo: (next: string) => { person = next }, subject: () => person, proof}
 }
 
 // The page's own save path: the account loader starts the page's sign-in bridge,
-// and the bridge opens a profile client for one person, as privy_bridge.tsx does.
+// and the bridge opens a profile client for the person signed in at that moment,
+// as privy_bridge.tsx does.
 function pageLoader(service: ReturnType<typeof profileService>, signIn: ReturnType<typeof browser>) {
   return createLazyAuthLoader(async () => ({
     startPrivyBridge: async () => ({
       request: async () => {},
-      openProfile: () => createProfileClient({acquireProof: oneSignIn(signIn.proof), fetch: service.fetch}),
+      openProfile: () =>
+        createProfileClient({acquireProof: oneSignIn(signIn.subject(), signIn.proof), fetch: service.fetch}),
     }),
   }))
 }
@@ -153,6 +169,26 @@ function form() {
   const press = (typed: string) => { name.value = typed; return submit!({preventDefault() {}}) }
   return {root: root as unknown as HTMLElement, attributes, status, name, press}
 }
+
+it("a save pressed before a switch of account, still waiting its turn, saves to neither account", async () => {
+  const service = profileService()
+  const signIn = browser("did:a")
+  // The first save's change reaches the server, then the person switches account
+  // while the second save waits for it.
+  const switchDuringFirstWrite: typeof globalThis.fetch = async (input, init) => {
+    if (init?.method === "PATCH") signIn.switchTo("did:b")
+    return service.fetch(input, init)
+  }
+  const page = form()
+  const loader = pageLoader({...service, fetch: switchDuringFirstWrite}, signIn)
+  mountProfile(page.root, {openProfile: () => loader.openProfile(), onSaved: vi.fn()})
+
+  await Promise.all([page.press("Ada"), page.press("Grace")])
+  expect(service.profiles.get("did:a")?.display_name).toBe("Ada")
+  expect(service.profiles.has("did:b")).toBe(false)
+  expect(service.writes.filter(write => write.endsWith("did:b"))).toEqual([])
+  expect(page.status.textContent).toBe("Sign in again to save your name.")
+})
 
 it("a save that fails outright says so and leaves the form ready", async () => {
   const page = form()

@@ -874,15 +874,24 @@ export function createLazyAuthLoader(
       return preparing ?? prepare()
     },
     // One change to the shared profile, answered by the page's one bridge, started
-    // here when nothing has started it. Every call of the change uses one client.
+    // here when nothing has started it. The change opens as it is asked for, so it
+    // belongs to whoever is signed in then, and every call of it uses that client.
     openProfile(): ProfileAction {
-      let client: ProfileAction | null = null
-      return (...args) => loadProfileAction(async () => {
+      const ready = () => {
         assertActive()
         if (state !== "ordinary") throw new Error("Provider sign out is still in progress.")
+      }
+      const opening = (async () => {
+        ready()
         if (!handle) await (preparing ?? prepare())
         if (!handle?.openProfile) throw new Error("Privy profile bridge is not ready")
-        return (client ??= handle.openProfile())
+        return handle.openProfile()
+      })()
+      // A change that is never used still settles quietly; each use reports its own failure.
+      opening.catch(() => {})
+      return (...args) => loadProfileAction(async () => {
+        ready()
+        return opening
       }, ...args)
     },
     finishHandoff(): void {

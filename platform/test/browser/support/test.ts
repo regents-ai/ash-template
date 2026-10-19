@@ -1,9 +1,9 @@
 import {test as base, expect} from "@playwright/test"
 
-// The walk never leaves this machine. The page's sign-in bridge, the only part
+// The browser never leaves this machine. The page's sign-in bridge, the only part
 // that talks to Privy, is answered by a stand-in that holds no Privy sign-in, as
 // a browser without one does; any other outside address is refused and fails the
-// check that reached for it.
+// check that reached for it. The server's side: playwright.config.ts.
 const bridge = /^\/assets\/js\/privy_bridge(-[0-9a-f]+)?\.js$/
 
 const standIn = `

@@ -4,16 +4,16 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "e8c3e43270398b98842b930c6d8a39be1a38c386"
+  @elixir_utils_ref "46ae189867fbd2afc702dddd82b0916d787c9ede"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "e4440c78a50376aab0d5cc71e52f186f18d6113d"
+  @design_system_ref "ec561f9dd3b5f6373bf48d03706ea66f5ff43f54"
 
   def project do
     [
       app: :ash_template,
       version: "0.1.0",
       elixir: "~> 1.15",
-      elixirc_paths: ["lib"],
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: false,
       aliases: aliases(),
       deps: deps(),
@@ -22,6 +22,11 @@ defmodule AshTemplate.MixProject do
       usage_rules: usage_rules()
     ]
   end
+
+  # The browser walk's server runs in development, with its guard against the
+  # outside world (`AshTemplate.WalkOffline`).
+  defp elixirc_paths(:dev), do: ["lib", "test/browser/support/server"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   def application do
     [

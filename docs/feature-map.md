@@ -7,8 +7,13 @@ copy this file's shape.
 
 `make check` runs every check below. The browser walk (`make check-browser`) runs
 headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac. The walk never
-leaves the machine: Privy is answered by a stand-in that holds no sign-in, and any
-other outside request fails the check that made it (`platform/test/browser/support/test.ts`).
+leaves the machine. In the browser, Privy is answered by a stand-in that holds no
+sign-in, and any other outside request fails the check that made it
+(`platform/test/browser/support/test.ts`). The walk's server reads its chains and
+sign-in service from a closed port on the machine, starts with every outside
+service's setting cleared, and refuses any other outside request, which fails the
+walk (`platform/test/browser/support/server/walk_offline.ex`,
+`platform/test/browser/support/outside_teardown.mjs`).
 
 ## Every page and document
 
@@ -30,8 +35,9 @@ other outside request fails the check that made it (`platform/test/browser/suppo
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
 | Each account shows the name its person saved with this site's sign-in, never a name saved under another sign-in, in the order asked | `platform/test/ash_template/accounts/display_name_test.exs` (property test) |
 | A name saved on the Account page with the person's own sign-in shows there, in the form and as the account's name; a forged sign-in changes nothing | `platform/test/ash_template_web/public_name_test.exs` |
-| Save makes the person's profile on their first save and saves only to the profile it read; a switch of account part way through the page's own save path saves nothing; two quick saves keep the name pressed last; a failed save never leaves the form busy | `platform/assets/test/public_name.test.ts` |
+| Save makes the person's profile on their first save and saves only to the profile it read; a switch of account part way through the page's own save path saves nothing, and neither does a save pressed before a switch and still waiting its turn; two quick saves keep the name pressed last; a failed save never leaves the form busy | `platform/assets/test/public_name.test.ts` |
 | Save on the Account page without the browser's sign-in finishes, says why, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
+| A name with a control or text-direction character is refused, and the person is told to remove the hidden characters | elixir-utils `ash_components/identity/test/http_test.exs`; the words in `platform/assets/test/public_name.test.ts` |
 | The longest name the site takes, with no spaces, fits every signed-in page at both widths | `pages.spec.ts`; the walk's person has an 80-letter name (`platform/test/browser/support/sign_in.exs`) |
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code, and each choice a new code | same |
