@@ -49,7 +49,8 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
   to this account. Switch to 0x1234..abcd or another of your wallets."; a short address
   is always `0x`, the first four and the last four characters, joined by `..`). A press
   from it sends nothing and says why. Signed out, panels show the active wallet's
-  figures and buttons ask for sign-in. `onchain-buttons` shows the pattern.
+  figures and a button's first press opens Privy's sign-in. `onchain-buttons` shows
+  the pattern.
 - A signed-in customer never sees a wallet panel ask them to sign in again. Each panel
   reads the account's wallet from the server session when it mounts (balance,
   positions, form) and shows it straight away, after page jumps and reloads, then

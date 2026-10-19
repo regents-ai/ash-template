@@ -36,7 +36,8 @@ for a USDC payment's button, `payments`.
    the steps for it. When it is not linked, or none is active, the figures stay on the
    account's own wallet, a note beside the button names both short addresses and asks
    the person to switch, and a press sends nothing and says why. Signed out, the active
-   wallet's figures show and the button asks for sign-in. The account's linked wallets
+   wallet's figures show and the first press opens Privy's sign-in (founder,
+   2026-10-19). The account's linked wallets
    come from `AccessContext.linked_wallets/1` (`nil` signed out), never a hard-coded
    list. See [which wallet sends](references/hook-pattern.md#which-wallet-sends).
 4. **The server builds every step** (founder decision, 2026-09-27): it encodes the
@@ -48,7 +49,9 @@ for a USDC payment's button, `payments`.
    the last read before `eth_sendTransaction`.
 6. **An approval is a step of its own.** The next step's button appears as soon as the
    approval is sent; nothing waits for it to land before the next press can reach the
-   wallet.
+   wallet. Approve and Buy are the same size, and Approve turns grey with a green border
+   once its transaction succeeds, still pressable. See
+   [hook pattern](references/hook-pattern.md#approvals).
 7. **The hook reports only what the wallet said**: the hash, or why nothing was sent.
    Each report names the review it was sent from, and `handleEvent` payloads carry the
    component's DOM id, since every hook on the page hears every `push_event`.

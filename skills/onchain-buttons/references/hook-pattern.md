@@ -169,15 +169,18 @@ and only when the signed-in account links it.
 
 The hook's own click listener runs every press on its own:
 
-1. **No active wallet**: it reports `wallet_unavailable` and the server's note says why.
+1. **Signed out**: the press opens Privy's sign-in (founder, 2026-10-19) and sends
+   nothing. Once the person is signed in, the server builds the steps for their wallet
+   and the next press sends.
+2. **No active wallet**: it reports `wallet_unavailable` and the server's note says why.
    It never opens Privy's connect step (founder decision "1 a").
-2. **No review yet, or the form differs from the review's `inputs`** (the person pressed
+3. **No review yet, or the form differs from the review's `inputs`** (the person pressed
    before the first review arrived, or typed and pressed before the new one did), on a
    component with `data-onchain-input` fields: it sends `prepare_and_send` with the form
    and the step. The component takes the form as the page's own, builds the review and
    replies `%{review: review, send: name}`, and the hook sends that. An empty reply is
    `step_unknown`; no reply at all (a lost connection) shows the `data-onchain-lost` line.
-3. **Otherwise** it sends the step from the review it holds, if the active wallet is the
+4. **Otherwise** it sends the step from the review it holds, if the active wallet is the
    review's signer.
 
 `press(review, name, push)` returns what it reported (`{transaction_hash}`, `{signature}`
@@ -220,7 +223,7 @@ The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4
 
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |
-| Signed out | No account | "Sign in to send this. Nothing was sent." |
+| Signed out | No account | No words: the press opens Privy's sign-in |
 | `wallet_unavailable`, none active | Signed in, but no wallet is open in the wallet app | "You're signed in with 0x1234..abcd, but your wallet app has no wallet open. Open 0x1234..abcd there, then press again. Nothing was sent." |
 | Active wallet not linked | Another wallet is open in the wallet app | "Your wallet is on 0x9a8b..c1d2, which isn't linked to this account. Switch to 0x1234..abcd. Nothing was sent." |
 | `step_unknown` | No step by that name for these figures | "This can't be sent as it stands. Check the details above, then press again. Nothing was sent." |
@@ -245,6 +248,11 @@ amount the next step needs. When the approval is sent, the next button shows at 
 press on it before the approval lands still reaches the wallet, and if it reverts the
 words say so. Whether an approval is needed is read on the server at `latest` when the
 review is built.
+
+Approve and the button it unlocks (Buy, Stake) are the same width and height, side by
+side or stacked. Once the server confirms the approval's receipt, Approve turns grey
+with a green border (founder, 2026-10-19). That is a done look, not `disabled`: a
+further press still reaches the wallet.
 
 ## Signing instead of sending
 

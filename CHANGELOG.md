@@ -3129,3 +3129,8 @@ Operations
 ## 2026-10-19 — Workflow skill: clean up after yourself
 
 - The Regent Workflow skill gains Sean's rule of 19 Oct, after the Mac's disk filled: every agent and subagent keeps a list of what it creates (worktrees, temporary copies, `node_modules`, `deps` and `_build`, test databases, generated files) and removes it when its task ends, retiring its worktrees through `scripts/worktrees.py retire` so the slot in `/Users/sean/Documents/regent/.agent-worktrees.json` is freed. Work not yet on main is kept and named. Nothing another session made is deleted; it is listed for Sean. Delegation briefs name the duty, and the parent checks a subagent cleaned up before integrating.
+
+## 2026-10-19 — Frontend skill: Sean's UI conventions
+
+- The ash-frontend skill gains Sean's four UI conventions of 19 Oct for every Regent site: contract addresses and transaction hashes show a copy icon and a diagonal arrow to Basescan from one shared component; no modal ships as a default square box, every one uses the shared cut-corner shell; on-chain buttons open Privy's sign-in on a signed-out first press, Approve matches the size of the button it unlocks and turns grey with a green border once its transaction succeeds, still pressable; primary buttons show their corner marks on hover instead of losing them, and two header buttons side by side are never identical.
+- The onchain-buttons skill and its hook pattern, and the Regent Workflow skill, now say a signed-out press opens Privy's sign-in, in place of the "Sign in to send this" line. The template's own code (`platform/lib/ash_template_web/onchain_steps.ex`) still shows that line; it moves when the template adopts the shared pieces.

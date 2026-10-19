@@ -21,6 +21,27 @@ pipeline around them. Verify generated helper signatures against the installed v
   page.
 - [UI review](references/ui-review.md): accessibility, responsive states and hooks.
 
+## Regent UI conventions (founder, 2026-10-19)
+
+Every Regent site follows these. The design-system `STYLE.md` sections named here hold
+the detail.
+
+- **Contract addresses and transaction hashes** always show the short form, then a copy
+  icon and a diagonal arrow (up and to the right) that opens the address or transaction
+  on Basescan in a new tab, the three tight together. They come from one shared
+  component, never drawn by hand (STYLE.md, "Addresses and transaction hashes").
+- **No default square dialogs.** Every modal or window uses the shared cut-corner shell:
+  two cut corners with their accents and two decorated square corners, the primary
+  button's treatment at panel size (STYLE.md, "Dialogs").
+- **On-chain buttons:** signed out, the first press opens Privy's sign-in. Approve and
+  the button it unlocks (Buy, Stake) are the same size. Once the approval's transaction
+  succeeds, Approve turns grey with a green border and stays pressable. See
+  [onchain-buttons](../onchain-buttons/SKILL.md).
+- **Primary CTAs** use the site's primary colour and the shared CTA motion. The corner
+  marks and accents appear on hover and keyboard focus; hover never takes them away.
+  Two buttons side by side in a header never look the same: one primary, one secondary
+  (STYLE.md, "Shape and spacing").
+
 Reuse Regent UI primitives while retaining each product's theme, navigation and
 layout. Components own no authentication, database or wallet admission decisions.
 A second on-chain button press must still reach the wallet while the first is pending.
