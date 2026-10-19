@@ -277,7 +277,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
             <p :if={!purchase.privy_user_id}>
               Nobody has signed in with this wallet yet. These Credits wait until someone does.
             </p>
-            <p>From <code>{purchase.wallet}</code></p>
+            <p>From <P.address id={"#{@id}-from-#{purchase.id}"} address={purchase.wallet} /></p>
             <p>
               <a href={CreditsHistoryLive.transaction_url(purchase.chain, purchase.tx_hash)}>Transaction</a>
             </p>
@@ -313,8 +313,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
             <p>
               Send exactly <strong>{usdc(refund.amount)} USDC</strong>
               on <strong>{chain_name(refund.chain)}</strong>
-              from the Treasury Safe <code>{@treasury}</code>
-              to <code>{refund.wallet}</code>.
+              from the Treasury Safe
+              <P.address id={"#{@id}-treasury-#{refund.id}"} address={@treasury} /> to
+              <P.address id={"#{@id}-to-#{refund.id}"} address={refund.wallet} />.
             </p>
             <form id={"#{@id}-close-#{refund.id}"} phx-submit="close_refund" phx-target={@myself}>
               <input type="hidden" name="refund" value={refund.id} />

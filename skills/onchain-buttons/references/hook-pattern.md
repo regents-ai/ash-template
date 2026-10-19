@@ -141,6 +141,11 @@ and only when the signed-in account links it.
   addresses and asks the person to switch when the wallet app has another wallet open
   ("Your wallet is on 0x9a8b..c1d2, which isn't linked to this account. Switch to
   0x1234..abcd.").
+- `failure_note/4` and `mismatch_note/2` return the note as parts: words, and
+  `{:address, address}` for each wallet it names. The component draws them with
+  `<OnchainSteps.note id=... parts=... />`, so every wallet in a note opens its full
+  address and has a copy icon (`Regent.Primitives.address`), as every address on a
+  Regent page does.
 - `OnchainSteps.shown_wallet(linked, own, active)` is the wallet the panel shows figures
   for: the signer, or with none the account's own wallet
   (`AccessContext.own_wallet/1`), so a wrong or missing active wallet never empties the
@@ -211,7 +216,7 @@ The component forwards `handle_async({:onchain_step, hash}, result, socket)` to
 ## Outcomes and words
 
 The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4` and
-`describe/2`.
+`describe/2`. Each short address in the table is drawn with its copy icon.
 
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |

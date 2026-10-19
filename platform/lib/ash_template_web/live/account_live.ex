@@ -13,8 +13,6 @@ defmodule AshTemplateWeb.AccountLive do
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   import AshTemplateWeb.Components.VerifiedConnections
 
-  alias AshTemplate.PublicIdentity
-
   attr :lease, :map, required: true
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
@@ -31,24 +29,22 @@ defmodule AshTemplateWeb.AccountLive do
     >
       <:tip>Your profile, your Credits and your agents.</:tip>
       <div class="account-layout">
-        <section id="account-identity" class="account-identity" aria-label="Your account">
-          <p class="account-kicker">Your account</p>
-          <div class="account-identity__who">
+        <Regent.Account.identity
+          id="account-identity"
+          class="account-identity"
+          name={@account_control.label}
+          wallet={@account.wallet_address}
+          ens_name={@account.ens_name}
+        >
+          <:picture>
             <AshTemplateWeb.Components.Shell.account_picture
               id="account-identity-picture"
-              class="account-identity__avatar"
               squares={@account_control.squares}
               picture={@account_control.picture}
               size={64}
             />
-            <div class="account-identity__name">
-              <h2>{@account_control.label}</h2>
-              <p :if={short_wallet(@account) not in [nil, @account_control.label]}>
-                <code>{short_wallet(@account)}</code>
-              </p>
-            </div>
-          </div>
-        </section>
+          </:picture>
+        </Regent.Account.identity>
 
         <.live_component
           module={AshTemplateWeb.AgentsPanel}
@@ -102,11 +98,8 @@ defmodule AshTemplateWeb.AccountLive do
         <dl>
           <div>
             <dt>Wallet</dt>
-            <dd :if={@account.wallet_address} class="account-wallet">
-              <code>{@account.wallet_address}</code>
-              <Regent.Primitives.copy_button id="account-wallet-copy" text={@account.wallet_address}>
-                Copy
-              </Regent.Primitives.copy_button>
+            <dd :if={@account.wallet_address}>
+              <Regent.Primitives.address id="account-wallet" address={@account.wallet_address} />
             </dd>
             <dd :if={is_nil(@account.wallet_address)}>No wallet linked</dd>
           </div>
@@ -114,7 +107,9 @@ defmodule AshTemplateWeb.AccountLive do
             <dt>Other linked wallets</dt>
             <dd>
               <ul class="account-wallet-list">
-                <li :for={wallet <- other_wallets(@account)}><code>{wallet}</code></li>
+                <li :for={wallet <- other_wallets(@account)}>
+                  <Regent.Primitives.address id={"account-wallet-#{wallet}"} address={wallet} />
+                </li>
               </ul>
             </dd>
           </div>
@@ -189,11 +184,4 @@ defmodule AshTemplateWeb.AccountLive do
     |> Enum.uniq()
     |> Enum.reject(&(&1 == primary))
   end
-
-  # The card names the person the way the header does; the wallet is only
-  # repeated beneath when that name is something other than the wallet itself.
-  defp short_wallet(%{wallet_address: wallet}) when is_binary(wallet),
-    do: PublicIdentity.short_wallet(wallet)
-
-  defp short_wallet(_account), do: nil
 end

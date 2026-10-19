@@ -2785,3 +2785,25 @@ Operations
   out the refusal or the save fails it.
 - The Public Display Name walk finds the name field by its role, since the new tip
   beside it is also labelled with the name (`platform/test/browser/public_name.spec.ts`).
+
+## 2026-10-19 — Every address on the site has its copy icon
+
+- Founder, 19 Oct 00:17Z: "make a standing rule where anywhere an ens name or a
+  0xaddress or abbreviated 0xaddress is shown , to show a copy icon to get the full
+  address". The rule is in `skills/regent-workflow/SKILL.md`.
+- The design-system pin moves to `30d50d8c` (tpl/ds-identity-1019b): one account card
+  for every Account page (`Regent.Account.identity`), which says the person's name
+  once, and their wallet beneath it only when the name is not the wallet's own ENS
+  name or short address, so an ENS name is never shown twice. An address's words
+  default to its short address.
+- The Account page uses that card, and its Wallets page, a room post's agent, a
+  note's agent, the Credits panel and its agent spending, the Credits admin page, the
+  on-chain example and every showcase draw each address with
+  `Regent.Primitives.address`. The template's own card styles are gone.
+- A wallet note (`OnchainSteps.failure_note/4`, `mismatch_note/2`) is now its words and
+  the wallets it names, drawn by `<OnchainSteps.note>`, so each wallet in a note opens
+  and copies its full address.
+- The browser walk fails a page that shows an address without its icon
+  (`platform/test/browser/support/addresses.ts`), and opens and copies the wallets a
+  wallet note names (`platform/test/browser/addresses.spec.ts`); a note drawn without
+  the icons, or with a space before the comma after an address, fails it.

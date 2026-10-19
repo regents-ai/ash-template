@@ -25,7 +25,7 @@ starts, and the server watches no files, so no page reloads under a check.
 
 | What | Check |
 | --- | --- |
-| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site and fits the screen, signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
+| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen and shows every ENS name, full address and short address with its copy icon, signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
 | Every machine-readable document answers with its type | same, `documents` |
 | No page or document the site serves is left out of the walk, and the walk names none the site has dropped | `platform/test/ash_template_web/feature_map_test.exs` |
 | Every agent in the side panel has a guide page and a skill the walk opens | same |
@@ -50,6 +50,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
 | An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
+| A wallet note names each wallet with its copy icon: with an unlinked wallet open in the on-chain lab, the note names it and the account's wallets, each opening and copying its full address, the words run straight on from each address, and nothing on the page shows an address without its icon | `platform/test/browser/addresses.spec.ts` |
 | An agent's window renames the agent: a name with a hidden character is refused beside the field and the agent keeps its name; a name with an emoji joined by a zero-width joiner saves and shows in the window and the list, at both widths; the field and Save are at least 44 px tall on the phone | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs |
 | Only the person renames their agent; a blank name, one over 80 characters or one with a hidden character is refused | elixir-utils `ash_components/agents/test/pairing_test.exs` |
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
@@ -76,8 +77,9 @@ starts, and the server watches no files, so no page reloads under a check.
 - An agent's signed pairing request: the walk's agent is paired with a code issued
   and taken through the same calls the side panel and the pairing request make, but no
   agent signs a request, since the walk never leaves the machine.
-- Other addresses (the Account page's own wallet, linked wallets): only the agent's
-  window is walked.
+- Pressing other addresses (the Account page's own wallet, linked wallets): the walk
+  checks each one shows its copy icon, and presses only the agent's window's and a
+  wallet note's.
 - Wallet buttons and paying with USDC: only the showcase pages open; no chain is
   attached to the walk.
 - Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not

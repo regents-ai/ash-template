@@ -112,7 +112,10 @@ defmodule AshTemplateWeb.CreditsPanel do
     %{linked: linked, active: active, amount: amount} = socket.assigns
     AshTemplateWeb.Telemetry.wallet_failed(:credits_panel, reason)
 
-    note = amount_problem(amount) || OnchainSteps.failure_note(reason, linked, active, "Base")
+    note =
+      if problem = amount_problem(amount),
+        do: [problem],
+        else: OnchainSteps.failure_note(reason, linked, active, "Base")
 
     {:noreply, assign(socket, press_note: note)}
   end
@@ -461,10 +464,12 @@ defmodule AshTemplateWeb.CreditsPanel do
            appearing never moves or replaces the button a person is about to press. --%>
       <div class="credits-panel__wallet" data-empty={is_nil(@wallet)}>
         <span class="credits-panel__muted">{if @signer, do: "Paying from", else: "Wallet"}</span>
-        <code>{@wallet && RegentFormat.short_address(@wallet)}</code>
+        <P.address :if={@wallet} id={"#{@id}-wallet"} address={@wallet} />
         <span class="credits-panel__usdc">{usdc(@usdc)}</span>
       </div>
-      <p class="credits-panel__note credits-panel__mismatch">{@mismatch}</p>
+      <p class="credits-panel__note credits-panel__mismatch">
+        <OnchainSteps.note :if={@mismatch} id={"#{@id}-mismatch"} parts={@mismatch} />
+      </p>
 
       <ol class="credits-panel__steps">
         <li class="credits-panel__step" data-state={@approve.state}>
@@ -513,7 +518,9 @@ defmodule AshTemplateWeb.CreditsPanel do
 
       <%!-- Room for three lines is kept, so a note never moves the links below. --%>
       <div class="credits-panel__press-notes">
-        <p :if={@press_note} class="credits-panel__note" role="status">{@press_note}</p>
+        <p :if={@press_note} class="credits-panel__note" role="status">
+          <OnchainSteps.note id={"#{@id}-press-note"} parts={@press_note} />
+        </p>
         <p class="credits-panel__note" role="status" data-onchain-lost hidden>
           Connection lost, so nothing was sent. Press again once it's back.
         </p>

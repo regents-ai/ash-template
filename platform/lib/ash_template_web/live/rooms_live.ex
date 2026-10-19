@@ -256,7 +256,11 @@ defmodule AshTemplateWeb.RoomsLive do
                     <span :if={message.via_agent_address} class="rooms-message__human">
                       <span class="rooms-message__agent">Via agent</span>
                       <Primitives.tip id={"#{dom_id}-via"} label="About this agent">
-                        Written by {RegentFormat.short_address(message.via_agent_address)}, an agent {message.author_name} paired with their account.
+                        Written by
+                        <Primitives.address
+                          id={"#{dom_id}-via-agent"}
+                          address={message.via_agent_address}
+                        />, an agent {message.author_name} paired with their account.
                       </Primitives.tip>
                     </span>
                     <time datetime={DateTime.to_iso8601(message.inserted_at)}>
