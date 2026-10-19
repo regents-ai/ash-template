@@ -4,6 +4,7 @@ defmodule AshTemplate.SignedToolsTest do
   use ExUnit.Case, async: false
   import Plug.Test
   import Plug.Conn
+  require Ash.Query
   alias AshTemplate.Accounts.VerifiedSession
 
   @wallet "0x2222222222222222222222222222222222222222"
@@ -57,7 +58,12 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:ok, %{status: :confirmed}} = Points.process_event(first.id, actor: Store.system())
     assert {:ok, %{status: :capped}} = Points.process_event(second.id, actor: Store.system())
     assert {:ok, %{status: :confirmed}} = Points.process_event(first.id, actor: Store.system())
-    assert length(Points.read_entries!(actor: Store.system())) == 2
+    assert length(
+             Points.read_entries!(
+               query: Ash.Query.filter(RegentPoints.Entry, account_id == ^account.id),
+               actor: Store.system()
+             )
+           ) == 2
     day_two = DateTime.add(at, 1, :day)
     cap = Store.cap(account.id, Rules.program(), "activity:account", Rules.window("day", day_two))
     Points.consume_cap!(cap, 95_000_000, actor: Store.system())

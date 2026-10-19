@@ -661,7 +661,8 @@ defmodule AshTemplateWeb.ShellLive do
     lead <> String.slice(text, start, @excerpt_length) <> tail
   end
 
-  # The NFT tier is read from Base once per page open, never on each award notice.
+  # The NFT tier is read from Base once per page open, never on each award
+  # notice, and not at all while nothing earns.
   defp load_points(socket, %{route_id: :points}) do
     socket
     |> assign(:points_earning, RegentPoints.Rules.active())
@@ -682,6 +683,9 @@ defmodule AshTemplateWeb.ShellLive do
         Read.clear(socket, :points)
     end
   end
+
+  defp read_points_bonus(%{assigns: %{points_earning: []}} = socket),
+    do: Read.clear(socket, :points_bonus)
 
   defp read_points_bonus(socket) do
     case human_actor(socket) do

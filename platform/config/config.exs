@@ -259,7 +259,7 @@ config :regent_points,
   approved_rules: [],
   adapters: %{
     "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
-    "#{site}.first_agent_note" => AshTemplate.Points.AgentNote
+    "template.first_agent_note" => AshTemplate.Points.AgentNote
   }
 
 # Reference audience only: adopting sites set their exact MCP URL in config and migration.

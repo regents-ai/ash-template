@@ -13,10 +13,10 @@ defmodule AshTemplateWeb.PageToolsController do
   alias AshTemplate.{Activity, Notes, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
-  alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
-  alias RegentPoints.{Amount, Rules}
+  alias RegentPoints.Rules
 
   plug :paired_agent
 
@@ -119,33 +119,11 @@ defmodule AshTemplateWeb.PageToolsController do
 
   defp cursor_error?(_error), do: false
 
-  # Points as decimal text, as the Points page shows them.
+  # Points as decimal text, the same figures the Points page shows.
   def points(conn, _params) do
     case RegentPoints.summary(actor: conn.assigns.actor) do
       {:ok, summary} ->
-        answer = %{
-          points: Amount.format(summary.balance_micro),
-          earned_today: Amount.format(summary.earned_today_micro),
-          pending: summary.pending,
-          daily_allowances:
-            Enum.map(
-              summary.allowances,
-              &%{scope: &1.scope, remaining: Amount.format(&1.remaining)}
-            ),
-          entries:
-            Enum.map(
-              summary.entries,
-              &%{
-                points: Amount.format(&1.points_micro_delta),
-                source: &1.source_app,
-                by: &1.actor_kind,
-                earned_at: &1.earned_at
-              }
-            ),
-          more: summary.more?
-        }
-
-        json(conn, with_note(answer, Rules.active() == [], @points_off))
+        json(conn, with_note(PointsEntries.answer(summary), Rules.active() == [], @points_off))
 
       {:error, error} ->
         conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
