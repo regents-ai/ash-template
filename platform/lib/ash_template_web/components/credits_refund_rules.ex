@@ -1,7 +1,9 @@
 defmodule AshTemplateWeb.CreditsRefundRules do
   @moduledoc """
   The Credits refund rules, shown at regents.sh/credits/refunds and linked from
-  every Buy Credits panel. Sean approved this wording on 6 Oct 2026.
+  every Buy Credits panel. Sean approved this wording on 6 Oct 2026; the first
+  line follows the refund rule of 13 Oct 2026, where a refund takes back bought
+  Credits still in the account and anything else is decided case by case.
   """
   use AshTemplateWeb, :html
 
@@ -12,8 +14,8 @@ defmodule AshTemplateWeb.CreditsRefundRules do
     <article id={@id} class="credits-refunds">
       <h1>Credits refunds</h1>
       <p>
-        You can get your money back for Credits you bought, as long as you have never used
-        Credits. Placing any bid counts as using them, even a bid that came back to you.
+        You can get your money back for Credits you bought and haven't spent yet. Anything
+        else, we look at case by case.
       </p>
       <p>
         Credits you were given, and Credits you received for an answer, are never refunded.

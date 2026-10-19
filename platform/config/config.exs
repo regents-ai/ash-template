@@ -81,6 +81,7 @@ config :ash_template, Oban,
     points: 5,
     points_chain: 2,
     outside_calls: 3,
+    purchase_checks: 5,
     ens: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10]

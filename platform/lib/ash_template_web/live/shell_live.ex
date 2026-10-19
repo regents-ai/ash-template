@@ -17,6 +17,7 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
+  alias AshTemplate.Credits.CheckPurchase
   alias AshTemplate.Notes.Note
   alias AshTemplate.Rooms.{Message, Mute, Room}
 
@@ -214,6 +215,11 @@ defmodule AshTemplateWeb.ShellLive do
   # An agent paired, checked in or was unpaired, here or on another Regent site.
   # The side panel's pairing box and agents are on every page; the Account page
   # also lists the agents.
+  def handle_info({:credits_purchase, hash, shown}, socket) do
+    send_update(AshTemplateWeb.CreditsPanel, id: "credits-panel", purchase: {hash, shown})
+    {:noreply, socket}
+  end
+
   def handle_info(:agents_changed, socket) do
     send_update(PairingBox, id: "shell-pairing-box", agents_changed: true)
     send_update(PanelAgents, id: "shell-agents", agents_changed: true)
@@ -400,6 +406,7 @@ defmodule AshTemplateWeb.ShellLive do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:conversations:#{account.id}")
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(account.privy_user_id))
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, CheckPurchase.topic(account.privy_user_id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentAgents.topic(account.privy_user_id))
   end
 
@@ -531,7 +538,8 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  # The newest page of the account's Credits history, read again on each change.
+  # The newest page of the account's Credits history, read again on each
+  # change with the older pages already shown kept below it.
   defp load_credits_history(socket, %{route_id: :credits}) do
     case current_account(socket.assigns.access_context) do
       nil ->
@@ -539,14 +547,21 @@ defmodule AshTemplateWeb.ShellLive do
 
       account ->
         actor = AshTemplate.Credits.person(account)
+        shown = shown_history(socket.assigns.credits_history, account)
 
         Read.start(socket, :credits_history, account.privy_user_id, fn ->
-          RegentCredits.history(%{}, actor: actor)
+          with {:ok, page} <- RegentCredits.history(%{}, actor: actor),
+               do: {:ok, CreditsHistoryLive.refreshed(page, shown)}
         end)
     end
   end
 
   defp load_credits_history(socket, _route_spec), do: Read.clear(socket, :credits_history)
+
+  defp shown_history(%Read{owner: owner, value: %{} = history}, %{privy_user_id: owner}),
+    do: history
+
+  defp shown_history(_read, _account), do: nil
 
   defp count_unread(socket) do
     with %Human{} = actor <- human_actor(socket),
