@@ -6,16 +6,20 @@ touched: a change to a feature adds or updates its row in the same commit. Sites
 copy this file's shape.
 
 `make check` runs every check below. The browser walk (`make check-browser`) runs
-headless Chromium at 390 and 1280 wide; WebKit is not run on the Mac. The walk never
+headless Chromium as a desktop 1280 wide and as a touch phone 390 wide (Playwright's
+Pixel 7 at that width); WebKit is not run on the Mac. The walk never
 leaves the machine. In the browser, Privy is answered by a stand-in that holds no
 sign-in, and any other outside request fails the check that made it
 (`platform/test/browser/support/test.ts`). The walk's server reads its chains and
 sign-in service from a closed port on the machine, starts with every outside
 service's setting cleared, and refuses any other outside request, which fails the
 walk (`platform/test/browser/support/server/walk_offline.ex`,
-`platform/test/browser/support/outside_teardown.ts`). Each walk runs its server on a
-port nothing else on the machine is using (`platform/playwright.config.ts`), so two
-walks at once never reach each other's server; they still share the walk's database.
+`platform/test/browser/support/teardown.ts`). Each walk runs its server on a port
+nothing else on the machine is using, on a database made for that run and named after
+the port, which it drops when it ends (`platform/playwright.config.ts`,
+`platform/test/browser/support/drop.exs`), so two walks at once never reach each
+other's server or data. It builds the pages' scripts and styles before its server
+starts, and the server watches no files, so no page reloads under a check.
 
 ## Every page and document
 
@@ -39,12 +43,13 @@ walks at once never reach each other's server; they still share the walk's datab
 | A name saved on the Account page with the person's own sign-in shows there, in the form and as the account's name; a forged sign-in changes nothing | `platform/test/ash_template_web/public_name_test.exs` |
 | Save makes the person's profile on their first save and saves only to the profile it read; a switch of account part way through the page's own save path saves nothing, and neither does a save pressed before a switch and still waiting its turn; two quick saves keep the name pressed last; a failed save never leaves the form busy | `platform/assets/test/public_name.test.ts` |
 | Save on the Account page without the browser's sign-in finishes, says why, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
-| A name with a control or text-direction character is refused, and the person is told to remove the hidden characters | elixir-utils `ash_components/identity/test/http_test.exs` and `profile_test.exs` (property tests); the words in `platform/assets/test/public_name.test.ts` |
+| A name with a hidden character (a control, a line or paragraph separator, or a format character such as a text-direction mark or zero-width space) is refused, and the person is told to remove the hidden characters; a joiner between two visible characters and a complete flag still save; taking out any one rule fails a check | elixir-utils `ash_components/identity/test/http_test.exs` and `profile_test.exs` (property tests); the words in `platform/assets/test/public_name.test.ts` |
 | The longest name the site takes, with no spaces, fits every signed-in page at both widths | `pages.spec.ts`; the walk's person has an 80-letter name (`platform/test/browser/support/sign_in.exs`) |
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code, and each choice a new code | same |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
+| An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
@@ -65,9 +70,11 @@ walks at once never reach each other's server; they still share the walk's datab
   the walk opens these pages but does not use them.
 - Connecting X on Connections, copying a wallet, the search dialog and the theme
   switch: not walked.
-- An agent's window, with its address: the walk pairs no agent, so it never opens.
-  The address's 44 px targets on a phone were measured once in headless Chromium,
-  not by a check that runs each time.
+- An agent's signed pairing request: the walk's agent is paired with a code issued
+  and taken through the same calls the side panel and the pairing request make, but no
+  agent signs a request, since the walk never leaves the machine.
+- Other addresses (the Account page's own wallet, linked wallets): only the agent's
+  window is walked.
 - Wallet buttons and paying with USDC: only the showcase pages open; no chain is
   attached to the walk.
 - Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not

@@ -2739,3 +2739,25 @@ Operations
     as well as showing its still picture (`platform/assets/js/canvas_island.ts`), as
     Keyfleet `ff1146e1` found; `platform/assets/test/canvas_island.test.ts` fails
     without it.
+- After the coordinator's ruling of 19 Oct 01:42Z on `feef62af`:
+  - The elixir-utils pin moves to `384fbb00` (tpl/eu-name-1019e, on `35532d74`): a name
+    refuses every hidden character, not only controls and text-direction marks. Line
+    and paragraph separators and all format characters are refused, among them
+    zero-width spaces, the byte-order mark, the word joiner and the soft hyphen. A
+    zero-width joiner or non-joiner stays allowed between two visible characters, and
+    tag characters inside a complete flag. Taking out any one of these rules fails a
+    check.
+  - Each browser walk makes its own database, named after its port, and drops it when
+    it ends, passed or failed (`platform/test/browser/support/drop.exs`, run by
+    `platform/test/browser/support/teardown.ts`, which now also holds the
+    outside-request check). Two walks at once no longer share data.
+  - The walk builds the pages' scripts and styles before its server starts, and its
+    server runs no file watcher, so no page is reloaded under a check and the first run
+    from a fresh copy passes.
+  - The walk's phone is a touch phone at 390 wide (Playwright's Pixel 7 with its width
+    set to 390), not a desktop browser made narrow.
+  - The walk's person has an agent, paired with a code the way the Account page and
+    the agent do it, and the walk opens its window at both widths: the address opens
+    the full address on a tap or click, Escape closes it and gives the press back to
+    the address, the icon copies the full address, and on the phone each target is at
+    least 44 px tall (`platform/test/browser/agents.spec.ts`).

@@ -1,15 +1,16 @@
-# The browser walk's person: a local account on the walk's own database, signed
-# in through the site's own sign-in step with a fresh session, one chat of their
-# own, the longest unbroken Public Display Name the site takes (so every signed-in
-# page proves a long name fits the screen), and the signed cookie the walk sends. Run by playwright.config.ts before
-# the server starts; it refuses any database but the walk's local one.
+# The browser walk's person: a local account on the database made for this run,
+# signed in through the site's own sign-in step with a fresh session, one chat of
+# their own, the longest unbroken Public Display Name the site takes (so every
+# signed-in page proves a long name fits the screen), one agent paired the way an
+# agent pairs, and the signed cookie the walk sends. Run by playwright.config.ts
+# before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
 alias AshTemplate.Actors.Human
 
 repo = AshTemplate.Repo.config()
 
 unless to_string(repo[:hostname]) in ["127.0.0.1", "::1"] and
-         String.ends_with?(to_string(repo[:database]), "_browser_dev"),
+         Regex.match?(~r/\Aash_template_browser_\d+_dev\z/, to_string(repo[:database])),
        do: raise("the browser walk signs in only on its own local database")
 
 AshTemplate.LocalDatabaseFixture.ensure_human_accounts!()
@@ -41,8 +42,14 @@ Ash.Seed.upsert!(
   identity: :privy_subject
 )
 
-if AshTemplate.Chat.my_conversations!(actor: person) == [],
-  do: AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
+AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
+
+# The agent the walk opens on the Account page (agents.spec.ts).
+code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: account.privy_user_id})
+
+RegentAgents.pair_agent!(code.code, "Walk Agent", :hermes,
+  actor: %RegentAgents.Agent{wallet: "0x" <> String.duplicate("c", 40)}
+)
 
 {:bootstrap, claim} = SessionAuthority.renew(nil)
 {:ok, _account, bound} = SessionAuthority.sign_in(claim, account.id)

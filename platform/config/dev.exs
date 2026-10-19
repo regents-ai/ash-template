@@ -19,7 +19,9 @@ config :ash_template, :chain_nodes, %{
 # chain nodes and sign-in service are a closed port on this machine, so their reads
 # fail at once, and any other request outside it is refused and fails the walk
 # (AshTemplate.WalkOffline).
-if System.get_env("ASH_TEMPLATE_WALK") == "true" do
+walk? = System.get_env("ASH_TEMPLATE_WALK") == "true"
+
+if walk? do
   closed = "http://127.0.0.1:9"
 
   config :ash_template, :chain_nodes, %{
@@ -47,9 +49,16 @@ config :ash_template, AshTemplateWeb.Endpoint,
   # `make readiness` sets this to off, so error pages answer as they do in a release.
   debug_errors: System.get_env("ASH_TEMPLATE_DEBUG_ERRORS", "on") == "on",
   secret_key_base: "6ihHqnWB0px5FXmoddiKg3V2NLeiM0k0UsFs5DwmIADSX35FFdeSs5VNICCc3iU5",
-  watchers: [
-    esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]}
-  ],
+  # The browser walk builds the pages' scripts and styles before its server starts
+  # (playwright.config.ts), so nothing rebuilds them and reloads a page while a check
+  # is on it.
+  watchers:
+    if(walk?,
+      do: [],
+      else: [
+        esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]}
+      ]
+    ),
   live_reload: [
     web_console_logger: true,
     patterns: [

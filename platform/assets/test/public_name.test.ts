@@ -68,7 +68,7 @@ it("nothing is written without a current sign-in or a profile", async () => {
   expect(conflict.calls.map(call => call[0])).toEqual(["get", "sync"])
 })
 
-// regent_identity refuses a name holding control or text-direction characters
+// regent_identity refuses a name holding hidden characters, such as a text-direction mark,
 // with its own code (founder, 19 Oct); the person is told what to change.
 it("a name the profile service refuses says what to change", async () => {
   const {action} = server({get: profile("p3", "Ada"), update: refused(422, "invalid_display_name")})

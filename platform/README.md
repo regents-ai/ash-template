@@ -301,10 +301,12 @@ can do and the check that proves it. Among them:
 - It saves a Public Display Name with Privy-signed test proof, the way the Account
   page does, and checks the name then shows on that page; a forged proof changes
   nothing.
-- The browser walk (`test/browser`) opens every page and document at 390 and 1280
-  wide in headless Chromium, signed out and signed in, and pairs an agent the way a
-  person does. It starts its own server on a free port and its own database,
-  `ash_template_browser_dev`, and signs in a local person first. Every page it opens
+- The browser walk (`test/browser`) opens every page and document in headless
+  Chromium as a desktop 1280 wide and as a touch phone 390 wide, signed out and signed
+  in, gets a pairing code the way a person does, and opens a paired agent's window.
+  It builds the pages' scripts and styles, starts its own server on a free port and a
+  database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
+  end, and signs in a local person with one agent first. Every page it opens
   is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
   that is not.
 
