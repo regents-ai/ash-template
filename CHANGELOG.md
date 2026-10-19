@@ -3121,3 +3121,7 @@ Operations
   stayed empty, so its name sat above an empty line.
 - The design-system pin moves to `0da350a6` (agents-brief-manage-1019).
 - The browser walk pairs a fourth agent, which the panel leaves out.
+
+## 2026-10-19 — Workflow skill: stop what you start
+
+- The Regent Workflow skill's "Local sites" section gains Sean's rule of 19 Oct: a local chain (anvil) or lab site starts only through a script that records its pid, with a stop script beside it that stops by that pid; never `nohup … &` typed into the shell; every chain and site a session started is stopped, and its port checked free, before a walk or lab is reported done. Two left-running Base copies had filled the Mac's swap.

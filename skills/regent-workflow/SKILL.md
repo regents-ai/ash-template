@@ -331,6 +331,10 @@ without its Privy settings.
   non-empty (its length, never its value), not only the status code.
 - Never stop or restart a server the founder or another session started without saying
   so to them first.
+- Stop what you start (founder, 19 Oct 2026). Start a local chain (anvil) or lab site only
+  through a script that records its pid, and keep a stop script beside it that stops by that
+  pid. Never start one with `nohup … &` typed into the shell. Before you report a walk or
+  lab done, stop every chain and site you started, and check its port is free.
 
 ## Domains and servers
 
