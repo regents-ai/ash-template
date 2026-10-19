@@ -2761,3 +2761,25 @@ Operations
     the full address on a tap or click, Escape closes it and gives the press back to
     the address, the icon copies the full address, and on the phone each target is at
     least 44 px tall (`platform/test/browser/agents.spec.ts`).
+
+## 2026-10-19 — An agent's name says where it comes from, and its person can change it
+
+- Founder, 19 Oct 00:16Z: make clearer where agents' names come from and who sees
+  them, and let the person edit them, in one shared piece for every account page.
+- The design-system pin moves to `f7b4c66c` (tpl/ds-name-1019a): the agents list's tip
+  says each agent chose its own name when it paired and only the person and the agent
+  see it, and the agent's window has a Name field with Save, a line saying only the
+  person sees it and a tip on where it comes from. The Public Display Name's tip says
+  people see it beside what the person posts, the same on every Regent site.
+- The elixir-utils pin moves to `9c580f45` (tpl/eu-rename-1019a): the person may rename
+  their agent, and an agent's name follows the same rule as a Public Display Name (1
+  to 80 characters, no hidden characters). A pairing whose name breaks it is refused
+  with `invalid_name` (400), and the same code still works; `cli/COMMANDS.md` and
+  `platform/priv/public/openapi.json` list it.
+- `regent_format` is now pinned with `override: true`, since `regent_identity` and
+  `regent_agents` name it by path.
+- The Account page's agent window saves a new name
+  (`platform/lib/ash_template_web/components/agents_panel.ex`); a refused name is said
+  beside the field and the agent keeps its name. The browser walk pairs two more
+  agents and renames one at each width (`platform/test/browser/agents.spec.ts`); taking
+  out the refusal or the save fails it.

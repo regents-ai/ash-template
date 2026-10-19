@@ -77,6 +77,20 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 
+## Every address has a copy icon (founder rule, 19 Oct 2026)
+
+Sean, 19 Oct 2026, verbatim: "make a standing rule where anywhere an ens name or a
+0xaddress or abbreviated 0xaddress is shown , to show a copy icon to get the full
+address".
+
+- On all five sites, every ENS name, full `0x` address and short address a page shows
+  is drawn with `Regent.Primitives.address` from design-system: the words open the full
+  address, and its copy icon copies the full address. This holds in lists, tables,
+  windows, notes beside buttons and the account's own wallets.
+- Never print an address or ENS name as plain text beside a hand-made copy button. A
+  page that needs a new shape of address changes the primitive in design-system first.
+- Reviews treat a bare address or ENS name on screen as a defect.
+
 ## Every change proves itself (founder rule, 18 Oct 2026)
 
 Sean, 18 Oct 2026 22:35Z, verbatim in part: "Give your agent a way to verify its

@@ -4,8 +4,8 @@ defmodule AshTemplateWeb.AgentsPanel do
   Account page, in the shared agents list (`Regent.Account.agents`), with Pair
   New Agent opening the side panel's pairing box (`AshTemplateWeb.PairingBox`),
   and a larger view of one agent with where it has been active across the Regent
-  sites, a line for each site and day (`AshTemplate.Agents.ActivityReading`), and
-  Unpair.
+  sites, a line for each site and day (`AshTemplate.Agents.ActivityReading`), its
+  name, which the person may change, and Unpair.
 
   Pairing immediately lets an agent do what `AshTemplateWeb.Capabilities.may/0`
   lists, which the list's tip and the agent's view show the person, and the
@@ -26,13 +26,15 @@ defmodule AshTemplateWeb.AgentsPanel do
   alias Regent.Primitives, as: P
   alias RegentAgents.{Harness, HumanBacking, PairedAgent, Person}
 
+  @name_refused "That name can’t be used. Use 1 to 80 characters with no hidden characters."
+
   @impl true
   def mount(socket),
     do:
       {:ok,
        socket
        |> Session.check_component_lease(&take_account/2)
-       |> assign(detail: nil, notice: nil)}
+       |> assign(detail: nil, notice: nil, name_error: nil)}
 
   @impl true
   def update(%{agents_changed: true}, socket), do: {:ok, read_agents(socket)}
@@ -57,10 +59,41 @@ defmodule AshTemplateWeb.AgentsPanel do
 
   @impl true
   def handle_event("open_agent", %{"id" => id}, socket),
-    do: {:noreply, socket |> assign(notice: nil) |> show_agent(id)}
+    do: {:noreply, socket |> assign(notice: nil, name_error: nil) |> show_agent(id)}
 
   def handle_event("close_agent", _params, socket),
-    do: {:noreply, assign(socket, detail: nil, notice: nil)}
+    do: {:noreply, assign(socket, detail: nil, notice: nil, name_error: nil)}
+
+  # A name the shared rule refuses (blank, over 80 characters or holding a hidden
+  # character) is said beside the field; the agent keeps its name.
+  def handle_event("rename_agent", %{"agent_id" => id, "name" => name}, socket) do
+    actor = socket.assigns.person
+
+    renamed =
+      with {:ok, id} <- Ecto.UUID.cast(id),
+           {:ok, %PairedAgent{} = agent} <- RegentAgents.get_my_agent(id, actor: actor) do
+        RegentAgents.rename_agent(agent, name, actor: actor)
+      end
+
+    {notice, name_error} =
+      case renamed do
+        {:ok, %PairedAgent{name: name}} ->
+          {{:status, "Saved. This agent is now called #{name} on every Regent site."}, nil}
+
+        {:ok, nil} ->
+          {{:alert, "This agent is no longer paired with your account. Nothing changed."}, nil}
+
+        {:error, %Ash.Error.Invalid{errors: errors}} ->
+          if Enum.any?(errors, &match?(%{field: :name}, &1)),
+            do: {nil, @name_refused},
+            else: {failed_notice(), nil}
+
+        _failed ->
+          {failed_notice(), nil}
+      end
+
+    {:noreply, socket |> read_agents() |> assign(notice: notice, name_error: name_error)}
+  end
 
   def handle_event("unpair_agent", %{"id" => id}, socket) do
     actor = socket.assigns.person
@@ -75,11 +108,14 @@ defmodule AshTemplateWeb.AgentsPanel do
           {:alert, "This agent is no longer paired with your account. Nothing changed."}
 
         _failed ->
-          {:alert, "Your agents couldn’t be updated just now. Nothing changed. Try again."}
+          failed_notice()
       end
 
     {:noreply, socket |> read_agents() |> assign(notice: notice)}
   end
+
+  defp failed_notice,
+    do: {:alert, "Your agents couldn’t be updated just now. Nothing changed. Try again."}
 
   # Where the open agent has been active and its registry listing, landing only
   # while that agent is still open.
@@ -162,6 +198,8 @@ defmodule AshTemplateWeb.AgentsPanel do
             notice={@notice}
             target={@myself}
             open_event="open_agent"
+            rename_event="rename_agent"
+            name_error={@name_error}
             phx-hook="InfoDialog"
             data-open
             data-close-event="close_agent"

@@ -303,10 +303,11 @@ can do and the check that proves it. Among them:
   nothing.
 - The browser walk (`test/browser`) opens every page and document in headless
   Chromium as a desktop 1280 wide and as a touch phone 390 wide, signed out and signed
-  in, gets a pairing code the way a person does, and opens a paired agent's window.
+  in, gets a pairing code the way a person does, opens a paired agent's window and
+  renames the agent.
   It builds the pages' scripts and styles, starts its own server on a free port and a
   database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
-  end, and signs in a local person with one agent first. Every page it opens
+  end, and signs in a local person with three agents first. Every page it opens
   is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
   that is not.
 

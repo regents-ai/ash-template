@@ -5013,6 +5013,15 @@
                     "hint": "Send one of: hermes, grok_bot, muse, openclaw, nemoclaw, ironclaw, pi, claude_code, codex, cursor, gemini_cli, dots, other. Send other if yours is not listed."
                   }
                 }
+              },
+              "invalidName": {
+                "value": {
+                  "error": {
+                    "code": "invalid_name",
+                    "message": "That name can't be used.",
+                    "hint": "Send a name of 1 to 80 characters with no hidden characters: no control, line-break, text-direction or zero-width characters, except a zero-width joiner between two visible characters, as in an emoji. The same code works until it expires."
+                  }
+                }
               }
             }
           }

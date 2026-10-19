@@ -50,6 +50,8 @@ starts, and the server watches no files, so no page reloads under a check.
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
 | An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
+| An agent's window renames the agent: a name with a hidden character is refused beside the field and the agent keeps its name; a name with an emoji joined by a zero-width joiner saves and shows in the window and the list, at both widths; the field and Save are at least 44 px tall on the phone | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs |
+| Only the person renames their agent; a blank name, one over 80 characters or one with a hidden character is refused | elixir-utils `ash_components/agents/test/pairing_test.exs` |
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
@@ -59,6 +61,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | What | Check |
 | --- | --- |
 | A cookie or an unpaired or revoked agent never reaches the account; each signed request counts once | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| An agent pairing with a name that has a hidden character is refused with `invalid_name`, and the same code still pairs it with another name | elixir-utils `ash_components/agents/test/http_test.exs` |
 | Two agents spending a person's last Credits at once never spend more than there is; a retried pin pays once; a revoked allowance stops the next spend | `platform/test/ash_template/credits/agent_spend_test.exs` |
 
 ## Gaps

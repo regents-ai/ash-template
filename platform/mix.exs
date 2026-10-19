@@ -4,9 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "384fbb00344ef07b986edb16d907942f480e3e90"
+  @elixir_utils_ref "9c580f45133d451c1284dd4067a924ea72057be2"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "edf0bb272590954da3caf46eb4c5bd9c1026c0cd"
+  @design_system_ref "f7b4c66cde21553e882f72f38656150f79d7e84e"
 
   def project do
     [
@@ -63,7 +63,9 @@ defmodule AshTemplate.MixProject do
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/agents", override: true},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
       {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
-      {:regent_format, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format"},
+      # regent_identity and regent_agents name regent_format by path; this pin replaces it.
+      {:regent_format,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format", override: true},
       # regent_credits names regent_chain by a sibling path; this pin replaces it.
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},

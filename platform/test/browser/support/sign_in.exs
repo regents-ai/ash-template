@@ -1,7 +1,7 @@
 # The browser walk's person: a local account on the database made for this run,
 # signed in through the site's own sign-in step with a fresh session, one chat of
 # their own, the longest unbroken Public Display Name the site takes (so every
-# signed-in page proves a long name fits the screen), one agent paired the way an
+# signed-in page proves a long name fits the screen), three agents paired the way an
 # agent pairs, and the signed cookie the walk sends. Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
@@ -44,12 +44,16 @@ Ash.Seed.upsert!(
 
 AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
 
-# The agent the walk opens on the Account page (agents.spec.ts).
-code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: account.privy_user_id})
+# The agent the walk opens on the Account page, and one for each width to rename
+# (agents.spec.ts).
+for {name, digit} <- [{"Walk Agent", "c"}, {"Desktop Agent", "d"}, {"Phone Agent", "e"}] do
+  code =
+    RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: account.privy_user_id})
 
-RegentAgents.pair_agent!(code.code, "Walk Agent", :hermes,
-  actor: %RegentAgents.Agent{wallet: "0x" <> String.duplicate("c", 40)}
-)
+  RegentAgents.pair_agent!(code.code, name, :hermes,
+    actor: %RegentAgents.Agent{wallet: "0x" <> String.duplicate(digit, 40)}
+  )
+end
 
 {:bootstrap, claim} = SessionAuthority.renew(nil)
 {:ok, _account, bound} = SessionAuthority.sign_in(claim, account.id)
