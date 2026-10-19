@@ -1,12 +1,12 @@
 import {execFileSync} from "node:child_process"
 import {defineConfig, devices} from "@playwright/test"
 
-// The browser walk (make check-browser). It builds the pages' scripts and styles,
-// starts its own local server on a database made for this run, signs its person in
-// and pairs their agent first (test/browser/support/sign_in.exs), and drops the
-// database at the end (test/browser/support/teardown.ts). It walks a desktop at
-// 1280 wide and a touch phone at 390 wide. Chromium only: WebKit is not run on the
-// Mac.
+// The browser walk (the end of mix precommit, or make check-browser alone). It
+// builds the pages' scripts and styles, starts its own local server on a database
+// made for this run, signs its person in and pairs their agent first
+// (test/browser/support/sign_in.exs), and drops the database at the end
+// (test/browser/support/teardown.ts). It walks a desktop at 1280 wide and a touch
+// phone at 390 wide. Chromium only: WebKit is not run on the Mac.
 // Neither the browser nor the server leaves this machine: the browser's outside
 // requests fail the check that made them (test/browser/support/test.ts), and the
 // server, with the outside services' settings cleared, refuses its own and the walk
