@@ -7,7 +7,7 @@ help:
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
 check: check-platform check-browser check-required-fixes check-cli check-contracts
 check-platform:
-	cd platform && mix precommit && mix test && mix regent_agent_access.assets && npm run typecheck && npm test
+	cd platform && mix precommit && mix test && mix do regent_ui.assets + regent_identity.assets + regent_agent_access.assets && npm run typecheck && npm test
 # The browser walk (platform/test/browser): every page at phone and desktop width,
 # and the paths a person takes. It starts its own server on its own database.
 check-browser:

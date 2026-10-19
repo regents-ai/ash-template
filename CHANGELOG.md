@@ -2689,3 +2689,6 @@ Operations
   `platform/test/browser/support/test.ts` answers for Privy with a stand-in that
   holds no sign-in and fails any check that reaches another address; `keepSignedIn`
   is gone, since only the real bridge asked the site to sign out.
+- `make check` now builds all three shared library copies (`regent_ui`, `regent_identity`,
+  `regent_agent_access`) before the type check. It built only the last, so the type check
+  failed on a fresh clone and only ran clean in a folder that already held the others.
