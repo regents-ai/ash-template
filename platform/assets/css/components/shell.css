@@ -856,7 +856,6 @@
 }
 
 .shell-aside__head .rg-button {
-  min-height: 2rem;
   padding: 0.25rem 0.6rem;
   font-size: 0.8125rem;
   white-space: nowrap;
@@ -1516,8 +1515,7 @@
   }
 }
 
-/* On touch screens every press in the rail, the list and the side panel's head
-   is at least 44px. */
+/* On touch screens every press in the rail and the list is at least 44px. */
 @media (hover: none), (pointer: coarse) {
   .shell-rail__you {
     width: 2.75rem;
@@ -1526,8 +1524,7 @@
 
   #shell-sidebar li > a,
   #shell-sidebar li > button,
-  .shell-sidebar__new,
-  .shell-aside__head .rg-button {
+  .shell-sidebar__new {
     min-height: 2.75rem;
   }
 }
