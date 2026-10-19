@@ -49,6 +49,11 @@ defmodule AshTemplateWeb.HarbourLive do
   @place_ids Enum.map(@places, & &1.id)
   @places_by_id Map.new(@places, &{&1.id, &1})
 
+  # The column of the list under the harbour that each island heads. Each agent
+  # keeps its own row and stands in its island's column, so the list keeps its
+  # height wherever the agents gather.
+  @columns @place_ids |> Enum.with_index(1) |> Map.new()
+
   # The sample agents: the Key each one holds, the colour of its sail, and the
   # place of its last action.
   @crew [
@@ -169,7 +174,8 @@ defmodule AshTemplateWeb.HarbourLive do
         data-harbour-crew={
           Jason.encode!(Enum.map(@crew, &Map.take(&1, [:id, :name, :place, :color])))
         }
-        aria-hidden="true"
+        role="img"
+        aria-label="The agent harbour"
       >
         <img
           class="harbour__still harbour__still--light"
@@ -201,24 +207,28 @@ defmodule AshTemplateWeb.HarbourLive do
           </.link>
         </div>
       </div>
-      <ul class="harbour__legend" aria-label="Where each agent is">
-        <li :for={place <- @places}>
-          <p>
+      <div class="harbour__legend">
+        <ul class="harbour__islands" aria-label="Islands">
+          <li :for={place <- @places}>
             <.link
               patch={~p"/animations/harbour/#{place.id}"}
               aria-current={@place == place && "page"}
             >
-              <strong>{place.name}</strong>
+              {place.name}
             </.link>
-            {place.action}
-          </p>
-          <ul>
-            <li :for={agent <- @crew} :if={agent.place == place.id} style={"--sail: #{agent.color}"}>
-              <.link patch={harbour_path(@place, agent: agent.id)}>{agent.name}</.link>
-            </li>
-          </ul>
-        </li>
-      </ul>
+            <span>{place.action}</span>
+          </li>
+        </ul>
+        <ul class="harbour__crew" aria-label="Where each agent is" style={"--rows: #{length(@crew)}"}>
+          <li
+            :for={{agent, row} <- Enum.with_index(@crew, 1)}
+            style={"--sail: #{agent.color}; grid-area: #{row} / #{column(agent.place)}"}
+          >
+            <.link patch={harbour_path(@place, agent: agent.id)}>{agent.name}</.link>
+            <span class="visually-hidden">at the {place_name(agent.place)}</span>
+          </li>
+        </ul>
+      </div>
       <.agent_card
         :if={@agent_id}
         agent={Enum.find(@crew, &(&1.id == @agent_id))}
@@ -271,6 +281,10 @@ defmodule AshTemplateWeb.HarbourLive do
     %{name: name, action: action} = Map.fetch!(@places_by_id, place)
     "#{action} at the #{name}"
   end
+
+  defp place_name(place), do: Map.fetch!(@places_by_id, place).name
+
+  defp column(place), do: Map.fetch!(@columns, place)
 
   defp ago(at, now) do
     case DateTime.diff(now, at) do

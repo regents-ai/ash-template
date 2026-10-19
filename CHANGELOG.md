@@ -2939,3 +2939,36 @@ Operations
 - `platform/priv/public/changelog.md` notes the agent harbour for visitors, and
   `platform/README.md` names the harbour and its island pages among the motion lab pages
   that follow `ASH_TEMPLATE_SHOWCASE`.
+
+## 2026-10-19 — Agent harbour: a steady list, phone-sized names, and its checks
+
+- The six harbour entries above (16 Oct) are applied unchanged on top of the 19 Oct
+  template line (Public Display Name, the offline walk on a free port).
+- The list under the harbour gives each agent its own row, standing in its island's
+  column, so it keeps its height wherever the agents gather and the page below never
+  moves (the footer dropped 48 px at 390 when agents gathered). The inn's page now
+  shifts 0.01 over 30 seconds at 1280, was 0.165. Island and agent names are targets
+  at least 44 px square; island names were 24–54 × 25 px and agent names 16 px tall.
+- The harbour is one picture to a screen reader, named "The agent harbour"; the list
+  under it says where each agent is.
+- `mix test` creates the local test database when it is missing, so a fresh copy
+  needs no step of its own for it.
+- `mix precommit` now ends with the TypeScript typecheck, the script tests and the
+  browser walk, so every commit's gate runs the harbour's checks; `make check-browser`
+  runs the walk alone.
+- `platform/README.md` no longer says only Privy leaves the machine: the local server
+  also reads the chain nodes and the agent sign-in service, and any optional service
+  that is set. The walk runs with all of them off.
+- Checks, each found by role and name: `platform/test/browser/harbour.spec.ts` opens
+  each agent's card from the list and closes it with Close and with Escape, checks each
+  island's page marks its island and the list's names on the phone are at least 44 px
+  square, keeps the list's height with every agent at one island, measures the inn's
+  page's shift over 30 seconds, and checks the still picture for each theme without
+  WebGPU. `platform/test/browser/harbour_sea.spec.ts` turns WebGPU on, finds ships and
+  islands on the sea with the pointer, and presses one of each with a click at 1280 and
+  a tap at 390. Both run light and dark. `platform/test/ash_template_web/harbour_live_test.exs`
+  checks each move, each island's page and each agent's address. Each check failed
+  against a broken copy: a card that never opens, a card with no Close button, a list
+  with no agents, a card with no name, no island marked, the list's old layout, names
+  smaller than 44 px, the wrong still picture in the dark theme, and a ship press that
+  opens nothing. WebKit is not run on the Mac.

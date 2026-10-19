@@ -151,76 +151,69 @@
   content: "";
 }
 
+/* The list under the harbour: the islands in a row, and below them one row for
+   each agent, standing in its island's column. An agent that sails on moves
+   across its own row, so the list keeps its height. Every name is a target at
+   least 2.75rem (44px) square. */
 .harbour__legend {
   display: grid;
+}
+
+.harbour__legend ul {
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  column-gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.harbour__legend > li {
+.harbour__islands li {
   display: grid;
-  align-content: start;
-  gap: var(--space-2);
+  justify-items: start;
   min-width: 0;
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
 
-.harbour__legend p {
-  display: grid;
-  justify-items: start;
-}
-
-.harbour__legend strong {
-  font-family: var(--font-family-title);
-  font-weight: 400;
-}
-
-.harbour__legend p,
-.harbour__legend ul {
+.harbour__islands span,
+.harbour__crew a {
   color: var(--color-fg-muted);
   font: 0.72rem/1.4 var(--font-family-mono);
   letter-spacing: var(--tracking-microlabel);
   text-transform: uppercase;
 }
 
-.harbour__legend strong {
-  color: var(--color-fg);
-  font-size: 1.1rem;
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-.harbour__legend ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
-  min-height: 2.8em;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.harbour__legend ul li {
-  display: flex;
+.harbour__legend a {
+  display: inline-flex;
   gap: 0.4em;
   align-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  text-decoration: none;
+  text-underline-offset: 0.25em;
 }
 
-.harbour__legend ul li::before {
+.harbour__islands a {
+  color: var(--color-fg);
+  font: 400 1.1rem/1.1 var(--font-family-title);
+}
+
+.harbour__crew {
+  grid-template-rows: repeat(var(--rows), auto);
+}
+
+.harbour__crew li {
+  min-width: 0;
+}
+
+.harbour__crew a::before {
+  flex: none;
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
   background: var(--sail);
   content: "";
-}
-
-.harbour__legend a {
-  text-decoration: none;
-  text-underline-offset: 0.25em;
 }
 
 .harbour__legend a:is(:hover, :focus-visible, [aria-current="page"]) {

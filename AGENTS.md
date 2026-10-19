@@ -68,8 +68,9 @@ After renaming, a new site must still replace, by hand:
   Add an entry the day such a fix is published and push it to `main`; every
   site's `make check-required-fixes` reads `main` and fails until the site takes
   it. A new shared library must be listed before any site can use it.
-- `make check` runs every gate: the platform's `mix precommit` and TypeScript
-  typecheck, the required-fixes check, then the command description check against the
+- `make check` runs every gate: the platform's `mix precommit` (which ends with the
+  TypeScript typecheck, the script tests and the browser walk) and `mix test`, the
+  required-fixes check, then the command description check against the
   site's OpenAPI documents (regents-cli's checker at the commit the `Makefile` pins).
   `make check-platform`, `check-required-fixes`, `check-cli` and `check-contracts`
   run one component.
