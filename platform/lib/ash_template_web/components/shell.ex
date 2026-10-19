@@ -432,7 +432,7 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  defp credits_label(%{state: :ready, value: balance}),
+  defp credits_label(%{state: state, value: %{} = balance}) when state in [:ready, :loading],
     do: RegentCredits.Amount.format(balance.available)
 
   defp credits_label(%{state: state}) when state in [:error, :stale], do: "Credits unavailable"
@@ -440,11 +440,12 @@ defmodule AshTemplateWeb.Components.Shell do
 
   attr :amount, :map, required: true
 
-  # "12.40 Credits", whose unit a phone's header leaves out for room. Only a
-  # balance just read shows; while it is read again, or when it can't be, the
-  # figure is a dash. The button and the Buy Credits panel behind it are there
-  # either way.
-  defp credits_amount(%{amount: %{state: :ready, value: balance}} = assigns) do
+  # "12.40 Credits", whose unit a phone's header leaves out for room. The last
+  # balance read stays while it is read again; before the first read, or when
+  # it can't be read, the figure is a dash. The button and the Buy Credits panel
+  # behind it are there either way.
+  defp credits_amount(%{amount: %{state: state, value: %{} = balance}} = assigns)
+       when state in [:ready, :loading] do
     [number, unit] = String.split(RegentCredits.Amount.format(balance.available), " ", parts: 2)
     assigns = assign(assigns, number: number, unit: unit)
 

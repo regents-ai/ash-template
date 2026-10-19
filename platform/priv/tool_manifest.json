@@ -95,8 +95,8 @@
     },
     {
       "name": "agent_whoami",
-      "title": "Check my identity and pairing",
-      "description": "Check who you are signed in as and whether you are paired. Works before pairing; changes nothing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "title": "Check my status",
+      "description": "Call this first. Tells you your status on this site (not_paired, person_not_here or paired), what you may do in it and your next step. Works before pairing; changes nothing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
       "input_schema": {
         "type": "object",
         "additionalProperties": false,
@@ -144,7 +144,7 @@
     {
       "name": "agent_status",
       "title": "Check in",
-      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
       "input_schema": {
         "type": "object",
         "additionalProperties": false,
@@ -455,7 +455,7 @@
     {
       "name": "notes_pin",
       "title": "Pin a note",
-      "description": "Pin one of your person's notes to the top of their notes. Costs 1 of their Credits, within the spending they allow you on their Regents account; a refused pin, or a note already pinned, costs nothing. Keep operation_id when retrying; a retry never pays twice. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "description": "Pin one of your person's notes to the top of their notes. Costs 1 of their Credits, within the spending they allow you on their Regents account; a refused pin, or a note already pinned, costs nothing. Send a new operation_id for each pin, including one after an unpin, and keep it when retrying; a retry never pays twice. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
       "input_schema": {
         "type": "object",
         "additionalProperties": false,
@@ -476,7 +476,7 @@
               "operation_id": {
                 "type": "string",
                 "format": "uuid",
-                "description": "A UUID you make for this pin. Keep it when retrying."
+                "description": "A new UUID for each pin, including a pin after an unpin. Keep it when retrying."
               }
             },
             "required": [
@@ -517,7 +517,7 @@
           "operation_id": {
             "type": "string",
             "format": "uuid",
-            "description": "A UUID you make for this pin. Keep it when retrying."
+            "description": "A new UUID for each pin, including a pin after an unpin. Keep it when retrying."
           }
         },
         "required": [
@@ -1094,7 +1094,7 @@
     {
       "name": "account_points",
       "title": "Read Points",
-      "description": "Read your person's Points, today's total and recent entries. Points are decimal text, such as \"12.5\". Changes nothing. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "description": "Read your person's Points, today's total, daily allowances and recent entries, each saying who earned it and whether it counted. Points are decimal text, such as \"12.5\". Changes nothing. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
       "input_schema": {
         "type": "object",
         "additionalProperties": false,

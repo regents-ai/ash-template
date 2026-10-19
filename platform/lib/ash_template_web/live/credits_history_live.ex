@@ -73,6 +73,9 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
           empty_message="Nothing has changed your Credits yet."
         />
       </div>
+      <p :if={@account} id="credits-history-refunds">
+        For a refund, write to <a href="mailto:support@regents.sh">support@regents.sh</a>.
+      </p>
       <section id="credits-uses" class="account-panel credits-uses">
         <h2>What Credits buy</h2>
         <ul>
@@ -170,6 +173,26 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
     with {:ok, page} <- read.(%{after: history.next}),
          do: {:ok, %{page | entries: history.entries ++ page.entries}}
   end
+
+  @doc """
+  The newest page read again after a change, with the older entries already
+  shown kept below it, as far as they continue from where the new page ends.
+  When the new page no longer reaches the entries shown (many changes at once),
+  only the new page is kept, and Show older reads on from it.
+  """
+  def refreshed(page, %{entries: shown, more?: more?, next: next}) when page.more? do
+    oldest = List.last(page.entries)
+
+    case Enum.split_while(shown, &(&1.id != oldest.id)) do
+      {_newer, [_same | older]} ->
+        %{page | entries: page.entries ++ older, more?: more?, next: next}
+
+      {_shown, []} ->
+        page
+    end
+  end
+
+  def refreshed(page, _shown), do: page
 
   # An empty history is a table with no rows; a failed read keeps the entries on screen.
   defp state(%{state: :empty}), do: :ready

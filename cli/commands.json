@@ -165,7 +165,7 @@
     },
     {
       "command": "agents whoami",
-      "description": "Check who you are signed in as and whether you are paired. Changes nothing.",
+      "description": "Run this first. Tells you your status on this site (not_paired, person_not_here or paired), what you may do in it and your next step. Changes nothing.",
       "operation_id": "getAgentIdentity",
       "webmcp": "agent_whoami",
       "method": "GET",
@@ -175,7 +175,7 @@
     },
     {
       "command": "agents status",
-      "description": "Check in as your person's paired agent. Shows the account you act for and records this as your latest contact, which your person sees on their account page.",
+      "description": "Check in as your person's paired agent. Shows the account you act for and records this as your latest contact, which your person sees on their account page. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site.",
       "operation_id": "checkInAgent",
       "webmcp": "agent_status",
       "method": "GET",
@@ -273,7 +273,7 @@
     },
     {
       "command": "notes pin <id>",
-      "description": "Pin a note to the top of your person's notes; it costs 1 of their Credits. Pipe a stable operation_id UUID on stdin and keep it when retrying; a retry never pays twice.",
+      "description": "Pin a note to the top of your person's notes; it costs 1 of their Credits. Pipe a new operation_id UUID on stdin for each pin, including one after an unpin, and keep it when retrying; a retry never pays twice.",
       "operation_id": "pinNoteAsAgent",
       "webmcp": "notes_pin",
       "method": "POST",
@@ -357,7 +357,7 @@
     },
     {
       "command": "account points",
-      "description": "Read your person's Points, today's total and recent entries.",
+      "description": "Read your person's Points, today's total, daily allowances and recent entries, each saying who earned it and whether it counted.",
       "operation_id": "getAccountPoints",
       "webmcp": "account_points",
       "method": "GET",

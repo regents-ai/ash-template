@@ -4,8 +4,9 @@ defmodule AshTemplateWeb.CreditsPanel do
   and what each press did, all in one place. Built on the reference wallet
   component (`AshTemplateWeb.OnchainExample`): the server builds the steps
   (`RegentCredits.Chains.steps/3`), every press goes straight to the wallet, and
-  each sent Buy is reported as a purchase once the chain holds it, then checked
-  every two seconds until it counts. The site's Oban keeps checking once a minute after the page stops.
+  each sent Buy is followed by a job (`AshTemplate.Credits.CheckPurchase`) that
+  reports and checks it until it counts. The parent hears how it ended on the
+  person's purchase topic and hands it to the panel as `purchase`.
 
   Credits are bought with USDC on Base only: the wallet is asked onto Base when
   a press needs it. The USDC of the wallet that pays is shown.
@@ -17,22 +18,19 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   The parent passes `account` (the signed-in account), its `credits` reading
   (`state` and the `RegentCredits.balance/1` value, kept current by the
-  parent; the figures show only while it is `:ready`, and a dash otherwise), its
+  parent; the figures show while it is `:ready` or read again, and a dash
+  otherwise), its
   `session_lease` as `lease` and `id`.
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.{AccessContext, ChainClient, Credits, Limits}
+  alias AshTemplate.{AccessContext, ChainClient, Limits}
+  alias AshTemplate.Credits.CheckPurchase
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
   alias RegentChain.{Call, Presses, Review}
   alias RegentCredits.{Amount, Chains}
-  alias RegentCredits.Errors.Refused
-
-  @recheck_ms 2_000
-  @purchase_reads 150
-  @report_tries 150
 
   @impl true
   def mount(socket) do
@@ -55,6 +53,14 @@ defmodule AshTemplateWeb.CreditsPanel do
   end
 
   @impl true
+  # How a Buy this panel sent ended, as its check told the parent.
+  def update(%{purchase: {hash, shown}}, socket) do
+    case socket.assigns.purchases do
+      %{^hash => _sent} -> {:ok, put_purchase(socket, hash, shown)}
+      _other_page -> {:ok, socket}
+    end
+  end
+
   def update(%{account: account} = assigns, socket) do
     {:ok,
      socket
@@ -98,10 +104,7 @@ defmodule AshTemplateWeb.CreditsPanel do
 
     case Enum.find(socket.assigns.presses.sent, &(&1.hash == String.downcase(hash))) do
       %{name: "buy", review: %{} = review} = entry ->
-        {:noreply,
-         socket
-         |> put_purchase(entry.hash, %{purchase: :reporting, reads: 0})
-         |> report(entry.hash, review, 0)}
+        {:noreply, follow(socket, entry.hash, review)}
 
       _other ->
         {:noreply, socket}
@@ -124,12 +127,9 @@ defmodule AshTemplateWeb.CreditsPanel do
     do: {:noreply, OnchainSteps.check_again(socket, hash)}
 
   def handle_event("check_purchase_again", %{"hash" => hash}, socket) do
-    case socket.assigns.purchases do
-      %{^hash => %{purchase: %{id: _id}} = shown} ->
-        {:noreply, check_purchase(socket, hash, %{shown | reads: 0})}
-
-      _unknown ->
-        {:noreply, socket}
+    case Enum.find(socket.assigns.presses.sent, &(&1.hash == hash and &1.name == "buy")) do
+      %{review: %{} = review} -> {:noreply, follow(socket, hash, review)}
+      _unknown -> {:noreply, socket}
     end
   end
 
@@ -145,43 +145,6 @@ defmodule AshTemplateWeb.CreditsPanel do
       _waiting ->
         {:noreply, socket}
     end
-  end
-
-  def handle_async({:report, hash}, {:ok, {_review, _tries, {:ok, purchase}}}, socket),
-    do: {:noreply, check_purchase(socket, hash, %{purchase: purchase, reads: 0})}
-
-  def handle_async({:report, hash}, {:ok, {review, tries, answer}}, socket) do
-    if again?(answer) and tries + 1 < @report_tries,
-      do: {:noreply, report(socket, hash, review, tries + 1, @recheck_ms)},
-      else: {:noreply, put_purchase(socket, hash, %{purchase: nil, reads: 0})}
-  end
-
-  def handle_async({:report, hash}, _unanswered, socket),
-    do: {:noreply, put_purchase(socket, hash, %{purchase: nil, reads: 0})}
-
-  def handle_async({:purchase, hash}, {:ok, {:ok, purchase}}, socket) do
-    shown = %{purchase: purchase, reads: socket.assigns.purchases[hash].reads + 1}
-
-    cond do
-      purchase.status == :credited ->
-        {:noreply, put_purchase(socket, hash, shown)}
-
-      purchase.status == :checking and shown.reads < @purchase_reads ->
-        {:noreply, check_purchase(socket, hash, shown)}
-
-      true ->
-        {:noreply, put_purchase(socket, hash, shown)}
-    end
-  end
-
-  # An unanswered read counts like any other; the next one tries again.
-  def handle_async({:purchase, hash}, _unanswered, socket) do
-    %{purchase: purchase, reads: reads} = socket.assigns.purchases[hash]
-    shown = %{purchase: purchase, reads: reads + 1}
-
-    if shown.reads < @purchase_reads,
-      do: {:noreply, check_purchase(socket, hash, shown)},
-      else: {:noreply, put_purchase(socket, hash, shown)}
   end
 
   # Each read answers with the wallet it was for, and lands only while that
@@ -262,54 +225,17 @@ defmodule AshTemplateWeb.CreditsPanel do
   defp remember_number(socket, review),
     do: assign(socket, numbers: Map.put(socket.assigns.numbers, review.id, socket.assigns.number))
 
-  # A sent Buy is reported once the chain holds it: until then the report is
-  # refused as not seen yet, and the page reports again every two seconds, for
-  # up to five minutes. Each report counts against the person's report
-  # allowance; past it, the page waits its turn the same way.
-  defp report(socket, hash, review, tries, wait_ms \\ 0) do
-    account = socket.assigns.account
+  # A sent Buy is followed by its own job, which reports it once the chain
+  # holds it and checks it until it counts; the page shows it waiting until
+  # the job says how it ended. Pressing Check again follows it once more.
+  defp follow(socket, hash, review) do
     number = Map.fetch!(socket.assigns.numbers, review.id)
+    dollars = dollars(review.inputs["amount"])
 
-    start_async(socket, {:report, hash}, fn ->
-      Process.sleep(wait_ms)
-      {review, tries, send_report(account, review, number, hash)}
-    end)
-  end
-
-  defp send_report(account, review, number, hash) do
-    with :ok <- Limits.spend(:credits_report, {:human, account.id}) do
-      RegentCredits.report_purchase(
-        account.privy_user_id,
-        review.signer,
-        :base,
-        dollars(review.inputs["amount"]),
-        number,
-        hash,
-        actor: Credits.person(account)
-      )
+    case CheckPurchase.start(socket.assigns.account, review.signer, dollars, number, hash) do
+      {:ok, _job} -> put_purchase(socket, hash, %{purchase: :reporting, stalled?: false})
+      {:error, _not_queued} -> put_purchase(socket, hash, %{purchase: nil, stalled?: false})
     end
-  end
-
-  # Reported again: past the allowance, before the chain holds the Buy, or when
-  # the chain could not be read. Any other refusal is final.
-  defp again?(:limited), do: true
-
-  defp again?({:error, %Ash.Error.Invalid{errors: errors}}),
-    do: Enum.any?(errors, &match?(%Refused{reason: :not_seen_yet}, &1))
-
-  defp again?({:error, %Ash.Error.Unknown{}}), do: true
-  defp again?(_refused), do: false
-
-  defp check_purchase(socket, hash, shown) do
-    actor = Credits.person(socket.assigns.account)
-    id = shown.purchase.id
-
-    socket
-    |> put_purchase(hash, shown)
-    |> start_async({:purchase, hash}, fn ->
-      Process.sleep(@recheck_ms)
-      RegentCredits.check_purchase(id, actor: actor)
-    end)
   end
 
   defp put_purchase(socket, hash, shown),
@@ -411,17 +337,12 @@ defmodule AshTemplateWeb.CreditsPanel do
         >
           <dt>Regents Credits</dt>
           <dd><span data-count>{figure(@credits, :available)}</span>{missing(@credits)}</dd>
-          <dt>Active Bids</dt>
+          <dt>Held</dt>
           <dd><span data-count>{figure(@credits, :held)}</span>{missing(@credits)}</dd>
         </dl>
-        <a
-          class="credits-panel__history"
-          href="https://regents.sh/account/credits"
-          target="_blank"
-          rel="noopener"
-        >
+        <.link class="credits-panel__history" navigate={~p"/account/credits"}>
           Purchase History
-        </a>
+        </.link>
       </header>
 
       <form
@@ -631,14 +552,13 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   # Until the balance is read, or when it can't be, each figure is a dash, as
   # in the header; a word beside it would wrap on a phone and move the buttons.
-  # Only a balance just read shows; while it is read again, or when it can't be,
-  # each figure is a dash.
-  defp figure(%{state: :ready, value: balance}, field),
+  # The last balance read stays while it is read again.
+  defp figure(%{state: state, value: %{} = balance}, field) when state in [:ready, :loading],
     do: balance |> Map.fetch!(field) |> Amount.format() |> String.replace_suffix(" Credits", "")
 
   defp figure(_credits, _field), do: "—"
 
-  defp missing(%{state: :ready}), do: nil
+  defp missing(%{state: state, value: %{}}) when state in [:ready, :loading], do: nil
 
   defp missing(%{state: state} = assigns) when state in [:error, :stale],
     do: ~H|<span class="visually-hidden">Unavailable</span>|
@@ -700,9 +620,7 @@ defmodule AshTemplateWeb.CreditsPanel do
       else: "Waiting for Base"
   end
 
-  defp purchase_stalled?(%{purchase: %{status: :checking}, reads: reads}),
-    do: reads >= @purchase_reads
-
+  defp purchase_stalled?(%{purchase: %{status: :checking}, stalled?: stalled?}), do: stalled?
   defp purchase_stalled?(_shown), do: false
 
   defp chain_name_of(%{review: %{chain: %{name: name}}}), do: name

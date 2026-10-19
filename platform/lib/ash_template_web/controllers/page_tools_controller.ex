@@ -13,10 +13,10 @@ defmodule AshTemplateWeb.PageToolsController do
   alias AshTemplate.{Activity, Notes, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
-  alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
-  alias RegentPoints.{Amount, Rules}
+  alias RegentPoints.Rules
 
   plug :paired_agent
 
@@ -48,7 +48,7 @@ defmodule AshTemplateWeb.PageToolsController do
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
       {422, "The note could not be pinned.",
-       "details says why. Send operation_id, a UUID you make for this pin and keep when retrying."},
+       "details says why. Send operation_id, a new UUID for each pin that you keep when retrying."},
     "not_enough_credits" =>
       {402, "Your person does not have enough Credits for this.",
        "Ask your person to buy Credits on regents.sh, then retry with the same operation_id and fresh proof."},
@@ -68,21 +68,34 @@ defmodule AshTemplateWeb.PageToolsController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
-  @points_off "Earning Points is off on this site."
-  @spending_off "Approving agent spending is off on this site."
+  # The refusals a change to the agent's grant would answer.
+  @granted ~w(spending_not_allowed spending_not_on_this_site spending_over_limit_per_spend spending_over_daily_limit)
 
+  @points_off "Earning Points is off on this site."
+  @spending_closed "Agent spending isn't open yet. Your person can do this themselves."
+  @spending_ask "Your person can allow you to spend Credits on this site on their Regents account at regents.sh/account."
+
+  # What the agent may spend, and the note, both come from the agent's budget
+  # (`RegentCredits.agent_budget/1`): its grant, and whether a grant can be made.
   def balances(conn, _params) do
     actor = credit_actor(conn)
 
     case RegentCredits.agent_budget(actor: actor) do
       {:ok, budget} ->
         answer = %{credits: RegentCredits.balance(actor.privy_user_id), spending_grant: budget}
-        json(conn, with_note(answer, not RegentCredits.agent_grants_enabled?(), @spending_off))
+        json(conn, with_note(answer, spending_note(budget)))
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        refuse(conn, "agent_not_paired")
 
       {:error, error} ->
         conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
+
+  defp spending_note(%{site_allowed: true}), do: nil
+  defp spending_note(%{grant_approvals_available: false}), do: @spending_closed
+  defp spending_note(%{grant_approvals_available: true}), do: @spending_ask
 
   def credits_history(%{body_params: %{"after" => cursor}} = conn, _params)
       when not is_binary(cursor),
@@ -119,33 +132,11 @@ defmodule AshTemplateWeb.PageToolsController do
 
   defp cursor_error?(_error), do: false
 
-  # Points as decimal text, as the Points page shows them.
+  # Points as decimal text, the same figures the Points page shows.
   def points(conn, _params) do
     case RegentPoints.summary(actor: conn.assigns.actor) do
       {:ok, summary} ->
-        answer = %{
-          points: Amount.format(summary.balance_micro),
-          earned_today: Amount.format(summary.earned_today_micro),
-          pending: summary.pending,
-          daily_allowances:
-            Enum.map(
-              summary.allowances,
-              &%{scope: &1.scope, remaining: Amount.format(&1.remaining)}
-            ),
-          entries:
-            Enum.map(
-              summary.entries,
-              &%{
-                points: Amount.format(&1.points_micro_delta),
-                source: &1.source_app,
-                by: &1.actor_kind,
-                earned_at: &1.earned_at
-              }
-            ),
-          more: summary.more?
-        }
-
-        json(conn, with_note(answer, Rules.active() == [], @points_off))
+        json(conn, with_note(PointsEntries.answer(summary), points_note(Rules.active())))
 
       {:error, error} ->
         conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
@@ -284,8 +275,28 @@ defmodule AshTemplateWeb.PageToolsController do
   defp refuse_pin(conn, %Ash.Error.Invalid{errors: errors} = error) do
     case Enum.find_value(errors, &spending_code/1) do
       nil -> refuse(conn, "invalid_pin", error)
+      code when code in @granted -> refuse_spending(conn, code)
       code -> refuse(conn, code)
     end
+  end
+
+  # A refusal under the agent's grant says to change the grant only while a
+  # grant can be made; until then the person pins it themselves.
+  defp refuse_spending(conn, code) do
+    case RegentCredits.agent_budget(actor: credit_actor(conn)) do
+      {:ok, %{grant_approvals_available: true}} -> refuse(conn, code)
+      {:ok, %{grant_approvals_available: false}} -> refuse_closed(conn, code)
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  defp refuse_closed(conn, code) do
+    {status, message, _grant_hint} = Map.fetch!(@errors, code)
+
+    conn
+    |> put_status(status)
+    |> json(%{error: %{code: code, message: message, hint: @spending_closed}})
   end
 
   def unpin_note(conn, %{"id" => id}) do
@@ -327,8 +338,11 @@ defmodule AshTemplateWeb.PageToolsController do
     )
   end
 
-  defp with_note(answer, true, note), do: Map.put(answer, :note, note)
-  defp with_note(answer, false, _note), do: answer
+  defp points_note([]), do: @points_off
+  defp points_note(_earning), do: nil
+
+  defp with_note(answer, nil), do: answer
+  defp with_note(answer, note), do: Map.put(answer, :note, note)
 
   defp paired_agent(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")

@@ -8,7 +8,9 @@ defmodule AshTemplate.Notes.Note.Pin do
 
   The note is read again under a row lock first, so a note already pinned stays
   as it is and costs nothing, and two pins at once pay once. The hold is named
-  by the note and the agent's `operation_id`, so a retry never pays twice.
+  by the note and the agent's `operation_id`, so a retry never pays twice. Each
+  new pin is a new press with its own `operation_id`: one that already paid for
+  an earlier pin of this note is refused and pins nothing.
   """
 
   use Ash.Resource.Change
@@ -34,11 +36,18 @@ defmodule AshTemplate.Notes.Note.Pin do
   defp pay(changeset, %Agent{} = agent) do
     key = "note-pin:#{changeset.data.id}:#{Ash.Changeset.get_argument(changeset, :operation_id)}"
 
-    case RegentCredits.hold(key, agent.privy_user_id, @price, "Note pinned by your agent",
-           actor: spender(agent)
-         ) do
-      {:ok, _hold} ->
+    case RegentCredits.hold(key, agent.privy_user_id, @price, "note_pin", actor: spender(agent)) do
+      {:ok, %{status: :held}} ->
         Ash.Changeset.after_action(changeset, fn _changeset, note -> charge(key, note) end)
+
+      {:ok, _earlier_pin} ->
+        Ash.Changeset.add_error(
+          changeset,
+          Ash.Error.Changes.InvalidArgument.exception(
+            field: :operation_id,
+            message: "already paid for an earlier pin of this note; send a new operation_id"
+          )
+        )
 
       {:error, error} ->
         Ash.Changeset.add_error(changeset, error)
