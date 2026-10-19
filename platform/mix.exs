@@ -4,9 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "9c580f45133d451c1284dd4067a924ea72057be2"
+  @elixir_utils_ref "f8f36fd12f4f45151835e75a81ebabedeb4d43a1"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "c0a83f4a2651bee2efe23b563fcd087a234fe876"
+  @design_system_ref "3599ae974e0eeed741221b0779f3cbbb9649013d"
 
   def project do
     [
@@ -164,7 +164,7 @@ defmodule AshTemplate.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "cmd npm ci", "assets.setup", "assets.build"],
-      test: ["ash_template.setup_local_auth", "test"],
+      test: ["ecto.create --quiet", "ash_template.setup_local_auth", "test"],
       "assets.setup": ["esbuild.install --if-missing"],
       "assets.build": [
         "compile",

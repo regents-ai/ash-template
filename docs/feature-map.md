@@ -16,9 +16,9 @@ service's setting cleared, and refuses any other outside request, which fails th
 walk (`platform/test/browser/support/server/walk_offline.ex`,
 `platform/test/browser/support/teardown.ts`). Each walk runs its server on a port
 nothing else on the machine is using, on a database made for that run and named after
-the port, which it drops when it ends (`platform/playwright.config.ts`,
-`platform/test/browser/support/drop.exs`), so two walks at once never reach each
-other's server or data. It builds the pages' scripts and styles before its server
+the port, which it drops when it ends, whatever happens, even when its server never
+starts (`platform/test/browser/walk.sh`, `platform/test/browser/support/drop.exs`), so
+two walks at once never reach each other's server or data. It builds the pages' scripts and styles before its server
 starts, and the server watches no files, so no page reloads under a check.
 
 ## Every page and document
@@ -49,9 +49,9 @@ starts, and the server watches no files, so no page reloads under a check.
 | Choosing an agent gives a message with a code, and each choice a new code | same |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
-| An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
+| An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall once the window has risen into place | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
 | A wallet note names each wallet with its copy icon: with an unlinked wallet open in the on-chain lab, the note names it and the account's wallets, each opening and copying its full address, the words run straight on from each address, and nothing on the page shows an address without its icon | `platform/test/browser/addresses.spec.ts` |
-| An agent's window renames the agent: a name with a hidden character is refused beside the field and the agent keeps its name; a name with an emoji joined by a zero-width joiner saves and shows in the window and the list, at both widths; the field and Save are at least 44 px tall on the phone | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs |
+| An agent's window renames the agent: a name with a hidden character is refused beside the field and the agent keeps its name; a name with an emoji joined by a zero-width joiner saves and shows in the window and the list, at both widths; the field and Save are at least 44 px tall on the phone once the window has risen into place | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs |
 | Only the person renames their agent; a blank name, one over 80 characters or one with a hidden character is refused | elixir-utils `ash_components/agents/test/pairing_test.exs` |
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |

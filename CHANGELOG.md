@@ -2815,3 +2815,22 @@ Operations
   foil cards stay flat, and the light that follows the pointer shows only on a 12px
   frame round each card; inside it the face stays still graphite with the crown's
   outline. The home page's foil drawing still lights wherever it is.
+
+## 2026-10-19 — Sentinel's four fixes to the name work
+
+- The browser walk is started by `platform/test/browser/walk.sh`, which takes the
+  run's port, makes its database and drops it when the walk ends, whatever happens:
+  passed, failed, stopped, or a server that never started, when Playwright skips its
+  own teardown. It prints the database's name first. A drop that cannot reach the
+  database names the database it leaves.
+- `mix test` creates the local `ash_template_test` database when it is missing, so a
+  fresh copy needs only `mix setup` before `make check`. The Quickstart, the local
+  sign-in notes and the rename script's last steps make the development database
+  with `mix ecto.create` after `mix setup`.
+- The agent window's 44px checks measure once the window has risen into place
+  (`resting` in `platform/test/browser/support/person.ts`); measured while it was
+  still rising, a target came out a fraction of a pixel short. The design-system pin
+  moves to `3599ae97` (tpl/ds-address-44-1019a): an address's words and copy icon are
+  at least 44px tall on a touch screen whatever the root font size.
+- The elixir-utils pin moves to `f8f36fd1` (tpl/eu-rename-1019c): six more names with
+  hidden characters are refused in its HTTP check, each one a looser rule let through.

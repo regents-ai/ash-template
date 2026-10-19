@@ -1,4 +1,4 @@
-import {type Page} from "@playwright/test"
+import {type Locator, type Page} from "@playwright/test"
 import {expect} from "./test"
 
 // The walk's person, signed in by sign_in.exs before the server starts.
@@ -8,6 +8,13 @@ export const signedIn = {storageState: "test/browser/.auth/person.json"}
 // person by the time they reach for one.
 export async function ready(page: Page) {
   await expect(page.locator('[data-behavior-ready="true"]')).toBeAttached()
+}
+
+// A window opened by a press rises into place, and its script takes the move out of
+// the window's own style once it rests (assets/js/hooks/motion/slides.ts). Sizes are
+// measured once it rests: a window still rising measures a fraction of a pixel off.
+export async function resting(window: Locator) {
+  await expect(window).not.toHaveAttribute("style", /transform/)
 }
 
 // The run's own server (playwright.config.ts).

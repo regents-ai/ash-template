@@ -1,26 +1,19 @@
-import {execFileSync} from "node:child_process"
 import {defineConfig, devices} from "@playwright/test"
 
-// The browser walk (make check-browser). It builds the pages' scripts and styles,
-// starts its own local server on a database made for this run, signs its person in
-// and pairs their agent first (test/browser/support/sign_in.exs), and drops the
-// database at the end (test/browser/support/teardown.ts). It walks a desktop at
+// The browser walk (make check-browser), started by test/browser/walk.sh, which
+// takes the run's port, makes the run's database and drops it at the end. Here it
+// builds the pages' scripts and styles, starts its own local server on that
+// database, and signs its person in and pairs their agents first
+// (test/browser/support/sign_in.exs). It walks a desktop at
 // 1280 wide and a touch phone at 390 wide. Chromium only: WebKit is not run on the
 // Mac.
 // Neither the browser nor the server leaves this machine: the browser's outside
 // requests fail the check that made them (test/browser/support/test.ts), and the
 // server, with the outside services' settings cleared, refuses its own and the walk
 // fails at the end (config/dev.exs, test/browser/support/teardown.ts).
-// Each run takes a port nothing on this machine is using and names its database
-// after it, ash_template_browser_<port>_dev, so two walks at once, from two
-// checkouts, never reach each other's server or data. The workers read this file
-// again and keep the run's port from the environment they inherit.
-process.env.ASH_TEMPLATE_WALK_PORT ??= execFileSync(process.execPath, [
-  "-e",
-  "const s = require('node:net').createServer().listen(0, '127.0.0.1', () => { console.log(s.address().port); s.close() })",
-]).toString().trim()
+// Each run's port and database are its own, so two walks at once, from two
+// checkouts, never reach each other's server or data.
 const port = Number(process.env.ASH_TEMPLATE_WALK_PORT)
-process.env.ASH_TEMPLATE_DEV_PARTITION = `_browser_${port}`
 const baseURL = `http://127.0.0.1:${port}`
 
 export default defineConfig({
@@ -42,7 +35,7 @@ export default defineConfig({
       "ASH_TEMPLATE_SIWA_BROKER_URL ETHEREUM_READ_RPC_URL OPENROUTER_API_KEY OPENROUTER_DECISIONS_URL " +
       "ASH_TEMPLATE_NOTES_WEBHOOK_URL SIWA_ACTIVITY_READ_TOKEN && " +
       `export ASH_TEMPLATE_WALK=true PORT=${port} POOL_SIZE=3 && ` +
-      "mix ecto.create --quiet && mix run test/browser/support/sign_in.exs && " +
+      "mix run test/browser/support/sign_in.exs && " +
       "mix assets.build && mix phx.server",
     url: `${baseURL}/healthz`,
     reuseExistingServer: false,

@@ -1,12 +1,12 @@
 import type {Locator} from "@playwright/test"
 import {expect, test} from "./support/test"
-import {ready, signedIn, watch} from "./support/person"
+import {ready, resting, signedIn, watch} from "./support/person"
 
 // The walk's person has three agents, paired by sign_in.exs. Walk Agent's window, opened from
 // the Account page, says who it is and shows its short address, which opens the
 // full address on a press, gives the press back to the address when Escape closes
 // it, and copies the full address from its icon. On the touch phone each of the
-// address's two targets is at least 44 pixels tall.
+// address's two targets is at least 44 pixels tall once the window rests.
 test.use({...signedIn, permissions: ["clipboard-read", "clipboard-write"]})
 
 const wallet = `0x${"c".repeat(40)}`
@@ -20,6 +20,7 @@ test("an agent's window opens its full address and copies it", async ({page, has
 
   const agentWindow = page.getByRole("dialog", {name: "Walk Agent"})
   await expect(agentWindow).toBeVisible()
+  await resting(agentWindow)
   const address = agentWindow.getByRole("button", {name: "0xcccc..cccc", exact: true})
   const copy = agentWindow.getByRole("button", {name: "Copy the full address"})
   const full = agentWindow.getByText(wallet, {exact: true})
@@ -59,6 +60,7 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   const save = agentWindow.getByRole("button", {name: "Save", exact: true})
   await expect(name).toHaveValue(agent)
   await expect(agentWindow.getByText("Only you see this name.")).toBeVisible()
+  await resting(agentWindow)
   if (hasTouch)
     for (const target of [name, save])
       expect((await target.boundingBox())?.height).toBeGreaterThanOrEqual(44)

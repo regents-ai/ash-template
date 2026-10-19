@@ -6,7 +6,7 @@
     "assets:build": "mix assets.build",
     "test": "vitest run",
     "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit",
-    "test:browser": "playwright test"
+    "test:browser": "sh test/browser/walk.sh"
   },
   "dependencies": {
     "@privy-io/react-auth": "3.49.1",

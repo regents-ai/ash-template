@@ -76,11 +76,11 @@ Run these from `platform/`. You need
 Erlang, Elixir, Node and PostgreSQL at the versions pinned in `.tool-versions`.
 
 ```sh
-createdb ash_template_dev
 cp .env.example .env
 touch .env.local
 printf '%s\n' 'source_env .env' 'source_env_if_exists .env.local' > .envrc
 mix setup
+mix ecto.create
 # Put the Privy values in .env.local first (docs/local-privy-auth.md).
 direnv allow
 mix ash_template.setup_local_auth
@@ -308,11 +308,13 @@ can do and the check that proves it. Among them:
   copies the wallets a wallet note names.
   It builds the pages' scripts and styles, starts its own server on a free port and a
   database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
-  end, and signs in a local person with three agents first. Every page it opens
+  end whatever happens, even when its server never starts (`test/browser/walk.sh`),
+  and signs in a local person with three agents first. Every page it opens
   is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
   that is not.
 
-`mix test` first brings the local `ash_template_test` database up to date.
+`mix test` first creates the local `ash_template_test` database when it is missing
+and brings it up to date, so a fresh copy needs only `mix setup` before `make check`.
 
 ## Deployment
 

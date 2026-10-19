@@ -1,5 +1,5 @@
 # The end of a browser walk: drop the database made for this run
-# (playwright.config.ts), even while the walk's server is still connected to it.
+# (test/browser/walk.sh), even while the walk's server is still connected to it.
 # It refuses any database but a walk's own local one.
 repo = AshTemplate.Repo.config()
 
@@ -10,4 +10,5 @@ unless to_string(repo[:hostname]) in ["127.0.0.1", "::1"] and
 case Ecto.Adapters.Postgres.storage_down(Keyword.put(repo, :force_drop, true)) do
   :ok -> :ok
   {:error, :already_down} -> :ok
+  {:error, reason} -> raise("the walk's database #{repo[:database]} is left: #{inspect(reason)}")
 end
