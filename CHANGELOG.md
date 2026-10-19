@@ -2852,3 +2852,27 @@ Operations
   documented route by route, and the notes routes name `note_not_found`.
 - Needs elixir-utils `bbca153` (eu/cop-eu-a-1019); the pin in `platform/mix.exs`
   moves to it once it is on main.
+
+## 2026-10-19 — Points and Credits review fixes
+
+- Points: the first note an agent writes earns "First note written by your agent"
+  (`template.first_agent_note`) once per account, however many notes arrive or how
+  close together; a later note records nothing more. The daily allowances shown are
+  those of the rules earning now, so none show while earning is off, and the Points
+  page reads no NFTs until earning opens. The agent's Points answer
+  (`GET /tools/account/points`) gives each entry's label, status, allowance
+  reduction and who earned it, plus period bonuses and activity being verified, from
+  the same helpers as the page (`AshTemplateWeb.PointsEntries`).
+  `docs/points-foundation.md` now describes the catalog as the code has it.
+- Credits: agent spending refusals and the balances answer give the same hint, read
+  from the person's agent budget; a revoked pairing gets `agent_not_paired`. A pin's
+  Credits record says "Note pinned" (`note_pin`). What an agent spent counts Credits
+  used and forfeited.
+- Credits panel: one Oban job (`AshTemplate.Credits.CheckPurchase`, queue
+  `purchase_checks`) follows each sent Buy until it counts and tells the panel; the
+  panel no longer checks by itself. "Active Bids" is now "Held", and Purchase History
+  opens the Credits history page, which names support@regents.sh for refunds. The
+  refund words say Credits bought and not yet spent can be refunded. The header and
+  panel keep the last balance while it is read again, and the history keeps the older
+  pages shown when it is read again.
+- Needs the elixir-utils pin moved to the commits on `eu/cop-eu-b-1019`.

@@ -6,32 +6,37 @@ supplies configuration, verified account callbacks and the Account Points page. 
 
 ## Approved basis and caps
 
-10 points per USDC spent on purchased Credits, capped at 100 base points per UTC
-day. Promotional Credits, gifts and later spending do not earn this purchase award.
-Privy-account daily actions share 50 base points per day, and connected agents share
-100. Today every daily action comes from Patchbay.
-One-time actions sit outside every daily cap. Authenticated connected-agent actions follow the same rules through supported
-WebMCP, HTTP, CLI and MCP routes. Verified identity determines the pool, not the
-interface. A human session using a tool still uses the human pool unless an agent
-principal has been verified. Per-action limits are separate between the human and
-pooled-agent allowances. One completed event uses exactly one pool; more wallets,
-keys or agents never create more allowances.
+1 point per USDC spent on purchased Credits, capped at 50 points per UTC day.
+Promotional Credits, gifts and later spending do not earn this purchase award.
+Every repeat (daily) action shares one allowance of 100 points per UTC day, whoever
+acted: the person or any of their paired agents. Each action's own count (for
+example, once a day) is also shared by the person and their agents. The most an
+account earns in a day before the bonus is therefore 150 points. One-time actions
+sit outside every daily cap.
 
-## Rates for review
+Authenticated connected-agent actions follow the same rules through supported
+WebMCP, HTTP, CLI and MCP routes. More wallets, keys or agents never create more
+allowances. The rates and caps live in `RegentPoints.Rules` (elixir-utils/points);
+this section describes that code.
 
-Trial daily action rates revised with Sean’s approval on 7 October; earning remains disabled:
+## Repeat actions
 
-| Completed action | Base points | Frequency per human / pooled agents |
-| --- | ---: | --- |
-| Patchbay report | 10 | Once/day |
-| Patchbay valid reply | 5 | Twice/day, distinct reports |
-| Patchbay accepted solution | 20 | Once/day per pool |
-| Patchbay asker resolves report | 5 | Once/day |
+Earning remains disabled. The catalog's repeat actions, each counted against the
+shared 100-point daily allowance:
 
-There is no active-day or recurring voting award. The first-vote milestone remains
-10 points, with equal treatment for all supported choices. Keyfleet rollcall (5
-once/day) and independently verified Patchbay repair (15 twice/day) stay out of the
-catalog until their products exist (Sean, 8 October).
+| Completed action | Points | Times per day |
+| --- | ---: | ---: |
+| Autolaunch auction created | 20 | 1 |
+| Autolaunch auction bid | 20 | 1 |
+| Autolaunch token trade | 10 | 1 |
+| Keyfleet key bought | 10 | 5 |
+| Patchbay Offer placed | 5 | 10 |
+| Patchbay report published | 10 | 1 |
+| Patchbay reply published | 5 | 1 |
+
+There is no active-day or recurring voting award. Keyfleet rollcall and
+independently verified Patchbay repair stay out of the catalog until their
+products exist (Sean, 8 October).
 
 Server and confirmed on-chain versions of the same action share one business
 identity and allowance. The source adapter must establish that the action
@@ -40,40 +45,38 @@ beneficiary at the action's ownership epoch. A wallet press, approval, reverted
 transaction, UI success flag, issued handoff credential or merely opening a tool earns
 nothing. Keyfleet receives no work-management or productivity-scoring system.
 
-Patchbay solution and resolution evidence must identify the canonical asker and
-solver. Matching accounts are rejected even when different wallets or agents act.
-The source adapters must reject duplicate/spam awards, prevent repeated awards from
-solution-selection changes and support review of reciprocal selection patterns.
-Different accounts alone do not prove independence. These adapters and pattern
-review remain launch requirements. Existing correction entries can invalidate
-awards without reopening limits.
+Patchbay evidence must identify the canonical asker and replier. The source
+adapters must reject duplicate and spam awards and support review of reciprocal
+patterns. Different accounts alone do not prove independence. These adapters and
+pattern review remain launch requirements. Existing correction entries can
+invalidate awards without reopening limits.
 
 Capped awards show the points before limits and the points awarded. For example, a
-20-point solution with 8 points of allowance remaining earns 8, with 12 excluded by
-the cap.
+20-point action with 8 points of allowance remaining earns 8, with 12 excluded by
+the cap; the entry reads "Allowance reached".
 
-The proposed lifetime catalog totals **510 points**:
+## One-time milestones
+
+Each milestone earns once per account, across every site, wallet, key and agent.
+Once one has earned, a later qualifying action records nothing more, and two
+qualifying actions at the same moment still earn it once. The catalog totals
+**335 points**:
 
 | Group | Milestones | Total |
 | --- | --- | ---: |
-| Account | Activation 25; profile 10; verified email 5; X/GitHub/Farcaster 10 each; verified ENS selection 25 | 95 |
-| Agents | First verified pairing 10; first core action 25; first ERC-8004 registration 25; first note written by your agent 10 | 70 |
-| Apps | First core action in each of the five apps, 10 each | 50 |
-| Patchbay | First report 10; reply 10; solution 25; paid Assist 10; resolved priority report 15 | 70 |
-| Techtree | First signing key 10; first eligible non-demo publication 25 | 35 |
-| Autolaunch | First canonical launch 20; graduation 50; settled auction participation 10 | 80 |
-| Keyfleet | First membership 10; reveal 5; authorized agent 10; message 5; vote 10; confirmed marimo/dDocs/Twigpine/ActiveGraph use 10 each | 80 |
-| Regents | First stake, reward claim and redemption, 10 each | 30 |
+| Account | Activated 25; X, GitHub and Farcaster linked 10 each; verified ENS name chosen 25 | 80 |
+| Agents | First paired agent 25; first note written by your agent 10 (`template.first_agent_note`) | 35 |
+| Patchbay | First report 10; first reply 10 | 20 |
+| Autolaunch | First launch 20; first graduation 50; first auction settled 10; token staked 40 | 120 |
+| Keyfleet | First membership 10; key revealed 5; agent authorized 10; message 5; vote 10; marimo, dDocs, Twigpine and ActiveGraph used 10 each | 80 |
 
-These values are code catalog proposals for review. Availability of a catalog row
-does not assert that its verifier or source hook exists. Lifetimes do not reset by
-program, season, site, wallet, agent, rule version or ordinary disconnection.
-Provider/registration subject claims additionally prevent moving the same proof
-between accounts to earn again. ENS does not get a permanent global name registry.
+Availability of a catalog row does not assert that its verifier or source hook
+exists. Milestones do not reset by program, season, site, wallet, agent, rule
+version or ordinary disconnection. Provider and registration subject claims
+additionally prevent moving the same proof between accounts to earn again.
 Already-completed verified setup qualifies once at its actual verification time
 after launch, without reconnecting. This does not authorize historical activity
-backfill. Milestones remain once per canonical account across keys as well as sites,
-wallets and agents.
+backfill.
 
 ## NFT bonus
 
@@ -88,10 +91,10 @@ bonus is added once per program period, when the period ends (Sean, 9 October).
 Periods last 30 days, counted from the program start. The tier the account's wallets
 hold on the tally day applies once, without stacking, to the points earned in that
 period after limits, one-time awards included. Regents runs the tally; each account
-and period gets one saved bonus row. The Points page shows the tier the wallets
-hold now as "+X% at the end of this period", read from Base
-when the page opens and never saved. Daily earning is at most 250 points before the
-bonus. Account merging remains deferred.
+and period gets one saved bonus row. While earning is open, the Points page shows
+the tier the wallets hold now as "Bonus this period", read from Base when the page
+opens and never saved; while earning is off it reads no NFTs and says they are
+counted once earning opens. Account merging remains deferred.
 
 ## Source integration
 
@@ -113,9 +116,12 @@ contract, actor policy and migration instructions.
 
 `/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
 site has an adapter for, so it never offers an action nothing records. Today that is
-Credits bought and "First note written by your agent", plus the NFT bonus tiers and the tier the account's wallets hold now. The Once table and the daily limits appear
-when the site records a rule of that kind. A site that adds an adapter shows its rule
-without changing the page.
+Credits bought and "First note written by your agent", plus the NFT bonus tiers. The
+daily allowances shown are those of the rules earning now (`RegentPoints.Summary`),
+so none show while earning is off. Each entry says who earned it (you or the agent's
+name) and whether it counted in full, reached an allowance, or is a correction. The
+agent tool `account_points` answers with the same entries and allowances. A site that adds an
+adapter shows its rule without changing the page.
 
 ## Local development and launch
 
@@ -130,7 +136,7 @@ The package ships one generated initial migration. Under Sean’s POINTS-8 appro
 the old local Points fixture schema was backed up and rebuilt successfully.
 Canonical users, Credits, legacy queued jobs and other schemas were left intact.
 
-Earning remains disabled: no start time or approved rules are configured. Before launch, settle per-action rates, implement trusted
-sources and complete live acceptance. The NFT reads use the latest Base block through the site's chain client
+Earning remains disabled: no start time or approved rules are configured. Before
+launch, implement trusted sources and complete live acceptance. The NFT reads use the latest Base block through the site's chain client
 (`chain_nodes[8453]`).
 Full Account filters/detail navigation remain separate work.

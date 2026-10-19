@@ -1,7 +1,8 @@
 defmodule AshTemplate.Points.FirstAgentNoteTest do
   # Invariant: a one-time award yields exactly one ledger entry per account,
   # however many qualifying events arrive, in whatever order or at once, and an
-  # award already earned records nothing more and queues no award.
+  # award already earned records nothing more and queues no award. The agent's
+  # Points answer names the agent that earned it.
   #
   # The races need separate connections that really commit, so the rows these
   # runs write stay in the test database; every run uses its own person.
@@ -38,7 +39,8 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
             max_runs: 8
           ) do
       person = person()
-      actors = Enum.map(1..agents, fn _ -> agent(person) end)
+      names = Enum.map(1..agents, &"Agent #{&1}")
+      actors = Enum.map(names, &agent(person, &1))
 
       if together? do
         # Every note is written first; their checks and awards then run at once.
@@ -64,6 +66,13 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
                Ash.read!(Ash.Query.filter(Event, account_id == ^account_id),
                  actor: Store.system()
                )
+
+      {:ok, summary} = RegentPoints.summary(actor: hd(actors))
+
+      assert [%{by: "agent", agent: name, status: :counted}] =
+               AshTemplateWeb.PointsEntries.answer(summary).entries
+
+      assert name in names
     end
   end
 
@@ -112,13 +121,13 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
   end
 
   # A paired agent as this site's agent sign-in makes it.
-  defp agent(person) do
+  defp agent(person, name) do
     wallet = wallet()
 
     code =
       RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: person.did})
 
-    RegentAgents.pair_agent!(code.code, "Agent", :codex,
+    RegentAgents.pair_agent!(code.code, name, :codex,
       actor: %RegentAgents.Agent{wallet: wallet}
     )
 
