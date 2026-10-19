@@ -2540,14 +2540,9 @@ Operations
   Chromium checks at 320 to 430px and screenshots at 375 and 1440px · WebKit not run
   on the Mac; no browser test harness in this repo yet.
 
-## 2026-10-19 — Buttons are 44px tall at every width
+## 2026-10-19 — Buttons are back to their normal size on desktop
 
-- `platform/mix.exs` pins design-system `ac201fd`: every shared button is at least
-  44px tall on every screen, not only on touch screens, the target size Sentinel holds
-  every site to. They stay slimmer than the 58px they were. Sean, 19 Oct: "2. a".
-- The side panel's Sign out and Manage Account buttons drop the template's own 32px
-  height, so they meet the same floor.
-- Evidence · level ordinary · features: shared buttons, app shell · every visible
-  button measured at least 44px tall on eight pages at 390 and 1280px in headless
-  Chromium, with the side panel open; phone menu checks passed six runs in a row ·
-  WebKit not run on the Mac; no browser test harness in this repo yet.
+- Buttons are back to their normal size on desktop; 44px stays for touch targets
+  only. The template pins design-system 54500eb1 again, and the side panel's Sign
+  out and Manage Account keep their own 32px height. Sean, 19 Oct 04:30Z: "Normal
+  desktop size".
