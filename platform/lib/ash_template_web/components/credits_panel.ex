@@ -14,7 +14,8 @@ defmodule AshTemplateWeb.CreditsPanel do
   Buy is disabled only when it is certain to fail, from the chain at the latest
   block: the Base approval does not cover the amount yet, or the wallet holds
   too little USDC. Explanations wait in tips; the panel shows figures, choices,
-  presses and outcomes.
+  presses and outcomes. "Where to spend" opens a window listing each Regents
+  Product and what Credits buy there (`AshTemplateWeb.Components.Shell.regents_products/0`).
 
   The parent passes `account` (the signed-in account), its `credits` reading
   (`state` and the `RegentCredits.balance/1` value, kept current by the
@@ -26,6 +27,7 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   alias AshTemplate.{AccessContext, ChainClient, Limits}
   alias AshTemplate.Credits.CheckPurchase
+  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
@@ -340,10 +342,49 @@ defmodule AshTemplateWeb.CreditsPanel do
           <dt>Held</dt>
           <dd><span data-count>{figure(@credits, :held)}</span>{missing(@credits)}</dd>
         </dl>
-        <.link class="credits-panel__history" navigate={~p"/account/credits"}>
-          Purchase History
-        </.link>
+        <div class="credits-panel__links">
+          <.link class="credits-panel__history" navigate={~p"/account/credits"}>
+            Purchase History
+          </.link>
+          <button type="button" class="credits-panel__where" popovertarget={"#{@id}-where"}>
+            <Shell.nine_dots_icon class="credits-panel__where-icon" /> Where to spend
+          </button>
+        </div>
       </header>
+
+      <%!-- The browser opens and closes it (`popover`), above the Buy dialog, and
+           closes it on Escape or a press outside; a page update never shuts it. --%>
+      <section
+        id={"#{@id}-where"}
+        class="credits-where"
+        popover
+        role="dialog"
+        aria-labelledby={"#{@id}-where-title"}
+      >
+        <header class="credits-where__head">
+          <h2 id={"#{@id}-where-title"}>Where to spend Credits</h2>
+          <button
+            type="button"
+            class="credits-where__close"
+            popovertarget={"#{@id}-where"}
+            popovertargetaction="hide"
+            aria-label="Close"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </header>
+        <ul>
+          <li :for={site <- Shell.regents_products()}>
+            <a href={site.url} target="_blank" rel="noopener">
+              <span class="shell-apps__tile" data-tone={site.tone}><Shell.crown /></span>
+              <span class="credits-where__words">
+                <strong>{site.name}</strong>
+                <span>{site.credits}</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </section>
 
       <form
         id={"#{@id}-form"}
@@ -367,8 +408,7 @@ defmodule AshTemplateWeb.CreditsPanel do
           <span aria-hidden="true">USDC</span>
         </div>
         <p id={"#{@id}-rate"} class="credits-panel__rate">
-          Regents Credits can be used across all Regents sites. See them on
-          <a href="https://regents.sh">regents.sh</a>
+          Regents Credits can be used across all Regents sites.
         </p>
         <p
           id={"#{@id}-problem"}

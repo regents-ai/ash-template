@@ -35,13 +35,30 @@ defmodule AshTemplateWeb.Components.Shell do
     {"Terms", "/terms"}
   ]
 
-  # The Regents Products, each shown with the crown in its own pair of brand colours.
+  # The Regents Products, each shown with the crown in its own pair of brand colours,
+  # and what Regents Credits buy there (the Credits panel's "Where to spend").
+  @nothing_yet "Nothing to spend on yet."
   @regents_apps [
-    %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
-    %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
-    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet"},
-    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
-    %{name: "$REGENT Staking", url: "https://regents.sh/stake", tone: "protocol"}
+    %{
+      name: "Patchbay",
+      url: "https://patchbay.help",
+      tone: "patchbay",
+      credits: "Bid for Agent Offer slots."
+    },
+    %{
+      name: "Autolaunch",
+      url: "https://autolaunch.sh",
+      tone: "autolaunch",
+      credits: @nothing_yet
+    },
+    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet", credits: @nothing_yet},
+    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree", credits: @nothing_yet},
+    %{
+      name: "$REGENT Staking",
+      url: "https://regents.sh/stake",
+      tone: "protocol",
+      credits: @nothing_yet
+    }
   ]
 
   @doc "The Regents Products, in the order every menu of them lists them."
@@ -696,6 +713,15 @@ defmodule AshTemplateWeb.Components.Shell do
     <svg class="shell-apps__crown" viewBox="31 46 178 106" fill="currentColor" aria-hidden="true">
       <rect :for={{x, y} <- crown_blocks()} x={x} y={y} width="34" height="34" />
     </svg>
+    """
+  end
+
+  attr :class, :string, default: "shell-icon"
+
+  @doc "The nine-dot icon of the Regents Products menu."
+  def nine_dots_icon(assigns) do
+    ~H"""
+    <.icon name={:apps} class={@class} />
     """
   end
 

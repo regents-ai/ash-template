@@ -3092,3 +3092,16 @@ Operations
 - The browser walk's `platform/test/browser/motion.spec.ts` checks that a new list item
   and a new note end at rest and that only the page's own alert shakes. Each check
   fails when its change is undone.
+
+## 2026-10-19 — Where to spend Credits
+
+- The Credits panel has a "Where to spend" button with the nine-dot icon of the
+  Regents Products menu (Sean, 19 Oct 2026). It opens a window listing each Regents
+  Product with its crown, what Credits buy there and a link to it: Patchbay, "Bid for
+  Agent Offer slots."; Autolaunch, Keyfleet, Techtree and $REGENT Staking, "Nothing to
+  spend on yet." The words live beside each product in `regents_products/0`
+  (`AshTemplateWeb.Components.Shell`), so the menu and the window share one list.
+- The panel's line under the figures no longer links to regents.sh; it reads
+  "Regents Credits can be used across all Regents sites."
+- Each site copies the window with its Credits panel and changes a product's words in
+  the template first when it starts taking Credits.
