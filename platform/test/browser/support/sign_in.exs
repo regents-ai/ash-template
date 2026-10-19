@@ -44,9 +44,15 @@ Ash.Seed.upsert!(
 
 AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
 
-# The agent the walk opens on the Account page, and one for each width to rename
-# (agents.spec.ts).
-for {name, digit} <- [{"Walk Agent", "c"}, {"Desktop Agent", "d"}, {"Phone Agent", "e"}] do
+# A fourth agent, paired first, which the side panel's three leave out
+# (side_agents.spec.ts); the agent the walk opens on the Account page, and one for
+# each width to rename (agents.spec.ts).
+for {name, digit} <- [
+      {"Spare Agent", "f"},
+      {"Walk Agent", "c"},
+      {"Desktop Agent", "d"},
+      {"Phone Agent", "e"}
+    ] do
   code =
     RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: account.privy_user_id})
 

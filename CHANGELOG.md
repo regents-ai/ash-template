@@ -3105,3 +3105,19 @@ Operations
   "Regents Credits can be used across all Regents sites."
 - Each site copies the window with its Credits panel and changes a product's words in
   the template first when it starts taking Credits.
+
+## 2026-10-19 — "Your agents" shows the three most recently active
+
+- The side panel's "Your agents" lists three agents, the most recently active first
+  (Sean, 19 Oct 2026). It listed every agent, newest paired first, so the times beside
+  them jumped around. Agents never active come after those that were, newest paired
+  first, and until the panel has read where each was last active the three paired
+  last show. Every agent is listed on the account page.
+- Manage beside the heading leads to https://regents.sh/account. With a mouse it
+  shows while the pointer is over the list or a key has moved into it; on a touch
+  screen it always shows. The heading is no longer a link.
+- A row's last line reads "Active on Keyfleet · 15m"; the site and the time had run
+  together. An agent not active since it paired says "No activity yet"; its line had
+  stayed empty, so its name sat above an empty line.
+- The design-system pin moves to `0da350a6` (agents-brief-manage-1019).
+- The browser walk pairs a fourth agent, which the panel leaves out.

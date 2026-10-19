@@ -76,6 +76,8 @@ starts, and the server watches no files, so no page reloads under a check.
 | `/llms.txt`, `/agents.md` and `/skill.md` list, for each status, exactly what the status check allows and its next step | `platform/test/ash_template_web/what_you_can_do_test.exs` |
 | Two agents spending a person's last Credits at once never spend more than there is; a retried pin pays once and its hold says it was a pinned note; a pin after an unpin needs a new operation_id and pays again, and reusing the old one pins and charges nothing; a revoked allowance stops the next spend; what an agent spent counts Credits used and forfeited, not those given back | `platform/test/ash_template/credits/agent_spend_test.exs` |
 | While agent spending is closed, a refused pin and the balances answer say the same thing and the note stays unpinned; a revoked pairing gets `agent_not_paired` from the balances answer | `platform/test/ash_template_web/spending_answers_test.exs` |
+| The side panel shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/panel_agents_test.exs` (property test); `platform/test/browser/side_agents.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
+| Manage beside "Your agents" leads to https://regents.sh/account; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/side_agents.spec.ts` |
 
 ## Gaps
 
