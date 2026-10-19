@@ -84,3 +84,7 @@ starts, and the server watches no files, so no page reloads under a check.
   attached to the walk.
 - Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not
   called by a check.
+- The foil cards' light keeping to a thick frame round each card, with the face inside
+  it still: the walk's browser draws no GPU picture, so it sees only the still frame.
+  Checked by hand in Chrome with the Mac's GPU, desktop and phone, light and dark
+  (19 Oct).

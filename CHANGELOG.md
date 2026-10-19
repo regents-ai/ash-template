@@ -2807,3 +2807,11 @@ Operations
   (`platform/test/browser/support/addresses.ts`), and opens and copies the wallets a
   wallet note names (`platform/test/browser/addresses.spec.ts`); a note drawn without
   the icons, or with a space before the comma after an address, fails it.
+
+## 2026-10-19 — The foil cards shine only on a thick frame
+
+- Founder, 19 Oct 00:51Z: "5. a , but only shine on a thick border not the whole
+  card." The design-system pin moves to `c0a83f4a` (tpl/ds-holo-frame-1019a): the
+  foil cards stay flat, and the light that follows the pointer shows only on a 12px
+  frame round each card; inside it the face stays still graphite with the crown's
+  outline. The home page's foil drawing still lights wherever it is.
