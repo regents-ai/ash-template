@@ -2584,3 +2584,6 @@ Operations
   script pieces, shared sitemap) and `platform/test/ash_template_web/read_test.exs`
   (`Read.now` lands in the callback, a refused read is a failure never an empty list,
   another owner's read drops a late answer). All five fail on `2d4e995`.
+- The header logo (`platform/lib/ash_template_web/components/shell.ex`) uses `~p`, so
+  it is sent by its digested name with the year-long cache; a signed-in return visit
+  makes 18 requests instead of 20.
