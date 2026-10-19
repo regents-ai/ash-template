@@ -28,7 +28,7 @@ declare module "node:zlib" {
 }
 
 // The WebMCP draft's document.modelContext. Browsers without it have no such
-// property; public_tools.ts checks `"modelContext" in document` before use.
+// property; app.ts checks `"modelContext" in document` before loading public_tools.ts.
 type ModelContextTool = {
   name: string
   title: string

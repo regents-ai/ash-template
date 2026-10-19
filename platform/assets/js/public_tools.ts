@@ -230,19 +230,15 @@ const tools: ModelContextTool[] = entries.map(entry => ({
   },
 }))
 
-// One registration per shown page: register on pageshow, remove on pagehide,
-// so a page restored from the back/forward cache never holds two sets. The
-// html element's data-webmcp-status says whether the browser holds them all;
-// only the latest registration writes it.
+// One registration per shown page: register now and again when the page comes
+// back from the back/forward cache, remove on pagehide, so a page never holds
+// two sets. The html element's data-webmcp-status says whether the browser
+// holds them all; only the latest registration writes it.
 export function installPublicTools(): void {
   const status = document.documentElement.dataset
-  if (!("modelContext" in document)) {
-    status.webmcpStatus = "unsupported"
-    return
-  }
   let registration: AbortController | undefined
 
-  window.addEventListener("pageshow", () => {
+  const register = () => {
     const current = new AbortController()
     registration = current
     const {signal} = current
@@ -259,6 +255,9 @@ export function installPublicTools(): void {
         status.webmcpStatus = "error"
         console.warn("The browser tools could not be offered.", error)
       })
-  })
+  }
+
+  register()
+  window.addEventListener("pageshow", event => { if (event.persisted) register() })
   window.addEventListener("pagehide", () => registration?.abort())
 }

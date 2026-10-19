@@ -25,10 +25,7 @@ import {
 } from "./shell_state"
 import {installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
-import {Crown} from "./hooks/crown"
-import {KeyfleetField, KeyfleetKeyCard, KeyfleetReplay} from "./hooks/keyfleet_hero"
 import {HolographicCard} from "./hooks/holographic_card"
-import {CodeCube} from "./hooks/code_cube"
 import {InfoDialog} from "./hooks/info_dialog"
 import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
@@ -38,12 +35,9 @@ import {PanelAgents} from "./hooks/panel_agents"
 import {ProductsMenu} from "./hooks/products_menu"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
-import {TwinCube} from "./hooks/twin_cube"
-import {WorldCube} from "./hooks/world_cube"
 import {mountMotion} from "./motion"
 import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
-import {installPublicTools} from "./public_tools"
 
 type ShellHook = Hook & {
   el: HTMLElement
@@ -110,9 +104,10 @@ window.addEventListener("phx:page-loading-stop", syncTheme)
 window.addEventListener("popstate", syncTheme)
 window.addEventListener("pageshow", syncTheme)
 
-// Before the lazy imports below can hold this module, so the page's first
-// pageshow registers the browser tools.
-installPublicTools()
+// Only a browser with its own agent loads the site's tools.
+const toolStatus = document.documentElement.dataset
+if ("modelContext" in document) void import("./public_tools").then(tools => tools.installPublicTools())
+else toolStatus.webmcpStatus = "unsupported"
 
 const shellBehavior: Hook = {
   mounted(this: ShellHook) {
@@ -311,22 +306,19 @@ const showcaseHooks = window.location.pathname.startsWith("/showcase")
   ? (await import("./showcase")).hooks : {}
 const labHooks = window.location.pathname === "/animations"
   ? (await import("./motion_lab")).hooks : {}
-// Every lab page shares one live session, so the buttons study can be reached from any of them.
-const buttonHooks = window.location.pathname.startsWith("/animations")
-  ? (await import("./site_buttons_lab")).hooks : {}
+// Every lab page shares one live session, so each lab page can be reached from any of them.
+const [buttonHooks, labPageHooks] = window.location.pathname.startsWith("/animations")
+  ? (await Promise.all([import("./site_buttons_lab"), import("./lab_pages")])).map(lab => lab.hooks)
+  : [{}, {}]
 const hooks = {
   ...showcaseHooks,
   ...labHooks,
   ...buttonHooks,
+  ...labPageHooks,
   ...colocatedHooks,
   AccountPicture,
-  CodeCube,
-  Crown,
   HolographicCard,
   InfoDialog,
-  KeyfleetField,
-  KeyfleetKeyCard,
-  KeyfleetReplay,
   MotionCascade,
   MotionCount,
   MotionList,
@@ -338,9 +330,7 @@ const hooks = {
   PanelAgents,
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
-  TwinCube,
   VerifiedConnections,
-  WorldCube,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")
 
