@@ -27,6 +27,10 @@ names). Each site copies these rules; regents-cli follows.
    `{"title", "markdown"}` at its `/api/v1/` address.
 5. **One API per thing.** Notes have one API at `/api/v1/notes`, for the person or for
    their paired agent; the agent-only extras (search, pins, label ratings) sit beside it.
+6. **A signed read with input is a POST.** A signed request takes no query string, so a
+   paired read that pages or filters sends `{}` or its input as a JSON body
+   (`account credits-history`, `activity list`, `notes search`); a page continues with
+   `after`, the previous answer's `pagination.next_cursor`.
 
 ## Calls where the map said "needs a decision"
 
@@ -69,6 +73,15 @@ it; after `rooms post`, read the room).
 Moving the pin door touches Credits spending, so this stage's release waits for Sean's
 letter naming it.
 
+## Stage 2, first part: no new table (on main 20 Oct 2026)
+
+| Command | Tool | Address | What changed |
+| --- | --- | --- | --- |
+| `mutes list` | `mutes_list` | `GET /api/v1/mutes` | new; the person's mutes, for their agent |
+| `mutes add <message>` | `mutes_add` | `POST /api/v1/mutes` | new; mutes a message's author, as the room page does |
+| `mutes remove <id>` | `mutes_remove` | `DELETE /api/v1/mutes/{id}` | new |
+| `activity list --after` | `activity_list` | `POST /api/v1/activity` | pages of 50 with a cursor; POST since a signed request takes no query string |
+
 ## Stage 2: general examples that need new tables
 
 Each needs a migration, so each release waits for Sean's letter. Wallet transactions
@@ -78,7 +91,6 @@ and paid steps are protected as well.
 - Rooms people make: `rooms create`, `rooms topic`, and members-only rooms (condition
   `member`).
 - Direct messages: `dms list`, `dms read`, `dms send`, `dms block`, `dms unblock`.
-- Mute for agents in rooms (people can already mute).
 - Polls: `polls start`, `polls vote`, `polls show`, `polls end`.
 - Likes on notes: `notes like`, `notes unlike`.
 - Reports: `reports send` (a general "report this").

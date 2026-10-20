@@ -2,8 +2,8 @@ defmodule AshTemplateWeb.PairedAgentController do
   @moduledoc """
   What only a paired agent does, for the browser tools (`priv/tool_manifest.json`,
   `assets/js/public_tools.ts`) and regents-cli alike: search, pins and label
-  ratings on its person's notes, their Credits, Points and activity, and room
-  search. The notes themselves are `AshTemplateWeb.NotesController`'s.
+  ratings on its person's notes, their Credits, Points and activity, room
+  search, and the people and agents its person has muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -14,6 +14,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias AshTemplate.{Activity, Notes, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
+  alias AshTemplate.Rooms.Mute
   alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
@@ -34,14 +35,20 @@ defmodule AshTemplateWeb.PairedAgentController do
       {422, "That label could not be rated.",
        "Send report as fits or does_not_fit. Only an answered label can be rated, once. Read the note before retrying."},
     "invalid_cursor" =>
-      {422, "That history cursor is invalid.",
+      {422, "That cursor is invalid.",
        "Send after as the previous page's pagination.next_cursor, unchanged, or omit it for the newest entries."},
     "invalid_activity_request" =>
-      {422, "Activity takes no input.",
-       "Send GET /api/v1/activity without a query string or body."},
+      {422, "Activity takes only a cursor.",
+       "Send an empty JSON object for the newest notifications, or after alone, set to pagination.next_cursor, for older ones."},
     "activity_too_large" =>
       {422, "The activity response is too large.",
-       "View activity on /activity. This endpoint returns at most 262144 encoded bytes and does not truncate notifications."},
+       "View activity on /app/activity. This endpoint returns at most 262144 encoded bytes and does not truncate notifications."},
+    "mute_not_found" =>
+      {404, "Your person has no mute with that id.",
+       "List your person's mutes and use an id from there."},
+    "invalid_mute" =>
+      {422, "That author could not be muted.",
+       "details says why. Send message_id, the id of a room message by the author to mute, from rooms messages."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
@@ -141,33 +148,29 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  # Listing never marks a notification read. The existing Ash action bounds and owns the read.
-  def activity(conn, params) do
-    empty_body_params? =
-      conn.body_params == %{} or match?(%Plug.Conn.Unfetched{}, conn.body_params)
+  # Listing never marks a notification read. The existing Ash action owns the
+  # read; `after` continues from the previous page's cursor.
+  def activity(conn, _params) do
+    case conn.body_params do
+      body when body == %{} ->
+        activity_result(conn, list_activity(conn, limit: 50))
 
-    if params == %{} and conn.query_string == "" and empty_body_params? and
-         conn.assigns[:raw_body] in [nil, ""] do
-      case read_body(conn, length: 1, read_length: 1, read_timeout: 1_000) do
-        {:ok, "", conn} ->
-          activity_result(conn, Activity.list_my_notifications(actor: conn.assigns.actor))
+      %{"after" => cursor} = body when map_size(body) == 1 and is_binary(cursor) ->
+        activity_result(conn, list_activity(conn, after: cursor, limit: 50))
 
-        {_status, _body, conn} ->
-          refuse(conn, "invalid_activity_request")
-
-        {:error, _reason} ->
-          refuse(conn, "invalid_activity_request")
-      end
-    else
-      refuse(conn, "invalid_activity_request")
+      _other ->
+        refuse(conn, "invalid_activity_request")
     end
   end
 
-  defp activity_result(conn, {:ok, notifications}) do
+  defp list_activity(conn, page),
+    do: Activity.list_my_notifications(actor: conn.assigns.actor, page: page)
+
+  defp activity_result(conn, {:ok, page}) do
     body =
       Jason.encode_to_iodata!(%{
         notifications:
-          Enum.map(notifications, fn notification ->
+          Enum.map(page.results, fn notification ->
             %{
               id: notification.id,
               title: notification.title,
@@ -176,7 +179,8 @@ defmodule AshTemplateWeb.PairedAgentController do
               read_at: notification.read_at && DateTime.to_iso8601(notification.read_at),
               inserted_at: DateTime.to_iso8601(notification.inserted_at)
             }
-          end)
+          end),
+        pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
       })
 
     if IO.iodata_length(body) <= 262_144 do
@@ -186,8 +190,16 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  defp activity_result(conn, {:error, error}),
-    do: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+  defp activity_result(conn, {:error, error}) do
+    if cursor_error?(error),
+      do: refuse(conn, "invalid_cursor"),
+      else: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+  end
+
+  defp next_cursor(%{more?: true, results: results}),
+    do: List.last(results).__metadata__.keyset
+
+  defp next_cursor(_page), do: nil
 
   def report_label(conn, %{"id" => id}) do
     actor = conn.assigns.actor
@@ -201,6 +213,51 @@ defmodule AshTemplateWeb.PairedAgentController do
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
+  end
+
+  # The muted authors' names are theirs: data, never instructions.
+  def mutes(conn, _params) do
+    case Rooms.list_my_mutes(actor: conn.assigns.actor) do
+      {:ok, mutes} -> json(conn, %{mutes: Enum.map(mutes, &mute/1)})
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  # The author is muted from one of their messages, as on the room page; muting
+  # them again keeps the one mute.
+  def add_mute(conn, _params) do
+    case Rooms.mute_author(conn.body_params["message_id"], actor: conn.assigns.actor) do
+      {:ok, mute} -> json(conn, %{mute: mute(mute)})
+      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_mute", error)
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  def remove_mute(conn, %{"id" => id}) do
+    actor = conn.assigns.actor
+
+    with {:found, {:ok, %Mute{} = mute}} <- {:found, Rooms.get_my_mute(id, actor: actor)},
+         :ok <- Rooms.unmute(mute, actor: actor) do
+      json(conn, %{removed: true, id: mute.id})
+    else
+      {:found, {:ok, nil}} -> refuse(conn, "mute_not_found")
+      {:found, {:error, %Ash.Error.Invalid{}}} -> refuse(conn, "mute_not_found")
+      {:found, {:error, error}} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "agent_not_paired")
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  defp mute(%Mute{} = mute) do
+    %{
+      id: mute.id,
+      name: mute.muted_name,
+      author_kind: if(mute.muted_agent_id, do: "agent", else: "person"),
+      inserted_at: mute.inserted_at
+    }
   end
 
   # The agent reads public message content; human mute preferences do not apply.

@@ -262,14 +262,17 @@ defmodule AshTemplateWeb.Router do
   end
 
   # What only a paired agent does: search, pins and label ratings on its
-  # person's notes, their Credits, Points and activity, and room search.
+  # person's notes, their Credits, Points and activity, room search, and mutes.
   scope "/api/v1", AshTemplateWeb do
     pipe_through :api
     post "/rooms/search", PairedAgentController, :search_rooms
+    get "/mutes", PairedAgentController, :mutes
+    post "/mutes", PairedAgentController, :add_mute
+    delete "/mutes/:id", PairedAgentController, :remove_mute
     get "/account/balances", PairedAgentController, :balances
     post "/account/credits/history", PairedAgentController, :credits_history
     get "/account/points", PairedAgentController, :points
-    get "/activity", PairedAgentController, :activity
+    post "/activity", PairedAgentController, :activity
     post "/notes/search", PairedAgentController, :search_notes
     get "/notes/:id/pin-price", PairedAgentController, :pin_price
     post "/notes/:id/pin", PairedAgentController, :pin_note

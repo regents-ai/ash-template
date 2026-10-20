@@ -577,7 +577,7 @@ defmodule AshTemplateWeb.ShellLive do
     case human_actor(socket) do
       %Human{} = actor ->
         Read.now(socket, :notifications, actor.human_account_id, fn ->
-          Activity.list_my_notifications(actor: actor)
+          latest_notifications(actor)
         end)
 
       nil ->
@@ -586,6 +586,12 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp load_notifications(socket, _route_spec), do: Read.clear(socket, :notifications)
+
+  # The activity page shows the newest page of notifications.
+  defp latest_notifications(actor) do
+    with {:ok, page} <- Activity.list_my_notifications(actor: actor, page: [limit: 50]),
+         do: {:ok, page.results}
+  end
 
   # Pages and actions match their names; the person's notes and the room
   # messages they can read match their text, from two characters on.

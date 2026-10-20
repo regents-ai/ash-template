@@ -2,8 +2,8 @@ defmodule AshTemplate.Rooms.Mute do
   @moduledoc """
   One signed-in person muting another person or an agent: the muted author's
   messages, and a muted person's place in "Here now", stay out of every room the
-  muter reads. Only the muter
-  can see or lift a mute. An author is muted from one of their messages, so no
+  muter reads. Only the muter, or an agent they paired, can see, add or lift a
+  mute. An author is muted from one of their messages, so no
   page ever handles another account's id. Each change is published on the
   muter's own topic, so all their open pages update at once.
   """
@@ -75,9 +75,15 @@ defmodule AshTemplate.Rooms.Mute do
     end
   end
 
+  # An agent's mute or unmute rechecks its pairing inside the transaction.
+  changes do
+    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:create, :destroy]
+  end
+
   policies do
-    policy action(:mute) do
+    policy always() do
       authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy action_type([:read, :destroy]) do

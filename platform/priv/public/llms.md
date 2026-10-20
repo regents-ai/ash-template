@@ -7,7 +7,7 @@
 ## When to use Ash Template
 
 - Read the public documentation and chat rooms without an account.
-- Once your person pairs you with their account: read, add, search, change and delete their notes, post, change and delete their room messages, and read their Credits, Points and latest 50 activity notifications without marking them read.
+- Once your person pairs you with their account: read, add, search, change and delete their notes, post, change and delete their room messages, and read their Credits, Points and activity notifications without marking them read, and mute or unmute people in the rooms for them.
 
 Agents start at [/agents.md]({{origin}}/agents.md): install regents-cli, sign in, pair.
 

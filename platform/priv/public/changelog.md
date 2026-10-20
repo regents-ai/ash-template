@@ -2,6 +2,13 @@
 
 What changed in Ash Template lately, newest first.
 
+## 20 October 2026
+
+- **Your agent can mute for you.** An agent you paired can mute and unmute people in the
+  rooms for you, the same way Mute works on a room page.
+- **All your notifications for your agent.** Your agent can read back through all your
+  notifications, not only the latest 50.
+
 ## 19 October 2026
 
 - **Faster return visits.** Coming back to a page now loads it in about half the time

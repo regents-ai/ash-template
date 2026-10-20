@@ -372,8 +372,38 @@
       "effect": "read",
       "authority": "paired_agent",
       "conditions": [],
-      "person_page": "/activity",
-      "may": "Read your latest activity without marking it read",
+      "person_page": "/app/activity",
+      "may": "Read your activity without marking it read",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "listMyMutes",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": "Mute and unmute people in the rooms",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "addMute",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": "Mute and unmute people in the rooms",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "removeMute",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
       "cli_pending": true
     }

@@ -63,8 +63,10 @@ defmodule AshTemplate.Activity.Notification do
       run fn input, _context -> NotifyMentions.notify(input.arguments.signal) end
     end
 
+    # Newest first, a page at a time.
     read :mine do
-      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 50)
+      prepare build(sort: [inserted_at: :desc, id: :desc])
+      pagination keyset?: true, default_limit: 50, max_page_size: 50
     end
 
     read :unread do

@@ -6,8 +6,10 @@ defmodule AshTemplate.SignedToolsTest do
   import Plug.Conn
   require Ash.Query
   alias AshTemplate.Accounts.VerifiedSession
+  alias AshTemplate.Rooms
 
   @wallet "0x2222222222222222222222222222222222222222"
+  @other "0x4444444444444444444444444444444444444444"
 
   test "Points settlement shares the account cap and per-action count across actors and retries" do
     # Accepted invariant: transport/actor changes cannot create another reward allowance.
@@ -299,4 +301,124 @@ defmodule AshTemplate.SignedToolsTest do
     assert request(:get, "/api/v1/notes/" <> id).status in [401, 403]
     assert request(:post, "/api/v1/notes", body).status in [401, 403]
   end
+
+  test "an agent mutes and unmutes only for its own person, and only while paired" do
+    # Invariant: a mute an agent adds is its person's, as if they pressed Mute, and it
+    # can never read or lift another person's mute.
+    {account, person, paired} = paired_person("did:privy:mute-test")
+    human = AshTemplate.Actors.Human.for_account(account)
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:mute-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+
+    other_human = AshTemplate.Actors.Human.for_account(other)
+    message =
+      Rooms.post_message!(%{room: "general", body: "Hello from the other side"},
+        actor: other_human,
+        context: %{client_key: "other"}
+      )
+
+    # A signed body reaches the action whole: the search finds the message to mute.
+    found = request(:post, "/api/v1/rooms/search", Jason.encode!(%{text: "other side"}))
+    assert found.status == 200, found.resp_body
+    assert [%{"id" => id}] = Jason.decode!(found.resp_body)["messages"]
+    assert id == message.id
+
+    added = request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id}))
+    assert added.status == 200, added.resp_body
+    mute = Jason.decode!(added.resp_body)["mute"]
+    assert mute["author_kind"] == "person"
+    assert Enum.map(Rooms.list_my_mutes!(actor: human), & &1.id) == [mute["id"]]
+
+    # Muting again keeps the one mute.
+    assert request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id})).status == 200
+    listed = Jason.decode!(request(:get, "/api/v1/mutes").resp_body)["mutes"]
+    assert Enum.map(listed, & &1["id"]) == [mute["id"]]
+
+    # Another person's mute answers as a missing one, and stays.
+    own =
+      Rooms.post_message!(%{room: "general", body: "Mine"},
+        actor: human,
+        context: %{client_key: "person"}
+      )
+    theirs = Rooms.mute_author!(own.id, actor: other_human)
+    assert error_code(request(:delete, "/api/v1/mutes/" <> theirs.id)) == "mute_not_found"
+    assert {:ok, %Rooms.Mute{}} = Rooms.get_my_mute(theirs.id, actor: other_human)
+
+    # The person's own message cannot be muted for them.
+    assert error_code(request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: own.id}))) ==
+             "invalid_mute"
+
+    removed = request(:delete, "/api/v1/mutes/" <> mute["id"])
+    assert Jason.decode!(removed.resp_body) == %{"removed" => true, "id" => mute["id"]}
+    assert Rooms.list_my_mutes!(actor: human) == []
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    added_after = request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id}))
+    assert added_after.status == 403
+    assert Rooms.list_my_mutes!(actor: human) == []
+  end
+
+  test "an agent reads its person's activity a page at a time, each notification once, marking none read" do
+    {account, _person, _paired} = paired_person("did:privy:activity-test")
+    human = AshTemplate.Actors.Human.for_account(account)
+
+    Ash.bulk_create!(
+      for(n <- 1..51, do: %{human_account_id: account.id, title: "Notice #{n}", path: "/notes"}),
+      AshTemplate.Activity.Notification,
+      :notify,
+      actor: %AshTemplate.Actors.System{}
+    )
+
+    first = request(:post, "/api/v1/activity", "{}")
+    assert first.status == 200, first.resp_body
+
+    %{"notifications" => newest, "pagination" => %{"has_more" => true, "next_cursor" => cursor}} =
+      Jason.decode!(first.resp_body)
+
+    second = request(:post, "/api/v1/activity", Jason.encode!(%{after: cursor}))
+    assert second.status == 200, second.resp_body
+
+    %{"notifications" => older, "pagination" => %{"has_more" => false, "next_cursor" => nil}} =
+      Jason.decode!(second.resp_body)
+
+    assert {length(newest), length(older)} == {50, 1}
+    assert (newest ++ older) |> Enum.uniq_by(& &1["id"]) |> length() == 51
+
+    for body <- [%{after: cursor, limit: 5}, %{after: 5}, %{limit: 5}] do
+      assert error_code(request(:post, "/api/v1/activity", Jason.encode!(body))) ==
+               "invalid_activity_request"
+    end
+
+    assert error_code(request(:post, "/api/v1/activity", Jason.encode!(%{after: "nope"}))) ==
+             "invalid_cursor"
+
+    assert {:ok, 51} = AshTemplate.Activity.count_unread(actor: human)
+  end
+
+  defp paired_person(privy_user_id) do
+    {:ok, account, []} =
+      VerifiedSession.establish(%RegentPrivy.Session{
+        app_id: "test-app",
+        session_id: "test-session",
+        privy_user_id: privy_user_id,
+        wallet_address: @wallet,
+        wallet_addresses: [@wallet],
+        linked_socials: []
+      })
+
+    person = %RegentAgents.Person{privy_user_id: privy_user_id}
+    code = RegentAgents.issue_pairing_code!(actor: person)
+
+    paired =
+      RegentAgents.pair_agent!(code.code, "Fixture", :codex,
+        actor: %RegentAgents.Agent{wallet: @wallet}
+      )
+
+    {account, person, paired}
+  end
+
+  defp error_code(conn), do: Jason.decode!(conn.resp_body)["error"]["code"]
 end

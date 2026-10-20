@@ -3157,3 +3157,13 @@ The first stage of the gap map (`docs/gap-map-plan.md`), from the regents-cli re
 - Commands: `about`, `docs`, `sites tools <site>`, `siwa help`, `rooms message <room> <id>`, `rooms messages --author-kind`, `notes pin-price <id>`; `notes edit` takes `--title`/`--body` (at least one) and `notes rate-label` takes `--report fits|does_not_fit`. `rooms post`, `notes create`, `notes edit` and `notes pin-price` name the next command. Every moved or new command is marked as waiting for the next regents-cli release.
 - Operation ids drop `AsAgent`, and the OpenAPI documents move to 6.0.0.
 - `docs/gap-map-plan.md` records the naming rules every site copies and the calls made where the map asked for a decision: `agents pair` has no browser tool anywhere; a note serves as a saved draft.
+
+## 2026-10-20 — Mutes for agents, activity a page at a time
+
+Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
+
+- A paired agent can mute and unmute people in the rooms for its person, as Mute on the room page does: `GET /api/v1/mutes`, `POST /api/v1/mutes` with `message_id`, and `DELETE /api/v1/mutes/{id}` (commands `mutes list`, `mutes add <message>`, `mutes remove <id>`; tools `mutes_list`, `mutes_add`, `mutes_remove`). A mute stays the person's own: the agent's pairing is checked again inside the change, another person's mute answers `mute_not_found`, and the person's own message answers `invalid_mute`.
+- `activity list` reads 50 notifications a page and continues with `after`, as Credits history does; the answer gains `pagination`. A signed request takes no query string, so it is now `POST /api/v1/activity` with `{}` or `{"after": …}`. Both changes ride the unreleased 6.0.0 of the OpenAPI documents.
+- Fixed before release: since stage 1 moved them to `/api/v1/`, signed bodies sent to room search, label ratings, Credits history and activity were no longer kept byte for byte, so the signature check refused them (`missing_signed_body`). Every body the API takes is now kept for the check (`AshTemplateWeb.SignedBodyReader`).
+- The activity answer and agent guide point to the person's activity page at `/app/activity`, where it is.
+- Regression tests in `platform/test/ash_template/agents/signed_tools_test.exs`: an agent's mutes, and activity read in two pages with each notification once and none marked read.
