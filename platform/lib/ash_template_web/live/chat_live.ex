@@ -290,7 +290,12 @@ defmodule AshTemplateWeb.ChatLive do
     |> MDEx.to_html!(
       extension: [strikethrough: true, tagfilter: true, table: true, autolink: true],
       render: [unsafe: true],
-      sanitize: MDEx.Document.default_sanitize_options()
+      # A code block too wide for the panel scrolls sideways, so a keyboard can
+      # focus it to scroll it.
+      sanitize:
+        Keyword.put(MDEx.Document.default_sanitize_options(), :set_tag_attribute_values, %{
+          "pre" => %{"tabindex" => "0"}
+        })
     )
     |> Phoenix.HTML.raw()
   end

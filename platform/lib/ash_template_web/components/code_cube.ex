@@ -185,7 +185,7 @@ defmodule AshTemplateWeb.Components.CodeCube do
       <li :for={step <- @help.steps} class="code-card__tool">
         <h3>{step.title}</h3>
         <p>{step.copy}</p>
-        <pre><code>{step.command}</code></pre>
+        <pre tabindex="0"><code>{step.command}</code></pre>
       </li>
     </ol>
     <a href={@help.guide} class="rg-button" target="_blank" rel="noopener noreferrer">

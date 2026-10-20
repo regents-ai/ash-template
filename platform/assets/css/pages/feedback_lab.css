@@ -30,7 +30,7 @@
 .flair input, .flair textarea { display: block; width: 100%; min-width: 0; min-height: 3rem; padding: .75rem; border: 1px solid var(--ash-line-strong); border-radius: 0; background: var(--color-bg); color: var(--color-fg); font-size: 1rem; line-height: 1.5; }
 .flair input::placeholder, .flair textarea::placeholder { color: var(--color-fg-muted); opacity: 1; }
 .flair textarea { resize: vertical; }
-.flair textarea:focus-visible { outline: 2px solid var(--color-focus-ring, Highlight); outline-offset: 2px; }
+.flair textarea:focus-visible { outline: 2px solid var(--ash-accent); outline-offset: 2px; }
 .flair-field { position: relative; }
 .flair-field input { padding-inline-end: 2.75rem; }
 .flair-field[data-state="valid"] input { border-color: var(--color-success); }

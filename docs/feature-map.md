@@ -25,7 +25,7 @@ starts, and the server watches no files, so no page reloads under a check.
 
 | What | Check |
 | --- | --- |
-| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen and shows every ENS name, full address and short address with its copy icon, signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
+| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen, shows every ENS name, full address and short address with its copy icon, and lets a keyboard reach every box that scrolls (a wide code block or table takes focus), signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
 | Every machine-readable document answers with its type | same, `documents` |
 | No page or document the site serves is left out of the walk, and the walk names none the site has dropped | `platform/test/ash_template_web/feature_map_test.exs` |
 | Every agent in the side panel has a guide page and a skill the walk opens | same |

@@ -3204,3 +3204,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 
 - When the database closes a pool connection that sat idle ("ssl recv (idle): closed"), the pool opens a new one and nothing failed, but the line was logged at error, and Sentinel's error-log survey (15 Oct) found it filling the error level on every site. `AshTemplate.IdleDisconnects` now logs that one line at info; every other database disconnect stays at error. It is added to every log line as the site starts.
 - Not changed: Fly's own "Reaped child process" lines come from Fly's machine, not the site, so no site setting reaches them.
+
+## 2026-10-20 — Keyboard: wide boxes scroll, and one focus ring everywhere
+
+- What: the docs and reading pages' code blocks and tables, the chat's code blocks and a code cube card's commands take keyboard focus (`tabindex="0"`), so a box too wide for the screen scrolls with the arrow keys. The focus ring on the reading pages and the feedback lab is the app's accent (`--ash-accent`), the ring the app shell already uses, instead of `--color-focus-ring`, which nothing defines, so they showed the device's pale highlight.
+- Checked: the page walk (`platform/test/browser/support/scrollers.ts`) now fails any shown box that scrolls with nothing in it a keyboard can reach; without the change it fails /docs and the other reading pages on four to eight code blocks and a table. The ring measured as the accent on /docs in light and dark.
+- Why: the Keyfleet chief's note (20 Oct 04:21Z), from Keyfleet release 115 (bd9dcafb); every site takes the same ring and the same check from here.

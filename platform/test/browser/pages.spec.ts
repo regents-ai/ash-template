@@ -2,11 +2,12 @@ import type {Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import map from "./pages.json" with {type: "json"}
 import {bareAddresses} from "./support/addresses"
+import {unreachableScrollers} from "./support/scrollers"
 import {ready, signedIn, watch} from "./support/person"
 
 // Every page in the feature map opens, shows what proves its purpose, raises no
-// error, fits the screen and shows every address with its copy icon; every document
-// answers with its type. The map lists
+// error, fits the screen, shows every address with its copy icon and lets a keyboard
+// scroll every box that scrolls; every document answers with its type. The map lists
 // every page route (feature_map_test.exs), so a new page is walked from its first day.
 type Entry = {route: string; paths?: string[]; check: string; status?: number}
 
@@ -32,6 +33,7 @@ function walk(entry: Entry, path: string, signedIn: boolean) {
       await expect(page.locator("#account-chip")).toBeVisible()
     }
     expect(await bareAddresses(page)).toEqual([])
+    expect(await unreachableScrollers(page)).toEqual([])
     await problems.expect()
   })
 }
