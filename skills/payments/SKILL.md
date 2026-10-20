@@ -69,9 +69,11 @@ config :regent_payments, RegentPayments.Facilitator,
 - Start `RegentPayments.Supervisor` after the repository.
 - The CDP key goes in Fly secrets. `BASE_RPC_URL` may carry a provider key; the library
   never logs it, so don't log it either.
-- **Only Regents migrates the tables.** Its release runs `RegentPayments.Migrator.up/1`
-  and creates the shared `regent_payments` schema. Every other site reads and writes it,
-  seeing only the rows its own `site` wrote. The rows are the record of money that moved:
+- **No deployment migrates the tables.** Every site carries the same `bin/migrate-shared`,
+  which runs `RegentPayments.Migrator.up/1` with the other shared migrators; after the
+  founder's go, the site whose release first carries a change runs it. Each site's
+  release check refuses to deploy while a payments change is missing. Every site reads
+  and writes the one `regent_payments` schema, seeing only the rows its own `site` wrote. The rows are the record of money that moved:
   `payment_intents` and `payment_receipts` are on the production protected-table lock
   (founder, 2026-09-29), so a migration or reset that deletes from, empties or drops them
   fails, and only Sean lifts it. Tests use the Ecto sandbox or a fresh local database.

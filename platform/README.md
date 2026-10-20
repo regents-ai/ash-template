@@ -330,9 +330,12 @@ hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `ASH_TEMPLATE_SHOWCASE`, `PHX_HOST` and a 64-byte `SECRET_KEY_BASE` are set.
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything: `pending:`,
-`applied-without-file:`, and `shared-pending:` for each shared Credits or Points
-change the release needs that is not applied yet (a deployment is refused while
-one is listed; only Regents applies those), or `none`.
+`applied-without-file:`, and `shared-pending:` for each shared Identity, Agents,
+Credits, Points or Payments change the release carries that is not applied yet
+(a deployment is refused while one is listed), or `none`.
+`/app/bin/migrate-shared` applies those shared changes, and only those. Every
+site carries the same command; after the founder's go, the site whose release
+first carries a shared change runs it from the new image before deploying.
 
 The image is built from `Dockerfile` with the repository root as its context:
 the app is in `platform/`, and when it compiles it reads the build skills it

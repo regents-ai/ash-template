@@ -13,11 +13,47 @@ defmodule AshTemplate.Release do
   """
   @schema_exists "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = $1)"
 
+  # Every shared library with its own schema and ledger, in the order their
+  # changes apply: Credits' pairing grants build on Agents' pairing history.
+  @shared [
+    {:regent_identity, "regent_identity", RegentIdentity.Migrator},
+    {:regent_agents, "regent_agents", RegentAgents.Migrator},
+    {:regent_credits, "regent_credits", RegentCredits.Migrator},
+    {:regent_points, "regent_points", RegentPoints.Migrator},
+    {:regent_payments, "regent_payments", RegentPayments.Migrator}
+  ]
+
   def migrate do
     with_release_repo(fn repo ->
       require_signed_access_schema!(repo)
       repo.migrate!(migrations_path())
     end)
+  end
+
+  @doc """
+  Applies the shared database changes this release's pinned libraries carry
+  that the database has not applied, and prints each one, or `none`. Run as
+  `/app/bin/migrate-shared`.
+
+  Every site carries this same command. A deployment never runs it: `migrate/0`
+  refuses while a shared change is missing and applies none. Each change needs
+  the founder's own named go; the site whose release first carries it runs this
+  from the new image before that deployment, because only that image carries
+  the change's file. Each library's ledger takes a migration lock, so two sites
+  running it at once apply each change once.
+  """
+  def migrate_shared do
+    applied =
+      with_release_repo(fn repo ->
+        unapplied = unapplied_shared_migrations(repo)
+        if unapplied != [], do: apply_shared(repo)
+        unapplied
+      end)
+
+    case applied do
+      [] -> IO.puts("none")
+      applied -> IO.puts("applied: #{Enum.join(applied, ", ")}")
+    end
   end
 
   @doc "Read-only release prerequisite; shared migrations require separate founder authority."
@@ -27,9 +63,9 @@ defmodule AshTemplate.Release do
     RegentCredits.Migrator.require_pairing_grants!(repo)
   end
 
-  # The Agents, Credits and Points code this release carries reads tables and columns
-  # from every migration its pinned library ships, so each must already be in
-  # that schema's own ledger. Every missing version is named at once.
+  # The shared code this release carries reads tables and columns from every
+  # migration its pinned library ships, so each must already be in that schema's
+  # own ledger. Every missing version is named at once.
   defp require_shared_migrations!(repo) do
     case unapplied_shared_migrations(repo) do
       [] ->
@@ -42,11 +78,7 @@ defmodule AshTemplate.Release do
   end
 
   defp unapplied_shared_migrations(repo) do
-    for {app, schema} <- [
-          regent_agents: "regent_agents",
-          regent_credits: "regent_credits",
-          regent_points: "regent_points"
-        ],
+    for {app, schema, _migrator} <- carried_shared(),
         {:down, version, _name} <-
           Ecto.Migrator.migrations(repo, [Application.app_dir(app, "priv/repo/migrations")],
             prefix: schema,
@@ -59,9 +91,9 @@ defmodule AshTemplate.Release do
   @doc """
   Prepares an empty staging database for the first deployment: creates a
   staging-only copy of the tables this repository reads but does not own
-  (`regent_names.platform_human_users`), in the local fixture's shape, runs
-  every migration into `ash_template_app`, then creates the Regent Credits
-  ledger, which Regents migrates in production. It refuses a database that already
+  (`regent_names.platform_human_users`), in the local fixture's shape, applies
+  every shared change this release carries, as `migrate_shared/0` does in
+  production, then runs every migration into `ash_template_app`. It refuses a database that already
   carries migration state or the regent_names schema and repairs nothing: recovery
   from a half-finished bootstrap is to destroy and recreate the staging database.
   """
@@ -75,11 +107,8 @@ defmodule AshTemplate.Release do
       refuse_existing_state!(repo)
       # The fixture is the only definition of these tables' shape in the repository.
       AshTemplate.LocalDatabaseFixture.create_shared_tables!()
+      apply_shared(repo)
       repo.migrate!(migrations_path())
-      RegentAgents.Migrator.up(repo)
-      RegentCredits.Migrator.up(repo)
-      RegentPoints.Migrator.up(repo)
-      RegentIdentity.Migrator.up(repo)
     end)
   end
 
@@ -87,9 +116,10 @@ defmodule AshTemplate.Release do
   Prints what a deployed database and the release disagree about: the migrations
   the release carries that the database has not applied (`pending:`), the
   versions the database has applied whose file the release does not carry
-  (`applied-without-file:`), and the shared Credits and Points changes the
-  release needs that their own ledgers do not hold (`shared-pending:`, each as
-  schema and version; a deployment is refused while one is listed), or `none`.
+  (`applied-without-file:`), and the shared changes the release carries that
+  their own ledgers do not hold (`shared-pending:`, each as schema and version;
+  a deployment is refused while one is listed, and `migrate_shared/0` applies
+  them), or `none`.
   It applies nothing, creates nothing, and takes no migration lock.
   """
   def pending_migrations do
@@ -136,6 +166,14 @@ defmodule AshTemplate.Release do
         {version, "_" <> _name} <- [file |> Path.basename() |> Integer.parse()],
         into: MapSet.new(),
         do: version
+  end
+
+  defp apply_shared(repo), do: Enum.each(carried_shared(), fn {_, _, m} -> m.up(repo) end)
+
+  # A shared library this site does not carry has no tables it reads or changes.
+  defp carried_shared do
+    carried = Application.spec(@app, :applications)
+    for {app, _schema, _migrator} = shared <- @shared, app in carried, do: shared
   end
 
   defp refuse_existing_state!(repo) do

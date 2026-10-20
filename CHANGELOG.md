@@ -3182,3 +3182,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Not moved: the "Where to spend" list in Buy Credits is a popover over the window, not a window the frame covers. Wallet buttons (sign in on the first press when signed out, Approve and Buy one size, Approve done in green) wait for Sean's letter, because they change sign-in and wallet presses.
 - Checked: `platform/test/browser/windows.spec.ts` opens each window in light and dark, at 1280 and on the phone, and checks it is the frame and sits whole on the screen. The frame's rules sit outside the cascade layers, so a window's text colour and body padding are set outside the layer too; the code card's text was dark on its dark fill until then.
 - Why: Sean (19 Oct): never ship a default square window, and one standing way to show an address or transaction with copy and Basescan. Keyfleet runs both live (v107).
+
+## 2026-10-20 — Every site applies shared changes the same way
+
+- `/app/bin/migrate-shared` applies the shared Identity, Agents, Credits, Points
+  and Payments database changes the release carries, and nothing else. Every site
+  carries this same command, so no site is the only one able to apply them. A
+  deployment still never applies them: after the founder's go, the site whose
+  release first carries a change runs it before deploying.
+- The release check, `/app/bin/pending-migrations` and the staging bootstrap read
+  the same list, so the check now also stops a deployment while a shared Identity
+  or Payments change is missing. Each site covers only the shared libraries it
+  carries. The staging bootstrap applies the shared changes before the site's
+  own migrations, as production does.
