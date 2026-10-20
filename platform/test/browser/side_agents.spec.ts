@@ -13,7 +13,8 @@ test("the side panel shows three agents and Manage", async ({page, hasTouch}) =>
   await page.goto("/account")
   await ready(page)
   const agents = page.locator("#shell-agents")
-  if (!(await agents.isVisible())) await page.getByRole("button", {name: "Side panel"}).click()
+  // The side panel's own button, or on a phone the account's name, opens it.
+  if (!(await agents.isVisible())) await page.locator("[data-aside-toggle]:visible").last().click()
   await expect(agents).toBeVisible()
 
   await expect(agents.getByRole("listitem")).toHaveCount(3)

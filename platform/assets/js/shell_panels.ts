@@ -34,7 +34,10 @@ export const asideOpen = () =>
  */
 export function installShellPanels(shell: HTMLElement) {
   const aside = () => shell.querySelector<HTMLElement>("#shell-aside")
-  const asideButton = () => shell.querySelector<HTMLButtonElement>("#shell-aside-button")
+  // Whichever of the two is showing: on a phone, the account's name.
+  const asideButton = () =>
+    [...shell.querySelectorAll<HTMLButtonElement>("[data-aside-toggle]")].find(toggle =>
+      toggle.checkVisibility())
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
   const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
 

@@ -158,11 +158,11 @@ defmodule AshTemplateWeb.Components.Shell do
 
         <.apps_menu />
 
-        <button
+        <Regent.Primitives.button
           :if={@credits}
           id="shell-credits-button"
           class="shell-credits"
-          type="button"
+          arrow={false}
           aria-haspopup="dialog"
           aria-controls="shell-credits"
           aria-label={credits_label(@credits)}
@@ -171,7 +171,7 @@ defmodule AshTemplateWeb.Components.Shell do
           data-variant="flash"
         >
           <.credits_amount amount={@credits} />
-        </button>
+        </Regent.Primitives.button>
 
         <.account_control account_control={@account_control} />
 
@@ -548,18 +548,18 @@ defmodule AshTemplateWeb.Components.Shell do
       >
         {@account_control.label}
       </Regent.Primitives.button>
-      <button
+      <Regent.Primitives.button
         :if={@panel and @account_control.kind in [:signed_in, :preview]}
         id="account-chip"
         class="account-chip"
-        type="button"
+        arrow={false}
         aria-controls="shell-aside"
         aria-expanded="false"
         data-aside-toggle
         phx-mounted={JS.ignore_attributes(["aria-expanded"])}
       >
         <.account_name id="account-chip-picture" account_control={@account_control} />
-      </button>
+      </Regent.Primitives.button>
       <%= if !@panel and @account_control.kind in [:signed_in, :preview] do %>
         <span class="account-chip">
           <.account_name id="account-name-picture" account_control={@account_control} />

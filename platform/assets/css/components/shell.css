@@ -100,7 +100,6 @@
 }
 
 .shell-brand,
-#app-shell .account-chip,
 #app-shell .mobile-menu-button {
   display: flex;
   align-items: center;
@@ -240,13 +239,12 @@
   }
 
   .shell-brand:hover,
-  #app-shell .account-chip:hover,
   #app-shell .mobile-menu-button:hover {
     background: color-mix(in oklch, var(--color-fg) 6%, transparent);
   }
 }
 
-#app-shell [data-aside-toggle][aria-expanded="true"],
+#app-shell #shell-aside-button[aria-expanded="true"],
 #app-shell:has(#shell-apps:popover-open) #shell-apps-button {
   background: var(--ash-panel-strong);
   color: var(--color-fg);
@@ -293,15 +291,21 @@
   position: relative;
 }
 
-.account-control,
-.account-chip {
+.account-control {
   display: flex;
   align-items: center;
 }
 
+/* Signed in, the account's picture and name sit in the same cut-corner frame
+   as Sign in. */
 .account-chip {
-  gap: 0.55rem;
   min-width: 0;
+}
+
+.account-chip .rg-button__label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 /* A long name ends in an ellipsis on one line; Account shows it in full. */
@@ -315,11 +319,6 @@
 /* Account and balance controls share the icon buttons' height, not the whole header. */
 #shell-header > .account-control {
   align-self: center;
-}
-
-#app-shell #shell-header .account-chip {
-  height: auto;
-  min-height: 2.75rem;
 }
 
 /* The shared prism control draws its own box and hover; the bar only centres it. */
@@ -405,6 +404,15 @@
   height: auto;
   margin: var(--space-1);
   white-space: nowrap;
+}
+
+/* Signed in, the balance and the name share the icon buttons' 44px height, so
+   the header keeps its height. */
+#app-shell .shell-credits,
+.account-control > .account-chip {
+  min-height: 2.75rem;
+  margin-block: 0;
+  padding-block: 0;
 }
 
 /* ---- Regents Products ---- */
@@ -520,32 +528,12 @@
   display: none;
 }
 
-/* The header's Credits balance, which opens Buy Credits. It sits here, outside
-   the product layer, so it wins over the site's plain button rules. */
+/* The header's Credits balance, which opens Buy Credits, in the same
+   cut-corner frame as Sign in and the account's name beside it. */
 #app-shell .shell-credits {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25em;
   align-self: center;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
   margin-inline-end: var(--space-1);
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-fg);
-  font: inherit;
-  font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  #app-shell .shell-credits:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
-  }
 }
 
 /* The Buy Credits dialog's close button, square in the dialog's top right
@@ -1320,7 +1308,9 @@
     min-width: 0;
   }
 
+  /* Unlike other main buttons, the name gives way when the row is short. */
   #app-shell .account-chip {
+    flex-shrink: 1;
     min-width: 2.75rem;
     max-width: 6rem;
     padding-inline: 0.5rem;
@@ -1348,6 +1338,12 @@
   #app-shell #shell-apps-button,
   #app-shell #shell-aside-button {
     flex: 0 0 auto;
+  }
+
+  /* The account's name opens the same side panel, so on a phone the panel's
+     own button gives way to it and the balance and name keep their room. */
+  #app-shell #shell-aside-button {
+    display: none;
   }
 
   .account-control > .rg-button {
@@ -1505,10 +1501,14 @@
     letter-spacing: 0.04em;
   }
 
-  /* The side panel button beside it opens the same panel, so the name gives
-     way to it. */
+  /* Narrower still, the name gives way to the side panel's own button, which
+     opens the same panel in less room. */
   #app-shell .account-chip {
     display: none;
+  }
+
+  #app-shell #shell-aside-button {
+    display: inline-grid;
   }
 
   #shell-footer {
