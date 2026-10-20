@@ -8,8 +8,11 @@ product.
 
 After renaming, a new site must still replace, by hand:
 
-1. The homepage art `platform/priv/static/images/home/hero-bg-dark.svg`. Keep
-   the file name. The logo files in `platform/priv/static` (`favicon.svg`,
+1. The homepage art `platform/priv/static/images/home/hero-bg-dark.svg` and the
+   share picture `platform/priv/static/images/og-image.png` (1200 x 630, the
+   product's name and one line about it in the left 600 pixels, which is all X
+   shows on a phone, and nothing in the bottom-left corner, where X writes the
+   site's name). Keep the file names. The logo files in `platform/priv/static` (`favicon.svg`,
    `favicon.ico`, `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`,
    `mark.png`, `images/brand/mark-flat-dark.svg`,
    `images/brand/mark-flat-light.svg`) are the Regents crown. Keep them.

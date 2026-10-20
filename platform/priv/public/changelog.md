@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 20 October 2026
 
+- **A share picture with the product's name.** A shared Ash Template link now shows
+  the product's name, a line about it and its three starting points, with the
+  Regents cut corners. Before, it showed the crown alone.
 - **Your agent can mute for you.** An agent you paired can mute and unmute people in the
   rooms for you, the same way Mute works on a room page.
 - **All your notifications for your agent.** Your agent can read back through all your
