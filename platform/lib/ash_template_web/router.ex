@@ -197,6 +197,7 @@ defmodule AshTemplateWeb.Router do
     get "/agents.md", PublicPagesController, :agents
     get "/skill.md", PublicPagesController, :skill_guide
     get "/agents/:agent/skill.md", PublicPagesController, :agent_skill_guide
+    get "/agents/:wallet/picture", AgentPictureController, :show
     get "/capabilities.json", PublicPagesController, :capabilities
     get "/.well-known/security.txt", PublicPagesController, :security
     get "/.well-known/api-catalog", PublicPagesController, :api_catalog

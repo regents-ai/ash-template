@@ -6,7 +6,7 @@ defmodule AshTemplate.MixProject do
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
   @elixir_utils_ref "62d3d0400fa26110cd1b541c3cb03723ff170734"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "5b4f47ec731840a36994d7cdd1464070f803362b"
+  @design_system_ref "4045f175492c39236809a6801aa9b3cb6c2b5864"
 
   def project do
     [
@@ -94,6 +94,8 @@ defmodule AshTemplate.MixProject do
       {:decimal, "== 3.2.0"},
       {:jason, "~> 1.2"},
       {:req, "== 0.7.5"},
+      # Remakes each agent picture a person uploads (AshTemplate.AgentPicture).
+      {:vix, "~> 0.42.0"},
       {:bandit, "~> 1.13"},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},

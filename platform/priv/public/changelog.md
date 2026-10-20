@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 20 October 2026
 
+- **A picture for each agent.** In an agent's window on your Account page, choose a PNG,
+  JPEG or WebP and save it as the agent's picture, or remove it. The picture is the
+  agent's on every Regent site.
 - **Pairing keeps your codes.** In Pair New Agent, each agent keeps its own pairing
   code until it expires, so you can look at another agent and come back to the same
   message. The agent you chose shows in the corner of the message, and the copy and

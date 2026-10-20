@@ -1,8 +1,9 @@
 import {expect, test} from "./support/test"
 import {ready, signedIn, watch} from "./support/person"
 
-// The walk's person has four agents (sign_in.exs) and none has been active, so the
-// side panel shows the three paired last and leaves out Spare Agent, paired first.
+// The walk's person has six agents (sign_in.exs) and none has been active, so the
+// side panel shows the three paired last and leaves out Spare Agent and the two
+// picture agents, paired first.
 // Manage beside the heading leads to the account page on regents.sh. With a mouse
 // it shows while the pointer is over the list or a key has moved into it, and the
 // rows never move when it does; on the touch phone it always shows, 44 px tall.

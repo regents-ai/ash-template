@@ -44,10 +44,13 @@ Ash.Seed.upsert!(
 
 AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
 
-# A fourth agent, paired first, which the side panel's three leave out
-# (side_agents.spec.ts); the agent the walk opens on the Account page, and one for
-# each width to rename (agents.spec.ts).
+# The agents the walk pairs, in order: one for each width to give a picture
+# (agent_picture.spec.ts); Spare Agent, which the side panel's three leave out
+# (side_agents.spec.ts) and which wears a picture (below); the agent the walk
+# opens on the Account page; and one for each width to rename (agents.spec.ts).
 for {name, digit} <- [
+      {"Desktop Picture", "1"},
+      {"Phone Picture", "2"},
       {"Spare Agent", "f"},
       {"Walk Agent", "c"},
       {"Desktop Agent", "d"},
@@ -60,6 +63,15 @@ for {name, digit} <- [
     actor: %RegentAgents.Agent{wallet: "0x" <> String.duplicate(digit, 40)}
   )
 end
+
+# Spare Agent wears a picture, so the walk reads one from where every site serves it.
+owner = %RegentAgents.Person{privy_user_id: account.privy_user_id}
+spare = Enum.find(RegentAgents.list_my_agents!(actor: owner), &(&1.name == "Spare Agent"))
+
+{:ok, picture} =
+  "test/browser/support/agent.png" |> File.read!() |> AshTemplate.AgentPicture.make()
+
+RegentAgents.set_agent_picture!(spare.id, picture, actor: owner)
 
 {:bootstrap, claim} = SessionAuthority.renew(nil)
 {:ok, _account, bound} = SessionAuthority.sign_in(claim, account.id)

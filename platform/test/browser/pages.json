@@ -68,6 +68,7 @@
     {"route": "/.well-known/security.txt", "purpose": "Say how to report a security problem.", "type": "text/plain"},
     {"route": "/.well-known/api-catalog", "purpose": "Point agents at the API.", "type": "application/linkset+json"},
     {"route": "/build/skill.md", "purpose": "Give an agent the skill for building a site like this.", "type": "text/markdown"},
+    {"route": "/agents/:wallet/picture", "paths": ["/agents/0xffffffffffffffffffffffffffffffffffffffff/picture"], "purpose": "Show the picture a person chose for their agent.", "type": "image/webp"},
     {"route": "/.well-known/agent-skills/*path", "paths": ["/.well-known/agent-skills/index.json"], "purpose": "List and serve the build skills.", "type": "application/json"},
     {"route": "/showcase/catalog", "purpose": "List the shared components for tools.", "type": "application/json"},
     {"route": "/showcase/style.css", "purpose": "Serve the shared components' styles.", "type": "text/css"}
