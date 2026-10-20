@@ -245,7 +245,7 @@ defmodule AshTemplateWeb.HarbourLive do
   # it is rendered and closes with its X, Escape or the browser's back button.
   defp agent_card(assigns) do
     ~H"""
-    <dialog
+    <Regent.Structure.dialog
       id="harbour-agent"
       class="harbour-card"
       aria-labelledby="harbour-agent-title"
@@ -273,7 +273,7 @@ defmodule AshTemplateWeb.HarbourLive do
           <time datetime={DateTime.to_iso8601(action.at)}>{ago(action.at, @now)}</time>
         </li>
       </ol>
-    </dialog>
+    </Regent.Structure.dialog>
     """
   end
 

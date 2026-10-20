@@ -154,12 +154,10 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
 
   defp payment(_entry), do: %{}
 
-  @doc """
-  A payment's page on its chain's explorer: the explorer's address and the
-  transaction hash, which the purchase table holds only as `0x` and 64
-  lowercase hex characters.
-  """
-  def transaction_url(chain, tx_hash), do: @explorers[chain].tx <> tx_hash
+  # A payment's page on its chain's explorer: the explorer's address and the
+  # transaction hash, which the purchase table holds only as `0x` and 64
+  # lowercase hex characters.
+  defp transaction_url(chain, tx_hash), do: @explorers[chain].tx <> tx_hash
 
   defp signed(:in), do: "+"
   defp signed(:out), do: "−"

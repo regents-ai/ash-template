@@ -58,6 +58,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
 | Agent harbour: the list under the harbour names all six agents; each name opens its agent's card, named for the agent, with its Key and four actions at most; the card closes with its Close button and with Escape; each island's page marks its own island, and pressing another island's name opens that page; an island that does not exist is not found; on the phone every name and the Close button are at least 44 px square; light and dark | `platform/test/browser/harbour.spec.ts` |
+| Every window opens in the design library's frame, with its cut corners, and sits whole on the screen: search, Buy Credits, the agent tools list, a code cube face's card and an agent's card in the harbour; light and dark, at both widths | `platform/test/browser/windows.spec.ts` |
 | Agent harbour: the list keeps its height with every agent at one island, the page below it does not move, and the inn's page shifts by less than 0.1 over 30 seconds at 1280 while agents sail | same |
 | Agent harbour: without WebGPU the still picture for the theme fills the harbour, light and dark | same |
 | Agent harbour: pressing a ship on the sea opens its agent's card, and pressing an island opens its page, with a click at 1280 and a tap at 390, light and dark | `platform/test/browser/harbour_sea.spec.ts` |
@@ -89,8 +90,8 @@ starts, and the server watches no files, so no page reloads under a check.
   proves the save and `public_name.test.ts` the save path.
 - Writing, pinning and deleting a note; posting in a room; sending a chat message:
   the walk opens these pages but does not use them.
-- Connecting X on Connections, copying a wallet, the search dialog and the theme
-  switch: not walked.
+- Connecting X on Connections, copying a wallet, searching and the theme switch: not
+  walked. The search window opens, and nothing is typed in it.
 - An agent's signed pairing request: the walk's agent is paired with a code issued
   and taken through the same calls the side panel and the pairing request make, but no
   agent signs a request, since the walk never leaves the machine.

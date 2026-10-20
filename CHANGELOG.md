@@ -3174,3 +3174,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   already live, read from the live image's label, so two releases that cross
   can no longer put back an older tree. Keyfleet's deploy script already did
   this; every site copies it from here.
+
+## 2026-10-20 — Every window on the shared frame
+
+- What: the template's five windows (search, Buy Credits, a code cube face's card, the agent tools list and an agent's card in the harbour) open in the design library's frame, `Regent.Structure.dialog`: two cut corners with an accent, two marked square corners, light and dark. Each keeps its width (`--rg-dialog-size`) and its own layout inside `.rg-dialog__body`; their own borders, corners, fills, shadows, heights and backdrops are gone. The code cards keep their dark fill and face colours on the frame. The refunds page shows each purchase's transaction with `Regent.Primitives.address` (copy and explorer arrow), so `CreditsHistoryLive.transaction_url/2` is private again.
+- Library: design-system `9ef0d31a` (on top of `652ce9ef`, the frame and the address arrow) adds `chain="ethereum"` to `Regent.Primitives.address`, because Credits can be bought on Ethereum and Basescan would not find those transactions.
+- Not moved: the "Where to spend" list in Buy Credits is a popover over the window, not a window the frame covers. Wallet buttons (sign in on the first press when signed out, Approve and Buy one size, Approve done in green) wait for Sean's letter, because they change sign-in and wallet presses.
+- Checked: `platform/test/browser/windows.spec.ts` opens each window in light and dark, at 1280 and on the phone, and checks it is the frame and sits whole on the screen. The frame's rules sit outside the cascade layers, so a window's text colour and body padding are set outside the layer too; the code card's text was dark on its dark fill until then.
+- Why: Sean (19 Oct): never ship a default square window, and one standing way to show an address or transaction with copy and Basescan. Keyfleet runs both live (v107).

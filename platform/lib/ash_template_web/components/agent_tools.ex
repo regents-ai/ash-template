@@ -58,7 +58,7 @@ defmodule AshTemplateWeb.Components.AgentTools do
     assigns = assign(assigns, label: @label, tools: @tools, markdown: @markdown)
 
     ~H"""
-    <dialog
+    <Regent.Structure.dialog
       id={@id}
       class="code-card agent-tools"
       aria-labelledby={"#{@id}-title"}
@@ -87,7 +87,7 @@ defmodule AshTemplateWeb.Components.AgentTools do
           </li>
         </ol>
       </div>
-    </dialog>
+    </Regent.Structure.dialog>
     """
   end
 end

@@ -101,7 +101,7 @@ defmodule AshTemplateWeb.Components.CodeCube do
   """
   def card(assigns) do
     ~H"""
-    <dialog
+    <Regent.Structure.dialog
       id={@id}
       class="code-card"
       data-face={@face.face}
@@ -139,7 +139,7 @@ defmodule AshTemplateWeb.Components.CodeCube do
           retry={@retry}
         />
       </div>
-    </dialog>
+    </Regent.Structure.dialog>
     """
   end
 

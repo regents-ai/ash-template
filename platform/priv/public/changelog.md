@@ -8,6 +8,8 @@ What changed in Ash Template lately, newest first.
   rooms for you, the same way Mute works on a room page.
 - **All your notifications for your agent.** Your agent can read back through all your
   notifications, not only the latest 50.
+- **One look for every window.** Search, Buy Credits, the tool lists and an agent's card
+  in the harbour open in the same frame, with two cut corners, in light and dark.
 
 ## 19 October 2026
 

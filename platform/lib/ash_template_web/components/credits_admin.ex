@@ -279,7 +279,13 @@ defmodule AshTemplateWeb.CreditsAdmin do
             </p>
             <p>From <P.address id={"#{@id}-from-#{purchase.id}"} address={purchase.wallet} /></p>
             <p>
-              <a href={CreditsHistoryLive.transaction_url(purchase.chain, purchase.tx_hash)}>Transaction</a>
+              Transaction
+              <P.address
+                id={"#{@id}-tx-#{purchase.id}"}
+                address={purchase.tx_hash}
+                kind="tx"
+                chain={to_string(purchase.chain)}
+              />
             </p>
             <P.button
               :if={
