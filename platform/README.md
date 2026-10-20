@@ -348,8 +348,10 @@ Deploy from the repository root with the app's name, for the hosted demo:
 scripts/deploy.sh template-regents-sh
 ```
 
-It refuses a working tree with any change and a commit that is not on
-`origin/main`, then runs `fly deploy . --config platform/fly.toml --app <app>
+It refuses a working tree with any change, a commit that is not on
+`origin/main`, and a commit that does not contain the commit already live (the
+live image's label, read with `fly image show`), so two crossing releases never
+take live work back out. Then it runs `fly deploy . --config platform/fly.toml --app <app>
 --ha=false --remote-only --image-label <short commit>`, so both folders reach
 the build and the image names the commit it came from. Staging deploys with
 `fly deploy . --config platform/fly.staging.toml`.

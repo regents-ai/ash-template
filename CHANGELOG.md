@@ -3167,3 +3167,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Fixed before release: since stage 1 moved them to `/api/v1/`, signed bodies sent to room search, label ratings, Credits history and activity were no longer kept byte for byte, so the signature check refused them (`missing_signed_body`). Every body the API takes is now kept for the check (`AshTemplateWeb.SignedBodyReader`).
 - The activity answer and agent guide point to the person's activity page at `/app/activity`, where it is.
 - Regression tests in `platform/test/ash_template/agents/signed_tools_test.exs`: an agent's mutes, and activity read in two pages with each notification once and none marked read.
+
+## 2026-10-20 — Deploys never take live work out
+
+- `scripts/deploy.sh` now also refuses a commit that does not contain the one
+  already live, read from the live image's label, so two releases that cross
+  can no longer put back an older tree. Keyfleet's deploy script already did
+  this; every site copies it from here.

@@ -3,13 +3,14 @@
 #
 #   scripts/deploy.sh <fly-app>        # the hosted demo: scripts/deploy.sh template-regents-sh
 #
-# It refuses a working tree with any change, and a commit that is not on
-# origin/main, so what runs is always what the repository holds. The app is named
-# here, never in fly.toml, so the same configuration serves every site built
-# from the template. The image is labelled with the short commit it was built
-# from and carries the full commit, which /capabilities.json names. The build
-# runs on Fly's builders from the repository root, where .dockerignore admits
-# only platform/, skills/ and cli/commands.json.
+# It refuses a working tree with any change, a commit that is not on
+# origin/main, and a commit that does not contain the one already live, so what
+# runs is always what the repository holds and never takes live work out. The
+# app is named here, never in fly.toml, so the same configuration serves every
+# site built from the template. The image is labelled with the short commit it
+# was built from and carries the full commit, which /capabilities.json names.
+# The build runs on Fly's builders from the repository root, where
+# .dockerignore admits only platform/, skills/ and cli/commands.json.
 set -euo pipefail
 
 if [[ $# -ne 1 || -z $1 ]]; then
@@ -30,6 +31,16 @@ git fetch --quiet origin main
 commit="$(git rev-parse HEAD)"
 if ! git merge-base --is-ancestor "$commit" origin/main; then
   echo "Refusing to deploy: ${commit:0:7} is not on origin/main. Push it to main first." >&2
+  exit 1
+fi
+
+# The running image is labelled with the short commit it was built from (the
+# --image-label below). A commit that does not contain it would take live work
+# back out, which happens when two releases cross: bring this checkout up to
+# origin/main and deploy again.
+live="$(fly image show --app "$app" --json | jq -r '.[0].Tag')"
+if ! git merge-base --is-ancestor "$live" "$commit" 2>/dev/null; then
+  echo "Refusing to deploy: ${commit:0:7} does not contain the live image's commit \"$live\". Update to origin/main first." >&2
   exit 1
 fi
 
