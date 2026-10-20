@@ -209,6 +209,7 @@ defmodule AshTemplateWeb.AgentsPanel do
               <.live_component
                 module={AshTemplateWeb.AgentPictureUpload}
                 id="account-agent-picture"
+                panel={@id}
                 lease={@lease}
                 account={@account}
                 agent={@detail.agent}

@@ -7,10 +7,10 @@ defmodule AshTemplateWeb.AgentPictureUpload do
   the agent's on every Regent site, so the same window on any of them shows it.
 
   The host passes `account` (the signed-in account), its `session_lease` as
-  `lease`, and `agent` (the person's `RegentAgents.PairedAgent`, with
-  `picture_updated_at` loaded). The shared agents library announces each
-  change, and the page reads the agent again, so the picture shown is always
-  the saved one.
+  `lease`, `agent` (the person's `RegentAgents.PairedAgent`, with
+  `picture_updated_at` loaded) and `panel`, the id of the agents panel it sits
+  in. Once a picture is saved or removed the panel reads the agent again, so
+  the picture shown is always the saved one.
   """
   use AshTemplateWeb, :live_component
 
@@ -37,7 +37,7 @@ defmodule AshTemplateWeb.AgentPictureUpload do
   def update(assigns, socket) do
     {:ok,
      socket
-     |> assign(Map.take(assigns, [:id, :lease, :agent]))
+     |> assign(Map.take(assigns, [:id, :lease, :agent, :panel]))
      |> take_account(assigns.account)}
   end
 
@@ -84,6 +84,7 @@ defmodule AshTemplateWeb.AgentPictureUpload do
              actor: socket.assigns.actor
            ) do
         :ok ->
+          read_again(socket)
           {:status, "Picture removed."}
 
         {:error, _error} ->
@@ -107,6 +108,7 @@ defmodule AshTemplateWeb.AgentPictureUpload do
              RegentAgents.set_agent_picture(socket.assigns.agent.id, webp,
                actor: socket.assigns.actor
              ) do
+        read_again(socket)
         {:status, "Picture saved."}
       else
         {:error, reason} when is_atom(reason) -> {:alert, refused(reason)}
@@ -115,6 +117,9 @@ defmodule AshTemplateWeb.AgentPictureUpload do
 
     assign(socket, notice: notice)
   end
+
+  defp read_again(socket),
+    do: send_update(AshTemplateWeb.AgentsPanel, id: socket.assigns.panel, agents_changed: true)
 
   defp refused(reason) when reason in [:too_large, :too_big],
     do: "That picture is too large. Choose one up to 5 MB."
