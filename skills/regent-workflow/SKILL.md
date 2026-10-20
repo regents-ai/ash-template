@@ -132,8 +132,8 @@ what a person or agent can now do, the checks that prove it, and what is not pro
   Sentinel or a person gets a check that fails on the old code (run it against the
   old code once to see it fail) and passes on the fix, listed in the feature map.
 - **Approvals by risk.** Copy, CSS and docs ship on the evidence. Ordinary code ships
-  on the evidence plus the review. Protected work (billing, sign-in, contracts,
-  wallets, production data) also waits for Sean's go by letter.
+  on the evidence plus the review. Only what "Act on your recommendation" lists also
+  waits for Sean's go.
 - **Evidence with every Sentinel request:** the commit it ran on (`git rev-parse
   HEAD`) and a clean tree at the top; what behaviour changed; the commands that prove
   it, with their results; what was not proven.
@@ -179,12 +179,30 @@ fixture preview from a real configured product. New founder corrections override
 historical rollout reports; delayed agent notifications do not reopen completed or
 cancelled work.
 
+## Act on your recommendation (founder rule, 19 Oct 2026)
+
+Sean, 19 Oct: "why does every action need me to rubberstamp it?" When you have a
+recommendation, act on it, then tell Sean what you did. Do not ask him to approve it.
+
+Ask Sean first only for:
+
+- a Safe transaction;
+- a contract change or deployment;
+- a write to production data;
+- moving money;
+- the first change to sign-in, wallets or the side panel (later versions of a change he
+  already approved need no new go);
+- rotating a secret, or deleting something another session made.
+
+Everything else is yours to decide and do: wording, names, layout, which tests to run,
+the order of work, restacks, and pushing and releasing ordinary work.
+
 ## Rules in force (founder, 15 Oct 2026)
 
 - No feature branches. Work goes to main; main goes to production after its checks and
   Sentinel's read. The one exception is a cloud thread's side branch, below.
-- The protected list is sign-in, secrets, production data, wallets, staking and money
-  movement. A change there lands only after Sean's go naming the action.
+- The protected list is the one in "Act on your recommendation" above. A change there
+  lands only after Sean's go naming the action.
 - Contessa is not a gate.
 - Agents get WebMCP first. The CLI follows and never blocks a site change.
 - Simplicity is golden (16 Oct): each route, and each tab in a route, has one purpose a
@@ -258,8 +276,7 @@ cancelled work.
    because a milestone is done. Put status notes and recommendations in the same message
    as the next tool call and carry on with whatever does not depend on an answer.
    Ordinary work is pushed to main and released after its checks and Sentinel's read.
-   Confirmation before a protected change, payment, signature or destructive action is
-   unchanged.
+   Sean is asked first only for what "Act on your recommendation" lists.
 
 ## Release checklist
 
@@ -288,10 +305,11 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
 
 ## Decisions for the founder
 
-Every numbered decision put to the founder stands on its own, because earlier context
-is often hundreds of lines away. Under the question, give two to four plain bullets:
-what changes and in which product or repository; what happens on yes and what happens
-on hold; the recommendation. Then the lettered options. Repeat the bullets each time
+Only the actions "Act on your recommendation" lists become decisions for the founder;
+everything else is done and reported. Every numbered decision put to the founder stands
+on its own, because earlier context is often hundreds of lines away. Under the question,
+give two to four plain bullets: what changes and in which product or repository; what
+happens on yes and what happens on hold; the recommendation. Then the lettered options. Repeat the bullets each time
 the decision is listed again; never a bare "Push X? a) yes b) hold".
 
 Never re-letter or renumber a question once it is posted; the founder may already be
@@ -386,9 +404,8 @@ server host.
 Investigate and prepare billing, authentication, contracts, wallets and production
 changes within scope. Record the relevant invariants and verification for risky work.
 Ordinary work is pushed to main and released after its checks and Sentinel's read.
-Protected changes (sign-in, secrets, production data, wallets, staking and money
-movement), destructive operations, signing and value movement need explicit applicable
-founder authority naming the action.
+The actions "Act on your recommendation" lists need explicit founder authority naming
+the action.
 Authority belongs to the explicitly authorized action and actor. Do not repeat
 permission questions when the current session already authorizes the exact action.
 

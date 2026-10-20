@@ -3139,3 +3139,7 @@ Operations
 
 - The message a person pastes to their agent now opens "Pair with my Regents Labs account on template.regents.sh" (the site's own host), in place of "Pair with my Ash Template account.", so an agent learns the account is the person's one Regents Labs account and which site it pairs on (Sean, 19 Oct 2026). ChatGPT's opens "Connect ChatGPT to my existing Regents Labs account on <host>".
 - The elixir-utils pin moves to `62d3d040`, where `RegentAgents.PairingMessage.text/3` takes `(code, origin, harness)`; the pairing box no longer passes a site name.
+
+## 2026-10-19 — Workflow skill: act on your recommendation
+
+- The Regent Workflow skill gains Sean's rule of 19 Oct ("why does every action need me to rubberstamp it?"): an agent with a recommendation acts on it and tells Sean what it did. It asks him first only for a Safe transaction, a contract change or deployment, a write to production data, moving money, the first change to sign-in, wallets or the side panel, rotating a secret, or deleting something another session made. The protected lists in "Every change proves itself", "Rules in force", "Execute" and "Protected work" now point to that one list, and "Decisions for the founder" covers only those actions.
