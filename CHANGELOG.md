@@ -3143,3 +3143,17 @@ Operations
 ## 2026-10-19 — Workflow skill: act on your recommendation
 
 - The Regent Workflow skill gains Sean's rule of 19 Oct ("why does every action need me to rubberstamp it?"): an agent with a recommendation acts on it and tells Sean what it did. It asks him first only for a Safe transaction, a contract change or deployment, a write to production data, moving money, the first change to sign-in, wallets or the side panel, rotating a secret, or deleting something another session made. The protected lists in "Every change proves itself", "Rules in force", "Execute" and "Protected work" now point to that one list, and "Decisions for the founder" covers only those actions.
+
+## 2026-10-20 — One address scheme, tools named after commands
+
+The first stage of the gap map (`docs/gap-map-plan.md`), from the regents-cli review of the template.
+
+- Everything the site answers is under `/api/v1/`; nothing is left under `/tools/`. A paired agent uses `/api/v1/notes` like its person, and the `/tools/notes` copies are gone. Note search, pin, unpin, label rating, balances, Credits history, Points, room search and activity moved to `/api/v1/` (`docs.md` lists each address). The agent sign-in stays at `/api/agents/v1/`, where siwa-server's client and every site already call it.
+- `GET /api/v1/site-tools/{site}` is now `GET /api/v1/sites/{site}/tools`, and siwa-server's connection steps have their own `GET /api/v1/siwa/help`, so neither answer has two shapes.
+- New public reads: `GET /api/v1/about` and `GET /api/v1/docs` answer `{"title", "markdown"}`; `GET /api/v1/rooms/{room}/messages/{id}` reads one message; `author_kind=person|agent` keeps one kind of room message (422 `invalid_author_kind` otherwise).
+- New paired read: `GET /api/v1/notes/{id}/pin-price` says what pinning a note would cost, changing nothing.
+- `DELETE /api/v1/notes/{id}` answers 200 `{"deleted": true, "id"}`, as a room message delete does, so every command answers a JSON object.
+- Browser tools are named after their commands: `agents_whoami`, `agents_status`, `rooms_messages`, `rooms_post`, `notes_edit`, `notes_rate_label` and so on. The five `show_*_webmcp_tools` tools are now `sites_tools`, and `show_siwa_connection_help` is `siwa_help`. New tools `health`, `about`, `docs`, `rooms_message` and `notes_pin_price`. `/capabilities.json` and the build now refuse a tool not named after its command, and a read-only tool whose operation changes anything other than a quote.
+- Commands: `about`, `docs`, `sites tools <site>`, `siwa help`, `rooms message <room> <id>`, `rooms messages --author-kind`, `notes pin-price <id>`; `notes edit` takes `--title`/`--body` (at least one) and `notes rate-label` takes `--report fits|does_not_fit`. `rooms post`, `notes create`, `notes edit` and `notes pin-price` name the next command. Every moved or new command is marked as waiting for the next regents-cli release.
+- Operation ids drop `AsAgent`, and the OpenAPI documents move to 6.0.0.
+- `docs/gap-map-plan.md` records the naming rules every site copies and the calls made where the map asked for a decision: `agents pair` has no browser tool anywhere; a note serves as a saved draft.

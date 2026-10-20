@@ -324,7 +324,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     ## What you can do
 
     Check your status first, with `regents ash-template agents whoami --json` or the \
-    `agent_whoami` browser tool: `status` is one of the three below, `allowed` lists what \
+    `agents_whoami` browser tool: `status` is one of the three below, `allowed` lists what \
     you may do in it and `next_step` says what to do next.
 
     #{lines}\

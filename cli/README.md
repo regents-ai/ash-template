@@ -68,7 +68,17 @@ run (`owner_only`, `wallet`) never become commands.
 
 `rooms messages <room>` in `commands.json` shows each kind of input: a word in angle
 brackets is an argument, listed under `arguments` with the path parameter it fills;
-`--limit` and `--after` are flags placed in the query; and `pagination` tells the command
-line where the answer says whether another page follows and which flag asks for it.
+`--author-kind`, `--limit` and `--after` are flags placed in the query, and `--author-kind`
+takes one word from a fixed list (`enum`); and `pagination` tells the command line where the
+answer says whether another page follows and which flag asks for it. `notes edit <id>` shows
+body flags, `--title` and `--body`, with `required_one_of` asking for at least one.
+
+## Names
+
+A command is a noun, then a verb (`notes list`, `rooms post`, `account balances`). Its
+browser tool is the same words joined by `_` (`notes_list`, `rooms_post`), and the site
+refuses to build when the two disagree. Every command answers a JSON object at an address
+under `/api/v1/`, apart from the shared agent sign-in under `/api/agents/v1/`. `agents pair`
+is the one command with no browser tool: an agent pairs once, where it keeps its key.
 
 Set `base_url` to the site's own address; the template's is its demo, template.regents.sh.

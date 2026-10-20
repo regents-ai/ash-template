@@ -42,34 +42,22 @@ type Reply =
 
 type Request = (input: Input, signal: AbortSignal | undefined) => Promise<Reply>
 
+const segment = (value: string | number) => encodeURIComponent(String(value))
+
 // The public reads. Every other tool except prepare_agent_request is signed.
 const requests: Record<string, Request> = {
-  about: (_input, signal) => markdown("/about", signal),
-  docs: (_input, signal) => markdown("/docs", signal),
+  health: (_input, signal) => call("/api/v1/health", signal),
+  about: (_input, signal) => call("/api/v1/about", signal),
+  docs: (_input, signal) => call("/api/v1/docs", signal),
+  sites_tools: ({site}, signal) => call(`/api/v1/sites/${segment(site)}/tools`, signal),
+  siwa_help: (_input, signal) => call("/api/v1/siwa/help", signal),
   rooms_list: (_input, signal) => call("/api/v1/rooms", signal),
-  room_read: async ({room, ...page}, signal) => {
-    // URL parsing drops these segments even when their dots are percent-encoded.
-    if (room === "." || room === "..") {
-      return {ok: false, error: {code: "invalid_input", message: "room must be a room's slug, such as general."}}
-    }
+  rooms_messages: ({room, ...page}, signal) => {
     const query = new URLSearchParams(Object.entries(page).map(([key, value]) => [key, String(value)])).toString()
-    const path = `/api/v1/rooms/${encodeURIComponent(String(room))}/messages`
+    const path = `/api/v1/rooms/${segment(room)}/messages`
     return call(query ? `${path}?${query}` : path, signal)
   },
-}
-
-// A public document, in the Markdown an agent gets when it asks for that page.
-async function markdown(path: string, signal: AbortSignal | undefined): Promise<Reply> {
-  const response = await fetch(path, {
-    headers: {Accept: "text/markdown"},
-    credentials: "omit",
-    cache: "no-store",
-    redirect: "error",
-    signal,
-  })
-  const body = await response.text()
-  if (response.ok) return {ok: true, status: response.status, data: body}
-  return {ok: false, status: response.status, error: {code: "unreadable", message: body}}
+  rooms_message: ({room, id}, signal) => call(`/api/v1/rooms/${segment(room)}/messages/${segment(id)}`, signal),
 }
 
 // Public JSON without session authority. Every refusal it sends is
@@ -86,7 +74,7 @@ async function call(path: string, signal: AbortSignal | undefined): Promise<Repl
 }
 
 async function reply(response: Response): Promise<Reply> {
-  const answer = response.status === 204 ? null : await response.json()
+  const answer = await response.json()
   if (response.ok) return {ok: true, status: response.status, data: answer}
   // Past a rate limit the agent is told how many seconds to wait.
   const retryAfter = Number(response.headers.get("retry-after"))
@@ -112,6 +100,9 @@ function inputProblem(input: unknown, schema: Schema) {
   const missing = schema.required.find(key => !Object.hasOwn(input, key))
   if (missing) return `${missing} is required.`
   const values = input as Record<string, unknown>
+  // URL parsing drops these path segments even when their dots are percent-encoded.
+  const dots = Object.keys(values).find(key => values[key] === "." || values[key] === "..")
+  if (dots) return `${dots} must be a name or id, not ${values[dots]}.`
   const wrong = Object.keys(values).find(key =>
     schema.properties[key].type === "integer" ? !Number.isInteger(values[key]) : typeof values[key] !== "string")
   if (!wrong) return null

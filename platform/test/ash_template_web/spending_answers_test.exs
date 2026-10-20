@@ -10,7 +10,7 @@ defmodule AshTemplateWeb.SpendingAnswersTest do
   import Phoenix.ConnTest
   alias AshTemplate.{Accounts, Agents, Notes, Repo}
   alias AshTemplate.Actors.{Agent, Human, System}
-  alias AshTemplateWeb.PageToolsController
+  alias AshTemplateWeb.PairedAgentController
 
   setup do
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Repo, shared: true)
@@ -27,12 +27,12 @@ defmodule AshTemplateWeb.SpendingAnswersTest do
     %{agent: agent, account: account} = paired()
     note = Notes.create_note!(%{title: "Pin me", operation_id: Ecto.UUID.generate()}, actor: agent)
 
-    balances = agent |> conn_for() |> PageToolsController.balances(%{}) |> json_response(200)
+    balances = agent |> conn_for() |> PairedAgentController.balances(%{}) |> json_response(200)
 
     refused =
       agent
       |> conn_for(%{"operation_id" => Ecto.UUID.generate()})
-      |> PageToolsController.pin_note(%{"id" => note.id})
+      |> PairedAgentController.pin_note(%{"id" => note.id})
       |> json_response(403)
 
     assert balances["spending_grant"]["grant_approvals_available"] == false
@@ -46,7 +46,7 @@ defmodule AshTemplateWeb.SpendingAnswersTest do
     [paired_agent] = RegentAgents.list_my_agents!(actor: person)
     :ok = RegentAgents.unpair_agent(paired_agent, actor: person)
 
-    refused = agent |> conn_for() |> PageToolsController.balances(%{}) |> json_response(403)
+    refused = agent |> conn_for() |> PairedAgentController.balances(%{}) |> json_response(403)
     assert refused["error"]["code"] == "agent_not_paired"
   end
 

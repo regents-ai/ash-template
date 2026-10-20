@@ -7,7 +7,7 @@ defmodule AshTemplateWeb.FeatureMapTest do
   @map "test/browser/pages.json" |> File.read!() |> Jason.decode!()
 
   # Machine interfaces, each proved by its own tests rather than by a page walk.
-  @interfaces ["/api/", "/tools/", "/auth/", "/oauth/", "/admin/", "/.well-known/oauth-"]
+  @interfaces ["/api/", "/auth/", "/oauth/", "/admin/", "/.well-known/oauth-"]
 
   test "every page and document the router serves is in the walk, and nothing else" do
     served =

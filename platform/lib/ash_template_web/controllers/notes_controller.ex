@@ -71,7 +71,7 @@ defmodule AshTemplateWeb.NotesController do
   def delete(conn, %{"id" => id}) do
     with_note(conn, id, fn conn, note ->
       case Notes.destroy_note(note, actor: conn.assigns.actor) do
-        :ok -> send_resp(conn, :no_content, "")
+        :ok -> json(conn, %{deleted: true, id: note.id})
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
       end
     end)

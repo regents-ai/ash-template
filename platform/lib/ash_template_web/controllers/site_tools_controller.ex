@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.SiteToolsController do
   @moduledoc """
   The browser tools each Regent site offers on its home page, and how an agent
   connects to siwa-server: what the twin cube's six cards show, for anyone to
-  read. The twin cube's own browser tools read them here.
+  read, as the `sites_tools` and `siwa_help` tools and commands.
   """
 
   use AshTemplateWeb, :controller
@@ -12,16 +12,16 @@ defmodule AshTemplateWeb.SiteToolsController do
   @errors %{
     "site_not_found" =>
       {404, "There is no site with that name.",
-       "Use regents, patchbay, techtree, autolaunch, keyfleet or siwa."},
+       "Use regents, patchbay, techtree, autolaunch or keyfleet."},
     "site_unreachable" =>
       {503, "That site's tools could not be read right now.", "Try again in a minute."}
   }
 
-  def show(conn, %{"site" => "siwa"}) do
+  def siwa_help(conn, _params) do
     json(conn, %{site: "siwa-server", connection: SiteTools.connection_help()})
   end
 
-  def show(conn, %{"site" => site}) do
+  def tools(conn, %{"site" => site}) do
     case SiteTools.tools(site) do
       {:ok, tools} -> json(conn, %{site: SiteTools.name(site), tools: tools})
       {:error, :unknown_site} -> refuse(conn, "site_not_found")

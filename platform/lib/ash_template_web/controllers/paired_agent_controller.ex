@@ -1,8 +1,9 @@
-defmodule AshTemplateWeb.PageToolsController do
+defmodule AshTemplateWeb.PairedAgentController do
   @moduledoc """
-  The agent doors under `/tools` that the browser tools (`priv/tool_manifest.json`,
-  `assets/js/public_tools.ts`) and regents-cli share: notes and the account's
-  Credits, Points and activity.
+  What only a paired agent does, for the browser tools (`priv/tool_manifest.json`,
+  `assets/js/public_tools.ts`) and regents-cli alike: search, pins and label
+  ratings on its person's notes, their Credits, Points and activity, and room
+  search. The notes themselves are `AshTemplateWeb.NotesController`'s.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -27,9 +28,6 @@ defmodule AshTemplateWeb.PageToolsController do
     "note_not_found" =>
       {404, "There is no note of yours with that id.",
        "List your person's notes and use an id from there."},
-    "invalid_note" =>
-      {422, "The note could not be saved.",
-       "details says why. Send a title of 1 to 120 characters, an optional body of up to 10,000 characters, and operation_id, a UUID you keep when retrying."},
     "label_not_found" =>
       {404, "There is no label of yours with that id.", "Read the note and use its label.id."},
     "invalid_label_report" =>
@@ -40,7 +38,7 @@ defmodule AshTemplateWeb.PageToolsController do
        "Send after as the previous page's pagination.next_cursor, unchanged, or omit it for the newest entries."},
     "invalid_activity_request" =>
       {422, "Activity takes no input.",
-       "Send GET /tools/activity without a query string or body."},
+       "Send GET /api/v1/activity without a query string or body."},
     "activity_too_large" =>
       {422, "The activity response is too large.",
        "View activity on /activity. This endpoint returns at most 262144 encoded bytes and does not truncate notifications."},
@@ -191,15 +189,6 @@ defmodule AshTemplateWeb.PageToolsController do
   defp activity_result(conn, {:error, error}),
     do: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
 
-  def notes(conn, _params) do
-    case Notes.list_my_notes(actor: conn.assigns.actor) do
-      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
-  end
-
-  def note(conn, %{"id" => id}), do: for_note(conn, id, &json(conn, %{note: NotesJSON.note(&1)}))
-
   def report_label(conn, %{"id" => id}) do
     actor = conn.assigns.actor
 
@@ -245,19 +234,13 @@ defmodule AshTemplateWeb.PageToolsController do
     end
   end
 
-  # A retry with the operation_id of a note already made answers that note (200).
-  def create_note(conn, _params) do
-    actor = conn.assigns.actor
-
-    with {:ok, nil} <- Notes.earlier_note(conn.body_params["operation_id"], actor: actor),
-         {:ok, note} <- Notes.create_note(conn.body_params, actor: actor) do
-      conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
-    else
-      {:ok, %Note{} = earlier} -> json(conn, %{note: NotesJSON.note(earlier)})
-      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_note", error)
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
+  # What pinning the note would cost, changing nothing: a pinned note stays as
+  # it is and costs nothing (`Note.Pin`).
+  def pin_price(conn, %{"id" => id}) do
+    for_note(conn, id, fn note ->
+      credits = if note.pinned_at, do: Decimal.new(0), else: Note.Pin.price()
+      json(conn, %{note: %{id: note.id, pinned: !!note.pinned_at}, price: %{credits: credits}})
+    end)
   end
 
   # Pinning costs the person one Credit (`Note.Pin`); a refused spend pins nothing.

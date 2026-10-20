@@ -3,8 +3,8 @@ defmodule AshTemplateWeb.TwinCubeLive do
   The world cube and its twin, side by side: the world cube on the left for
   people browsing the sites, and the code cube on the right for agents, whose
   faces open a card of the browser tools each site's home page offers, or of
-  how to connect to siwa-server. The six browser tools of this page open the
-  same cards for an agent.
+  how to connect to siwa-server. An agent reads the same lists with the
+  `sites_tools` and `siwa_help` tools on every page.
   """
 
   use AshTemplateWeb, :live_view
@@ -71,7 +71,6 @@ defmodule AshTemplateWeb.TwinCubeLive do
         class="twin-cube"
         aria-label="Two ways into the sites"
         phx-hook="TwinCube"
-        phx-mounted={JS.ignore_attributes(["data-webmcp-status"])}
       >
         <div id="twin-cube-labels" class="twin-cube__labels" phx-update="ignore" aria-hidden="true">
           <p class="twin-cube__label" data-twin-label>Human Browsing</p>

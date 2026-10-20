@@ -204,10 +204,10 @@ defmodule AshTemplate.SignedToolsTest do
     refute_receive {:proof_checked, _}
 
     for {method, path, body} <- [
-          {:get, "/tools/notes", nil},
-          {:post, "/tools/notes",
+          {:get, "/api/v1/notes", nil},
+          {:post, "/api/v1/notes",
            Jason.encode!(%{title: "Refused", operation_id: Ecto.UUID.generate()})},
-          {:get, "/tools/account/balances", nil}
+          {:get, "/api/v1/account/balances", nil}
         ] do
       refused = request(method, path, body)
       assert refused.status == 403
@@ -236,27 +236,29 @@ defmodule AshTemplate.SignedToolsTest do
         actor: %RegentAgents.Agent{wallet: @wallet}
       )
 
-    assert request(:get, "/tools/notes", nil, false).status == 401
-    assert_receive {:proof_checked, _}
+    # A cookie with no signature is a person's request with no sign-in: refused
+    # before any proof is checked.
+    assert request(:get, "/api/v1/notes", nil, false).status == 401
+    refute_receive {:proof_checked, _}
     id = Ecto.UUID.generate()
     body = Jason.encode!(%{title: "Paired note", operation_id: id})
-    created = request(:post, "/tools/notes", body)
+    created = request(:post, "/api/v1/notes", body)
     assert created.status == 201, created.resp_body
     digest = Siwa.content_digest_for_body(body)
-    assert_receive {:proof_checked, %{"path" => "/tools/notes", "body_digest" => ^digest}}
+    assert_receive {:proof_checked, %{"path" => "/api/v1/notes", "body_digest" => ^digest}}
     refute_receive {:proof_checked, _}
     note = Jason.decode!(created.resp_body)["note"]
     assert note["id"] == id
     assert note["changed_by_agent"] != nil
-    assert request(:get, "/tools/notes/" <> id).status == 200
-    assert request(:get, "/tools/account/balances").status == 200
-    assert request(:get, "/tools/account/points").status == 200
-    assert request(:post, "/tools/account/credits/history", "{}").status == 200
-    retried = request(:post, "/tools/notes", body)
+    assert request(:get, "/api/v1/notes/" <> id).status == 200
+    assert request(:get, "/api/v1/account/balances").status == 200
+    assert request(:get, "/api/v1/account/points").status == 200
+    assert request(:post, "/api/v1/account/credits/history", "{}").status == 200
+    retried = request(:post, "/api/v1/notes", body)
     assert retried.status == 200
     assert Jason.decode!(retried.resp_body)["note"]["id"] == id
 
-    assert request(:post, "/tools/notes", Jason.encode!(%{title: "Missing operation"})).status ==
+    assert request(:post, "/api/v1/notes", Jason.encode!(%{title: "Missing operation"})).status ==
              422
 
     assert length(
@@ -294,7 +296,7 @@ defmodule AshTemplate.SignedToolsTest do
 
     assert inspect(error) =~ "pairing_revoked"
 
-    assert request(:get, "/tools/notes/" <> id).status in [401, 403]
-    assert request(:post, "/tools/notes", body).status in [401, 403]
+    assert request(:get, "/api/v1/notes/" <> id).status in [401, 403]
+    assert request(:post, "/api/v1/notes", body).status in [401, 403]
   end
 end

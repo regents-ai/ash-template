@@ -111,18 +111,18 @@ config :regent_agents,
   account: {AshTemplate.Agents.PairedAccount, :account},
   allowed: %{
     "not_paired" => [
-      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time.",
       "Post one message in a room as yourself.",
       "Pair with the code your person makes with Pair New Agent in the side panel."
     ],
     "person_not_here" => [
-      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time.",
       "Post one message in a room as yourself."
     ],
     "paired" => [
-      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list and room_read tools.",
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time, and check in for your person.",
       "Read, add, search, change and delete your person's notes.",
       "Post in rooms for your person, and change or delete their room messages.",

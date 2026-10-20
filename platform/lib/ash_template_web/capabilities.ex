@@ -8,8 +8,9 @@ defmodule AshTemplateWeb.Capabilities do
   The title and address come from `priv/public/openapi.json`, the browser tool
   from `priv/tool_manifest.json` (the file the pages register them from) and the
   command from `cli/commands.json`. The four are checked against each other when
-  this module compiles. Whether an operation is open is read from the site's
-  switch on every request, never written down. Each agent operation also says,
+  this module compiles, and every browser tool must be named after its command.
+  Whether an operation is open is read from the site's switch on every request,
+  never written down. Each agent operation also says,
   in its person's words, what it lets an agent do, which the account page shows.
   """
 
@@ -29,6 +30,7 @@ defmodule AshTemplateWeb.Capabilities do
   @source files.source
   @manifest files.manifest
   @agents ~w(signed_agent paired_agent)
+  @changes_nothing ~w(read quote)
   @to_person ~w(owner_only wallet)
 
   openapi =
@@ -40,6 +42,16 @@ defmodule AshTemplateWeb.Capabilities do
   tools = for %{"operation_id" => id} = tool <- @manifest["tools"], into: %{}, do: {id, tool}
   commands = Map.new(files.commands["commands"], &{&1["operation_id"], &1})
   names = fn key -> MapSet.new(@source[key], & &1["name"]) end
+
+  # A browser tool is its command's words, arguments left out, joined and with
+  # hyphens turned into underscores: `notes rate-label <id>` is `notes_rate_label`.
+  tool_name = fn command ->
+    command
+    |> String.split(" ")
+    |> Enum.reject(&String.starts_with?(&1, "<"))
+    |> Enum.join("_")
+    |> String.replace("-", "_")
+  end
 
   {authorities, conditions, switches} =
     {names.("authorities"), names.("conditions"), names.("switches")}
@@ -75,7 +87,9 @@ defmodule AshTemplateWeb.Capabilities do
                            row["authority"] in @agents ->
                        "a browser tool signed differently"
 
-                     tool && !!tool["annotations"]["readOnlyHint"] != (row["effect"] == "read") ->
+                     tool &&
+                         !!tool["annotations"]["readOnlyHint"] !=
+                           row["effect"] in @changes_nothing ->
                        "a browser tool marked read-only differently"
 
                      command && "#{command["method"]} #{command["path"]}" != http ->
@@ -86,6 +100,9 @@ defmodule AshTemplateWeb.Capabilities do
 
                      command && command["webmcp"] != (tool && tool["name"]) ->
                        "a command naming another browser tool"
+
+                     tool && command && tool["name"] != tool_name.(command["command"]) ->
+                       "a browser tool not named after its command"
 
                      !!command != (!!row["cli_release"] or row["cli_pending"] == true) ->
                        "a cli_release without its command, or a command without one"

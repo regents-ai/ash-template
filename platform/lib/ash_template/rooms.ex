@@ -9,6 +9,11 @@ defmodule AshTemplate.Rooms do
       define :search_messages, action: :search, args: [:text]
       define :get_message, action: :read, get_by: [:id], not_found_error?: false
 
+      define :get_room_message,
+        action: :one_in_room,
+        args: [:room, :id],
+        not_found_error?: false
+
       define :get_earlier_post,
         action: :earlier_post,
         args: [:room, :operation_id],

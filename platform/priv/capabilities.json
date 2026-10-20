@@ -64,6 +64,26 @@
       "switch": "app_surfaces"
     },
     {
+      "operation": "getAbout",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/about",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "getDocs",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/docs",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "getMyProfile",
       "effect": "read",
       "authority": "owner_only",
@@ -100,8 +120,8 @@
       "conditions": [],
       "person_page": "/notes",
       "may": "Read and search your notes",
-      "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "createNote",
@@ -110,8 +130,8 @@
       "conditions": [],
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
-      "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "getMyNote",
@@ -120,8 +140,8 @@
       "conditions": [],
       "person_page": "/notes",
       "may": "Read and search your notes",
-      "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "updateMyNote",
@@ -130,8 +150,8 @@
       "conditions": [],
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
-      "cli_release": "1.10.4",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "deleteMyNote",
@@ -164,14 +184,34 @@
       "switch": "app_surfaces"
     },
     {
-      "operation": "getSiteTools",
+      "operation": "getRoomMessage",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "listSiteTools",
       "effect": "read",
       "authority": "public",
       "conditions": [],
       "person_page": null,
       "may": null,
-      "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "getSiwaHelp",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": null,
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "postRoomMessage",
@@ -236,47 +276,27 @@
       "switch": "app_surfaces"
     },
     {
-      "operation": "listNotesAsAgent",
+      "operation": "searchNotes",
       "effect": "read",
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
       "may": "Read and search your notes",
-      "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
-      "operation": "createNoteAsAgent",
-      "effect": "write",
-      "authority": "paired_agent",
-      "conditions": [],
-      "person_page": "/notes",
-      "may": "Add, change and delete your notes",
-      "cli_release": "1.9.0",
-      "switch": "app_surfaces"
-    },
-    {
-      "operation": "searchNotesAsAgent",
-      "effect": "read",
+      "operation": "getNotePinPrice",
+      "effect": "quote",
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
       "may": "Read and search your notes",
-      "cli_release": "1.10.4",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
-      "operation": "getNoteAsAgent",
-      "effect": "read",
-      "authority": "paired_agent",
-      "conditions": [],
-      "person_page": "/notes",
-      "may": "Read and search your notes",
-      "cli_release": "1.9.0",
-      "switch": "app_surfaces"
-    },
-    {
-      "operation": "pinNoteAsAgent",
+      "operation": "pinNote",
       "effect": "payment",
       "authority": "paired_agent",
       "conditions": [
@@ -284,18 +304,18 @@
       ],
       "person_page": "/notes",
       "may": "Pin a note for 1 Credit, within the spending you allow",
-      "cli_release": "1.9.2",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
-      "operation": "unpinNoteAsAgent",
+      "operation": "unpinNote",
       "effect": "write",
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
       "may": "Unpin your notes",
-      "cli_release": "1.9.2",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "getAccountBalances",
@@ -304,8 +324,8 @@
       "conditions": [],
       "person_page": "/account",
       "may": "See your Credits",
-      "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "listCreditsHistory",
@@ -314,8 +334,8 @@
       "conditions": [],
       "person_page": "/account",
       "may": "See your Credits",
-      "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
       "operation": "getAccountPoints",
@@ -324,38 +344,38 @@
       "conditions": [],
       "person_page": "/account/points",
       "may": "See your Points",
-      "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     },
     {
-      "operation": "reportNoteLabelAsAgent",
+      "operation": "reportNoteLabel",
       "effect": "write",
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/notes",
       "may": "Rate your note labels",
       "switch": "app_surfaces",
-      "cli_release": "1.10.4"
+      "cli_pending": true
     },
     {
-      "operation": "searchRoomMessagesAsAgent",
+      "operation": "searchRoomMessages",
       "effect": "read",
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/rooms/general",
       "may": "Search public room messages",
       "switch": "app_surfaces",
-      "cli_release": "1.10.4"
+      "cli_pending": true
     },
     {
-      "operation": "listActivityAsAgent",
+      "operation": "listActivity",
       "effect": "read",
       "authority": "paired_agent",
       "conditions": [],
       "person_page": "/activity",
       "may": "Read your latest activity without marking it read",
-      "cli_release": "1.10.4",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "cli_pending": true
     }
   ]
 }

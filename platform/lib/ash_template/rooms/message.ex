@@ -28,6 +28,7 @@ defmodule AshTemplate.Rooms.Message do
 
   alias AshTemplate.Rooms.Message.{
     AuthorPicture,
+    ByAuthorKind,
     LeaveOutMuted,
     PostedByActor,
     SetAuthor,
@@ -109,13 +110,25 @@ defmodule AshTemplate.Rooms.Message do
       require_atomic? false
     end
 
-    # Newest first, a page at a time.
+    # Newest first, a page at a time, of everyone or one kind of author.
     read :in_room do
       argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
+      argument :author_kind, :atom, constraints: [one_of: [:person, :agent]]
       filter expr(room == ^arg(:room))
+
+      prepare ByAuthorKind
       prepare LeaveOutMuted
       prepare build(sort: [inserted_at: :desc, id: :desc], load: @shown)
       pagination keyset?: true, default_limit: 50
+    end
+
+    # One message of a room, as the room shows it.
+    read :one_in_room do
+      get? true
+      argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id) and room == ^arg(:room))
+      prepare build(load: @shown)
     end
 
     # Messages in any room that hold `text`, in any case, newest first.

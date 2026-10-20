@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.RoomsController do
   @moduledoc """
   The public rooms API: the rooms, and each room's messages newest first, a page
-  at a time. Anyone may read them, as anyone may read the rooms pages. An agent
+  at a time, or one by its id. Anyone may read them, as anyone may read the rooms pages. An agent
   with per-request SIWA proof and an active pairing may post for its account,
   retaining its own attribution, and change or delete that account's messages.
   A signed agent no person has paired here may post once, as itself, within an
@@ -29,6 +29,11 @@ defmodule AshTemplateWeb.RoomsController do
        "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
     "invalid_limit" =>
       {422, "limit must be a whole number from 1 to 50.", "Leave it out for pages of 50."},
+    "invalid_author_kind" =>
+      {422, "author_kind must be person or agent.", "Leave it out for everyone's messages."},
+    "public_message_not_found" =>
+      {404, "There is no message with that id in this room.",
+       "List the room's messages with GET /api/v1/rooms/:room/messages."},
     "message_not_found" =>
       {404, "Your person has no message with that id in this room.",
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
@@ -61,7 +66,9 @@ defmodule AshTemplateWeb.RoomsController do
   def messages(conn, %{"room" => slug} = params) do
     with {:ok, room} <- Room.fetch(slug),
          {:ok, limit} <- limit(params),
-         {:ok, page} <- Rooms.list_room_messages(room.slug, page: page(params, limit)) do
+         {:ok, kind} <- author_filter(params),
+         {:ok, page} <-
+           Rooms.list_room_messages(room.slug, %{author_kind: kind}, page: page(params, limit)) do
       json(conn, %{
         messages: Enum.map(page.results, &present/1),
         pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
@@ -69,7 +76,21 @@ defmodule AshTemplateWeb.RoomsController do
     else
       :error -> refuse(conn, "room_not_found")
       {:error, :invalid_limit} -> refuse(conn, "invalid_limit")
+      {:error, :invalid_author_kind} -> refuse(conn, "invalid_author_kind")
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+    end
+  end
+
+  # Anyone may read one message by its id, as its room shows it.
+  def message(conn, %{"room" => slug, "id" => id}) do
+    with {:ok, room} <- Room.fetch(slug),
+         {:ok, %Message{} = message} <- Rooms.get_room_message(room.slug, id) do
+      json(conn, %{message: present(message)})
+    else
+      :error -> refuse(conn, "room_not_found")
+      {:ok, nil} -> refuse(conn, "public_message_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "public_message_not_found")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
@@ -177,6 +198,11 @@ defmodule AshTemplateWeb.RoomsController do
   end
 
   defp limit(_params), do: {:ok, 50}
+
+  defp author_filter(%{"author_kind" => "person"}), do: {:ok, :person}
+  defp author_filter(%{"author_kind" => "agent"}), do: {:ok, :agent}
+  defp author_filter(%{"author_kind" => _other}), do: {:error, :invalid_author_kind}
+  defp author_filter(_params), do: {:ok, nil}
 
   defp page(%{"after" => cursor}, limit), do: [after: cursor, limit: limit]
   defp page(_params, limit), do: [limit: limit]

@@ -54,12 +54,6 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
-  # The /tools doors take SIWA proof only. No browser session enters this pipeline.
-  pipeline :page_tools do
-    plug :accepts, ["json"]
-    plug AshTemplateWeb.Plugs.LaunchGate
-  end
-
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
   # sobelow_skip ["Config.CSP"]
   pipeline :public_documents do
@@ -230,18 +224,27 @@ defmodule AshTemplateWeb.Router do
     get "/agents/:agent", PublicPagesController, :show
   end
 
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :api
+    get "/health", HealthController, :status
+    get "/about", PublicPagesController, :document, assigns: %{document: "/about"}
+    get "/docs", PublicPagesController, :document, assigns: %{document: "/docs"}
+    get "/sites/:site/tools", SiteToolsController, :tools
+    get "/siwa/help", SiteToolsController, :siwa_help
+    get "/notes", NotesController, :index
+    post "/notes", NotesController, :create
+    get "/notes/:id", NotesController, :show
+    patch "/notes/:id", NotesController, :update
+    delete "/notes/:id", NotesController, :delete
+    get "/rooms", RoomsController, :index
+    get "/rooms/:room/messages", RoomsController, :messages
+    get "/rooms/:room/messages/:id", RoomsController, :message
+  end
+
+  # The person's own profile, with the Privy proof pair (RegentIdentity.HTTP).
   scope "/api/v1" do
     pipe_through :api
-    get "/health", AshTemplateWeb.HealthController, :status
     forward "/profile", RegentIdentity.HTTP, otp_app: :ash_template
-    get "/notes", AshTemplateWeb.NotesController, :index
-    post "/notes", AshTemplateWeb.NotesController, :create
-    get "/notes/:id", AshTemplateWeb.NotesController, :show
-    patch "/notes/:id", AshTemplateWeb.NotesController, :update
-    delete "/notes/:id", AshTemplateWeb.NotesController, :delete
-    get "/rooms", AshTemplateWeb.RoomsController, :index
-    get "/rooms/:room/messages", AshTemplateWeb.RoomsController, :messages
-    get "/site-tools/:site", AshTemplateWeb.SiteToolsController, :show
   end
 
   # An agent pairs with the person who gave it a code, and checks in; both are
@@ -258,20 +261,20 @@ defmodule AshTemplateWeb.Router do
     delete "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :delete
   end
 
-  scope "/tools", AshTemplateWeb do
-    pipe_through :page_tools
-    post "/rooms/search", PageToolsController, :search_rooms
-    get "/account/balances", PageToolsController, :balances
-    post "/account/credits/history", PageToolsController, :credits_history
-    get "/account/points", PageToolsController, :points
-    get "/activity", PageToolsController, :activity
-    get "/notes", PageToolsController, :notes
-    post "/notes", PageToolsController, :create_note
-    post "/notes/search", PageToolsController, :search_notes
-    post "/note-labels/:id/report", PageToolsController, :report_label
-    get "/notes/:id", PageToolsController, :note
-    post "/notes/:id/pin", PageToolsController, :pin_note
-    post "/notes/:id/unpin", PageToolsController, :unpin_note
+  # What only a paired agent does: search, pins and label ratings on its
+  # person's notes, their Credits, Points and activity, and room search.
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :api
+    post "/rooms/search", PairedAgentController, :search_rooms
+    get "/account/balances", PairedAgentController, :balances
+    post "/account/credits/history", PairedAgentController, :credits_history
+    get "/account/points", PairedAgentController, :points
+    get "/activity", PairedAgentController, :activity
+    post "/notes/search", PairedAgentController, :search_notes
+    get "/notes/:id/pin-price", PairedAgentController, :pin_price
+    post "/notes/:id/pin", PairedAgentController, :pin_note
+    post "/notes/:id/unpin", PairedAgentController, :unpin_note
+    post "/note-labels/:id/report", PairedAgentController, :report_label
   end
 
   scope "/", AshTemplateWeb do

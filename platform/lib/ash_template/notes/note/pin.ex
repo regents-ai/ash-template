@@ -20,6 +20,10 @@ defmodule AshTemplate.Notes.Note.Pin do
 
   @price Decimal.new(1)
 
+  @doc "What an agent's pin of an unpinned note costs its person, in Credits."
+  @spec price() :: Decimal.t()
+  def price, do: @price
+
   @impl true
   def change(changeset, _opts, %{actor: actor}) do
     Ash.Changeset.before_action(changeset, fn
