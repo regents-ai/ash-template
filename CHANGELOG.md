@@ -3216,3 +3216,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - What: when a saved note's webhook could not be delivered, or Jev could not be asked about a note's label, the job failed with a plain-text error. Ash files that as "Invalid", the class the error page leaves out as bad input, so a job that ran out of attempts never showed on /admin/errors. Both now fail with `Ash.Error.Unknown.UnknownError`, the way the ENS lookup already does, so the last attempt is saved once; earlier attempts are still left out while Oban retries.
 - Checked: `platform/test/ash_template/notes/webhook_failure_test.exs` sends a note's webhook to an address nobody answers; with the old error it fails.
 - Why: Sentinel's error-log survey (15 Oct), item 4.
+
+## 2026-10-20 — The page behind a window dims toward charcoal
+
+- What: regent_ui moves to design-system `d2785869` (on `9ef0d31a`). The page behind an open window now dims toward charcoal, at 32% in light and 64% in dark. Before, it dimmed toward the page's text colour, which turned it light grey in dark mode. Windows keep the template's own motion: a press with a mouse or finger springs the window up, a key press opens it at once, and reduced motion keeps it still.
+- Checked: `platform/test/browser/windows.spec.ts` (all five windows, light and dark, 1280 and the phone) and the full `make check`. Buy Credits measured with a charcoal backdrop at 32% light and 64% dark.
+- Why: the conventions thread's design-system fix (20 Oct). Its first version also moved windows in the library's stylesheet, which fought the template's spring and opened windows by key with motion; that part was taken back out (`d2785869`). Every site gets the backdrop with its next regent_ui pin.
