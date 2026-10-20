@@ -3210,3 +3210,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - What: the docs and reading pages' code blocks and tables, the chat's code blocks and a code cube card's commands take keyboard focus (`tabindex="0"`), so a box too wide for the screen scrolls with the arrow keys. The focus ring on the reading pages and the feedback lab is the app's accent (`--ash-accent`), the ring the app shell already uses, instead of `--color-focus-ring`, which nothing defines, so they showed the device's pale highlight.
 - Checked: the page walk (`platform/test/browser/support/scrollers.ts`) now fails any shown box that scrolls with nothing in it a keyboard can reach; without the change it fails /docs and the other reading pages on four to eight code blocks and a table. The ring measured as the accent on /docs in light and dark.
 - Why: the Keyfleet chief's note (20 Oct 04:21Z), from Keyfleet release 115 (bd9dcafb); every site takes the same ring and the same check from here.
+
+## 2026-10-20 — A webhook or Jev call that keeps failing reaches the error page
+
+- What: when a saved note's webhook could not be delivered, or Jev could not be asked about a note's label, the job failed with a plain-text error. Ash files that as "Invalid", the class the error page leaves out as bad input, so a job that ran out of attempts never showed on /admin/errors. Both now fail with `Ash.Error.Unknown.UnknownError`, the way the ENS lookup already does, so the last attempt is saved once; earlier attempts are still left out while Oban retries.
+- Checked: `platform/test/ash_template/notes/webhook_failure_test.exs` sends a note's webhook to an address nobody answers; with the old error it fails.
+- Why: Sentinel's error-log survey (15 Oct), item 4.

@@ -11,6 +11,7 @@ defmodule AshTemplate.Notes.Decision.AskJev do
 
   use Ash.Resource.Change
 
+  alias Ash.Error.Unknown.UnknownError
   alias AshTemplate.Notes.Labels
   alias RegentJev.Error
 
@@ -58,8 +59,12 @@ defmodule AshTemplate.Notes.Decision.AskJev do
           cost_usd: error.cost_usd
         })
 
+      # A server fault, so a job that runs out of attempts reaches the error page.
       {:error, error} ->
-        Ash.Changeset.add_error(changeset, Exception.message(error))
+        Ash.Changeset.add_error(
+          changeset,
+          UnknownError.exception(error: "Jev could not be asked: #{Exception.message(error)}")
+        )
     end
   end
 end

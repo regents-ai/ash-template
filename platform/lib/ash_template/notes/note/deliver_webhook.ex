@@ -10,6 +10,7 @@ defmodule AshTemplate.Notes.Note.DeliverWebhook do
 
   use Ash.Resource.Change
 
+  alias Ash.Error.Unknown.UnknownError
   alias AshOban.Errors.{CancelJob, SnoozeJob}
   alias AshTemplate.Notes.Note
   alias AshTemplate.Notes.Webhook
@@ -27,8 +28,12 @@ defmodule AshTemplate.Notes.Note.DeliverWebhook do
         {:cancel, reason} ->
           Ash.Changeset.add_error(changeset, CancelJob.exception(reason: reason))
 
+        # A server fault, so a job that runs out of attempts reaches the error page.
         {:error, reason} ->
-          Ash.Changeset.add_error(changeset, reason)
+          Ash.Changeset.add_error(
+            changeset,
+            UnknownError.exception(error: "The note's webhook was not delivered: #{reason}")
+          )
       end
     end)
   end
