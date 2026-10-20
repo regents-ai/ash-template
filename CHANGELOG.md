@@ -3195,3 +3195,7 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   or Payments change is missing. Each site covers only the shared libraries it
   carries. The staging bootstrap applies the shared changes before the site's
   own migrations, as production does.
+
+## 2026-10-20 — The harbour's sailing check no longer misses a sail
+
+- `platform/test/browser/harbour.spec.ts` ("the inn's page barely shifts while the agents sail") compared the crew list only at the start and after 30 seconds, and two moves can put the crew back where it started, so it failed now and then with nothing wrong. It now watches for a sail as it happens and still measures the page's shift over the whole 30 seconds.

@@ -125,7 +125,8 @@ for (const colorScheme of ["light", "dark"] as const) {
     })
 
     // The page's own clock moves an agent every 7 seconds; over 30 seconds at 1280
-    // the page shifts by less than 0.1.
+    // the page shifts by less than 0.1. Two moves can put the crew back where it
+    // started, so a sail is caught as it happens, not by comparing the two ends.
     test("the inn's page barely shifts while the agents sail", async ({page}, testInfo) => {
       test.skip(testInfo.project.name !== "desktop", "measured at 1280 wide")
       test.setTimeout(60_000)
@@ -140,8 +141,9 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.goto("/animations/harbour/inn")
       const where = () => crewList(page).getByRole("listitem").allTextContents()
       const first = await where()
-      await page.waitForTimeout(30_000)
-      expect(await where(), "no agent sailed in 30 seconds").not.toEqual(first)
+      const start = Date.now()
+      await expect.poll(where, {message: "no agent sailed in 30 seconds", timeout: 30_000}).not.toEqual(first)
+      await page.waitForTimeout(Math.max(0, 30_000 - (Date.now() - start)))
       const shift = await page.evaluate(() => (window as unknown as {shift: number}).shift)
       expect(shift).toBeLessThan(0.1)
     })
