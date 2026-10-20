@@ -31,7 +31,7 @@ test("the agent guide's link lands on the pairing box", async ({page}) => {
   await expect(pairing(page)).toBeInViewport()
 })
 
-test("choosing an agent gives a message with a code, and each choice a new code", async ({page}) => {
+test("each agent keeps its own code until a new one is asked for", async ({page}) => {
   const problems = watch(page)
   await page.goto("/account")
   await ready(page)
@@ -45,6 +45,14 @@ test("choosing an agent gives a message with a code, and each choice a new code"
   const first = await message(page).innerText()
 
   await choose(page, "Hermes")
+  await expect(message(page)).not.toHaveText(first)
+  await expect(message(page)).toContainText(/Pairing code:\s*\S{12,}/)
+
+  // Coming back shows the same code, so a message already pasted still works.
+  await choose(page, "Dots")
+  await expect(message(page)).toHaveText(first)
+
+  await pairing(page).getByRole("button", {name: "Make a new code"}).click()
   await expect(message(page)).not.toHaveText(first)
   await expect(message(page)).toContainText(/Pairing code:\s*\S{12,}/)
   await problems.expect()

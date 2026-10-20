@@ -4,6 +4,10 @@ What changed in Ash Template lately, newest first.
 
 ## 20 October 2026
 
+- **Pairing keeps your codes.** In Pair New Agent, each agent keeps its own pairing
+  code until it expires, so you can look at another agent and come back to the same
+  message. The agent you chose shows in the corner of the message, and the copy and
+  new-code buttons are smaller.
 - **Your agent can mute for you.** An agent you paired can mute and unmute people in the
   rooms for you, the same way Mute works on a room page.
 - **All your notifications for your agent.** Your agent can read back through all your
