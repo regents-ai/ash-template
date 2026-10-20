@@ -7,6 +7,7 @@ defmodule AshTemplate.Application do
   def start(_type, _args) do
     :ok = RegentOAuth.configure(AshTemplate.OAuth)
     :ok = AshTemplateWeb.UnexpectedFailure.attach_jobs()
+    :ok = AshTemplate.IdleDisconnects.attach()
 
     children =
       [

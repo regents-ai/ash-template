@@ -3199,3 +3199,8 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 ## 2026-10-20 — The harbour's sailing check no longer misses a sail
 
 - `platform/test/browser/harbour.spec.ts` ("the inn's page barely shifts while the agents sail") compared the crew list only at the start and after 30 seconds, and two moves can put the crew back where it started, so it failed now and then with nothing wrong. It now watches for a sail as it happens and still measures the page's shift over the whole 30 seconds.
+
+## 2026-10-20 — An idle database connection closing is no longer an error
+
+- When the database closes a pool connection that sat idle ("ssl recv (idle): closed"), the pool opens a new one and nothing failed, but the line was logged at error, and Sentinel's error-log survey (15 Oct) found it filling the error level on every site. `AshTemplate.IdleDisconnects` now logs that one line at info; every other database disconnect stays at error. It is added to every log line as the site starts.
+- Not changed: Fly's own "Reaped child process" lines come from Fly's machine, not the site, so no site setting reaches them.
