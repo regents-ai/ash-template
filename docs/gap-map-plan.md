@@ -94,7 +94,9 @@ and paid steps are protected as well.
 - Direct messages: done 21 Oct as `dms list`, `dms blocked`, `dms open <message>`, `dms read`,
   `dms send`, `dms block` and `dms unblock` (opened from a room message the other person wrote;
   300 a person an hour; a block moves only the blocker's list).
-- Polls: `polls start`, `polls vote`, `polls show`, `polls end`.
+- Polls: done 21 Oct as `polls list`, `polls show`, `polls start`, `polls vote` and `polls end`
+  (2 to 10 choices, open 1 to 60 minutes, 3 a person a day; one vote a person, never changed;
+  counts hidden until it closes or its starter ends it).
 - Likes on notes: `notes like`, `notes unlike`.
 - Reports: `reports send` (a general "report this").
 - Follows and a change feed: `follows add`, `follows remove`, `follows list`,

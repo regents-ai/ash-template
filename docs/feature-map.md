@@ -64,6 +64,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Agent harbour: pressing a ship on the sea opens its agent's card, and pressing an island opens its page, with a click at 1280 and a tap at 390, light and dark | `platform/test/browser/harbour_sea.spec.ts` |
 | Agent harbour: each move sends one agent to another island, lists it first on its card and keeps four actions at most; an agent's address opens its card and an unknown agent opens none | `platform/test/ash_template_web/harbour_live_test.exs` |
 | Message on someone's room message opens the conversation with them, and a message sent there shows at once as the person's own and empties the box, at both widths | `platform/test/browser/dms.spec.ts` |
+| A person starts a poll, votes once and sees their vote, with no counts while it is open; ending it shows each choice's votes, at both widths | `platform/test/browser/polls.spec.ts` |
 | A sent Buy is followed by one job however often the page asks; however often it runs the purchase is credited once and the panel hears how it ended | `platform/test/ash_template/credits/check_purchase_test.exs` |
 | Credits history read again after a change keeps the older pages already shown, newest first with nothing twice; when the new first page no longer reaches them, only the new first page shows | `platform/test/ash_template_web/credits_history_refresh_test.exs` (property test) |
 | A saved note's webhook the address never answers fails as a server fault, so the job that runs out of attempts shows on the error page | `platform/test/ash_template/notes/webhook_failure_test.exs` |
@@ -79,6 +80,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | An archived note goes after its person's other notes and keeps its pin until unarchived; an agent archives only its own person's notes | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | A paired agent starts a room whose address comes from its name; a retry answers the same room, another person's same name is refused with `room_name_taken`, and only the person who started a room changes its topic | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent's direct messages are its person's alone: it opens a conversation from a room message, a retried send sends once, a stranger's conversation answers as missing, a bad cursor is refused, and a block moves the conversation to the blocker's Blocked list only, while the other side's messages still save | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| An agent's poll counts one vote a person: a retried start starts one poll, repeated choices are refused, the same vote again answers that vote, another choice or one the poll lacks is refused, the counts stay hidden until it closes, only its starter ends it, ending twice is refused, a vote after the end is refused, and an unpaired agent is turned away | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent reads its person's activity 50 a page, each notification once, marking none read; any other body or a bad cursor is refused | same |
 | Every operation has one address under `/api/v1/` (the agent sign-in under `/api/agents/v1/`), one browser tool named after its command, and the same name, address and inputs in the tool list, the command list, `/capabilities.json` and both OpenAPI documents; a read-only tool that changes something, or a tool and command that disagree, stops the build | `platform/lib/ash_template_web/capabilities.ex` (when it compiles); `make check-cli` |
 | An agent pairing with a name that has a hidden character is refused with `invalid_name`, and the same code still pairs it with another name | elixir-utils `ash_components/agents/test/http_test.exs` |
@@ -98,6 +100,8 @@ starts, and the server watches no files, so no page reloads under a check.
   the walk opens these pages but does not use them.
 - Block and Unblock on the messages page, and a message arriving from the other person
   while the page is open: the walk sends one message and does not press either.
+- A poll closing by itself while its page is open, and another person's vote arriving there:
+  the walk ends its poll with End poll and votes alone.
 - Someone with no name shows by a short wallet address in rooms and messages; the walk's
   people all have names.
 - Connecting X on Connections, copying a wallet, searching and the theme switch: not

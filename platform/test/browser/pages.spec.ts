@@ -15,7 +15,11 @@ const paths = (entry: {route: string; paths?: string[]}) => entry.paths ?? [entr
 
 // A chat's or a conversation's address is only known once it exists: open the
 // person's first one from its page's list, as they would.
-const lists: Record<string, string> = {"/chat/{conversation}": "/chat", "/dms/{conversation}": "/dms"}
+const lists: Record<string, string> = {
+  "/chat/{conversation}": "/chat",
+  "/dms/{conversation}": "/dms",
+  "/polls/{poll}": "/polls"
+}
 
 async function open(page: Page, path: string) {
   const list = lists[path]

@@ -431,6 +431,74 @@ defmodule AshTemplate.SignedToolsTest do
     assert request(:get, "/api/v1/dms").status == 403
   end
 
+  test "an agent's poll counts one vote a person, hides its counts until it closes, and only its starter ends it" do
+    # Invariant: a person votes once in a poll (the same choice again answers that
+    # vote, a different one is refused), nobody reads which way it leans while it
+    # is open, a retried start never starts twice, and only the starter ends it.
+    {_account, person, paired} = paired_person("did:privy:poll-test")
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:poll-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    start =
+      Jason.encode!(%{
+        question: "Lunch?",
+        choices: ["Soup", "Salad"],
+        minutes: 5,
+        operation_id: Ecto.UUID.generate()
+      })
+
+    started = request(:post, "/api/v1/polls", start)
+    assert started.status == 201, started.resp_body
+    assert %{"id" => id, "open" => true, "counts" => nil, "votes_cast" => 0} = Jason.decode!(started.resp_body)["poll"]
+    retried = request(:post, "/api/v1/polls", start)
+    assert retried.status == 200, retried.resp_body
+    assert Jason.decode!(retried.resp_body)["poll"]["id"] == id
+
+    same = Jason.encode!(%{question: "Lunch?", choices: ["Soup", "Soup"], minutes: 5, operation_id: Ecto.UUID.generate()})
+    assert error_code(request(:post, "/api/v1/polls", same)) == "invalid_poll"
+
+    voted = request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Soup"}))
+    assert voted.status == 200, voted.resp_body
+    assert %{"vote" => %{"choice" => "Soup"}, "poll" => %{"votes_cast" => 1, "counts" => nil}} = Jason.decode!(voted.resp_body)
+    assert request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Soup"})).status == 200
+    assert error_code(request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Salad"}))) == "invalid_vote"
+    assert error_code(request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Pie"}))) == "invalid_vote"
+
+    assert {:ok, _vote} = AshTemplate.Polls.vote(id, %{choice: "Salad"}, actor: other)
+    assert {:ok, %{my_choice: "Salad", votes_cast: 2, totals: nil}} = AshTemplate.Polls.get_poll(id, actor: other)
+    public = Jason.decode!(request(:get, "/api/v1/polls/#{id}", nil, false).resp_body)["poll"]
+    assert %{"votes_cast" => 2, "counts" => nil} = public
+
+    poll = AshTemplate.Polls.get_poll!(id, actor: other)
+    assert {:error, %Ash.Error.Forbidden{}} = AshTemplate.Polls.end_poll(poll, actor: other)
+
+    ended = request(:post, "/api/v1/polls/#{id}/end", "{}")
+    assert ended.status == 200, ended.resp_body
+    assert %{"open" => false, "counts" => [%{"choice" => "Soup", "votes" => 1}, %{"choice" => "Salad", "votes" => 1}]} =
+             Jason.decode!(ended.resp_body)["poll"]
+
+    assert error_code(request(:post, "/api/v1/polls/#{id}/end", "{}")) == "poll_closed"
+    # The vote already counted still answers; a first vote after the close is refused.
+    assert request(:post, "/api/v1/polls/#{id}/vote", ~s({"choice": "Soup"})).status == 200
+    late =
+      AshTemplate.Accounts.register_verified!("did:privy:poll-late", @third, [@third],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    assert {:error, %Ash.Error.Invalid{}} = AshTemplate.Polls.vote(id, %{choice: "Soup"}, actor: late)
+
+    listed = Jason.decode!(request(:get, "/api/v1/polls", nil, false).resp_body)["polls"]
+    assert [%{"id" => ^id, "started_by" => %{"name" => _}}] = listed
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert request(:post, "/api/v1/polls", start).status == 403
+  end
+
   test "an archived note goes after its person's other notes and keeps its pin until unarchived" do
     # Invariant: archiving only moves a note to the end of its person's notes; it never
     # drops a pin they may have paid for, and an agent reaches only its own person's notes.

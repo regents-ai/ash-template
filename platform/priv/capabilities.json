@@ -546,6 +546,56 @@
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
       "cli_pending": true
+    },
+    {
+      "operation": "listPolls",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/polls",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "getPoll",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/polls/{poll}",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "startPoll",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/polls",
+      "may": "Start polls, vote in them, and end the ones you started",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "votePoll",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/polls/{poll}",
+      "may": "Start polls, vote in them, and end the ones you started",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "endPoll",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/polls/{poll}",
+      "may": "Start polls, vote in them, and end the ones you started",
+      "switch": "app_surfaces",
+      "cli_pending": true
     }
   ]
 }

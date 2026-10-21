@@ -82,6 +82,11 @@ said =
 conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
 AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
 
+# A poll the friend started, open for the whole walk, for the poll page to show.
+AshTemplate.Polls.start_poll!(%{question: "Tea or coffee?", choices: ["Tea", "Coffee"], minutes: 60},
+  actor: Human.for_account(friend)
+)
+
 # A fourth agent, paired first, which the side panel's three leave out
 # (side_agents.spec.ts); the agent the walk opens on the Account page, and one for
 # each width to rename (agents.spec.ts).

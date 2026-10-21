@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   import AshTemplateWeb.Components.Shell
 
-  alias AshTemplate.{Accounts, Activity, Chat, Dms, Notes, Rooms}
+  alias AshTemplate.{Accounts, Activity, Chat, Dms, Notes, Polls, Rooms}
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
@@ -32,6 +32,7 @@ defmodule AshTemplateWeb.ShellLive do
     OverviewLive,
     PairingBox,
     PanelAgents,
+    PollsLive,
     Presence,
     PublicDocuments,
     Read,
@@ -61,6 +62,8 @@ defmodule AshTemplateWeb.ShellLive do
        conversation: nil,
        chat_topics: MapSet.new(),
        dm: nil,
+       poll_id: nil,
+       hearing_polls?: false,
        verified_connections: %Read{},
        points: %Read{},
        credits_read: %Read{},
@@ -85,6 +88,7 @@ defmodule AshTemplateWeb.ShellLive do
     room = room_in(action, params)
     conversation = conversation_in(action, params, human_actor(socket))
     dm = dm_in(action, params, human_actor(socket))
+    poll_id = poll_in(action, params)
     route_spec = RouteCatalog.fetch!(action, params)
 
     {:noreply,
@@ -98,7 +102,9 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(search: unsearched(), mark_read_failed?: false)
      |> enter_room(room)
      |> open_conversation(conversation)
-     |> assign(:dm, dm)}
+     |> assign(:dm, dm)
+     |> hear_polls(route_spec)
+     |> assign(:poll_id, poll_id)}
   end
 
   @impl true
@@ -290,6 +296,14 @@ defmodule AshTemplateWeb.ShellLive do
       else: {:noreply, socket}
   end
 
+  # A start, vote or end anywhere reaches the polls page on screen.
+  def handle_info(%{topic: "public:polls", payload: %{poll_id: id}}, socket) do
+    if socket.assigns.route_spec.route_id == :polls,
+      do: send_update(PollsLive, id: "polls", change: id)
+
+    {:noreply, socket}
+  end
+
   @doc "The search box before anything is typed: every page and action, as suggestions."
   def unsearched, do: %{query: "", results: search("", nil)}
 
@@ -379,6 +393,15 @@ defmodule AshTemplateWeb.ShellLive do
           lease={@session_lease}
           account={current_account(@access_context)}
           conversation={@dm}
+        />
+
+        <.live_component
+          :if={@route_spec.route_id == :polls}
+          module={PollsLive}
+          id="polls"
+          lease={@session_lease}
+          account={current_account(@access_context)}
+          poll_id={@poll_id}
         />
 
         <DesignLive.page :if={@route_spec.route_id == :design} />
@@ -479,6 +502,32 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
+  # A poll anyone may read; an id that names none is not found.
+  defp poll_in(:poll, %{"poll_id" => id}) do
+    case Polls.get_poll(id) do
+      {:ok, %{id: id}} -> id
+      _none -> raise NotFoundError
+    end
+  end
+
+  defp poll_in(_action, _params), do: nil
+
+  # The page hears every poll while the polls page is open, and none elsewhere.
+  defp hear_polls(socket, %{route_id: route}) do
+    hearing? = socket.assigns.hearing_polls?
+    wanted? = route == :polls
+
+    if connected?(socket) and hearing? != wanted? do
+      if wanted?,
+        do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, Polls.topic()),
+        else: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Polls.topic())
+
+      assign(socket, :hearing_polls?, wanted?)
+    else
+      socket
+    end
+  end
+
   defp on_dm?(%{assigns: %{dm: %{id: id}}}, id), do: true
   defp on_dm?(_socket, _id), do: false
 
@@ -491,6 +540,7 @@ defmodule AshTemplateWeb.ShellLive do
   # Every conversation shares the chat page's title.
   defp page_path(:conversation, _uri), do: "/chat"
   defp page_path(:dm, _uri), do: "/dms"
+  defp page_path(:poll, _uri), do: "/polls"
   defp page_path(_action, uri), do: URI.parse(uri).path
 
   defp on_conversation?(%{assigns: %{conversation: %{id: id}}}, id), do: true

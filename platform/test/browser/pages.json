@@ -22,6 +22,8 @@
     {"route": "/rooms/:room", "paths": ["/rooms/general", "/rooms/help"], "purpose": "Read and post in a room.", "check": "#room-messages", "signed_in": true},
     {"route": "/dms", "purpose": "See your direct messages.", "check": "#dms-start", "signed_in": true},
     {"route": "/dms/:conversation_id", "paths": ["/dms/{conversation}"], "purpose": "Write privately to someone you met in a room.", "check": "#dms-conversation", "signed_in": true},
+    {"route": "/polls", "purpose": "See the polls and start one.", "check": "#poll-start-form", "signed_in": true},
+    {"route": "/polls/:poll_id", "paths": ["/polls/{poll}"], "purpose": "Vote in a poll and see its counts once it closes.", "check": "#poll", "signed_in": true},
     {"route": "/chat", "purpose": "Start a chat.", "check": "#chat-conversation", "signed_in": true},
     {"route": "/chat/:conversation_id", "paths": ["/chat/{conversation}"], "purpose": "Carry on one of your chats.", "check": "#chat-conversation", "signed_in": true},
     {"route": "/design", "purpose": "Find the design pages.", "check": "#design-heading", "signed_in": true},

@@ -239,6 +239,8 @@ defmodule AshTemplateWeb.Router do
     get "/rooms", RoomsController, :index
     get "/rooms/:room/messages", RoomsController, :messages
     get "/rooms/:room/messages/:id", RoomsController, :message
+    get "/polls", PollsController, :index
+    get "/polls/:poll", PollsController, :show
   end
 
   # The person's own profile, with the Privy proof pair (RegentIdentity.HTTP).
@@ -261,6 +263,9 @@ defmodule AshTemplateWeb.Router do
     post "/rooms/:room/messages", AshTemplateWeb.RoomsController, :post
     patch "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :update
     delete "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :delete
+    post "/polls", AshTemplateWeb.PollsController, :create
+    post "/polls/:poll/vote", AshTemplateWeb.PollsController, :vote
+    post "/polls/:poll/end", AshTemplateWeb.PollsController, :end_poll
     get "/agents/me", AshTemplateWeb.AgentsController, :profile
     patch "/agents/me", AshTemplateWeb.AgentsController, :edit_profile
   end
@@ -330,6 +335,8 @@ defmodule AshTemplateWeb.Router do
       live "/rooms/:room", ShellLive, :room
       live "/dms", ShellLive, :dms
       live "/dms/:conversation_id", ShellLive, :dm
+      live "/polls", ShellLive, :polls
+      live "/polls/:poll_id", ShellLive, :poll
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
       live "/design", ShellLive, :design

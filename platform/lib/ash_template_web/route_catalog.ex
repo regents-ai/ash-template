@@ -13,6 +13,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :notes, label: "Notes", path: "/notes", icon: :notes},
     %{id: :rooms, label: "Rooms", path: @first_room, icon: :rooms},
     %{id: :dms, label: "Messages", path: "/dms", icon: :dms},
+    %{id: :polls, label: "Polls", path: "/polls", icon: :polls},
     %{id: :chat, label: "Chat", path: "/chat", icon: :chat},
     %{id: :design, label: "Design", path: "/design", icon: :design},
     %{id: :settings, label: "Account", path: "/account", icon: :settings}
@@ -38,6 +39,8 @@ defmodule AshTemplateWeb.RouteCatalog do
     rooms: %{id: :rooms, title: "Rooms", targets: []},
     # The conversations are rows; the messages page puts them in the sidebar itself.
     dms: %{id: :dms, title: "Your messages", targets: []},
+    # The polls are rows; the polls page puts them in the sidebar itself.
+    polls: %{id: :polls, title: "Polls", targets: []},
     chat: %{id: :chat, title: "Your chats", targets: []},
     design: %{
       id: :design,
@@ -127,6 +130,9 @@ defmodule AshTemplateWeb.RouteCatalog do
     dm:
       {:dms,
        %{route_id: :dms, destination: "/dms/:conversation_id", page_display_label: "Messages"}},
+    polls: {:polls, %{route_id: :polls, destination: "/polls", page_display_label: "Polls"}},
+    poll:
+      {:polls, %{route_id: :polls, destination: "/polls/:poll_id", page_display_label: "Polls"}},
     chat: {:chat, %{route_id: :chat, destination: "/chat", page_display_label: "Chat"}},
     conversation:
       {:chat,
@@ -174,6 +180,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Notes", path: "/notes"},
     %{label: "Rooms", path: @first_room},
     %{label: "Messages", path: "/dms"},
+    %{label: "Polls", path: "/polls"},
     %{label: "Chat", path: "/chat"},
     %{label: "Account", path: "/account"},
     %{label: "Credits history", path: "/account/credits"},
@@ -190,6 +197,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Write a note", path: "/notes"},
     %{label: "Start a chat", path: "/chat"},
     %{label: "Post in a room", path: @first_room},
+    %{label: "Start a poll", path: "/polls"},
     %{label: "Connect an account", path: "/account/connections"},
     %{label: "Connect your agent", path: "/agents"},
     %{label: "Copy your wallet address", path: "/account/wallets"}
@@ -233,6 +241,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     do: %{fetch!(:conversation) | destination: "/chat/#{id}"}
 
   def fetch!(:dm, %{"conversation_id" => id}), do: %{fetch!(:dm) | destination: "/dms/#{id}"}
+  def fetch!(:poll, %{"poll_id" => id}), do: %{fetch!(:poll) | destination: "/polls/#{id}"}
 
   def fetch!(action, _params), do: fetch!(action)
 
@@ -281,6 +290,8 @@ defmodule AshTemplateWeb.RouteCatalog do
 
   defp parameter_schema(action) when action in [:conversation, :dm],
     do: %{conversation_id: %{type: "string", format: "uuid"}}
+
+  defp parameter_schema(:poll), do: %{poll_id: %{type: "string", format: "uuid"}}
 
   defp parameter_schema(_action), do: %{}
 

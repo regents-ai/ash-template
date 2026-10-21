@@ -35,6 +35,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
     "/dms" => {"Messages", "Write privately to someone you met in a room."},
+    "/polls" => {"Polls", "Ask a quick question and see how people vote."},
     "/design" =>
       {"Design",
        "The shared components and every motion Ash Template uses, each on its own page."},
