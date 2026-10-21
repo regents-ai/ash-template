@@ -3379,3 +3379,24 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   under the header's line and its top bar's line meets the sidebar's, at 1280 and 2000
   wide and on a phone. Sites that carry the panel copy the check.
 - design-system `STYLE.md` gains the rule (3e69c99).
+
+## 2026-10-21 — Each agent on the Account page names its wallet
+
+- design-system moves to 5dd1262. Each row of the Account page's agents list shows the
+  agent's wallet beside its name: its short form opens the full address on a click,
+  tap or Enter, its icon copies it, its arrow opens it on Basescan. Two agents with one
+  name now read apart. The row and the agent's window say "Last check-in": when the
+  agent paired or last checked in. A Codex handoff asked for it (21 Oct 11:15Z).
+- The pin also brings the side panel rule (3e69c99), the agent window's picture slot
+  (b1371481) and the check-in light on agent rows (361bf64f); the template passes no
+  picture, and `light: nil, light_label: nil` on every agents row (Account page, side
+  panel, showcase), so neither shows here.
+- An independent review's fixes are in 5dd1262: with a mouse, Unpair no longer lies
+  over the wallet's copy and explorer controls; on a phone the wallet has its own line
+  under the name, so a long name with World ID never widens the page; "Address
+  unavailable" keeps the wallet's height.
+- Released before this commit: v104 is b9d301fe (the side panel under the header,
+  Report a room message, agent names in rooms, the privacy page's sign-in services),
+  21 Oct 11:32Z, Sean's 14. a; rollback v103 is 4a0c4b26.
+- The browser walk checks the wallet in two rows at both widths
+  (`platform/test/browser/agents.spec.ts`).

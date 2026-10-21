@@ -123,7 +123,13 @@ defmodule AshTemplateWeb.PanelAgents do
     |> shown(last_actions)
     |> Enum.map(fn agent ->
       Map.merge(
-        %{id: agent.id, name: agent.name, kind: to_string(agent.harness)},
+        %{
+          id: agent.id,
+          name: agent.name,
+          kind: to_string(agent.harness),
+          light: nil,
+          light_label: nil
+        },
         last_line(last_actions[agent.id], now)
       )
     end)

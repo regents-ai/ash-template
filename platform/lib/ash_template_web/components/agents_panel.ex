@@ -233,9 +233,12 @@ defmodule AshTemplateWeb.AgentsPanel do
         name: agent.name,
         kind: to_string(agent.harness),
         harness: Harness.label(agent.harness),
+        wallet: agent.wallet,
         backed: HumanBacking.describe(agent).human_backed,
         last_contact_iso: DateTime.to_iso8601(agent.last_contact_at),
-        last_contact: RegentFormat.relative_time(agent.last_contact_at, now)
+        last_contact: RegentFormat.relative_time(agent.last_contact_at, now),
+        light: nil,
+        light_label: nil
       }
     end)
   end

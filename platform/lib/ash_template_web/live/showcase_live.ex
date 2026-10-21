@@ -135,7 +135,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
               kind: "hermes",
               last_action: "Active on Patchbay",
               last_action_iso: "2026-10-16T12:00:00Z",
-              last_action_at: "2m"
+              last_action_at: "2m",
+              light: nil,
+              light_label: nil
             }
           ]}
         />
