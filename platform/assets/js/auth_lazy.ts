@@ -115,6 +115,32 @@ export function returnedFromOAuth(search: string): boolean {
   return new URLSearchParams(search).has("privy_oauth_code")
 }
 
+// Where Privy 3.49 keeps a session of its own in this browser
+// (`@privy-io/react-auth`, pinned in package.json).
+const privySessionKeys = ["privy:token", "privy:refresh_token"]
+
+/**
+ * Whether Privy still holds a sign-in of its own in this browser. A person
+ * whose sign-in here has lapsed is then signed back in on whatever page they
+ * open, without pressing anything.
+ */
+export function privyHoldsSession(storage: Pick<Storage, "getItem"> | null): boolean {
+  if (!storage) return false
+  try {
+    return privySessionKeys.some(key => storage.getItem(key) !== null)
+  } catch {
+    return false
+  }
+}
+
+function localStorageOrNull(): Pick<Storage, "getItem"> | null {
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
 export function reloadDocumentOnce(documentRoot: Document, reload: () => void): void {
   if (reloadedDocuments.has(documentRoot)) return
   reloadedDocuments.add(documentRoot)
@@ -1124,8 +1150,9 @@ export function installAccountAuthLazyLoader(
     })
   } else if (documentRoot.querySelector("#account-control [data-account-target='profile']")) {
     reconcileSignedInStartup()
-  } else if (returnedFromOAuth(documentRoot.location?.search ?? "")) {
-    // Privy finishes a redirect sign-in only once it is running on the page.
+  } else if (returnedFromOAuth(documentRoot.location?.search ?? "") || privyHoldsSession(localStorageOrNull())) {
+    // Privy finishes a redirect sign-in only once it is running on the page, and
+    // a sign-in Privy still holds here signs the person back in the same way.
     onWalletSync()
   }
   return () => {

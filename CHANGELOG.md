@@ -3246,3 +3246,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - What: `security/required-fixes.json` now says the upsert problem is still there in ash_postgres 2.15.1. Nothing else changes.
 - Checked: on a copy of the template moved to 2.15.1, an upsert on `account_ens_identities` (a table in the Repo's default schema) ran as `INSERT ... ON CONFLICT` on the bare table name and failed with "relation does not exist". 2.15 dropped MERGE for upserts, but the default schema is still left out, so the hold stays.
 - Why: Sean (21 Oct) asked to keep the libraries current; this is the one held back, with the reason checked again.
+
+## 2026-10-21 — A sign-in Privy still holds signs the person back in on any page
+
+- What: a page opened while Privy still holds a sign-in in this browser (its `privy:token` or `privy:refresh_token` entry) loads the sign-in bridge at once, so a person whose sign-in here lapsed is signed back in without pressing anything, as Keyfleet already does. Before, only a page Privy returned to from a Google or other redirect sign-in did so. elixir-utils moves to `2aed41530804e32f8b76fb1ff87bff2d02dc0fb2`, whose Privy library now names the person's Regents embedded wallet and their own wallet apart; nothing here reads those yet.
+- Checked: `platform/assets/test/privy_session_pickup.test.ts` reads the two keys and checks the installed Privy still writes them, and the full `make check`.
+- Why: the sign-in audit of 20 Oct found the template asked a returning person to press Sign in again while Privy still held their sign-in.
