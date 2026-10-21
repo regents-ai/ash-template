@@ -1,7 +1,7 @@
 # Ash Template Privacy Policy
 
-**Effective date:** October 14, 2026  
-**Version:** 1.2
+**Effective date:** October 21, 2026  
+**Version:** 1.3
 
 This Privacy Policy explains how **Regents Labs, Inc.** ("Regents Labs," "we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name at `template.regents.sh` (collectively, the "Services").
 
@@ -97,6 +97,12 @@ These providers receive information needed to perform services for us and are su
 ### B. Connected and third-party services
 
 When you connect a social account, identity, or wallet, we disclose information needed to complete the connection. The third party may separately collect information under its own policy.
+
+Signing in, and staying signed in, also connects your browser to these services, each under its own privacy policy:
+
+- **Privy**, which runs sign-in and the wallets linked to your account;
+- **Cloudflare**, which checks that a person is signing in; and
+- **WalletConnect** and **Coinbase Wallet**, when you connect a wallet through them.
 
 If your wallet has an ENS name with a picture, your browser loads that picture from the ENS avatar service, which can see your internet address and ENS name.
 

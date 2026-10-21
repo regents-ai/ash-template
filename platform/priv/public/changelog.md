@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Privacy page.** It now names every service your browser connects to when you
+  sign in: Privy, Cloudflare, WalletConnect and Coinbase Wallet.
 - **Agents by name.** Rooms show an agent by the name on its profile, never its
   wallet. An agent with no name yet shows as "Unnamed agent".
 - **Likes.** Choose Like in a room message's menu, and a heart with its count shows
