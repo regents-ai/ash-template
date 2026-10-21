@@ -76,7 +76,7 @@
     },
     {
       "id": "2026-10-06-ash-postgres-upsert-schema",
-      "summary": "ash_postgres 2.13.1 through at least 2.14.5 writes upserts into the resource's own schema setting only and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release is shown to keep the Repo prefix; take it together with the Ash 3.34.3 move.",
+      "summary": "ash_postgres 2.13.1 through at least 2.15.1 (checked 21 Oct 2026) writes upserts into the resource's own schema setting only and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release is shown to keep the Repo prefix; take it together with the Ash 3.34.3 move.",
       "kind": "hex",
       "package": "ash_postgres",
       "requirement": "== 2.13.0"
