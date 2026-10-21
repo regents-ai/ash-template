@@ -12,6 +12,9 @@ defmodule AshTemplateWeb.Telemetry do
   available, running or retrying job in each running `queue`, 0 when there is
   none, every ten seconds. A paused queue keeps its jobs waiting on purpose, so it
   is not measured.
+  Every request the router sends to a page or controller is timed by its route
+  pattern (`[:phoenix, :router_dispatch, :stop]`), never by its path, and every
+  query by its whole time (`total_time` of the same Ecto event).
   The engine's memory, run queues and process counts come from telemetry_poller's
   default poller, every 10 seconds (`config/config.exs`).
   Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
@@ -139,6 +142,31 @@ defmodule AshTemplateWeb.Telemetry do
           buckets:
             [1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000] ++
               [1_000_000, 2_500_000, 5_000_000]
+        ]
+      ),
+      distribution("ash_template.repo.query.microseconds",
+        event_name: [:ash_template, :repo, :query],
+        measurement: :total_time,
+        unit: {:native, :microsecond},
+        description: "Microseconds each query took, waiting for a connection included",
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets:
+            [1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000] ++
+              [1_000_000, 2_500_000, 5_000_000]
+        ]
+      ),
+      distribution("ash_template.request.duration.microseconds",
+        event_name: [:phoenix, :router_dispatch, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:route],
+        description: "Microseconds each request took, by its route pattern",
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets:
+            [5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000] ++
+              [2_500_000, 5_000_000, 10_000_000]
         ]
       ),
       counter("health.chain_request_failures.total",

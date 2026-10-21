@@ -45,6 +45,8 @@ defmodule AshTemplate.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
       {:ash, "~> 3.36"},
+      # 2.13.1 through 2.14.5 send upserts to the public schema, ignoring the
+      # repo's prefix that picks each site's schema on the shared database.
       {:ash_postgres, "== 2.13.0"},
       {:ash_phoenix, "~> 2.3.25"},
       {:oban, "~> 2.24"},
