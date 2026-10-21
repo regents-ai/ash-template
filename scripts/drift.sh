@@ -36,6 +36,7 @@ shared=(
   platform/lib/ash_template_web/components/pairing_box.ex
   platform/lib/ash_template_web/content_security_policy.ex
   platform/lib/ash_template_web/metrics.ex
+  platform/lib/ash_template_web/telemetry/buckets.ex
   platform/lib/ash_template_web/onchain_steps.ex
   platform/lib/ash_template_web/plugs/canonical_host.ex
   platform/lib/ash_template_web/plugs/launch_gate.ex

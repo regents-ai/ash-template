@@ -62,8 +62,10 @@ feature (chain requests, Jev, shared readings).
 | `vm_total_run_queue_lengths_{total,cpu}` | gauge | — | Work waiting for a scheduler |
 | `vm_system_counts_{process,atom,port}_count` | gauge | — | Processes, atoms and ports alive |
 
-A site's own series follow the same rules, for example
-`keyfleet_agent_guide_fetches_total` or `techtree_result_reads_total`.
+A site's own series follow the same rules, for example Techtree's
+`techtree_results_published_total` and `techtree_results_read_total`. How often one
+address is fetched, such as an agent guide like `/skill.md`, needs no series of its
+own: `<app>_request_duration_microseconds_count` has it by route.
 
 ## Fly Sentinel
 

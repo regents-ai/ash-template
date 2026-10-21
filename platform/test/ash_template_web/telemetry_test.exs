@@ -9,9 +9,9 @@ defmodule AshTemplateWeb.TelemetryTest do
   # Every site's dashboard reads request and query time by these names, so a
   # request and a query must each land in the scrape.
   test "a request is timed by its route pattern and a query by its whole time" do
-    :get |> conn("/sitemap.xml") |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
-
     :ok = Sandbox.checkout(Repo)
+
+    :get |> conn("/sitemap.xml") |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
     Repo.query!("SELECT 1")
 
     scrape = AshTemplateWeb.Telemetry.scrape()
