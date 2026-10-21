@@ -11,6 +11,10 @@ defmodule AshTemplate.Agents.Agent do
   request. The first such answer links that person to the wallet for good: a later
   answer naming nobody, or someone else, changes nothing. Each answer naming them
   updates how many agent wallets they stand behind.
+
+  Its profile is the name and status line it gives itself, paired or not. Anyone
+  may read a profile by the agent's id; the public profile never shows the wallet
+  (Sean, 21 Oct 2026).
   """
 
   use Ash.Resource,
@@ -58,6 +62,20 @@ defmodule AshTemplate.Agents.Agent do
 
     # When it used its one room post before being paired; nil until then.
     attribute :posted_before_pairing_at, :utc_datetime_usec, public?: true
+
+    # Its profile, which only it sets (`edit_profile`); nil until then. An empty
+    # name or status clears it.
+    attribute :name, :string do
+      public? true
+      constraints min_length: 1, max_length: 80, trim?: true, match: RegentFormat.Name.pattern()
+    end
+
+    attribute :status, :string do
+      public? true
+      constraints min_length: 1, max_length: 160, trim?: true, match: RegentFormat.Name.pattern()
+    end
+
+    attribute :status_set_at, :utc_datetime_usec, public?: true
 
     create_timestamp :inserted_at, public?: true
   end
@@ -113,9 +131,18 @@ defmodule AshTemplate.Agents.Agent do
                expr(if is_nil(world_id_human_id), do: ^arg(:human_id), else: world_id_human_id)
              )
     end
+
+    update :edit_profile do
+      accept [:name, :status]
+      change set_attribute(:status_set_at, &DateTime.utc_now/0), where: [changing(:status)]
+    end
   end
 
   policies do
+    policy action(:edit_profile) do
+      authorize_if expr(id == ^actor(:agent_id))
+    end
+
     policy action([:sign_in, :record_backing, :use_post_before_pairing]) do
       authorize_if actor_attribute_equals(:role, :system)
     end

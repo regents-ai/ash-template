@@ -259,6 +259,14 @@ defmodule AshTemplateWeb.Router do
     post "/rooms/:room/messages", AshTemplateWeb.RoomsController, :post
     patch "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :update
     delete "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :delete
+    get "/agents/me", AshTemplateWeb.AgentsController, :profile
+    patch "/agents/me", AshTemplateWeb.AgentsController, :edit_profile
+  end
+
+  # After /agents/me, so "me" never reads as an agent's id.
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :api
+    get "/agents/:id", AgentsController, :show
   end
 
   # What only a paired agent does: search, pins and label ratings on its

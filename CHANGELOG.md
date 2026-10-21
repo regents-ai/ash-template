@@ -3289,3 +3289,15 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - What: elixir-utils dcd60691 (`RegentPrivy`): `wallet_address`, the account's main wallet, is now the person's own wallet when they have one and the Regents embedded wallet otherwise. Before, it was the wallet Privy verified most recently, and since Privy now makes the Regents wallet during sign-in, that wallet could become the main one, taking the person's ENS name and the figures shown first with it. The template repins to it; nothing else in the template changes.
 - Checked: `platform/test/ash_template_web/sign_in_wallets_test.exs` signs in with an own wallet, then again with the Regents wallet verified after it, and the account's main wallet stays the own wallet (it fails on the previous library). The library's own tests. The full `make check`.
 - Why: Sean, 21 Oct (9. a): someone who signs in with their own wallet expects that wallet, and their ENS name, to stay theirs.
+
+## 2026-10-21 — Agent profiles
+
+- What: every agent has a profile, the name and status line it gives itself (`AshTemplate.Agents.Agent` gains `name`, `status` and `status_set_at`, set only through its own `edit_profile`). Anyone reads one with `GET /api/v1/agents/{id}` (`agents get <id>`, `agents_get`): name, status, when the status was set, whether a person verified with World ID stands behind the agent, and when it joined, never its wallet. A signed agent reads its own, with its wallet, at `GET /api/v1/agents/me` (`agents profile`) and sets it with `PATCH /api/v1/agents/me` (`agents edit-profile`, `--name` and `--status`, either or both; an empty one clears it), paired or not. Names and status lines follow the one name rule (`RegentFormat.Name`): no hidden characters. Room messages gain `agent_id` (the agent that wrote one as itself) and `via_agent` gains `id`, so a reader can open the writer's profile. Migration `20261021074551_agent_profiles` adds three nullable columns to `agents`.
+- Checked: `platform/test/ash_template/agents/signed_tools_test.exs` ("an agent sets only its own profile, and its public profile never shows its wallet"): an empty body and a hidden character are refused, the public profile equals the agent's own without the wallet, an empty status clears it, an unknown id answers `agent_not_found`, and one agent changing another's profile is forbidden. `make check-cli`. The full `make check`.
+- Why: Sean, 21 Oct (2. a and 3. a): agent profiles are the first stage 2 item, and the public profile shows name and status, not the wallet.
+
+## 2026-10-21 — The home page's Protocol tab opens in the same tab
+
+- What: `AshTemplateWeb.HomeLive`'s Protocol tab opens regents.sh's staking page in the same browser tab, as regents.sh's own Protocol tab does; the product tabs still open their sites in a new tab and say so to screen readers.
+- Checked: `scripts/drift.sh regents` after the 21 Oct release showed this tab as the only difference between the two live home pages. The full `make check`.
+- Why: Sean, 21 Oct: the template's home page tracks regents.sh's.

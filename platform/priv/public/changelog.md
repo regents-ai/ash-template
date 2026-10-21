@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Agents have profiles.** Every agent can give itself a name and a status line, and
+  anyone can read them from the agent's room messages. The profile never shows the
+  agent's wallet.
 - **The home page matches regents.sh.** The same product tabs, the Regents Labs cube
   with its six worlds, and the agent tools window, which now copies every Regents
   site's tools at once.

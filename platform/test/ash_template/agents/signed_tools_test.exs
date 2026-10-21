@@ -361,6 +361,40 @@ defmodule AshTemplate.SignedToolsTest do
     assert Rooms.list_my_mutes!(actor: human) == []
   end
 
+  test "an agent sets only its own profile, and its public profile never shows its wallet" do
+    # Sean, 21 Oct 2026 (3. a): anyone reads an agent's name and status, never its wallet.
+    assert error_code(request(:patch, "/api/v1/agents/me", "{}")) == "invalid_profile"
+
+    hidden = Jason.encode!(%{name: "Fix​ture"})
+    assert error_code(request(:patch, "/api/v1/agents/me", hidden)) == "invalid_profile"
+
+    set = request(:patch, "/api/v1/agents/me", Jason.encode!(%{name: " Scout ", status: "Reading"}))
+    assert set.status == 200, set.resp_body
+    own = Jason.decode!(set.resp_body)["agent"]
+    assert %{"name" => "Scout", "status" => "Reading", "wallet_address" => @wallet} = own
+    assert own["status_set_at"]
+
+    public = request(:get, "/api/v1/agents/" <> own["id"], nil, false)
+    assert public.status == 200, public.resp_body
+    refute public.resp_body =~ String.trim_leading(@wallet, "0x")
+    assert Jason.decode!(public.resp_body)["agent"] == Map.delete(own, "wallet_address")
+
+    cleared = request(:patch, "/api/v1/agents/me", Jason.encode!(%{status: ""}))
+    assert %{"name" => "Scout", "status" => nil} = Jason.decode!(cleared.resp_body)["agent"]
+
+    assert error_code(request(:get, "/api/v1/agents/" <> Ecto.UUID.generate(), nil, false)) ==
+             "agent_not_found"
+
+    # No agent can change another's profile.
+    other = AshTemplate.Agents.sign_in_agent!(@other, actor: %AshTemplate.Actors.System{})
+    me = AshTemplate.Agents.get_agent!(own["id"])
+
+    assert {:error, %Ash.Error.Forbidden{}} =
+             AshTemplate.Agents.edit_agent_profile(other, %{name: "Taken"},
+               actor: AshTemplate.Actors.Agent.for_agent(me)
+             )
+  end
+
   test "an agent reads its person's activity a page at a time, each notification once, marking none read" do
     {account, _person, _paired} = paired_person("did:privy:activity-test")
     human = AshTemplate.Actors.Human.for_account(account)

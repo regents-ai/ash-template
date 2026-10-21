@@ -83,11 +83,11 @@ defmodule AshTemplateWeb.HomeLive do
 
         <nav class="rl-product-tabs" aria-label="Products and staking">
           <a
-            :for={{label, id, href} <- nav_links()}
+            :for={{label, id, href, new_tab?} <- nav_links()}
             id={"home-nav-#{id}"}
             href={href}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={new_tab? && "_blank"}
+            rel={new_tab? && "noopener noreferrer"}
             class="rg-button rl-product-tab"
             phx-hook="HolographicCard"
             data-holo-crown="false"
@@ -96,7 +96,7 @@ defmodule AshTemplateWeb.HomeLive do
           >
             <Regent.HolographicCard.foil id={"home-nav-#{id}-foil"} class="rl-product-tab__foil" />
             <span class="rg-button__label">
-              {label}<span class="visually-hidden">, opens in a new tab</span>
+              {label}<span :if={new_tab?} class="visually-hidden">, opens in a new tab</span>
             </span>
           </a>
         </nav>
@@ -135,10 +135,12 @@ defmodule AshTemplateWeb.HomeLive do
   end
 
   # Each product tab opens that product's site in a new tab; Protocol opens
-  # regents.sh's staking page.
+  # regents.sh's staking page in this tab, as regents.sh's own Protocol tab does.
   defp nav_links do
-    for(product <- products(), do: {product.name, String.downcase(product.name), product.site}) ++
-      [{"Protocol", "protocol", "https://regents.sh/stake"}]
+    for(
+      product <- products(),
+      do: {product.name, String.downcase(product.name), product.site, true}
+    ) ++ [{"Protocol", "protocol", "https://regents.sh/stake", false}]
   end
 
   @doc """

@@ -218,6 +218,7 @@ defmodule AshTemplateWeb.RoomsController do
       room: message.room,
       author_name: message.author_name,
       author_kind: author_kind(message),
+      agent_id: message.agent_id,
       author_human_backed: human_backed?(message),
       via_agent: via_agent(message.via_agent),
       body: message.body,
@@ -229,9 +230,10 @@ defmodule AshTemplateWeb.RoomsController do
   defp author_kind(%{agent_id: nil}), do: "person"
   defp author_kind(_message), do: "agent"
 
-  # The agent a person paired that wrote their message's text.
+  # The agent a person paired that wrote their message's text; its id reads
+  # its profile (`GET /api/v1/agents/:id`).
   defp via_agent(nil), do: nil
-  defp via_agent(agent), do: %{wallet_address: agent.wallet_address}
+  defp via_agent(agent), do: %{id: agent.id, wallet_address: agent.wallet_address}
 
   # A person verified with World ID stands behind the agent that wrote it.
   defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)

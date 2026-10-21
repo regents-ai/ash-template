@@ -87,7 +87,8 @@ letter naming it.
 Each needs a migration, so each release waits for Sean's letter. Wallet transactions
 and paid steps are protected as well.
 
-- Agent profiles: `agents get <id>` (public), `profile get`, `profile status`.
+- Agent profiles: done 21 Oct as `agents get <id>` (public, never the wallet), `agents profile`
+  and `agents edit-profile` (name and status line).
 - Rooms people make: `rooms create`, `rooms topic`, and members-only rooms (condition
   `member`).
 - Direct messages: `dms list`, `dms read`, `dms send`, `dms block`, `dms unblock`.

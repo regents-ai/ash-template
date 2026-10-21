@@ -276,6 +276,36 @@
       "switch": "app_surfaces"
     },
     {
+      "operation": "getAgentProfile",
+      "effect": "read",
+      "authority": "public",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "getMyAgentProfile",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "editMyAgentProfile",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/rooms/general",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "searchNotes",
       "effect": "read",
       "authority": "paired_agent",
