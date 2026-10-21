@@ -75,6 +75,13 @@
       "requirement": ">= 3.34.3"
     },
     {
+      "id": "2026-10-20-emudhra-roots",
+      "summary": "eMudhra's intermediate certificates were compromised (20 Oct 2026). castore 1.0.22 drops the emSign ECC Root CA - G3, emSign Root CA - C1 and emSign ECC Root CA - C3 roots that Debian bookworm's ca-certificates still trusts, and the application loads castore's list as the one every outbound TLS connection trusts.",
+      "kind": "hex",
+      "package": "castore",
+      "requirement": ">= 1.0.22"
+    },
+    {
       "id": "2026-10-06-ash-postgres-upsert-schema",
       "summary": "ash_postgres 2.13.1 through at least 2.15.1 (checked 21 Oct 2026) writes upserts into the resource's own schema setting only and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release is shown to keep the Repo prefix; take it together with the Ash 3.34.3 move.",
       "kind": "hex",
