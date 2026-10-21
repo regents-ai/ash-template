@@ -138,11 +138,6 @@
 
 /* Verified connections */
 
-.verified-connections > div:first-child {
-  display: grid;
-  gap: 0.5rem;
-}
-
 .verified-connections__list {
   display: grid;
   gap: 0.5rem;

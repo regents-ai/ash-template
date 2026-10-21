@@ -729,7 +729,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
           identities={@identities}
           authenticated
           notice={@connection_notice}
-          description="Practice only. Nothing is linked for real."
         />
       </.disclosure>
     </.section>

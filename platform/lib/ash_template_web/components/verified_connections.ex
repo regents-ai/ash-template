@@ -15,50 +15,39 @@ defmodule AshTemplateWeb.Components.VerifiedConnections do
 
   attr :notice, :map, default: nil
   attr :authenticated, :boolean, default: true
-  attr :title, :string, default: "Verified connections"
-  attr :description, :string, default: "Connect accounts that help people recognize your work."
   attr :class, :string, default: nil
 
   def verified_connections(assigns) do
     assigns = assign(assigns, :rows, rows(assigns.identities))
 
     ~H"""
-    <section
-      id={@id}
-      class={["verified-connections", @class]}
-      aria-labelledby={"#{@id}-title"}
-      phx-hook="VerifiedConnections"
-    >
-      <div>
-        <h2 id={"#{@id}-title"}>{@title}</h2>
-        <p>{@description}</p>
-        <p
-          :if={@notice}
-          id={"#{@id}-notice"}
-          class={[
-            "verified-connections__notice",
-            @notice.tone == :error && "verified-connections__notice--error"
-          ]}
-          role={if(@notice.tone == :error, do: "alert", else: "status")}
-          phx-hook="MotionRefusal"
-          data-refused={@notice.tone == :error}
-        >
-          {@notice.message}
-        </p>
-        <p :if={@read_state in [:idle, :loading] and is_nil(@identities)} role="status">
-          Loading your connections…
-        </p>
-        <p :if={@read_state == :stale} class="verified-connections__notice" role="status">
-          Your connections couldn’t be refreshed. This is what they were last time.
-        </p>
-        <p
-          :if={@read_state == :error}
-          class="verified-connections__notice verified-connections__notice--error"
-          role="alert"
-        >
-          Your connections couldn’t be loaded. Refresh the page to try again.
-        </p>
-      </div>
+    <section id={@id} class={["verified-connections", @class]} phx-hook="VerifiedConnections">
+      <p
+        :if={@notice}
+        id={"#{@id}-notice"}
+        class={[
+          "verified-connections__notice",
+          @notice.tone == :error && "verified-connections__notice--error"
+        ]}
+        role={if(@notice.tone == :error, do: "alert", else: "status")}
+        phx-hook="MotionRefusal"
+        data-refused={@notice.tone == :error}
+      >
+        {@notice.message}
+      </p>
+      <p :if={@read_state in [:idle, :loading] and is_nil(@identities)} role="status">
+        Loading your connections…
+      </p>
+      <p :if={@read_state == :stale} class="verified-connections__notice" role="status">
+        Your connections couldn’t be refreshed. This is what they were last time.
+      </p>
+      <p
+        :if={@read_state == :error}
+        class="verified-connections__notice verified-connections__notice--error"
+        role="alert"
+      >
+        Your connections couldn’t be loaded. Refresh the page to try again.
+      </p>
 
       <ul :if={@rows} class="verified-connections__list">
         <li :for={{entry, identity} <- @rows} id={"#{@id}-#{entry.provider}"}>

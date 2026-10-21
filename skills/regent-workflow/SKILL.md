@@ -409,6 +409,10 @@ the action.
 Authority belongs to the explicitly authorized action and actor. Do not repeat
 permission questions when the current session already authorizes the exact action.
 
+Run one plain command per call: no for-loops, no `$(...)` inside a command, no
+chaining a site check with git work. The Mac's auto-allow rules match plain commands
+only; loops and nested commands always stop for Sean.
+
 Never read `.env`, `.env.local` or `.envrc`; `.env.example` is allowed. Never expose
 secrets. Only Sean may approve rotation after disclosure. Value transfer remains
 user-signed, operator-signed or contract-defined. Every distinct wallet-button press

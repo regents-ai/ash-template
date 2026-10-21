@@ -3400,3 +3400,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   21 Oct 11:32Z, Sean's 14. a; rollback v103 is 4a0c4b26.
 - The browser walk checks the wallet in two rows at both widths
   (`platform/test/browser/agents.spec.ts`).
+
+## 2026-10-21 — Connections starts with its rows; one plain command per call
+
+- Released before this commit: v105 is a993f2d6 (each agent on the Account page names
+  its wallet), 21 Oct 16:32Z, Sean's 16. a; rollback v104 is b9d301fe.
+- The Account page's Connections tab no longer repeats itself: the panel's own
+  "Verified connections" heading and its sentence are gone, so the rows start under
+  the page's title, whose tip already says what the tab is for (Sean's 17. a, after
+  his 10:16Z "simplify is the guideline"). The showcase's practice panel drops its own
+  sentence the same way; its disclosure already says it is practice.
+- The regent-workflow skill says to run one plain command per call, with no loops,
+  no nested commands and no site check chained with git work, because the Mac's
+  auto-allow rules match plain commands only (Sean's 17. a). The skill is now
+  reviewed in full with Sean every week, with its log in the workspace's
+  `control/hq/regent-workflow-skill-review.md`.
