@@ -12,7 +12,7 @@ defmodule AshTemplateWeb.Components.Shell do
 
   The right side panel and its button are there only for someone signed in, so a
   page signed out has nothing beside the Sign in button. It is the same on every
-  page: the person's name and picture, Sign out, Manage Account on regents.sh,
+  page: the person's name and picture, Sign out, Manage Account (this site's Account page),
   the box to pair an agent (the `pairing` slot) and the agents paired with the
   account (the `agents` slot). Opened, it slides in and the page beside it gives
   way; only on a phone, too narrow for both, does it cover the page.
@@ -310,12 +310,7 @@ defmodule AshTemplateWeb.Components.Shell do
           >
             Sign out
           </Regent.Primitives.button>
-          <a
-            href="https://regents.sh/account"
-            class="rg-button rg-button--secondary"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={~p"/account"} class="rg-button rg-button--secondary">
             Manage Account
           </a>
         </div>

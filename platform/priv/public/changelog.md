@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Manage stays here.** Manage Account and Manage beside Your agents open your Account
+  page on this site.
 - **Messages.** Write privately to anyone who wrote in a room: choose Message on
   something they said. Your conversations are on the Messages page, newest first.
   Block someone to move them to your Blocked list; they can still write, and they
