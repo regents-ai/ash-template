@@ -2,6 +2,18 @@
 
 What changed in Ash Template lately, newest first.
 
+## 21 October 2026
+
+- **The home page matches regents.sh.** The same product tabs, the Regents Labs cube
+  with its six worlds, and the agent tools window, which now copies every Regents
+  site's tools at once.
+- **A Regents wallet for everyone.** Everyone gets a Regents wallet at their next
+  sign-in. The Wallets page shows it beside the wallet you signed in with, and you
+  stay signed in from page to page without pressing Sign in again.
+- **A share picture with the product's name.** A shared Ash Template link now shows
+  the product's name, a line about it and its three starting points, with the
+  Regents cut corners. Before, it showed the crown alone.
+
 ## 20 October 2026
 
 - **Pairing keeps your codes.** In Pair New Agent, each agent keeps its own pairing

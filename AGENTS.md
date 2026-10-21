@@ -11,7 +11,11 @@ After renaming, a new site must still replace, by hand:
 1. The homepage's name, the line under it and the cube's six worlds
    (`worlds/0`) in `platform/lib/ash_template_web/live/home_live.ex`. On the
    template itself the homepage tracks regents.sh's, and `scripts/drift.sh`
-   reports when the two differ. The logo files in `platform/priv/static` (`favicon.svg`,
+   reports when the two differ. Also the share picture
+   `platform/priv/static/images/og-image.png` (1200 x 630, the product's name
+   and one line about it in the left 600 pixels, which is all X shows on a
+   phone, and nothing in the bottom-left corner, where X writes the site's
+   name); keep its file name. The logo files in `platform/priv/static` (`favicon.svg`,
    `favicon.ico`, `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`,
    `mark.png`, `images/brand/mark-flat-dark.svg`,
    `images/brand/mark-flat-light.svg`) are the Regents crown. Keep them.

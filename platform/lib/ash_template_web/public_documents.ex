@@ -182,7 +182,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       suffix: suffix,
       description: description,
       canonical: url(path),
-      image: url("/mark.png"),
+      image: url(AshTemplateWeb.Endpoint.static_path("/images/og-image.png")),
       markdown?: path in @documents,
       site_type: @site_type
     }
