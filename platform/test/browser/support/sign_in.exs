@@ -15,18 +15,23 @@ unless to_string(repo[:hostname]) in ["127.0.0.1", "::1"] and
 
 AshTemplate.LocalDatabaseFixture.ensure_human_accounts!()
 
+# The person signed in with their own wallet, and Privy made their Regents wallet.
 wallet = "0x" <> String.duplicate("b", 40)
+embedded = "0x" <> String.duplicate("9", 40)
 app_id = Keyword.fetch!(Application.fetch_env!(:ash_template, :privy), :app_id)
 
-{:ok, account, _conflicts} =
-  VerifiedSession.establish(%RegentPrivy.Session{
-    app_id: app_id,
-    privy_user_id: "did:privy:browser-walk",
-    session_id: "browser-walk",
-    wallet_address: wallet,
-    wallet_addresses: [wallet],
-    linked_socials: []
-  })
+verified = %RegentPrivy.Session{
+  app_id: app_id,
+  privy_user_id: "did:privy:browser-walk",
+  session_id: "browser-walk",
+  wallet_address: wallet,
+  wallet_addresses: [wallet, embedded],
+  embedded_wallet_address: embedded,
+  user_wallet_address: wallet,
+  linked_socials: []
+}
+
+{:ok, account, _conflicts} = VerifiedSession.establish(verified)
 
 person = Human.for_account(account)
 
@@ -75,6 +80,7 @@ conn =
 conn =
   bound
   |> SessionAuthority.session()
+  |> Map.put("wallets", VerifiedSession.wallet_labels(verified))
   |> Enum.reduce(conn, fn {key, value}, conn -> Plug.Conn.put_session(conn, key, value) end)
   |> Plug.Conn.send_resp(200, "")
 

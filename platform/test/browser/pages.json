@@ -26,7 +26,7 @@
     {"route": "/account", "purpose": "See your account, your agents and your Credits.", "check": "#account-agents", "signed_in": true},
     {"route": "/account/points", "purpose": "See your Points and how to earn them.", "check": "#points-earn", "signed_in": true},
     {"route": "/account/credits", "purpose": "See your Credits history.", "check": "#credits-history", "signed_in": true},
-    {"route": "/account/wallets", "purpose": "See and copy the wallets your sign-in verified.", "check": "#account-wallet-copy", "signed_in": true},
+    {"route": "/account/wallets", "purpose": "See and copy the wallets your sign-in verified.", "check": "#account-embedded-wallet-copy", "signed_in": true},
     {"route": "/account/connections", "purpose": "Connect the accounts that help people recognize your work.", "check": "#account-verified-connections", "signed_in": true},
     {"route": "/showcase", "purpose": "See the shared components and palette.", "check": "#foundations"},
     {"route": "/showcase/preview", "purpose": "Preview the page frame.", "check": "h1"},

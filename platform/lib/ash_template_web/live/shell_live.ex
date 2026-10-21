@@ -379,6 +379,7 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :wallets}
           signed_out_reason={@signed_out_reason}
           account={current_account(@access_context)}
+          sign_in_wallets={@sign_in_wallets}
         />
 
         <AccountLive.connections

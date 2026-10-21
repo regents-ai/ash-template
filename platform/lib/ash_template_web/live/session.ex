@@ -41,14 +41,25 @@ defmodule AshTemplateWeb.Live.Session do
       )
 
     if connected?(socket) do
-      connected(socket, session, get_connect_info(socket, :session))
+      handshake = get_connect_info(socket, :session)
+
+      socket
+      |> assign(sign_in_wallets: sign_in_wallets(handshake))
+      |> connected(session, handshake)
     else
       {_lineage, account, _lapses_at} =
         session |> SessionAuthority.claim() |> SessionAuthority.resolve()
 
-      {:cont, assign_principal(socket, account)}
+      {:cont,
+       socket |> assign(sign_in_wallets: sign_in_wallets(session)) |> assign_principal(account)}
     end
   end
+
+  # Which wallets the sign-in named the Regents wallet and the person's own
+  # (`AshTemplate.Accounts.VerifiedSession.wallet_labels/1`), read from the same
+  # cookie as the claim; the account itself only ever comes from the claim's row.
+  defp sign_in_wallets(%{"wallets" => %{} = wallets}), do: wallets
+  defp sign_in_wallets(_session), do: %{}
 
   # The cookie the socket connected with is the only authority, and a mount that
   # cannot honour it is refused here, not left to a later hook. An exactly

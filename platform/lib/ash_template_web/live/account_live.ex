@@ -83,8 +83,11 @@ defmodule AshTemplateWeb.AccountLive do
 
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
+  attr :sign_in_wallets, :map, required: true
 
   def wallets(assigns) do
+    assigns = assign(assigns, :named, named_wallets(assigns.account, assigns.sign_in_wallets))
+
     ~H"""
     <.settings_page
       id="wallets-page"
@@ -96,18 +99,24 @@ defmodule AshTemplateWeb.AccountLive do
       <section class="account-panel account-details" aria-labelledby="account-wallets-title">
         <h2 id="account-wallets-title">Your wallets</h2>
         <dl>
-          <div>
-            <dt>Wallet</dt>
-            <dd :if={@account.wallet_address}>
-              <Regent.Primitives.address id="account-wallet" address={@account.wallet_address} />
+          <div :if={@named.user}>
+            <dt>User wallet</dt>
+            <dd>
+              <Regent.Primitives.address id="account-user-wallet" address={@named.user} />
             </dd>
-            <dd :if={is_nil(@account.wallet_address)}>No wallet linked</dd>
           </div>
-          <div :if={other_wallets(@account) != []}>
+          <div>
+            <dt>Regents embedded wallet</dt>
+            <dd :if={@named.embedded}>
+              <Regent.Primitives.address id="account-embedded-wallet" address={@named.embedded} />
+            </dd>
+            <dd :if={is_nil(@named.embedded)}>Made for you at your next sign-in</dd>
+          </div>
+          <div :if={@named.others != []}>
             <dt>Other linked wallets</dt>
             <dd>
               <ul class="account-wallet-list">
-                <li :for={wallet <- other_wallets(@account)}>
+                <li :for={wallet <- @named.others}>
                   <Regent.Primitives.address id={"account-wallet-#{wallet}"} address={wallet} />
                 </li>
               </ul>
@@ -175,13 +184,17 @@ defmodule AshTemplateWeb.AccountLive do
     """
   end
 
-  defp other_wallets(%{wallet_address: primary, wallet_addresses: wallets}) do
-    primary = primary && String.downcase(primary)
+  # The sign-in names which linked wallet Privy made for the person and which is
+  # their own. A name for a wallet the account no longer holds is not shown, so
+  # an outside wallet is never shown as the Regents wallet.
+  defp named_wallets(nil, _sign_in_wallets), do: %{user: nil, embedded: nil, others: []}
 
-    wallets
-    |> List.wrap()
-    |> Enum.map(&String.downcase/1)
-    |> Enum.uniq()
-    |> Enum.reject(&(&1 == primary))
+  defp named_wallets(%{wallet_addresses: wallets}, sign_in_wallets) do
+    linked = wallets |> List.wrap() |> Enum.map(&String.downcase/1) |> Enum.uniq()
+    named = fn key -> if sign_in_wallets[key] in linked, do: sign_in_wallets[key] end
+    user = named.("user")
+    embedded = named.("embedded")
+
+    %{user: user, embedded: embedded, others: linked -- [user, embedded]}
   end
 end

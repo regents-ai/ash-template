@@ -37,6 +37,15 @@ defmodule AshTemplate.Accounts.VerifiedSession do
   end
 
   @doc """
+  Which of the verified session's wallets Privy made for the person (their
+  Regents embedded wallet) and which is their own, as the browser session keeps
+  them for the Wallets page. Either is nil when there is none. They only name
+  wallets: the account still comes from the session's own row.
+  """
+  def wallet_labels(%RegentPrivy.Session{} = verified),
+    do: %{"embedded" => verified.embedded_wallet_address, "user" => verified.user_wallet_address}
+
+  @doc """
   The account a verified session names, read without changing it: an API call
   acts for the account a sign-in on the site created, while its wallet evidence
   is still current.
