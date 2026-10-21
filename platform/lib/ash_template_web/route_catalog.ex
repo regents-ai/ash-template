@@ -12,6 +12,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :home, label: "Home", path: "/app", icon: :home},
     %{id: :notes, label: "Notes", path: "/notes", icon: :notes},
     %{id: :rooms, label: "Rooms", path: @first_room, icon: :rooms},
+    %{id: :dms, label: "Messages", path: "/dms", icon: :dms},
     %{id: :chat, label: "Chat", path: "/chat", icon: :chat},
     %{id: :design, label: "Design", path: "/design", icon: :design},
     %{id: :settings, label: "Account", path: "/account", icon: :settings}
@@ -35,6 +36,8 @@ defmodule AshTemplateWeb.RouteCatalog do
     notes: %{id: :notes, title: "Your notes", targets: []},
     # The rooms are rows; the rooms page puts them in the sidebar itself.
     rooms: %{id: :rooms, title: "Rooms", targets: []},
+    # The conversations are rows; the messages page puts them in the sidebar itself.
+    dms: %{id: :dms, title: "Your messages", targets: []},
     chat: %{id: :chat, title: "Your chats", targets: []},
     design: %{
       id: :design,
@@ -120,6 +123,10 @@ defmodule AshTemplateWeb.RouteCatalog do
        %{route_id: :activity, destination: "/app/activity", page_display_label: "Activity"}},
     notes: {:notes, %{route_id: :notes, destination: "/notes", page_display_label: "Notes"}},
     room: {:rooms, %{route_id: :room, destination: "/rooms/:room", page_display_label: "Rooms"}},
+    dms: {:dms, %{route_id: :dms, destination: "/dms", page_display_label: "Messages"}},
+    dm:
+      {:dms,
+       %{route_id: :dms, destination: "/dms/:conversation_id", page_display_label: "Messages"}},
     chat: {:chat, %{route_id: :chat, destination: "/chat", page_display_label: "Chat"}},
     conversation:
       {:chat,
@@ -166,6 +173,7 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{label: "Activity", path: "/app/activity"},
     %{label: "Notes", path: "/notes"},
     %{label: "Rooms", path: @first_room},
+    %{label: "Messages", path: "/dms"},
     %{label: "Chat", path: "/chat"},
     %{label: "Account", path: "/account"},
     %{label: "Credits history", path: "/account/credits"},
@@ -224,6 +232,8 @@ defmodule AshTemplateWeb.RouteCatalog do
   def fetch!(:conversation, %{"conversation_id" => id}),
     do: %{fetch!(:conversation) | destination: "/chat/#{id}"}
 
+  def fetch!(:dm, %{"conversation_id" => id}), do: %{fetch!(:dm) | destination: "/dms/#{id}"}
+
   def fetch!(action, _params), do: fetch!(action)
 
   @doc "The spec of a live action as the catalog holds it."
@@ -269,7 +279,9 @@ defmodule AshTemplateWeb.RouteCatalog do
   defp parameter_schema(:room),
     do: %{room: %{type: "string", pattern: "^[a-z0-9]+(-[a-z0-9]+)*$", maxLength: 40}}
 
-  defp parameter_schema(:conversation), do: %{conversation_id: %{type: "string", format: "uuid"}}
+  defp parameter_schema(action) when action in [:conversation, :dm],
+    do: %{conversation_id: %{type: "string", format: "uuid"}}
+
   defp parameter_schema(_action), do: %{}
 
   defp handoff_target(%RouteTarget{} = target) do

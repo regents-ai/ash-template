@@ -1,6 +1,6 @@
 # The browser walk's person: a local account on the database made for this run,
 # signed in through the site's own sign-in step with a fresh session, one chat of
-# their own, the longest unbroken Public Display Name the site takes (so every
+# their own, one direct message to someone who wrote in General, the longest unbroken Public Display Name the site takes (so every
 # signed-in page proves a long name fits the screen), three agents paired the way an
 # agent pairs, and the signed cookie the walk sends. Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
@@ -48,6 +48,39 @@ Ash.Seed.upsert!(
 )
 
 AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
+
+# Someone else, with a name of their own, writes in General, and the person
+# messages them from it.
+friend_wallet = "0x" <> String.duplicate("a", 40)
+
+Ash.Seed.upsert!(
+  RegentIdentity.Profile,
+  %{
+    app_id: app_id,
+    privy_user_id: "did:privy:browser-walk-friend",
+    display_name: "Walk Friend",
+    wallet_addresses: [friend_wallet],
+    proof_issued_at: System.system_time(:second)
+  },
+  identity: :privy_subject
+)
+
+friend =
+  AshTemplate.Accounts.register_verified!(
+    "did:privy:browser-walk-friend",
+    friend_wallet,
+    [friend_wallet],
+    actor: %AshTemplate.Actors.System{}
+  )
+
+said =
+  AshTemplate.Rooms.post_message!(%{room: "general", body: "Hello from the walk."},
+    actor: Human.for_account(friend),
+    context: %{client_key: "browser-walk-friend"}
+  )
+
+conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
+AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
 
 # A fourth agent, paired first, which the side panel's three leave out
 # (side_agents.spec.ts); the agent the walk opens on the Account page, and one for

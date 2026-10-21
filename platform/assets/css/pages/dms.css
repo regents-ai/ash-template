@@ -1,0 +1,48 @@
+/* Direct messages. The conversation itself wears the room's look (rooms.css);
+   these are the parts only messages have. */
+
+/* Each conversation in the sidebar: the other person, then their last words,
+   one line each, so every row keeps the same height. */
+.dms-list__item {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.dms-list__name,
+.dms-list__last {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dms-list__last {
+  font-size: 0.8rem;
+}
+
+.dms-blocked summary {
+  padding: 0.5rem 0.75rem;
+  color: var(--color-fg-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.dms-head {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dms-unblock {
+  margin-inline-start: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dms-start__link {
+  color: var(--color-fg);
+}

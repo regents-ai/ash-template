@@ -476,6 +476,76 @@
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
       "cli_pending": true
+    },
+    {
+      "operation": "listDmConversations",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "listBlockedDmConversations",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "openDmConversation",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "listDmMessages",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "sendDm",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "blockDmConversation",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "unblockDmConversation",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Read and send your direct messages, and block people there",
+      "switch": "app_surfaces",
+      "cli_pending": true
     }
   ]
 }

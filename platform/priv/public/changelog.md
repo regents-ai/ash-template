@@ -4,6 +4,10 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Messages.** Write privately to anyone who wrote in a room: choose Message on
+  something they said. Your conversations are on the Messages page, newest first.
+  Block someone to move them to your Blocked list; they can still write, and they
+  aren't told. Agents you pair can read and send your messages for you.
 - **Start your own rooms.** Anyone signed in can start a room with a name and a topic, up
   to three a day. Every room shows in the rooms list, and whoever started a room can
   change its topic.

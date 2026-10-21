@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   import AshTemplateWeb.Components.Shell
 
-  alias AshTemplate.{Accounts, Activity, Chat, Notes, Rooms}
+  alias AshTemplate.{Accounts, Activity, Chat, Dms, Notes, Rooms}
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
@@ -26,6 +26,7 @@ defmodule AshTemplateWeb.ShellLive do
     ChatLive,
     CreditsHistoryLive,
     DesignLive,
+    DmsLive,
     NotesLive,
     NotFoundError,
     OverviewLive,
@@ -59,6 +60,7 @@ defmodule AshTemplateWeb.ShellLive do
        people: [],
        conversation: nil,
        chat_topics: MapSet.new(),
+       dm: nil,
        verified_connections: %Read{},
        points: %Read{},
        credits_read: %Read{},
@@ -82,6 +84,7 @@ defmodule AshTemplateWeb.ShellLive do
     open!(action)
     room = room_in(action, params)
     conversation = conversation_in(action, params, human_actor(socket))
+    dm = dm_in(action, params, human_actor(socket))
     route_spec = RouteCatalog.fetch!(action, params)
 
     {:noreply,
@@ -94,7 +97,8 @@ defmodule AshTemplateWeb.ShellLive do
      |> load_notifications(route_spec)
      |> assign(search: unsearched(), mark_read_failed?: false)
      |> enter_room(room)
-     |> open_conversation(conversation)}
+     |> open_conversation(conversation)
+     |> assign(:dm, dm)}
   end
 
   @impl true
@@ -275,6 +279,17 @@ defmodule AshTemplateWeb.ShellLive do
       else: {:noreply, socket}
   end
 
+  # A direct message or a block in one of the person's conversations reaches
+  # the messages page; a block also reads the open conversation again.
+  def handle_info(%{topic: "dms:" <> _, event: event, payload: payload}, socket) do
+    if socket.assigns.route_spec.route_id == :dms,
+      do: send_update(DmsLive, id: "dms", change: {event, payload})
+
+    if event != "send" and on_dm?(socket, payload.conversation_id),
+      do: {:noreply, assign(socket, :dm, read_dm(payload.conversation_id, human_actor(socket)))},
+      else: {:noreply, socket}
+  end
+
   @doc "The search box before anything is typed: every page and action, as suggestions."
   def unsearched, do: %{query: "", results: search("", nil)}
 
@@ -357,6 +372,15 @@ defmodule AshTemplateWeb.ShellLive do
           conversation={@conversation}
         />
 
+        <.live_component
+          :if={@route_spec.route_id == :dms}
+          module={DmsLive}
+          id="dms"
+          lease={@session_lease}
+          account={current_account(@access_context)}
+          conversation={@dm}
+        />
+
         <DesignLive.page :if={@route_spec.route_id == :design} />
 
         <AccountLive.profile
@@ -409,6 +433,7 @@ defmodule AshTemplateWeb.ShellLive do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Mute.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:conversations:#{account.id}")
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, Dms.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentCredits.topic(account.privy_user_id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, CheckPurchase.topic(account.privy_user_id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, RegentAgents.topic(account.privy_user_id))
@@ -440,6 +465,23 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp conversation_in(_action, _params, _actor), do: nil
 
+  # A direct-message conversation opens only for its two people; a visitor
+  # sees the messages page's sign-in prompt instead.
+  defp dm_in(:dm, %{"conversation_id" => id}, %Human{} = actor),
+    do: read_dm(id, actor) || raise(NotFoundError)
+
+  defp dm_in(_action, _params, _actor), do: nil
+
+  defp read_dm(id, actor) do
+    case Dms.get_conversation(id, actor: actor, load: [:other_person, :blocked]) do
+      {:ok, conversation} -> conversation
+      {:error, %Ash.Error.Invalid{}} -> nil
+    end
+  end
+
+  defp on_dm?(%{assigns: %{dm: %{id: id}}}, id), do: true
+  defp on_dm?(_socket, _id), do: false
+
   # A room's title and description are its own name and topic.
   defp page_meta(%Room{} = room, _path),
     do: [page_title: "#{room.name} room", page_description: room.topic]
@@ -448,6 +490,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   # Every conversation shares the chat page's title.
   defp page_path(:conversation, _uri), do: "/chat"
+  defp page_path(:dm, _uri), do: "/dms"
   defp page_path(_action, uri), do: URI.parse(uri).path
 
   defp on_conversation?(%{assigns: %{conversation: %{id: id}}}, id), do: true

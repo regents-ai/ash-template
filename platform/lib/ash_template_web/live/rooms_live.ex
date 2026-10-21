@@ -27,7 +27,7 @@ defmodule AshTemplateWeb.RoomsLive do
   import AshTemplateWeb.Components.PageHead
 
   alias AshTemplate.Actors.Human
-  alias AshTemplate.Rooms
+  alias AshTemplate.{Dms, Rooms}
   alias AshTemplate.Rooms.{Message, Mute, Room}
   alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
@@ -163,6 +163,22 @@ defmodule AshTemplateWeb.RoomsLive do
 
       failure ->
         {:noreply, notice(socket, failure, @gone, "That person couldn’t be muted. Try again.")}
+    end
+  end
+
+  # Opens the reader's direct messages with the message's author.
+  def handle_event("message_author", %{"id" => id}, socket) do
+    case Dms.open_conversation(id, actor: socket.assigns.actor) do
+      {:ok, conversation} ->
+        {:noreply, push_patch(socket, to: ~p"/dms/#{conversation.id}")}
+
+      # Why it could not open, in the words the conversation gives.
+      {:error, %Ash.Error.Invalid{} = error} ->
+        [%{message: why} | _] = FormErrors.details(error)
+        {:noreply, assign(socket, :notice, why)}
+
+      {:error, _failure} ->
+        {:noreply, assign(socket, :notice, "That conversation couldn’t be opened. Try again.")}
     end
   end
 
@@ -516,7 +532,8 @@ defmodule AshTemplateWeb.RoomsLive do
   attr :actor, Human, required: true
   attr :myself, :any, required: true
 
-  # The author's own message offers Edit and Delete; anyone else's, Mute. The
+  # The author's own message offers Edit and Delete; anyone else's, Mute, and
+  # Message when a person stands behind it. The
   # browser opens the choices above everything else (`popover`), hanging from
   # the button, so the conversation's scrolling edge never cuts them off; they
   # open upward when there is no room below. Each choice closes them.
@@ -567,6 +584,16 @@ defmodule AshTemplateWeb.RoomsLive do
           data-confirm="Delete this message?"
         >
           Delete
+        </button>
+        <button
+          :if={!@own? and @message.human_account_id}
+          type="button"
+          class="rooms-menu__item"
+          popovertarget={@menu}
+          popovertargetaction="hide"
+          phx-click={JS.push("message_author", value: %{id: @message.id}, target: @myself)}
+        >
+          Message <bdi>{@message.author_name}</bdi>
         </button>
         <button
           :if={!@own?}

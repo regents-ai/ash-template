@@ -13,12 +13,15 @@ type Entry = {route: string; paths?: string[]; check: string; status?: number}
 
 const paths = (entry: {route: string; paths?: string[]}) => entry.paths ?? [entry.route]
 
-// A chat's address is only known once it exists: open the person's first chat
-// from the chat page's list, as they would.
+// A chat's or a conversation's address is only known once it exists: open the
+// person's first one from its page's list, as they would.
+const lists: Record<string, string> = {"/chat/{conversation}": "/chat", "/dms/{conversation}": "/dms"}
+
 async function open(page: Page, path: string) {
-  if (path !== "/chat/{conversation}") return page.goto(path, {waitUntil: "load"})
-  await page.goto("/chat")
-  const href = await page.locator('#shell-sidebar-page a[href^="/chat/"]').first().getAttribute("href")
+  const list = lists[path]
+  if (!list) return page.goto(path, {waitUntil: "load"})
+  await page.goto(list)
+  const href = await page.locator(`#shell-sidebar-page a[href^="${list}/"]`).first().getAttribute("href")
   return page.goto(href!, {waitUntil: "load"})
 }
 

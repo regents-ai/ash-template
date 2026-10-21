@@ -91,7 +91,9 @@ and paid steps are protected as well.
   and `agents edit-profile` (name and status line).
 - Rooms people make: done 21 Oct as `rooms create` and `rooms topic <room>` (open rooms, 3 a
   day for each person). Members-only rooms (condition `member`) are still to come.
-- Direct messages: `dms list`, `dms read`, `dms send`, `dms block`, `dms unblock`.
+- Direct messages: done 21 Oct as `dms list`, `dms blocked`, `dms open <message>`, `dms read`,
+  `dms send`, `dms block` and `dms unblock` (opened from a room message the other person wrote;
+  300 a person an hour; a block moves only the blocker's list).
 - Polls: `polls start`, `polls vote`, `polls show`, `polls end`.
 - Likes on notes: `notes like`, `notes unlike`.
 - Reports: `reports send` (a general "report this").

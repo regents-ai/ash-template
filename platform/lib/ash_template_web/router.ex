@@ -292,6 +292,18 @@ defmodule AshTemplateWeb.Router do
     post "/note-labels/:id/report", PairedAgentController, :report_label
   end
 
+  # A paired agent's direct messages, as its person has them on /dms.
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :api
+    get "/dms", DmsController, :index
+    get "/dms/blocked", DmsController, :blocked
+    post "/dms", DmsController, :open
+    post "/dms/:conversation/history", DmsController, :history
+    post "/dms/:conversation/messages", DmsController, :send_message
+    post "/dms/:conversation/block", DmsController, :block
+    post "/dms/:conversation/unblock", DmsController, :unblock
+  end
+
   scope "/", AshTemplateWeb do
     pipe_through :browser
 
@@ -316,6 +328,8 @@ defmodule AshTemplateWeb.Router do
       live "/app/activity", ShellLive, :activity
       live "/notes", ShellLive, :notes
       live "/rooms/:room", ShellLive, :room
+      live "/dms", ShellLive, :dms
+      live "/dms/:conversation_id", ShellLive, :dm
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
       live "/design", ShellLive, :design

@@ -10,6 +10,7 @@ defmodule AshTemplate.SignedToolsTest do
 
   @wallet "0x2222222222222222222222222222222222222222"
   @other "0x4444444444444444444444444444444444444444"
+  @third "0x5555555555555555555555555555555555555555"
 
   test "Points settlement shares the account cap and per-action count across actors and retries" do
     # Accepted invariant: transport/actor changes cannot create another reward allowance.
@@ -359,6 +360,75 @@ defmodule AshTemplate.SignedToolsTest do
     added_after = request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id}))
     assert added_after.status == 403
     assert Rooms.list_my_mutes!(actor: human) == []
+  end
+
+  test "an agent's direct messages are its person's alone, a retry sends once, and a block moves only the blocker's list" do
+    # Invariant: only the two people in a conversation, or an agent one of them
+    # paired, read or write it; a retried send never sends twice; and blocking
+    # moves the conversation for the blocker without stopping the other side's
+    # messages from saving.
+    {account, person, paired} = paired_person("did:privy:dm-test")
+    human = AshTemplate.Actors.Human.for_account(account)
+
+    [other_human, stranger] =
+      for {id, wallet} <- [{"did:privy:dm-other", @other}, {"did:privy:dm-stranger", @third}] do
+        id
+        |> AshTemplate.Accounts.register_verified!(wallet, [wallet],
+          actor: %AshTemplate.Actors.System{}
+        )
+        |> AshTemplate.Actors.Human.for_account()
+      end
+
+    said =
+      Rooms.post_message!(%{room: "general", body: "Write to me"},
+        actor: other_human,
+        context: %{client_key: "other"}
+      )
+
+    opened = request(:post, "/api/v1/dms", Jason.encode!(%{message_id: said.id}))
+    assert opened.status == 200, opened.resp_body
+    assert %{"id" => id, "blocked" => false} = Jason.decode!(opened.resp_body)["conversation"]
+
+    # Opening it again answers the same conversation.
+    again = request(:post, "/api/v1/dms", Jason.encode!(%{message_id: said.id}))
+    assert Jason.decode!(again.resp_body)["conversation"]["id"] == id
+
+    send = Jason.encode!(%{body: "Hi there", operation_id: Ecto.UUID.generate()})
+    sent = request(:post, "/api/v1/dms/#{id}/messages", send)
+    assert sent.status == 201, sent.resp_body
+    retried = request(:post, "/api/v1/dms/#{id}/messages", send)
+    assert retried.status == 200, retried.resp_body
+    assert Jason.decode!(retried.resp_body)["message"]["id"] == Jason.decode!(sent.resp_body)["message"]["id"]
+
+    read = Jason.decode!(request(:post, "/api/v1/dms/#{id}/history", "{}").resp_body)["messages"]
+    assert [%{"body" => "Hi there", "mine" => true}] = read
+    assert error_code(request(:post, "/api/v1/dms/#{id}/history", ~s({"after": 5}))) == "invalid_cursor"
+
+    # Nobody else reads or writes it.
+    assert {:ok, nil} = AshTemplate.Dms.get_conversation(id, actor: stranger)
+    assert {:error, _} = AshTemplate.Dms.send_dm(id, %{body: "Let me in"}, actor: stranger)
+
+    AshTemplate.Dms.send_dm!(id, %{body: "Hello back"}, actor: other_human)
+    listed = Jason.decode!(request(:get, "/api/v1/dms").resp_body)["conversations"]
+    assert [%{"id" => ^id, "last_message" => "Hello back"}] = listed
+
+    # A block moves it to the blocker's Blocked list only; the other side still writes.
+    blocked = request(:post, "/api/v1/dms/#{id}/block", "{}")
+    assert Jason.decode!(blocked.resp_body)["conversation"]["blocked"]
+    assert Jason.decode!(request(:get, "/api/v1/dms").resp_body)["conversations"] == []
+    in_blocked = request(:get, "/api/v1/dms/blocked")
+    assert in_blocked.status == 200, in_blocked.resp_body
+    assert [%{"id" => ^id}] = Jason.decode!(in_blocked.resp_body)["conversations"]
+    assert [%{id: ^id}] = AshTemplate.Dms.list_conversations!(false, actor: other_human)
+    AshTemplate.Dms.send_dm!(id, %{body: "Still here"}, actor: other_human)
+    assert length(AshTemplate.Dms.list_dms!(id, actor: human).results) == 3
+
+    # Nobody writes to themselves.
+    own = Rooms.post_message!(%{room: "general", body: "Mine"}, actor: human, context: %{client_key: "person"})
+    assert error_code(request(:post, "/api/v1/dms", Jason.encode!(%{message_id: own.id}))) == "invalid_open"
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert request(:get, "/api/v1/dms").status == 403
   end
 
   test "an archived note goes after its person's other notes and keeps its pin until unarchived" do

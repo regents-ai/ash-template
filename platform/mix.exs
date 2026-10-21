@@ -190,7 +190,9 @@ defmodule AshTemplate.MixProject do
         "cmd env SOBELOW_HOME=_build/sobelow mix sobelow --exit",
         # Ash 3.32.1's retained policy-check compile dependencies (ash #2886) set the floor.
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
-        "xref graph --label compile-connected --fail-above 28",
+        # Each Ash domain adds one (it reads its resources at compile time), and so does each
+        # signed-agent controller (it reads AgentWallet's refusals into its error table).
+        "xref graph --label compile-connected --fail-above 30",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",
