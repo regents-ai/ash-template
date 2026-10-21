@@ -13,7 +13,12 @@
 # platform/_build/drift/<site>/ for reading. A file a site has no use for yet is
 # listed as "not used", with why, from not_used below; a file a site keeps at its
 # own path is read there, from moved below. Of platform/mix.exs only the aliases
-# are compared, since each site's dependencies are its own. Needs `gh auth login`.
+# are compared, since each site's dependencies are its own.
+#
+# The template's homepage tracks regents.sh's, so for regents two more checks
+# run: the homepage files the template copies from regents.sh, and the two live
+# homepages' tabs and cube (each tab and link, and every word in the cube's six
+# worlds), as visitors see them. Needs `gh auth login` and curl.
 set -euo pipefail
 
 sites=(keyfleet regents autolaunch patchbay techtree)
@@ -70,6 +75,16 @@ build=(
   platform/.formatter.exs
   platform/.credo.exs
   platform/.sobelow-conf
+)
+
+# The files of the homepage the template copies from regents.sh, compared with
+# regents.sh's alone.
+homepage=(
+  platform/lib/ash_template_web/components/world_cube.ex
+  platform/assets/js/hooks/world_cube.ts
+  platform/assets/js/hooks/cube_label.ts
+  platform/assets/css/pages/home.css
+  platform/assets/css/components/world_cube.css
 )
 
 # Shared files a site has no use for yet, with why. Such a file is listed as "not used"
@@ -160,6 +175,35 @@ compare() {
   printf '    %s same, %s differ, %s missing, %s not used\n' "$same" "$differ" "$missing" "$unused"
 }
 
+# A live homepage's tabs and cube as visitors see them: each piece of text and
+# each link on its own line, the page's markup dropped and a link within the
+# site written with the site's address.
+home_words() {
+  curl -fsS --max-time 20 "$1/" | ORIGIN="$1" perl -0777 -ne '
+    my $nav = m{<nav class="rl-product-tabs".*?</nav>}s ? $& : "";
+    my $cube = m{<[^<>]*id="home-worlds".*?</section>}s ? $& : "";
+    $_ = "$nav$cube";
+    s{<a [^>]*?href="([^"]+)"[^>]*>}{my $href = $1; "\nlink " . ($href =~ m{^/} ? "$ENV{ORIGIN}$href" : $href) . "\n"}ge;
+    s{<[^>]+>}{\n}g;
+    print map { s/^\s+|\s+$//gr . "\n" } grep { /\S/ } split /\n/;
+  '
+}
+
+# Compares the two live homepages' tabs and cube.
+compare_live_homepages() {
+  local diff_file="$out/regents/live-homepage.diff" added removed
+  echo "  Live homepages (regents.sh and template.regents.sh: tabs and cube)"
+  if diff -u --label "template.regents.sh" --label "regents.sh" \
+    <(home_words https://template.regents.sh) <(home_words https://regents.sh) >"$diff_file"; then
+    rm "$diff_file"
+    echo "    same     tabs, links and every word in the cube"
+  else
+    added="$(tail -n +3 "$diff_file" | grep -c '^+' || true)"
+    removed="$(tail -n +3 "$diff_file" | grep -c '^-' || true)"
+    printf '    differs  tabs or cube  (+%s -%s)\n' "$added" "$removed"
+  fi
+}
+
 for site in "${@:-${sites[@]}}"; do
   repo="regents-ai/$site"
   rev="$(gh api "repos/$repo/commits/main" --jq .sha)"
@@ -175,6 +219,10 @@ for site in "${@:-${sites[@]}}"; do
   find "$out/$site" -name '*.diff' -delete
   compare "Shared files" "${shared[@]}"
   compare "Build and deploy files" "${build[@]}"
+  if [[ "$site" == regents ]]; then
+    compare "Homepage files" "${homepage[@]}"
+    compare_live_homepages
+  fi
   echo
 done
 echo "Differences are in $out/<site>/."

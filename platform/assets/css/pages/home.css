@@ -13,130 +13,147 @@
   .rl-header-bar { display: flex; align-items: center; flex-wrap: wrap; min-height: 5rem; gap: 1rem; padding: var(--space-2) var(--rg-panel-padding); }
   .rl-brand { display: flex; gap: var(--space-1); align-items: center; font-family: var(--font-family-title); text-decoration: none; }
   .rl-brand img { width: 2rem; height: 2rem; object-fit: contain; }
-  .rl-product-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; order: 3; width: 100%; max-width: 44rem; margin-inline: auto; }
+  .rl-product-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .625rem; order: 3; width: 100%; max-width: 52rem; margin-inline: auto; }
   .rl-header-bar > .rl-header-links { margin-inline-start: auto; }
   .rl-header-links { display: flex; align-items: center; gap: var(--space-2); }
   .rl-header-links > a:not(.rg-button), .rl-header-links svg { display: inline-flex; width: 1.5rem; height: 1.5rem; }
   .rl-hero { min-width: 0; }
-  .rl-hero-stage {
-    position: relative; isolation: isolate; min-width: 0;
-    display: grid; grid-template-rows: auto 1fr; gap: var(--space-4);
-    min-height: 34rem; height: clamp(34rem, calc(100svh - 7rem), 44rem);
-    padding: var(--rg-panel-padding);
-  }
-  /* Absolute artwork cannot contribute its intrinsic dimensions to a grid row. */
-  .rl-hero-media { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; contain: strict; }
-  .rl-hero-art { position: absolute; inset: 0; display: block; width: 100%; height: 100%; pointer-events: none; object-fit: cover; }
-  /* Copy sits over the art; the cards below stay opaque. */
   .rl-hero-copy { position: relative; z-index: 1; width: fit-content; max-width: 100%; align-self: start; padding: var(--space-1) var(--space-2) var(--space-2) 0; }
   .rl-hero-copy h1 { margin-block-start: var(--space-2); font-size: clamp(2.75rem, 5vw, 4.5rem); line-height: 1.05; letter-spacing: -.035em; }
   .rl-hero-description { margin-block-start: var(--space-2); max-width: 34ch; font-size: 1.125rem; line-height: 1.5; }
-  .rl-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block-start: var(--space-3); }
-  .rl-hero-products { position: relative; z-index: 1; align-self: end; width: min(100%, 54rem); display: grid; gap: var(--space-2); }
-  .rl-hero-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
-  .rl-hero-card {
-    --rl-card-fill: var(--palette-platinum);
-    --rg-local-fill: var(--rl-card-fill); --rg-local-ink: var(--palette-charcoal);
-    --color-accent: var(--palette-charcoal); --color-fg-on-accent: var(--palette-platinum);
-    display: grid; grid-template-rows: auto 1fr auto; gap: var(--space-2); min-width: 0;
-    padding: var(--space-2); background: var(--rl-card-fill); color: var(--palette-charcoal);
+  .rl-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-block-start: var(--space-3); pointer-events: auto; }
+  /* Phones stack the heading and the stage. On desktop the heading overlays
+     the stage, whose fallback list reserves the same height as the drawn cube. */
+  .rl-hero--home {
+    display: grid; grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
   }
-  .rl-hero-card[data-home-hero-card="signin"] { --rl-card-fill: var(--palette-tangerine-tango); }
-  .rl-hero-card[data-home-hero-card="account"] { --rl-card-fill: var(--palette-powder-blue); }
-  .rl-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-1); }
-  .rl-card-heading h2 { font-size: 1.375rem; line-height: 1.15; }
-
-  .rl-hero-card > p { font-size: .875rem; line-height: 1.45; }
-  .rl-card-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
-  .rl-closing-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .rl-chapter, .rl-closing { padding: var(--rg-panel-padding); }
-  .rl-chapter-intro { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: var(--space-3); }
-  .rl-chapter-intro > div:only-child { grid-column: 2; }
-  .rl-chapter-index { font-family: var(--font-family-mono); font-size: .8125rem; border-block-start: 1px solid var(--rl-line); padding-block-start: var(--space-2); }
+  .rl-hero--home .rl-hero-copy { grid-area: 1 / 1; padding: var(--space-3); pointer-events: none; transition: opacity 320ms ease-out; }
+  .rl-hero--home .world-cube { grid-area: 2 / 1; grid-template-rows: minmax(0, 1fr); min-height: 0; }
+  .rl-hero--home .world-cube__worlds { align-self: stretch; }
+  /* "Human Browsing" over the cube, while the pointer is on it; where nothing
+     hovers, it stays shown. */
+  .rl-cube-label {
+    position: relative; z-index: 2; grid-area: 2 / 1; align-self: start; justify-self: center;
+    margin: 0; padding-top: var(--space-3);
+    color: color-mix(in srgb, var(--rl-ink) 74%, transparent);
+    font: .75rem/1.4 var(--font-family-mono); letter-spacing: var(--tracking-microlabel); text-transform: uppercase;
+    opacity: 0; pointer-events: none;
+  }
+  .rl-hero--home:has(.world-cube:is([data-world-state="entering"], [data-world-state="inside"], [data-world-state="leaving"])) .rl-cube-label { visibility: hidden; }
+  @media (hover: none) {
+    .rl-cube-label { opacity: 1; }
+  }
   .rl-overline { font-family: var(--font-family-ui); font-size: .6875rem; letter-spacing: .16em; text-transform: uppercase; }
-  .rl-chapter-intro h2, .rl-closing h2 { max-width: 22ch; margin-block: var(--space-3); font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.1; letter-spacing: -.035em; }
-  .rl-proof-grid { margin-block-start: var(--space-4); }
-  .rl-proof-card { --rl-proof-fill: var(--palette-platinum); --color-accent: var(--palette-charcoal); --color-fg-on-accent: var(--palette-platinum); }
-  .rl-proof-card[data-card-color="orange"] { --rl-proof-fill: var(--palette-tangerine-tango); }
-  .rl-proof-card[data-card-color="blue"] { --rl-proof-fill: var(--palette-powder-blue); }
-  .rl-card-diagram { pointer-events: none; }
-  .rl-proof-card .rg-feature__caption { display: flex; flex-direction: column; }
-  .rl-closing-actions { margin-block-start: var(--space-4); }
-  .rl-closing { padding-inline-start: calc(var(--rg-panel-padding) + 4rem + var(--space-3)); }
-  .rl-closing > p { max-width: 60ch; }
+
   @media (max-width: 63.99rem) {
     .rl-header-links { margin-inline-start: auto; }
   }
+  /* Just under 1280 the bar packs tighter, so the tabs keep their one row between the brand and links. */
+  @media (min-width: 77rem) and (max-width: 79.99rem) {
+    .rl-header-bar { gap: .75rem; }
+    .rl-header-links { gap: .5rem; }
+  }
   @media (max-width: 47.99rem) {
-    .rl-header-links { position: relative; }
-    .rl-hero-stage { height: auto; min-height: 0; grid-template-rows: auto 15rem auto; gap: var(--space-2); }
-    .rl-hero-copy { grid-row: 1; padding: 0; }
-    .rl-hero-media { position: relative; inset: auto; grid-row: 2; width: 100%; height: 15rem; }
-    .rl-hero-products { grid-row: 3; width: 100%; }
-    .rl-hero-cards { grid-template-columns: minmax(0, 1fr); }
-    .rl-hero-card { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: var(--space-1) var(--space-2); }
-    .rl-card-heading { grid-column: 1 / -1; }
-    .rl-hero-card > p { align-self: center; }
-    .rl-card-actions { flex-wrap: wrap; justify-content: end; max-width: 12rem; }
-    .rl-hero-art { object-fit: contain; }
-    .rl-closing { padding-inline-start: var(--rg-panel-padding); }
-    .rl-chapter-intro { grid-template-columns: minmax(0, 1fr); }
-    .rl-chapter-intro > div:only-child { grid-column: 1; }
+    .rl-header-links { position: relative; gap: .25rem; }
+    /* Phone tap targets are 44px square; the icons keep their size. */
+    .rl-header-links > a:not(.rg-button) { width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; }
+    .rl-hero-copy { padding: 0; }
     .rl-hero-copy h1 { font-size: clamp(2.5rem, 10vw, 4.5rem); }
+    /* On a phone the name sits at the left of the stage. */
+    .rl-cube-label { justify-self: start; padding-inline: var(--space-3); }
     .rl-brand { font-size: .875rem; }
   }
-  @media (max-width: 25rem) {
-    .rl-hero-card { grid-template-columns: minmax(0, 1fr); }
-    .rl-card-actions { justify-content: space-between; max-width: none; }
+  @media (min-width: 48rem) {
+    .rl-hero--home { --rl-worlds-height: 55.5rem; }
+    .rl-hero--home .rl-hero-copy { padding: var(--space-5) var(--space-5) var(--space-3); }
+    /* A desktop room overlays the heading; phones keep theirs above the stage. */
+    .rl-hero--home:has(.world-cube[data-world-ready="true"]:is([data-world-state="entering"], [data-world-state="inside"])) .rl-hero-copy { opacity: 0; }
+    .rl-hero--home:has(.world-cube[data-world-ready="true"]:is([data-world-state="entering"], [data-world-state="inside"])) .rl-hero-actions { pointer-events: none; }
+    .rl-hero--home { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto minmax(var(--rl-worlds-height), auto); }
+    /* Drawn, the cube stands in the middle of the stage, its name over it and
+       its hint under it. Where it is not drawn, the list of worlds keeps the
+       stage's full width, so the stage is the same height either way. */
+    .rl-hero--home .world-cube { --world-cube-size: .85; grid-area: 1 / 1 / span 2 / span 2; grid-template-rows: subgrid; }
+    .rl-hero--home .world-cube__worlds { grid-row: 2; align-self: center; }
+    .rl-cube-label { grid-area: 2 / 1 / auto / span 2; top: -.75rem; padding-top: 0; }
+  }
+  @media (min-width: 60rem) {
+    .rl-hero--home { --rl-worlds-height: 44rem; }
+    /* The cube reaches up level with the heading, so it is drawn smaller to
+       pass under the heading's words. */
+    .rl-hero--home .world-cube { --world-cube-size: .66; }
+  }
+  @media (min-width: 68.75rem) {
+    /* Wide enough for the heading to sit beside the cube at full size, its
+       name at the top of the stage. */
+    .rl-hero--home { --rl-worlds-height: 38rem; }
+    .rl-hero--home .world-cube { --world-cube-size: 1; }
+    .rl-cube-label { grid-area: 1 / 1 / auto / span 2; top: 0; padding-top: var(--space-5); }
   }
 }
 
-/* Product navigation keeps its muted, square paint and compact sizing. */
+/* Quiet, equally padded keys. The existing VGPU foil supplies the light;
+   the shared Anime.js press scales its paint and label, never its hit target. */
 .rg-button.rl-product-tab {
-  --rl-tab-fill: color-mix(in srgb, var(--rl-ink) 16%, var(--rl-bg));
-  color: var(--rl-ink);
-  min-width: 0; min-height: 3.25rem; padding: .75rem .5rem;
-  border-radius: 0; font-size: clamp(.8125rem, 1.1vw, .9375rem);
-  font-weight: 400; letter-spacing: .045em; text-transform: uppercase;
-  text-align: center; justify-content: center; white-space: nowrap;
+  --rg-cut-control: 0px;
+  --rg-p-accent: color-mix(in srgb, var(--rl-ink) 7%, var(--rl-bg));
+  --rg-p-on-accent: var(--rl-ink);
+  --rg-button-border-color: color-mix(in srgb, var(--rl-ink) 30%, transparent);
+  min-width: 0; min-height: 3.25rem; padding: .875rem 1rem;
+  border-radius: 0; font-size: .8125rem; line-height: 1.25;
+  font-weight: 400; letter-spacing: .06em; text-transform: uppercase;
+  text-align: center; justify-content: center; white-space: nowrap; user-select: none;
 }
-.rg-button.rl-product-tab::before { background: var(--rl-tab-fill); clip-path: none; transition: background-color 150ms ease; }
-.rg-button.rl-product-tab:is(:hover, :focus-visible) { --rl-tab-fill: color-mix(in srgb, var(--rl-ink) 21%, var(--rl-bg)); }
-@media (min-width: 80rem) {
-  .rl-header-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 36rem) minmax(0, 1fr); }
+.rg-button.rl-product-tab::after, .rg-button.rl-action::after { content: none; }
+.rg-button.rl-action { white-space: nowrap; }
+.rg-button.rl-product-tab::before {
+  border: 1px solid var(--rg-button-border-color);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.rl-product-tab__foil {
+  inset: 0; z-index: -1; opacity: 0;
+  transform: scale(var(--rg-press-scale, 1));
+  transition: opacity 140ms ease;
+  /* Keep the material strongest at the edge and quiet underneath the label. */
+  mask-image: linear-gradient(#000, rgb(0 0 0 / .3) 35% 65%, #000);
+}
+.rg-button.rl-product-tab:focus-visible {
+  outline: 2px solid var(--palette-powder-blue); outline-offset: 4px;
+  --rg-button-border-color: var(--palette-powder-blue);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rg-button.rl-product-tab:hover {
+    --rg-p-accent: color-mix(in srgb, var(--rl-ink) 11%, var(--rl-bg));
+    --rg-button-border-color: color-mix(in srgb, var(--palette-powder-blue) 65%, transparent);
+  }
+  .rl-product-tab[data-holo-ready="true"]:hover .rl-product-tab__foil { opacity: .65; }
+  .rl-product-tab[data-holo-ready="true"]:active .rl-product-tab__foil { opacity: 1; }
+}
+.rg-button.rl-product-tab:active {
+  --rg-p-accent: color-mix(in srgb, var(--rl-ink) 17%, var(--rl-bg));
+  --rg-button-border-color: var(--palette-powder-blue);
+}
+@media (min-width: 77rem) {
+  .rl-header-bar { display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(0, 44rem) minmax(max-content, 1fr); }
   .rl-product-tabs { order: 0; max-width: none; }
   .rl-header-bar > .rl-header-links { justify-self: end; margin-inline-start: 0; }
 }
-@media (max-width: 39.99rem) {
+@media (max-width: 49.99rem) {
   .rl-product-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rl-product-tabs > :last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 23.99rem) {
+  .rg-button.rl-product-tab { font-size: .75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .rl-product-tab__foil { display: none; }
   .rg-button.rl-product-tab::before { transition: none; }
 }
-
-/* Local compact sizing overrides only shared geometry, never its 150ms cut
-   outline or press feedback. Keep the actual target at least 44px tall. */
-.rl-card-actions .rg-button { min-height: 2.75rem; padding: var(--space-1); font-size: .75rem; }
-/* Per-card stock/ink pairs use the shared panel's public color properties. */
-.rl-proof-card > .rg-panel { --rg-panel-fill: var(--rl-proof-fill); --rg-panel-ink: var(--palette-charcoal); }
-/* Compact desktop stock: 75% of the former card width with a 1ch gutter.
-   All product rows share the compact Patchbay reference height; narrow
-   layouts stay content-sized so the copy never needs clipping or scaling. */
-.rl-proof-grid { column-gap: 1ch; row-gap: 0; }
-@media (min-width: 64rem) {
-  .rl-chapter { container-type: inline-size; --rl-card-aspect: 327 / 593.1875; }
-  .rl-proof-grid {
-    width: calc(75% + 2ch - 1.5px);
-    block-size: calc((75cqw - 1.5px) / 3 / (var(--rl-card-aspect)));
-    grid-template-rows: max-content minmax(0, 1fr) max-content;
-  }
-  .rl-proof-card { min-block-size: 0; }
-  .rl-proof-card .rg-technical-figure { min-block-size: 0; grid-template-rows: minmax(0, 1fr); }
-  .rl-proof-card .rg-technical-figure__art { min-block-size: 0; height: 100%; }
-  .rl-proof-card .rg-feature__face .rg-technical-figure__art > svg { block-size: 100%; aspect-ratio: auto; }
-
+@media (forced-colors: active) {
+  .rl-product-tab__foil { display: none; }
+  .rg-button.rl-product-tab { border-color: ButtonText; color: LinkText; }
+  .rg-button.rl-product-tab:focus-visible { outline-color: Highlight; }
 }
-@media (max-width: 63.99rem) {
-  .rl-proof-grid { row-gap: 1ch; }
-}
+
 html[data-home-theme-locked="true"] [data-theme-toggle] { display: none; }

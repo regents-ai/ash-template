@@ -10,7 +10,7 @@ defmodule AshTemplateWeb.HeaderFooterLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.SiteHeader
-  alias AshTemplateWeb.WorldCubeLive
+  alias AshTemplateWeb.HomeLive
 
   @impl true
   def mount(_params, _session, socket) do
@@ -76,7 +76,7 @@ defmodule AshTemplateWeb.HeaderFooterLive do
 
   defp worlds(:long),
     do:
-      Enum.filter(WorldCubeLive.worlds(), fn world ->
+      Enum.filter(HomeLive.worlds(), fn world ->
         Enum.all?(world.cards, &is_map_key(&1, :title))
       end)
 end

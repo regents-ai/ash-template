@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.TwinCubeLive do
 
   alias AshTemplate.SiteTools
   alias AshTemplateWeb.Components.{CodeCube, WorldCube}
-  alias AshTemplateWeb.{Read, WorldCubeLive}
+  alias AshTemplateWeb.{HomeLive, Read}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.TwinCubeLive do
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/animations/twin-cube"))
      |> assign(
-       worlds: WorldCubeLive.worlds(),
+       worlds: HomeLive.worlds(),
        help: SiteTools.connection_help(),
        open: nil,
        tools: %Read{}

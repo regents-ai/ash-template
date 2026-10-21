@@ -34,7 +34,26 @@
 /* The list itself wears a face's card (`code_cube.css`). Its copy press holds
    the place a face's guide link has, in the card's colours in either theme. */
 .code-card__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--space-2);
   margin-inline-start: auto;
+}
+
+/* The copy-all button and the line under it saying how the read stands. The
+   line always holds words, so nothing moves when they change. */
+.agent-tools__every-site {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.agent-tools__note {
+  margin: 0;
+  color: color-mix(in srgb, var(--code-card-ink) 78%, transparent);
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }
 
 .code-card__copy .rg-button {

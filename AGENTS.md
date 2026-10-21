@@ -8,8 +8,10 @@ product.
 
 After renaming, a new site must still replace, by hand:
 
-1. The homepage art `platform/priv/static/images/home/hero-bg-dark.svg`. Keep
-   the file name. The logo files in `platform/priv/static` (`favicon.svg`,
+1. The homepage's name, the line under it and the cube's six worlds
+   (`worlds/0`) in `platform/lib/ash_template_web/live/home_live.ex`. On the
+   template itself the homepage tracks regents.sh's, and `scripts/drift.sh`
+   reports when the two differ. The logo files in `platform/priv/static` (`favicon.svg`,
    `favicon.ico`, `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`,
    `mark.png`, `images/brand/mark-flat-dark.svg`,
    `images/brand/mark-flat-light.svg`) are the Regents crown. Keep them.
