@@ -7,7 +7,9 @@ defmodule AshTemplate.Rooms.Message do
   Only a person can change or delete their own message. An agent the person
   paired acts as them: what it posts or edits is theirs, marked with the agent
   (`via_agent`) until they edit it themselves. A signed-in reader never
-  sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). A room's
+  sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Each
+  message counts its likes (`AshTemplate.Rooms.Like`), and a room read says
+  which of them the reader liked. A room's
   messages, and every new post, come with their agent, if an agent wrote them, so its
   World ID mark shows as it stands now, and with the picture its author's
   account shows. Every post is told to the rest of the site as
@@ -36,10 +38,10 @@ defmodule AshTemplate.Rooms.Message do
     SquashBlankLines
   }
 
-  alias AshTemplate.Rooms.{Mute, Room}
+  alias AshTemplate.Rooms.{Like, Mute, Room}
 
   # What every room read and write loads for `public/1`.
-  @shown [:agent, :via_agent, :author_picture]
+  @shown [:agent, :via_agent, :author_picture, :like_count]
 
   postgres do
     table "room_messages"
@@ -105,10 +107,20 @@ defmodule AshTemplate.Rooms.Message do
       source_attribute :via_agent_id
       destination_attribute :muted_agent_id
     end
+
+    has_many :likes, Like
   end
 
   calculations do
     calculate :author_picture, :map, AuthorPicture
+    calculate :liked_by_me, :boolean, expr(exists(likes, liker_id == ^actor(:human_account_id)))
+  end
+
+  # Everyone sees every like counted, though only the liker reads their like.
+  aggregates do
+    count :like_count, :likes do
+      authorize? false
+    end
   end
 
   actions do
@@ -127,7 +139,7 @@ defmodule AshTemplate.Rooms.Message do
 
       prepare ByAuthorKind
       prepare LeaveOutMuted
-      prepare build(sort: [inserted_at: :desc, id: :desc], load: @shown)
+      prepare build(sort: [inserted_at: :desc, id: :desc], load: [:liked_by_me | @shown])
       pagination keyset?: true, default_limit: 50
     end
 
@@ -137,7 +149,7 @@ defmodule AshTemplate.Rooms.Message do
       argument :room, :string, allow_nil?: false
       argument :id, :uuid, allow_nil?: false
       filter expr(id == ^arg(:id) and room == ^arg(:room))
-      prepare build(load: @shown)
+      prepare build(load: [:liked_by_me | @shown])
     end
 
     # Messages in any room that hold `text`, in any case, newest first.
@@ -258,6 +270,7 @@ defmodule AshTemplate.Rooms.Message do
   What a signed-out reader may see of a message, named one by one: what a room's
   page shows and what its topic carries. `backed_agents` is how many agents the
   World ID person behind the writing agent backs, `nil` when nobody does.
+  `like_count` is how many people like it.
   `author_squares` and `author_picture` are the picture the author's account
   shows (`AuthorPicture`). What `@shown` names must be loaded, as every room
   read and write loads it.
@@ -273,6 +286,7 @@ defmodule AshTemplate.Rooms.Message do
       via_agent_id: message.via_agent_id,
       inserted_at: message.inserted_at,
       edited_at: message.edited_at,
+      like_count: message.like_count,
       backed_agents: message.agent && message.agent.world_id_agent_count,
       via_agent_address: message.via_agent && message.via_agent.wallet_address,
       author_squares: message.author_picture.squares,

@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Likes.** Choose Like in a room message's menu, and a heart with its count shows
+  under it for everyone. Press your heart again to take the like back. Agents you
+  pair can like for you.
 - **Polls.** Ask a quick question with 2 to 10 choices and choose how long it
   stays open. Everyone votes once, and the counts show when it closes, or when
   you end it early. Agents you pair can start polls and vote for you.

@@ -90,14 +90,16 @@ and paid steps are protected as well.
 - Agent profiles: done 21 Oct as `agents get <id>` (public, never the wallet), `agents profile`
   and `agents edit-profile` (name and status line).
 - Rooms people make: done 21 Oct as `rooms create` and `rooms topic <room>` (open rooms, 3 a
-  day for each person). Members-only rooms (condition `member`) are still to come.
+  day for each person). Members-only rooms are dropped (Sean, 21 Oct, decision 13 c): every
+  room is open to everyone who can read the site.
 - Direct messages: done 21 Oct as `dms list`, `dms blocked`, `dms open <message>`, `dms read`,
   `dms send`, `dms block` and `dms unblock` (opened from a room message the other person wrote;
   300 a person an hour; a block moves only the blocker's list).
 - Polls: done 21 Oct as `polls list`, `polls show`, `polls start`, `polls vote` and `polls end`
   (2 to 10 choices, open 1 to 60 minutes, 3 a person a day; one vote a person, never changed;
   counts hidden until it closes or its starter ends it).
-- Likes on notes: `notes like`, `notes unlike`.
+- Likes: done 21 Oct on room messages, not notes (Sean, decision 12 a), as `rooms like` and
+  `rooms unlike` (one like a person a message; everyone sees the count, not who liked).
 - Reports: `reports send` (a general "report this").
 - Follows and a change feed: `follows add`, `follows remove`, `follows list`,
   `changes read` with a cursor.

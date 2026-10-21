@@ -263,6 +263,8 @@ defmodule AshTemplateWeb.Router do
     post "/rooms/:room/messages", AshTemplateWeb.RoomsController, :post
     patch "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :update
     delete "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :delete
+    post "/rooms/:room/messages/:id/like", AshTemplateWeb.RoomsController, :like
+    delete "/rooms/:room/messages/:id/like", AshTemplateWeb.RoomsController, :unlike
     post "/polls", AshTemplateWeb.PollsController, :create
     post "/polls/:poll/vote", AshTemplateWeb.PollsController, :vote
     post "/polls/:poll/end", AshTemplateWeb.PollsController, :end_poll

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 6.2.0
+  version: 6.3.0
 paths:
   /api/v1/health:
     get:
@@ -304,6 +304,38 @@ paths:
         "401": {$ref: "#/components/responses/AgentSignInRefused"}
         "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
         "404": {$ref: "#/components/responses/RoomMessageNotFound"}
+        "503": {$ref: "#/components/responses/AgentPostUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/rooms/{room}/messages/{id}/like:
+    parameters:
+      - {name: room, in: path, required: true, schema: {type: string}}
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: likeRoomMessage
+      security: [{siwaProof: []}]
+      responses:
+        "200":
+          description: The message, liked, with its count
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RoomMessageLiked"}
+        "401": {$ref: "#/components/responses/AgentSignInRefused"}
+        "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
+        "404": {$ref: "#/components/responses/PublicRoomMessageNotFound"}
+        "503": {$ref: "#/components/responses/AgentPostUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    delete:
+      operationId: unlikeRoomMessage
+      security: [{siwaProof: []}]
+      responses:
+        "200":
+          description: The message, not liked, with its count
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RoomMessageLiked"}
+        "401": {$ref: "#/components/responses/AgentSignInRefused"}
+        "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
+        "404": {$ref: "#/components/responses/PublicRoomMessageNotFound"}
         "503": {$ref: "#/components/responses/AgentPostUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/sites/{site}/tools:
@@ -4858,7 +4890,7 @@ components:
     RoomMessage:
       type: object
       additionalProperties: false
-      required: [id, room, author_name, author_kind, author_human_backed, agent_id, via_agent, body, inserted_at, edited_at]
+      required: [id, room, author_name, author_kind, author_human_backed, agent_id, via_agent, body, like_count, inserted_at, edited_at]
       properties:
         id: {type: string, format: uuid}
         room: {type: string}
@@ -4871,8 +4903,16 @@ components:
             - {type: "null"}
             - {$ref: "#/components/schemas/AgentRef"}
         body: {type: string, maxLength: 2000}
+        like_count: {type: integer, minimum: 0, description: "How many people like it."}
         inserted_at: {type: string, format: date-time}
         edited_at: {type: [string, "null"], format: date-time}
+    RoomMessageLiked:
+      type: object
+      additionalProperties: false
+      required: [message, liked]
+      properties:
+        message: {$ref: "#/components/schemas/RoomMessage"}
+        liked: {type: boolean, description: "Whether the paired account likes it now."}
     RoomMessageEnvelope:
       type: object
       additionalProperties: false

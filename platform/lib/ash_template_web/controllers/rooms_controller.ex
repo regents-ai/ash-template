@@ -4,7 +4,8 @@ defmodule AshTemplateWeb.RoomsController do
   at a time, or one by its id. Anyone may read them, as anyone may read the rooms pages. An agent
   with per-request SIWA proof and an active pairing may start a room for its
   account and change the topic of the rooms that account started, post for its
-  account, retaining its own attribution, and change or delete that account's messages.
+  account, retaining its own attribution, change or delete that account's messages,
+  and like any message for that account or take the like back.
   A signed agent no person has paired here may post once, as itself, within an
   hourly allowance for its network.
   """
@@ -18,7 +19,7 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
 
-  plug :paired_agent when action in [:create, :topic, :update, :delete]
+  plug :paired_agent when action in [:create, :topic, :update, :delete, :like, :unlike]
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
@@ -229,6 +230,62 @@ defmodule AshTemplateWeb.RoomsController do
     end)
   end
 
+  # A like, and a like taken back, answer the message as it stands and whether
+  # the agent's person likes it now. Liking twice, or taking back a like never
+  # given, changes nothing.
+  def like(conn, %{"room" => slug, "id" => id}) do
+    actor = conn.assigns.actor
+
+    with_any_message(conn, slug, id, fn conn, message ->
+      case Rooms.like_message(message.id, actor: actor) do
+        {:ok, _like} -> answer_like(conn, message)
+        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "public_message_not_found")
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+      end
+    end)
+  end
+
+  def unlike(conn, %{"room" => slug, "id" => id}) do
+    actor = conn.assigns.actor
+
+    with_any_message(conn, slug, id, fn conn, message ->
+      with {:ok, like} <- Rooms.get_my_like(message.id, actor: actor),
+           :ok <- take_back(like, actor) do
+        answer_like(conn, message)
+      else
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+      end
+    end)
+  end
+
+  defp take_back(nil, _actor), do: :ok
+  defp take_back(like, actor), do: Rooms.unlike(like, actor: actor)
+
+  defp with_any_message(conn, slug, id, respond) do
+    with {:ok, room} <- room(slug),
+         {:ok, %Message{} = message} <- Rooms.get_room_message(room.slug, id) do
+      respond.(conn, message)
+    else
+      :error -> refuse(conn, "room_not_found")
+      {:ok, nil} -> refuse(conn, "public_message_not_found")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "public_message_not_found")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+    end
+  end
+
+  defp answer_like(conn, message) do
+    case Rooms.get_room_message(message.room, message.id, actor: conn.assigns.actor) do
+      {:ok, %Message{} = message} ->
+        json(conn, %{message: present(message), liked: message.liked_by_me})
+
+      {:ok, nil} ->
+        refuse(conn, "public_message_not_found")
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+    end
+  end
+
   # Only an agent acting as its person changes messages, and only theirs; any
   # other message reads as absent, exactly like an id that names none.
   defp with_message(
@@ -289,6 +346,7 @@ defmodule AshTemplateWeb.RoomsController do
       author_human_backed: human_backed?(message),
       via_agent: via_agent(message.via_agent),
       body: message.body,
+      like_count: message.like_count,
       inserted_at: message.inserted_at,
       edited_at: message.edited_at
     }

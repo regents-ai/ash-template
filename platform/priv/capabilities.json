@@ -286,6 +286,26 @@
       "switch": "app_surfaces"
     },
     {
+      "operation": "likeRoomMessage",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "may": "Like room messages and take likes back",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "unlikeRoomMessage",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/rooms/{room}",
+      "may": "Like room messages and take likes back",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "getAgentIdentity",
       "effect": "read",
       "authority": "signed_agent",

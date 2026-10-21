@@ -499,6 +499,49 @@ defmodule AshTemplate.SignedToolsTest do
     assert request(:post, "/api/v1/polls", start).status == 403
   end
 
+  test "an agent's like counts once for its person, everyone sees the count, and only that person's like is taken back" do
+    # Invariant: a person likes a message once (liking again changes nothing), the
+    # count is public while who liked it is not, and taking a like back removes only
+    # the agent's person's like.
+    {account, person, paired} = paired_person("did:privy:like-test")
+    human = AshTemplate.Actors.Human.for_account(account)
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:like-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    message =
+      Rooms.post_message!(%{room: "general", body: "Worth a like"},
+        actor: other,
+        context: %{client_key: "other"}
+      )
+
+    path = "/api/v1/rooms/general/messages/#{message.id}/like"
+    liked = request(:post, path, "{}")
+    assert liked.status == 200, liked.resp_body
+    assert %{"liked" => true, "message" => %{"like_count" => 1}} = Jason.decode!(liked.resp_body)
+    assert %{"liked" => true, "message" => %{"like_count" => 1}} = Jason.decode!(request(:post, path, "{}").resp_body)
+
+    assert {:ok, _like} = Rooms.like_message(message.id, actor: other)
+    public = request(:get, "/api/v1/rooms/general/messages/#{message.id}", nil, false)
+    assert %{"like_count" => 2} = Jason.decode!(public.resp_body)["message"]
+    assert {:ok, %{liked_by_me: true, like_count: 2}} = Rooms.get_room_message("general", message.id, actor: human)
+
+    unliked = request(:delete, path)
+    assert %{"liked" => false, "message" => %{"like_count" => 1}} = Jason.decode!(unliked.resp_body)
+    assert %{"liked" => false, "message" => %{"like_count" => 1}} = Jason.decode!(request(:delete, path).resp_body)
+    assert {:ok, %Rooms.Like{}} = Rooms.get_my_like(message.id, actor: other)
+
+    assert error_code(request(:post, "/api/v1/rooms/general/messages/#{Ecto.UUID.generate()}/like", "{}")) ==
+             "public_message_not_found"
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert request(:post, path, "{}").status == 403
+    assert {:ok, %{liked_by_me: false, like_count: 1}} = Rooms.get_room_message("general", message.id, actor: human)
+  end
+
   test "an archived note goes after its person's other notes and keeps its pin until unarchived" do
     # Invariant: archiving only moves a note to the end of its person's notes; it never
     # drops a pin they may have paid for, and an agent reaches only its own person's notes.

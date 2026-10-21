@@ -135,6 +135,12 @@
   margin: 0;
 }
 
+/* The heart sits under the words, its picture lined up with them. */
+.rooms-message__main .rg-discussion__like {
+  justify-self: start;
+  margin-inline-start: -0.6rem;
+}
+
 .rooms-body {
   margin: 0;
   white-space: pre-wrap;
