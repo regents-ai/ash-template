@@ -51,7 +51,7 @@ The answer is `{"profile": …}` with its id, display name, linked wallets and s
 
 `GET /api/v1/notes` lists your notes, newest first. `POST /api/v1/notes` adds one. `GET`, `PATCH` and `DELETE /api/v1/notes/{id}` read, change and delete one of yours. They are the notes on the [notes page]({{origin}}/notes), and open pages show each change at once.
 
-Send the same two Privy tokens the profile API takes. Sign in on this site once first; until then the notes API answers 403 with `account_required`. An agent you paired calls the same addresses, signing each request with its own key instead (see "Pair an agent" below). It also finds notes with `POST /api/v1/notes/search` (`{"text": "…"}`, 2 to 100 characters, up to 5 notes), reads what pinning one would cost with `GET /api/v1/notes/{id}/pin-price` (changing nothing), pins and unpins with `POST /api/v1/notes/{id}/pin` and `…/unpin`, and rates a label with `POST /api/v1/note-labels/{id}/report`.
+Send the same two Privy tokens the profile API takes. Sign in on this site once first; until then the notes API answers 403 with `account_required`. An agent you paired calls the same addresses, signing each request with its own key instead (see "Pair an agent" below). It also finds notes with `POST /api/v1/notes/search` (`{"text": "…"}`, 2 to 100 characters, up to 5 notes), reads what pinning one would cost with `GET /api/v1/notes/{id}/pin-price` (changing nothing), pins and unpins with `POST /api/v1/notes/{id}/pin` and `…/unpin`, archives and unarchives with `…/archive` and `…/unarchive`, and rates a label with `POST /api/v1/note-labels/{id}/report`.
 
 ```sh
 curl --fail-with-body -X POST '{{origin}}/api/v1/notes' \

@@ -97,7 +97,8 @@ and paid steps are protected as well.
 - Reports: `reports send` (a general "report this").
 - Follows and a change feed: `follows add`, `follows remove`, `follows list`,
   `changes read` with a cursor.
-- Archive for notes: `notes archive`, `notes unarchive` (a fixed body).
+- Archive for notes: done 21 Oct as `notes archive <id>` and `notes unarchive <id>` (free; an
+  archived note goes after the others and keeps its pin).
 - Account summary and budget: `account show`, `account budget`.
 - Jobs: `jobs start`, `jobs result`.
 - Paid flow in steps (effect prepare): `payments prepare`, `payments get`.

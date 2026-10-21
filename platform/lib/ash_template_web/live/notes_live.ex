@@ -10,8 +10,9 @@ defmodule AshTemplateWeb.NotesLive do
   its label decision's PubSub notifiers publish it after the transaction
   commits, the shell holds the subscription, and hands it on here as
   `send_update(NotesLive, id: "notes", change: {event, note_or_decision})`.
-  Any change but a delete reads the note again with its latest label; a pin or
-  unpin reads the list again, since pinned notes come first.
+  Any change but a delete reads the note again with its latest label; a pin,
+  unpin, archive or unarchive reads the list again, since pinned notes come
+  first and archived ones last. Archived notes stay out of the sidebar.
   """
 
   use AshTemplateWeb, :live_component
@@ -93,6 +94,28 @@ defmodule AshTemplateWeb.NotesLive do
       {:noreply, assign(socket, :notice, nil)}
     else
       failure -> {:noreply, assign(socket, :notice, notice(failure, "unpinned"))}
+    end
+  end
+
+  def handle_event("archive", %{"id" => id}, socket) do
+    actor = socket.assigns.actor
+
+    with {:ok, %Note{} = note} <- Notes.get_my_note(id, actor: actor),
+         {:ok, _note} <- Notes.archive_note(note, actor: actor) do
+      {:noreply, assign(socket, :notice, nil)}
+    else
+      failure -> {:noreply, assign(socket, :notice, notice(failure, "archived"))}
+    end
+  end
+
+  def handle_event("unarchive", %{"id" => id}, socket) do
+    actor = socket.assigns.actor
+
+    with {:ok, %Note{} = note} <- Notes.get_my_note(id, actor: actor),
+         {:ok, _note} <- Notes.unarchive_note(note, actor: actor) do
+      {:noreply, assign(socket, :notice, nil)}
+    else
+      failure -> {:noreply, assign(socket, :notice, notice(failure, "unarchived"))}
     end
   end
 
@@ -211,6 +234,7 @@ defmodule AshTemplateWeb.NotesLive do
             </li>
             <li :for={{dom_id, note} <- @streams.notes} id={dom_id} class="notes-item">
               <Primitives.status :if={note.pinned_at} tone="info">Pinned</Primitives.status>
+              <Primitives.status :if={note.archived_at}>Archived</Primitives.status>
               <h3>{note.title}</h3>
               <p :if={note.body}>{note.body}</p>
               <p :if={note.changed_by_agent} class="rg-muted">
@@ -240,6 +264,15 @@ defmodule AshTemplateWeb.NotesLive do
                   phx-target={@myself}
                 >
                   Unpin
+                </Primitives.button>
+                <Primitives.button
+                  type="button"
+                  variant="quiet"
+                  phx-click={if note.archived_at, do: "unarchive", else: "archive"}
+                  phx-value-id={note.id}
+                  phx-target={@myself}
+                >
+                  {if note.archived_at, do: "Unarchive", else: "Archive"}
                 </Primitives.button>
                 <Primitives.button
                   type="button"
@@ -325,7 +358,7 @@ defmodule AshTemplateWeb.NotesLive do
        when state in [:ready, :empty] do
     socket
     |> stream(:notes, notes, reset: true)
-    |> stream(:note_links, notes, reset: true)
+    |> stream(:note_links, Enum.reject(notes, & &1.archived_at), reset: true)
   end
 
   defp show_notes(socket), do: socket
@@ -335,7 +368,10 @@ defmodule AshTemplateWeb.NotesLive do
     if socket.assigns.editing == note.id, do: new_form(socket), else: socket
   end
 
-  defp apply_change(socket, event, %Note{}) when event in ["pin", "unpin"], do: reread(socket)
+  defp apply_change(socket, event, %Note{})
+       when event in ["pin", "unpin", "archive", "unarchive"],
+       do: reread(socket)
+
   defp apply_change(socket, _event, %Note{id: id}), do: refresh(socket, id)
   defp apply_change(socket, _event, %Decision{note_id: id}), do: refresh(socket, id)
 
@@ -343,10 +379,15 @@ defmodule AshTemplateWeb.NotesLive do
   # top. One deleted since the change leaves the page as it is.
   defp refresh(socket, id) do
     case Notes.get_my_note(id, actor: socket.assigns.actor) do
-      {:ok, %Note{} = note} ->
+      {:ok, %Note{archived_at: nil} = note} ->
         socket
         |> stream_insert(:notes, note, at: 0)
         |> stream_insert(:note_links, note, at: 0)
+
+      {:ok, %Note{} = note} ->
+        socket
+        |> stream_insert(:notes, note)
+        |> stream_delete(:note_links, note)
 
       {:ok, nil} ->
         socket

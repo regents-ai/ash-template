@@ -17,6 +17,9 @@ defmodule AshTemplate.Notes.Note do
   A pinned note comes first among its writer's notes. An agent pinning one
   costs that person one Regent Credit (`Pin`); unpinning is free.
 
+  An archived note goes after all the others and keeps everything else,
+  its pin included; archiving and unarchiving are free.
+
   Each new note is told as `:note_created`, and one an agent wrote for its
   person is offered to Regent Points (`AshTemplate.Points.Award`).
   """
@@ -62,6 +65,9 @@ defmodule AshTemplate.Notes.Note do
 
     # When the note was pinned to the top of its writer's notes; nil when it is not.
     attribute :pinned_at, :utc_datetime_usec, public?: true
+
+    # When the note was archived, after its writer's other notes; nil when it is not.
+    attribute :archived_at, :utc_datetime_usec, public?: true
   end
 
   relationships do
@@ -90,7 +96,13 @@ defmodule AshTemplate.Notes.Note do
     end
 
     read :mine do
-      prepare build(sort: [pinned_at: :desc_nils_last, inserted_at: :desc])
+      prepare build(
+                sort: [
+                  archived_at: :desc_nils_first,
+                  pinned_at: :desc_nils_last,
+                  inserted_at: :desc
+                ]
+              )
     end
 
     # The person's notes whose title or text holds `text`, in any case.
@@ -164,6 +176,18 @@ defmodule AshTemplate.Notes.Note do
       change set_attribute(:pinned_at, nil)
     end
 
+    update :archive do
+      require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change set_attribute(:archived_at, &DateTime.utc_now/0)
+    end
+
+    update :unarchive do
+      require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change set_attribute(:archived_at, nil)
+    end
+
     update :send_webhook do
       transaction? false
       require_atomic? false
@@ -234,6 +258,8 @@ defmodule AshTemplate.Notes.Note do
     publish :update, [:human_account_id]
     publish :pin, [:human_account_id]
     publish :unpin, [:human_account_id]
+    publish :archive, [:human_account_id]
+    publish :unarchive, [:human_account_id]
     publish_all :destroy, [:human_account_id]
   end
 

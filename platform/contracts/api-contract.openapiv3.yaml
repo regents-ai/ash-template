@@ -816,6 +816,172 @@ paths:
           description: Request refused; JSON error contains code, message and hint.
         default:
           description: Request refused; JSON error contains code, message and hint.
+  /api/v1/notes/{id}/archive:
+    post:
+      operationId: archiveNote
+      summary: "Archive one of your person's notes: it goes after their other notes and out of their sidebar, and keeps its pin. Free."
+      description: Signed; needs a pairing. A browser sign-in does not work here.
+      security:
+      - siwaProof: []
+      parameters:
+      - name: x-siwa-receipt
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-key-id
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-timestamp
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^\d+$
+      - name: x-agent-wallet-address
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^0x[0-9a-fA-F]{40}$
+      - name: x-agent-chain-id
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '8453'
+      - name: x-siwa-signature-input
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-siwa-signature
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: content-digest
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AgentNotActingForPerson'
+        '401':
+          description: Request refused; JSON error contains code, message and hint.
+        '404':
+          $ref: '#/components/responses/AgentNoteNotFound'
+        '429':
+          description: Request refused; JSON error contains code, message and hint.
+        '409':
+          description: Request refused; JSON error contains code, message and hint.
+        '503':
+          description: Request refused; JSON error contains code, message and hint.
+        default:
+          description: Request refused; JSON error contains code, message and hint.
+  /api/v1/notes/{id}/unarchive:
+    post:
+      operationId: unarchiveNote
+      summary: Unarchive one of your person's notes, back among their other notes. Free.
+      description: Signed; needs a pairing. A browser sign-in does not work here.
+      security:
+      - siwaProof: []
+      parameters:
+      - name: x-siwa-receipt
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-key-id
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-timestamp
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^\d+$
+      - name: x-agent-wallet-address
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^0x[0-9a-fA-F]{40}$
+      - name: x-agent-chain-id
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '8453'
+      - name: x-siwa-signature-input
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-siwa-signature
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: content-digest
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Authorized result
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AgentNotActingForPerson'
+        '401':
+          description: Request refused; JSON error contains code, message and hint.
+        '404':
+          $ref: '#/components/responses/AgentNoteNotFound'
+        '429':
+          description: Request refused; JSON error contains code, message and hint.
+        '409':
+          description: Request refused; JSON error contains code, message and hint.
+        '503':
+          description: Request refused; JSON error contains code, message and hint.
+        default:
+          description: Request refused; JSON error contains code, message and hint.
   /api/v1/account/balances:
     get:
       operationId: getAccountBalances
@@ -2723,13 +2889,15 @@ components:
     Note:
       type: object
       additionalProperties: false
-      required: [id, title, body, inserted_at, updated_at, label, changed_by_agent]
+      required: [id, title, body, inserted_at, updated_at, pinned_at, archived_at, label, changed_by_agent]
       properties:
         id: {type: string, format: uuid}
         title: {type: string, minLength: 1, maxLength: 120}
         body: {type: [string, "null"], maxLength: 10000}
         inserted_at: {type: string, format: date-time}
         updated_at: {type: string, format: date-time}
+        pinned_at: {type: [string, "null"], format: date-time, description: "When the note was pinned to the top of its writer's notes, or null."}
+        archived_at: {type: [string, "null"], format: date-time, description: "When the note was archived, after its writer's other notes, or null."}
         label:
           description: The label chosen for the note's latest save, or null when none was asked for (the site has no labelling set up, or has used today's questions).
           oneOf:

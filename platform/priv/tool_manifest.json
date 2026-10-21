@@ -240,6 +240,8 @@
               "notes_pin_price",
               "notes_pin",
               "notes_unpin",
+              "notes_archive",
+              "notes_unarchive",
               "notes_rate_label",
               "account_balances",
               "account_credits_history",
@@ -1410,6 +1412,128 @@
       "route": "POST /api/v1/notes/{id}/unpin",
       "scope": "site",
       "operation_id": "unpinNote",
+      "authentication": "siwa_per_request",
+      "availability": "available",
+      "operation_input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The note's id, from notes_list or notes_search."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "notes_archive",
+      "title": "Archive a note",
+      "description": "Archive one of your person's notes: it goes after their other notes and out of their sidebar, and keeps its pin. Free. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "request",
+          "proof"
+        ],
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The note's id, from notes_list or notes_search."
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "request": {
+            "type": "object",
+            "description": "The exact request prepare_agent_request returned."
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The proof headers your SIWA signer made for that request."
+          }
+        }
+      },
+      "annotations": {},
+      "route": "POST /api/v1/notes/{id}/archive",
+      "scope": "site",
+      "operation_id": "archiveNote",
+      "authentication": "siwa_per_request",
+      "availability": "available",
+      "operation_input_schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The note's id, from notes_list or notes_search."
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "notes_unarchive",
+      "title": "Unarchive a note",
+      "description": "Unarchive one of your person's notes, back among their other notes. Free. Needs a pairing. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "request",
+          "proof"
+        ],
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The note's id, from notes_list or notes_search."
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "request": {
+            "type": "object",
+            "description": "The exact request prepare_agent_request returned."
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The proof headers your SIWA signer made for that request."
+          }
+        }
+      },
+      "annotations": {},
+      "route": "POST /api/v1/notes/{id}/unarchive",
+      "scope": "site",
+      "operation_id": "unarchiveNote",
       "authentication": "siwa_per_request",
       "availability": "available",
       "operation_input_schema": {

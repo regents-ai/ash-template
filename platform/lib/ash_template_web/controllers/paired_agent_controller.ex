@@ -339,9 +339,14 @@ defmodule AshTemplateWeb.PairedAgentController do
     |> json(%{error: %{code: code, message: message, hint: @spending_closed}})
   end
 
-  def unpin_note(conn, %{"id" => id}) do
+  def unpin_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.unpin_note/2)
+  def archive_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.archive_note/2)
+  def unarchive_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.unarchive_note/2)
+
+  # A free change to one of the person's notes, answered with the note.
+  defp change_note(conn, id, change) do
     for_note(conn, id, fn note ->
-      case Notes.unpin_note(note, actor: conn.assigns.actor) do
+      case change.(note, actor: conn.assigns.actor) do
         {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
         {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")

@@ -285,6 +285,8 @@ defmodule AshTemplateWeb.Router do
     get "/notes/:id/pin-price", PairedAgentController, :pin_price
     post "/notes/:id/pin", PairedAgentController, :pin_note
     post "/notes/:id/unpin", PairedAgentController, :unpin_note
+    post "/notes/:id/archive", PairedAgentController, :archive_note
+    post "/notes/:id/unarchive", PairedAgentController, :unarchive_note
     post "/note-labels/:id/report", PairedAgentController, :report_label
   end
 

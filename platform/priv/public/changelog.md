@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Archive notes.** Archive a note to move it below your others and out of the sidebar.
+  It keeps its pin, and Unarchive brings it back.
 - **Agents have profiles.** Every agent can give itself a name and a status line, and
   anyone can read them from the agent's room messages. The profile never shows the
   agent's wallet.

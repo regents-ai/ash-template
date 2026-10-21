@@ -636,6 +636,44 @@
       ]
     },
     {
+      "command": "notes archive <id>",
+      "description": "Archive one of your person's notes: it goes after their other notes and out of their sidebar, and keeps its pin. Free.",
+      "operation_id": "archiveNote",
+      "webmcp": "notes_archive",
+      "method": "POST",
+      "path": "/api/v1/notes/{id}/archive",
+      "authority": "paired_agent",
+      "effect": "write",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "in": "path",
+          "field": "id",
+          "description": "The note's id, from notes list or notes search."
+        }
+      ]
+    },
+    {
+      "command": "notes unarchive <id>",
+      "description": "Unarchive one of your person's notes, back among their other notes. Free.",
+      "operation_id": "unarchiveNote",
+      "webmcp": "notes_unarchive",
+      "method": "POST",
+      "path": "/api/v1/notes/{id}/unarchive",
+      "authority": "paired_agent",
+      "effect": "write",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "in": "path",
+          "field": "id",
+          "description": "The note's id, from notes list or notes search."
+        }
+      ]
+    },
+    {
       "command": "notes rate-label <id>",
       "description": "Say once whether a note's label fits it. Changes neither the note nor its label. If the answer is lost, read the note before trying again.",
       "operation_id": "reportNoteLabel",

@@ -251,7 +251,7 @@ defmodule AshTemplate.SignedToolsTest do
     refute_receive {:proof_checked, _}
     note = Jason.decode!(created.resp_body)["note"]
     assert note["id"] == id
-    assert note["changed_by_agent"] != nil
+    assert %{"id" => <<_::binary-size(36)>>, "wallet_address" => @wallet} = note["changed_by_agent"]
     assert request(:get, "/api/v1/notes/" <> id).status == 200
     assert request(:get, "/api/v1/account/balances").status == 200
     assert request(:get, "/api/v1/account/points").status == 200
@@ -359,6 +359,39 @@ defmodule AshTemplate.SignedToolsTest do
     added_after = request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id}))
     assert added_after.status == 403
     assert Rooms.list_my_mutes!(actor: human) == []
+  end
+
+  test "an archived note goes after its person's other notes and keeps its pin until unarchived" do
+    # Invariant: archiving only moves a note to the end of its person's notes; it never
+    # drops a pin they may have paid for, and an agent reaches only its own person's notes.
+    {account, _person, _paired} = paired_person("did:privy:archive-test")
+    human = AshTemplate.Actors.Human.for_account(account)
+    older = AshTemplate.Notes.create_note!(%{title: "Older"}, actor: human)
+    newer = AshTemplate.Notes.create_note!(%{title: "Newer"}, actor: human)
+    AshTemplate.Notes.pin_note!(newer, Ecto.UUID.generate(), actor: human)
+    order = fn -> Enum.map(AshTemplate.Notes.list_my_notes!(actor: human), & &1.id) end
+    assert order.() == [newer.id, older.id]
+
+    archived = request(:post, "/api/v1/notes/#{newer.id}/archive", "{}")
+    assert archived.status == 200, archived.resp_body
+    note = Jason.decode!(archived.resp_body)["note"]
+    assert note["archived_at"] && note["pinned_at"]
+    assert note["changed_by_agent"] == nil
+    assert order.() == [older.id, newer.id]
+
+    unarchived = request(:post, "/api/v1/notes/#{newer.id}/unarchive", "{}")
+    assert %{"archived_at" => nil} = Jason.decode!(unarchived.resp_body)["note"]
+    assert order.() == [newer.id, older.id]
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:archive-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+
+    other_human = AshTemplate.Actors.Human.for_account(other)
+    theirs = AshTemplate.Notes.create_note!(%{title: "Theirs"}, actor: other_human)
+    assert error_code(request(:post, "/api/v1/notes/#{theirs.id}/archive", "{}")) == "note_not_found"
+    assert AshTemplate.Notes.get_my_note!(theirs.id, actor: other_human).archived_at == nil
   end
 
   test "an agent sets only its own profile, and its public profile never shows its wallet" do

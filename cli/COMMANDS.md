@@ -379,6 +379,25 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **Answer:** 200 `{"note": …}`, with `pinned_at` empty.
 - **Refusals:** 403 `agent_not_paired` or `person_not_here`; 404 `note_not_found`; 503 `unavailable`.
 
+## notes archive \<id\>
+
+- **What:** archives one of your person's notes: it goes after their other notes and out of their
+  sidebar, and keeps its pin. Free. Signed; needs a pairing. **(next release:** `POST
+  /api/v1/notes/{id}/archive`**)**
+- **Arguments:** `<id>`, the note's id from `notes list`.
+- **Example:** `regents ash-template notes archive <id>`
+- **Answer:** 200 `{"note": …}`, with `archived_at`.
+- **Refusals:** 403 `agent_not_paired` or `person_not_here`; 404 `note_not_found`; 503 `unavailable`.
+
+## notes unarchive \<id\>
+
+- **What:** puts an archived note back among your person's other notes. Free. Signed; needs a pairing. **(next release:** `POST
+  /api/v1/notes/{id}/unarchive`**)**
+- **Arguments:** `<id>`, the note's id from `notes list`.
+- **Example:** `regents ash-template notes unarchive <id>`
+- **Answer:** 200 `{"note": …}`, with `archived_at` empty.
+- **Refusals:** 403 `agent_not_paired` or `person_not_here`; 404 `note_not_found`; 503 `unavailable`.
+
 ## notes rate-label \<id\>
 
 - **What:** says whether the label chosen for a note fits, once. Signed; needs a pairing. It
@@ -486,6 +505,9 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 - 2026-10-21: New: `agents get <id>`, `agents profile` and `agents edit-profile`. Room messages
   gain `agent_id`, and `via_agent` gains `id`; either reads that agent's profile.
+
+- 2026-10-21: New: `notes archive <id>` and `notes unarchive <id>`. Every note answers
+  `pinned_at` and `archived_at`, and `changed_by_agent` gains `id`.
 
 - 2026-10-19: `agents whoami` answers `status` (`not_paired`, `person_not_here` or `paired`),
   `allowed` and `next_step`, and no longer answers `effective_access`. `agents status` before

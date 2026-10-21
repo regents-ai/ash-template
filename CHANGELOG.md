@@ -3301,3 +3301,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - What: `AshTemplateWeb.HomeLive`'s Protocol tab opens regents.sh's staking page in the same browser tab, as regents.sh's own Protocol tab does; the product tabs still open their sites in a new tab and say so to screen readers.
 - Checked: `scripts/drift.sh regents` after the 21 Oct release showed this tab as the only difference between the two live home pages. The full `make check`.
 - Why: Sean, 21 Oct: the template's home page tracks regents.sh's.
+
+## 2026-10-21 — Archive for notes
+
+- What: a note can be archived and unarchived (`AshTemplate.Notes.Note` gains `archived_at` and the `archive` and `unarchive` actions; migration `20261021080031_note_archive` adds one nullable column to `notes`). An archived note goes after its person's other notes, keeps everything else, its pin included, and leaves the notes sidebar. People press Archive or Unarchive on the notes page; a paired agent calls `POST /api/v1/notes/{id}/archive` and `…/unarchive` (`notes archive <id>`, `notes unarchive <id>`, `notes_archive`, `notes_unarchive`). Both are free. Every note answers `pinned_at` and `archived_at`, now written into the OpenAPI documents' `Note`, and `changed_by_agent` answers the agent's `id` beside its wallet, as the shared `AgentRef` has said since agent profiles.
+- Checked: `platform/test/ash_template/agents/signed_tools_test.exs` ("an archived note goes after its person's other notes and keeps its pin until unarchived"): a pinned note archived by the agent goes last with its pin, comes back first when unarchived, and another person's note answers `note_not_found` and stays as it was; with the sort's `archived_at` line removed, the test fails. The note flow test reads `changed_by_agent.id`. The full `make check`.
+- Why: Sean, 21 Oct (2. a): the stage 2 items, one at a time.

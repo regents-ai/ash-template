@@ -348,6 +348,26 @@
       "cli_pending": true
     },
     {
+      "operation": "archiveNote",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "may": "Archive your notes",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "unarchiveNote",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/notes",
+      "may": "Unarchive your notes",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "getAccountBalances",
       "effect": "read",
       "authority": "paired_agent",

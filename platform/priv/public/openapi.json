@@ -3040,6 +3040,166 @@
         }
       }
     },
+    "/api/v1/notes/{id}/archive": {
+      "post": {
+        "operationId": "archiveNote",
+        "summary": "Archive one of your person's notes: it goes after their other notes and out of their sidebar, and keeps its pin. Free.",
+        "description": "Signed; needs a pairing. A browser sign-in does not work here.",
+        "security": [
+          {
+            "siwaProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiwaReceipt"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaKeyId"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentWallet"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentChainId"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignatureInput"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignature"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDigest"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AgentVerificationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/AgentRateLimited"
+          },
+          "409": {
+            "$ref": "#/components/responses/AgentRequestReplayed"
+          },
+          "503": {
+            "$ref": "#/components/responses/AgentVerificationUnavailable"
+          },
+          "default": {
+            "$ref": "#/components/responses/AgentSignInRefused"
+          },
+          "403": {
+            "$ref": "#/components/responses/AgentNotActingForPerson"
+          },
+          "404": {
+            "$ref": "#/components/responses/AgentNoteNotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/notes/{id}/unarchive": {
+      "post": {
+        "operationId": "unarchiveNote",
+        "summary": "Unarchive one of your person's notes, back among their other notes. Free.",
+        "description": "Signed; needs a pairing. A browser sign-in does not work here.",
+        "security": [
+          {
+            "siwaProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiwaReceipt"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaKeyId"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentWallet"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentChainId"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignatureInput"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignature"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDigest"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AgentVerificationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/AgentRateLimited"
+          },
+          "409": {
+            "$ref": "#/components/responses/AgentRequestReplayed"
+          },
+          "503": {
+            "$ref": "#/components/responses/AgentVerificationUnavailable"
+          },
+          "default": {
+            "$ref": "#/components/responses/AgentSignInRefused"
+          },
+          "403": {
+            "$ref": "#/components/responses/AgentNotActingForPerson"
+          },
+          "404": {
+            "$ref": "#/components/responses/AgentNoteNotFound"
+          }
+        }
+      }
+    },
     "/api/v1/account/balances": {
       "get": {
         "operationId": "getAccountBalances",
@@ -4797,6 +4957,8 @@
           "body",
           "inserted_at",
           "updated_at",
+          "pinned_at",
+          "archived_at",
           "label",
           "changed_by_agent"
         ],
@@ -4824,6 +4986,22 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "pinned_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the note was pinned to the top of its writer's notes, or null."
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the note was archived, after its writer's other notes, or null."
           },
           "label": {
             "oneOf": [
