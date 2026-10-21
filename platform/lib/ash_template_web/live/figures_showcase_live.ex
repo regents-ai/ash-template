@@ -4,14 +4,15 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   (`AshTemplate.ChainHead`) asks Base for it. Each room's activity: one counter
   (`AshTemplate.Rooms.Activity`) counts a room again when someone posts in it.
   Every open copy of this page shows what `AshTemplate.SharedReading` holds and
-  is told when it changes. The page reads nothing from the chain or the
-  database itself, so a thousand open copies cost the one read. The `ash-frontend` skill's `public-figures.md` says
+  is told when it changes. The page reads the list of rooms once when it opens
+  and nothing else from the chain or the database, so a thousand open copies
+  cost the one read; a room started while it is open shows after a reload. The `ash-frontend` skill's `public-figures.md` says
   when a product page uses this and when it must not.
   """
   use AshTemplateWeb, :live_view
 
-  alias AshTemplate.{ChainHead, SharedReading}
-  alias AshTemplate.Rooms.{Activity, Room}
+  alias AshTemplate.{ChainHead, Rooms, SharedReading}
+  alias AshTemplate.Rooms.Activity
   alias AshTemplateWeb.Components.Shell
   alias Regent.Primitives, as: P
 
@@ -20,22 +21,25 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   # Subscribed before the first fetch, so no change between the two is missed.
   @impl true
   def mount(_params, _session, socket) do
+    names = for room <- Rooms.list_rooms!(), do: {room.slug, room.name}
+
     if connected?(socket) do
       SharedReading.subscribe(@key)
-      for room <- Room.slugs(), do: SharedReading.subscribe(Activity.key(room))
+      for {slug, _name} <- names, do: SharedReading.subscribe(Activity.key(slug))
     end
 
     {:ok,
      socket
      |> assign(AshTemplateWeb.PublicDocuments.page("/showcase/figures"))
-     |> assign(head: head(), rooms: rooms()), layout: false}
+     |> assign(head: head(), names: names)
+     |> assign_rooms(), layout: false}
   end
 
   @impl true
   def handle_info({:shared_reading, @key}, socket), do: {:noreply, assign(socket, head: head())}
 
   def handle_info({:shared_reading, {:room_activity, _room}}, socket),
-    do: {:noreply, assign(socket, rooms: rooms())}
+    do: {:noreply, assign_rooms(socket)}
 
   # No reading yet is shown as the reader being behind, never as a block.
   defp head do
@@ -46,15 +50,17 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   end
 
   # Only what a row draws is kept: the room's name and its two figures.
-  defp rooms do
-    for %{slug: slug, name: name} <- Room.all() do
-      case SharedReading.fetch(Activity.key(slug)) do
-        {:ok, %{reading: %{messages: messages, latest_at: latest_at}, degraded?: behind?}} ->
-          %{slug: slug, name: name, messages: messages, latest_at: latest_at, behind?: behind?}
+  defp assign_rooms(socket) do
+    assign(socket, rooms: Enum.map(socket.assigns.names, &room/1))
+  end
 
-        _no_count_yet ->
-          %{slug: slug, name: name, messages: nil, latest_at: nil, behind?: true}
-      end
+  defp room({slug, name}) do
+    case SharedReading.fetch(Activity.key(slug)) do
+      {:ok, %{reading: %{messages: messages, latest_at: latest_at}, degraded?: behind?}} ->
+        %{slug: slug, name: name, messages: messages, latest_at: latest_at, behind?: behind?}
+
+      _no_count_yet ->
+        %{slug: slug, name: name, messages: nil, latest_at: nil, behind?: true}
     end
   end
 

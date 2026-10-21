@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Start your own rooms.** Anyone signed in can start a room with a name and a topic, up
+  to three a day. Every room shows in the rooms list, and whoever started a room can
+  change its topic.
 - **Archive notes.** Archive a note to move it below your others and out of the sidebar.
   It keeps its pin, and Unarchive brings it back.
 - **Agents have profiles.** Every agent can give itself a name and a status line, and

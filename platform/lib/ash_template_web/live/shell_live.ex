@@ -86,7 +86,7 @@ defmodule AshTemplateWeb.ShellLive do
 
     {:noreply,
      socket
-     |> assign(PublicDocuments.page(page_path(action, uri)))
+     |> assign(page_meta(room, page_path(action, uri)))
      |> assign(:route_spec, route_spec)
      |> load_points(route_spec)
      |> load_credits_history(route_spec)
@@ -229,6 +229,15 @@ defmodule AshTemplateWeb.ShellLive do
   def handle_info(%{topic: "public:room:" <> _, event: event, payload: message}, socket) do
     if on_room?(socket, message.room),
       do: send_update(RoomsLive, id: "rooms", change: {event, message})
+
+    {:noreply, socket}
+  end
+
+  # A room started or a topic changed anywhere reaches the room page on screen,
+  # which keeps its list of rooms and its topic current.
+  def handle_info(%{topic: "public:rooms", event: event, payload: room}, socket) do
+    if socket.assigns.room,
+      do: send_update(RoomsLive, id: "rooms", room_change: {event, room})
 
     {:noreply, socket}
   end
@@ -412,9 +421,9 @@ defmodule AshTemplateWeb.ShellLive do
   defp open!(_action), do: true
 
   defp room_in(:room, %{"room" => slug}) do
-    case Room.fetch(slug) do
-      {:ok, room} -> room
-      :error -> raise NotFoundError
+    case Rooms.get_room(slug) do
+      {:ok, %Room{} = room} -> room
+      {:ok, nil} -> raise NotFoundError
     end
   end
 
@@ -430,6 +439,12 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp conversation_in(_action, _params, _actor), do: nil
+
+  # A room's title and description are its own name and topic.
+  defp page_meta(%Room{} = room, _path),
+    do: [page_title: "#{room.name} room", page_description: room.topic]
+
+  defp page_meta(nil, path), do: PublicDocuments.page(path)
 
   # Every conversation shares the chat page's title.
   defp page_path(:conversation, _uri), do: "/chat"
@@ -472,7 +487,7 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  defp on_room?(%{assigns: %{room: %{slug: slug}}}, room), do: to_string(slug) == to_string(room)
+  defp on_room?(%{assigns: %{room: %{slug: slug}}}, room), do: slug == room
   defp on_room?(_socket, _room), do: false
 
   # The page hears the room it shows, and a signed-in person is listed as here
@@ -491,6 +506,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp join_room(nil, _human), do: :ok
 
   defp join_room(room, human) do
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, Room.topic())
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Message.topic(room.slug))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Presence.topic(room.slug))
     if human, do: Presence.join(room.slug, human)
@@ -499,6 +515,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp leave_room(nil, _human), do: :ok
 
   defp leave_room(room, human) do
+    Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Room.topic())
     Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Message.topic(room.slug))
     Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Presence.topic(room.slug))
     if human, do: Presence.leave(room.slug, human)
@@ -592,8 +609,9 @@ defmodule AshTemplateWeb.ShellLive do
          do: {:ok, page.results}
   end
 
-  # Pages and actions match their names; the person's notes and the room
-  # messages they can read match their text, from two characters on.
+  # Pages and actions match their names; rooms match their names, and the
+  # person's notes and the room messages they can read their text, from two
+  # characters on.
   defp search("", _actor), do: RouteCatalog.search_entries() |> Enum.map(&live_items/1)
 
   defp search(query, actor) do
@@ -605,7 +623,7 @@ defmodule AshTemplateWeb.ShellLive do
           matches != [],
           do: live_items({group, matches})
 
-    named ++ found_notes(query, actor) ++ found_messages(query, actor)
+    named ++ found_rooms(query) ++ found_notes(query, actor) ++ found_messages(query, actor)
   end
 
   defp live_items({group, entries}) do
@@ -614,6 +632,15 @@ defmodule AshTemplateWeb.ShellLive do
     {group,
      Enum.map(entries, &Map.merge(&1, %{kind: kind, live?: RouteCatalog.live_path?(&1.path)}))}
   end
+
+  defp found_rooms(query) when byte_size(query) >= 2 do
+    case Rooms.search_rooms(query) do
+      {:ok, [_ | _] = rooms} -> [{"Rooms", Enum.map(rooms, &room_item/1)}]
+      _none -> []
+    end
+  end
+
+  defp found_rooms(_query), do: []
 
   defp found_notes(query, %Human{} = actor) when byte_size(query) >= 2 do
     case Notes.search_my_notes(query, actor: actor) do
@@ -648,17 +675,17 @@ defmodule AshTemplateWeb.ShellLive do
       live?: true
     }
 
-  defp message_item(message, query) do
-    {:ok, room} = message.room |> Atom.to_string() |> Room.fetch()
+  defp room_item(room),
+    do: %{kind: :page, label: "#{room.name} room", path: "/rooms/#{room.slug}", live?: true}
 
-    %{
+  defp message_item(message, query),
+    do: %{
       kind: :message,
-      label: "#{message.author_name} in #{room.name}",
+      label: "#{message.author_name} in #{message.in_room.name}",
       detail: excerpt(message.body, query),
-      path: "/rooms/#{room.slug}",
+      path: "/rooms/#{message.room}",
       live?: true
     }
-  end
 
   @excerpt_length 90
 

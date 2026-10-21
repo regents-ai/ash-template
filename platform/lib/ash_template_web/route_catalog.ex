@@ -2,9 +2,9 @@ defmodule AshTemplateWeb.RouteCatalog do
   @moduledoc "The route specs the shell renders, and the design handoff built from them."
 
   alias __MODULE__.RouteTarget
-  alias AshTemplate.Rooms.Room
 
-  @first_room "/rooms/#{hd(Room.all()).slug}"
+  # The site's own first room, which the migration that made the rooms table wrote.
+  @first_room "/rooms/general"
 
   # The rail's sections, in order. Each page belongs to one; its sidebar holds
   # the section's own list and its tabs the section's views.
@@ -33,15 +33,8 @@ defmodule AshTemplateWeb.RouteCatalog do
       ]
     },
     notes: %{id: :notes, title: "Your notes", targets: []},
-    rooms: %{
-      id: :rooms,
-      title: "Rooms",
-      targets:
-        Enum.map(
-          Room.all(),
-          &%RouteTarget{route_id: :room, label: &1.name, path: "/rooms/#{&1.slug}"}
-        )
-    },
+    # The rooms are rows; the rooms page puts them in the sidebar itself.
+    rooms: %{id: :rooms, title: "Rooms", targets: []},
     chat: %{id: :chat, title: "Your chats", targets: []},
     design: %{
       id: :design,
@@ -166,26 +159,24 @@ defmodule AshTemplateWeb.RouteCatalog do
               route
           end)
 
-  # What search finds besides the person's own notes and room messages: every
-  # page, then the things a person most often comes to do.
+  # What search finds besides the rooms and the person's own notes and room
+  # messages: every page, then the things a person most often comes to do.
   @pages [
-           %{label: "Overview", path: "/app"},
-           %{label: "Activity", path: "/app/activity"},
-           %{label: "Notes", path: "/notes"}
-         ] ++
-           Enum.map(Room.all(), &%{label: "#{&1.name} room", path: "/rooms/#{&1.slug}"}) ++
-           [
-             %{label: "Chat", path: "/chat"},
-             %{label: "Account", path: "/account"},
-             %{label: "Credits history", path: "/account/credits"},
-             %{label: "Wallets", path: "/account/wallets"},
-             %{label: "Connections", path: "/account/connections"},
-             %{label: "Connect your agent", path: "/agents"},
-             %{label: "Documentation", path: "/docs"},
-             %{label: "What's new", path: "/changelog"},
-             %{label: "Privacy Policy", path: "/privacy"},
-             %{label: "Terms of Use", path: "/terms"}
-           ]
+    %{label: "Overview", path: "/app"},
+    %{label: "Activity", path: "/app/activity"},
+    %{label: "Notes", path: "/notes"},
+    %{label: "Rooms", path: @first_room},
+    %{label: "Chat", path: "/chat"},
+    %{label: "Account", path: "/account"},
+    %{label: "Credits history", path: "/account/credits"},
+    %{label: "Wallets", path: "/account/wallets"},
+    %{label: "Connections", path: "/account/connections"},
+    %{label: "Connect your agent", path: "/agents"},
+    %{label: "Documentation", path: "/docs"},
+    %{label: "What's new", path: "/changelog"},
+    %{label: "Privacy Policy", path: "/privacy"},
+    %{label: "Terms of Use", path: "/terms"}
+  ]
 
   @actions [
     %{label: "Write a note", path: "/notes"},
@@ -276,7 +267,7 @@ defmodule AshTemplateWeb.RouteCatalog do
   defp same_shape?(_pattern, _segments), do: false
 
   defp parameter_schema(:room),
-    do: %{room: %{type: "string", enum: Enum.map(Room.slugs(), &Atom.to_string/1)}}
+    do: %{room: %{type: "string", pattern: "^[a-z0-9]+(-[a-z0-9]+)*$", maxLength: 40}}
 
   defp parameter_schema(:conversation), do: %{conversation_id: %{type: "string", format: "uuid"}}
   defp parameter_schema(_action), do: %{}

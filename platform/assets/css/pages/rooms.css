@@ -235,6 +235,24 @@
   justify-content: space-between;
 }
 
+/* Starting a room and changing its topic: fields above a button at the start. */
+.rooms-start {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+
+.rooms-start .rg-field,
+.rooms-start input,
+.rooms-start textarea {
+  width: 100%;
+  font: inherit;
+}
+
+.rooms-start textarea {
+  resize: vertical;
+}
+
 .rooms-people,
 .rooms-mutes {
   display: grid;

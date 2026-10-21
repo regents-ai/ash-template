@@ -5,12 +5,15 @@ defmodule AshTemplate.Limits.LimitWrites do
   the caller passes as `context: %{client_key: key}` (`AshTemplateWeb.ClientAddress`).
   A write counts when it is saved, not while it is typed, so checking a draft
   never uses the allowance. The count runs before the statement, so an update
-  that uses it sets `require_atomic? false`.
+  that uses it sets `require_atomic? false`. `:message` replaces the words a
+  writer past the allowance sees, for an allowance counted over a day.
   """
 
   use Ash.Resource.Change
 
   alias AshTemplate.Limits
+
+  @quickly "You're going quickly. Wait a moment and try again."
 
   @impl true
   def init(opts) do
@@ -27,7 +30,7 @@ defmodule AshTemplate.Limits.LimitWrites do
         else:
           Ash.Changeset.add_error(changeset,
             field: opts[:field],
-            message: "You're going quickly. Wait a moment and try again."
+            message: Keyword.get(opts, :message, @quickly)
           )
     end)
   end

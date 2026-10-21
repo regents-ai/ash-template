@@ -256,6 +256,8 @@ defmodule AshTemplateWeb.Router do
 
   scope "/api/v1" do
     pipe_through :agent_api
+    post "/rooms", AshTemplateWeb.RoomsController, :create
+    patch "/rooms/:room", AshTemplateWeb.RoomsController, :topic
     post "/rooms/:room/messages", AshTemplateWeb.RoomsController, :post
     patch "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :update
     delete "/rooms/:room/messages/:id", AshTemplateWeb.RoomsController, :delete

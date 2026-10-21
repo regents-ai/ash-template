@@ -148,6 +148,7 @@ config :ash_template, :note_labels,
 # client address may post or search, each window (AshTemplate.Limits). A guest
 # post is one no person stands behind: an unpaired agent's one post.
 config :ash_template, :limits,
+  room: [limit: 3, window_seconds: 86_400],
   room_post: [limit: 10, window_seconds: 60],
   room_post_address: [limit: 30, window_seconds: 60],
   guest_post_address: [limit: 10, window_seconds: 3600],

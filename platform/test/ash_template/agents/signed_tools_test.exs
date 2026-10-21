@@ -394,6 +394,60 @@ defmodule AshTemplate.SignedToolsTest do
     assert AshTemplate.Notes.get_my_note!(theirs.id, actor: other_human).archived_at == nil
   end
 
+  test "a paired agent starts a room and changes its topic; another person's same name and topic change are refused" do
+    # Invariant: a room's address belongs to the first room with that name, a retry never
+    # starts a second, and only the person who started a room changes its topic.
+    {_account, _person, _paired} = paired_person("did:privy:room-test")
+    body = Jason.encode!(%{name: "Book Club!", topic: "What we read."})
+
+    started = request(:post, "/api/v1/rooms", body)
+    assert started.status == 201, started.resp_body
+
+    assert %{"slug" => "book-club", "name" => "Book Club!", "topic" => "What we read."} =
+             Jason.decode!(started.resp_body)["room"]
+
+    retried = request(:post, "/api/v1/rooms", body)
+    assert retried.status == 200, retried.resp_body
+    assert Jason.decode!(retried.resp_body)["room"]["slug"] == "book-club"
+
+    assert error_code(request(:post, "/api/v1/rooms", Jason.encode!(%{name: "HELP", topic: "Mine"}))) ==
+             "room_name_taken"
+
+    changed = request(:patch, "/api/v1/rooms/book-club", Jason.encode!(%{topic: "Short stories."}))
+    assert %{"topic" => "Short stories."} = Jason.decode!(changed.resp_body)["room"]
+
+    assert error_code(request(:patch, "/api/v1/rooms/general", Jason.encode!(%{topic: "Mine"}))) ==
+             "not_room_maker"
+
+    posted =
+      request(
+        :post,
+        "/api/v1/rooms/book-club/messages",
+        Jason.encode!(%{body: "Hello", operation_id: Ecto.UUID.generate()})
+      )
+
+    assert posted.status == 201, posted.resp_body
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:room-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+
+    other_human = AshTemplate.Actors.Human.for_account(other)
+
+    assert {:error, %Ash.Error.Invalid{} = taken} =
+             Rooms.create_room(%{name: "book club", topic: "Mine"}, actor: other_human)
+
+    assert Rooms.Room.name_taken?(taken)
+    room = Rooms.get_room!("book-club")
+
+    assert {:error, %Ash.Error.Forbidden{}} =
+             Rooms.set_room_topic(room, %{topic: "Mine"}, actor: other_human)
+
+    assert Rooms.get_room!("book-club").topic == "Short stories."
+    assert Rooms.get_room!("general").topic == "Say hello and talk about anything."
+  end
+
   test "an agent sets only its own profile, and its public profile never shows its wallet" do
     # Sean, 21 Oct 2026 (3. a): anyone reads an agent's name and status, never its wallet.
     assert error_code(request(:patch, "/api/v1/agents/me", "{}")) == "invalid_profile"

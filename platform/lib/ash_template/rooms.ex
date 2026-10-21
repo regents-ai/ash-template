@@ -1,9 +1,18 @@
 defmodule AshTemplate.Rooms do
-  @moduledoc "The site's chat rooms: messages anyone can read, and the people each reader has muted."
+  @moduledoc "The chat rooms: rooms people start, messages anyone can read, and the people each reader has muted."
 
   use Ash.Domain, extensions: [AshPhoenix]
 
   resources do
+    resource AshTemplate.Rooms.Room do
+      define :list_rooms, action: :list
+      define :get_room, action: :read, get_by: [:slug], not_found_error?: false
+      define :get_started_room, action: :started_by_actor, args: [:slug], not_found_error?: false
+      define :search_rooms, action: :search, args: [:text]
+      define :create_room, action: :create
+      define :set_room_topic, action: :set_topic
+    end
+
     resource AshTemplate.Rooms.Message do
       define :list_room_messages, action: :in_room, args: [:room]
       define :search_messages, action: :search, args: [:text]

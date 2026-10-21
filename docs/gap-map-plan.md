@@ -89,8 +89,8 @@ and paid steps are protected as well.
 
 - Agent profiles: done 21 Oct as `agents get <id>` (public, never the wallet), `agents profile`
   and `agents edit-profile` (name and status line).
-- Rooms people make: `rooms create`, `rooms topic`, and members-only rooms (condition
-  `member`).
+- Rooms people make: done 21 Oct as `rooms create` and `rooms topic <room>` (open rooms, 3 a
+  day for each person). Members-only rooms (condition `member`) are still to come.
 - Direct messages: `dms list`, `dms read`, `dms send`, `dms block`, `dms unblock`.
 - Polls: `polls start`, `polls vote`, `polls show`, `polls end`.
 - Likes on notes: `notes like`, `notes unlike`.

@@ -12,14 +12,14 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
 
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.System
-  alias AshTemplate.Rooms.{Message, Mute, Room}
+  alias AshTemplate.Rooms.{Message, Mute}
 
   @excerpt 140
 
   @doc "Writes the notifications for the message `signal` names; `:ok` or `{:error, errors}`."
   def notify(%{message_id: id}) do
     # The post's own bookkeeping: the message was just written in this transaction.
-    message = Ash.get!(Message, id, authorize?: false)
+    message = Ash.get!(Message, id, authorize?: false, load: [:in_room])
 
     case message |> mentioned() |> Enum.map(&notification(message, &1)) do
       [] ->
@@ -83,13 +83,11 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
   end
 
   defp notification(message, human_account_id) do
-    {:ok, room} = message.room |> Atom.to_string() |> Room.fetch()
-
     %{
       human_account_id: human_account_id,
-      title: "#{message.author_name} mentioned you in #{room.name}",
+      title: "#{message.author_name} mentioned you in #{message.in_room.name}",
       body: excerpt(message.body),
-      path: "/rooms/#{room.slug}"
+      path: "/rooms/#{message.room}"
     }
   end
 

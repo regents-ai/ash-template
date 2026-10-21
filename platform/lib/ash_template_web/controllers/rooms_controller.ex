@@ -2,8 +2,9 @@ defmodule AshTemplateWeb.RoomsController do
   @moduledoc """
   The public rooms API: the rooms, and each room's messages newest first, a page
   at a time, or one by its id. Anyone may read them, as anyone may read the rooms pages. An agent
-  with per-request SIWA proof and an active pairing may post for its account,
-  retaining its own attribution, and change or delete that account's messages.
+  with per-request SIWA proof and an active pairing may start a room for its
+  account and change the topic of the rooms that account started, post for its
+  account, retaining its own attribution, and change or delete that account's messages.
   A signed agent no person has paired here may post once, as itself, within an
   hourly allowance for its network.
   """
@@ -17,13 +18,22 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
 
-  plug :paired_agent when action in [:update, :delete]
+  plug :paired_agent when action in [:create, :topic, :update, :delete]
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
   @errors %{
     "room_not_found" =>
       {404, "There is no room with that name.", "List the rooms with GET /api/v1/rooms."},
+    "room_name_taken" =>
+      {409, "A room with this name is already here.",
+       "Post in that room, or start yours with another name. GET /api/v1/rooms lists them."},
+    "invalid_room" =>
+      {422, "The room could not be started or changed.",
+       "details says why. Send a name of 1 to 40 characters with at least one letter from A to Z or a number, and a topic of 1 to 200 characters. A person starts 3 rooms a day."},
+    "not_room_maker" =>
+      {403, "Only the person who started this room changes its topic.",
+       "Change the topic of a room your person started."},
     "invalid_cursor" =>
       {422, "That page could not be found.",
        "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
@@ -58,13 +68,70 @@ defmodule AshTemplateWeb.RoomsController do
     do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
 
   def index(conn, _params) do
-    json(conn, %{
-      rooms: Enum.map(Room.all(), &%{slug: &1.slug, name: &1.name, about: &1.about})
-    })
+    case Rooms.list_rooms() do
+      {:ok, rooms} -> json(conn, %{rooms: Enum.map(rooms, &Room.public/1)})
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+    end
+  end
+
+  # A retry with the name of a room this agent's person already started answers
+  # that room (200), and starts nothing.
+  def create(conn, _params) do
+    actor = conn.assigns.actor
+
+    with {:ok, nil} <- earlier_room(conn.body_params["name"], actor),
+         {:ok, room} <-
+           Rooms.create_room(Map.take(conn.body_params, ["name", "topic"]), actor: actor) do
+      conn |> put_status(:created) |> json(%{room: Room.public(room)})
+    else
+      {:ok, %Room{} = earlier} -> json(conn, %{room: Room.public(earlier)})
+      {:error, error} -> refuse_room(conn, error)
+    end
+  end
+
+  def topic(conn, %{"room" => slug}) do
+    with {:ok, room} <- room(slug),
+         {:ok, room} <-
+           Rooms.set_room_topic(room, Map.take(conn.body_params, ["topic"]),
+             actor: conn.assigns.actor
+           ) do
+      json(conn, %{room: Room.public(room)})
+    else
+      :error -> refuse(conn, "room_not_found")
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "not_room_maker")
+      {:error, error} -> refuse_room(conn, error)
+    end
+  end
+
+  # A name with no slug finds no earlier room; the start refuses it.
+  defp earlier_room(name, actor) when is_binary(name) do
+    case Rooms.get_started_room(Room.slug(name), actor: actor) do
+      {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
+      result -> result
+    end
+  end
+
+  defp earlier_room(_name, _actor), do: {:ok, nil}
+
+  defp refuse_room(conn, %Ash.Error.Invalid{} = error) do
+    if Room.name_taken?(error),
+      do: refuse(conn, "room_name_taken"),
+      else: refuse(conn, "invalid_room", error)
+  end
+
+  defp refuse_room(conn, error),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+
+  defp room(slug) do
+    case Rooms.get_room(slug) do
+      {:ok, %Room{} = room} -> {:ok, room}
+      {:ok, nil} -> :error
+      {:error, error} -> {:error, error}
+    end
   end
 
   def messages(conn, %{"room" => slug} = params) do
-    with {:ok, room} <- Room.fetch(slug),
+    with {:ok, room} <- room(slug),
          {:ok, limit} <- limit(params),
          {:ok, kind} <- author_filter(params),
          {:ok, page} <-
@@ -84,7 +151,7 @@ defmodule AshTemplateWeb.RoomsController do
 
   # Anyone may read one message by its id, as its room shows it.
   def message(conn, %{"room" => slug, "id" => id}) do
-    with {:ok, room} <- Room.fetch(slug),
+    with {:ok, room} <- room(slug),
          {:ok, %Message{} = message} <- Rooms.get_room_message(room.slug, id) do
       json(conn, %{message: present(message)})
     else
@@ -98,7 +165,7 @@ defmodule AshTemplateWeb.RoomsController do
   # A retry with the operation_id of a post this actor already made answers that
   # post (200), and posts nothing.
   def post(conn, %{"room" => slug}) do
-    with {:ok, room} <- Room.fetch(slug),
+    with {:ok, room} <- room(slug),
          {:ok, nil} <- earlier_post(conn, room),
          {:ok, message} <-
            Rooms.post_message(
@@ -170,7 +237,7 @@ defmodule AshTemplateWeb.RoomsController do
          id,
          respond
        ) do
-    with {:ok, room} <- Room.fetch(slug),
+    with {:ok, room} <- room(slug),
          {:ok, %Message{room: room_slug, human_account_id: author} = message}
          when room_slug == room.slug and author == actor.human_account_id <-
            Rooms.get_message(id, actor: actor) do

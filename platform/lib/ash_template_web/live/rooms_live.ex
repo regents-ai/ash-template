@@ -2,7 +2,9 @@ defmodule AshTemplateWeb.RoomsLive do
   @moduledoc """
   One chat room: its messages oldest at the top and newest at the bottom above
   the message box, a form bound to the message's own Ash actions, and below it,
-  for someone signed in, who is here now and the people the reader has muted.
+  for someone signed in, who is here now, the people the reader has muted, a
+  form to start a room and, in a room they started, one to change its topic.
+  Every room is listed in the shell's sidebar.
 
   Posting never touches the list directly. Every post, edit and delete reaches
   each open page of the room the same way: the message's PubSub notifier
@@ -10,6 +12,9 @@ defmodule AshTemplateWeb.RoomsLive do
   subscription and hands it on here as `send_update(RoomsLive, id: "rooms",
   change: {event, message})`. The shell also tracks who is here
   (`AshTemplateWeb.Presence`) and passes the list in as `people`.
+
+  A room started or a topic changed anywhere arrives the same way, as
+  `room_change: {event, Room.public(room)}`, and the list and the topic follow.
 
   A message on the page is `Message.public/1`, the same map the notifier
   publishes, so a message read and a message published are drawn alike. Which
@@ -23,7 +28,7 @@ defmodule AshTemplateWeb.RoomsLive do
 
   alias AshTemplate.Actors.Human
   alias AshTemplate.Rooms
-  alias AshTemplate.Rooms.{Message, Mute}
+  alias AshTemplate.Rooms.{Message, Mute, Room}
   alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
@@ -43,6 +48,7 @@ defmodule AshTemplateWeb.RoomsLive do
      |> assign(
        actor: nil,
        room: nil,
+       rooms: [],
        people: [],
        messages: %Read{},
        older: %Read{},
@@ -52,6 +58,8 @@ defmodule AshTemplateWeb.RoomsLive do
        shown: %{},
        latest: nil,
        form: nil,
+       room_form: nil,
+       topic_form: nil,
        editing: nil,
        notice: nil,
        author_key: :crypto.strong_rand_bytes(16)
@@ -63,8 +71,20 @@ defmodule AshTemplateWeb.RoomsLive do
   def update(%{change: {event, message}}, socket), do: {:ok, apply_change(socket, event, message)}
   def update(%{mutes_changed: true}, socket), do: {:ok, load(socket)}
 
+  def update(%{room_change: {_event, changed}}, socket) do
+    room = socket.assigns.room
+
+    socket =
+      if changed.slug == room.slug,
+        do: socket |> assign(:room, %{room | topic: changed.topic}) |> topic_form(),
+        else: socket
+
+    {:ok, assign(socket, :rooms, listed(socket.assigns.rooms, changed))}
+  end
+
   # The shell renders this with every update of its own, so the room is read
-  # again only when the room or the person reading it changes.
+  # again only when the room or the person reading it changes. The room's topic
+  # here may be newer than the shell's, so only its slug is compared.
   def update(
         %{id: id, lease: lease, account: account, room: room, people: people, client_key: key},
         socket
@@ -72,7 +92,7 @@ defmodule AshTemplateWeb.RoomsLive do
     actor = account && Human.for_account(account)
     socket = assign(socket, id: id, lease: lease, people: people, client_key: key)
 
-    if {actor, room} == {socket.assigns.actor, socket.assigns.room},
+    if {actor, room.slug} == {socket.assigns.actor, slug(socket.assigns.room)},
       do: {:ok, socket},
       else: {:ok, socket |> assign(actor: actor, room: room) |> load()}
   end
@@ -99,6 +119,30 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   def handle_event("cancel", _params, socket), do: {:noreply, new_form(socket)}
+
+  def handle_event("validate_room", %{"room" => params}, socket),
+    do:
+      {:noreply,
+       assign(socket, :room_form, AshPhoenix.Form.validate(socket.assigns.room_form, params))}
+
+  def handle_event("create_room", %{"room" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.room_form, params: params) do
+      {:ok, room} -> {:noreply, push_patch(socket, to: ~p"/rooms/#{room.slug}")}
+      {:error, form} -> {:noreply, assign(socket, :room_form, form)}
+    end
+  end
+
+  def handle_event("validate_topic", %{"topic" => params}, socket),
+    do:
+      {:noreply,
+       assign(socket, :topic_form, AshPhoenix.Form.validate(socket.assigns.topic_form, params))}
+
+  def handle_event("save_topic", %{"topic" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.topic_form, params: params) do
+      {:ok, room} -> {:noreply, socket |> assign(:room, room) |> topic_form()}
+      {:error, form} -> {:noreply, assign(socket, :topic_form, form)}
+    end
+  end
 
   def handle_event("delete", %{"id" => id}, socket) do
     actor = socket.assigns.actor
@@ -153,8 +197,20 @@ defmodule AshTemplateWeb.RoomsLive do
   def render(assigns) do
     ~H"""
     <article id="rooms-page" class="account-page">
+      <.portal id="rooms-sidebar" target="#shell-sidebar-page">
+        <ul id="rooms-list" class="shell-sidebar__list" data-state={@messages.state}>
+          <li :for={room <- @rooms}>
+            <.link
+              patch={~p"/rooms/#{room.slug}"}
+              aria-current={if room.slug == @room.slug, do: "page"}
+            >
+              {room.name}
+            </.link>
+          </li>
+        </ul>
+      </.portal>
       <.page_head title={@room.name}>
-        <:tip>{@room.about}</:tip>
+        <:tip>{@room.topic}</:tip>
       </.page_head>
 
       <section
@@ -346,8 +402,83 @@ defmodule AshTemplateWeb.RoomsLive do
             </li>
           </ul>
         </section>
+
+        <section
+          :if={@topic_form}
+          class="account-panel"
+          aria-labelledby="room-topic-title"
+        >
+          <h2 id="room-topic-title">Room topic</h2>
+          <p class="rg-muted">You started this room, so you choose what it’s about.</p>
+          <.form
+            for={@topic_form}
+            id="room-topic-form"
+            class="rooms-start"
+            phx-change="validate_topic"
+            phx-submit="save_topic"
+            phx-target={@myself}
+          >
+            <.topic_field form={@topic_form} id="room-topic" />
+            <Primitives.button type="submit" variant="secondary" phx-disable-with="Saving…">
+              Save topic
+            </Primitives.button>
+          </.form>
+        </section>
+
+        <section class="account-panel" aria-labelledby="room-start-title">
+          <h2 id="room-start-title">Start a room</h2>
+          <.form
+            for={@room_form}
+            id="room-start-form"
+            class="rooms-start"
+            phx-change="validate_room"
+            phx-submit="create_room"
+            phx-target={@myself}
+          >
+            <Primitives.field
+              :let={field}
+              id="room-start-name"
+              label="Name"
+              errors={FormErrors.messages(@room_form[:name])}
+            >
+              <input
+                id={field.id}
+                name={@room_form[:name].name}
+                value={@room_form[:name].value}
+                maxlength="40"
+                autocomplete="off"
+                phx-debounce="300"
+                aria-invalid={field.aria_invalid}
+                aria-describedby={field.described_by}
+              />
+            </Primitives.field>
+            <.topic_field form={@room_form} id="room-start-topic" />
+            <Primitives.button type="submit" phx-disable-with="Starting…">
+              Start room
+            </Primitives.button>
+          </.form>
+        </section>
       </div>
     </article>
+    """
+  end
+
+  attr :form, Phoenix.HTML.Form, required: true
+  attr :id, :string, required: true
+
+  defp topic_field(assigns) do
+    ~H"""
+    <Primitives.field :let={field} id={@id} label="Topic" errors={FormErrors.messages(@form[:topic])}>
+      <textarea
+        id={field.id}
+        name={@form[:topic].name}
+        rows="2"
+        maxlength="200"
+        phx-debounce="300"
+        aria-invalid={field.aria_invalid}
+        aria-describedby={field.described_by}
+      >{Phoenix.HTML.Form.normalize_value("textarea", @form[:topic].value)}</textarea>
+    </Primitives.field>
     """
   end
 
@@ -462,19 +593,34 @@ defmodule AshTemplateWeb.RoomsLive do
     |> Read.now(:messages, owner(socket), fn -> read_room(room, actor) end)
     |> show_messages()
     |> new_form()
+    |> room_form()
+    |> topic_form()
   end
 
   # A visitor has muted nobody. A signed-in reader's mutes are read with the
-  # messages, so the two always agree.
+  # messages, so the two always agree. The list of rooms is read alongside.
   defp read_room(room, nil) do
-    with {:ok, page} <- Rooms.list_room_messages(room.slug),
-         do: {:ok, %{mutes: [], page: page}}
+    with {:ok, rooms} <- Rooms.list_rooms(),
+         {:ok, page} <- Rooms.list_room_messages(room.slug),
+         do: {:ok, %{rooms: rooms, mutes: [], page: page}}
   end
 
   defp read_room(room, actor) do
-    with {:ok, mutes} <- Rooms.list_my_mutes(actor: actor),
+    with {:ok, rooms} <- Rooms.list_rooms(),
+         {:ok, mutes} <- Rooms.list_my_mutes(actor: actor),
          {:ok, page} <- Rooms.list_room_messages(room.slug, actor: actor),
-         do: {:ok, %{mutes: mutes, page: page}}
+         do: {:ok, %{rooms: rooms, mutes: mutes, page: page}}
+  end
+
+  defp slug(nil), do: nil
+  defp slug(room), do: room.slug
+
+  # A room started elsewhere joins the end of the list; a changed topic keeps
+  # its place.
+  defp listed(rooms, changed) do
+    if Enum.any?(rooms, &(&1.slug == changed.slug)),
+      do: Enum.map(rooms, &if(&1.slug == changed.slug, do: changed, else: &1)),
+      else: rooms ++ [changed]
   end
 
   # A failed read keeps the messages already on the page, so only a read that
@@ -484,6 +630,7 @@ defmodule AshTemplateWeb.RoomsLive do
 
     socket
     |> assign(
+      rooms: Enum.map(value.rooms, &Room.public/1),
       page: value.page,
       mutes: value.mutes,
       muted: MapSet.new(value.mutes, &muted_author/1),
@@ -639,6 +786,20 @@ defmodule AshTemplateWeb.RoomsLive do
 
     assign(socket, form: to_form(form), editing: nil, notice: nil)
   end
+
+  defp room_form(%{assigns: %{actor: nil}} = socket), do: assign(socket, :room_form, nil)
+
+  defp room_form(%{assigns: %{actor: actor}} = socket),
+    do: assign(socket, :room_form, to_form(Rooms.form_to_create_room(actor: actor, as: "room")))
+
+  # Only the person who started the room sees the form to change its topic.
+  defp topic_form(%{assigns: %{actor: %Human{human_account_id: id}, room: room}} = socket)
+       when room.created_by_id == id do
+    form = Rooms.form_to_set_room_topic(room, actor: socket.assigns.actor, as: "topic")
+    assign(socket, :topic_form, to_form(form))
+  end
+
+  defp topic_form(socket), do: assign(socket, :topic_form, nil)
 
   defp edit_form(socket, message) do
     form = Rooms.form_to_edit_message(message, actor: socket.assigns.actor, as: "message")

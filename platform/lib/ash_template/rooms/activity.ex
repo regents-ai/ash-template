@@ -5,13 +5,15 @@ defmodule AshTemplate.Rooms.Activity do
   runs on each machine.
 
   This is a reread on notice, the second of the two shapes the `elixir-stack`
-  skill lets keep a shared reading. It hears every post and delete on a room's
-  topic and counts that room again, at most once a second however many arrive.
+  skill lets keep a shared reading. It hears every post and delete in every
+  room (`Message.every_room_topic/0`) and counts that room again, at most once a
+  second however many arrive.
   It holds nothing but which rooms are due a count: no queue, no copy of rows,
   and it never writes the database.
 
   A notice is sent at most once and can be lost, so each minute
-  `AshTemplate.SharedReading.Heal` asks for every room to be counted again. That
+  `AshTemplate.SharedReading.Heal` asks for every room to be counted again, the
+  rooms read afresh so a room started since is among them. That
   pass also keeps each key's age under the kind's `within`, so a quiet room
   never reads as a stopped producer.
 
@@ -29,24 +31,22 @@ defmodule AshTemplate.Rooms.Activity do
 
   require Ash.Query
 
-  alias AshTemplate.Rooms.{Message, Room}
+  alias AshTemplate.Rooms
+  alias AshTemplate.Rooms.Message
   alias AshTemplate.SharedReading
 
   @kind :room_activity
 
-  @doc "Where the activity of `room`, a slug from `AshTemplate.Rooms.Room`, is held."
-  def key(room) when is_atom(room), do: {@kind, Atom.to_string(room)}
+  @doc "Where the activity of `room`, a room's slug, is held."
+  def key(room) when is_binary(room), do: {@kind, room}
 
   def start_link(_opts), do: GenServer.start_link(__MODULE__, nil)
 
   @impl true
   def init(nil) do
     SharedReading.subscribe_heal(@kind)
-
-    for room <- Room.slugs(),
-        do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, Message.topic(room))
-
-    Enum.each(Room.slugs(), &count/1)
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, Message.every_room_topic())
+    Enum.each(slugs(), &count/1)
     {:ok, MapSet.new()}
   end
 
@@ -54,12 +54,12 @@ defmodule AshTemplate.Rooms.Activity do
   def handle_info(%{event: event, payload: %{room: room}}, due) when event in ~w(post destroy),
     do: {:noreply, due(due, room)}
 
-  # An edit changes neither figure. An event added to a room's topic later is
-  # ignored here too, so one that changes a figure needs a clause above.
-  def handle_info(%{event: _edit_or_unknown}, due), do: {:noreply, due}
+  # An event added to the topic later is ignored here, so one that changes a
+  # figure needs a clause above.
+  def handle_info(%{event: _unknown}, due), do: {:noreply, due}
 
   def handle_info({:shared_reading_heal, @kind}, due),
-    do: {:noreply, Enum.reduce(Room.slugs(), due, &due(&2, &1))}
+    do: {:noreply, Enum.reduce(slugs(), due, &due(&2, &1))}
 
   def handle_info(:count, due) do
     Enum.each(due, &count/1)
@@ -70,6 +70,17 @@ defmodule AshTemplate.Rooms.Activity do
   defp due(due, room) do
     if MapSet.size(due) == 0, do: Process.send_after(self(), :count, 1_000)
     MapSet.put(due, room)
+  end
+
+  # Every room's slug; none while the database is not answering, when no
+  # count could be taken either.
+  defp slugs do
+    case Rooms.list_rooms() do
+      {:ok, rooms} -> Enum.map(rooms, & &1.slug)
+      {:error, _not_read} -> []
+    end
+  rescue
+    _error in [DBConnection.ConnectionError, Postgrex.Error] -> []
   end
 
   defp count(room) do

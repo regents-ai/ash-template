@@ -1,6 +1,6 @@
 defmodule AshTemplate.Rooms.Message do
   @moduledoc """
-  One message in one of the site's rooms (`AshTemplate.Rooms.Room`). Anyone can
+  One message in one room (`AshTemplate.Rooms.Room`). Anyone can
   read a room; a signed-in person, or an agent signed in with its wallet, can
   post, a few times a minute at most. Its author is that person or that agent.
   An agent no person has paired here posts as itself, once (`SetAuthor`).
@@ -14,8 +14,9 @@ defmodule AshTemplate.Rooms.Message do
   `:message_posted` (`AshTemplate.Rooms.Signals`), so a post that mentions
   someone by name tells them. Every post,
   edit and delete is published on the room's topic, so each open page of that
-  room shows it at once. What is published is `public/1`, the fields a
-  signed-out reader sees, never the record.
+  room shows it at once, and every post and delete on `every_room_topic/0` as
+  well. What is published is `public/1`, the fields a signed-out reader sees,
+  never the record.
   """
 
   use Ash.Resource,
@@ -58,7 +59,8 @@ defmodule AshTemplate.Rooms.Message do
 
   attributes do
     uuid_primary_key :id
-    attribute :room, :atom, allow_nil?: false, public?: true, constraints: [one_of: Room.slugs()]
+    # The room's slug (`in_room`).
+    attribute :room, :string, allow_nil?: false, public?: true
     attribute :body, :string, allow_nil?: false, public?: true, constraints: [max_length: 2000]
 
     # The author's display name, or their short wallet address, when they posted.
@@ -70,6 +72,13 @@ defmodule AshTemplate.Rooms.Message do
   end
 
   relationships do
+    belongs_to :in_room, Room do
+      source_attribute :room
+      destination_attribute :slug
+      attribute_type :string
+      define_attribute? false
+    end
+
     # The author: a person, or an agent.
     belongs_to :human_account, AshTemplate.Accounts.HumanAccount do
       attribute_type :integer
@@ -112,7 +121,7 @@ defmodule AshTemplate.Rooms.Message do
 
     # Newest first, a page at a time, of everyone or one kind of author.
     read :in_room do
-      argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
+      argument :room, :string, allow_nil?: false
       argument :author_kind, :atom, constraints: [one_of: [:person, :agent]]
       filter expr(room == ^arg(:room))
 
@@ -125,7 +134,7 @@ defmodule AshTemplate.Rooms.Message do
     # One message of a room, as the room shows it.
     read :one_in_room do
       get? true
-      argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
+      argument :room, :string, allow_nil?: false
       argument :id, :uuid, allow_nil?: false
       filter expr(id == ^arg(:id) and room == ^arg(:room))
       prepare build(load: @shown)
@@ -136,14 +145,14 @@ defmodule AshTemplate.Rooms.Message do
       argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
       filter expr(contains(string_downcase(body), string_downcase(^arg(:text))))
       prepare LeaveOutMuted
-      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5)
+      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5, load: [:in_room])
     end
 
     # The message this actor already posted in this room with this operation_id,
     # so a retry answers the first post.
     read :earlier_post do
       get? true
-      argument :room, :atom, allow_nil?: false, constraints: [one_of: Room.slugs()]
+      argument :room, :string, allow_nil?: false
       argument :operation_id, :uuid, allow_nil?: false
       filter expr(id == ^arg(:operation_id) and room == ^arg(:room))
       prepare PostedByActor
@@ -216,25 +225,34 @@ defmodule AshTemplate.Rooms.Message do
 
   # Delivered after the transaction commits to `topic/1` of the message's room:
   # %{event: "post" | "edit", payload: public(message)}, or %{event: "destroy",
-  # payload: %{id: id, room: room}}. `edited_at` is the order marker: the
+  # payload: %{id: id, room: room}}; posts and deletes to `every_room_topic/0` too. `edited_at` is the order marker: the
   # database sets it on every edit, and a page keeps the newer. Post and edit
   # load what `public/1` reads themselves, so no publication reads it again.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
-    prefix "public:room"
+    prefix "public"
     broadcast_type :broadcast
 
-    publish :post, [:room], returns: :map, transform: &__MODULE__.public(&1.data)
-    publish :edit, [:room], returns: :map, transform: &__MODULE__.public(&1.data)
+    publish :post, ["room", :room], returns: :map, transform: &__MODULE__.public(&1.data)
+    publish :edit, ["room", :room], returns: :map, transform: &__MODULE__.public(&1.data)
 
-    publish :destroy, [:room],
+    publish :destroy, ["room", :room],
+      returns: :map,
+      transform: &%{id: &1.data.id, room: &1.data.room}
+
+    publish :post, ["room_messages"], returns: :map, transform: &__MODULE__.public(&1.data)
+
+    publish :destroy, ["room_messages"],
       returns: :map,
       transform: &%{id: &1.data.id, room: &1.data.room}
   end
 
-  @doc "The topic every post, edit and delete in `room` is published on."
+  @doc "The topic every post, edit and delete in `room`, a room's slug, is published on."
   def topic(room), do: "public:room:#{room}"
+
+  @doc "The topic every post and delete in every room is published on."
+  def every_room_topic, do: "public:room_messages"
 
   @doc """
   What a signed-out reader may see of a message, named one by one: what a room's
