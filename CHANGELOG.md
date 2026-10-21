@@ -3434,3 +3434,15 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   is never a signed-in account's wallet; sign-out lets go of every wallet first, even
   one that refuses) and `platform/assets/test/send_step.test.ts` (a checksummed
   answer still sends; another account sends nothing).
+
+## 2026-10-21 — IronClaw in the side panel; Hermes keeps the key it pairs with
+
+- Shared library elixir-utils moves from `dcd6069` to `554f15d`. Pair New Agent
+  offers IronClaw where NemoClaw was (elixir-utils 7d73e67, as Keyfleet already
+  does); an agent on NemoClaw still pairs, as any agent, and `nemoclaw` stays a
+  harness value.
+- `/agents/ironclaw` and `/agents/ironclaw/skill.md` replace the NemoClaw pages.
+  Patchbay has no IronClaw help page yet, so the page points to its page for any
+  agent.
+- Hermes's pairing message now says "Keep the key you pair with" instead of naming
+  regents-cli (elixir-utils 554f15d).

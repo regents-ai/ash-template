@@ -12,7 +12,7 @@
     {"route": "/agents", "purpose": "Choose your agent and learn how it pairs with your account.", "check": "main h1"},
     {
       "route": "/agents/:agent",
-      "paths": ["/agents/other", "/agents/codex", "/agents/grok-bot", "/agents/muse", "/agents/hermes", "/agents/dots", "/agents/nemoclaw", "/agents/openclaw", "/agents/claude-code", "/agents/pi"],
+      "paths": ["/agents/other", "/agents/codex", "/agents/grok-bot", "/agents/muse", "/agents/hermes", "/agents/dots", "/agents/ironclaw", "/agents/openclaw", "/agents/claude-code", "/agents/pi"],
       "purpose": "Set up one agent, with answers to its common questions.",
       "check": "main h1"
     },
@@ -64,7 +64,7 @@
     {"route": "/skill.md", "purpose": "Give an agent the site's skill.", "type": "text/markdown"},
     {
       "route": "/agents/:agent/skill.md",
-      "paths": ["/agents/other/skill.md", "/agents/codex/skill.md", "/agents/grok-bot/skill.md", "/agents/muse/skill.md", "/agents/hermes/skill.md", "/agents/dots/skill.md", "/agents/nemoclaw/skill.md", "/agents/openclaw/skill.md", "/agents/claude-code/skill.md", "/agents/pi/skill.md"],
+      "paths": ["/agents/other/skill.md", "/agents/codex/skill.md", "/agents/grok-bot/skill.md", "/agents/muse/skill.md", "/agents/hermes/skill.md", "/agents/dots/skill.md", "/agents/ironclaw/skill.md", "/agents/openclaw/skill.md", "/agents/claude-code/skill.md", "/agents/pi/skill.md"],
       "purpose": "Give one agent its skill.",
       "type": "text/markdown"
     },

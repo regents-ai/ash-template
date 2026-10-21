@@ -10,7 +10,9 @@ defmodule AshTemplateWeb.AgentGuides do
     * `## Set up`: what this agent needs beyond the agent guide. The agent guide
       with this section added is the agent's own skill, at `/agents/SLUG/skill.md`;
     * `## Questions`, then `## Troubleshooting`, ending with its Patchbay link,
-      `https://patchbay.help/SLUG/troubleshooting`.
+      `https://patchbay.help/SLUG/troubleshooting`, or Patchbay's page for any
+      agent, `https://patchbay.help/other/troubleshooting`, until Patchbay has one
+      for it (IronClaw).
 
   The files are the same shape on every Regent site, so a site copies them as they
   are. Adding an agent is adding its file. Nothing here reads the database.
