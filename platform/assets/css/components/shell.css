@@ -14,6 +14,13 @@
   --shell-sidebar: 15rem;
   --shell-aside-open: 20rem;
   --shell-aside: var(--shell-aside-open);
+  /* The first row under the header: the sidebar's title, the page's tabs and the
+     side panel's Sign out row share it, so the lines under them are one line. */
+  --shell-bar: 3rem;
+  --shell-header: 3.5rem;
+  /* Where the header's bottom line ends, below the frame's top rule; a phone's
+     menu and side panel open here, so they never cover that line. */
+  --shell-header-end: calc(var(--rg-rule-width) + var(--shell-header) + env(safe-area-inset-top));
   position: relative;
   isolation: isolate;
   display: grid;
@@ -86,7 +93,7 @@
   grid-area: header;
   align-items: stretch;
   min-width: 0;
-  min-height: 3.5rem;
+  min-height: var(--shell-header);
   border-block-end: 1px solid var(--color-border);
   background: var(--color-bg);
 }
@@ -655,7 +662,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 3rem;
+  min-height: var(--shell-bar);
   padding-inline-start: 0.85rem;
   border-block-end: 1px solid var(--color-border);
 }
@@ -790,7 +797,7 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  min-height: 3rem;
+  min-height: var(--shell-bar);
   color: var(--color-fg-muted);
   text-decoration: none;
 }
@@ -846,7 +853,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-height: 3rem;
+  min-height: var(--shell-bar);
   padding-inline: 1rem;
   border-block-end: 1px solid var(--color-border);
 }
@@ -1354,7 +1361,7 @@
 
   #shell-drawer {
     position: fixed;
-    inset: calc(3.5rem + env(safe-area-inset-top)) auto 0 env(safe-area-inset-left);
+    inset: var(--shell-header-end) auto 0 env(safe-area-inset-left);
     z-index: 5;
     display: none;
     grid-template:
@@ -1402,7 +1409,7 @@
 
   .shell-menu-scrim {
     position: fixed;
-    inset: calc(3.5rem + env(safe-area-inset-top)) 0 0;
+    inset: var(--shell-header-end) 0 0;
     z-index: 4;
     display: block;
     min-width: 0;
@@ -1421,7 +1428,7 @@
      edge, and opens only when opened on this page, never on arrival. */
   #shell-aside {
     position: fixed;
-    inset: calc(3.5rem + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    inset: var(--shell-header-end) env(safe-area-inset-right) 0 env(safe-area-inset-left);
     z-index: 6;
     width: auto;
     padding-block-end: env(safe-area-inset-bottom);

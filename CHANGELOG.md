@@ -3364,3 +3364,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Migration `20261021104829_message_reports` adds the table.
 - The compile-connected limit in `platform/mix.exs` moves to 35: the rooms domain reads
   its new resource at compile time.
+
+## 2026-10-21 — The side panel opens under the header
+
+- Found on Patchbay: its side panel slid in beside a taller header, so the line under
+  the panel's top bar stopped partway down the header. The template already opens the
+  panel under the header; it now says so in one place. `#app-shell` names the header's
+  height (`--shell-header`), the first row's height (`--shell-bar`, shared by the
+  sidebar's title row, the page tabs and the panel's Sign out row) and where the
+  header's line ends (`--shell-header-end`).
+- Phone: the menu, its backdrop and the side panel opened one pixel high and hid the
+  header's line. They open at `--shell-header-end`, under the line.
+- The browser walk checks it (`platform/test/browser/layout.spec.ts`): the panel opens
+  under the header's line and its top bar's line meets the sidebar's, at 1280 and 2000
+  wide and on a phone. Sites that carry the panel copy the check.
+- design-system `STYLE.md` gains the rule (3e69c99).

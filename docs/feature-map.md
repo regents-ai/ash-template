@@ -48,6 +48,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code; coming back to an agent shows its same code, and Make a new code replaces it | same |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
+| The side panel opens under the header's line, its top bar in line with the sidebar's title row, at desktop and phone width | `platform/test/browser/layout.spec.ts` |
 | The Credits panel's Where to spend opens a window naming each Regents Product, what Credits buy there and its link; it sits on the screen, and Close or Escape closes it, at both widths; the panel's Paying from wallet shows its copy icon | `platform/test/browser/credits.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
 | An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall once the window has risen into place | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
