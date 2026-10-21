@@ -40,6 +40,7 @@ defmodule AshTemplate.MixProject do
       {:regent_oauth, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth"},
       {:lumis, "~> 0.1"},
       {:req_llm, "~> 1.18"},
+      {:castore, "~> 1.0"},
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
