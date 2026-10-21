@@ -8,8 +8,9 @@ What changed in Ash Template lately, newest first.
   with its six worlds, and the agent tools window, which now copies every Regents
   site's tools at once.
 - **A Regents wallet for everyone.** Everyone gets a Regents wallet at their next
-  sign-in. The Wallets page shows it beside the wallet you signed in with, and you
-  stay signed in from page to page without pressing Sign in again.
+  sign-in. The Wallets page shows it beside the wallet you signed in with, which
+  stays your main wallet and keeps its name, and you stay signed in from page to
+  page without pressing Sign in again.
 - **A share picture with the product's name.** A shared Ash Template link now shows
   the product's name, a line about it and its three starting points, with the
   Regents cut corners. Before, it showed the crown alone.

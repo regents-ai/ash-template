@@ -2,8 +2,10 @@ defmodule AshTemplateWeb.SignInWalletsTest do
   # Sean, 20 Oct 2026: the Wallets page shows "User wallet" only when the person
   # signed in to Privy with a wallet of their own, and the wallet Privy made for
   # everyone as the "Regents embedded wallet". An outside wallet must never show
-  # as the Regents wallet. This signs in through the site's own sign-in step, as
-  # the browser does, with tokens signed as Privy signs them.
+  # as the Regents wallet. Sean, 21 Oct 2026 (9. a): the person's own wallet is
+  # their main wallet, even though Privy makes the Regents wallet during the
+  # sign-in. This signs in through the site's own sign-in step, as the browser
+  # does, with tokens signed as Privy signs them.
   use ExUnit.Case, async: false
 
   import Phoenix.ConnTest
@@ -40,13 +42,35 @@ defmodule AshTemplateWeb.SignInWalletsTest do
   test "a wallet sign-in shows the person's own wallet and their Regents wallet", %{key: key} do
     html =
       key
-      |> sign_in("did:privy:own-wallet", [wallet(@own, 2_000, "metamask"), wallet(@made, 2_001, "privy")])
+      |> sign_in("did:privy:own-wallet", [
+        wallet(@own, 2_000, "metamask"),
+        wallet(@made, 2_001, "privy")
+      ])
       |> get("/account/wallets")
       |> html_response(200)
 
     assert section(html, "User wallet") =~ @own
     assert section(html, "Regents embedded wallet") =~ @made
     refute section(html, "Regents embedded wallet") =~ @own
+  end
+
+  test "the person's own wallet stays their main wallet after Privy makes the Regents wallet",
+       %{key: key} do
+    key |> sign_in("did:privy:main-wallet", [wallet(@own, 4_000, "metamask")])
+
+    key
+    |> sign_in("did:privy:main-wallet", [
+      wallet(@own, 4_000, "metamask"),
+      wallet(@made, 4_001, "privy")
+    ])
+
+    {:ok, account} =
+      AshTemplate.Accounts.get_by_privy_did("did:privy:main-wallet",
+        actor: %AshTemplate.Actors.System{}
+      )
+
+    assert account.wallet_address == @own
+    assert Enum.sort(account.wallet_addresses) == Enum.sort([@own, @made])
   end
 
   test "an email sign-in shows only the Regents wallet", %{key: key} do
