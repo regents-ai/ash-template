@@ -46,6 +46,14 @@ defmodule AshTemplateWeb.RoomsLive do
 
   @gone "That message is no longer here."
 
+  # Why someone may report a message (`AshTemplate.Rooms.Report`), in the menu's words.
+  @report_reasons [
+    spam: "Spam",
+    abuse: "Abuse",
+    steers_agents: "Tries to steer agents",
+    other: "Something else"
+  ]
+
   @impl true
   def mount(socket) do
     {:ok,
@@ -69,6 +77,7 @@ defmodule AshTemplateWeb.RoomsLive do
        topic_form: nil,
        editing: nil,
        notice: nil,
+       reported?: false,
        author_key: :crypto.strong_rand_bytes(16)
      )
      |> stream(:messages, [])}
@@ -204,6 +213,24 @@ defmodule AshTemplateWeb.RoomsLive do
 
       failure ->
         {:noreply, notice(socket, failure, @gone, "That like couldn’t be saved. Try again.")}
+    end
+  end
+
+  # Reports someone else's message to the site's team, saying why. The thanks
+  # stays until the reader next posts or edits.
+  def handle_event("report", %{"id" => id, "reason" => reason}, socket) do
+    case Rooms.report_message(id, reason, actor: socket.assigns.actor) do
+      {:ok, _report} ->
+        {:noreply, assign(socket, notice: nil, reported?: true)}
+
+      # Why it could not be reported, in the words the report gives.
+      {:error, %Ash.Error.Invalid{} = error} ->
+        [%{message: why} | _] = FormErrors.details(error)
+        {:noreply, assign(socket, notice: why, reported?: false)}
+
+      {:error, _failure} ->
+        {:noreply,
+         assign(socket, notice: "That report couldn’t be sent. Try again.", reported?: false)}
     end
   end
 
@@ -363,6 +390,9 @@ defmodule AshTemplateWeb.RoomsLive do
         </div>
 
         <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
+        <Primitives.notice :if={@reported?} tone="success">
+          Thanks. The site’s team will read your report.
+        </Primitives.notice>
         <Primitives.notice :if={@messages.state in [:error, :stale]} tone="error">
           This room couldn’t be loaded. Refresh the page to try again.
         </Primitives.notice>
@@ -585,16 +615,19 @@ defmodule AshTemplateWeb.RoomsLive do
   attr :myself, :any, required: true
 
   # Every message offers Like, or Remove like once the reader likes it. The
-  # author's own message offers Edit and Delete; anyone else's, Mute, and
-  # Message when a person stands behind it. The
+  # author's own message offers Edit and Delete; anyone else's, Mute, Report,
+  # and Message when a person stands behind it. The
   # browser opens the choices above everything else (`popover`), hanging from
   # the button, so the conversation's scrolling edge never cuts them off; they
-  # open upward when there is no room below. Each choice closes them.
+  # open upward when there is no room below. Each choice closes them. Report
+  # opens the reasons in their place, and each reason closes both.
   defp message_menu(assigns) do
     assigns =
       assign(assigns,
+        report_reasons: @report_reasons,
         own?: assigns.message.human_account_id == assigns.actor.human_account_id,
         menu: "#{assigns.id}-menu",
+        reasons: "#{assigns.id}-reasons",
         anchor: "--#{assigns.id}-menu"
       )
 
@@ -667,6 +700,30 @@ defmodule AshTemplateWeb.RoomsLive do
           data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
         >
           Mute <bdi>{@message.author_name}</bdi>
+        </button>
+        <button :if={!@own?} type="button" class="rooms-menu__item" popovertarget={@reasons}>
+          Report
+        </button>
+      </div>
+      <div
+        :if={!@own?}
+        id={@reasons}
+        class="rooms-menu__items rooms-menu__reasons"
+        popover
+        role="group"
+        aria-label="Why are you reporting this message?"
+        style={"position-anchor: #{@anchor}"}
+      >
+        <p class="rooms-menu__label">Report as</p>
+        <button
+          :for={{reason, label} <- @report_reasons}
+          type="button"
+          class="rooms-menu__item"
+          popovertarget={@menu}
+          popovertargetaction="hide"
+          phx-click={JS.push("report", value: %{id: @message.id, reason: reason}, target: @myself)}
+        >
+          {label}
         </button>
       </div>
     </div>
@@ -914,7 +971,7 @@ defmodule AshTemplateWeb.RoomsLive do
         prepare_params: fn params, _phase -> Map.put(params, "room", room.slug) end
       )
 
-    assign(socket, form: to_form(form), editing: nil, notice: nil)
+    assign(socket, form: to_form(form), editing: nil, notice: nil, reported?: false)
   end
 
   defp room_form(%{assigns: %{actor: nil}} = socket), do: assign(socket, :room_form, nil)
@@ -933,6 +990,6 @@ defmodule AshTemplateWeb.RoomsLive do
 
   defp edit_form(socket, message) do
     form = Rooms.form_to_edit_message(message, actor: socket.assigns.actor, as: "message")
-    assign(socket, form: to_form(form), editing: message.id, notice: nil)
+    assign(socket, form: to_form(form), editing: message.id, notice: nil, reported?: false)
   end
 end

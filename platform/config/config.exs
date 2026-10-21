@@ -158,6 +158,7 @@ config :ash_template, :limits,
   note: [limit: 30, window_seconds: 60],
   chat_message: [limit: 10, window_seconds: 60],
   dm: [limit: 300, window_seconds: 3600],
+  report: [limit: 10, window_seconds: 3600],
   search_address: [limit: 300, window_seconds: 60],
   wallet_read: [limit: 30, window_seconds: 60],
   credits_report: [limit: 120, window_seconds: 60]

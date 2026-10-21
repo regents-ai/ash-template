@@ -191,6 +191,18 @@
   display: grid;
 }
 
+/* The reasons open over the menu they came from, in its place. */
+.rooms-menu:has(.rooms-menu__reasons:popover-open) .rooms-menu__items:not(.rooms-menu__reasons) {
+  visibility: hidden;
+}
+
+.rooms-menu__label {
+  margin: 0;
+  padding: 0.5rem 0.85rem 0.25rem;
+  color: var(--color-fg-muted);
+  font-size: 0.875rem;
+}
+
 .rooms-signed-out {
   display: flex;
   flex-wrap: wrap;

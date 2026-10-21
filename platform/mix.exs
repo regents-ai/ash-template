@@ -192,7 +192,7 @@ defmodule AshTemplate.MixProject do
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
-        "xref graph --label compile-connected --fail-above 34",
+        "xref graph --label compile-connected --fail-above 35",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

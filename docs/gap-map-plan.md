@@ -100,7 +100,9 @@ and paid steps are protected as well.
   counts hidden until it closes or its starter ends it).
 - Likes: done 21 Oct on room messages, not notes (Sean, decision 12 a), as `rooms like` and
   `rooms unlike` (one like a person a message; everyone sees the count, not who liked).
-- Reports: `reports send` (a general "report this").
+- Reports: done 21 Oct on room messages, as `rooms report <room> <id> --reason` (spam, abuse,
+  steers agents or something else; one report a person a message, 10 an hour; only the
+  site's team sees them).
 - Follows and a change feed: `follows add`, `follows remove`, `follows list`,
   `changes read` with a cursor.
 - Archive for notes: done 21 Oct as `notes archive <id>` and `notes unarchive <id>` (free; an

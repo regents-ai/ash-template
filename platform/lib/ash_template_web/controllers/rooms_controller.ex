@@ -5,7 +5,8 @@ defmodule AshTemplateWeb.RoomsController do
   with per-request SIWA proof and an active pairing may start a room for its
   account and change the topic of the rooms that account started, post for its
   account, retaining its own attribution, change or delete that account's messages,
-  and like any message for that account or take the like back.
+  like any message for that account or take the like back, and report someone
+  else's message to the site's team.
   A signed agent no person has paired here may post once, as itself, within an
   hourly allowance for its network.
   """
@@ -14,12 +15,12 @@ defmodule AshTemplateWeb.RoomsController do
 
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Rooms
-  alias AshTemplate.Rooms.{Message, Room}
+  alias AshTemplate.Rooms.{Message, Report, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
   alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
 
-  plug :paired_agent when action in [:create, :topic, :update, :delete, :like, :unlike]
+  plug :paired_agent when action in [:create, :topic, :update, :delete, :like, :unlike, :report]
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
@@ -58,6 +59,9 @@ defmodule AshTemplateWeb.RoomsController do
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
        "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel to keep posting, or wait the number of seconds in Retry-After."},
+    "invalid_report" =>
+      {422, "The message could not be reported.",
+       "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."},
     "rooms_unavailable" =>
       {503, "The room's messages could not be reached right now.", "Try again in a moment."}
   }
@@ -253,6 +257,19 @@ defmodule AshTemplateWeb.RoomsController do
            :ok <- take_back(like, actor) do
         answer_like(conn, message)
       else
+        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+      end
+    end)
+  end
+
+  # Reporting a message again answers the first report, with its first reason.
+  def report(conn, %{"room" => slug, "id" => id}) do
+    actor = conn.assigns.actor
+
+    with_any_message(conn, slug, id, fn conn, message ->
+      case Rooms.report_message(message.id, conn.body_params["reason"], actor: actor) do
+        {:ok, report} -> json(conn, %{report: Report.public(report)})
+        {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_report", error)
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)

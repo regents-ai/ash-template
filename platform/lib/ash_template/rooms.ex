@@ -1,5 +1,5 @@
 defmodule AshTemplate.Rooms do
-  @moduledoc "The chat rooms: rooms people start, messages anyone can read, the likes people give them, and the people each reader has muted."
+  @moduledoc "The chat rooms: rooms people start, messages anyone can read, the likes people give them, the people each reader has muted, and the messages people report."
 
   use Ash.Domain, extensions: [AshPhoenix]
 
@@ -44,6 +44,10 @@ defmodule AshTemplate.Rooms do
       define :like_message, action: :like, args: [:message_id]
       define :get_my_like, action: :mine, args: [:message_id], not_found_error?: false
       define :unlike, action: :destroy
+    end
+
+    resource AshTemplate.Rooms.Report do
+      define :report_message, action: :send, args: [:message_id, :reason]
     end
   end
 end

@@ -542,6 +542,50 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:ok, %{liked_by_me: false, like_count: 1}} = Rooms.get_room_message("general", message.id, actor: human)
   end
 
+  test "an agent's report is its person's one report of someone else's message, never their own" do
+    # Invariant: a person reports a message once, whoever presses (the first reason
+    # stays), never their own, and only while the agent is paired.
+    {account, person, paired} = paired_person("did:privy:report-test")
+    human = AshTemplate.Actors.Human.for_account(account)
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:report-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    message =
+      Rooms.post_message!(%{room: "general", body: "Buy now"}, actor: other, context: %{client_key: "other"})
+
+    path = "/api/v1/rooms/general/messages/#{message.id}/report"
+    reported = request(:post, path, ~s({"reason":"spam"}))
+    assert reported.status == 200, reported.resp_body
+    assert %{"report" => %{"id" => id, "message_id" => message_id, "reason" => "spam"} = report} =
+             Jason.decode!(reported.resp_body)
+
+    assert message_id == message.id
+    assert map_size(report) == 4
+
+    assert {:ok, %{id: ^id, reason: :spam}} = Rooms.report_message(message.id, :abuse, actor: human)
+    assert %{"report" => %{"id" => ^id, "reason" => "spam"}} =
+             Jason.decode!(request(:post, path, ~s({"reason":"other"})).resp_body)
+
+    assert error_code(request(:post, path, ~s({"reason":"rude"}))) == "invalid_report"
+
+    own =
+      Rooms.post_message!(%{room: "general", body: "Mine"}, actor: human, context: %{client_key: "own"})
+
+    refused = request(:post, "/api/v1/rooms/general/messages/#{own.id}/report", ~s({"reason":"abuse"}))
+    assert error_code(refused) == "invalid_report"
+    assert refused.resp_body =~ "You can't report your own message."
+
+    assert error_code(request(:post, "/api/v1/rooms/general/messages/#{Ecto.UUID.generate()}/report", ~s({"reason":"spam"}))) ==
+             "public_message_not_found"
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert request(:post, path, ~s({"reason":"spam"})).status == 403
+  end
+
   test "an archived note goes after its person's other notes and keeps its pin until unarchived" do
     # Invariant: archiving only moves a note to the end of its person's notes; it never
     # drops a pin they may have paid for, and an agent reaches only its own person's notes.

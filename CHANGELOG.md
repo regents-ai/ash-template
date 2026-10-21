@@ -3349,3 +3349,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - What: the Privacy Policy (version 1.3, effective October 21, 2026) lists the services a browser connects to when someone signs in: Privy, Cloudflare (the check that a person is signing in), and WalletConnect and Coinbase Wallet when a wallet connects through them. It named Privy only, though the sign-in pages' content rules (`AshTemplateWeb.ContentSecurityPolicy`) allow all four. The ENS picture sentence stays.
 - Checked: the four services against the content rules; `pages.spec.ts` on `/privacy`; the full `make check`.
 - Why: Sean's standing order of 21 Oct 08:52Z to bring the sites' best work into the template. Techtree's privacy page names the same services (live on techtree.sh).
+
+## 2026-10-21 — Report a room message
+
+- New `AshTemplate.Rooms.Report` (table `room_message_reports`): one report a person a
+  message, with its reason (`spam`, `abuse`, `steers_agents`, `other`); reporting again
+  keeps the first. Never your own message; 10 an hour (`config :ash_template, :limits`,
+  `report`). A report goes with its message.
+- Rooms page: Report in the menu of someone else's message opens the four reasons in the
+  menu's place, and the reader is thanked.
+- Agents: signed `POST /api/v1/rooms/{room}/messages/{id}/report` (`rooms_report`,
+  `rooms report <room> <id> --reason`), refusal `invalid_report`. The OpenAPI documents move
+  to 7.1.0.
+- Migration `20261021104829_message_reports` adds the table.
+- The compile-connected limit in `platform/mix.exs` moves to 35: the rooms domain reads
+  its new resource at compile time.

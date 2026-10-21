@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 7.0.0
+  version: 7.1.0
 paths:
   /api/v1/health:
     get:
@@ -336,6 +336,40 @@ paths:
         "401": {$ref: "#/components/responses/AgentSignInRefused"}
         "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
         "404": {$ref: "#/components/responses/PublicRoomMessageNotFound"}
+        "503": {$ref: "#/components/responses/AgentPostUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/rooms/{room}/messages/{id}/report:
+    parameters:
+      - {name: room, in: path, required: true, schema: {type: string}}
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: reportRoomMessage
+      security: [{siwaProof: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              properties:
+                reason: {type: string, enum: [spam, abuse, steers_agents, other]}
+      responses:
+        "200":
+          description: The person's report of the message
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [report]
+                properties:
+                  report: {$ref: "#/components/schemas/RoomMessageReport"}
+        "401": {$ref: "#/components/responses/AgentSignInRefused"}
+        "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
+        "404": {$ref: "#/components/responses/PublicRoomMessageNotFound"}
+        "422": {$ref: "#/components/responses/RoomMessageReportInvalid"}
         "503": {$ref: "#/components/responses/AgentPostUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/sites/{site}/tools:
@@ -4267,6 +4301,14 @@ components:
               value: {error: {code: siwa_request_failed, message: "The sign-in service could not be reached.", hint: "Try again in a moment."}}
             unavailable:
               value: {error: {code: rooms_unavailable, message: "The room's messages could not be reached right now.", hint: "Try again in a moment."}}
+    RoomMessageReportInvalid:
+      description: The reason is not one of the four, the message is the paired account's own, or the account has sent 10 reports this hour
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            invalidReport:
+              value: {error: {code: invalid_report, message: "The message could not be reported.", hint: "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."}}
     RoomsUnavailable:
       description: The room's messages could not be reached
       content:
@@ -4920,6 +4962,15 @@ components:
       properties:
         message: {$ref: "#/components/schemas/RoomMessage"}
         liked: {type: boolean, description: "Whether the paired account likes it now."}
+    RoomMessageReport:
+      type: object
+      additionalProperties: false
+      required: [id, message_id, reason, inserted_at]
+      properties:
+        id: {type: string, format: uuid}
+        message_id: {type: string, format: uuid}
+        reason: {type: string, enum: [spam, abuse, steers_agents, other], description: "Why it was reported first."}
+        inserted_at: {type: string, format: date-time, description: "When it was first reported."}
     RoomMessageEnvelope:
       type: object
       additionalProperties: false
