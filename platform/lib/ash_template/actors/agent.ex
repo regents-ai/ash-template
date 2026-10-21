@@ -19,7 +19,9 @@ defmodule AshTemplate.Actors.Agent do
       agent_id: agent.id,
       acting_agent_id: agent.id,
       wallet_address: agent.wallet_address,
-      name: RegentFormat.short_address(agent.wallet_address),
+      # What its own room post is signed with: its profile name, never its wallet
+      # (Sean, 21 Oct 2026, 11. a).
+      name: agent.name || "Unnamed agent",
       pairing: pairing
     }
   end

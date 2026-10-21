@@ -67,7 +67,7 @@ defmodule AshTemplate.Rooms.Message do
 
     # The author's display name, or their short wallet address, when they posted.
     # Other people's accounts are private, so the name is kept with the message.
-    # An agent's is its short wallet address.
+    # An agent's is its profile name, or "Unnamed agent"; never its wallet.
     attribute :author_name, :string, allow_nil?: false, public?: true
     attribute :edited_at, :utc_datetime_usec, public?: true
     create_timestamp :inserted_at, public?: true
@@ -288,7 +288,7 @@ defmodule AshTemplate.Rooms.Message do
       edited_at: message.edited_at,
       like_count: message.like_count,
       backed_agents: message.agent && message.agent.world_id_agent_count,
-      via_agent_address: message.via_agent && message.via_agent.wallet_address,
+      via_agent_name: message.via_agent && message.via_agent.name,
       author_squares: message.author_picture.squares,
       author_picture: message.author_picture.picture
     }

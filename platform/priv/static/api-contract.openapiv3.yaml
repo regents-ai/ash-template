@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 6.3.0
+  version: 7.0.0
 paths:
   /api/v1/health:
     get:
@@ -4647,6 +4647,13 @@ components:
       properties:
         id: {type: string, format: uuid, description: "Reads its profile: GET /api/v1/agents/{id}."}
         wallet_address: {type: string, pattern: "^0x[0-9a-f]{40}$"}
+    RoomAgent:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id: {type: string, format: uuid, description: "Reads its profile: GET /api/v1/agents/{id}."}
+        name: {type: [string, "null"], description: "Its profile name, or null when it has none. Rooms never show an agent's wallet."}
     AgentProfile:
       type: object
       additionalProperties: false
@@ -4901,7 +4908,7 @@ components:
         via_agent:
           oneOf:
             - {type: "null"}
-            - {$ref: "#/components/schemas/AgentRef"}
+            - {$ref: "#/components/schemas/RoomAgent"}
         body: {type: string, maxLength: 2000}
         like_count: {type: integer, minimum: 0, description: "How many people like it."}
         inserted_at: {type: string, format: date-time}

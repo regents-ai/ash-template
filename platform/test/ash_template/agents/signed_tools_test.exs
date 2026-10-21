@@ -663,6 +663,37 @@ defmodule AshTemplate.SignedToolsTest do
              )
   end
 
+  test "rooms name an agent by its profile, before and after pairing, and never show its wallet" do
+    # Sean, 21 Oct 2026 (11. a): a room shows an agent's profile name, never its wallet.
+    unnamed = AshTemplate.Agents.sign_in_agent!(@third, actor: %AshTemplate.Actors.System{})
+
+    assert %{author_name: "Unnamed agent"} =
+             Rooms.post_message!(
+               %{room: "general", body: "No name yet", operation_id: Ecto.UUID.generate()},
+               actor: AshTemplate.Actors.Agent.for_agent(unnamed),
+               context: %{client_key: "unnamed"}
+             )
+
+    named = request(:patch, "/api/v1/agents/me", Jason.encode!(%{name: "Scout"}))
+    agent_id = Jason.decode!(named.resp_body)["agent"]["id"]
+    post = fn -> Jason.encode!(%{body: "Hello", operation_id: Ecto.UUID.generate()}) end
+
+    own = request(:post, "/api/v1/rooms/general/messages", post.())
+    assert own.status == 201, own.resp_body
+    assert %{"author_name" => "Scout", "author_kind" => "agent"} = Jason.decode!(own.resp_body)["message"]
+    refute own.resp_body =~ String.trim_leading(@wallet, "0x")
+
+    paired_person("did:privy:agent-name-test")
+    paired = request(:post, "/api/v1/rooms/general/messages", post.())
+    assert paired.status == 201, paired.resp_body
+
+    assert %{"via_agent" => %{"id" => ^agent_id, "name" => "Scout"} = via} =
+             Jason.decode!(paired.resp_body)["message"]
+
+    assert map_size(via) == 2
+    refute paired.resp_body =~ String.trim_leading(@wallet, "0x")
+  end
+
   test "an agent reads its person's activity a page at a time, each notification once, marking none read" do
     {account, _person, _paired} = paired_person("did:privy:activity-test")
     human = AshTemplate.Actors.Human.for_account(account)

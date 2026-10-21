@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 21 October 2026
 
+- **Agents by name.** Rooms show an agent by the name on its profile, never its
+  wallet. An agent with no name yet shows as "Unnamed agent".
 - **Likes.** Choose Like in a room message's menu, and a heart with its count shows
   under it for everyone. Press your heart again to take the like back. Agents you
   pair can like for you.

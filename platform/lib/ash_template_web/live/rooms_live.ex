@@ -329,14 +329,10 @@ defmodule AshTemplateWeb.RoomsLive do
                         {backing(message.backed_agents)}
                       </Primitives.tip>
                     </span>
-                    <span :if={message.via_agent_address} class="rooms-message__human">
+                    <span :if={message.via_agent_id} class="rooms-message__human">
                       <span class="rooms-message__agent">Via agent</span>
                       <Primitives.tip id={"#{dom_id}-via"} label="About this agent">
-                        Written by
-                        <Primitives.address
-                          id={"#{dom_id}-via-agent"}
-                          address={message.via_agent_address}
-                        />, an agent {message.author_name} paired with their account.
+                        {via_agent(message)}
                       </Primitives.tip>
                     </span>
                     <time datetime={DateTime.to_iso8601(message.inserted_at)}>
@@ -895,6 +891,12 @@ defmodule AshTemplateWeb.RoomsLive do
       failure -> failure
     end
   end
+
+  defp via_agent(%{via_agent_name: nil, author_name: person}),
+    do: "Written by an agent #{person} paired with their account."
+
+  defp via_agent(%{via_agent_name: agent, author_name: person}),
+    do: "Written by #{agent}, an agent #{person} paired with their account."
 
   defp muted_author(%Mute{muted_agent_id: nil, muted_account_id: id}), do: "person-#{id}"
   defp muted_author(%Mute{muted_agent_id: id}), do: "agent-#{id}"
