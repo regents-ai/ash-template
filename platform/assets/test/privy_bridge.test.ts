@@ -9,7 +9,7 @@ import type {PrivyEvents} from "@privy-io/react-auth"
 vi.mock("@privy-io/react-auth", () => ({}))
 vi.mock("react-dom/client", () => ({}))
 
-const {createPrivyLoginCallbacks} = await import("../js/privy_bridge")
+const {accountActiveWallet, createPrivyLoginCallbacks, signOutOfProvider} = await import("../js/privy_bridge")
 
 const disconnected = "regent:wallet-disconnected:v1"
 const stored = new Map<string, string>()
@@ -55,4 +55,28 @@ it("a remembered session never signs back in after Disconnect", () => {
 it("a real redirect return after Disconnect signs in", () => {
   expect(complete(false)).toHaveBeenCalledOnce()
   expect(stored.has(disconnected)).toBe(false)
+})
+
+// Invariant (Sean, 21 Oct 2026): a sign-in shows only its own account's wallets,
+// and signing out lets go of every wallet, so nothing carries to the next person.
+it("signed in, a wallet app left from before is never the account's wallet", () => {
+  const zerion = {address: "0x0cB2000000000000000000000000000000003C37"}
+  const regents = {address: "0x2c95000000000000000000000000000000008cf6"}
+  const held = [zerion, regents]
+
+  expect(accountActiveWallet(zerion, held, true, [regents.address])).toBeNull()
+  expect(accountActiveWallet(regents, held, true, [regents.address])).toBe(regents)
+  expect(accountActiveWallet(zerion, held, true, [zerion.address.toLowerCase()])).toBe(zerion)
+  expect(accountActiveWallet(zerion, held, false, [])).toBe(zerion)
+  expect(accountActiveWallet(zerion, [regents], false, [])).toBeNull()
+})
+
+it("signing out lets go of every wallet before Privy signs out, even one that refuses", async () => {
+  const order: string[] = []
+  const zerion = {disconnect: vi.fn(() => { order.push("zerion"); throw new Error("refused") })}
+  const regents = {disconnect: vi.fn(() => { order.push("regents") })}
+
+  await signOutOfProvider([zerion, regents], async () => { order.push("logout") })
+
+  expect(order).toEqual(["zerion", "regents", "logout"])
 })

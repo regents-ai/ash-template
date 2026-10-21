@@ -93,6 +93,33 @@ function createAccountRequestHandler({
   }
 }
 
+// Signing out lets go of every wallet Privy holds, a wallet app such as Zerion
+// included, before Privy itself signs out, so the next sign-in, by Google or
+// any other way, starts with none of them. A wallet that will not let go never
+// holds the sign-out open.
+export async function signOutOfProvider(
+  wallets: ReadonlyArray<{disconnect: () => void}>,
+  logout: () => Promise<void>,
+): Promise<void> {
+  await Promise.allSettled(wallets.map(wallet => Promise.resolve().then(() => wallet.disconnect())))
+  await logout()
+}
+
+// Signed in, the wallet Privy remembers as active counts only when the account
+// is linked to it: a wallet app left connected from before, such as one used
+// ahead of a Google sign-in, is never this account's wallet.
+export function accountActiveWallet<W extends {address: string}>(
+  active: W | null,
+  wallets: ReadonlyArray<{address: string}>,
+  authenticated: boolean,
+  linked: ReadonlyArray<string>,
+): W | null {
+  if (!active) return null
+  const address = active.address.toLowerCase()
+  const held = wallets.some(wallet => wallet.address.toLowerCase() === address)
+  return held && (!authenticated || linked.includes(address)) ? active : null
+}
+
 // A refusal the server itself answered, told apart from a failure on the way.
 class ServerReportedSessionError extends Error {
   constructor() {
@@ -880,6 +907,8 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   const {linkTwitter, linkGithub, linkFarcaster} = useLinkAccount(linkCallbacks)
   const {unlink: unlinkOAuth} = useUnlinkOAuth()
   const {unlink: unlinkFarcasterAccount} = useUnlinkFarcaster()
+  const walletsRef = React.useRef(wallets)
+  React.useEffect(() => { walletsRef.current = wallets }, [wallets])
   const walletSyncGeneration = React.useRef(0)
   const selectedWalletRef = React.useRef<ConnectedWallet | null>(null)
   const reconcileProviderSession = React.useMemo(
@@ -925,11 +954,13 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
       return
     }
 
-    let selectedWallet =
-      activeWallet?.type === "ethereum" &&
-      wallets.some(wallet => wallet.address.toLowerCase() === activeWallet.address.toLowerCase())
-        ? activeWallet
-        : null
+    const linked = linkedWallets ? linkedWallets.split(",") : []
+    let selectedWallet = accountActiveWallet(
+      activeWallet?.type === "ethereum" ? activeWallet : null,
+      wallets,
+      authenticated,
+      linked,
+    )
     const pendingSelection = pendingEthereumWalletSelection()
     if (pendingSelection) {
       const matches = ready && walletsReady ? wallets.filter(wallet =>
@@ -951,8 +982,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     // connected wallet the account is linked to, or, when this tab has several,
     // the account's own wallet the page was drawn for. Several and none of them
     // the account's own is no wallet; the press opens Privy's connect window.
-    if (!selectedWallet && !pendingSelection && ready && walletsReady && linkedWallets) {
-      const linked = linkedWallets.split(",")
+    if (!selectedWallet && !pendingSelection && ready && walletsReady && linked.length > 0) {
       const signedIn = wallets.filter(wallet =>
         wallet.type === "ethereum" && linked.includes(wallet.address.toLowerCase()),
       )
@@ -1039,6 +1069,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     window.dispatchEvent(new CustomEvent("ash:wallet-state"))
   }, [
     activeWallet,
+    authenticated,
     linkedWallets,
     ready,
     reconcileProviderSession,
@@ -1089,7 +1120,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
           loginEpoch.current = walletWorkEpoch()
           return signIn()
         },
-        providerLogout: () => provider.current.logout(),
+        providerLogout: () => signOutOfProvider(walletsRef.current, provider.current.logout),
         synchronizeWallets,
       }),
     [connectSelectedWallet, signIn, synchronizeWallets, lifetime],

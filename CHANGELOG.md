@@ -3415,3 +3415,22 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   auto-allow rules match plain commands only (Sean's 17. a). The skill is now
   reviewed in full with Sean every week, with its log in the workspace's
   `control/hq/regent-workflow-skill-review.md`.
+
+## 2026-10-21 — Sign out lets go of every wallet; the send step loads no wallet library
+
+- Signing out disconnects every wallet Privy holds, a wallet app such as Zerion
+  included, before Privy's own sign-out, so the next sign-in, by Google or any other
+  way, starts with none of them. A wallet that refuses to let go never holds the
+  sign-out open. Signed in, the wallet Privy remembers as active counts only when
+  the account is linked to it; otherwise the page uses the account's own wallet in
+  this tab. Sean on Keyfleet, 21 Oct 06:46Z: "signing out zerion should 100% drop
+  that account"; carried here as his 18. a, following Keyfleet 53ab3d62.
+- The wallet send step compares addresses in any letter case itself instead of
+  through viem's getAddress, so no page loads viem's code for it (Keyfleet ee4dca34
+  cut its homepage script from 183 KB to 100 KB this way). The server's addresses go
+  to the wallet as it built them.
+- Sign-in and wallet code: these go live only with Sean's letter.
+- Checks: `platform/assets/test/privy_bridge.test.ts` (a wallet app left from before
+  is never a signed-in account's wallet; sign-out lets go of every wallet first, even
+  one that refuses) and `platform/assets/test/send_step.test.ts` (a checksummed
+  answer still sends; another account sends nothing).

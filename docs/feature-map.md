@@ -39,6 +39,8 @@ starts, and the server watches no files, so no page reloads under a check.
 | --- | --- |
 | Sign in, and sign in again with a wallet added; sign in with email and keep one account | `platform/test/ash_template/accounts/verified_session_test.exs` |
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
+| Sign out lets go of every wallet Privy holds before Privy signs out, even one that refuses; signed in, a wallet app left from before is never the account's wallet | `platform/assets/test/privy_bridge.test.ts` |
+| A wallet send goes out when the wallet answers its account in other letter case, and nothing is sent when it answers for another account | `platform/assets/test/send_step.test.ts` |
 | Each account shows the name its person saved with this site's sign-in, never a name saved under another sign-in, in the order asked | `platform/test/ash_template/accounts/display_name_test.exs` (property test) |
 | A name saved on the Account page with the person's own sign-in shows there, in the form and as the account's name; a forged sign-in changes nothing | `platform/test/ash_template_web/public_name_test.exs` |
 | Save makes the person's profile on their first save and saves only to the profile it read; a switch of account part way through the page's own save path saves nothing, and neither does a save pressed before a switch and still waiting its turn; two quick saves keep the name pressed last; a failed save never leaves the form busy | `platform/assets/test/public_name.test.ts` |
