@@ -11,8 +11,6 @@ defmodule AshTemplateWeb.ShellLive do
 
   import AshTemplateWeb.Components.Shell
 
-  require Ash.Query
-
   alias AshTemplate.{Accounts, Activity, Chat, Notes, Rooms}
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Activity.Notification

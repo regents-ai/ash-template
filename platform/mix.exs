@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "62d3d0400fa26110cd1b541c3cb03723ff170734"
+  @elixir_utils_ref "3ffd16471b689912ccfce65f4d3b9eba0df89338"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "5b4f47ec731840a36994d7cdd1464070f803362b"
 
@@ -12,7 +12,7 @@ defmodule AshTemplate.MixProject do
     [
       app: :ash_template,
       version: "0.1.0",
-      elixir: "~> 1.15",
+      elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: false,
       aliases: aliases(),
@@ -50,7 +50,7 @@ defmodule AshTemplate.MixProject do
       {:nebulex, "~> 3.0"},
       {:nebulex_local, "~> 3.0"},
       {:ash_oban, "~> 0.10.0"},
-      {:ash_ai, "~> 1.2.0"},
+      {:ash_ai, "~> 1.3.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
       {:mdex, "== 0.14.2"},

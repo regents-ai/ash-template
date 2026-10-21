@@ -3,8 +3,6 @@ defmodule AshTemplate.Activity do
 
   use Ash.Domain
 
-  require Ash.Query
-
   alias AshTemplate.Activity.Notification
 
   resources do
