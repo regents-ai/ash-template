@@ -40,17 +40,18 @@ recognized assets; no fee conversion or denomination redesign is wanted.
 
 Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 
-- Privy's active wallet is the only wallet that acts (founder, 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch").
-  When it is one of the signed-in account's linked wallets (the verified session's
-  `wallet_address` and `wallet_addresses`), panels show that wallet's figures and the
-  server builds its steps for it. When it is not linked, or none is active, panels stay
-  on the account's own wallet and a note beside the button names both wallets and asks
-  the person to switch (for example "Your wallet is on 0x9a8b..c1d2, which isn't linked
-  to this account. Switch to 0x1234..abcd or another of your wallets."; a short address
-  is always `0x`, the first four and the last four characters, joined by `..`). A press
-  from it sends nothing and says why. Signed out, panels show the active wallet's
-  figures and a button's first press opens Privy's sign-in. `onchain-buttons` shows
-  the pattern.
+- Signed in, only the account's own wallets act: the verified session's
+  `wallet_address` and `wallet_addresses` (founder, 21 Oct 2026: "signing out zerion
+  should 100% drop that account"). When Privy's active wallet is one of them, panels
+  show that wallet's figures and the server builds its steps for it. A wallet the
+  account is not linked to, such as a wallet app left connected from before a Google
+  sign-in, is ignored: panels stay on the account's own wallet, presses use the
+  account's wallet this tab has connected, and no note asks the person to switch.
+  Signing out disconnects every wallet Privy holds, wallet apps included, so the next
+  sign-in starts with none. Signed out, panels show the active wallet's figures and a
+  button's first press opens Privy's sign-in. A short address is always `0x`, the first
+  four and the last four characters, joined by `..`. `onchain-buttons` shows the
+  pattern.
 - A signed-in customer never sees a wallet panel ask them to sign in again. Each panel
   reads the account's wallet from the server session when it mounts (balance,
   positions, form) and shows it straight away, after page jumps and reloads, then
@@ -344,6 +345,12 @@ On 19 Oct 2026 the Mac's disk filled: Claude temporary copies 248 GB, Regent bac
 88 GB, worktrees 52 GB, generated artifacts 42 GB, local databases 35 GB. Every agent
 and every subagent removes what it made before its task ends.
 
+- Start at most two heavy build/browser runs across the workspace, and keep 50 GiB of
+  disk free. Reuse dependency caches; keep a clean rebuild for dependency or
+  reproducibility investigations.
+- Keep one current handoff per assignment and update it at a milestone or interruption.
+  Check the account's remaining capacity before several long reviews; reserve enough
+  for integration and verification. Do not create another recurring monitor by default.
 - Keep a running list of what you create: worktrees, temporary copies and scratch
   folders, `node_modules`, `deps` and `_build`, test databases, and generated files
   (screenshots, recordings, exports, archives, logs).

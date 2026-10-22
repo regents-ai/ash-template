@@ -3446,3 +3446,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   agent.
 - Hermes's pairing message now says "Keep the key you pair with" instead of naming
   regents-cli (elixir-utils 554f15d).
+
+## 2026-10-22 — The workflow skill drops an unlinked wallet; agents read main's skill
+
+- The regent-workflow skill's wallet rule follows Sean's 21 Oct rule ("signing out
+  zerion should 100% drop that account"): signed in, only the account's own wallets
+  act, a wallet the account is not linked to is ignored with no note asking the person
+  to switch, and signing out disconnects every wallet Privy holds (Sean's 2. a of
+  22 Oct).
+- The copy of the skill agents read held an uncommitted rewrite of 19 Oct; it now
+  holds this text. Main's wording on pushing and releasing stands (Sean's 1. a of
+  22 Oct), and the rewrite's two lines on disk space and capacity join "Clean up
+  after yourself". The rewrite is kept in the workspace's
+  `control/hq/regent-workflow-skill-review.md`.
