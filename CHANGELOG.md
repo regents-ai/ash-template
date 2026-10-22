@@ -3459,3 +3459,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   22 Oct), and the rewrite's two lines on disk space and capacity join "Clean up
   after yourself". The rewrite is kept in the workspace's
   `control/hq/regent-workflow-skill-review.md`.
+
+## 2026-10-22 — Sign-out never waits on a wallet that does not answer
+
+- Signing out asks every wallet to disconnect without waiting on its answer, so a
+  wallet whose disconnect never finishes no longer holds the sign-out open (Sentinel's
+  note N1 on v106). A wallet that refuses already could not.
+- Check: `platform/assets/test/privy_bridge.test.ts` (a wallet that never answers its
+  disconnect does not hold the sign-out open; it failed on the old code).
+- Sign-in code: a later version of the sign-out change Sean released as v106; it goes
+  live with the next release.

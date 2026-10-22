@@ -80,3 +80,13 @@ it("signing out lets go of every wallet before Privy signs out, even one that re
 
   expect(order).toEqual(["zerion", "regents", "logout"])
 })
+
+it("a wallet that never answers its disconnect does not hold the sign-out open", async () => {
+  const silent = {disconnect: vi.fn(() => new Promise<void>(() => {}))}
+  const logout = vi.fn(async () => undefined)
+
+  await signOutOfProvider([silent], logout)
+
+  expect(silent.disconnect).toHaveBeenCalledOnce()
+  expect(logout).toHaveBeenCalledOnce()
+}, 1000)
