@@ -3609,3 +3609,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   (`uname -m`): x86_64 on Fly, aarch64 on a Mac running `make release`, which otherwise stopped
   at GitHub's long download headers. Proven by a fresh aarch64 build on the Mac and a
   build-only x86_64 run on Fly (image label prefetchcheck, not released). From Techtree 78c5c5a5.
+
+## 2026-10-23 — The runtime image carries libsctp1
+
+- OTP 29 opens libsctp when it starts. Without it every boot and every `bin/ash_template rpc`
+  printed an ESOCK warning first, which put a warning in front of the database name
+  `make release` reads, and in front of every rpc answer and release command log on Fly.
+  `platform/Dockerfile` installs `libsctp1` in the runtime stage. Proven by starting the image
+  on the Mac (no warning) and a build-only run on Fly (label sctpcheck, not released). From
+  Techtree fadc820d and regents.sh.
