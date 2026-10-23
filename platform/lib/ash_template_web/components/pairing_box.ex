@@ -48,6 +48,12 @@ defmodule AshTemplateWeb.PairingBox do
   def handle_event("new_pairing_code", %{"harness" => harness}, socket),
     do: {:noreply, with_offered(socket, harness, &issue/2)}
 
+  # Nothing chosen: a reconnecting page restores the form with no agent picked,
+  # and a submit can come before a choice. The box stays as it is.
+  def handle_event(event, _nothing_chosen, socket)
+      when event in ["choose_agent", "new_pairing_code"],
+      do: {:noreply, socket}
+
   @impl true
   def render(assigns) do
     ~H"""

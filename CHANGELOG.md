@@ -3533,3 +3533,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   purchase check within a minute.
 - design-system `30d16360` (was `af32c1d3`): the read-again icon's commits as they
   landed on design-system main, after its tip-figure and plug_crypto 2.2.1 changes.
+
+## 2026-10-23 — The Pair New Agent box never crashes with nothing chosen
+
+- `AshTemplateWeb.PairingBox` keeps the box as it is when the pairing form arrives with
+  no agent picked. A page reconnecting restores the form with nothing chosen, and a
+  submit can come before a choice; both crashed the side panel before (Sentinel, from
+  Patchbay's error mail). Every site copies this clause.
+- Checks: `platform/test/browser/pairing.spec.ts` sends the form with nothing chosen,
+  then chooses an agent, at both widths, and watches for a crash on the page's socket.
