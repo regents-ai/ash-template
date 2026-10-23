@@ -3590,3 +3590,15 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - `ash-data` migrations guide: under a bluegreen release, release 1 stops declaring a column
   and release 2 drops it, so the outgoing machines never select a dropped column.
 - Both come from Autolaunch's move from its own runner to Oban (da6cbf58, d5e7a4c5).
+
+## 2026-10-23 — A page cannot draw half a side panel
+
+- `AshTemplateWeb.Components.Shell.shell` now requires its `:credits_panel`, `:pairing` and
+  `:agents` slots, so a page that draws the shell without one fails
+  `mix compile --warnings-as-errors`. Callers still leave each one out for someone signed
+  out with `:if`. From regents.sh v225, where two pages drew the shell themselves and,
+  signed in, their side panel held only Sign out and Manage Account.
+- The showcase preview of the page frame gives a Credits panel too, so its balance opens
+  a window saying that buying Credits needs a signed-in account.
+- ash-frontend: every page with the side panel is a `ShellLive` action in
+  `live_session :product_shell`; a page never draws the shell itself.

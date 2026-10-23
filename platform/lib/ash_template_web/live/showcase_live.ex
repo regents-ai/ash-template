@@ -118,6 +118,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
       healthy={true}
       search={AshTemplateWeb.ShellLive.unsearched()}
     >
+      <:credits_panel>
+        <p style="padding: 24px">Buying Credits needs a signed-in account.</p>
+      </:credits_panel>
       <:pairing>
         <Regent.Account.pairing
           id="preview-pairing"

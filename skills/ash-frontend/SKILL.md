@@ -42,6 +42,9 @@ the detail.
   Two buttons side by side in a header never look the same: one primary, one secondary
   (STYLE.md, "Shape and spacing").
 
+Every page with the side panel is a `ShellLive` action in `live_session :product_shell`;
+a page never draws the shell itself, or signed in it shows half a side panel.
+
 Reuse Regent UI primitives while retaining each product's theme, navigation and
 layout. Components own no authentication, database or wallet admission decisions.
 A second on-chain button press must still reach the wallet while the first is pending.
