@@ -3525,3 +3525,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   quiet spell reads at once; asks close together cost one read; another chain's ask
   leaves the reader alone) and `platform/test/browser/figures.spec.ts` (the page says
   when Base was last read and the icon reads it again, at both widths).
+
+## 2026-10-23 — Credits deposits read every five minutes; design-system on main
+
+- elixir-utils `e600ed34` (was `554f15d7`): the shared Credits deposit reader runs every
+  five minutes instead of every minute. A person's own Buy is still credited by its
+  purchase check within a minute.
+- design-system `30d16360` (was `af32c1d3`): the read-again icon's commits as they
+  landed on design-system main, after its tip-figure and plug_crypto 2.2.1 changes.
