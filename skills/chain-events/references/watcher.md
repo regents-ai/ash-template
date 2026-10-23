@@ -418,7 +418,7 @@ defmodule MyApp.Chain.ReadContract do
   @moduledoc """
   Keeps one contract's history current. Each run is one scanner pass; the job then
   waits five minutes and runs again. `MyApp.Chain.Watch.refresh/1` brings the next
-  run forward to ten seconds away. A failed pass is retried a minute later.
+  run forward to ten seconds away, never later. A failed pass is retried a minute later.
   """
   use Oban.Worker,
     queue: :chain,
@@ -472,17 +472,22 @@ defmodule MyApp.Chain.Watch do
 
   @impl MyApp.ChainRefresh
   def refresh(chain_id) do
+    soon = DateTime.add(DateTime.utc_now(), MyApp.ChainRefresh.gap_s())
+
     contracts()
     |> Enum.filter(&(&1.chain_id == chain_id))
-    |> Enum.each(fn args ->
-      args
-      |> ReadContract.new(
-        schedule_in: MyApp.ChainRefresh.gap_s(),
-        replace: [scheduled: [:scheduled_at], retryable: [:scheduled_at]]
-      )
-      |> Oban.insert!()
-    end)
+    |> Enum.each(&(&1 |> ReadContract.new() |> Oban.insert!() |> bring_forward(soon)))
   end
+
+  # A waiting job due later than `soon` moves to `soon`; one due sooner keeps its
+  # time, so presses that keep coming never put the read off.
+  defp bring_forward(%Oban.Job{state: state, scheduled_at: at} = job, soon)
+       when state in ["scheduled", "retryable"] do
+    if DateTime.after?(at, soon), do: {:ok, _job} = Oban.update_job(job, %{scheduled_at: soon})
+    :ok
+  end
+
+  defp bring_forward(%Oban.Job{}, _soon), do: :ok
 
   defp contracts, do: Application.fetch_env!(:my_app, MyApp.Chain)[:contracts]
 end
@@ -491,9 +496,11 @@ end
 `:contracts` lists each watched contract as `%{chain_id: 8453, name: "..."}`; name
 `MyApp.Chain.Watch` among `config :my_app, MyApp.ChainRefresh, readers:`. The job is
 unique while it is incomplete, so inserting it again is how the watch says "make sure
-it exists": a waiting job is left alone, and `refresh/1`'s `replace:` moves a waiting
-job's `scheduled_at` to ten seconds from now, so many presses close together cost one
-pass. A press that lands while a pass is running is seen by that pass if it read the
+it exists": `Oban.insert!/1` then answers the job already there, read from the
+database, and a new job runs at once. `refresh/1` moves a waiting job's `scheduled_at`
+to ten seconds from now only when it was due later, so many presses close together
+cost one pass and presses that keep coming never put the pass off. (Oban's `replace:`
+would set every press's time, later as well as sooner, so it is not used here.) A press that lands while a pass is running is seen by that pass if it read the
 head after the press, or else at the next turn. Open the cursor at the contract's
 deployment block with `Chain.open_cursor/2`, which leaves an existing one alone. Never
 start the reading from the site's supervisor: Oban runs it on whichever machine takes

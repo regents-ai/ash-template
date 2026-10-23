@@ -3542,3 +3542,15 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   Patchbay's error mail). Every site copies this clause.
 - Checks: `platform/test/browser/pairing.spec.ts` sends the form with nothing chosen,
   then chooses an agent, at both widths, and watches for a crash on the page's socket.
+
+## 2026-10-23 — Skills: a press brings a chain reading forward, never later
+
+- `chain-events` watcher guide: `Watch.refresh/1` inserts the unique reading job without
+  `replace:` and, when the job waiting is due later than ten seconds from now, moves it
+  there with `Oban.update_job/2`. With `replace:` every press set the time to ten
+  seconds away, later as well as sooner, so presses less than ten seconds apart (an
+  auction launch crowd) could keep putting the reading off. Found by Autolaunch while
+  replacing its hand-built runner (Sentinel D1). Rule 12 in `chain-events` says the same.
+- Checked against Oban 2.24.2 with a probe that was not kept: a job waiting five minutes
+  comes forward to ten seconds and later presses keep that time; a job due in three
+  seconds keeps its time; `replace:` pushes it to ten.

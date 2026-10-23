@@ -58,8 +58,9 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
     shows when it was read and the icon, with `Regent.Primitives.last_read`. A one-off
     Oban reading queues one unique job (`states: [:available, :scheduled]`, so an ask
     while a pass runs still gets one more); a long-lived reading job has its next run
-    moved to ten seconds away with `replace: [scheduled: [:scheduled_at]]`
-    ([watcher.md](references/watcher.md)); a supervised reader wakes on a
+    brought forward to ten seconds away, and never put back, with `Oban.update_job/2`
+    ([watcher.md](references/watcher.md)), so presses that keep coming cannot keep
+    pushing the read off; a supervised reader wakes on a
     `Phoenix.PubSub` topic on every machine (`AshTemplate.ChainHead`).
 
 ## References
