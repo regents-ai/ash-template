@@ -19,14 +19,6 @@ declare module "phoenix-colocated/ash_template" {
 
 declare module "*.css"
 
-declare module "node:fs" {
-  export function readFileSync(path: URL): Uint8Array
-}
-
-declare module "node:zlib" {
-  export function gzipSync(input: Uint8Array): Uint8Array
-}
-
 // The WebMCP draft's document.modelContext. Browsers without it have no such
 // property; app.ts checks `"modelContext" in document` before loading public_tools.ts.
 type ModelContextTool = {

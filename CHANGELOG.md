@@ -3481,3 +3481,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   session.
 - Lockfile-only change; every other pin stays where it was. `mix hex.audit`
   finds no advisories.
+
+## 2026-10-23 — Node's own types for the tests
+
+- Removed the hand-written `node:fs` and `node:zlib` declarations from
+  `platform/assets/js/types.d.ts`, left from the Regents import. `@types/node` is a
+  direct dev dependency and declares both in full; the narrow copy lacked `readdirSync`
+  and the text form of `readFileSync` that `privy_session_pickup.test.ts` calls, so a
+  site copying the file failed its typecheck (regents.sh, 23 Oct).
