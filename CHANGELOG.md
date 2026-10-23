@@ -3569,3 +3569,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   rustler_precompiled checks each file against the package's checksums before using it.
 - The two curl lines name the versions mix.lock pins and change with them. Remove the
   step once GitHub or rustler_precompiled fixes the limit (backlog).
+
+## 2026-10-23 — ChatGPT's picture, and CLI 1.10.17
+
+- design-system pin moves to `cbf12f8`, which adds ChatGPT's picture to
+  `Regent.Account.agent_mark` (kind `"chatgpt"`). Before, an agent list or pairing box holding a
+  ChatGPT agent failed to draw. ChatGPT pairing stays off here
+  (`config :regent_agents, chatgpt_pairing:`).
+- The command check and every install line move to regents-cli 1.10.17 (`773f8a67`), whose copy
+  of this site's `cli/commands.json` is identical to ours. `cli/COMMANDS.md` drops its "next
+  release" marks, and `/agents.md`, `/llms.md` and the public changelog name 1.10.17 with its
+  published wheel's SHA256.
