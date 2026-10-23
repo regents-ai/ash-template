@@ -3502,3 +3502,26 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - `createConnectWalletRequest` in `platform/assets/js/privy_bridge.tsx`, with three
   regression tests in `platform/assets/test/privy_bridge.test.ts` (regents.sh
   security note, 23 Oct).
+## 2026-10-23 — Chains read on a slow clock, and again when a person acts
+
+- Sean, 23 Oct: "template does not need to be reading the chain at all, so change it
+  to once per hour. But any onchain user action must refresh the cache." Base's
+  newest block on `/showcase/figures` is read once an hour instead of every two
+  seconds (`config :ash_template, :chain_heads`), about 43,000 node calls a day
+  fewer per machine.
+- New `AshTemplate.ChainRefresh`: `request(chain_id)` asks every reader named in its
+  `:readers` setting to read that chain again. `AshTemplateWeb.OnchainSteps` calls it
+  when a step lands, and a page's read-again icon calls it. Each reader keeps at least
+  ten seconds between two early reads, so a crowd pressing costs one read.
+  `AshTemplate.ChainHead` is the first reader: it wakes on a `Phoenix.PubSub` topic on
+  every machine. Every site copies this module; this is the original.
+- The figures page shows when Base was last read and the read-again icon, with the new
+  `Regent.Primitives.last_read` from design-system `af32c1d3` (was `5dd12626`).
+- Skills: `chain-events` gains rule 12 (read the chain on a slow clock), its watcher
+  guide runs passes as Oban jobs, as Keyfleet does, every five minutes and brought
+  forward by `ChainRefresh`, and "catching up" starts after 420 seconds;
+  `elixir-stack` and `ash-frontend`'s public figures point to the rule.
+- Checks: `platform/test/ash_template/site/chain_refresh_test.exs` (an ask after a
+  quiet spell reads at once; asks close together cost one read; another chain's ask
+  leaves the reader alone) and `platform/test/browser/figures.spec.ts` (the page says
+  when Base was last read and the icon reads it again, at both widths).

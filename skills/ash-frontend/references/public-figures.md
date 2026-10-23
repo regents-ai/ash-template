@@ -163,7 +163,10 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 
 - **A supervised reader of an outside clock**, such as `AshTemplate.ChainHead`.
   One that also records what it read writes its rows first and stores the
-  reading after, so a page never shows a figure the database does not hold.
+  reading after, so a page never shows a figure the database does not hold. It
+  reads on a slow clock and early when `ChainRefresh` asks (`chain-events`, rule
+  12); the page shows the entry's `at` and a read-again icon with
+  `Regent.Primitives.last_read`, whose press calls `ChainRefresh.request/1`.
 - **A reread on notice**, for a reading built from the site's own rows: the
   producer subscribes to the rows' notices, rereads at most once a second however
   many arrive, and holds nothing but "a reread is due". `AshTemplate.Rooms.Activity`

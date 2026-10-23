@@ -182,9 +182,14 @@ config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0
 config :telemetry_poller, :default, period: 10_000
 
 # The chains whose newest block the site's pages show, each with how often it is
-# read, in milliseconds: Base, every two seconds, for /showcase/figures. The
+# read, in milliseconds: Base, once an hour, for /showcase/figures, and again
+# after a confirmed on-chain press or a press of the page's read-again icon. The
 # readers run only where the site serves pages (`AshTemplate.ChainHead`).
-config :ash_template, :chain_heads, %{8453 => 2_000}
+config :ash_template, :chain_heads, %{8453 => 3_600_000}
+
+# Who reads a chain again when a person's action may have changed it
+# (`AshTemplate.ChainRefresh`).
+config :ash_template, AshTemplate.ChainRefresh, readers: [AshTemplate.ChainHead]
 
 # The chain the wallet page at /showcase/wallet sends on: Base Sepolia, a test
 # network, so nothing it sends moves value.

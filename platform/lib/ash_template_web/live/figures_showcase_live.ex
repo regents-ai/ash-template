@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.FiguresShowcaseLive do
   @moduledoc """
   Figures every visitor sees alike, working. Base's newest block: one reader
-  (`AshTemplate.ChainHead`) asks Base for it. Each room's activity: one counter
+  (`AshTemplate.ChainHead`) asks Base for it once an hour, and again when anyone
+  presses the read-again icon (`AshTemplate.ChainRefresh`). Each room's activity: one counter
   (`AshTemplate.Rooms.Activity`) counts a room again when someone posts in it.
   Every open copy of this page shows what `AshTemplate.SharedReading` holds and
   is told when it changes. The page reads the list of rooms once when it opens
@@ -11,7 +12,7 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   """
   use AshTemplateWeb, :live_view
 
-  alias AshTemplate.{ChainHead, Rooms, SharedReading}
+  alias AshTemplate.{ChainHead, ChainRefresh, Rooms, SharedReading}
   alias AshTemplate.Rooms.Activity
   alias AshTemplateWeb.Components.Shell
   alias Regent.Primitives, as: P
@@ -41,11 +42,21 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   def handle_info({:shared_reading, {:room_activity, _room}}, socket),
     do: {:noreply, assign_rooms(socket)}
 
+  # The new reading arrives as `{:shared_reading, key}`, like any other.
+  @impl true
+  def handle_event("read_again", _params, socket) do
+    ChainRefresh.request(8453)
+    {:noreply, socket}
+  end
+
   # No reading yet is shown as the reader being behind, never as a block.
   defp head do
     case SharedReading.fetch(@key) do
-      {:ok, %{reading: block, degraded?: behind?}} -> %{block: block, behind?: behind?}
-      :error -> %{block: nil, behind?: true}
+      {:ok, %{reading: block, at: at, degraded?: behind?}} ->
+        %{block: block, at: at, behind?: behind?}
+
+      :error ->
+        %{block: nil, at: nil, behind?: true}
     end
   end
 
@@ -98,10 +109,11 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
             <P.status :if={!@head.behind?} tone="success">Live</P.status>
             <P.status :if={@head.behind?} tone="warning">Behind</P.status>
           </p>
+          <P.last_read id="figures-head-read" at={@head.at} phx-click="read_again" />
           <p id="figures-head-state" role="status">
             {if @head.behind?,
               do: "Base can't be read right now. This page catches up by itself.",
-              else: "Read from Base every two seconds, once for everyone."}
+              else: "Read from Base once an hour, and again on request."}
           </p>
         </section>
 

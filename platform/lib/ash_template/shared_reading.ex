@@ -72,7 +72,7 @@ defmodule AshTemplate.SharedReading do
       open: "a chain's newest block number is public on the chain itself",
       keys: 8,
       bytes: 64,
-      within: 30
+      within: 3_630
     },
     room_activity: %{
       open:

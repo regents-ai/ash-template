@@ -13,13 +13,22 @@ defmodule AshTemplate.ChainHead do
 
   The first read happens as the reader starts, so the key holds a reading or
   its degraded mark before the site serves a page. Each later read is scheduled
-  only when the last has finished, and a read gives up within one interval, so
+  only when the last has finished, and a read gives up within ten seconds, so
   reads never pile up behind a slow node.
+
+  Between its slow turns a reader reads again when asked (`refresh/1`, through
+  `AshTemplate.ChainRefresh`): at once, or ten seconds after its last read, so
+  many asks close together cost one read.
   """
 
   use GenServer
 
-  alias AshTemplate.{ChainClient, SharedReading}
+  @behaviour AshTemplate.ChainRefresh
+
+  alias AshTemplate.{ChainClient, ChainRefresh, SharedReading}
+
+  # Connecting and the answer each get this long.
+  @wait_ms 5_000
 
   @doc "One reader for each chain in `:chain_heads`."
   def children do
@@ -31,31 +40,65 @@ defmodule AshTemplate.ChainHead do
   @doc "Where the newest block of chain `chain_id` is held."
   def key(chain_id), do: {:chain_head, chain_id}
 
-  def start_link({chain_id, every_ms}) when is_integer(chain_id) and every_ms >= 1_000,
-    do: GenServer.start_link(__MODULE__, {chain_id, every_ms})
+  @doc "Wakes the reader of chain `chain_id` on every machine."
+  @impl ChainRefresh
+  def refresh(chain_id),
+    do: Phoenix.PubSub.broadcast(AshTemplate.PubSub, topic(chain_id), {:chain_refresh, chain_id})
+
+  def start_link({chain_id, every_ms})
+      when is_integer(chain_id) and every_ms > 2 * @wait_ms,
+      do: GenServer.start_link(__MODULE__, {chain_id, every_ms})
 
   @impl true
-  def init(chain), do: {:ok, read(chain)}
-
-  @impl true
-  def handle_info(:read, chain), do: {:noreply, read(chain)}
-
-  defp read({chain_id, every_ms} = chain) do
-    case newest(chain_id, div(every_ms, 3)) do
-      {:ok, block} -> SharedReading.put(key(chain_id), block)
-      :error -> SharedReading.degraded(key(chain_id))
-    end
-
-    Process.send_after(self(), :read, every_ms)
-    chain
+  def init({chain_id, every_ms}) do
+    :ok = Phoenix.PubSub.subscribe(AshTemplate.PubSub, topic(chain_id))
+    {:ok, read(%{chain_id: chain_id, every_ms: every_ms, read_at: nil, next: nil, timer: nil})}
   end
 
-  # Connecting and the answer each get a third of the interval. These connect
-  # options give the reads a connection pool of their own, so they never wait
-  # behind another caller. A failed request is counted by the client under the
-  # reader's own name, apart from the wallet's.
-  defp newest(chain_id, wait_ms) do
-    timeouts = [connect_options: [timeout: wait_ms], receive_timeout: wait_ms]
+  # Only the read scheduled last is made; one it replaced is dropped.
+  @impl true
+  def handle_info({:read, next}, %{next: next} = state), do: {:noreply, read(state)}
+  def handle_info({:read, _replaced}, state), do: {:noreply, state}
+
+  def handle_info({:chain_refresh, _chain_id}, state) do
+    case state.read_at + ChainRefresh.gap_s() * 1_000 - now() do
+      wait when wait <= 0 -> {:noreply, read(state)}
+      wait -> {:noreply, sooner(state, wait)}
+    end
+  end
+
+  # A read already due sooner than `wait` stays as it is.
+  defp sooner(state, wait) do
+    case Process.read_timer(state.timer) do
+      left when is_integer(left) and left > wait -> schedule(state, wait)
+      _sooner_already -> state
+    end
+  end
+
+  defp read(state) do
+    case newest(state.chain_id) do
+      {:ok, block} -> SharedReading.put(key(state.chain_id), block)
+      :error -> SharedReading.degraded(key(state.chain_id))
+    end
+
+    schedule(%{state | read_at: now()}, state.every_ms)
+  end
+
+  defp schedule(state, wait) do
+    if state.timer, do: Process.cancel_timer(state.timer)
+    next = make_ref()
+    %{state | next: next, timer: Process.send_after(self(), {:read, next}, wait)}
+  end
+
+  defp now, do: System.monotonic_time(:millisecond)
+
+  defp topic(chain_id), do: "chain_head:#{chain_id}"
+
+  # These connect options give the reads a connection pool of their own, so
+  # they never wait behind another caller. A failed request is counted by the
+  # client under the reader's own name, apart from the wallet's.
+  defp newest(chain_id) do
+    timeouts = [connect_options: [timeout: @wait_ms], receive_timeout: @wait_ms]
 
     with {:ok, "0x" <> hex} <-
            ChainClient.rpc(%{chain_id: chain_id}, "eth_blockNumber", [], "chain_head", timeouts),

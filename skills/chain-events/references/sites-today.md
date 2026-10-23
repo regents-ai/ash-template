@@ -14,7 +14,7 @@ local checkouts lag behind.
 ## Models
 
 - The watcher: Keyfleet, `platform/lib/keyfleet/chain/` (`scanner.ex`, `cursor.ex`,
-  `changes/record_once.ex`, `poller.ex`), its stub client
+  `changes/record_once.ex`, `read_fleet.ex`, `watch.ex`), its stub client
   `test/support/chain_stub_client.ex`, and the vote row's `:record` action in
   `lib/keyfleet/proposals/vote.ex`.
 - The page: Autolaunch, `platform/lib/autolaunch/auction.ex` (`pub_sub`),

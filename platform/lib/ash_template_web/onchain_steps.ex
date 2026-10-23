@@ -8,6 +8,8 @@ defmodule AshTemplateWeb.OnchainSteps do
   page reports each press against the review it sent from, and every sent step
   is then read at the latest block of the review's chain, every quarter second,
   until it lands or the page stops asking. Nothing is kept beyond the page.
+  A step that lands asks every reader of its chain to read it again
+  (`AshTemplate.ChainRefresh`), so the site's shared figures show what it changed.
 
   The only wallet that may act is Privy's active wallet when it is one of the
   signed-in account's own (`signer/2`).
@@ -17,7 +19,7 @@ defmodule AshTemplateWeb.OnchainSteps do
 
   import Phoenix.LiveView, only: [push_event: 3, start_async: 3]
 
-  alias AshTemplate.ChainClient
+  alias AshTemplate.{ChainClient, ChainRefresh}
   alias RegentChain.{Outcome, Presses}
 
   @recheck_ms 250
@@ -111,6 +113,7 @@ defmodule AshTemplateWeb.OnchainSteps do
 
       {entry, presses} ->
         socket = assign(socket, presses: presses)
+        if entry.outcome == :confirmed, do: ChainRefresh.request(entry.review.chain.chain_id)
         if Presses.reading?(entry), do: check(socket, entry), else: socket
     end
   end

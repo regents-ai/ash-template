@@ -16,7 +16,8 @@ the policies check) is the template's own. The example watches ERC-20 `Transfer`
 | `lib/my_app/chain/<event>.ex` | One resource per kind of event row |
 | `lib/my_app/chain/changes/record_once.ex` | The check that a row read again matches |
 | `lib/my_app/chain/scanner.ex` | One pass (follow Keyfleet's) |
-| `lib/my_app/chain/poller.ex` | Runs passes |
+| `lib/my_app/chain/read_contract.ex` | The Oban job that runs passes |
+| `lib/my_app/chain/watch.ex` | The cron job that gives each contract its reading job, and brings it forward when asked |
 | `test/support/chain_stub_client.ex` | The chain a test describes |
 
 ## The client
@@ -410,53 +411,93 @@ Write the pass after `Keyfleet.Chain.Scanner`
 5. Never ask for blocks above the head this pass read; a node that is behind makes a
    shorter pass, never missing history.
 
-## The poller
+## The reading job
 
 ```elixir
-defmodule MyApp.Chain.Poller do
-  @moduledoc "Runs a scanner pass every few seconds; a failed pass is retried later, never fatal."
-  use GenServer
+defmodule MyApp.Chain.ReadContract do
+  @moduledoc """
+  Keeps one contract's history current. Each run is one scanner pass; the job then
+  waits five minutes and runs again. `MyApp.Chain.Watch.refresh/1` brings the next
+  run forward to ten seconds away. A failed pass is retried a minute later.
+  """
+  use Oban.Worker,
+    queue: :chain,
+    max_attempts: 20,
+    unique: [keys: [:name], period: :infinity, states: :incomplete]
+
   require Logger
 
-  @max_delay 60_000
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"chain_id" => chain_id, "name" => name}}) do
+    client = MyApp.Chain.Client.configured()
 
-  def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
-
-  @impl true
-  def init(opts) do
-    send(self(), :tick)
-    {:ok, Map.new(opts) |> Map.merge(%{client: MyApp.Chain.Client.configured(), delay: opts[:interval]})}
-  end
-
-  @impl true
-  def handle_info(:tick, state) do
-    cursor = MyApp.Chain.cursor!(state.chain_id, state.name)
-
-    case MyApp.Chain.Scanner.pass(state.client, cursor) do
-      :ok ->
-        Process.send_after(self(), :tick, state.interval)
-        {:noreply, %{state | delay: state.interval}}
+    with {:ok, ^chain_id} <- client.chain_id(),
+         :ok <- MyApp.Chain.Scanner.pass(client, MyApp.Chain.cursor!(chain_id, name)) do
+      {:snooze, 300}
+    else
+      {:ok, other_chain} ->
+        Logger.error("#{name} is on chain #{chain_id} but the node serves #{other_chain}; not reading it")
+        {:cancel, {:wrong_chain, other_chain}}
 
       {:stopped, block} ->
-        Logger.error("#{state.name} stopped at block #{block}: the chain disagrees with the record")
-        {:noreply, state}
+        Logger.error("#{name} stopped at block #{block}: the chain disagrees with the record")
+        {:cancel, {:stopped, block}}
 
       {:error, reason} ->
-        delay = min(state.delay * 2, @max_delay)
-        Logger.warning("#{state.name} read failed, retrying in #{delay} ms: #{inspect(reason)}")
-        Process.send_after(self(), :tick, delay)
-        {:noreply, %{state | delay: delay}}
+        Logger.warning("#{name} read failed; it is tried again: #{inspect(reason)}")
+        {:error, reason}
     end
   end
+
+  @impl Oban.Worker
+  def backoff(%Oban.Job{}), do: 60
+end
+
+defmodule MyApp.Chain.Watch do
+  @moduledoc """
+  Every five minutes (`config :my_app, Oban, cron:`), makes sure each watched contract
+  has its reading job. As the site's `ChainRefresh` reader, brings that job forward
+  when a person's on-chain press lands.
+  """
+  use Oban.Worker, queue: :default, max_attempts: 1
+
+  @behaviour MyApp.ChainRefresh
+
+  alias MyApp.Chain.ReadContract
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{}) do
+    Enum.each(contracts(), &Oban.insert!(ReadContract.new(&1)))
+  end
+
+  @impl MyApp.ChainRefresh
+  def refresh(chain_id) do
+    contracts()
+    |> Enum.filter(&(&1.chain_id == chain_id))
+    |> Enum.each(fn args ->
+      args
+      |> ReadContract.new(
+        schedule_in: MyApp.ChainRefresh.gap_s(),
+        replace: [scheduled: [:scheduled_at], retryable: [:scheduled_at]]
+      )
+      |> Oban.insert!()
+    end)
+  end
+
+  defp contracts, do: Application.fetch_env!(:my_app, MyApp.Chain)[:contracts]
 end
 ```
 
-Start one per contract from the site's supervisor, with `chain_id`, `name` and
-`interval` (4 seconds on Base). Before its first pass it must check `client.chain_id()`
-equals the cursor's chain and refuse to read at all when it does not, as Keyfleet's
-poller does on its first tick. Open the cursor at the
-contract's deployment block with `Chain.open_cursor/2`, which leaves an existing one
-alone.
+`:contracts` lists each watched contract as `%{chain_id: 8453, name: "..."}`; name
+`MyApp.Chain.Watch` among `config :my_app, MyApp.ChainRefresh, readers:`. The job is
+unique while it is incomplete, so inserting it again is how the watch says "make sure
+it exists": a waiting job is left alone, and `refresh/1`'s `replace:` moves a waiting
+job's `scheduled_at` to ten seconds from now, so many presses close together cost one
+pass. A press that lands while a pass is running is seen by that pass if it read the
+head after the press, or else at the next turn. Open the cursor at the contract's
+deployment block with `Chain.open_cursor/2`, which leaves an existing one alone. Never
+start the reading from the site's supervisor: Oban runs it on whichever machine takes
+the job, once.
 
 ## The page
 
@@ -503,7 +544,7 @@ end
 - Every read goes through the code interface with the viewer's actor; the notice
   carries no row data to show.
 - For the "catching up" notice, read the cursor through a `fresh?` calculation
-  (`observed_at` within 120 seconds and `head_block - next_block` within 300 blocks, as
+  (`observed_at` within 420 seconds and `head_block - next_block` within 300 blocks, as
   Keyfleet's cursor has) and show plain words: "Catching up with the chain. Recent
   activity may take a moment to appear."
 

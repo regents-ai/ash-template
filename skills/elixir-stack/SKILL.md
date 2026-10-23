@@ -45,7 +45,8 @@ page (ash-frontend, [public figures](../ash-frontend/references/public-figures.m
   next one. The next read is scheduled when the last has finished, never on a fixed
   interval. Its Req call has `retry: false` and gives up well inside one tick. One
   runs per chain per machine, with telemetry for the age of its reading and for each
-  failed read.
+  failed read. It runs on a slow clock and reads again early only when asked, by the
+  rule in `chain-events` (read the chain on a slow clock).
 - **A reread on notice.** The producer of a reading built from the site's own rows
   subscribes to those rows' notices and rereads at most once a second however many
   arrive. It holds nothing but "a reread is due" (`AshTemplate.Rooms.Activity`). A

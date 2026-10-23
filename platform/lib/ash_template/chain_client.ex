@@ -43,7 +43,8 @@ defmodule AshTemplate.ChainClient do
   One JSON-RPC request to the node; one that gets no answer counts in
   `health.chain_request_failures.total` under `scope`, the caller's fixed name.
   `timeouts` are Req's own options, for a caller that must hear back sooner than
-  five seconds. `AshTemplate.ChainHead` passes both.
+  five seconds, or with a connection pool of its own. `AshTemplate.ChainHead`
+  passes both.
   """
   @impl RegentPoints.ChainClient
   def rpc(
