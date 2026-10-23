@@ -3489,3 +3489,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   direct dev dependency and declares both in full; the narrow copy lacked `readdirSync`
   and the text form of `readFileSync` that `privy_session_pickup.test.ts` calls, so a
   site copying the file failed its typecheck (regents.sh, 23 Oct).
+
+## 2026-10-23 — Connecting a wallet never revives the last person's sign-in
+
+- On a signed-out page, Connect wallet now logs out a Privy session the browser
+  still remembers before Privy's connect window opens. Before, if Privy's logout
+  failed at sign-out, connecting a wallet afterwards ended the Disconnect and the
+  remembered session signed the previous person back in, which matters on a shared
+  computer. If that logout fails too, the window does not open, the page says
+  "Wallet connection couldn’t start. Try again." and the Disconnect stands.
+  Signed in, connecting a wallet keeps the visitor's own session as before.
+- `createConnectWalletRequest` in `platform/assets/js/privy_bridge.tsx`, with three
+  regression tests in `platform/assets/test/privy_bridge.test.ts` (regents.sh
+  security note, 23 Oct).
