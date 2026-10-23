@@ -3554,3 +3554,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Checked against Oban 2.24.2 with a probe that was not kept: a job waiting five minutes
   comes forward to ten seconds and later presses keep that time; a job due in three
   seconds keeps its time; `replace:` pushes it to ten.
+
+## 2026-10-23 — Fresh builds fetch native code around GitHub's long headers
+
+- Since about 20:30Z on 23 Oct, GitHub's release-download redirect sends a
+  content-security-policy header of about 9,200 bytes, which takes the whole header block
+  past the 10,240 bytes Erlang's `httpc` accepts. rustler_precompiled 0.10.0 offers no
+  way to raise that limit, so any build without a cached deps layer stopped at
+  `mix deps.compile` with `header_too_long`. The v108 release was the first to hit it.
+- lumis and mdex_native now download from their makers' official mirrors
+  (`artifact_source: :cloudflare` in `platform/config/config.exs`). ex_keccak and
+  ex_secp256k1 publish only on GitHub, so `platform/Dockerfile` fetches their two files
+  with curl into `RUSTLER_PRECOMPILED_GLOBAL_CACHE_PATH` before `mix deps.compile`.
+  rustler_precompiled checks each file against the package's checksums before using it.
+- The two curl lines name the versions mix.lock pins and change with them. Remove the
+  step once GitHub or rustler_precompiled fixes the limit (backlog).
