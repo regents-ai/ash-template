@@ -3602,3 +3602,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   a window saying that buying Credits needs a signed-in account.
 - ash-frontend: every page with the side panel is a `ShellLive` action in
   `live_session :product_shell`; a page never draws the shell itself.
+
+## 2026-10-23 — The native-code prefetch follows the building machine's chip
+
+- `platform/Dockerfile` fetches the ex_keccak and ex_secp256k1 files for the chip it builds on
+  (`uname -m`): x86_64 on Fly, aarch64 on a Mac running `make release`, which otherwise stopped
+  at GitHub's long download headers. Proven by a fresh aarch64 build on the Mac and a
+  build-only x86_64 run on Fly (image label prefetchcheck, not released). From Techtree 78c5c5a5.
