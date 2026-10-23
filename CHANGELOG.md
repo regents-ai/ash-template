@@ -3469,3 +3469,15 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   disconnect does not hold the sign-out open; it failed on the old code).
 - Sign-in code: a later version of the sign-out change Sean released as v106; it goes
   live with the next release.
+
+## 2026-10-23 — plug_crypto 2.2.1 and req_llm 1.29.0
+
+- Moved plug_crypto to 2.2.1, which closes the medium-severity
+  EEF-CVE-2026-105963 (a wrong-typed argument could write the secret key base
+  into the error log).
+- Moved req_llm to 1.29.0, which closes the critical EEF-CVE-2026-107685
+  (OpenAI WebSocket sessions did not check the server's certificate). The
+  template's chat uses only its local stand-in, so it never opened such a
+  session.
+- Lockfile-only change; every other pin stays where it was. `mix hex.audit`
+  finds no advisories.
