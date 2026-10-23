@@ -16,8 +16,10 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
    changes recorded history stops the watcher and a person fixes the record by hand.
 2. **One reading job per contract per chain**, an Oban job unique by its contract that
    runs a pass, then snoozes five minutes and runs again, and runs early when asked
-   (rule 12). A failed pass is logged and retried a minute later, never fatal. A watch on
-   the Oban cron every five minutes makes sure each contract has its job.
+   (rule 12). A node that does not answer is one warning line and a minute's wait
+   (`{:snooze, 60}`), never an error, so a provider blip is never saved as a crash; any
+   other failed pass is retried a minute later, never fatal. A watch on the Oban cron
+   every five minutes makes sure each contract has its job.
 3. **A cursor row per chain and contract** holds the first block not read yet, the head
    last seen and when, and `rescan_from` when the watcher is stopped.
 4. **Each pass** reads the head, reads the last 30 recorded blocks again, then reads

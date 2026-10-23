@@ -31,6 +31,18 @@ writes into errors. On a large table that is not pruned (sessions, events, ledge
 The template's 30-day sign-in change (935fc63) did all of this in one migration because
 its sign-in table is small and pruned; a site copying it onto a large table splits it.
 
+### Dropping a column
+
+On a bluegreen release the outgoing machines keep running the old code until the new
+ones are healthy, and Ash selects every attribute a resource declares. A migration that
+drops a column the old code still declares makes every read on the old machines fail.
+
+1. Release 1: remove the attribute from the resource and every use of it. No migration.
+2. Release 2, once release 1 is the only code running: the migration that drops the
+   column.
+
+Autolaunch's move from its own runner to Oban (da6cbf58, then d5e7a4c5) did it this way.
+
 Concurrent index creation and constraint validation have PostgreSQL/Ecto-specific
 transaction and locking requirements. Inspect the installed migration APIs and DB
 version before choosing them. Do not paste a raw SQL pattern from another version

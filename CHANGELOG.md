@@ -3580,3 +3580,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   of this site's `cli/commands.json` is identical to ours. `cli/COMMANDS.md` drops its "next
   release" marks, and `/agents.md`, `/llms.md` and the public changelog name 1.10.17 with its
   published wheel's SHA256.
+
+## 2026-10-23 — Skills: a silent node is a wait, and dropping a column takes two releases
+
+- `chain-events`: the client answers `{:error, :unavailable}` when the node does not answer
+  (timeout, refused connection, 429, 5xx), and the reading job logs one warning and returns
+  `{:snooze, 60}` instead of `{:error, _}`, so a provider blip is never saved as a crash. Other
+  failures still fail the job and retry a minute later. Rule 2 says the same.
+- `ash-data` migrations guide: under a bluegreen release, release 1 stops declaring a column
+  and release 2 drops it, so the outgoing machines never select a dropped column.
+- Both come from Autolaunch's move from its own runner to Oban (da6cbf58, d5e7a4c5).

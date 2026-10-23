@@ -31,11 +31,11 @@ defmodule MyApp.Chain.Client do
 
   @type head :: %{number: non_neg_integer(), hash: String.t(), timestamp: DateTime.t()}
 
-  @callback chain_id() :: {:ok, pos_integer()} | {:error, term()}
-  @callback head() :: {:ok, head()} | {:error, term()}
-  @callback block_hash(non_neg_integer()) :: {:ok, String.t()} | {:error, term()}
+  @callback chain_id() :: {:ok, pos_integer()} | {:error, :unavailable | term()}
+  @callback head() :: {:ok, head()} | {:error, :unavailable | term()}
+  @callback block_hash(non_neg_integer()) :: {:ok, String.t()} | {:error, :unavailable | term()}
   @callback logs(addresses :: [String.t()], topic0s :: [String.t()], from :: non_neg_integer(), to :: non_neg_integer()) ::
-              {:ok, [map()]} | {:error, :too_many_results | term()}
+              {:ok, [map()]} | {:error, :too_many_results | :unavailable | term()}
   @callback transaction(chain :: map(), hash :: String.t()) :: {:ok, map() | nil} | {:error, term()}
   @callback receipt(chain :: map(), hash :: String.t()) :: {:ok, map() | nil} | {:error, term()}
 
@@ -45,7 +45,10 @@ end
 
 The JSON-RPC client asks for `"latest"` wherever a block tag goes and lowercases every
 hash and address it returns. `logs/4` answers `{:error, :too_many_results}` when the node
-refuses a range for size, so the pass can halve it. Keep the node's URL in an environment
+refuses a range for size, so the pass can halve it. Every call answers
+`{:error, :unavailable}` when the node does not answer: a timeout, a refused connection,
+a 429 or a 5xx. That is the provider's weather, not a fault, and the reading job waits
+for it without failing (below). Keep the node's URL in an environment
 variable and never log it; provider URLs carry keys.
 
 `transaction/2` and `receipt/2` serve `onchain-buttons`' check: `RegentChain.Outcome`
@@ -418,7 +421,8 @@ defmodule MyApp.Chain.ReadContract do
   @moduledoc """
   Keeps one contract's history current. Each run is one scanner pass; the job then
   waits five minutes and runs again. `MyApp.Chain.Watch.refresh/1` brings the next
-  run forward to ten seconds away, never later. A failed pass is retried a minute later.
+  run forward to ten seconds away, never later. When the node does not answer, the job
+  waits a minute; any other failure is retried a minute later.
   """
   use Oban.Worker,
     queue: :chain,
@@ -443,8 +447,11 @@ defmodule MyApp.Chain.ReadContract do
         Logger.error("#{name} stopped at block #{block}: the chain disagrees with the record")
         {:cancel, {:stopped, block}}
 
+      {:error, :unavailable} ->
+        Logger.warning("#{name} not read: the node did not answer; reading again in a minute")
+        {:snooze, 60}
+
       {:error, reason} ->
-        Logger.warning("#{name} read failed; it is tried again: #{inspect(reason)}")
         {:error, reason}
     end
   end
