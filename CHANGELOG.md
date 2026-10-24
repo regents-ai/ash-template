@@ -3664,3 +3664,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   (`Autolaunch.AuctionMarket`, `Autolaunch.AuctionReading`) is the worked example.
   The bound example that described Autolaunch's old pass now names `ChainHead`.
 - Public changelog: ten wonders in the Motion Lab.
+
+## 2026-10-24 — Native code comes straight from GitHub again
+
+- GitHub's download redirect fits Erlang's HTTP client again: its header is about 5.5 KB
+  (it was over the 10,240-byte limit), and `:httpc` fetches the ex_keccak, ex_secp256k1
+  and lumis release files with certificate checks on. So `platform/Dockerfile` no longer
+  curls ex_keccak and ex_secp256k1 into a cache first, and `platform/config/config.exs` no
+  longer sends lumis and mdex_native to their Cloudflare mirrors. Checked on the Mac: with
+  an empty cache, `mix deps.compile ex_keccak ex_secp256k1 lumis mdex_native --force`
+  downloaded all four from GitHub, checksums matched, and server checks were 65.

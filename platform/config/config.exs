@@ -2,11 +2,6 @@ import Config
 
 config :mdex_native, syntax_highlighter: :lumis
 
-# Both download their prebuilt native code from their makers' own mirrors, not
-# GitHub: GitHub's download redirect now sends headers longer than Erlang's HTTP
-# client accepts, which stops a fresh build (see platform/Dockerfile).
-config :lumis, artifact_source: :cloudflare
-config :mdex_native, artifact_source: :cloudflare
 # The chat page's free stand-in model (`AshTemplate.Chat.StandIn`).
 config :req_llm, custom_providers: [AshTemplate.Chat.StandIn]
 
