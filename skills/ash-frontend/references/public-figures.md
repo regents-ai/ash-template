@@ -94,21 +94,23 @@ publication.
 
 An auction's price, raised total and price ladder are read from its contract, but
 they belong to one auction, so they are a public row too. One Oban job for each
-record reads the contract at one block, asks whether that block is still part of
-the chain, then writes the row in one transaction. An upsert condition lets the
-row's block only move forward, so a repeated or rescued job changes nothing, and
-the save publishes. A job never writes `SharedReading`: it runs on whichever
-machine claims it, and each machine's table is its own. A fresh machine needs no
-warm-up, because a page reads the row. Writing the row only when a figure changed,
-or once its reading has reached a stated age, keeps quiet records from waking
-pages.
+record reads the contract at the newest block, then writes in one transaction
+under the record's row lock, and the save publishes. Under that lock it writes
+only a newer block, so a repeated or rescued job changes nothing. Before
+reading, it asks whether the block of the reading it holds is still part of the
+chain. If not, the new reading replaces it, even at a lower block, so a reading
+from a block the chain left heals on the next pass. A job never writes
+`SharedReading`: it runs on whichever machine claims it, and each machine's
+table is its own. A fresh machine needs no warm-up, because a page reads the
+row. Writing the row only when a figure changed, or once its reading has reached
+a stated age, keeps quiet records from waking pages.
 
 `Autolaunch.AuctionMarket` and `Autolaunch.AuctionReading` (Autolaunch v180, 24
 October 2026) are the worked example:
 
 - One job per auction. It reads every five minutes while the auction is open and
   every twenty once it has finished, and a press that lands brings the next read
-  forward.
+  forward to ten seconds away.
 - The reading has a table of its own, so the auction's protected row keeps its
   columns.
 - The figures go out on `public:auction_market:<id>`. The price ladder, up to

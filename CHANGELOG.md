@@ -3658,7 +3658,8 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 
 - `skills/ash-frontend/references/public-figures.md`: a new section says that a
   figure read from a chain but belonging to one record goes in that record's row,
-  written by one Oban job per record with a forward-only upsert, and reaches pages
+  written by one Oban job per record under the row lock, only ever with a newer
+  block unless the chain left the one it holds, and reaches pages
   through the row's publication. A job never writes `SharedReading`. Autolaunch v180
   (`Autolaunch.AuctionMarket`, `Autolaunch.AuctionReading`) is the worked example.
   The bound example that described Autolaunch's old pass now names `ChainHead`.
