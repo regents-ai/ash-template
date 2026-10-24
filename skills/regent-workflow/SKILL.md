@@ -416,9 +416,12 @@ the action.
 Authority belongs to the explicitly authorized action and actor. Do not repeat
 permission questions when the current session already authorizes the exact action.
 
-Run one plain command per call: no for-loops, no `$(...)` inside a command, no
-chaining a site check with git work. The Mac's auto-allow rules match plain commands
-only; loops and nested commands always stop for Sean.
+Git is the agent's own job (Sean, 24 Oct 2026: "I only want to be needed for product
+level decisions, never git things and never copy pasting bash"). Commit, push to main,
+merge, rebase and tidy branches without asking. Never ask Sean a git question or hand
+him a command to run or paste. When a guard refuses a command, find a safe way
+yourself: write a long commit message to a file, split a chained command, or merge
+instead of rewriting shared history.
 
 Never read `.env`, `.env.local` or `.envrc`; `.env.example` is allowed. Never expose
 secrets. Only Sean may approve rotation after disclosure. Value transfer remains
