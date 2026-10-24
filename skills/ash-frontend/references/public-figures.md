@@ -90,6 +90,32 @@ The rules, each with its reason:
 review finding: the row already has a save, and the save already has a
 publication.
 
+### A chain figure that belongs to one record
+
+An auction's price, raised total and price ladder are read from its contract, but
+they belong to one auction, so they are a public row too. One Oban job for each
+record reads the contract at one block, asks whether that block is still part of
+the chain, then writes the row in one transaction. An upsert condition lets the
+row's block only move forward, so a repeated or rescued job changes nothing, and
+the save publishes. A job never writes `SharedReading`: it runs on whichever
+machine claims it, and each machine's table is its own. A fresh machine needs no
+warm-up, because a page reads the row. Writing the row only when a figure changed,
+or once its reading has reached a stated age, keeps quiet records from waking
+pages.
+
+`Autolaunch.AuctionMarket` and `Autolaunch.AuctionReading` (Autolaunch v180, 24
+October 2026) are the worked example:
+
+- One job per auction. It reads every five minutes while the auction is open and
+  every twenty once it has finished, and a press that lands brings the next read
+  forward.
+- The reading has a table of its own, so the auction's protected row keeps its
+  columns.
+- The figures go out on `public:auction_market:<id>`. The price ladder, up to
+  128 KB, goes out on `public:auction_page:<id>`, so only the auction's own page
+  receives it.
+- A reading whose figures have not moved is saved again after twenty minutes.
+
 ## A shared reading: `AshTemplate.SharedReading`
 
 `platform/lib/ash_template/shared_reading.ex` is the whole of it, and
@@ -191,9 +217,8 @@ keeps the site from starting. Two shapes are allowed (`elixir-stack`):
 
 A producer's cost no longer grows with the pages open, but it does not stop when
 nobody is looking: it is keys times passes, every pass, with no visitor on the
-site. Bound it on purpose and say the bound beside the kind (Autolaunch reads at
-most 100 open auctions a pass, plus up to 100 finished ones every fourth pass,
-at about 29 chain requests an auction).
+site. Bound it on purpose and say the bound beside the kind (`AshTemplate.ChainHead`
+makes one request for each chain it watches, on each tick).
 
 Measure a producer at a production provider's pace, not at a local node's. At
 25 ms a request, Autolaunch's pass took longer than one two-second block; its

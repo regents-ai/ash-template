@@ -3653,3 +3653,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   machine stops on five sites. On SIGTERM the VM stops its applications in order. Checked
   with a probe application on OTP 29: SIGTERM ran its `stop/1`, SIGINT did not. Patchbay
   has run the same two lines with no such lines in seven days.
+
+## 2026-10-24 — Chain figures that belong to one record are a public row
+
+- `skills/ash-frontend/references/public-figures.md`: a new section says that a
+  figure read from a chain but belonging to one record goes in that record's row,
+  written by one Oban job per record with a forward-only upsert, and reaches pages
+  through the row's publication. A job never writes `SharedReading`. Autolaunch v180
+  (`Autolaunch.AuctionMarket`, `Autolaunch.AuctionReading`) is the worked example.
+  The bound example that described Autolaunch's old pass now names `ChainHead`.
+- Public changelog: ten wonders in the Motion Lab.
