@@ -3644,3 +3644,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   whose browser cannot draw it, and its buttons appear with the first real frame.
 - Checked headless in Chromium with WebGPU: all ten draw and answer their controls, no
   page overflow at 1280, 390 and 320 wide, and reduced motion keeps the ten stills.
+
+## 2026-10-24 — A machine stops in order
+
+- `platform/fly.toml`: `kill_signal = "SIGTERM"`, `kill_timeout = "60s"`. Fly sent SIGINT,
+  on which the VM halts at once (it opens its break menu and, with no input, aborts), so
+  every stop cut open connections and running jobs; Sentinel counted the proxy's lines at
+  machine stops on five sites. On SIGTERM the VM stops its applications in order. Checked
+  with a probe application on OTP 29: SIGTERM ran its `stop/1`, SIGINT did not. Patchbay
+  has run the same two lines with no such lines in seven days.
