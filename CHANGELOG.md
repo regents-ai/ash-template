@@ -3618,3 +3618,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   `platform/Dockerfile` installs `libsctp1` in the runtime stage. Proven by starting the image
   on the Mac (no warning) and a build-only run on Fly (label sctpcheck, not released). From
   Techtree fadc820d and regents.sh.
+
+## 2026-10-24 — Two Elixir 1.20 warnings gone
+
+- `platform/mix.exs` sets `test_ignore_filters` for `test/browser/`, the Playwright walk's own
+  files, so `mix test` on Elixir 1.20 no longer warns that they match no test pattern (a site that
+  runs `mix test --warnings-as-errors` failed on it; Autolaunch b5a53ac4).
+- design-system pin 9c2a817: regent_ui asks for Elixir `~> 1.19`, so building it on 1.20.4 no
+  longer warns (Keyfleet found it). Nothing else in design-system moved.
+- Server checks: 65 passed.
