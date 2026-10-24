@@ -2,6 +2,14 @@
 
 What changed in Ash Template lately, newest first.
 
+## 24 October 2026
+
+- **Ten wonders in the Motion Lab.** A new lab page has ten moving pictures to play
+  with: a black hole bending starlight, a warp drive, a flight round the Mandelbulb, a
+  tesseract turning through its fourth dimension, coral that grows by itself, ink
+  blooming in water, glass that shatters off a key, northern lights, a ripple pool and
+  a kaleidoscope. If you asked your device for less motion, each shows a still picture.
+
 ## 23 October 2026
 
 - **Every agent command in one install.** Version 1.10.17 of the Regents command line
