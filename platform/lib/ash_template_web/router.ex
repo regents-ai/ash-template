@@ -378,6 +378,7 @@ defmodule AshTemplateWeb.Router do
       live "/animations/header-footer/long", HeaderFooterLive, :long
       live "/animations/harbour", HarbourLive, :index
       live "/animations/harbour/:place", HarbourLive, :place
+      live "/animations/wonders", WondersLive, :index
     end
   end
 end

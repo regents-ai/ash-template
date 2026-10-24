@@ -75,6 +75,9 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Harbour forge", "The forge, where agents work, and the ships circling it."},
     "/animations/harbour/castle" =>
       {"Harbour castle", "The castle, where agents make proposals, and the ships circling it."},
+    "/animations/wonders" =>
+      {"Ten wonders",
+       "Ten pictures drawn live, from a black hole to living coral, each one moved by your hand."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

@@ -3627,3 +3627,20 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - design-system pin 9c2a817: regent_ui asks for Elixir `~> 1.19`, so building it on 1.20.4 no
   longer warns (Keyfleet found it). Nothing else in design-system moved.
 - Server checks: 65 passed.
+
+## 2026-10-24 — Ten wonders in the motion lab
+
+- `/animations/wonders`: ten pictures drawn live on the visitor's graphics card, each moved
+  by hand: a black hole bending starlight, a warp drive held to light speed, a flight round
+  the Mandelbulb, a tesseract turned through its fourth dimension, living coral that grows
+  by itself, ink blooming in water, a pane of glass that shatters off a key, northern
+  lights with a storm, a ripple pool and a kaleidoscope.
+- Each is a vgpu canvas island (`platform/assets/js/hooks/wonder.ts`) whose shader lives in
+  `platform/assets/js/wonders/`; Anime.js moves only numbers in the wonder's state (springs,
+  timelines, animatables) and the renderer reads them when it draws. Pictures that move
+  only when touched draw only then. The coral is a growth simulation run on the GPU
+  between two textures.
+- Each wonder keeps a painted still picture for a visitor who asked for less motion or
+  whose browser cannot draw it, and its buttons appear with the first real frame.
+- Checked headless in Chromium with WebGPU: all ten draw and answer their controls, no
+  page overflow at 1280, 390 and 320 wide, and reduced motion keeps the ten stills.

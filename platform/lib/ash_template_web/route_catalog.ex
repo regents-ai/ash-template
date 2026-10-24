@@ -63,7 +63,8 @@ defmodule AshTemplateWeb.RouteCatalog do
           label: "Header and footer",
           path: "/animations/header-footer"
         },
-        %RouteTarget{route_id: :harbour, label: "Agent harbour", path: "/animations/harbour"}
+        %RouteTarget{route_id: :harbour, label: "Agent harbour", path: "/animations/harbour"},
+        %RouteTarget{route_id: :wonders, label: "Ten wonders", path: "/animations/wonders"}
       ]
     },
     settings: %{

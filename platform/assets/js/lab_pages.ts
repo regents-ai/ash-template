@@ -4,5 +4,6 @@ import {CodeCube} from "./hooks/code_cube"
 import {Harbour} from "./hooks/harbour"
 import {KeyfleetField, KeyfleetKeyCard, KeyfleetReplay} from "./hooks/keyfleet_hero"
 import {TwinCube} from "./hooks/twin_cube"
+import {Wonder} from "./hooks/wonder"
 
-export const hooks = {Crown, CodeCube, Harbour, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, TwinCube}
+export const hooks = {Crown, CodeCube, Harbour, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, TwinCube, Wonder}

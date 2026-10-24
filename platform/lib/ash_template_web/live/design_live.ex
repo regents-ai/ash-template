@@ -21,7 +21,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/crown" => "Glass cubes that follow you",
     "/animations/keyfleet" => "A fleet's front door, in motion",
     "/animations/header-footer" => "Every product under one menu",
-    "/animations/harbour" => "Ships that sail to their last action"
+    "/animations/harbour" => "Ships that sail to their last action",
+    "/animations/wonders" => "Ten pictures that answer your hand"
   }
 
   def page(assigns) do
