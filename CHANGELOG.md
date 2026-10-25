@@ -3674,3 +3674,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   longer sends lumis and mdex_native to their Cloudflare mirrors. Checked on the Mac: with
   an empty cache, `mix deps.compile ex_keccak ex_secp256k1 lumis mdex_native --force`
   downloaded all four from GitHub, checksums matched, and server checks were 65.
+
+## 2026-10-25 — When the docs and the code disagree
+
+- `skills/regent-workflow/SKILL.md`, Execute step 1, gains Sean's rule word for word: when a
+  repository's documentation and its existing code disagree, follow the conventions used in
+  the existing code, and point out each inconsistency in the final reply. Skills only; it
+  reaches agents through the served skills at the next release.

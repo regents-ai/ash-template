@@ -244,6 +244,9 @@ the order of work, restacks, and pushing and releasing ordinary work.
    from the founder's request. A short task does not need a separate plan.
    Before writing code, run elixir-stack's design check: name the standard tool for each
    moving part, and build only what no standard tool covers.
+   When a repository's documentation and its existing code disagree, follow the
+   conventions used in the existing code, and in your final reply point out each
+   inconsistency you found between the documentation and the code.
 2. Implement the bounded change directly. If delegating an independent subtask, give
    it the objective, absolute repository/worktree path, owned files or component,
    acceptance checks, a time budget for the subtask (a delegate paces itself to one; it
