@@ -1,3 +1,5 @@
+import {visitId} from "./visit_log"
+
 type Tool = {name: string; title: string; description: string}
 type Step = {title: string; copy: string; command: string}
 type Connection = {guide: string; steps: Step[]}
@@ -31,10 +33,12 @@ export function installAgentTools() {
 }
 
 // Public JSON without session authority, from this site's own reads of each
-// Regent site (`/api/v1/sites/:site/tools`) and of siwa-server's steps.
+// Regent site (`/api/v1/sites/:site/tools`) and of siwa-server's steps. It sends
+// no cookies, so it names this visit for the site's log (AshTemplateWeb.VisitLog).
 async function read<T>(path: string): Promise<T> {
+  const visit = visitId()
   const response = await fetch(path, {
-    headers: {Accept: "application/json"},
+    headers: {Accept: "application/json", ...(visit && {"x-regent-visit": visit})},
     credentials: "omit",
     cache: "no-store",
     redirect: "error",

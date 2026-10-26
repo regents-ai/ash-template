@@ -3848,3 +3848,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Checks: property tests over the line writer, the plug and the browser's reports, and a
   browser walk check that replays a saved note from the server's lines; the walk's server
   writes its lines in production's shape to `platform/tmp/walk-lines.jsonl`.
+
+## 2026-10-26 — jose 1.11.13; a page's API calls keep their visit
+
+- Moved jose (through regent_privy and joken) to 1.11.13, which fixes the eight advisories
+  published 26 Oct, one high (EEF-CVE-2026-65625 to -65632). Lockfile-only change.
+  `security/required-fixes.json` adds `EEF-CVE-2026-65629` with `>= 1.11.13`, so a site
+  still on 1.11.12 fails `make check-required-fixes`.
+- An `/api` call that names no tool or command but carries a visit, in the `_visit` cookie
+  or in `x-regent-visit`, is the page's own script: its line keeps that visit and says
+  surface `page`, not `agent_http`. The agent tools list sends no cookies, so it now sends
+  the visit in `x-regent-visit`. Found by the Autolaunch port of visit lines.
+- Checks: a unit test for the header, cookie and neither cases, and a browser walk check
+  that the agent tools list's reads land in the page's visit.

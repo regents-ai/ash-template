@@ -27,6 +27,13 @@
   ],
   "fixes": [
     {
+      "id": "EEF-CVE-2026-65629",
+      "summary": "jose before 1.11.13 had eight advisories (one high): weak PBKDF2 settings for password-encrypted key export, forgeable short AES-GCM tags, an RSA PKCS1 padding oracle, unbounded zlib decompression, infinite recursion in shared_secret, an X25519 timing leak, factoring an attacker's RSA modulus, and unchecked ECDSA signature length (EEF-CVE-2026-65625 to -65632).",
+      "kind": "hex",
+      "package": "jose",
+      "requirement": ">= 1.11.13"
+    },
+    {
       "id": "EEF-CVE-2026-108525",
       "summary": "Bandit before 1.14.0 had eleven advisories (nine high): HTTP/2 flow control, HPACK table and cookie sizes, SETTINGS and WINDOW_UPDATE work, stream error recovery, 1-byte chunked bodies, chunk extension smuggling, Content-Length and Host parsing, and WebSocket fragments and frames after close.",
       "kind": "hex",

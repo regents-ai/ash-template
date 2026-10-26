@@ -80,3 +80,17 @@ test("opening Notes and saving a note replays in order from the visit's lines", 
   }
   await problems.expect()
 })
+
+// A page's own script reading the API joins its visit: the agent tools list on the
+// home page reads each site's tools without cookies, and the reads are the visit's.
+test("the agent tools list's reads belong to the page's visit", async ({page, context, hasTouch}) => {
+  await page.goto("/")
+  const button = page.locator("#home-agent-tools-button")
+  await (hasTouch ? button.tap() : button.click())
+  await expect(page.getByRole("dialog", {name: /^Agents see/})).toBeVisible()
+
+  const visit = (await context.cookies()).find(cookie => cookie.name === "_visit")!.value
+  await expect.poll(() => lines(visit).map(step)).toContain("tool.call /api/v1/sites/:site/tools")
+  const read = lines(visit).find(line => step(line) === "tool.call /api/v1/sites/:site/tools")!
+  expect(read.metadata.surface).toBe("page")
+})

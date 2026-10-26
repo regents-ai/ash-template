@@ -36,9 +36,9 @@ Only five metadata fields can reach a line (`AshTemplateWeb.VisitLog.fields/0`):
 
 | Field | Meaning |
 | --- | --- |
-| `visit` | A random id for one browser visit, kept in an httpOnly cookie for the browser session. It is not linked to the account |
+| `visit` | A random id for one browser visit, kept in an httpOnly cookie for the browser session. A page's scripts that send no cookies send it in `x-regent-visit`. It is not linked to the account |
 | `request_id` | The request id Phoenix already gives every request |
-| `surface` | `page`, `webmcp`, `cli`, `agent_http` or `job` |
+| `surface` | `page`, `webmcp`, `cli`, `agent_http` or `job`. An `/api` call that names no tool or command but carries a visit, in the cookie or the header, is the page's own script, so it is `page` |
 | `actor` | `person:`, `agent:` or `anonymous`, then the first 8 bytes of an HMAC of the account or agent id, keyed from the site's secret. The same person always gets the same code; the code can't be turned back into the id |
 | `event` | `name`, `where`, `outcome` and `ms` (below) |
 
