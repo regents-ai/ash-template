@@ -3900,3 +3900,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   site's page colour. Each agent's disc keeps its own colour as its rim.
 - Themed looks now name their stage colour in each theme through `--swarm-light` and
   `--swarm-dark`, read by one rule under `data-swarm-themed`.
+
+## 2026-10-26 — Public posts under Sean's name need their own decision
+
+- `skills/regent-workflow/SKILL.md` (Protected work): nothing is posted in public under
+  Sean's name or accounts (issues, pull requests, comments, reviews, edits, reactions
+  outside regents-ai; X, forums, email) without a decision that shows the account, the
+  place and the full final text. A plan approval never approves a post. Git without
+  asking now reads "inside regents-ai repositories".

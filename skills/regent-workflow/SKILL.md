@@ -420,11 +420,26 @@ Authority belongs to the explicitly authorized action and actor. Do not repeat
 permission questions when the current session already authorizes the exact action.
 
 Git is the agent's own job (Sean, 24 Oct 2026: "I only want to be needed for product
-level decisions, never git things and never copy pasting bash"). Commit, push to main,
-merge, rebase and tidy branches without asking. Never ask Sean a git question or hand
-him a command to run or paste. When a guard refuses a command, find a safe way
-yourself: write a long commit message to a file, split a chained command, or merge
-instead of rewriting shared history.
+level decisions, never git things and never copy pasting bash"). Inside regents-ai
+repositories, commit, push to main, merge, rebase and tidy branches without asking.
+Never ask Sean a git question or hand him a command to run or paste. When a guard
+refuses a command, find a safe way yourself: write a long commit message to a file,
+split a chained command, or merge instead of rewriting shared history.
+
+Public posts under Sean's name (Sean, 26 Oct 2026, after an agent opened an issue and a
+pull request on ash-project/ash_postgres as sean-regents on the strength of a plan
+approval: "I want to make it stricter that I approve this"):
+
+1. Nothing appears in public under Sean's name or accounts without its own decision.
+   This covers issues, pull requests, comments, reviews, edits and reactions on any
+   GitHub repository outside regents-ai, and posts, replies and messages on X, forums,
+   email and any other site.
+2. That decision shows the account it posts as, the exact place (repository or site)
+   and the full final text, title included. Sean's letter on that decision is the only
+   approval. Ask again for every new post and every edit to one already posted.
+3. Approving a plan never approves a post. "Send the fix upstream", "contribute it" or
+   "report it to the makers" lets you prepare the text; it does not let you post it.
+4. Never post first and report after.
 
 Never read `.env`, `.env.local` or `.envrc`; `.env.example` is allowed. Never expose
 secrets. Only Sean may approve rotation after disclosure. Value transfer remains
