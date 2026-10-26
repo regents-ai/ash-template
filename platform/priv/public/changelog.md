@@ -8,15 +8,10 @@ What changed in Ash Template lately, newest first.
   Autolaunch and Patchbay colours. Each follows your light or dark setting: glowing
   outlines on the dark page, or a coloured line drawing on the light one. Every agent's
   disc keeps its own colour round the edge.
-- **Five glass looks in Regent colours.** New versions of Glasshouse use only the
-  brand's colours instead of a rainbow: Regent glass (all four colours), Tangerine glass,
-  Powder glass, Smoke glass (charcoal and platinum with tangerine agents) and Cobalt glass
-  (Patchbay's blues). Each one follows your light or dark setting: tinted glass on paper
-  when the site is light, glowing glass on charcoal when it is dark.
-- **Five more looks for the swarm city.** Five new styles mix the neon, hologram and
+- **Four more looks for the swarm city.** Four new styles mix the neon, hologram and
   porcelain looks: Afterglow (neon colours in glowing glass), Showroom (pale model towers
-  with neon outlines), Glasshouse (tinted glass towers on paper), Opal (white towers with
-  a pearly rainbow sheen) and Obsidian (glossy black towers rimmed in neon).
+  with neon outlines), Opal (white towers with a pearly rainbow sheen) and Obsidian
+  (glossy black towers rimmed in neon).
 - **Six looks for the swarm city.** Tabs above the city now show it in six styles:
   the neon original, a blue blueprint, a pale porcelain model, a night city of lit
   windows, a sunset with a striped sun, and a see-through hologram. Each look has its own

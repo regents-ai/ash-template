@@ -34,10 +34,6 @@
   background: #05060b;
 }
 
-.swarm-city[data-swarm-look="glasshouse"] {
-  background: #e9e6df;
-}
-
 .swarm-city[data-swarm-look="opal"] {
   background: #e4e5ec;
 }
@@ -47,18 +43,9 @@
 }
 
 /* A look that follows the page's theme names its ground in each. */
-.swarm-city[data-swarm-look="regent"],
-.swarm-city[data-swarm-look="tangerine"],
-.swarm-city[data-swarm-look="powder"],
-.swarm-city[data-swarm-look="smoke"],
 .swarm-city[data-swarm-look="regents-neon"] {
   --swarm-light: #f6f4ea;
   --swarm-dark: #0b0b0b;
-}
-
-.swarm-city[data-swarm-look="cobalt"] {
-  --swarm-light: #f6f7fa;
-  --swarm-dark: #111726;
 }
 
 .swarm-city[data-swarm-look="techtree-neon"] {
@@ -121,7 +108,7 @@
   object-fit: cover;
 }
 
-/* A glass look's still picture for the theme showing. */
+/* A themed look's still picture for the theme showing. */
 .swarm-city__still--light,
 :root[data-theme="light"] .swarm-city__still--dark {
   display: none;

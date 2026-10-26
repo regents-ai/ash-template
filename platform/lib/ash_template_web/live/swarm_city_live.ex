@@ -19,8 +19,8 @@ defmodule AshTemplateWeb.SwarmCityLive do
 
   The city comes in several looks, each with its own colours and way of
   drawing it; `?look=` names one, and the first needs no name. Changing the look
-  repaints the city where it stands. The looks in a site's palette, neon or
-  glass, follow the page's theme, light or dark.
+  repaints the city where it stands. The looks in a site's palette follow
+  the page's theme, light or dark.
   """
 
   use AshTemplateWeb, :live_view
@@ -42,14 +42,8 @@ defmodule AshTemplateWeb.SwarmCityLive do
     %{id: "hologram", name: "Hologram", themed: false},
     %{id: "afterglow", name: "Afterglow", themed: false},
     %{id: "showroom", name: "Showroom", themed: false},
-    %{id: "glasshouse", name: "Glasshouse", themed: false},
     %{id: "opal", name: "Opal", themed: false},
-    %{id: "obsidian", name: "Obsidian", themed: false},
-    %{id: "regent", name: "Regent glass", themed: true},
-    %{id: "tangerine", name: "Tangerine glass", themed: true},
-    %{id: "powder", name: "Powder glass", themed: true},
-    %{id: "smoke", name: "Smoke glass", themed: true},
-    %{id: "cobalt", name: "Cobalt glass", themed: true}
+    %{id: "obsidian", name: "Obsidian", themed: false}
   ]
   @looks_by_id Map.new(@looks, &{&1.id, &1})
   @first_look hd(@looks)

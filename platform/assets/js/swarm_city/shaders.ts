@@ -11,9 +11,8 @@ import type {Look} from "./looks"
 
 const f = (value: number) => value.toFixed(3)
 
-/** What a building fades into far away: the haze, or for glass, glass so faint it leaves what is behind it as it is. */
-const CLEAR_GLASS = {glow: "vec3f(0.0)", tint: "vec3f(1.0)"} as const
-const clearOf = (look: Look) => (look.glass ? CLEAR_GLASS[look.glass] : "HAZE")
+/** What a building fades into far away: the haze, or for glass, glass so faint it adds nothing to what is behind it. */
+const clearOf = (look: Look) => (look.glass ? "vec3f(0.0)" : "HAZE")
 
 /** The lens, top to bottom, in degrees. */
 export const FOV = 38

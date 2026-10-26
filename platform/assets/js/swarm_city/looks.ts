@@ -15,14 +15,8 @@ export type LookId =
   | "hologram"
   | "afterglow"
   | "showroom"
-  | "glasshouse"
   | "opal"
   | "obsidian"
-  | "regent"
-  | "tangerine"
-  | "powder"
-  | "smoke"
-  | "cobalt"
   | "regents-neon"
   | "techtree-neon"
   | "autolaunch-neon"
@@ -30,12 +24,8 @@ export type LookId =
 
 export type Look = {
   readonly id: LookId
-  /**
-   * See-through buildings instead of ones that hide what stands behind them: glass that
-   * glows brighter where it overlaps, for a dark look, or glass that tints deeper, for a
-   * light one, where a colour of white leaves what is behind it as it is.
-   */
-  readonly glass: "glow" | "tint" | null
+  /** See-through glass buildings that glow brighter where they overlap, instead of ones that hide what stands behind them. */
+  readonly glass: boolean
   /** Whether the grid hangs over the downtowns, and whether the beacons are lit. */
   readonly sky: boolean
   readonly beacons: boolean
@@ -45,7 +35,7 @@ export type Look = {
 /** Thin coloured outlines on the dark, a blue street plan, a red sky grid, and yellow agents. */
 const neon: Look = {
   id: "neon",
-  glass: null,
+  glass: false,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -119,7 +109,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** A drafting sheet: white linework on blueprint blue, hatched shadow sides, a fine grid, and agents in red pencil orange. */
 const blueprint: Look = {
   id: "blueprint",
-  glass: null,
+  glass: false,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -195,7 +185,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** An architect's model in daylight: pastel towers lit by a low sun, fine ink outlines, and ink-dark agents. */
 const porcelain: Look = {
   id: "porcelain",
-  glass: null,
+  glass: false,
   sky: false,
   beacons: false,
   wgsl: /* wgsl */ `
@@ -266,7 +256,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** The city after dark: black towers with windows lit at random, amber street lamps, and teal agents. */
 const lamplight: Look = {
   id: "lamplight",
-  glass: null,
+  glass: false,
   sky: false,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -346,7 +336,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** A neon dusk: violet towers edged in pink and cyan, a striped sun, a glowing grid floor, and gold agents. */
 const sunset: Look = {
   id: "sunset",
-  glass: null,
+  glass: false,
   sky: false,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -425,7 +415,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** A city of light: see-through glass towers with rainbow edges and rising scan lines, a dot floor, and white agents. */
 const hologram: Look = {
   id: "hologram",
-  glass: "glow",
+  glass: true,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -498,7 +488,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** Neon's colours in hologram glass: green, cyan and lime glass towers with rising scan lines, the red sky grid, and yellow agents. */
 const afterglow: Look = {
   id: "afterglow",
-  glass: "glow",
+  glass: true,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -575,7 +565,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** Porcelain models at night with neon outlines: pale solid towers caught by one light, edged in neon colours, under the red sky grid. */
 const showroom: Look = {
   id: "showroom",
-  glass: null,
+  glass: false,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -647,82 +637,10 @@ fn trailColour(glow: f32) -> vec4f {
 `,
 }
 
-/** Porcelain's paper in hologram glass: towers of tinted film that deepen edge-on, rainbow ink outlines, and ink agents. */
-const glasshouse: Look = {
-  id: "glasshouse",
-  glass: "tint",
-  sky: false,
-  beacons: false,
-  wgsl: /* wgsl */ `
-const PAPER: vec3f = vec3f(0.945, 0.93, 0.895);
-const LAND: vec3f = vec3f(0.87, 0.855, 0.82);
-const HAZE: vec3f = vec3f(0.91, 0.9, 0.88);
-const INK: vec3f = vec3f(0.14, 0.13, 0.16);
-const CLAY: vec3f = vec3f(0.82, 0.42, 0.3);
-
-fn quarterColour(quarter: u32) -> vec3f {
-  switch quarter {
-    case 0u: { return vec3f(0.5, 0.82, 0.62); }
-    case 1u: { return vec3f(0.5, 0.72, 0.97); }
-    case 2u: { return vec3f(0.98, 0.8, 0.45); }
-    default: { return vec3f(0.84, 0.84, 0.9); }
-  }
-}
-
-fn sky(direction: vec3f) -> vec3f {
-  return mix(HAZE, vec3f(0.82, 0.87, 0.92), smoothstep(0.02, 0.8, direction.y));
-}
-
-// Paper with a dot of ink at every corner of the grid; a lit district's ground takes on its colour.
-fn groundColour(p: vec2f, onPlate: f32) -> vec3f {
-  let light = districtLight(p);
-  let cell = p / 0.5;
-  let gap = length(fract(cell + 0.5) - 0.5) / max(length(fwidth(cell)), 1e-4);
-  let spot = 1.0 - min(gap / 1.4, 1.0);
-  var colour = mix(LAND, PAPER, onPlate) * (1.0 - 0.22 * spot * onPlate);
-  for (var i = 0u; i < 3u; i++) {
-    colour = mix(colour, quarterColour(i), light[i] * 0.4);
-  }
-  return colour;
-}
-
-// Tinted film, deeper where it is seen edge-on, with faint bands rising up each tower.
-fn faceColour(face: Face) -> vec4f {
-  let view = normalize(city.eye - face.world);
-  let rim = pow(1.0 - abs(dot(view, face.normal)), 2.0);
-  let scan = smoothstep(0.9, 1.0, fract(face.world.y * 2.5 - city.time * 0.35));
-  let depth = clamp((0.05 + 0.16 * rim + 0.1 * scan) * (1.0 + face.lit * 0.5), 0.0, 1.0);
-  return vec4f(mix(vec3f(1.0), quarterColour(face.quarter), depth), 1.0);
-}
-
-// Ink with a rainbow sheen along it.
-fn edgeColour(edge: Edge) -> vec3f {
-  let sheen = rainbow((edge.world.x + edge.world.z) * 0.06 + edge.world.y * 0.1 + city.time * 0.05);
-  let ink = mix(quarterColour(edge.quarter) * 0.45, sheen * 0.7, 0.5);
-  let strength = select(0.26, 0.28, edge.quarter == 3u);
-  return mix(vec3f(1.0), ink, strength + 0.1 * edge.lit);
-}
-
-fn streetColour(kind: u32, p: vec3f) -> vec4f {
-  let colours = array<vec3f, 3>(mix(PAPER, CLAY, 0.4), CLAY, INK);
-  return vec4f(colours[kind], 1.0);
-}
-
-fn discColour(agent: vec3f, lead: f32, ring: f32) -> vec3f {
-  return mix(agent, INK, select(1.0, ring, lead > 0.5));
-}
-
-// Tails shift through the rainbow toward the agent.
-fn trailColour(glow: f32) -> vec4f {
-  return vec4f(mix(INK, rainbow(glow * 0.8 + 0.1) * 0.75, glow), glow * 0.8);
-}
-`,
-}
-
 /** Mother of pearl: white porcelain towers with a rainbow sheen that shifts as the city turns, neon outlines downtown, and gold agents. */
 const opal: Look = {
   id: "opal",
-  glass: null,
+  glass: false,
   sky: true,
   beacons: false,
   wgsl: /* wgsl */ `
@@ -799,7 +717,7 @@ fn trailColour(glow: f32) -> vec4f {
 /** Black porcelain: glossy dark towers lit by one light, rimmed in neon where seen edge-on, with scan lines, the red sky grid, and white agents. */
 const obsidian: Look = {
   id: "obsidian",
-  glass: null,
+  glass: false,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -915,273 +833,6 @@ const POWDER = hex("#AECACD")
 const PAGE_LIGHT = hex("#F6F4EA")
 const PAGE_DARK = hex("#0B0B0B")
 
-/** One glass look's colours in one theme. */
-type GlassColours = {
-  /** The city's plate, the land beyond its edge, and the dots at every corner of the grid. */
-  readonly plate: Colour
-  readonly land: Colour
-  readonly dots: Colour
-  /** Each quarter's glass: castle, forge, inn, and the low city between them. */
-  readonly quarters: readonly [Colour, Colour, Colour, Colour]
-  /** The two colours that take turns along the outlines. */
-  readonly sheen: readonly [Colour, Colour]
-  /** Back streets, avenues and main roads. */
-  readonly streets: readonly [Colour, Colour, Colour]
-  /** An agent's disc and the swarm around it, the rim round the agent's own disc, and the tail behind it. */
-  readonly body: Colour
-  readonly rim: Colour
-  readonly tail: Colour
-}
-
-/** The colours every glass look's functions read, and the sheen that runs along its outlines. */
-const glassColours = (colours: GlassColours) => /* wgsl */ `
-const PLATE: vec3f = ${wgsl(colours.plate)};
-const LAND: vec3f = ${wgsl(colours.land)};
-const HAZE: vec3f = (PLATE + LAND) * 0.5;
-const DOTS: vec3f = ${wgsl(colours.dots)};
-const SHEEN_A: vec3f = ${wgsl(colours.sheen[0])};
-const SHEEN_B: vec3f = ${wgsl(colours.sheen[1])};
-const BODY: vec3f = ${wgsl(colours.body)};
-const RIM: vec3f = ${wgsl(colours.rim)};
-const TAIL: vec3f = ${wgsl(colours.tail)};
-
-fn quarterColour(quarter: u32) -> vec3f {
-  switch quarter {
-    case 0u: { return ${wgsl(colours.quarters[0])}; }
-    case 1u: { return ${wgsl(colours.quarters[1])}; }
-    case 2u: { return ${wgsl(colours.quarters[2])}; }
-    default: { return ${wgsl(colours.quarters[3])}; }
-  }
-}
-
-// The two colours of the sheen in turn, a little further along each outline.
-fn sheen(edge: Edge) -> vec3f {
-  let along = (edge.world.x + edge.world.z) * 0.06 + edge.world.y * 0.1 + city.time * 0.05;
-  return mix(SHEEN_A, SHEEN_B, 0.5 + 0.5 * cos(6.2832 * along));
-}
-
-fn streetColour(kind: u32, p: vec3f) -> vec4f {
-  let colours = array<vec3f, 3>(${colours.streets.map(wgsl).join(", ")});
-  return vec4f(colours[kind], 1.0);
-}
-
-fn discColour(agent: vec3f, lead: f32, ring: f32) -> vec3f {
-  return mix(RIM, BODY, select(1.0, ring, lead > 0.5));
-}
-`
-
-/** Glasshouse for the light theme: tinted film on the page's paper, deeper edge-on, with outlines in the sheen. */
-const paperGlass = (id: LookId, colours: GlassColours): Look => ({
-  id,
-  glass: "tint",
-  sky: false,
-  beacons: false,
-  wgsl: /* wgsl */ `${glassColours(colours)}
-fn sky(direction: vec3f) -> vec3f {
-  return mix(HAZE, PLATE, smoothstep(0.02, 0.8, direction.y));
-}
-
-// Paper with a dot at every corner of the grid; a lit district's ground takes on its colour.
-fn groundColour(p: vec2f, onPlate: f32) -> vec3f {
-  let light = districtLight(p);
-  let cell = p / 0.5;
-  let gap = length(fract(cell + 0.5) - 0.5) / max(length(fwidth(cell)), 1e-4);
-  let spot = 1.0 - min(gap / 1.4, 1.0);
-  var colour = mix(mix(LAND, PLATE, onPlate), DOTS, 0.22 * spot * onPlate);
-  for (var i = 0u; i < 3u; i++) {
-    colour = mix(colour, quarterColour(i), light[i] * 0.3);
-  }
-  return colour;
-}
-
-fn faceColour(face: Face) -> vec4f {
-  let view = normalize(city.eye - face.world);
-  let rim = pow(1.0 - abs(dot(view, face.normal)), 2.0);
-  let scan = smoothstep(0.9, 1.0, fract(face.world.y * 2.5 - city.time * 0.35));
-  let depth = clamp((0.05 + 0.16 * rim + 0.1 * scan) * (1.0 + face.lit * 0.5), 0.0, 1.0);
-  return vec4f(mix(vec3f(1.0), quarterColour(face.quarter), depth), 1.0);
-}
-
-fn edgeColour(edge: Edge) -> vec3f {
-  let ink = mix(quarterColour(edge.quarter), sheen(edge), 0.5) * 0.6;
-  return mix(vec3f(1.0), ink, select(0.3, 0.32, edge.quarter == 3u) + 0.12 * edge.lit);
-}
-
-fn trailColour(glow: f32) -> vec4f {
-  return vec4f(mix(BODY, TAIL, glow), glow * 0.8);
-}
-`,
-})
-
-/** Glasshouse for the dark theme: faint glass that glows brighter edge-on and where it overlaps, outlined in the sheen. */
-const nightGlass = (id: LookId, colours: GlassColours): Look => ({
-  id,
-  glass: "glow",
-  sky: false,
-  beacons: false,
-  wgsl: /* wgsl */ `${glassColours(colours)}
-fn sky(direction: vec3f) -> vec3f {
-  return mix(HAZE, LAND, smoothstep(0.0, 0.5, direction.y));
-}
-
-// The plate with a faint dot at every corner of the grid; a lit district's ground takes on its colour.
-fn groundColour(p: vec2f, onPlate: f32) -> vec3f {
-  let light = districtLight(p);
-  let cell = p / 0.5;
-  let gap = length(fract(cell + 0.5) - 0.5) / max(length(fwidth(cell)), 1e-4);
-  let spot = 1.0 - min(gap / 1.6, 1.0);
-  return mix(LAND, PLATE, onPlate) + DOTS * spot * mix(0.04, 0.16, onPlate)
-    + (quarterColour(0u) * light.x + quarterColour(1u) * light.y + quarterColour(2u) * light.z) * 0.06;
-}
-
-fn faceColour(face: Face) -> vec4f {
-  let view = normalize(city.eye - face.world);
-  let rim = pow(1.0 - abs(dot(view, face.normal)), 2.0);
-  let scan = smoothstep(0.92, 1.0, fract(face.world.y * 2.0 - city.time * 0.3));
-  return vec4f(quarterColour(face.quarter) * (0.01 + 0.035 * rim + 0.06 * scan) * (1.0 + face.lit * 0.4), 1.0);
-}
-
-fn edgeColour(edge: Edge) -> vec3f {
-  let colour = mix(quarterColour(edge.quarter), sheen(edge), 0.5);
-  return colour * (0.55 + 0.45 * edge.shade) * 0.2 * (1.0 + edge.lit * 0.4);
-}
-
-fn trailColour(glow: f32) -> vec4f {
-  return vec4f(mix(BODY, TAIL, glow), glow);
-}
-`,
-})
-
-/** All four colours: tangerine, powder blue and smoked glass, with tangerine agents. */
-const regent: ThemedLook = {
-  light: paperGlass("regent", {
-    plate: PAGE_LIGHT,
-    land: PLATINUM,
-    dots: CHARCOAL,
-    quarters: [TANGERINE, POWDER, blend(CHARCOAL, PLATINUM, 0.45), PLATINUM],
-    sheen: [TANGERINE, blend(POWDER, CHARCOAL, 0.35)],
-    streets: [blend(PLATINUM, CHARCOAL, 0.15), POWDER, TANGERINE],
-    body: TANGERINE,
-    rim: CHARCOAL,
-    tail: TANGERINE,
-  }),
-  dark: nightGlass("regent", {
-    plate: CHARCOAL,
-    land: PAGE_DARK,
-    dots: PLATINUM,
-    quarters: [TANGERINE, POWDER, PLATINUM, blend(PLATINUM, CHARCOAL, 0.5)],
-    sheen: [TANGERINE, POWDER],
-    streets: [blend(CHARCOAL, PLATINUM, 0.12), blend(POWDER, CHARCOAL, 0.45), TANGERINE],
-    body: TANGERINE,
-    rim: PLATINUM,
-    tail: TANGERINE,
-  }),
-}
-
-/** Tangerine glass in three strengths, with charcoal or platinum agents ringed in tangerine. */
-const tangerine: ThemedLook = {
-  light: paperGlass("tangerine", {
-    plate: PAGE_LIGHT,
-    land: PLATINUM,
-    dots: CHARCOAL,
-    quarters: [TANGERINE, blend(TANGERINE, PLATINUM, 0.5), blend(TANGERINE, CHARCOAL, 0.35), PLATINUM],
-    sheen: [TANGERINE, CHARCOAL],
-    streets: [blend(PLATINUM, CHARCOAL, 0.15), blend(TANGERINE, PLATINUM, 0.5), TANGERINE],
-    body: CHARCOAL,
-    rim: TANGERINE,
-    tail: TANGERINE,
-  }),
-  dark: nightGlass("tangerine", {
-    plate: CHARCOAL,
-    land: PAGE_DARK,
-    dots: PLATINUM,
-    quarters: [TANGERINE, blend(TANGERINE, PLATINUM, 0.45), blend(TANGERINE, CHARCOAL, 0.3), blend(PLATINUM, CHARCOAL, 0.55)],
-    sheen: [TANGERINE, PLATINUM],
-    streets: [blend(CHARCOAL, PLATINUM, 0.1), blend(TANGERINE, CHARCOAL, 0.55), TANGERINE],
-    body: PLATINUM,
-    rim: TANGERINE,
-    tail: TANGERINE,
-  }),
-}
-
-/** Powder blue glass in three strengths, with tangerine agents. */
-const powder: ThemedLook = {
-  light: paperGlass("powder", {
-    plate: PAGE_LIGHT,
-    land: PLATINUM,
-    dots: CHARCOAL,
-    quarters: [POWDER, blend(POWDER, PLATINUM, 0.4), blend(POWDER, CHARCOAL, 0.2), PLATINUM],
-    sheen: [blend(POWDER, CHARCOAL, 0.4), POWDER],
-    streets: [blend(PLATINUM, CHARCOAL, 0.15), POWDER, blend(POWDER, CHARCOAL, 0.45)],
-    body: TANGERINE,
-    rim: CHARCOAL,
-    tail: TANGERINE,
-  }),
-  dark: nightGlass("powder", {
-    plate: CHARCOAL,
-    land: PAGE_DARK,
-    dots: PLATINUM,
-    quarters: [POWDER, blend(POWDER, PLATINUM, 0.5), blend(POWDER, CHARCOAL, 0.3), blend(PLATINUM, CHARCOAL, 0.55)],
-    sheen: [POWDER, PLATINUM],
-    streets: [blend(CHARCOAL, PLATINUM, 0.1), blend(POWDER, CHARCOAL, 0.5), POWDER],
-    body: TANGERINE,
-    rim: POWDER,
-    tail: TANGERINE,
-  }),
-}
-
-/** Smoked glass in charcoal and platinum only, and tangerine agents the one colour in it. */
-const smoke: ThemedLook = {
-  light: paperGlass("smoke", {
-    plate: PAGE_LIGHT,
-    land: PLATINUM,
-    dots: CHARCOAL,
-    quarters: [blend(CHARCOAL, PLATINUM, 0.25), blend(CHARCOAL, PLATINUM, 0.5), blend(CHARCOAL, PLATINUM, 0.7), PLATINUM],
-    sheen: [CHARCOAL, blend(CHARCOAL, PLATINUM, 0.5)],
-    streets: [blend(PLATINUM, CHARCOAL, 0.12), blend(PLATINUM, CHARCOAL, 0.3), CHARCOAL],
-    body: TANGERINE,
-    rim: CHARCOAL,
-    tail: TANGERINE,
-  }),
-  dark: nightGlass("smoke", {
-    plate: CHARCOAL,
-    land: PAGE_DARK,
-    dots: PLATINUM,
-    quarters: [PLATINUM, blend(PLATINUM, CHARCOAL, 0.3), blend(PLATINUM, CHARCOAL, 0.5), blend(PLATINUM, CHARCOAL, 0.65)],
-    sheen: [PLATINUM, blend(PLATINUM, CHARCOAL, 0.4)],
-    streets: [blend(CHARCOAL, PLATINUM, 0.1), blend(CHARCOAL, PLATINUM, 0.25), PLATINUM],
-    body: TANGERINE,
-    rim: PLATINUM,
-    tail: TANGERINE,
-  }),
-}
-
-/** Patchbay's porcelain and cobalt: cobalt glass on cool white, or pale cobalt glass on midnight. */
-const cobalt: ThemedLook = {
-  light: paperGlass("cobalt", {
-    plate: hex("#F6F7FA"),
-    land: hex("#EAEDF4"),
-    dots: hex("#192239"),
-    quarters: [hex("#294EC3"), hex("#9BB4FF"), hex("#192239"), hex("#ABB8D1")],
-    sheen: [hex("#294EC3"), hex("#9BB4FF")],
-    streets: [blend(hex("#F6F7FA"), hex("#7B869B"), 0.4), hex("#9BB4FF"), hex("#294EC3")],
-    body: hex("#294EC3"),
-    rim: hex("#192239"),
-    tail: hex("#294EC3"),
-  }),
-  dark: nightGlass("cobalt", {
-    plate: hex("#1B2335"),
-    land: hex("#111726"),
-    dots: hex("#ABB8D1"),
-    quarters: [hex("#9BB4FF"), hex("#294EC3"), hex("#EEF2FF"), hex("#6D7D99")],
-    sheen: [hex("#9BB4FF"), hex("#EEF2FF")],
-    streets: [hex("#252F45"), hex("#6D7D99"), hex("#9BB4FF")],
-    body: hex("#9BB4FF"),
-    rim: hex("#EEF2FF"),
-    tail: hex("#9BB4FF"),
-  }),
-}
-
 /** One neon look's colours in one theme. */
 type NeonColours = {
   /** The page beyond the city, the city's plate and the buildings' walls. */
@@ -1200,7 +851,7 @@ type NeonColours = {
 /** Neon in a site's palette: outlines in the quarters' colours, the street plan, the sky grid, and the swarm. */
 const neonIn = (id: LookId, theme: Theme, colours: NeonColours): Look => ({
   id,
-  glass: null,
+  glass: false,
   sky: true,
   beacons: true,
   wgsl: /* wgsl */ `
@@ -1383,14 +1034,8 @@ export const LOOKS: Readonly<Record<LookId, ThemedLook>> = {
   hologram: always(hologram),
   afterglow: always(afterglow),
   showroom: always(showroom),
-  glasshouse: always(glasshouse),
   opal: always(opal),
   obsidian: always(obsidian),
-  regent,
-  tangerine,
-  powder,
-  smoke,
-  cobalt,
   "regents-neon": regentsNeon,
   "techtree-neon": techtreeNeon,
   "autolaunch-neon": autolaunchNeon,

@@ -3908,3 +3908,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   outside regents-ai; X, forums, email) without a decision that shows the account, the
   place and the full final text. A plan approval never approves a post. Git without
   asking now reads "inside regents-ai repositories".
+
+## 2026-10-26 — Swarm city: glass looks removed
+
+- Removed Glasshouse and the five brand glass looks (`?look=glasshouse`, `regent`,
+  `tangerine`, `powder`, `smoke`, `cobalt`) and their stills, on Sean's call now that
+  the four site-palette neon looks replace them. Fourteen looks remain; their addresses
+  now answer not found. Glass is a yes/no on a look again (glowing glass only), since
+  no look tints any more.
