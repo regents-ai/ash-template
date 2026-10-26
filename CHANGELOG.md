@@ -3872,3 +3872,21 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   repaint the city in place; a still picture for each theme shows before it draws.
 - `LOOKS` now holds each look for both themes (`ThemedLook`); the renderer's `setLook`
   takes the look and the theme, and keeps one painting for a look that is the same in both.
+
+## 2026-10-26 — The shared ash_required helper, fixed in public
+
+- Version 6 of ash_postgres's `ash_required`, the copy in `public` that every site on the
+  shared database calls, runs with an empty search path and cannot find
+  `ash_raise_error`, so a missing required value raised "function ash_raise_error does not
+  exist" instead of Ash's error. Migration `20261026194117_ash_functions_v7_extensions_1`
+  now names `public.ash_required`, so it replaces that one copy whichever login runs it
+  (agreed with Patchbay, whose production read found the sites resolve it to `public`).
+  Version 7 keeps the same arguments and raises the same `ash_error:` message.
+- elixir-utils moves to `e796a9d527b839121145d2515da9f4d5689fe80b`: Credits' first
+  migration installs version 6, and on a fresh database it ran after the site's and put
+  that copy back; its new migration `20261026220000` installs version 7 in `public` too.
+  jose 1.11.13 in the libraries' own locks. `security/required-fixes.json` adds
+  `2026-10-26-ash-required-v7`, so a site on an older regent_credits fails
+  `make check-required-fixes`.
+- Check: `platform/test/ash_template/required_value_test.exs` on a database built from
+  every migration. It fails with the "does not exist" error on version 6.

@@ -27,6 +27,13 @@
   ],
   "fixes": [
     {
+      "id": "2026-10-26-ash-required-v7",
+      "summary": "regent_credits' first migration installs ash_postgres's version 6 ash_required in public, which cannot find ash_raise_error under its empty search path, so a missing required value raised \"function does not exist\"; on a fresh database it also replaced the site's version 7. Its migration 20261026220000 installs version 7 in public.",
+      "kind": "git",
+      "commit": "e796a9d527b839121145d2515da9f4d5689fe80b",
+      "apps": ["regent_credits"]
+    },
+    {
       "id": "EEF-CVE-2026-65629",
       "summary": "jose before 1.11.13 had eight advisories (one high): weak PBKDF2 settings for password-encrypted key export, forgeable short AES-GCM tags, an RSA PKCS1 padding oracle, unbounded zlib decompression, infinite recursion in shared_secret, an X25519 timing leak, factoring an attacker's RSA modulus, and unchecked ECDSA signature length (EEF-CVE-2026-65625 to -65632).",
       "kind": "hex",
