@@ -1,6 +1,6 @@
 @layer regents-product {
-/* The swarm city at /animations/swarm-city. Each look keeps its own colours in
-   both themes, so the stage behind the picture takes the look's sky; the name
+/* The swarm city at /animations/swarm-city. The stage behind the picture takes
+   the look's sky, in the page's theme for a look that follows it; the name
    tag, the district cards and the list under it are the harbour's. */
 .swarm-city {
   position: relative;
@@ -46,25 +46,47 @@
   background: #030306;
 }
 
-/* The glass looks follow the page's theme, on the page's own ground. */
+/* A look that follows the page's theme names its ground in each. */
 .swarm-city[data-swarm-look="regent"],
 .swarm-city[data-swarm-look="tangerine"],
 .swarm-city[data-swarm-look="powder"],
-.swarm-city[data-swarm-look="smoke"] {
-  background: var(--color-bg);
+.swarm-city[data-swarm-look="smoke"],
+.swarm-city[data-swarm-look="regents-neon"] {
+  --swarm-light: #f6f4ea;
+  --swarm-dark: #0b0b0b;
 }
 
 .swarm-city[data-swarm-look="cobalt"] {
-  background: #111726;
+  --swarm-light: #f6f7fa;
+  --swarm-dark: #111726;
 }
 
-:root[data-theme="light"] .swarm-city[data-swarm-look="cobalt"] {
-  background: #f6f7fa;
+.swarm-city[data-swarm-look="techtree-neon"] {
+  --swarm-light: #f6f4ea;
+  --swarm-dark: #161616;
+}
+
+.swarm-city[data-swarm-look="autolaunch-neon"] {
+  --swarm-light: #e5e3d2;
+  --swarm-dark: #0e0e0e;
+}
+
+.swarm-city[data-swarm-look="patchbay-neon"] {
+  --swarm-light: #eaedf4;
+  --swarm-dark: #111726;
+}
+
+.swarm-city[data-swarm-themed] {
+  background: var(--swarm-dark);
+}
+
+:root[data-theme="light"] .swarm-city[data-swarm-themed] {
+  background: var(--swarm-light);
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .swarm-city[data-swarm-look="cobalt"] {
-    background: #f6f7fa;
+  :root:not([data-theme]) .swarm-city[data-swarm-themed] {
+    background: var(--swarm-light);
   }
 }
 

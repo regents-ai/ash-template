@@ -4,6 +4,10 @@ What changed in Ash Template lately, newest first.
 
 ## 26 October 2026
 
+- **Neon in four site palettes.** The neon city now comes in Regents, Techtree,
+  Autolaunch and Patchbay colours. Each follows your light or dark setting: glowing
+  outlines on the dark page, or a coloured line drawing on the light one. Every agent's
+  disc keeps its own colour round the edge.
 - **Five glass looks in Regent colours.** New versions of Glasshouse use only the
   brand's colours instead of a rainbow: Regent glass (all four colours), Tangerine glass,
   Powder glass, Smoke glass (charcoal and platinum with tangerine agents) and Cobalt glass

@@ -19,8 +19,8 @@ defmodule AshTemplateWeb.SwarmCityLive do
 
   The city comes in several looks, each with its own colours and way of
   drawing it; `?look=` names one, and the first needs no name. Changing the look
-  repaints the city where it stands. The glass looks follow the page's theme,
-  light or dark.
+  repaints the city where it stands. The looks in a site's palette, neon or
+  glass, follow the page's theme, light or dark.
   """
 
   use AshTemplateWeb, :live_view
@@ -31,6 +31,10 @@ defmodule AshTemplateWeb.SwarmCityLive do
   # A themed look paints the city one way while the page is light and another while it is dark.
   @looks [
     %{id: "neon", name: "Neon", themed: false},
+    %{id: "regents-neon", name: "Regents neon", themed: true},
+    %{id: "techtree-neon", name: "Techtree neon", themed: true},
+    %{id: "autolaunch-neon", name: "Autolaunch neon", themed: true},
+    %{id: "patchbay-neon", name: "Patchbay neon", themed: true},
     %{id: "blueprint", name: "Blueprint", themed: false},
     %{id: "porcelain", name: "Porcelain", themed: false},
     %{id: "lamplight", name: "Lamplight", themed: false},
@@ -163,6 +167,7 @@ defmodule AshTemplateWeb.SwarmCityLive do
         data-swarm-crew={SampleCrew.drawn(@crew)}
         data-swarm-focus={@place && @place.id}
         data-swarm-look={@look.id}
+        data-swarm-themed={@look.themed}
         data-swarm-query={URI.encode_query(look_query(@look))}
         role="img"
         aria-label="The swarm city"

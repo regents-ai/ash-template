@@ -3890,3 +3890,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   `make check-required-fixes`.
 - Check: `platform/test/ash_template/required_value_test.exs` on a database built from
   every migration. It fails with the "does not exist" error on version 6.
+
+## 2026-10-26 — Neon in four site palettes, light and dark
+
+- Added four neon looks to the swarm city (`?look=regents-neon`, `techtree-neon`,
+  `autolaunch-neon`, `patchbay-neon`), built by one `neonIn` recipe from each site's light
+  and dark palette in the design system's site colour sheets.
+- Dark keeps Neon's glowing outlines; light draws the same outlines as coloured ink on the
+  site's page colour. Each agent's disc keeps its own colour as its rim.
+- Themed looks now name their stage colour in each theme through `--swarm-light` and
+  `--swarm-dark`, read by one rule under `data-swarm-themed`.

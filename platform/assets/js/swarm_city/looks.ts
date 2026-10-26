@@ -23,6 +23,10 @@ export type LookId =
   | "powder"
   | "smoke"
   | "cobalt"
+  | "regents-neon"
+  | "techtree-neon"
+  | "autolaunch-neon"
+  | "patchbay-neon"
 
 export type Look = {
   readonly id: LookId
@@ -1178,6 +1182,198 @@ const cobalt: ThemedLook = {
   }),
 }
 
+/** One neon look's colours in one theme. */
+type NeonColours = {
+  /** The page beyond the city, the city's plate and the buildings' walls. */
+  readonly page: Colour
+  readonly plate: Colour
+  /** Each quarter's outlines: castle, forge, inn, and the low city between them. */
+  readonly quarters: readonly [Colour, Colour, Colour, Colour]
+  readonly street: Colour
+  /** The grid over the downtowns and the lines it drops, and the beacons. */
+  readonly sky: Colour
+  readonly beacon: Colour
+  /** The swarm, and the ring round each agent's own disc, which keeps the agent's colour. */
+  readonly swarm: Colour
+}
+
+/** Neon in a site's palette: outlines in the quarters' colours, the street plan, the sky grid, and the swarm. */
+const neonIn = (id: LookId, theme: Theme, colours: NeonColours): Look => ({
+  id,
+  glass: null,
+  sky: true,
+  beacons: true,
+  wgsl: /* wgsl */ `
+const NIGHT: vec3f = ${wgsl(colours.page)};
+const HAZE: vec3f = NIGHT;
+const PLATE: vec3f = ${wgsl(colours.plate)};
+const STREET: vec3f = ${wgsl(colours.street)};
+const SKY: vec3f = ${wgsl(colours.sky)};
+const BEACON: vec3f = ${wgsl(colours.beacon)};
+const SWARM: vec3f = ${wgsl(colours.swarm)};
+const BEACON_SIZE: f32 = 1.4;
+
+fn quarterColour(quarter: u32) -> vec3f {
+  switch quarter {
+    case 0u: { return ${wgsl(colours.quarters[0])}; }
+    case 1u: { return ${wgsl(colours.quarters[1])}; }
+    case 2u: { return ${wgsl(colours.quarters[2])}; }
+    default: { return ${wgsl(colours.quarters[3])}; }
+  }
+}
+
+fn sky(direction: vec3f) -> vec3f {
+  return NIGHT;
+}
+
+// A faint wash of colour over a district that is lit.
+fn groundColour(p: vec2f, onPlate: f32) -> vec3f {
+  let light = districtLight(p);
+  var colour = PLATE;
+  for (var i = 0u; i < 3u; i++) {
+    colour = mix(colour, quarterColour(i), light[i] * ${theme === "dark" ? "0.06" : "0.1"});
+  }
+  return mix(NIGHT, colour, onPlate);
+}
+
+fn faceColour(face: Face) -> vec4f {
+  return vec4f(PLATE, 1.0);
+}
+
+// Each building keeps a strength of its own, so the city is never one flat colour.
+fn edgeColour(edge: Edge) -> vec3f {
+  let tint = mix(PLATE, quarterColour(edge.quarter), ${theme === "dark" ? "0.55 + 0.45" : "0.75 + 0.25"} * edge.shade);
+${
+  theme === "dark"
+    ? "  return mix(tint, vec3f(1.0), edge.lit * 0.2) * (1.0 + edge.lit * 0.6);"
+    : "  return mix(tint, quarterColour(edge.quarter) * 0.8, edge.lit);"
+}
+}
+
+fn streetColour(kind: u32, p: vec3f) -> vec4f {
+  let strength = array<f32, 3>(0.6, 0.95, 1.0);
+  return vec4f(mix(PLATE, STREET, strength[kind]), 1.0);
+}
+
+fn skyColour(down: f32, kind: u32) -> vec3f {
+  return mix(NIGHT, SKY, select(0.85, 0.7 - 0.45 * down, kind == 1u));
+}
+
+fn beaconColour(glow: f32) -> vec3f {
+  return mix(NIGHT, BEACON, glow);
+}
+
+// The swarm is one colour; an agent's own disc is ringed in its own colour.
+fn discColour(agent: vec3f, lead: f32, ring: f32) -> vec3f {
+  return mix(agent, SWARM, select(1.0, ring, lead > 0.5));
+}
+
+fn trailColour(glow: f32) -> vec4f {
+  return vec4f(SWARM, glow);
+}
+`,
+})
+
+// The site palettes' other swatches.
+const CHARCOAL_SOFT = hex("#3A3A3A")
+const TANGERINE_GLOW = hex("#FF8A4D")
+const TANGERINE_DEEP = hex("#E6450E")
+const POWDER_DEEP = hex("#85AEB0")
+const COBALT = hex("#294EC3")
+const COBALT_PALE = hex("#9BB4FF")
+const COBALT_INK = hex("#192239")
+const COBALT_MIST = hex("#ABB8D1")
+const COBALT_SLATE = hex("#6D7D99")
+const COBALT_WHITE = hex("#EEF2FF")
+
+/** Regents: charcoal and platinum, with tangerine and powder blue downtowns and a tangerine sky. */
+const regentsNeon: ThemedLook = {
+  light: neonIn("regents-neon", "light", {
+    page: PAGE_LIGHT,
+    plate: hex("#FFFFFF"),
+    quarters: [TANGERINE, blend(POWDER, CHARCOAL, 0.35), CHARCOAL, blend(PLATINUM, CHARCOAL, 0.35)],
+    street: blend(POWDER, CHARCOAL, 0.35),
+    sky: blend(TANGERINE, PAGE_LIGHT, 0.35),
+    beacon: TANGERINE,
+    swarm: CHARCOAL,
+  }),
+  dark: neonIn("regents-neon", "dark", {
+    page: PAGE_DARK,
+    plate: hex("#0E0E0E"),
+    quarters: [TANGERINE, POWDER, PLATINUM, blend(PLATINUM, CHARCOAL, 0.7)],
+    street: blend(POWDER, CHARCOAL, 0.45),
+    sky: blend(TANGERINE, CHARCOAL, 0.4),
+    beacon: TANGERINE,
+    swarm: PLATINUM,
+  }),
+}
+
+/** Techtree: powder blue in two strengths and platinum, with tangerine agents. */
+const techtreeNeon: ThemedLook = {
+  light: neonIn("techtree-neon", "light", {
+    page: PAGE_LIGHT,
+    plate: hex("#FAF8F2"),
+    quarters: [blend(POWDER_DEEP, CHARCOAL, 0.45), blend(POWDER, CHARCOAL, 0.25), CHARCOAL_SOFT, hex("#B8B6A6")],
+    street: POWDER_DEEP,
+    sky: blend(POWDER_DEEP, PAGE_LIGHT, 0.2),
+    beacon: TANGERINE,
+    swarm: TANGERINE,
+  }),
+  dark: neonIn("techtree-neon", "dark", {
+    page: CHARCOAL,
+    plate: hex("#1F1F1F"),
+    quarters: [POWDER, POWDER_DEEP, PLATINUM, blend(hex("#8C8C8C"), CHARCOAL, 0.2)],
+    street: blend(POWDER_DEEP, CHARCOAL, 0.35),
+    sky: blend(POWDER_DEEP, CHARCOAL, 0.35),
+    beacon: TANGERINE,
+    swarm: TANGERINE,
+  }),
+}
+
+/** Autolaunch: tangerine in three strengths with a powder blue downtown and a deep orange sky. */
+const autolaunchNeon: ThemedLook = {
+  light: neonIn("autolaunch-neon", "light", {
+    page: PLATINUM,
+    plate: PAGE_LIGHT,
+    quarters: [TANGERINE_DEEP, blend(POWDER, CHARCOAL, 0.4), TANGERINE, hex("#B8B6A6")],
+    street: TANGERINE_GLOW,
+    sky: blend(TANGERINE_DEEP, PLATINUM, 0.3),
+    beacon: TANGERINE_DEEP,
+    swarm: CHARCOAL,
+  }),
+  dark: neonIn("autolaunch-neon", "dark", {
+    page: hex("#0E0E0E"),
+    plate: CHARCOAL,
+    quarters: [TANGERINE, POWDER, TANGERINE_GLOW, hex("#A1A19A")],
+    street: blend(TANGERINE_DEEP, CHARCOAL, 0.35),
+    sky: blend(TANGERINE_DEEP, CHARCOAL, 0.25),
+    beacon: TANGERINE_GLOW,
+    swarm: PLATINUM,
+  }),
+}
+
+/** Patchbay: cobalt in all its strengths on cool white or midnight. */
+const patchbayNeon: ThemedLook = {
+  light: neonIn("patchbay-neon", "light", {
+    page: hex("#EAEDF4"),
+    plate: hex("#F6F7FA"),
+    quarters: [COBALT, COBALT_INK, blend(COBALT_PALE, COBALT, 0.35), COBALT_MIST],
+    street: COBALT_PALE,
+    sky: blend(COBALT_PALE, hex("#F6F7FA"), 0.2),
+    beacon: COBALT,
+    swarm: COBALT_INK,
+  }),
+  dark: neonIn("patchbay-neon", "dark", {
+    page: hex("#111726"),
+    plate: hex("#1B2335"),
+    quarters: [COBALT_PALE, COBALT_WHITE, blend(COBALT, COBALT_PALE, 0.35), COBALT_SLATE],
+    street: blend(COBALT, hex("#1B2335"), 0.2),
+    sky: blend(COBALT, hex("#1B2335"), 0.25),
+    beacon: COBALT_PALE,
+    swarm: COBALT_WHITE,
+  }),
+}
+
 export const LOOKS: Readonly<Record<LookId, ThemedLook>> = {
   neon: always(neon),
   blueprint: always(blueprint),
@@ -1195,4 +1391,8 @@ export const LOOKS: Readonly<Record<LookId, ThemedLook>> = {
   powder,
   smoke,
   cobalt,
+  "regents-neon": regentsNeon,
+  "techtree-neon": techtreeNeon,
+  "autolaunch-neon": autolaunchNeon,
+  "patchbay-neon": patchbayNeon,
 }
