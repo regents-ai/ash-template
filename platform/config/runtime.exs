@@ -25,6 +25,14 @@ if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateW
   end
 end
 
+# The browser walk's server (playwright.config.ts) writes its lines in production's
+# shape to a file, which test/browser/visits.spec.ts reads to replay a visit.
+if config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true" do
+  config :logger, :default_handler,
+    config: [file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__))],
+    formatter: LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
+end
+
 # The server reads a chain through its own node when one is set, such as a
 # private node whose address carries a key, or a local copy of the chain for a
 # lab run; wallets still add the public address. The wallet chain's node is
@@ -158,6 +166,11 @@ config :ash_template, AshTemplate.Repo, database_config
 
 if config_env() == :prod do
   config :ash_template, :session_options, secure: true, http_only: true
+
+  # One JSON object a line, which Fly Sentinel reads, carrying only the visit
+  # fields (AshTemplateWeb.VisitLog). Release commands write the same shape.
+  config :logger, :default_handler,
+    formatter: LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
 
   unless migrating? do
     host = String.trim(System.fetch_env!("PHX_HOST"))

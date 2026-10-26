@@ -42,6 +42,10 @@ import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
 import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
+import {installVisitLog} from "./visit_log"
+
+// First, so an error anywhere below is reported too.
+installVisitLog()
 
 type ShellHook = Hook & {
   el: HTMLElement

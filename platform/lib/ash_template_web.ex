@@ -38,6 +38,7 @@ defmodule AshTemplateWeb do
       use Phoenix.LiveView, layout: {AshTemplateWeb.Layouts, :app}
 
       on_mount AshTemplateWeb.Live.OpenPages
+      on_mount AshTemplateWeb.VisitLog
 
       unquote(html_helpers())
     end

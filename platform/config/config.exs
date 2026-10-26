@@ -241,7 +241,7 @@ config :esbuild,
 
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id, :visit, :actor, :surface, :event]
 
 # Failed requests, pages and jobs are saved in the site's own schema and shown
 # to Credits admins at /admin/errors. Only server faults are saved

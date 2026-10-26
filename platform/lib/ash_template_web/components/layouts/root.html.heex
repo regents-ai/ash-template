@@ -35,6 +35,7 @@
     <meta :if={assigns[:session_refused]} name="session-refused" content="true" />
     <meta name="privy-app-id" content={Application.get_env(:ash_template, :privy, [])[:app_id]} />
     <meta name="agent-request-origin" content={AshTemplateWeb.Endpoint.url()} />
+    <meta :if={assigns[:visit]} name="regent-visit" content={assigns[:visit]} />
     <meta
       name="privy-bridge-src"
       content={AshTemplateWeb.Endpoint.static_path("/assets/js/privy_bridge.js")}

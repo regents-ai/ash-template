@@ -101,6 +101,13 @@ starts, and the server watches no files, so no page reloads under a check.
 | The side panel shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/panel_agents_test.exs` (property test); `platform/test/browser/side_agents.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
 | Manage beside "Your agents" opens this site's `/account#account-agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/side_agents.spec.ts` |
 
+## Visit lines
+
+| What | Check |
+| --- | --- |
+| A visit replays in order from its lines alone: opening Notes and saving a note writes the request, the page, the note's creation and the press, each with the same visit and one person code, in production's shape, and nothing the person wrote or a wallet, at both widths | `platform/test/browser/visits.spec.ts` |
+| Whatever a caller or browser sends, a line holds only the site's own names and shapes: headers, browser reports and event values that do not fit are dropped or written as `other`; a page's address is written as its route | `platform/test/ash_template_web/visit_log_test.exs` |
+
 ## Gaps
 
 - Saving a name in a real browser, and the page's Privy bridge itself: the walk

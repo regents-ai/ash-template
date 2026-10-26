@@ -1,12 +1,14 @@
 // Manifest-listed WebMCP operations. SIWA keys stay in the caller’s existing signer.
 import manifest from "../../priv/tool_manifest.json" with {type: "json"}
 import {signedTools, type SignedOperation, type SignedInput} from "../vendor/regent_agent_access/signed_tools"
+import {report, visitId} from "./visit_log"
 
 function signedTransport() { return signedTools({
   origin: window.location.origin,
   trustedOrigins: [document.querySelector<HTMLMetaElement>('meta[name="agent-request-origin"]')?.content ?? ""],
   audience: manifest.audience,
   proofHeaders: manifest.proof_headers,
+  requestHeaders: client,
   // Only the signed tools are operations; each is sent with its operation's own inputs.
   operations: manifest.tools.flatMap(entry =>
     "operation_input_schema" in entry ? [{...entry, input_schema: entry.operation_input_schema}] : [],
@@ -40,31 +42,37 @@ type Reply =
   | {ok: true; status: number; data: unknown}
   | {ok: false; status?: number; outcome?: "unknown"; retry_after?: number; error: Refusal}
 
-type Request = (input: Input, signal: AbortSignal | undefined) => Promise<Reply>
-
 const segment = (value: string | number) => encodeURIComponent(String(value))
 
-// The public reads. Every other tool except prepare_agent_request is signed.
-const requests: Record<string, Request> = {
-  health: (_input, signal) => call("/api/v1/health", signal),
-  about: (_input, signal) => call("/api/v1/about", signal),
-  docs: (_input, signal) => call("/api/v1/docs", signal),
-  sites_tools: ({site}, signal) => call(`/api/v1/sites/${segment(site)}/tools`, signal),
-  siwa_help: (_input, signal) => call("/api/v1/siwa/help", signal),
-  rooms_list: (_input, signal) => call("/api/v1/rooms", signal),
-  rooms_messages: ({room, ...page}, signal) => {
+// The public reads, by the path each one asks. Every other tool except
+// prepare_agent_request is signed.
+const paths: Record<string, (input: Input) => string> = {
+  health: () => "/api/v1/health",
+  about: () => "/api/v1/about",
+  docs: () => "/api/v1/docs",
+  sites_tools: ({site}) => `/api/v1/sites/${segment(site)}/tools`,
+  siwa_help: () => "/api/v1/siwa/help",
+  rooms_list: () => "/api/v1/rooms",
+  rooms_messages: ({room, ...page}) => {
     const query = new URLSearchParams(Object.entries(page).map(([key, value]) => [key, String(value)])).toString()
     const path = `/api/v1/rooms/${segment(room)}/messages`
-    return call(query ? `${path}?${query}` : path, signal)
+    return query ? `${path}?${query}` : path
   },
-  rooms_message: ({room, id}, signal) => call(`/api/v1/rooms/${segment(room)}/messages/${segment(id)}`, signal),
+  rooms_message: ({room, id}) => `/api/v1/rooms/${segment(room)}/messages/${segment(id)}`,
+}
+
+// Every call names its tool and this visit, so the site's log can put the call
+// beside the rest of the visit (AshTemplateWeb.VisitLog). Neither is a credential.
+function client(tool: string): Record<string, string> {
+  const visit = visitId()
+  return {"x-regent-client": `webmcp/${tool}`, ...(visit && {"x-regent-visit": visit})}
 }
 
 // Public JSON without session authority. Every refusal it sends is
 // {"error": {"code", "message", "hint"}}, handed on as it came.
-async function call(path: string, signal: AbortSignal | undefined): Promise<Reply> {
+async function call(tool: string, path: string, signal: AbortSignal | undefined): Promise<Reply> {
   const response = await fetch(path, {
-    headers: {Accept: "application/json"},
+    headers: {Accept: "application/json", ...client(tool)},
     credentials: "omit",
     cache: "no-store",
     redirect: "error",
@@ -110,9 +118,11 @@ function inputProblem(input: unknown, schema: Schema) {
 }
 
 // A call that ended without an answer. Anything but a read may already have
-// reached the server, so its outcome is unknown, never cancelled.
+// reached the server, so its outcome is unknown, never cancelled. The site never
+// heard it, so the page reports it.
 function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
   if (!entry.annotations.readOnlyHint) {
+    report({name: "tool.unsent", where: entry.name, outcome: "outcome_unknown"})
     return {
       ok: false,
       outcome: "unknown",
@@ -123,9 +133,9 @@ function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
       },
     }
   }
-  return signal?.aborted
-    ? {ok: false, error: {code: "cancelled", message: "The read was cancelled; nothing changed."}}
-    : {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
+  if (signal?.aborted) return {ok: false, error: {code: "cancelled", message: "The read was cancelled; nothing changed."}}
+  report({name: "tool.unsent", where: entry.name, outcome: "unreachable"})
+  return {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
 }
 
 // The signing transport refuses with a reason such as "missing_field:title".
@@ -214,7 +224,7 @@ const tools: ModelContextTool[] = entries.map(entry => ({
       return {ok: false, error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
     }
     try {
-      return await requests[entry.name](input as Input, signal)
+      return await call(entry.name, paths[entry.name](input as Input), signal)
     } catch (_error) {
       return unanswered(entry, signal)
     }

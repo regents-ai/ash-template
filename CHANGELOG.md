@@ -3825,3 +3825,26 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   repository". `AGENTS.md`, `docs/dependency-baseline.md` and the check script's comment
   say the same.
 - Move back to Hex once a release carries #910 and passes the isolated upsert check.
+
+## 2026-10-26 — Visit lines
+
+- Production writes one JSON object a line (LoggerJSON's basic shape) carrying only five
+  fields: `visit`, `request_id`, `surface`, `actor` and `event` (`name`, `where`,
+  `outcome`, `ms`), so a visit can be replayed from its lines alone
+  (`docs/logging-replay-plan.md`, Sean's decisions of 26 Oct). Phoenix's own request lines
+  are off in production.
+- `AshTemplateWeb.VisitLog` gives each browser visit a random id in an httpOnly session
+  cookie (the page's `regent-visit` meta tag hands it to the page's scripts), reads the
+  caller's kind from `x-regent-client`, and writes accounts and agents only as a one-way
+  code keyed from the site's secret. `AshTemplateWeb.VisitLog.Events` writes requests,
+  tool calls, pages, presses, Ash actions, Oban jobs and outgoing calls from their
+  `:telemetry` events.
+- `POST /visit-log` takes what only the browser knows: a page error, a browser tool that
+  never got an answer, and a wallet step whose answer never reached the server, at most
+  20 a batch, rate limited with the browser's other reports. The site stores nothing new.
+- Browser tools send `x-regent-client: webmcp/<tool>` and the visit. elixir-utils moves to
+  `c4fdaae6e9bdb2dd7b09e9792aecdde2109c385d`, where the signed tool transport takes the
+  same headers through its new required `requestHeaders` setting.
+- Checks: property tests over the line writer, the plug and the browser's reports, and a
+  browser walk check that replays a saved note from the server's lines; the walk's server
+  writes its lines in production's shape to `platform/tmp/walk-lines.jsonl`.

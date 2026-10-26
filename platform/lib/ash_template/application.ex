@@ -13,6 +13,7 @@ defmodule AshTemplate.Application do
     :ok = RegentOAuth.configure(AshTemplate.OAuth)
     :ok = AshTemplateWeb.UnexpectedFailure.attach_jobs()
     :ok = AshTemplate.IdleDisconnects.attach()
+    :ok = AshTemplateWeb.VisitLog.Events.attach()
 
     children =
       [

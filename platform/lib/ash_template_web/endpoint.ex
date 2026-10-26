@@ -74,6 +74,8 @@ defmodule AshTemplateWeb.Endpoint do
   end
 
   plug Plug.RequestId
+  # Which visit, and which kind of caller, each line of this request belongs to.
+  plug AshTemplateWeb.VisitLog
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   # Every answer, including the Markdown and refusals the next plug gives before
@@ -81,9 +83,10 @@ defmodule AshTemplateWeb.Endpoint do
   # carries the origin-trial token, so Chrome knows it before reading `tools`.
   plug :allow_page_tools
 
-  # One budget per client address, shared by the health check and every /api path,
-  # answered or not; pairing counts against its own budget too. Every answer says
-  # what is left of each; past one, 429 with Retry-After.
+  # One budget per client address, shared by the health check, the browser's visit
+  # reports and every /api path, answered or not; pairing counts against its own
+  # budget too. Every answer says what is left of each; past one, 429 with
+  # Retry-After.
   plug :limit_rate
 
   # Before the parsers, so a body they reject on an /api path is answered in
@@ -121,6 +124,9 @@ defmodule AshTemplateWeb.Endpoint do
     conn = RegentAgentAccess.RateLimit.call(conn, @rate_limit)
     if conn.halted, do: conn, else: RegentAgentAccess.RateLimit.call(conn, @pair_rate_limit)
   end
+
+  defp limit_rate(%Plug.Conn{method: "POST", path_info: ["visit-log"]} = conn, _opts),
+    do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
 
   defp limit_rate(%Plug.Conn{path_info: ["api" | _]} = conn, _opts),
     do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)

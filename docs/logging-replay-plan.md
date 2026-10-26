@@ -1,6 +1,6 @@
 # Logging that can replay a visit
 
-Plan, 26 Oct 2026. Requested by Sean on 25 Oct:
+Requested by Sean on 25 Oct 2026:
 
 1. Plan logging good enough to replay what a person or agent experienced, the
    internal operations that mattered, and what they saw at the end. Build it in
@@ -8,116 +8,129 @@ Plan, 26 Oct 2026. Requested by Sean on 25 Oct:
 2. Connect it to Sentinel.
 3. Then run a daily review of the last 24 hours for Autolaunch and Keyfleet.
 
-Nothing here is built yet. The decisions at the end are Sean's to make.
+Sean's decisions, 26 Oct 2026 ("1a 2a 3a 4a 5a"):
 
-## What we can see today
+1. **What a line may hold:** event names, pages, tool names, results and timings.
+   Accounts and wallets only as a one-way code. Never message text, notes or emails.
+2. **How long:** Sentinel keeps visit lines 30 days; warnings and errors stay 14.
+3. **The browser** reports only what the server can't see. The site stores nothing new.
+4. **The daily review** is a scheduled task on Sean's Mac. Its report goes in
+   `/Users/sean/Documents/regent/control/coordination/log-review/`, and Sean gets a
+   notification.
 
-- **Sites** write plain text lines (`time request_id [level] message`) at info
-  level in production. Each request logs a "GET /path" line and a "Sent 200"
-  line. Nothing ties those lines to one visit, and nothing says what the person
-  pressed or saw.
-- **Measurements** (Peep and telemetry) count database time, chain and wallet
-  failures, Oban jobs and agent activity. They are totals, so they can't follow
-  one visit.
-- **ErrorTracker** keeps crashes at `/admin/errors`.
-- **Sentinel** hears every line from every Fly app through Fly's log feed. It
-  keeps warning and error lines for 14 days and emails each new kind of error
-  once a day. It drops every info line, which includes everything a normal
-  visit writes.
-- **WebMCP tools and the CLI already use the same server addresses.** Each
-  browser tool in
-  `/Users/sean/Documents/regent/repos/ash-template/platform/assets/js/public_tools.ts`
-  calls an `/api/v1/...` address, and the CLI calls the same addresses with a
-  signature. If the server records each call once and says who made it, both
-  are covered.
+The template part is built (below). Sentinel's part, the sites' copies and the
+daily review follow, in the order at the end.
 
-## The shape
+## One line
 
-### One event line
+In production every line is one JSON object (LoggerJSON's basic shape):
 
-Every event is one JSON line with a fixed set of fields:
+```json
+{"time":"…","severity":"info","message":"press NotesLive:save ok",
+ "metadata":{"visit":"9QxA6VnjnEaus6YHMrNArQ","request_id":"GOItfW1pO7ZpVNcAAHPG",
+             "actor":"person:5a8162a0e7ba15e1","surface":"page",
+             "event":{"name":"press","where":"NotesLive:save","outcome":"ok","ms":3}}}
+```
+
+Only five metadata fields can reach a line (`AshTemplateWeb.VisitLog.fields/0`):
 
 | Field | Meaning |
 | --- | --- |
-| `event` | What happened, such as `page.open`, `press`, `tool.call`, `action.done`, `job.done`, `shown` |
-| `visit` | A random id for one browser visit or one agent session. It is not linked to the account |
-| `request` | The request id we already log, so ordinary lines join up with events |
+| `visit` | A random id for one browser visit, kept in an httpOnly cookie for the browser session. It is not linked to the account |
+| `request_id` | The request id Phoenix already gives every request |
 | `surface` | `page`, `webmcp`, `cli`, `agent_http` or `job` |
-| `actor` | `person`, `agent` or `anonymous`, plus a one-way hash of the account or agent (decision 1) |
-| `where` | The route, LiveView event name, tool name, Ash action or Oban worker |
-| `outcome` | `ok`, a refusal code (the same codes the API already returns) or `failed` |
-| `shown` | Which message the person or agent was shown, by its key, never its full text |
-| `ms` | How long it took |
+| `actor` | `person:`, `agent:` or `anonymous`, then the first 8 bytes of an HMAC of the account or agent id, keyed from the site's secret. The same person always gets the same code; the code can't be turned back into the id |
+| `event` | `name`, `where`, `outcome` and `ms` (below) |
 
-Only these fields are allowed. A field outside the list never reaches the line,
-so free text, message bodies, notes, emails and secrets can't leak through it.
+An event's `where` and `outcome` must fit a short pattern of plain characters, or
+they are written as `other`. Nothing a person typed can reach a line.
 
-### Where the events come from (standard tools only)
+| Event | Written when | `where` | `outcome` |
+| --- | --- | --- | --- |
+| `request` | A page request finishes | The route, such as `/rooms/:room` | `ok` or `status_404` |
+| `tool.call` | An `/api` request finishes | The tool name from `x-regent-client`, else the route | `ok`, the error's code, or `status_N` |
+| `page` | A connected page opens or changes address | The route | none |
+| `press` | A page or component event finishes | `View:event` | `ok`, `failed`, or for wallet steps `sent`, `signed` or the failure reason |
+| `action` | An Ash create, update, destroy or generic action finishes during a request, press or job | `resource.action` | none |
+| `job` | An Oban job finishes | The worker | Oban's state |
+| `outgoing` | A call to another service finishes during a request, press or job | `METHOD host` | The status |
+| `page.error` | The browser reports an uncaught error | The route | `error` or `unhandledrejection` |
+| `tool.unsent` | A browser tool's call never got an answer | The tool | `unreachable` or `outcome_unknown` |
+| `press.unsent` | A wallet step's answer never reached the server | The step | `lost` |
 
-- **The formatter.** LoggerJSON changes the existing log lines to JSON. Sentinel
-  already reads a JSON line's `severity`, so its error alerts keep working.
-- **Pages:** Phoenix and LiveView already emit `:telemetry` events when a page
-  opens, an event is handled or the address changes. One handler turns those
-  into `page.open`, `press` and `navigate`.
-- **Internal operations:** Ash actions, Oban jobs and outgoing Req calls also
-  emit `:telemetry` events. Handlers record which action ran, its result and its
-  duration, but not the inputs.
-- **WebMCP and the CLI:** one plug on the `/api/v1` and `/api/agents` routes
-  writes `tool.call` with the tool name and outcome. Each caller adds a short
-  header to say what it is. The browser tool transport sends
-  `x-regent-client: webmcp/<tool>`, and the CLI sends
-  `regents-cli/<version> <command>` (the CLI lane adds this; the site never
-  waits for it).
-- **What only the browser knows:** a wallet prompt that was approved or
-  declined, a page error, or a tool that never reached the server. The browser
-  sends these in small batches to one site address, and the site writes them as
-  lines. The site saves nothing to its own database for this (decision 3).
-- **What the person saw at the end:** flash messages, notes beside buttons and
-  refusal messages already come from a few shared places. Each one logs its key
-  as `shown`.
+A press line is written when the press finishes, so the actions it caused come
+just before it. Phoenix's own request lines are off in production: they repeat
+each raw path and its parameters.
 
-### Sentinel's part
+"What the person saw" is the outcome. Each outcome code picks the words shown,
+so the code is enough to know the message without logging its text.
 
-- Keep the event lines at info level in their own events table, indexed by app,
-  visit and time. Plain info lines are still dropped.
-- Delete old events on a schedule, the same way warning lines are deleted now
-  (decision 2).
-- Add a page that shows one visit's events in order, joined with that visit's
+## Where the lines come from
+
+All standard tools; nothing is queued or stored by the site.
+
+- `AshTemplateWeb.VisitLog` (a plug and a LiveView `on_mount`): sets `visit`,
+  `surface` and the caller's tool on the process, and writes lines.
+- `AshTemplateWeb.VisitLog.Events`: `:telemetry` handlers for Phoenix endpoint and
+  LiveView, Ash, Oban and Finch events.
+- `POST /visit-log` (`AshTemplateWeb.VisitLogController`): the browser's reports,
+  at most 20 lines a batch, rate limited with the other browser reports. The
+  browser sends a batch every 5 seconds or when the page is hidden
+  (`assets/js/visit_log.ts`).
+- **WebMCP:** each browser tool sends `x-regent-client: webmcp/<tool>` and the
+  visit (`assets/js/public_tools.ts`). Signed tools take the same headers through
+  the shared transport's required `requestHeaders` setting (elixir-utils
+  `agent_access/assets/signed_tools.ts`, from commit `c4fdaae6`).
+- **CLI:** sends `x-regent-client: regents-cli/<version> <command>`. The CLI lane
+  adds it; the site never waits for it.
+
+## Proof
+
+- `platform/test/ash_template_web/visit_log_test.exs`: property tests that throw
+  random headers, events and browser reports at the writer and check that only
+  fitting values reach a line.
+- `platform/test/browser/visits.spec.ts` (browser walk): the walk's person opens
+  Notes and saves a note; the server's lines for that visit, in production's
+  shape, replay it in order (request, page, `note.create`, the press), with one
+  person code and nothing they wrote.
+
+## Sentinel's part
+
+- Keep the event lines in their own events table, indexed by app, visit and
+  time. Plain info lines are still dropped.
+- Delete event rows older than 30 days on a schedule.
+- A page that shows one visit's events in order, joined with that visit's
   warning and error lines. This is the replay.
-- Add a read-only export of the last 24 hours for one app. The daily review
-  reads it.
-- Sentinel's code and releases belong to the Sentinel chief, and each Sentinel
+- A read-only export of the last 24 hours for one app, which the daily review reads.
+- Sentinel's code and releases belong to the Sentinel chief; each Sentinel
   release needs Sean's letter in that lane.
 
-### The daily review
+## The daily review
 
-Once a day it reads the last 24 hours of events and warning lines for Autolaunch
-and Keyfleet. It runs Sean's prompt word for word:
+Once a day, on Sean's Mac, it reads the last 24 hours of events and warning
+lines for Autolaunch and Keyfleet and runs Sean's prompt word for word:
 
 "analyze my logs from this program in the past 24h thoroughly, identify broken
 behaviors, user friction, inefficiencies, and propose improvements sorted by
 estimated impact for the autolaunch and keyfleet codebases".
 
-It writes one report a day and tells Sean where it is (decision 4). It only
-reads; it doesn't change any code.
+It writes one report a day to
+`/Users/sean/Documents/regent/control/coordination/log-review/` and notifies
+Sean. It only reads; it changes no code.
 
 ## Order of work
 
-1. **Template.** Add the formatter, the handlers, the API plug, the browser
-   batch address and the `shown` keys. Write a property test that throws random
-   inputs at the event writer and checks that no field outside the list ever
-   appears in a line. Run a browser walk that replays one visit from its lines.
-   Release with Sean's template letter.
-2. **Sentinel.** Add the events table, deletion of old events, the visit page
-   and the export. Release with Sean's Sentinel letter.
+1. **Template** (built). Released with Sean's template letter.
+2. **Sentinel.** Events table, 30-day deletion, visit page and export. Released
+   with Sean's Sentinel letter.
 3. **Autolaunch and Keyfleet** copy the template's version word for word, each
-   in its own queue with its own letter. The other three sites follow later.
-4. **Daily review.** Start it once two days of Autolaunch and Keyfleet events
-   are in Sentinel, so the first report has real data.
+   with its own letter. The other three sites follow.
+4. **Daily review.** Starts once Sentinel holds two days of Autolaunch and
+   Keyfleet events, so the first report has real data.
 
 ## What it costs
 
-- At the 1,000–2,000 person target, a busy visit writes about 50 events, so a
+- At the 1,000–2,000 person target, a busy visit writes about 50 lines, so a
   busy day is about 100,000 rows per site. That is small for Postgres with one
   index, and the lines already travel through Fly's log feed today.
-- No new machines are needed. The site writes nothing new to its own database.
+- No new machines. The site writes nothing new to its own database.
