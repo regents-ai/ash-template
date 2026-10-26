@@ -9,16 +9,16 @@
 #     elixir check_required_fixes.exs REVISION < required-fixes.json
 #
 # "managed" lists each shared library: its app, its one repository URL and its folder
-# there. A managed library must be a git dependency on exactly that URL and folder,
-# pinned with `ref:` to a full commit whose history is fetched. Local folders,
-# vendored copies, other URLs and unlisted libraries from a shared repository fail,
-# and so do libraries from one repository pinned at different commits. The one
-# local folder allowed is the library's own folder in its own repository (Regents
-# uses identity/ from the same commit).
+# there (null when the library is the whole repository). A managed library must be a
+# git dependency on exactly that URL and folder, pinned with `ref:` to a full commit
+# whose history is fetched. Local folders, vendored copies, other URLs and unlisted
+# libraries from a shared repository fail, and so do libraries from one repository
+# pinned at different commits. The one local folder allowed is the library's own
+# folder in its own repository (Regents uses identity/ from the same commit).
 # A "git" fix must be in the pinned history of each listed app the site uses; a
 # "hex" fix sets the Hex versions a package may be locked at, as an Elixir version
-# requirement (">= 3.34.3", "== 2.13.0"). Dependencies of every
-# environment are checked, not only the one the check runs in.
+# requirement (">= 3.34.3"). Dependencies of every environment are checked, not only
+# the one the check runs in.
 
 [revision] = System.argv()
 Mix.start()

@@ -3796,3 +3796,32 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   looks switch in place on one canvas and keep their links; all 30 district pages draw;
   no console errors; no overflow at 390 and 320 wide, where the tabs wrap to four rows;
   reduced motion draws; `?look=nope` is not found.
+
+## 2026-10-26 — ash_postgres from Regent's copy of 2.15.2
+
+- `platform/mix.exs` takes ash_postgres from `https://github.com/regents-ai/ash_postgres.git`
+  at `cc886ab3efc8b05d51b7b1f57e609341fb6a0873` with `override: true`: the 2.15.2 release
+  plus ash-project/ash_postgres#910, which makes upserts and `Ash.update_many` use the Repo's
+  `default_options/1` prefix again (upstream issue ash-project/ash_postgres#909). That prefix
+  is how each site picks its schema on the shared database. The override stands in for the
+  Hex release ash_money and ash_double_entry ask for. It clears EEF-CVE-2026-115635 and
+  EEF-CVE-2026-115627, the two advisories on 2.13.0. ash_sql moves to 0.8.4.
+- elixir-utils moves to `56fa86bd6aee5efe7ac7c8b7b698e82d8fdcfe29`, where every shared Ash
+  package uses the same copy.
+- The dead `config :ash_postgres, upsert_with_merge?: false` line goes from
+  `platform/config/config.exs` (2.15.2 has no such setting; upserts are always
+  `INSERT ... ON CONFLICT`), and the `AshTemplate.Repo` comment says where the prefix comes
+  from.
+- 2.15.2 ships ash-functions 7. Its `ash_required` raises its own error instead of calling
+  `ash_raise_error`, which the function's empty search path cannot find, so a missing
+  required value failed with "function does not exist". Migration
+  `20261026194117_ash_functions_v7_extensions_1` replaces the function, in the same place
+  the first migration created it; the snapshot moves to version 7. It runs with the
+  release's migrations, so the release that carries it needs Sean's go for a migration.
+- `security/required-fixes.json` lists the copy as a managed library (whole repository, so
+  `sparse` is null) and replaces the `== 2.13.0` hold with the git fix
+  `2026-10-26-ash-postgres-upsert-schema`. A site still on Hex ash_postgres now fails
+  `make check-required-fixes` with "ash_postgres comes from Hex.SCM, not its shared
+  repository". `AGENTS.md`, `docs/dependency-baseline.md` and the check script's comment
+  say the same.
+- Move back to Hex once a release carries #910 and passes the isolated upsert check.

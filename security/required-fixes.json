@@ -22,7 +22,8 @@
     {"app": "regent_jev", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "jev"},
     {"app": "regent_sprites", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "sprites"},
     {"app": "regent_credits", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "credits"},
-    {"app": "regent_points", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "points"}
+    {"app": "regent_points", "repository": "https://github.com/regents-ai/elixir-utils.git", "sparse": "points"},
+    {"app": "ash_postgres", "repository": "https://github.com/regents-ai/ash_postgres.git", "sparse": null}
   ],
   "fixes": [
     {
@@ -96,11 +97,11 @@
       "requirement": ">= 1.0.22"
     },
     {
-      "id": "2026-10-06-ash-postgres-upsert-schema",
-      "summary": "ash_postgres 2.13.1 through at least 2.15.2 (checked 26 Oct 2026) writes upserts as its own SQL with only the resource's schema or tenant as the prefix and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release keeps the Repo prefix. 2.15.2 also fixes EEF-CVE-2026-115635 and EEF-CVE-2026-115627, which need attribute multitenancy; no Regent resource uses multitenancy.",
-      "kind": "hex",
-      "package": "ash_postgres",
-      "requirement": "== 2.13.0"
+      "id": "2026-10-26-ash-postgres-upsert-schema",
+      "summary": "ash_postgres 2.13.1 through 2.15.2 writes upserts and Ash.update_many with only the resource's schema or tenant as the prefix and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so those writes land in public. Regent's copy of 2.15.2 (regents-ai/ash_postgres, sent upstream as ash-project/ash_postgres#910) keeps the Repo prefix and carries the 2.15.2 fixes for EEF-CVE-2026-115635 and EEF-CVE-2026-115627, the two advisories on 2.13.0.",
+      "kind": "git",
+      "commit": "cc886ab3efc8b05d51b7b1f57e609341fb6a0873",
+      "apps": ["ash_postgres"]
     },
     {
       "id": "EEF-CVE-2026-82672",

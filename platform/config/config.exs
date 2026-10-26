@@ -31,10 +31,6 @@ config :regent_credits,
 # (CVE-2026-82752).
 config :ash, default_string_length_count: :codepoints
 
-# AshPostgres 2.13.0 writes a PostgreSQL 17 upsert as MERGE, which leaves out the
-# Repo's default schema. Upserts stay on INSERT ... ON CONFLICT, which keeps it.
-config :ash_postgres, upsert_with_merge?: false
-
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
 # The name this site goes by in Regent Credits and Regent Points. A site copied

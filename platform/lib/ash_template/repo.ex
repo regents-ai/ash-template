@@ -6,17 +6,15 @@ defmodule AshTemplate.Repo do
   # that read tables owned elsewhere name their schema themselves.
   @schema "ash_template_app"
 
-  # The shared database runs PostgreSQL 17. Upserts stay on INSERT ... ON CONFLICT
-  # (`upsert_with_merge?: false` in config.exs): AshPostgres 2.13.0's MERGE names
-  # the table without `default_prefix/0`, so it fails here with "relation ... does
-  # not exist". `Ash.update_many` is written the same way; nothing here calls it.
+  # The shared database runs PostgreSQL 17.
   def min_pg_version, do: %Version{major: 17, minor: 0, patch: 0}
   def installed_extensions, do: ["ash-functions"]
   def default_prefix, do: @schema
 
-  # Ash qualifies reads with `default_prefix/0`; writes and plain Ecto queries take
-  # the prefix from here instead. An explicit prefix, such as a resource's own
-  # schema, always wins over this default.
+  # Ash qualifies reads with `default_prefix/0`; writes, upserts, `Ash.update_many`
+  # and plain Ecto queries take the prefix from here instead (upserts and
+  # `update_many` through Regent's ash_postgres copy, ash-project/ash_postgres#910).
+  # An explicit prefix, such as a resource's own schema, always wins over this default.
   def default_options(_operation), do: [prefix: @schema]
 
   # PostgreSQL's own catalog (`pg_class`, `pg_namespace`, ...) is never in this
