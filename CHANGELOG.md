@@ -3731,3 +3731,38 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   an `EnsIdentity` upsert went to an unqualified table and failed, and 2.13.0 with Ash 3.37.2
   wrote one row in `ash_template_app`. Its two advisories (EEF-CVE-2026-115635, -115627) need
   attribute multitenancy, which no Regent resource uses, but `mix hex.audit` still names them.
+
+## 2026-10-26 — Six looks for the swarm city
+
+- `/animations/swarm-city` and its three district pages gain a row of tabs above the
+  picture, one per look, each with its own link as `?look=<name>`; the first look keeps
+  the plain link. Every link on the page keeps the look, and a name the page does not
+  know gives the not-found page. Switching tabs repaints the same canvas without
+  starting it again.
+  - **Neon** is the city as it was.
+  - **Blueprint**: a blue drafting sheet ruled to the horizon, buildings in white and
+    pale-blue ink with hatched shadow sides, dashed streets, orange pencil agents.
+  - **Porcelain**: a pale model city lit by a low sun, pastel downtowns, clay streets
+    and ink-dark agents ringed in their colours.
+  - **Lamplight**: the city at night, thousands of lit windows that blend into a warm
+    glow far away, amber street lamps and teal agents.
+  - **Sunset**: violet towers edged from cyan to pink, cyan and gold, a pink grid floor
+    under a striped setting sun, gold agents.
+  - **Hologram**: see-through glass towers with rainbow edges and scan lines rising up
+    them, a floor of dots, a violet sky grid and white agents.
+- Each look is one block of WGSL in `platform/assets/js/swarm_city/looks.ts`: the colours
+  of the sky, ground, building sides, edges, streets, beacons, agents and tails, and
+  whether it draws the sky grid and beacons. `platform/assets/js/swarm_city/shaders.ts`
+  builds every draw around that block, and the renderer compiles a look the first time it
+  is shown and keeps it. The ground and sky are now one full-screen draw that meets the
+  plate, so a look can rule lines to the horizon. Glass looks add their sides and skip
+  depth writes.
+- The still pictures moved to `platform/priv/static/images/animations/swarm-city/`, one
+  per look (`neon.webp` is the old `swarm-city.webp`).
+- Public changelog: the swarm city's six looks.
+- Checked headless in Chromium with WebGPU: all 44 look shaders pass `vgpu check`; every
+  look draws on the overview and on each district page (15 pages); switching through all
+  six tabs keeps the same canvas and updates the district cards' links; a district name
+  in the list keeps the look; a hover tag reads on the light porcelain city; no page
+  overflow at 390 and 320 wide, where the tabs wrap to two rows; reduced motion draws
+  one still city; `?look=nope` is not found; each still picture is served.

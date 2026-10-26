@@ -1,19 +1,46 @@
 /**
- * The swarm city's WGSL. Each shader is prepared on its own, so the part every
- * scene shader shares is written once here and placed at the head of each.
- *
- * The city is drawn as thin lines on the dark: each building is a dark box
- * outlined in its quarter's colour, streets are blue, the sky grid is red, and
- * the agents are flat yellow discs trailing thin yellow tails.
+ * The swarm city's WGSL. Every look draws the same parts the same way: the sky
+ * and ground behind everything, the streets, each building's sides and roof
+ * and its outline, the sky grid, the beacons, and the agents with their tails.
+ * What changes is the colour of each part, which each look writes as a few
+ * WGSL functions (see looks.ts). Each shader is prepared on its own, so the
+ * part they all share is placed at the head of each.
  */
 import {CITY_REACH, DISTRICTS} from "./city"
+import type {Look} from "./looks"
 
 const f = (value: number) => value.toFixed(3)
 
 /** The lens, top to bottom, in degrees. */
 export const FOV = 38
 
-const shared = /* wgsl */ `
+/** One shader for each part of the city, in the order they are drawn. */
+export type CityShaders = {
+  readonly backdrop: string
+  readonly streets: string
+  readonly faces: string
+  readonly edges: string
+  readonly sky: string
+  readonly beacons: string
+  readonly trails: string
+  readonly nodes: string
+}
+
+/**
+ * What every scene shader shares. WGSL lets module-level names be used before
+ * they are written, so the helpers here read the look's colours, such as
+ * HAZE, and each look's functions can call these helpers.
+ *
+ * A look provides:
+ * - `HAZE`, the colour far things sink into;
+ * - `quarterColour(quarter)`, each quarter's own colour;
+ * - `sky(direction)`, above the horizon, and `groundColour(p, onPlate)`, below it;
+ * - `faceColour(face)`, a building's sides and roof, and `edgeColour(edge)`, its outline;
+ * - `streetColour(kind, p)`, where an alpha under 0.5 leaves a gap in the line;
+ * - `skyColour(down, kind)` and `beaconColour(glow)` with `BEACON_SIZE`, when it draws them;
+ * - `discColour(agent, lead, ring)` and `trailColour(glow)` for the agents.
+ */
+const shared = (look: Look) => /* wgsl */ `
 struct City {
   viewProjection: mat4x4f,
   // Where the camera is, and the time the city is drawn at.
@@ -34,25 +61,40 @@ struct City {
 // How far the lens reaches: 1 / tan(half the field of view).
 const FOCAL: f32 = ${f(1 / Math.tan((FOV * Math.PI) / 360))};
 
-// The dark the city stands in, and the plate it is built on.
-const NIGHT: vec3f = vec3f(0.006, 0.007, 0.014);
-const PLATE: vec3f = vec3f(0.012, 0.015, 0.026);
-// Each quarter's line colour: the castle green, the forge cyan, the inn lime, and the low city between them lavender.
-const CASTLE: vec3f = vec3f(0.26, 0.95, 0.52);
-const FORGE: vec3f = vec3f(0.22, 0.82, 1.0);
-const INN: vec3f = vec3f(0.78, 1.0, 0.3);
-const BETWEEN: vec3f = vec3f(0.44, 0.46, 0.92);
-const STREET: vec3f = vec3f(0.17, 0.32, 1.0);
-const SIGNAL: vec3f = vec3f(1.0, 0.9, 0.04);
-const SKY_RED: vec3f = vec3f(1.0, 0.13, 0.13);
+// Each district's middle and reach on the ground, and the plate's edge.
+const DISTRICT_AT = array<vec3f, 3>(
+  vec3f(${f(DISTRICTS.castle.x)}, ${f(DISTRICTS.castle.z)}, ${f(DISTRICTS.castle.radius)}),
+  vec3f(${f(DISTRICTS.forge.x)}, ${f(DISTRICTS.forge.z)}, ${f(DISTRICTS.forge.radius)}),
+  vec3f(${f(DISTRICTS.inn.x)}, ${f(DISTRICTS.inn.z)}, ${f(DISTRICTS.inn.radius)}),
+);
+const REACH: f32 = ${f(CITY_REACH + 0.06)};
 
-fn quarterColour(quarter: u32) -> vec3f {
-  switch quarter {
-    case 0u: { return CASTLE; }
-    case 1u: { return FORGE; }
-    case 2u: { return INN; }
-    default: { return BETWEEN * 0.7; }
-  }
+// A point on one of a building's faces.
+struct Face {
+  world: vec3f,
+  // Which way the face looks: one of the four sides, or up for the roof.
+  normal: vec3f,
+  // How far across the face, from its left edge, in world units.
+  along: f32,
+  // Whose building it is: castle, forge, inn, or 3 for the city between them.
+  quarter: u32,
+  // A shade of the building's own, from 0 to 1.
+  shade: f32,
+  // How lit its district is, from 0 to 1.
+  lit: f32,
+  // The building's base and roof.
+  base: f32,
+  top: f32,
+}
+
+// A point on one of a building's edges.
+struct Edge {
+  world: vec3f,
+  quarter: u32,
+  shade: f32,
+  lit: f32,
+  base: f32,
+  top: f32,
 }
 
 fn quarterLit(quarter: u32) -> f32 {
@@ -64,9 +106,35 @@ fn quarterLit(quarter: u32) -> f32 {
   }
 }
 
-// Far things sink into the dark, so the city has depth.
+// Far things sink into the look's haze, so the city has depth.
 fn distanceFade(p: vec3f) -> f32 {
   return 1.0 - smoothstep(30.0, 60.0, length(p - city.eye));
+}
+
+fn hazed(colour: vec3f, p: vec3f) -> vec3f {
+  return mix(HAZE, colour, distanceFade(p));
+}
+
+// How far each district's light reaches a point on the ground: castle, forge, inn.
+fn districtLight(p: vec2f) -> vec3f {
+  var light = vec3f(0.0);
+  for (var i = 0u; i < 3u; i++) {
+    let reach = length(p - DISTRICT_AT[i].xy) / DISTRICT_AT[i].z;
+    light[i] = city.lit[i] * (1.0 - smoothstep(0.4, 1.1, reach));
+  }
+  return light;
+}
+
+// 1 on a grid's lines and 0 between them, each line about 'width' pixels wide at any distance.
+fn gridLine(p: vec2f, spacing: f32, width: f32) -> f32 {
+  let cell = p / spacing;
+  let gap = abs(fract(cell - 0.5) - 0.5) / max(fwidth(cell), vec2f(1e-5));
+  return 1.0 - min(min(gap.x, gap.y) / width, 1.0);
+}
+
+// A fixed hash of a point, from 0 to 1.
+fn hash(p: vec2f) -> f32 {
+  return fract(sin(dot(p, vec2f(12.9898, 78.233))) * 43758.5453);
 }
 
 // A quad of six corners round a point, for things drawn as flat cards: x and y from -1 to 1.
@@ -77,6 +145,9 @@ fn corner(index: u32) -> vec2f {
   );
   return corners[index];
 }
+
+// The look.
+${look.wgsl}
 `
 
 /** A building's record, as each of its two draws reads it. */
@@ -100,10 +171,41 @@ fn boxPoint(building: Building, unit: vec3f, inset: f32) -> vec3f {
 `
 
 /**
- * The buildings' sides and roofs: dark, and pulled in a hair from the
- * outline, so each building hides what stands behind it but never its own edges.
+ * Everything behind the city, drawn first over the whole picture: the sky
+ * above the horizon and, below it, the ground where the camera's ray meets it,
+ * the plate and the land round it running on into the haze.
  */
-export const towerFaceWgsl = /* wgsl */ `${shared}
+const backdropWgsl = (look: Look) => /* wgsl */ `${shared(look)}
+struct BackdropVarying {
+  @builtin(position) clip: vec4f,
+  @location(0) ndc: vec2f,
+}
+
+@vertex
+fn vs_main(@builtin(vertex_index) vertex: u32) -> BackdropVarying {
+  // One triangle that covers the whole picture.
+  let corners = array<vec2f, 3>(vec2f(-1.0, -1.0), vec2f(3.0, -1.0), vec2f(-1.0, 3.0));
+  var output: BackdropVarying;
+  output.clip = vec4f(corners[vertex], 0.0, 1.0);
+  output.ndc = corners[vertex];
+  return output;
+}
+
+@fragment
+fn fs_main(input: BackdropVarying) -> @location(0) vec4f {
+  let aspect = city.resolution.x / city.resolution.y;
+  let forward = cross(city.up, city.right);
+  let direction = normalize(forward + (city.right * input.ndc.x * aspect + city.up * input.ndc.y) / FOCAL);
+  let along = city.eye.y / max(-direction.y, 1e-4);
+  let ground = city.eye + direction * along;
+  let onPlate = step(max(abs(ground.x), abs(ground.z)), REACH);
+  let below = hazed(groundColour(ground.xz, onPlate), ground);
+  return vec4f(select(sky(direction), below, direction.y < 0.0), 1.0);
+}
+`
+
+/** The buildings' sides and roofs, pulled in a hair from the outline so each building never hides its own edges. */
+const faceWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 ${buildingInput}
 
 // Five faces of the unit box, two triangles each: four sides and the roof.
@@ -114,28 +216,49 @@ const FACES = array<vec3f, 30>(
   vec3f(0.0, 0.0, 1.0), vec3f(0.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 0.0, 1.0), vec3f(0.0, 1.0, 0.0), vec3f(0.0, 1.0, 1.0),
   vec3f(0.0, 1.0, 0.0), vec3f(1.0, 1.0, 0.0), vec3f(1.0, 1.0, 1.0), vec3f(0.0, 1.0, 0.0), vec3f(1.0, 1.0, 1.0), vec3f(0.0, 1.0, 1.0),
 );
+const NORMALS = array<vec3f, 5>(
+  vec3f(0.0, 0.0, -1.0), vec3f(1.0, 0.0, 0.0), vec3f(0.0, 0.0, 1.0), vec3f(-1.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0),
+);
 
 struct FaceVarying {
   @builtin(position) clip: vec4f,
   @location(0) world: vec3f,
+  @location(1) normal: vec3f,
+  @location(2) along: f32,
+  @location(3) @interpolate(flat) quarter: u32,
+  @location(4) shade: f32,
+  @location(5) lit: f32,
+  @location(6) span: vec2f,
 }
 
 @vertex
 fn vs_main(@builtin(vertex_index) vertex: u32, building: Building) -> FaceVarying {
   var output: FaceVarying;
-  output.world = boxPoint(building, FACES[vertex], 0.004);
+  let unit = FACES[vertex];
+  let face = vertex / 6u;
+  let size = building.footprint.zw;
+  // Across each side from its left edge, as someone facing it sees it.
+  let across = array<f32, 5>(unit.x * size.x, unit.z * size.y, (1.0 - unit.x) * size.x, (1.0 - unit.z) * size.y, unit.x * size.x);
+  output.world = boxPoint(building, unit, 0.004);
+  output.normal = NORMALS[face];
+  output.along = across[face];
+  output.quarter = u32(building.quarter + 0.5);
+  output.shade = building.shade;
+  output.lit = quarterLit(output.quarter);
+  output.span = building.span;
   output.clip = city.viewProjection * vec4f(output.world, 1.0);
   return output;
 }
 
 @fragment
 fn fs_main(input: FaceVarying) -> @location(0) vec4f {
-  return vec4f(mix(NIGHT, PLATE, distanceFade(input.world)), 1.0);
+  let colour = faceColour(Face(input.world, input.normal, input.along, input.quarter, input.shade, input.lit, input.span.x, input.span.y));
+  return vec4f(hazed(colour.rgb, input.world), colour.a);
 }
 `
 
-/** The buildings' outlines: the twelve edges of each box, a hair-thin line in its quarter's colour. */
-export const towerEdgeWgsl = /* wgsl */ `${shared}
+/** The buildings' outlines: the twelve edges of each box, a hair-thin line. */
+const edgeWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 ${buildingInput}
 
 // The twelve edges of the unit box, two ends each.
@@ -158,10 +281,8 @@ fn vs_main(@builtin(vertex_index) vertex: u32, building: Building) -> EdgeVaryin
   var output: EdgeVarying;
   let world = boxPoint(building, EDGES[vertex], 0.0);
   let quarter = u32(building.quarter + 0.5);
-  let lit = quarterLit(quarter);
-  // Each building keeps a brightness of its own, so the city is never one flat colour.
-  let tint = quarterColour(quarter) * (0.55 + 0.45 * building.shade);
-  output.colour = mix(tint, vec3f(0.9, 1.0, 0.95), lit * 0.2) * (1.0 + lit * 0.6) * distanceFade(world);
+  let edge = Edge(world, quarter, building.shade, quarterLit(quarter), building.span.x, building.span.y);
+  output.colour = hazed(edgeColour(edge), world);
   output.clip = city.viewProjection * vec4f(world, 1.0);
   return output;
 }
@@ -172,65 +293,35 @@ fn fs_main(input: EdgeVarying) -> @location(0) vec4f {
 }
 `
 
-/** The plate the city stands on: dark, with a faint wash of colour over a district that is lit. */
-export const groundWgsl = /* wgsl */ `${shared}
-struct GroundVarying {
-  @builtin(position) clip: vec4f,
-  @location(0) world: vec3f,
-}
-
-const DISTRICT_AT = array<vec3f, 3>(
-  vec3f(${f(DISTRICTS.castle.x)}, ${f(DISTRICTS.castle.z)}, ${f(DISTRICTS.castle.radius)}),
-  vec3f(${f(DISTRICTS.forge.x)}, ${f(DISTRICTS.forge.z)}, ${f(DISTRICTS.forge.radius)}),
-  vec3f(${f(DISTRICTS.inn.x)}, ${f(DISTRICTS.inn.z)}, ${f(DISTRICTS.inn.radius)}),
-);
-const REACH: f32 = ${f(CITY_REACH + 0.06)};
-
-@vertex
-fn vs_main(@location(0) position: vec3f) -> GroundVarying {
-  var output: GroundVarying;
-  output.world = position;
-  output.clip = city.viewProjection * vec4f(position, 1.0);
-  return output;
-}
-
-@fragment
-fn fs_main(input: GroundVarying) -> @location(0) vec4f {
-  let p = input.world.xz;
-  var colour = PLATE;
-  for (var i = 0u; i < 3u; i++) {
-    let reach = length(p - DISTRICT_AT[i].xy) / DISTRICT_AT[i].z;
-    colour += quarterColour(i) * 0.06 * city.lit[i] * (1.0 - smoothstep(0.4, 1.1, reach));
-  }
-  let onPlate = step(max(abs(p.x), abs(p.y)), REACH);
-  return vec4f(mix(NIGHT, colour, onPlate * distanceFade(input.world)), 1.0);
-}
-`
-
-/** The streets: thin blue lines on the plate, brighter along the avenues and round the rim. */
-export const streetWgsl = /* wgsl */ `${shared}
+/** The streets: thin lines on the plate. 'kind' is 0 for a street, 1 for an avenue's edge and 2 for the plate's rim. */
+const streetWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 struct StreetVarying {
   @builtin(position) clip: vec4f,
-  @location(0) colour: vec3f,
+  @location(0) world: vec3f,
+  @location(1) @interpolate(flat) kind: u32,
 }
 
 @vertex
 fn vs_main(@location(0) position: vec3f, @location(1) kind: f32) -> StreetVarying {
   var output: StreetVarying;
-  let strength = array<f32, 3>(0.6, 0.95, 1.0);
-  output.colour = STREET * strength[u32(kind + 0.5)] * distanceFade(position);
+  output.world = position;
+  output.kind = u32(kind + 0.5);
   output.clip = city.viewProjection * vec4f(position, 1.0);
   return output;
 }
 
 @fragment
 fn fs_main(input: StreetVarying) -> @location(0) vec4f {
-  return vec4f(input.colour, 1.0);
+  let colour = streetColour(input.kind, input.world);
+  if (colour.a < 0.5) {
+    discard;
+  }
+  return vec4f(hazed(colour.rgb, input.world), 1.0);
 }
 `
 
-/** The red sky grid and the lines it drops, fading as they fall. */
-export const skyWgsl = /* wgsl */ `${shared}
+/** The grid hanging over the downtowns and the lines it drops, 'down' running from 0 at the top of a line to 1 at its foot. */
+const skyWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 struct SkyVarying {
   @builtin(position) clip: vec4f,
   @location(0) colour: vec3f,
@@ -239,8 +330,7 @@ struct SkyVarying {
 @vertex
 fn vs_main(@location(0) position: vec3f, @location(1) down: f32, @location(2) kind: f32) -> SkyVarying {
   var output: SkyVarying;
-  let strength = select(0.85, 0.7 - 0.45 * down, kind > 0.5);
-  output.colour = SKY_RED * strength * distanceFade(position);
+  output.colour = hazed(skyColour(down, u32(kind + 0.5)), position);
   output.clip = city.viewProjection * vec4f(position, 1.0);
   return output;
 }
@@ -251,34 +341,34 @@ fn fs_main(input: SkyVarying) -> @location(0) vec4f {
 }
 `
 
-/** The beacons: small yellow squares round the rim, at street corners and along the avenues. */
-export const beaconWgsl = /* wgsl */ `${shared}
+/** The beacons: small squares round the rim, at street corners and along the avenues. */
+const beaconWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 struct BeaconVarying {
   @builtin(position) clip: vec4f,
-  @location(0) glow: f32,
+  @location(0) colour: vec3f,
 }
 
 @vertex
 fn vs_main(@builtin(vertex_index) vertex: u32, @location(0) position: vec3f, @location(1) phase: f32) -> BeaconVarying {
   var output: BeaconVarying;
   let clip = city.viewProjection * vec4f(position, 1.0);
-  let half = 1.4 * city.pixel / city.resolution * 2.0;
+  let half = BEACON_SIZE * city.pixel / city.resolution * 2.0;
   output.clip = clip + vec4f(corner(vertex) * half * clip.w, 0.0, 0.0);
-  output.glow = (0.8 + 0.2 * sin(city.time * 1.6 + phase)) * distanceFade(position);
+  output.colour = hazed(beaconColour(0.8 + 0.2 * sin(city.time * 1.6 + phase)), position);
   return output;
 }
 
 @fragment
 fn fs_main(input: BeaconVarying) -> @location(0) vec4f {
-  return vec4f(SIGNAL * input.glow, 1.0);
+  return vec4f(input.colour, 1.0);
 }
 `
 
 /**
- * The agents and their swarms: flat yellow discs that always face the camera.
- * An agent's own disc is larger and ringed in its own colour.
+ * The agents and their swarms: flat discs that always face the camera. An
+ * agent's own disc is larger, and its look rings it.
  */
-export const nodeWgsl = /* wgsl */ `${shared}
+const nodeWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 struct NodeVarying {
   @builtin(position) clip: vec4f,
   @location(0) at: vec2f,
@@ -322,13 +412,12 @@ fn fs_main(input: NodeVarying) -> @location(0) vec4f {
   let d = length(input.at) * input.radius;
   let edge = 1.0 - smoothstep(input.radius - 1.0, input.radius, d);
   let ring = (1.0 - smoothstep(input.radius - 2.6 * city.pixel, input.radius - 1.6 * city.pixel, d)) * input.lead;
-  let colour = mix(input.colour, SIGNAL, select(1.0, ring, input.lead > 0.5));
-  return vec4f(colour, edge * input.glow);
+  return vec4f(discColour(input.colour, input.lead, ring), edge * input.glow);
 }
 `
 
-/** The tails: hair-thin yellow lines that always face the camera, fading toward their ends. */
-export const trailWgsl = /* wgsl */ `${shared}
+/** The tails: hair-thin lines that always face the camera, fading toward their ends. */
+const trailWgsl = (look: Look) => /* wgsl */ `${shared(look)}
 struct TrailVarying {
   @builtin(position) clip: vec4f,
   @location(0) side: f32,
@@ -363,6 +452,18 @@ fn vs_main(
 @fragment
 fn fs_main(input: TrailVarying) -> @location(0) vec4f {
   let soft = 1.0 - input.side * input.side;
-  return vec4f(SIGNAL, soft * input.glow);
+  let colour = trailColour(input.glow);
+  return vec4f(colour.rgb, soft * colour.a);
 }
 `
+
+export const cityShaders = (look: Look): CityShaders => ({
+  backdrop: backdropWgsl(look),
+  streets: streetWgsl(look),
+  faces: faceWgsl(look),
+  edges: edgeWgsl(look),
+  sky: skyWgsl(look),
+  beacons: beaconWgsl(look),
+  trails: trailWgsl(look),
+  nodes: nodeWgsl(look),
+})

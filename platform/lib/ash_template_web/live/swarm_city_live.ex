@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.SwarmCityLive do
   @moduledoc """
   The swarm city: a dense city of thin outlined towers with three downtowns,
-  and each agent a yellow disc flying to the district of its last action and
-  circling its towers. The inn is a chat, the forge is work and the castle is a
+  and each agent a disc flying to the district of its last action and circling
+  its towers. The inn is a chat, the forge is work and the castle is a
   proposal.
 
   The agents are the same samples as the agent harbour's. While the page is
@@ -16,36 +16,67 @@ defmodule AshTemplateWeb.SwarmCityLive do
   Each district has its own page at `/animations/swarm-city/<district>`, where
   the camera flies to it and lights it. A mouse over a district shows a card
   with the link; pressing the district, or its name under the city, follows it.
+
+  The city comes in several looks, each with its own colours and way of
+  drawing it; `?look=` names one, and the first needs no name. Changing the look
+  repaints the city where it stands.
   """
 
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.{PublicDocuments, SampleCrew}
+  alias AshTemplateWeb.{NotFoundError, PublicDocuments, SampleCrew}
   alias Phoenix.LiveView.JS
+
+  @looks [
+    %{id: "neon", name: "Neon"},
+    %{id: "blueprint", name: "Blueprint"},
+    %{id: "porcelain", name: "Porcelain"},
+    %{id: "lamplight", name: "Lamplight"},
+    %{id: "sunset", name: "Sunset"},
+    %{id: "hologram", name: "Hologram"}
+  ]
+  @looks_by_id Map.new(@looks, &{&1.id, &1})
+  @first_look hd(@looks)
 
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: :timer.send_interval(SampleCrew.every(), :act)
     now = DateTime.utc_now()
 
-    {:ok, assign(socket, places: SampleCrew.places(), crew: SampleCrew.crew(now), now: now)}
+    {:ok,
+     assign(socket,
+       places: SampleCrew.places(),
+       looks: @looks,
+       crew: SampleCrew.crew(now),
+       now: now
+     )}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
     place = SampleCrew.place!(params["place"])
+    look = look!(params["look"])
     agent_id = SampleCrew.agent_id(socket.assigns.crew, params["agent"])
 
     {:noreply,
      socket
-     |> assign(PublicDocuments.page(city_path(place)))
-     |> assign(place: place, agent_id: agent_id)}
+     |> assign(PublicDocuments.page(city_path(place, @first_look)))
+     |> assign(place: place, look: look, agent_id: agent_id)}
   end
 
-  # The city's own page, or a district's.
-  defp city_path(place, query \\ [])
-  defp city_path(nil, query), do: ~p"/animations/swarm-city?#{query}"
-  defp city_path(place, query), do: ~p"/animations/swarm-city/#{place.id}?#{query}"
+  # The look an address names, or the first for none; a look that does not exist is not found.
+  defp look!(nil), do: @first_look
+  defp look!(id), do: Map.get(@looks_by_id, id) || raise(NotFoundError)
+
+  # The city's own page, or a district's, in a look.
+  defp city_path(place, look, query \\ [])
+  defp city_path(nil, look, query), do: ~p"/animations/swarm-city?#{look_query(look) ++ query}"
+
+  defp city_path(place, look, query),
+    do: ~p"/animations/swarm-city/#{place.id}?#{look_query(look) ++ query}"
+
+  defp look_query(@first_look), do: []
+  defp look_query(look), do: [look: look.id]
 
   # What each district's own page says about it.
   defp about("inn"),
@@ -67,11 +98,12 @@ defmodule AshTemplateWeb.SwarmCityLive do
 
   @impl true
   def handle_event("show_agent", %{"id" => id}, socket) do
-    {:noreply, push_patch(socket, to: city_path(socket.assigns.place, agent: id))}
+    {:noreply,
+     push_patch(socket, to: city_path(socket.assigns.place, socket.assigns.look, agent: id))}
   end
 
   def handle_event("close_agent", _params, socket) do
-    {:noreply, push_patch(socket, to: city_path(socket.assigns.place))}
+    {:noreply, push_patch(socket, to: city_path(socket.assigns.place, socket.assigns.look))}
   end
 
   @impl true
@@ -85,7 +117,7 @@ defmodule AshTemplateWeb.SwarmCityLive do
         <p :if={@place} class="motion-lab__kicker">
           <a href={~p"/"}>Ash Template</a>
           / <a href={~p"/animations"}>Motion lab</a>
-          / <.link patch={~p"/animations/swarm-city"}>Swarm city</.link>
+          / <.link patch={city_path(nil, @look)}>Swarm city</.link>
           / {@place.name}
         </p>
         <h1>{if @place, do: @place.name, else: "Swarm city"}</h1>
@@ -93,9 +125,18 @@ defmodule AshTemplateWeb.SwarmCityLive do
           {if @place,
             do: about(@place.id),
             else:
-              "Each yellow disc is an agent. It flies to the district of its last action and circles the towers there until it does something new. Drag to turn the city."}
+              "Each disc is an agent. It flies to the district of its last action and circles the towers there until it does something new. Drag to turn the city."}
         </p>
       </header>
+      <nav class="flair-tabs" aria-label="Looks">
+        <.link
+          :for={look <- @looks}
+          patch={city_path(@place, look)}
+          aria-current={look == @look && "page"}
+        >
+          {look.name}
+        </.link>
+      </nav>
       <div
         id="swarm-city"
         class="swarm-city"
@@ -103,12 +144,14 @@ defmodule AshTemplateWeb.SwarmCityLive do
         phx-mounted={JS.ignore_attributes(["data-swarm-ready"])}
         data-swarm-crew={SampleCrew.drawn(@crew)}
         data-swarm-focus={@place && @place.id}
+        data-swarm-look={@look.id}
+        data-swarm-query={URI.encode_query(look_query(@look))}
         role="img"
         aria-label="The swarm city"
       >
         <img
           class="swarm-city__still"
-          src={~p"/images/animations/swarm-city.webp"}
+          src={~p"/images/animations/swarm-city/#{@look.id <> ".webp"}"}
           width="1280"
           height="720"
           alt=""
@@ -118,7 +161,7 @@ defmodule AshTemplateWeb.SwarmCityLive do
           <span class="harbour__tag" data-swarm-tag hidden></span>
           <.link
             :for={place <- @places}
-            patch={~p"/animations/swarm-city/#{place.id}"}
+            patch={city_path(place, @look)}
             class="harbour__isle"
             data-swarm-district={place.id}
             tabindex="-1"
@@ -132,10 +175,7 @@ defmodule AshTemplateWeb.SwarmCityLive do
       <div class="harbour__legend">
         <ul class="harbour__islands" aria-label="Districts">
           <li :for={place <- @places}>
-            <.link
-              patch={~p"/animations/swarm-city/#{place.id}"}
-              aria-current={@place == place && "page"}
-            >
+            <.link patch={city_path(place, @look)} aria-current={@place == place && "page"}>
               {place.name}
             </.link>
             <span>{place.action}</span>
@@ -146,7 +186,7 @@ defmodule AshTemplateWeb.SwarmCityLive do
             :for={{agent, row} <- Enum.with_index(@crew, 1)}
             style={"--sail: #{agent.color}; grid-area: #{row} / #{SampleCrew.column(agent.place)}"}
           >
-            <.link patch={city_path(@place, agent: agent.id)}>{agent.name}</.link>
+            <.link patch={city_path(@place, @look, agent: agent.id)}>{agent.name}</.link>
             <span class="visually-hidden">at the {SampleCrew.place_name(agent.place)}</span>
           </li>
         </ul>

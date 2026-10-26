@@ -2,6 +2,7 @@ import {animate, createScope, utils, type Scope} from "animejs"
 
 import {createCanvasIsland, type CanvasIslandController, type LoadRenderer} from "../canvas_island"
 import type {Place} from "../swarm_city/city"
+import type {LookId} from "../swarm_city/looks"
 import type {CityView, Framing, SwarmCityRenderer} from "../swarm_city/renderer"
 import type {Agent} from "../swarm_city/swarm"
 
@@ -10,6 +11,7 @@ type CrewMember = Agent & {readonly name: string}
 
 const crewOf = (root: HTMLElement): CrewMember[] => JSON.parse(root.dataset.swarmCrew!) as CrewMember[]
 const focusOf = (root: HTMLElement): Place | null => (root.dataset.swarmFocus || null) as Place | null
+const lookOf = (root: HTMLElement): LookId => root.dataset.swarmLook as LookId
 
 const PLACES: readonly Place[] = ["castle", "forge", "inn"]
 
@@ -47,8 +49,8 @@ type SwarmCityHook = {
 
 /**
  * The swarm city: a dense city of thin outlined towers with three downtowns, and
- * one yellow disc for each agent, flying to the district of its last action and
- * circling its towers.
+ * one disc for each agent, flying to the district of its last action and
+ * circling its towers, painted in the look the page's address names.
  *
  * The city always moves, so it draws every frame while it is on screen. A visitor
  * who asked for less motion gets one composed, unmoving city, still turned by a
@@ -59,7 +61,8 @@ type SwarmCityHook = {
  * when it draws. A drag turns the city. A mouse over a disc shows its agent's
  * name, and over a district shows a card with the link to the district's page.
  * Pressing a disc opens its agent's card; pressing a district follows its link.
- * On a district's page the camera flies to that district and lights it.
+ * On a district's page the camera flies to that district and lights it. Another
+ * look repaints the city where it stands, without starting it again.
  */
 export const SwarmCity = {
   mounted(this: SwarmCityHook) {
@@ -77,6 +80,7 @@ export const SwarmCity = {
     )
     let crew = crewOf(root)
     let focus = focusOf(root)
+    let look = lookOf(root)
     let hovered: Place | null = null
     let city: SwarmCityRenderer | undefined
     let nudge = () => {}
@@ -245,7 +249,7 @@ export const SwarmCity = {
 
     const load: LoadRenderer<SwarmCityRenderer> = async (canvas, size, onDeviceLost) => {
       const {createSwarmCityRenderer} = await import("../swarm_city/renderer")
-      return createSwarmCityRenderer(canvas, size, onDeviceLost, view)
+      return createSwarmCityRenderer(canvas, size, onDeviceLost, view, look)
     }
 
     this.island = createCanvasIsland<SwarmCityRenderer>(root, {}, {
@@ -260,6 +264,8 @@ export const SwarmCity = {
           city = island.renderer()!
           city.setCalm(calm.matches)
           city.setAgents(crew)
+          // The look may have changed while the city was loading.
+          void city.setLook(look).then(() => nudge())
           // The first frame already stands where the page asks.
           utils.remove(view)
           Object.assign(view, framingOf(focus))
@@ -292,6 +298,13 @@ export const SwarmCity = {
     this.sync = () => {
       crew = crewOf(root)
       city?.setAgents(crew)
+      const nextLook = lookOf(root)
+      if (nextLook !== look) {
+        look = nextLook
+        // The district cards stand in the picture, which the page leaves alone, so they learn the look here.
+        for (const link of cards.values()) link.search = root.dataset.swarmQuery!
+        void city?.setLook(look).then(() => nudge())
+      }
       const next = focusOf(root)
       if (next !== focus) {
         focus = next

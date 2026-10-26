@@ -1,21 +1,24 @@
 /**
  * Draws the swarm city with WebGPU through vgpu: a square plate of thin
- * outlined buildings in three downtowns and the low city between them, blue
- * streets, a red sky grid, and one yellow disc for each agent, its swarm and
- * their tails behind them. Loaded only once the city is really going to be shown.
+ * outlined buildings in three downtowns and the low city between them, its
+ * streets, the grid over the downtowns, and one disc for each agent, its swarm
+ * and their tails behind them, all in one of the city's looks. Loaded only
+ * once the city is really going to be shown.
  *
  * Each frame is drawn straight to the page, multisampled so the thin lines
- * stay smooth: the dark sides and roofs first, so each building hides what
- * stands behind it, then every line, then the agents over the top.
+ * stay smooth: the sky and ground first, then the streets, then the sides and
+ * roofs, so each building hides what stands behind it (unless the look is
+ * glass), then every line, then the agents over the top.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
-import {draw, frame, geometry, init, surface, uniforms, type Geometry, type Gpu} from "vgpu"
+import {draw, frame, geometry, init, surface, uniforms, type Draw, type Gpu} from "vgpu"
 import {orbitRig, perspective, rigPose, viewMatrices, type CameraMatrices, type Pose} from "vgpu/scene"
 
 import type {IslandRenderer} from "../canvas_island"
-import {CITY_REACH, CROWNS, DISTRICTS, PLACE_ORDER, TOWERS, type Place} from "./city"
+import {CROWNS, DISTRICTS, PLACE_ORDER, TOWERS, type Place} from "./city"
 import {BEACON_FLOATS, BEACONS, SKY_FLOATS, SKY_LINES, STREET_FLOATS, STREET_LINES, TOWER_FLOATS, TOWER_RECORDS} from "./meshes"
-import {FOV, beaconWgsl, groundWgsl, nodeWgsl, skyWgsl, streetWgsl, towerEdgeWgsl, towerFaceWgsl, trailWgsl} from "./shaders"
+import {LOOKS, type LookId} from "./looks"
+import {FOV, cityShaders, type CityShaders} from "./shaders"
 import {FOLLOWERS, MAX_AGENTS, TRAIL, followerAt, parkSwarm, stepSwarm, syncSwarm, type Agent, type Node} from "./swarm"
 
 export type CityView = {
@@ -46,6 +49,8 @@ export type DistrictMark = {
 }
 
 export type SwarmCityRenderer = IslandRenderer & {
+  /** Paints the city in another look, once that look is ready on the GPU. */
+  setLook(look: LookId): Promise<void>
   setAgents(agents: readonly Agent[]): void
   /** A visitor who asked for less motion gets one composed, unmoving city. */
   setCalm(calm: boolean): void
@@ -82,14 +87,27 @@ const NODE_FLOATS = 8
 const TRAIL_FLOATS = 8
 const NODE_DISCS = MAX_AGENTS * (1 + FOLLOWERS)
 const TRAIL_PIECES = MAX_AGENTS * (TRAIL + FOLLOWERS * TAIL_PIECES)
-/** The dark the scene is cleared to, as NIGHT in the shaders. */
-const NIGHT: [number, number, number, number] = [0.006, 0.007, 0.014, 1]
+/** The sky and ground cover every pixel, so the colour the picture is cleared to never shows. */
+const CLEAR: [number, number, number, number] = [0, 0, 0, 1]
+
+/** Every draw of one look. A look without the sky grid or the beacons has none for them. */
+type Painting = {
+  readonly backdrop: Draw
+  readonly streets: Draw
+  readonly faces: Draw
+  readonly edges: Draw
+  readonly sky: Draw | null
+  readonly beacons: Draw | null
+  readonly trails: Draw
+  readonly nodes: Draw
+}
 
 export async function createSwarmCityRenderer(
   canvas: HTMLCanvasElement,
   size: readonly [number, number],
   onDeviceLost: () => void,
   view: CityView,
+  look: LookId,
 ): Promise<SwarmCityRenderer> {
   const gpu = await init()
   let disposed = false
@@ -99,7 +117,7 @@ export async function createSwarmCityRenderer(
     if (!disposed) onDeviceLost()
   })
   try {
-    return await build(gpu, canvas, size, view, () => disposed, () => void (disposed = true))
+    return await build(gpu, canvas, size, view, look, () => disposed, () => void (disposed = true))
   } catch (error) {
     disposed = true
     gpu.dispose()
@@ -112,6 +130,7 @@ async function build(
   canvas: HTMLCanvasElement,
   size: readonly [number, number],
   view: CityView,
+  look: LookId,
   isDisposed: () => boolean,
   markDisposed: () => void,
 ): Promise<SwarmCityRenderer> {
@@ -156,90 +175,54 @@ async function build(
       topology,
       label,
     })
-  const ground = draw(gpu, {
-    shader: prepareShader(groundWgsl, "swarm_city_ground.wgsl"),
-    geometry: flatSquare(gpu, CITY_REACH + 24, "swarm-city.ground"),
-    set,
-    label: "swarm-city.ground",
-  })
-  const faces = draw(gpu, {
-    shader: prepareShader(towerFaceWgsl, "swarm_city_tower_faces.wgsl"),
-    geometry: buildings("triangle-list", "swarm-city.tower-faces"),
-    vertices: 30,
-    set,
-    label: "swarm-city.tower-faces",
-  })
-  const edges = draw(gpu, {
-    shader: prepareShader(towerEdgeWgsl, "swarm_city_tower_edges.wgsl"),
-    geometry: buildings("line-list", "swarm-city.tower-edges"),
-    vertices: 24,
-    set,
-    label: "swarm-city.tower-edges",
-  })
-  const streets = draw(gpu, {
-    shader: prepareShader(streetWgsl, "swarm_city_streets.wgsl"),
-    geometry: geometry(gpu, {
-      buffers: [
-        {
-          data: STREET_LINES,
-          stride: STREET_FLOATS * 4,
-          attributes: {
-            position: {format: "float32x3", offset: 0, location: 0},
-            kind: {format: "float32", offset: 12, location: 1},
-          },
+  const towerFaces = buildings("triangle-list", "swarm-city.tower-faces")
+  const towerEdges = buildings("line-list", "swarm-city.tower-edges")
+  const streetLines = geometry(gpu, {
+    buffers: [
+      {
+        data: STREET_LINES,
+        stride: STREET_FLOATS * 4,
+        attributes: {
+          position: {format: "float32x3", offset: 0, location: 0},
+          kind: {format: "float32", offset: 12, location: 1},
         },
-      ],
-      vertexCount: STREET_LINES.length / STREET_FLOATS,
-      topology: "line-list",
-      label: "swarm-city.streets",
-    }),
-    set,
+      },
+    ],
+    vertexCount: STREET_LINES.length / STREET_FLOATS,
+    topology: "line-list",
     label: "swarm-city.streets",
   })
-  const sky = draw(gpu, {
-    shader: prepareShader(skyWgsl, "swarm_city_sky.wgsl"),
-    geometry: geometry(gpu, {
-      buffers: [
-        {
-          data: SKY_LINES,
-          stride: SKY_FLOATS * 4,
-          attributes: {
-            position: {format: "float32x3", offset: 0, location: 0},
-            down: {format: "float32", offset: 12, location: 1},
-            kind: {format: "float32", offset: 16, location: 2},
-          },
+  const skyLines = geometry(gpu, {
+    buffers: [
+      {
+        data: SKY_LINES,
+        stride: SKY_FLOATS * 4,
+        attributes: {
+          position: {format: "float32x3", offset: 0, location: 0},
+          down: {format: "float32", offset: 12, location: 1},
+          kind: {format: "float32", offset: 16, location: 2},
         },
-      ],
-      vertexCount: SKY_LINES.length / SKY_FLOATS,
-      topology: "line-list",
-      label: "swarm-city.sky",
-    }),
-    set,
+      },
+    ],
+    vertexCount: SKY_LINES.length / SKY_FLOATS,
+    topology: "line-list",
     label: "swarm-city.sky",
   })
-  const beacons = draw(gpu, {
-    shader: prepareShader(beaconWgsl, "swarm_city_beacons.wgsl"),
-    geometry: geometry(gpu, {
-      buffers: [
-        {
-          data: BEACONS,
-          stride: BEACON_FLOATS * 4,
-          stepMode: "instance",
-          attributes: {
-            position: {format: "float32x3", offset: 0, location: 0},
-            phase: {format: "float32", offset: 12, location: 1},
-          },
+  const beaconPoints = geometry(gpu, {
+    buffers: [
+      {
+        data: BEACONS,
+        stride: BEACON_FLOATS * 4,
+        stepMode: "instance",
+        attributes: {
+          position: {format: "float32x3", offset: 0, location: 0},
+          phase: {format: "float32", offset: 12, location: 1},
         },
-      ],
-      instanceCount: BEACONS.length / BEACON_FLOATS,
-      label: "swarm-city.beacons",
-    }),
-    vertices: 6,
-    set,
+      },
+    ],
+    instanceCount: BEACONS.length / BEACON_FLOATS,
     label: "swarm-city.beacons",
   })
-  // The agents lie over the city, hidden by what stands in front of them, with soft edges.
-  const flying = {blend: "alpha", depth: {write: false}} as const
   const nodeData = new Float32Array(NODE_DISCS * NODE_FLOATS)
   const nodeGeometry = geometry(gpu, {
     buffers: [
@@ -256,14 +239,6 @@ async function build(
       },
     ],
     instanceCount: NODE_DISCS,
-    label: "swarm-city.nodes",
-  })
-  const nodeDiscs = draw(gpu, {
-    shader: prepareShader(nodeWgsl, "swarm_city_nodes.wgsl"),
-    geometry: nodeGeometry,
-    vertices: 6,
-    set,
-    ...flying,
     label: "swarm-city.nodes",
   })
   const trailData = new Float32Array(TRAIL_PIECES * TRAIL_FLOATS)
@@ -283,17 +258,42 @@ async function build(
     instanceCount: TRAIL_PIECES,
     label: "swarm-city.trails",
   })
-  const trails = draw(gpu, {
-    shader: prepareShader(trailWgsl, "swarm_city_trails.wgsl"),
-    geometry: trailGeometry,
-    vertices: 6,
-    set,
-    ...flying,
-    label: "swarm-city.trails",
-  })
 
-  const sceneDraws = [ground, faces, edges, streets, sky, beacons, trails, nodeDiscs]
-  await Promise.all(sceneDraws.map(each => each.compile(stage)))
+  /** Every draw of one look, ready on the GPU. */
+  const paint = async (id: LookId): Promise<Painting> => {
+    const look = LOOKS[id]
+    const shaders = cityShaders(look)
+    const part = (name: keyof CityShaders) => ({
+      shader: prepareShader(shaders[name], `swarm_city_${id}_${name}.wgsl`),
+      set,
+      label: `swarm-city.${id}.${name}`,
+    })
+    // Glass lets everything behind it show through, and adds its light to theirs.
+    const glass = look.glass ? ({blend: "additive", depth: {write: false}} as const) : {}
+    // The agents lie over the city, hidden by what stands in front of them, with soft edges.
+    const flying = {blend: "alpha", depth: {write: false}} as const
+    const painting: Painting = {
+      backdrop: draw(gpu, {...part("backdrop"), vertices: 3, depth: false}),
+      streets: draw(gpu, {...part("streets"), geometry: streetLines}),
+      faces: draw(gpu, {...part("faces"), geometry: towerFaces, vertices: 30, ...glass}),
+      edges: draw(gpu, {...part("edges"), geometry: towerEdges, vertices: 24, ...glass}),
+      sky: look.sky ? draw(gpu, {...part("sky"), geometry: skyLines}) : null,
+      beacons: look.beacons ? draw(gpu, {...part("beacons"), geometry: beaconPoints, vertices: 6}) : null,
+      trails: draw(gpu, {...part("trails"), geometry: trailGeometry, vertices: 6, ...flying}),
+      nodes: draw(gpu, {...part("nodes"), geometry: nodeGeometry, vertices: 6, ...flying}),
+    }
+    await Promise.all(Object.values(painting).flatMap(each => (each ? [each.compile(stage)] : [])))
+    return painting
+  }
+  // Each look is made the first time it is asked for, and kept.
+  const paintings = new Map<LookId, Promise<Painting>>()
+  const paintingOf = (id: LookId) => {
+    const made = paintings.get(id) ?? paint(id)
+    paintings.set(id, made)
+    return made
+  }
+  let wanted = look
+  let painting = await paintingOf(look)
 
   let nodes: Node[] = []
   let time = STILL_TIME
@@ -397,6 +397,12 @@ async function build(
   }
 
   const renderer: SwarmCityRenderer = {
+    async setLook(id) {
+      wanted = id
+      const next = await paintingOf(id)
+      // A look asked for later, while this one was being made, wins.
+      if (wanted === id) painting = next
+    },
     setAgents(agents) {
       nodes = syncSwarm(nodes, agents)
       colours.clear()
@@ -487,15 +493,15 @@ async function build(
       cityValues.lit = [view.castle, view.forge, view.inn, 0]
       cityUniforms.set(cityValues)
       frame(gpu, current => {
-        current.pass({target: stage, clear: NIGHT}, pass => {
-          pass.draw(ground)
-          pass.draw(faces, {vertices: 30, instances: TOWERS.length})
-          pass.draw(edges, {vertices: 24, instances: TOWERS.length})
-          pass.draw(streets)
-          pass.draw(sky)
-          pass.draw(beacons, {vertices: 6})
-          if (trailCount > 0) pass.draw(trails, {vertices: 6, instances: trailCount})
-          if (nodeCount > 0) pass.draw(nodeDiscs, {vertices: 6, instances: nodeCount})
+        current.pass({target: stage, clear: CLEAR}, pass => {
+          pass.draw(painting.backdrop)
+          pass.draw(painting.streets)
+          pass.draw(painting.faces, {vertices: 30, instances: TOWERS.length})
+          pass.draw(painting.edges, {vertices: 24, instances: TOWERS.length})
+          if (painting.sky) pass.draw(painting.sky)
+          if (painting.beacons) pass.draw(painting.beacons, {vertices: 6})
+          if (trailCount > 0) pass.draw(painting.trails, {vertices: 6, instances: trailCount})
+          if (nodeCount > 0) pass.draw(painting.nodes, {vertices: 6, instances: nodeCount})
         })
       })
     },
@@ -512,22 +518,6 @@ async function build(
 
   cityValues.pixel = Math.max(1, size[1] / 620)
   return renderer
-}
-
-/** A flat square just under the plate, centred on the city, `reach` from its middle to each side. */
-function flatSquare(gpu: Gpu, reach: number, label: string): Geometry {
-  const y = -0.01
-  return geometry(gpu, {
-    buffers: [
-      {
-        data: new Float32Array([-reach, y, -reach, reach, y, -reach, reach, y, reach, -reach, y, reach]),
-        stride: 12,
-        attributes: {position: {format: "float32x3", offset: 0, location: 0}},
-      },
-    ],
-    indices: new Uint16Array([0, 2, 1, 0, 3, 2]),
-    label,
-  })
 }
 
 /** How far along a ray it first meets a tower's box, or Infinity if it misses. */

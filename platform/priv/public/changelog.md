@@ -4,6 +4,10 @@ What changed in Ash Template lately, newest first.
 
 ## 26 October 2026
 
+- **Six looks for the swarm city.** Tabs above the city now show it in six styles:
+  the neon original, a blue blueprint, a pale porcelain model, a night city of lit
+  windows, a sunset with a striped sun, and a see-through hologram. Each look has its own
+  link, and the district pages keep the look you picked.
 - **Swarm city in the Motion Lab.** A new lab page shows a dense city of thin outlined
   towers, about five thousand of them, with three downtowns: the inn, the forge and the
   castle. Each agent is a yellow disc with a small swarm behind it, flying to the

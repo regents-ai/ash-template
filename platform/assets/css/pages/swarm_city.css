@@ -1,13 +1,33 @@
 @layer regents-product {
-/* The swarm city at /animations/swarm-city. The city is lit at night in both
-   themes, so its stage is always dark; the name tag, the district cards and
-   the list under it are the harbour's. */
+/* The swarm city at /animations/swarm-city. Each look keeps its own colours in
+   both themes, so the stage behind the picture takes the look's sky; the name
+   tag, the district cards and the list under it are the harbour's. */
 .swarm-city {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border: 1px solid var(--color-border);
   background: #030208;
+}
+
+.swarm-city[data-swarm-look="blueprint"] {
+  background: #06194a;
+}
+
+.swarm-city[data-swarm-look="porcelain"] {
+  background: #e6e3dc;
+}
+
+.swarm-city[data-swarm-look="lamplight"] {
+  background: #120d0f;
+}
+
+.swarm-city[data-swarm-look="sunset"] {
+  background: #2a0636;
+}
+
+.swarm-city[data-swarm-look="hologram"] {
+  background: #000306;
 }
 
 @media (max-width: 40rem) {
