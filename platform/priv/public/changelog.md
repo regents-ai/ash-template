@@ -4,6 +4,10 @@ What changed in Ash Template lately, newest first.
 
 ## 26 October 2026
 
+- **Five more looks for the swarm city.** Five new styles mix the neon, hologram and
+  porcelain looks: Afterglow (neon colours in glowing glass), Showroom (pale model towers
+  with neon outlines), Glasshouse (tinted glass towers on paper), Opal (white towers with
+  a pearly rainbow sheen) and Obsidian (glossy black towers rimmed in neon).
 - **Six looks for the swarm city.** Tabs above the city now show it in six styles:
   the neon original, a blue blueprint, a pale porcelain model, a night city of lit
   windows, a sunset with a striped sun, and a see-through hologram. Each look has its own

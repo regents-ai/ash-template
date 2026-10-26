@@ -11,6 +11,10 @@ import type {Look} from "./looks"
 
 const f = (value: number) => value.toFixed(3)
 
+/** What a building fades into far away: the haze, or for glass, glass so faint it leaves what is behind it as it is. */
+const CLEAR_GLASS = {glow: "vec3f(0.0)", tint: "vec3f(1.0)"} as const
+const clearOf = (look: Look) => (look.glass ? CLEAR_GLASS[look.glass] : "HAZE")
+
 /** The lens, top to bottom, in degrees. */
 export const FOV = 38
 
@@ -113,6 +117,17 @@ fn distanceFade(p: vec3f) -> f32 {
 
 fn hazed(colour: vec3f, p: vec3f) -> vec3f {
   return mix(HAZE, colour, distanceFade(p));
+}
+
+const CLEAR: vec3f = ${clearOf(look)};
+
+fn buildingFaded(colour: vec3f, p: vec3f) -> vec3f {
+  return mix(CLEAR, colour, distanceFade(p));
+}
+
+// Every colour of the rainbow in turn as t runs from 0 to 1.
+fn rainbow(t: f32) -> vec3f {
+  return 0.5 + 0.5 * cos(6.2832 * (t + vec3f(0.0, 0.33, 0.67)));
 }
 
 // How far each district's light reaches a point on the ground: castle, forge, inn.
@@ -253,7 +268,7 @@ fn vs_main(@builtin(vertex_index) vertex: u32, building: Building) -> FaceVaryin
 @fragment
 fn fs_main(input: FaceVarying) -> @location(0) vec4f {
   let colour = faceColour(Face(input.world, input.normal, input.along, input.quarter, input.shade, input.lit, input.span.x, input.span.y));
-  return vec4f(hazed(colour.rgb, input.world), colour.a);
+  return vec4f(buildingFaded(colour.rgb, input.world), colour.a);
 }
 `
 
@@ -282,7 +297,7 @@ fn vs_main(@builtin(vertex_index) vertex: u32, building: Building) -> EdgeVaryin
   let world = boxPoint(building, EDGES[vertex], 0.0);
   let quarter = u32(building.quarter + 0.5);
   let edge = Edge(world, quarter, building.shade, quarterLit(quarter), building.span.x, building.span.y);
-  output.colour = hazed(edgeColour(edge), world);
+  output.colour = buildingFaded(edgeColour(edge), world);
   output.clip = city.viewProjection * vec4f(world, 1.0);
   return output;
 }

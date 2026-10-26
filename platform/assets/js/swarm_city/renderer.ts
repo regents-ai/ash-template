@@ -8,7 +8,7 @@
  * Each frame is drawn straight to the page, multisampled so the thin lines
  * stay smooth: the sky and ground first, then the streets, then the sides and
  * roofs, so each building hides what stands behind it (unless the look is
- * glass), then every line, then the agents over the top.
+ * glass, which glows or tints), then every line, then the agents over the top.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
 import {draw, frame, geometry, init, surface, uniforms, type Draw, type Gpu} from "vgpu"
@@ -89,6 +89,14 @@ const NODE_DISCS = MAX_AGENTS * (1 + FOLLOWERS)
 const TRAIL_PIECES = MAX_AGENTS * (TRAIL + FOLLOWERS * TAIL_PIECES)
 /** The sky and ground cover every pixel, so the colour the picture is cleared to never shows. */
 const CLEAR: [number, number, number, number] = [0, 0, 0, 1]
+/**
+ * Glass lets everything behind it show through. Glowing glass adds its light to
+ * theirs; tinted glass filters it, the way coloured film darkens the paper under it.
+ */
+const GLASS = {
+  glow: {blend: "additive", depth: {write: false}},
+  tint: {blend: {color: {src: "dst", dst: "zero"}}, depth: {write: false}},
+} as const
 
 /** Every draw of one look. A look without the sky grid or the beacons has none for them. */
 type Painting = {
@@ -268,8 +276,7 @@ async function build(
       set,
       label: `swarm-city.${id}.${name}`,
     })
-    // Glass lets everything behind it show through, and adds its light to theirs.
-    const glass = look.glass ? ({blend: "additive", depth: {write: false}} as const) : {}
+    const glass = look.glass ? GLASS[look.glass] : {}
     // The agents lie over the city, hidden by what stands in front of them, with soft edges.
     const flying = {blend: "alpha", depth: {write: false}} as const
     const painting: Painting = {

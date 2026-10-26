@@ -3766,3 +3766,33 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   in the list keeps the look; a hover tag reads on the light porcelain city; no page
   overflow at 390 and 320 wide, where the tabs wrap to two rows; reduced motion draws
   one still city; `?look=nope` is not found; each still picture is served.
+
+## 2026-10-26 — Five mixed looks for the swarm city
+
+- Five more tabs on `/animations/swarm-city` and its district pages, each mixing Neon,
+  Hologram and Porcelain:
+  - **Afterglow** (`?look=afterglow`): Hologram's glowing glass towers and scan lines in
+    Neon's castle green, forge cyan and inn lime, with a lavender dot floor, blue streets,
+    the red sky grid and yellow agents.
+  - **Showroom** (`?look=showroom`): pale porcelain models at night, lit by one light and
+    darker low down, with Neon's bright outlines, streets, grid and agents.
+  - **Glasshouse** (`?look=glasshouse`): Porcelain's paper with towers of tinted glass that
+    deepen where they are seen edge-on, outlines with a rainbow sheen, an ink dot floor,
+    clay streets and ink agents with rainbow tails.
+  - **Opal**: white porcelain towers with a pearly rainbow sheen that shifts as the city
+    turns, Neon's colours deepened to read on white, blue streets, a pale red sky grid and
+    gold agents.
+  - **Obsidian**: glossy black towers lit by one light, with a glint, a neon rim where seen
+    edge-on and scan lines, dim neon outlines, the red sky grid and white agents.
+- Glass now comes in two kinds (`glass: "glow" | "tint" | null` in
+  `platform/assets/js/swarm_city/looks.ts`): glowing glass adds its light, as before;
+  tinted glass multiplies what is behind it, so a light look can have glass too.
+  Far-off glass fades to clear instead of to the haze. The rainbow helper moved from the
+  hologram look into the shared shader code.
+- Still pictures for the five new looks in
+  `platform/priv/static/images/animations/swarm-city/`.
+- Public changelog: five more looks.
+- Checked headless in Chromium with WebGPU: all 81 look shaders pass `vgpu check`; all 11
+  looks switch in place on one canvas and keep their links; all 30 district pages draw;
+  no console errors; no overflow at 390 and 320 wide, where the tabs wrap to four rows;
+  reduced motion draws; `?look=nope` is not found.

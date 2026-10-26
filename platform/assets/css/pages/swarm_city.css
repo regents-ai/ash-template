@@ -30,6 +30,22 @@
   background: #000306;
 }
 
+.swarm-city[data-swarm-look="showroom"] {
+  background: #05060b;
+}
+
+.swarm-city[data-swarm-look="glasshouse"] {
+  background: #e9e6df;
+}
+
+.swarm-city[data-swarm-look="opal"] {
+  background: #e4e5ec;
+}
+
+.swarm-city[data-swarm-look="obsidian"] {
+  background: #030306;
+}
+
 @media (max-width: 40rem) {
   .swarm-city {
     aspect-ratio: 5 / 4;

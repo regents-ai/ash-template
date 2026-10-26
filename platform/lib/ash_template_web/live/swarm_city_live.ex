@@ -33,7 +33,12 @@ defmodule AshTemplateWeb.SwarmCityLive do
     %{id: "porcelain", name: "Porcelain"},
     %{id: "lamplight", name: "Lamplight"},
     %{id: "sunset", name: "Sunset"},
-    %{id: "hologram", name: "Hologram"}
+    %{id: "hologram", name: "Hologram"},
+    %{id: "afterglow", name: "Afterglow"},
+    %{id: "showroom", name: "Showroom"},
+    %{id: "glasshouse", name: "Glasshouse"},
+    %{id: "opal", name: "Opal"},
+    %{id: "obsidian", name: "Obsidian"}
   ]
   @looks_by_id Map.new(@looks, &{&1.id, &1})
   @first_look hd(@looks)
