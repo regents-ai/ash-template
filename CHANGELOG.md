@@ -3681,3 +3681,40 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   repository's documentation and its existing code disagree, follow the conventions used in
   the existing code, and point out each inconsistency in the final reply. Skills only; it
   reaches agents through the served skills at the next release.
+
+## 2026-10-26 — Swarm city in the motion lab
+
+- `/animations/swarm-city`: a new take on the agent harbour, drawn live in 3D in the style
+  of a wireframe city. A square plate holds about five thousand buildings, each a dark box
+  outlined by a hair-thin line: three downtowns of thin towers (the castle green, the forge
+  cyan, the inn lime) rise out of a dense low city outlined in lavender. Blue streets cut
+  the plate into irregular blocks, six avenues run out from a central plaza, yellow beacons
+  mark the rim, the corners and the avenues, and a red sky grid hangs over the downtowns
+  with lines dropped to the roofs and a curtain to the ground; the castle's needle pierces
+  it. Each agent is a flat yellow disc ringed in its own colour, trailing a thin yellow tail
+  and a small swarm of discs with tails of their own; it circles the towers of the district
+  of its last action and climbs over the roofs to cross the city when it acts somewhere
+  new. A drag turns the city; a mouse over a disc names its agent, over a district shows a
+  card with its link; pressing a disc opens the agent's card.
+- `/animations/swarm-city/inn`, `/forge` and `/castle`: the camera flies to that district
+  and lights it.
+- The city comes from a fixed seed (`platform/assets/js/swarm_city/city.ts`): the plate is
+  cut into blocks and each block into lots, downtown lots small and tall, with setbacks
+  and rooftop boxes, so every visitor sees the same city.
+- The harbour and the swarm city now share one sample crew and agent card,
+  `AshTemplateWeb.SampleCrew` (`platform/lib/ash_template_web/sample_crew.ex`); the harbour
+  page itself is unchanged.
+- The city is a vgpu canvas island (`platform/assets/js/hooks/swarm_city.ts`, drawing in
+  `platform/assets/js/swarm_city/`), drawn straight to the page with multisampling: each
+  building is one record drawn twice, as dark sides and roof that hide what stands behind
+  them and as twelve edge lines. Anime.js eases the camera and each district's light. A
+  visitor who asked for less motion gets one composed still city, still turned by a drag;
+  a browser that cannot draw it shows `priv/static/images/animations/swarm-city.webp`.
+- `/animations/wonders` and the four swarm city pages join the showcase list in
+  `public_documents.ex`, which the wonders page had been missing.
+- Public changelog: swarm city in the Motion Lab.
+- Checked headless in Chromium with WebGPU: the city draws, hovering finds all six agents
+  and all three districts, pressing an agent opens its card and Escape closes it, a drag
+  turns the city, each district page flies the camera there, an agent that acts crosses
+  to its new district, no page overflow at 1280, 390 and 320 wide, reduced motion keeps
+  one still city, and without WebGPU the still picture shows.

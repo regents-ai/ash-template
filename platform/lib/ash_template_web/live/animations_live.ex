@@ -271,6 +271,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/header-footer"}>Header and footer</.link>
           / <.link navigate={~p"/animations/harbour"}>Agent harbour</.link>
           / <.link navigate={~p"/animations/wonders"}>Ten wonders</.link>
+          / <.link navigate={~p"/animations/swarm-city"}>Swarm city</.link>
         </nav>
         <div :if={@lab_tab != "palettes"} class="motion-lab__row">
           <P.button

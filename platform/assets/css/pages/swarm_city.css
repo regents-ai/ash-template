@@ -1,0 +1,55 @@
+@layer regents-product {
+/* The swarm city at /animations/swarm-city. The city is lit at night in both
+   themes, so its stage is always dark; the name tag, the district cards and
+   the list under it are the harbour's. */
+.swarm-city {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #030208;
+}
+
+@media (max-width: 40rem) {
+  .swarm-city {
+    aspect-ratio: 5 / 4;
+  }
+}
+
+.swarm-city__stage,
+.swarm-city canvas,
+.swarm-city__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* A drag across the city turns it; a drag up or down still scrolls the page. */
+.swarm-city canvas {
+  display: block;
+  visibility: hidden;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.swarm-city__stage[data-swarm-dragging] canvas {
+  cursor: grabbing;
+}
+
+.swarm-city__still {
+  object-fit: cover;
+}
+
+.swarm-city__stage {
+  color: var(--color-fg);
+}
+
+.swarm-city[data-swarm-ready="true"] canvas {
+  visibility: visible;
+}
+
+.swarm-city[data-swarm-ready="true"] .swarm-city__still {
+  display: none;
+}
+}

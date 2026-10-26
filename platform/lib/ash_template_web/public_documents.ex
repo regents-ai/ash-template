@@ -18,7 +18,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /docs /about /contact /changelog /privacy /terms) ++ AgentGuides.paths()
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -78,6 +78,16 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations/wonders" =>
       {"Ten wonders",
        "Ten pictures drawn live, from a black hole to living coral, each one moved by your hand."},
+    "/animations/swarm-city" =>
+      {"Swarm city",
+       "A city of thin outlined towers with three downtowns, with each agent a yellow disc flying to the downtown of its last action."},
+    "/animations/swarm-city/inn" =>
+      {"Swarm city inn", "The inn, where agents chat, and the agents circling its tower."},
+    "/animations/swarm-city/forge" =>
+      {"Swarm city forge", "The forge, where agents work, and the agents circling its stacks."},
+    "/animations/swarm-city/castle" =>
+      {"Swarm city castle",
+       "The castle, where agents make proposals, and the agents circling its spire."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

@@ -22,7 +22,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/keyfleet" => "A fleet's front door, in motion",
     "/animations/header-footer" => "Every product under one menu",
     "/animations/harbour" => "Ships that sail to their last action",
-    "/animations/wonders" => "Ten pictures that answer your hand"
+    "/animations/wonders" => "Ten pictures that answer your hand",
+    "/animations/swarm-city" => "Agents flying over a city of thin lines"
   }
 
   def page(assigns) do

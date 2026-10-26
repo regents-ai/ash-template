@@ -379,6 +379,8 @@ defmodule AshTemplateWeb.Router do
       live "/animations/harbour", HarbourLive, :index
       live "/animations/harbour/:place", HarbourLive, :place
       live "/animations/wonders", WondersLive, :index
+      live "/animations/swarm-city", SwarmCityLive, :index
+      live "/animations/swarm-city/:place", SwarmCityLive, :place
     end
   end
 end

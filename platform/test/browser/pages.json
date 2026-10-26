@@ -52,6 +52,8 @@
     {"route": "/animations/harbour", "purpose": "Watch the agents sail between the harbour's islands.", "check": "role=img[name=\"The agent harbour\"]"},
     {"route": "/animations/harbour/:place", "paths": ["/animations/harbour/inn", "/animations/harbour/forge", "/animations/harbour/castle"], "purpose": "See one island of the harbour and who is there.", "check": "role=list[name=\"Islands\"]"},
     {"route": "/animations/wonders", "purpose": "Play with the ten wonders.", "check": "#wonder-horizon"},
+    {"route": "/animations/swarm-city", "purpose": "Watch the agents fly between the city's districts.", "check": "role=img[name=\"The swarm city\"]"},
+    {"route": "/animations/swarm-city/:place", "paths": ["/animations/swarm-city/inn", "/animations/swarm-city/forge", "/animations/swarm-city/castle"], "purpose": "See one district of the city and who is there.", "check": "role=list[name=\"Districts\"]"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

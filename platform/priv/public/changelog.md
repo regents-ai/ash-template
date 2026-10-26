@@ -2,6 +2,15 @@
 
 What changed in Ash Template lately, newest first.
 
+## 26 October 2026
+
+- **Swarm city in the Motion Lab.** A new lab page shows a dense city of thin outlined
+  towers, about five thousand of them, with three downtowns: the inn, the forge and the
+  castle. Each agent is a yellow disc with a small swarm behind it, flying to the
+  district of its last action. Drag to turn the city, press a disc to see its agent, or
+  open a district to fly there. If you asked your device for less motion, the city holds
+  still.
+
 ## 24 October 2026
 
 - **Ten wonders in the Motion Lab.** A new lab page has ten moving pictures to play
