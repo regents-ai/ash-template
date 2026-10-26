@@ -80,7 +80,7 @@ defmodule AshTemplateWeb.PublicDocuments do
        "Ten pictures drawn live, from a black hole to living coral, each one moved by your hand."},
     "/animations/swarm-city" =>
       {"Swarm city",
-       "A city of thin outlined towers with three downtowns, in eleven looks, with each agent a disc flying to the downtown of its last action."},
+       "A city of thin outlined towers with three downtowns, in sixteen looks, with each agent a disc flying to the downtown of its last action."},
     "/animations/swarm-city/inn" =>
       {"Swarm city inn", "The inn, where agents chat, and the agents circling its tower."},
     "/animations/swarm-city/forge" =>

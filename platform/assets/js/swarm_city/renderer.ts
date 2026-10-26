@@ -17,7 +17,7 @@ import {orbitRig, perspective, rigPose, viewMatrices, type CameraMatrices, type 
 import type {IslandRenderer} from "../canvas_island"
 import {CROWNS, DISTRICTS, PLACE_ORDER, TOWERS, type Place} from "./city"
 import {BEACON_FLOATS, BEACONS, SKY_FLOATS, SKY_LINES, STREET_FLOATS, STREET_LINES, TOWER_FLOATS, TOWER_RECORDS} from "./meshes"
-import {LOOKS, type LookId} from "./looks"
+import {LOOKS, type Look, type LookId, type Theme} from "./looks"
 import {FOV, cityShaders, type CityShaders} from "./shaders"
 import {FOLLOWERS, MAX_AGENTS, TRAIL, followerAt, parkSwarm, stepSwarm, syncSwarm, type Agent, type Node} from "./swarm"
 
@@ -49,8 +49,8 @@ export type DistrictMark = {
 }
 
 export type SwarmCityRenderer = IslandRenderer & {
-  /** Paints the city in another look, once that look is ready on the GPU. */
-  setLook(look: LookId): Promise<void>
+  /** Paints the city in another look, or the same look for the other theme, once it is ready on the GPU. */
+  setLook(look: LookId, theme: Theme): Promise<void>
   setAgents(agents: readonly Agent[]): void
   /** A visitor who asked for less motion gets one composed, unmoving city. */
   setCalm(calm: boolean): void
@@ -116,6 +116,7 @@ export async function createSwarmCityRenderer(
   onDeviceLost: () => void,
   view: CityView,
   look: LookId,
+  theme: Theme,
 ): Promise<SwarmCityRenderer> {
   const gpu = await init()
   let disposed = false
@@ -125,7 +126,7 @@ export async function createSwarmCityRenderer(
     if (!disposed) onDeviceLost()
   })
   try {
-    return await build(gpu, canvas, size, view, look, () => disposed, () => void (disposed = true))
+    return await build(gpu, canvas, size, view, look, theme, () => disposed, () => void (disposed = true))
   } catch (error) {
     disposed = true
     gpu.dispose()
@@ -139,6 +140,7 @@ async function build(
   size: readonly [number, number],
   view: CityView,
   look: LookId,
+  theme: Theme,
   isDisposed: () => boolean,
   markDisposed: () => void,
 ): Promise<SwarmCityRenderer> {
@@ -267,14 +269,13 @@ async function build(
     label: "swarm-city.trails",
   })
 
-  /** Every draw of one look, ready on the GPU. */
-  const paint = async (id: LookId): Promise<Painting> => {
-    const look = LOOKS[id]
+  /** Every draw of one look in one theme, ready on the GPU. */
+  const paint = async (look: Look, theme: Theme): Promise<Painting> => {
     const shaders = cityShaders(look)
     const part = (name: keyof CityShaders) => ({
-      shader: prepareShader(shaders[name], `swarm_city_${id}_${name}.wgsl`),
+      shader: prepareShader(shaders[name], `swarm_city_${look.id}_${theme}_${name}.wgsl`),
       set,
-      label: `swarm-city.${id}.${name}`,
+      label: `swarm-city.${look.id}.${theme}.${name}`,
     })
     const glass = look.glass ? GLASS[look.glass] : {}
     // The agents lie over the city, hidden by what stands in front of them, with soft edges.
@@ -292,15 +293,15 @@ async function build(
     await Promise.all(Object.values(painting).flatMap(each => (each ? [each.compile(stage)] : [])))
     return painting
   }
-  // Each look is made the first time it is asked for, and kept.
-  const paintings = new Map<LookId, Promise<Painting>>()
-  const paintingOf = (id: LookId) => {
-    const made = paintings.get(id) ?? paint(id)
-    paintings.set(id, made)
+  // Each look is made the first time it is asked for, and kept; a look the same in both themes is made once.
+  const paintings = new Map<Look, Promise<Painting>>()
+  const paintingOf = (look: Look, theme: Theme) => {
+    const made = paintings.get(look) ?? paint(look, theme)
+    paintings.set(look, made)
     return made
   }
-  let wanted = look
-  let painting = await paintingOf(look)
+  let wanted = LOOKS[look][theme]
+  let painting = await paintingOf(wanted, theme)
 
   let nodes: Node[] = []
   let time = STILL_TIME
@@ -404,11 +405,12 @@ async function build(
   }
 
   const renderer: SwarmCityRenderer = {
-    async setLook(id) {
-      wanted = id
-      const next = await paintingOf(id)
+    async setLook(id, theme) {
+      const look = LOOKS[id][theme]
+      wanted = look
+      const next = await paintingOf(look, theme)
       // A look asked for later, while this one was being made, wins.
-      if (wanted === id) painting = next
+      if (wanted === look) painting = next
     },
     setAgents(agents) {
       nodes = syncSwarm(nodes, agents)

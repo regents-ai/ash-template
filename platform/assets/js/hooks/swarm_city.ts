@@ -2,7 +2,7 @@ import {animate, createScope, utils, type Scope} from "animejs"
 
 import {createCanvasIsland, type CanvasIslandController, type LoadRenderer} from "../canvas_island"
 import type {Place} from "../swarm_city/city"
-import type {LookId} from "../swarm_city/looks"
+import type {LookId, Theme} from "../swarm_city/looks"
 import type {CityView, Framing, SwarmCityRenderer} from "../swarm_city/renderer"
 import type {Agent} from "../swarm_city/swarm"
 
@@ -12,6 +12,11 @@ type CrewMember = Agent & {readonly name: string}
 const crewOf = (root: HTMLElement): CrewMember[] => JSON.parse(root.dataset.swarmCrew!) as CrewMember[]
 const focusOf = (root: HTMLElement): Place | null => (root.dataset.swarmFocus || null) as Place | null
 const lookOf = (root: HTMLElement): LookId => root.dataset.swarmLook as LookId
+/** Dark unless the page or the device asks for light, the same reading as the theme switch. */
+const themeOf = (light: MediaQueryList): Theme => {
+  const theme = document.documentElement.dataset.theme
+  return theme === "light" || theme === "dark" ? theme : light.matches ? "light" : "dark"
+}
 
 const PLACES: readonly Place[] = ["castle", "forge", "inn"]
 
@@ -62,13 +67,15 @@ type SwarmCityHook = {
  * name, and over a district shows a card with the link to the district's page.
  * Pressing a disc opens its agent's card; pressing a district follows its link.
  * On a district's page the camera flies to that district and lights it. Another
- * look repaints the city where it stands, without starting it again.
+ * look, or the page turning light or dark, repaints the city where it stands,
+ * without starting it again.
  */
 export const SwarmCity = {
   mounted(this: SwarmCityHook) {
     const root = this.el
     const view: CityView = {...OVERVIEW, castle: 0, forge: 0, inn: 0}
     const calm = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const light = window.matchMedia("(prefers-color-scheme: light)")
     const stage = root.querySelector<HTMLElement>("[data-swarm-stage]")!
     const canvas = root.querySelector<HTMLCanvasElement>("[data-swarm-canvas]")!
     const tag = root.querySelector<HTMLElement>("[data-swarm-tag]")!
@@ -81,6 +88,7 @@ export const SwarmCity = {
     let crew = crewOf(root)
     let focus = focusOf(root)
     let look = lookOf(root)
+    let theme = themeOf(light)
     let hovered: Place | null = null
     let city: SwarmCityRenderer | undefined
     let nudge = () => {}
@@ -246,10 +254,17 @@ export const SwarmCity = {
       city?.setCalm(calm.matches)
       nudge()
     }
+    const onThemeChange = () => {
+      const next = themeOf(light)
+      if (next === theme) return
+      theme = next
+      void city?.setLook(look, theme).then(() => nudge())
+    }
+    const themeObserver = new MutationObserver(onThemeChange)
 
     const load: LoadRenderer<SwarmCityRenderer> = async (canvas, size, onDeviceLost) => {
       const {createSwarmCityRenderer} = await import("../swarm_city/renderer")
-      return createSwarmCityRenderer(canvas, size, onDeviceLost, view, look)
+      return createSwarmCityRenderer(canvas, size, onDeviceLost, view, look, theme)
     }
 
     this.island = createCanvasIsland<SwarmCityRenderer>(root, {}, {
@@ -264,14 +279,16 @@ export const SwarmCity = {
           city = island.renderer()!
           city.setCalm(calm.matches)
           city.setAgents(crew)
-          // The look may have changed while the city was loading.
-          void city.setLook(look).then(() => nudge())
+          // The look or the theme may have changed while the city was loading.
+          void city.setLook(look, theme).then(() => nudge())
           // The first frame already stands where the page asks.
           utils.remove(view)
           Object.assign(view, framingOf(focus))
           for (const place of PLACES) view[place] = place === focus ? 1 : 0
         })
         calm.addEventListener("change", onCalmChange)
+        light.addEventListener("change", onThemeChange)
+        themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]})
         canvas.addEventListener("pointerdown", onPointerDown)
         stage.addEventListener("pointermove", onPointerMove)
         canvas.addEventListener("pointerup", onPointerUp)
@@ -283,6 +300,8 @@ export const SwarmCity = {
           city = undefined
           drag = undefined
           calm.removeEventListener("change", onCalmChange)
+          light.removeEventListener("change", onThemeChange)
+          themeObserver.disconnect()
           hideTag()
           hideCards()
           canvas.removeEventListener("pointerdown", onPointerDown)
@@ -303,7 +322,7 @@ export const SwarmCity = {
         look = nextLook
         // The district cards stand in the picture, which the page leaves alone, so they learn the look here.
         for (const link of cards.values()) link.search = root.dataset.swarmQuery!
-        void city?.setLook(look).then(() => nudge())
+        void city?.setLook(look, theme).then(() => nudge())
       }
       const next = focusOf(root)
       if (next !== focus) {

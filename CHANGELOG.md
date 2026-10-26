@@ -3861,3 +3861,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   the visit in `x-regent-visit`. Found by the Autolaunch port of visit lines.
 - Checks: a unit test for the header, cookie and neither cases, and a browser walk check
   that the agent tools list's reads land in the page's visit.
+
+## 2026-10-26 — Glass looks in brand colours, light and dark
+
+- Added five glass looks to the swarm city (`?look=regent`, `tangerine`, `powder`,
+  `smoke`, `cobalt`), versions of Glasshouse in the design system's colours with no
+  rainbow: tangerine, charcoal, platinum and powder blue, and Patchbay's cobalt palette.
+- Each follows the page's theme: tinted glass on the light page ground (`#F6F4EA`),
+  glowing glass on the dark one (`#0B0B0B`). The theme switch and the device's setting
+  repaint the city in place; a still picture for each theme shows before it draws.
+- `LOOKS` now holds each look for both themes (`ThemedLook`); the renderer's `setLook`
+  takes the look and the theme, and keeps one painting for a look that is the same in both.

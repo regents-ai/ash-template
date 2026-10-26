@@ -4,6 +4,11 @@ What changed in Ash Template lately, newest first.
 
 ## 26 October 2026
 
+- **Five glass looks in Regent colours.** New versions of Glasshouse use only the
+  brand's colours instead of a rainbow: Regent glass (all four colours), Tangerine glass,
+  Powder glass, Smoke glass (charcoal and platinum with tangerine agents) and Cobalt glass
+  (Patchbay's blues). Each one follows your light or dark setting: tinted glass on paper
+  when the site is light, glowing glass on charcoal when it is dark.
 - **Five more looks for the swarm city.** Five new styles mix the neon, hologram and
   porcelain looks: Afterglow (neon colours in glowing glass), Showroom (pale model towers
   with neon outlines), Glasshouse (tinted glass towers on paper), Opal (white towers with

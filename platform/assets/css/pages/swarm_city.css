@@ -46,6 +46,28 @@
   background: #030306;
 }
 
+/* The glass looks follow the page's theme, on the page's own ground. */
+.swarm-city[data-swarm-look="regent"],
+.swarm-city[data-swarm-look="tangerine"],
+.swarm-city[data-swarm-look="powder"],
+.swarm-city[data-swarm-look="smoke"] {
+  background: var(--color-bg);
+}
+
+.swarm-city[data-swarm-look="cobalt"] {
+  background: #111726;
+}
+
+:root[data-theme="light"] .swarm-city[data-swarm-look="cobalt"] {
+  background: #f6f7fa;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .swarm-city[data-swarm-look="cobalt"] {
+    background: #f6f7fa;
+  }
+}
+
 @media (max-width: 40rem) {
   .swarm-city {
     aspect-ratio: 5 / 4;
@@ -75,6 +97,26 @@
 
 .swarm-city__still {
   object-fit: cover;
+}
+
+/* A glass look's still picture for the theme showing. */
+.swarm-city__still--light,
+:root[data-theme="light"] .swarm-city__still--dark {
+  display: none;
+}
+
+:root[data-theme="light"] .swarm-city__still--light {
+  display: block;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .swarm-city__still--light {
+    display: block;
+  }
+
+  :root:not([data-theme]) .swarm-city__still--dark {
+    display: none;
+  }
 }
 
 .swarm-city__stage {

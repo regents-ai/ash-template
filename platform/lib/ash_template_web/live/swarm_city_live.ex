@@ -19,7 +19,8 @@ defmodule AshTemplateWeb.SwarmCityLive do
 
   The city comes in several looks, each with its own colours and way of
   drawing it; `?look=` names one, and the first needs no name. Changing the look
-  repaints the city where it stands.
+  repaints the city where it stands. The glass looks follow the page's theme,
+  light or dark.
   """
 
   use AshTemplateWeb, :live_view
@@ -27,18 +28,24 @@ defmodule AshTemplateWeb.SwarmCityLive do
   alias AshTemplateWeb.{NotFoundError, PublicDocuments, SampleCrew}
   alias Phoenix.LiveView.JS
 
+  # A themed look paints the city one way while the page is light and another while it is dark.
   @looks [
-    %{id: "neon", name: "Neon"},
-    %{id: "blueprint", name: "Blueprint"},
-    %{id: "porcelain", name: "Porcelain"},
-    %{id: "lamplight", name: "Lamplight"},
-    %{id: "sunset", name: "Sunset"},
-    %{id: "hologram", name: "Hologram"},
-    %{id: "afterglow", name: "Afterglow"},
-    %{id: "showroom", name: "Showroom"},
-    %{id: "glasshouse", name: "Glasshouse"},
-    %{id: "opal", name: "Opal"},
-    %{id: "obsidian", name: "Obsidian"}
+    %{id: "neon", name: "Neon", themed: false},
+    %{id: "blueprint", name: "Blueprint", themed: false},
+    %{id: "porcelain", name: "Porcelain", themed: false},
+    %{id: "lamplight", name: "Lamplight", themed: false},
+    %{id: "sunset", name: "Sunset", themed: false},
+    %{id: "hologram", name: "Hologram", themed: false},
+    %{id: "afterglow", name: "Afterglow", themed: false},
+    %{id: "showroom", name: "Showroom", themed: false},
+    %{id: "glasshouse", name: "Glasshouse", themed: false},
+    %{id: "opal", name: "Opal", themed: false},
+    %{id: "obsidian", name: "Obsidian", themed: false},
+    %{id: "regent", name: "Regent glass", themed: true},
+    %{id: "tangerine", name: "Tangerine glass", themed: true},
+    %{id: "powder", name: "Powder glass", themed: true},
+    %{id: "smoke", name: "Smoke glass", themed: true},
+    %{id: "cobalt", name: "Cobalt glass", themed: true}
   ]
   @looks_by_id Map.new(@looks, &{&1.id, &1})
   @first_look hd(@looks)
@@ -79,6 +86,12 @@ defmodule AshTemplateWeb.SwarmCityLive do
 
   defp city_path(place, look, query),
     do: ~p"/animations/swarm-city/#{place.id}?#{look_query(look) ++ query}"
+
+  # The picture shown before the city draws: one for each theme of a themed look.
+  defp stills(%{themed: true, id: id}),
+    do: for(theme <- ~w(light dark), do: %{theme: theme, file: "#{id}-#{theme}.webp"})
+
+  defp stills(%{id: id}), do: [%{theme: nil, file: "#{id}.webp"}]
 
   defp look_query(@first_look), do: []
   defp look_query(look), do: [look: look.id]
@@ -155,8 +168,9 @@ defmodule AshTemplateWeb.SwarmCityLive do
         aria-label="The swarm city"
       >
         <img
-          class="swarm-city__still"
-          src={~p"/images/animations/swarm-city/#{@look.id <> ".webp"}"}
+          :for={still <- stills(@look)}
+          class={["swarm-city__still", still.theme && "swarm-city__still--#{still.theme}"]}
+          src={~p"/images/animations/swarm-city/#{still.file}"}
           width="1280"
           height="720"
           alt=""

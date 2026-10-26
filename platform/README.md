@@ -167,7 +167,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the ten wonders `/animations/wonders`, the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`, and the swarm city `/animations/swarm-city` and its district pages `/animations/swarm-city/inn`, `/animations/swarm-city/forge` and `/animations/swarm-city/castle`, each in eleven looks chosen by `?look=`) and the build
+wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the ten wonders `/animations/wonders`, the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`, and the swarm city `/animations/swarm-city` and its district pages `/animations/swarm-city/inn`, `/animations/swarm-city/forge` and `/animations/swarm-city/castle`, each in sixteen looks chosen by `?look=`, five of which follow the light or dark theme) and the build
 skills (`/skills`, the agent guide `/skill.md` and
 `/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
 which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:
