@@ -3718,3 +3718,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   turns the city, each district page flies the camera there, an agent that acts crosses
   to its new district, no page overflow at 1280, 390 and 320 wide, reduced motion keeps
   one still city, and without WebGPU the still picture shows.
+
+## 2026-10-26 — Bandit 1.14.0 and Ash 3.37.2
+
+- Bandit 1.13.1 had eleven published advisories, nine high (HTTP/2 flow control and HPACK
+  sizes, 1-byte chunked bodies, chunk extension smuggling, Content-Length parsing, WebSocket
+  fragments); 1.14.0 fixes them. Ash 3.37.2 fixes a through relationship with a limit of 1
+  returning unrelated records, and a multitenancy upsert advisory. `platform/mix.exs` now asks
+  for `~> 1.14` and `~> 3.37`, and `security/required-fixes.json` requires `>= 1.14.0` and
+  `>= 3.37.2`, so every site's check names the move.
+- ash_postgres stays at 2.13.0. 2.15.2 still writes upserts without the Repo's default prefix:
+  an `EnsIdentity` upsert went to an unqualified table and failed, and 2.13.0 with Ash 3.37.2
+  wrote one row in `ash_template_app`. Its two advisories (EEF-CVE-2026-115635, -115627) need
+  attribute multitenancy, which no Regent resource uses, but `mix hex.audit` still names them.

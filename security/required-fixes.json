@@ -26,6 +26,20 @@
   ],
   "fixes": [
     {
+      "id": "EEF-CVE-2026-108525",
+      "summary": "Bandit before 1.14.0 had eleven advisories (nine high): HTTP/2 flow control, HPACK table and cookie sizes, SETTINGS and WINDOW_UPDATE work, stream error recovery, 1-byte chunked bodies, chunk extension smuggling, Content-Length and Host parsing, and WebSocket fragments and frames after close.",
+      "kind": "hex",
+      "package": "bandit",
+      "requirement": ">= 1.14.0"
+    },
+    {
+      "id": "EEF-CVE-2026-114214",
+      "summary": "Ash before 3.37.1 ignored the through path when loading a through relationship with a limit of 1, returning unrelated records; before 3.37.2 an upsert on the primary key ignored attribute multitenancy (EEF-CVE-2026-96581).",
+      "kind": "hex",
+      "package": "ash",
+      "requirement": ">= 3.37.2"
+    },
+    {
       "id": "EEF-CVE-2026-105659",
       "summary": "Bandit HTTP/2 blocked sends could be kept alive indefinitely with tiny WINDOW_UPDATE or empty SETTINGS frames, until the progress-based deadline fix released in 1.13.0.",
       "kind": "hex",
@@ -83,7 +97,7 @@
     },
     {
       "id": "2026-10-06-ash-postgres-upsert-schema",
-      "summary": "ash_postgres 2.13.1 through at least 2.15.1 (checked 21 Oct 2026) writes upserts into the resource's own schema setting only and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release is shown to keep the Repo prefix; take it together with the Ash 3.34.3 move.",
+      "summary": "ash_postgres 2.13.1 through at least 2.15.2 (checked 26 Oct 2026) writes upserts as its own SQL with only the resource's schema or tenant as the prefix and ignores the Repo's default prefix, which is how every Regent site picks its schema in the shared production database, so upserts land in public. Stay on 2.13.0 until a release keeps the Repo prefix. 2.15.2 also fixes EEF-CVE-2026-115635 and EEF-CVE-2026-115627, which need attribute multitenancy; no Regent resource uses multitenancy.",
       "kind": "hex",
       "package": "ash_postgres",
       "requirement": "== 2.13.0"
