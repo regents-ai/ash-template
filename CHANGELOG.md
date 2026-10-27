@@ -4393,3 +4393,20 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   address also gains a full form, every character and wrapping, for an address a person
   must check, and a compact form, the words and the copy icon only, for beside a small
   control in a narrow row. No template page uses those two yet.
+
+## 2026-10-27 — Released v119 and v120: own agent keys, the right agent under each code, addresses in their own letters
+
+- Fly v119, image 2933931, live 23:50Z; rollback v118 (e8ed190). Carries e6e100b (elixir-utils
+  7794682: own agent keys, Grok Bot's key in /workspace, check-ins stop missing notifications,
+  amounts of any size, the pairing box names the agent each code paired) and 2933931 (the
+  visits walk waits for the page's line). No migrations.
+- Fly v120, image 7de32ab, live 23:55Z; rollback v119 (2933931). Carries 7de32ab (design-system
+  804c752: addresses keep their own letters; full and compact forms). No migrations.
+- Ordinary work, shipped under AUTONOMY-RULE a, under the shared release lock after reading
+  that no release was running.
+- Before: full check on 2933931's tree and on 7de32ab's tree: 94 ExUnit (9 properties), 24 JS,
+  299 browser steps passed, 3 skipped, at 1280 and 390 (Chromium; WebKit not run on the Mac).
+- After, headless on template.regents.sh: `/capabilities.json` reports each commit in turn; the
+  home page, Account, Notes and llms.txt answer 200 at 1280 and 390 with no page errors and no
+  sideways scroll; Grok Bot's skill and the pairing line both name `/workspace/.siwa-agent`;
+  the live stylesheet carries the address letter reset; the health check passes.
