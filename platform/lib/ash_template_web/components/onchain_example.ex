@@ -281,8 +281,5 @@ defmodule AshTemplateWeb.OnchainExample do
   defp balance(nil), do: "reading balance"
   defp balance(:unread), do: "balance unavailable right now"
 
-  defp balance(wei) do
-    eth = wei |> Decimal.new() |> Decimal.div(Decimal.new(1_000_000_000_000_000_000))
-    "#{eth |> Decimal.normalize() |> Decimal.to_string(:normal)} ETH"
-  end
+  defp balance(wei), do: "#{RegentFormat.token_amount(wei, 18)} ETH"
 end

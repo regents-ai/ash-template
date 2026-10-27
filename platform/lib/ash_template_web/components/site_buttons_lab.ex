@@ -16,7 +16,7 @@ defmodule AshTemplateWeb.SiteButtonsLab do
       domain: "regents.sh",
       label: "Stake REGENT",
       place: "Staking page · Manage your stake",
-      context: "Available 1,250.0 REGENT",
+      context: "Available 1,250.00 REGENT",
       waiting: %{
         today: ["Sign tx in wallet", "Confirming"],
         motion: ["Sign tx in wallet", "Confirming"]

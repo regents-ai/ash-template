@@ -4139,3 +4139,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Proven on the template's machine with this commit's own settings: through the
   pooler a query and a transaction lock succeed, and the listening connection on the
   direct address hears a notice.
+
+## 2026-10-27 — Amounts shown the one Regent way
+
+- elixir-utils 78f92d5 (RegentFormat 4187ef2, Points and Credits c6b520c, Anthropic
+  error message 78f92d5). Sean: at 1 and above, the number with exactly 2 decimals;
+  below 1, 3 significant digits; digits are cut, never rounded up.
+- The Credits window's USDC balance, the Credits admin page's amounts and the
+  example wallet's ETH balance use `RegentFormat`; the showcase's sample figures read
+  "1,250.00". Amounts people type and on-chain titles stay exact.

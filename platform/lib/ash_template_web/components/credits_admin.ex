@@ -220,11 +220,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
 
   defp sent_on(purchase), do: Calendar.strftime(purchase.inserted_at, "%d %b %Y %H:%M UTC")
 
-  # USDC to the millionth, as exact as it was paid: "5.00", "4.123456".
-  defp usdc(amount) do
-    places = max(-Decimal.normalize(amount).exp, 2)
-    amount |> Decimal.round(places) |> Decimal.to_string(:normal)
-  end
+  defp usdc(amount), do: RegentFormat.amount(amount)
 
   defp chain_name(:base), do: "Base"
   defp chain_name(:ethereum), do: "Ethereum"

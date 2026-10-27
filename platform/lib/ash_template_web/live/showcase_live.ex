@@ -11,7 +11,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
   # and what it holds. A zero balance is a real reading, unlike a failed one.
   @fixture_wallets [
     {"slow",
-     %{label: "Slow wallet", delay: 3_000, holdings: [{"REGENT", "1,250"}, {"USDC", "40.00"}]}},
+     %{label: "Slow wallet", delay: 3_000, holdings: [{"REGENT", "1,250.00"}, {"USDC", "40.00"}]}},
     {"quick", %{label: "Quick wallet", delay: 400, holdings: [{"REGENT", "0"}]}},
     {"new", %{label: "New wallet", delay: 800, holdings: []}}
   ]
