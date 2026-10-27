@@ -76,6 +76,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Report in someone's room message menu opens the four reasons in its place; choosing one closes both and thanks the reader, and the reader's own message offers no Report, at both widths | `platform/test/browser/reports.spec.ts` |
 | A sent Buy is followed by one job however often the page asks; however often it runs the purchase is credited once and the panel hears how it ended | `platform/test/ash_template/credits/check_purchase_test.exs` |
 | Credits history read again after a change keeps the older pages already shown, newest first with nothing twice; when the new first page no longer reaches them, only the new first page shows | `platform/test/ash_template_web/credits_history_refresh_test.exs` (property test) |
+| A Buy pressed before its steps reached the page is never handed to the wallet when the fresh build finds it certain to fail (too little USDC, or no approval on the chain yet); a Buy that may go through, and an approval, are handed over | `platform/test/ash_template_web/credits_press_test.exs` (property test) |
 | A saved note's webhook the address never answers fails as a server fault, so the job that runs out of attempts shows on the error page | `platform/test/ash_template/notes/webhook_failure_test.exs` |
 | A person's agents' notes earn the first-note Points once, in one entry, written at once or one after another; the Points answer names the agent that earned it | `platform/test/ash_template/points/first_agent_note_test.exs` (property test) |
 

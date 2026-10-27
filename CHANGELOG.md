@@ -4070,3 +4070,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   sets "It never uses your wallet." as a quote, links Spending to the Account page and
   says "Your agent’s actions will appear here." while there are none.
 - The row's button is now See Actions (was See what it has done). Sean, 27 Oct.
+
+## 2026-10-27 — A wallet press certain to fail is never handed to the wallet
+
+- Credits: a Buy pressed before its steps reached the page asks the server for them.
+  The reply now leaves out a Buy that the fresh build finds certain to fail (no USDC,
+  or no approval on the chain yet); the button shows why instead of opening the wallet.
+  From Keyfleet 1f4049bc (Sean, 27 Oct: Mark present opened a Privy wallet holding no
+  Keys, and the chain refused it). The onchain example blocks nothing, so it is unchanged.
+- onchain-buttons skill (hook-pattern): the press path says the same. New property check
+  `platform/test/ash_template_web/credits_press_test.exs` (fails on the old reply), listed in
+  `docs/feature-map.md`.

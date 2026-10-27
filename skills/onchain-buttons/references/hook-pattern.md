@@ -178,8 +178,13 @@ The hook's own click listener runs every press on its own:
    before the first review arrived, or typed and pressed before the new one did), on a
    component with `data-onchain-input` fields: it sends `prepare_and_send` with the form
    and the step. The component takes the form as the page's own, builds the review and
-   replies `%{review: review, send: name}`, and the hook sends that. An empty reply is
-   `step_unknown`; no reply at all (a lost connection) shows the `data-onchain-lost` line.
+   replies `%{review: review, send: name}`, and the hook sends that. When the fresh build
+   finds that step certain to fail (the same check that disables the button), the reply
+   is empty instead: the press came while the page still showed another wallet or form,
+   and the button now re-renders disabled with its reason. Keyfleet, 27 Oct: Mark present
+   opened a Privy wallet holding no Keys because this reply skipped the check
+   (`AshTemplateWeb.CreditsPanel` shows it). An empty reply is `step_unknown`; no reply
+   at all (a lost connection) shows the `data-onchain-lost` line.
 4. **Otherwise** it sends the step from the review it holds, if the active wallet is the
    review's signer.
 
