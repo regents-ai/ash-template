@@ -94,7 +94,9 @@ test("the agent tools list's reads belong to the page's visit", async ({page, co
 
   const visit = (await context.cookies()).find(cookie => cookie.name === "_visit")!.value
   await expect.poll(() => lines(visit).map(step)).toContain("tool.call /api/v1/sites/:site/tools")
-  expect(lines(visit).map(step)).toContain("page /")
+  // The page's line is written once its live connection opens, which on a busy
+  // machine can come after the list's reads.
+  await expect.poll(() => lines(visit).map(step)).toContain("page /")
   const read = lines(visit).find(line => step(line) === "tool.call /api/v1/sites/:site/tools")!
   expect(read.metadata.surface).toBe("page")
   expect(read.metadata.event!.client).toBe("none")
