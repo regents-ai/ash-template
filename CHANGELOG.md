@@ -4362,3 +4362,19 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   rail 20 and footer 1 read from the layer tokens; a header tool's name shows at the tip
   layer; on a phone the open menu covers the bottom bar; with less motion asked for, the
   home headline settles fully visible.
+
+## 2026-10-27 — Agents keep their own key; check-ins stop warning; amounts of any size render
+
+- elixir-utils fbb5516, all fourteen pins: every pairing message but ChatGPT's adds
+  "If other agents share your computer, use your own key: begin every shell with export
+  SIWA_AGENT_HOME=~/.siwa-agent/<runtime>", the folder named after the agent's runtime
+  (`claude-code`, `codex`, `grok-bot` and so on, `YOUR-RUNTIME` for any agent), so
+  agents sharing one computer pair as separate agents (Sean, AGENT-KEY-HOME a). The
+  template's pairing box adds no setup lines of its own, so nothing here repeated it.
+- The same version stops every agent check-in logging "Missed 1 notifications in action
+  RegentAgents.PairedAgent.touch": pairing, check-in and making a code run in
+  `Ash.transact/2`. Listed in `docs/feature-map.md`.
+- The same version shows amounts of any size exactly: 1e32 and above no longer crash a
+  page (`RegentFormat.amount/1` and `token_amount/2` raised past 34 digits; Autolaunch
+  report).
+- The same version shows Points amounts exactly at any size.
