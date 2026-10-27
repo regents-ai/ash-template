@@ -17,6 +17,8 @@ defmodule AshTemplate.DatabaseConfigTest do
     assert serving[:pool_size] == 5
     assert serving[:max_lifetime] == 540_000..600_000
     assert serving[:ssl][:server_name_indication] == ~c"pgbouncer.dzx6qo6xqzvojpv5.flympg.net"
+    # The pooler closes a connection that sends any other startup setting (v115).
+    assert serving[:parameters] == [application_name: "ash-template-web"]
 
     # Postgrex.Notifications reads connection keys, never a URL.
     refute Keyword.has_key?(listening, :url)

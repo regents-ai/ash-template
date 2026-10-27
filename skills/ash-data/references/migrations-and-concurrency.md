@@ -118,6 +118,15 @@ only what needs a session on the direct address:
   and `max_lifetime: 540_000..600_000`, which replaces each connection before the
   pooler's ten-minute limit and spreads the reconnects. The health check reads through
   the same pool (`AshTemplate.Health.database_ready?/0`).
+- **Limits live on the serving login.** The pooler closes any connection whose startup
+  settings name more than `application_name` (template v115 failed on
+  `statement_timeout`), so a site's connection sends only its name. The limits that
+  keep one site from stalling the others are set once on the serving login itself, by
+  that login on the direct address (an ordinary login may set its own defaults), and
+  apply to every connection the pooler opens for it:
+  `ALTER ROLE CURRENT_USER SET statement_timeout = '15s'`, then `lock_timeout = '5s'`
+  and `idle_in_transaction_session_timeout = '15s'`. It is a production database
+  change: it needs the founder's go naming it.
 - **Listening: one direct connection per machine.** The pooler drops `LISTEN`, so the
   site opens one `Postgrex.Notifications` connection on `direct.<cluster>` with the
   serving login (`AshTemplate.DatabaseConfig.notifications_config!/2`), and

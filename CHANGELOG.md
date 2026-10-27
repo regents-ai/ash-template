@@ -4125,3 +4125,17 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   ash-data skill (Sean, POOLER-CERT c): the pooler, not a lock, protects the
   database's connections. Sites still on the direct address drop the lock as they
   move to the pooler.
+
+## 2026-10-27 — The pooler hears only the connection's name
+
+- v115 (d615f81) connected through the pooler with the pinned authority, then the
+  pooler closed every connection: it refuses any startup setting but
+  `application_name` ("unsupported startup parameter: statement_timeout"). Rolled
+  back as v116 (f76f138) within about two minutes.
+- The serving connection now sends only its name. The three limits (statement 15 s,
+  lock wait 5 s, idle open transaction 15 s) move onto the serving login itself
+  (`ALTER ROLE CURRENT_USER SET …`, run by that login on the direct address), which
+  the ash-data skill now describes; that database change waits for Sean's go.
+- Proven on the template's machine with this commit's own settings: through the
+  pooler a query and a transaction lock succeed, and the listening connection on the
+  direct address hears a notice.
