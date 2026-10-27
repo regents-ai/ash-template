@@ -3964,3 +3964,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Check: `platform/test/browser/visits.spec.ts` now expects the home page's `page /`
   line; it failed with the old listener (the visit held only its request and API reads)
   and succeeds with the hook. Each walked page writes exactly one page line.
+
+## 2026-10-27 — One address per page: a slash at the end is not found
+
+- Sentinel found `/account/` and `/notes/` answering 500 on template.regents.sh. The router
+  matches every route with a slash at the end too, and the signed-in shell then looked up
+  the page's title under the slash address and raised. `AshTemplateWeb.Plugs.NoTrailingSlash`,
+  in the endpoint right after `RegentAgentAccess.Plug` has chosen the error format, answers
+  any address ending in a slash other than `/` as an address that names nothing: the
+  not-found page for a page, the API's `not_found` answer for an `/api` address. `/about/`,
+  `/llms.txt/` and every other slash address now get that same answer, so each page and API
+  call has one address. Files served before the endpoint's own plugs are unchanged.
+- Check: `platform/test/ash_template_web/trailing_slash_test.exs` (failed without the plug
+  with the same `"/account/" not found` crash, succeeds with it).

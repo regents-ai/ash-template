@@ -31,6 +31,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Every agent in the side panel has a guide page and a skill the walk opens | same |
 | The site started with its sign-in settings | `pages.spec.ts`, first test |
 | A page asked for JSON gets a refusal, a browser gets the page | `platform/test/ash_template_web/content_negotiation_test.exs` |
+| An address with a slash at the end, other than the homepage, is not found: the not-found page for a page, the API's not-found answer for an API address | `platform/test/ash_template_web/trailing_slash_test.exs` |
 | Closing the site leaves the agent pages open | `platform/test/ash_template/site/launch_gate_test.exs` |
 | A missing required value gets the site's own error, not a database failure, on a database built from every migration, the libraries' included | `platform/test/ash_template/required_value_test.exs` |
 
