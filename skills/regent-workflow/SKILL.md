@@ -125,16 +125,19 @@ what a person or agent can now do, the checks that prove it, and what is not pro
   commit, and a check fails when a page is added without being walked.
 - **Property tests** (StreamData, or a generated-input test in TypeScript) where a
   rule must hold for every input: money, limits, ownership, names and ordering.
-- **An adversarial review before Sentinel.** A separate helper agent tries to break
+- **An adversarial review for protected work.** A separate helper agent tries to break
   the change: real pages at both widths, edge cases, and the elixir-stack design
   check. A finding counts when it comes with a failing check; confirmed findings are
   fixed before Sentinel's read.
-- **Every real failure becomes a lasting check.** A bug found by the walk, the review,
-  Sentinel or a person gets a check that fails on the old code (run it against the
-  old code once to see it fail) and passes on the fix, listed in the feature map.
-- **Approvals by risk.** Copy, CSS and docs ship on the evidence. Ordinary code ships
-  on the evidence plus the review. Only what "Act on your recommendation" lists also
-  waits for Sean's go.
+- **Every real failure becomes a lasting check, once the fix is confirmed live.** A bug
+  found by the walk, the review, Sentinel or a person gets a check that fails on the old
+  code (run it against the old code once to see it fail) and passes on the fix, listed in
+  the feature map. Write it after Sean confirms the fix has worked live for an hour or
+  more (Sean, 27 Oct 22:28Z, "regressions added, after the code is confirmed working by
+  me (after 1+ hours of liveness)"); until then the release report lists the checks to add.
+- **Approvals by risk.** Copy, CSS, docs and ordinary code ship on the repository's
+  check, are tested on the live site, and are reported afterwards with their rollback.
+  Only what "Act on your recommendation" lists waits for Sean's go.
 - **Evidence with every Sentinel request:** the commit it ran on (`git rev-parse
   HEAD`) and a clean tree at the top; what behaviour changed; the commands that prove
   it, with their results; what was not proven.
@@ -180,30 +183,35 @@ fixture preview from a real configured product. New founder corrections override
 historical rollout reports; delayed agent notifications do not reopen completed or
 cancelled work.
 
-## Act on your recommendation (founder rule, 19 Oct 2026)
+## Act on your recommendation (founder rules, 19 and 27 Oct 2026)
 
-Sean, 19 Oct: "why does every action need me to rubberstamp it?" When you have a
-recommendation, act on it, then tell Sean what you did. Do not ask him to approve it.
+Sean, 19 Oct: "why does every action need me to rubberstamp it?" Sean, 27 Oct 22:31Z:
+"how do we stop smaller questions from getting my rubber stamp? the agents need more
+autonomy". When you have a recommendation, act on it, then tell Sean what you did. Do
+not ask him to approve it.
 
-Ask Sean first only for:
+Ask Sean first only for protected work:
 
-- a Safe transaction;
-- a contract change or deployment;
-- a write to production data;
-- moving money;
-- the first change to sign-in, wallets or the side panel (later versions of a change he
-  already approved need no new go);
-- rotating a secret, or deleting something another session made.
+- sign-in;
+- secrets: rotating one, or anything that would expose one;
+- production data: a write, or a migration that changes or deletes existing rows or
+  columns (a migration that only adds a table or column is ordinary);
+- wallets, staking and claims;
+- moving money, including a Safe transaction;
+- a contract change or deployment.
 
-Everything else is yours to decide and do: wording, names, layout, which tests to run,
-the order of work, restacks, and pushing and releasing ordinary work.
+Everything else is yours to decide and do: wording, names, layout, the side panel and
+pairing box, which tests to run, the order of work, restacks, and pushing, deploying
+and releasing ordinary work. An ordinary release is never a question, a decision or a
+"Blocked decisions" line: ship it, check it on the live site, and report it after the
+fact with its rollback. Never delete another session's work; leave it and say so.
 
 ## Rules in force (founder, 15 Oct 2026)
 
-- No feature branches. Work goes to main; main goes to production after its checks and
-  Sentinel's read. The one exception is a cloud thread's side branch, below.
+- No feature branches. Work goes to main; main goes to production after its checks,
+  and Sentinel reads it once live. The one exception is a cloud thread's side branch, below.
 - The protected list is the one in "Act on your recommendation" above. A change there
-  lands only after Sean's go naming the action.
+  lands only after Sean's go naming the action; nothing else waits for him.
 - Contessa is not a gate.
 - Agents get WebMCP first. The CLI follows and never blocks a site change.
 - Simplicity is golden (16 Oct): each route, and each tab in a route, has one purpose a
@@ -225,7 +233,7 @@ the order of work, restacks, and pushing and releasing ordinary work.
 - Side branches are a handoff only (16 Oct, Sean "1. a 2. a" at 20:30Z in Keyfleet's
   Home stretch plan, ruling 2). A cloud thread may build a fix on a side branch for
   Sean's Mac session to test and ship. The Mac session runs the suites, pushes main and
-  deploys, and Sentinel reads every head. Main stays production, and nothing ships from
+  deploys, and Sentinel reads every release. Main stays production, and nothing ships from
   a branch.
 - Hard cutover: no shims, aliases or compatibility branches. Every review checks
   **no dual-shape responses** by name.
@@ -279,7 +287,7 @@ the order of work, restacks, and pushing and releasing ordinary work.
    prefers otherwise, a list of decisions none of which blocks the rest, or a report
    because a milestone is done. Put status notes and recommendations in the same message
    as the next tool call and carry on with whatever does not depend on an answer.
-   Ordinary work is pushed to main and released after its checks and Sentinel's read.
+   Ordinary work is pushed to main, released after its checks and tested live.
    Sean is asked first only for what "Act on your recommendation" lists.
 
 ## Release checklist
@@ -291,18 +299,25 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
 2. **Suite against live.** Run the suite and report pass and fail counts beside the
    live commit's counts. Any failure that live already has gets a named owner before
    the release goes out.
-3. **Sentinel.** Ask Sentinel for a read before every production release, and again
-   after it. Every request has the same shape: repository, previous released
+3. **Live first, small and reversible** (Sean, 27 Oct 22:28Z: "reducing process and
+   accelerating safe but not overengineered code deployment and live testing"). Ship
+   the smallest change that works, then test the changed behaviour on the live site
+   (headless, read-only). Every release names its rollback before it goes out: the
+   previous Fly release and image. Regression tests for it come after Sean confirms it
+   has worked live for an hour or more.
+4. **Sentinel.** Ask Sentinel for a read after every production release, and before a
+   protected one. A read is never a reason to hold an ordinary release. Every request
+   has the same shape: repository, previous released
    commit, candidate commit, release number, migrations (yes or no), protected area
    (yes or no), and who receives the verdict.
-4. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
+5. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
    task. The public changelog says only what changed for people and agents: no release
    numbers, commits or rollback notes. Those go in a release record the site does not
    show (the template's root `CHANGELOG.md`).
-5. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
+6. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
    or route, old shape, new shape, defining commit, live commit.
-6. **Holds.** A hold names who lifts it and what the release check looks for.
-7. **Browser checks stay in the background** (decisions, 15 Oct 23:15Z). Run them
+7. **Holds.** A hold names who lifts it and what the release check looks for.
+8. **Browser checks stay in the background** (decisions, 15 Oct 23:15Z). Run them
    headless through Playwright. Never open a web address with `open` or `osascript`,
    and never use Sean's Chrome. A visible browser is only a Playwright-launched
    Chromium with its own profile, said in the thread first.
@@ -310,7 +325,8 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
 ## Decisions for the founder
 
 Only the actions "Act on your recommendation" lists become decisions for the founder;
-everything else is done and reported. Every numbered decision put to the founder stands
+everything else is done and reported. A release, a test choice, a Sentinel read or a
+wording choice is never put to him. Every numbered decision put to the founder stands
 on its own, because earlier context is often hundreds of lines away. Under the question,
 give two to four plain bullets: what changes and in which product or repository; what
 happens on yes and what happens on hold; the recommendation. Then the lettered options. Repeat the bullets each time
@@ -413,7 +429,7 @@ server host.
 
 Investigate and prepare billing, authentication, contracts, wallets and production
 changes within scope. Record the relevant invariants and verification for risky work.
-Ordinary work is pushed to main and released after its checks and Sentinel's read.
+Ordinary work is pushed to main, released after its checks and tested live.
 The actions "Act on your recommendation" lists need explicit founder authority naming
 the action.
 Authority belongs to the explicitly authorized action and actor. Do not repeat

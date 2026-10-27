@@ -4303,3 +4303,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   (Sean, CARD-POINTS a). Credits a test card paid for earn no Points
   (`card_test_payment`). Points stay off until Sean approves the rule and start time.
 - `platform/.env.example` names the three Stripe settings.
+
+## 2026-10-27 — Ordinary work ships without asking
+
+- Regent Workflow skill: "Act on your recommendation" now lists only protected work
+  (sign-in, secrets, production data writes or migrations that change or delete
+  existing rows or columns, wallets, staking, claims, money, contract changes).
+  The side panel, pairing box and additive migrations are ordinary. An ordinary
+  release is never a question or a "Blocked decisions" line: it is shipped, tested
+  on the live site and reported afterwards with its rollback (Sean, 27 Oct 22:31Z,
+  "the agents need more autonomy"; approved 22:49Z, AUTONOMY-RULE a).
+- Release checklist: live first, small and reversible, every release names its
+  rollback; Sentinel reads after release and before protected releases only;
+  regression tests follow Sean's one-hour live confirmation (Sean, 27 Oct 22:28Z).
