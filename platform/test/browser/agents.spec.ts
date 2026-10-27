@@ -16,7 +16,7 @@ test("an agent's window opens its full address and copies it", async ({page, has
   const problems = watch(page)
   await page.goto("/account")
   await ready(page)
-  await press(page.getByRole("button", {name: "See what Walk Agent has done"}))
+  await press(page.getByRole("button", {name: "See Walk Agent’s actions"}))
 
   const agentWindow = page.getByRole("dialog", {name: "Walk Agent"})
   await expect(agentWindow).toBeVisible()
@@ -89,7 +89,7 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   const renamed = `Ada 👩\u200D💻 ${testInfo.project.name}`
   await page.goto("/account")
   await ready(page)
-  await press(page.getByRole("button", {name: `See what ${agent} has done`}))
+  await press(page.getByRole("button", {name: `See ${agent}’s actions`}))
 
   const agentWindow = page.getByRole("dialog", {name: agent})
   const name = agentWindow.getByRole("textbox", {name: "Name"})
@@ -116,6 +116,6 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
     renamedWindow.getByText(`Saved. This agent is now called ${renamed} on every Regent site.`),
   ).toBeVisible()
   await expect(renamedWindow.getByRole("alert")).toHaveCount(0)
-  await expect(page.getByRole("button", {name: `See what ${renamed} has done`})).toBeAttached()
+  await expect(page.getByRole("button", {name: `See ${renamed}’s actions`})).toBeAttached()
   await problems.expect()
 })

@@ -4060,3 +4060,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   and classes for it; the footer's count button is unchanged. Copied from regents.sh
   572230a1 (v229, Sean 27 Oct: "add this as the primary CTA in the hero 'Enter App', and
   'WebMCP Tools' as secondary").
+
+## 2026-10-27 — Agent list and agent window: clearer words and layout
+
+- design-system 18a3c65 and 0c72c96: each agent row shows the whole name, with the address, its
+  copy and explorer controls, See Actions and Unpair on the line under it. The agent
+  window explains the agent address (made with SIWA; where its key lives depends on the
+  app running the agent), names its parts Allowed Agent Actions, Spending and Activity,
+  sets "It never uses your wallet." as a quote, links Spending to the Account page and
+  says "Your agent’s actions will appear here." while there are none.
+- The row's button is now See Actions (was See what it has done). Sean, 27 Oct.
