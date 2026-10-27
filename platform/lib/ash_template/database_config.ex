@@ -5,6 +5,12 @@ defmodule AshTemplate.DatabaseConfig do
   @cluster_name "regents-platform-prod"
   @production_database_host "direct.dzx6qo6xqzvojpv5.flympg.net"
   @production_pooler_host "pgbouncer.dzx6qo6xqzvojpv5.flympg.net"
+  # The pooler presents a certificate from the cluster's own authority
+  # (postgres-operator-ca, valid to July 2036), issued to the cluster's internal
+  # name rather than the public one, so pooler connections trust that authority
+  # alone and accept only that name.
+  @pooler_authority "priv/certs/regents-platform-prod-pooler-ca.pem"
+  @pooler_certificate_name ~c"pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc"
   # Superseded identities refused in production configuration: the legacy
   # platform application and the retired rehearsal cluster.
   @production_identities ["platform-phx", "regents-pg-test", "nvwq9ozp9ye03kl1"]
@@ -76,7 +82,16 @@ defmodule AshTemplate.DatabaseConfig do
     |> runtime_config!(getenv)
     |> Keyword.drop([:pool, :pool_size, :prepare, :max_lifetime, :parameters])
     |> direct_address()
+    |> connection_keys()
     |> Keyword.merge(auto_reconnect: true, parameters: [application_name: "ash-template-listen"])
+  end
+
+  # Postgrex.Notifications takes connection keys, not the repository's URL.
+  defp connection_keys(options) do
+    case Keyword.pop(options, :url) do
+      {nil, options} -> options
+      {url, options} -> Keyword.merge(Ecto.Repo.Supervisor.parse_url(url), options)
+    end
   end
 
   def release_config!(getenv \\ &System.get_env/1) do
@@ -179,19 +194,35 @@ defmodule AshTemplate.DatabaseConfig do
     if fly_mpg_host?(host), do: fly_mpg_options(host) ++ options, else: options
   end
 
-  defp fly_mpg_options(host) do
-    ssl = [
-      verify: :verify_peer,
-      # Read before the application loads castore into `cacerts_get/0`.
-      cacertfile: CAStore.file_path(),
-      server_name_indication: String.to_charlist(host),
-      customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
+  defp fly_mpg_options(@production_pooler_host = host) do
+    [
+      prepare: :unnamed,
+      ssl: [
+        verify: :verify_peer,
+        cacertfile: Application.app_dir(:ash_template, @pooler_authority),
+        server_name_indication: String.to_charlist(host),
+        customize_hostname_check: [match_fun: &pooler_certificate_name?/2]
+      ]
     ]
-
-    if host |> String.downcase() |> String.starts_with?("pgbouncer."),
-      do: [prepare: :unnamed, ssl: ssl],
-      else: [ssl: ssl]
   end
+
+  # The direct address presents a public certificate for its own name.
+  defp fly_mpg_options(host) do
+    [
+      ssl: [
+        verify: :verify_peer,
+        # Read before the application loads castore into `cacerts_get/0`.
+        cacertfile: CAStore.file_path(),
+        server_name_indication: String.to_charlist(host),
+        customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
+      ]
+    ]
+  end
+
+  defp pooler_certificate_name?(_reference, {:dNSName, name}),
+    do: name == @pooler_certificate_name
+
+  defp pooler_certificate_name?(_reference, _presented), do: false
 
   # A Fly Managed Postgres cluster answers on `pgbouncer.<cluster>` through its
   # pooler and on `direct.<cluster>` without it, for the same logins.

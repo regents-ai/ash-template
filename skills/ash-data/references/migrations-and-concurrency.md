@@ -102,6 +102,14 @@ only what needs a session on the direct address:
 
 - **Serving: the pooler.** `DATABASE_POOLED_URL` names
   `pgbouncer.dzx6qo6xqzvojpv5.flympg.net`, the cluster's PgBouncer in transaction mode.
+  The pooler's certificate comes from the cluster's own authority
+  (`postgres-operator-ca`, valid to July 2036) and names the cluster's internal address,
+  not the public one. Copy `platform/priv/certs/regents-platform-prod-pooler-ca.pem`
+  and the pooler clause of `AshTemplate.DatabaseConfig.fly_mpg_options/1`: verify the
+  peer against that one authority and accept only
+  `pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc`. Never turn the check
+  off. If Fly replaces the authority, pooler connections fail until the new certificate
+  is copied in.
   The pooler opens at most 50 real connections (plus a reserve of 10) for up to 200
   client connections, so a release's second machine waits a moment for a connection
   instead of taking one from the database. Copy `AshTemplate.DatabaseConfig.serving/1`:
@@ -126,17 +134,11 @@ only what needs a session on the direct address:
 - `keyfleet-code` runs the Twigpine git node (Rust, sqlx), not an Ash site. It holds at
   most 10 connections (since its v5, c9a59ea). Through the pooler, sqlx keeps no
   prepared statements between transactions: `statement_cache_capacity(0)`.
-- Until every app serves through the pooler, one release on the shared database at a
-  time. On the founder's Mac, everything that builds, releases or restarts a production
-  app on the shared database runs under one lock, which waits its turn:
-  `lockf -k /tmp/regent-shared-db-release.lock <command>`. The template's
-  `scripts/deploy.sh` does this, and so does every site's copy; a `fly deploy --image`,
-  `fly secrets set` or `fly secrets import` run by hand takes the same lock. A release
-  started anywhere else first reads the newest release of each of the others
-  (`fly releases --app <app> --json`, one call per app: `autolaunch-sh`, `keyfleet`,
-  `keyfleet-code`, `patchbay-regents`, `regents-sh-web`, `techtree-sh`,
-  `template-regents-sh`, `sentinel-regent`) and starts after any that shows
-  `"InProgress": true`.
+- Releases do not take turns. The pooler, not a release lock, keeps a release's second
+  machine from taking the database's connections, so a site serving through it releases
+  whenever it is ready. A site still serving on the direct address moves to the pooler
+  in its next release, and drops `lockf -k /tmp/regent-shared-db-release.lock` from its
+  deploy in the same change.
 - More connections for one site, or a larger database plan, is the founder's decision.
 
 ## Snapshots are generator state

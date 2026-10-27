@@ -4108,3 +4108,20 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - An agent's smallest size now follows the shorter side of the picture, so on
   a tall phone the agents are as small beside the city as on a wide screen
   instead of covering it. Keyfleet's copy carries the same change.
+
+## 2026-10-27 — Pooler trusted by its own authority; releases no longer take turns
+
+- The shared database's pooler presents a certificate from the cluster's own
+  authority (`postgres-operator-ca`, valid to July 2036) issued to the cluster's
+  internal name, which is why the 27 October release (v113) could not connect.
+  Pooler connections now verify against that one authority
+  (`platform/priv/certs/regents-platform-prod-pooler-ca.pem`) and accept only
+  `pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc`. The direct address
+  keeps its public certificate check. Proven from the template's machine before
+  release: a connection through the pooler with these settings succeeds.
+- The listening connection hands Postgrex.Notifications the login's parts instead
+  of a URL, which it does not read (v113's "missing the :database key").
+- Removed the take-turns release lock from `scripts/deploy.sh`, the README and the
+  ash-data skill (Sean, POOLER-CERT c): the pooler, not a lock, protects the
+  database's connections. Sites still on the direct address drop the lock as they
+  move to the pooler.
