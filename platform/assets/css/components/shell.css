@@ -54,7 +54,7 @@
   position: absolute;
   inset-block-start: 0.5rem;
   inset-inline-start: 0.5rem;
-  z-index: 20;
+  z-index: var(--rg-layer-skip);
   padding: 0.5rem 0.75rem;
   background: var(--color-bg);
   color: var(--color-fg);
@@ -88,7 +88,7 @@
 
 #shell-header {
   position: relative;
-  z-index: 4;
+  z-index: var(--rg-layer-header);
   display: flex;
   grid-area: header;
   align-items: stretch;
@@ -262,12 +262,13 @@
   position: absolute;
   inset-block-start: calc(100% + 0.35rem);
   inset-inline-start: 50%;
-  z-index: 8;
+  z-index: var(--rg-layer-tip);
   padding: 0.25rem 0.5rem;
   border: 1px solid var(--ash-line-strong);
   background: var(--color-surface);
   color: var(--color-fg);
   font-size: 0.75rem;
+  box-shadow: var(--rg-layer-tip-shadow);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -550,7 +551,7 @@
 .shell-credits-dialog__close {
   position: sticky;
   inset-block-start: calc(-1 * var(--shell-credits-pad-top));
-  z-index: 1;
+  z-index: var(--rg-layer-card);
   display: grid;
   place-items: center;
   width: 2.75rem;
@@ -574,7 +575,7 @@
 }
 
 #shell-rail {
-  z-index: 3;
+  z-index: var(--rg-layer-panel);
   display: flex;
   grid-area: rail;
   flex-direction: column;
@@ -645,7 +646,6 @@
    scroll the page behind the frame. */
 #shell-sidebar {
   position: relative;
-  z-index: 2;
   grid-area: sidebar;
   min-width: 0;
   min-height: 0;
@@ -819,7 +819,7 @@
 /* A size container, so the agents list can take a quarter of its height. */
 #shell-aside {
   position: relative;
-  z-index: 3;
+  z-index: var(--rg-layer-panel);
   container-type: size;
   display: grid;
   grid-area: aside;
@@ -900,7 +900,7 @@
 /* ---- Bottom bar ---- */
 
 #shell-footer {
-  z-index: 3;
+  z-index: var(--rg-layer-panel);
   display: flex;
   grid-area: footer;
   flex-wrap: wrap;
@@ -1362,7 +1362,7 @@
   #shell-drawer {
     position: fixed;
     inset: var(--shell-header-end) auto 0 env(safe-area-inset-left);
-    z-index: 5;
+    z-index: var(--rg-layer-panel);
     display: none;
     grid-template:
       "close close" auto
@@ -1372,6 +1372,7 @@
     padding-block-end: env(safe-area-inset-bottom);
     border-inline-end: 1px solid var(--ash-line-strong);
     background: var(--color-bg);
+    box-shadow: var(--rg-layer-panel-shadow);
   }
 
   #app-shell[data-menu-open="true"] #shell-drawer {
@@ -1410,7 +1411,7 @@
   .shell-menu-scrim {
     position: fixed;
     inset: var(--shell-header-end) 0 0;
-    z-index: 4;
+    z-index: var(--rg-layer-shade);
     display: block;
     min-width: 0;
     min-height: 0;
@@ -1429,10 +1430,11 @@
   #shell-aside {
     position: fixed;
     inset: var(--shell-header-end) env(safe-area-inset-right) 0 env(safe-area-inset-left);
-    z-index: 6;
+    z-index: var(--rg-layer-panel);
     width: auto;
     padding-block-end: env(safe-area-inset-bottom);
     border-inline-start: 0;
+    box-shadow: var(--rg-layer-panel-shadow);
     transition:
       transform var(--duration-slow) var(--ease-out),
       visibility var(--duration-slow);

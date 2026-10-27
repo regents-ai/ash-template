@@ -18,7 +18,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   @documents ~w(/ /docs /about /contact /changelog /privacy /terms) ++ AgentGuides.paths()
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -130,6 +130,13 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/showcase/figures" =>
       {"Live figures",
        "How a figure that is the same for everyone reaches every open page: Base's newest block and each room's activity, read once and shown to all."},
+    "/showcase/grammar" => {"Grammar", "The pieces every Regent page is made of, by name."},
+    "/showcase/grammar/verbs" =>
+      {"Grammar: verbs",
+       "How things move on every Regent page: arriving, opening, answering a press and leaving."},
+    "/showcase/grammar/layers" =>
+      {"Grammar: layers",
+       "The six layers of a Regent page, from the ground to a tip, and how each shows its height."},
     "/showcase/onchain" =>
       {"Wallet lab", "Wallet buttons against a practice network on this machine."},
     "/showcase/credits" =>

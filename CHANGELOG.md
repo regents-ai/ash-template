@@ -4224,3 +4224,28 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   lines for that agent) and `start:` (the page from a pairing link), and always
   ends with the start line. The pairing box passes `start:`; the template adds
   no lines of its own. Keyfleet passes its check-in lines as `setup:`.
+
+## 2026-10-27 — Layers: one stacking place per layer, and the grammar page (draft)
+
+- Six layers name what sits on what: Ground, Sheet, Card, Panel, Window and Tip.
+  `tokens/root.css` gives each floating layer one stacking place
+  (`--rg-layer-card` 1, `-shade` 10, `-panel` 20, `-header` 30, `-window` 40,
+  `-tip` 50, `-skip` 60) and one shadow (`--rg-layer-panel-shadow`,
+  `-window-shadow`, `-tip-shadow`), all `none`: height shows in the edge, the
+  fill and how a thing arrives. Whether floating layers get a soft shadow is
+  still open (LAYERS-DEPTH); the answer changes only those three tokens.
+- Hard cutover in product CSS: the shell's skip link, header, rail, side panels,
+  footer, phone menu and its shade, the rail's tips, the account popover and the
+  Credits dialog's close button take their place from the tokens. The left
+  column no longer states its own number, so the rail's tips show over it. The
+  phone header now sits above the phone panels; the panels start below it, so
+  only the account popover changes, and it now shows over an open panel.
+- The Credits "where" window and the rooms menu lose their soft shadows for the
+  layer shadows (none).
+- `/showcase/grammar` has three views, each its own address: Nouns (the shared
+  pieces by name), Verbs (`/verbs`: arrive, settle, open, press, leave, played by
+  the motion kit, with a fade when less motion is asked for) and Layers
+  (`/layers`: the six layers drawn in Regent's look, square with cut corners
+  and hairlines, beside a table of each layer's edge, fill and arrival).
+- Artwork that orders its own pieces (cubes, crown, hero, lab pages) keeps its
+  numbers; they never meet the page's layers.

@@ -58,3 +58,25 @@
   --ash-accent: light-dark(color-mix(in oklab, var(--palette-powder-blue) 50%, var(--palette-charcoal)), var(--palette-powder-blue));
   --ash-accent-warm: light-dark(color-mix(in oklab, var(--palette-tangerine-tango) 68%, var(--palette-charcoal)), var(--palette-tangerine-tango));
 }
+
+/* Layers: what sits on what. Ground is the page; a sheet is the one surface you
+   work on; cards sit on a sheet; a panel slides in from the edge it stays
+   against; a window opens in the middle over a shade; a tip or menu is the
+   highest and the shortest-lived. Each layer that floats has one stacking
+   place, and nothing states a number of its own. Windows and tips the browser
+   lifts above the page itself (a modal dialog, a popover) need none.
+   Height shows in the edge, the fill and how a thing arrives, never in a soft
+   shadow: each floating layer's shadow is named here, and is none. */
+:root {
+  --rg-layer-card: 1;
+  --rg-layer-shade: 10;
+  --rg-layer-panel: 20;
+  --rg-layer-header: 30;
+  --rg-layer-window: 40;
+  --rg-layer-tip: 50;
+  --rg-layer-skip: 60;
+
+  --rg-layer-panel-shadow: none;
+  --rg-layer-window-shadow: none;
+  --rg-layer-tip-shadow: none;
+}
