@@ -4096,3 +4096,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   failed 3 of 17 runs alone before and passed 40 of 40 after. New check
   `platform/assets/test/session_leaving.test.ts` (fails without the change),
   listed in `docs/feature-map.md`.
+
+## 2026-10-27 — Swarm city: room for 24 agents
+
+- The swarm city now draws up to 24 agents, each with its swarm and trail, up
+  from 16 (Sean, 27 Oct: "do 24"). With 24 the districts still read clearly on a
+  wide screen and at 390 and 320 wide. Keyfleet's copy carries the same change.
