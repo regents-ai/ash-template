@@ -20,6 +20,9 @@ config :ash_template, :privy, app_id: "test-app"
 # Jobs are only recorded, never run, while a test holds its transaction.
 config :ash_template, Oban, testing: :manual
 
+# IndexNow is answered by the test itself (AshTemplate.IndexNow).
+config :ash_template, :indexnow_req, plug: {Req.Test, AshTemplate.IndexNow}
+
 config :logger, level: :warning
 
 config :phoenix, :plug_init_mode, :runtime

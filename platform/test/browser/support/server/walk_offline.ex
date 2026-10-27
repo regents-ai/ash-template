@@ -3,7 +3,7 @@ defmodule AshTemplate.WalkOffline do
   The browser walk's server never leaves the machine. With `ASH_TEMPLATE_WALK` set
   (playwright.config.ts), every request the server makes through Req comes here
   first: one to this machine goes ahead, each Regent site's published tool list
-  is answered here, and any other is written to the walk's list of outside
+  and IndexNow's receipt of the site's pages are answered here, and any other is written to the walk's list of outside
   requests and refused by raising, so a quick call fails the walk as surely as
   one that holds a connection open.
   """
@@ -27,6 +27,9 @@ defmodule AshTemplate.WalkOffline do
       do: {request, Req.Response.json(%{"tools" => tools(url.host)})},
       else: refuse(:get, url)
   end
+
+  def run(%Req.Request{method: :post, url: %URI{host: "api.indexnow.org"}} = request),
+    do: {request, Req.Response.new(status: 202)}
 
   def run(%Req.Request{method: method, url: url}), do: refuse(method, url)
 

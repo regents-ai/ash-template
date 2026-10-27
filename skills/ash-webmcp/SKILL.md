@@ -98,6 +98,11 @@ Completion: documentation and machine contracts agree with the live product.
 Use `Regent.AgentMetadata.head` from `design-system/regent_ui` once in the root layout.
 It owns canonical/description, optional real discovery links, OG/Twitter tags and
 script-safe JSON-LD encoding. Pass actual product values and a structured-data map.
+A page that holds a blog post, a forum thread or question, or a table of data adds its
+own node with `Regent.StructuredData` as a `page_data` assign, which the root layout
+joins to the site graph (`AshTemplateWeb.PublicDocuments.structured_data/1`); only
+facts the page shows. New and changed public pages reach search engines through
+`AshTemplate.IndexNow` (`ASH_TEMPLATE_INDEXNOW_KEY`, one key per site).
 The product retains its title, viewport, CSRF/provider metadata, CSP and assets.
 
 Set `markdown` only for supported pages; it defaults to false. Optional guide,

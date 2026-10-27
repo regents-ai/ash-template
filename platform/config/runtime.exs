@@ -92,6 +92,15 @@ if webhook_url = System.get_env("ASH_TEMPLATE_NOTES_WEBHOOK_URL") do
   end
 end
 
+# Search engines that read IndexNow hear about this site's new and changed public
+# pages when this key is set (AshTemplate.IndexNow). It is public: the site serves it.
+if indexnow_key = System.get_env("ASH_TEMPLATE_INDEXNOW_KEY") do
+  unless Regex.match?(~r/\A[a-zA-Z0-9-]{8,128}\z/, indexnow_key),
+    do: raise("ASH_TEMPLATE_INDEXNOW_KEY must be 8 to 128 letters, digits or dashes")
+
+  config :ash_template, :indexnow_key, indexnow_key
+end
+
 # Each sign-in reads the wallet's ENS name from Ethereum mainnet while this
 # endpoint is set (AshTemplate.Accounts.EnsIdentity). Tests never read it.
 if config_env() != :test do

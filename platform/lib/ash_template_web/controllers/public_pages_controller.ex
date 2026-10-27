@@ -63,6 +63,15 @@ defmodule AshTemplateWeb.PublicPagesController do
 
   def security(conn, _params), do: send_cached(conn, "text/plain", PublicDocuments.security_txt())
 
+  # The IndexNow key, which proves the pages this site sends came from it
+  # (AshTemplate.IndexNow); not found while no key is set.
+  def indexnow_key(conn, _params) do
+    case AshTemplate.IndexNow.key() do
+      nil -> raise AshTemplateWeb.NotFoundError
+      key -> send_cached(conn, "text/plain", key)
+    end
+  end
+
   # The body is JSON built from this site's own addresses, sent as a linkset with
   # the RFC 9727 profile.
   def api_catalog(conn, _params) do

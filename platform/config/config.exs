@@ -91,6 +91,8 @@ config :ash_template, Oban,
   cron: [
     crontab: [
       {"17 4 * * *", AshTemplate.ErrorPruner},
+      # This release's public pages, sent to IndexNow once per release.
+      {"@hourly", AshTemplate.IndexNow},
       # One line for each kind of shared reading a producer rereads on notice.
       {"* * * * *", AshTemplate.SharedReading.Heal, args: %{kind: "room_activity"}}
     ]

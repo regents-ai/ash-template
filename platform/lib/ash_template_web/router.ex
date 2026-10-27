@@ -199,6 +199,7 @@ defmodule AshTemplateWeb.Router do
     get "/agents/:agent/skill.md", PublicPagesController, :agent_skill_guide
     get "/capabilities.json", PublicPagesController, :capabilities
     get "/.well-known/security.txt", PublicPagesController, :security
+    get "/indexnow-key.txt", PublicPagesController, :indexnow_key
     get "/.well-known/api-catalog", PublicPagesController, :api_catalog
   end
 

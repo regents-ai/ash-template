@@ -212,15 +212,23 @@ defmodule AshTemplateWeb.PublicDocuments do
     |> put_in(["info", "termsOfService"], url("/terms"))
   end
 
-  def sitemap do
-    lastmod = DateTime.to_iso8601(@released_at)
+  @doc "When this release was built, which is when its public documents last changed."
+  def released_at, do: DateTime.to_iso8601(@released_at)
 
+  @doc "Every public page's address, as the sitemap lists them."
+  def sitemap_urls do
     pages =
       if AshTemplateWeb.Showcase.public?(), do: @documents ++ @showcase_pages, else: @documents
 
+    Enum.map(pages, &url/1)
+  end
+
+  def sitemap do
+    lastmod = released_at()
+
     locations =
-      Enum.map_join(pages, "\n", fn path ->
-        "  <url><loc>#{Plug.HTML.html_escape(url(path))}</loc><lastmod>#{lastmod}</lastmod></url>"
+      Enum.map_join(sitemap_urls(), "\n", fn location ->
+        "  <url><loc>#{Plug.HTML.html_escape(location)}</loc><lastmod>#{lastmod}</lastmod></url>"
       end)
 
     """
@@ -255,13 +263,22 @@ defmodule AshTemplateWeb.PublicDocuments do
     }
   end
 
-  def structured_data do
+  @doc """
+  The site's own graph, then the nodes the page holds (a page's `page_data` assign,
+  built with `Regent.StructuredData`).
+  """
+  def structured_data(page_nodes), do: Regent.StructuredData.graph(site_graph(), page_nodes)
+
+  @doc "The `@id` of the site's Organization node, a blog post's publisher."
+  def organization_id, do: url("/#organization")
+
+  defp site_graph do
     %{
       "@context" => "https://schema.org",
       "@graph" => [
         %{
           "@type" => "Organization",
-          "@id" => url("/#organization"),
+          "@id" => organization_id(),
           "name" => "Ash Template",
           "legalName" => "Regents Labs, Inc.",
           "url" => url("/"),
@@ -282,7 +299,7 @@ defmodule AshTemplateWeb.PublicDocuments do
           "@id" => url("/#website"),
           "url" => url("/"),
           "name" => "Ash Template",
-          "publisher" => %{"@id" => url("/#organization")}
+          "publisher" => %{"@id" => organization_id()}
         }
       ]
     }

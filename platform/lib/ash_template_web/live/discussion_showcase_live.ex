@@ -13,13 +13,17 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
   alias AshTemplateWeb.Components.Shell
   alias Regent.Discussion, as: D
   alias Regent.Primitives, as: P
+  alias Regent.StructuredData
 
+  @thread_title "Why does the sign-in window close before my wallet opens?"
+  @thread_views 214
   @filters [{"all", "All replies"}, {"solution", "Solution"}, {"house", "Ash Template replies"}]
 
   @impl true
   def mount(_params, _session, socket) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     [opening | replies] = posts(now)
+    liked = MapSet.new(["r2"])
 
     {:ok,
      socket
@@ -28,7 +32,10 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
        now: now,
        opening: opening,
        all_replies: replies,
-       liked: MapSet.new(["r2"])
+       liked: liked,
+       thread_title: @thread_title,
+       thread_views: @thread_views,
+       page_data: [page_data(opening, replies, liked)]
      ), layout: false}
   end
 
@@ -81,10 +88,10 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
 
       <D.thread
         id="sample-thread"
-        title="Why does the sign-in window close before my wallet opens?"
+        title={@thread_title}
         solved
         replies={length(@all_replies)}
-        views={214}
+        views={@thread_views}
         likes={@like_total}
         last_activity_at={List.last(@all_replies).at}
         last_activity={RegentFormat.relative_time(List.last(@all_replies).at, @now)}
@@ -184,6 +191,35 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
     if Enum.any?(shown, & &1.solution),
       do: "#r2",
       else: "/showcase/discussion?replies=solution#r2"
+  end
+
+  # The thread as the page first shows it, for search engines and AI answers.
+  defp page_data(opening, replies, liked) do
+    url = AshTemplateWeb.PublicDocuments.url("/showcase/discussion")
+
+    post = fn post ->
+      %{
+        url: url <> "#" <> post.id,
+        text: Enum.join(post.body, "\n\n"),
+        author: %{name: post.author},
+        at: post.at,
+        likes: likes(post, liked)
+      }
+    end
+
+    StructuredData.discussion(%{
+      kind: :question,
+      url: url,
+      title: @thread_title,
+      text: post.(opening).text,
+      author: %{name: opening.author},
+      at: opening.at,
+      likes: Enum.sum(Enum.map([opening | replies], &likes(&1, liked))),
+      views: @thread_views,
+      reply_count: length(replies),
+      replies: Enum.map(replies, post),
+      answer: post.(Enum.find(replies, & &1.solution))
+    })
   end
 
   # The sample's own likes, plus the reader's when they like it.

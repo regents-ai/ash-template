@@ -27,7 +27,9 @@
       agent_guide={~p"/llms.txt"}
       sitemap={~p"/sitemap.xml"}
       service_description={~p"/openapi.json"}
-      structured_data={AshTemplateWeb.PublicDocuments.structured_data()}
+      structured_data={
+        AshTemplateWeb.PublicDocuments.structured_data(Map.get(assigns, :page_data, []))
+      }
     />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content={theme || "dark light"} />

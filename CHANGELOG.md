@@ -4176,3 +4176,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   before its first page line, a Sign in press writes `step sign_in_opened`, and a
   second page in the visit adds no arrival; visit_log_test.exs covers every source
   name and the client names.
+
+## 2026-10-27 — Pages tell search engines what they hold, and when they change
+
+- Design system bca0f09: `Regent.StructuredData` shapes the schema.org node a page
+  adds beside the site graph (blog post, question or forum thread, data table).
+  Pages pass it as `page_data`; the root layout joins it to the site graph
+  (`PublicDocuments.structured_data/1`). The discussion showcase is a QAPage with
+  its marked answer accepted.
+- IndexNow (`AshTemplate.IndexNow`, Oban, `outside_calls` queue): with
+  `ASH_TEMPLATE_INDEXNOW_KEY` set, an hourly job queues the sitemap once per release
+  and `/indexnow-key.txt` serves the key; a site queues `submit/1` for a page it adds
+  or changes. Refused lists stop for good; a busy answer waits ten minutes.
+- Patchbay's AI-search requests 1 and 3 (control coordination/ash-template.md).
+- index_now_test.exs; structured_data.spec.ts reads the rendered head on /docs and
+  the discussion showcase; the walk opens /indexnow-key.txt.

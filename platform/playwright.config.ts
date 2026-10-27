@@ -32,7 +32,7 @@ export default defineConfig({
       "mkdir -p tmp && rm -f tmp/walk-outside.txt tmp/walk-lines.jsonl && " +
       "unset ASH_TEMPLATE_CHAIN_NODE_URL ASH_TEMPLATE_BASE_NODE_URL ASH_TEMPLATE_ETHEREUM_NODE_URL " +
       "ASH_TEMPLATE_SIWA_BROKER_URL ETHEREUM_READ_RPC_URL OPENROUTER_API_KEY OPENROUTER_DECISIONS_URL " +
-      "ASH_TEMPLATE_NOTES_WEBHOOK_URL SIWA_ACTIVITY_READ_TOKEN && " +
+      "ASH_TEMPLATE_NOTES_WEBHOOK_URL ASH_TEMPLATE_INDEXNOW_KEY SIWA_ACTIVITY_READ_TOKEN && " +
       `export ASH_TEMPLATE_WALK=true PORT=${port} POOL_SIZE=3 && ` +
       "mix run test/browser/support/sign_in.exs && " +
       "mix assets.build && mix phx.server",

@@ -34,6 +34,7 @@ if walk? do
   config :regent_agents, :siwa, url: closed, audience: "ash-template"
   config :req, default_options: [adapter: AshTemplate.WalkOffline]
   config :ash_template, :walk_outside_file, Path.expand("../tmp/walk-outside.txt", __DIR__)
+  config :ash_template, :indexnow_key, "walk-indexnow-key"
 end
 
 # Several sites run side by side locally, each on the port named by PORT.
