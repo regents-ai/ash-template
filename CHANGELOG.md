@@ -3977,3 +3977,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   call has one address. Files served before the endpoint's own plugs are unchanged.
 - Check: `platform/test/ash_template_web/trailing_slash_test.exs` (failed without the plug
   with the same `"/account/" not found` crash, succeeds with it).
+
+## 2026-10-27 — Swarm city: the sky grid clears the tallest tower
+
+- The red grid over the city now hangs one step above the tallest roof instead
+  of at a fixed height, so the castle's needle no longer rises through it.
+- The city's overview aims a little higher and stands a little further back,
+  so the raised grid stays whole inside the picture on a wide screen.
+  Keyfleet's copy carries the same change.

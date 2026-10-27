@@ -21,7 +21,7 @@ const themeOf = (light: MediaQueryList): Theme => {
 const PLACES: readonly Place[] = ["castle", "forge", "inn"]
 
 /** The whole city, seen from above its southern edge. */
-const OVERVIEW: Framing = {x: 0, y: 2.2, z: 0.4, yaw: 0.65, pitch: 0.62, distance: 36}
+const OVERVIEW: Framing = {x: 0, y: 5, z: 0.4, yaw: 0.65, pitch: 0.62, distance: 40}
 
 /** Space kept between a tag or a district's card and the picture's sides, in pixels. */
 const TAG_MARGIN = 4
