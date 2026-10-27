@@ -3985,3 +3985,15 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - The city's overview aims a little higher and stands a little further back,
   so the raised grid stays whole inside the picture on a wide screen.
   Keyfleet's copy carries the same change.
+
+## 2026-10-27 — Released v112
+
+- Fly v112, image f76f138 (Sean's letter TEMPLATE-V112), live 02:32Z; rollback v111 (33c5cd1).
+  Carries every page's `page` line (7fec82e), one address per page (9dd2237, be54337) and the
+  swarm city sky grid above the tallest tower (f76f138). No database change: a temporary
+  machine's `pending-migrations` printed `none` and the release step migrated nothing new.
+- Before: full check 74 ExUnit, 23 JS, 274 browser steps (2 skipped); required fixes clean.
+- After: `/capabilities.json` reports f76f138; `/healthz` 200; the old machine stopped on
+  SIGTERM with exit 0. `/about/`, `/contact/`, `/account/`, `/notes/`, `/skills/` and
+  `/llms.txt/` answer 404 and `/api/v1/rooms/` the JSON `not_found`; the plain addresses
+  answer 200. A headless Chromium visit to `/` wrote `request / ok` then `page /`.
