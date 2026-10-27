@@ -3997,3 +3997,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   SIGTERM with exit 0. `/about/`, `/contact/`, `/account/`, `/notes/`, `/skills/` and
   `/llms.txt/` answer 404 and `/api/v1/rooms/` the JSON `not_found`; the plain addresses
   answer 200. A headless Chromium visit to `/` wrote `request / ok` then `page /`.
+
+## 2026-10-27 — Skills: the shared database's connections
+
+- ash-data now says how sites share the production database's 97 connections, after four
+  releases swapping at once used them all for 20 seconds (02:48Z): each site serves with a
+  pool of 5, as the template does, and starts a release only when no other app's newest
+  release is still in progress. More connections or a larger plan is Sean's decision.

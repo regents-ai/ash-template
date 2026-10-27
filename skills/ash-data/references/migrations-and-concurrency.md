@@ -89,6 +89,23 @@ table is refused even against a local test database. Reset test data with the Ec
 sandbox or a fresh database, never by emptying a listed table. Agents do not edit the
 guard's settings or ask it to allow a command.
 
+## Connections to the shared production database
+
+The template, the five sites, `keyfleet-code` and Sentinel share one production database
+(`regents-platform-prod`) with 97 connections for their logins. During a release a site's
+old and new machines are both connected, so its connections briefly double. On 27 October
+2026 four releases swapped at once and every site lost the database for 20 seconds.
+
+- A site's serving connection holds 5, set in its own database config as
+  `AshTemplate.DatabaseConfig.serving/1` does. Never leave `pool_size` unset: Ecto's
+  default is 10.
+- One release on the shared database at a time. Before `fly deploy` on a production app,
+  read the newest release of each of the others (`fly releases --app <app> --json`, one
+  call per app: `autolaunch-sh`, `keyfleet`, `keyfleet-code`, `patchbay-regents`,
+  `regents-sh-web`, `techtree-sh`, `template-regents-sh`, `sentinel-regent`). If any shows
+  `"InProgress": true`, start yours after it finishes.
+- More connections for one site, or a larger database plan, is the founder's decision.
+
 ## Snapshots are generator state
 
 Commit snapshots with their migrations where the project does so.

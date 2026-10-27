@@ -21,6 +21,9 @@ A limit or once-only rule on an update is an atomic validation, never
 `change filter(expr(...))`: Ash 3.33.11 drops that filter from single-record atomic
 updates ([details](references/migrations-and-concurrency.md#four-distinct-concurrency-questions)).
 
+Every site shares one production database: a serving pool of 5, and one release on it
+at a time ([connections](references/migrations-and-concurrency.md#connections-to-the-shared-production-database)).
+
 Do not disable atomic requirements reflexively. A race test needs independent
 transactions, not two processes sharing one sandbox connection. Persistent retry or
 locking guidance never authorizes admission state for user-signed Regent wallet sends.
