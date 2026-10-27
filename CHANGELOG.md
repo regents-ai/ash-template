@@ -4384,3 +4384,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   it used, and the other agent keeps its code. Before, the newest agent showed under
   whichever agent was on screen and the spent code was offered again (Autolaunch
   report). The pairing box asks the library which agent each code paired.
+
+## 2026-10-27 — Addresses keep their own letters
+
+- design-system 804c752: an address, ENS name or short address shows in its own letters
+  wherever it sits. A row or button style that sets capitals, small capitals or wide
+  letter-spacing no longer reaches it, and it always reads left to right. The shared
+  address also gains a full form, every character and wrapping, for an address a person
+  must check, and a compact form, the words and the copy icon only, for beside a small
+  control in a narrow row. No template page uses those two yet.
