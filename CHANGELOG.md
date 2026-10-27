@@ -4348,3 +4348,17 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   and hairlines, beside a table of each layer's edge, fill and arrival).
 - Artwork that orders its own pieces (cubes, crown, hero, lab pages) keeps its
   numbers; they never meet the page's layers.
+
+## 2026-10-27 — Released v118: layers, one stacking place each
+
+- Fly v118, image e8ed190, live 23:18Z; rollback v117 (be65b7d). Ordinary work, shipped
+  under AUTONOMY-RULE a after the template chief's review. Carries everything since
+  be65b7d on main: card purchases earn Points (304fdac, CARD-POINTS a), the workflow skill
+  text (88a6929) and the layers change (e8ed190, design-system d53b8f1). No migrations.
+- Before: full check on e8ed190: 94 ExUnit (9 properties), 24 JS, 298 browser steps passed,
+  1 failed (visits.spec.ts:89 on the phone, a known timing gap; 4/4 when run alone), 3 skipped.
+- After, headless on template.regents.sh: `/capabilities.json` reports e8ed190; the home page,
+  a room and the three grammar pages answer at 1280 and 390 with no page errors; header 30,
+  rail 20 and footer 1 read from the layer tokens; a header tool's name shows at the tip
+  layer; on a phone the open menu covers the bottom bar; with less motion asked for, the
+  home headline settles fully visible.
