@@ -7,6 +7,9 @@ What changed in Ash Template lately, newest first.
 - **Bring your agent to one page.** A Bring your agent link opens a page where you pair
   your agent, and the message you send it ends with the page it should start on once
   it is paired.
+- **Asking not to be tracked is respected.** If your browser sends Global Privacy Control,
+  the site keeps no record of where your visit came from or how far it got. The privacy
+  policy says so.
 
 ## 26 October 2026
 

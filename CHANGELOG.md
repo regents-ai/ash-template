@@ -4224,3 +4224,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   lines for that agent) and `start:` (the page from a pairing link), and always
   ends with the start line. The pairing box passes `start:`; the template adds
   no lines of its own. Keyfleet passes its check-in lines as `setup:`.
+
+## 2026-10-27 — Browsers that send Global Privacy Control write no arrival or step lines
+
+- `AshTemplateWeb.VisitLog` reads `Sec-GPC: 1`: such a visit gets no `arrival`, and
+  `VisitLog.step/2` writes nothing for it, in the request (sign-in exchange, the
+  browser's `sign_in_opened` report) and on its pages (the render context carries
+  `gpc` into the LiveView's process, so the pairing box's steps are skipped too).
+  Its other lines are written as before. Sean VISIT-SOURCES-PRIVACY a.
+- The privacy policy's cookies section says so; its effective date is now 27 October 2026.
+- New walk in `test/browser/arrivals.spec.ts` and a unit test in `visit_log_test.exs`.
