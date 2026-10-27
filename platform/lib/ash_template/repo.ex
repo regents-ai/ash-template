@@ -13,7 +13,7 @@ defmodule AshTemplate.Repo do
 
   # Ash qualifies reads with `default_prefix/0`; writes, upserts, `Ash.update_many`
   # and plain Ecto queries take the prefix from here instead (upserts and
-  # `update_many` through Regent's ash_postgres copy, ash-project/ash_postgres#910).
+  # `update_many` since ash-project/ash_postgres#910).
   # An explicit prefix, such as a resource's own schema, always wins over this default.
   def default_options(_operation), do: [prefix: @schema]
 

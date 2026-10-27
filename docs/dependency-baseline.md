@@ -31,7 +31,7 @@ comparison; each site's compiler, typecheck, audit and product checks still appl
 
 `security/required-fixes.json` separately enforces security provenance and known
 safe version requirements, such as Bandit 1.13.0 or later for its HTTP/2 fix.
-ash_postgres comes from Regent's copy of 2.15.2 (regents-ai/ash_postgres), which keeps the Repo's default prefix for upserts and `Ash.update_many`. Move back to the Hex package once a release carries ash-project/ash_postgres#910 and passes an isolated real upsert check using the Repo's default prefix.
+ash_postgres comes from ash-project/ash_postgres main at 55db7d44, which carries #910: upserts and `Ash.update_many` keep the Repo's default prefix. Move to the Hex package once a release carries #910 and passes an isolated real upsert check using the Repo's default prefix.
 An upgrade must never enable Points earning or change production data as a
 side effect of package alignment.
 

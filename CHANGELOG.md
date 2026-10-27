@@ -3916,3 +3916,17 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   the four site-palette neon looks replace them. Fourteen looks remain; their addresses
   now answer not found. Glass is a yes/no on a look again (glowing glass only), since
   no look tints any more.
+
+## 2026-10-26 — ash_postgres from upstream main; ash_phoenix and ash_oban up to date
+
+- `platform/mix.exs` takes ash_postgres from `https://github.com/ash-project/ash_postgres.git`
+  at `55db7d449aad351d200c5f300fca2a83e0a8734c`, upstream main with #910 merged (upserts and
+  `Ash.update_many` keep the Repo's default prefix), still with `override: true` until a Hex
+  release carries it. It also brings #907 (snapshot hashes from the sorted encoding) and two
+  unique-error mapping fixes. The regents-ai copy is no longer used.
+- `security/required-fixes.json`: the shared-library entry and fix
+  `2026-10-26-ash-postgres-upsert-schema` now name ash-project/ash_postgres at 55db7d44.
+  Every site on the regents-ai copy fails the check until it moves to the same commit.
+- ash_phoenix 2.3.25 → 2.3.26 and ash_oban 0.10.2 → 0.10.3, their newest Hex releases
+  (Keyfleet main dc1f8140 has the same two). Ash stays at 3.37.2, the newest.
+- `docs/dependency-baseline.md` names the new source.

@@ -47,18 +47,18 @@ defmodule AshTemplate.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
       {:ash, "~> 3.37"},
-      # Regent's copy of 2.15.2 with ash-project/ash_postgres#910: upserts use the
+      # ash_postgres main with #910 until a Hex release carries it: upserts use the
       # repo's prefix, which picks each site's schema on the shared database. It
       # stands in for the Hex release that ash_money and ash_double_entry ask for.
       {:ash_postgres,
-       git: "https://github.com/regents-ai/ash_postgres.git",
-       ref: "cc886ab3efc8b05d51b7b1f57e609341fb6a0873",
+       git: "https://github.com/ash-project/ash_postgres.git",
+       ref: "55db7d449aad351d200c5f300fca2a83e0a8734c",
        override: true},
-      {:ash_phoenix, "~> 2.3.25"},
+      {:ash_phoenix, "~> 2.3.26"},
       {:oban, "~> 2.24"},
       {:nebulex, "~> 3.0"},
       {:nebulex_local, "~> 3.0"},
-      {:ash_oban, "~> 0.10.0"},
+      {:ash_oban, "~> 0.10.3"},
       {:ash_ai, "~> 1.3.0"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
