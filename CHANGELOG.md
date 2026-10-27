@@ -4102,3 +4102,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - The swarm city now draws up to 24 agents, each with its swarm and trail, up
   from 16 (Sean, 27 Oct: "do 24"). With 24 the districts still read clearly on a
   wide screen and at 390 and 320 wide. Keyfleet's copy carries the same change.
+
+## 2026-10-27 — Swarm city: agents keep their size on phones
+
+- An agent's smallest size now follows the shorter side of the picture, so on
+  a tall phone the agents are as small beside the city as on a wide screen
+  instead of covering it. Keyfleet's copy carries the same change.
