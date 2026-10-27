@@ -96,7 +96,8 @@ defmodule AshTemplateWeb.PairingBox do
   defp pairing(harness, %PairingCode.Issued{} = code, start),
     do: %{
       chosen: to_string(harness),
-      message: PairingMessage.text(code.code, AshTemplateWeb.Endpoint.url(), harness, start),
+      message:
+        PairingMessage.text(code.code, AshTemplateWeb.Endpoint.url(), harness, start: start),
       expires_iso: DateTime.to_iso8601(code.expires_at),
       expires: Calendar.strftime(code.expires_at, "%H:%M UTC")
     }

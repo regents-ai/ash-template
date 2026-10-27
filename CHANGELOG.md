@@ -4217,3 +4217,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Styles only (`.pair-page` in pages/account.css); the words, the flow and the side
   panel's pairing box are unchanged. Checked headless at 1280, 390 and 320 in light
   and dark; pair_link and account walks pass.
+
+## 2026-10-27 — A site's own pairing lines come before the start line
+
+- elixir-utils `20ee197`: `PairingMessage.text/4` takes `setup:` (a site's own
+  lines for that agent) and `start:` (the page from a pairing link), and always
+  ends with the start line. The pairing box passes `start:`; the template adds
+  no lines of its own. Keyfleet passes its check-in lines as `setup:`.
