@@ -164,6 +164,12 @@ database_config =
 
 config :ash_template, AshTemplate.Repo, database_config
 
+unless migrating? do
+  config :ash_template,
+         AshTemplate.Notifications,
+         AshTemplate.DatabaseConfig.notifications_config!(config_env())
+end
+
 if config_env() == :prod do
   config :ash_template, :session_options, secure: true, http_only: true
 

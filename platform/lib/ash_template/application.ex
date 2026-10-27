@@ -34,11 +34,9 @@ defmodule AshTemplate.Application do
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
         chain_head_children(),
         room_activity_child(),
-        # After the repository and PubSub: a Credits balance changed on any
-        # Regent site reaches the pages showing it.
-        RegentCredits.Listener,
-        # A pairing made or ended anywhere reaches the person's account page.
-        RegentAgents.Listener,
+        # After PubSub: a Credits balance changed or a pairing made or ended on
+        # any Regent site reaches the pages showing it.
+        AshTemplate.SharedChanges,
         {Oban, oban_config()},
         AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Live.OpenPages,

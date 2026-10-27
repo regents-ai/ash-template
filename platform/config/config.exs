@@ -17,6 +17,7 @@ config :ex_money,
 config :regent_credits,
   repo: AshTemplate.Repo,
   pubsub: AshTemplate.PubSub,
+  notifications: AshTemplate.Notifications,
   ash_domains: [RegentCredits],
   admins: [],
   chain_client: AshTemplate.ChainClient,
@@ -107,6 +108,7 @@ config :ash_template, :session_bootstrap_rate_limit, limit: 30, window_seconds: 
 config :regent_agents,
   repo: AshTemplate.Repo,
   pubsub: AshTemplate.PubSub,
+  notifications: AshTemplate.Notifications,
   account: {AshTemplate.Agents.PairedAccount, :account},
   allowed: %{
     "not_paired" => [

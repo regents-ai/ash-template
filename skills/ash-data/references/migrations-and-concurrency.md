@@ -92,29 +92,51 @@ guard's settings or ask it to allow a command.
 ## Connections to the shared production database
 
 The template, the five sites, `keyfleet-code` and Sentinel share one production database
-(`regents-platform-prod`) with 97 connections for their logins. During a release a site's
-old and new machines are both connected, so its connections briefly double. On 27 October
-2026 four releases swapped at once and every site lost the database for 20 seconds.
+(`regents-platform-prod`, Fly Managed Postgres on the Starter plan) with 97 connections
+for their logins. During a release a site's old and new machines are both connected, so
+its connections briefly double. On 27 October 2026 four releases swapped at once and
+every site lost the database for 20 seconds.
 
-- A site's serving connection holds 5, set in its own database config as
-  `AshTemplate.DatabaseConfig.serving/1` does. Never leave `pool_size` unset: Ecto's
-  default is 10. The health check reads through that same pool
-  (`AshTemplate.Health.database_ready?/0`); a site keeps no second pool for it.
+A site therefore serves through the database's pooler, as the template does, and keeps
+only what needs a session on the direct address:
+
+- **Serving: the pooler.** `DATABASE_POOLED_URL` names
+  `pgbouncer.dzx6qo6xqzvojpv5.flympg.net`, the cluster's PgBouncer in transaction mode.
+  The pooler opens at most 50 real connections (plus a reserve of 10) for up to 200
+  client connections, so a release's second machine waits a moment for a connection
+  instead of taking one from the database. Copy `AshTemplate.DatabaseConfig.serving/1`:
+  a pool of 5 (never leave `pool_size` unset: Ecto's default is 10),
+  `prepare: :unnamed` (named prepared statements do not survive a transaction pooler),
+  and `max_lifetime: 540_000..600_000`, which replaces each connection before the
+  pooler's ten-minute limit and spreads the reconnects. The health check reads through
+  the same pool (`AshTemplate.Health.database_ready?/0`).
+- **Listening: one direct connection per machine.** The pooler drops `LISTEN`, so the
+  site opens one `Postgrex.Notifications` connection on `direct.<cluster>` with the
+  serving login (`AshTemplate.DatabaseConfig.notifications_config!/2`), and
+  `RegentCredits.Listener`, `RegentAgents.Listener` and any listener of the site's own
+  share it under one `:rest_for_one` supervisor (`AshTemplate.SharedChanges`). Never
+  open a second listening connection, and never listen through the repository.
+- **Release commands: the direct address.** Migrations take session locks, so they run
+  with the release login on `DATABASE_DIRECT_URL`, `direct.dzx6qo6xqzvojpv5.flympg.net`.
+- **Everything else works through the pooler.** Oban's notices go over Erlang
+  (`Oban.Notifiers.PG`); a lock held for one transaction
+  (`pg_advisory_xact_lock`) is fine. A session lock (`pg_advisory_lock`), `SET` outside
+  a transaction or a temporary table kept between transactions is not: use the
+  transaction form.
 - `keyfleet-code` runs the Twigpine git node, not an Ash site. Its ceiling is 20: 10 in
   its main pool and 10 for push locks (`GITLAWB_DB_MAX_CONNECTIONS=10`,
   `GITLAWB_MAX_CONCURRENT_GIT_PUSHES=2`), the lowest the node starts with.
-- One release on the shared database at a time. On the founder's Mac, everything that
-  builds, releases or restarts a production app on the shared database runs under one
-  lock, which waits its turn: `lockf -k /tmp/regent-shared-db-release.lock <command>`.
-  The template's `scripts/deploy.sh` does this, and so does every site's copy; a
-  `fly deploy --image`, `fly secrets set` or `fly secrets import` run by hand takes the
-  same lock. The lock sees a release that is still building, which Fly's release list
-  does not: Fly writes the release only once the build is done.
-- A release started anywhere else also reads the newest release of each of the others
-  first (`fly releases --app <app> --json`, one call per app: `autolaunch-sh`,
-  `keyfleet`, `keyfleet-code`, `patchbay-regents`, `regents-sh-web`, `techtree-sh`,
-  `template-regents-sh`, `sentinel-regent`). If any shows `"InProgress": true`, start
-  yours after it finishes.
+- Until every app serves through the pooler, one release on the shared database at a
+  time. On the founder's Mac, everything that builds, releases or restarts a production
+  app on the shared database runs under one lock, which waits its turn:
+  `lockf -k /tmp/regent-shared-db-release.lock <command>`. The template's
+  `scripts/deploy.sh` does this, and so does every site's copy; a `fly deploy --image`,
+  `fly secrets set` or `fly secrets import` run by hand takes the same lock. A release
+  started anywhere else first reads the newest release of each of the others
+  (`fly releases --app <app> --json`, one call per app: `autolaunch-sh`, `keyfleet`,
+  `keyfleet-code`, `patchbay-regents`, `regents-sh-web`, `techtree-sh`,
+  `template-regents-sh`, `sentinel-regent`) and starts after any that shows
+  `"InProgress": true`.
 - More connections for one site, or a larger database plan, is the founder's decision.
 
 ## Snapshots are generator state

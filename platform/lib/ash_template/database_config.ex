@@ -4,6 +4,7 @@ defmodule AshTemplate.DatabaseConfig do
   @cluster_id "dzx6qo6xqzvojpv5"
   @cluster_name "regents-platform-prod"
   @production_database_host "direct.dzx6qo6xqzvojpv5.flympg.net"
+  @production_pooler_host "pgbouncer.dzx6qo6xqzvojpv5.flympg.net"
   # Superseded identities refused in production configuration: the legacy
   # platform application and the retired rehearsal cluster.
   @production_identities ["platform-phx", "regents-pg-test", "nvwq9ozp9ye03kl1"]
@@ -15,6 +16,7 @@ defmodule AshTemplate.DatabaseConfig do
   @staging_refusals [
     @cluster_id,
     @production_database_host,
+    @production_pooler_host,
     "regents-sh-web" | @production_identities
   ]
   @deployment_role_error ~s(ASH_TEMPLATE_DEPLOYMENT_ROLE must be set to "production" or "staging")
@@ -64,6 +66,19 @@ defmodule AshTemplate.DatabaseConfig do
     ]
   end
 
+  @doc """
+  The connection the site's listeners share (`AshTemplate.SharedChanges`): the
+  serving login on the database's direct address, since the pooler hands out
+  connections per transaction and drops `LISTEN`.
+  """
+  def notifications_config!(environment, getenv \\ &System.get_env/1) do
+    environment
+    |> runtime_config!(getenv)
+    |> Keyword.drop([:pool, :pool_size, :prepare, :max_lifetime, :parameters])
+    |> direct_address()
+    |> Keyword.merge(auto_reconnect: true, parameters: [application_name: "ash-template-listen"])
+  end
+
   def release_config!(getenv \\ &System.get_env/1) do
     role = deployment_role!(getenv)
     if role == :production, do: require_production_target!(getenv)
@@ -73,11 +88,14 @@ defmodule AshTemplate.DatabaseConfig do
   # The serving connection shares one database with every other site, so it holds
   # five connections, names itself in pg_stat_activity, keeps connection details out
   # of its errors, and gives up on a statement, a lock wait or an idle open transaction
-  # before it can stall anyone else. Release commands connect with their own login
-  # and none of these limits.
+  # before it can stall anyone else. Each connection is replaced after nine to ten
+  # minutes, spread so the pool never reconnects at once, ahead of the pooler's own
+  # ten-minute limit. Release commands connect with their own login and none of
+  # these limits.
   defp serving(options) do
     Keyword.merge(options,
       pool_size: 5,
+      max_lifetime: 540_000..600_000,
       show_sensitive_data_on_connection_error: false,
       parameters: [
         application_name: "ash-template-web",
@@ -99,13 +117,19 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   # The hosts a venue admits (any, for a developer's remote target) and the terms
-  # its URL may not name anywhere.
-  defp venue(:production), do: {[@production_database_host], @production_identities}
-  defp venue(:staging), do: {@staging_hosts, @staging_refusals}
-  defp venue(:remote), do: {nil, @production_identities}
+  # its URL may not name anywhere. Production serves through the pooler and runs
+  # its release commands on the direct address.
+  defp venue(:production, "DATABASE_POOLED_URL"),
+    do: {[@production_pooler_host], @production_identities}
+
+  defp venue(:production, "DATABASE_DIRECT_URL"),
+    do: {[@production_database_host], @production_identities}
+
+  defp venue(:staging, _variable), do: {@staging_hosts, @staging_refusals}
+  defp venue(:remote, _variable), do: {nil, @production_identities}
 
   defp database_url!(getenv, variable, venue) do
-    {admitted_hosts, refused_terms} = venue(venue)
+    {admitted_hosts, refused_terms} = venue(venue, variable)
 
     with value when is_binary(value) and value != "" <- getenv.(variable),
          {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
@@ -167,6 +191,19 @@ defmodule AshTemplate.DatabaseConfig do
     if host |> String.downcase() |> String.starts_with?("pgbouncer."),
       do: [prepare: :unnamed, ssl: ssl],
       else: [ssl: ssl]
+  end
+
+  # A Fly Managed Postgres cluster answers on `pgbouncer.<cluster>` through its
+  # pooler and on `direct.<cluster>` without it, for the same logins.
+  defp direct_address(options) do
+    case options[:url] && URI.parse(options[:url]) do
+      %URI{host: "pgbouncer." <> cluster} = uri ->
+        host = "direct." <> cluster
+        Keyword.merge(options, connection_options(URI.to_string(%{uri | host: host}), host))
+
+      _not_pooled ->
+        options
+    end
   end
 
   defp fly_mpg_host?(host) do

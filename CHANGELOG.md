@@ -4029,3 +4029,19 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   building unseen when Keyfleet's check found nothing in progress, and the two swaps
   overlapped by about a minute. ash-data says the same for releases, secrets changes and
   restarts run by hand; the release-list check stays for releases started elsewhere.
+
+## 2026-10-27 — The site serves through the database's pooler
+
+- The running site connects to the shared database's pooler
+  (`pgbouncer.dzx6qo6xqzvojpv5.flympg.net`, transaction mode) instead of its direct
+  address, with `prepare: :unnamed` and each connection replaced after nine to ten
+  minutes. The pooler opens at most 50 real connections (plus a reserve of 10) for every
+  site together, so a release's second machine no longer adds load on the database's own
+  limit. Production admits only the pooler for `DATABASE_POOLED_URL`; release commands
+  stay on the direct address. Sean's decision RELEASE-NO-WAIT (27 Oct, "1. a").
+- Credits and agent changes from other sites arrive on one connection of the site's own
+  on the direct address (`AshTemplate.SharedChanges`, shown as `ash-template-listen`),
+  which both listeners share; the pooler drops listening. elixir-utils 85d05a7: the
+  listeners take the required `notifications:` setting instead of opening their own.
+- ash-data describes the standard for every site. The one-release-at-a-time rule stays
+  until every app serves through the pooler.
