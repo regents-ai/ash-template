@@ -4011,3 +4011,11 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   does, with no second pool beside it (Keyfleet kept one extra connection per process
   group for it). `keyfleet-code`, the Twigpine git node, is capped at 20 connections, the
   lowest it starts with; it was able to open up to 88.
+
+## 2026-10-27 — Header lab: the crown has no frame
+
+- The crown beside the site name in the header lab (`/animations/header-footer`) drew a
+  1px frame that showed as a light ring on a dark page. It now stands alone, the same
+  size. From Keyfleet's header (Keyfleet 3a37be86, after Sean asked for the ring to go).
+  Keyfleet's other two header fixes do not apply here: the nine-dot button is already
+  44×44, and icon names are hidden below 48rem and end inside the screen above it.

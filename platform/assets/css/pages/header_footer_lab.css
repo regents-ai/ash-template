@@ -48,9 +48,12 @@
   white-space: nowrap;
 }
 
+/* The crown stands alone in the header: no frame, which showed as a light ring
+   on a dark page. */
 .site-header__brand .shell-apps__tile {
   width: 1.875rem;
   height: 1.875rem;
+  border: 0;
 }
 
 .site-header__nav {
