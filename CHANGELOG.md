@@ -4050,3 +4050,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 
 - ash-data: `keyfleet-code` holds at most 10 connections since its v5 (c9a59ea), not 20,
   and turns off sqlx's statement cache when it serves through the pooler.
+
+## 2026-10-27 — Homepage hero: Enter App and WebMCP Tools
+
+- The homepage hero's main button is Enter App, opening `/app`. At rest it shows the
+  marks a main button shows on hover in dark (Powder Blue corners, Tangerine cuts), and
+  on hover the Powder Blue runs on into two full L-edges. WebMCP Tools beside it is the
+  secondary button and opens the same tools list. `AgentTools.button` takes its own words
+  and classes for it; the footer's count button is unchanged. Copied from regents.sh
+  572230a1 (v229, Sean 27 Oct: "add this as the primary CTA in the hero 'Enter App', and
+  'WebMCP Tools' as secondary").

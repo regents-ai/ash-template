@@ -122,7 +122,16 @@ defmodule AshTemplateWeb.HomeLive do
         <h1 id="home-title" class="rl-hero-title">Ash Template</h1>
         <p class="rl-hero-description">A starting point for your next product</p>
         <div class="rl-hero-actions">
-          <AgentTools.button id="home-agent-tools-button" dialog="home-agent-tools" />
+          <a href={~p"/app"} class="rg-button rl-hero-cta">
+            <span class="rg-button__label">Enter App</span>
+          </a>
+          <AgentTools.button
+            id="home-agent-tools-button"
+            dialog="home-agent-tools"
+            class="rg-button rg-button--secondary rg-button--no-arrow"
+          >
+            <span class="rg-button__label">WebMCP Tools</span>
+          </AgentTools.button>
         </div>
       </div>
       <AgentTools.dialog id="home-agent-tools" />
