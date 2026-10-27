@@ -4206,3 +4206,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   URL-encoded.
 - pair_live_test.exs covers which links are taken; pair_link.spec.ts pairs from a link,
   from a link to another site, and as a visitor; the walk opens /pair.
+
+## 2026-10-27 — Bring your agent: the pairing box fits the page
+
+- On `/pair` the pairing box keeps the width it has on a phone (24rem), so the ten
+  agents' pictures stay together on a wide screen instead of spreading across it.
+- The page the agent starts at wraps rather than running off a narrow screen.
+- Below 22rem wide the pictures shrink to 2rem so all five in a row fit; at 320 the
+  box ran 28px past the page's edge before.
+- Styles only (`.pair-page` in pages/account.css); the words, the flow and the side
+  panel's pairing box are unchanged. Checked headless at 1280, 390 and 320 in light
+  and dark; pair_link and account walks pass.

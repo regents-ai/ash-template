@@ -24,7 +24,7 @@ defmodule AshTemplateWeb.PairLive do
 
   def page(assigns) do
     ~H"""
-    <article id="pair-page" class="account-page">
+    <article id="pair-page" class="account-page pair-page">
       <.page_head title="Bring your agent">
         <:tip>Pair your agent with your account, then send it the message.</:tip>
       </.page_head>
