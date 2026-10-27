@@ -8,9 +8,9 @@ defmodule AshTemplate.Points.Award do
       per person, on whichever site copies the template), from
       `AshTemplate.Notes.Signals`.
     * A Credits purchase credited to an account, or a waiting one an account
-      now holds (`credits.purchase_settled`), from `RegentCredits.Signals`.
-      Credits is one Regents ledger, so every site names it "regents" and a
-      purchase earns once.
+      now holds, in USDC or by card or Link (`credits.purchase_settled`), from
+      `RegentCredits.Signals`. Credits is one Regents ledger, so every site
+      names it "regents" and a purchase earns once.
   """
 
   use Ash.Resource,
@@ -27,6 +27,7 @@ defmodule AshTemplate.Points.Award do
     from RegentCredits.Signals do
       on :purchase_credited, :purchase_credited, action: :credits_purchase
       on :purchase_attributed, :purchase_attributed, action: :credits_purchase
+      on :card_purchase_credited, :card_purchase_credited, action: :card_purchase
     end
   end
 
@@ -56,6 +57,19 @@ defmodule AshTemplate.Points.Award do
           rule_id: "credits.purchase_settled",
           source_app: "regents",
           source_kind: "credits_purchase",
+          source_event_key: signal.purchase_id
+        })
+      end
+    end
+
+    action :card_purchase do
+      argument :signal, :struct, allow_nil?: false
+
+      run fn %{arguments: %{signal: signal}}, _context ->
+        record(%{
+          rule_id: "credits.purchase_settled",
+          source_app: "regents",
+          source_kind: "card_purchase",
           source_event_key: signal.purchase_id
         })
       end

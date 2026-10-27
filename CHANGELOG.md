@@ -4292,3 +4292,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   `/indexnow-key.txt` serves the key; a Stripe notice answers 404 "takes no card
   payments" while the keys are unset. The only errors are the health check's refusals
   in the two seconds the single machine restarted.
+
+## 2026-10-27 — Credits bought by card earn Points
+
+- elixir-utils 9a015f8: a card or Link purchase tells the site when its Credits are
+  added (`RegentCredits.Signals`, `:card_purchase_credited`). The Points listener
+  (`AshTemplate.Points.Award`) records `credits.purchase_settled` from it with source
+  kind `card_purchase`, and Points' check (`AshTemplate.Points.CreditsPurchase`) reads
+  the card purchase: one Point per Credit, as for USDC, and nothing for the card fee
+  (Sean, CARD-POINTS a). Credits a test card paid for earn no Points
+  (`card_test_payment`). Points stay off until Sean approves the rule and start time.
+- `platform/.env.example` names the three Stripe settings.
