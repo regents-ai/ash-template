@@ -4266,3 +4266,29 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Release needs the migration above (new table) and, to switch it on, the three
   Stripe secrets staged on the app. The public changelog gets its line when live
   keys are set; until then only the Credits admins see the choice.
+
+## 2026-10-27 — Released v117: serving through the pooler, Credits by card ready
+
+- Fly v117, image be65b7d (Sean's letters STRIPE-TEMPLATE-RELEASE a and POOLER-LIMITS a),
+  live 20:18Z; rollback v116 (f76f138). Carries the pooler change and everything since
+  f76f138 on main (24 commits), including visit lines with the Global Privacy Control
+  rule and Credits by card or Link. Card payments stay off until Stripe's keys are set.
+- Before the deploy, on the template's own login (`template-runtime`, used only by
+  `ash-template-web`): statement 15 s, lock wait 5 s and idle open transaction 15 s are
+  stored on the login (`ALTER ROLE CURRENT_USER SET …`), read back from `pg_roles`.
+- From the be65b7d image on temporary machines that removed themselves: a connection
+  through the pooler with the release's own certificate settings answered as
+  `template-runtime` with 15s / 5s / 15s; `pending-migrations` printed only
+  `shared-pending: regent_credits 20261027170554`; `migrate-shared` printed
+  `applied: regent_credits 20261027170554` (table `regent_credits.card_purchases`).
+  The release step migrated nothing new.
+- Settings: `DATABASE_POOLED_URL` now names the pooler host (same login and database,
+  changed on the server without showing it); `ASH_TEMPLATE_INDEXNOW_KEY` set. Both staged,
+  then applied by the deploy.
+- Before: full check on be65b7d 92 ExUnit, 24 JS, 292 browser steps (2 skipped).
+- After: `/capabilities.json` reports be65b7d; the running site's database host is the
+  pooler and its connections carry the three limits; `/`, `/account`,
+  `/account/credits`, `/skill.md`, `/healthz` and `/api/v1/health` answer 200;
+  `/indexnow-key.txt` serves the key; a Stripe notice answers 404 "takes no card
+  payments" while the keys are unset. The only errors are the health check's refusals
+  in the two seconds the single machine restarted.
