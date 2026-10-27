@@ -16,7 +16,7 @@ import {CTA, mountButtons} from "./hooks/motion/buttons"
 import {splitText} from "animejs"
 import {deny, nope, squish} from "./hooks/motion/press"
 import {CASCADE, GRIDS, HEADLINES, onFirstSight} from "./hooks/motion/reveals"
-import {CLIPPED_WORD, byPointer, lastInputByPointer, still, watchInput} from "./hooks/motion/shared"
+import {CLIPPED_WORD, byPointer, fadeIn, lastInputByPointer, still, watchInput} from "./hooks/motion/shared"
 import {backdrop, drawer, menu, sheet} from "./hooks/motion/slides"
 
 // A menu's summary is its button; other summaries open disclosures in the
@@ -36,13 +36,19 @@ export function mountMotion(doc: Document) {
   doc.addEventListener("toggle", toggle, true)
 
   const main = doc.querySelector("main")
-  if (main === null || live(main) || still(main)) return
+  if (main === null || live(main)) return
+
+  // With less motion asked for, the headline and the cards only fade in.
+  const calm = still(main)
 
   const headline = main.querySelector<HTMLElement>("h1")
-  if (headline !== null) rise(headline)
+  if (headline !== null) calm ? fadeIn(headline) : rise(headline)
 
   for (const list of main.querySelectorAll<HTMLElement>("[data-cascade]"))
-    onFirstSight(list, () => GRIDS.cascade([...list.children].slice(0, CASCADE)))
+    onFirstSight(list, () => {
+      const cards = [...list.children].slice(0, CASCADE)
+      calm ? fadeIn(cards) : GRIDS.cascade(cards)
+    })
 
   // A page the server sent back refused says why in an alert set straight in
   // `main`, and the reason shakes once. An alert inside content that is still
@@ -79,7 +85,8 @@ export function press(event: MouseEvent) {
   if (shade) backdrop(shade)
 }
 
-// A dialog rises as a sheet and a header menu pops open. A page that redraws
+// A dialog rises as a sheet, whether it opens as a modal or as a popover over
+// another window, and a header menu pops open. A page that redraws
 // an open one closes and reopens it within one moment, which reports it as
 // having been open all along, so it does not move again. Once it rests where it
 // opens, moved or not, it carries `data-settled`, so whatever measures it, such
@@ -92,7 +99,7 @@ function toggle(event: Event) {
 
   const moves = lastInputByPointer() && !still(target)
   Promise.resolve(moves ? open(target) : undefined).then(() => {
-    if (target.hasAttribute("open")) target.dataset.settled = ""
+    if (target.matches("[open], :popover-open")) target.dataset.settled = ""
   })
 }
 

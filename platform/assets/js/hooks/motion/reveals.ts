@@ -14,7 +14,7 @@ import {
   type Scope,
   type TextSplitter,
 } from "animejs"
-import {EASE_IN_OUT, EASE_OUT, SLOW, byPointer, play, still} from "./shared"
+import {EASE_IN_OUT, EASE_OUT, SLOW, byPointer, fadeIn, play, still} from "./shared"
 import type {Hook} from "../../hook_composition"
 
 type Spot = {x: number; scaleX: number}
@@ -213,10 +213,11 @@ export const MotionCascade: Hook = {
     const scope = createScope({root: list})
 
     this.scope = scope.add(self => {
-      self!.add("cascade", () => GRIDS[list.dataset.variant ?? ""]([...list.children].slice(0, CASCADE)))
-      return onFirstSight(list, () => {
-        if (!still(list)) scope.methods.cascade()
+      self!.add("cascade", () => {
+        const cards = [...list.children].slice(0, CASCADE)
+        return still(list) ? fadeIn(cards) : GRIDS[list.dataset.variant ?? ""](cards)
       })
+      return onFirstSight(list, () => scope.methods.cascade())
     })
   },
 

@@ -1,6 +1,6 @@
 import type {Locator} from "@playwright/test"
 import {expect, test} from "./support/test"
-import {signedIn, watch} from "./support/person"
+import {resting, signedIn, watch} from "./support/person"
 
 // The Credits panel's "Where to spend" opens a window naming each Regents Product
 // and what Credits buy there, and the panel's "Paying from" wallet carries its copy icon.
@@ -36,7 +36,8 @@ test("Where to spend lists each site and what Credits buy there", async ({page, 
     await expect(rows.nth(index).getByRole("link")).toHaveAttribute("href", url)
   }
 
-  // The whole window sits on the screen.
+  // The whole window sits on the screen once it has risen into place.
+  await resting(window)
   const box = (await window.boundingBox())!
   const screen = page.viewportSize()!
   expect(box.x).toBeGreaterThanOrEqual(0)

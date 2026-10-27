@@ -1,6 +1,7 @@
 import {selectConnectedEthereumWallet} from "./wallet_actions/connected_wallet"
 import {PrivyShowcase} from "./hooks/privy_showcase"
 import {OnchainLab} from "./hooks/onchain_lab"
+import {GrammarVerbs} from "./hooks/grammar_verbs"
 
 
 import {selectors} from "../vendor/regent_ui/tokens.json"
@@ -294,4 +295,4 @@ const ShowcaseWallet = {
     this.cleanup?.()
   },
 }
-export const hooks = {Showcase, ShowcaseWallet, PrivyShowcase, OnchainLab}
+export const hooks = {Showcase, ShowcaseWallet, PrivyShowcase, OnchainLab, GrammarVerbs}

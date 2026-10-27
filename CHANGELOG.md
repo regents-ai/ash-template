@@ -4316,3 +4316,35 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Release checklist: live first, small and reversible, every release names its
   rollback; Sentinel reads after release and before protected releases only;
   regression tests follow Sean's one-hour live confirmation (Sean, 27 Oct 22:28Z).
+
+## 2026-10-27 — Layers: one stacking place per layer, and the grammar page
+
+- Six layers name what sits on what: Ground, Sheet, Card, Panel, Window and Tip.
+  The tokens come from design-system d53b8f1 (regent_ui's
+  `design_system_tokens.css`): one stacking place per floating layer
+  (`--rg-layer-card` 1, `-shade` 10, `-panel` 20, `-header` 30, `-tip` 50,
+  `-skip` 60) and one shadow each for panel and tip, both `none`. Windows need
+  no number: the browser lifts them above the page. Layers stay flat (Sean, LAYERS-DEPTH a): height shows in the edge,
+  the fill and how a thing arrives.
+- Hard cutover in product CSS: the shell's skip link, header, rail, side panels,
+  footer, phone menu and its shade, the rail's tips, the Regents Products menu,
+  the account popover and the Credits dialog's close button take their place
+  from the tokens. The bottom bar never floats (card layer), so on a phone the
+  open menu, the side panel and the shade cover it. The left column states no
+  number of its own. The phone header sits above the phone panels, which start
+  below it, so the account menu now opens over an open panel instead of behind
+  it.
+- Credits' "Where to spend" is a shared window (`Regent.Structure.dialog`
+  opened as a popover): cut corners in place of its rounded box and soft shadow.
+  The rooms menu loses its soft shadow too.
+- With less motion asked for, a page's headline and its cards now fade in
+  (`fadeIn` in the motion kit) instead of appearing with no change at all;
+  windows, panels and menus are simply there, as before. A window opened as a
+  popover now carries `data-settled` once it rests, like a modal one.
+- `/showcase/grammar` has three views, each its own address: Nouns (the shared
+  pieces by name), Verbs (`/verbs`: arrive, settle, open, press, leave, played by
+  the motion kit, with a fade when less motion is asked for) and Layers
+  (`/layers`: the six layers drawn in Regent's look, square with cut corners
+  and hairlines, beside a table of each layer's edge, fill and arrival).
+- Artwork that orders its own pieces (cubes, crown, hero, lab pages) keeps its
+  numbers; they never meet the page's layers.

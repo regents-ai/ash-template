@@ -451,14 +451,15 @@ defmodule AshTemplateWeb.CreditsPanel do
         </div>
       </header>
 
-      <%!-- The browser opens and closes it (`popover`), above the Buy dialog, and
-           closes it on Escape or a press outside; a page update never shuts it. --%>
-      <section
+      <%!-- A window in the shared frame. The browser opens and closes it
+           (`popover`), above the Buy dialog, and closes it on Escape or a press
+           outside; a page update never shuts it. --%>
+      <Regent.Structure.dialog
         id={"#{@id}-where"}
         class="credits-where"
         popover
-        role="dialog"
         aria-labelledby={"#{@id}-where-title"}
+        phx-mounted={JS.ignore_attributes(["style", "data-settled"])}
       >
         <header class="credits-where__head">
           <h2 id={"#{@id}-where-title"}>Where to spend Credits</h2>
@@ -483,7 +484,7 @@ defmodule AshTemplateWeb.CreditsPanel do
             </a>
           </li>
         </ul>
-      </section>
+      </Regent.Structure.dialog>
 
       <form
         id={"#{@id}-form"}

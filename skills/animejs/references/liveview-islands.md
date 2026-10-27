@@ -50,7 +50,7 @@ each kind of movement, and the lab where every version that was tried sits side 
 
 | File | Holds |
 | --- | --- |
-| `platform/assets/js/hooks/motion/shared.ts` | Timings, curves, `still(el)`, `byPointer(event)`, `lastInputByPointer()`, `play()` |
+| `platform/assets/js/hooks/motion/shared.ts` | Timings, curves, `still(el)`, `byPointer(event)`, `lastInputByPointer()`, `play()`, `fadeIn()` |
 | `platform/assets/js/hooks/motion/press.ts` | `squish`, `nope`, `deny` |
 | `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `backdrop`, `MotionPanels` |
 | `platform/assets/js/hooks/motion/reveals.ts` | `ShellViews`, `MotionTabs` / `tabsHook`, `MotionCascade`, `HEADLINES`, `GRIDS` |

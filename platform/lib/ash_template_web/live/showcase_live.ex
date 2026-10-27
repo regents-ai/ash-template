@@ -73,7 +73,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
     {"/showcase/payments", "Pay with USDC"},
     {"/showcase/funds", "Your funds"},
     {"/showcase/discussion", "Discussion"},
-    {"/showcase/figures", "Live figures"}
+    {"/showcase/figures", "Live figures"},
+    {"/showcase/grammar", "Grammar"}
   ]
 
   def mount(_params, _session, socket) do

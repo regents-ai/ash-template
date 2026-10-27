@@ -174,6 +174,9 @@ defmodule AshTemplateWeb.Router do
       live "/funds", FundsShowcaseLive, :index
       live "/discussion", DiscussionShowcaseLive, :index
       live "/figures", FiguresShowcaseLive, :index
+      live "/grammar", GrammarShowcaseLive, :nouns
+      live "/grammar/verbs", GrammarShowcaseLive, :verbs
+      live "/grammar/layers", GrammarShowcaseLive, :layers
     end
   end
 

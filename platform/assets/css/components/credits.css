@@ -116,20 +116,7 @@
    there, in a window above the Buy dialog. */
 
 .credits-where {
-  box-sizing: border-box;
-  width: min(26rem, calc(100% - 2rem));
-  max-height: calc(100dvh - 4rem);
-  padding: 1.25rem;
-  overflow-y: auto;
-  border: 1px solid var(--ash-line-strong);
-  border-radius: 1.25rem;
-  background: var(--color-surface);
-  color: var(--color-fg);
-  box-shadow: 0 1.5rem 3rem -1rem color-mix(in oklch, var(--palette-charcoal) 35%, transparent);
-}
-
-.credits-where::backdrop {
-  background: color-mix(in oklch, var(--palette-charcoal) 30%, transparent);
+  --rg-dialog-size: 26rem;
 }
 
 .credits-where__head {
