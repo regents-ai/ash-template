@@ -3930,3 +3930,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - ash_phoenix 2.3.25 → 2.3.26 and ash_oban 0.10.2 → 0.10.3, their newest Hex releases
   (Keyfleet main dc1f8140 has the same two). Ash stays at 3.37.2, the newest.
 - `docs/dependency-baseline.md` names the new source.
+
+## 2026-10-26 — Swarm city: haze follows the camera
+
+- The city's haze starts just short of the city however far the camera stands
+  back, so on a tall, narrow phone screen the city no longer fades to blank.
+  At the usual distance it looks the same as before. Keyfleet's copy carries the
+  same change.

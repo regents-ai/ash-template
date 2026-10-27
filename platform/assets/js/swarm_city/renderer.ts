@@ -155,6 +155,7 @@ async function build(
     up: [0, 1, 0],
     lit: [0, 0, 0, 0],
     resolution: [size[0], size[1]],
+    reach: view.distance,
   }
   const cityUniforms = uniforms(gpu, cityValues)
   const set = {city: cityUniforms}
@@ -312,11 +313,12 @@ async function build(
     const aspect = width / height
     // A narrow canvas stands back further, so the whole city still fits across it.
     const fit = Math.max(1, 1.4 / aspect) ** 0.85
+    cityValues.reach = view.distance * fit
     const rig = orbitRig({
       target: [view.x, view.y, view.z],
       yaw: view.yaw + spin,
       pitch: view.pitch,
-      distance: view.distance * fit,
+      distance: cityValues.reach,
     })
     rigPose(rig, camera.pose)
     perspective({fov: FOV, near: 0.3, far: 140}, aspect, camera.projection)

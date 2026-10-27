@@ -57,6 +57,8 @@ struct City {
   // How lit each district is: castle, forge, inn, from 0 to 1.
   lit: vec4f,
   resolution: vec2f,
+  // How far the camera stands from what it looks at, so the haze starts just short of the city.
+  reach: f32,
 }
 
 @group(0) @binding(0) var<uniform> city: City;
@@ -111,7 +113,7 @@ fn quarterLit(quarter: u32) -> f32 {
 
 // Far things sink into the look's haze, so the city has depth.
 fn distanceFade(p: vec3f) -> f32 {
-  return 1.0 - smoothstep(30.0, 60.0, length(p - city.eye));
+  return 1.0 - smoothstep(city.reach - 6.0, city.reach + 24.0, length(p - city.eye));
 }
 
 fn hazed(colour: vec3f, p: vec3f) -> vec3f {
