@@ -4081,3 +4081,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - onchain-buttons skill (hook-pattern): the press path says the same. New property check
   `platform/test/ash_template_web/credits_press_test.exs` (fails on the old reply), listed in
   `docs/feature-map.md`.
+
+## 2026-10-27 — A refused sign-in reloads the page once
+
+- When the server refuses a sign-in and drops the browser's session, the page
+  reloads once and lands signed out. Before, the old page's live connection,
+  told by the server to drop, could ask for a new session while the reload was
+  already on its way. That late answer replaced the reloaded page's cookie, its
+  connection was refused as stale, and the page loaded a third time.
+- `holdAdoptionWhileLeaving` in `platform/assets/js/auth_lazy.ts`, installed in
+  `platform/assets/js/app.ts`: from `beforeunload` on, a page's held live
+  connection asks the server for nothing; the page that replaces it reads its own
+  session. Ported from Keyfleet b19ab5be, where the rejected-bearer browser test
+  failed 3 of 17 runs alone before and passed 40 of 40 after. New check
+  `platform/assets/test/session_leaving.test.ts` (fails without the change),
+  listed in `docs/feature-map.md`.
