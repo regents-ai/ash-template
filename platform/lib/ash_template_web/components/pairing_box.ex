@@ -10,7 +10,9 @@ defmodule AshTemplateWeb.PairingBox do
 
   The parent passes `account` (the signed-in account), its `session_lease` as
   `lease` and `id`, and sends `agents_changed: true` when an agent pairs, checks
-  in or is unpaired anywhere.
+  in or is unpaired anywhere. A pairing link (`/pair?to=<path>`) also passes
+  `start`, the page on this site the agent begins on once paired; the message
+  then ends by sending it there.
   """
   use AshTemplateWeb, :live_component
 
@@ -31,8 +33,12 @@ defmodule AshTemplateWeb.PairingBox do
   @impl true
   def update(%{agents_changed: true}, socket), do: {:ok, after_pairing(socket)}
 
-  def update(%{account: account, id: id, lease: lease}, socket),
-    do: {:ok, socket |> assign(id: id, lease: lease) |> take_account(account)}
+  def update(%{account: account, id: id, lease: lease} = assigns, socket),
+    do:
+      {:ok,
+       socket
+       |> assign(id: id, lease: lease, start: assigns[:start])
+       |> take_account(account)}
 
   # The account as the page gave it, or as it reads now before each event
   # (`Session.check_component_lease/2`).
@@ -66,7 +72,7 @@ defmodule AshTemplateWeb.PairingBox do
         phx-change="choose_agent"
         phx-submit="new_pairing_code"
         phx-target={@myself}
-        {pairing(@chosen, @codes[@chosen])}
+        {pairing(@chosen, @codes[@chosen], @start)}
       />
     </div>
     """
@@ -85,20 +91,21 @@ defmodule AshTemplateWeb.PairingBox do
   defp label(harness), do: Harness.label(harness)
 
   # The pairing box's state; the box keeps one size whatever it holds.
-  defp pairing(nil, nil), do: %{}
+  defp pairing(nil, nil, _start), do: %{}
 
-  defp pairing(harness, %PairingCode.Issued{} = code),
+  defp pairing(harness, %PairingCode.Issued{} = code, start),
     do: %{
       chosen: to_string(harness),
-      message: agent_message(code.code, harness),
+      message: PairingMessage.text(code.code, AshTemplateWeb.Endpoint.url(), harness, start),
       expires_iso: DateTime.to_iso8601(code.expires_at),
       expires: Calendar.strftime(code.expires_at, "%H:%M UTC")
     }
 
-  defp pairing(harness, {:paired, agent}),
+  defp pairing(harness, {:paired, agent}, _start),
     do: %{chosen: to_string(harness), outcome: {:paired, agent.name}}
 
-  defp pairing(harness, :unavailable), do: %{chosen: to_string(harness), outcome: :unavailable}
+  defp pairing(harness, :unavailable, _start),
+    do: %{chosen: to_string(harness), outcome: :unavailable}
 
   defp with_offered(socket, harness, then) do
     with {:ok, harness} <- Harness.match(harness),
@@ -153,8 +160,4 @@ defmodule AshTemplateWeb.PairingBox do
   # The kinds of failure alone: the failure's words can hold the person's id.
   defp failure_kinds(%{errors: [_ | _] = errors}), do: Enum.map(errors, & &1.__struct__)
   defp failure_kinds(error), do: [error.__struct__]
-
-  # What the person pastes to their agent.
-  defp agent_message(code, harness),
-    do: PairingMessage.text(code, AshTemplateWeb.Endpoint.url(), harness)
 end

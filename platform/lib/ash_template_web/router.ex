@@ -350,6 +350,7 @@ defmodule AshTemplateWeb.Router do
       live "/account/credits", ShellLive, :credits
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
+      live "/pair", ShellLive, :pair
     end
   end
 

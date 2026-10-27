@@ -4191,3 +4191,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Patchbay's AI-search requests 1 and 3 (control coordination/ash-template.md).
 - index_now_test.exs; structured_data.spec.ts reads the rendered head on /docs and
   the discussion showcase; the walk opens /indexnow-key.txt.
+
+## 2026-10-27 — Bring your agent to one page
+
+- `/pair?to=<path>` (`AshTemplateWeb.PairLive`, inside the app frame): the side panel's
+  pairing box with `start`, so the pasted message ends "Once paired, start at
+  <origin><path>" (elixir-utils 6773781, `RegentAgents.PairingMessage.text/4`). `to`
+  must be a page on this site: one leading "/", never "//" or "/\\", no spaces or
+  control characters, at most 512 characters; anything else opens plain pairing.
+  Signed out, the page shows the page the agent will start on and Sign in.
+- The side panel's pairing box is unchanged: it passes no `start`.
+- The agent guide (llms.txt) names the link and the closing line.
+- A site's own "Bring your agent" button links to `/pair?to=` with its page's path,
+  URL-encoded.
+- pair_live_test.exs covers which links are taken; pair_link.spec.ts pairs from a link,
+  from a link to another site, and as a visitor; the walk opens /pair.

@@ -31,6 +31,7 @@ defmodule AshTemplateWeb.ShellLive do
     NotFoundError,
     OverviewLive,
     PairingBox,
+    PairLive,
     PanelAgents,
     PollsLive,
     Presence,
@@ -64,6 +65,7 @@ defmodule AshTemplateWeb.ShellLive do
        dm: nil,
        poll_id: nil,
        hearing_polls?: false,
+       pair_start: nil,
        verified_connections: %Read{},
        points: %Read{},
        credits_read: %Read{},
@@ -95,6 +97,7 @@ defmodule AshTemplateWeb.ShellLive do
      socket
      |> assign(page_meta(room, page_path(action, uri)))
      |> assign(:route_spec, route_spec)
+     |> assign(:pair_start, PairLive.start(params))
      |> load_points(route_spec)
      |> load_credits_history(route_spec)
      |> load_verified_connections(route_spec)
@@ -230,6 +233,9 @@ defmodule AshTemplateWeb.ShellLive do
 
     if socket.assigns.route_spec.route_id == :account,
       do: send_update(AgentsPanel, id: "account-agents", agents_changed: true)
+
+    if socket.assigns.route_spec.route_id == :pair,
+      do: send_update(PairingBox, id: "pair-pairing-box", agents_changed: true)
 
     {:noreply, socket}
   end
@@ -436,6 +442,13 @@ defmodule AshTemplateWeb.ShellLive do
           signed_out_reason={@signed_out_reason}
           account={current_account(@access_context)}
           sign_in_wallets={@sign_in_wallets}
+        />
+
+        <PairLive.page
+          :if={@route_spec.route_id == :pair}
+          account={current_account(@access_context)}
+          lease={@session_lease}
+          start={@pair_start}
         />
 
         <AccountLive.connections

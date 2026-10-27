@@ -46,6 +46,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
+    "/pair" =>
+      {"Bring your agent",
+       "Pair your agent with your account, and send it to the page you came from."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/animations/crown" =>
       {"Crown",

@@ -2,6 +2,12 @@
 
 What changed in Ash Template lately, newest first.
 
+## 27 October 2026
+
+- **Bring your agent to one page.** A Bring your agent link opens a page where you pair
+  your agent, and the message you send it ends with the page it should start on once
+  it is paired.
+
 ## 26 October 2026
 
 - **Neon in four site palettes.** The neon city now comes in Regents, Techtree,
