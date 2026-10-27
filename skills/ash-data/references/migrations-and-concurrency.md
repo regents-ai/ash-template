@@ -98,7 +98,11 @@ old and new machines are both connected, so its connections briefly double. On 2
 
 - A site's serving connection holds 5, set in its own database config as
   `AshTemplate.DatabaseConfig.serving/1` does. Never leave `pool_size` unset: Ecto's
-  default is 10.
+  default is 10. The health check reads through that same pool
+  (`AshTemplate.Health.database_ready?/0`); a site keeps no second pool for it.
+- `keyfleet-code` runs the Twigpine git node, not an Ash site. Its ceiling is 20: 10 in
+  its main pool and 10 for push locks (`GITLAWB_DB_MAX_CONNECTIONS=10`,
+  `GITLAWB_MAX_CONCURRENT_GIT_PUSHES=2`), the lowest the node starts with.
 - One release on the shared database at a time. Before `fly deploy` on a production app,
   read the newest release of each of the others (`fly releases --app <app> --json`, one
   call per app: `autolaunch-sh`, `keyfleet`, `keyfleet-code`, `patchbay-regents`,

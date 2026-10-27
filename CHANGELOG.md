@@ -4004,3 +4004,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   releases swapping at once used them all for 20 seconds (02:48Z): each site serves with a
   pool of 5, as the template does, and starts a release only when no other app's newest
   release is still in progress. More connections or a larger plan is Sean's decision.
+
+## 2026-10-27 — Skills: health checks share the pool; keyfleet-code's ceiling
+
+- ash-data: a site's health check reads through its serving pool of 5, as the template's
+  does, with no second pool beside it (Keyfleet kept one extra connection per process
+  group for it). `keyfleet-code`, the Twigpine git node, is capped at 20 connections, the
+  lowest it starts with; it was able to open up to 88.
