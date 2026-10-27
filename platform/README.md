@@ -356,7 +356,9 @@ It refuses a working tree with any change, a commit that is not on
 live image's label, read with `fly image show`), so two crossing releases never
 take live work back out. Then it runs `fly deploy . --config platform/fly.toml --app <app>
 --ha=false --remote-only --image-label <short commit>`, so both folders reach
-the build and the image names the commit it came from. Staging deploys with
+the build and the image names the commit it came from. It runs that under
+`lockf -k /tmp/regent-shared-db-release.lock`, the lock every site's deploy takes, so
+a release waits for any other site's release on the shared database to finish. Staging deploys with
 `fly deploy . --config platform/fly.staging.toml`.
 
 A new staging database is empty and has no copy of the shared

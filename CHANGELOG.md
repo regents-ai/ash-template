@@ -4019,3 +4019,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   size. From Keyfleet's header (Keyfleet 3a37be86, after Sean asked for the ring to go).
   Keyfleet's other two header fixes do not apply here: the nine-dot button is already
   44×44, and icon names are hidden below 48rem and end inside the screen above it.
+
+## 2026-10-27 — Releases on the shared database take turns
+
+- `scripts/deploy.sh` now runs the build and release under
+  `lockf -k /tmp/regent-shared-db-release.lock`, the lock every site's deploy takes on
+  the founder's Mac, so a release waits for any other to finish. Keyfleet found the gap:
+  Fly lists a release only once its build is done, so at 03:39Z Patchbay v275 was
+  building unseen when Keyfleet's check found nothing in progress, and the two swaps
+  overlapped by about a minute. ash-data says the same for releases, secrets changes and
+  restarts run by hand; the release-list check stays for releases started elsewhere.

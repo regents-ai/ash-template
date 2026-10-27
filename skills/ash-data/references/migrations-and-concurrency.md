@@ -103,11 +103,18 @@ old and new machines are both connected, so its connections briefly double. On 2
 - `keyfleet-code` runs the Twigpine git node, not an Ash site. Its ceiling is 20: 10 in
   its main pool and 10 for push locks (`GITLAWB_DB_MAX_CONNECTIONS=10`,
   `GITLAWB_MAX_CONCURRENT_GIT_PUSHES=2`), the lowest the node starts with.
-- One release on the shared database at a time. Before `fly deploy` on a production app,
-  read the newest release of each of the others (`fly releases --app <app> --json`, one
-  call per app: `autolaunch-sh`, `keyfleet`, `keyfleet-code`, `patchbay-regents`,
-  `regents-sh-web`, `techtree-sh`, `template-regents-sh`, `sentinel-regent`). If any shows
-  `"InProgress": true`, start yours after it finishes.
+- One release on the shared database at a time. On the founder's Mac, everything that
+  builds, releases or restarts a production app on the shared database runs under one
+  lock, which waits its turn: `lockf -k /tmp/regent-shared-db-release.lock <command>`.
+  The template's `scripts/deploy.sh` does this, and so does every site's copy; a
+  `fly deploy --image`, `fly secrets set` or `fly secrets import` run by hand takes the
+  same lock. The lock sees a release that is still building, which Fly's release list
+  does not: Fly writes the release only once the build is done.
+- A release started anywhere else also reads the newest release of each of the others
+  first (`fly releases --app <app> --json`, one call per app: `autolaunch-sh`,
+  `keyfleet`, `keyfleet-code`, `patchbay-regents`, `regents-sh-web`, `techtree-sh`,
+  `template-regents-sh`, `sentinel-regent`). If any shows `"InProgress": true`, start
+  yours after it finishes.
 - More connections for one site, or a larger database plan, is the founder's decision.
 
 ## Snapshots are generator state
