@@ -3951,3 +3951,16 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - Read-only check on the live machine: `public.ash_required` has the version 7 body, both
   ledgers hold their version, a missing value raises "ash_error: {}" and a present one
   comes back. Version 6 copies remain in `patchbay_app` and `techtree_app`.
+
+## 2026-10-27 — Every page writes its page line
+
+- Sentinel's first read of v111 found request lines but no `page` lines: the page line
+  came from LiveView's `handle_params` telemetry, which fires only for a view that
+  defines `handle_params/3`, and most of the template's views (the home page among them)
+  do not. `AshTemplateWeb.VisitLog.on_mount/4` now attaches a `handle_params` hook on
+  every page the router opens, so each one writes `page <route>` when it connects and
+  each time its address changes; `AshTemplateWeb.VisitLog.Events` no longer listens for
+  that telemetry event. A view drawn inside another page attaches nothing.
+- Check: `platform/test/browser/visits.spec.ts` now expects the home page's `page /`
+  line; it failed with the old listener (the visit held only its request and API reads)
+  and succeeds with the hook. Each walked page writes exactly one page line.
