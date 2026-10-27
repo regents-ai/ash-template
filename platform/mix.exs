@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "20ee19753a11c113fd1a8d2f9e151be14a0dafae"
+  @elixir_utils_ref "2386ef9d3216ebd79ff3e75a82bb415cf7d55927"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "bca0f090836c49a13c621ac0983227526ce0cead"
 
@@ -46,6 +46,8 @@ defmodule AshTemplate.MixProject do
       {:phoenix, "~> 1.8.9"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.6", override: true},
+      # Reads whole pages in LiveView tests.
+      {:lazy_html, "~> 0.1", only: :test},
       {:ash, "~> 3.37"},
       # ash_postgres main with #910 until a Hex release carries it: upserts use the
       # repo's prefix, which picks each site's schema on the shared database. It

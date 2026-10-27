@@ -125,6 +125,9 @@ production.
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
 | `PORT` | No | HTTP port. Defaults to `4000`. |
 | `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the Credits admins. Only they can open the saved errors at `/admin/errors`; anyone else gets the not-found page. |
+| `STRIPE_SECRET_KEY` | For card payments | Stripe's secret key. Set, the Credits panel offers Card or Link beside USDC on Base; see [Card and Link payments](#card-and-link-payments). A test key (`sk_test_…`) offers it to the Credits admins only. Unset means USDC only, and `/api/stripe/notices` is not found. |
+| `STRIPE_WEBHOOK_SECRET` | With `STRIPE_SECRET_KEY` | The signing secret (`whsec_…`) of the Stripe endpoint that sends `/api/stripe/notices`. The boot stops without it once the secret key is set. |
+| `STRIPE_PUBLISHABLE_KEY` | With `STRIPE_SECRET_KEY` | Stripe's publishable key (`pk_test_…` or `pk_live_…`), which the page gives Stripe's payment form. The boot stops without it once the secret key is set. |
 | `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. There is no default; each role admits only its own database hosts. |
 | `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's pooler, `pgbouncer.dzx6qo6xqzvojpv5.flympg.net`. |
 | `DATABASE_DIRECT_URL` | Only when migrating | Direct PostgreSQL connection string used by the migration release command. |
@@ -153,6 +156,32 @@ uses one for the other's work.
   role, used only while a release goes out: the release command runs the
   migrations with it and then exits. The running site never reads it.
 
+### Card and Link payments
+
+Credits can be bought by card or Link through Stripe as well as with USDC on Base
+(`RegentCredits.CardPurchase` in elixir-utils). The buyer pays the Credits plus the
+card fee shown before Continue; Stripe's own form takes the email, card or Link.
+The Credits are added once, from Stripe's record of the payment, whichever comes
+first: the panel when Stripe says the payment went through, or Stripe's signed
+notice. A refund takes them back; a dispute takes them back and pauses card
+purchases until the account's Credits are above zero again.
+
+To turn it on for a site:
+
+1. In Stripe, under **Settings → Payment methods**, turn on Cards and Link.
+2. Under **Developers → Webhooks**, add an endpoint at
+   `https://<site host>/api/stripe/notices` sending `checkout.session.completed`,
+   `checkout.session.async_payment_succeeded`, `charge.refunded` and
+   `charge.dispute.created`, and copy its signing secret.
+3. Set `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`
+   (on Fly with `fly secrets set --stage`, then release). Use the test keys first:
+   only the Credits admins see the choice, and a test card such as
+   `4242 4242 4242 4242` adds real Credits to their account.
+
+Locally, `stripe listen --forward-to localhost:4000/api/stripe/notices` prints a
+signing secret for `STRIPE_WEBHOOK_SECRET`; without it the panel still adds the
+Credits when Stripe says the payment went through.
+
 ## Public HTTP surface
 
 `contracts/api-contract.openapiv3.yaml` is the source of truth for the API and
@@ -169,6 +198,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/agents`, `/agents/<agent>` | GET | The agents people pair and a page for each, from `priv/public/agents/`; `Accept: text/markdown` returns Markdown. Open while the site is closed. |
 | `/agents/<agent>/skill.md` | GET | That agent's skill: the agent guide with its set-up notes. |
 | `/app`, `/account` | GET | The signed-in shell. |
+| `/api/stripe/notices` | POST | Stripe's signed notices about card and Link purchases of Credits; found only while `STRIPE_SECRET_KEY` is set. |
 
 ## Showcase
 
@@ -216,14 +246,17 @@ security policy; the router's pipelines choose one.
 | Profile | Pipelines | What it allows |
 | --- | --- | --- |
 | `reading` | `:public_documents` | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
-| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
+| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, inline style elements for Privy's window, and Stripe's and Link's scripts, frames and API for card payments (the hosts Stripe lists, some as `*.js.stripe.com` and `*.link.com`). |
 | `showcase` | `:framed_preview` | `sign_in` that may frame its own preview page, for `/showcase` and `/showcase/preview`. |
 
 A site that loads something else (an RPC, an image host, an embedded wallet)
 adds each exact origin to the one directive in the one profile that needs it:
 `@sign_in` for anything the wallet or sign-in pages use, `@baseline` only for
 what every page loads. Never add `https:`, `*`, a whole-domain wildcard or
-`'unsafe-eval'`. After a change, load each affected page and the sign-in window
+`'unsafe-eval'`; the only wildcards are the ones Privy and Stripe publish for
+their own hosts (`*.rpc.privy.systems`, `*.js.stripe.com`, `*.stripe.com` and
+`*.link.com`).
+After a change, load each affected page and the sign-in window
 and check the browser console for "Content Security Policy" errors.
 
 Rate limits key on the client address from `AshTemplateWeb.ClientAddress`. In

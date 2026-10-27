@@ -70,6 +70,18 @@ if admins = System.get_env("REGENT_CREDITS_ADMINS") do
     admins: admins |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
 end
 
+# Credits by card or Link through Stripe while its keys are set (RegentCredits.Stripe).
+# Tests answer for Stripe themselves (config/test.exs), whatever the shell sets.
+if config_env() != :test do
+  if secret_key = System.get_env("STRIPE_SECRET_KEY") do
+    config :regent_credits, :stripe,
+      secret_key: secret_key,
+      webhook_secret: System.fetch_env!("STRIPE_WEBHOOK_SECRET")
+
+    config :ash_template, :stripe_publishable_key, System.fetch_env!("STRIPE_PUBLISHABLE_KEY")
+  end
+end
+
 # Agents' signed requests are checked by this sign-in service instead, such as one
 # running on this machine.
 if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do

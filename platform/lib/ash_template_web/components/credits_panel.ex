@@ -8,8 +8,13 @@ defmodule AshTemplateWeb.CreditsPanel do
   reports and checks it until it counts. The parent hears how it ended on the
   person's purchase topic and hands it to the panel as `purchase`.
 
-  Credits are bought with USDC on Base only: the wallet is asked onto Base when
-  a press needs it. The USDC of the wallet that pays is shown.
+  Credits are bought with USDC on Base: the wallet is asked onto Base when a
+  press needs it. The USDC of the wallet that pays is shown. While the site has
+  Stripe's keys, they can also be bought by card or Link
+  (`RegentCredits.CardPurchase`): Continue opens a payment for the amount with
+  the card fee on top, Stripe's own form takes the email and the card or Link
+  in the panel (the `CardCheckout` hook), and the panel adds the Credits once
+  Stripe says it is paid. With Stripe's test keys only Credits admins see it.
 
   Buy is disabled only when it is certain to fail, from the chain at the latest
   block: the Base approval does not cover the amount yet, or the wallet holds
@@ -25,7 +30,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   """
   use AshTemplateWeb, :live_component
 
-  alias AshTemplate.{AccessContext, ChainClient, Limits}
+  alias AshTemplate.{AccessContext, ChainClient, Credits, Limits}
   alias AshTemplate.Credits.CheckPurchase
   alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.Live.Session
@@ -33,6 +38,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   alias Regent.Primitives, as: P
   alias RegentChain.{Call, Presses, Review}
   alias RegentCredits.{Amount, Chains}
+  alias RegentCredits.Errors.Refused
 
   @impl true
   def mount(socket) do
@@ -50,7 +56,10 @@ defmodule AshTemplateWeb.CreditsPanel do
        usdc: nil,
        allowance: nil,
        latest: %{},
-       purchases: %{}
+       purchases: %{},
+       pay: :usdc,
+       card: nil,
+       card_note: nil
      )}
   end
 
@@ -77,8 +86,49 @@ defmodule AshTemplateWeb.CreditsPanel do
     {:noreply, socket |> assign(active: active) |> sync()}
   end
 
-  def handle_event("change", %{"amount" => amount}, socket),
-    do: {:noreply, socket |> assign(amount: amount) |> sync()}
+  # A new amount closes a card payment opened for the old one.
+  def handle_event("change", %{"amount" => amount} = params, socket) do
+    socket =
+      if amount == socket.assigns.amount, do: socket, else: assign(socket, card: nil)
+
+    {:noreply, socket |> assign(amount: amount, pay: pay(params)) |> sync()}
+  end
+
+  # Every press opens its own card payment, for the amount as it stands.
+  def handle_event("card_start", _params, socket) do
+    %{account: account, amount: amount} = socket.assigns
+
+    case dollars(amount) do
+      nil ->
+        {:noreply, socket}
+
+      dollars ->
+        {:noreply,
+         socket
+         |> assign(card_note: nil)
+         |> start_async(:card_start, fn ->
+           RegentCredits.start_card_purchase(
+             account.privy_user_id,
+             dollars,
+             card_return_url(),
+             actor: Credits.person(account)
+           )
+         end)}
+    end
+  end
+
+  # Stripe said the payment went through: the Credits are added from Stripe's
+  # own record of it, whichever of this and Stripe's notice comes first.
+  def handle_event("card_paid", _params, %{assigns: %{card: %{session_id: id}}} = socket) do
+    account = socket.assigns.account
+
+    {:noreply,
+     start_async(socket, :card_settle, fn ->
+       RegentCredits.settle_card_purchase(id, actor: Credits.person(account))
+     end)}
+  end
+
+  def handle_event("card_paid", _params, socket), do: {:noreply, socket}
 
   # The page asks when the panel opens, when it comes back into view and after
   # each press, so the funds behind a disabled Buy are read again then.
@@ -139,6 +189,18 @@ defmodule AshTemplateWeb.CreditsPanel do
   end
 
   @impl true
+  def handle_async(:card_start, {:ok, {:ok, card}}, socket),
+    do: {:noreply, assign(socket, card: card)}
+
+  def handle_async(:card_start, result, socket),
+    do: {:noreply, assign(socket, card_note: card_refusal(result))}
+
+  def handle_async(:card_settle, {:ok, {:ok, %{status: :credited, credits: credits}}}, socket),
+    do: {:noreply, assign(socket, card: nil, card_note: "#{credits} Credits added")}
+
+  def handle_async(:card_settle, _paid, socket),
+    do: {:noreply, assign(socket, card: nil, card_note: "Paid. Your Credits arrive in a moment.")}
+
   # The funds are read again once a step lands, not at every read while it waits.
   def handle_async({:onchain_step, hash}, result, socket) do
     socket = socket |> OnchainSteps.checked(hash, result) |> approved(hash)
@@ -288,18 +350,48 @@ defmodule AshTemplateWeb.CreditsPanel do
 
   # The account as the page gave it, or as it reads now before each event and
   # each background result (`Session.check_component_lease/2`): the wallets that may act and the
-  # review follow it.
+  # review follow it, and so does whether it may pay by card.
   defp take_account(socket, account) do
     context = AccessContext.for_account(account)
+    card? = card?(account)
 
     socket
     |> assign(
       account: account,
       linked: AccessContext.linked_wallets(context),
-      own: AccessContext.own_wallet(context)
+      own: AccessContext.own_wallet(context),
+      card?: card?,
+      pay: if(card?, do: socket.assigns.pay, else: :usdc)
     )
     |> sync()
   end
+
+  defp card?(account) do
+    RegentCredits.card_payments?() and
+      RegentCredits.can_start_card_purchase?(
+        Credits.person(account),
+        account.privy_user_id,
+        5,
+        card_return_url()
+      )
+  end
+
+  defp pay(%{"pay" => "card"}), do: :card
+  defp pay(_usdc), do: :usdc
+
+  # Where Stripe sends the buyer if their payment needs another page: Purchase
+  # History, where Stripe's notice of the payment then adds the Credits.
+  defp card_return_url, do: url(~p"/account/credits")
+
+  defp card_refusal({:ok, {:error, %Ash.Error.Invalid{errors: [%Refused{reason: :below_zero}]}}}),
+    do: "Your Credits are below zero, so card purchases are paused."
+
+  defp card_refusal({:ok, {:error, %Ash.Error.Forbidden{}}}),
+    do: "Card purchases aren't open to this account."
+
+  defp card_refusal(_failed), do: "Couldn't open the payment. Try again."
+
+  defp cents(cents), do: "$" <> :erlang.float_to_binary(cents / 100, decimals: 2)
 
   defp dollars(amount) do
     case Integer.parse(String.trim(amount)) do
@@ -309,14 +401,17 @@ defmodule AshTemplateWeb.CreditsPanel do
   end
 
   # Why an amount can't be bought, in words for the person; nil when it can.
-  defp amount_problem(amount) do
+  defp amount_problem(amount, pay \\ :usdc) do
     case Integer.parse(String.trim(amount)) do
       {n, ""} when n in 5..500 -> nil
-      {n, ""} when n < 5 -> "The minimum is 5 USDC."
-      {n, ""} when n > 500 -> "The maximum is 500 USDC per purchase."
+      {n, ""} when n < 5 -> "The minimum is #{unit(5, pay)}."
+      {n, ""} when n > 500 -> "The maximum is #{unit(500, pay)} per purchase."
       _not_whole -> "Enter a whole number from 5 to 500."
     end
   end
+
+  defp unit(dollars, :usdc), do: "#{dollars} USDC"
+  defp unit(dollars, :card), do: "$#{dollars}"
 
   @impl true
   def render(assigns) do
@@ -325,7 +420,8 @@ defmodule AshTemplateWeb.CreditsPanel do
     assigns =
       assign(assigns,
         dollars: dollars,
-        problem: amount_problem(assigns.amount),
+        problem: amount_problem(assigns.amount, assigns.pay),
+        price: dollars && RegentCredits.card_price(dollars),
         approve: approve_step(assigns, dollars),
         buy: step(assigns, "buy"),
         blocked: blocked(assigns, dollars)
@@ -396,7 +492,15 @@ defmodule AshTemplateWeb.CreditsPanel do
         phx-submit="change"
         phx-target={@myself}
       >
-        <label class="credits-panel__label" for={"#{@id}-amount"}>USDC on Base</label>
+        <label :if={!@card?} class="credits-panel__label" for={"#{@id}-amount"}>
+          USDC on Base
+        </label>
+        <label :if={@card?} class="rg-pill-select credits-panel__pay">
+          <select id={"#{@id}-pay"} name="pay" aria-label="Pay with">
+            <option value="usdc" selected={@pay == :usdc}>USDC on Base</option>
+            <option value="card" selected={@pay == :card}>Card or Link</option>
+          </select>
+        </label>
         <div class="credits-panel__amount" data-invalid={@problem && "true"}>
           <input
             id={"#{@id}-amount"}
@@ -404,11 +508,12 @@ defmodule AshTemplateWeb.CreditsPanel do
             value={@amount}
             inputmode="numeric"
             autocomplete="off"
+            aria-label={@card? && "Amount"}
             aria-describedby={"#{@id}-rate #{@id}-problem"}
             aria-invalid={@problem && "true"}
             data-onchain-input="amount"
           />
-          <span aria-hidden="true">USDC</span>
+          <span aria-hidden="true">{if @pay == :card, do: "USD", else: "USDC"}</span>
         </div>
         <p id={"#{@id}-rate"} class="credits-panel__rate">
           Regents Credits can be used across all Regents sites.
@@ -424,70 +529,107 @@ defmodule AshTemplateWeb.CreditsPanel do
         </p>
       </form>
 
-      <%!-- Lines above the buttons stay in the page with their room kept, so one
-           appearing never moves or replaces the button a person is about to press. --%>
-      <div class="credits-panel__wallet" data-empty={is_nil(@wallet)}>
-        <span class="credits-panel__muted">{if @signer, do: "Paying from", else: "Wallet"}</span>
-        <P.address :if={@wallet} id={"#{@id}-wallet"} address={@wallet} />
-        <span class="credits-panel__usdc">{usdc(@usdc)}</span>
-      </div>
-      <p class="credits-panel__note credits-panel__mismatch">
-        <OnchainSteps.note :if={@mismatch} id={"#{@id}-mismatch"} parts={@mismatch} />
-      </p>
-
-      <ol class="credits-panel__steps">
-        <li class="credits-panel__step" data-state={@approve.state}>
-          <P.button variant="secondary" data-onchain-step="approve">
-            <span data-press-label>Approve</span>
-          </P.button>
-          <div class="credits-panel__step-words">
-            <strong>
-              Approve {@dollars && "#{@dollars} "}USDC
-              <P.tip id={"#{@id}-approve-tip"} label="About approving">
-                Lets REGENT staking take this USDC for your purchase. Each purchase needs its own approval.
-              </P.tip>
-            </strong>
-            <span :if={@approve.words}>{@approve.words}</span>
+      <%!-- Both ways to pay share one place, so switching never changes the height. --%>
+      <div class="credits-panel__ways">
+        <div class="credits-panel__way" inert={@pay != :usdc}>
+          <%!-- Lines above the buttons stay in the page with their room kept, so one
+               appearing never moves or replaces the button a person is about to press. --%>
+          <div class="credits-panel__wallet" data-empty={is_nil(@wallet)}>
+            <span class="credits-panel__muted">{if @signer, do: "Paying from", else: "Wallet"}</span>
+            <P.address :if={@wallet} id={"#{@id}-wallet"} address={@wallet} />
+            <span class="credits-panel__usdc">{usdc(@usdc)}</span>
           </div>
-          <.check_again step={@approve} myself={@myself} />
-        </li>
-        <li class="credits-panel__step" data-state={@buy.state}>
-          <P.button
-            data-onchain-step="buy"
-            disabled={@blocked != nil}
-            aria-describedby={@blocked && "#{@id}-buy-why"}
-          >
-            <span data-press-label>Buy</span>
-          </P.button>
-          <div class="credits-panel__step-words">
-            <strong>
-              Buy {@dollars && "#{@dollars} "}Credits
-              <P.tip id={"#{@id}-buy-tip"} label="About buying">
-                Sends the USDC to REGENT staking. Your Credits arrive in about 2 seconds.
-              </P.tip>
-            </strong>
-            <span :if={@buy.words}>{@buy.words}</span>
-            <span :if={@buy.help?}>
-              If USDC left your wallet, post the link in <a
-                href="https://patchbay.help/credits-help"
-                target="_blank"
-                rel="noopener"
-              >Credits help</a>.
-            </span>
-            <span :if={@blocked} id={"#{@id}-buy-why"}>{@blocked}</span>
-          </div>
-          <.check_again step={@buy} myself={@myself} />
-        </li>
-      </ol>
+          <p class="credits-panel__note credits-panel__mismatch">
+            <OnchainSteps.note :if={@mismatch} id={"#{@id}-mismatch"} parts={@mismatch} />
+          </p>
 
-      <%!-- Room for three lines is kept, so a note never moves the links below. --%>
-      <div class="credits-panel__press-notes">
-        <p :if={@press_note} class="credits-panel__note" role="status">
-          <OnchainSteps.note id={"#{@id}-press-note"} parts={@press_note} />
-        </p>
-        <p class="credits-panel__note" role="status" data-onchain-lost hidden>
-          Connection lost, so nothing was sent. Press again once it's back.
-        </p>
+          <ol class="credits-panel__steps">
+            <li class="credits-panel__step" data-state={@approve.state}>
+              <P.button variant="secondary" data-onchain-step="approve">
+                <span data-press-label>Approve</span>
+              </P.button>
+              <div class="credits-panel__step-words">
+                <strong>
+                  Approve {@dollars && "#{@dollars} "}USDC
+                  <P.tip id={"#{@id}-approve-tip"} label="About approving">
+                    Lets REGENT staking take this USDC for your purchase. Each purchase needs its own approval.
+                  </P.tip>
+                </strong>
+                <span :if={@approve.words}>{@approve.words}</span>
+              </div>
+              <.check_again step={@approve} myself={@myself} />
+            </li>
+            <li class="credits-panel__step" data-state={@buy.state}>
+              <P.button
+                data-onchain-step="buy"
+                disabled={@blocked != nil}
+                aria-describedby={@blocked && "#{@id}-buy-why"}
+              >
+                <span data-press-label>Buy</span>
+              </P.button>
+              <div class="credits-panel__step-words">
+                <strong>
+                  Buy {@dollars && "#{@dollars} "}Credits
+                  <P.tip id={"#{@id}-buy-tip"} label="About buying">
+                    Sends the USDC to REGENT staking. Your Credits arrive in about 2 seconds.
+                  </P.tip>
+                </strong>
+                <span :if={@buy.words}>{@buy.words}</span>
+                <span :if={@buy.help?}>
+                  If USDC left your wallet, post the link in <a
+                    href="https://patchbay.help/credits-help"
+                    target="_blank"
+                    rel="noopener"
+                  >Credits help</a>.
+                </span>
+                <span :if={@blocked} id={"#{@id}-buy-why"}>{@blocked}</span>
+              </div>
+              <.check_again step={@buy} myself={@myself} />
+            </li>
+          </ol>
+
+          <%!-- Room for three lines is kept, so a note never moves the links below. --%>
+          <div class="credits-panel__press-notes">
+            <p :if={@press_note} class="credits-panel__note" role="status">
+              <OnchainSteps.note id={"#{@id}-press-note"} parts={@press_note} />
+            </p>
+            <p class="credits-panel__note" role="status" data-onchain-lost hidden>
+              Connection lost, so nothing was sent. Press again once it's back.
+            </p>
+          </div>
+        </div>
+        <div :if={@card?} class="credits-panel__way" inert={@pay != :card}>
+          <%!-- The amount with the card fee on top, then Stripe's own form for the
+               payment Continue opened. The form is Stripe's from then on
+               (`phx-update="ignore"`), each payment in its own place, so a new one
+               starts a new form. --%>
+          <div class="credits-panel__card">
+            <dl class="credits-panel__price">
+              <dt>Card fee</dt>
+              <dd>{if @price, do: cents(@price.fee_cents), else: "—"}</dd>
+              <dt>Total</dt>
+              <dd>{if @price, do: cents(@price.total_cents), else: "—"}</dd>
+            </dl>
+            <P.button :if={!@card} phx-click="card_start" phx-target={@myself} disabled={!@price}>
+              Continue
+            </P.button>
+            <div
+              :if={@card}
+              id={"#{@id}-checkout-#{@card.id}"}
+              class="credits-panel__checkout"
+              phx-hook="CardCheckout"
+              phx-update="ignore"
+              data-publishable-key={Application.fetch_env!(:ash_template, :stripe_publishable_key)}
+              data-client-secret={@card.client_secret}
+            >
+              <div data-contact></div>
+              <div data-payment></div>
+              <P.button type="button" data-pay disabled>Pay {cents(@card.total_cents)}</P.button>
+              <p class="credits-panel__problem" role="alert" data-problem></p>
+            </div>
+            <p class="credits-panel__note" role="status">{@card_note}</p>
+          </div>
+        </div>
       </div>
 
       <footer class="credits-panel__legal">

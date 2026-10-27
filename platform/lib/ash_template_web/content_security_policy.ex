@@ -5,11 +5,16 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   or is framed itself, and forms submit only here. `sign_in/0` adds exactly what
   Privy's sign-in loads, from Privy's published policy and the bundled Privy
   and WalletConnect code; Privy's sign-in window writes its own style elements, so
-  only that profile allows them. `showcase/0` is `sign_in/0` for the showcase
+  only that profile allows them. It also adds what Stripe's card and Link form
+  in the Buy Credits panel loads, from Stripe's published policy for Stripe.js
+  and Link (docs.stripe.com/security/guide), since the panel is on every page
+  that can sign someone in. `showcase/0` is `sign_in/0` for the showcase
   catalog, which frames its own preview page. `errors/1` is the baseline plus one
   request's nonce, for the saved-errors page. A site that loads anything else adds
   each origin to the one directive and the one profile that needs it; the only
-  wildcard is Privy's own `*.rpc.privy.systems`, from its published policy.
+  wildcards are Privy's own `*.rpc.privy.systems` and Stripe's own
+  `*.js.stripe.com`, `*.stripe.com` and `*.link.com`, from their published
+  policies.
   """
 
   # The development code reloader runs in a frame from this site.
@@ -35,14 +40,28 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   ]
 
   @sign_in %{
-    "script-src" => ["https://challenges.cloudflare.com"],
+    "script-src" => [
+      "https://challenges.cloudflare.com",
+      "https://js.stripe.com",
+      "https://*.js.stripe.com"
+    ],
     "style-src" => ["'unsafe-inline'"],
-    "img-src" => ["blob:", "https://explorer-api.walletconnect.com"],
+    "img-src" => [
+      "blob:",
+      "https://explorer-api.walletconnect.com",
+      "https://*.stripe.com",
+      "https://*.link.com"
+    ],
     "frame-src" => [
       "https://auth.privy.io",
       "https://verify.walletconnect.com",
       "https://verify.walletconnect.org",
-      "https://challenges.cloudflare.com"
+      "https://challenges.cloudflare.com",
+      "https://js.stripe.com",
+      "https://*.js.stripe.com",
+      "https://hooks.stripe.com",
+      "https://link.com",
+      "https://*.link.com"
     ],
     "connect-src" => [
       "https://auth.privy.io",
@@ -53,7 +72,10 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
       "https://explorer-api.walletconnect.com",
       "https://rpc.walletconnect.org",
       "https://pulse.walletconnect.org",
-      "wss://www.walletlink.org"
+      "wss://www.walletlink.org",
+      "https://api.stripe.com",
+      "https://link.com",
+      "https://*.link.com"
     ]
   }
 

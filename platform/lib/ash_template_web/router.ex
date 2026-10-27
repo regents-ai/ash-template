@@ -225,6 +225,12 @@ defmodule AshTemplateWeb.Router do
     get "/agents/:agent", PublicPagesController, :show
   end
 
+  # Stripe's signed notices about card purchases of Credits.
+  scope "/api/stripe", AshTemplateWeb do
+    pipe_through :api
+    post "/notices", StripeController, :notice
+  end
+
   scope "/api/v1", AshTemplateWeb do
     pipe_through :api
     get "/health", HealthController, :status

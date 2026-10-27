@@ -343,6 +343,57 @@
   color: var(--color-success);
 }
 
+/* USDC or card: both ways to pay sit in one cell, the other one hidden, so
+   switching never changes the height. */
+
+.credits-panel__pay {
+  justify-self: start;
+}
+
+.credits-panel__ways {
+  display: grid;
+}
+
+.credits-panel__way {
+  display: grid;
+  grid-area: 1 / 1;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.credits-panel__way[inert] {
+  visibility: hidden;
+}
+
+.credits-panel__card,
+.credits-panel__checkout {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.credits-panel__card > .rg-button {
+  justify-self: start;
+}
+
+.credits-panel__price {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1.5rem;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.credits-panel__price dt {
+  color: var(--color-fg-muted);
+}
+
+.credits-panel__card > .credits-panel__note {
+  min-block-size: 2lh;
+}
+
 /* A press the wallet still has: marked, never blocked. */
 .credits-panel [data-awaiting-wallet] {
   opacity: 0.75;

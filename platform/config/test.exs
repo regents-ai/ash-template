@@ -20,6 +20,14 @@ config :ash_template, :privy, app_id: "test-app"
 # Jobs are only recorded, never run, while a test holds its transaction.
 config :ash_template, Oban, testing: :manual
 
+# Stripe, with test keys, is answered by the test itself (RegentCredits.Stripe).
+config :regent_credits, :stripe,
+  secret_key: "sk_test_template",
+  webhook_secret: "whsec_template",
+  req_options: [plug: {Req.Test, RegentCredits.Stripe}, retry: false]
+
+config :ash_template, :stripe_publishable_key, "pk_test_template"
+
 # IndexNow is answered by the test itself (AshTemplate.IndexNow).
 config :ash_template, :indexnow_req, plug: {Req.Test, AshTemplate.IndexNow}
 

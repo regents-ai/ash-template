@@ -4234,3 +4234,35 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   Its other lines are written as before. Sean VISIT-SOURCES-PRIVACY a.
 - The privacy policy's cookies section says so; its effective date is now 27 October 2026.
 - New walk in `test/browser/arrivals.spec.ts` and a unit test in `visit_log_test.exs`.
+
+## 2026-10-27 — Credits by card or Link through Stripe
+
+- elixir-utils `2386ef9` (`RegentCredits.CardPurchase`, new table
+  `regent_credits.card_purchases`, migration `20261027170554`): a Checkout Session in
+  Stripe's Elements mode for the Credits plus the card fee the buyer sees
+  (Sean CARD-FEE-RULES a); the Credits are added once from Stripe's record of the
+  payment; a refund takes them back; a dispute takes them back and pauses card
+  purchases while the account is below zero (Sean CARD-DISPUTE-KEYS a). Test keys
+  open it to the Credits admins only, and their test payments add real Credits.
+- The Credits panel's "Pay with" choice offers Card or Link while `STRIPE_SECRET_KEY`
+  is set and the account may use it. Continue opens a purchase; the
+  `CardCheckout` hook loads `@stripe/stripe-js` 10.0.0 only then and mounts Stripe's
+  Contact Details and Payment Elements. Pay calls `confirm` on every press; on
+  success the panel settles the purchase. Stripe's WebMCP tools come with its
+  Elements.
+- `POST /api/stripe/notices` (`AshTemplateWeb.StripeController`) checks the
+  `Stripe-Signature` against the exact body and hands it to
+  `RegentCredits.card_notice/3`; 404 without keys, 400 for a bad signature, 500 to
+  have Stripe send it again.
+- `sign_in` security profile: Stripe.js and Link's scripts, frames, images and API,
+  from Stripe's published list.
+- Stripe's return address is `/account/credits`; card and Link finish on the page,
+  and Stripe's notice adds the Credits for any payment that leaves it.
+- `lazy_html` (test only) so LiveView tests can read pages.
+- New `test/ash_template_web/card_purchase_test.exs`: the panel's Continue and paid
+  flow adds the Credits once, alongside the notice; a forged notice is refused; a
+  person who is not an admin sees USDC only under test keys. Stripe itself is not
+  reached by any check; the browser walk cannot load Stripe's form.
+- Release needs the migration above (new table) and, to switch it on, the three
+  Stripe secrets staged on the app. The public changelog gets its line when live
+  keys are set; until then only the Credits admins see the choice.
