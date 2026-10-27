@@ -3937,3 +3937,17 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   back, so on a tall, narrow phone screen the city no longer fades to blank.
   At the usual distance it looks the same as before. Keyfleet's copy carries the
   same change.
+
+## 2026-10-27 — Released v111
+
+- Released before this commit: v111 is 33c5cd1 (visit lines for replay, jose 1.11.13, the
+  shared ash_required fixed in public, ash_postgres from ash-project main 55db7d44,
+  ash_phoenix 2.3.26, ash_oban 0.10.3, the swarm city looks up to e69c1d8), 27 Oct
+  01:24Z, Sean's 1. a; rollback v110 is 0d713c8.
+- Before the deploy, from the v111 image on temporary machines that removed themselves:
+  `/app/bin/pending-migrations` listed `pending: 20261026194117` and
+  `shared-pending: regent_credits 20261026220000`; `/app/bin/migrate-shared` applied
+  regent_credits 20261026220000. The deploy's release command migrated 20261026194117.
+- Read-only check on the live machine: `public.ash_required` has the version 7 body, both
+  ledgers hold their version, a missing value raises "ash_error: {}" and a present one
+  comes back. Version 6 copies remain in `patchbay_app` and `techtree_app`.
