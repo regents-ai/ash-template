@@ -4148,3 +4148,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - The Credits window's USDC balance, the Credits admin page's amounts and the
   example wallet's ETH balance use `RegentFormat`; the showcase's sample figures read
   "1,250.00". Amounts people type and on-chain titles stay exact.
+
+## 2026-10-27 — Refunds ask for the exact amount again
+
+- The Credits admin's refund lock and "Send exactly" line went through the shared
+  amount format and read "4.12" for a 4.123456 USDC deposit; a refund is matched to
+  its purchase to the millionth on chain, so an admin sending that would never
+  close it. Both lines show the amount as exact as it was paid again; the purchase
+  row keeps the shared format. Found by the regents.sh chief (f6930c94).
+- credits_admin_test.exs locks and renders a 4.123456 refund (failed with "4.12"
+  before, succeeds now).

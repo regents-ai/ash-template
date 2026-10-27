@@ -222,6 +222,13 @@ defmodule AshTemplateWeb.CreditsAdmin do
 
   defp usdc(amount), do: RegentFormat.amount(amount)
 
+  # What an admin locks and sends for a refund stays as exact as it was paid
+  # ("4.123456"): a refund is matched to the purchase to the millionth on chain.
+  defp exact(amount) do
+    places = max(-Decimal.normalize(amount).exp, 2)
+    amount |> Decimal.round(places) |> Decimal.to_string(:normal)
+  end
+
   defp chain_name(:base), do: "Base"
   defp chain_name(:ethereum), do: "Ethereum"
 
@@ -293,7 +300,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
               phx-click="start_refund"
               phx-value-id={purchase.id}
               phx-target={@myself}
-              data-confirm={"Lock #{usdc(purchase.amount)} purchased Credits for a refund?"}
+              data-confirm={"Lock #{exact(purchase.amount)} purchased Credits for a refund?"}
             >
               Refund
             </P.button>
@@ -313,7 +320,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
         <ul :if={@refunds != []} class="credits-admin__list">
           <li :for={refund <- @refunds}>
             <p>
-              Send exactly <strong>{usdc(refund.amount)} USDC</strong>
+              Send exactly <strong>{exact(refund.amount)} USDC</strong>
               on <strong>{chain_name(refund.chain)}</strong>
               from the Treasury Safe
               <P.address id={"#{@id}-treasury-#{refund.id}"} address={@treasury} /> to
