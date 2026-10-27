@@ -123,9 +123,9 @@ only what needs a session on the direct address:
   (`pg_advisory_xact_lock`) is fine. A session lock (`pg_advisory_lock`), `SET` outside
   a transaction or a temporary table kept between transactions is not: use the
   transaction form.
-- `keyfleet-code` runs the Twigpine git node, not an Ash site. Its ceiling is 20: 10 in
-  its main pool and 10 for push locks (`GITLAWB_DB_MAX_CONNECTIONS=10`,
-  `GITLAWB_MAX_CONCURRENT_GIT_PUSHES=2`), the lowest the node starts with.
+- `keyfleet-code` runs the Twigpine git node (Rust, sqlx), not an Ash site. It holds at
+  most 10 connections (since its v5, c9a59ea). Through the pooler, sqlx keeps no
+  prepared statements between transactions: `statement_cache_capacity(0)`.
 - Until every app serves through the pooler, one release on the shared database at a
   time. On the founder's Mac, everything that builds, releases or restarts a production
   app on the shared database runs under one lock, which waits its turn:

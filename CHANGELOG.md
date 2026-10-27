@@ -4045,3 +4045,8 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   listeners take the required `notifications:` setting instead of opening their own.
 - ash-data describes the standard for every site. The one-release-at-a-time rule stays
   until every app serves through the pooler.
+
+## 2026-10-27 — keyfleet-code's connections
+
+- ash-data: `keyfleet-code` holds at most 10 connections since its v5 (c9a59ea), not 20,
+  and turns off sqlx's statement cache when it serves through the pooler.
