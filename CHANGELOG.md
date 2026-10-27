@@ -4158,3 +4158,21 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   row keeps the shared format. Found by the regents.sh chief (f6930c94).
 - credits_admin_test.exs locks and renders a 4.123456 refund (failed with "4.12"
   before, succeeds now).
+
+## 2026-10-27 — Where visits come from and where they stop
+
+- Two new visit lines, the same on every site (docs/logging-replay-plan.md):
+  `arrival` (the first page of a visit once its page connects, by route and where
+  it came from: chatgpt, perplexity, claude, gemini, copilot, google, bing,
+  duckduckgo, x, linkedin, github, hackernews, reddit, site, other_site or direct,
+  from utm_source else the referring site, never the address itself) and `step`
+  (sign_in_opened, signed_in, pairing_code_shown, agent_paired, with the agent's
+  harness for the pairing steps).
+- A `tool.call` line names the program that called in `client`: webmcp,
+  regents-cli/<version>, another program's <name>/<version>, other or none
+  (Sentinel's request after two unexplained refused notebook calls on Keyfleet).
+- The privacy page says what the visit count records.
+- arrivals.spec.ts: a visit from a ChatGPT link writes one `arrival /notes chatgpt`
+  before its first page line, a Sign in press writes `step sign_in_opened`, and a
+  second page in the visit adds no arrival; visit_log_test.exs covers every source
+  name and the client names.

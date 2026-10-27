@@ -20,7 +20,7 @@ type Line = {
     actor?: string
     surface?: string
     request_id?: string
-    event?: {name: string; where: string; outcome?: string; ms?: number}
+    event?: {name: string; where: string; outcome?: string; ms?: number; client?: string}
   }
 }
 
@@ -74,7 +74,9 @@ test("opening Notes and saving a note replays in order from the visit's lines", 
   for (const line of told) {
     expect(Object.keys(line).sort()).toEqual(["message", "metadata", "severity", "time"])
     expect(Object.keys(line.metadata).every(key => fields.includes(key))).toBe(true)
-    expect(Object.keys(line.metadata.event!).every(key => ["name", "where", "outcome", "ms"].includes(key))).toBe(true)
+    expect(
+      Object.keys(line.metadata.event!).every(key => ["name", "where", "outcome", "ms", "client"].includes(key)),
+    ).toBe(true)
     const text = JSON.stringify(line)
     for (const written of [title, body, wallet, embedded, "did:privy"]) expect(text).not.toContain(written)
   }
@@ -95,4 +97,5 @@ test("the agent tools list's reads belong to the page's visit", async ({page, co
   expect(lines(visit).map(step)).toContain("page /")
   const read = lines(visit).find(line => step(line) === "tool.call /api/v1/sites/:site/tools")!
   expect(read.metadata.surface).toBe("page")
+  expect(read.metadata.event!.client).toBe("none")
 })

@@ -40,7 +40,7 @@ Only five metadata fields can reach a line (`AshTemplateWeb.VisitLog.fields/0`):
 | `request_id` | The request id Phoenix already gives every request |
 | `surface` | `page`, `webmcp`, `cli`, `agent_http` or `job`. An `/api` call that names no tool or command but carries a visit, in the cookie or the header, is the page's own script, so it is `page` |
 | `actor` | `person:`, `agent:` or `anonymous`, then the first 8 bytes of an HMAC of the account or agent id, keyed from the site's secret. The same person always gets the same code; the code can't be turned back into the id |
-| `event` | `name`, `where`, `outcome` and `ms` (below) |
+| `event` | `name`, `where`, `outcome` and `ms` (below); a `tool.call` also has `client` |
 
 An event's `where` and `outcome` must fit a short pattern of plain characters, or
 they are written as `other`. Nothing a person typed can reach a line.
@@ -48,7 +48,7 @@ they are written as `other`. Nothing a person typed can reach a line.
 | Event | Written when | `where` | `outcome` |
 | --- | --- | --- | --- |
 | `request` | A page request finishes | The route, such as `/rooms/:room` | `ok` or `status_404` |
-| `tool.call` | An `/api` request finishes | The tool name from `x-regent-client`, else the route | `ok`, the error's code, or `status_N` |
+| `tool.call` | An `/api` request finishes | The tool name from `x-regent-client`, else the route | `ok`, the error's code, or `status_N`; `client` is `webmcp`, `regents-cli/<version>`, another program's `<name>/<version>`, `other` or `none` |
 | `page` | A connected page opens or changes address | The route | none |
 | `press` | A page or component event finishes | `View:event` | `ok`, `failed`, or for wallet steps `sent`, `signed` or the failure reason |
 | `action` | An Ash create, update, destroy or generic action finishes during a request, press or job | `resource.action` | none |
@@ -57,6 +57,12 @@ they are written as `other`. Nothing a person typed can reach a line.
 | `page.error` | The browser reports an uncaught error | The route | `error` or `unhandledrejection` |
 | `tool.unsent` | A browser tool's call never got an answer | The tool | `unreachable` or `outcome_unknown` |
 | `press.unsent` | A wallet step's answer never reached the server | The step | `lost` |
+| `arrival` | The first page of a visit has connected (a crawler that runs no script writes none) | The route | Where the visit came from: `chatgpt`, `perplexity`, `claude`, `gemini`, `copilot`, `google`, `bing`, `duckduckgo`, `x`, `linkedin`, `github`, `hackernews`, `reddit` (from `utm_source`, else the referring site), `site`, `other_site` or `direct`. The referring address is never written |
+| `step` | A step of the shared journey | `sign_in_opened` (a Sign in button pressed), `signed_in` (the sign-in exchange succeeded), `pairing_code_shown`, `agent_paired` | The agent's harness for the two pairing steps, else none |
+
+Where people stop is read from these alone: per visit, its `arrival`, then how far
+it got along `sign_in_opened`, `signed_in`, `pairing_code_shown`, `agent_paired`,
+then its first `action`. A returning person is an `actor` seen on an earlier day.
 
 A press line is written when the press finishes, so the actions it caused come
 just before it. Phoenix's own request lines are off in production: they repeat

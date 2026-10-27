@@ -124,6 +124,8 @@ We use cookies, local storage, and similar technologies that are necessary to ma
 
 Our hosting, authentication, and other service providers may also set or read technologies needed to provide their services.
 
+A cookie that ends when your browser closes groups one visit's activity, so we can count where visits come from (for example a search engine, an AI assistant or a social site) and how far they get, such as signing in or pairing an agent. We record only the name of the site that sent you, never the address you came from.
+
 If we introduce non-essential analytics, advertising, or similar tracking, we will update this Policy and request consent or provide opt-out choices where required. Where applicable law requires recognition of an opt-out preference signal such as Global Privacy Control, we will process it as required.
 
 ## 8. No sale or targeted-advertising sharing

@@ -15,6 +15,7 @@ defmodule AshTemplateWeb.PairingBox do
   use AshTemplateWeb, :live_component
 
   alias AshTemplateWeb.Live.Session
+  alias AshTemplateWeb.VisitLog
   alias RegentAgents.{Harness, PairingCode, PairingMessage, Person}
 
   require Logger
@@ -127,6 +128,7 @@ defmodule AshTemplateWeb.PairingBox do
     with %PairingCode.Issued{issued_at: issued_at} <- codes[chosen],
          {:ok, agents} <- RegentAgents.list_my_agents(actor: socket.assigns.person),
          %{} = agent <- Enum.find(agents, &(DateTime.compare(&1.paired_at, issued_at) != :lt)) do
+      VisitLog.step("agent_paired", to_string(chosen))
       assign(socket, codes: Map.put(codes, chosen, {:paired, agent}))
     else
       _unchanged -> socket
@@ -137,6 +139,7 @@ defmodule AshTemplateWeb.PairingBox do
     code =
       case RegentAgents.issue_pairing_code(actor: socket.assigns.person) do
         {:ok, issued} ->
+          VisitLog.step("pairing_code_shown", to_string(harness))
           issued
 
         {:error, error} ->
