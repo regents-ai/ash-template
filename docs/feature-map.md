@@ -52,6 +52,8 @@ starts, and the server watches no files, so no page reloads under a check.
 | The longest name the site takes, with no spaces, fits every signed-in page at both widths | `pages.spec.ts`; the walk's person has an 80-letter name (`platform/test/browser/support/sign_in.exs`) |
 | Pair New Agent opens the pairing box, from the Account page and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code; coming back to an agent shows its same code, and Make a new code replaces it | same |
+| With codes out for two agents, an agent that pairs shows under the code it used and the other keeps its code | elixir-utils `ash_components/agents/test/regent_agents/pairing_test.exs` (each used code names its agent); gap: the box itself is not walked, because the walk's one person has agents other checks count |
+| Every agent's message but ChatGPT's tells it to keep its own key in a folder named after its runtime, so agents sharing one computer pair as separate agents | elixir-utils `ash_components/agents/test/regent_agents/pairing_message_test.exs` |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | The side panel opens under the header's line, its top bar in line with the sidebar's title row, at desktop and phone width | `platform/test/browser/layout.spec.ts` |
 | The Credits panel's Where to spend opens a window naming each Regents Product, what Credits buy there and its link; it sits on the screen, and Close or Escape closes it, at both widths; the panel's Paying from wallet shows its copy icon | `platform/test/browser/credits.spec.ts` |
