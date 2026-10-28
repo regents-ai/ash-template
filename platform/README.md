@@ -70,6 +70,35 @@ encrypted under `secret_key_base`) and carries the `:deliver` trigger, and
 `PatchbayWeb.MCP.EventDelivery` is its delivery action. Its `/mcp` route is declared
 with `log: false` so the secret and callback address never reach the request log.
 
+### Hosted MCP tools
+
+The agent access spec's hosted `/mcp` runs on AshAi (`{:ash_ai, "~> 1.4.1"}`). Its
+tools are the `tools do` entries in an Ash domain, each naming the same Ash action the
+HTTP route, the browser tool and the command already run, so every surface answers the
+same words and refusals. The Rooms domain has the first two: `rooms_messages`
+(`Message.room_messages`, a public read) and `rooms_post` (`Message.agent_post`, a signed
+write). The `/mcp` route itself is not mounted yet. The chat assistant lists its own two
+tools, so it never reaches these.
+
+`priv/capabilities.json` carries `contract_revision` and, for each operation, its
+`surfaces` (`webmcp`, `hosted_mcp`, `http`, `cli`: `true`, or the reason it is left
+out), `auth_modes`, `fresh_proof`, `actor`, `context`, `retry` and `lifecycle`.
+`AshTemplateWeb.Capabilities` stops the build when these disagree with the browser tool,
+the command, the AshAi tools or each other: a hosted tool with no AshAi tool, an AshAi
+tool named like a browser tool but not marked hosted, hosted input that differs from the
+browser tool's, a public operation that needs proof, an operation-key retry with no
+`operation_id` field, or a surface left out with no reason. `/capabilities.json` adds
+each operation's `output_schema`, its success answer in `/openapi.json`.
+
+An agent's room post spends its `operation_id` once in `agent_operations`
+(`AshTemplate.Agents.Operation`: agent, capability, key, a hash of the room and text,
+and the message it posted), in the same transaction as the post and before it, under a
+unique index. The same key with the same room and text answers the first post; with
+anything else it is refused as `idempotency_conflict` (409); after that message was
+deleted, as `message_removed` (410) naming it. Rows are kept, so a key stays spent. The
+table's migration (`priv/repo/migrations/20261028154117_agent_operations.exs`) needs
+Sean's letter naming the release before it runs in production.
+
 ## Quickstart
 
 Run these from `platform/`. You need

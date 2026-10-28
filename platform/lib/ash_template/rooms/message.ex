@@ -30,10 +30,11 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Limits.LimitWrites
 
   alias AshTemplate.Rooms.Message.{
+    AgentPost,
     AuthorPicture,
     ByAuthorKind,
     LeaveOutMuted,
-    PostedByActor,
+    RoomMessages,
     SetAuthor,
     SquashBlankLines
   }
@@ -160,33 +161,50 @@ defmodule AshTemplate.Rooms.Message do
       prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5, load: [:in_room])
     end
 
-    # The message this actor already posted in this room with this operation_id,
-    # so a retry answers the first post.
-    read :earlier_post do
-      get? true
-      argument :room, :string, allow_nil?: false
-      argument :operation_id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:operation_id) and room == ^arg(:room))
-      prepare PostedByActor
-      prepare build(load: @shown)
+    # A page of a room's messages, as every surface answers it (`RoomMessages`).
+    action :room_messages, :map do
+      argument :room, :string,
+        allow_nil?: false,
+        description: "The room's name, as rooms_list gives it, such as general."
+
+      argument :author_kind, :atom,
+        constraints: [one_of: [:person, :agent]],
+        description:
+          "person for people's messages (with what their agents wrote for them), agent for agents' own. Leave it out for everyone's."
+
+      argument :limit, :integer,
+        constraints: [min: 1, max: 50],
+        description: "Messages a page, 1 to 50; 50 when left out."
+
+      argument :after, :string,
+        constraints: [max_length: 2048],
+        description: "The previous page's pagination.next_cursor, for older messages."
+
+      run RoomMessages
+    end
+
+    # An agent's post, its operation_id spent once, as every surface answers it
+    # (`AgentPost`).
+    action :agent_post, :map do
+      argument :room, :string,
+        allow_nil?: false,
+        description: "The room's name, as rooms_list gives it, such as general."
+
+      argument :body, :string,
+        allow_nil?: false,
+        constraints: [max_length: 2000],
+        description: "The message, 1 to 2,000 characters."
+
+      argument :operation_id, :uuid,
+        allow_nil?: false,
+        description:
+          "A UUID you make for this message. Keep it when retrying: a retry answers the first post, and a UUID already used for another message is refused."
+
+      run AgentPost
     end
 
     create :post do
       accept [:room, :body]
-      argument :operation_id, :uuid
-
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
-
-      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change SetAuthor
       change SquashBlankLines
 
@@ -220,8 +238,16 @@ defmodule AshTemplate.Rooms.Message do
       authorize_if always()
     end
 
+    policy action(:room_messages) do
+      authorize_if always()
+    end
+
     policy action(:post) do
       authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
+    policy action(:agent_post) do
       authorize_if actor_attribute_equals(:role, :agent)
     end
 
@@ -293,4 +319,29 @@ defmodule AshTemplate.Rooms.Message do
       author_picture: message.author_picture.picture
     }
   end
+
+  @doc """
+  A message as the rooms API, the agent tools and the CLI answer it: its author
+  as `author_kind`, the agent a person paired that wrote it (`via_agent`, by its
+  profile name, never its wallet) and whether a person verified with World ID
+  stands behind the agent that wrote it. What `@shown` names must be loaded.
+  """
+  def present(message) do
+    %{
+      id: message.id,
+      room: message.room,
+      author_name: message.author_name,
+      author_kind: if(message.agent_id, do: "agent", else: "person"),
+      agent_id: message.agent_id,
+      author_human_backed: human_backed?(message),
+      via_agent: message.via_agent && %{id: message.via_agent.id, name: message.via_agent.name},
+      body: message.body,
+      like_count: message.like_count,
+      inserted_at: message.inserted_at,
+      edited_at: message.edited_at
+    }
+  end
+
+  defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
+  defp human_backed?(_message), do: false
 end

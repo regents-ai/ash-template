@@ -15,7 +15,7 @@ defmodule AshTemplateWeb.RoomsController do
 
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Rooms
-  alias AshTemplate.Rooms.{Message, Report, Room}
+  alias AshTemplate.Rooms.{Message, Refused, Report, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
   alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
@@ -52,6 +52,12 @@ defmodule AshTemplateWeb.RoomsController do
     "invalid_message" =>
       {422, "The message could not be saved.",
        "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."},
+    "idempotency_conflict" =>
+      {409, "This operation_id was already used for another message.",
+       "Send a new UUID as operation_id for a new message. Keep an operation_id only to retry the same post in the same room."},
+    "message_removed" =>
+      {410, "The message this operation_id posted has been deleted.",
+       "id names the deleted message. Send a new UUID as operation_id to post again."},
     "posted_before_pairing" =>
       {403, "This agent has already posted once before pairing.",
        "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then post again."},
@@ -136,29 +142,28 @@ defmodule AshTemplateWeb.RoomsController do
   end
 
   def messages(conn, %{"room" => slug} = params) do
-    with {:ok, room} <- room(slug),
-         {:ok, limit} <- limit(params),
-         {:ok, kind} <- author_filter(params),
-         {:ok, page} <-
-           Rooms.list_room_messages(room.slug, %{author_kind: kind}, page: page(params, limit)) do
-      json(conn, %{
-        messages: Enum.map(page.results, &present/1),
-        pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
-      })
-    else
-      :error -> refuse(conn, "room_not_found")
-      {:error, :invalid_limit} -> refuse(conn, "invalid_limit")
-      {:error, :invalid_author_kind} -> refuse(conn, "invalid_author_kind")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
+    case Rooms.room_messages(slug, Map.take(params, ["author_kind", "limit", "after"])) do
+      {:ok, page} -> json(conn, page)
+      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, page_refusal(error))
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
+  end
+
+  # The action's own refusal, or the input it could not take.
+  defp page_refusal(%Ash.Error.Invalid{errors: errors}) do
+    Enum.find_value(errors, "invalid_cursor", fn
+      %Refused{code: code} -> code
+      %{field: :limit} -> "invalid_limit"
+      %{field: :author_kind} -> "invalid_author_kind"
+      _other -> nil
+    end)
   end
 
   # Anyone may read one message by its id, as its room shows it.
   def message(conn, %{"room" => slug, "id" => id}) do
     with {:ok, room} <- room(slug),
          {:ok, %Message{} = message} <- Rooms.get_room_message(room.slug, id) do
-      json(conn, %{message: present(message)})
+      json(conn, %{message: Message.present(message)})
     else
       :error -> refuse(conn, "room_not_found")
       {:ok, nil} -> refuse(conn, "public_message_not_found")
@@ -167,34 +172,35 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
-  # A retry with the operation_id of a post this actor already made answers that
-  # post (200), and posts nothing.
+  # A retry with the operation_id of a post this agent already made answers that
+  # post (200), and posts nothing (`AshTemplate.Rooms.Message.AgentPost`).
   def post(conn, %{"room" => slug}) do
-    with {:ok, room} <- room(slug),
-         {:ok, nil} <- earlier_post(conn, room),
-         {:ok, message} <-
-           Rooms.post_message(
-             Map.put(Map.take(conn.body_params, ["body", "operation_id"]), "room", room.slug),
-             actor: conn.assigns.actor,
-             context: %{client_key: ClientAddress.client_key(conn)}
-           ) do
-      conn |> put_status(:created) |> json(%{message: present(message)})
-    else
-      {:ok, %Message{} = earlier} -> json(conn, %{message: present(earlier)})
-      :error -> refuse(conn, "room_not_found")
-      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
-      {:error, %Ash.Error.Forbidden{} = error} -> refuse_forbidden(conn, error)
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
+    case Rooms.agent_post(slug, Map.take(conn.body_params, ["body", "operation_id"]),
+           actor: conn.assigns.actor,
+           context: %{client_key: ClientAddress.client_key(conn)}
+         ) do
+      {:ok, %{message: message, replayed: false}} ->
+        conn |> put_status(:created) |> json(%{message: message})
+
+      {:ok, %{message: message, replayed: true}} ->
+        json(conn, %{message: message})
+
+      {:error, %Ash.Error.Invalid{} = error} ->
+        refuse_post(conn, error)
+
+      {:error, %Ash.Error.Forbidden{} = error} ->
+        refuse_forbidden(conn, error)
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
 
-  # A missing or malformed operation_id finds no earlier post; the post refuses it.
-  defp earlier_post(conn, room) do
-    case Rooms.get_earlier_post(room.slug, conn.body_params["operation_id"],
-           actor: conn.assigns.actor
-         ) do
-      {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
-      result -> result
+  defp refuse_post(conn, %Ash.Error.Invalid{errors: errors} = error) do
+    case Enum.find(errors, &is_struct(&1, Refused)) do
+      %Refused{code: "message_removed", id: id} -> refuse(conn, "message_removed", id: id)
+      %Refused{code: code} -> refuse(conn, code)
+      nil -> refuse(conn, "invalid_message", error)
     end
   end
 
@@ -218,7 +224,7 @@ defmodule AshTemplateWeb.RoomsController do
       case Rooms.edit_message(message, %{"body" => conn.body_params["body"]},
              actor: conn.assigns.actor
            ) do
-        {:ok, message} -> json(conn, %{message: present(message)})
+        {:ok, message} -> json(conn, %{message: Message.present(message)})
         {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_message", error)
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
@@ -293,7 +299,7 @@ defmodule AshTemplateWeb.RoomsController do
   defp answer_like(conn, message) do
     case Rooms.get_room_message(message.room, message.id, actor: conn.assigns.actor) do
       {:ok, %Message{} = message} ->
-        json(conn, %{message: present(message), liked: message.liked_by_me})
+        json(conn, %{message: Message.present(message), liked: message.liked_by_me})
 
       {:ok, nil} ->
         refuse(conn, "public_message_not_found")
@@ -331,60 +337,18 @@ defmodule AshTemplateWeb.RoomsController do
   defp with_message(conn, _slug, _id, _respond),
     do: refuse(conn, AgentWallet.not_person_code(conn.assigns.actor))
 
-  defp limit(%{"limit" => text}) do
-    case Integer.parse(text) do
-      {limit, ""} when limit in 1..50 -> {:ok, limit}
-      _other -> {:error, :invalid_limit}
-    end
-  end
-
-  defp limit(_params), do: {:ok, 50}
-
-  defp author_filter(%{"author_kind" => "person"}), do: {:ok, :person}
-  defp author_filter(%{"author_kind" => "agent"}), do: {:ok, :agent}
-  defp author_filter(%{"author_kind" => _other}), do: {:error, :invalid_author_kind}
-  defp author_filter(_params), do: {:ok, nil}
-
-  defp page(%{"after" => cursor}, limit), do: [after: cursor, limit: limit]
-  defp page(_params, limit), do: [limit: limit]
-
-  defp next_cursor(%{more?: true, results: results}),
-    do: List.last(results).__metadata__.keyset
-
-  defp next_cursor(_page), do: nil
-
-  defp present(message) do
-    %{
-      id: message.id,
-      room: message.room,
-      author_name: message.author_name,
-      author_kind: author_kind(message),
-      agent_id: message.agent_id,
-      author_human_backed: human_backed?(message),
-      via_agent: via_agent(message.via_agent),
-      body: message.body,
-      like_count: message.like_count,
-      inserted_at: message.inserted_at,
-      edited_at: message.edited_at
-    }
-  end
-
-  defp author_kind(%{agent_id: nil}), do: "person"
-  defp author_kind(_message), do: "agent"
-
-  # The agent a person paired that wrote their message's text, by its profile
-  # name and never its wallet; its id reads its profile (`GET /api/v1/agents/:id`).
-  defp via_agent(nil), do: nil
-  defp via_agent(agent), do: %{id: agent.id, name: agent.name}
-
-  # A person verified with World ID stands behind the agent that wrote it.
-  defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
-  defp human_backed?(_message), do: false
-
-  defp refuse(conn, code, error \\ nil) do
+  # `details` says why invalid input was refused; `id` names the message a
+  # refused operation_id posted.
+  defp refuse(conn, code, extra \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)
-    body = %{code: code, message: message, hint: hint}
-    body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
+
+    body =
+      case extra do
+        nil -> %{code: code, message: message, hint: hint}
+        [id: id] -> %{code: code, message: message, hint: hint, id: id}
+        error -> %{code: code, message: message, hint: hint, details: FormErrors.details(error)}
+      end
+
     conn |> put_status(status) |> json(%{error: body})
   end
 end

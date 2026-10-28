@@ -4659,3 +4659,32 @@ An adversarial review of the two commits above found five things, all fixed here
   docs, account, connections, chat, notes and the discussion page open at 1280 and 390
   with no page errors and nothing wider than the screen. Sentinel's after-read is asked.
   Rollback: v125, `14a8a3e4`.
+
+## 2026-10-28 — Agent access: AshAi tools, capability fields and operation keys
+
+- AshAi moves to 1.4.1 (`~> 1.4.1`), which brings ash_json_api 1.8.0, bandit 1.14.1,
+  websock_adapter 0.7.0 and llm_db 2026.10.7. The chat assistant now names its own two
+  tools, so it never reaches another domain's.
+- The Rooms domain hands AshAi two tools, `rooms_messages` and `rooms_post`. They run
+  `Message.room_messages` and `Message.agent_post`, the same actions `GET` and
+  `POST /api/v1/rooms/{room}/messages` now call, so the browser tool, the command, the
+  route and hosted MCP answer alike. The `/mcp` route is not mounted yet.
+- `priv/capabilities.json` gains `contract_revision` and, per operation, `surfaces`
+  (with a reason for each surface left out), `auth_modes`, `fresh_proof`, `actor`,
+  `context`, `retry` and `lifecycle`; `/capabilities.json` adds each operation's
+  `output_schema` from `/openapi.json`. The build stops on a hosted tool with no AshAi
+  tool, an AshAi tool named like a browser tool but not hosted, hosted input that
+  differs from the browser tool's, a public operation that needs proof, an
+  operation-key retry with no `operation_id` field, or a surface left out with no
+  reason. The agent guide's operations table gains Surfaces and Proof columns, and its
+  heading is now "Agent operations".
+- An agent's room post spends its `operation_id` once in the new `agent_operations`
+  table, in the same transaction as the post. The message's id is no longer the key.
+  The same key with another room or other text answers 409 `idempotency_conflict`, and
+  after its message was deleted 410 `message_removed` with that message's `id`; two
+  calls with one key at once post one message. `read :earlier_post` is gone. The
+  OpenAPI documents move to 8.0.0. The migration
+  `20261028154117_agent_operations` needs Sean's letter naming the release before it
+  runs in production.
+- The compile-connected limit in `mix precommit` moves from 35 to 38: the new resource
+  and the two actions' modules.

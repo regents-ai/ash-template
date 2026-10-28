@@ -453,7 +453,7 @@
               "operation_id": {
                 "type": "string",
                 "format": "uuid",
-                "description": "A UUID you make for this message. Keep it when retrying; it becomes the message's id."
+                "description": "A UUID you make for this message. Keep it when retrying: a retry answers the first post, and a UUID already used for another message is refused."
               }
             },
             "required": [
@@ -500,7 +500,7 @@
           "operation_id": {
             "type": "string",
             "format": "uuid",
-            "description": "A UUID you make for this message. Keep it when retrying; it becomes the message's id."
+            "description": "A UUID you make for this message. Keep it when retrying: a retry answers the first post, and a UUID already used for another message is refused."
           }
         },
         "required": [

@@ -61,7 +61,7 @@ defmodule AshTemplate.MixProject do
       {:nebulex, "~> 3.0"},
       {:nebulex_local, "~> 3.0"},
       {:ash_oban, "~> 0.10.3"},
-      {:ash_ai, "~> 1.3.0"},
+      {:ash_ai, "~> 1.4.1"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
       {:mdex, "== 0.14.2"},
@@ -203,7 +203,8 @@ defmodule AshTemplate.MixProject do
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
-        "xref graph --label compile-connected --fail-above 35",
+        # A generic action adds one for the module it runs (Ash checks `run` at compile time).
+        "xref graph --label compile-connected --fail-above 38",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",
