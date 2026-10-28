@@ -137,6 +137,9 @@ function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
   return {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
 }
 
+// Reasons that mean the tool itself is set up wrongly, not the agent's input.
+const siteFaults = new Set(["invalid_operation", "invalid_path", "invalid_request_header", "unsupported_field_type"])
+
 // The signing transport refuses with a reason such as "missing_field:title".
 // The agent reads it in words; the reason itself stays in details.
 const invalid = (error: unknown): Reply => {
@@ -144,7 +147,9 @@ const invalid = (error: unknown): Reply => {
   return {ok: false, error: {
     code: "invalid_request",
     message: explain(reason),
-    hint: "Check the input against this tool's schema, then call the tool again.",
+    hint: siteFaults.has(reason.split(":", 1)[0])
+      ? "Use another way in, such as the API, and tell the site's team."
+      : "Check the input against this tool's schema, then call the tool again.",
     details: {reason},
   }}
 }
@@ -155,7 +160,14 @@ function explain(reason: string): string {
     case "invalid_input": return "Send an object of named fields."
     case "missing_field": return `${field} is required.`
     case "invalid_field": return `${field} is not a field of this tool, or is not the kind of value it takes.`
-    case "invalid_path_field": return `${field} must be a name, not empty.`
+    case "invalid_path_field": return `${field} must be a name: not empty, "." or "..".`
+    case "unexpected_read_body": return "This tool reads only. Send only the fields its address names."
+    case "invalid_raw_body": return "Send the body as JSON text, and nothing else."
+    case "invalid_operation":
+    case "invalid_path":
+    case "invalid_request_header":
+    case "unsupported_field_type":
+      return "This tool is set up wrongly on the site, so nothing was sent."
     case "operation_unavailable": return "No signed tool has that name. Use a name from this page's tools."
     case "operation_id_required": return "operation_id is required. Use a new one for each change and keep it when retrying."
     case "body_too_large": return "The input is too large."
@@ -176,8 +188,8 @@ function explain(reason: string): string {
 
 // fetch fails with a TypeError when the network fails and an AbortError when
 // cancelled. Before anything is sent, the transport refuses with a plain Error, or
-// with Refused when there is no agent signer or it says no; Refused carries the
-// words for the agent.
+// with Refused when there is no agent signer, it fails or says no, or the call was
+// cancelled while it signed; Refused carries the words for the agent.
 const lost = (error: unknown) =>
   error instanceof TypeError || (error instanceof DOMException && error.name === "AbortError")
 

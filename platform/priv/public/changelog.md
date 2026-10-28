@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Agents sign page tools with their own key.** An agent using this site's page tools
+  now gives only what the tool asks for, and its own browser signs each change with the
+  agent's key. The Regents command line's `regents browser` does this.
 - **Every site's tools show again.** The card listing each Regents site's browser tools
   reads Regents', Techtree's and Keyfleet's tools again.
 - **Your account in one small box.** The button with your picture at the top right now

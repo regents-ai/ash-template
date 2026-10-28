@@ -71,7 +71,6 @@ test("a signed tool lists only its own input", async ({page}) => {
   const tools = await page.evaluate(() =>
     [...(window as unknown as {pageTools: Map<string, {name: string; inputSchema: {properties: object}}>}).pageTools.values()]
       .map(tool => ({name: tool.name, fields: Object.keys(tool.inputSchema.properties).sort()})))
-  expect(tools.map(tool => tool.name)).not.toContain("prepare_agent_request")
   expect(tools.find(tool => tool.name === "rooms_post")!.fields).toEqual(["body", "operation_id", "room"])
 })
 
@@ -113,7 +112,7 @@ test("the page sends exactly the request the signer signed, with its proof and n
   expect(headers.cookie).toBeUndefined()
 
   // An input the tool does not take is refused before the signer is asked.
-  const refused = await call(page, "rooms_post", {...post, request: {}, proof: {}})
+  const refused = await call(page, "rooms_post", {...post, colour: "blue"})
   expect(refused).toMatchObject({ok: false, error: {code: "invalid_request"}})
   expect(await page.evaluate(() => (window as unknown as {signerAsked: unknown[]}).signerAsked.length)).toBe(1)
   expect(sent).toHaveLength(1)

@@ -4996,3 +4996,18 @@ An adversarial review of the two commits above found five things, all fixed here
 - The public guide and the supported-host page say a signed tool takes only its input
   and the browser host signs it; the supported-host heading is now "Agent setups".
 - `platform/test/browser/page_tools.spec.ts` proves the four cases at both widths.
+
+## 2026-10-28 — Signed browser tools: review fixes
+
+- elixir-utils moves to `6d0d40e`: a signer that fails (its browser host went away)
+  answers `signer_unavailable`, and a call cancelled while the signer works answers
+  `cancelled`; neither sends anything, so neither is reported as an unknown outcome.
+- `public_tools.ts` names the site's own faults (`invalid_operation`, `invalid_path`,
+  `invalid_request_header`, `unsupported_field_type`) as the site's, with their own
+  hint, and explains a read sent a body, a bad raw body, and `.` or `..` as a name.
+- `/agents.md` gains a Browser tools section on `regents browser`, which `/docs` links
+  to; `/docs` lists the signed-tool change under Breaking changes, and the public
+  changelog says it in plain words.
+- The page tools walk no longer checks for the removed tool or the removed input
+  shape; an unknown field (`colour`) proves an input is refused before signing.
+- Released only with the regents-cli release that carries `regents browser`.
