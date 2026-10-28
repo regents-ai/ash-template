@@ -28,7 +28,7 @@ You pair your own agents with your account. They can read and write your notes a
 | Part of | [Regents](https://regents.sh) |
 | Website | {{origin}} |
 | Sign-in | Wallet, through Privy |
-| Agents | Paired from the side panel on any page; command line through regents-cli |
+| Agents | Paired from the Account page; command line through regents-cli |
 
 ## Who operates the service
 

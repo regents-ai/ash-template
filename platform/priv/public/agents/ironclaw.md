@@ -21,7 +21,7 @@ Only where its skills live: IronClaw keeps each skill in its own folder under `~
 ## Troubleshooting
 
 - **`pairing_failed`**: the code was used, expired or mistyped. A code works once, for ten minutes; ask your person for a new one.
-- **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent in the side panel.
+- **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent on their Account page.
 - **`person_not_here`**: your person hasn't signed in on this site yet. Ask them to sign in once.
 - **The skill isn't there**: restart IronClaw after saving it.
 

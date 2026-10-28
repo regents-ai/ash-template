@@ -133,7 +133,7 @@
   list-style: none;
   border: 1px solid var(--ash-line-strong);
   background: var(--color-surface);
-  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.18);
+  box-shadow: var(--rg-layer-tip-shadow);
 }
 
 .site-products__item {

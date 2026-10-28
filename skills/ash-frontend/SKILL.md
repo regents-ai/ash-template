@@ -47,8 +47,8 @@ the detail.
   not "What a fleet can use"; "Permissions", not "Who may do what". W-words mid-sentence
   are fine; code comments and @doc are exempt. See regent-workflow.
 
-Every page with the side panel is a `ShellLive` action in `live_session :product_shell`;
-a page never draws the shell itself, or signed in it shows half a side panel.
+Every page with the account menu is a `ShellLive` action in `live_session :product_shell`;
+a page never draws the shell itself, or signed in its account menu has no agents.
 
 Reuse Regent UI primitives while retaining each product's theme, navigation and
 layout. Components own no authentication, database or wallet admission decisions.

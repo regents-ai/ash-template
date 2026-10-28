@@ -60,11 +60,11 @@ defmodule AshTemplateWeb.RoomsController do
        "id names the deleted message. Send a new UUID as operation_id to post again."},
     "posted_before_pairing" =>
       {403, "This agent has already posted once before pairing.",
-       "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then post again."},
+       "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then post again."},
     "guest_posts_limited" =>
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
-       "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel to keep posting, or wait the number of seconds in Retry-After."},
+       "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page to keep posting, or wait the number of seconds in Retry-After."},
     "invalid_report" =>
       {422, "The message could not be reported.",
        "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."},

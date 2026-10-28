@@ -1,83 +1,47 @@
-// The app shell's panels that the browser alone opens and closes: the right side
-// bar, the section sidebar, the search dialog, with the dialog's highlight, and
-// the Buy Credits dialog. Open and hidden states live
-// on <html data-aside data-sidebar>, which the server first draws from the
-// cookies written here (AshTemplateWeb.Plugs.Panels), so LiveView never patches
-// them away. On a phone, where the side panel covers the page, it opens only when
-// the person opens it on that page (<html data-aside-here>), never from the
-// remembered state.
+// The app shell's panels that the browser alone opens and closes: the section
+// sidebar, the search dialog, with the dialog's highlight, and the Buy Credits
+// dialog. Whether the sidebar shows lives on <html data-sidebar>, which the server
+// first draws from the cookie written here (AshTemplateWeb.Plugs.Panels), so
+// LiveView never patches it away. The account menu and the apps menu are popovers
+// the browser opens and closes itself; only following a link inside one is ours.
 
 const yearInSeconds = 60 * 60 * 24 * 365
 
-type Panel = "aside" | "sidebar"
-const cookies: Record<Panel, {name: string; kept: string}> = {
-  aside: {name: "ash_template_aside", kept: "open"},
-  sidebar: {name: "ash_template_sidebar", kept: "hidden"},
-}
-
-// The server's value is the default for each panel; only the other one is kept.
-function remember(panel: Panel, value: string) {
-  const {name, kept} = cookies[panel]
+// Shown is the server's default; only hidden is kept.
+function rememberSidebar(value: "shown" | "hidden") {
   const secure = window.location.protocol === "https:" ? "; Secure" : ""
-  const age = value === kept ? yearInSeconds : 0
-  document.cookie = `${name}=${value}; Path=/; Max-Age=${age}; SameSite=Lax${secure}`
+  const age = value === "hidden" ? yearInSeconds : 0
+  document.cookie = `ash_template_sidebar=${value}; Path=/; Max-Age=${age}; SameSite=Lax${secure}`
 }
 
 const root = () => document.documentElement
-const covering = window.matchMedia("(max-width: 47.99rem)")
-export const asideOpen = () =>
-  root().dataset.aside === "open" && (!covering.matches || root().dataset.asideHere !== undefined)
+
+/**
+ * Brings `target`, what an address's #fragment names, into view. When it holds a
+ * choice, such as the pairing box's agents, focus goes to the chosen one, or the
+ * first, so the keyboard starts there. Returns whether it holds one.
+ */
+export function arriveAt(target: HTMLElement) {
+  target.scrollIntoView()
+  const choices = [...target.querySelectorAll<HTMLInputElement>("input[type=radio]")]
+  const choice = choices.find(radio => radio.checked) ?? choices[0]
+  // Next frame: following the link, and LiveView's patch, each move focus first.
+  if (choice) requestAnimationFrame(() => choice.focus({preventScroll: true}))
+  return choice !== undefined
+}
 
 /**
  * Wires the panels inside `shell`. Returns `sync`, to run after every LiveView
  * update, and `cleanup`.
  */
 export function installShellPanels(shell: HTMLElement) {
-  const aside = () => shell.querySelector<HTMLElement>("#shell-aside")
-  // Whichever of the two is showing: on a phone, the account's name.
-  const asideButton = () =>
-    [...shell.querySelectorAll<HTMLButtonElement>("[data-aside-toggle]")].find(toggle =>
-      toggle.checkVisibility())
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
   const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
-
-  // The side panel's own button and the account name in the header both open it.
-  const syncAside = () => {
-    shell.querySelectorAll("[data-aside-toggle]").forEach(toggle =>
-      toggle.setAttribute("aria-expanded", String(asideOpen())))
-  }
-
-  const setAside = (open: boolean) => {
-    const value = open ? "open" : "closed"
-    root().dataset.aside = value
-    if (open) root().dataset.asideHere = ""
-    else delete root().dataset.asideHere
-    remember("aside", value)
-    syncAside()
-
-    // Opened, focus moves into it, so Escape closes it and returns focus to the
-    // button that opened it, and what it shows is read again.
-    if (!open) return
-    aside()?.focus()
-    aside()
-      ?.querySelectorAll("[data-read-on-open]")
-      .forEach(reader => reader.dispatchEvent(new CustomEvent("ash:aside-opened")))
-  }
-
-  // Focus goes to the chosen agent, or the first, and its picture scrolls into view:
-  // the radio itself is hidden, so focusing it does not move the panel.
-  const openPairing = () => {
-    setAside(true)
-    const choices = [...shell.querySelectorAll<HTMLInputElement>("#shell-pairing input[type=radio]")]
-    const choice = choices.find(radio => radio.checked) ?? choices[0]
-    choice?.focus()
-    choice?.closest("label")?.scrollIntoView({block: "nearest"})
-  }
 
   const setSidebar = (shown: boolean) => {
     const value = shown ? "shown" : "hidden"
     root().dataset.sidebar = value
-    remember("sidebar", value)
+    rememberSidebar(value)
     const next = shown ? "#shell-sidebar-button" : "#shell-sidebar-show"
     shell.querySelector<HTMLButtonElement>(next)?.focus()
   }
@@ -144,10 +108,6 @@ export function installShellPanels(shell: HTMLElement) {
     const target = event.target instanceof Element ? event.target : null
     if (!target) return
 
-    if (target.closest("[data-aside-toggle]")) return setAside(!asideOpen())
-    // A page's own Pair New Agent button opens the panel, leaves it open, and moves
-    // to the agent choice, so a press with the panel already open still lands there.
-    if (target.closest("[data-aside-open]")) return openPairing()
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()
@@ -158,8 +118,16 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()
     // A press on the dialog's own backdrop lands on the dialog itself.
     if (target === search()) return closeSearch()
-    // On a phone, where the side panel covers the page, a link inside it closes it.
-    if (covering.matches && target.closest("#shell-aside a")) setAside(false)
+    // A page change keeps an open menu open, so a link followed from one closes it.
+    // A link to a #fragment of this page changes nothing LiveView sees when the
+    // address already shows it, so what it names comes into view here, every press.
+    const link = target.closest<HTMLAnchorElement>("a[href]")
+    if (!link) return
+    link.closest<HTMLElement>("[popover]")?.hidePopover()
+    const named = link.hash && link.pathname === window.location.pathname
+      ? document.getElementById(decodeURIComponent(link.hash.slice(1)))
+      : null
+    if (named) arriveAt(named)
   }
 
   const onKeydown = (event: KeyboardEvent) => {
@@ -189,12 +157,6 @@ export function installShellPanels(shell: HTMLElement) {
         return
       }
     }
-
-    if (event.key === "Escape" && asideOpen() && aside()?.contains(document.activeElement)) {
-      event.preventDefault()
-      setAside(false)
-      asideButton()?.focus()
-    }
   }
 
   // The shortcut's name follows the keyboard: ⌘K on Apple devices, Ctrl K elsewhere.
@@ -211,12 +173,10 @@ export function installShellPanels(shell: HTMLElement) {
   shell.addEventListener("click", onClick)
   shell.addEventListener("pointermove", onPointerMove)
   document.addEventListener("keydown", onKeydown)
-  covering.addEventListener("change", syncAside)
 
   // A list the page put in the sidebar marks the page it is on, as the
   // server-drawn links do.
   const sync = () => {
-    syncAside()
     syncSearch()
     const destination = shell.dataset.destination
     shell.querySelectorAll<HTMLAnchorElement>("#shell-sidebar-page a[href]").forEach(link => {
@@ -227,18 +187,12 @@ export function installShellPanels(shell: HTMLElement) {
 
   sync()
 
-  // A link from a page without the panel, such as /agents' Pair New Agent, arrives
-  // with the panel's section in its address and opens the panel on it.
-  if (window.location.hash === "#shell-pairing" && shell.querySelector("#shell-pairing"))
-    setAside(true)
-
   return {
     sync,
     cleanup: () => {
       shell.removeEventListener("click", onClick)
       shell.removeEventListener("pointermove", onPointerMove)
       document.removeEventListener("keydown", onKeydown)
-      covering.removeEventListener("change", syncAside)
     },
   }
 }

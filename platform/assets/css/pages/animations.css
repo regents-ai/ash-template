@@ -400,7 +400,7 @@
   border: 1px solid var(--ash-line-strong);
   border-inline-start: 4px solid var(--ash-accent-warm);
   background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--rg-layer-tip-shadow);
   font-size: 0.85rem;
 }
 

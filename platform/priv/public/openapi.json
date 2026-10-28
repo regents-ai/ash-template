@@ -9043,7 +9043,7 @@
                   "error": {
                     "code": "pairing_failed",
                     "message": "The pairing code could not be used.",
-                    "hint": "Ask your person for a new code from Pair New Agent in the side panel on this site. Each code works once and expires ten minutes after it was made."
+                    "hint": "Ask your person for a new code from Pair New Agent on their Account page on this site. Each code works once and expires ten minutes after it was made."
                   }
                 }
               },
@@ -9236,7 +9236,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then check in again."
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then check in again."
                   }
                 }
               },
@@ -9274,7 +9274,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again."
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again."
                   }
                 }
               },
@@ -9321,7 +9321,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again."
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again."
                   }
                 }
               },
