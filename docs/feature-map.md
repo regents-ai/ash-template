@@ -112,6 +112,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | While agent spending is closed, a refused pin and the balances answer say the same thing and the note stays unpinned; a revoked pairing gets `agent_not_paired` from the balances answer | `platform/test/ash_template_web/spending_answers_test.exs` |
 | The account menu shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/menu_agents_test.exs` (property test); `platform/test/browser/account_menu.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
 | Manage beside "Your agents" opens this site's `/account#account-agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/account_menu.spec.ts` |
+| A signed browser tool takes only its own input; with no agent signer in the browser it sends nothing and answers `agent_auth_required`, naming `regents browser --site`; a signer's refusal is the tool's answer and nothing is sent; otherwise the page sends exactly the request the signer signed, with its proof and no cookie, and an input the tool does not take is refused before the signer is asked, at both widths | `platform/test/browser/page_tools.spec.ts` |
 
 ## Claude connector
 
@@ -183,8 +184,8 @@ on a first request with no credential, so `/mcp` serves no anonymous call.
   wallet note's.
 - Wallet buttons and paying with USDC: only the showcase pages open; no chain is
   attached to the walk.
-- Each WebMCP tool an agent sees: built by `mix regent_agent_access.assets`, not
-  called by a check.
+- Each WebMCP tool beyond `rooms_post`: built by `mix regent_agent_access.assets` and
+  listed by `platform/test/browser/page_tools.spec.ts`, not called by a check.
 - The Credits panel's Held label and its link to the Credits history, the refund
   note on the Credits history, the header's figure staying while the balance is read
   again, and the Points page's bonus words while earning is off: opened by the walk,

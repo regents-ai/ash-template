@@ -4980,3 +4980,19 @@ An adversarial review of the two commits above found five things, all fixed here
   servers; other requests keep 120 a minute per address. Each connected account keeps
   its own 120 a minute.
 - The batch test sends a JSON array, as clients do.
+
+## 2026-10-28 — Signed browser tools take only their input
+
+- elixir-utils moves to `5d6ccf6`: a signed browser tool now builds its request, asks
+  the browser host's `window.regentsSign` to sign it, and sends exactly those bytes
+  with the proof and no cookie. With no signer it sends nothing and answers
+  `agent_auth_required`, naming `regents browser --site`; a signer's refusal is the
+  tool's answer.
+- Hard cutover in `platform/priv/tool_manifest.json`: each signed tool's
+  `input_schema` is its own input (the former `operation_input_schema`, now gone), and
+  `prepare_agent_request` is removed. `Capabilities` reads `input_schema`.
+- `platform/assets/js/public_tools.ts` answers a refusal in the site's error shape, and
+  explains a signer's incomplete answer.
+- The public guide and the supported-host page say a signed tool takes only its input
+  and the browser host signs it; the supported-host heading is now "Agent setups".
+- `platform/test/browser/page_tools.spec.ts` proves the four cases at both widths.

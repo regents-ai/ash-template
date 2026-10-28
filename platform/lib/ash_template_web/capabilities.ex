@@ -127,7 +127,7 @@ defmodule AshTemplateWeb.Capabilities do
                  command = commands[id]
                  surfaces = row["surfaces"]
                  hosted_input = tool && hosted[tool["name"]][:input]
-                 browser_input = tool && (tool["operation_input_schema"] || tool["input_schema"])
+                 browser_input = tool && tool["input_schema"]
 
                  "#/components/schemas/" <> answer =
                    row["output_schema"]["$ref"] || "#/components/schemas/"

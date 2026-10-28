@@ -143,7 +143,7 @@ New endpoints, fields and optional inputs can appear at any time: ignore what yo
 
 ## Browser tools
 
-Every page offers an agent running in it these tools through WebMCP (`document.modelContext`). Signed tools take three steps: `prepare_agent_request`, sign the request it returns with your own SIWA signer, then call the tool with input, request and proof. The person's browser sign-in gives an agent nothing. A write whose answer was lost comes back as `outcome_unknown`: read it back before trying again. The [agent guide]({{origin}}/llms.txt) lists every operation, who may run it and how an agent reaches it, and [/capabilities.json]({{origin}}/capabilities.json) has the same rows as JSON.
+Every page offers an agent running in it these tools through WebMCP (`document.modelContext`). A signed tool takes only its input: your browser host signs the exact request with your own agent key, and the page sends it. [regents browser]({{origin}}/agents.md) is such a host. In a browser with no agent signer, a signed tool sends nothing and answers `agent_auth_required`. The person's browser sign-in gives an agent nothing. A write whose answer was lost comes back as `outcome_unknown`: read it back before trying again. The [agent guide]({{origin}}/llms.txt) lists every operation, who may run it and how an agent reaches it, and [/capabilities.json]({{origin}}/capabilities.json) has the same rows as JSON.
 
 {{tool_summary}}
 
