@@ -4632,3 +4632,44 @@ An adversarial review of the two commits above found five things, all fixed here
   page open at 1280 and 390 with no page errors and nothing wider than the screen. The
   logs since the release show only the machine's six seconds of restart. Sentinel's
   after-read is asked. Rollback: v124, `0b11a68e`.
+
+## 2026-10-28 — The account menu replaces the side panel; pairing moves to the Account page
+
+- Sean, 28 Oct 07:54Z: "instead of a sidepanel, do a upper right modal. and then the
+  account route on all sites handles that privy user . and all account routes should be
+  the exact same, with some local site versions shown first".
+- The account's button at the top right opens the account menu (`Regent.Account.menu`,
+  design-system side branch): a browser popover hanging under the button on the Tip
+  layer, with the person's picture, name and wallet, their three most recently active
+  agents (`AshTemplateWeb.MenuAgents`, was `PanelAgents`; the `MenuAgents` hook reads
+  where each was last active each time the menu opens), Pair New Agent, Manage Account
+  and Sign out. It hangs from the button by name (`anchor-name: --rg-account-menu` on
+  `#account-chip`). Following a link in it closes it (`shell_panels.ts`); Escape or a
+  press outside it does too.
+- Any link to a #fragment of the page already open, and a page opened at one, bring
+  what it names into view every press (`arriveAt` in `shell_panels.ts`). The pairing
+  box still gives focus to the chosen agent, or the first, as v122 did, now from the
+  menu, the Account page and the agent guides' link alike.
+- The right side panel is gone: `#shell-aside`, its button, its grid column and slide,
+  the `ash_template_aside` cookie, `<html data-aside>` and `data-aside-here`, the
+  `data-aside-toggle`/`data-aside-open` handlers and the `#shell-pairing` hash. On the
+  narrowest phones the account's button shrinks to its picture instead of giving way
+  to the panel's button.
+- The Account page uses the shared `Regent.Account.layout`: any parts only this site
+  has first, then the account card and the agents full width, then Pair New Agent
+  (`AshTemplateWeb.PairingBox`, `#account-pairing-box`) beside Credits and the public
+  name. The page's own `.account-layout`/`.account-column` rules are gone. Pair New
+  Agent under the agents moves down to it.
+- Every word that sent people or agents to "Pair New Agent in the side panel" now says
+  "on their Account page": the refusal hints (`plugs/agent_wallet.ex`,
+  `rooms_controller.ex`), `:regent_mcp_agents` in `config.exs`, `capabilities.json`, the
+  agent guides (link `/account#account-pairing`), `llms.md`, `agents.md` and each agent's
+  page, `docs.md`, `about.md`, `build-skill.md`, `site_tools.ex`, the API contract and
+  `openapi.json`, and `cli/COMMANDS.md` and `cli/commands.json`. The matching
+  elixir-utils `regent_agents` hints change on their own side branch.
+- Walks: `account_menu.spec.ts` replaces `side_agents.spec.ts` (three agents and Manage,
+  placement under the button at 1280, 2000, 390 and 320, Escape, Manage Account and
+  Pair New Agent closing the menu, the bottom bar covered on a phone); `pairing.spec.ts`
+  works on the Account page's box; `layout.spec.ts` drops the side panel's checks.
+  The walk's server gets ten minutes to start (`playwright.config.ts`), since a busy
+  machine can take more than the old three for its three mix starts.

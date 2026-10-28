@@ -122,13 +122,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
       <:credits_panel>
         <p style="padding: 24px">Buying Credits needs a signed-in account.</p>
       </:credits_panel>
-      <:pairing>
-        <Regent.Account.pairing
-          id="preview-pairing"
-          harnesses={AshTemplateWeb.PairingBox.choices()}
-          layout={:icons}
-        />
-      </:pairing>
       <:agents>
         <Regent.Account.agents_brief
           id="preview-agents"
@@ -149,7 +142,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
       <:content>
         <div style="padding: 32px">
           <h1>Page frame preview</h1>
-          <p>The top bar, sections, lists, side panel and bottom bar around every signed-in page.</p>
+          <p>
+            The top bar, sections, lists, account menu and bottom bar around every signed-in page.
+          </p>
           <p>The account and Credits shown here are examples, not a signed-in session.</p>
           <a href="/showcase" target="_top">Back to showcase</a>
         </div>
@@ -621,7 +616,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
       <.disclosure id="shell-detail" summary="Page frame and theme switch">
         <iframe id="shell-preview" title="Page frame preview" src="/showcase/preview" loading="lazy"></iframe>
         <p>
-          This preview shows the frame around every signed-in page: the top bar, the sections, each section's list, the side panel and the bottom bar.
+          This preview shows the frame around every signed-in page: the top bar, the sections, each section's list, the account menu and the bottom bar.
         </p>
       </.disclosure>
       <.disclosure id="article-table-detail" summary="Readable article tables">

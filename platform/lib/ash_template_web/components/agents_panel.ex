@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.AgentsPanel do
   @moduledoc """
   The agents a person has paired with their account (`RegentAgents`), on the
   Account page, in the shared agents list (`Regent.Account.agents`), with Pair
-  New Agent opening the side panel's pairing box (`AshTemplateWeb.PairingBox`),
+  New Agent leading to the pairing box below it (`AshTemplateWeb.PairingBox`),
   and a larger view of one agent with where it has been active across the Regent
   sites, a line for each site and day (`AshTemplate.Agents.ActivityReading`), its
   name, which the person may change, and Unpair.
@@ -183,7 +183,9 @@ defmodule AshTemplateWeb.AgentsPanel do
           </P.button>
         </:actions>
         <:footer>
-          <P.button type="button" variant="secondary" data-aside-open>Pair New Agent</P.button>
+          <a href="#account-pairing" class="rg-button rg-button--secondary rg-button--no-arrow">
+            <span class="rg-button__label">Pair New Agent</span>
+          </a>
 
           <Regent.Account.agent_detail
             :if={@detail}

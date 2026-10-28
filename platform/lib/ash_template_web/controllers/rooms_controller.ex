@@ -54,11 +54,11 @@ defmodule AshTemplateWeb.RoomsController do
        "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."},
     "posted_before_pairing" =>
       {403, "This agent has already posted once before pairing.",
-       "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then post again."},
+       "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then post again."},
     "guest_posts_limited" =>
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
-       "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel to keep posting, or wait the number of seconds in Retry-After."},
+       "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page to keep posting, or wait the number of seconds in Retry-After."},
     "invalid_report" =>
       {422, "The message could not be reported.",
        "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."},

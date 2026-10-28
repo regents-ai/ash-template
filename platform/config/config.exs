@@ -117,7 +117,7 @@ config :regent_agents,
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time.",
       "Post one message in a room as yourself.",
-      "Pair with the code your person makes with Pair New Agent in the side panel."
+      "Pair with the code your person makes with Pair New Agent on their Account page."
     ],
     "person_not_here" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",

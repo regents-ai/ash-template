@@ -52,7 +52,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
         <Shell.account_control
           account_control={@account_control}
           enabled={@mode == :configured}
-          panel={false}
+          menu={false}
         />
         <Shell.theme_toggle id="privy-reference-theme" />
       </header>

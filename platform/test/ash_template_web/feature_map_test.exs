@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.FeatureMapTest do
   # The browser walk opens every page and document in test/browser/pages.json. A
   # page added to the router without an entry there would never be walked, and an
-  # agent added to the side panel would get a page nobody opens.
+  # agent added to the pairing box would get a page nobody opens.
   use ExUnit.Case, async: true
 
   @map "test/browser/pages.json" |> File.read!() |> Jason.decode!()

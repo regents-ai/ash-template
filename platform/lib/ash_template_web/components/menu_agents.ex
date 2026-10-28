@@ -1,19 +1,19 @@
-defmodule AshTemplateWeb.PanelAgents do
+defmodule AshTemplateWeb.MenuAgents do
   @moduledoc """
   The three most recently active agents paired with the person's account
-  (`RegentAgents`), first in the side panel on every page, in the shared short
-  list (`Regent.Account.agents_brief`): each agent's picture and name over the
-  Regent site it was last active on and how long ago. Pairing is shared by every
+  (`RegentAgents`), in the account menu every page opens from its header, in the
+  shared short list (`Regent.Account.agents_brief`): each agent's picture and name
+  over the Regent site it was last active on and how long ago. Pairing is shared by every
   Regent site, so an agent paired on another one is listed too. Manage beside the
   heading opens the agents on this site's own Account page, where every agent is
   listed.
 
   Where each agent was last active comes from its shared reading
-  (`AshTemplate.Agents.ActivityReading`), asked for only for an open panel: the
-  `PanelAgents` hook asks when the page arrives with the panel open and each time
-  it opens, and a request while one is still out is let go. Until the readings
-  arrive the newest paired three show; then the three most recently active, with
-  agents never active after those that were, newest paired first. A pairing,
+  (`AshTemplate.Agents.ActivityReading`), asked for only for an open menu: the
+  `MenuAgents` hook asks each time the menu opens, and a request while one is
+  still out is let go. Until the readings arrive the newest paired three show;
+  then the three most recently active, with agents never active after those that
+  were, newest paired first. A pairing,
   check-in or unpairing updates the list at once; the lines follow on the next
   opening.
 
@@ -62,7 +62,7 @@ defmodule AshTemplateWeb.PanelAgents do
   @impl true
   def render(assigns) do
     ~H"""
-    <div id={"#{@id}-reader"} phx-hook="PanelAgents" data-read-on-open>
+    <div id={"#{@id}-reader"} phx-hook="MenuAgents">
       <Regent.Account.agents_brief
         id={@id}
         manage_href="/account#account-agents"
@@ -148,7 +148,7 @@ defmodule AshTemplateWeb.PanelAgents do
   defp last_line(nil, _now), do: %{last_action: nil, last_action_iso: nil, last_action_at: nil}
 
   @doc """
-  The three agents the panel shows, from the person's agents newest paired first
+  The three agents the menu shows, from the person's agents newest paired first
   and where and when each was last active, by id (`:none` for one never active):
   the most recently active first, then the rest, keeping their order.
   """

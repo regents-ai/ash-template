@@ -1,10 +1,9 @@
 defmodule AshTemplateWeb.Plugs.Panels do
   @moduledoc """
-  Reads which of the app shell's panels the visitor last opened or hid, so the
-  first server render already draws them that way: the right side bar is closed
-  and the sidebar shown until they choose otherwise. The browser writes the
-  cookies (`assets/js/shell_panels.ts`); only the two values each panel can take
-  are ever accepted, since they reach an HTML attribute.
+  Reads whether the visitor last hid the app shell's sidebar, so the first server
+  render already draws it that way: shown until they choose otherwise. The
+  browser writes the cookie (`assets/js/shell_panels.ts`); only the two values it
+  can take are ever accepted, since they reach an HTML attribute.
   """
 
   @behaviour Plug
@@ -18,12 +17,8 @@ defmodule AshTemplateWeb.Plugs.Panels do
   def call(conn, _opts) do
     conn = fetch_cookies(conn)
 
-    conn
-    |> assign(
-      :aside,
-      if(conn.req_cookies["ash_template_aside"] == "open", do: "open", else: "closed")
-    )
-    |> assign(
+    assign(
+      conn,
       :sidebar,
       if(conn.req_cookies["ash_template_sidebar"] == "hidden", do: "hidden", else: "shown")
     )

@@ -28,7 +28,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen, shows every ENS name, full address and short address with its copy icon, and lets a keyboard reach every box that scrolls (a wide code block or table takes focus), signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
 | Every machine-readable document answers with its type | same, `documents` |
 | No page or document the site serves is left out of the walk, and the walk names none the site has dropped | `platform/test/ash_template_web/feature_map_test.exs` |
-| Every agent in the side panel has a guide page and a skill the walk opens | same |
+| Every agent in the pairing box has a guide page and a skill the walk opens | same |
 | The site started with its sign-in settings | `pages.spec.ts`, first test |
 | A page asked for JSON gets a refusal, a browser gets the page | `platform/test/ash_template_web/content_negotiation_test.exs` |
 | An address with a slash at the end, other than the homepage, is not found: the not-found page for a page, the API's not-found answer for an API address | `platform/test/ash_template_web/trailing_slash_test.exs` |
@@ -51,13 +51,13 @@ starts, and the server watches no files, so no page reloads under a check.
 | Save on the Account page without the browser's sign-in finishes, says why, sends no change and moves nothing, at both widths | `platform/test/browser/public_name.spec.ts` |
 | A name with a hidden character (a control, a line or paragraph separator, or a format character such as a text-direction mark or zero-width space) is refused, and the person is told to remove the hidden characters; a joiner between two visible characters and a complete flag still save; taking out any one rule fails a check | elixir-utils `ash_components/identity/test/http_test.exs` and `profile_test.exs` (property tests); the words in `platform/assets/test/public_name.test.ts` |
 | The longest name the site takes, with no spaces, fits every signed-in page at both widths | `pages.spec.ts`; the walk's person has an 80-letter name (`platform/test/browser/support/sign_in.exs`) |
-| Pair New Agent opens the pairing box, from the Account page and from an agent guide's link, and with the panel already open moves to the agent choice | `platform/test/browser/pairing.spec.ts` |
+| Pair New Agent moves to the Account page's pairing box, from the Agents list on every press, from the account menu and from an agent guide's link | `platform/test/browser/pairing.spec.ts` |
 | Choosing an agent gives a message with a code; coming back to an agent shows its same code, and Make a new code replaces it | same |
 | With codes out for two agents, an agent that pairs shows under the code it used and the other keeps its code | elixir-utils `ash_components/agents/test/regent_agents/pairing_test.exs` (each used code names its agent); gap: the box itself is not walked, because the walk's one person has agents other checks count |
 | Every agent's message but ChatGPT's tells it to keep its own key in a folder named after its runtime, so agents sharing one computer pair as separate agents | elixir-utils `ash_components/agents/test/regent_agents/pairing_message_test.exs` |
-| Every agent kind the library knows, Claude included, draws its picture in the agents list and side panel, so an agent paired on another site never breaks a person's list here | `platform/test/ash_template_web/agent_pictures_test.exs` |
+| Every agent kind the library knows, Claude included, draws its picture in the agents list and the account menu, so an agent paired on another site never breaks a person's list here | `platform/test/ash_template_web/agent_pictures_test.exs` |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
-| The side panel opens under the header's line, its top bar in line with the sidebar's title row, at desktop and phone width | `platform/test/browser/layout.spec.ts` |
+| The account menu hangs under its button inside the screen at desktop and phone width (320 too), closes on Escape, and on a phone covers the bottom bar; Manage Account and Pair New Agent in it lead to the Account page and close it | `platform/test/browser/account_menu.spec.ts` |
 | The Credits panel's Where to spend opens a window naming each Regents Product, what Credits buy there and its link; it sits on the screen, and Close or Escape closes it, at both widths; the panel's Paying from wallet shows its copy icon | `platform/test/browser/credits.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
 | Each agent on the Account page names its own wallet beside its name: the short form opens the full address on a press, its icon copies it, and the row fits on one line, at both widths; the contact line says "Last check-in" | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs; design-system `regent_ui/test/regent/account_test.exs` (a row without a wallet says "Address unavailable") |
@@ -106,8 +106,8 @@ starts, and the server watches no files, so no page reloads under a check.
 | `/llms.txt`, `/agents.md` and `/skill.md` list, for each status, exactly what the status check allows and its next step | `platform/test/ash_template_web/what_you_can_do_test.exs` |
 | Two agents spending a person's last Credits at once never spend more than there is; a retried pin pays once and its hold says it was a pinned note; a pin after an unpin needs a new operation_id and pays again, and reusing the old one pins and charges nothing; a revoked allowance stops the next spend; what an agent spent counts Credits used and forfeited, not those given back | `platform/test/ash_template/credits/agent_spend_test.exs` |
 | While agent spending is closed, a refused pin and the balances answer say the same thing and the note stays unpinned; a revoked pairing gets `agent_not_paired` from the balances answer | `platform/test/ash_template_web/spending_answers_test.exs` |
-| The side panel shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/panel_agents_test.exs` (property test); `platform/test/browser/side_agents.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
-| Manage beside "Your agents" opens this site's `/account#account-agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/side_agents.spec.ts` |
+| The account menu shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/menu_agents_test.exs` (property test); `platform/test/browser/account_menu.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
+| Manage beside "Your agents" opens this site's `/account#account-agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/account_menu.spec.ts` |
 
 ## Visit lines
 
@@ -134,7 +134,7 @@ starts, and the server watches no files, so no page reloads under a check.
 - Connecting X on Connections, copying a wallet, searching and the theme switch: not
   walked. The search window opens, and nothing is typed in it.
 - An agent's signed pairing request: the walk's agent is paired with a code issued
-  and taken through the same calls the side panel and the pairing request make, but no
+  and taken through the same calls the pairing box and the pairing request make, but no
   agent signs a request, since the walk never leaves the machine.
 - Pressing other addresses (the Account page's own wallet, linked wallets): the walk
   checks each one shows its copy icon, and presses only the agent's window's and a

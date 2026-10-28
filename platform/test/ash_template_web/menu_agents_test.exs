@@ -1,14 +1,14 @@
-defmodule AshTemplateWeb.PanelAgentsTest do
-  # Invariant: the side panel shows at most three of a person's agents, none left
+defmodule AshTemplateWeb.MenuAgentsTest do
+  # Invariant: the account menu shows at most three of a person's agents, none left
   # out more recently active than one shown, every active one before the rest
   # (never active, or not yet read), and the rest in the order given (newest
   # paired first).
   use ExUnit.Case, async: true
   use ExUnitProperties
 
-  alias AshTemplateWeb.PanelAgents
+  alias AshTemplateWeb.MenuAgents
 
-  property "the panel shows the three most recently active agents" do
+  property "the menu shows the three most recently active agents" do
     check all(
             seconds <- list_of(one_of([constant(nil), constant(:none), integer(0..50)]), max_length: 8)
           ) do
@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.PanelAgentsTest do
           {id, if(second == :none, do: :none, else: %{site: "Keyfleet", at: DateTime.from_unix!(second)})}
         end
 
-      shown = PanelAgents.shown(agents, last_actions)
+      shown = MenuAgents.shown(agents, last_actions)
       at = fn agent ->
         with %{at: at} <- last_actions[agent.id], do: DateTime.to_unix(at), else: (_never -> nil)
       end

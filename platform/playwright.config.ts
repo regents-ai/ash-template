@@ -38,7 +38,8 @@ export default defineConfig({
       "mix assets.build && mix phx.server",
     url: `${baseURL}/healthz`,
     reuseExistingServer: false,
-    timeout: 180_000,
+    // Three mix starts in a row; on a busy machine each can take a minute or more.
+    timeout: 600_000,
   },
   projects: [
     {name: "desktop", use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}},

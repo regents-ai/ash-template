@@ -4,6 +4,13 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Your account in one small box.** The button with your picture at the top right now
+  opens a small box under it: your name and wallet, your three most recently active
+  agents, Pair New Agent, Manage Account and Sign out. The panel down the right side is
+  gone, so pages keep their full width.
+- **Pair an agent on your Account page.** Pair New Agent now lives on your Account page,
+  beside your Credits. Pair New Agent in the box at the top right takes you straight
+  there, and so do the agent guides.
 - **Asking not to be tracked starts no visit.** If your browser sends Global Privacy
   Control, the site no longer sets its visit cookie, so nothing it records can be put
   together into one visit.
