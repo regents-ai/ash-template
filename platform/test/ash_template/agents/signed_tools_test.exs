@@ -103,12 +103,20 @@ defmodule AshTemplate.SignedToolsTest do
       end
     end)
 
+    # Like the sign-in service, this answers only the site's own verify key
+    # (config/test.exs); any other key would leave every signed request below at 503.
     Req.Test.stub(RegentAgents.Broker, fn conn ->
       {:ok, body, conn} = read_body(conn)
       envelope = Jason.decode!(body)
       send(self(), {:proof_checked, envelope})
 
-      if envelope["headers"]["x-siwa-signature"] == "fixture-proof" do
+      cond do
+        get_req_header(conn, "authorization") != ["Bearer test-site-verify-key"] ->
+          conn
+          |> put_status(401)
+          |> Req.Test.json(%{error: %{code: "site_verify_unauthorized"}})
+
+        envelope["headers"]["x-siwa-signature"] == "fixture-proof" ->
         Req.Test.json(conn, %{
           code: "http_envelope_valid",
           data: %{
@@ -124,7 +132,8 @@ defmodule AshTemplate.SignedToolsTest do
             }
           }
         })
-      else
+
+        true ->
         conn
         |> put_status(401)
         |> Req.Test.json(%{

@@ -31,6 +31,9 @@ config :ash_template, :stripe_publishable_key, "pk_test_template"
 # IndexNow is answered by the test itself (AshTemplate.IndexNow).
 config :ash_template, :indexnow_req, plug: {Req.Test, AshTemplate.IndexNow}
 
+# The sign-in service is answered by the test itself (RegentAgents.Broker).
+config :regent_agents, :siwa, verify_key: "test-site-verify-key"
+
 config :logger, level: :warning
 
 config :phoenix, :plug_init_mode, :runtime
