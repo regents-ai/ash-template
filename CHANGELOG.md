@@ -4450,3 +4450,18 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - `platform/test/browser/pairing.spec.ts` shortens the open panel so the agents are out of
   view, presses again, and checks the agent is focused and in view; it fails against the old
   button. Listed in `docs/feature-map.md`.
+
+## 2026-10-28 — Released v122: Pair New Agent lands on the agent choice
+
+- Fly v122, image 3df1d08, live about 00:25Z; rollback v121 (1395f42). Carries the Pair New
+  Agent fix and 3df1d08, which restores v121's motion lab files and changelog on main after
+  8b1e3b4 was committed from an older tree. No migrations.
+- Ordinary work, shipped under AUTONOMY-RULE a, under the shared release lock after reading
+  that no release was running.
+- Before: full check on the fix: 94 ExUnit (9 properties), 24 JS, 301 browser steps passed, 3
+  skipped, at 1280 and 390 (Chromium; WebKit not run on the Mac). The new pairing check fails
+  against the old button.
+- After, headless on template.regents.sh: `/capabilities.json` reports 3df1d08; the home
+  page, Account, Notes and the motion lab answer 200 at 1280 and 390 with no page errors and
+  no sideways scroll; the live script carries the new Pair New Agent step; the health check
+  passes.
