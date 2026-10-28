@@ -4762,3 +4762,46 @@ An adversarial review of the two commits above found five things, all fixed here
   `@design_system_ref` moves to design-system `b7a34d89`, where the `claude` harness (Claude,
   the connected app) draws `claude-duet.png`; Claude Code keeps its own picture.
   `test/ash_template_web/agent_pictures_test.exs` still draws every agent kind.
+
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
+  main `9da44bdc` merged with the connector's oauth and mcp_agents work).
+  `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` answers at `/mcp`
+  with Claude's handshake, the 401 sign-in challenge, each connected account's own budget
+  and the identity tools. `regent_oauth` and `regent_agent_access` carry `override: true`,
+  since `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on the
+  sign-in under `/oauth` and `/.well-known/oauth-*`, `/mcp`, Claude in the pairing box
+  and the pair request, and the Claude guide at `/agents/claude`. With the switch on, the
+  boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed. With it off, an agent's
+  sign-in, pairing and rate limits are as before: the endpoint only adds a budget for
+  `/mcp` paths (600 a minute from one address) and the `/api` budget is unchanged.
+- The connector's sign-in signs, through the sign-in service, only `whoami`, `me` and
+  `pair` for the account's one hosted identity, asked with the site's own key; the
+  connection's Bearer token never leaves the site. Connecting again or refreshing keeps
+  that identity and its one agent, a pairing code must be the authorizing account's own,
+  only `check_in` moves when the agent was last in touch, unpairing on the Account page
+  holds, and disconnecting at Connected apps revokes the app's access and refresh tokens
+  at once. `platform/test/ash_template_web/claude_connector_test.exs` checks each through
+  this site's endpoint; `docs/feature-map.md` lists them and the gaps left.
+- Pairing and checking in when asked in a chat are supported. A check-in from a scheduled
+  Claude task has not been tried, and Claude's guide says so.
+- Claude's guide and the connector's refusal send people to Pair New Agent on their
+  Account page. The pairing box uses the library's `Harness.offered/0`; its own copy is
+  gone.
+- Migrations: `20261014170000_add_oauth_provider` now calls `RegentOAuth.Migration.up()`
+  (the shape a new database gets; production already ran it).
+  `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL lock_timeout = '5s'`) runs
+  `RegentOAuth.Migration.V2`: it drops the token table's issuer and resource defaults
+  (each code and token now has them written as it is issued) and rewrites every stored
+  access token row in place as hashes. The template has OAuth rows on the shared
+  production database, so the release that carries it waits for Sean's letter naming it.
+  Tokens issued for the old resource stay refused and their apps connect again.
+- Lifetimes stay the library's: a Bearer token lives at most an hour, a refresh token 30
+  days, and a refresh token reused within 30 seconds of its rotation is only refused
+  (`config/config.exs` notes where each is set).
+- Not yet: the sign-in service's hosted signing allows the `patchbay` and `keyfleet`
+  audiences only, so with the switch on here every signed tool call would be refused
+  until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
+  version before any site takes it.

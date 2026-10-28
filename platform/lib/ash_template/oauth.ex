@@ -1,9 +1,20 @@
 defmodule AshTemplate.OAuth do
-  @moduledoc "Opt-in MCP consent through the site's existing verified Privy account."
+  @moduledoc """
+  Consent for connected apps, such as Claude's connector, through the person's
+  verified account. The one permission lets the app keep an identity, pair it
+  with this account and check in through the MCP address at `/mcp`; nothing else.
+  """
   @behaviour RegentOAuth
 
   def config, do: Application.fetch_env!(:ash_template, __MODULE__)
   def repo, do: AshTemplate.Repo
+
+  @doc """
+  Whether the Claude connector is switched on (`ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`,
+  read once at boot): its sign-in, its MCP address, Claude in the pairing box and
+  the Claude guide all follow this one setting.
+  """
+  def enabled?, do: Keyword.fetch!(config(), :enabled?)
 
   def current_subject(conn) do
     case conn.assigns[:current_human_account] do
