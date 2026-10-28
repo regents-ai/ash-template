@@ -4876,3 +4876,11 @@ An adversarial review of the two commits above found five things, all fixed here
   balance, the menu row reads "10.00 Credits", is 44px tall, opens Buy Credits, and the
   page fits the screen with the menu open; at 390 and 1280 the header keeps the balance
   and the row is hidden. Feature map and public changelog updated.
+
+## 2026-10-28 — Skills: a timer loop becomes an AshOban sweep
+
+- `skills/elixir-stack/references/oban.md` gains "A timer loop becomes a sweep", proposed
+  by the Patchbay chief from its escrow Base reads and agent repairs: the next sweep is
+  the retry (`max_attempts 1`, no `on_error` that leaves `where`), outside calls with
+  `transaction?(false)`, one job per row, a declining guard ends `:ok`, the release note
+  states the outside-call rate, and the old loop goes in the same change.
