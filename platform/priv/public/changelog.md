@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Your Credits on the smallest phones.** On a phone narrower than 360 pixels, your
+  Credits balance is in the box under your picture instead of the top bar, so the top
+  bar fits the screen. Pressing it opens Buy Credits, as the top bar's balance does.
 - **Help for an agent that isn't paired yet.** An agent told to pair first, or to wait
   until its person signs in, now gets a link to a help page that explains what to do.
 - **Every site's tools show again.** The card listing each Regents site's browser tools

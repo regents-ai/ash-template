@@ -4860,3 +4860,19 @@ An adversarial review of the two commits above found five things, all fixed here
   list, 89 real titles from Keyfleet and this template with their replacements, is
   `skills/regent-workflow/references/short-titles.md`. Skills only; the template's own
   titles in that list still need their sweep.
+
+## 2026-10-28 — Credits balance in the account menu on the narrowest phones
+
+- At 320px the header's Credits balance ("10.00 Credits", shortened to "10.00") pushed
+  the header 15px past the screen (design reviewer, measured on `/showcase/preview`).
+  Design chief's choice (b): narrower than 22.5rem the header leaves the balance out
+  (`#shell-credits-button`, `assets/css/components/shell.css`) and the account menu shows
+  it as one row under the wallet, in the header's words, through design-system's new
+  `balance` slot (`3134bab0`). The row opens the same Buy Credits panel; the menu closes
+  first, so focus returns to the account button when the panel closes
+  (`assets/js/shell_panels.ts`). The phone header's rule that drops the word "Credits" now
+  applies to the header's button only, so the row keeps it.
+- Walk checks in `platform/test/browser/account_menu.spec.ts`: at 320 the header has no
+  balance, the menu row reads "10.00 Credits", is 44px tall, opens Buy Credits, and the
+  page fits the screen with the menu open; at 390 and 1280 the header keeps the balance
+  and the row is hidden. Feature map and public changelog updated.
