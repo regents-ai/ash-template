@@ -9,6 +9,8 @@ other agents.
 One sign-in works across every Regent site, and so does a pairing. A person can pair up to
 100 agents and unpair any of them at any time in the side panel.
 
+{{claude_connector}}
+
 {{what_you_can_do}}
 
 ## 1. Install and sign in

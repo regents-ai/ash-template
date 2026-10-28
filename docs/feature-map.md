@@ -108,6 +108,25 @@ starts, and the server watches no files, so no page reloads under a check.
 | The side panel shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/panel_agents_test.exs` (property test); `platform/test/browser/side_agents.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
 | Manage beside "Your agents" opens this site's `/account#account-agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/side_agents.spec.ts` |
 
+## Claude connector
+
+Off unless `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is `true`
+([docs/oauth-reference.md](oauth-reference.md)). The template's own checks for it
+are not written yet; every row below that names only elixir-utils is a gap here.
+
+| What | Check |
+| --- | --- |
+| Claude connects at `/mcp`: `initialize` answers in the version it asks for, `notifications/initialized` gets 202, `ping` and `tools/list` answer, with the identity tools and `claude` as the only harness | elixir-utils `mcp_agents/test/regent_mcp_agents/plug_test.exs`; gap: not run against the template's router, endpoint and sign-in |
+| A request to `/mcp` without a live token gets 401 with the challenge that starts sign-in; a GET gets 405; the address is 404 while the switch is off | same; gap: not run against the template |
+| A disconnected (revoked) app's token is refused at `/mcp` at once | elixir-utils `oauth/test/regent_oauth/hashed_tokens_test.exs` (refresh reuse and revocation disconnect the app); gap: not run against the template's `/mcp` |
+| Each connected account has its own budget at `/mcp`, and each address its ceiling first | elixir-utils `plug_test.exs` (each account's budget); gap: the template's two budgets are not checked |
+| A refused tool call ends with the site's own words | elixir-utils `plug_test.exs`; gap: the template's words are not checked |
+| Consent, the callback, refresh, disconnect from Connected apps, and the host checks (issuer and resource from the site's host; a token bound to another address is refused) | gap: not checked on the template; the 14 and 15 October local exercises in the OAuth reference predate the connector |
+| Tokens are stored only as their hashes; the migration hashes the template's existing rows in place and their apps keep working | elixir-utils `oauth/test/regent_oauth/migration_v2_test.exs`; gap: the template's migration (`20261028120000_oauth_connector_tokens`) has not run on a scratch database with existing rows |
+| The boot stops with the switch on and no well-formed `SIWA_HOSTED_SIGNING_KEY`, naming the setting | gap: not checked |
+| Claude's guide, its skill, its line on `/agents` and in the sitemap, the `/agents.md` paragraph and the `/llms.txt` line exist only while the switch is on | gap: not checked with the switch on; the walk and `feature_map_test.exs` run with it off |
+| Claude is offered in the pairing box and accepted by the pair request only while the switch is on | elixir-utils `ash_components/agents/test/regent_agents/hosted_pairing_test.exs`; gap: the template's box is not checked, and it cannot draw Claude until design-system has a `claude` picture |
+
 ## Visit lines
 
 | What | Check |

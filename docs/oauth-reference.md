@@ -2,8 +2,8 @@
 
 Sean authorized this bounded implementation on 14 October 2026: “Build the shared
 Boruta/Privy service locally.” It does not authorize release or change the broader
-connected-app backlog. OAuth defaults off (`ASH_TEMPLATE_OAUTH_ENABLED` is unset). The template has no hosted MCP endpoint;
-its configured origin is a reference audience, not an advertised working tool URL.
+connected-app backlog. Since 28 October the same sign-in serves the template's
+Claude connector (below), which is off until its one switch turns it on.
 
 `RegentOAuth` in `elixir-utils/oauth` supplies the Boruta 2.3.8 protocol adapter,
 S256 PKCE, public-client registration, token refresh, consent and connected-app
@@ -12,41 +12,136 @@ account. Consent uses the browser pipeline's session authority and CSRF protecti
 No request header or account parameter can establish a person. Nothing here grants
 a paired-agent or wallet actor, and no new account store is introduced.
 
-API routes expose resource/server metadata, `/oauth/register`, `/oauth/token` and
-`/oauth/revoke`. Browser routes are GET/POST `/oauth/authorize`, GET
-`/oauth/connections` and POST `/oauth/connections/revoke`. Credential routes disable
-logging; the existing address limiter bounds registration and token requests.
-A connected-app link is present on consent pages. There is no change to Account's
-existing social-connections page.
+API routes expose resource/server metadata (the resource's also at
+`/.well-known/oauth-protected-resource/mcp`, where RFC 9728 places it),
+`/oauth/register`, `/oauth/token` and `/oauth/revoke`. Browser routes are GET/POST
+`/oauth/authorize`, GET `/oauth/connections` and POST `/oauth/connections/revoke`.
+Credential routes disable logging; the existing address limiter bounds registration
+and token requests. A connected-app link is present on consent pages. There is no
+change to Account's existing social-connections page.
 
-A site adopts the adapter, router/controller wiring and supervised repo, supplies
-its exact HTTPS issuer/resource and one event-read scope in config, and uses the
-same literal issuer/resource in its additive migration. Tokens freeze that binding
-at issuance. Never change a provider's audience by reinterpreting old rows.
-The default issuer is `https://template.regents.sh`; the default resource is its
-origin only because the template has no MCP route. Replace the resource before
-turning the feature on. Do not add a dummy MCP route.
+## The Claude connector: one switch
+
+`ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true` turns on everything at once, read at
+boot by `config/runtime.exs`; anything else leaves all of it off:
+
+- the sign-in above (`AshTemplate.OAuth`, `RegentOAuth.enabled?/0`), with
+  `RegentOAuth.Repo` supervised;
+- the MCP address at `/mcp` (below);
+- Claude in the pairing box and the signed pair request
+  (`config :regent_agents, hosted_pairing: [:claude]`; empty while off);
+- the Claude guide at `/agents/claude` and its skill, its line on `/agents` and in
+  the sitemap, the connector paragraph in `/agents.md` and the hosted MCP line in
+  `/llms.txt`. These are read on each request (`AshTemplate.OAuth.enabled?/0`);
+  while off, `/agents/claude` is not found and `/llms.txt` says the site has no
+  hosted MCP endpoint.
+
+With the switch on, the boot stops unless `SIWA_HOSTED_SIGNING_KEY` is this site's
+hosted signing key at the sign-in service (32 or more letters, digits, `-` or `_`),
+naming that setting. The connector's identities are held by the same sign-in
+service that checks agents' signed requests (`ASH_TEMPLATE_SIWA_BROKER_URL`, or
+`https://siwa.regents.sh`), for the `ash-template` audience.
+`RegentMCPAgents.configure!/0` then checks the rest at boot: the scope, at least one
+hosted runtime and the refusal words.
+
+The one permission is `regent.identity.manage`: the app may keep an identity for
+itself, pair it with the account using a code the person gives it, and check in.
+It cannot post, spend Credits, make payments or change wallets. The template's
+earlier reference scope, `mcp.events.read`, is gone; an app registered for it
+connects again.
+
+## The MCP address
+
+`forward "/mcp", RegentMCPAgents.Plug` in the router, as the library's README
+documents, after the sign-in routes and outside the `:api` pipeline: its own `:mcp`
+pipeline holds only the launch gate, so the plug answers a GET with 405 itself
+rather than the API's format check refusing it, and the site's closing closes it
+too. The plug answers 404 while the switch is off. Each POST is one JSON-RPC
+message: `initialize`, `notifications/initialized` (202), `ping`, `tools/list` and
+`tools/call` for `register_identity`, `get_identity`, `pair_identity` and
+`check_in`. A request without a live Bearer token carrying `regent.identity.manage`
+gets 401 with `WWW-Authenticate: Bearer resource_metadata=…`, which starts
+Claude's sign-in. The route is not logged: tool calls carry pairing codes.
+
+Two budgets: the endpoint counts each address first (`mcp_address`, 600 a minute,
+since Claude's requests come from Anthropic's shared addresses and a request
+without a token is answered before any account is known), then the plug counts
+each connected account under its OAuth subject (`mcp`, 120 a minute) through
+`RegentAgentAccess.RateLimit` and the site's `RequestRateLimiter`. A refused tool
+call ends with the site's own words (`config :regent_mcp_agents, :config,
+refusal:`).
+
+## Issuer and resource from the site's host
+
+The issuer is the site's own address and the resource is its `/mcp`, set at
+runtime: `https://PHX_HOST` in production, the endpoint's address elsewhere
+(`http://localhost:4000` in development). Nothing names `template.regents.sh` in
+code, so a site cut from the template, and its staging, get their own.
+
+Tokens freeze that binding at issuance: `oauth_tokens.oauth_issuer` and
+`mcp_resource` take column defaults, and `RegentOAuth.verify` refuses a token
+whose columns differ from the running site's. The migration
+`20261028120000_oauth_connector_tokens` sets those defaults from the same runtime
+values, so it needs `PHX_HOST` in the release step and refuses to run without it.
+Never change a provider's audience by reinterpreting old rows: the migration
+changes only the defaults, so tokens issued for the old resource (the bare
+origin) stay refused and their apps connect again. Moving a site to a new address
+needs a migration that changes the defaults again. The first migration
+(`20261014170000_add_oauth_provider`) keeps its literal values as history.
+
+## Hashed tokens
+
+Access and refresh tokens are stored only as their SHA-256 hash
+(`RegentOAuth.hash_token/1`) and looked up by it; the plain tokens reach the app
+once. The same migration runs `RegentOAuth.Migration.V2`, which rewrites every
+stored access token row in place (`value`, `refresh_token`, `previous_token`), so
+an app connected before it keeps working. It is up only, with
+`SET LOCAL lock_timeout = '5s'`, and cannot be undone. The template has live
+OAuth rows on the shared production database, so this migration changes
+production data: it is protected and runs only with Sean's letter naming it.
+Authorization codes stay as Boruta keeps them.
+
+## Rollout to the sites
+
+This is a shared change under the "Shared changes" rule (regent-workflow): built
+and tested here, released on template.regents.sh with the switch on only after
+Sean's letter for the migration, then signed off by Sean as a numbered decision
+with the template link and the checks below, and only then handed to all five
+sites at once in one rollout file. Each site makes its own version (its own
+switch name, title, about line, refusal words and guide in its own voice), runs
+its own hashing migration on its own schema with its own letter, and records its
+commit, release and rollback in its row. Keyfleet's hand-written MCP controller
+(branch `claude/claude-connector-fixes-1027`) is replaced by this plug and is not
+taken. Patchbay keeps `hosted_pairing: [:chatgpt]` and its own refusal words.
+
+Before the switch is turned on anywhere, the site must have completed consent,
+callback, refresh, disconnect and host checks, and the `/mcp` checks: initialize,
+tools/list, 401 without a token, a revoked token refused and the per-account
+limit. One shared piece is still missing: design-system's `Regent.Account` has no
+picture for the `claude` harness (`@agent_pictures`, `Map.fetch!`), so a pairing
+box offering Claude, or any list showing a paired Claude, raises until
+design-system adds one and the template takes that `regent_ui` pin.
 
 All shared packages use one reviewed `elixir-utils` Git commit, including OAuth.
 The template's existing `REGENT_ELIXIR_UTILS_PATH` development override also covers
-OAuth; production refuses that override. Normal local integration checks fetch the
-exact pins from the local shared repository without changing the recorded URLs.
-Publish the reviewed shared commit before a separately authorized consumer release
-so its builds can fetch the exact pin.
-Site-owned additive migrations create the OAuth tables; this change does not run
-production migrations. Keep the feature off until the site has completed consent,
-callback, refresh, disconnect and host checks.
+OAuth and the MCP plug; production refuses that override. Normal local integration
+checks fetch the exact pins from the local shared repository without changing the
+recorded URLs. Publish the reviewed shared commit before a separately authorized
+consumer release so its builds can fetch the exact pin.
+Site-owned migrations create and change the OAuth tables; this change does not run
+production migrations.
 
 Use Ash Signals for ordinary resource-change reactions where appropriate. They do
 not replace an ordered, replayable MCP event log: write that log in the same
 transaction as the domain action and use AshOban for delivery and retries. This
 auth service adds no new domain-event producer, queue or polling loop. Patchbay's
-existing committed event stream remains canonical.
+existing committed event stream remains canonical. The template's `/mcp` offers
+no events.
 
 Local checks use stand-in accounts and an isolated loopback database. They cannot
-establish real Privy or ChatGPT acceptance. Money tests and Points activation are
+establish real Privy or Claude acceptance. Money tests and Points activation are
 outside this integration. Publishing and deployment require applicable authority;
-live consent and event delivery require their own verification.
+live consent requires its own verification.
 
 ## Integration verified on 14 October
 

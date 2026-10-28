@@ -4505,3 +4505,36 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   refresh, switching and signing out, and checks a lineage whose count ran out stays
   signed out; both tests fail against the old transactions. Listed in
   `docs/feature-map.md`. Sean gave the go on 28 October ("3. a").
+
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `d763b80` (from `7794682`): `595eddc` and
+  `d763b80`. `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` is
+  mounted at `/mcp` as its README documents, with Claude's handshake, the 401
+  sign-in challenge, each connected account's own budget and the `check_in` tool.
+  OAuth access and refresh tokens are stored only as their hash. `hosted_pairing` is
+  a list (`[:claude]` here while the switch is on) and `chatgpt_pairing` is gone.
+  `regent_oauth` and `regent_agent_access` now carry `override: true`, since
+  `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on
+  the sign-in, `/mcp`, Claude in the pairing box and the pair request, and the Claude
+  guide at `/agents/claude`, which `/agents`, the sitemap, `/agents.md` and
+  `/llms.txt` then name, read at runtime. `ASH_TEMPLATE_OAUTH_ENABLED` is gone. With
+  the switch on, the boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed.
+- The sign-in's issuer and resource come from the site's host at runtime
+  (`https://PHX_HOST` and its `/mcp`), not `template.regents.sh` in code. Its one
+  permission is `regent.identity.manage` (pair and check in); `mcp.events.read` is
+  gone, so an app registered for it connects again.
+- `/mcp` has two budgets: 600 a minute from one address, then 120 a minute for each
+  connected account. `/.well-known/oauth-protected-resource/mcp` also answers.
+- Migration `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL
+  lock_timeout = '5s'`) sets the token table's issuer and resource defaults from the
+  site's host and runs `RegentOAuth.Migration.V2`, which rewrites the stored tokens
+  in place as their hashes. The template has live OAuth rows on the shared production
+  database, so this changes production data: the release that carries it waits for
+  Sean's letter naming it. Tokens issued for the old resource stay refused.
+- Not yet: design-system has no `claude` agent picture, so with the switch on the
+  pairing box, and any list showing a paired Claude, raises until it does. The
+  template's own checks for the connector are listed as gaps in
+  `docs/feature-map.md`. Shared change: Sean signs off the template's version
+  before any site takes it (`docs/oauth-reference.md`, "Rollout to the sites").

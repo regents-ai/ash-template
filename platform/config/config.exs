@@ -277,17 +277,25 @@ config :regent_points,
     "template.first_agent_note" => AshTemplate.Points.AgentNote
   }
 
-# Reference audience only: adopting sites set their exact MCP URL in config and migration.
-# The template does not expose an MCP endpoint. OAuth remains off until a site opts in.
+# The Claude connector's sign-in, through the person's verified account
+# (AshTemplate.OAuth). Its one permission lets the app pair with the account and
+# check in; nothing else. config/runtime.exs switches it on and sets its issuer
+# and resource from the site's own address.
 config :ash_template, AshTemplate.OAuth,
-  enabled?: false,
   brand: "platform",
-  issuer: "https://template.regents.sh",
-  resource: "https://template.regents.sh",
-  scope: "mcp.events.read",
-  permission_description: "watch updates for your account on this site",
+  scope: "regent.identity.manage",
+  permission_description:
+    "pair with your account using a code you give it, and check in so you see it is active",
   consent_note:
-    "This connection only reads updates. It cannot post, spend your Credits, make payments or change your wallets."
+    "This connection can only pair with your account and check in. It cannot post, spend your Credits, make payments or change your wallets."
+
+# The connector's identity tools (RegentMCPAgents): which site's signers they use
+# at the sign-in service, and the words a refused tool call ends with.
+# config/runtime.exs switches them on with the connector and gives the key.
+config :regent_mcp_agents, :config,
+  audience: "ash-template",
+  refusal:
+    "Call get_identity to see where this connection stands. Not paired: ask your person for a new code from Pair New Agent in the side panel. Asked to connect: your person connects this app to Ash Template again."
 
 config :phoenix, :filter_parameters, [
   "password",
