@@ -17,6 +17,8 @@ In both modes the implementing agent owns the requested working result and imple
 reviews and verifies it directly, using ash-stack and the relevant specialist skills.
 Every agent, Claude or Codex, loads regent-workflow, ash-stack and elixir-stack before
 any Elixir, Phoenix, Ecto, Oban or Ash work, including reviews and pairing.
+Every design or animation task also loads animejs and vgpu-island and follows the
+Layers section of `repos/design-system/STYLE.md` (see below).
 Delegation is optional, not a prerequisite; an unavailable peer or external coding
 agent must not block direct implementation. This skill is workflow guidance, not a launcher.
 
@@ -209,6 +211,18 @@ Before changing a product UI, read [the shared design and showcase contract](ref
 and the current working `repos/design-system/STYLE.md`. The reference records source
 ownership, Pixel/Sans typography, shared button/card behavior, the distinct homepage
 contracts, and the actual-component showcase/build workflow.
+
+Sean, 28 Oct 06:59Z: "always use the new stacked design language and vgpu.sh skills
+and /animejs skill for animation/design work". So every design, layout or animation
+task, including reviews, does three things:
+
+- It builds on the stacked design language: the six layers in the Layers section of
+  `STYLE.md` (Ground, Sheet, Card, Panel, Window, Tip) and their `--rg-layer-*`
+  stacking tokens, never a number of its own. Height comes from a firmer edge, a lighter
+  fill and how a thing arrives, never from a soft shadow. `/showcase/grammar/layers` on
+  the template shows each layer.
+- It loads the `vgpu-island` skill for any GPU picture, shader or canvas.
+- It loads the `animejs` skill for any motion.
 
 Change common primitives in design-system, not in four conflicting app overrides.
 Keep page composition and business behavior in the owning monorepo. Coordinate

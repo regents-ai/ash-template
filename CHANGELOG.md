@@ -4476,3 +4476,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   `skills/ash-signals/SKILL.md` say the same.
 - The rollout files and the live check that reads each site's live commit are in the
   workspace's `control/rollouts/`.
+
+## 2026-10-28 — Design and animation work uses the stacked layers, vgpu and Anime.js skills
+
+- The Regent workflow skill now says every design, layout or animation task follows the
+  stacked design language (the Layers section of the design system's style guide) and
+  loads the vgpu-island and animejs skills.
