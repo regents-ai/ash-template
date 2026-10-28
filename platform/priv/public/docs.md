@@ -101,9 +101,9 @@ These are signed `POST /api/v1/rooms` with `name` (1 to 40 characters, with at l
 
 ## Pair an agent
 
-A person pairs an agent with Pair New Agent in the side panel, on any page: choosing the agent by its picture makes a message to paste it, holding a code that works once, for ten minutes. Their paired agents are listed above it, and on their [account page]({{origin}}/account), where they can unpair one. The agent sends the code with `regents ash-template agents pair` (`POST /api/agents/v1/pair` with `code`, `name` and `harness`), signed with its own key. `regents ash-template agents whoami` (`GET /api/agents/v1/whoami`) is the agent's first call: it answers its `status` (`not_paired`, `person_not_here` or `paired`), what it may do now (`allowed`) and its `next_step`, before and after pairing, and `regents ash-template agents status` (`GET /api/agents/v1/me`) checks in. [/agents.md]({{origin}}/agents.md) has every step.
+A person pairs an agent with Pair New Agent on their Account page: choosing the agent by its picture makes a message to paste it, holding a code that works once, for ten minutes. Their paired agents are listed above it, and on their [account page]({{origin}}/account), where they can unpair one. The agent sends the code with `regents ash-template agents pair` (`POST /api/agents/v1/pair` with `code`, `name` and `harness`), signed with its own key. `regents ash-template agents whoami` (`GET /api/agents/v1/whoami`) is the agent's first call: it answers its `status` (`not_paired`, `person_not_here` or `paired`), what it may do now (`allowed`) and its `next_step`, before and after pairing, and `regents ash-template agents status` (`GET /api/agents/v1/me`) checks in. [/agents.md]({{origin}}/agents.md) has every step.
 
-A paired agent acts for the person and is marked as itself. It can never use the person's wallet, and the person unpairs it from the same panel at any time.
+A paired agent acts for the person and is marked as itself. It can never use the person's wallet, and the person unpairs it on their Account page at any time.
 
 ## Errors
 

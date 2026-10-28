@@ -298,7 +298,7 @@ Ask Sean first only for protected work:
 - a shared change going out to the sites: Sean signs off the template's version
   first ("Shared changes", above).
 
-Everything else is yours to decide and do: wording, names, layout, the side panel and
+Everything else is yours to decide and do: wording, names, layout, the account menu and
 pairing box, which tests to run, the order of work, restacks, and pushing, deploying
 and releasing ordinary work. An ordinary release is never a question, a decision or a
 "Blocked decisions" line: ship it, check it on the live site, and report it after the

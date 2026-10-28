@@ -25,7 +25,7 @@ import {
   shellDestinationChanged,
   type ShellState,
 } from "./shell_state"
-import {installShellPanels} from "./shell_panels"
+import {arriveAt, installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
 import {CardCheckout} from "./hooks/card_checkout"
 import {HolographicCard} from "./hooks/holographic_card"
@@ -36,7 +36,7 @@ import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
 import {OnchainSteps} from "./hooks/onchain_steps"
-import {PanelAgents} from "./hooks/panel_agents"
+import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
 import {ProductsMenu} from "./hooks/products_menu"
 import {Conversation} from "./hooks/conversation"
@@ -119,6 +119,12 @@ const toolStatus = document.documentElement.dataset
 if ("modelContext" in document) void import("./public_tools").then(tools => tools.installPublicTools())
 else toolStatus.webmcpStatus = "unsupported"
 
+// The element the address's #fragment names, such as the Account page's pairing box.
+const hashTarget = () => {
+  const id = decodeURIComponent(window.location.hash.slice(1))
+  return id ? document.getElementById(id) : null
+}
+
 const shellBehavior: Hook = {
   mounted(this: ShellHook) {
     const shell = this.el
@@ -138,6 +144,9 @@ const shellBehavior: Hook = {
       shell.querySelector<HTMLButtonElement>("#mobile-menu-button")
     const drawer = () => shell.querySelector<HTMLElement>("#shell-drawer")
     const scroller = () => shell.querySelector<HTMLElement>("#app-shell-scroller")
+    // What the phone menu covers: the page and its bottom bar.
+    const pageBehind = () =>
+      shell.querySelectorAll<HTMLElement>("#app-shell-scroller, #shell-footer")
     const menuScrim = () =>
       shell.querySelector<HTMLButtonElement>("[data-shell-menu-scrim]")
     const menuFocusables = () =>
@@ -149,10 +158,11 @@ const shellBehavior: Hook = {
 
     const syncMenuAccessibility = (focusMenu = false, restoreFocus = false) => {
       const menuOpen = this.shellState?.menuOpen === true
-      const currentScroller = scroller()
       const currentScrim = menuScrim()
       const currentDrawer = drawer()
-      if (currentScroller) currentScroller.inert = menuOpen
+      pageBehind().forEach(behind => {
+        behind.inert = menuOpen
+      })
       if (currentScrim) currentScrim.hidden = !menuOpen
       // Open on a phone, the drawer is a modal menu over the page; otherwise it is
       // the page's own rail and list.
@@ -235,7 +245,8 @@ const shellBehavior: Hook = {
         return
       }
 
-      if (event.key === "Escape") {
+      // An open account or apps menu takes Escape itself, before any section behind it.
+      if (event.key === "Escape" && !shell.querySelector(":popover-open")) {
         const openDetails = [...shell.querySelectorAll<HTMLDetailsElement>("details[open]")].at(-1)
 
         if (openDetails) {
@@ -252,6 +263,13 @@ const shellBehavior: Hook = {
       scroller()?.scrollTo({top: 0})
     }
 
+    // LiveView records a new address only once its page is drawn, so what a
+    // #fragment names is reached here, after the page has started at its top.
+    const onNavigate = () => {
+      const named = hashTarget()
+      if (named) arriveAt(named)
+    }
+
     // The menu exists only on a phone, so a screen that widens past one closes it.
     const wideScreen = window.matchMedia("(min-width: 48rem)")
     const onWideScreen = () => {
@@ -261,11 +279,15 @@ const shellBehavior: Hook = {
     shell.addEventListener("click", onClick)
     shell.addEventListener("keydown", onKeydown)
     window.addEventListener("popstate", onHistoryNavigation)
+    window.addEventListener("phx:navigate", onNavigate)
     wideScreen.addEventListener("change", onWideScreen)
     const panels = installShellPanels(shell)
     this.syncPanels = panels.sync
     this.restoreState()
-    scroller()?.scrollTo({top: 0})
+    // A page opened at a #fragment starts at what it names, otherwise at its top.
+    const opened = hashTarget()
+    if (opened) arriveAt(opened)
+    else scroller()?.scrollTo({top: 0})
     shell.dataset.behaviorReady = "true"
 
     this.cleanup = () => {
@@ -274,6 +296,7 @@ const shellBehavior: Hook = {
       shell.removeEventListener("click", onClick)
       shell.removeEventListener("keydown", onKeydown)
       window.removeEventListener("popstate", onHistoryNavigation)
+      window.removeEventListener("phx:navigate", onNavigate)
       wideScreen.removeEventListener("change", onWideScreen)
     }
   },
@@ -339,7 +362,7 @@ const hooks = {
   MotionRefusal,
   MotionTabs,
   OnchainSteps,
-  PanelAgents,
+  MenuAgents,
   PublicName,
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),

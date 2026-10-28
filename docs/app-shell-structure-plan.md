@@ -38,7 +38,7 @@ each page (its sidebar, header controls and scroll rule).
 | Sidebar | The open section's own list. Home: shortcuts (write a note, start a chat, the General room, connect an account). Notes: the person's notes. Rooms: the rooms. Chat: the conversations and "New chat" (the Ash AI chat page's list lives here). Settings: help links (the account pages are its tabs). It can be hidden to give the content more room, and stays hidden until shown again. |
 | Tabs | Views of the open section. Home: Overview, Activity. Settings: Profile, Wallets, Connections. A section with one view shows no tabs. |
 | Main content | The page itself, as today. |
-| Side panel | Signed in only, on every page, closed until the person opens it and remembered open or closed. It holds Sign out, Manage Account, the agents paired with the account, then Pair New Agent. A room's "Here now" and muted people sit below the room. |
+| Account menu | Signed in only, on every page, opened by the account's button at the top right and hanging under it. It holds the person's picture, name and wallet, their three most recently active agents, Pair New Agent (on the Account page), Manage Account and Sign out. A room's "Here now" and muted people sit below the room. |
 | Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Help, API, What's new, For agents, Privacy, Terms) and the running version with its commit. |
 
 ### Phones and small screens
@@ -57,11 +57,12 @@ The standard tool for each part (elixir-stack design check):
 - **The frame and its panels:** `Shell` function components with one slot per panel.
   `ShellLive` stays the single LiveView, so the frame never reloads between pages.
 - **What each page puts in each panel:** `RouteCatalog` gains a section per page (rail icon,
-  sidebar model, tabs, right side bar parts), checked by the existing route handoff.
-- **Open/closed panels:** browser state on `<html data-aside data-sidebar>`, set by
-  `assets/js/shell_panels.ts` and kept in the cookies `ash_template_aside` and
+  sidebar model and tabs), checked by the existing route handoff.
+- **Open/closed panels:** whether the sidebar shows is browser state on
+  `<html data-sidebar>`, set by `assets/js/shell_panels.ts` and kept in the cookie
   `ash_template_sidebar`, which `AshTemplateWeb.Plugs.Panels` reads so the first paint is
-  right. LiveView never patches them. Nothing is stored server-side.
+  right. LiveView never patches it. The account menu and the apps menu are popovers the
+  browser opens and closes itself. Nothing is stored server-side.
 - **Search:** Ash read actions on the domains (pages and actions from `RouteCatalog`; the
   person's notes and room messages through their own policies), opened as a dialog.
 - **Notifications:** a `Notification` Ash resource on AshPostgres, per person, written in the
@@ -80,8 +81,8 @@ template.regents.sh.
 
 1. **Frame:** top bar with the icons and person menu, left rail, section sidebars, bottom bar
    links, version and status dot. Rooms and the chat page move their lists into the sidebar.
-2. **Tabs and side panel:** section tabs, and the collapsible side panel with the account,
-   the paired agents and Pair New Agent.
+2. **Tabs and account menu:** section tabs, and the account menu with the account, the
+   paired agents, Pair New Agent, Manage Account and Sign out.
 3. **Search:** the ⌘K dialog over pages, actions, notes and room messages.
 4. **Live parts:** notifications and the bell, the background-jobs count, the assistant box.
 

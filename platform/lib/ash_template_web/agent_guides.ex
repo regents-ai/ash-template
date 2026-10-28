@@ -35,12 +35,12 @@ defmodule AshTemplateWeb.AgentGuides do
              %{name: name, summary: summary, source: source, setup: String.trim(setup)}}
           end)
 
-  # The order the side panel offers them in.
+  # The order the pairing box offers them in.
   @slugs Enum.map(
            RegentAgents.Harness.featured(),
            &(&1 |> to_string() |> String.replace("_", "-"))
          )
-  # Every agent the side panel offers has a page, and every page is one it offers.
+  # Every agent the pairing box offers has a page, and every page is one it offers.
   @unmatched (@slugs -- Map.keys(@guides)) ++ (Map.keys(@guides) -- @slugs)
   if @unmatched != [],
     do: raise("priv/public/agents and Harness.featured/0 differ: #{inspect(@unmatched)}")
@@ -100,9 +100,9 @@ defmodule AshTemplateWeb.AgentGuides do
 
     Your agent pairs with your Ash Template account and works for you: it reads and writes your notes, posts in rooms and reads your Credits and Points. It can never use your wallet, change your account or pair other agents.
 
-    1. Sign in, open [Pair New Agent]({{origin}}/account#shell-pairing) in the side panel and choose your agent. Its pairing code works once, for ten minutes.
+    1. Sign in, open [Pair New Agent]({{origin}}/account#account-pairing) on your Account page and choose your agent. Its pairing code works once, for ten minutes.
     2. Paste the message to your agent wherever you chat with it.
-    3. It shows in your side panel under its name, and asks you before it posts, pins a note or deletes anything.
+    3. It shows in your account menu under its name, and asks you before it posts, pins a note or deletes anything.
 
     Each page below is one agent's: how to set it up, answers to common questions and where to get help.
 

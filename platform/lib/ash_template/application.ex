@@ -30,7 +30,7 @@ defmodule AshTemplate.Application do
         # there before the endpoint below serves a page.
         AshTemplate.SharedReading,
         AshTemplate.Agents.ActivityReading,
-        # Each agent's reading for an open side panel, unlinked from the page.
+        # Each agent's reading for an open account menu, unlinked from the page.
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
         chain_head_children(),
         room_activity_child(),

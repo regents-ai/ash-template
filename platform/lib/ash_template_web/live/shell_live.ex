@@ -3,8 +3,8 @@ defmodule AshTemplateWeb.ShellLive do
   One LiveView holds the frame (`AshTemplateWeb.Components.Shell`) across every
   in-app route and patches between them, so the frame never remounts on
   navigation. Besides the page, it keeps the frame's own parts current: the
-  side panel's pairing box and agents, the bell's unread count, the background
-  jobs running, and search.
+  account menu's agents, the bell's unread count, the background jobs running,
+  and search.
   """
 
   use AshTemplateWeb, :live_view
@@ -27,12 +27,12 @@ defmodule AshTemplateWeb.ShellLive do
     CreditsHistoryLive,
     DesignLive,
     DmsLive,
+    MenuAgents,
     NotesLive,
     NotFoundError,
     OverviewLive,
     PairingBox,
     PairLive,
-    PanelAgents,
     PollsLive,
     Presence,
     PublicDocuments,
@@ -219,20 +219,21 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket |> read_credits() |> load_credits_history(socket.assigns.route_spec)}
   end
 
-  # An agent paired, checked in or was unpaired, here or on another Regent site.
-  # The side panel's pairing box and agents are on every page; the Account page
-  # also lists the agents.
   def handle_info({:credits_purchase, hash, shown}, socket) do
     send_update(AshTemplateWeb.CreditsPanel, id: "credits-panel", purchase: {hash, shown})
     {:noreply, socket}
   end
 
+  # An agent paired, checked in or was unpaired, here or on another Regent site.
+  # The account menu's agents are on every page; the Account page also lists the
+  # agents and holds the pairing box.
   def handle_info(:agents_changed, socket) do
-    send_update(PairingBox, id: "shell-pairing-box", agents_changed: true)
-    send_update(PanelAgents, id: "shell-agents", agents_changed: true)
+    send_update(MenuAgents, id: "shell-agents", agents_changed: true)
 
-    if socket.assigns.route_spec.route_id == :account,
-      do: send_update(AgentsPanel, id: "account-agents", agents_changed: true)
+    if socket.assigns.route_spec.route_id == :account do
+      send_update(AgentsPanel, id: "account-agents", agents_changed: true)
+      send_update(PairingBox, id: "account-pairing-box", agents_changed: true)
+    end
 
     if socket.assigns.route_spec.route_id == :pair,
       do: send_update(PairingBox, id: "pair-pairing-box", agents_changed: true)
@@ -334,17 +335,9 @@ defmodule AshTemplateWeb.ShellLive do
           credits={@credits_read}
         />
       </:credits_panel>
-      <:pairing :if={current_account(@access_context)}>
-        <.live_component
-          module={PairingBox}
-          id="shell-pairing-box"
-          lease={@session_lease}
-          account={current_account(@access_context)}
-        />
-      </:pairing>
       <:agents :if={current_account(@access_context)}>
         <.live_component
-          module={PanelAgents}
+          module={MenuAgents}
           id="shell-agents"
           lease={@session_lease}
           account={current_account(@access_context)}

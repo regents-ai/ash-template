@@ -1,21 +1,20 @@
 defmodule AshTemplateWeb.Components.Shell do
   @moduledoc """
   The app shell: the top bar, the rail of sections, the open section's sidebar
-  and tabs, the page, the right side bar and the bottom bar, plus the search
-  dialog, the list of tools agents see, the Regents Products menu, the account
-  control and the theme switch.
+  and tabs, the page and the bottom bar, plus the search dialog, the list of tools
+  agents see, the Regents Products menu, the account control and its menu, and the
+  theme switch.
 
-  The panels' open and closed states are the browser's (`assets/js/shell_panels.ts`
-  and the `ash_template_aside` and `ash_template_sidebar` cookies, read into
-  `<html data-aside data-sidebar>`), so the server never stores them. A page puts its own parts
-  into the sidebar with `<.portal>` into `#shell-sidebar-page`.
+  Whether the sidebar shows is the browser's (`assets/js/shell_panels.ts` and the
+  `ash_template_sidebar` cookie, read into `<html data-sidebar>`), so the server
+  never stores it. A page puts its own parts into the sidebar with `<.portal>` into
+  `#shell-sidebar-page`.
 
-  The right side panel and its button are there only for someone signed in, so a
-  page signed out has nothing beside the Sign in button. It is the same on every
-  page: the person's name and picture, Sign out, Manage Account (this site's Account page),
-  the box to pair an agent (the `pairing` slot) and the agents paired with the
-  account (the `agents` slot). Opened, it slides in and the page beside it gives
-  way; only on a phone, too narrow for both, does it cover the page.
+  Signed in, the account's picture and name at the top right open the account menu
+  (`Regent.Account.menu`), the same on every page: the person's picture, name and
+  wallet, the agents paired with the account (the `agents` slot), Pair New Agent,
+  Manage Account and Sign out. Pairing itself and everything else about the account
+  are on the Account page.
   """
 
   use Phoenix.Component
@@ -79,14 +78,13 @@ defmodule AshTemplateWeb.Components.Shell do
   slot :content, required: true
 
   # Required, so a page that draws the shell without one of these does not compile:
-  # signed in, it would show half a side panel or a balance that opens nothing. A
-  # caller leaves one out for someone signed out with `:if`.
+  # signed in, it would show a menu without agents or a balance that opens nothing.
+  # A caller leaves one out for someone signed out with `:if`.
   slot :credits_panel,
     required: true,
     doc: "The Buy Credits panel, opened from the header's balance."
 
-  slot :pairing, required: true, doc: "The box to pair an agent, in the side panel."
-  slot :agents, required: true, doc: "The agents paired with the account, in the side panel."
+  slot :agents, required: true, doc: "The agents paired with the account, in the account menu."
 
   def shell(assigns) do
     ~H"""
@@ -181,20 +179,25 @@ defmodule AshTemplateWeb.Components.Shell do
 
         <.account_control account_control={@account_control} />
 
-        <button
+        <Regent.Account.menu
           :if={@account_control.kind in [:signed_in, :preview]}
-          id="shell-aside-button"
-          class="shell-tool"
-          type="button"
-          aria-controls="shell-aside"
-          aria-expanded="false"
-          aria-label="Side panel"
-          data-aside-toggle
-          phx-mounted={JS.ignore_attributes(["aria-expanded"])}
+          id="account-menu"
+          name={@account_control.label}
+          wallet={@account_control.wallet}
+          ens_name={@account_control.ens_name}
+          manage_href={~p"/account"}
+          pair_href={~p"/account#account-pairing"}
         >
-          <.icon name={:panel} />
-          <span class="shell-tool__tip" aria-hidden="true">Side panel</span>
-        </button>
+          <:picture>
+            <.account_picture
+              id="account-menu-picture"
+              squares={@account_control.squares}
+              picture={@account_control.picture}
+              size={40}
+            />
+          </:picture>
+          <:agents>{render_slot(@agents)}</:agents>
+        </Regent.Account.menu>
       </header>
 
       <div id="shell-drawer" data-panel="drawer" tabindex="-1">
@@ -301,33 +304,6 @@ defmodule AshTemplateWeb.Components.Shell do
           {render_slot(@content)}
         </main>
       </div>
-
-      <aside
-        :if={@account_control.kind in [:signed_in, :preview]}
-        id="shell-aside"
-        aria-label="Your account and agents"
-        tabindex="-1"
-      >
-        <div id="shell-account" class="shell-aside__head">
-          <Regent.Primitives.button
-            variant="secondary"
-            type="button"
-            data-account-target="sign-out"
-          >
-            Sign out
-          </Regent.Primitives.button>
-          <a href={~p"/account"} class="rg-button rg-button--secondary">
-            Manage Account
-          </a>
-        </div>
-
-        {render_slot(@agents)}
-
-        <section :if={@pairing != []} id="shell-pairing" aria-labelledby="shell-pairing-title">
-          <h2 id="shell-pairing-title">Pair New Agent</h2>
-          {render_slot(@pairing)}
-        </section>
-      </aside>
 
       <footer id="shell-footer">
         <p class="shell-footer__status" data-healthy={to_string(@healthy)}>
@@ -527,11 +503,11 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
   attr :enabled, :boolean, default: true
 
-  attr :panel, :boolean,
+  attr :menu, :boolean,
     default: true,
     doc: """
-    Signed in, the name opens the side panel, which holds Account and Sign out.
-    A page without the side panel (the workshop pages) shows Sign out beside the name.
+    Signed in, the name opens the account menu, which holds Account and Sign out.
+    A page without the menu (the workshop pages) shows Sign out beside the name.
     """
 
   @doc """
@@ -550,18 +526,15 @@ defmodule AshTemplateWeb.Components.Shell do
         {@account_control.label}
       </Regent.Primitives.button>
       <Regent.Primitives.button
-        :if={@panel and @account_control.kind in [:signed_in, :preview]}
+        :if={@menu and @account_control.kind in [:signed_in, :preview]}
         id="account-chip"
         class="account-chip"
         arrow={false}
-        aria-controls="shell-aside"
-        aria-expanded="false"
-        data-aside-toggle
-        phx-mounted={JS.ignore_attributes(["aria-expanded"])}
+        popovertarget="account-menu"
       >
         <.account_name id="account-chip-picture" account_control={@account_control} />
       </Regent.Primitives.button>
-      <%= if !@panel and @account_control.kind in [:signed_in, :preview] do %>
+      <%= if !@menu and @account_control.kind in [:signed_in, :preview] do %>
         <span class="account-chip">
           <.account_name id="account-name-picture" account_control={@account_control} />
         </span>
@@ -771,7 +744,6 @@ defmodule AshTemplateWeb.Components.Shell do
       <path :if={@name == :page} d="M6 3h9l4 4v14H6zM14 3v5h5" />
       <path :if={@name == :action} d="M13 3 5 13h6l-1 8 8-10h-6z" />
       <path :if={@name == :bell} d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4" />
-      <path :if={@name == :panel} d="M3 4h18v16H3zM15 4v16" />
       <path :if={@name == :collapse} d="M3 4h18v16H3zM9 4v16M15 10l-2 2 2 2" />
       <path :if={@name == :expand} d="M3 4h18v16H3zM9 4v16M13 10l2 2-2 2" />
       <g :if={@name == :apps} fill="currentColor" stroke="none">

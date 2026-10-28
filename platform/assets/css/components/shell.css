@@ -1,34 +1,24 @@
-/* The app shell: one hairline grid of top bar, rail, sidebar, page, right side
-   bar and bottom bar. Which side panels show is the visitor's, on
-   <html data-aside data-sidebar>. */
-
-/* The right side bar's width slides, so the page beside it gives way smoothly. */
-@property --shell-aside {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: 0px;
-}
+/* The app shell: one hairline grid of top bar, rail, sidebar, page and bottom
+   bar. Whether the sidebar shows is the visitor's, on <html data-sidebar>. */
 
 #app-shell {
   --shell-rail: 4.25rem;
   --shell-sidebar: 15rem;
-  --shell-aside-open: 20rem;
-  --shell-aside: var(--shell-aside-open);
-  /* The first row under the header: the sidebar's title, the page's tabs and the
-     side panel's Sign out row share it, so the lines under them are one line. */
+  /* The first row under the header: the sidebar's title and the page's tabs share
+     it, so the lines under them are one line. */
   --shell-bar: 3rem;
   --shell-header: 3.5rem;
   /* Where the header's bottom line ends, below the frame's top rule; a phone's
-     menu and side panel open here, so they never cover that line. */
+     menu opens here, so it never covers that line. */
   --shell-header-end: calc(var(--rg-rule-width) + var(--shell-header) + env(safe-area-inset-top));
   position: relative;
   isolation: isolate;
   display: grid;
   grid-template:
-    "header header header header" auto
-    "rail sidebar main aside" minmax(0, 1fr)
-    "footer footer footer footer" auto
-    / var(--shell-rail) var(--shell-sidebar) minmax(0, 1fr) var(--shell-aside);
+    "header header header" auto
+    "rail sidebar main" minmax(0, 1fr)
+    "footer footer footer" auto
+    / var(--shell-rail) var(--shell-sidebar) minmax(0, 1fr);
   min-width: 0;
   height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: visible;
@@ -36,17 +26,10 @@
   color: var(--color-fg);
   font-family: var(--font-family-ui);
   line-height: 1.55;
-  transition: --shell-aside var(--duration-slow) var(--ease-out);
 }
 
 :root[data-sidebar="hidden"] #app-shell {
   --shell-sidebar: 0px;
-}
-
-/* Closed, or signed out with no side bar at all, it keeps no room. */
-:root:not([data-aside="open"]) #app-shell,
-#app-shell:not(:has(#shell-aside)) {
-  --shell-aside: 0px;
 }
 
 /* Unseen until a keyboard reaches it. */
@@ -251,7 +234,6 @@
   }
 }
 
-#app-shell #shell-aside-button[aria-expanded="true"],
 #app-shell:has(#shell-apps:popover-open) #shell-apps-button {
   background: var(--ash-panel-strong);
   color: var(--color-fg);
@@ -425,15 +407,19 @@
 
 /* ---- Regents Products ---- */
 
-/* These buttons sit straight in the top bar rather than in the tools group, so
-   they centre themselves as the groups beside them do. */
-#app-shell #shell-apps-button,
-#app-shell #shell-aside-button {
+/* This button sits straight in the top bar rather than in the tools group, so
+   it centres itself as the groups beside it do. */
+#app-shell #shell-apps-button {
   align-self: center;
 }
 
 #app-shell #shell-apps-button {
   anchor-name: --shell-apps-button;
+}
+
+/* The account menu hangs from the account button. */
+#app-shell #account-chip {
+  anchor-name: --rg-account-menu;
 }
 
 /* The panel hangs from the nine-dot button: straight under it, its right edge
@@ -815,89 +801,6 @@
   padding: var(--rg-panel-padding);
 }
 
-/* ---- Right side bar ---- */
-
-/* A size container, so the agents list can take a quarter of its height. */
-#shell-aside {
-  position: relative;
-  z-index: var(--rg-layer-panel);
-  container-type: size;
-  display: grid;
-  grid-area: aside;
-  align-content: start;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden auto;
-  border-inline-start: 1px solid var(--color-border);
-  background: var(--color-bg);
-  /* Hidden only once it has slid shut. */
-  transition: visibility var(--duration-slow);
-}
-
-/* Shown at once on opening, so focus can move into it. */
-:root[data-aside="open"] #shell-aside {
-  transition: none;
-}
-
-/* Its parts keep their width while it slides, so nothing inside rewraps. */
-#shell-aside > * {
-  min-inline-size: calc(var(--shell-aside-open) - 1px);
-}
-
-:root:not([data-aside="open"]) #shell-aside {
-  visibility: hidden;
-}
-
-/* Sign out and Manage Account share one short row; the header's panel button
-   closes the panel. */
-.shell-aside__head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: var(--shell-bar);
-  padding-inline: 1rem;
-  border-block-end: 1px solid var(--color-border);
-}
-
-.shell-aside__head .rg-button {
-  min-height: 2rem;
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8125rem;
-  white-space: nowrap;
-}
-
-#shell-aside section {
-  display: grid;
-  gap: 0.6rem;
-  padding: 1rem;
-  border-block-end: 1px solid var(--color-border);
-}
-
-#shell-aside h2 {
-  margin: 0;
-  font-family: var(--font-family-ui);
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-#shell-aside p {
-  margin: 0;
-}
-
-#shell-aside ul,
-#shell-aside ol {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* The agents list keeps its own rows; the panel's list spacing is for its other lists. */
-#shell-aside .rg-account__brief-list {
-  gap: 0;
-}
-
 /* ---- Bottom bar ---- */
 
 #shell-footer {
@@ -1230,18 +1133,6 @@
   }
 }
 
-/* ---- Below a wide screen the open side panel takes the list's place ---- */
-
-@media (min-width: 48rem) and (max-width: 63.99rem) {
-  :root[data-aside="open"] #app-shell {
-    --shell-sidebar: 0px;
-  }
-
-  :root[data-aside="open"] #shell-sidebar {
-    display: none;
-  }
-}
-
 @media (max-width: 63.99rem) {
   #app-shell .shell-search-button {
     min-width: 0;
@@ -1343,15 +1234,8 @@
     white-space: nowrap;
   }
 
-  #app-shell #shell-apps-button,
-  #app-shell #shell-aside-button {
+  #app-shell #shell-apps-button {
     flex: 0 0 auto;
-  }
-
-  /* The account's name opens the same side panel, so on a phone the panel's
-     own button gives way to it and the balance and name keep their room. */
-  #app-shell #shell-aside-button {
-    display: none;
   }
 
   .account-control > .rg-button {
@@ -1426,35 +1310,6 @@
     display: none;
   }
 
-  /* Too narrow for both, the side panel covers the page: it slides in from the
-     edge, and opens only when opened on this page, never on arrival. */
-  #shell-aside {
-    position: fixed;
-    inset: var(--shell-header-end) env(safe-area-inset-right) 0 env(safe-area-inset-left);
-    z-index: var(--rg-layer-panel);
-    width: auto;
-    padding-block-end: env(safe-area-inset-bottom);
-    border-inline-start: 0;
-    box-shadow: var(--rg-layer-panel-shadow);
-    transition:
-      transform var(--duration-slow) var(--ease-out),
-      visibility var(--duration-slow);
-  }
-
-  #shell-aside > * {
-    min-inline-size: 0;
-  }
-
-  :root:not([data-aside="open"]) #shell-aside,
-  :root:not([data-aside-here]) #shell-aside {
-    visibility: hidden;
-    transform: translateX(100%);
-  }
-
-  :root[data-aside="open"][data-aside-here] #shell-aside {
-    transition: transform var(--duration-slow) var(--ease-out);
-  }
-
   /* Four tabs fit a 320px phone without the strip scrolling. */
   .shell-tabs {
     gap: 0.625rem;
@@ -1511,14 +1366,9 @@
     letter-spacing: 0.04em;
   }
 
-  /* Narrower still, the name gives way to the side panel's own button, which
-     opens the same panel in less room. */
+  /* Narrower still, the account button is its picture alone. */
   #app-shell .account-chip {
-    display: none;
-  }
-
-  #app-shell #shell-aside-button {
-    display: inline-grid;
+    max-width: 2.75rem;
   }
 
   #shell-footer {
@@ -1526,8 +1376,7 @@
   }
 }
 
-/* On touch screens every press in the rail, the list and the side panel's head
-   is at least 44px. */
+/* On touch screens every press in the rail and the list is at least 44px. */
 @media (hover: none), (pointer: coarse) {
   .shell-rail__you {
     width: 2.75rem;
@@ -1536,17 +1385,14 @@
 
   #shell-sidebar li > a,
   #shell-sidebar li > button,
-  .shell-sidebar__new,
-  .shell-aside__head .rg-button {
+  .shell-sidebar__new {
     min-height: 2.75rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .shell-tool__tip,
-  #app-shell,
-  #shell-aside,
-  :root[data-aside="open"][data-aside-here] #shell-aside {
+  #app-shell {
     transition: none;
   }
 }
