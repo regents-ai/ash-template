@@ -4465,3 +4465,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   page, Account, Notes and the motion lab answer 200 at 1280 and 390 with no page errors and
   no sideways scroll; the live script carries the new Pair New Agent step; the health check
   passes.
+
+## 2026-10-28 — Shared changes: template first, Sean signs off, all sites at once
+
+- Sean's rule of 28 Oct 06:40Z is in `skills/regent-workflow/SKILL.md` ("Shared changes"),
+  replacing "Shared work across the five Ash sites": a shared change is built and tested
+  here and released on template.regents.sh, Sean signs off the template's version, then it
+  goes to all five sites at once and each go-live is watched. Signing off a shared change
+  joins the list of things that wait for Sean. `skills/ash-stack/SKILL.md` and
+  `skills/ash-signals/SKILL.md` say the same.
+- The rollout files and the live check that reads each site's live commit are in the
+  workspace's `control/rollouts/`.

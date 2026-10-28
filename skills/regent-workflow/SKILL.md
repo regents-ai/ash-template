@@ -156,18 +156,52 @@ and codebases refer to it as the 'golden generic baseline'".
 - regents.sh is one of the five sites, not the reference. Never write, ask or plan
   "match X to the Regents site", "as regents.sh does" or "like Patchbay's page". The
   question is always "what does ash-template do here?"; if the template has nothing,
-  the change lands in the library and the template first, then the sites copy it.
+  the change lands in the library and the template first, then goes to every site at
+  once after Sean signs it off ("Shared changes", below).
 - A site keeps its own commands, names and pages only where the template has no
   equivalent.
 
-## Shared work across the five Ash sites (founder rule, 8 Oct 2026)
+## Shared changes: template first, Sean signs off, all sites at once (founder rule, 28 Oct 2026)
 
-Regents, Patchbay, Keyfleet, Autolaunch and Techtree are five similar Ash sites. Site-specific work stays in the site's monorepo. Anything shared goes in two places, in this order:
+Sean, 28 Oct 2026 06:40Z, verbatim: "I want you to change how we do things, so that all
+shared components are tested in this repo first, and always signed off by me, and then
+they go to all other sites for custom implementation all at once, and monitored as they
+go live."
 
-1. **The shared component library** (`repos/design-system`, the `regent_ui` pin, and the shared Elixir packages in `repos/elixir-utils`): components, primitives, CSS tokens, and library code every site uses.
-2. **`repos/ash-template`**: the reference implementation that wires those pieces into a working site (pages, resources, policies, WebMCP tools, skills).
+Regents, Patchbay, Keyfleet, Autolaunch and Techtree are five similar Ash sites. A
+change is shared when more than one site uses it: design-system components, primitives
+and tokens (`repos/design-system`, the `regent_ui` pin); the shared Elixir packages in
+`repos/elixir-utils`; and everything `repos/ash-template` wires up for every site:
+sign-in, account, agents and pairing, Credits, Points, agent guides, signed-request
+refusals and their words, layers, health, deploys and security. Pages only one site has
+stay in that site's monorepo.
 
-Then, before building a feature in a site monorepo: **check whether ash-template already implements it, use that implementation, and improve it there if it falls short.** Never fork a second copy of a shared feature into one site. When a site needs something the template lacks, the change lands in the library and the template first, then the site re-pins. The ash-template chief owns the template and the shared skills; coordinate the change with that thread.
+Every shared change goes through four steps, in order:
+
+1. **Built and tested in ash-template.** The library change comes first, then the
+   template wires it in, runs `make check` and ships it on template.regents.sh like any
+   template release (a protected change still waits for Sean's letter first). A site
+   never builds or ships a shared change first; a site that needs one asks the template
+   chief, who builds it in the template.
+2. **Signed off by Sean.** The template chief opens the change's rollout file in
+   `/Users/sean/Documents/regent/control/rollouts/` and asks Sean to sign it off as a
+   numbered decision with the template link and what to check there. Every shared change
+   needs this, ordinary or protected. No site takes it before his letter.
+3. **To all five sites at once.** On Sean's sign-off the template chief hands the same
+   rollout file to all five site chiefs in one round. Each site makes its own version in
+   its own look, names and pages, keeping the template's behaviour and words, and ships it
+   on its own checks. No site waits for another and none is skipped.
+4. **Watched as each goes live.** Each site chief records its commit, release and
+   rollback in its row of the rollout file. The template chief runs
+   `control/rollouts/live.sh` on that file, which reads each site's live commit from
+   `/capabilities.json` and says whether it carries the site's commit, and Sentinel reads
+   each site after its release. The rollout closes when all five rows are live and read.
+
+Before building a feature in a site monorepo, **check whether ash-template already
+implements it, use that implementation, and improve it there if it falls short.** Never
+fork a second copy of a shared feature into one site. The ash-template chief owns the
+template, the shared skills and the rollout files; coordinate every shared change with
+that thread. `control/rollouts/README.md` describes the rollout file and the live check.
 
 ## Shared design-system and showcase work
 
@@ -198,7 +232,9 @@ Ask Sean first only for protected work:
   columns (a migration that only adds a table or column is ordinary);
 - wallets, staking and claims;
 - moving money, including a Safe transaction;
-- a contract change or deployment.
+- a contract change or deployment;
+- a shared change going out to the sites: Sean signs off the template's version
+  first ("Shared changes", above).
 
 Everything else is yours to decide and do: wording, names, layout, the side panel and
 pairing box, which tests to run, the order of work, restacks, and pushing, deploying

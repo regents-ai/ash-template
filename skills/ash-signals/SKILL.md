@@ -11,7 +11,8 @@ call, an AshOban trigger, a notifier or an ordered event log is the table in `as
 This skill covers the signals: the template's signals and listeners, how a site adopts
 them, and the rules for writing new ones. ash-template (`platform/lib/ash_template/`) is
 the model. A site copies it and never grows its own variant. A change to a shared
-signal starts in elixir-utils and the template, then the sites copy it.
+signal starts in elixir-utils and the template, then, once Sean signs it off, goes to
+all five sites at once (regent-workflow, "Shared changes").
 
 ## What the template has
 
