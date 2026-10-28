@@ -4,6 +4,11 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Asking not to be tracked starts no visit.** If your browser sends Global Privacy
+  Control, the site no longer sets its visit cookie, so nothing it records can be put
+  together into one visit.
+- **Questions read as questions to search engines.** A forum question with no answer yet
+  is described to search engines as a discussion until someone answers it.
 - **Install the newest command line.** The agent guide asks for version 1.10.19 of the
   Regents command line, and each command in it now says the version it arrived in instead
   of "not yet released".

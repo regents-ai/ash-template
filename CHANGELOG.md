@@ -4599,3 +4599,24 @@ An adversarial review of the two commits above found five things, all fixed here
   pages open at 1280 and 390 with no page errors and nothing wider than the screen. The
   logs since the release show only the machine's few seconds of restart. Sentinel's
   after-read is asked. Rollback: v123, `5a1fe29e`.
+
+## 2026-10-28 — Asking not to be tracked starts no visit; questions read as questions
+
+- A browser that sends Global Privacy Control (`Sec-GPC: 1`) starts no visit
+  (`AshTemplateWeb.VisitLog`): it gets no `_visit` cookie and loses one it was given
+  before, the page carries no `regent-visit` tag, and its requests and API calls carry
+  no visit, even one the browser sends itself. It still writes no `arrival` or `step`
+  line. Before, it kept the cookie and its visit id was on every page, tool and request
+  line, so its visit could still be pieced together, which the privacy policy rules out.
+  The same change regents.sh made (its 35ec4dc and 012b9cbf); the server checks in
+  `platform/test/ash_template_web/visit_log_test.exs` and the walk in
+  `platform/test/browser/arrivals.spec.ts` prove it, and the new cookie check fails on the
+  old line. Listed in `docs/feature-map.md`.
+- design-system moves to `6dcd85e` (from `cda974f`, one commit): a forum question with no
+  replies and no marked answer is described to search engines as a discussion until it
+  has an answer, instead of a question page with nothing to show
+  (`Regent.StructuredData.discussion/1`, used by `/showcase/discussion`).
+- `/capabilities.json` `build.release` names only the Fly image's tag (for example
+  `0b11a68`), not the registry path and app name before it
+  (`platform/config/runtime.exs`). A release still refuses to start without
+  `FLY_IMAGE_REF`.

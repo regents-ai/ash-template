@@ -215,10 +215,11 @@ if config_env() == :prod do
       ],
       secret_key_base: secret_key_base
 
-    # The commit the image was built from, and the Fly image this machine runs.
+    # The commit the image was built from, and the tag of the Fly image this
+    # machine runs (the part after the registry path and app name).
     config :ash_template, :build, %{
       commit: System.fetch_env!("SOURCE_COMMIT"),
-      release: System.fetch_env!("FLY_IMAGE_REF")
+      release: "FLY_IMAGE_REF" |> System.fetch_env!() |> String.split(":") |> List.last()
     }
   end
 end

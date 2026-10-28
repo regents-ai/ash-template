@@ -115,6 +115,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | --- | --- |
 | A visit replays in order from its lines alone: opening Notes and saving a note writes the request, the page, the note's creation and the press, each with the same visit and one person code, in production's shape, and nothing the person wrote or a wallet, at both widths; the agent tools list's reads belong to the same visit, and the home page, which has no handle_params of its own, still writes its page line | `platform/test/browser/visits.spec.ts` |
 | Whatever a caller or browser sends, a line holds only the site's own names and shapes: headers, browser reports and event values that do not fit are dropped or written as `other`; a page's address is written as its route; a page's own script calling the API belongs to its visit by header or cookie | `platform/test/ash_template_web/visit_log_test.exs` |
+| A browser that sends Global Privacy Control starts no visit: no `_visit` cookie, no visit on the page or on any call it makes (even one it sends itself), no arrival or step line, and its Sign in press still reaches the site | `platform/test/ash_template_web/visit_log_test.exs`, `platform/test/browser/arrivals.spec.ts` |
 
 ## Gaps
 
