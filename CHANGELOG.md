@@ -4539,3 +4539,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - The Regent workflow skill now says every chief keeps its threads moving, improves the
   Skills it uses and uses them itself, reviews the code it ships, and checks each
   thread's claims against evidence.
+
+## 2026-10-28 — Workflow skill: release gate, second review, release record
+
+- `skills/regent-workflow/SKILL.md` (Sean, 28 Oct 08:47Z, "1. a" in the siwa-server thread):
+  a push or release runs only when the check passed, chained so a failure stops it; a
+  sign-in, signing, keys, single-use or money change gets a reviewer who sees the code, not
+  the author's conclusion, and every fix made during review or release gets its own review;
+  each release ends with its record (health, logs from the release start, record commit,
+  Sentinel's after-read, the lanes told). Release checklist renumbered.

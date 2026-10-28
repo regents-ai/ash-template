@@ -145,7 +145,11 @@ what a person or agent can now do, the checks that prove it, and what is not pro
 - **An adversarial review for protected work.** A separate helper agent tries to break
   the change: real pages at both widths, edge cases, and the elixir-stack design
   check. A finding counts when it comes with a failing check; confirmed findings are
-  fixed before Sentinel's read.
+  fixed before Sentinel's read. For sign-in, signing, keys, single-use checks or money,
+  the reviewer gets the code and the question, never your conclusion, and every fix
+  made during review or release gets its own review before it ships: a fix that
+  removes a guard can open what the guard closed (28 Oct, siwa-server: dropping the
+  replay store's clock check would have let one request be accepted twice).
 - **Every real failure becomes a lasting check, once the fix is confirmed live.** A bug
   found by the walk, the review, Sentinel or a person gets a check that fails on the old
   code (run it against the old code once to see it fail) and passes on the fix, listed in
@@ -383,25 +387,34 @@ Read `/Users/sean/Documents/regent/docs/decisions.md` again before a release.
 2. **Suite against live.** Run the suite and report pass and fail counts beside the
    live commit's counts. Any failure that live already has gets a named owner before
    the release goes out.
-3. **Live first, small and reversible** (Sean, 27 Oct 22:28Z: "reducing process and
+3. **Push and release only on a passing check.** Chain them so a failure stops the
+   push, for example `make check && git push origin HEAD:main`. Run the check again when main moved
+   under you, on the exact commit the release builds. A failure you believe is old
+   still stops the release until you have reproduced it on the live commit and written
+   it in the backlog.
+4. **Live first, small and reversible** (Sean, 27 Oct 22:28Z: "reducing process and
    accelerating safe but not overengineered code deployment and live testing"). Ship
    the smallest change that works, then test the changed behaviour on the live site
    (headless, read-only). Every release names its rollback before it goes out: the
    previous Fly release and image. Regression tests for it come after Sean confirms it
    has worked live for an hour or more.
-4. **Sentinel.** Ask Sentinel for a read after every production release, and before a
+5. **Sentinel.** Ask Sentinel for a read after every production release, and before a
    protected one. A read is never a reason to hold an ordinary release. Every request
    has the same shape: repository, previous released
    commit, candidate commit, release number, migrations (yes or no), protected area
    (yes or no), and who receives the verdict.
-5. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
+6. **Changelog.** Write the changelog entry in the deploy step itself, never as a later
    task. The public changelog says only what changed for people and agents: no release
    numbers, commits or rollback notes. Those go in a release record the site does not
    show (the template's root `CHANGELOG.md`).
-6. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
+7. **CLI notice.** Send the CLI lane one notice per contract change, in one shape: tool
    or route, old shape, new shape, defining commit, live commit.
-7. **Holds.** A hold names who lifts it and what the release check looks for.
-8. **Browser checks stay in the background** (decisions, 15 Oct 23:15Z). Run them
+8. **Holds.** A hold names who lifts it and what the release check looks for.
+9. **Release record, straight after.** Once it is live: read the health endpoint and
+   the logs from the release's start (errors, crashes, refusals, and real traffic
+   answered), commit the record (version, commit, time, what changed, rollback),
+   send Sentinel's after-read request, and tell each lane that waits on the release.
+10. **Browser checks stay in the background** (decisions, 15 Oct 23:15Z). Run them
    headless through Playwright. Never open a web address with `open` or `osascript`,
    and never use Sean's Chrome. A visible browser is only a Playwright-launched
    Chromium with its own profile, said in the thread first.
