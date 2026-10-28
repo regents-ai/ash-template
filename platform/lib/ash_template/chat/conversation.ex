@@ -1,8 +1,9 @@
 defmodule AshTemplate.Chat.Conversation do
   @moduledoc """
   One person's conversation with the chat assistant, as `mix ash_ai.gen.chat`
-  generates it, owned by the signed-in account. After the assistant's first
-  reply, a job names the conversation from its opening messages.
+  generates it, owned by the signed-in account, which an agent it paired may
+  also start and read. After the assistant's first reply, a job names the
+  conversation from its opening messages.
   """
 
   use Ash.Resource,
@@ -76,8 +77,9 @@ defmodule AshTemplate.Chat.Conversation do
       authorize_if always()
     end
 
-    policy action_type(:create) do
+    policy always() do
       authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy action_type([:read, :update, :destroy]) do

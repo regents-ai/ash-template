@@ -588,6 +588,36 @@
       "cli_release": "1.10.16"
     },
     {
+      "operation": "listChatConversations",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/chat",
+      "may": "Chat with the assistant for you",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "listChatMessages",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/chat",
+      "may": "Chat with the assistant for you",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "sendChatMessage",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/chat",
+      "may": "Chat with the assistant for you",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "listPolls",
       "effect": "read",
       "authority": "public",

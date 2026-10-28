@@ -3,6 +3,9 @@ defmodule AshTemplate.Chat.Message do
   One message in a chat conversation, as `mix ash_ai.gen.chat` generates it: a
   person's message, or the assistant's reply, which a job writes a few words at
   a time and publishes to the conversation's open pages as it goes.
+
+  A paired agent writes for its person with an `operation_id`, which becomes the
+  message's id, so a retry answers the message it already sent (`:earlier_send`).
   """
 
   use Ash.Resource,
@@ -65,6 +68,18 @@ defmodule AshTemplate.Chat.Message do
       filter expr(conversation_id == ^arg(:conversation_id))
     end
 
+    # The `:respond` job's own read of its message. Only AshOban may use it, so a
+    # job whose agent was unpaired after sending still reaches `:fail_response`.
+    read :job_read
+
+    # The message the actor's person already sent with this id, so a retry
+    # answers the first send.
+    read :earlier_send do
+      get? true
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id) and source == :user)
+    end
+
     create :create do
       accept [:text]
 
@@ -75,6 +90,23 @@ defmodule AshTemplate.Chat.Message do
       argument :conversation_id, :uuid do
         public? false
       end
+
+      argument :operation_id, :uuid do
+        public? false
+      end
+
+      change fn changeset, %{actor: actor} ->
+        if Map.get(actor || %{}, :role) == :agent and
+             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
+           do:
+             Ash.Changeset.add_error(changeset,
+               field: :operation_id,
+               message: "is required for agent creates"
+             ),
+           else: changeset
+      end
+
+      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
 
       change {AshTemplate.Limits.LimitWrites, allowance: :chat_message, field: :text}
       change AshTemplate.Chat.Message.Changes.CreateConversationIfNotProvided
@@ -178,9 +210,25 @@ defmodule AshTemplate.Chat.Message do
     end
   end
 
+  # An agent's send rechecks its pairing inside the transaction.
+  changes do
+    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:create]
+  end
+
   policies do
     bypass AshAi.Checks.ActorIsAshAi do
       authorize_if always()
+    end
+
+    # An agent unpaired after sending may no longer read or answer its message, so
+    # AshOban alone ends that reply with a line saying it failed.
+    bypass action([:job_read, :fail_response]) do
+      authorize_if AshOban.Checks.AshObanInteraction
+    end
+
+    policy always() do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
     policy always() do
@@ -230,6 +278,7 @@ defmodule AshTemplate.Chat.Message do
       trigger :respond do
         actor_persister AshTemplate.Chat.ActorPersister
         action :respond
+        worker_read_action :job_read
         on_error :fail_response
         on_error_fails_job? true
         # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
