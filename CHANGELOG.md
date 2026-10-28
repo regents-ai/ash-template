@@ -4411,6 +4411,37 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   sideways scroll; Grok Bot's skill and the pairing line both name `/workspace/.siwa-agent`;
   the live stylesheet carries the address letter reset; the health check passes.
 
+## 2026-10-27 — Motion lab panels take their layers
+
+- The motion lab's sample drawer, sheet, shade, note, Share menu and sparks
+  (`assets/css/pages/animations.css`) take the tip layer instead of their own numbers
+  (30, 60, 65, 70, 80). On a site that shows the lab inside its shell, they now cover
+  the header and sit under the skip link, which a keyboard reaches on top of them.
+  Techtree found the skip link dimmed under the open drawer once it moved to the skip
+  layer. Their shadows are the tip's, which is none.
+- The header and footer lab's sample header sits at the card layer
+  (`assets/css/pages/header_footer_lab.css`), enough to keep its Products menu over
+  the page below it.
+- Checked: a page check with a stand-in header and focused skip link around the lab
+  at 1280 and 390 (drawer over the header, skip link on top for every panel), and the
+  motion, windows, layout and pages walks, 299 steps passed (Chromium; WebKit not run
+  on the Mac).
+
+## 2026-10-27 — Released v121: motion lab panels take their layers
+
+- Fly v121, image 1395f42, live 00:09Z on 28 October; rollback v120 (7de32ab). Carries
+  1395f42 (the motion lab's panels and sparks at the tip layer; the header and footer lab's
+  sample header at the card layer). CSS only; no migrations.
+- Ordinary work, shipped under AUTONOMY-RULE a, under the shared release lock after reading
+  that no release was running.
+- Before: the motion, windows, layout and pages walks, 299 steps passed at 1280 and 390
+  (Chromium; WebKit not run on the Mac).
+- After, headless on template.regents.sh: `/capabilities.json` reports 1395f42; with a
+  stand-in header and a focused skip link around /animations at 1280 and 390, the drawer,
+  sheet, note and Share menu each sit at the tip layer with no shadow, the skip link stays on
+  top and each closes again; the header and footer lab's header sits at the card layer; no
+  page errors and no sideways scroll.
+
 ## 2026-10-27 — Pair New Agent always lands on the agent choice
 
 - A page's Pair New Agent button now moves focus to the chosen agent (or the first) in the
