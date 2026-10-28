@@ -19,6 +19,8 @@ defmodule AshTemplateWeb.AgentsPanel do
   """
   use AshTemplateWeb, :live_component
 
+  require Logger
+
   alias AshTemplate.Agents.ActivityReading
   alias AshTemplate.Credits
   alias AshTemplateWeb.Capabilities
@@ -299,8 +301,15 @@ defmodule AshTemplateWeb.AgentsPanel do
   defp read_agents(socket) do
     agents =
       case RegentAgents.list_my_agents(actor: socket.assigns.person) do
-        {:ok, agents} -> agents
-        {:error, _error} -> :unavailable
+        {:ok, agents} ->
+          agents
+
+        {:error, error} ->
+          Logger.warning(
+            "The agents for the Account page couldn't be read: #{inspect(failure_kinds(error))}"
+          )
+
+          :unavailable
       end
 
     socket = assign(socket, agents: agents, now: DateTime.utc_now())
@@ -349,4 +358,8 @@ defmodule AshTemplateWeb.AgentsPanel do
   end
 
   defp moment(datetime), do: Calendar.strftime(datetime, "%-d %B %Y, %H:%M UTC")
+
+  # The kinds of failure alone: the failure's words can hold the person's id.
+  defp failure_kinds(%{errors: [_ | _] = errors}), do: Enum.map(errors, & &1.__struct__)
+  defp failure_kinds(error), do: [error.__struct__]
 end

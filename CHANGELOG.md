@@ -4673,3 +4673,6 @@ An adversarial review of the two commits above found five things, all fixed here
   works on the Account page's box; `layout.spec.ts` drops the side panel's checks.
   The walk's server gets ten minutes to start (`playwright.config.ts`), since a busy
   machine can take more than the old three for its three mix starts.
+- When the person's agents can't be read, the account menu and the Account page log a
+  warning naming the kinds of failure (never its words, which can hold the person's id),
+  so the live site's logs show it instead of only a quiet "unavailable".

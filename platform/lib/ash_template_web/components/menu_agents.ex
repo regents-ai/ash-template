@@ -23,6 +23,8 @@ defmodule AshTemplateWeb.MenuAgents do
   """
   use AshTemplateWeb, :live_component
 
+  require Logger
+
   alias AshTemplate.Agents.ActivityReading
   alias AshTemplateWeb.Live.Session
   alias RegentAgents.{Activity, Person}
@@ -75,8 +77,15 @@ defmodule AshTemplateWeb.MenuAgents do
   defp read_agents(socket) do
     agents =
       case RegentAgents.list_my_agents(actor: socket.assigns.person) do
-        {:ok, agents} -> agents
-        {:error, _error} -> :unavailable
+        {:ok, agents} ->
+          agents
+
+        {:error, error} ->
+          Logger.warning(
+            "The agents for the account menu couldn't be read: #{inspect(failure_kinds(error))}"
+          )
+
+          :unavailable
       end
 
     assign(socket, agents: agents, now: DateTime.utc_now())
@@ -163,4 +172,8 @@ defmodule AshTemplateWeb.MenuAgents do
   defp more_recent?(%{at: _first}, _never), do: true
   defp more_recent?(_never, %{at: _second}), do: false
   defp more_recent?(_never, _also_never), do: true
+
+  # The kinds of failure alone: the failure's words can hold the person's id.
+  defp failure_kinds(%{errors: [_ | _] = errors}), do: Enum.map(errors, & &1.__struct__)
+  defp failure_kinds(error), do: [error.__struct__]
 end
