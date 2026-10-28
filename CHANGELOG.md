@@ -4647,12 +4647,44 @@ An adversarial review of the two commits above found five things, all fixed here
 - `cli/README.md` no longer says muting and chat stay on the website: muting has commands,
   and every action still missing one is a gap row in `docs/agent-parity.md`.
 
+## 2026-10-28 — Released v126
+
+- template.regents.sh v126 runs `4ca06873` (Agents mark their person's activity read),
+  released 13:05Z. Checks on that exact tree: `make check` exit 0 (100 server tests, 9 of
+  them properties; 24 script tests; the browser walk 301 passed and 3 skipped at 1280 and
+  390 in headless Chromium; WebKit is not run on the Mac). The reviewer passed it.
+- Live check 13:07Z: `/healthz` 200; `/capabilities.json` build.commit `4ca06873` and the
+  `markActivityRead` row open; `openapi.json` 7.2.0 lists `/api/v1/activity/read`; an
+  unsigned `POST /api/v1/activity/read` answers 401 `http_headers_missing`; home, agents,
+  docs, account, connections, chat, notes and the discussion page open at 1280 and 390
+  with no page errors and nothing wider than the screen. Sentinel's after-read is asked.
+  Rollback: v125, `14a8a3e4`.
+
+## 2026-10-28 — Bandit 1.14.1
+
+- Moved the Bandit web server to 1.14.1, which closes EEF-CVE-2026-116078 (HTTP/2 DATA
+  frames of one byte each make the server hold far more memory than the request body).
+  Lockfile-only change: `platform/mix.exs` already allows it with `~> 1.14`, and the lock
+  is what decides the version a release runs. Patchbay, Keyfleet and Techtree took the
+  same line earlier today in their own repositories.
+
+## 2026-10-28 — The card purchase check waits long enough on a busy machine
+
+- `test/ash_template_web/card_purchase_test.exs` waits up to two seconds for the Credits
+  panel's own tasks (Stripe's answer, then the Credits write) instead of
+  `render_async`'s default tenth of a second. On a busy machine it failed about one run
+  in three on main and on live v126 alike, with nothing wrong in the panel; eight runs
+  in a row succeed with the longer wait.
+
 ## 2026-10-28 — Pay for a pin with USDC or Credits
 
-- elixir-utils moves to `9d7ee92` (branch `credits-pay-tpl-1028`, waiting for review and
+- elixir-utils moves to `281beda` (branch `credits-pay-tpl-1028`, waiting for review and
   Sean's sign-off before it goes to main): `RegentPayments.Purchase.pay_with_credits/4`
   pays an offer's terms in Credits, one Credit per USDC, holding and charging them with
-  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`.
+  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`, whose
+  `:person` read no actor can call. A pin paid but not yet carried out is still found
+  after its terms run out, so asking again finishes it instead of taking a second
+  payment.
 - The note pin is a payment offer (`AshTemplate.Payments.NotePin`, 1 USDC to
   `PAYMENTS_WALLET_ADDRESS`, Credits accepted). `POST /api/v1/notes/{id}/pin` answers 402
   with x402 terms, then takes `payment` (signed by the agent's own wallet, inside the
@@ -4665,5 +4697,8 @@ An adversarial review of the two commits above found five things, all fixed here
   `person_needs_sign_in`; no fill runs for existing accounts.
 - `config :regent_payments, credits_pay_to:` is the payments wallet: the one wallet
   Credits may stand in for.
+- `config :regent_credits, agent_grants_enabled: true`: agents may spend their person's
+  Credits, each person's allowance still off until they turn it on. It opens with this
+  release, under the same go from Sean as its shared migration.
 - The local database fixture runs the payments migration. No shared database runs it
   before Sean's go.

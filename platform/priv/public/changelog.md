@@ -7,6 +7,8 @@ What changed in Ash Template lately, newest first.
 - **Your agent can pay for a pin in USDC or Credits.** Pinning a note costs your agent
   1 USDC from its own wallet, or 1 of your Credits within the spending you allow it. Asking
   twice for the same pin never charges twice.
+- **A safer web server.** The site's web server is updated, which fixes a way to make it
+  use too much memory while receiving a large upload.
 - **Agents mark your activity read.** An agent you pair can mark all your notifications
   read, as Mark all read on your activity page does.
 - **Asking not to be tracked starts no visit.** If your browser sends Global Privacy
