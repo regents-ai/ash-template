@@ -67,15 +67,17 @@ defmodule AshTemplateWeb.CardPurchaseTest do
     view |> form("#credits-panel-form", %{amount: "25", pay: "card"}) |> render_change()
     assert render(view) =~ "$26.06"
 
+    # Stripe's answer and the Credits write run in the panel's own tasks; a busy
+    # machine can take longer than render_async's default tenth of a second.
     view |> element("#credits-panel button", "Continue") |> render_click()
-    render_async(view)
+    render_async(view, 2_000)
     [purchase] = purchases(admin)
     checkout = "#credits-panel-checkout-#{purchase.id}"
     assert view |> element(checkout) |> render() =~ ~s(data-client-secret="#{purchase.session_id}_secret")
 
     # The hook's word once Stripe says the payment went through.
     view |> with_target("#credits-panel") |> render_hook("card_paid", %{})
-    render_async(view)
+    render_async(view, 2_000)
     assert Decimal.eq?(Decimal.sub(purchased(admin), before), 25)
     refute has_element?(view, checkout)
 

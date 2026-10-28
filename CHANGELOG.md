@@ -4667,3 +4667,11 @@ An adversarial review of the two commits above found five things, all fixed here
   Lockfile-only change: `platform/mix.exs` already allows it with `~> 1.14`, and the lock
   is what decides the version a release runs. Patchbay, Keyfleet and Techtree took the
   same line earlier today in their own repositories.
+
+## 2026-10-28 — The card purchase check waits long enough on a busy machine
+
+- `test/ash_template_web/card_purchase_test.exs` waits up to two seconds for the Credits
+  panel's own tasks (Stripe's answer, then the Credits write) instead of
+  `render_async`'s default tenth of a second. On a busy machine it failed about one run
+  in three on main and on live v126 alike, with nothing wrong in the panel; eight runs
+  in a row succeed with the longer wait.
