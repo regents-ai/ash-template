@@ -1,11 +1,11 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-cli-latest check-contracts check-dependency-parity release drift readiness
+.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release drift readiness
 help:
-	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-cli-latest or check-contracts for one component."
+	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make readiness."
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
-check: check-platform check-required-fixes check-cli check-cli-latest check-contracts
+check: check-platform check-required-fixes check-cli check-siwa-latest check-contracts
 # mix precommit ends with the TypeScript typecheck, the script tests and the
 # browser walk.
 check-platform:
@@ -28,10 +28,11 @@ REGENTS_CLI_REV := 02f89615c4d8ceaf4c6f597f07112e41f001adc6
 check-cli:
 	uv run --no-project --with "regents-cli[check] @ git+https://github.com/regents-ai/regents-cli@$(REGENTS_CLI_REV)" \
 	  python -m regents_cli.check_commands cli/commands.json platform/priv/public/openapi.json platform/priv/static/api-contract.openapiv3.yaml
-# Every site is on the newest regents-cli: the pin above, the agent guide and the
-# install lines all name the newest release on PyPI. Needs `gh auth login`.
-check-cli-latest:
-	scripts/check-cli-latest.sh $(REGENTS_CLI_REV)
+# Every site is on the newest SIWA: the newest regents-cli release on PyPI (the pin
+# above, the agent guide and the install lines) and the newest change to the SIWA
+# library in elixir-utils. Needs `gh auth login`.
+check-siwa-latest:
+	scripts/check-siwa-latest.sh $(REGENTS_CLI_REV)
 check-contracts:
 	@echo "contracts/ is empty; add a Foundry project there and replace this target with its checks."
 # Read-only comparison with explicitly selected local site checkouts.

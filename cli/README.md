@@ -46,12 +46,16 @@ its descriptions explain every field.
 
 ## Always the newest release
 
-Every Regent site is on the newest regents-cli release. `make check-cli-latest` reads the
-newest release from PyPI and fails until `REGENTS_CLI_REV` is that release's tag commit,
+Every Regent site is on the newest SIWA: the newest regents-cli release, which agents sign
+in and sign with, and the newest SIWA library the site checks them with.
+`make check-siwa-latest` (`scripts/check-siwa-latest.sh`) reads the newest release from PyPI
+and fails until `REGENTS_CLI_REV` is that release's tag commit,
 [the agent guide](../platform/priv/public/agents.md) names the release, its commit and its
 wheel's SHA256, every `uv tool install regents-cli==` line names it, and
 `platform/priv/capabilities.json` names it as `cli.release`. A new release therefore stops
-the next `make check` until those move together in one commit.
+the next `make check` until those move together in one commit. It also fails until the
+elixir-utils commit `platform/mix.exs` pins contains the newest change to
+`siwa/siwa-elixir/apps/siwa` on elixir-utils main.
 
 ## What does not go here
 

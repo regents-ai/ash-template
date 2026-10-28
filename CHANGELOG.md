@@ -4526,3 +4526,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   whose command matches today's (1.10.17 for all of them, read from each release's
   copy), so the agent guide no longer calls them not yet released. Dropped the four
   stale "next release" notes from `cli/COMMANDS.md`.
+
+## 2026-10-28 — The newest SIWA on both sides
+
+- `make check-cli-latest` became `make check-siwa-latest` (`scripts/check-siwa-latest.sh`):
+  Sean's rule names SIWA, so besides the newest regents-cli it now also fails until the
+  pinned elixir-utils commit contains the newest change to the SIWA library
+  (`siwa/siwa-elixir/apps/siwa`, today `48a2e1c`). The template's pin `7794682` does.
