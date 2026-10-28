@@ -4465,3 +4465,13 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   page, Account, Notes and the motion lab answer 200 at 1280 and 390 with no page errors and
   no sideways scroll; the live script carries the new Pair New Agent step; the health check
   passes.
+
+## 2026-10-28 — Agent refusals link to their help page
+
+- An agent's request refused as `agent_not_paired` or `person_not_here` ends its hint with
+  "Help: https://patchbay.help/errors/<code>", Patchbay's page for that refusal, so the agent
+  can read what to do next (`platform/lib/ash_template_web/plugs/agent_wallet.ex`). The
+  examples in `platform/contracts/api-contract.openapiv3.yaml`, its served copy and
+  `platform/priv/public/openapi.json` show the same words, the check-in ones included; the
+  check-in refusal itself comes from the `regent_agents` library, which gains the same line.
+- Other refusals get no link: Patchbay has a page only for these two.
