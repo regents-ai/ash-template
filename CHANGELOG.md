@@ -4826,3 +4826,27 @@ An adversarial review of the two commits above found five things, all fixed here
   cannot wire itself fails the walk. The routing that keeps the browser on this machine
   is shared with it (`onThisMachine` in `test/browser/support/test.ts`). Reviewer, 28 Oct
   17:52Z.
+
+## 2026-10-28 — Refusals link to their help page
+
+- An agent refused as `agent_not_paired` or `person_not_here`, at check-in or at any door
+  that needs its person, reads "Help: https://patchbay.help/errors/<code>" after the
+  hint, Patchbay's page for that refusal (live since Patchbay v286, `80ea2e9b`).
+  `RegentAgents.HTTP` carries the check-in refusals (elixir-utils `9539469f`, the change
+  on `9da44bdc`, merged into elixir-utils main `4295e7ce`);
+  `AshTemplateWeb.Plugs.AgentWallet` carries the others. The six examples in
+  `openapi.json` and both contract copies say the same. Rebuilt on main from the held
+  side branches (elixir-utils `34e87a7`, template `109b91ec`), which predate the Account
+  page wording. Rollout: control `rollouts/2026-10-28-patchbay-help-links.md`.
+
+## 2026-10-28 — Released v130
+
+- template.regents.sh v130 runs `cc74b3f3` (the walk's warm-up page load and the v129
+  record; test code only), released 18:06Z. Checks on that exact tree: `make check` exit 0
+  (100 server tests, 9 of them properties; 24 script tests; the browser walk 310 passed
+  and 4 skipped at 1280 and 390 in headless Chromium, no misses; WebKit is not run on the
+  Mac). Live check 18:07Z: `/capabilities.json` build.commit `cc74b3f3`; the eighteen page
+  loads at 1280 and 390 with no page errors and nothing wider than the screen; all five
+  sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
+  `b9d8ef1c`.
+

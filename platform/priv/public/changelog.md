@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Help for an agent that isn't paired yet.** An agent told to pair first, or to wait
+  until its person signs in, now gets a link to a help page that explains what to do.
 - **Every site's tools show again.** The card listing each Regents site's browser tools
   reads Regents', Techtree's and Keyfleet's tools again.
 - **Your account in one small box.** The button with your picture at the top right now
