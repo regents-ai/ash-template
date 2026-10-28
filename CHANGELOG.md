@@ -4763,6 +4763,93 @@ An adversarial review of the two commits above found five things, all fixed here
   the connected app) draws `claude-duet.png`; Claude Code keeps its own picture.
   `test/ash_template_web/agent_pictures_test.exs` still draws every agent kind.
 
+## 2026-10-28 — The tools card reads Techtree's and Keyfleet's new addresses
+
+- Techtree (v201) and Keyfleet moved their browser tools list to `/capabilities.json`, and
+  the old `/capabilities` answers 404, so the template's tools card showed neither site's
+  tools. `AshTemplate.SiteTools` and the walk's offline answers
+  (`test/browser/support/server/walk_offline.ex`) now read
+  https://techtree.sh/capabilities.json and https://keyfleet.ai/capabilities.json. Reported
+  by the Techtree chief, 28 Oct 14:50Z. regents.sh, Patchbay and Autolaunch still answer at
+  their old addresses.
+
+## 2026-10-28 — Released v128
+
+- template.regents.sh v128 runs `2848406d` (the account menu replaces the side panel;
+  regents-cli 1.10.20; Claude Duet's picture; the tools card reads Techtree's and Keyfleet's
+  new addresses), released 17:35Z. Checks on that exact tree: `make check` exit 0 (100
+  server tests, 9 of them properties; 24 script tests; the browser walk 310 passed and 4
+  skipped at 1280 and 390 in headless Chromium; WebKit is not run on the Mac). The reviewer
+  passed the account menu (`d7ead6ae`).
+- Live check 17:36Z: `/capabilities.json` build.commit `2848406d` and `cli.release` 1.10.20;
+  `agents.md` names 1.10.20 and `0e3768f5…`; `claude-duet.png` answers 200; the tools of
+  Techtree, Keyfleet, Patchbay and Autolaunch load (15, 91, 55 and 18); home, agents, docs,
+  account, connections, chat, notes, the discussion page and `/api/v1/rooms` open at 1280
+  and 390 with no page errors and nothing wider than the screen. Sentinel's after-read is
+  asked. Rollback: v127, `b204e320`.
+
+## 2026-10-28 — The tools card reads regents.sh's new address
+
+- regents.sh (`206f8c1f`, live 17:36Z) moved its browser tools list to `/capabilities.json`,
+  as Techtree and Keyfleet did, and its old `/capabilities` answers 404, so v128's tools
+  card could not read it. `AshTemplate.SiteTools` and the walk's offline answers now read
+  https://regents.sh/capabilities.json. Patchbay and Autolaunch still answer at their old
+  addresses.
+
+## 2026-10-28 — Claude Duet's picture on the white tile
+
+- `@design_system_ref` moves to design-system `99c99d14`: the paper around Claude Duet's
+  picture and three stray corner marks are transparent, so it sits cleanly on the agent
+  mark's white tile (reviewer, 28 Oct 17:38Z).
+
+## 2026-10-28 — Released v129
+
+- template.regents.sh v129 runs `b9d8ef1c` (the tools card reads regents.sh's new address;
+  Claude Duet's picture on the white tile, design-system `99c99d14`), released 17:53Z.
+  Checks on that exact tree: `make check` exit 0 (100 server tests, 9 of them properties;
+  24 script tests; the browser walk 310 passed and 4 skipped at 1280 and 390 in headless
+  Chromium; WebKit is not run on the Mac).
+- Live check 18:05Z: `/capabilities.json` build.commit `b9d8ef1c` and `cli.release`
+  1.10.20; the tools of all five sites load (Regents 25, Patchbay 55, Techtree 15,
+  Autolaunch 18, Keyfleet 91); `claude-duet.png` answers 200; home, agents, docs, account,
+  connections, chat, notes, the discussion page and `/api/v1/rooms` open at 1280 and 390
+  with no page errors and nothing wider than the screen. Rollback: v128, `2848406d`.
+
+## 2026-10-28 — The walk opens one page before its first check
+
+- The first signed-in checks of a cold run sometimes timed out waiting for the page's
+  buttons to be wired (rooms, messages and the harbour, on one run of 28 Oct). The server
+  log of every run that day shows no failed agents read and no page crash or rejoin, so
+  the cause was the newly started server's slow first pages. The walk now opens one
+  signed-in room once before any check (`test/browser/support/warm_up.ts`, Playwright's
+  global setup, which runs after the server answers), never retried; a page that still
+  cannot wire itself fails the walk. The routing that keeps the browser on this machine
+  is shared with it (`onThisMachine` in `test/browser/support/test.ts`). Reviewer, 28 Oct
+  17:52Z.
+
+## 2026-10-28 — Refusals link to their help page
+
+- An agent refused as `agent_not_paired` or `person_not_here`, at check-in or at any door
+  that needs its person, reads "Help: https://patchbay.help/errors/<code>" after the
+  hint, Patchbay's page for that refusal (live since Patchbay v286, `80ea2e9b`).
+  `RegentAgents.HTTP` carries the check-in refusals (elixir-utils `9539469f`, the change
+  on `9da44bdc`, merged into elixir-utils main `4295e7ce`);
+  `AshTemplateWeb.Plugs.AgentWallet` carries the others. The six examples in
+  `openapi.json` and both contract copies say the same. Rebuilt on main from the held
+  side branches (elixir-utils `34e87a7`, template `109b91ec`), which predate the Account
+  page wording. Rollout: control `rollouts/2026-10-28-patchbay-help-links.md`.
+
+## 2026-10-28 — Released v130
+
+- template.regents.sh v130 runs `cc74b3f3` (the walk's warm-up page load and the v129
+  record; test code only), released 18:06Z. Checks on that exact tree: `make check` exit 0
+  (100 server tests, 9 of them properties; 24 script tests; the browser walk 310 passed
+  and 4 skipped at 1280 and 390 in headless Chromium, no misses; WebKit is not run on the
+  Mac). Live check 18:07Z: `/capabilities.json` build.commit `cc74b3f3`; the eighteen page
+  loads at 1280 and 390 with no page errors and nothing wider than the screen; all five
+  sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
+  `b9d8ef1c`.
+
 ## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
 
 - The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
@@ -4805,3 +4892,11 @@ An adversarial review of the two commits above found five things, all fixed here
   audiences only, so with the switch on here every signed tool call would be refused
   until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
   version before any site takes it.
+
+## 2026-10-28 — Claude connector brought onto main 2362ad83
+
+- Merged with template main `2362ad83` (the help links on refusals; design-system
+  `99c99d14`). elixir-utils moves to its main `09afad89`, which holds `aa5512f4` (the
+  connector), pay with Credits' library work (`ff7927c0`) and the help links (`9539469f`);
+  its files are the same as `4295e7ce`, where `make check` ran green. Reviewer,
+  28 Oct 22:32Z: a re-pin with no other change needs no new review.
