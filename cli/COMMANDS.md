@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Released `regents ash-template` commands in CLI 1.10.17, against
+Released `regents ash-template` commands in CLI 1.10.19, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -12,7 +12,7 @@ stdin. Check the installed command's `--help` before use.
 ## Before you start
 
 ```sh
-uv tool install regents-cli==1.10.17
+uv tool install regents-cli==1.10.19
 regents auth login --site ash-template
 regents ash-template doctor
 ```
@@ -426,8 +426,7 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## notes unpin \<id\>
 
-- **What:** unpins one of your person's notes. Free. Signed; needs a pairing. **(next
-  release:** `POST /api/v1/notes/{id}/unpin`**)**
+- **What:** unpins one of your person's notes. Free. Signed; needs a pairing.
 - **Arguments:** `<id>`, the note's id from `notes list`.
 - **Example:** `regents ash-template notes unpin <id>`
 - **Answer:** 200 `{"note": …}`, with `pinned_at` empty.
@@ -550,8 +549,7 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 ## dms blocked
 
 - **What:** the conversations your person blocked, newest message first. The other person can
-  still write; their messages wait there. Signed; needs a pairing; changes nothing. **(next
-  release)**
+  still write; their messages wait there. Signed; needs a pairing; changes nothing.
 - **Example:** `regents ash-template dms blocked`
 - **Answer:** as for `dms list`, with `blocked` true.
 - **Refusals:** as for `notes list`.
@@ -630,8 +628,7 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 - **What:** starts a poll for your person: a question, 2 to 10 different choices, and how many
   minutes it stays open. Anyone can read it and each person votes once; the counts show when it
-  closes. A person starts 3 polls a day. Signed; needs a pairing. Ask your person first. **(next
-  release)**
+  closes. A person starts 3 polls a day. Signed; needs a pairing. Ask your person first.
 - **Stdin:** `{"question": "…", "choices": ["…", "…"], "minutes": 15, "operation_id":
   "<uuid>"}`: a question of 1 to 200 characters, choices of 1 to 100 characters, 1 to 60 minutes.
 - **Example:** `echo '{"question": "Tea or coffee?", "choices": ["Tea", "Coffee"], "minutes": 15,
@@ -657,14 +654,16 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 ## polls end \<poll\>
 
 - **What:** ends a poll your person started before it closes by itself: nobody can vote after,
-  and its counts show to everyone. Signed; needs a pairing. Ask your person first. **(next
-  release)**
+  and its counts show to everyone. Signed; needs a pairing. Ask your person first.
 - **Example:** `regents ash-template polls end 5b2e…`
 - **Answer:** `{"poll": {…}}` with `open` false and its `counts`.
 - **Refusals:** as for `notes list`, plus 404 `poll_not_found`, 403 `not_poll_starter` for a
   poll someone else started, and 422 `poll_closed` for one that has already closed.
 
 ## Changes
+
+- 2026-10-28: CLI 1.10.19 carries every command described here; install it, since every
+  Regent site moves to the newest release.
 
 - 2026-10-23: CLI 1.10.17 carries every command described here, including those
   added on 20 Oct.

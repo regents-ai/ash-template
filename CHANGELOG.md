@@ -4505,3 +4505,24 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   refresh, switching and signing out, and checks a lineage whose count ran out stays
   signed out; both tests fail against the old transactions. Listed in
   `docs/feature-map.md`. Sean gave the go on 28 October ("3. a").
+
+## 2026-10-28 — Released v123
+
+- template.regents.sh v123 runs `5a1fe29e` (the sign-in transaction fix), released at
+  07:27Z after Sentinel's clear pre-read. Rollback: v122, `3df1d084`.
+
+## 2026-10-28 — regents-cli 1.10.19, and always the newest
+
+- Moved to regents-cli 1.10.19 (tag commit `02f89615c4d8ceaf4c6f597f07112e41f001adc6`,
+  wheel SHA256 `935c21569a740d90ea7d6951584ab6de3757af8fa07e2302f5c01ef69e959080`):
+  `REGENTS_CLI_REV`, the agent guide, `llms.txt`, `cli/COMMANDS.md`, `cli/README.md`
+  and `cli.release` in `platform/priv/capabilities.json`. 1.10.19 carries this site's
+  `commands.json`, OpenAPI document and tool manifest byte for byte.
+- Sean, 28 October: every site is always on the newest regents-cli. The new
+  `make check-cli-latest` (`scripts/check-cli-latest.sh`, part of `make check`) reads
+  the newest release from PyPI and fails until the pin, the guide (release, commit and
+  wheel SHA256), every install line and `cli.release` name it.
+- The 44 operations still marked as waiting for a release now name the first release
+  whose command matches today's (1.10.17 for all of them, read from each release's
+  copy), so the agent guide no longer calls them not yet released. Dropped the four
+  stale "next release" notes from `cli/COMMANDS.md`.

@@ -1,11 +1,11 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-contracts check-dependency-parity release drift readiness
+.PHONY: help check check-platform check-browser check-required-fixes check-cli check-cli-latest check-contracts check-dependency-parity release drift readiness
 help:
-	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli or check-contracts for one component."
+	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-cli-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make readiness."
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
-check: check-platform check-required-fixes check-cli check-contracts
+check: check-platform check-required-fixes check-cli check-cli-latest check-contracts
 # mix precommit ends with the TypeScript typecheck, the script tests and the
 # browser walk.
 check-platform:
@@ -24,10 +24,14 @@ check-required-fixes:
 	&& elixir _build/check_required_fixes.exs "ash-template $$rev" < _build/required-fixes.json
 # The command description check is regents-cli's own checker at the commit pinned
 # here, run by uv straight from GitHub. Move the pin in a commit.
-REGENTS_CLI_REV := 773f8a676a5dc329a538c56c2275725963e8a880
+REGENTS_CLI_REV := 02f89615c4d8ceaf4c6f597f07112e41f001adc6
 check-cli:
 	uv run --no-project --with "regents-cli[check] @ git+https://github.com/regents-ai/regents-cli@$(REGENTS_CLI_REV)" \
 	  python -m regents_cli.check_commands cli/commands.json platform/priv/public/openapi.json platform/priv/static/api-contract.openapiv3.yaml
+# Every site is on the newest regents-cli: the pin above, the agent guide and the
+# install lines all name the newest release on PyPI. Needs `gh auth login`.
+check-cli-latest:
+	scripts/check-cli-latest.sh $(REGENTS_CLI_REV)
 check-contracts:
 	@echo "contracts/ is empty; add a Foundry project there and replace this target with its checks."
 # Read-only comparison with explicitly selected local site checkouts.

@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.12",
+    "release": "1.10.19",
     "namespace": "ash-template"
   },
   "authorities": [
@@ -71,7 +71,7 @@
       "person_page": "/about",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getDocs",
@@ -81,7 +81,7 @@
       "person_page": "/docs",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getMyProfile",
@@ -121,7 +121,7 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "createNote",
@@ -131,7 +131,7 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getMyNote",
@@ -141,7 +141,7 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "updateMyNote",
@@ -151,7 +151,7 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "deleteMyNote",
@@ -181,7 +181,7 @@
       "person_page": "/rooms/{room}",
       "may": "Start rooms for you",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "setRoomTopic",
@@ -191,7 +191,7 @@
       "person_page": "/rooms/{room}",
       "may": "Change the topic of rooms you started",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listRoomMessages",
@@ -211,7 +211,7 @@
       "person_page": "/rooms/{room}",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listSiteTools",
@@ -221,7 +221,7 @@
       "person_page": null,
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getSiwaHelp",
@@ -231,7 +231,7 @@
       "person_page": null,
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "postRoomMessage",
@@ -293,7 +293,7 @@
       "person_page": "/rooms/{room}",
       "may": "Like room messages and take likes back",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "unlikeRoomMessage",
@@ -303,7 +303,7 @@
       "person_page": "/rooms/{room}",
       "may": "Like room messages and take likes back",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "reportRoomMessage",
@@ -313,7 +313,7 @@
       "person_page": "/rooms/{room}",
       "may": "Report room messages to the site's team",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getAgentIdentity",
@@ -333,7 +333,7 @@
       "person_page": "/rooms/general",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getMyAgentProfile",
@@ -343,7 +343,7 @@
       "person_page": "/rooms/general",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "editMyAgentProfile",
@@ -353,7 +353,7 @@
       "person_page": "/rooms/general",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "searchNotes",
@@ -363,7 +363,7 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getNotePinPrice",
@@ -373,7 +373,7 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "pinNote",
@@ -385,7 +385,7 @@
       "person_page": "/notes",
       "may": "Pin a note for 1 Credit, within the spending you allow",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "unpinNote",
@@ -395,7 +395,7 @@
       "person_page": "/notes",
       "may": "Unpin your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "archiveNote",
@@ -405,7 +405,7 @@
       "person_page": "/notes",
       "may": "Archive your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "unarchiveNote",
@@ -415,7 +415,7 @@
       "person_page": "/notes",
       "may": "Unarchive your notes",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getAccountBalances",
@@ -425,7 +425,7 @@
       "person_page": "/account",
       "may": "See your Credits",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listCreditsHistory",
@@ -435,7 +435,7 @@
       "person_page": "/account",
       "may": "See your Credits",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getAccountPoints",
@@ -445,7 +445,7 @@
       "person_page": "/account/points",
       "may": "See your Points",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "reportNoteLabel",
@@ -455,7 +455,7 @@
       "person_page": "/notes",
       "may": "Rate your note labels",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "searchRoomMessages",
@@ -465,7 +465,7 @@
       "person_page": "/rooms/general",
       "may": "Search public room messages",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listActivity",
@@ -475,7 +475,7 @@
       "person_page": "/app/activity",
       "may": "Read your activity without marking it read",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listMyMutes",
@@ -485,7 +485,7 @@
       "person_page": "/rooms/general",
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "addMute",
@@ -495,7 +495,7 @@
       "person_page": "/rooms/general",
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "removeMute",
@@ -505,7 +505,7 @@
       "person_page": "/rooms/general",
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listDmConversations",
@@ -515,7 +515,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listBlockedDmConversations",
@@ -525,7 +525,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "openDmConversation",
@@ -535,7 +535,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listDmMessages",
@@ -545,7 +545,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "sendDm",
@@ -555,7 +555,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "blockDmConversation",
@@ -565,7 +565,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "unblockDmConversation",
@@ -575,7 +575,7 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "listPolls",
@@ -585,7 +585,7 @@
       "person_page": "/polls",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "getPoll",
@@ -595,7 +595,7 @@
       "person_page": "/polls/{poll}",
       "may": null,
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "startPoll",
@@ -605,7 +605,7 @@
       "person_page": "/polls",
       "may": "Start polls, vote in them, and end the ones you started",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "votePoll",
@@ -615,7 +615,7 @@
       "person_page": "/polls/{poll}",
       "may": "Start polls, vote in them, and end the ones you started",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     },
     {
       "operation": "endPoll",
@@ -625,7 +625,7 @@
       "person_page": "/polls/{poll}",
       "may": "Start polls, vote in them, and end the ones you started",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_release": "1.10.17"
     }
   ]
 }

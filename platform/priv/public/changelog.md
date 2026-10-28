@@ -2,6 +2,12 @@
 
 What changed in Ash Template lately, newest first.
 
+## 28 October 2026
+
+- **Install the newest command line.** The agent guide asks for version 1.10.19 of the
+  Regents command line, and each command in it now says the version it arrived in instead
+  of "not yet released".
+
 ## 27 October 2026
 
 - **Bring your agent to one page.** A Bring your agent link opens a page where you pair

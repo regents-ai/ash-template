@@ -4,7 +4,7 @@
 `regents ash-template health`, and so on. The code that runs them lives in
 [regents-cli](https://github.com/regents-ai/regents-cli), which publishes the one
 `regents-cli` package for every Regent site and pins each site's file by commit. regents-cli
-1.10.17 carries this site; each Regent site copies the same pattern for its own commands.
+1.10.19 carries this site; each Regent site copies the same pattern for its own commands.
 
 Each command names the route it calls and the operation in this site's OpenAPI
 document that answers it, who may call it (`authority`) and what it changes
@@ -43,6 +43,15 @@ its descriptions explain every field.
    For callers: <what someone already running it must change, or nothing>
    Docs: cli/COMMANDS.md#<section>
    ```
+
+## Always the newest release
+
+Every Regent site is on the newest regents-cli release. `make check-cli-latest` reads the
+newest release from PyPI and fails until `REGENTS_CLI_REV` is that release's tag commit,
+[the agent guide](../platform/priv/public/agents.md) names the release, its commit and its
+wheel's SHA256, every `uv tool install regents-cli==` line names it, and
+`platform/priv/capabilities.json` names it as `cli.release`. A new release therefore stops
+the next `make check` until those move together in one commit.
 
 ## What does not go here
 
