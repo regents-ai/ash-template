@@ -25,11 +25,9 @@
 
 /* ---- Header ---- */
 
-/* The sample header sits a card above what follows it, so its Products menu
-   covers the page below. */
 .site-header {
   position: relative;
-  z-index: var(--rg-layer-card);
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: var(--space-2);

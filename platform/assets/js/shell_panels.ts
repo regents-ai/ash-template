@@ -64,6 +64,16 @@ export function installShellPanels(shell: HTMLElement) {
       .forEach(reader => reader.dispatchEvent(new CustomEvent("ash:aside-opened")))
   }
 
+  // Focus goes to the chosen agent, or the first, and its picture scrolls into view:
+  // the radio itself is hidden, so focusing it does not move the panel.
+  const openPairing = () => {
+    setAside(true)
+    const choices = [...shell.querySelectorAll<HTMLInputElement>("#shell-pairing input[type=radio]")]
+    const choice = choices.find(radio => radio.checked) ?? choices[0]
+    choice?.focus()
+    choice?.closest("label")?.scrollIntoView({block: "nearest"})
+  }
+
   const setSidebar = (shown: boolean) => {
     const value = shown ? "shown" : "hidden"
     root().dataset.sidebar = value
@@ -135,8 +145,9 @@ export function installShellPanels(shell: HTMLElement) {
     if (!target) return
 
     if (target.closest("[data-aside-toggle]")) return setAside(!asideOpen())
-    // A page's own Pair New Agent button opens the panel, and leaves it open.
-    if (target.closest("[data-aside-open]")) return setAside(true)
+    // A page's own Pair New Agent button opens the panel, leaves it open, and moves
+    // to the agent choice, so a press with the panel already open still lands there.
+    if (target.closest("[data-aside-open]")) return openPairing()
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()

@@ -26,6 +26,28 @@ test("Pair New Agent on the Account page opens the pairing box", async ({page}) 
   await problems.expect()
 })
 
+// Keyfleet, 27 Oct 2026: with the panel already open and scrolled away from the
+// pairing box, the button did nothing a person could see.
+test("Pair New Agent with the panel already open moves to the agent choice", async ({page}) => {
+  const problems = watch(page)
+  await page.goto("/account")
+  await ready(page)
+  const button = page.locator("#account-agents").getByRole("button", {name: "Pair New Agent"})
+  const firstAgent = pairing(page).getByRole("radio").first()
+  const picture = firstAgent.locator("xpath=ancestor::label")
+  await button.click()
+  // A short panel, the way a small screen or a long agents list leaves it.
+  await page.locator("#shell-aside").evaluate(aside => {
+    aside.style.maxBlockSize = "5rem"
+    aside.scrollTop = 0
+  })
+  await expect(picture).not.toBeInViewport()
+  await button.click()
+  await expect(firstAgent).toBeFocused()
+  await expect(picture).toBeInViewport()
+  await problems.expect()
+})
+
 test("the agent guide's link lands on the pairing box", async ({page}) => {
   await page.goto("/account#shell-pairing")
   await expect(pairing(page)).toBeInViewport()
