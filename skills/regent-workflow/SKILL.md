@@ -192,6 +192,45 @@ what a person or agent can now do, the checks that prove it, and what is not pro
   HEAD`) and a clean tree at the top; what behaviour changed; the commands that prove
   it, with their results; what was not proven.
 
+## Live checks (founder rule, 28 Oct 2026)
+
+Sean, 28 Oct 2026 13:42Z, verbatim: "From the next release the Mac checks keyfleet.ai
+the way an agent does, through the CLI as a paired agent and WebMCP in the headless
+browser, and those go on the allowlist; raw curl is dropped. For Claude threads
+themselves the route is the connector you are shipping: once the switch is on and
+keyfleet.ai/mcp is added as a connector, threads can use the site through MCP like any
+other agent, with the same limits as everyone else."
+
+This holds on all five sites and the template, for every Claude session: a Mac Remote
+Control session, a Claude Projects thread and every helper either one starts.
+
+- **The way an agent does.** A live site is checked through two surfaces, never with
+  raw `curl`:
+  1. **The CLI as a paired agent.** The regents CLI, or the site's SIWA client
+     (`uv run siwa_agent.py request`), run from the agent's own folder with its own
+     signer and pairing. A check reads: `whoami`, lists and reads. A command that
+     changes live data is agent work, not a check, and asks first.
+  2. **WebMCP in headless Chromium.** Open the live page in Playwright's Chromium,
+     list the tools the page registers, call its public reads, and call signed reads
+     through `prepare_agent_request` and the SIWA client. The page walk at 390 and
+     1280 wide runs in the same browser. The health page and `/capabilities.json` are
+     read there too, or from Fly's read commands (`fly status`, `fly releases`).
+- **On the allowlist.** Each site repository commits `.claude/settings.json` so these
+  checks never prompt. `permissions.allow` lists the CLI and SIWA-client read commands
+  for that site, the repository's checks and tests (`make check`, `make check-change`,
+  `mix test`) and its headless Chromium scripts. `permissions.ask` keeps deploys,
+  secrets, `fly ssh`, release functions and live-data writes prompting. Raw `curl`
+  against a live site is not on the list. The template commits its file first; the
+  shape reaches every site as a shared change ("Shared changes", below).
+- **Claude threads use the connector.** Once a site's connector switch is on and its
+  `/mcp` address is added as a custom connector on Sean's Claude account, a thread uses
+  that site through MCP as a paired agent, with the same pairing, refusals and rate
+  limits as any other agent and no extra access. Until then a thread asks the Mac
+  session to run the check and reports what ran; it never borrows a person's cookies
+  or reaches for `curl`.
+- **The report.** Every live check names the surface it used (CLI, WebMCP or MCP), the
+  agent it ran as (`type#N`), the live commit and the result.
+
 ## The golden baseline is ash-template (founder rule, 13 Oct 2026)
 
 Sean, 13 Oct 2026, verbatim: "I want all other agent threads to instead be matching

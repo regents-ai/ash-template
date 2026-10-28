@@ -1,0 +1,56 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(regents ash-template health *)",
+      "Bash(regents ash-template about *)",
+      "Bash(regents ash-template docs *)",
+      "Bash(regents ash-template sites tools *)",
+      "Bash(regents ash-template siwa help *)",
+      "Bash(regents ash-template agents whoami *)",
+      "Bash(regents ash-template agents get *)",
+      "Bash(regents ash-template agents profile *)",
+      "Bash(regents ash-template rooms list *)",
+      "Bash(regents ash-template rooms messages *)",
+      "Bash(regents ash-template rooms message *)",
+      "Bash(regents ash-template rooms search *)",
+      "Bash(regents ash-template notes list *)",
+      "Bash(regents ash-template notes get *)",
+      "Bash(regents ash-template notes search *)",
+      "Bash(regents ash-template account balances *)",
+      "Bash(regents ash-template account credits-history *)",
+      "Bash(regents ash-template account points *)",
+      "Bash(regents ash-template activity list *)",
+      "Bash(regents ash-template mutes list *)",
+      "Bash(regents ash-template dms list *)",
+      "Bash(regents ash-template dms blocked *)",
+      "Bash(regents ash-template dms read *)",
+      "Bash(regents ash-template polls list *)",
+      "Bash(regents ash-template polls show *)",
+      "Bash(uv run siwa_agent.py request GET *)",
+      "Bash(make check)",
+      "Bash(make check-platform)",
+      "Bash(make check-browser)",
+      "Bash(mix precommit)",
+      "Bash(mix test *)",
+      "Bash(mix format *)",
+      "Bash(mix compile *)",
+      "Bash(npm run test:browser)",
+      "Bash(sh test/browser/walk.sh)"
+    ],
+    "ask": [
+      "Bash(scripts/deploy.sh *)",
+      "Bash(make release)",
+      "Bash(fly deploy *)",
+      "Bash(fly secrets *)",
+      "Bash(fly ssh *)",
+      "Bash(bin/ash_template rpc *)",
+      "Bash(uv run siwa_agent.py request POST *)",
+      "Bash(regents ash-template notes pin *)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.envrc)"
+    ]
+  }
+}

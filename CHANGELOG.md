@@ -4675,3 +4675,16 @@ An adversarial review of the two commits above found five things, all fixed here
   `render_async`'s default tenth of a second. On a busy machine it failed about one run
   in three on main and on live v126 alike, with nothing wrong in the panel; eight runs
   in a row succeed with the longer wait.
+
+## 2026-10-28 — Live checks run the way an agent does
+
+- `skills/regent-workflow` gains "Live checks", signed off by Sean at 15:41Z: a live site
+  is checked through the CLI as a paired agent and through WebMCP in headless Chromium,
+  never with raw `curl`, and every report names the surface, the agent, the live commit
+  and the result. Claude threads use a site's connector once it is switched on.
+- `.claude/settings.json` is committed so those checks never prompt: the
+  `regents ash-template` read commands, the SIWA client's `GET` requests, `make check`
+  and its parts, `mix test`, `mix format`, `mix compile` and the headless Chromium walk.
+  Deploys, `make release`, secrets, `fly ssh`, release functions, signed `POST`
+  requests and paid pins still ask; `.env`, `.env.local` and `.envrc` are never read.
+  Every site takes the same shape with its own site name.
