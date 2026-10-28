@@ -81,6 +81,21 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 
+## No W-word openings (founder rule, 28 Oct 2026)
+
+Sean, 28 Oct 2026, verbatim: "the entire phase / concept of a phrase starting with a
+'W word' [who what where why when] is now obvious AI writing."
+
+- On every Regent site, CLI and agent guide, a heading, label, tip, link, button, empty
+  state, page title or description, or Markdown bold lead never opens with who, what,
+  where, why or when. Use a plain noun phrase: "Fleet Tools", not "What a fleet can
+  use"; "Cost", not "What it costs"; "Next step", not "What happens next"; "Reason
+  (optional)", not "Why (optional)".
+- W-words in the middle of an ordinary sentence are fine. Code comments and @doc are
+  exempt. Legal pages are versioned and change only on Sean's go.
+- Choose the replacement yourself; never put the wording to Sean. Reviews treat a
+  W-word opening on screen as a defect.
+
 ## Every address has a copy icon (founder rule, 19 Oct 2026)
 
 Sean, 19 Oct 2026, verbatim: "make a standing rule where anywhere an ens name or a

@@ -41,6 +41,11 @@ the detail.
   marks and accents appear on hover and keyboard focus; hover never takes them away.
   Two buttons side by side in a header never look the same: one primary, one secondary
   (STYLE.md, "Shape and spacing").
+- **No W-word openings** (founder, 2026-10-28): a heading, label, tip, link, button,
+  empty state, page title or description, or bold lead never opens with who, what,
+  where, why or when; it reads as AI writing. Use a plain noun phrase: "Fleet Tools",
+  not "What a fleet can use"; "Permissions", not "Who may do what". W-words mid-sentence
+  are fine; code comments and @doc are exempt. See regent-workflow.
 
 Every page with the side panel is a `ShellLive` action in `live_session :product_shell`;
 a page never draws the shell itself, or signed in it shows half a side panel.

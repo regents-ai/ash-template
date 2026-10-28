@@ -4482,3 +4482,10 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
 - The Regent workflow skill now says every design, layout or animation task follows the
   stacked design language (the Layers section of the design system's style guide) and
   loads the vgpu-island and animejs skills.
+
+## 2026-10-28 — No W-word openings in on-screen words
+
+- Regent Workflow and ash-frontend skills: Sean's 28 Oct rule that headings, labels,
+  tips, buttons, empty states and page titles never open with who, what, where, why or
+  when. It had only been written into the local skills checkout; it is now on main for
+  every session.
