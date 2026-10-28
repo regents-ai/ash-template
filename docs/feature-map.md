@@ -113,6 +113,33 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | The account menu shows at most three agents: the most recently active first, then those never active (which say "No activity yet") or not yet read, newest paired first | `platform/test/ash_template_web/menu_agents_test.exs` (property test); `platform/test/browser/account_menu.spec.ts`, on the four agents `platform/test/browser/support/sign_in.exs` pairs |
 | Manage beside "Your agents" opens this site's `/account#account-agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/account_menu.spec.ts` |
 
+## Claude connector
+
+Off unless `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is `true`
+([docs/oauth-reference.md](oauth-reference.md)). `platform/test/ash_template_web/claude_connector_test.exs` runs the
+connector through this site's endpoint, router, sign-in and agent records, with the
+hosted signer and the SIWA service stubbed; a row that names only elixir-utils is a
+gap here.
+
+| What | Check |
+| --- | --- |
+| Claude connects at `/mcp`: `initialize` answers in the version it asks for, `notifications/initialized` gets 202, `ping` and `tools/list` answer, with the identity tools and `claude` as the only harness | elixir-utils `mcp_agents/test/regent_mcp_agents/plug_test.exs`; gap: not run against the template's router, endpoint and sign-in |
+| A request to `/mcp` without a live token gets 401 with the challenge that starts sign-in; a GET gets 405; the address is 404 while the switch is off | same; `platform/test/ash_template_web/claude_connector_test.exs` (404 and the sign-in routes not found while off; 401 with the challenge after a disconnect); gap: the GET is not run against the template |
+| A disconnected (revoked) app's token is refused at `/mcp` at once, and its refresh token with it | `platform/test/ash_template_web/claude_connector_test.exs` (disconnect from Connected apps); elixir-utils `oauth/test/regent_oauth/hashed_tokens_test.exs` |
+| Each connected account has its own budget at `/mcp`, and each address its ceiling first | elixir-utils `plug_test.exs` (each account's budget); gap: the template's two budgets are not checked |
+| A refused tool call ends with the site's own words | elixir-utils `plug_test.exs`; gap: the template's words are not checked |
+| Consent, the callback, and the host checks (issuer and resource from the site's host; a token bound to another address is refused) | gap: not checked on the template (refresh and disconnect from Connected apps are, in `platform/test/ash_template_web/claude_connector_test.exs`); the 14 and 15 October local exercises in the OAuth reference predate the connector |
+| Tokens are stored only as their hashes; the migration hashes the template's existing rows in place and their apps keep working | elixir-utils `oauth/test/regent_oauth/migration_v2_test.exs`; gap: the template's migration (`20261028120000_oauth_connector_tokens`) has not run on a scratch database with existing rows |
+| The boot stops with the switch on and no well-formed `SIWA_HOSTED_SIGNING_KEY`, naming the setting | gap: not checked |
+| Claude's guide, its skill, its line on `/agents` and in the sitemap, the `/agents.md` paragraph and the `/llms.txt` line exist only while the switch is on | gap: not checked with the switch on; the walk and `feature_map_test.exs` run with it off |
+| `pair_identity` pairs one ordinary agent of the authorizing account, as the hosted wallet, from that account's own code only; the signed POST is verified with its exact body | `platform/test/ash_template_web/claude_connector_test.exs`; elixir-utils `mcp_agents/test/regent_mcp_agents/hosted_identity_test.exs` |
+| The hosted signer is asked with the site's own key, for the account's one identity, and signs only `whoami`, `me` and `pair`; the connection's Bearer token never leaves the site | `platform/test/ash_template_web/claude_connector_test.exs`; elixir-utils `hosted_identity_test.exs` |
+| Connecting again or refreshing keeps the one identity and the one agent | `platform/test/ash_template_web/claude_connector_test.exs`; elixir-utils `hosted_identity_test.exs` |
+| Only a check-in moves when the agent was last in touch: the handshake, ping, a refresh, `get_identity` and `register_identity` leave it | `platform/test/ash_template_web/claude_connector_test.exs`; elixir-utils `hosted_identity_test.exs` |
+| Unpairing on the Account page holds: the connection's check-in is refused and pairs nothing again | `platform/test/ash_template_web/claude_connector_test.exs`; elixir-utils `hosted_identity_test.exs` |
+| A check-in from a scheduled Claude task | gap: not tried |
+| Claude is offered in the pairing box and accepted by the pair request only while the switch is on; with it off an agent's sign-in and pairing work as before | `platform/test/ash_template_web/claude_connector_test.exs` (off: no Claude in the box, a signed Claude pairing refused, a Codex pairing accepted); elixir-utils `ash_components/agents/test/regent_agents/hosted_pairing_test.exs`; gap: the box is not drawn with the switch on |
+
 ## Visit lines
 
 | What | Check |

@@ -52,7 +52,7 @@ Every operation, who may run it, the browser tool, command and other surfaces th
 
 {{tools}}
 
-Ash Template does not offer a hosted MCP endpoint.
+{{hosted_mcp}}
 
 {{showcase}}
 

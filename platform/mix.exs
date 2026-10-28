@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "9da44bdc3c3fb6d62493f8cd8eabf066529fe5df"
+  @elixir_utils_ref "aa5512f4f332a0dd57f6b9829ba13cc1b441de2c"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "99c99d1474bc8850c15276747aa5ca77a84dc4d7"
 
@@ -39,7 +39,12 @@ defmodule AshTemplate.MixProject do
 
   defp deps do
     [
-      {:regent_oauth, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth"},
+      # regent_mcp_agents names regent_oauth, regent_agents and regent_agent_access
+      # by sibling paths; these pins replace them.
+      {:regent_oauth,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth", override: true},
+      # The Claude connector's MCP address at /mcp (RegentMCPAgents.Plug).
+      {:regent_mcp_agents, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_agents"},
       {:lumis, "~> 0.1"},
       {:req_llm, "~> 1.18"},
       {:castore, "~> 1.0"},
@@ -73,7 +78,8 @@ defmodule AshTemplate.MixProject do
       {:regent_agents,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/agents", override: true},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
-      {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
+      {:regent_agent_access,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access", override: true},
       # regent_identity and regent_agents name regent_format by path; this pin replaces it.
       {:regent_format,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format", override: true},
@@ -134,6 +140,7 @@ defmodule AshTemplate.MixProject do
       {_, root} ->
         paths = %{
           regent_oauth: "oauth",
+          regent_mcp_agents: "mcp_agents",
           regent_agents: "ash_components/agents",
           regent_identity: "ash_components/identity",
           regent_points: "points",

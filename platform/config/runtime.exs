@@ -1,9 +1,5 @@
 import Config
 
-# Reference remains off until the consuming site authorizes release and setup.
-config :ash_template, AshTemplate.OAuth,
-  enabled?: System.get_env("ASH_TEMPLATE_OAUTH_ENABLED") == "true"
-
 require Logger
 
 # Tests sign in to their own app id (config/test.exs), whatever the shell sets.
@@ -84,9 +80,60 @@ end
 
 # Agents' signed requests are checked by this sign-in service instead, such as one
 # running on this machine.
-if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do
+broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL")
+
+if broker_url do
   config :regent_agents, :siwa, url: broker_url, audience: "ash-template"
 end
+
+# The Claude connector, behind one switch (AshTemplate.OAuth.enabled?/0): its
+# sign-in under /oauth and /.well-known/oauth-*, its MCP address at /mcp
+# (RegentMCPAgents.Plug), Claude in the pairing box and the Claude guide at
+# /agents/claude, which /agents, the sitemap, /llms.txt and /agents.md then name.
+# Anything but "true" leaves all of it off. Switch it on only after the
+# migrations have run. The connector's identities are held by the same sign-in
+# service, asked with this site's own key there.
+claude_connector? = System.get_env("ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED") == "true"
+hosted_signing_key = System.get_env("SIWA_HOSTED_SIGNING_KEY")
+
+if claude_connector? and
+     not (is_binary(hosted_signing_key) and
+            Regex.match?(~r/\A[A-Za-z0-9_-]{32,}\z/, hosted_signing_key)) do
+  raise "ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED is true, so SIWA_HOSTED_SIGNING_KEY must be " <>
+          "this site's hosted signing key from the sign-in service: 32 or more letters, " <>
+          "digits, - or _"
+end
+
+# The connector's sign-in answers at the site's own address and its MCP address
+# is under it: https://PHX_HOST in production, the endpoint's own address
+# elsewhere. Each code and token has these written on it as it is issued, and one
+# whose values differ from the running site's is refused (docs/oauth-reference.md).
+site_url =
+  if config_env() == :prod do
+    case String.trim(System.get_env("PHX_HOST", "")) do
+      "" -> nil
+      host -> "https://" <> host
+    end
+  else
+    url = Application.fetch_env!(:ash_template, AshTemplateWeb.Endpoint)[:url]
+    URI.to_string(%URI{scheme: url[:scheme] || "http", host: url[:host], port: url[:port]})
+  end
+
+config :ash_template, AshTemplate.OAuth,
+  enabled?: claude_connector?,
+  issuer: site_url,
+  resource: site_url && site_url <> "/mcp"
+
+config :regent_mcp_agents, :config,
+  enabled?: claude_connector?,
+  hosted_signer: [
+    base_url: broker_url || Application.fetch_env!(:regent_agents, :siwa)[:url],
+    key: hosted_signing_key
+  ]
+
+# Claude is offered in the pairing box, and accepted by the pair request, only
+# while its connector is on.
+config :regent_agents, hosted_pairing: if(claude_connector?, do: [:claude], else: [])
 
 # This site's own key for reading what paired agents have done from the sign-in
 # service (RegentAgents.Activity).
