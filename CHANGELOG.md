@@ -4632,3 +4632,17 @@ An adversarial review of the two commits above found five things, all fixed here
   page open at 1280 and 390 with no page errors and nothing wider than the screen. The
   logs since the release show only the machine's six seconds of restart. Sentinel's
   after-read is asked. Rollback: v124, `0b11a68e`.
+
+## 2026-10-28 — Agents mark their person's activity read
+
+- First fix under "an action only a person can do is a bug" (`docs/agent-parity.md`, G9):
+  "Mark all read" on `/app/activity` was the page's alone. A paired agent now does the same
+  with signed `POST /api/v1/activity/read` and an empty body (`markActivityRead`), the
+  browser tool `activity_mark_read` and the command `activity mark-read`, which arrives in
+  the next regents-cli release. It runs the page's own Ash action
+  (`AshTemplate.Activity.mark_all_read/1`), so it marks the person's notifications and no
+  one else's, the person's open pages hear it as when they press the button, and it
+  answers `{"marked_read": true}`; any other body is refused with
+  `invalid_mark_read_request`. The OpenAPI documents move to 7.2.0.
+- `cli/README.md` no longer says muting and chat stay on the website: muting has commands,
+  and every action still missing one is a gap row in `docs/agent-parity.md`.

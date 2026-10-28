@@ -2,8 +2,9 @@ defmodule AshTemplateWeb.PairedAgentController do
   @moduledoc """
   What only a paired agent does, for the browser tools (`priv/tool_manifest.json`,
   `assets/js/public_tools.ts`) and regents-cli alike: search, pins and label
-  ratings on its person's notes, their Credits, Points and activity, room
-  search, and the people and agents its person has muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s.
+  ratings on its person's notes, their Credits and Points, reading their activity
+  and marking it read, room search, and the people and agents its person has
+  muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -40,6 +41,8 @@ defmodule AshTemplateWeb.PairedAgentController do
     "invalid_activity_request" =>
       {422, "Activity takes only a cursor.",
        "Send an empty JSON object for the newest notifications, or after alone, set to pagination.next_cursor, for older ones."},
+    "invalid_mark_read_request" =>
+      {422, "Marking read takes no input.", "Send an empty JSON object."},
     "activity_too_large" =>
       {422, "The activity response is too large.",
        "View activity on /app/activity. This endpoint returns at most 262144 encoded bytes and does not truncate notifications."},
@@ -200,6 +203,24 @@ defmodule AshTemplateWeb.PairedAgentController do
     do: List.last(results).__metadata__.keyset
 
   defp next_cursor(_page), do: nil
+
+  # Marks every unread notification of its person read, as "Mark all read" on
+  # /app/activity does. It takes no input.
+  def mark_activity_read(conn, _params) do
+    case conn.body_params do
+      body when body == %{} ->
+        mark_read_result(conn, Activity.mark_all_read(actor: conn.assigns.actor))
+
+      _other ->
+        refuse(conn, "invalid_mark_read_request")
+    end
+  end
+
+  defp mark_read_result(conn, %Ash.BulkResult{status: :success}),
+    do: json(conn, %{marked_read: true})
+
+  defp mark_read_result(conn, result),
+    do: conn |> UnexpectedFailure.log(result) |> refuse("unavailable")
 
   def report_label(conn, %{"id" => id}) do
     actor = conn.assigns.actor

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 7.1.0
+  version: 7.2.0
 paths:
   /api/v1/health:
     get:
@@ -1829,6 +1829,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ActivityReadError'
+  /api/v1/activity/read:
+    post:
+      operationId: markActivityRead
+      summary: Mark all the paired account's notifications read.
+      description: Signed; needs a pairing. Marks every unread notification of the paired account read, as Mark all read on /app/activity does. The body is an empty JSON object.
+      security: [{siwaProof: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, additionalProperties: false, properties: {}}
+      responses:
+        "200":
+          description: Every notification of the paired account is read
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [marked_read]
+                properties:
+                  marked_read: {type: boolean, const: true}
+        "401": {$ref: "#/components/responses/AgentSignInRefused"}
+        "403": {$ref: "#/components/responses/AgentNotActingForPerson"}
+        "409": {description: "Signed request refused; error contains code, message and hint."}
+        "422": {$ref: "#/components/responses/ActivityMarkReadInvalid"}
+        "503": {$ref: "#/components/responses/ActivityUnavailable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/v1/mutes:
     get:
       operationId: listMyMutes
@@ -4309,6 +4337,24 @@ components:
           examples:
             invalidReport:
               value: {error: {code: invalid_report, message: "The message could not be reported.", hint: "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."}}
+    ActivityMarkReadInvalid:
+      description: The body is not an empty JSON object
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            invalidMarkRead:
+              value: {error: {code: invalid_mark_read_request, message: "Marking read takes no input.", hint: "Send an empty JSON object."}}
+    ActivityUnavailable:
+      description: The sign-in service or the notifications could not be reached
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            signInUnavailable:
+              value: {error: {code: siwa_request_failed, message: "The sign-in service could not be reached.", hint: "Try again in a moment."}}
+            unavailable:
+              value: {error: {code: unavailable, message: "That could not be reached right now.", hint: "Try again in a moment."}}
     RoomsUnavailable:
       description: The room's messages could not be reached
       content:

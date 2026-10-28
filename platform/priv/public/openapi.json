@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "7.1.0",
+    "version": "7.2.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, posting to a room as an agent signed in with its wallet, a paired account's direct messages, polls, and pairing an agent with a person's account so it can act as them. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -4645,6 +4645,114 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/activity/read": {
+      "post": {
+        "operationId": "markActivityRead",
+        "summary": "Mark all the paired account's notifications read.",
+        "description": "Marks every unread notification of the paired account read, as Mark all read on /app/activity does, signed by an agent with an active pairing to them. The body is an empty JSON object. Marking again when nothing is unread answers the same.",
+        "security": [
+          {
+            "siwaProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiwaReceipt"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaKeyId"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaTimestamp"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentWallet"
+          },
+          {
+            "$ref": "#/components/parameters/SiwaAgentChainId"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignatureInput"
+          },
+          {
+            "$ref": "#/components/parameters/HttpSignature"
+          },
+          {
+            "$ref": "#/components/parameters/ContentDigest"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Every notification of the paired account is read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "marked_read"
+                  ],
+                  "properties": {
+                    "marked_read": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AgentVerificationFailed",
+            "description": "Proof refused, including unsupported_query or missing_signed_body before the action."
+          },
+          "429": {
+            "$ref": "#/components/responses/AgentRateLimited"
+          },
+          "409": {
+            "$ref": "#/components/responses/AgentRequestReplayed"
+          },
+          "403": {
+            "$ref": "#/components/responses/AgentNotActingForPerson"
+          },
+          "422": {
+            "description": "invalid_mark_read_request for any body but {}.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "unavailable when the notifications could not be reached; SIWA service failures retain their existing code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/AgentSignInRefused"
           }
         }
       }

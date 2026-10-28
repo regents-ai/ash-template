@@ -59,10 +59,11 @@ elixir-utils commit `platform/mix.exs` pins contains the newest change to
 three places named at its top (its agent guide, the folders holding install lines, its
 `capabilities.json`) and keeps every check the same.
 
-## What does not go here
+## Commands still missing
 
-- Browser sign-in, which has no command.
-- Muting in rooms, and chat with the assistant, which stay on the website.
+An action only a person can do is a bug: everything a person does on the site gets a
+command. [docs/agent-parity.md](../docs/agent-parity.md) lists the actions that have none yet
+and who is building each one, starting with signing in and chat with the assistant.
 
 ## A command that signs
 

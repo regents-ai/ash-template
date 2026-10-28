@@ -775,6 +775,51 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:ok, 51} = AshTemplate.Activity.count_unread(actor: human)
   end
 
+  test "an agent marks all its person's notifications read, and no one else's" do
+    {account, _person, _paired} = paired_person("did:privy:mark-read-test")
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:mark-read-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+
+    Ash.bulk_create!(
+      for(owner <- [account, account, other], do: %{human_account_id: owner.id, title: "Notice", path: "/notes"}),
+      AshTemplate.Activity.Notification,
+      :notify,
+      actor: %AshTemplate.Actors.System{}
+    )
+
+    for body <- [%{all: true}, %{after: "x"}, []] do
+      assert error_code(request(:post, "/api/v1/activity/read", Jason.encode!(body))) ==
+               "invalid_mark_read_request"
+    end
+
+    unread = fn owner ->
+      {:ok, count} =
+        AshTemplate.Activity.count_unread(actor: AshTemplate.Actors.Human.for_account(owner))
+
+      count
+    end
+
+    assert {unread.(account), unread.(other)} == {2, 1}
+
+    # The person's open pages hear it, as when they press Mark all read.
+    Phoenix.PubSub.subscribe(
+      AshTemplate.PubSub,
+      AshTemplate.Activity.Notification.topic(account.id)
+    )
+
+    for _twice <- 1..2 do
+      marked = request(:post, "/api/v1/activity/read", "{}")
+      assert marked.status == 200, marked.resp_body
+      assert Jason.decode!(marked.resp_body) == %{"marked_read" => true}
+    end
+
+    assert {unread.(account), unread.(other)} == {0, 1}
+    assert_receive %{event: "mark_read"}
+  end
+
   defp paired_person(privy_user_id) do
     {:ok, account, []} =
       VerifiedSession.establish(%RegentPrivy.Session{

@@ -478,6 +478,16 @@
       "cli_release": "1.10.16"
     },
     {
+      "operation": "markActivityRead",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/app/activity",
+      "may": "Mark your activity read",
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "listMyMutes",
       "effect": "read",
       "authority": "paired_agent",

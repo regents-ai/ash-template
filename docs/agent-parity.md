@@ -69,7 +69,7 @@ first.
 | Direct messages: list, open, read, send, block, unblock | `/dms` | `dms_*` | — | `dms *` | no | G5 |
 | Polls: list, read, start, vote, end | `/polls` | `polls_*` | — | `polls *` | no | G5 |
 | Notifications: read | `/app/activity` | `activity_list` | — | `activity list` | no | G5 |
-| Notifications: mark all read | `/app/activity` | — | — | — | no | G9 |
+| Notifications: mark all read | `/app/activity` | `activity_mark_read` | — | `activity mark-read` (next release) | no | G5 |
 | Search notes and messages together | page search box | `notes_search` and `rooms_search` separately | — | `notes search`, `rooms search` | no | — |
 | Chat with the site's assistant | `/chat` | — | — | — | no | G10 |
 
@@ -108,6 +108,7 @@ first.
   allowance opens only to the owner. Protected (money, wallet): waits for Sean's go.
 - **G8. Credits admin.** Give and refund are for the site's team. An agent on the
   team needs them through the same four surfaces. Protected (money); after G1.
-- **G9. Mark all notifications read.** Ordinary; built first as the reference fix
-  (WebMCP `activity_mark_read`, CLI `activity mark-read`, OpenAPI, capabilities).
+- **G9. Mark all notifications read.** Closed on WebMCP and the CLI 28 Oct
+  (`activity_mark_read`, `activity mark-read`, `POST /api/v1/activity/read`); hosted MCP
+  follows with G5.
 - **G10. Chat with the site's assistant.** Page only. Ordinary; tool after G9.

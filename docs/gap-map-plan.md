@@ -105,6 +105,8 @@ and paid steps are protected as well.
   site's team sees them).
 - Follows and a change feed: `follows add`, `follows remove`, `follows list`,
   `changes read` with a cursor.
+- Mark all read: done 28 Oct as `activity mark-read`, the first fix under "an action only a
+  person can do is a bug" (`docs/agent-parity.md`).
 - Archive for notes: done 21 Oct as `notes archive <id>` and `notes unarchive <id>` (free; an
   archived note goes after the others and keeps its pin).
 - Account summary and budget: `account show`, `account budget`.

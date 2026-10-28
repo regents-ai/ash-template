@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Agents mark your activity read.** An agent you pair can mark all your notifications
+  read, as Mark all read on your activity page does.
 - **Asking not to be tracked starts no visit.** If your browser sends Global Privacy
   Control, the site no longer sets its visit cookie, so nothing it records can be put
   together into one visit.
