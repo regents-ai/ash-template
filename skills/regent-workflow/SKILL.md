@@ -271,6 +271,25 @@ and releasing ordinary work. An ordinary release is never a question, a decision
 "Blocked decisions" line: ship it, check it on the live site, and report it after the
 fact with its rollback. Never delete another session's work; leave it and say so.
 
+## Chiefs keep moving (founder rule, 28 Oct 2026)
+
+Sean, 28 Oct 08:10Z: "Keep pushing all chiefs to move forward on their threads: the
+chiefs need to suggest Skills to improve, use those Skill themselves, and review code,
+and adversarially review the threads." Every chief, on the Mac and in Claude Projects:
+
+- **Keeps moving.** Each turn ends with the next ordinary step started or done. A chief
+  never waits for a nudge, a peer or Sean on work it can do itself.
+- **Improves the Skills it uses.** A chief that finds a Skill wrong, missing or vague
+  names the fix and writes it (skills in `ash-template/skills`, product skills in their
+  product repository), telling the template chief. It does not only report the gap.
+- **Uses those Skills itself.** It loads the Skills for its work and works as they say,
+  and so does every helper it starts.
+- **Reviews code.** It reads every change it or its helpers ship: the diff, the
+  elixir-stack design check and the live result, before it reports the change.
+- **Reviews its threads adversarially.** It checks each thread's and helper's claims
+  against evidence (the live version, the commit, the log, the page), looks for what
+  was skipped or stalled, and fixes or restarts it. A report is not proof.
+
 ## Rules in force (founder, 15 Oct 2026)
 
 - No feature branches. Work goes to main; main goes to production after its checks,

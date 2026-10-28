@@ -4533,3 +4533,9 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   Sean's rule names SIWA, so besides the newest regents-cli it now also fails until the
   pinned elixir-utils commit contains the newest change to the SIWA library
   (`siwa/siwa-elixir/apps/siwa`, today `48a2e1c`). The template's pin `7794682` does.
+
+## 2026-10-28 — Chiefs keep moving, improve Skills and review their threads
+
+- The Regent workflow skill now says every chief keeps its threads moving, improves the
+  Skills it uses and uses them itself, reviews the code it ships, and checks each
+  thread's claims against evidence.
