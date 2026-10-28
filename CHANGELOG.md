@@ -4966,3 +4966,17 @@ An adversarial review of the two commits above found five things, all fixed here
   at compile time; the compile-connected limit is 41 (the tools list and the input check).
   `Capabilities.sign_in_needed?/1` and `proof_headers/0`, and the context keys nothing
   read, are gone.
+
+## 2026-10-28 — Hosted MCP: identity tools as listed, room read input, connector budget
+
+- A tool listed with no inputs (`register_identity`, `get_identity`, `check_in`) runs
+  when called as its schema says, with empty `arguments` or none: the input check reads
+  a missing `input` as AshAi does. Before this, Claude's first call was refused.
+- `rooms_messages` answers `invalid_input` for input that is not an object or names
+  something the read does not take, where it answered `invalid_cursor`. A bad `after`
+  still answers `invalid_cursor`.
+- `/mcp` requests with a Bearer token share 600 a minute per address
+  (`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
+  servers; other requests keep 120 a minute per address. Each connected account keeps
+  its own 120 a minute.
+- The batch test sends a JSON array, as clients do.

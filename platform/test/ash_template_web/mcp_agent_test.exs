@@ -202,7 +202,7 @@ defmodule AshTemplateWeb.McpAgentTest do
       call("rooms_post", %{room: "general", body: "Hello", operation_id: Ecto.UUID.generate()})
 
     batch =
-      mcp(%{"_json" => [call("rooms_messages", %{room: "general"}), post]},
+      mcp([call("rooms_messages", %{room: "general"}), post],
         from: from,
         proof: agent
       )
@@ -242,7 +242,11 @@ defmodule AshTemplateWeb.McpAgentTest do
            }, "invalid_message"},
           {"rooms_post", %{room: "general", body: "Hello", operation_id: "not-a-uuid"},
            "invalid_message"},
-          {"rooms_post", %{room: "general", body: "Hello"}, "invalid_message"}
+          {"rooms_post", %{room: "general", body: "Hello"}, "invalid_message"},
+          {"rooms_messages", %{room: "general", after: 5}, "invalid_cursor"},
+          {"rooms_messages", %{room: "general", foo: 1}, "invalid_input"},
+          {"rooms_messages", "general", "invalid_input"},
+          {"rooms_messages", %{}, "room_not_found"}
         ] do
       assert %{"isError" => true, "content" => [%{"text" => text}]} =
                result(mcp(call(name, input), from: from, proof: agent))
@@ -301,6 +305,14 @@ defmodule AshTemplateWeb.McpAgentTest do
     statuses = for _ <- 1..121, do: mcp(rpc("tools/list"), from: from).status
     assert Enum.take(statuses, 120) |> Enum.uniq() == [401]
     assert List.last(statuses) == 429
+  end
+
+  test "requests with a token share 600 a minute from one address, Claude's servers among them",
+       %{from: from} do
+    statuses = for _ <- 1..601, do: mcp(rpc("tools/list"), from: from, token: "not-a-token").status
+    assert Enum.take(statuses, 600) |> Enum.uniq() == [401]
+    assert List.last(statuses) == 429
+    assert mcp(rpc("tools/list"), from: from).status == 401
   end
 
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",

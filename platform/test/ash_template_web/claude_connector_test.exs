@@ -192,7 +192,11 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert %{"isError" => false} = tool(token, "register_identity")
       assert %{"isError" => false} = tool(token, "get_identity")
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
-      assert %{"isError" => false} = tool(token, "check_in")
+
+      # A call may also leave arguments out.
+      assert %{"isError" => false} =
+               json(post_mcp(rpc("tools/call", %{"name" => "check_in"}), token))["result"]
+
       assert %{"error" => _} = json(post_mcp(rpc("tools/call", %{"name" => "post"}), token))
 
       key = RegentMCPAgents.identity_key("ash-template", subject)
@@ -437,8 +441,13 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   # AshAi takes a tool's arguments as its action's input.
-  defp tool(token, name, arguments \\ %{}) do
-    call = rpc("tools/call", %{"name" => name, "arguments" => %{"input" => arguments}})
+  # A call as tools/list lists the tool: one with no inputs is sent empty
+  # arguments; one with inputs takes them under `input`.
+  defp tool(token, name),
+    do: json(post_mcp(rpc("tools/call", %{"name" => name, "arguments" => %{}}), token))["result"]
+
+  defp tool(token, name, input) do
+    call = rpc("tools/call", %{"name" => name, "arguments" => %{"input" => input}})
     json(post_mcp(call, token))["result"]
   end
 

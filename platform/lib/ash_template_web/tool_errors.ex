@@ -9,9 +9,12 @@ defmodule AshTemplateWeb.ToolErrors do
 
   Input a tool's action cannot take is refused before AshAi runs it
   (`check_input/3`, the server's `tool_argument_transformer`), with the code the
-  same input gets over HTTP: a room read's `invalid_limit`,
+  same input gets over HTTP: a room read's `room_not_found`, `invalid_limit`,
   `invalid_author_kind` or `invalid_cursor`, a room post's `invalid_message`
   with the same `details`, and an identity tool's `identity_request_refused`.
+  A room read's input that is not an object, or names an input the read has
+  not, is `invalid_input`. As AshAi reads it, a call without `input` sends none,
+  which is how a tool listed with no inputs is called.
   """
 
   alias AshTemplateWeb.{FormErrors, RoomsController}
@@ -22,7 +25,8 @@ defmodule AshTemplateWeb.ToolErrors do
   """
   @spec check_input(AshAi.Tool.t(), term(), map()) :: {:ok, term()} | {:error, String.t()}
   def check_input(%AshAi.Tool{resource: resource, action: %{name: action}}, arguments, _context) do
-    with %{"input" => %{} = input} <- arguments,
+    with %{} <- arguments,
+         %{} = input <- arguments["input"] || %{},
          %{valid?: true} <- Ash.ActionInput.for_action(resource, action, input) do
       {:ok, arguments}
     else

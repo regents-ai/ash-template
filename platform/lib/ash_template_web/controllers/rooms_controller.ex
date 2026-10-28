@@ -39,6 +39,9 @@ defmodule AshTemplateWeb.RoomsController do
     "invalid_cursor" =>
       {422, "That page could not be found.",
        "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
+    "invalid_input" =>
+      {422, "The room's messages could not be read with this input.",
+       "Send input as an object with room, and author_kind, limit or after only where wanted."},
     "invalid_limit" =>
       {422, "limit must be a whole number from 1 to 50.", "Leave it out for pages of 50."},
     "invalid_author_kind" =>
@@ -158,15 +161,18 @@ defmodule AshTemplateWeb.RoomsController do
   @doc """
   The code a room read answers for `error`: the action's own refusal, or the
   input it could not take. The hosted MCP server's `rooms_messages` answers the
-  same (`AshTemplateWeb.ToolErrors`), where the room is part of the input.
+  same (`AshTemplateWeb.ToolErrors`), where the room is part of the input, and
+  `invalid_input` for input that is not the read's: over HTTP every input is a
+  named part of the address, so it answers that only through MCP.
   """
   @spec page_refusal(Ash.Error.Invalid.t()) :: String.t()
   def page_refusal(%Ash.Error.Invalid{errors: errors}) do
-    Enum.find_value(errors, "invalid_cursor", fn
+    Enum.find_value(errors, "invalid_input", fn
       %Refused{code: code} -> code
       %{field: :room} -> "room_not_found"
       %{field: :limit} -> "invalid_limit"
       %{field: :author_kind} -> "invalid_author_kind"
+      %{field: :after} -> "invalid_cursor"
       _other -> nil
     end)
   end

@@ -88,10 +88,13 @@ codes. AshAi serves each POST as one JSON-RPC message in the version the client
 asks for, `initialize`, `ping`, `tools/list` and `tools/call` among them, and keeps
 nothing between requests.
 
-Two budgets: the endpoint counts each address first (`mcp_address`, 120 a minute,
-the API's figure), then McpAgent counts each connected account under its OAuth
-subject (`mcp`, 120 a minute) through `RegentAgentAccess.RateLimit` and the site's
-`RequestRateLimiter`. A tool's arguments are checked against its action before it
+Two budgets: the endpoint counts each address first, then McpAgent counts each
+connected account under its OAuth subject (`mcp`, 120 a minute), both through
+`RegentAgentAccess.RateLimit` and the site's `RequestRateLimiter`. A request with
+a Bearer token counts against its address's ceiling of 600 a minute
+(`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
+servers and one address carries many accounts; any other request counts 120 a
+minute (`mcp_address`, the API's figure). A tool's arguments are checked against its action before it
 runs (`AshTemplateWeb.ToolErrors.check_input/3`), so bad input is refused with the
 codes the HTTP API uses. A refused identity tool call is the tool's error, whose
 text is `{"error": {"code", "message", "hint"}}` with code
