@@ -106,7 +106,7 @@ defmodule AshTemplate.MixProject do
       {:decimal, "== 3.2.0"},
       {:jason, "~> 1.2"},
       {:req, "== 0.7.5"},
-      {:bandit, "~> 1.14"},
+      {:bandit, "~> 1.14 and >= 1.14.1"},
       {:credo, "~> 1.7", only: :dev, runtime: false},
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
