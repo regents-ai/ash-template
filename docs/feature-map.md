@@ -40,6 +40,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | What | Check |
 | --- | --- |
 | Sign in, and sign in again with a wallet added; sign in with email and keep one account | `platform/test/ash_template/accounts/verified_session_test.exs` |
+| Sign in, refresh, sign in as someone else and sign out each run in a transaction Ash started, so none leaves an unsent notification; a lineage whose count ran out is refused and stays signed out | `platform/test/ash_template/accounts/session_authority_test.exs` (the test settings raise on a missed notification) |
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
 | Sign out lets go of every wallet Privy holds before Privy signs out, even one that refuses; signed in, a wallet app left from before is never the account's wallet | `platform/assets/test/privy_bridge.test.ts` |
 | After a refused sign-in the page reloads once: a page that has begun to leave never asks the server for a session behind the page replacing it | `platform/assets/test/session_leaving.test.ts` |

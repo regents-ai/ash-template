@@ -4410,3 +4410,19 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   home page, Account, Notes and llms.txt answer 200 at 1280 and 390 with no page errors and no
   sideways scroll; Grok Bot's skill and the pairing line both name `/workspace/.siwa-agent`;
   the live stylesheet carries the address letter reset; the health check passes.
+
+## 2026-10-27 — Sign-in stops missing notifications
+
+- `AshTemplate.Accounts.SessionAuthority` runs sign-in, refresh, switching person and
+  signing out in `Ash.transact/2` instead of `Repo.transaction/1`, so the updates
+  inside send their notifications once the transaction commits instead of logging
+  "Missed 1 notifications". A refused transition still keeps what it wrote (the
+  first row of a new sign-in, and the revocation of a lineage whose count ran out),
+  so its answer leaves the transaction wrapped and the answers callers see are
+  unchanged.
+- The test settings raise on a missed notification
+  (`config :ash, :missed_notifications, :raise`).
+  `platform/test/ash_template/accounts/session_authority_test.exs` walks sign-in,
+  refresh, switching and signing out, and checks a lineage whose count ran out stays
+  signed out; both tests fail against the old transactions. Listed in
+  `docs/feature-map.md`. This changes sign-in, so it waits Sean's go before release.
