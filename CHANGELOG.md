@@ -4548,3 +4548,14 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   the author's conclusion, and every fix made during review or release gets its own review;
   each release ends with its record (health, logs from the release start, record commit,
   Sentinel's after-read, the lanes told). Release checklist renumbered.
+
+## 2026-10-28 — An action only a person can do is a bug
+
+- `skills/regent-workflow/SKILL.md` (Sean, 28 Oct 08:49Z): an agent may own a Privy
+  account, so every action an account's owner can do is open to an agent through the
+  website in a browser, WebMCP, hosted MCP and the regents CLI. Value transfer stays
+  signed by the owner, and an agent owner signs with its own key.
+- `skills/ash-webmcp/SKILL.md`: the agent inventory covers every owner action, with
+  missing surfaces listed as gaps.
+- `docs/agent-parity.md`: one row per action on its four surfaces, audited on
+  `0ae11a7c`, with ten gaps and who closes each.

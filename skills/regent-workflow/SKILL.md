@@ -81,6 +81,35 @@ Apply the same rule in Regents, Autolaunch, Techtree, Patchbay and Keyfleet:
 - Remove existing pending-preservation machinery through scoped product changes;
   do not delete historical database records or change other deployments implicitly.
 
+## An action only a person can do is a bug (founder rule, 28 Oct 2026)
+
+Sean, 28 Oct 2026 08:49Z, verbatim: "this was in keyfleet/ , but it must be a stronger
+rule: 'Taken as a rule: any action only a human can do on keyfleet.ai is a bug'
+prepare for an agent being the owner of a privy address, and so it must be able to
+either 1) browse the website and interact 2) webmcp 3) mcp 4) CLI -- to do things ."
+
+- On all five sites and the template, an action only a person can do is a bug. An
+  agent may own a Privy account itself, so everything an account's owner can do, an
+  agent can do too, through each of four surfaces: the website in a browser, WebMCP,
+  hosted MCP at `/mcp`, and the regents CLI.
+- One operation, four surfaces. Each surface calls the same Ash action with the same
+  inputs, results, words and refusals; none rebuilds the rule. The agent access spec
+  (`handoffs/regents-agent-access-spec-2026-10-28.md` in the project files) sets the
+  identity model: the transport proves who is acting, and model-written arguments
+  never choose the actor.
+- The browser surface counts only when an agent can finish the action in a headless
+  Chromium with its own wallet: no captcha, no step that needs a person's eyes (a
+  picture with no words, a drag with no other way), and every control reachable by
+  its name.
+- Value transfer stays signed by the owner. When the owner is an agent, its own key
+  signs; the site prepares the step and never holds or uses the agent's key.
+- Every action has a row in `docs/agent-parity.md` naming its four surfaces. A new
+  action ships with all four, or its row lists each missing surface as a gap with the
+  lane that closes it. Reviews treat an action with no agent path, or a missing
+  surface with no gap row, as a defect.
+- Protected areas stay protected: parity work on sign-in, wallets and money is built
+  on a side branch and waits for Sean's go like any other protected change.
+
 ## No W-word openings (founder rule, 28 Oct 2026)
 
 Sean, 28 Oct 2026, verbatim: "the entire phase / concept of a phrase starting with a
