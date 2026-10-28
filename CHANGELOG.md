@@ -4900,3 +4900,13 @@ An adversarial review of the two commits above found five things, all fixed here
   connector), pay with Credits' library work (`ff7927c0`) and the help links (`9539469f`);
   its files are the same as `4295e7ce`, where `make check` ran green. Reviewer,
   28 Oct 22:32Z: a re-pin with no other change needs no new review.
+
+## 2026-10-28 — Titles are one or two words
+
+- New founder copy rule beside the W-word one: every heading, eyebrow, tab, column
+  header, `<dt>`, field label, step title and guide heading is one or two words, never a
+  phrase (Sean, 22:34Z: "instead of 'Work that cites it' , write 'Citation'"). Written into
+  `skills/regent-workflow/SKILL.md` and `skills/ash-frontend/SKILL.md`; the counterexample
+  list, 89 real titles from Keyfleet and this template with their replacements, is
+  `skills/regent-workflow/references/short-titles.md`. Skills only; the template's own
+  titles in that list still need their sweep.

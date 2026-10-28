@@ -125,6 +125,34 @@ Sean, 28 Oct 2026, verbatim: "the entire phase / concept of a phrase starting wi
 - Choose the replacement yourself; never put the wording to Sean. Reviews treat a
   W-word opening on screen as a defect.
 
+## Titles are one or two words (founder rule, 28 Oct 2026)
+
+Sean, 28 Oct 2026 22:34Z, verbatim, of the Keyfleet heading "Work that cites it": "a
+title like this is a 100% match for AI writing" and "instead of 'Work that cites it' ,
+write 'Citation'. Always use 1-2 words instead of a phrase for titles".
+
+- On every Regent site, the template, the CLI and every agent guide, a title is one or
+  two words, never a phrase. Titles are page, section, card, panel and dialog headings;
+  eyebrows; tab, filter and menu names; table column headers; `<dt>` terms; field,
+  legend and select labels; disclosure summaries; step titles; and the headings and bold
+  leads of served Markdown.
+- A phrase-shaped title reads as AI writing: a clause ("Work that cites it", "How each
+  Key voted"), a possessive or article lead ("Your person's expectations", "About this
+  Key"), nouns strung with "and" or "in" ("Work and notes", "Keys in this fleet"), a
+  question ("Ready to pay?"), or a label with its explanation after a comma ("Choices,
+  one per line"). Name the thing with a noun: "Citation", "Votes", "Expectations",
+  "About", "Work", "Fleet Keys", "Checkout", "Choices".
+- A proper name counts as one word ("Daily Treasury Slice", "Terms of Use", "Claude
+  Code", "Regents Club"), and so does a unit in brackets ("Daily limit (Credits)").
+- The explanation a long title carried moves to the sentence under it or a tip. Body
+  text, tips and empty-state sentences stay sentences; the W-word rule above still
+  holds for them. Hidden accessible names (`aria-label`), code comments and @doc are
+  exempt. Legal pages change only on Sean's go.
+- [Short titles](references/short-titles.md) lists real counterexamples from the sites
+  and the template, each with its replacement; add new finds there. Choose the words
+  yourself; never put them to Sean. Reviews treat a title of three or more words that
+  is not a proper name as a defect.
+
 ## Every address has a copy icon (founder rule, 19 Oct 2026)
 
 Sean, 19 Oct 2026, verbatim: "make a standing rule where anywhere an ens name or a
