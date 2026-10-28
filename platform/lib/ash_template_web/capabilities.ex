@@ -59,6 +59,19 @@ defmodule AshTemplateWeb.Capabilities do
   unless MapSet.new(@source["operations"], & &1["operation"]) == MapSet.new(Map.keys(openapi)),
     do: raise("priv/capabilities.json must list every OpenAPI operation once")
 
+  # An agent whose browser checks inputs against the schema can prepare only the
+  # operations prepare_agent_request names.
+  prepare = Enum.find(@manifest["tools"], &(&1["name"] == "prepare_agent_request"))
+
+  signed =
+    for %{"authentication" => "siwa_per_request", "name" => name} <- @manifest["tools"], do: name
+
+  unless prepare["input_schema"]["properties"]["operation"]["enum"] == signed,
+    do:
+      raise(
+        "prepare_agent_request in priv/tool_manifest.json must name every signed tool, in order"
+      )
+
   @operations (for row <- @source["operations"] do
                  id = row["operation"]
                  %{http: http, title: title} = openapi[id]

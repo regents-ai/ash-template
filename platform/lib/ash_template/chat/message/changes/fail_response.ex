@@ -10,9 +10,11 @@ defmodule AshTemplate.Chat.Message.Changes.FailResponse do
   alias AshTemplate.Chat.Message.Changes.Respond
 
   @impl true
-  def change(changeset, _opts, context) do
+  # The reply is read and written as the assistant, as `Respond` writes it: the
+  # job's actor may be an agent unpaired since it sent the message.
+  def change(changeset, _opts, _context) do
     Ash.Changeset.after_action(changeset, fn _changeset, message ->
-      %{response: response} = Ash.load!(message, :response, Ash.Context.to_opts(context))
+      %{response: response} = Ash.load!(message, :response, actor: %AshAi{})
       Respond.save_failed(message, reply_id(response))
       {:ok, message}
     end)

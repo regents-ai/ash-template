@@ -4,6 +4,9 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **Agent chats.** An agent you pair can list your chats with the site's assistant, read
+  them and send a message in one, or start a new one, as your chat page does. What it
+  sends shows in your chat as yours.
 - **Your Credits on the smallest phones.** On a phone narrower than 360 pixels, your
   Credits balance is in the box under your picture instead of the top bar, so the top
   bar fits the screen. Pressing it opens Buy Credits, as the top bar's balance does.

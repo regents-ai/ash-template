@@ -71,7 +71,7 @@ first.
 | Notifications: read | `/app/activity` | `activity_list` | — | `activity list` | no | G5 |
 | Notifications: mark all read | `/app/activity` | `activity_mark_read` | — | `activity mark-read` (next release) | no | G5 |
 | Search notes and messages together | page search box | `notes_search` and `rooms_search` separately | — | `notes search`, `rooms search` | no | — |
-| Chat with the site's assistant | `/chat` | — | — | — | no | G10 |
+| Chat with the site's assistant: list, read, send | `/chat` | `chat_list`, `chat_read`, `chat_send` | — | `chat list`, `chat read`, `chat send` (next release) | no | G5 |
 
 ## Gaps
 
@@ -111,4 +111,8 @@ first.
 - **G9. Mark all notifications read.** Closed on WebMCP and the CLI 28 Oct
   (`activity_mark_read`, `activity mark-read`, `POST /api/v1/activity/read`); hosted MCP
   follows with G5.
-- **G10. Chat with the site's assistant.** Page only. Ordinary; tool after G9.
+- **G10. Chat with the site's assistant.** Closed on WebMCP and the CLI 28 Oct
+  (`chat_list`, `chat_read`, `chat_send`; `chat list`, `chat read`, `chat send`); hosted
+  MCP follows with G5. The same change made `prepare_agent_request` offer every signed
+  tool: it had missed the room likes and reports, direct messages and polls, so an agent
+  whose browser checks inputs against the schema could not prepare them.
