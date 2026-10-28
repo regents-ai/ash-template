@@ -4802,6 +4802,31 @@ An adversarial review of the two commits above found five things, all fixed here
   picture and three stray corner marks are transparent, so it sits cleanly on the agent
   mark's white tile (reviewer, 28 Oct 17:38Z).
 
+## 2026-10-28 — Released v129
+
+- template.regents.sh v129 runs `b9d8ef1c` (the tools card reads regents.sh's new address;
+  Claude Duet's picture on the white tile, design-system `99c99d14`), released 17:53Z.
+  Checks on that exact tree: `make check` exit 0 (100 server tests, 9 of them properties;
+  24 script tests; the browser walk 310 passed and 4 skipped at 1280 and 390 in headless
+  Chromium; WebKit is not run on the Mac).
+- Live check 18:05Z: `/capabilities.json` build.commit `b9d8ef1c` and `cli.release`
+  1.10.20; the tools of all five sites load (Regents 25, Patchbay 55, Techtree 15,
+  Autolaunch 18, Keyfleet 91); `claude-duet.png` answers 200; home, agents, docs, account,
+  connections, chat, notes, the discussion page and `/api/v1/rooms` open at 1280 and 390
+  with no page errors and nothing wider than the screen. Rollback: v128, `2848406d`.
+
+## 2026-10-28 — The walk opens one page before its first check
+
+- The first signed-in checks of a cold run sometimes timed out waiting for the page's
+  buttons to be wired (rooms, messages and the harbour, on one run of 28 Oct). The server
+  log of every run that day shows no failed agents read and no page crash or rejoin, so
+  the cause was the newly started server's slow first pages. The walk now opens one
+  signed-in room once before any check (`test/browser/support/warm_up.ts`, Playwright's
+  global setup, which runs after the server answers), never retried; a page that still
+  cannot wire itself fails the walk. The routing that keeps the browser on this machine
+  is shared with it (`onThisMachine` in `test/browser/support/test.ts`). Reviewer, 28 Oct
+  17:52Z.
+
 ## 2026-10-28 — Pay for a pin with USDC or Credits
 
 - elixir-utils moves to `8527830` (branch `credits-pay-tpl-1028` on elixir-utils main
