@@ -4804,7 +4804,7 @@ An adversarial review of the two commits above found five things, all fixed here
 
 ## 2026-10-28 — Agent access: this site's own verify key at the sign-in service
 
-- elixir-utils moves to `dac609d2` (branch `agent-access/site-verify-key-1028`, merged onto
+- elixir-utils moves to `a1b6e5db` (branch `agent-access/site-verify-key-1028`, merged onto
   library main at the joint release). Every signed agent request the site asks the sign-in
   service to check carries the site's own key, `SIWA_SITE_VERIFY_KEY`, which names the
   audience; the `x-siwa-audience` header is gone. Production refuses to start without the
@@ -4815,5 +4815,9 @@ An adversarial review of the two commits above found five things, all fixed here
   that check, so `AgentWallet.accept/3` no longer compares the audience itself.
 - The tests' sign-in service answers only the site's key, so every signed-request test
   also proves the key is sent; with another key 13 of the 14 fail.
+- `GET /api/agents/v1/whoami`'s `agent` also answers `human_backed` and
+  `same_person_agent_count`, as the sign-in service names them on that request, so
+  regents-cli checks a whole sign-in through a site instead of the sign-in service. The
+  person's World ID number is never answered. The OpenAPI documents move to 7.3.0.
 - Releases only in the joint verify-key release with siwa-server, every site, the mobile
   server, regents-cli and Sentinel, after Sean's letters for the secrets and the deploys.
