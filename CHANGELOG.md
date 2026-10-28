@@ -4850,6 +4850,17 @@ An adversarial review of the two commits above found five things, all fixed here
   sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
   `b9d8ef1c`.
 
+
+## 2026-10-28 — Titles are one or two words
+
+- New founder copy rule beside the W-word one: every heading, eyebrow, tab, column
+  header, `<dt>`, field label, step title and guide heading is one or two words, never a
+  phrase (Sean, 22:34Z: "instead of 'Work that cites it' , write 'Citation'"). Written into
+  `skills/regent-workflow/SKILL.md` and `skills/ash-frontend/SKILL.md`; the counterexample
+  list, 89 real titles from Keyfleet and this template with their replacements, is
+  `skills/regent-workflow/references/short-titles.md`. Skills only; the template's own
+  titles in that list still need their sweep.
+
 ## 2026-10-28 — Pay for a pin with USDC or Credits
 
 - elixir-utils moves to `ff7927c` (branch `credits-pay-tpl-1028`: elixir-utils main

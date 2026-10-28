@@ -46,6 +46,13 @@ the detail.
   where, why or when; it reads as AI writing. Use a plain noun phrase: "Fleet Tools",
   not "What a fleet can use"; "Permissions", not "Who may do what". W-words mid-sentence
   are fine; code comments and @doc are exempt. See regent-workflow.
+- **Titles are one or two words** (founder, 2026-10-28): every heading, eyebrow, tab,
+  column header, `<dt>`, field label and step title names the thing with a noun, never a
+  phrase; a phrase-shaped title reads as AI writing. "Citation", not "Work that cites
+  it"; "Votes", not "How each Key voted"; "Choices", not "Choices, one per line". A
+  proper name counts as one word. The explanation moves to the sentence under it. See
+  regent-workflow and its [short titles](../regent-workflow/references/short-titles.md)
+  list.
 
 Every page with the account menu is a `ShellLive` action in `live_session :product_shell`;
 a page never draws the shell itself, or signed in its account menu has no agents.
