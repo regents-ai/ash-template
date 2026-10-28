@@ -4410,3 +4410,19 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   home page, Account, Notes and llms.txt answer 200 at 1280 and 390 with no page errors and no
   sideways scroll; Grok Bot's skill and the pairing line both name `/workspace/.siwa-agent`;
   the live stylesheet carries the address letter reset; the health check passes.
+
+## 2026-10-27 — Motion lab panels take their layers
+
+- The motion lab's sample drawer, sheet, shade, note, Share menu and sparks
+  (`assets/css/pages/animations.css`) take the tip layer instead of their own numbers
+  (30, 60, 65, 70, 80). On a site that shows the lab inside its shell, they now cover
+  the header and sit under the skip link, which a keyboard reaches on top of them.
+  Techtree found the skip link dimmed under the open drawer once it moved to the skip
+  layer. Their shadows are the tip's, which is none.
+- The header and footer lab's sample header sits at the card layer
+  (`assets/css/pages/header_footer_lab.css`), enough to keep its Products menu over
+  the page below it.
+- Checked: a page check with a stand-in header and focused skip link around the lab
+  at 1280 and 390 (drawer over the header, skip link on top for every panel), and the
+  motion, windows, layout and pages walks, 299 steps passed (Chromium; WebKit not run
+  on the Mac).
