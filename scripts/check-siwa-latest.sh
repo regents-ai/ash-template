@@ -16,6 +16,12 @@
 # and curl.
 set -euo pipefail
 
+# Where this site keeps them. A site copying this script sets these three and keeps
+# every check below the same.
+guide=platform/priv/public/agents.md
+install_lines=(platform/priv/public cli)
+capabilities=platform/priv/capabilities.json
+
 pin=$1
 read -r latest wheel < <(curl -fsS https://pypi.org/pypi/regents-cli/json | python3 -I -c '
 import json, sys
@@ -34,19 +40,23 @@ fail() {
 [ "$pin" = "$tag" ] ||
   fail "regents-cli $latest is the newest release: move REGENTS_CLI_REV in the Makefile from $pin to $tag."
 for word in "regents-cli==$latest" "$tag" "$wheel"; do
-  grep -qF "$word" platform/priv/public/agents.md ||
-    fail "regents-cli $latest is the newest release: platform/priv/public/agents.md does not name $word."
+  grep -qF "$word" "$guide" ||
+    fail "regents-cli $latest is the newest release: $guide does not name $word."
 done
-stale=$(grep -rnoE 'regents-cli==[0-9.]+' platform/priv/public cli | grep -vE "==${latest//./\\.}\$" || true)
+stale=$(grep -rnoE 'regents-cli==[0-9]+(\.[0-9]+)*' "${install_lines[@]}" | grep -vE "==${latest//./\\.}\$" || true)
 [ -z "$stale" ] || fail "regents-cli $latest is the newest release: these install lines name another release:
 $stale"
-release=$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["cli"]["release"])' platform/priv/capabilities.json)
+release=$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["cli"]["release"])' "$capabilities")
 [ "$release" = "$latest" ] ||
-  fail "regents-cli $latest is the newest release: platform/priv/capabilities.json names $release as cli.release."
+  fail "regents-cli $latest is the newest release: $capabilities names $release as cli.release."
 
-case $(gh api "repos/regents-ai/elixir-utils/compare/$siwa...$utils" --jq .status) in
-  identical | ahead) ;;
-  *) fail "elixir-utils $siwa is the newest SIWA library change: move @elixir_utils_ref in platform/mix.exs from $utils to a commit that contains it." ;;
-esac
+if [ -z "$utils" ]; then
+  fail "platform/mix.exs has no @elixir_utils_ref \"<40-character commit>\" line to check."
+else
+  case $(gh api "repos/regents-ai/elixir-utils/compare/$siwa...$utils" --jq .status) in
+    identical | ahead) ;;
+    *) fail "elixir-utils $siwa is the newest SIWA library change: move @elixir_utils_ref in platform/mix.exs from $utils to a commit that contains it." ;;
+  esac
+fi
 
 exit "$failed"

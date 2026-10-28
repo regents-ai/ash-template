@@ -4559,3 +4559,32 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   missing surfaces listed as gaps.
 - `docs/agent-parity.md`: one row per action on its four surfaces, audited on
   `0ae11a7c`, with ten gaps and who closes each.
+
+## 2026-10-28 — The SIWA check, after its review
+
+An adversarial review of the two commits above found five things, all fixed here:
+- The script names its three site-specific places at the top (the agent guide, the
+  folders holding install lines, `capabilities.json`), so each site copying it sets
+  those and keeps every check the same; the sites keep their guides at other paths.
+- An install line ending a sentence (`regents-cli==1.10.19.`) no longer reads as another
+  release; a `@elixir_utils_ref` line the script cannot read now says so instead of
+  failing with a blank commit.
+- The 44 operations name 1.10.16 as their first release, not 1.10.17: the release's copy
+  of the commands is the same from 1.10.16 to 1.10.19. Where the entry above says the CLI
+  carries this site's tool manifest byte for byte, it is the YAML API contract.
+
+## 2026-10-28 — Claude as an agent on every site
+
+- design-system moves to `cda974f` (from `804c752`, one commit): `Regent.Account` gains
+  the picture for the `claude` harness. Pairings are shared across sites, so once anyone
+  pairs a Claude through Keyfleet's connector, a site whose pin lacks it raised in the
+  agents list and side panel for that person (`agent_mark` reads pictures with
+  `Map.fetch!`).
+- Every elixir-utils package moves to `14013e4` (from `7794682`): the agents library as on
+  elixir-utils main, so it knows Claude as a kind of agent, with nothing of the Claude
+  connector's sign-in changes, which wait for their own decision. Without it, a Claude
+  pairing made on another site could not be read here at all. The template sets no
+  pairing option, so nothing else changes.
+- A test draws the picture for every agent kind the library knows
+  (`platform/test/ash_template_web/agent_pictures_test.exs`), so the next new kind fails
+  the checks here before it reaches a person's agents list.

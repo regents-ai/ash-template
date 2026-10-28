@@ -55,7 +55,9 @@ wheel's SHA256, every `uv tool install regents-cli==` line names it, and
 `platform/priv/capabilities.json` names it as `cli.release`. A new release therefore stops
 the next `make check` until those move together in one commit. It also fails until the
 elixir-utils commit `platform/mix.exs` pins contains the newest change to
-`siwa/siwa-elixir/apps/siwa` on elixir-utils main.
+`siwa/siwa-elixir/apps/siwa` on elixir-utils main. A site copying the script sets the
+three places named at its top (its agent guide, the folders holding install lines, its
+`capabilities.json`) and keeps every check the same.
 
 ## What does not go here
 

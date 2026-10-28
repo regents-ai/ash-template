@@ -55,6 +55,7 @@ starts, and the server watches no files, so no page reloads under a check.
 | Choosing an agent gives a message with a code; coming back to an agent shows its same code, and Make a new code replaces it | same |
 | With codes out for two agents, an agent that pairs shows under the code it used and the other keeps its code | elixir-utils `ash_components/agents/test/regent_agents/pairing_test.exs` (each used code names its agent); gap: the box itself is not walked, because the walk's one person has agents other checks count |
 | Every agent's message but ChatGPT's tells it to keep its own key in a folder named after its runtime, so agents sharing one computer pair as separate agents | elixir-utils `ash_components/agents/test/regent_agents/pairing_message_test.exs` |
+| Every agent kind the library knows, Claude included, draws its picture in the agents list and side panel, so an agent paired on another site never breaks a person's list here | `platform/test/ash_template_web/agent_pictures_test.exs` |
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | The side panel opens under the header's line, its top bar in line with the sidebar's title row, at desktop and phone width | `platform/test/browser/layout.spec.ts` |
 | The Credits panel's Where to spend opens a window naming each Regents Product, what Credits buy there and its link; it sits on the screen, and Close or Escape closes it, at both widths; the panel's Paying from wallet shows its copy icon | `platform/test/browser/credits.spec.ts` |
