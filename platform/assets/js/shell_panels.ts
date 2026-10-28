@@ -29,6 +29,17 @@ export const asideOpen = () =>
   root().dataset.aside === "open" && (!covering.matches || root().dataset.asideHere !== undefined)
 
 /**
+ * While the phone menu or the side panel covers the page, the page behind it
+ * can't be reached, so a tip or a focus ring on it never shows over the panel.
+ */
+export function syncPageBehind(shell: HTMLElement) {
+  const covered = shell.dataset.menuOpen === "true" || (covering.matches && asideOpen())
+  shell.querySelectorAll<HTMLElement>("#app-shell-scroller, #shell-footer").forEach(behind => {
+    behind.inert = covered
+  })
+}
+
+/**
  * Wires the panels inside `shell`. Returns `sync`, to run after every LiveView
  * update, and `cleanup`.
  */
@@ -45,6 +56,7 @@ export function installShellPanels(shell: HTMLElement) {
   const syncAside = () => {
     shell.querySelectorAll("[data-aside-toggle]").forEach(toggle =>
       toggle.setAttribute("aria-expanded", String(asideOpen())))
+    syncPageBehind(shell)
   }
 
   const setAside = (open: boolean) => {

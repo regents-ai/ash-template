@@ -28,7 +28,8 @@ test("Pair New Agent on the Account page opens the pairing box", async ({page}) 
 
 // Keyfleet, 27 Oct 2026: with the panel already open and scrolled away from the
 // pairing box, the button did nothing a person could see.
-test("Pair New Agent with the panel already open moves to the agent choice", async ({page}) => {
+test("Pair New Agent with the panel already open moves to the agent choice", async ({page, isMobile}) => {
+  test.skip(isMobile, "on a phone the open panel covers the page, so its button can't be pressed")
   const problems = watch(page)
   await page.goto("/account")
   await ready(page)

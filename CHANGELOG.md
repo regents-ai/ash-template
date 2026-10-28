@@ -4559,3 +4559,12 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   missing surfaces listed as gaps.
 - `docs/agent-parity.md`: one row per action on its four surfaces, audited on
   `0ae11a7c`, with ten gaps and who closes each.
+
+## 2026-10-28 — The page behind a phone's side panel can't be reached
+
+- On a phone, while the side panel or the menu covers the page, the page and its
+  bottom bar can't be reached: Tab stays in the header and the panel, and a tip
+  or focus ring from the page never shows on top of the panel. The menu already
+  did this for the page; it now covers the bottom bar too.
+- The motion lab's toast and the header-and-footer lab's product list are flat,
+  with no soft shadow, as the layers rules ask.

@@ -25,7 +25,7 @@ import {
   shellDestinationChanged,
   type ShellState,
 } from "./shell_state"
-import {installShellPanels} from "./shell_panels"
+import {installShellPanels, syncPageBehind} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
 import {CardCheckout} from "./hooks/card_checkout"
 import {HolographicCard} from "./hooks/holographic_card"
@@ -149,10 +149,9 @@ const shellBehavior: Hook = {
 
     const syncMenuAccessibility = (focusMenu = false, restoreFocus = false) => {
       const menuOpen = this.shellState?.menuOpen === true
-      const currentScroller = scroller()
       const currentScrim = menuScrim()
       const currentDrawer = drawer()
-      if (currentScroller) currentScroller.inert = menuOpen
+      syncPageBehind(shell)
       if (currentScrim) currentScrim.hidden = !menuOpen
       // Open on a phone, the drawer is a modal menu over the page; otherwise it is
       // the page's own rail and list.
