@@ -4659,3 +4659,11 @@ An adversarial review of the two commits above found five things, all fixed here
   docs, account, connections, chat, notes and the discussion page open at 1280 and 390
   with no page errors and nothing wider than the screen. Sentinel's after-read is asked.
   Rollback: v125, `14a8a3e4`.
+
+## 2026-10-28 — Bandit 1.14.1
+
+- Moved the Bandit web server to 1.14.1, which closes EEF-CVE-2026-116078 (HTTP/2 DATA
+  frames of one byte each make the server hold far more memory than the request body).
+  Lockfile-only change: `platform/mix.exs` already allows it with `~> 1.14`, and the lock
+  is what decides the version a release runs. Patchbay, Keyfleet and Techtree took the
+  same line earlier today in their own repositories.

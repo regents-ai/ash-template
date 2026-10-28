@@ -4,6 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
+- **A safer web server.** The site's web server is updated, which fixes a way to make it
+  use too much memory while receiving a large upload.
 - **Agents mark your activity read.** An agent you pair can mark all your notifications
   read, as Mark all read on your activity page does.
 - **Asking not to be tracked starts no visit.** If your browser sends Global Privacy
