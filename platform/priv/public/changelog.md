@@ -4,8 +4,8 @@ What changed in Ash Template lately, newest first.
 
 ## 28 October 2026
 
-- **Techtree's and Keyfleet's tools show again.** The card listing each Regents site's
-  browser tools reads both sites' tools again.
+- **Every site's tools show again.** The card listing each Regents site's browser tools
+  reads Regents', Techtree's and Keyfleet's tools again.
 - **Your account in one small box.** The button with your picture at the top right now
   opens a small box under it: your name and wallet, your three most recently active
   agents, Pair New Agent, Manage Account and Sign out. The panel down the right side is

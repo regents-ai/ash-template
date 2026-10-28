@@ -28,7 +28,7 @@ defmodule AshTemplate.SiteTools do
   @wait_ms 12_000
 
   @sites %{
-    "regents" => %{name: "regents.sh", url: "https://regents.sh/capabilities", scopes: :home},
+    "regents" => %{name: "regents.sh", url: "https://regents.sh/capabilities.json", scopes: :home},
     "patchbay" => %{
       name: "patchbay.help",
       url: "https://patchbay.help/forum/capabilities",

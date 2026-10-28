@@ -12,7 +12,7 @@ defmodule AshTemplate.WalkOffline do
 
   # The addresses `AshTemplate.SiteTools` reads each site's tools from.
   @tool_lists [
-    "https://regents.sh/capabilities",
+    "https://regents.sh/capabilities.json",
     "https://patchbay.help/forum/capabilities",
     "https://techtree.sh/capabilities.json",
     "https://autolaunch.sh/capabilities",

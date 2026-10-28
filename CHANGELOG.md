@@ -4772,3 +4772,32 @@ An adversarial review of the two commits above found five things, all fixed here
   https://techtree.sh/capabilities.json and https://keyfleet.ai/capabilities.json. Reported
   by the Techtree chief, 28 Oct 14:50Z. regents.sh, Patchbay and Autolaunch still answer at
   their old addresses.
+
+## 2026-10-28 — Released v128
+
+- template.regents.sh v128 runs `2848406d` (the account menu replaces the side panel;
+  regents-cli 1.10.20; Claude Duet's picture; the tools card reads Techtree's and Keyfleet's
+  new addresses), released 17:35Z. Checks on that exact tree: `make check` exit 0 (100
+  server tests, 9 of them properties; 24 script tests; the browser walk 310 passed and 4
+  skipped at 1280 and 390 in headless Chromium; WebKit is not run on the Mac). The reviewer
+  passed the account menu (`d7ead6ae`).
+- Live check 17:36Z: `/capabilities.json` build.commit `2848406d` and `cli.release` 1.10.20;
+  `agents.md` names 1.10.20 and `0e3768f5…`; `claude-duet.png` answers 200; the tools of
+  Techtree, Keyfleet, Patchbay and Autolaunch load (15, 91, 55 and 18); home, agents, docs,
+  account, connections, chat, notes, the discussion page and `/api/v1/rooms` open at 1280
+  and 390 with no page errors and nothing wider than the screen. Sentinel's after-read is
+  asked. Rollback: v127, `b204e320`.
+
+## 2026-10-28 — The tools card reads regents.sh's new address
+
+- regents.sh (`206f8c1f`, live 17:36Z) moved its browser tools list to `/capabilities.json`,
+  as Techtree and Keyfleet did, and its old `/capabilities` answers 404, so v128's tools
+  card could not read it. `AshTemplate.SiteTools` and the walk's offline answers now read
+  https://regents.sh/capabilities.json. Patchbay and Autolaunch still answer at their old
+  addresses.
+
+## 2026-10-28 — Claude Duet's picture on the white tile
+
+- `@design_system_ref` moves to design-system `99c99d14`: the paper around Claude Duet's
+  picture and three stray corner marks are transparent, so it sits cleanly on the agent
+  mark's white tile (reviewer, 28 Oct 17:38Z).
