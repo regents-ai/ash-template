@@ -4,7 +4,7 @@
 `regents ash-template health`, and so on. The code that runs them lives in
 [regents-cli](https://github.com/regents-ai/regents-cli), which publishes the one
 `regents-cli` package for every Regent site and pins each site's file by commit. regents-cli
-1.10.19 carries this site; each Regent site copies the same pattern for its own commands.
+1.10.20 carries this site; each Regent site copies the same pattern for its own commands.
 
 Each command names the route it calls and the operation in this site's OpenAPI
 document that answers it, who may call it (`authority`) and what it changes

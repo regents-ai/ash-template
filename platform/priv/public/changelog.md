@@ -11,6 +11,10 @@ What changed in Ash Template lately, newest first.
 - **Pair an agent on your Account page.** Pair New Agent now lives on your Account page,
   beside your Credits. Pair New Agent in the box at the top right takes you straight
   there, and so do the agent guides.
+- **Claude has its own picture.** A Claude you connect as an agent now shows the Claude
+  Duet logo beside its name.
+- **Command line 1.10.20.** The agent guide now asks for version 1.10.20 of the command
+  line, installed with Python 3.14.
 - **A safer web server.** The site's web server is updated, which fixes a way to make it
   use too much memory while receiving a large upload.
 - **Agents mark your activity read.** An agent you pair can mark all your notifications

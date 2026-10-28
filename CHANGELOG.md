@@ -4733,3 +4733,32 @@ An adversarial review of the two commits above found five things, all fixed here
   is moot now the side panel is gone. The account menu needs no such step: it is a
   browser popover in the top layer, so nothing on the page can draw over it, and a press
   outside it closes it.
+
+## 2026-10-28 — regents-cli 1.10.20
+
+- Sean, 28 Oct 07:16Z: every site always on the newest. `REGENTS_CLI_REV` in the `Makefile`
+  moves to `0e3768f5b92fe8210fb00fea0053bcb5e9c2afaf` (tag v1.10.20); the agent guide names
+  1.10.20, that commit and wheel SHA256
+  `55b242b41a86e4bd1952e1edb93e31e5cd718186e735867d4b276243f96179ad`; `capabilities.json`
+  `cli.release` is 1.10.20; every install line (`agents.md`, `llms.md`, `cli/COMMANDS.md`)
+  reads `uv tool install --python 3.14 regents-cli==1.10.20`, since 1.10.20 needs Python 3.14
+  (one of its engines has no Python 3.15 wheel yet). `activity mark-read` is still marked
+  for the next CLI release. `scripts/check-siwa-latest.sh` failed on main from the moment
+  1.10.20 reached PyPI, as it should, and passes again with these pins.
+
+## 2026-10-28 — Released v127
+
+- template.regents.sh v127 runs `b204e320` (Bandit 1.14.1), released 15:46Z under Sean's
+  TEMPLATE-V127 "8 a" (15:37Z). The reviewer passed it at 15:30Z.
+- Live check 15:47Z: `/capabilities.json` build.commit `b204e320`; home, agents, docs,
+  account, connections, chat, notes, the discussion page and `/api/v1/rooms` open with 200
+  at 1280 and 390 in headless Chromium with no page errors and nothing wider than the
+  screen (WebKit is not run on the Mac). Sentinel's after-read is asked. Rollback: v126,
+  `4ca06873`.
+
+## 2026-10-28 — Claude Duet's picture
+
+- Sean, 28 Oct 15:37Z, answered the picture decision with the Claude Duet logo.
+  `@design_system_ref` moves to design-system `b7a34d89`, where the `claude` harness (Claude,
+  the connected app) draws `claude-duet.png`; Claude Code keeps its own picture.
+  `test/ash_template_web/agent_pictures_test.exs` still draws every agent kind.
