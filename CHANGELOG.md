@@ -4676,14 +4676,140 @@ An adversarial review of the two commits above found five things, all fixed here
   in three on main and on live v126 alike, with nothing wrong in the panel; eight runs
   in a row succeed with the longer wait.
 
+## 2026-10-28 — The account menu replaces the side panel; pairing moves to the Account page
+
+- Sean, 28 Oct 07:54Z: "instead of a sidepanel, do a upper right modal. and then the
+  account route on all sites handles that privy user . and all account routes should be
+  the exact same, with some local site versions shown first".
+- The account's button at the top right opens the account menu (`Regent.Account.menu`,
+  design-system side branch): a browser popover hanging under the button on the Tip
+  layer, with the person's picture, name and wallet, their three most recently active
+  agents (`AshTemplateWeb.MenuAgents`, was `PanelAgents`; the `MenuAgents` hook reads
+  where each was last active each time the menu opens), Pair New Agent, Manage Account
+  and Sign out. It hangs from the button by name (`anchor-name: --rg-account-menu` on
+  `#account-chip`). Following a link in it closes it (`shell_panels.ts`); Escape or a
+  press outside it does too.
+- Any link to a #fragment of the page already open, and a page opened at one, bring
+  what it names into view every press (`arriveAt` in `shell_panels.ts`). The pairing
+  box still gives focus to the chosen agent, or the first, as v122 did, now from the
+  menu, the Account page and the agent guides' link alike.
+- The right side panel is gone: `#shell-aside`, its button, its grid column and slide,
+  the `ash_template_aside` cookie, `<html data-aside>` and `data-aside-here`, the
+  `data-aside-toggle`/`data-aside-open` handlers and the `#shell-pairing` hash. On the
+  narrowest phones the account's button shrinks to its picture instead of giving way
+  to the panel's button.
+- The Account page uses the shared `Regent.Account.layout`: any parts only this site
+  has first, then the account card and the agents full width, then Pair New Agent
+  (`AshTemplateWeb.PairingBox`, `#account-pairing-box`) beside Credits and the public
+  name. The page's own `.account-layout`/`.account-column` rules are gone. Pair New
+  Agent under the agents moves down to it.
+- Every word that sent people or agents to "Pair New Agent in the side panel" now says
+  "on their Account page": the refusal hints (`plugs/agent_wallet.ex`,
+  `rooms_controller.ex`), `:regent_mcp_agents` in `config.exs`, `capabilities.json`, the
+  agent guides (link `/account#account-pairing`), `llms.md`, `agents.md` and each agent's
+  page, `docs.md`, `about.md`, `build-skill.md`, `site_tools.ex`, the API contract and
+  `openapi.json`, and `cli/COMMANDS.md` and `cli/commands.json`. The matching
+  elixir-utils `regent_agents` hints change on their own side branch.
+- Walks: `account_menu.spec.ts` replaces `side_agents.spec.ts` (three agents and Manage,
+  placement under the button at 1280, 2000, 390 and 320, Escape, Manage Account and
+  Pair New Agent closing the menu, the bottom bar covered on a phone); `pairing.spec.ts`
+  works on the Account page's box; `layout.spec.ts` drops the side panel's checks.
+  The walk's server gets ten minutes to start (`playwright.config.ts`), since a busy
+  machine can take more than the old three for its three mix starts.
+- When the person's agents can't be read, the account menu and the Account page log a
+  warning naming the kinds of failure (never its words, which can hold the person's id),
+  so the live site's logs show it instead of only a quiet "unavailable".
+
+## 2026-10-28 — The phone menu covers the bottom bar too; two lab shadows on the Tip layer
+
+- On a phone, while the menu is open, the bottom bar is out of reach as well as the page
+  (`#shell-footer` goes inert with `#app-shell-scroller` in `app.ts`), so Tab and a
+  press can no longer land on its links behind the menu. The walk in
+  `test/browser/layout.spec.ts` checks both while the menu is open and after it closes.
+- The motion lab's toast (`animations.css`) and the header-and-footer lab's product list
+  (`header_footer_lab.css`) use `--rg-layer-tip-shadow` instead of shadows of their own,
+  as the Layers rules ask.
+- Carried from the design chief's `dm/page-behind-1028` (`d328dc2a`); its side-panel half
+  is moot now the side panel is gone. The account menu needs no such step: it is a
+  browser popover in the top layer, so nothing on the page can draw over it, and a press
+  outside it closes it.
+
+## 2026-10-28 — regents-cli 1.10.20
+
+- Sean, 28 Oct 07:16Z: every site always on the newest. `REGENTS_CLI_REV` in the `Makefile`
+  moves to `0e3768f5b92fe8210fb00fea0053bcb5e9c2afaf` (tag v1.10.20); the agent guide names
+  1.10.20, that commit and wheel SHA256
+  `55b242b41a86e4bd1952e1edb93e31e5cd718186e735867d4b276243f96179ad`; `capabilities.json`
+  `cli.release` is 1.10.20; every install line (`agents.md`, `llms.md`, `cli/COMMANDS.md`)
+  reads `uv tool install --python 3.14 regents-cli==1.10.20`, since 1.10.20 needs Python 3.14
+  (one of its engines has no Python 3.15 wheel yet). `activity mark-read` is still marked
+  for the next CLI release. `scripts/check-siwa-latest.sh` failed on main from the moment
+  1.10.20 reached PyPI, as it should, and passes again with these pins.
+
+## 2026-10-28 — Released v127
+
+- template.regents.sh v127 runs `b204e320` (Bandit 1.14.1), released 15:46Z under Sean's
+  TEMPLATE-V127 "8 a" (15:37Z). The reviewer passed it at 15:30Z.
+- Live check 15:47Z: `/capabilities.json` build.commit `b204e320`; home, agents, docs,
+  account, connections, chat, notes, the discussion page and `/api/v1/rooms` open with 200
+  at 1280 and 390 in headless Chromium with no page errors and nothing wider than the
+  screen (WebKit is not run on the Mac). Sentinel's after-read is asked. Rollback: v126,
+  `4ca06873`.
+
+## 2026-10-28 — Claude Duet's picture
+
+- Sean, 28 Oct 15:37Z, answered the picture decision with the Claude Duet logo.
+  `@design_system_ref` moves to design-system `b7a34d89`, where the `claude` harness (Claude,
+  the connected app) draws `claude-duet.png`; Claude Code keeps its own picture.
+  `test/ash_template_web/agent_pictures_test.exs` still draws every agent kind.
+
+## 2026-10-28 — The tools card reads Techtree's and Keyfleet's new addresses
+
+- Techtree (v201) and Keyfleet moved their browser tools list to `/capabilities.json`, and
+  the old `/capabilities` answers 404, so the template's tools card showed neither site's
+  tools. `AshTemplate.SiteTools` and the walk's offline answers
+  (`test/browser/support/server/walk_offline.ex`) now read
+  https://techtree.sh/capabilities.json and https://keyfleet.ai/capabilities.json. Reported
+  by the Techtree chief, 28 Oct 14:50Z. regents.sh, Patchbay and Autolaunch still answer at
+  their old addresses.
+
+## 2026-10-28 — Released v128
+
+- template.regents.sh v128 runs `2848406d` (the account menu replaces the side panel;
+  regents-cli 1.10.20; Claude Duet's picture; the tools card reads Techtree's and Keyfleet's
+  new addresses), released 17:35Z. Checks on that exact tree: `make check` exit 0 (100
+  server tests, 9 of them properties; 24 script tests; the browser walk 310 passed and 4
+  skipped at 1280 and 390 in headless Chromium; WebKit is not run on the Mac). The reviewer
+  passed the account menu (`d7ead6ae`).
+- Live check 17:36Z: `/capabilities.json` build.commit `2848406d` and `cli.release` 1.10.20;
+  `agents.md` names 1.10.20 and `0e3768f5…`; `claude-duet.png` answers 200; the tools of
+  Techtree, Keyfleet, Patchbay and Autolaunch load (15, 91, 55 and 18); home, agents, docs,
+  account, connections, chat, notes, the discussion page and `/api/v1/rooms` open at 1280
+  and 390 with no page errors and nothing wider than the screen. Sentinel's after-read is
+  asked. Rollback: v127, `b204e320`.
+
+## 2026-10-28 — The tools card reads regents.sh's new address
+
+- regents.sh (`206f8c1f`, live 17:36Z) moved its browser tools list to `/capabilities.json`,
+  as Techtree and Keyfleet did, and its old `/capabilities` answers 404, so v128's tools
+  card could not read it. `AshTemplate.SiteTools` and the walk's offline answers now read
+  https://regents.sh/capabilities.json. Patchbay and Autolaunch still answer at their old
+  addresses.
+
+## 2026-10-28 — Claude Duet's picture on the white tile
+
+- `@design_system_ref` moves to design-system `99c99d14`: the paper around Claude Duet's
+  picture and three stray corner marks are transparent, so it sits cleanly on the agent
+  mark's white tile (reviewer, 28 Oct 17:38Z).
+
 ## 2026-10-28 — Pay for a pin with USDC or Credits
 
-- elixir-utils moves to `281beda` (branch `credits-pay-tpl-1028`, waiting for review and
-  Sean's sign-off before it goes to main): `RegentPayments.Purchase.pay_with_credits/4`
+- elixir-utils moves to `8527830` (branch `credits-pay-tpl-1028` on elixir-utils main
+  `9da44bd`, waiting for Sean's sign-off before it goes to main): `RegentPayments.Purchase.pay_with_credits/4`
   pays an offer's terms in Credits, one Credit per USDC, holding and charging them with
-  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`, whose
-  `:person` read no actor can call. A pin paid but not yet carried out is still found
-  after its terms run out, so asking again finishes it instead of taking a second
+  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`; the
+  profile `:person` and `:names` reads are closed to every actor. A pin paid but not yet
+  carried out is still found after its terms run out, so asking again finishes it instead of taking a second
   payment.
 - The note pin is a payment offer (`AshTemplate.Payments.NotePin`, 1 USDC to
   `PAYMENTS_WALLET_ADDRESS`, Credits accepted). `POST /api/v1/notes/{id}/pin` answers 402
@@ -4695,6 +4821,8 @@ An adversarial review of the two commits above found five things, all fixed here
 - Sign-in makes sure the person has a shared Regent profile, which a paired agent's
   payments name as the person paid for. An agent whose person has none yet is told
   `person_needs_sign_in`; no fill runs for existing accounts.
+- A pin whose payment is still being checked answers 409 `settlement_pending`: the
+  purchase is waiting on a check of its payment, so do not pay again and ask again later.
 - `config :regent_payments, credits_pay_to:` is the payments wallet: the one wallet
   Credits may stand in for.
 - `config :regent_credits, agent_grants_enabled: true`: agents may spend their person's

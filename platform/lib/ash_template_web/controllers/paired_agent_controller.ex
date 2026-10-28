@@ -66,8 +66,8 @@ defmodule AshTemplateWeb.PairedAgentController do
       {202, "The pin is paid for and is being applied.",
        "Ask again the same way to finish it. You will not pay twice."},
     "settlement_pending" =>
-      {409, "This payment is being confirmed with the payment service by hand.",
-       "Do not pay again. Ask again later to see where it stands."},
+      {409, "This purchase is waiting on a check of its payment.",
+       "Do not pay again. Ask again later the same way to see where it stands."},
     "terms_expired" =>
       {410, "Those payment terms are no longer on offer.",
        "Ask again without a payment to be given fresh terms."},

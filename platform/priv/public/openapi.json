@@ -3590,7 +3590,7 @@
           },
           "409": {
             "$ref": "#/components/responses/AgentRequestReplayed",
-            "description": "The signed request was already used (sign a new one), or the payment is still settling (settlement_pending): ask again later with the same body; nothing more is charged."
+            "description": "The signed request was already used (sign a new one), or the purchase is waiting on a check of its payment (settlement_pending): ask again later with the same body; nothing more is charged."
           },
           "503": {
             "$ref": "#/components/responses/AgentVerificationUnavailable",
@@ -9021,7 +9021,7 @@
                   "error": {
                     "code": "pairing_failed",
                     "message": "The pairing code could not be used.",
-                    "hint": "Ask your person for a new code from Pair New Agent in the side panel on this site. Each code works once and expires ten minutes after it was made."
+                    "hint": "Ask your person for a new code from Pair New Agent on their Account page on this site. Each code works once and expires ten minutes after it was made."
                   }
                 }
               },
@@ -9214,7 +9214,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then check in again."
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then check in again."
                   }
                 }
               },
@@ -9252,7 +9252,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again."
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again."
                   }
                 }
               },
@@ -9299,7 +9299,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent in the side panel, then send the request again."
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again."
                   }
                 }
               },

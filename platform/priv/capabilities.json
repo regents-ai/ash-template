@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.19",
+    "release": "1.10.20",
     "namespace": "ash-template"
   },
   "authorities": [
@@ -29,7 +29,7 @@
   "conditions": [
     {
       "name": "pairing_code",
-      "words": "A pairing code the person made with Pair New Agent in the side panel."
+      "words": "A pairing code the person made with Pair New Agent on their Account page."
     },
     {
       "name": "spending_allowed",

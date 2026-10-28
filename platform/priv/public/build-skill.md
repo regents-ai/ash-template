@@ -42,7 +42,7 @@ Start with `ash-stack`: it says which of the others a task needs. Every file can
 
 ## 3. What only a person can do
 
-- Change their account's security and unpair agents from their own account page, and pair an agent with Pair New Agent in the side panel.
+- Change their account's security and unpair agents from their own account page, and pair an agent with Pair New Agent on that same page.
 - Press the wallet buttons. They send from the person's own wallet on Base Sepolia, and each press needs a little Base Sepolia test ETH for the network fee. Nothing there moves real money, but it is still their wallet: explain what a button does and let them press it.
 
 ## Boundaries

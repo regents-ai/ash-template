@@ -22,6 +22,8 @@ defmodule AshTemplate.PublicIdentity do
 
   def picture(account), do: present(Map.get(account, :ens_avatar_url))
 
+  def ens_name(account), do: present(Map.get(account, :ens_name))
+
   def squares(account),
     do: account |> Map.get(:wallet_address) |> normalize_wallet() |> identicon()
 

@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.AccountLive do
   @moduledoc """
   The signed-in person's Account, one tab each: Account (their profile, their
-  Credits and the agents they paired), Wallets (the wallets their sign-in
+  Credits, the agents they paired and pairing a new one, in the layout every
+  Regent site shares, `Regent.Account.layout`), Wallets (the wallets their sign-in
   verified) and Connections (the accounts they have connected). Points has its own tab (`AshTemplateWeb.PointsLive`).
 
   Everything here is read from the sign-in the shell already holds; nothing on
@@ -28,32 +29,41 @@ defmodule AshTemplateWeb.AccountLive do
       signed_out_reason={@signed_out_reason}
     >
       <:tip>Your profile, your Credits and your agents.</:tip>
-      <div class="account-layout">
-        <Regent.Account.identity
-          id="account-identity"
-          class="account-identity"
-          name={@account_control.label}
-          wallet={@account.wallet_address}
-          ens_name={@account.ens_name}
-        >
-          <:picture>
-            <AshTemplateWeb.Components.Shell.account_picture
-              id="account-identity-picture"
-              squares={@account_control.squares}
-              picture={@account_control.picture}
-              size={64}
-            />
-          </:picture>
-        </Regent.Account.identity>
-
-        <.live_component
-          module={AshTemplateWeb.AgentsPanel}
-          id="account-agents"
-          lease={@lease}
-          account={@account}
-        />
-
-        <div class="account-column">
+      <Regent.Account.layout id="account">
+        <:identity>
+          <Regent.Account.identity
+            id="account-identity"
+            name={@account_control.label}
+            wallet={@account_control.wallet}
+            ens_name={@account_control.ens_name}
+          >
+            <:picture>
+              <AshTemplateWeb.Components.Shell.account_picture
+                id="account-identity-picture"
+                squares={@account_control.squares}
+                picture={@account_control.picture}
+                size={64}
+              />
+            </:picture>
+          </Regent.Account.identity>
+        </:identity>
+        <:agents>
+          <.live_component
+            module={AshTemplateWeb.AgentsPanel}
+            id="account-agents"
+            lease={@lease}
+            account={@account}
+          />
+        </:agents>
+        <:pairing>
+          <.live_component
+            module={AshTemplateWeb.PairingBox}
+            id="account-pairing-box"
+            lease={@lease}
+            account={@account}
+          />
+        </:pairing>
+        <:credits>
           <Regent.Account.credits_summary
             id="account-credits"
             available={
@@ -64,9 +74,8 @@ defmodule AshTemplateWeb.AccountLive do
           >
             <a href="https://regents.sh/account">Manage Credits on regents.sh</a>
           </Regent.Account.credits_summary>
-        </div>
-
-        <div class="account-column">
+        </:credits>
+        <:profile>
           <%!-- The name is saved from the browser with the sign-in's own proof. --%>
           <div id="account-profile" phx-hook="PublicName" phx-update="ignore">
             <Regent.Profile.panel
@@ -75,8 +84,8 @@ defmodule AshTemplateWeb.AccountLive do
               display_name={@account.display_name}
             />
           </div>
-        </div>
-      </div>
+        </:profile>
+      </Regent.Account.layout>
     </.settings_page>
     """
   end

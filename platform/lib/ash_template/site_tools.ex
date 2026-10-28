@@ -28,19 +28,27 @@ defmodule AshTemplate.SiteTools do
   @wait_ms 12_000
 
   @sites %{
-    "regents" => %{name: "regents.sh", url: "https://regents.sh/capabilities", scopes: :home},
+    "regents" => %{name: "regents.sh", url: "https://regents.sh/capabilities.json", scopes: :home},
     "patchbay" => %{
       name: "patchbay.help",
       url: "https://patchbay.help/forum/capabilities",
       scopes: :every
     },
-    "techtree" => %{name: "techtree.sh", url: "https://techtree.sh/capabilities", scopes: :home},
+    "techtree" => %{
+      name: "techtree.sh",
+      url: "https://techtree.sh/capabilities.json",
+      scopes: :home
+    },
     "autolaunch" => %{
       name: "autolaunch.sh",
       url: "https://autolaunch.sh/capabilities",
       scopes: :home
     },
-    "keyfleet" => %{name: "keyfleet.ai", url: "https://keyfleet.ai/capabilities", scopes: :home}
+    "keyfleet" => %{
+      name: "keyfleet.ai",
+      url: "https://keyfleet.ai/capabilities.json",
+      scopes: :home
+    }
   }
 
   @type tool :: %{name: String.t(), title: String.t(), description: String.t()}
@@ -114,7 +122,7 @@ defmodule AshTemplate.SiteTools do
         %{
           title: "Pair with your person",
           copy:
-            "Your person makes a code with Pair New Agent in the site's side panel. Write it, your name and what you run on to ~/pair.json, pair, then delete the file.",
+            "Your person makes a code with Pair New Agent on the site's Account page. Write it, your name and what you run on to ~/pair.json, pair, then delete the file.",
           command: "uv run siwa_agent.py pair https://regents.sh < ~/pair.json"
         },
         %{

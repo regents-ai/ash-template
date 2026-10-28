@@ -2,12 +2,13 @@ import type {Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {ready, signedIn, watch} from "./support/person"
 
-// Pairing an agent, the way a person does it: from the Account page or the agent
-// guide's link, into the side panel, then choosing their agent.
+// Pairing an agent, the way a person does it: from the Account page, the account
+// menu or the agent guide's link, to the Account page's pairing box, then choosing
+// their agent.
 test.use(signedIn)
 
-const pairing = (page: Page) => page.locator("#shell-pairing")
-const message = (page: Page) => page.locator("#shell-pairing-box pre")
+const pairing = (page: Page) => page.locator("#account-pairing")
+const message = (page: Page) => page.locator("#account-pairing-box pre")
 
 // A person presses the agent's picture: the radio's label, whose name only
 // screen readers hear.
@@ -17,47 +18,59 @@ async function choose(page: Page, agent: string) {
   await expect(radio).toBeChecked()
 }
 
-test("Pair New Agent on the Account page opens the pairing box", async ({page}) => {
+const pairButton = (page: Page) =>
+  page.locator("#account-agents").getByRole("link", {name: "Pair New Agent"})
+
+// Keyfleet, 27 Oct 2026: pressed a second time, after scrolling away from the
+// pairing box, Pair New Agent did nothing a person could see.
+test("Pair New Agent on the Account page moves to the pairing box, every press", async ({page}) => {
   const problems = watch(page)
+  await page.setViewportSize({width: page.viewportSize()!.width, height: 500})
   await page.goto("/account")
   await ready(page)
-  await page.locator("#account-agents").getByRole("button", {name: "Pair New Agent"}).click()
+  await pairButton(page).click()
+  await expect(pairing(page)).toBeInViewport()
+
+  await page.locator("#app-shell-scroller").evaluate(scroller => scroller.scrollTo({top: 0}))
+  await expect(pairing(page).getByRole("heading", {name: "Pair New Agent"})).not.toBeInViewport()
+  await pairButton(page).click()
   await expect(pairing(page)).toBeInViewport()
   await problems.expect()
 })
 
-// Keyfleet, 27 Oct 2026: with the panel already open and scrolled away from the
-// pairing box, the button did nothing a person could see.
-test("Pair New Agent with the panel already open moves to the agent choice", async ({page}) => {
+// Keyfleet, 27 Oct 2026: the keyboard starts on the agent choice, the chosen agent
+// once there is one.
+test("Pair New Agent gives focus to the chosen agent, or the first", async ({page}) => {
   const problems = watch(page)
   await page.goto("/account")
   await ready(page)
-  const button = page.locator("#account-agents").getByRole("button", {name: "Pair New Agent"})
-  const firstAgent = pairing(page).getByRole("radio").first()
-  const picture = firstAgent.locator("xpath=ancestor::label")
-  await button.click()
-  // A short panel, the way a small screen or a long agents list leaves it.
-  await page.locator("#shell-aside").evaluate(aside => {
-    aside.style.maxBlockSize = "5rem"
-    aside.scrollTop = 0
-  })
-  await expect(picture).not.toBeInViewport()
-  await button.click()
-  await expect(firstAgent).toBeFocused()
-  await expect(picture).toBeInViewport()
+  await pairButton(page).click()
+  await expect(pairing(page).getByRole("radio").first()).toBeFocused()
+
+  await choose(page, "Dots")
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+  await page.locator("#app-shell-scroller").evaluate(scroller => scroller.scrollTo({top: 0}))
+  await pairButton(page).click()
+  await expect(pairing(page).getByRole("radio", {name: "Dots", exact: true})).toBeFocused()
   await problems.expect()
 })
 
+// The page starts at the box the link names, and stays there once it is ready.
 test("the agent guide's link lands on the pairing box", async ({page}) => {
-  await page.goto("/account#shell-pairing")
+  const problems = watch(page)
+  await page.setViewportSize({width: page.viewportSize()!.width, height: 500})
+  await page.goto("/account#account-pairing")
+  await ready(page)
   await expect(pairing(page)).toBeInViewport()
+  await expect(page.locator("#account-identity")).not.toBeInViewport()
+  await expect(pairing(page).getByRole("radio").first()).toBeFocused()
+  await problems.expect()
 })
 
 test("each agent keeps its own code until a new one is asked for", async ({page}) => {
   const problems = watch(page)
   await page.goto("/account")
   await ready(page)
-  await page.locator("#account-agents").getByRole("button", {name: "Pair New Agent"}).click()
   await expect(message(page)).toHaveCount(0)
 
   await choose(page, "Dots")
@@ -81,7 +94,7 @@ test("each agent keeps its own code until a new one is asked for", async ({page}
 })
 
 // A reconnecting page sends the pairing form back with no agent picked, and a
-// submit can come before a choice. Neither may crash the side panel (Sentinel,
+// submit can come before a choice. Neither may crash the pairing box (Sentinel,
 // 23 Oct 2026, from Patchbay's error mail).
 test("the pairing form with nothing chosen leaves the box as it is", async ({page}) => {
   const problems = watch(page)
@@ -93,8 +106,7 @@ test("the pairing form with nothing chosen leaves the box as it is", async ({pag
   )
   await page.goto("/account")
   await ready(page)
-  await page.locator("#account-agents").getByRole("button", {name: "Pair New Agent"}).click()
-  const form = page.locator("form#shell-pairing-box")
+  const form = page.locator("form#account-pairing-box")
   await expect(form.getByRole("radio", {checked: true})).toHaveCount(0)
 
   await form.getByRole("radio").first().dispatchEvent("input")

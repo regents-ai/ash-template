@@ -48,38 +48,6 @@
   align-items: start;
 }
 
-/* The Account page: the account card and the agents run full width. Below them,
-   two columns that each stack their own panels, so a tall panel never leaves a
-   gap beside it: Credits on the left, the profile on the right. A narrow page
-   shows one column in that order. */
-.account-page:has(> .account-layout) {
-  container: account-page / inline-size;
-}
-
-.account-layout,
-.account-column {
-  display: grid;
-  gap: 1.5rem;
-  align-content: start;
-}
-
-.account-column {
-  min-width: 0;
-}
-
-@container account-page (min-width: 46rem) {
-  .account-layout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 2.5rem;
-    align-items: start;
-  }
-
-  .account-identity,
-  .account-agents {
-    grid-column: 1 / -1;
-  }
-}
-
 .account-panel {
   display: grid;
   gap: 1rem;
