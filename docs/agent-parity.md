@@ -9,8 +9,8 @@ as the action.
 
 Audited on template main `0ae11a7c` (28 Oct 2026). Hosted MCP (side branch
 `agent-access/template-mcp-1028`) is `/mcp` on AshAI: the room tools `rooms_messages`
-and `rooms_post` for anyone and signed agents, and the Claude connector's four identity
-tools behind its switch.
+and `rooms_post` for an agent signing each call, and the Claude connector's four
+identity tools behind its switch.
 
 ## Key
 

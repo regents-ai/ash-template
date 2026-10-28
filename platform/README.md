@@ -84,25 +84,33 @@ assistant lists its own two tools, so it never reaches these.
 
 `forward "/mcp", AshAi.Mcp.Router` serves exactly the tools `priv/capabilities.json`
 marks hosted (`AshTemplateWeb.Capabilities.hosted_tools/0`), in every protocol version
-AshAi answers, keeping nothing between requests. `AshTemplateWeb.Plugs.McpAgent` runs
-first and says who is calling, as the agent access spec (4.3) sets out:
+AshAi answers, keeping nothing between requests. The `:mcp` pipeline takes JSON only,
+then `AshTemplateWeb.Plugs.McpAgent` admits the request and says who is calling, as the
+agent access spec (4.3) sets out. Before any credential is looked at it refuses a query
+string, any address but `/mcp` and any method but POST, a page from another site (any
+`Origin` but the site's own; no `Origin` goes on), a body that is not JSON and a
+JSON-RPC batch, so one signature covers one call. Then every request carries exactly
+one credential; there is no anonymous MCP, and public reads are on the HTTP API and the
+browser tools:
 
-- an agent's signature (any of the pages' proof headers) is checked by
+- an agent's signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked by
   `AshTemplateWeb.Plugs.AgentWallet`, unchanged, and the agent is the actor;
 - a Bearer token must be the connector's, for this site's `/mcp`, and the connected app
   is the actor, under its account's budget; any other token gets 401 with the
   challenge that starts sign-in, and while the connector is off 401
   `delegated_access_not_enabled`;
 - both together get 401 `ambiguous_credentials`;
-- neither may list the tools and call `rooms_messages`; calling a tool that needs a
-  sign-in gets 401 `agent_auth_required`.
+- neither gets 401: `connection_required` with the challenge while the connector is on,
+  so Claude's first request starts its sign-in, and `agent_auth_required` while it is
+  off.
 
 Ash policies decide the rest: a connected app sees and runs only its identity tools,
 and `rooms_post` only an agent. Every call carries the client's address key
-(`client_key`). Answers are `cache-control: private, no-store`, and a page from another
-site is refused. A tool's own refusal is its error, whose text is the HTTP refusal's
-JSON, `{"error": {"code", "message", "hint"}}` (`AshTemplateWeb.ToolErrors`); an input
-the action cannot take is AshAi's own words. `[:ash_template, :mcp, :auth]` counts each
+(`client_key`). Answers are `cache-control: private, no-store`. A tool's own refusal is
+its error, whose text is the HTTP refusal's JSON, `{"error": {"code", "message",
+"hint"}}` (`AshTemplateWeb.ToolErrors`); an input the action cannot take is checked
+before the tool runs (`ToolErrors.check_input/3`) and refused with the code the HTTP
+route uses (`invalid_limit`, `invalid_message`, `identity_request_refused`). `[:ash_template, :mcp, :auth]` counts each
 request by how it came in and whether it was taken.
 
 `priv/capabilities.json` carries `contract_revision` and, for each operation, its
@@ -177,7 +185,7 @@ production.
 | `ASH_TEMPLATE_NOTES_WEBHOOK_URL` | No | An `http` or `https` address each saved note is posted to, as `{"event": "note.saved", "note_id": …, "revision": …}` without the note's text. A failed post is retried four more times and then recorded on the note. Unset means saving a note posts nothing. Any other kind of address stops the boot. |
 | `ASH_TEMPLATE_INDEXNOW_KEY` | No | This site's IndexNow key, 8 to 128 letters, digits or dashes; make one with `openssl rand -hex 16`, one per site. Set it only where the site serves its public address. It is public: `/indexnow-key.txt` serves it. Each release's public pages are then sent once to IndexNow (Bing, which ChatGPT search reads, and others), and the site can queue `AshTemplate.IndexNow.submit/1` for a page it adds or changes. Unset means nothing is sent and `/indexnow-key.txt` is not found. Any other value stops the boot. |
 | `ASH_TEMPLATE_SIWA_BROKER_URL` | No | The sign-in service that checks agents' signed requests, such as one running on this machine. Unset means `https://siwa.regents.sh` (`config/config.exs`, `config :regent_agents, siwa: [url: ..., audience: "ash-template"]`). |
-| `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` | No | `true` switches the Claude connector on, all of it at once: the sign-in routes under `/oauth` and `/.well-known/oauth-*`, its identity tools at `/mcp`, Claude in the pairing box and the signed pair request, and the Claude guide at `/agents/claude` with its `skill.md`, which `/agents`, the sitemap, `/llms.txt` and `/agents.md` then name. Anything else leaves it all off: the guide is not found, `/mcp` refuses a Bearer token and lists only the room tools, and `/llms.txt` names no connector. It needs `SIWA_HOSTED_SIGNING_KEY`, and the migration `20261028120000_oauth_connector_tokens` must have run first. That migration runs with the release that carries it, switch on or off, and rewrites the stored tokens in place, keeping only their hashes: on the shared production database that release waits for Sean's letter naming it. [docs/oauth-reference.md](../docs/oauth-reference.md) has the rest. Before the first release that switches it on, confirm the staged key has the right shape without printing it (its length and characters only), or the boot stops. |
+| `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` | No | `true` switches the Claude connector on, all of it at once: the sign-in routes under `/oauth` and `/.well-known/oauth-*`, its identity tools at `/mcp`, Claude in the pairing box and the signed pair request, and the Claude guide at `/agents/claude` with its `skill.md`, which `/agents`, the sitemap, `/llms.txt` and `/agents.md` then name. Anything else leaves it all off: the guide is not found, `/mcp` refuses a Bearer token and a request with no signature, and `/llms.txt` names no connector. It needs `SIWA_HOSTED_SIGNING_KEY`, and the migration `20261028120000_oauth_connector_tokens` must have run first. That migration runs with the release that carries it, switch on or off, and rewrites the stored tokens in place, keeping only their hashes: on the shared production database that release waits for Sean's letter naming it. [docs/oauth-reference.md](../docs/oauth-reference.md) has the rest. Before the first release that switches it on, confirm the staged key has the right shape without printing it (its length and characters only), or the boot stops. |
 | `SIWA_HOSTED_SIGNING_KEY` | With the connector | This site's own key at the sign-in service, which holds the connector's identities for the `ash-template` audience: 32 or more letters, digits, `-` or `_`. With the connector on and no such key, the boot stops with a message naming this setting. Never shown to a client. The service is the one `ASH_TEMPLATE_SIWA_BROKER_URL` names. |
 | `SIWA_ACTIVITY_READ_TOKEN` | No | The reader key for the sign-in service's agent activity, which gives the account menu each agent's last active site and the Account page each agent's sites by day. `AshTemplate.Agents.ActivityReading` keeps each agent's reading for five minutes. Unset means neither shows activity. |
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. The Claude connector's sign-in (its issuer) is `https://PHX_HOST` and its resource is `https://PHX_HOST/mcp`; each code and token records them as it is issued, so moving the site to a new address means its connected apps connect again. |
@@ -257,7 +265,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/agents`, `/agents/<agent>` | GET | The agents people pair and a page for each, from `priv/public/agents/`; `Accept: text/markdown` returns Markdown. Open while the site is closed. Claude's page exists only while the Claude connector is on. |
 | `/agents/<agent>/skill.md` | GET | That agent's skill: the agent guide with its set-up notes. |
 | `/app`, `/account` | GET | The signed-in shell. |
-| `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): anyone reads a room with `rooms_messages`; an agent signing the call posts with `rooms_post`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token gets 401 with the challenge that starts sign-in; a token while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, a token beside a signature, and an unsigned call to `rooms_post` get 401. 600 requests a minute from one address, then 120 a minute for each connected account. GET answers 405; not logged. |
+| `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): an agent signing each call reads a room with `rooms_messages` and posts with `rooms_post`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token, or none, gets 401 with the challenge that starts sign-in; a token or no signature while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, and a token beside a signature, get 401 with none. A query string, a batch, a body that is not JSON and a page from another site are refused before any credential is read. 120 requests a minute from one address, then 120 a minute for each connected account. Other methods answer 405; not logged. |
 | `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`, `/oauth/register`, `/oauth/token`, `/oauth/revoke` | GET, POST | The connector's sign-in discovery, app registration, tokens and revocation (`RegentOAuth.Protocol`). Registration (30 a minute) and token and revocation requests (120 a minute) are limited by address and never logged. 404 while the connector is off. |
 | `/oauth/authorize`, `/oauth/connections`, `/oauth/connections/revoke` | GET, POST | The consent page under the signed-in browser session, and Connected apps, where a person sees and disconnects their apps (`RegentOAuth.Consent`). They refuse while the connector is off. |
 | `/api/stripe/notices` | POST | Stripe's signed notices about card and Link purchases of Credits; found only while `STRIPE_SECRET_KEY` is set. |

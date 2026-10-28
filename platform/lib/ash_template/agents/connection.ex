@@ -31,12 +31,26 @@ defmodule AshTemplate.Agents.Connection do
     action :pair_identity, :map do
       description "Pairs the connection's identity with the account's own pairing code."
 
-      argument :code, :string, allow_nil?: false, constraints: [max_length: 128]
-      argument :name, :string, allow_nil?: false, constraints: [max_length: 100]
-      argument :harness, :string, allow_nil?: false
+      # What `RegentMCPAgents.pair/2` takes, as given: a code and a name of these
+      # lengths, untrimmed, and one of the apps whose connection the site serves,
+      # which config/runtime.exs sets to Claude alone with the connector's switch.
+      argument :code, :string,
+        allow_nil?: false,
+        constraints: [min_length: 1, max_length: 128, trim?: false],
+        description: "Your person's one-use pairing code, 1 to 128 characters."
+
+      argument :name, :string,
+        allow_nil?: false,
+        constraints: [min_length: 1, max_length: 100, trim?: false],
+        description: "The name your person will see for you, 1 to 100 characters."
+
+      argument :harness, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:claude]],
+        description: "The app you are."
 
       run fn %{arguments: %{code: code, name: name, harness: harness}}, context ->
-        args = %{"code" => code, "name" => name, "harness" => harness}
+        args = %{"code" => code, "name" => name, "harness" => Atom.to_string(harness)}
         answer(RegentMCPAgents.pair(principal(context), args))
       end
     end

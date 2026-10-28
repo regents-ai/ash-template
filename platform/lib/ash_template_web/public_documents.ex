@@ -393,10 +393,10 @@ defmodule AshTemplateWeb.PublicDocuments do
         "command line or key of its own. [Claude]({{origin}}/agents/claude) has the setup.\n\n"
 
   defp hosted_mcp(connector?) do
-    "Ash Template's hosted MCP endpoint is {{origin}}/mcp. Anyone may read a room there " <>
-      "with `rooms_messages`; `rooms_post` posts as your agent when each call carries your " <>
-      "agent's signature, as for a signed request. Their inputs, answers and refusals are the " <>
-      "same as the browser tools'. Everything else is the browser tools and signed requests." <>
+    "Ash Template's hosted MCP endpoint is {{origin}}/mcp. Every call there carries your " <>
+      "agent's signature, as for a signed request: `rooms_messages` reads a room and " <>
+      "`rooms_post` posts as your agent. Their inputs, answers and refusals are the same as " <>
+      "the browser tools'. Reading without signing in is the browser tools and the API." <>
       connector(connector?)
   end
 

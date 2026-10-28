@@ -15,6 +15,16 @@ defmodule AshTemplateWeb.ErrorJSON do
     }
   end
 
+  # A body the MCP address cannot take, such as one too large, points at its own
+  # section of the docs.
+  def render(template, %{conn: %Plug.Conn{path_info: ["mcp" | _]}}) do
+    template
+    |> Phoenix.Controller.status_message_from_template()
+    |> RegentAgentAccess.Recovery.json(
+      "The Hosted MCP section of #{PublicDocuments.url("/docs")} says what the MCP address takes."
+    )
+  end
+
   def render(template, _assigns) do
     hint =
       "See #{PublicDocuments.url("/docs")} and #{PublicDocuments.url("/openapi.json")} for supported requests."

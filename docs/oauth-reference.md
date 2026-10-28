@@ -54,35 +54,50 @@ connects again.
 
 `/mcp` is the site's one hosted MCP server, `forward "/mcp", AshAi.Mcp.Router` in
 the router, after the sign-in routes and outside the `:api` pipeline. Its own `:mcp`
-pipeline runs the launch gate, so the site's closing closes it too, then
-`AshTemplateWeb.Plugs.McpAgent`, which says who is calling (agent access spec 4.3);
-AshAi answers a GET with 405 itself. The connector's four tools,
+pipeline takes JSON only, runs the launch gate, so the site's closing closes it
+too, then `AshTemplateWeb.Plugs.McpAgent`, which admits the request and says who
+is calling (agent access spec 4.3). The connector's four tools,
 `register_identity`, `get_identity`, `pair_identity` and `check_in`, are Ash
 actions on `AshTemplate.Agents.Connection` that only a connected app may run
 (`AshTemplate.Actors.ConnectedApp`); they call `RegentMCPAgents` with the token's
 account, and take their titles, words and hints from `RegentMCPAgents.Tools`. The
-same server offers the room tools (`rooms_messages` to anyone, `rooms_post` to an
-agent signing the call), which a connected app neither sees nor runs.
+same server offers the room tools (`rooms_messages` and `rooms_post`) to an agent
+signing each call, which a connected app neither sees nor runs.
 
-A Bearer token selects the connector: it must be live, for this site's `/mcp`
-resource and carry `regent.identity.manage` (`RegentOAuth.verify/3`); any other is
-refused with 401 and `WWW-Authenticate: Bearer resource_metadata=…`, which starts
-Claude's sign-in. While the switch is off a token is refused with 401
-`delegated_access_not_enabled` and no challenge, and the connector's tools are not
-listed. A token beside an agent's signature is refused as `ambiguous_credentials`.
-The route is not logged: tool calls carry pairing codes. AshAi serves each POST as
-one JSON-RPC message (or a batch where the protocol version allows one) in the
-version the client asks for, `initialize`, `ping`, `tools/list` and `tools/call`
-among them, and keeps nothing between requests.
+Before any credential is looked at, McpAgent refuses, in the site's
+`{"error": {"code", "message", "hint"}}` shape: a query string
+(`unsupported_query`, 400), any address but `/mcp` itself (404) and any method but
+POST (405), a page on another site (`origin_not_allowed`, 403: any `Origin` but the
+site's own, `null` included; no `Origin`, as MCP clients send, goes on), a body
+that is not JSON (415) and a JSON-RPC batch (`batch_not_supported`, 400), so one
+signature covers one call.
 
-Two budgets: the endpoint counts each address first (`mcp_address`, 600 a minute,
-since Claude's requests come from Anthropic's shared addresses and a request
-without a token is answered before any account is known), then McpAgent counts
-each connected account under its OAuth subject (`mcp`, 120 a minute) through
-`RegentAgentAccess.RateLimit` and the site's `RequestRateLimiter`. A refused tool
-call is the tool's error, whose text is `{"error": {"code", "message", "hint"}}`
-with code `identity_request_refused` and the site's own words (`config
-:regent_mcp_agents, :config, refusal:`).
+Every request then carries exactly one credential; there is no anonymous MCP.
+Public reads are on the HTTP API and the browser tools. A Bearer token selects the
+connector: it must be live, for this site's `/mcp` resource and carry
+`regent.identity.manage` (`RegentOAuth.verify/3`); any other is refused with 401
+and `WWW-Authenticate: Bearer resource_metadata=…`, which starts Claude's sign-in.
+A request with no credential at all gets the same: 401 `connection_required` with
+the challenge, so Claude's first request starts the sign-in, and the hint also
+tells an agent to sign its calls with `regents mcp`. While the switch is off a
+token is refused with 401 `delegated_access_not_enabled`, a request with no
+credential with 401 `agent_auth_required`, neither with a challenge, and the
+connector's tools are not listed. A token beside an agent's signature is refused
+as `ambiguous_credentials`. The route is not logged: tool calls carry pairing
+codes. AshAi serves each POST as one JSON-RPC message in the version the client
+asks for, `initialize`, `ping`, `tools/list` and `tools/call` among them, and keeps
+nothing between requests.
+
+Two budgets: the endpoint counts each address first (`mcp_address`, 120 a minute,
+the API's figure), then McpAgent counts each connected account under its OAuth
+subject (`mcp`, 120 a minute) through `RegentAgentAccess.RateLimit` and the site's
+`RequestRateLimiter`. A tool's arguments are checked against its action before it
+runs (`AshTemplateWeb.ToolErrors.check_input/3`), so bad input is refused with the
+codes the HTTP API uses. A refused identity tool call is the tool's error, whose
+text is `{"error": {"code", "message", "hint"}}` with code
+`identity_request_refused` and the site's own words (`config :regent_mcp_agents,
+:config, refusal:`). `pair_identity` lists the harness and the name and code
+lengths the library takes.
 
 ## Issuer and resource from the site's host
 
@@ -129,9 +144,10 @@ commit, release and rollback in its row. Keyfleet's hand-written MCP controller
 taken. Patchbay keeps `hosted_pairing: [:chatgpt]` and its own refusal words.
 
 Before the switch is turned on anywhere, the site must have completed consent,
-callback, refresh, disconnect and host checks, and the `/mcp` checks: initialize,
-tools/list, 401 without a token, a revoked token refused and the per-account
-limit. One shared piece is still missing: design-system's `Regent.Account` has no
+callback, refresh, disconnect and host checks, and the `/mcp` checks: a first
+request with no token answered 401 `connection_required` with the
+`WWW-Authenticate` challenge (`claude_connector_test.exs`), initialize and
+tools/list with a token, a revoked token refused and the per-account limit. One shared piece is still missing: design-system's `Regent.Account` has no
 picture for the `claude` harness (`@agent_pictures`, `Map.fetch!`), so a pairing
 box offering Claude, or any list showing a paired Claude, raises until
 design-system adds one and the template takes that `regent_ui` pin.

@@ -26,12 +26,11 @@ defmodule AshTemplateWeb.Endpoint do
                 admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
                 key: &AshTemplateWeb.ClientAddress.key/1
               )
-  # Claude's connector calls /mcp from Anthropic's servers, so one address carries
-  # many people's requests: this is a ceiling against a flood, and each connected
-  # account's own budget (`AshTemplateWeb.Plugs.McpAgent`) is the working limit.
+  # The MCP address counts each address as the API does; each connected account
+  # also has its own budget (`AshTemplateWeb.Plugs.McpAgent`).
   @mcp_rate_limit RegentAgentAccess.RateLimit.init(
                     policy: "mcp_address",
-                    limit: 600,
+                    limit: 120,
                     window: 60,
                     admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
                     key: &AshTemplateWeb.ClientAddress.key/1

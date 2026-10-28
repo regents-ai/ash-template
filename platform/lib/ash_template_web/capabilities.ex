@@ -265,24 +265,11 @@ defmodule AshTemplateWeb.Capabilities do
 
   @hosted for row <- @operations,
               name = row.interfaces.hosted_mcp,
-              do: {String.to_atom(name), row.auth_modes}
+              do: String.to_atom(name)
 
   @doc "The hosted MCP server's tools, by the name AshAi gives each."
   @spec hosted_tools() :: [atom()]
-  def hosted_tools, do: Keyword.keys(@hosted)
-
-  @doc """
-  Whether the hosted tool named `name` asks for a sign-in: every hosted tool but a
-  public one. A name that is no hosted tool asks for none, since there is nothing
-  to run.
-  """
-  @spec sign_in_needed?(String.t()) :: boolean()
-  def sign_in_needed?(name),
-    do: Enum.any?(@hosted, fn {tool, modes} -> Atom.to_string(tool) == name and modes != [] end)
-
-  @doc "The request headers that carry an agent's own signature, as the pages send them."
-  @spec proof_headers() :: [String.t()]
-  def proof_headers, do: @manifest["proof_headers"]
+  def hosted_tools, do: @hosted
 
   @may @source["operations"] |> Enum.map(& &1["may"]) |> Enum.reject(&is_nil/1) |> Enum.uniq()
 
@@ -379,6 +366,10 @@ defmodule AshTemplateWeb.Capabilities do
     do: "The app's connection to its person's account"
 
   defp proof_words(%{fresh_proof: true}), do: "A new signature on every request"
+  # Every call at /mcp is signed, so a read anyone may make elsewhere is signed there.
+  defp proof_words(%{auth_modes: [], surfaces: %{"hosted_mcp" => true}}),
+    do: "None, except at MCP: your agent's signature"
+
   defp proof_words(%{auth_modes: []}), do: "None"
   defp proof_words(_row), do: "Its person's sign-in"
 

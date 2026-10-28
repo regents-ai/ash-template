@@ -4937,3 +4937,32 @@ An adversarial review of the two commits above found five things, all fixed here
   authority with the `site_oauth` proof.
 - While the connector switch is off, `/mcp` serves the room tools and refuses a Bearer
   token with 401 `delegated_access_not_enabled`, where it answered 404 before.
+
+## 2026-10-28 — Hosted MCP review fixes
+
+- Every `/mcp` request carries an agent's signature or a connected app's token; there is
+  no anonymous MCP. With the Claude connector switch on, a request with neither gets 401
+  `connection_required` with the `WWW-Authenticate` challenge, so Claude's first request
+  starts its sign-in; with it off, 401 `agent_auth_required`. Reading a room without
+  signing in is the HTTP API and the browser tools, which replace the spec's anonymous
+  `/mcp` read (C02).
+- `AshTemplateWeb.Plugs.McpAgent` refuses, before any credential is read and in the
+  site's `{"error": {"code", "message", "hint"}}` shape: a query string (400
+  `unsupported_query`), any address but `/mcp` (404) and any method but POST (405), a
+  page on another site, `null` included (403 `origin_not_allowed`; no `Origin` goes on),
+  a body that is not JSON (415) and a JSON-RPC batch (400 `batch_not_supported`), so one
+  signature covers one call. The `:mcp` pipeline takes JSON only again. A signature is
+  told apart with `Siwa.AgentAuthPlug.signed_request?/1`.
+- A tool's input is checked against its action before it runs
+  (`AshTemplateWeb.ToolErrors.check_input/3`, AshAi's `tool_argument_transformer`), so a
+  bad input gets the HTTP route's code and words: `invalid_limit`, `invalid_author_kind`,
+  `invalid_message`, `room_not_found`, and `identity_request_refused` for the identity
+  tools. `RoomsController.page_refusal/1` is shared with it.
+- `pair_identity` lists the harness the library takes (`claude`) and limits the name to
+  100 characters and the code to 128.
+- `/mcp` takes 120 requests a minute from one address, the API's figure, where it took
+  600. A body over the limit and a form body point to the guide's Hosted MCP section.
+- The router's MCP instructions are written in place, so it no longer depends on McpAgent
+  at compile time; the compile-connected limit is 41 (the tools list and the input check).
+  `Capabilities.sign_in_needed?/1` and `proof_headers/0`, and the context keys nothing
+  read, are gone.

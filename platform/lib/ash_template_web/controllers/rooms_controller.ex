@@ -155,10 +155,16 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
-  # The action's own refusal, or the input it could not take.
-  defp page_refusal(%Ash.Error.Invalid{errors: errors}) do
+  @doc """
+  The code a room read answers for `error`: the action's own refusal, or the
+  input it could not take. The hosted MCP server's `rooms_messages` answers the
+  same (`AshTemplateWeb.ToolErrors`), where the room is part of the input.
+  """
+  @spec page_refusal(Ash.Error.Invalid.t()) :: String.t()
+  def page_refusal(%Ash.Error.Invalid{errors: errors}) do
     Enum.find_value(errors, "invalid_cursor", fn
       %Refused{code: code} -> code
+      %{field: :room} -> "room_not_found"
       %{field: :limit} -> "invalid_limit"
       %{field: :author_kind} -> "invalid_author_kind"
       _other -> nil
