@@ -1,4 +1,4 @@
-import {test as base, expect} from "@playwright/test"
+import {type BrowserContext, test as base, expect} from "@playwright/test"
 
 // The browser never leaves this machine. The page's sign-in bridge, the only part
 // that talks to Privy, is answered by a stand-in that holds no Privy sign-in, as
@@ -16,20 +16,26 @@ export async function startPrivyBridge() {
 }
 `
 
+// Keeps the context's requests on this machine; returns the outside ones it refused.
+export async function onThisMachine(context: BrowserContext, baseURL: string) {
+  const site = new URL(baseURL).host
+  const outside: string[] = []
+  await context.route(() => true, route => {
+    const url = new URL(route.request().url())
+    if (url.host !== site) {
+      outside.push(`${route.request().method()} ${url.origin}${url.pathname}`)
+      return route.abort("blockedbyclient")
+    }
+    if (bridge.test(url.pathname))
+      return route.fulfill({contentType: "text/javascript", body: standIn})
+    return route.continue()
+  })
+  return outside
+}
+
 export const test = base.extend<{onThisMachine: void}>({
   onThisMachine: [async ({context, baseURL}, use) => {
-    const site = new URL(baseURL!).host
-    const outside: string[] = []
-    await context.route(() => true, route => {
-      const url = new URL(route.request().url())
-      if (url.host !== site) {
-        outside.push(`${route.request().method()} ${url.origin}${url.pathname}`)
-        return route.abort("blockedbyclient")
-      }
-      if (bridge.test(url.pathname))
-        return route.fulfill({contentType: "text/javascript", body: standIn})
-      return route.continue()
-    })
+    const outside = await onThisMachine(context, baseURL!)
     await use()
     expect(outside, "requests that left the machine").toEqual([])
   }, {auto: true}],
