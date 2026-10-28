@@ -4827,6 +4827,56 @@ An adversarial review of the two commits above found five things, all fixed here
   is shared with it (`onThisMachine` in `test/browser/support/test.ts`). Reviewer, 28 Oct
   17:52Z.
 
+## 2026-10-28 — Refusals link to their help page
+
+- An agent refused as `agent_not_paired` or `person_not_here`, at check-in or at any door
+  that needs its person, reads "Help: https://patchbay.help/errors/<code>" after the
+  hint, Patchbay's page for that refusal (live since Patchbay v286, `80ea2e9b`).
+  `RegentAgents.HTTP` carries the check-in refusals (elixir-utils `9539469f`, the change
+  on `9da44bdc`, merged into elixir-utils main `4295e7ce`);
+  `AshTemplateWeb.Plugs.AgentWallet` carries the others. The six examples in
+  `openapi.json` and both contract copies say the same. Rebuilt on main from the held
+  side branches (elixir-utils `34e87a7`, template `109b91ec`), which predate the Account
+  page wording. Rollout: control `rollouts/2026-10-28-patchbay-help-links.md`.
+
+## 2026-10-28 — Released v130
+
+- template.regents.sh v130 runs `cc74b3f3` (the walk's warm-up page load and the v129
+  record; test code only), released 18:06Z. Checks on that exact tree: `make check` exit 0
+  (100 server tests, 9 of them properties; 24 script tests; the browser walk 310 passed
+  and 4 skipped at 1280 and 390 in headless Chromium, no misses; WebKit is not run on the
+  Mac). Live check 18:07Z: `/capabilities.json` build.commit `cc74b3f3`; the eighteen page
+  loads at 1280 and 390 with no page errors and nothing wider than the screen; all five
+  sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
+  `b9d8ef1c`.
+
+
+## 2026-10-28 — Titles are one or two words
+
+- New founder copy rule beside the W-word one: every heading, eyebrow, tab, column
+  header, `<dt>`, field label, step title and guide heading is one or two words, never a
+  phrase (Sean, 22:34Z: "instead of 'Work that cites it' , write 'Citation'"). Written into
+  `skills/regent-workflow/SKILL.md` and `skills/ash-frontend/SKILL.md`; the counterexample
+  list, 89 real titles from Keyfleet and this template with their replacements, is
+  `skills/regent-workflow/references/short-titles.md`. Skills only; the template's own
+  titles in that list still need their sweep.
+
+## 2026-10-28 — Credits balance in the account menu on the narrowest phones
+
+- At 320px the header's Credits balance ("10.00 Credits", shortened to "10.00") pushed
+  the header 15px past the screen (design reviewer, measured on `/showcase/preview`).
+  Design chief's choice (b): narrower than 22.5rem the header leaves the balance out
+  (`#shell-credits-button`, `assets/css/components/shell.css`) and the account menu shows
+  it as one row under the wallet, in the header's words, through design-system's new
+  `balance` slot (`3134bab0`). The row opens the same Buy Credits panel; the menu closes
+  first, so focus returns to the account button when the panel closes
+  (`assets/js/shell_panels.ts`). The phone header's rule that drops the word "Credits" now
+  applies to the header's button only, so the row keeps it.
+- Walk checks in `platform/test/browser/account_menu.spec.ts`: at 320 the header has no
+  balance, the menu row reads "10.00 Credits", is 44px tall, opens Buy Credits, and the
+  page fits the screen with the menu open; at 390 and 1280 the header keeps the balance
+  and the row is hidden. Feature map and public changelog updated.
+
 ## 2026-10-28 — Agent access: AshAi tools, capability fields and operation keys
 
 - AshAi moves to 1.4.1 (`~> 1.4.1`), which brings ash_json_api 1.8.0, websock_adapter

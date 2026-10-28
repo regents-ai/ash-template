@@ -111,8 +111,14 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()
-    // The header's balance, and a page's own Buy Credits button, open the one panel.
-    if (target.closest("[data-credits-open]")) return openCredits()
+    // The header's balance, the account menu's balance row on the narrowest phones,
+    // and a page's own Buy Credits button open the one panel. The menu closes first,
+    // so focus goes back to the account button and returns there when the panel closes.
+    const creditsOpener = target.closest<HTMLElement>("[data-credits-open]")
+    if (creditsOpener) {
+      creditsOpener.closest<HTMLElement>("[popover]")?.hidePopover()
+      return openCredits()
+    }
     if (target.closest("[data-credits-close]")) return closeCredits()
     if (target === credits()) return closeCredits()
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()

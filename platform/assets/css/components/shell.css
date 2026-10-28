@@ -1325,7 +1325,7 @@
     font-size: 0.8rem;
   }
 
-  #app-shell .shell-credits__unit {
+  #app-shell .shell-credits .shell-credits__unit {
     display: none;
   }
 
@@ -1373,6 +1373,14 @@
 
   #shell-footer {
     padding-inline: 0.5rem;
+  }
+}
+
+/* Narrower than 22.5rem the header has no room for the balance: the account
+   menu shows it instead, as its balance row, which opens the same panel. */
+@media (max-width: 22.49rem) {
+  #app-shell #shell-credits-button {
+    display: none;
   }
 }
 
