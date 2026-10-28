@@ -19,7 +19,9 @@ nothing else on the machine is using, on a database made for that run and named 
 the port, which it drops when it ends, whatever happens, even when its server never
 starts (`platform/test/browser/walk.sh`, `platform/test/browser/support/drop.exs`), so
 two walks at once never reach each other's server or data. It builds the pages' scripts and styles before its server
-starts, and the server watches no files, so no page reloads under a check.
+starts, and the server watches no files, so no page reloads under a check. Before
+the first check it opens one signed-in page once, so no check meets a cold server
+(`platform/test/browser/support/warm_up.ts`).
 
 ## Every page and document
 

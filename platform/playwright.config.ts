@@ -10,6 +10,8 @@ import {defineConfig, devices} from "@playwright/test"
 // requests fail the check that made them (test/browser/support/test.ts), and the
 // server, with the outside services' settings cleared, refuses its own and the walk
 // fails at the end (config/dev.exs, test/browser/support/teardown.ts).
+// Before the first check, one signed-in page is opened once, so the first checks do
+// not meet a cold server (test/browser/support/warm_up.ts).
 // Each run's port and database are its own, so two walks at once, from two
 // checkouts, never reach each other's server or data.
 const port = Number(process.env.ASH_TEMPLATE_WALK_PORT)
@@ -22,6 +24,7 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   reporter: "line",
+  globalSetup: "./test/browser/support/warm_up.ts",
   globalTeardown: "./test/browser/support/teardown.ts",
   use: {
     baseURL,

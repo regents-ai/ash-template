@@ -12,11 +12,11 @@ defmodule AshTemplate.WalkOffline do
 
   # The addresses `AshTemplate.SiteTools` reads each site's tools from.
   @tool_lists [
-    "https://regents.sh/capabilities",
+    "https://regents.sh/capabilities.json",
     "https://patchbay.help/forum/capabilities",
-    "https://techtree.sh/capabilities",
+    "https://techtree.sh/capabilities.json",
     "https://autolaunch.sh/capabilities",
-    "https://keyfleet.ai/capabilities"
+    "https://keyfleet.ai/capabilities.json"
   ]
 
   def run(%Req.Request{url: %URI{host: host}} = request) when host in @this_machine,
