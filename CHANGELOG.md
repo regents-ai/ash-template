@@ -4588,3 +4588,14 @@ An adversarial review of the two commits above found five things, all fixed here
 - A test draws the picture for every agent kind the library knows
   (`platform/test/ash_template_web/agent_pictures_test.exs`), so the next new kind fails
   the checks here before it reaches a person's agents list.
+
+## 2026-10-28 — Released v124
+
+- template.regents.sh v124 runs `0b11a68e` (the SIWA check after its review, and Claude
+  as an agent on every site), released at 12:33Z. The first try at 08:30Z was cut off
+  mid-build and never went live. Live check: `/capabilities.json` names the commit and
+  `cli.release` 1.10.19, `/healthz` answers 200, `/agents.md` names 1.10.19 and its
+  source commit, and the home, agents, docs, account, connections, chat and discussion
+  pages open at 1280 and 390 with no page errors and nothing wider than the screen. The
+  logs since the release show only the machine's few seconds of restart. Sentinel's
+  after-read is asked. Rollback: v123, `5a1fe29e`.
