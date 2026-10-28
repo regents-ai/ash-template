@@ -62,8 +62,14 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   describe "with the connector off, as config/test.exs and production leave it" do
-    test "its addresses are not found and Claude is neither offered nor accepted" do
-      assert post_mcp(rpc("ping"), nil).status == 404
+    test "its sign-in is not found, /mcp takes no app's token, and Claude is neither offered nor accepted" do
+      refused = post_mcp(rpc("ping"), "any-token")
+      assert refused.status == 401
+      assert get_resp_header(refused, "www-authenticate") == []
+
+      listed = json(post_mcp(rpc("tools/list"), nil))["result"]["tools"]
+      assert MapSet.disjoint?(MapSet.new(listed, & &1["name"]), MapSet.new(RegentMCPAgents.Tools.names()))
+
       assert @endpoint.call(conn(:get, "/.well-known/oauth-authorization-server"), []).status == 404
       assert @endpoint.call(conn(:post, "/oauth/register", %{}), []).status == 404
 
@@ -117,6 +123,22 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert payload["body_digest"] == Siwa.content_digest_for_body(signed["body"])
 
       assert [%{harness: :claude, wallet: @wallet, name: "Claude"}] = agents(subject)
+    end
+
+    test "a connected app lists and runs only its identity tools, never a room's" do
+      subject = "did:privy:connector-scope"
+      sign_in!(subject)
+      %{access: token} = connect!(subject)
+
+      listed = json(post_mcp(rpc("tools/list"), token))["result"]["tools"]
+      assert Enum.sort(Enum.map(listed, & &1["name"])) == Enum.sort(RegentMCPAgents.Tools.names())
+
+      for name <- ["rooms_messages", "rooms_post"] do
+        call = rpc("tools/call", %{"name" => name, "arguments" => %{"input" => %{"room" => "general"}}})
+        assert %{"error" => _} = json(post_mcp(call, token))
+      end
+
+      assert signer_asks() == []
     end
 
     test "the hosted signer signs only the identity requests, as the account's one identity, and the connection's token stays here" do
@@ -365,8 +387,11 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     {conn.status, json(conn)}
   end
 
-  defp tool(token, name, arguments \\ %{}),
-    do: json(post_mcp(rpc("tools/call", %{"name" => name, "arguments" => arguments}), token))["result"]
+  # AshAi takes a tool's arguments as its action's input.
+  defp tool(token, name, arguments \\ %{}) do
+    call = rpc("tools/call", %{"name" => name, "arguments" => %{"input" => arguments}})
+    json(post_mcp(call, token))["result"]
+  end
 
   defp post_mcp(body, token) do
     conn =

@@ -4911,3 +4911,29 @@ An adversarial review of the two commits above found five things, all fixed here
   audiences only, so with the switch on here every signed tool call would be refused
   until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
   version before any site takes it.
+
+## 2026-10-28 — Hosted MCP on AshAi
+
+- `/mcp` is now the site's hosted MCP server, `forward "/mcp", AshAi.Mcp.Router`, serving
+  exactly the tools `platform/priv/capabilities.json` marks hosted: `rooms_messages` and
+  `rooms_post`, the same Ash actions, inputs, answers and refusals as the browser tools and
+  the CLI, and the Claude connector's four identity tools.
+- `AshTemplateWeb.Plugs.McpAgent` says who is calling (agent access spec 4.3): an agent's
+  signature is checked by `AgentWallet` unchanged and the agent is the actor; the
+  connector's Bearer token makes the connected app the actor, under its account's budget,
+  and runs only the identity tools; both together get 401 `ambiguous_credentials`; neither
+  may list the tools and read a room, and a call to a tool that needs a sign-in gets 401
+  `agent_auth_required`. Every call carries the client's address key; answers are
+  `cache-control: private, no-store`; a page from another site is refused.
+- The identity tools are Ash actions on `AshTemplate.Agents.Connection`, over the
+  library's `RegentMCPAgents` functions; the template no longer mounts
+  `RegentMCPAgents.Plug`. A connected app can no longer read a room.
+- Refusals are the tool's error, whose text is the HTTP refusal's JSON
+  (`AshTemplateWeb.ToolErrors`). `[:ash_template, :mcp, :auth]` counts requests by how
+  they came in and whether they were taken.
+- The capabilities check allows a hosted-only operation, named after its tool, with its
+  answer among the OpenAPI components (`ConnectedIdentity`, `ConnectedIdentityStatus`,
+  `ConnectedIdentityPairing`, `ConnectedIdentityCheckIn`), and the `connected_app`
+  authority with the `site_oauth` proof.
+- While the connector switch is off, `/mcp` serves the room tools and refuses a Bearer
+  token with 401 `delegated_access_not_enabled`, where it answered 404 before.

@@ -43,7 +43,7 @@ defmodule AshTemplate.MixProject do
       # by sibling paths; these pins replace them.
       {:regent_oauth,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth", override: true},
-      # The Claude connector's MCP address at /mcp (RegentMCPAgents.Plug).
+      # The Claude connector's identity tools at /mcp (AshTemplate.Agents.Connection).
       {:regent_mcp_agents, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_agents"},
       {:lumis, "~> 0.1"},
       {:req_llm, "~> 1.18"},
@@ -212,7 +212,9 @@ defmodule AshTemplate.MixProject do
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
         # A generic action adds one for the module it runs (Ash checks `run` at compile time).
         # The capability check adds one: it names the chat domain, whose tools are never hosted.
-        "xref graph --label compile-connected --fail-above 39",
+        # The hosted MCP forward adds one: the router reads its tools from the capability list
+        # and its instructions and origin check from McpAgent at compile time.
+        "xref graph --label compile-connected --fail-above 41",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

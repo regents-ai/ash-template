@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.Capabilities do
   @moduledoc """
   What an agent may do on this site: one row per operation in the OpenAPI
-  document, served at `/capabilities.json` and drawn as the agent guide's tables.
+  document, and one per tool only the hosted MCP server has, served at
+  `/capabilities.json` and drawn as the agent guide's tables.
 
   `priv/capabilities.json` says who may run each operation, on what conditions,
   where its person sees it and the earliest regents-cli release with its command.
@@ -12,7 +13,10 @@ defmodule AshTemplateWeb.Capabilities do
   module compiles: every browser tool must be named after its command, every
   surface an operation leaves out gives a reason, and a hosted tool takes the
   browser tool's input. Each operation's output schema is its success answer in
-  the OpenAPI document, its references pointing there.
+  the OpenAPI document, its references pointing there. A tool only the hosted MCP
+  server has, such as a connected app's identity tools, is named after its
+  operation (`getIdentity` is `get_identity`), takes its title from its AshAi tool
+  and names its answer's schema among the OpenAPI document's components.
   Whether an operation is open is read from the site's switch on every request,
   never written down. Each agent operation also says,
   in its person's words, what it lets an agent do, which the account page shows.
@@ -36,6 +40,7 @@ defmodule AshTemplateWeb.Capabilities do
   @agents ~w(signed_agent paired_agent)
   @changes_nothing ~w(read quote)
   @to_person ~w(owner_only wallet)
+  @connected_app "connected_app"
 
   openapi =
     for {path, methods} <- files.openapi["paths"],
@@ -53,8 +58,9 @@ defmodule AshTemplateWeb.Capabilities do
 
   tools = for %{"operation_id" => id} = tool <- @manifest["tools"], into: %{}, do: {id, tool}
 
-  # The tools each domain hands AshAi for hosted MCP, by name, with the input AshAi
-  # asks for. The chat assistant's own tools (`AshTemplate.Chat`) are never hosted.
+  # The tools each domain hands AshAi for hosted MCP, by name, with their title
+  # and the input AshAi asks for. The chat assistant's own tools
+  # (`AshTemplate.Chat`) are never hosted.
   hosted =
     for domain <- Application.compile_env!(:ash_template, :ash_domains),
         domain != AshTemplate.Chat,
@@ -65,8 +71,10 @@ defmodule AshTemplateWeb.Capabilities do
       schema =
         AshAi.Tool.Schema.for_action(domain, tool.resource, action, nil, [], strict?: false)
 
-      {Atom.to_string(tool.name), schema["properties"]["input"]}
+      {Atom.to_string(tool.name), %{input: schema["properties"]["input"], title: tool.title}}
     end
+
+  components = files.openapi["components"]["schemas"]
 
   # An input's shape for comparing two schemas: each field's type, choices and
   # format, and which fields are required. Words and lengths are left out.
@@ -92,27 +100,52 @@ defmodule AshTemplateWeb.Capabilities do
 
   actors =
     Map.new(
-      [{"public", "anonymous"}] ++
+      [{"public", "anonymous"}, {@connected_app, @connected_app}] ++
         Enum.map(@agents, &{&1, "agent"}) ++ Enum.map(@to_person, &{&1, "person"})
     )
 
   {authorities, conditions, switches} =
     {names.("authorities"), names.("conditions"), names.("switches")}
 
-  unless MapSet.new(@source["operations"], & &1["operation"]) == MapSet.new(Map.keys(openapi)),
-    do: raise("priv/capabilities.json must list every OpenAPI operation once")
+  listed = Enum.map(@source["operations"], & &1["operation"])
+
+  unless length(listed) == length(Enum.uniq(listed)) and
+           MapSet.subset?(MapSet.new(Map.keys(openapi)), MapSet.new(listed)),
+         do: raise("priv/capabilities.json must list every OpenAPI operation once")
 
   @operations (for row <- @source["operations"] do
                  id = row["operation"]
-                 %{http: http, title: title} = openapi[id]
+                 # An operation the OpenAPI document leaves out is a tool only the
+                 # hosted MCP server has, named after it.
+                 hosted_only = !openapi[id] && Macro.underscore(id)
+                 hosted_tool = hosted_only && hosted[hosted_only]
+
+                 %{http: http, title: title} =
+                   openapi[id] || %{http: nil, title: hosted_tool && hosted_tool.title}
+
                  tool = tools[id]
                  command = commands[id]
                  surfaces = row["surfaces"]
-                 hosted_input = tool && hosted[tool["name"]]
+                 hosted_input = tool && hosted[tool["name"]][:input]
                  browser_input = tool && (tool["operation_input_schema"] || tool["input_schema"])
+
+                 "#/components/schemas/" <> answer =
+                   row["output_schema"]["$ref"] || "#/components/schemas/"
 
                  problem =
                    cond do
+                     hosted_only && !hosted_tool ->
+                       "no OpenAPI operation and no hosted tool named after it"
+
+                     hosted_only &&
+                         (surfaces["hosted_mcp"] != true or
+                            Enum.any?(~w(webmcp http cli), &(surfaces[&1] == true)) or
+                            !!(tool || command) or !components[answer]) ->
+                       "a hosted-only tool on another surface, or with no answer schema among the components"
+
+                     !hosted_only && Map.has_key?(row, "output_schema") ->
+                       "an output_schema beside its OpenAPI operation's own answer"
+
                      row["authority"] not in authorities ->
                        "an unknown authority"
 
@@ -161,7 +194,7 @@ defmodule AshTemplateWeb.Capabilities do
                        "a surface left out with no reason"
 
                      surfaces["webmcp"] == true != !!tool or surfaces["cli"] == true != !!command or
-                         surfaces["http"] != true ->
+                         surfaces["http"] == true != !!http ->
                        "a surface listed differently from its tool, command or route"
 
                      hosted_input && shape.(hosted_input) != shape.(browser_input) ->
@@ -172,7 +205,8 @@ defmodule AshTemplateWeb.Capabilities do
                        "a public operation that needs proof"
 
                      "siwa_request" in row["auth_modes"] != row["authority"] in @agents or
-                         row["fresh_proof"] != "siwa_request" in row["auth_modes"] ->
+                       row["fresh_proof"] != "siwa_request" in row["auth_modes"] or
+                         "site_oauth" in row["auth_modes"] != (row["authority"] == @connected_app) ->
                        "proof that differs from its authority"
 
                      row["actor"] != actors[row["authority"]] ->
@@ -203,7 +237,8 @@ defmodule AshTemplateWeb.Capabilities do
                    person_page: row["person_page"],
                    interfaces: %{
                      browser_tool: tool && tool["name"],
-                     hosted_mcp: if(surfaces["hosted_mcp"] == true, do: tool["name"]),
+                     hosted_mcp:
+                       if(surfaces["hosted_mcp"] == true, do: hosted_only || tool["name"]),
                      cli:
                        command && "regents #{files.commands["platform"]} #{command["command"]}",
                      http: http
@@ -216,7 +251,7 @@ defmodule AshTemplateWeb.Capabilities do
                    context: row["context"],
                    retry: row["retry"],
                    lifecycle: row["lifecycle"],
-                   output_schema: output_schemas[id]
+                   output_schema: output_schemas[id] || row["output_schema"]
                  }
                end)
 
@@ -225,8 +260,29 @@ defmodule AshTemplateWeb.Capabilities do
          do:
            raise(
              "priv/capabilities.json must mark hosted_mcp on exactly the operations whose " <>
-               "browser tool is an AshAi tool"
+               "browser tool, or own name, is an AshAi tool"
            )
+
+  @hosted for row <- @operations,
+              name = row.interfaces.hosted_mcp,
+              do: {String.to_atom(name), row.auth_modes}
+
+  @doc "The hosted MCP server's tools, by the name AshAi gives each."
+  @spec hosted_tools() :: [atom()]
+  def hosted_tools, do: Keyword.keys(@hosted)
+
+  @doc """
+  Whether the hosted tool named `name` asks for a sign-in: every hosted tool but a
+  public one. A name that is no hosted tool asks for none, since there is nothing
+  to run.
+  """
+  @spec sign_in_needed?(String.t()) :: boolean()
+  def sign_in_needed?(name),
+    do: Enum.any?(@hosted, fn {tool, modes} -> Atom.to_string(tool) == name and modes != [] end)
+
+  @doc "The request headers that carry an agent's own signature, as the pages send them."
+  @spec proof_headers() :: [String.t()]
+  def proof_headers, do: @manifest["proof_headers"]
 
   @may @source["operations"] |> Enum.map(& &1["may"]) |> Enum.reject(&is_nil/1) |> Enum.uniq()
 
@@ -278,6 +334,12 @@ defmodule AshTemplateWeb.Capabilities do
 
   defp gate(nil), do: %{state: "open", reason: nil}
 
+  defp gate("connected_apps") do
+    if AshTemplate.OAuth.enabled?(),
+      do: %{state: "open", reason: nil},
+      else: %{state: "closed", reason: switch_words("connected_apps")}
+  end
+
   defp gate("app_surfaces") do
     if LaunchGate.app_surfaces_enabled?(),
       do: %{state: "open", reason: nil},
@@ -312,6 +374,9 @@ defmodule AshTemplateWeb.Capabilities do
     |> Enum.filter(fn {name, _words} -> surfaces[Atom.to_string(name)] == true end)
     |> Enum.map_join(", ", &elem(&1, 1))
   end
+
+  defp proof_words(%{authority: @connected_app}),
+    do: "The app's connection to its person's account"
 
   defp proof_words(%{fresh_proof: true}), do: "A new signature on every request"
   defp proof_words(%{auth_modes: []}), do: "None"

@@ -28,7 +28,7 @@ defmodule AshTemplateWeb.Endpoint do
               )
   # Claude's connector calls /mcp from Anthropic's servers, so one address carries
   # many people's requests: this is a ceiling against a flood, and each connected
-  # account's own budget (`forward "/mcp"` in the router) is the working limit.
+  # account's own budget (`AshTemplateWeb.Plugs.McpAgent`) is the working limit.
   @mcp_rate_limit RegentAgentAccess.RateLimit.init(
                     policy: "mcp_address",
                     limit: 600,

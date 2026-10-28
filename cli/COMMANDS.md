@@ -677,6 +677,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-10-28: The site's hosted MCP server at `/mcp` serves `rooms_messages` and `rooms_post`,
+  the same operations as `rooms messages` and `rooms post`, with the same answers and refusals.
+  No command changes.
+
 - 2026-10-28: `rooms post` refuses an `operation_id` used before with another room or other
   text (409 `idempotency_conflict`) or after its message was deleted (410 `message_removed`).
   The OpenAPI documents move to 8.0.0.

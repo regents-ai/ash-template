@@ -25,6 +25,10 @@
     {
       "name": "wallet",
       "words": "The person, approving in their own wallet."
+    },
+    {
+      "name": "connected_app",
+      "words": "An app its person connected to their account here, such as Claude."
     }
   ],
   "conditions": [
@@ -41,6 +45,10 @@
     {
       "name": "app_surfaces",
       "words": "This site isn't open yet."
+    },
+    {
+      "name": "connected_apps",
+      "words": "Connecting apps isn't open on this site yet."
     }
   ],
   "operations": [
@@ -1439,6 +1447,116 @@
       "context": "none",
       "retry": "none",
       "lifecycle": "immediate"
+    },
+    {
+      "operation": "registerIdentity",
+      "effect": "write",
+      "authority": "connected_app",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentity"
+      }
+    },
+    {
+      "operation": "getIdentity",
+      "effect": "read",
+      "authority": "connected_app",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentityStatus"
+      }
+    },
+    {
+      "operation": "pairIdentity",
+      "effect": "write",
+      "authority": "connected_app",
+      "conditions": [
+        "pairing_code"
+      ],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentityPairing"
+      }
+    },
+    {
+      "operation": "checkIn",
+      "effect": "write",
+      "authority": "connected_app",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentityCheckIn"
+      }
     }
   ]
 }

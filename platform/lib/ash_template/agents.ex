@@ -6,7 +6,7 @@ defmodule AshTemplate.Agents do
   agent's identity. World ID is optional. Each agent sets its own public profile.
   """
 
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshAi]
 
   resources do
     resource AshTemplate.Agents.Agent do
@@ -24,6 +24,30 @@ defmodule AshTemplate.Agents do
         not_found_error?: false
 
       define :record_operation, action: :record
+    end
+
+    resource AshTemplate.Agents.Connection
+  end
+
+  # The hosted MCP server's identity tools, for an app a person connected to their
+  # account here, with the titles, words and hints every Regent site gives them.
+  @identity Map.new(RegentMCPAgents.Tools.list(), &{&1.name, &1})
+
+  tools do
+    for name <- RegentMCPAgents.Tools.names() do
+      %{title: title, description: description, annotations: hints} = @identity[name]
+      name = String.to_atom(name)
+
+      tool name, AshTemplate.Agents.Connection, name do
+        title(title)
+        description description
+
+        annotations(
+          read_only_hint: hints.readOnlyHint,
+          destructive_hint: hints.destructiveHint,
+          open_world_hint: hints.openWorldHint
+        )
+      end
     end
   end
 end

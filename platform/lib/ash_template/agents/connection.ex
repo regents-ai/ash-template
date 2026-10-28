@@ -1,0 +1,60 @@
+defmodule AshTemplate.Agents.Connection do
+  @moduledoc """
+  The one Regents identity an app keeps when a person connects it to their
+  account here, such as Claude: the identity tools of the hosted MCP server.
+  Only that app may run them (`AshTemplate.Actors.ConnectedApp`), with the token
+  its connection holds; `RegentMCPAgents` does the work for the account the token
+  names. register_identity prepares the identity, get_identity reads whether it
+  is paired, pair_identity pairs it with the account's own pairing code, and
+  check_in tells the person it is active. A refusal says only that the request
+  could not be completed and how to find out where the connection stands
+  (`AshTemplate.Agents.Connection.Refused`).
+  """
+
+  use Ash.Resource,
+    domain: AshTemplate.Agents,
+    authorizers: [Ash.Policy.Authorizer]
+
+  alias AshTemplate.Agents.Connection.Refused
+
+  actions do
+    action :register_identity, :map do
+      description "Prepares the connection's identity for the account its token names."
+      run fn _input, context -> answer(RegentMCPAgents.register(principal(context))) end
+    end
+
+    action :get_identity, :map do
+      description "Reads whether the connection's identity is paired."
+      run fn _input, context -> answer(RegentMCPAgents.status(principal(context))) end
+    end
+
+    action :pair_identity, :map do
+      description "Pairs the connection's identity with the account's own pairing code."
+
+      argument :code, :string, allow_nil?: false, constraints: [max_length: 128]
+      argument :name, :string, allow_nil?: false, constraints: [max_length: 100]
+      argument :harness, :string, allow_nil?: false
+
+      run fn %{arguments: %{code: code, name: name, harness: harness}}, context ->
+        args = %{"code" => code, "name" => name, "harness" => harness}
+        answer(RegentMCPAgents.pair(principal(context), args))
+      end
+    end
+
+    action :check_in, :map do
+      description "Checks in as the paired identity and reads the account it is paired with."
+      run fn _input, context -> answer(RegentMCPAgents.check_in(principal(context))) end
+    end
+  end
+
+  policies do
+    policy always() do
+      authorize_if actor_attribute_equals(:role, :connected_app)
+    end
+  end
+
+  defp principal(%{actor: %AshTemplate.Actors.ConnectedApp{principal: principal}}), do: principal
+
+  defp answer({:ok, answer}), do: {:ok, answer}
+  defp answer({:error, _reason}), do: {:error, Refused.exception([])}
+end

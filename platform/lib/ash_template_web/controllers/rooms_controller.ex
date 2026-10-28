@@ -73,6 +73,12 @@ defmodule AshTemplateWeb.RoomsController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
+  @doc """
+  The `{status, message, hint}` of the refusal `code`, for the hosted MCP
+  server's tool errors (`AshTemplateWeb.ToolErrors`).
+  """
+  def refusal(code), do: Map.fetch!(@errors, code)
+
   defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
 
   defp paired_agent(conn, _opts),
@@ -340,7 +346,7 @@ defmodule AshTemplateWeb.RoomsController do
   # `details` says why invalid input was refused; `id` names the message a
   # refused operation_id posted.
   defp refuse(conn, code, extra \\ nil) do
-    {status, message, hint} = Map.fetch!(@errors, code)
+    {status, message, hint} = refusal(code)
 
     body =
       case extra do

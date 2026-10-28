@@ -7,10 +7,10 @@ regents CLI. The rule is in `skills/regent-workflow/SKILL.md` ("An action only a
 can do is a bug"). This file has one row per action and is updated in the same commit
 as the action.
 
-Audited on template main `0ae11a7c` (28 Oct 2026). Hosted MCP is not on main yet: the
-Claude connector (side branch `claude/mcp-connector-1028`) serves four identity tools
-behind a switch, and the agent-access lane moves `/mcp` onto AshAI with the room tools
-first.
+Audited on template main `0ae11a7c` (28 Oct 2026). Hosted MCP (side branch
+`agent-access/template-mcp-1028`) is `/mcp` on AshAI: the room tools `rooms_messages`
+and `rooms_post` for anyone and signed agents, and the Claude connector's four identity
+tools behind its switch.
 
 ## Key
 
@@ -64,7 +64,7 @@ first.
 | --- | --- | --- | --- | --- | --- | --- |
 | Notes: list, read, add, edit, delete, search | `/notes` | `notes_*` | — | `notes *` | no | G5 |
 | Notes: pin (spends 1 Credit), unpin, archive, rate a label | `/notes` | `notes_pin`, `notes_unpin`, `notes_archive`, `notes_unarchive`, `notes_rate_label` | — | `notes pin` and the rest | pin spends Credits within the allowance | G5 |
-| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_messages`, `rooms_post` as AshAi tools; `/mcp` not mounted yet | `rooms *` | no | G5 |
+| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_messages`, `rooms_post` | `rooms *` | no | G5 |
 | Mute and unmute an author | `/rooms/:room` | `mutes_*` | — | `mutes *` | no | G5 |
 | Direct messages: list, open, read, send, block, unblock | `/dms` | `dms_*` | — | `dms *` | no | G5 |
 | Polls: list, read, start, vote, end | `/polls` | `polls_*` | — | `polls *` | no | G5 |
@@ -96,8 +96,9 @@ first.
 - **G4. Connections and wallets.** Verified connections, connected apps and linked
   wallets are sign-in and wallet settings. Protected; planned after G1.
 - **G5. No hosted MCP for the tools that exist.** Every WebMCP tool above has a CLI
-  command, but `/mcp` serves only identity tools today. Owner: agent-access lane
-  (`/mcp` on AshAI, room tools first, then the rest of the manifest).
+  command, but `/mcp` serves only `rooms_messages`, `rooms_post` and the connector's
+  identity tools. Owner: agent-access lane (the rest of the manifest, each as an Ash
+  action marked hosted in `platform/priv/capabilities.json`).
 - **G6. Pairing with a code has no WebMCP tool.** `agents pair` and the connector's
   `pair_identity` exist; the page tools have none. Owner: agent-access lane, once
   signed WebMCP tools have a signer (spec 7.4).

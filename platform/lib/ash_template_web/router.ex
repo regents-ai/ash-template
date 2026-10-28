@@ -50,32 +50,34 @@ defmodule AshTemplateWeb.Router do
     post "/connections/revoke", OAuthController, :revoke_connection, log: false
   end
 
-  # The Claude connector's MCP address: one JSON-RPC message per POST, with a
-  # Bearer token from the sign-in above (RegentMCPAgents.Plug). The plug answers
-  # a GET itself (405), so nothing here narrows the formats; it is 404 while the
-  # connector is off, and closes with the site. Each account has its own budget
-  # here; the endpoint counts each address first. Tool calls carry pairing codes,
-  # so nothing is logged.
+  # The hosted MCP server: AshAi runs the tools the capabilities list as hosted
+  # (`AshTemplateWeb.Capabilities.hosted_tools/0`), each as its Ash action with its
+  # policies. McpAgent says who is calling first: an agent signing with its wallet,
+  # an app connected with a Bearer token from the sign-in above, or anyone, for the
+  # public tools. No session, cookie or CSRF token is read. AshAi answers a GET
+  # itself (405), so nothing here narrows the formats; it closes with the site.
+  # Each account has its own budget here; the endpoint counts each address first.
+  # Nothing is kept between requests, and a page from another site is refused.
+  # Tool calls carry pairing codes, so nothing is logged.
   pipeline :mcp do
     plug AshTemplateWeb.Plugs.LaunchGate
+    plug AshTemplateWeb.Plugs.McpAgent
   end
 
   scope "/" do
     pipe_through :mcp
 
     forward "/mcp",
-            RegentMCPAgents.Plug,
+            AshAi.Mcp.Router,
             [
-              app: :ash_template,
-              title: "Ash Template",
-              about:
-                "Ash Template, where people keep notes, talk in rooms and pair the agents that work for them.",
-              rate_limit: [
-                policy: "mcp",
-                limit: 120,
-                window: 60,
-                admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3
-              ]
+              otp_app: :ash_template,
+              tools: AshTemplateWeb.Capabilities.hosted_tools(),
+              mcp_name: "ash_template",
+              instructions: AshTemplateWeb.Plugs.McpAgent.instructions(),
+              list_ttl_ms: 0,
+              read_ttl_ms: 0,
+              cache_scope: "private",
+              allowed_origins: &AshTemplateWeb.Plugs.McpAgent.site_origin?/1
             ],
             log: false
   end

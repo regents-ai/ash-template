@@ -8996,6 +8996,148 @@
             "description": "When it was first reported."
           }
         }
+      },
+      "ConnectedIdentity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "identity_id",
+          "account_url"
+        ],
+        "properties": {
+          "identity_id": {
+            "description": "The key this connection's identity has on this site, the same however often the app reconnects.",
+            "type": "string",
+            "minLength": 1
+          },
+          "account_url": {
+            "description": "The Account page where the person pairs agents and sees them.",
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ConnectedIdentityStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "identity_id",
+          "paired",
+          "account_url"
+        ],
+        "properties": {
+          "identity_id": {
+            "description": "The key this connection's identity has on this site, the same however often the app reconnects.",
+            "type": "string",
+            "minLength": 1
+          },
+          "paired": {
+            "description": "Whether the identity is paired with the person's account now.",
+            "type": "boolean"
+          },
+          "account_url": {
+            "description": "The Account page where the person pairs agents and sees them.",
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "ConnectedIdentityPairing": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "identity_id",
+          "paired",
+          "name"
+        ],
+        "properties": {
+          "identity_id": {
+            "description": "The key this connection's identity has on this site, the same however often the app reconnects.",
+            "type": "string",
+            "minLength": 1
+          },
+          "paired": {
+            "type": "boolean",
+            "const": true
+          },
+          "name": {
+            "description": "The name the app paired as.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "ConnectedIdentityCheckIn": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "harness",
+          "wallet",
+          "paired_at",
+          "last_contact_at",
+          "registry_listing",
+          "human_backed",
+          "same_person_agent_count",
+          "account",
+          "identity_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "harness": {
+            "$ref": "#/components/schemas/AgentHarness"
+          },
+          "wallet": {
+            "type": "string",
+            "pattern": "^0x[0-9a-f]{40}$"
+          },
+          "paired_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_contact_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registry_listing": {
+            "description": "The agent's page in the agent registry, or null when it has no listing there.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "human_backed": {
+            "description": "Whether a person verified with World ID stands behind the agent. Once true, it stays true, because the first person saved stays linked to the agent for good.",
+            "type": "boolean"
+          },
+          "same_person_agent_count": {
+            "description": "How many agents, this one included, the same verified person stands behind, or null when no verified person stands behind the agent.",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "account": {
+            "$ref": "#/components/schemas/PairedAccount"
+          },
+          "identity_id": {
+            "description": "The key this connection's identity has on this site, the same however often the app reconnects.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
       }
     },
     "headers": {
