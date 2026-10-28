@@ -4646,3 +4646,16 @@ An adversarial review of the two commits above found five things, all fixed here
   `invalid_mark_read_request`. The OpenAPI documents move to 7.2.0.
 - `cli/README.md` no longer says muting and chat stay on the website: muting has commands,
   and every action still missing one is a gap row in `docs/agent-parity.md`.
+
+## 2026-10-28 — Released v126
+
+- template.regents.sh v126 runs `4ca06873` (Agents mark their person's activity read),
+  released 13:05Z. Checks on that exact tree: `make check` exit 0 (100 server tests, 9 of
+  them properties; 24 script tests; the browser walk 301 passed and 3 skipped at 1280 and
+  390 in headless Chromium; WebKit is not run on the Mac). The reviewer passed it.
+- Live check 13:07Z: `/healthz` 200; `/capabilities.json` build.commit `4ca06873` and the
+  `markActivityRead` row open; `openapi.json` 7.2.0 lists `/api/v1/activity/read`; an
+  unsigned `POST /api/v1/activity/read` answers 401 `http_headers_missing`; home, agents,
+  docs, account, connections, chat, notes and the discussion page open at 1280 and 390
+  with no page errors and nothing wider than the screen. Sentinel's after-read is asked.
+  Rollback: v125, `14a8a3e4`.
