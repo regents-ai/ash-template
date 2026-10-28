@@ -34,3 +34,7 @@ config :ash_template, :indexnow_req, plug: {Req.Test, AshTemplate.IndexNow}
 config :logger, level: :warning
 
 config :phoenix, :plug_init_mode, :runtime
+
+# Every write inside a transaction runs in one Ash started (`Ash.transact/2`), so
+# a notification left unsent fails the test instead of warning in production.
+config :ash, :missed_notifications, :raise

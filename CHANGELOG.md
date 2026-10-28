@@ -4489,3 +4489,19 @@ Gap map stage 2, the parts that need no new table (`docs/gap-map-plan.md`).
   tips, buttons, empty states and page titles never open with who, what, where, why or
   when. It had only been written into the local skills checkout; it is now on main for
   every session.
+
+## 2026-10-28 — Sign-in stops missing notifications
+
+- `AshTemplate.Accounts.SessionAuthority` runs sign-in, refresh, switching person and
+  signing out in `Ash.transact/2` instead of `Repo.transaction/1`, so the updates
+  inside send their notifications once the transaction commits instead of logging
+  "Missed 1 notifications". A refused transition still keeps what it wrote (the
+  first row of a new sign-in, and the revocation of a lineage whose count ran out),
+  so its answer leaves the transaction wrapped and the answers callers see are
+  unchanged.
+- The test settings raise on a missed notification
+  (`config :ash, :missed_notifications, :raise`).
+  `platform/test/ash_template/accounts/session_authority_test.exs` walks sign-in,
+  refresh, switching and signing out, and checks a lineage whose count ran out stays
+  signed out; both tests fail against the old transactions. Listed in
+  `docs/feature-map.md`. Sean gave the go on 28 October ("3. a").
