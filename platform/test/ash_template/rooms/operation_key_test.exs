@@ -3,7 +3,8 @@ defmodule AshTemplate.Rooms.OperationKeyTest do
   # the same on every surface because every surface calls `Rooms.agent_post`:
   # - one key sent several times at once posts one message, and every call
   #   answers that message;
-  # - the same key with the same room and text answers the message it posted;
+  # - the same key with the same room and text answers the message it posted,
+  #   whether the text is resent as first sent or as the message stored it;
   # - the same key with other text is refused as idempotency_conflict;
   # - the same key after that message was deleted is refused as message_removed,
   #   naming the message.
@@ -25,10 +26,22 @@ defmodule AshTemplate.Rooms.OperationKeyTest do
 
   property "one operation key posts one message, answers it again, and refuses any other use" do
     check all(
-            body <- string(:alphanumeric, min_length: 1, max_length: 200),
+            first <- string(:alphanumeric, min_length: 1, max_length: 40),
+            rest <-
+              list_of(
+                one_of([
+                  string(:alphanumeric, min_length: 1, max_length: 40),
+                  member_of(["\n", "\n\n\n\n", "\r\n\r\n\r\n", " "])
+                ]),
+                max_length: 4
+              ),
+            gap <- member_of(["\n\n\n\n", "\r\n\r\n\r\n", "\n \n\t\n\n"]),
+            last <- string(:alphanumeric, min_length: 1, max_length: 40),
             calls <- integer(2..4),
             max_runs: 8
           ) do
+      # Blank lines inside the text, which the message squashes before it is stored.
+      body = Enum.join([first | rest]) <> gap <> last
       {actor, account} = paired_agent()
       key = Ecto.UUID.generate()
       post = fn text -> Rooms.agent_post("general", %{body: text, operation_id: key}, actor: actor, context: %{client_key: key}) end
@@ -38,11 +51,14 @@ defmodule AshTemplate.Rooms.OperationKeyTest do
         |> Task.async_stream(post, max_concurrency: calls)
         |> Enum.map(fn {:ok, {:ok, answer}} -> answer end)
 
-      assert [%{replayed: false, message: %{id: id}}] = Enum.reject(answers, & &1.replayed)
+      assert [%{replayed: false, message: %{id: id, body: stored}}] =
+               Enum.reject(answers, & &1.replayed)
+
       assert Enum.all?(answers, &(&1.message.id == id))
       assert posts(account) == [id]
 
-      assert {:ok, %{replayed: true, message: %{id: ^id, body: ^body}}} = post.(body)
+      assert {:ok, %{replayed: true, message: %{id: ^id}}} = post.(body)
+      assert {:ok, %{replayed: true, message: %{id: ^id}}} = post.(stored)
       assert {:error, %{errors: [%Refused{code: "idempotency_conflict"}]}} = post.(body <> "x")
 
       Rooms.delete_message!(Ash.get!(Message, id, authorize?: false), actor: actor)

@@ -4789,5 +4789,18 @@ An adversarial review of the two commits above found five things, all fixed here
   OpenAPI documents move to 8.0.0. The migration
   `20261028154117_agent_operations` needs Sean's letter naming the release before it
   runs in production.
-- The compile-connected limit in `mix precommit` moves from 35 to 38: the new resource
-  and the two actions' modules.
+- The compile-connected limit in `mix precommit` moves from 35 to 39: the new resource,
+  the two actions' modules, and the capability check naming the chat domain whose tools
+  are never hosted.
+- Review fixes: the key's fingerprint is taken from the text as the message stores it
+  (blank lines squashed), so a retry with the text the first answer gave back replays
+  instead of answering 409; the property test now always sends text with blank lines,
+  and fails on the earlier fingerprint. `agent_post` takes the client address from
+  every caller's context, never optionally. The build now stops unless `hosted_mcp`
+  is marked on exactly the operations whose browser tool is an AshAi tool, both ways;
+  the chat assistant's own tools are never hosted. `interfaces.hosted_mcp` names the
+  hosted tool. The agent guide's "Who may" column is now "Allowed", and the three
+  profile rows say "Not for agents yet." where they said only the person does this.
+- This change releases together with the `/mcp` mount (agent access work item 5),
+  never before it: until then two operations would be marked hosted on a route that
+  is not there.

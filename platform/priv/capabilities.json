@@ -142,10 +142,10 @@
       "cli_release": null,
       "switch": "app_surfaces",
       "surfaces": {
-        "webmcp": "Only its person does this, signed in on the site.",
-        "hosted_mcp": "Only its person does this, signed in on the site.",
+        "webmcp": "Not for agents yet.",
+        "hosted_mcp": "Not for agents yet.",
         "http": true,
-        "cli": "Only its person does this, signed in on the site."
+        "cli": "Not for agents yet."
       },
       "auth_modes": [
         "privy_session"
@@ -166,10 +166,10 @@
       "cli_release": null,
       "switch": "app_surfaces",
       "surfaces": {
-        "webmcp": "Only its person does this, signed in on the site.",
-        "hosted_mcp": "Only its person does this, signed in on the site.",
+        "webmcp": "Not for agents yet.",
+        "hosted_mcp": "Not for agents yet.",
         "http": true,
-        "cli": "Only its person does this, signed in on the site."
+        "cli": "Not for agents yet."
       },
       "auth_modes": [
         "privy_session"
@@ -190,10 +190,10 @@
       "cli_release": null,
       "switch": "app_surfaces",
       "surfaces": {
-        "webmcp": "Only its person does this, signed in on the site.",
-        "hosted_mcp": "Only its person does this, signed in on the site.",
+        "webmcp": "Not for agents yet.",
+        "hosted_mcp": "Not for agents yet.",
         "http": true,
-        "cli": "Only its person does this, signed in on the site."
+        "cli": "Not for agents yet."
       },
       "auth_modes": [
         "privy_session"

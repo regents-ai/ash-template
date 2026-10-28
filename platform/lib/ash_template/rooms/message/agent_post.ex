@@ -12,8 +12,11 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
   waits on the first's row, finds it spent, and answers as a reuse. The
   message's id is made here, so the row can name it before the post is written.
 
-  The caller passes the client address as `context: %{client_key: key}`, which
-  the post's allowances count (`AshTemplate.Rooms.Message.SetAuthor`).
+  The key's fingerprint is taken from the text as the message stores it, so a
+  retry with the text the first answer gave back replays it.
+
+  Every caller passes the client address as `context: %{client_key: key}`,
+  which the post's allowances count (`AshTemplate.Rooms.Message.SetAuthor`).
   """
 
   use Ash.Resource.Actions.Implementation
@@ -23,13 +26,14 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
   alias AshTemplate.Agents.Operation
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Refused, Room}
+  alias AshTemplate.Rooms.Message.SquashBlankLines
 
   @capability "room_post"
 
   @impl true
   def run(input, _opts, %{actor: %Agent{} = actor}) do
     %{room: slug, body: body, operation_id: key} = input.arguments
-    fingerprint = Operation.fingerprint([slug, body])
+    fingerprint = Operation.fingerprint([slug, SquashBlankLines.squash(body)])
 
     case spent(actor, key) do
       {:ok, nil} -> post(slug, body, key, fingerprint, actor, input.context)
@@ -61,7 +65,7 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
                Message
                |> Ash.Changeset.for_create(:post, %{room: room.slug, body: body},
                  actor: actor,
-                 context: Map.take(context, [:client_key])
+                 context: %{client_key: Map.fetch!(context, :client_key)}
                )
                |> Ash.Changeset.force_change_attribute(:id, id)
                |> Ash.create() do
@@ -80,11 +84,12 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
 
   # The key was spent by a call that committed while this one waited.
   defp answer_spent(error, actor, key, slug, fingerprint) do
-    if key_spent?(error) do
-      {:ok, operation} = spent(actor, key)
+    with true <- key_spent?(error),
+         {:ok, operation} <- spent(actor, key) do
       reuse(operation, slug, fingerprint)
     else
-      {:error, error}
+      false -> {:error, error}
+      {:error, error} -> {:error, error}
     end
   end
 

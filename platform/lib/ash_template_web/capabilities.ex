@@ -53,9 +53,11 @@ defmodule AshTemplateWeb.Capabilities do
 
   tools = for %{"operation_id" => id} = tool <- @manifest["tools"], into: %{}, do: {id, tool}
 
-  # The tools each domain hands AshAi, by name, with the input AshAi asks for.
+  # The tools each domain hands AshAi for hosted MCP, by name, with the input AshAi
+  # asks for. The chat assistant's own tools (`AshTemplate.Chat`) are never hosted.
   hosted =
     for domain <- Application.compile_env!(:ash_template, :ash_domains),
+        domain != AshTemplate.Chat,
         tool <- AshAi.Info.tools(domain),
         into: %{} do
       action = Ash.Resource.Info.action(tool.resource, tool.action)
@@ -162,12 +164,6 @@ defmodule AshTemplateWeb.Capabilities do
                          surfaces["http"] != true ->
                        "a surface listed differently from its tool, command or route"
 
-                     surfaces["hosted_mcp"] == true and !hosted_input ->
-                       "a hosted tool with no AshAi tool"
-
-                     hosted_input && surfaces["hosted_mcp"] != true ->
-                       "an AshAi tool not in the capability list"
-
                      hosted_input && shape.(hosted_input) != shape.(browser_input) ->
                        "hosted input that differs from the browser tool's input"
 
@@ -207,7 +203,7 @@ defmodule AshTemplateWeb.Capabilities do
                    person_page: row["person_page"],
                    interfaces: %{
                      browser_tool: tool && tool["name"],
-                     hosted_mcp: nil,
+                     hosted_mcp: if(surfaces["hosted_mcp"] == true, do: tool["name"]),
                      cli:
                        command && "regents #{files.commands["platform"]} #{command["command"]}",
                      http: http
@@ -223,6 +219,14 @@ defmodule AshTemplateWeb.Capabilities do
                    output_schema: output_schemas[id]
                  }
                end)
+
+  unless MapSet.new(@operations, & &1.interfaces.hosted_mcp) |> MapSet.delete(nil) ==
+           MapSet.new(Map.keys(hosted)),
+         do:
+           raise(
+             "priv/capabilities.json must mark hosted_mcp on exactly the operations whose " <>
+               "browser tool is an AshAi tool"
+           )
 
   @may @source["operations"] |> Enum.map(& &1["may"]) |> Enum.reject(&is_nil/1) |> Enum.uniq()
 
@@ -290,7 +294,7 @@ defmodule AshTemplateWeb.Capabilities do
   @spec markdown_table() :: String.t()
   def markdown_table do
     """
-    | Operation | Action | Who may | Browser tool | Command | Surfaces | Proof | For an agent |
+    | Operation | Action | Allowed | Browser tool | Command | Surfaces | Proof | For an agent |
     | --- | --- | --- | --- | --- | --- | --- | --- |
     #{Enum.map_join(operations(), "\n", &operation_row/1)}\
     """
@@ -319,7 +323,7 @@ defmodule AshTemplateWeb.Capabilities do
     rows = Map.new(@operations, &{&1.operation, &1})
 
     """
-    | Tool | Operation | Who may |
+    | Tool | Operation | Allowed |
     | --- | --- | --- |
     #{Enum.map_join(@manifest["tools"], "\n", &tool_row(&1, rows[&1["operation_id"]]))}\
     """
