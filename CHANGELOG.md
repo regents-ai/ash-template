@@ -4620,3 +4620,15 @@ An adversarial review of the two commits above found five things, all fixed here
   `0b11a68`), not the registry path and app name before it
   (`platform/config/runtime.exs`). A release still refuses to start without
   `FLY_IMAGE_REF`.
+
+## 2026-10-28 — Released v125
+
+- template.regents.sh v125 runs `14a8a3e4` (asking not to be tracked starts no visit;
+  forum questions; the release tag alone), released at 12:53Z. Live check:
+  `/capabilities.json` names the commit and `build.release` reads `14a8a3e`; `/healthz`
+  answers 200; a browser sending Global Privacy Control, even with an old `_visit`
+  cookie, leaves with no cookie and its page has no visit tag, while one without it
+  gets both; home, agents, docs, account, connections, chat, notes and the discussion
+  page open at 1280 and 390 with no page errors and nothing wider than the screen. The
+  logs since the release show only the machine's six seconds of restart. Sentinel's
+  after-read is asked. Rollback: v124, `0b11a68e`.
