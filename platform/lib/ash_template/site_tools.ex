@@ -34,13 +34,21 @@ defmodule AshTemplate.SiteTools do
       url: "https://patchbay.help/forum/capabilities",
       scopes: :every
     },
-    "techtree" => %{name: "techtree.sh", url: "https://techtree.sh/capabilities", scopes: :home},
+    "techtree" => %{
+      name: "techtree.sh",
+      url: "https://techtree.sh/capabilities.json",
+      scopes: :home
+    },
     "autolaunch" => %{
       name: "autolaunch.sh",
       url: "https://autolaunch.sh/capabilities",
       scopes: :home
     },
-    "keyfleet" => %{name: "keyfleet.ai", url: "https://keyfleet.ai/capabilities", scopes: :home}
+    "keyfleet" => %{
+      name: "keyfleet.ai",
+      url: "https://keyfleet.ai/capabilities.json",
+      scopes: :home
+    }
   }
 
   @type tool :: %{name: String.t(), title: String.t(), description: String.t()}

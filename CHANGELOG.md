@@ -4762,3 +4762,13 @@ An adversarial review of the two commits above found five things, all fixed here
   `@design_system_ref` moves to design-system `b7a34d89`, where the `claude` harness (Claude,
   the connected app) draws `claude-duet.png`; Claude Code keeps its own picture.
   `test/ash_template_web/agent_pictures_test.exs` still draws every agent kind.
+
+## 2026-10-28 — The tools card reads Techtree's and Keyfleet's new addresses
+
+- Techtree (v201) and Keyfleet moved their browser tools list to `/capabilities.json`, and
+  the old `/capabilities` answers 404, so the template's tools card showed neither site's
+  tools. `AshTemplate.SiteTools` and the walk's offline answers
+  (`test/browser/support/server/walk_offline.ex`) now read
+  https://techtree.sh/capabilities.json and https://keyfleet.ai/capabilities.json. Reported
+  by the Techtree chief, 28 Oct 14:50Z. regents.sh, Patchbay and Autolaunch still answer at
+  their old addresses.

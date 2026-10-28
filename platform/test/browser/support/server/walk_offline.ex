@@ -14,9 +14,9 @@ defmodule AshTemplate.WalkOffline do
   @tool_lists [
     "https://regents.sh/capabilities",
     "https://patchbay.help/forum/capabilities",
-    "https://techtree.sh/capabilities",
+    "https://techtree.sh/capabilities.json",
     "https://autolaunch.sh/capabilities",
-    "https://keyfleet.ai/capabilities"
+    "https://keyfleet.ai/capabilities.json"
   ]
 
   def run(%Req.Request{url: %URI{host: host}} = request) when host in @this_machine,
