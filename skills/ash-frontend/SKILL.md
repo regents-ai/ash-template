@@ -46,6 +46,11 @@ the detail.
   where, why or when; it reads as AI writing. Use a plain noun phrase: "Fleet Tools",
   not "What a fleet can use"; "Permissions", not "Who may do what". W-words mid-sentence
   are fine; code comments and @doc are exempt. See regent-workflow.
+- **Titles are one or two words** (founder, 2026-10-28): headings, panel and dialog
+  titles, disclosure summaries, tabs and field labels are a noun, never a phrase.
+  "Citation", not "Work that cites it"; "Legend", not "What the marks mean"; "Clone",
+  not "Copy the code". Product names, people's own content, buttons and one-line empty
+  states are not titles. See regent-workflow for the full list of counterexamples.
 
 Every page with the account menu is a `ShellLive` action in `live_session :product_shell`;
 a page never draws the shell itself, or signed in its account menu has no agents.

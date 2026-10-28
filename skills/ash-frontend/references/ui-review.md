@@ -3,7 +3,8 @@
 These are design choices for this pack, not promises made by Phoenix or Ash.
 
 **Hierarchy:** Can someone name the page's purpose and primary action within a glance?
-Use meaningful headings, restrained typography, aligned edges, and consistent spacing.
+Use headings of one or two words ("Citation", never "Work that cites it"), restrained
+typography, aligned edges, and consistent spacing.
 Do not label everything a platform, ecosystem, engine, or workflow. Explain the result
 of an action in normal language.
 

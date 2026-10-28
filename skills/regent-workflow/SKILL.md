@@ -125,6 +125,37 @@ Sean, 28 Oct 2026, verbatim: "the entire phase / concept of a phrase starting wi
 - Choose the replacement yourself; never put the wording to Sean. Reviews treat a
   W-word opening on screen as a defect.
 
+## Titles are one or two words (founder rule, 28 Oct 2026)
+
+Sean, 28 Oct 2026, verbatim, of the heading "Work that cites it": "a title like this is
+a 100% match for AI writing ... Always use 1-2 words instead of a phrase for titles."
+
+- On every Regent site, CLI and agent guide, a title is one or two words: page and
+  section headings, panel and card titles, dialog titles, disclosure summaries, tabs,
+  navigation items, field labels and Markdown bold leads. Use a noun, or an adjective and
+  a noun. Never a phrase or a clause.
+- Counterexamples, each an AI-writing tell, with the fix:
+  - "Work that cites it" → "Citation"
+  - "What the marks mean" → "Legend"
+  - "How each Key voted" → "Votes"
+  - "Money in and out" → "Cash flow"
+  - "Copy the code" → "Clone"
+  - "Sent lately" → "Pushes"
+  - "Get it" → "Clone"
+  - "Places to work" → "Workspaces"
+  - "Recent points activity" → "Points activity"
+  - "Say something here" → "Message"
+  - "About this Key" → "Overview"
+- Signs of a phrase: a verb ("cites", "moves", "voted"), a pronoun ("it", "your",
+  "this"), "and" joining two ideas, or a word that only makes sense read as a sentence.
+- Not titles, so not held to two words: a product's own name ("Pair New Agent", "Daily
+  Treasury Slice to Keys"), content people wrote (a commit's first line, an item's
+  title, a fleet's name), buttons (a verb and its object, such as "Make public"), and
+  empty states, errors and notices, which are one short sentence.
+- Choose the replacement yourself; never put the wording to Sean. Reviews treat a
+  title of three or more words, or any phrase as a title, as a defect, like a W-word
+  opening.
+
 ## Every address has a copy icon (founder rule, 19 Oct 2026)
 
 Sean, 19 Oct 2026, verbatim: "make a standing rule where anywhere an ens name or a
