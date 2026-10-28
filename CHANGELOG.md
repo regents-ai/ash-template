@@ -4646,3 +4646,24 @@ An adversarial review of the two commits above found five things, all fixed here
   `invalid_mark_read_request`. The OpenAPI documents move to 7.2.0.
 - `cli/README.md` no longer says muting and chat stay on the website: muting has commands,
   and every action still missing one is a gap row in `docs/agent-parity.md`.
+
+## 2026-10-28 — Pay for a pin with USDC or Credits
+
+- elixir-utils moves to `9d7ee92` (branch `credits-pay-tpl-1028`, waiting for review and
+  Sean's sign-off before it goes to main): `RegentPayments.Purchase.pay_with_credits/4`
+  pays an offer's terms in Credits, one Credit per USDC, holding and charging them with
+  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`.
+- The note pin is a payment offer (`AshTemplate.Payments.NotePin`, 1 USDC to
+  `PAYMENTS_WALLET_ADDRESS`, Credits accepted). `POST /api/v1/notes/{id}/pin` answers 402
+  with x402 terms, then takes `payment` (signed by the agent's own wallet, inside the
+  signed body) or `pay_with: "credits"`. The terms are chosen under the note's row lock
+  and reused while unpaid, so a pin asked for several times at once pays once, and a pin
+  after an unpin pays again. `operation_id` is gone from the route, the browser tool and
+  the command; the contract moves to 8.0.0.
+- Sign-in makes sure the person has a shared Regent profile, which a paired agent's
+  payments name as the person paid for. An agent whose person has none yet is told
+  `person_needs_sign_in`; no fill runs for existing accounts.
+- `config :regent_payments, credits_pay_to:` is the payments wallet: the one wallet
+  Credits may stand in for.
+- The local database fixture runs the payments migration. No shared database runs it
+  before Sean's go.

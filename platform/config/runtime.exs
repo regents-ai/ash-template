@@ -82,6 +82,31 @@ if config_env() != :test do
   end
 end
 
+# Payments in USDC are verified and settled by Coinbase's hosted x402
+# facilitator, whose address is public. CDP_API_KEY_ID and CDP_API_KEY_SECRET
+# are its credentials; without them the site still starts, and a payment in
+# USDC answers that the payment service can't be reached. Payments in Credits
+# need neither.
+config :regent_payments, RegentPayments.Facilitator,
+  url: X402.Facilitator.Auth.CDP.facilitator_url(),
+  auth:
+    (case {System.get_env("CDP_API_KEY_ID"), System.get_env("CDP_API_KEY_SECRET")} do
+       {id, secret} when id not in [nil, ""] and secret not in [nil, ""] ->
+         {X402.Facilitator.Auth.CDP, api_key_id: id, api_key_secret: secret}
+
+       _absent ->
+         nil
+     end)
+
+# The Regents wallet on Base that paid actions are paid into, and so the one
+# wallet a payment in Credits may stand in for. Until it is set, an agent's pin
+# answers that paid pins are not set up here.
+if config_env() != :test do
+  payments_wallet = System.get_env("PAYMENTS_WALLET_ADDRESS")
+  config :ash_template, :payments_wallet_address, payments_wallet
+  config :regent_payments, credits_pay_to: List.wrap(payments_wallet)
+end
+
 # Agents' signed requests are checked by this sign-in service instead, such as one
 # running on this machine.
 if broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL") do

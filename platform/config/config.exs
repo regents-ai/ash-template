@@ -20,6 +20,9 @@ config :regent_credits,
   notifications: AshTemplate.Notifications,
   ash_domains: [RegentCredits],
   admins: [],
+  # A paired agent may spend its person's Credits, within the limits that person
+  # sets for it on their account page; nothing until they turn it on.
+  agent_grants_enabled: true,
   chain_client: AshTemplate.ChainClient,
   chains: %{
     base: %{chain_id: 8453, name: "Base", rpc_url: "https://mainnet.base.org"},
@@ -132,12 +135,21 @@ config :regent_agents,
       "Search the chat rooms.",
       "Read your person's latest activity.",
       "Read your person's Credits and Points.",
-      # Changes together with `config :regent_credits, agent_grants_enabled:`.
-      "Spending your person's Credits, such as pinning a note, isn't open to agents yet; your person can do it themselves."
+      "Pin your person's notes, each pin paid with 1 USDC from your own wallet or 1 of your person's Credits, within the limits they set for you."
     ]
   },
   ash_domains: [RegentAgents],
   siwa: [url: "https://siwa.regents.sh", audience: "ash-template"]
+
+# Paid actions, through the Regents payments library shared by every Regent
+# site: an agent's note pin (AshTemplate.Payments.NotePin), paid in USDC from
+# its wallet or in its person's Credits. The records live in the shared
+# `regent_payments` schema; this site reads and writes only its own rows.
+config :regent_payments,
+  repo: AshTemplate.Repo,
+  site: site,
+  ash_domains: [RegentPayments],
+  offers: [AshTemplate.Payments.NotePin]
 
 # Jev picks a label for each saved note while the server has an OpenRouter key
 # (AshTemplate.Notes.Labels); the whole site asks at most daily_questions a day,

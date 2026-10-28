@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "14013e420600b7d201c690a29d19078b8ae43952"
+  @elixir_utils_ref "9d7ee927779f04bbe21e32d1fb0165cea289e83e"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "6dcd85ed5c09b09fd56fd900280e09910134280f"
 
@@ -81,7 +81,11 @@ defmodule AshTemplate.MixProject do
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},
       {:regent_points, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "points"},
-      {:regent_credits, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits"},
+      # regent_payments names regent_credits by a sibling path; this pin replaces it.
+      {:regent_credits,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits", override: true},
+      {:regent_payments,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/payments"},
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
       # ens_elixir names siwa by a sibling path; this pin replaces it.
       {:siwa,
@@ -139,6 +143,7 @@ defmodule AshTemplate.MixProject do
           regent_points: "points",
           regent_privy: "privy",
           regent_credits: "credits",
+          regent_payments: "ash_components/payments",
           regent_chain: "chain",
           regent_agent_access: "agent_access",
           siwa: "siwa/siwa-elixir/apps/siwa"

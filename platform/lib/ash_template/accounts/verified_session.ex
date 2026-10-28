@@ -8,8 +8,8 @@ defmodule AshTemplate.Accounts.VerifiedSession do
   @actor %System{}
 
   @doc """
-  Registers or refreshes the account the verified session names, reconciles
-  its linked socials, moves Credits waiting under its wallets to it and asks
+  Registers or refreshes the account the verified session names, gives the
+  person their shared profile when they have none, reconciles its linked socials, moves Credits waiting under its wallets to it and asks
   Ethereum for its wallet's ENS name again, returning the providers another
   account already holds.
   Without a linked wallet the account's wallet evidence is withdrawn instead.
@@ -23,6 +23,7 @@ defmodule AshTemplate.Accounts.VerifiedSession do
         with {:ok, account} <- Accounts.register_verified(did, primary, addresses, actor: @actor),
              {:ok, account} <-
                Accounts.refresh_verified(account, primary, addresses, actor: @actor),
+             {:ok, _profile} <- RegentIdentity.ensure(verified),
              {:ok, conflicts} <- reconcile(account.id, verified.linked_socials),
              {:ok, _moved} <-
                RegentCredits.attach_wallets(did, addresses,

@@ -28,7 +28,9 @@ verified = %RegentPrivy.Session{
   wallet_addresses: [wallet, embedded],
   embedded_wallet_address: embedded,
   user_wallet_address: wallet,
-  linked_socials: []
+  linked_socials: [],
+  issued_at: System.system_time(:second),
+  expires_at: System.system_time(:second) + 3600
 }
 
 {:ok, account, _conflicts} = VerifiedSession.establish(verified)

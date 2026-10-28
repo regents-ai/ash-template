@@ -15,10 +15,11 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias AshTemplate.{Activity, Notes, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
+  alias AshTemplate.Payments.NotePin
   alias AshTemplate.Rooms.Mute
   alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
-  alias RegentCredits.Errors.{NotEnoughCredits, Refused}
+  alias RegentPayments.{Purchase, USDC}
   alias RegentPoints.Rules
 
   plug :paired_agent
@@ -54,34 +55,33 @@ defmodule AshTemplateWeb.PairedAgentController do
        "details says why. Send message_id, the id of a room message by the author to mute, from rooms messages."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
-    "invalid_pin" =>
-      {422, "The note could not be pinned.",
-       "details says why. Send operation_id, a new UUID for each pin that you keep when retrying."},
-    "not_enough_credits" =>
-      {402, "Your person does not have enough Credits for this.",
-       "Ask your person to buy Credits on regents.sh, then retry with the same operation_id and fresh proof."},
-    "spending_not_allowed" =>
-      {403, "Your person has not allowed you to spend their Credits.",
-       "Ask your person to allow you to spend on their Regents account at regents.sh/account, with this site included. account_balances shows your current limits."},
-    "spending_not_on_this_site" =>
-      {403, "Your person has not allowed you to spend Credits on this site.",
-       "Ask your person to add this site to the sites you may spend on, on their Regents account at regents.sh/account. account_balances shows your current limits."},
-    "spending_over_limit_per_spend" =>
-      {403, "This costs more than your person lets you spend at once.",
-       "account_balances shows your limit per spend. Ask your person to raise it."},
-    "spending_over_daily_limit" =>
-      {403, "This would go over the daily limit your person set for you.",
-       "account_balances shows what is left over the last 24 hours. Retry once enough is left, or ask your person to raise the limit."},
+    "invalid_pin" => {422, "The note could not be pinned.", "details says why."},
+    "person_needs_sign_in" =>
+      {403, "Your person needs to sign in on this site again before you can pay for them.",
+       "Ask your person to sign in on this site once, then ask again."},
+    "pins_not_set_up" =>
+      {503, "Paid pins are not set up on this site yet.",
+       "Nothing was charged. Try again once this site has set them up."},
+    "pin_settled" =>
+      {202, "The pin is paid for and is being applied.",
+       "Ask again the same way to finish it. You will not pay twice."},
+    "settlement_pending" =>
+      {409, "This payment is being confirmed with the payment service by hand.",
+       "Do not pay again. Ask again later to see where it stands."},
+    "terms_expired" =>
+      {410, "Those payment terms are no longer on offer.",
+       "Ask again without a payment to be given fresh terms."},
+    "payment_service_unavailable" =>
+      {502, "The payment service could not be reached.",
+       "Do not pay again. Ask again with the same payment."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
-  # The refusals a change to the agent's grant would answer.
-  @granted ~w(spending_not_allowed spending_not_on_this_site spending_over_limit_per_spend spending_over_daily_limit)
-
   @points_off "Earning Points is off on this site."
   @spending_closed "Agent spending isn't open yet. Your person can do this themselves."
   @spending_ask "Your person can allow you to spend Credits on this site on their Regents account at regents.sh/account."
+  @pay_hint ~s(Sign the payment terms with your own wallet and send the signed payment as "payment" in the body, or send {"pay_with": "credits"} to pay with your person's Credits. Asking again the same way never pays twice.)
 
   # What the agent may spend, and the note, both come from the agent's budget
   # (`RegentCredits.agent_budget/1`): its grant, and whether a grant can be made.
@@ -313,52 +313,173 @@ defmodule AshTemplateWeb.PairedAgentController do
   end
 
   # What pinning the note would cost, changing nothing: a pinned note stays as
-  # it is and costs nothing (`Note.Pin`).
+  # it is and costs nothing.
   def pin_price(conn, %{"id" => id}) do
     for_note(conn, id, fn note ->
-      credits = if note.pinned_at, do: Decimal.new(0), else: Note.Pin.price()
-      json(conn, %{note: %{id: note.id, pinned: !!note.pinned_at}, price: %{credits: credits}})
+      price = if note.pinned_at, do: 0, else: NotePin.price_atomic()
+
+      json(conn, %{
+        note: %{id: note.id, pinned: !!note.pinned_at},
+        price: %{usdc: USDC.format(price), credits: USDC.format(price)}
+      })
     end)
   end
 
-  # Pinning costs the person one Credit (`Note.Pin`); a refused spend pins nothing.
+  @doc """
+  Pins the note once its pin is paid for (`AshTemplate.Payments.NotePin`): 1 USDC
+  from the agent's own wallet, an x402 payment sent as `"payment"` in the signed
+  body, or 1 of its person's Credits when the body says `"pay_with": "credits"`.
+  Without either it answers 402 with the terms. Asked again for the same note,
+  it pays the terms it already offered, so a retry never pays twice. A note
+  already pinned costs nothing.
+  """
   def pin_note(conn, %{"id" => id}) do
-    for_note(conn, id, fn note ->
-      case Notes.pin_note(note, conn.body_params["operation_id"], actor: conn.assigns.actor) do
-        {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
-        {:error, %Ash.Error.Invalid{} = error} -> refuse_pin(conn, error)
-        {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    for_note(conn, id, fn
+      %{pinned_at: %DateTime{}} = note -> json(conn, %{note: NotesJSON.note(note)})
+      note -> pay_for_pin(conn, note)
+    end)
+  end
+
+  defp pay_for_pin(%{assigns: %{actor: %Agent{beneficiary_profile_id: nil}}} = conn, _note),
+    do: refuse(conn, "person_needs_sign_in")
+
+  defp pay_for_pin(conn, note) do
+    actor = conn.assigns.actor
+
+    with :ok <- payments_set_up(),
+         {:ok, {:terms, intent}} <- pin_terms(actor, note.id) do
+      conn |> pay(actor, intent) |> answer_pin(conn)
+    else
+      {:ok, {:pinned, note}} -> json(conn, %{note: NotesJSON.note(note)})
+      :not_set_up -> refuse(conn, "pins_not_set_up")
+      {:error, :note_gone} -> refuse(conn, "note_not_found")
+      {:error, error} -> refuse_payment(conn, error)
+    end
+  end
+
+  defp payments_set_up, do: if(NotePin.pay_to(), do: :ok, else: :not_set_up)
+
+  # Chosen under the note's row lock, so requests at once agree on one set of
+  # terms and see a pin paid meanwhile. Terms already offered for this note and
+  # not yet used are paid again, so a retry pays once; a pin paid earlier and
+  # since unpinned starts afresh.
+  defp pin_terms(actor, note_id) do
+    Ash.transact([Note, RegentPayments.PaymentIntent], fn ->
+      case Notes.lock_my_note(note_id, actor: actor) do
+        {:ok, %Note{pinned_at: %DateTime{}}} ->
+          {:pinned, Notes.get_my_note!(note_id, actor: actor)}
+
+        {:ok, %Note{}} ->
+          terms(actor, note_id)
+
+        {:ok, nil} ->
+          {:error, :note_gone}
+
+        {:error, error} ->
+          {:error, error}
       end
     end)
   end
 
-  defp refuse_pin(conn, %Ash.Error.Invalid{errors: errors} = error) do
-    case Enum.find_value(errors, &spending_code/1) do
-      nil -> refuse(conn, "invalid_pin", error)
-      code when code in @granted -> refuse_spending(conn, code)
-      code -> refuse(conn, code)
+  defp terms(actor, note_id) do
+    case Purchase.on_offer(NotePin, actor, &(&1.target_id == note_id and &1.status != :applied)) do
+      nil ->
+        with {:ok, intent} <- Purchase.prepare(NotePin, %{note_id: note_id}, actor),
+             do: {:terms, intent}
+
+      intent ->
+        {:terms, intent}
     end
   end
 
-  # A refusal under the agent's grant says to change the grant only while a
-  # grant can be made; until then the person pins it themselves.
-  defp refuse_spending(conn, code) do
-    case RegentCredits.agent_budget(actor: credit_actor(conn)) do
-      {:ok, %{grant_approvals_available: true}} -> refuse(conn, code)
-      {:ok, %{grant_approvals_available: false}} -> refuse_closed(conn, code)
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
+  defp pay(%{body_params: %{"pay_with" => "credits"}} = conn, actor, intent),
+    do: Purchase.pay_with_credits(actor, intent.id, credit_actor(conn), %{})
+
+  defp pay(conn, actor, intent),
+    do: Purchase.execute(actor, intent.id, %{payment: payment(conn), payer: nil, context: %{}})
+
+  # The x402 payment travels in the signed body, so the agent's proof covers it.
+  defp payment(%{body_params: %{"payment" => payment}}) when is_binary(payment) and payment != "",
+    do: payment
+
+  defp payment(_conn), do: nil
+
+  defp answer_pin({:applied, intent, receipt}, conn) do
+    for_note(conn, intent.target_id, fn note ->
+      conn
+      |> paid_header(receipt)
+      |> json(%{
+        note: NotesJSON.note(note),
+        payment_intent_id: intent.id,
+        receipt: Purchase.receipt_payload(receipt)
+      })
+    end)
   end
 
-  defp refuse_closed(conn, code) do
-    {status, message, _grant_hint} = Map.fetch!(@errors, code)
+  defp answer_pin({:payment_required, intent}, conn), do: ask_payment(conn, intent, nil)
+
+  defp answer_pin({:payment_rejected, intent, reason}, conn),
+    do: ask_payment(conn, intent, reason)
+
+  defp answer_pin({:credits_refused, intent, words}, conn) do
+    conn
+    |> put_status(402)
+    |> json(%{
+      error: %{
+        code: "credits_refused",
+        message: words,
+        hint:
+          "Nothing was spent. account_balances shows your person's Credits and the limits they set for you. You can pay in USDC instead."
+      },
+      payment_intent_id: intent.id
+    })
+  end
+
+  defp answer_pin({:settled, intent, _receipt}, conn),
+    do: refuse_intent(conn, "pin_settled", intent)
+
+  defp answer_pin({:settlement_pending, intent}, conn),
+    do: refuse_intent(conn, "settlement_pending", intent)
+
+  defp answer_pin({:expired, intent}, conn), do: refuse_intent(conn, "terms_expired", intent)
+
+  defp answer_pin({:facilitator_unavailable, intent, _reason}, conn),
+    do: refuse_intent(conn, "payment_service_unavailable", intent)
+
+  defp answer_pin({:error, error}, conn), do: refuse_payment(conn, error)
+
+  defp ask_payment(conn, intent, reason) do
+    price = USDC.format(intent.amount_atomic)
+
+    message =
+      reason || "Pinning this note costs #{price} USDC, or #{price} of your person's Credits."
+
+    terms = Purchase.terms(intent, message, url(~p"/api/v1/notes/#{intent.target_id}/pin"))
+    {:ok, header} = X402.PaymentRequired.encode(terms)
 
     conn
-    |> put_status(status)
-    |> json(%{error: %{code: code, message: message, hint: @spending_closed}})
+    |> put_resp_header("payment-required", header)
+    |> put_status(402)
+    |> json(%{
+      error: %{code: "payment_required", message: message, hint: @pay_hint},
+      payment_intent_id: intent.id,
+      price: %{usdc: price, credits: price},
+      payment_terms: terms
+    })
   end
+
+  defp paid_header(conn, %{paid_with: :usdc, payment_response: response}) do
+    {:ok, header} = X402.PaymentResponse.encode(response)
+    put_resp_header(conn, "payment-response", header)
+  end
+
+  defp paid_header(conn, _paid_with_credits), do: conn
+
+  defp refuse_payment(conn, %Ash.Error.Forbidden{}), do: refuse(conn, "agent_not_paired")
+  defp refuse_payment(conn, %Ash.Error.Invalid{} = error), do: refuse(conn, "invalid_pin", error)
+
+  defp refuse_payment(conn, error),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
 
   def unpin_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.unpin_note/2)
   def archive_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.archive_note/2)
@@ -384,14 +505,6 @@ defmodule AshTemplateWeb.PairedAgentController do
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
-
-  defp spending_code(%NotEnoughCredits{}), do: "not_enough_credits"
-  defp spending_code(%Refused{reason: :agent_off}), do: "spending_not_allowed"
-  defp spending_code(%Refused{reason: :agent_site}), do: "spending_not_on_this_site"
-  defp spending_code(%Refused{reason: :agent_max_per_spend}), do: "spending_over_limit_per_spend"
-  defp spending_code(%Refused{reason: :agent_daily_limit}), do: "spending_over_daily_limit"
-  defp spending_code(%Refused{reason: :agent_not_paired}), do: "agent_not_paired"
-  defp spending_code(_error), do: nil
 
   defp credit_actor(conn) do
     actor = conn.assigns.actor
@@ -433,5 +546,13 @@ defmodule AshTemplateWeb.PairedAgentController do
     body = %{code: code, message: message, hint: hint}
     body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
     conn |> put_status(status) |> json(%{error: body})
+  end
+
+  defp refuse_intent(conn, code, intent) do
+    {status, message, hint} = Map.fetch!(@errors, code)
+
+    conn
+    |> put_status(status)
+    |> json(%{error: %{code: code, message: message, hint: hint}, payment_intent_id: intent.id})
   end
 end

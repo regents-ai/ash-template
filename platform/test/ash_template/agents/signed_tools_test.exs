@@ -176,7 +176,9 @@ defmodule AshTemplate.SignedToolsTest do
                privy_user_id: person.privy_user_id,
                wallet_address: "0x3333333333333333333333333333333333333333",
                wallet_addresses: ["0x3333333333333333333333333333333333333333"],
-               linked_socials: []
+               linked_socials: [],
+               issued_at: System.system_time(:second),
+               expires_at: System.system_time(:second) + 3600
              })
 
     checked_in = request(:get, "/api/agents/v1/me")
@@ -227,7 +229,9 @@ defmodule AshTemplate.SignedToolsTest do
       privy_user_id: "did:privy:tool-test",
       wallet_address: @wallet,
       wallet_addresses: [@wallet],
-      linked_socials: []
+      linked_socials: [],
+      issued_at: System.system_time(:second),
+      expires_at: System.system_time(:second) + 3600
     }
 
     assert {:ok, account, []} = VerifiedSession.establish(session)
@@ -593,7 +597,7 @@ defmodule AshTemplate.SignedToolsTest do
     human = AshTemplate.Actors.Human.for_account(account)
     older = AshTemplate.Notes.create_note!(%{title: "Older"}, actor: human)
     newer = AshTemplate.Notes.create_note!(%{title: "Newer"}, actor: human)
-    AshTemplate.Notes.pin_note!(newer, Ecto.UUID.generate(), actor: human)
+    AshTemplate.Notes.pin_note!(newer.id)
     order = fn -> Enum.map(AshTemplate.Notes.list_my_notes!(actor: human), & &1.id) end
     assert order.() == [newer.id, older.id]
 
@@ -828,7 +832,9 @@ defmodule AshTemplate.SignedToolsTest do
         privy_user_id: privy_user_id,
         wallet_address: @wallet,
         wallet_addresses: [@wallet],
-        linked_socials: []
+        linked_socials: [],
+        issued_at: System.system_time(:second),
+        expires_at: System.system_time(:second) + 3600
       })
 
     person = %RegentAgents.Person{privy_user_id: privy_user_id}
