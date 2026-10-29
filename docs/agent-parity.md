@@ -79,7 +79,7 @@ CLI and the Claude connector. The connector column comes with the connector's ch
 | Notifications: read | `/app/activity` | `activity_list` | `activity_list` | `activity list` | no | — |
 | Notifications: mark all read | `/app/activity` | `activity_mark_read` | — | `activity mark-read` (next release) | no | G5 |
 | Search notes and messages together | page search box | `notes_search` and `rooms_search` separately | `notes_search` and `rooms_search` separately | `notes search`, `rooms search` | no | — |
-| Chat with the site's assistant: list, read, send | `/chat` | `chat_list`, `chat_read`, `chat_send` | — | `chat list`, `chat read`, `chat send` (next release) | no | G5 |
+| Chat with the site's assistant: list, read, send | `/chat` | `chat_list`, `chat_read`, `chat_send` | `chat_list`, `chat_read`, `chat_send` | `chat list`, `chat read`, `chat send` (next release) | no | — |
 
 ## Gaps
 
@@ -105,9 +105,10 @@ CLI and the Claude connector. The connector column comes with the connector's ch
   wallets are sign-in and wallet settings. Protected; planned after G1.
 - **G5. Hosted MCP for the tools that exist.** Every WebMCP tool above has a CLI
   command. `/mcp` serves the reads (29 Oct, `tickets/mcp-1029` commit 1), every
-  notes tool but the pin (commit 2), every rooms and mutes tool (commit 3) and every
-  direct-messages tool (commit 4); the writes follow a domain at a time: chat, polls
-  and the agent's own profile and check-in, then the note pin (spends Credits). The
+  notes tool but the pin (commit 2), every rooms and mutes tool (commit 3), every
+  direct-messages tool (commit 4) and every chat tool (commit 5); the writes follow a
+  domain at a time: polls and the agent's own profile and check-in, then the note pin
+  (spends Credits). The
   library's `agents whoami` is not hosted yet: it is elixir-utils' route, and hosting
   it needs the library to offer it as a function. Owner: the hosted MCP lane (each
   operation as an Ash action marked hosted in `platform/priv/capabilities.json`).
@@ -126,6 +127,6 @@ CLI and the Claude connector. The connector column comes with the connector's ch
   follows with G5.
 - **G10. Chat with the site's assistant.** Closed on WebMCP and the CLI 28 Oct
   (`chat_list`, `chat_read`, `chat_send`; `chat list`, `chat read`, `chat send`); hosted
-  MCP follows with G5. The same change made `prepare_agent_request` offer every signed
+  MCP 29 Oct (G5, commit 5). The same change made `prepare_agent_request` offer every signed
   tool: it had missed the room likes and reports, direct messages and polls, so an agent
   whose browser checks inputs against the schema could not prepare them.

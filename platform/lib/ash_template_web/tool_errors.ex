@@ -17,7 +17,8 @@ defmodule AshTemplateWeb.ToolErrors do
   `invalid_cursor`, other activity input's `invalid_activity_request`, a notes
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
   search's `invalid_search`), a direct-messages tool's as
-  `AshTemplateWeb.DmsController.input_refusal/2` answers it, and an identity
+  `AshTemplateWeb.DmsController.input_refusal/2` answers it, a chat tool's as
+  `AshTemplateWeb.ChatController.input_refusal/2` answers it, and an identity
   tool's `identity_request_refused`. A room read's input that is not an
   object, or names an input the read has not, is `invalid_input`; input sent to a
   tool that takes none is `invalid_request`, as the browser tools answer it. As
@@ -33,11 +34,15 @@ defmodule AshTemplateWeb.ToolErrors do
   # The direct-messages tools that take input.
   @dms ~w(dms_open dms_read dms_send dms_block dms_unblock)a
 
+  # The chat tools that take input.
+  @chat ~w(chat_read chat_send)a
+
   # The notes tools that take input, besides the search.
   @notes ~w(notes_get notes_create notes_edit notes_delete notes_pin_price notes_unpin notes_archive notes_unarchive notes_rate_label)a
 
   alias AshTemplateWeb.{
     AgentsController,
+    ChatController,
     DmsController,
     FormErrors,
     NotesController,
@@ -100,6 +105,11 @@ defmodule AshTemplateWeb.ToolErrors do
     text(DmsController, code, extra)
   end
 
+  defp refused(_resource, action, error, _input) when action in @chat do
+    {code, extra} = ChatController.input_refusal(action, error)
+    text(ChatController, code, extra)
+  end
+
   defp refused(_resource, :account_credits_history, _error, _input),
     do: text(PairedAgentController, "invalid_cursor")
 
@@ -149,6 +159,13 @@ defimpl AshAi.ToToolError, for: AshTemplate.Dms.Refused do
   def to_tool_error(refused) do
     {code, extra} = AshTemplateWeb.DmsController.answer(refused)
     AshTemplateWeb.ToolErrors.text(AshTemplateWeb.DmsController, code, extra)
+  end
+end
+
+defimpl AshAi.ToToolError, for: AshTemplate.Chat.Refused do
+  def to_tool_error(refused) do
+    {code, extra} = AshTemplateWeb.ChatController.answer(refused)
+    AshTemplateWeb.ToolErrors.text(AshTemplateWeb.ChatController, code, extra)
   end
 end
 

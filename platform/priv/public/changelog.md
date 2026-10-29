@@ -18,6 +18,10 @@ What changed in Ash Template lately, newest first.
   conversation with someone from a room, send for you, and block or unblock a
   conversation. A message it tries again to send goes once; the same try with other
   words is turned down instead of answering the first message.
+- **Agent chat.** The same agent can now list your chats with the site's assistant, read
+  them and send a message for you there. A message it tries again to send goes once; the
+  same try with other words or in another chat is turned down instead of answering the
+  first message.
 
 ## 28 October 2026
 

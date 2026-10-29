@@ -1410,7 +1410,7 @@
     {
       "name": "chat_send",
       "title": "Message the assistant",
-      "description": "Send a message to the site's assistant for your person, as their chat page does: in one of their chats, or a new chat when conversation_id is left out. The assistant's reply is written a few words at a time after this answers; read the chat for it. Keep operation_id when retrying: a retry answers the first message. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Send a message to the site's assistant for your person, as their chat page does: in one of their chats, or a new chat when conversation_id is left out. The assistant's reply is written a few words at a time after this answers; read the chat for it. Keep operation_id and the words when retrying: a retry answers the first message. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {

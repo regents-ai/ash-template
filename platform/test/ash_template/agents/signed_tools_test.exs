@@ -892,7 +892,7 @@ defmodule AshTemplate.SignedToolsTest do
     assert error_code(request(:post, "/api/v1/chat/messages", into_theirs)) == "chat_not_found"
 
     stolen = Jason.encode!(%{text: "Theirs", operation_id: theirs.id, conversation_id: chat})
-    assert error_code(request(:post, "/api/v1/chat/messages", stolen)) == "invalid_message"
+    assert error_code(request(:post, "/api/v1/chat/messages", stolen)) == "idempotency_conflict"
     their_chat = AshTemplate.Chat.message_history!(theirs.conversation_id, actor: other)
     assert [%{text: "Mine alone"}] = Enum.filter(their_chat, &(&1.source == :user))
 
@@ -922,7 +922,7 @@ defmodule AshTemplate.SignedToolsTest do
     refute_received %Phoenix.Socket.Broadcast{}
 
     human = AshTemplate.Actors.Human.for_account(account)
-    sent = AshTemplate.Chat.get_earlier_message!(operation_id, actor: human)
+    sent = AshTemplate.Chat.get_message!(operation_id, actor: human)
     assert [reply, %{id: ^operation_id}] =
              AshTemplate.Chat.message_history!(sent.conversation_id, actor: human)
 

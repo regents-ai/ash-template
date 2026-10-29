@@ -5256,3 +5256,31 @@ An adversarial review of the two commits above found five things, all fixed here
   left out of the key's check, the taken-id branch removed, the race answered as a
   conflict, the body choosing the conversation) each fail a check.
 - `mix xref`'s compile-connected limit moves to 47 for the action module a send runs.
+
+## 2026-10-29 — Hosted MCP: chat
+
+- `/mcp` serves the three chat tools (`chat_list`, `chat_read`, `chat_send`). Each is a
+  generic action on `Conversation` or `Message` that `ChatController`, WebMCP and the AshAi
+  tool all call, so every surface gives the same answer, code, status, words and `details`.
+  `ChatController` keeps the words and maps each refusal in one place (`input_refusal/2`,
+  `answer/1`); `ToolErrors` reads it for every chat tool, and `AshTemplate.Chat.Refused`
+  names a refusal.
+- The assistant's own tools (`chat_list_conversations`, `chat_message_history`) stay its
+  own: `AshTemplate.Chat.assistant_tools/0` names them for the reply and for the capability
+  check, which no longer leaves the whole Chat domain off `/mcp`.
+- An agent's send spends its `operation_id` in `agent_operations` (`Message.AgentSend`, the
+  `chat_send` capability) in the same transaction as the message, which still takes the key
+  as its id. A retry answers the first message only with the same text and
+  `conversation_id` (a new chat's retry included); other text or another chat, or a key that
+  is already another message's id, is 409 `idempotency_conflict`, where it had answered the
+  first message (or 422 `invalid_message`). The `:earlier_send` read, `get_earlier_message`
+  and the `operation_id` argument on `:create` are gone.
+- Over HTTP a field a send does not take is refused (`invalid_message`), where it had been
+  ignored, and a `conversation` in a page's body is not read: the address names the chat.
+- `mcp_agent_test.exs` proves each tool answers and refuses through `/mcp` as over HTTP
+  (fourteen refusals, each with its status and code), the key rule across both surfaces,
+  twelve races of two new-chat sends with one key (one chat, one message, both answer it),
+  and that a call after the pairing ended saves nothing. Five planted faults (the text or
+  the chat left out of the key's check, the taken-id branch removed, the race answered as a
+  conflict, the body choosing the chat) each fail a check.
+- `mix xref`'s compile-connected limit moves to 48 for the action module a send runs.

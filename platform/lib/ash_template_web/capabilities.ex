@@ -60,11 +60,11 @@ defmodule AshTemplateWeb.Capabilities do
 
   # The tools each domain hands AshAi for hosted MCP, by name, with their title
   # and the input AshAi asks for. The chat assistant's own tools
-  # (`AshTemplate.Chat`) are never hosted.
+  # (`AshTemplate.Chat.assistant_tools/0`) are never hosted.
   hosted =
     for domain <- Application.compile_env!(:ash_template, :ash_domains),
-        domain != AshTemplate.Chat,
         tool <- AshAi.Info.tools(domain),
+        tool.name not in AshTemplate.Chat.assistant_tools(),
         into: %{} do
       action = Ash.Resource.Info.action(tool.resource, tool.action)
 

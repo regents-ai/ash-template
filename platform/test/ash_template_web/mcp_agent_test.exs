@@ -19,6 +19,10 @@ defmodule AshTemplateWeb.McpAgentTest do
   #   address alone names the conversation, a message's operation_id answers
   #   only the same words in the same conversation, and two sends with one key at
   #   once send one message;
+  # - each chat tool answers and refuses as HTTP does, over HTTP the address
+  #   alone names the chat a page is read from, a message's operation_id answers
+  #   only the same words in the same chat, and two sends with one key at once
+  #   send one message;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -1290,6 +1294,218 @@ defmodule AshTemplateWeb.McpAgentTest do
              Ash.get!(AshTemplate.Dms.Conversation, id, authorize?: false).blocked_by_b
   end
 
+  test "each chat tool answers through /mcp as HTTP answers, and the address alone names the chat",
+       %{from: from} do
+    agent = paired_wallet()
+
+    # Started through /mcp; its retry over HTTP answers the same message.
+    key = Ecto.UUID.generate()
+
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => false, "message" => sent}} =
+             result(mcp(call("chat_send", %{text: "Hi", operation_id: key}), from: from, proof: agent))
+
+    assert %{"id" => ^key, "conversation_id" => id, "from" => "person", "text" => "Hi"} = sent
+    again = http(:post, "/api/v1/chat/messages", %{text: "Hi", operation_id: key}, from, agent)
+    assert {again.status, Jason.decode!(again.resp_body)} == {200, %{"message" => sent}}
+
+    # Continued over HTTP; another chat started over HTTP.
+    assert {:sent, _} = chat(:http, from, agent, id, "More", Ecto.UUID.generate())
+    elsewhere = new_chat(from, agent)
+
+    # Read the same both ways; a chat in the body of a page never chooses another.
+    assert %{"isError" => false, "structuredContent" => read} =
+             result(mcp(call("chat_read", %{conversation: id}), from: from, proof: agent))
+
+    assert %{
+             "messages" => [%{"text" => "More"}, ^sent],
+             "pagination" => %{"has_more" => false, "next_cursor" => nil}
+           } = read
+
+    reread = http(:post, "/api/v1/chat/#{id}/history", %{conversation: elsewhere}, from, agent)
+    assert Jason.decode!(reread.resp_body) == read
+
+    # Listed the same both ways, newest first.
+    assert %{"isError" => false, "structuredContent" => listed} =
+             result(mcp(call("chat_list", %{}), from: from, proof: agent))
+
+    assert %{"conversations" => [%{"id" => ^elsewhere}, %{"id" => ^id}]} = listed
+    assert Jason.decode!(http(:get, "/api/v1/chat", nil, from, agent).resp_body) == listed
+  end
+
+  test "each chat tool refuses through /mcp with the code and words HTTP gives", %{from: from} do
+    unpaired = wallet()
+    agent = paired_wallet()
+    stranger = paired_wallet()
+    id = new_chat(from, agent)
+    strangers = new_chat(from, stranger)
+    [%{"id" => taken}] = chat_history(from, stranger, strangers)
+    key = Ecto.UUID.generate()
+    assert chat(:http, from, agent, id, "First", key) == {:sent, key}
+    missing = Ecto.UUID.generate()
+    history = "/api/v1/chat/#{id}/history"
+    send = "/api/v1/chat/messages"
+
+    codes =
+      for {name, input, method, path, body, signer} <- [
+            {"chat_list", %{}, :get, "/api/v1/chat", nil, unpaired},
+            {"chat_read", %{conversation: missing}, :post, "/api/v1/chat/#{missing}/history", %{},
+             agent},
+            {"chat_read", %{conversation: strangers}, :post, "/api/v1/chat/#{strangers}/history",
+             %{}, agent},
+            {"chat_read", %{conversation: "not-a-uuid"}, :post, "/api/v1/chat/not-a-uuid/history",
+             %{}, agent},
+            {"chat_read", %{conversation: id, after: "not-a-cursor"}, :post, history,
+             %{after: "not-a-cursor"}, agent},
+            {"chat_read", %{conversation: id, after: 5}, :post, history, %{after: 5}, agent},
+            {"chat_read", %{conversation: id, limit: 5}, :post, history, %{limit: 5}, agent},
+            {"chat_send", %{conversation_id: id, text: " ", operation_id: missing}, :post, send,
+             %{conversation_id: id, text: " ", operation_id: missing}, agent},
+            {"chat_send", %{conversation_id: id, text: "No key"}, :post, send,
+             %{conversation_id: id, text: "No key"}, agent},
+            {"chat_send", %{conversation_id: id, text: "Hi", operation_id: missing, title: "T"},
+             :post, send, %{conversation_id: id, text: "Hi", operation_id: missing, title: "T"},
+             agent},
+            {"chat_send", %{conversation_id: "not-a-uuid", text: "Hi", operation_id: missing},
+             :post, send, %{conversation_id: "not-a-uuid", text: "Hi", operation_id: missing},
+             agent},
+            {"chat_send", %{conversation_id: strangers, text: "Hi", operation_id: missing}, :post,
+             send, %{conversation_id: strangers, text: "Hi", operation_id: missing}, agent},
+            {"chat_send", %{conversation_id: id, text: "Other words", operation_id: key}, :post,
+             send, %{conversation_id: id, text: "Other words", operation_id: key}, agent},
+            {"chat_send", %{conversation_id: id, text: "Theirs", operation_id: taken}, :post,
+             send, %{conversation_id: id, text: "Theirs", operation_id: taken}, agent}
+          ] do
+        over_http = http(method, path, body, from, signer)
+        %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 result(mcp(call(name, input), from: from, proof: signer))
+
+        assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
+        {over_http.status, refused["code"]}
+      end
+
+    assert codes == [
+             {403, "agent_not_paired"},
+             {404, "chat_not_found"},
+             {404, "chat_not_found"},
+             {404, "chat_not_found"},
+             {422, "invalid_cursor"},
+             {422, "invalid_cursor"},
+             {422, "invalid_cursor"},
+             {422, "invalid_message"},
+             {422, "invalid_message"},
+             {422, "invalid_message"},
+             {404, "chat_not_found"},
+             {404, "chat_not_found"},
+             {409, "idempotency_conflict"},
+             {409, "idempotency_conflict"}
+           ]
+
+    # Nothing refused sent a message or started a chat.
+    assert [%{"text" => "First"}, %{"text" => "Opening"}] = chat_history(from, agent, id)
+    assert [%{"id" => ^taken}] = chat_history(from, stranger, strangers)
+
+    assert [%{"id" => ^id}] =
+             Jason.decode!(http(:get, "/api/v1/chat", nil, from, agent).resp_body)["conversations"]
+  end
+
+  test "a chat operation_id answers only the same words in the same chat, whichever way each call comes",
+       %{from: from} do
+    agent = paired_wallet()
+    id = new_chat(from, agent)
+    elsewhere = new_chat(from, agent)
+
+    for first <- [:http, :mcp], again <- [:http, :mcp] do
+      key = Ecto.UUID.generate()
+      assert chat(first, from, agent, id, "Same", key) == {:sent, key}
+      assert chat(again, from, agent, id, "Same", key) == {:replayed, key}
+      assert chat(again, from, agent, id, "Other", key) == {:refused, "idempotency_conflict"}
+      assert chat(again, from, agent, elsewhere, "Same", key) == {:refused, "idempotency_conflict"}
+      assert chat(again, from, agent, nil, "Same", key) == {:refused, "idempotency_conflict"}
+    end
+
+    # A new chat's retry names no chat again.
+    key = Ecto.UUID.generate()
+    assert chat(:mcp, from, agent, nil, "New", key) == {:sent, key}
+    assert chat(:http, from, agent, nil, "New", key) == {:replayed, key}
+
+    assert length(chat_history(from, agent, id)) == 5
+    assert [%{"text" => "Opening"}] = chat_history(from, agent, elsewhere)
+    assert length(Jason.decode!(http(:get, "/api/v1/chat", nil, from, agent).resp_body)["conversations"]) == 3
+  end
+
+  test "two chat sends with one operation_id at once send one message in one new chat, and both answer it",
+       %{from: from} do
+    for ways <- [[:http, :http], [:mcp, :mcp], [:http, :mcp], [:mcp, :http]], _ <- 1..3 do
+      agent = paired_wallet()
+      key = Ecto.UUID.generate()
+
+      answers =
+        ways
+        |> Enum.map(fn way -> Task.async(fn -> chat(way, from, agent, nil, "Once", key) end) end)
+        |> Task.await_many()
+
+      assert Enum.sort(answers) == [{:replayed, key}, {:sent, key}], inspect(ways)
+
+      assert [%{"id" => id}] =
+               Jason.decode!(http(:get, "/api/v1/chat", nil, from, agent).resp_body)["conversations"]
+
+      assert [%{"id" => ^key}] = chat_history(from, agent, id)
+    end
+  end
+
+  test "a chat action after the agent's pairing ended is refused as agent_not_paired",
+       %{from: from} do
+    did = "did:privy:mcp-" <> Ecto.UUID.generate()
+    person = wallet()
+    account = Accounts.register_verified!(did, person, [person], actor: %System{})
+    owner = %RegentAgents.Person{privy_user_id: did}
+    agent = wallet()
+
+    pairing =
+      RegentAgents.pair_agent!(
+        RegentAgents.issue_pairing_code!(actor: owner).code,
+        "Agent",
+        :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
+
+    id = new_chat(from, agent)
+
+    # The agent as its signed request was let in, then the person unpairs it.
+    {:ok, active} = RegentAgents.Authority.resolve(Repo, agent)
+
+    let_in =
+      AshTemplate.Actors.Agent.paired(
+        AshTemplate.Agents.sign_in_agent!(agent, actor: %System{}),
+        account,
+        active
+      )
+
+    assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
+    [key, new_key] = for _ <- 1..2, do: Ecto.UUID.generate()
+
+    for call <- [
+          fn -> AshTemplate.Chat.chat_list(actor: let_in) end,
+          fn -> AshTemplate.Chat.chat_read(id, %{}, actor: let_in) end,
+          fn ->
+            AshTemplate.Chat.chat_send(%{conversation_id: id, text: "Late", operation_id: key},
+              actor: let_in
+            )
+          end,
+          fn -> AshTemplate.Chat.chat_send(%{text: "Late", operation_id: new_key}, actor: let_in) end
+        ] do
+      assert {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"}]}} =
+               call.()
+    end
+
+    sent = Ash.read!(AshTemplate.Chat.Message, authorize?: false)
+    assert mine(sent, key) == [] and mine(sent, new_key) == []
+    assert [%{id: ^id}] = Ash.read!(AshTemplate.Chat.Conversation, authorize?: false) |> mine(id)
+    assert Ash.read!(AshTemplate.Chat.Conversation, authorize?: false) |> length() == 1
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -1445,6 +1661,49 @@ defmodule AshTemplateWeb.McpAgentTest do
   # The conversation `id`'s messages, newest first, as HTTP reads them for `agent`'s person.
   defp history(from, agent, id) do
     conn = http(:post, "/api/v1/dms/#{id}/history", %{}, from, agent)
+    assert conn.status == 200, conn.resp_body
+    Jason.decode!(conn.resp_body)["messages"]
+  end
+
+  # A new chat `agent` starts for its person over HTTP, with one message: its id.
+  defp new_chat(from, agent) do
+    conn = http(:post, "/api/v1/chat/messages", %{text: "Opening", operation_id: Ecto.UUID.generate()}, from, agent)
+    assert conn.status == 201, conn.resp_body
+    Jason.decode!(conn.resp_body)["message"]["conversation_id"]
+  end
+
+  # One message to the assistant with `key` in the chat `id`, or a new chat when it is
+  # nil, through `way`, as the answer's meaning: sent, the earlier message answered
+  # again, or refused with its code.
+  defp chat(:http, from, agent, id, text, key) do
+    body = if id, do: %{conversation_id: id, text: text, operation_id: key}, else: %{text: text, operation_id: key}
+    conn = http(:post, "/api/v1/chat/messages", body, from, agent)
+
+    case {conn.status, Jason.decode!(conn.resp_body)} do
+      {201, %{"message" => %{"id" => message}}} -> {:sent, message}
+      {200, %{"message" => %{"id" => message}}} -> {:replayed, message}
+      {_status, %{"error" => %{"code" => code}}} -> {:refused, code}
+    end
+  end
+
+  defp chat(:mcp, from, agent, id, text, key) do
+    input = if id, do: %{conversation_id: id, text: text, operation_id: key}, else: %{text: text, operation_id: key}
+
+    case result(mcp(call("chat_send", input), from: from, proof: agent)) do
+      %{"isError" => false, "structuredContent" => %{"replayed" => false, "message" => message}} ->
+        {:sent, message["id"]}
+
+      %{"isError" => false, "structuredContent" => %{"replayed" => true, "message" => message}} ->
+        {:replayed, message["id"]}
+
+      %{"isError" => true, "content" => [%{"text" => text}]} ->
+        {:refused, Jason.decode!(text)["error"]["code"]}
+    end
+  end
+
+  # The chat `id`'s messages, newest first, as HTTP reads them for `agent`'s person.
+  defp chat_history(from, agent, id) do
+    conn = http(:post, "/api/v1/chat/#{id}/history", %{}, from, agent)
     assert conn.status == 200, conn.resp_body
     Jason.decode!(conn.resp_body)["messages"]
   end

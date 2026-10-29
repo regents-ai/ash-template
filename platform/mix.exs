@@ -211,10 +211,10 @@ defmodule AshTemplate.MixProject do
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
         # A generic action adds one for the module it runs (Ash checks `run` at compile time).
-        # The capability check adds one: it names the chat domain, whose tools are never hosted.
+        # The capability check adds one: it reads the chat assistant's tools, which are never hosted.
         # The hosted MCP forward adds two: the router reads its tools from the capability list,
         # and its input check from ToolErrors (AshAi takes it only as a function), at compile time.
-        "xref graph --label compile-connected --fail-above 47",
+        "xref graph --label compile-connected --fail-above 48",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",
