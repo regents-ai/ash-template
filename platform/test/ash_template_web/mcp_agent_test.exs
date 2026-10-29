@@ -12,6 +12,9 @@ defmodule AshTemplateWeb.McpAgentTest do
   # - each notes tool answers and refuses as HTTP does; a UUID already another
   #   note's id, and a note saved after the agent's pairing ended, are refused
   #   the same way on both;
+  # - each rooms and mutes tool answers and refuses as HTTP does, and over HTTP the
+  #   address alone names the room, message or mute: a body never chooses another,
+  #   and a removal takes no body at all;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -157,6 +160,7 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
 
     listed = mcp(rpc("tools/list"), from: from, proof: wallet())
+
     assert Enum.map(result(listed)["tools"], & &1["name"]) ==
              Enum.sort(Enum.map(AshTemplateWeb.Capabilities.hosted_tools(), &Atom.to_string/1)) --
                ~w(register_identity get_identity pair_identity check_in)
@@ -315,7 +319,9 @@ defmodule AshTemplateWeb.McpAgentTest do
 
   test "requests with a token share 600 a minute from one address, Claude's servers among them",
        %{from: from} do
-    statuses = for _ <- 1..601, do: mcp(rpc("tools/list"), from: from, token: "not-a-token").status
+    statuses =
+      for _ <- 1..601, do: mcp(rpc("tools/list"), from: from, token: "not-a-token").status
+
     assert Enum.take(statuses, 600) |> Enum.uniq() == [401]
     assert List.last(statuses) == 429
     assert mcp(rpc("tools/list"), from: from).status == 401
@@ -324,7 +330,10 @@ defmodule AshTemplateWeb.McpAgentTest do
   test "each read answers through /mcp exactly as over HTTP, from the same action", %{from: from} do
     agent = paired_wallet()
     other = paired_wallet()
-    assert {:posted, id} = post(:http, from, agent, "Hello from the parity walk", Ecto.UUID.generate())
+
+    assert {:posted, id} =
+             post(:http, from, agent, "Hello from the parity walk", Ecto.UUID.generate())
+
     assert {:posted, muted} = post(:http, from, other, "Someone to mute", Ecto.UUID.generate())
     assert http(:post, "/api/v1/mutes", %{message_id: muted}, from, agent).status == 200
 
@@ -358,7 +367,8 @@ defmodule AshTemplateWeb.McpAgentTest do
       assert answer == Jason.decode!(over_http.resp_body), name
     end
 
-    assert %{"mutes" => [%{"name" => _}]} = Jason.decode!(http(:get, "/api/v1/mutes", nil, from, agent).resp_body)
+    assert %{"mutes" => [%{"name" => _}]} =
+             Jason.decode!(http(:get, "/api/v1/mutes", nil, from, agent).resp_body)
   end
 
   test "each read refuses through /mcp with the code and words HTTP gives", %{from: from} do
@@ -420,7 +430,13 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert read_note(from, agent, key) == made
 
     again =
-      http(:post, "/api/v1/notes", %{title: "Parity", body: "A walk", operation_id: key}, from, agent)
+      http(
+        :post,
+        "/api/v1/notes",
+        %{title: "Parity", body: "A walk", operation_id: key},
+        from,
+        agent
+      )
 
     assert again.status == 200
     assert Jason.decode!(again.resp_body) == %{"note" => made}
@@ -445,7 +461,12 @@ defmodule AshTemplateWeb.McpAgentTest do
     label = label(key, :answered)
 
     assert %{"isError" => false, "structuredContent" => rated} =
-             result(mcp(call("notes_rate_label", %{id: label, report: "fits"}), from: from, proof: agent))
+             result(
+               mcp(call("notes_rate_label", %{id: label, report: "fits"}),
+                 from: from,
+                 proof: agent
+               )
+             )
 
     assert rated == %{"label" => %{"id" => label, "rating" => "fits"}}
     assert read_note(from, agent, key)["label"]["rating"] == "fits"
@@ -459,9 +480,17 @@ defmodule AshTemplateWeb.McpAgentTest do
     unrated = label(second, :answered)
 
     rerated =
-      http(:post, "/api/v1/note-labels/#{unrated}/report", %{id: label, report: "does_not_fit"}, from, agent)
+      http(
+        :post,
+        "/api/v1/note-labels/#{unrated}/report",
+        %{id: label, report: "does_not_fit"},
+        from,
+        agent
+      )
 
-    assert Jason.decode!(rerated.resp_body) == %{"label" => %{"id" => unrated, "rating" => "does_not_fit"}},
+    assert Jason.decode!(rerated.resp_body) == %{
+             "label" => %{"id" => unrated, "rating" => "does_not_fit"}
+           },
            rerated.resp_body
 
     # Changes: each answers the note HTTP then reads.
@@ -485,19 +514,36 @@ defmodule AshTemplateWeb.McpAgentTest do
 
     elsewhere = Ecto.UUID.generate()
 
-    assert http(:post, "/api/v1/notes", %{title: "Elsewhere", operation_id: elsewhere}, from, agent).status ==
+    assert http(
+             :post,
+             "/api/v1/notes",
+             %{title: "Elsewhere", operation_id: elsewhere},
+             from,
+             agent
+           ).status ==
              201
 
     cleared =
-      http(:patch, "/api/v1/notes/#{key}", %{id: elsewhere, title: "Parity", body: nil}, from, agent)
+      http(
+        :patch,
+        "/api/v1/notes/#{key}",
+        %{id: elsewhere, title: "Parity", body: nil},
+        from,
+        agent
+      )
 
     assert cleared.status == 200, cleared.resp_body
-    assert %{"id" => ^key, "title" => "Parity", "body" => nil} = Jason.decode!(cleared.resp_body)["note"]
+
+    assert %{"id" => ^key, "title" => "Parity", "body" => nil} =
+             Jason.decode!(cleared.resp_body)["note"]
+
     assert %{"title" => "Elsewhere"} = read_note(from, agent, elsewhere)
 
     # Deleting answers the same way both ways, and the note is gone.
     other = Ecto.UUID.generate()
-    assert http(:post, "/api/v1/notes", %{title: "Other", operation_id: other}, from, agent).status == 201
+
+    assert http(:post, "/api/v1/notes", %{title: "Other", operation_id: other}, from, agent).status ==
+             201
 
     assert %{"isError" => false, "structuredContent" => deleted} =
              result(mcp(call("notes_delete", %{id: key}), from: from, proof: agent))
@@ -514,7 +560,9 @@ defmodule AshTemplateWeb.McpAgentTest do
     missing = Ecto.UUID.generate()
     key = Ecto.UUID.generate()
 
-    assert http(:post, "/api/v1/notes", %{title: "Mine", operation_id: key}, from, agent).status == 201
+    assert http(:post, "/api/v1/notes", %{title: "Mine", operation_id: key}, from, agent).status ==
+             201
+
     pending = label(key, :pending)
     saved = saved(key)
 
@@ -536,7 +584,8 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"notes_pin_price", %{id: missing}, :get, "/api/v1/notes/#{missing}/pin-price", nil,
            agent},
           {"notes_unpin", %{id: missing}, :post, "/api/v1/notes/#{missing}/unpin", %{}, agent},
-          {"notes_archive", %{id: missing}, :post, "/api/v1/notes/#{missing}/archive", %{}, agent},
+          {"notes_archive", %{id: missing}, :post, "/api/v1/notes/#{missing}/archive", %{},
+           agent},
           {"notes_unarchive", %{id: missing}, :post, "/api/v1/notes/#{missing}/unarchive", %{},
            agent},
           {"notes_rate_label", %{id: missing, report: "fits"}, :post,
@@ -559,7 +608,9 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert saved(key) == saved
 
     # A reused operation_id: other text is a conflict, and after a delete the note is named gone.
-    assert {409, %{"code" => "idempotency_conflict"}} = refused_both_ways(from, agent, "Other", key)
+    assert {409, %{"code" => "idempotency_conflict"}} =
+             refused_both_ways(from, agent, "Other", key)
+
     assert http(:delete, "/api/v1/notes/#{key}", nil, from, agent).status == 200
 
     assert {410, %{"code" => "note_removed", "id" => ^key}} =
@@ -598,7 +649,10 @@ defmodule AshTemplateWeb.McpAgentTest do
     agent = wallet()
 
     pairing =
-      RegentAgents.pair_agent!(RegentAgents.issue_pairing_code!(actor: owner).code, "Agent", :codex,
+      RegentAgents.pair_agent!(
+        RegentAgents.issue_pairing_code!(actor: owner).code,
+        "Agent",
+        :codex,
         actor: %RegentAgents.Agent{wallet: agent}
       )
 
@@ -615,7 +669,8 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
     key = Ecto.UUID.generate()
 
-    assert {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"} = refused]}} =
+    assert {:error,
+            %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"} = refused]}} =
              AshTemplate.Notes.notes_create(%{title: "Late", operation_id: key}, actor: let_in)
 
     assert Ash.read!(AshTemplate.Notes.Note, authorize?: false) |> mine(key) == []
@@ -626,6 +681,264 @@ defmodule AshTemplateWeb.McpAgentTest do
 
     assert over_http["code"] == "agent_not_paired"
     assert Jason.decode!(AshAi.ToToolError.to_tool_error(refused))["error"] == over_http
+  end
+
+  test "each rooms and mutes tool answers through /mcp as HTTP answers, and the address alone names the record",
+       %{from: from} do
+    agent = paired_wallet()
+    name = "Parity #{:erlang.unique_integer([:positive])}"
+
+    # A new room, then its name again over HTTP: the same room, started once.
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => false, "room" => room}} =
+             result(
+               mcp(call("rooms_create", %{name: name, topic: "First"}), from: from, proof: agent)
+             )
+
+    slug = room["slug"]
+    again = http(:post, "/api/v1/rooms", %{name: name, topic: "First"}, from, agent)
+    assert again.status == 200
+    assert Jason.decode!(again.resp_body) == %{"room" => room}
+
+    # The topic through /mcp; over HTTP a room in the body never chooses another.
+    general = listed_room(from, "general")
+
+    assert %{
+             "isError" => false,
+             "structuredContent" => %{"room" => %{"topic" => "Second"} = topped}
+           } =
+             result(
+               mcp(call("rooms_topic", %{room: slug, topic: "Second"}), from: from, proof: agent)
+             )
+
+    assert listed_room(from, slug) == topped
+
+    retopped =
+      http(:patch, "/api/v1/rooms/#{slug}", %{room: "general", topic: "Third"}, from, agent)
+
+    assert Jason.decode!(retopped.resp_body) == %{"room" => %{topped | "topic" => "Third"}}
+    assert listed_room(from, "general") == general
+
+    mine = said(from, agent, slug, "Mine")
+    kept = said(from, agent, slug, "Kept")
+    theirs = said(from, paired_wallet(), slug, "Theirs")
+
+    # An edit through /mcp reads back over HTTP; an id in the body never chooses another message.
+    assert %{"isError" => false, "structuredContent" => %{"message" => edited}} =
+             result(
+               mcp(call("rooms_edit", %{room: slug, id: mine, body: "Mine, edited"}),
+                 from: from,
+                 proof: agent
+               )
+             )
+
+    assert %{"body" => "Mine, edited"} = edited
+    assert read_message(from, slug, mine) == edited
+
+    reedited =
+      http(
+        :patch,
+        "/api/v1/rooms/#{slug}/messages/#{mine}",
+        %{room: "general", id: kept, body: "Again"},
+        from,
+        agent
+      )
+
+    assert %{"message" => %{"id" => ^mine, "body" => "Again"}} = Jason.decode!(reedited.resp_body)
+    assert %{"body" => "Kept"} = read_message(from, slug, kept)
+
+    # A like and a like taken back answer the same both ways; a like's body never chooses
+    # another message.
+    for {name, method, body, liked} <- [
+          {"rooms_like", :post, %{room: "general", id: kept}, true},
+          {"rooms_unlike", :delete, nil, false}
+        ] do
+      assert %{"isError" => false, "structuredContent" => answer} =
+               result(mcp(call(name, %{room: slug, id: theirs}), from: from, proof: agent))
+
+      assert %{"liked" => ^liked, "message" => %{"id" => ^theirs}} = answer
+      over_http = http(method, "/api/v1/rooms/#{slug}/messages/#{theirs}/like", body, from, agent)
+      assert Jason.decode!(over_http.resp_body) == answer, name
+    end
+
+    assert %{"like_count" => 0} = read_message(from, slug, kept)
+
+    # A report through /mcp; reporting again over HTTP answers the first, whatever the body names.
+    assert %{"isError" => false, "structuredContent" => %{"report" => report}} =
+             result(
+               mcp(call("rooms_report", %{room: slug, id: theirs, reason: "spam"}),
+                 from: from,
+                 proof: agent
+               )
+             )
+
+    rereported =
+      http(
+        :post,
+        "/api/v1/rooms/#{slug}/messages/#{theirs}/report",
+        %{room: "general", id: kept, reason: "abuse"},
+        from,
+        agent
+      )
+
+    assert Jason.decode!(rereported.resp_body) == %{"report" => report}
+    assert %{"reason" => "spam"} = report
+
+    # A mute through /mcp is listed over HTTP, and muting again keeps it.
+    assert %{"isError" => false, "structuredContent" => %{"mute" => mute}} =
+             result(mcp(call("mutes_add", %{message_id: theirs}), from: from, proof: agent))
+
+    assert mutes(from, agent) == [mute]
+    remuted = http(:post, "/api/v1/mutes", %{message_id: theirs}, from, agent)
+    assert Jason.decode!(remuted.resp_body) == %{"mute" => mute}
+
+    # Lifted through /mcp; HTTP then finds no such mute.
+    assert %{"isError" => false, "structuredContent" => lifted} =
+             result(mcp(call("mutes_remove", %{id: mute["id"]}), from: from, proof: agent))
+
+    assert lifted == %{"removed" => true, "id" => mute["id"]}
+    relifted = http(:delete, "/api/v1/mutes/#{mute["id"]}", nil, from, agent)
+
+    assert {relifted.status, Jason.decode!(relifted.resp_body)["error"]["code"]} ==
+             {404, "mute_not_found"}
+
+    # Deleting answers the same both ways.
+    assert %{"isError" => false, "structuredContent" => deleted} =
+             result(mcp(call("rooms_delete", %{room: slug, id: mine}), from: from, proof: agent))
+
+    assert deleted == %{"deleted" => true, "id" => mine}
+    assert http(:get, "/api/v1/rooms/#{slug}/messages/#{mine}", nil, from, nil).status == 404
+    other = said(from, agent, slug, "Other")
+    redeleted = http(:delete, "/api/v1/rooms/#{slug}/messages/#{other}", nil, from, agent)
+    assert Jason.decode!(redeleted.resp_body) == %{"deleted" => true, "id" => other}
+
+    # A removal never carries a body: each refuses one before anything runs, and nothing goes.
+    assert http(:post, "/api/v1/rooms/#{slug}/messages/#{kept}/like", nil, from, agent).status ==
+             200
+
+    assert %{"mute" => kept_mute} =
+             Jason.decode!(
+               http(:post, "/api/v1/mutes", %{message_id: theirs}, from, agent).resp_body
+             )
+
+    for path <- [
+          "/api/v1/rooms/#{slug}/messages/#{kept}/like",
+          "/api/v1/rooms/#{slug}/messages/#{kept}",
+          "/api/v1/mutes/#{kept_mute["id"]}"
+        ] do
+      refused = http(:delete, path, %{room: slug, id: other}, from, agent)
+
+      assert {refused.status, Jason.decode!(refused.resp_body)["error"]["code"]} ==
+               {401, "missing_signed_body"},
+             path
+    end
+
+    assert %{"body" => "Kept", "like_count" => 1} = read_message(from, slug, kept)
+    assert mutes(from, agent) == [kept_mute]
+  end
+
+  test "each rooms and mutes tool refuses through /mcp with the code and words HTTP gives",
+       %{from: from} do
+    unpaired = wallet()
+    [agent, same_person] = paired_wallets(2)
+    stranger = paired_wallet()
+
+    slug =
+      Jason.decode!(
+        http(
+          :post,
+          "/api/v1/rooms",
+          %{name: "Refusals #{:erlang.unique_integer([:positive])}", topic: "Here"},
+          from,
+          agent
+        ).resp_body
+      )["room"]["slug"]
+
+    mine = said(from, agent, slug, "Mine")
+    theirs = said(from, stranger, slug, "Theirs")
+    missing = Ecto.UUID.generate()
+    too_long = String.duplicate("a", 201)
+
+    codes =
+      for {name, input, method, path, body, signer} <- [
+            {"rooms_create", %{name: "Unpaired", topic: "No"}, :post, "/api/v1/rooms",
+             %{name: "Unpaired", topic: "No"}, unpaired},
+            {"rooms_create", %{name: "!!!", topic: "No letters"}, :post, "/api/v1/rooms",
+             %{name: "!!!", topic: "No letters"}, agent},
+            {"rooms_create", %{name: "General", topic: "Taken"}, :post, "/api/v1/rooms",
+             %{name: "General", topic: "Taken"}, agent},
+            {"rooms_topic", %{room: "general", topic: "Mine now"}, :patch,
+             "/api/v1/rooms/general", %{topic: "Mine now"}, agent},
+            {"rooms_topic", %{room: "no-such-room", topic: "Here"}, :patch,
+             "/api/v1/rooms/no-such-room", %{topic: "Here"}, agent},
+            {"rooms_topic", %{room: slug, topic: too_long}, :patch, "/api/v1/rooms/#{slug}",
+             %{topic: too_long}, agent},
+            {"rooms_edit", %{room: slug, id: theirs, body: "Not mine"}, :patch,
+             "/api/v1/rooms/#{slug}/messages/#{theirs}", %{body: "Not mine"}, agent},
+            {"rooms_edit", %{room: slug, id: mine, body: ""}, :patch,
+             "/api/v1/rooms/#{slug}/messages/#{mine}", %{body: ""}, agent},
+            {"rooms_edit", %{room: slug, id: "not-a-uuid", body: "Hi"}, :patch,
+             "/api/v1/rooms/#{slug}/messages/not-a-uuid", %{body: "Hi"}, agent},
+            {"rooms_edit", %{room: slug, id: mine, body: "Hi", pinned: true}, :patch,
+             "/api/v1/rooms/#{slug}/messages/#{mine}", %{body: "Hi", pinned: true}, agent},
+            {"rooms_delete", %{room: slug, id: theirs}, :delete,
+             "/api/v1/rooms/#{slug}/messages/#{theirs}", nil, agent},
+            {"rooms_delete", %{room: "general", id: mine}, :delete,
+             "/api/v1/rooms/general/messages/#{mine}", nil, same_person},
+            {"rooms_like", %{room: slug, id: missing}, :post,
+             "/api/v1/rooms/#{slug}/messages/#{missing}/like", nil, agent},
+            {"rooms_unlike", %{room: "no-such-room", id: theirs}, :delete,
+             "/api/v1/rooms/no-such-room/messages/#{theirs}/like", nil, agent},
+            {"rooms_report", %{room: slug, id: theirs, reason: "rude"}, :post,
+             "/api/v1/rooms/#{slug}/messages/#{theirs}/report", %{reason: "rude"}, agent},
+            {"rooms_report", %{room: slug, id: mine, reason: "spam"}, :post,
+             "/api/v1/rooms/#{slug}/messages/#{mine}/report", %{reason: "spam"}, same_person},
+            {"rooms_report", %{room: slug, id: missing, reason: "spam"}, :post,
+             "/api/v1/rooms/#{slug}/messages/#{missing}/report", %{reason: "spam"}, agent},
+            {"mutes_add", %{message_id: mine}, :post, "/api/v1/mutes", %{message_id: mine},
+             agent},
+            {"mutes_add", %{message_id: theirs}, :post, "/api/v1/mutes", %{message_id: theirs},
+             unpaired},
+            {"mutes_remove", %{id: missing}, :delete, "/api/v1/mutes/#{missing}", nil, agent},
+            {"mutes_remove", %{id: "not-a-uuid"}, :delete, "/api/v1/mutes/not-a-uuid", nil, agent}
+          ] do
+        over_http = http(method, path, body, from, signer)
+        %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 result(mcp(call(name, input), from: from, proof: signer))
+
+        assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
+        {over_http.status, refused["code"]}
+      end
+
+    assert codes == [
+             {403, "agent_not_paired"},
+             {422, "invalid_room"},
+             {409, "room_name_taken"},
+             {403, "not_room_maker"},
+             {404, "room_not_found"},
+             {422, "invalid_room"},
+             {404, "message_not_found"},
+             {422, "invalid_message"},
+             {404, "message_not_found"},
+             {422, "invalid_message"},
+             {404, "message_not_found"},
+             {404, "message_not_found"},
+             {404, "public_message_not_found"},
+             {404, "room_not_found"},
+             {422, "invalid_report"},
+             {422, "invalid_report"},
+             {404, "public_message_not_found"},
+             {422, "invalid_mute"},
+             {403, "agent_not_paired"},
+             {404, "mute_not_found"},
+             {404, "mute_not_found"}
+           ]
+
+    # Nothing refused changed a message or a room.
+    assert %{"body" => "Mine"} = read_message(from, slug, mine)
+    assert %{"body" => "Theirs"} = read_message(from, slug, theirs)
+    assert listed_room(from, "general")["topic"] != "Mine now"
   end
 
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
@@ -702,6 +1015,38 @@ defmodule AshTemplateWeb.McpAgentTest do
       %{"isError" => true, "content" => [%{"text" => text}]} ->
         {:refused, Jason.decode!(text)["error"]["code"]}
     end
+  end
+
+  # A new message by `agent` in the room `slug`, posted over HTTP: its id.
+  defp said(from, agent, slug, text) do
+    conn =
+      http(
+        :post,
+        "/api/v1/rooms/#{slug}/messages",
+        %{body: text, operation_id: Ecto.UUID.generate()},
+        from,
+        agent
+      )
+
+    assert conn.status == 201, conn.resp_body
+    Jason.decode!(conn.resp_body)["message"]["id"]
+  end
+
+  # The message `id` in the room `slug`, as anyone reads it over HTTP.
+  defp read_message(from, slug, id) do
+    conn = http(:get, "/api/v1/rooms/#{slug}/messages/#{id}", nil, from, nil)
+    assert conn.status == 200, conn.resp_body
+    Jason.decode!(conn.resp_body)["message"]
+  end
+
+  # `agent`'s person's mutes, as HTTP lists them.
+  defp mutes(from, agent),
+    do: Jason.decode!(http(:get, "/api/v1/mutes", nil, from, agent).resp_body)["mutes"]
+
+  # The room `slug` as the room list shows it.
+  defp listed_room(from, slug) do
+    Jason.decode!(http(:get, "/api/v1/rooms", nil, from, nil).resp_body)["rooms"]
+    |> Enum.find(&(&1["slug"] == slug))
   end
 
   # The note `id` as HTTP reads it for `agent`'s person.

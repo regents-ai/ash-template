@@ -61,8 +61,9 @@ is calling (agent access spec 4.3). The connector's four tools,
 actions on `AshTemplate.Agents.Connection` that only a connected app may run
 (`AshTemplate.Actors.ConnectedApp`); they call `RegentMCPAgents` with the token's
 account, and take their titles, words and hints from `RegentMCPAgents.Tools`. The
-same server offers the room tools (`rooms_messages` and `rooms_post`) to an agent
-signing each call, which a connected app neither sees nor runs.
+same server offers the site's own tools (each operation `priv/capabilities.json`
+marks hosted, the room tools among them) to an agent signing each call, which a
+connected app neither sees nor runs.
 
 Before any credential is looked at, McpAgent refuses, in the site's
 `{"error": {"code", "message", "hint"}}` shape: a query string

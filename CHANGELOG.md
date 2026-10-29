@@ -5175,3 +5175,38 @@ An adversarial review of the two commits above found five things, all fixed here
   made before this change has no `agent_operations` row, so retrying its old
   `operation_id` is refused as `idempotency_conflict` (the id is taken) instead of
   answering the note.
+
+## 2026-10-29 — Hosted MCP: rooms and mutes
+
+- Every rooms and mutes change is now a hosted agent tool at `/mcp`, each one Ash action
+  its HTTP route and browser tool also call: `rooms_create` and `rooms_topic` on
+  `AshTemplate.Rooms.Room`, `rooms_edit`, `rooms_delete`, `rooms_like`, `rooms_unlike`
+  and `rooms_report` on `AshTemplate.Rooms.Message`, and `mutes_add` and `mutes_remove`
+  on `AshTemplate.Rooms.Mute`. The controllers shrink to one action call each, and the
+  mutes routes answer through `RoomsController.respond/3`.
+- A room an agent starts (`Room.AgentStart`) answers a retry with the name of a room
+  its person already started as that room (HTTP 200, `replayed: true`), as before, and
+  now also when two calls with one name run at once. The room's name is its retry key,
+  so it declares no `operation_id`; the earlier-room read moves from the controller
+  into the action.
+- `RoomsController` keeps every rooms word, the mutes' included, and maps each action's
+  refusal in one place (`input_refusal/2`, `answer/1`), so `/mcp` and HTTP give the same
+  code, status, words and `details`. `ToolErrors` reads it for every rooms tool.
+- Over HTTP the address alone names the record: a `room` or `id` in the body of a
+  topic, an edit or a report is not read, since the code interface's arguments would
+  let it choose the room or message the action changed. A field a route does not take
+  is refused with that route's code (`invalid_room`, `invalid_message`,
+  `invalid_report`, `invalid_mute`), as the API contract already said, where it had
+  been ignored.
+- An unexpected failure on `POST /api/v1/mutes` or `DELETE /api/v1/mutes/{id}` answers
+  503 `rooms_unavailable`, the rooms' word, instead of 503 `unavailable`.
+- `mcp_agent_test.exs` proves each rooms and mutes tool answers and refuses through
+  `/mcp` as over HTTP (twenty refusals, each with its status and code), and one body
+  check per route; the topic, edit and report checks each fail when the body is read
+  again, and a removal refuses any body before it runs.
+- A report's reason is its own enum type (`AshTemplate.Rooms.Report.Reason`), which the
+  report and `rooms_report` both take, so the message no longer reads the report
+  resource at compile time; `Report.reasons/0` is gone. `mix xref`'s compile-connected
+  limit moves to 46 for the action module a room start runs.
+- Not proven by a check: two starts of one room at once (the race needs two
+  transactions to meet).

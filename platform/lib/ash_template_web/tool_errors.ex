@@ -11,8 +11,8 @@ defmodule AshTemplateWeb.ToolErrors do
   (`check_input/3`, the server's `tool_argument_transformer`), with the code the
   same input gets over HTTP: a room read's `room_not_found`, `invalid_limit`,
   `invalid_author_kind` or `invalid_cursor`, a room post's `invalid_message`
-  with the same `details`, one message's `room_not_found` or
-  `public_message_not_found`, a site's `site_not_found`, an agent's
+  with the same `details`, one message's and each rooms or mutes change's as
+  `AshTemplateWeb.RoomsController.input_refusal/2` answers it, a site's `site_not_found`, an agent's
   `agent_not_found`, a search's `invalid_search`, a history's or activity's
   `invalid_cursor`, other activity input's `invalid_activity_request`, a notes
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
@@ -24,6 +24,9 @@ defmodule AshTemplateWeb.ToolErrors do
   """
 
   alias AshTemplate.Agents.Connection
+
+  # The rooms and mutes tools that change something, and one message's read.
+  @rooms ~w(rooms_create rooms_topic rooms_message rooms_edit rooms_delete rooms_like rooms_unlike rooms_report mutes_add mutes_remove)a
 
   # The notes tools that take input, besides the search.
   @notes ~w(notes_get notes_create notes_edit notes_delete notes_pin_price notes_unpin notes_archive notes_unarchive notes_rate_label)a
@@ -67,10 +70,9 @@ defmodule AshTemplateWeb.ToolErrors do
   defp refused(_resource, :agent_post, error, _input),
     do: text(RoomsController, "invalid_message", %{details: FormErrors.details(error)})
 
-  defp refused(_resource, :rooms_message, %{errors: errors}, _input) do
-    if Enum.any?(errors, &match?(%{field: :room}, &1)),
-      do: text(RoomsController, "room_not_found"),
-      else: text(RoomsController, "public_message_not_found")
+  defp refused(_resource, action, error, _input) when action in @rooms do
+    {code, extra} = RoomsController.input_refusal(action, error)
+    text(RoomsController, code, extra)
   end
 
   defp refused(_resource, :sites_tools, _error, _input),
@@ -119,12 +121,10 @@ defmodule AshTemplateWeb.ToolErrors do
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Rooms.Refused do
-  def to_tool_error(%{code: "message_removed", id: id}),
-    do:
-      AshTemplateWeb.ToolErrors.text(AshTemplateWeb.RoomsController, "message_removed", %{id: id})
-
-  def to_tool_error(%{code: code}),
-    do: AshTemplateWeb.ToolErrors.text(AshTemplateWeb.RoomsController, code)
+  def to_tool_error(refused) do
+    {code, extra} = AshTemplateWeb.RoomsController.answer(refused)
+    AshTemplateWeb.ToolErrors.text(AshTemplateWeb.RoomsController, code, extra)
+  end
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Notes.Refused do

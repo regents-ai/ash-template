@@ -5,7 +5,8 @@ defmodule AshTemplateWeb.PairedAgentController do
   ratings on its person's notes, their Credits and Points, reading their activity
   and marking it read, room search, and the people and agents its person has
   muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s,
-  which also holds the words of every notes refusal.
+  which also holds the words of every notes refusal; the words of a mute's
+  refusals are `AshTemplateWeb.RoomsController`'s.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -19,8 +20,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Notes.Note
-  alias AshTemplate.Rooms.Mute
-  alias AshTemplateWeb.{FormErrors, NotesController, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesController, RoomsController, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
 
@@ -41,12 +41,6 @@ defmodule AshTemplateWeb.PairedAgentController do
     "activity_too_large" =>
       {422, "The activity response is too large.",
        "View activity on /app/activity. This endpoint returns at most 262144 encoded bytes and does not truncate notifications."},
-    "mute_not_found" =>
-      {404, "Your person has no mute with that id.",
-       "List your person's mutes and use an id from there."},
-    "invalid_mute" =>
-      {422, "That author could not be muted.",
-       "details says why. Send message_id, the id of a room message by the author to mute, from rooms messages."},
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" =>
@@ -72,13 +66,15 @@ defmodule AshTemplateWeb.PairedAgentController do
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   @notes ~w(note_not_found label_not_found invalid_label_report)
+  @mutes ~w(mute_not_found invalid_mute)
 
   @doc """
   The `{status, message, hint}` of the refusal `code`, for the hosted MCP
   server's tool errors (`AshTemplateWeb.ToolErrors`); a notes refusal is in the
-  notes' own words.
+  notes' own words, and a mute's in the rooms'.
   """
   def refusal(code) when code in @notes, do: NotesController.refusal(code)
+  def refusal(code) when code in @mutes, do: RoomsController.refusal(code)
   def refusal(code), do: Map.fetch!(@errors, code)
 
   # The refusals a change to the agent's grant would answer.
@@ -169,30 +165,21 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   # The author is muted from one of their messages, as on the room page; muting
   # them again keeps the one mute.
-  def add_mute(conn, _params) do
-    case Rooms.mute_author(conn.body_params["message_id"], actor: conn.assigns.actor) do
-      {:ok, mute} -> json(conn, %{mute: Mute.present(mute)})
-      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_mute", details(error))
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
-  end
+  def add_mute(conn, _params),
+    do:
+      RoomsController.respond(
+        conn,
+        :mutes_add,
+        Rooms.mutes_add(conn.body_params, actor: conn.assigns.actor)
+      )
 
-  def remove_mute(conn, %{"id" => id}) do
-    actor = conn.assigns.actor
-
-    with {:found, {:ok, %Mute{} = mute}} <- {:found, Rooms.get_my_mute(id, actor: actor)},
-         :ok <- Rooms.unmute(mute, actor: actor) do
-      json(conn, %{removed: true, id: mute.id})
-    else
-      {:found, {:ok, nil}} -> refuse(conn, "mute_not_found")
-      {:found, {:error, %Ash.Error.Invalid{}}} -> refuse(conn, "mute_not_found")
-      {:found, {:error, error}} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "agent_not_paired")
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
-  end
+  def remove_mute(conn, %{"id" => id}),
+    do:
+      RoomsController.respond(
+        conn,
+        :mutes_remove,
+        Rooms.mutes_remove(id, actor: conn.assigns.actor)
+      )
 
   # The agent reads public message content; human mute preferences do not apply.
   def search_rooms(conn, _params) do
