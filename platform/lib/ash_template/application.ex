@@ -26,6 +26,8 @@ defmodule AshTemplate.Application do
         AshTemplate.SiteTools,
         AshTemplate.Repo,
         if(RegentOAuth.enabled?(), do: RegentOAuth.Repo),
+        # The payment service's connections, after the repository its records use.
+        RegentPayments.Supervisor,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
         AshTemplateWeb.Presence,
         # The figures every visitor sees alike, then the readers that keep them.

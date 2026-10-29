@@ -479,7 +479,9 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
         privy_user_id: subject,
         wallet_address: "0x3333333333333333333333333333333333333333",
         wallet_addresses: ["0x3333333333333333333333333333333333333333"],
-        linked_socials: []
+        linked_socials: [],
+        issued_at: System.system_time(:second),
+        expires_at: System.system_time(:second) + 3600
       })
 
     {:bootstrap, claim} = SessionAuthority.renew(nil)

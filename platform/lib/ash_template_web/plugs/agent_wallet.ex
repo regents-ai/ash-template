@@ -132,10 +132,17 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   defp paired(agent, pairing) do
     case Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
-      {:ok, %{} = account} -> {:ok, Agent.paired(agent, account, pairing)}
+      {:ok, %{} = account} -> with_profile(agent, account, pairing)
       {:ok, nil} -> {:ok, Agent.for_agent(agent, :person_not_here)}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp with_profile(agent, account, pairing) do
+    app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
+
+    with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
+         do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
   end
 
   @doc """

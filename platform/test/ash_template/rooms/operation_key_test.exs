@@ -83,7 +83,7 @@ defmodule AshTemplate.Rooms.OperationKeyTest do
     code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: did})
     pairing = RegentAgents.pair_agent!(code.code, "Agent", :codex, actor: %RegentAgents.Agent{wallet: agent_wallet})
     record = Agents.sign_in_agent!(agent_wallet, actor: %System{})
-    {Agent.paired(record, account, pairing), account}
+    {Agent.paired(record, account, pairing, Ecto.UUID.generate()), account}
   end
 
   defp wallet, do: "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)

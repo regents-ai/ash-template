@@ -98,6 +98,7 @@
   "regent_jev": {:git, "https://github.com/regents-ai/elixir-utils.git", "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", [ref: "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", sparse: "jev"]},
   "regent_mcp_agents": {:git, "https://github.com/regents-ai/elixir-utils.git", "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", [ref: "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", sparse: "mcp_agents"]},
   "regent_oauth": {:git, "https://github.com/regents-ai/elixir-utils.git", "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", [ref: "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", sparse: "oauth"]},
+  "regent_payments": {:git, "https://github.com/regents-ai/elixir-utils.git", "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", [ref: "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", sparse: "ash_components/payments"]},
   "regent_points": {:git, "https://github.com/regents-ai/elixir-utils.git", "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", [ref: "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", sparse: "points"]},
   "regent_privy": {:git, "https://github.com/regents-ai/elixir-utils.git", "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", [ref: "4d30fea6e9bdc2407ca540c9c5f2f50686808c04", sparse: "privy"]},
   "regent_ui": {:git, "https://github.com/regents-ai/design-system.git", "3134bab0a23452fb82d3248072327e1d0199cc9a", [ref: "3134bab0a23452fb82d3248072327e1d0199cc9a", sparse: "regent_ui"]},
