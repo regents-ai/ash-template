@@ -50,8 +50,8 @@ defmodule AshTemplateWeb.SignInWalletsTest do
       |> html_response(200)
 
     assert section(html, "User wallet") =~ @own
-    assert section(html, "Regents wallet") =~ @made
-    refute section(html, "Regents wallet") =~ @own
+    assert section(html, "Regents embedded wallet") =~ @made
+    refute section(html, "Regents embedded wallet") =~ @own
   end
 
   test "the person's own wallet stays their main wallet after Privy makes the Regents wallet",
@@ -83,7 +83,7 @@ defmodule AshTemplateWeb.SignInWalletsTest do
       |> html_response(200)
 
     refute html =~ "User wallet"
-    assert section(html, "Regents wallet") =~ @made
+    assert section(html, "Regents embedded wallet") =~ @made
   end
 
   test "a wallet sign-in before Privy made the Regents wallet says it is still to come", %{
@@ -96,8 +96,8 @@ defmodule AshTemplateWeb.SignInWalletsTest do
       |> html_response(200)
 
     assert section(html, "User wallet") =~ @own
-    assert section(html, "Regents wallet") =~ "Made for you at your next sign-in"
-    refute section(html, "Regents wallet") =~ @own
+    assert section(html, "Regents embedded wallet") =~ "Made for you at your next sign-in"
+    refute section(html, "Regents embedded wallet") =~ @own
   end
 
   # The browser's steps: a fresh session, then Privy's two tokens on the sign-in

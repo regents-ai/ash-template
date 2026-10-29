@@ -115,7 +115,7 @@ defmodule AshTemplateWeb.AccountLive do
             </dd>
           </div>
           <div>
-            <dt>Regents wallet</dt>
+            <dt>Regents embedded wallet</dt>
             <dd :if={@named.embedded}>
               <Regent.Primitives.address id="account-embedded-wallet" address={@named.embedded} />
             </dd>
