@@ -5557,3 +5557,19 @@ way, and the library's own site-tool serving is gone.
   `/capabilities.json` named `e039f092`, 151 passed and 1 skipped (the tools are called
   once, from the desktop), and of the home page's 57 tools all 17 reads answered 200,
   `polls_list` among them. WebKit is not run on the Mac. Rollback: v138, `14120655`.
+
+## 2026-10-29 — Released v140
+
+- template.regents.sh v140 runs `017a3acd`: elixir-utils re-pinned to exactly `b375f122`
+  (every line), `AshTemplateWeb.UnexpectedFailure` replaced by the library's, the
+  wait-seconds refusal for identity tools, and `/mcp` answering a stream GET with 405.
+  Released 23:25Z–23:29:55Z under the shared release lock, one machine. No migration.
+  Rollback: v139, `e039f092`.
+- Live check in headless Chromium: `/capabilities.json` build.commit `017a3acd`.
+  `GET /mcp` with `Accept: text/event-stream` answers 405 `method_not_allowed` with
+  `Allow: POST` (v139 answered 406 `not_acceptable`). An unsigned `tools/list` POST still
+  answers 401 `connection_required` with the OAuth resource metadata. The template's own live
+  check (`playwright.live.config.ts`), run as the paired agent claude-code: 151 passed,
+  1 skipped (the phone copy of the tool test, by design). On the home page, 57 WebMCP tools
+  are registered and all 17 input-free reads answer 200, signed ones included. The CLI half
+  was not run: this agent has no CLI sign-in on the template.
