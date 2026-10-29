@@ -5430,3 +5430,13 @@ An adversarial review of the two commits above found five things, all fixed here
 - `docs/agent-parity.md` corrected: pinning a note is for agents only (a person has no
   Pin button, and none is added), room search by name has its row, and the Credits
   admin reads join the G8 row.
+
+## 2026-10-29 — Public reads check proof when it is sent (WM-6)
+
+- The public reads (`:public_read`) pass a request that carries any agent proof
+  header to `AshTemplateWeb.Plugs.AgentWallet` (`AshTemplateWeb.Plugs.PublicProof`).
+  Proof that fails, half the headers, or a signed read with a query string (which the
+  signature does not cover) is refused in the site's one shape; before, the proof was
+  ignored. A request with no proof headers still reads anonymously. `/docs` lists it
+  as a breaking change.
+- Release waits for Sean's letter (sign-in).

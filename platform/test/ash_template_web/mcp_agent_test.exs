@@ -404,7 +404,6 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"rooms_search", %{text: "hello"}, :post, "/api/v1/rooms/search", %{text: "hello"},
            unpaired},
           {"rooms_search", %{text: "a"}, :post, "/api/v1/rooms/search", %{text: "a"}, agent},
-          {"rooms_list", %{text: "a"}, :get, "/api/v1/rooms?text=a", nil, agent},
           {"agents_get", %{id: missing}, :get, "/api/v1/agents/#{missing}", nil, agent},
           {"rooms_message", %{room: "general", id: missing}, :get,
            "/api/v1/rooms/general/messages/#{missing}", nil, agent},
@@ -440,6 +439,7 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"health", %{foo: "1"}, "/api/v1/health?foo=1"},
           {"docs", %{foo: "1"}, "/api/v1/docs?foo=1"},
           {"rooms_list", %{foo: "1"}, "/api/v1/rooms?foo=1"},
+          {"rooms_list", %{text: "a"}, "/api/v1/rooms?text=a"},
           {"polls_list", %{foo: "1"}, "/api/v1/polls?foo=1"},
           {"sites_tools", %{site: "regents", foo: "1"}, "/api/v1/sites/regents/tools?foo=1"},
           {"rooms_messages", %{room: "general", foo: "1"}, "/api/v1/rooms/general/messages?foo=1"},
@@ -458,6 +458,42 @@ defmodule AshTemplateWeb.McpAgentTest do
       assert over_http.status in [404, 422], path
       assert Jason.decode!(text)["error"] == refused, path
     end
+  end
+
+  test "a public read checks proof headers when they are sent, and reads anonymously without",
+       %{from: from} do
+    anonymous = http(:get, "/api/v1/rooms", nil, from, nil)
+    assert anonymous.status == 200
+
+    for signer <- [paired_wallet(), wallet()] do
+      signed = http(:get, "/api/v1/rooms", nil, from, signer)
+      assert {signed.status, signed.resp_body} == {200, anonymous.resp_body}
+    end
+
+    refused = fn conn -> {conn.status, Jason.decode!(conn.resp_body)} end
+
+    forged =
+      conn(:get, "/api/v1/rooms")
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("accept", "application/json")
+      |> signed(wallet(), "not-the-proof")
+      |> @endpoint.call([])
+
+    assert {401, %{"error" => %{"code" => "http_signature_invalid"} = error}} = refused.(forged)
+    assert Map.keys(error) |> Enum.sort() == ~w(code hint message)
+
+    half =
+      conn(:get, "/api/v1/agents/#{Ecto.UUID.generate()}")
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("x-agent-wallet-address", wallet())
+      |> @endpoint.call([])
+
+    assert {401, %{"error" => %{"code" => _, "message" => _, "hint" => _}}} = refused.(half)
+
+    # The signature does not cover a query string, so a signed read with one is refused.
+    assert {401, %{"error" => %{"code" => "unsupported_query"}}} =
+             refused.(http(:get, "/api/v1/rooms?text=gener", nil, from, paired_wallet()))
   end
 
   test "a browser tool's answer to input it cannot send is the hosted tool's", %{from: from} do
