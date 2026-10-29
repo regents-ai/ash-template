@@ -4928,3 +4928,17 @@ An adversarial review of the two commits above found five things, all fixed here
   request). `skills/regent-workflow/SKILL.md` and `skills/ash-webmcp/SKILL.md` say so.
 - `docs/agent-parity.md` gains a Connector column. The connector's identity tools move
   there from the MCP column, and two rows with a missing surface but no gap now name G5.
+
+## 2026-10-29 — Released v131
+
+- template.regents.sh v131 runs `65c6e26c`, released 05:53Z: refusals that say an agent is
+  not paired or its person is not here link to their help page, the Credits balance moves
+  into the account menu on the narrowest phones, and a paired agent chats with the site's
+  assistant for its person. Checks on that tree: `make check` exit 0 (100 server tests,
+  24 script tests, the browser walk at 1280 and 390 in headless Chromium; WebKit is not
+  run on the Mac). Live check 05:56Z in headless Chromium: `/capabilities.json`
+  build.commit `65c6e26c`; home, agents, account, rooms and pair pages answer 200 at 390
+  and 1280 with the sign-in settings present, no page errors and nothing wider than the
+  screen. The machine's health check passes; the boot log shows no crash. `bab38804`
+  (docs and skills only) is on main and rides the next release. Rollback: v130,
+  `cc74b3f3`.
