@@ -824,6 +824,122 @@ defmodule AshTemplate.SignedToolsTest do
     assert_receive %{event: "mark_read"}
   end
 
+  test "an agent chats with the assistant for its person, a retry sends once, and no one else's chat is open to it" do
+    # Invariant: an agent reads and writes only its person's chats; a retried
+    # send never sends twice; and the assistant's reply job runs as that agent,
+    # writing its reply into the same chat.
+    {account, person, paired} = paired_person("did:privy:chat-test")
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:chat-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    theirs = AshTemplate.Chat.create_message!(%{text: "Mine alone"}, actor: other)
+    assert Jason.decode!(request(:get, "/api/v1/chat").resp_body) == %{"conversations" => []}
+
+    operation_id = Ecto.UUID.generate()
+
+    for body <- [%{text: "No id"}, %{text: " ", operation_id: Ecto.UUID.generate()}, %{operation_id: Ecto.UUID.generate()}] do
+      assert error_code(request(:post, "/api/v1/chat/messages", Jason.encode!(body))) == "invalid_message"
+    end
+
+    send = Jason.encode!(%{text: "Hello there", operation_id: operation_id})
+    sent = request(:post, "/api/v1/chat/messages", send)
+    assert sent.status == 201, sent.resp_body
+
+    assert %{"id" => ^operation_id, "from" => "person", "complete" => true, "conversation_id" => chat} =
+             Jason.decode!(sent.resp_body)["message"]
+
+    # The person's open chat page hears what the agent sends.
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{chat}")
+
+    retried = request(:post, "/api/v1/chat/messages", send)
+    assert retried.status == 200, retried.resp_body
+    assert Jason.decode!(retried.resp_body)["message"]["id"] == operation_id
+
+    more = Jason.encode!(%{text: "And again", operation_id: Ecto.UUID.generate(), conversation_id: chat})
+    assert request(:post, "/api/v1/chat/messages", more).status == 201
+    assert_receive %Phoenix.Socket.Broadcast{event: "create", payload: %{text: "And again"}}
+
+    # The reply jobs, two of them the agent's, run and answer into each chat.
+    assert %{success: 3, failure: 0} = Oban.drain_queue(queue: :chat_responses)
+
+    history = request(:post, "/api/v1/chat/#{chat}/history", "{}")
+    assert history.status == 200, history.resp_body
+    %{"messages" => messages, "pagination" => %{"has_more" => false}} = Jason.decode!(history.resp_body)
+    assert Enum.count(messages, &(&1["from"] == "person")) == 2
+    replies = Enum.filter(messages, &(&1["from"] == "assistant"))
+    assert [_, _] = replies
+    assert Enum.all?(replies, &(&1["complete"] and &1["conversation_id"] == chat and &1["text"] =~ "You wrote"))
+    assert operation_id in Enum.map(replies, & &1["response_to_id"])
+
+    assert [%{"id" => ^chat}] = Jason.decode!(request(:get, "/api/v1/chat").resp_body)["conversations"]
+
+    for body <- [~s({"after": 5}), ~s({"after": "nope"}), ~s({"limit": 5})] do
+      assert error_code(request(:post, "/api/v1/chat/#{chat}/history", body)) == "invalid_cursor"
+    end
+
+    # Another person's chat reads as absent, and stays theirs, refused as the API
+    # document says.
+    assert error_code(request(:post, "/api/v1/chat/#{theirs.conversation_id}/history", "{}")) ==
+             "chat_not_found"
+
+    assert documented_code("/api/v1/chat/{conversation}/history", "404") == "chat_not_found"
+    assert documented_code("/api/v1/chat/messages", "404") == "chat_not_found"
+
+    into_theirs =
+      Jason.encode!(%{text: "Let me in", operation_id: Ecto.UUID.generate(), conversation_id: theirs.conversation_id})
+
+    assert error_code(request(:post, "/api/v1/chat/messages", into_theirs)) == "chat_not_found"
+
+    stolen = Jason.encode!(%{text: "Theirs", operation_id: theirs.id, conversation_id: chat})
+    assert error_code(request(:post, "/api/v1/chat/messages", stolen)) == "invalid_message"
+    their_chat = AshTemplate.Chat.message_history!(theirs.conversation_id, actor: other)
+    assert [%{text: "Mine alone"}] = Enum.filter(their_chat, &(&1.source == :user))
+
+    assert {:ok, [%{id: ^chat}]} =
+             AshTemplate.Chat.my_conversations(actor: AshTemplate.Actors.Human.for_account(account))
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert request(:get, "/api/v1/chat").status == 403
+  end
+
+  test "an agent unpaired before the assistant answers leaves its person a finished reply, written as no one" do
+    # Invariant: the reply job never reads or writes as an agent that is no longer
+    # paired, and the person's chat never waits for a reply that will not come.
+    {account, person, paired} = paired_person("did:privy:chat-unpaired")
+    operation_id = Ecto.UUID.generate()
+    send = Jason.encode!(%{text: "Hello", operation_id: operation_id})
+    sent = request(:post, "/api/v1/chat/messages", send)
+    assert sent.status == 201
+    chat = Jason.decode!(sent.resp_body)["message"]["conversation_id"]
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{chat}")
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert %{success: 0} = Oban.drain_queue(queue: :chat_responses)
+
+    # No word of a reply was written: the one piece is the line saying it failed.
+    assert_receive %Phoenix.Socket.Broadcast{payload: %{source: :agent, complete: true}}
+    refute_received %Phoenix.Socket.Broadcast{}
+
+    human = AshTemplate.Actors.Human.for_account(account)
+    sent = AshTemplate.Chat.get_earlier_message!(operation_id, actor: human)
+    assert [reply, %{id: ^operation_id}] =
+             AshTemplate.Chat.message_history!(sent.conversation_id, actor: human)
+
+    assert %{source: :agent, complete: true, response_to_id: ^operation_id} = reply
+  end
+
+  defp documented_code(path, status) do
+    document = Application.app_dir(:ash_template, "priv/public/openapi.json")
+    %{"paths" => %{^path => %{"post" => %{"responses" => %{^status => response}}}}} =
+      document |> File.read!() |> Jason.decode!()
+
+    response["content"]["application/json"]["schema"]["properties"]["error"]["properties"]["code"]["const"]
+  end
+
   defp paired_person(privy_user_id) do
     {:ok, account, []} =
       VerifiedSession.establish(%RegentPrivy.Session{

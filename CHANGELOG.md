@@ -4861,6 +4861,63 @@ An adversarial review of the two commits above found five things, all fixed here
   `skills/regent-workflow/references/short-titles.md`. Skills only; the template's own
   titles in that list still need their sweep.
 
+## 2026-10-28 — Credits balance in the account menu on the narrowest phones
+
+- At 320px the header's Credits balance ("10.00 Credits", shortened to "10.00") pushed
+  the header 15px past the screen (design reviewer, measured on `/showcase/preview`).
+  Design chief's choice (b): narrower than 22.5rem the header leaves the balance out
+  (`#shell-credits-button`, `assets/css/components/shell.css`) and the account menu shows
+  it as one row under the wallet, in the header's words, through design-system's new
+  `balance` slot (`3134bab0`). The row opens the same Buy Credits panel; the menu closes
+  first, so focus returns to the account button when the panel closes
+  (`assets/js/shell_panels.ts`). The phone header's rule that drops the word "Credits" now
+  applies to the header's button only, so the row keeps it.
+- Walk checks in `platform/test/browser/account_menu.spec.ts`: at 320 the header has no
+  balance, the menu row reads "10.00 Credits", is 44px tall, opens Buy Credits, and the
+  page fits the screen with the menu open; at 390 and 1280 the header keeps the balance
+  and the row is hidden. Feature map and public changelog updated.
+
+## 2026-10-28 — Skills: a timer loop becomes an AshOban sweep
+
+- `skills/elixir-stack/references/oban.md` gains "A timer loop becomes a sweep", proposed
+  by the Patchbay chief from its escrow Base reads and agent repairs: the next sweep is
+  the retry (`max_attempts 1`, no `on_error` that leaves `where`), outside calls with
+  `transaction?(false)`, one job per row, a declining guard ends `:ok`, the release note
+  states the outside-call rate, and the old loop goes in the same change.
+
+## 2026-10-28 — Agents chat with the assistant for their person
+
+- G10 under "an action only a person can do is a bug" (`docs/agent-parity.md`): the chat
+  with the site's assistant on `/chat` was the page's alone. A paired agent now lists its
+  person's chats (`GET /api/v1/chat`, `listChatConversations`, `chat_list`, `chat list`),
+  reads one 50 messages a page (`POST /api/v1/chat/{conversation}/history`,
+  `listChatMessages`, `chat_read`, `chat read`) and sends a message in one or in a new chat
+  (`POST /api/v1/chat/messages`, `sendChatMessage`, `chat_send`, `chat send`). The commands
+  arrive in the next regents-cli release. The send runs the page's own Ash action
+  (`AshTemplate.Chat.create_message`), so the person's allowance of 10 a minute, the
+  assistant's streamed reply (the `:respond` trigger, now carrying an agent actor through
+  `AshTemplate.Chat.ActorPersister`) and the person's open chat page all work as when they
+  type it. Its `operation_id` becomes the message's id, so a retry answers the first
+  message with 200 (`:earlier_send`). Another person's chat answers 404 `chat_not_found`,
+  like one that does not exist. The message shows as the person's own: the chat is theirs
+  alone. The OpenAPI documents move to 7.3.0.
+- An agent unpaired after sending, before the assistant answers, may no longer read or
+  answer its message, so its reply job gives up; the job reads its message with
+  `:job_read` and ends the reply with `:fail_response`, both open to AshOban alone
+  (`AshOban.Checks.AshObanInteraction`), and the reply is read and written as the assistant.
+  The person's chat shows the failed reply instead of "The assistant is writing…" for good.
+- `operation_id` is a private argument of `Chat.Message.create`, set only by the agent
+  route, so the chat page cannot choose its messages' ids.
+- `prepare_agent_request` now offers every signed browser tool. It had missed the room
+  likes and reports, direct messages and polls; the list is now checked against the
+  manifest when `AshTemplateWeb.Capabilities` compiles.
+- An API refusal or form error from a rule that carries a value that is not text, such as
+  the pattern behind "cannot be empty", no longer crashes while it is worded
+  (`AshTemplateWeb.FormErrors`): only the values its words name are filled in.
+- The compile-connected limit in `platform/mix.exs` moves to 36: `AshTemplateWeb.ChatController`
+  is one more signed-agent controller reading AgentWallet's refusals at compile time.
+- `cli/COMMANDS.md` leads each command with **Does:** in place of **What:**, under the rule
+  that no bold lead opens with a W-word.
 ## 2026-10-28 — Pay for a pin with USDC or Credits
 
 - elixir-utils moves to `ff7927c` (branch `credits-pay-tpl-1028`: elixir-utils main

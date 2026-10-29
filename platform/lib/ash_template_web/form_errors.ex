@@ -22,9 +22,13 @@ defmodule AshTemplateWeb.FormErrors do
     end)
   end
 
+  # Only the values the words name are filled in: a rule may carry others that
+  # are not text, such as the pattern of a `match` validation.
   defp message({message, values}) do
-    Enum.reduce(values, message, fn {key, value}, message ->
-      String.replace(message, "%{#{key}}", to_string(value))
+    Regex.replace(~r/%\{(\w+)\}/, message, fn placeholder, key ->
+      Enum.find_value(values, placeholder, fn {name, value} ->
+        to_string(name) == key && to_string(value)
+      end)
     end)
   end
 end

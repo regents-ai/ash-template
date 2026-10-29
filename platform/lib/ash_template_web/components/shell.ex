@@ -14,7 +14,9 @@ defmodule AshTemplateWeb.Components.Shell do
   (`Regent.Account.menu`), the same on every page: the person's picture, name and
   wallet, the agents paired with the account (the `agents` slot), Pair New Agent,
   Manage Account and Sign out. Pairing itself and everything else about the account
-  are on the Account page.
+  are on the Account page. On a screen narrower than 22.5rem the header has no room
+  for the Credits balance, so the menu shows it instead, under the wallet, and it
+  opens the same Buy Credits panel.
   """
 
   use Phoenix.Component
@@ -196,6 +198,18 @@ defmodule AshTemplateWeb.Components.Shell do
               size={40}
             />
           </:picture>
+          <:balance :if={@credits}>
+            <button
+              type="button"
+              id="account-menu-credits"
+              aria-haspopup="dialog"
+              aria-controls="shell-credits"
+              aria-label={credits_label(@credits)}
+              data-credits-open
+            >
+              <.credits_amount amount={@credits} />
+            </button>
+          </:balance>
           <:agents>{render_slot(@agents)}</:agents>
         </Regent.Account.menu>
       </header>
