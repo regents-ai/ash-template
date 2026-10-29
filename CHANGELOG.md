@@ -4918,3 +4918,13 @@ An adversarial review of the two commits above found five things, all fixed here
   is one more signed-agent controller reading AgentWallet's refusals at compile time.
 - `cli/COMMANDS.md` leads each command with **Does:** in place of **What:**, under the rule
   that no bold lead opens with a W-word.
+
+## 2026-10-29 — Five agent surfaces, and agents own accounts by their wallet
+
+- Sean, 29 Oct 05:30Z, answered the agent-parity rule: every action needs all five
+  surfaces (the website, WebMCP, hosted MCP, the Claude connector and the regents CLI),
+  each built in ash-template first, and an agent owns its account through its own wallet
+  (its SIWA wallet is the Privy login wallet; the site makes the account from its signed
+  request). `skills/regent-workflow/SKILL.md` and `skills/ash-webmcp/SKILL.md` say so.
+- `docs/agent-parity.md` gains a Connector column. The connector's identity tools move
+  there from the MCP column, and two rows with a missing surface but no gap now name G5.
