@@ -4850,6 +4850,56 @@ An adversarial review of the two commits above found five things, all fixed here
   sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
   `b9d8ef1c`.
 
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
+  main `9da44bdc` merged with the connector's oauth and mcp_agents work).
+  `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` answers at `/mcp`
+  with Claude's handshake, the 401 sign-in challenge, each connected account's own budget
+  and the identity tools. `regent_oauth` and `regent_agent_access` carry `override: true`,
+  since `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on the
+  sign-in under `/oauth` and `/.well-known/oauth-*`, `/mcp`, Claude in the pairing box
+  and the pair request, and the Claude guide at `/agents/claude`. With the switch on, the
+  boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed. With it off, an agent's
+  sign-in, pairing and rate limits are as before: the endpoint only adds a budget for
+  `/mcp` paths (600 a minute from one address) and the `/api` budget is unchanged.
+- The connector's sign-in signs, through the sign-in service, only `whoami`, `me` and
+  `pair` for the account's one hosted identity, asked with the site's own key; the
+  connection's Bearer token never leaves the site. Connecting again or refreshing keeps
+  that identity and its one agent, a pairing code must be the authorizing account's own,
+  only `check_in` moves when the agent was last in touch, unpairing on the Account page
+  holds, and disconnecting at Connected apps revokes the app's access and refresh tokens
+  at once. `platform/test/ash_template_web/claude_connector_test.exs` checks each through
+  this site's endpoint; `docs/feature-map.md` lists them and the gaps left.
+- Pairing and checking in when asked in a chat are supported. A check-in from a scheduled
+  Claude task has not been tried, and Claude's guide says so.
+- Claude's guide and the connector's refusal send people to Pair New Agent on their
+  Account page. The pairing box uses the library's `Harness.offered/0`; its own copy is
+  gone.
+- Migrations: `20261014170000_add_oauth_provider` now calls `RegentOAuth.Migration.up()`
+  (the shape a new database gets; production already ran it).
+  `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL lock_timeout = '5s'`) runs
+  `RegentOAuth.Migration.V2`: it drops the token table's issuer and resource defaults
+  (each code and token now has them written as it is issued) and rewrites every stored
+  access token row in place as hashes. The template has OAuth rows on the shared
+  production database, so the release that carries it waits for Sean's letter naming it.
+  Tokens issued for the old resource stay refused and their apps connect again.
+- Lifetimes stay the library's: a Bearer token lives at most an hour, a refresh token 30
+  days, and a refresh token reused within 30 seconds of its rotation is only refused
+  (`config/config.exs` notes where each is set).
+- Not yet: the sign-in service's hosted signing allows the `patchbay` and `keyfleet`
+  audiences only, so with the switch on here every signed tool call would be refused
+  until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
+  version before any site takes it.
+
+## 2026-10-28 — Claude connector brought onto main 2362ad83
+
+- Merged with template main `2362ad83` (the help links on refusals; design-system
+  `99c99d14`). elixir-utils moves to its main `09afad89`, which holds `aa5512f4` (the
+  connector), pay with Credits' library work (`ff7927c0`) and the help links (`9539469f`);
+  its files are the same as `4295e7ce`, where `make check` ran green. Reviewer,
+  28 Oct 22:32Z: a re-pin with no other change needs no new review.
 
 ## 2026-10-28 — Titles are one or two words
 
@@ -4943,6 +4993,24 @@ An adversarial review of the two commits above found five things, all fixed here
   (docs and skills only) is on main and rides the next release. Rollback: v130,
   `cc74b3f3`.
 
+## 2026-10-29 — Claude connector brought onto main 17fa9881
+
+- Sean, 29 Oct 05:48Z, answered the connector decisions: 3 a (count the template's
+  token rows, then the one-time rewrite, then the connector goes live with Claude still
+  switched off), 4 a (a refreshed token's old one keeps working for 30 seconds) and 5 a
+  (Claude on for the template once the connector is live and the sign-in service
+  accepts the template).
+- The connector branch (`cbe48cde`) merges with main `17fa9881` (v131 and its release
+  record). elixir-utils stays at `09afad89`, the version the connector was reviewed on:
+  it already holds the 30-second grace and contains the Credits library change
+  `ff7927c`. Later elixir-utils main also changes how signed page tools are signed
+  (`3bc18ae`), which the template takes only with its own agent-access change, so this
+  merge does not move past it. design-system stays at main's `3134bab0`, which contains
+  Claude Duet's picture (`99c99d14`).
+- Not released by this merge: the release runs the connector migration, which rewrites
+  the template's stored connector tokens once, so it waits for the read-only count of
+  those rows first.
+
 ## 2026-10-29 — Signed-tools tests start with their own request budget
 
 - Every test request comes from 127.0.0.1, so the whole server suite shared one /api
@@ -4961,6 +5029,45 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-29 — Released v132
+
+- template.regents.sh v132 runs `637dcce8`, released 16:41Z on Sean's "1. a" (count, then
+  release with the switch off). The Claude connector ships behind its switch, which stays
+  off: `/mcp` and `/.well-known/oauth-authorization-server` answer 404. Sign out closes the
+  account menu, so its failure note is on top. Production held 0 OAuth clients and 0
+  tokens before the release, so the token-hashing migration ran on empty tables;
+  `/app/bin/pending-migrations` answers none. Checks on that tree: `make check` exit 0
+  (110 server tests with 9 properties, 24 script tests, the browser walk 315 passed and 5
+  skipped at 1280 and 390 in headless Chromium; WebKit is not run on the Mac). Live check
+  16:42Z in headless Chromium: `/capabilities.json` build.commit `637dcce8`; home,
+  agents, account and pair pages answer 200 at 390 and 1280 with the sign-in settings
+  present, no page errors and nothing wider than the screen. Rollback: v131, `65c6e26c`.
+
+## 2026-10-29 — Chain numbers for Sentinel
+
+- A chain event reader's pass, `[:ash_template, :indexer, :lag]` with `blocks`, becomes
+  `health_indexer_lag_blocks` and `health_indexer_passes_total` by `indexer` and
+  `chain_id` on the private metrics listener, in Autolaunch's shape. The template reads no
+  chain events, so it reports none; the chain-events skill says each pass reports it.
+- `health_wallet_unconfirmed_oldest_seconds` by `flow`: a site that sends from its own
+  wallet names `unconfirmed_sends` in `config :ash_template, AshTemplateWeb.Telemetry`,
+  and the site poller reads it every ten seconds beside the oldest job, logging and
+  skipping a tick it cannot read. The template names none, so the step never runs and the
+  age is never published here.
+- `health_chain_request_failures_total` is unchanged. Sentinel's ON-8 handoff; the
+  numbers reach the five sites in one rollout after Sean's sign-off.
+
+## 2026-10-29 — Released v133
+
+- template.regents.sh v133 runs `2e158726`, released 17:04Z: Sentinel's chain numbers
+  (indexer lag and passes, unconfirmed sends by flow). The template reads no chain events
+  and names no sending query, so neither row is published here. Checks on that tree:
+  `make check` exit 0 (114 server tests with 9 properties, 24 script tests, the browser
+  walk 315 passed and 5 skipped at 1280 and 390 in headless Chromium; WebKit is not run on
+  the Mac). Live check in headless Chromium: `/capabilities.json` build.commit `2e158726`;
+  home, agents, account and pair pages answer 200 at 390 and 1280, no page errors and
+  nothing wider than the screen. Rollback: v132, `637dcce8`.
 
 ## 2026-10-28 — Agent access: AshAi tools, capability fields and operation keys
 
