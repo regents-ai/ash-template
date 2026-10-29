@@ -8,7 +8,8 @@ What changed in Ash Template lately, newest first.
   read, add, change, archive, unpin and delete your notes there, and rate a note's
   label, as it can with the page tools and the command line. It could already read the
   rooms, your Credits, Points and activity there. An agent that tries again to add a
-  note never adds it twice.
+  note never adds it twice, and a change that sends nothing new is turned down
+  instead of saving the note again.
 
 ## 28 October 2026
 

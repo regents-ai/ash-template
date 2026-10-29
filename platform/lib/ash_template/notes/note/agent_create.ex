@@ -7,10 +7,12 @@ defmodule AshTemplate.Notes.Note.AgentCreate do
   the `note_create` capability), in the same transaction as the note, and before
   it; it becomes the note's id. A reuse with the same title and text answers the
   note it made (`replayed: true`) and saves nothing; a reuse with any other title
-  or text is refused as `idempotency_conflict`; a reuse after that note was
-  deleted is refused as `note_removed`, naming it. Of two calls with one key at
+  or text, or of a UUID that is already another note's id, is refused as
+  `idempotency_conflict`; a reuse after that note was deleted is refused as
+  `note_removed`, naming it. Of two calls with one key at
   once, the second waits on the first's row, finds it spent, and answers as a
-  reuse. A save the note refuses is `invalid_note`, with the refused save.
+  reuse. A save the note refuses is `invalid_note`, with the refused save; one
+  its pairing no longer allows is `agent_not_paired`.
   """
 
   use Ash.Resource.Actions.Implementation
@@ -68,19 +70,29 @@ defmodule AshTemplate.Notes.Note.AgentCreate do
     end
   end
 
-  # The key was spent by a call that committed while this one waited.
+  # The key was spent by a call that committed while this one waited. A key that
+  # is already a note's id, made by another key, is used for another note: which
+  # note, or whose, is not said.
   defp answer_spent(error, actor, key, fingerprint) do
     cond do
       Operation.key_spent?(error) ->
         with {:ok, operation} <- spent(actor, key), do: reuse(operation, fingerprint, actor)
 
+      id_taken?(error) ->
+        {:error, Refused.exception(code: "idempotency_conflict")}
+
       match?(%Ash.Error.Invalid{}, error) ->
         {:error, Refused.exception(code: "invalid_note", error: error)}
 
       true ->
-        {:error, error}
+        NotPaired.ended({:error, error})
     end
   end
+
+  defp id_taken?(%Ash.Error.Invalid{errors: errors}),
+    do: Enum.any?(errors, &match?(%{field: :id}, &1))
+
+  defp id_taken?(_error), do: false
 
   defp spent(actor, key),
     do: Agents.get_operation(actor.agent_id, @capability, key, actor: %System{})

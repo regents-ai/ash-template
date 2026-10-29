@@ -25,4 +25,13 @@ defmodule AshTemplate.Agents.NotPaired do
   def check(%Human{}), do: :ok
   def check(%Agent{pairing: :active}), do: :ok
   def check(%Agent{} = actor), do: {:error, exception(code: code(actor))}
+
+  @doc """
+  A write's `result`, with the refusal of an agent whose pairing ended after its
+  request was let in, which the write's own policy (`RegentAgents.Checks.Paired`)
+  then forbade, named `agent_not_paired`, as every surface answers it.
+  """
+  @spec ended(term()) :: term()
+  def ended({:error, %Ash.Error.Forbidden{}}), do: {:error, exception(code: "agent_not_paired")}
+  def ended(result), do: result
 end

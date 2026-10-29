@@ -9,6 +9,9 @@ defmodule AshTemplateWeb.McpAgentTest do
   #   any signature is checked;
   # - input a tool cannot take gets the code HTTP gives it;
   # - one address gets the API's 120 requests a minute;
+  # - each notes tool answers and refuses as HTTP does; a UUID already another
+  #   note's id, and a note saved after the agent's pairing ended, are refused
+  #   the same way on both;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -24,6 +27,7 @@ defmodule AshTemplateWeb.McpAgentTest do
 
   alias AshTemplate.{Accounts, Repo}
   alias AshTemplate.Actors.System
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Rooms.Message
 
   @endpoint AshTemplateWeb.Endpoint
@@ -459,7 +463,7 @@ defmodule AshTemplateWeb.McpAgentTest do
       assert note == read_note(from, agent, key), name
     end
 
-    assert read_note(from, agent, key)["title"] == "Parity, edited"
+    assert %{"title" => "Parity, edited", "body" => "A walk"} = read_note(from, agent, key)
 
     # Deleting answers the same way both ways, and the note is gone.
     other = Ecto.UUID.generate()
@@ -482,6 +486,7 @@ defmodule AshTemplateWeb.McpAgentTest do
 
     assert http(:post, "/api/v1/notes", %{title: "Mine", operation_id: key}, from, agent).status == 201
     pending = label(key, :pending)
+    saved = saved(key)
 
     for {name, input, method, path, body, signer} <- [
           {"notes_list", %{}, :get, "/api/v1/notes", nil, unpaired},
@@ -494,6 +499,7 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"notes_create", %{title: "No key"}, :post, "/api/v1/notes", %{title: "No key"}, agent},
           {"notes_edit", %{id: key, title: String.duplicate("a", 121)}, :patch,
            "/api/v1/notes/#{key}", %{title: String.duplicate("a", 121)}, agent},
+          {"notes_edit", %{id: key}, :patch, "/api/v1/notes/#{key}", %{}, agent},
           {"notes_edit", %{id: missing, title: "Gone"}, :patch, "/api/v1/notes/#{missing}",
            %{title: "Gone"}, agent},
           {"notes_delete", %{id: missing}, :delete, "/api/v1/notes/#{missing}", nil, agent},
@@ -519,12 +525,77 @@ defmodule AshTemplateWeb.McpAgentTest do
       assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
     end
 
+    # No refused edit saved the note again.
+    assert saved(key) == saved
+
     # A reused operation_id: other text is a conflict, and after a delete the note is named gone.
     assert {409, %{"code" => "idempotency_conflict"}} = refused_both_ways(from, agent, "Other", key)
     assert http(:delete, "/api/v1/notes/#{key}", nil, from, agent).status == 200
 
     assert {410, %{"code" => "note_removed", "id" => ^key}} =
              refused_both_ways(from, agent, "Mine", key)
+  end
+
+  test "a UUID that is already another note's id is refused as a reused operation_id, saying nothing of that note",
+       %{from: from} do
+    [agent, same_person] = paired_wallets(2)
+    key = Ecto.UUID.generate()
+
+    assert http(:post, "/api/v1/notes", %{title: "First", operation_id: key}, from, agent).status ==
+             201
+
+    # Another agent of the same person, and an agent of another person, send the key.
+    for other <- [same_person, paired_wallet()] do
+      assert {409, refused} = refused_both_ways(from, other, "First", key)
+      assert Map.keys(refused) == ["code", "hint", "message"]
+      assert refused["code"] == "idempotency_conflict"
+    end
+
+    assert [%{id: ^key}] = Ash.read!(AshTemplate.Notes.Note, authorize?: false) |> mine(key)
+
+    assert [_first] =
+             AshTemplate.Agents.Operation
+             |> Ash.read!(authorize?: false)
+             |> Enum.filter(&(&1.operation_key == key))
+  end
+
+  test "a note an agent saves after its pairing ended is refused as agent_not_paired, in the words HTTP gives",
+       %{from: from} do
+    did = "did:privy:mcp-" <> Ecto.UUID.generate()
+    person = wallet()
+    account = Accounts.register_verified!(did, person, [person], actor: %System{})
+    owner = %RegentAgents.Person{privy_user_id: did}
+    agent = wallet()
+
+    pairing =
+      RegentAgents.pair_agent!(RegentAgents.issue_pairing_code!(actor: owner).code, "Agent", :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
+
+    # The agent as its signed request was let in, then the person unpairs it.
+    {:ok, active} = RegentAgents.Authority.resolve(Repo, agent)
+
+    let_in =
+      AshTemplate.Actors.Agent.paired(
+        AshTemplate.Agents.sign_in_agent!(agent, actor: %System{}),
+        account,
+        active
+      )
+
+    assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
+    key = Ecto.UUID.generate()
+
+    assert {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"} = refused]}} =
+             AshTemplate.Notes.notes_create(%{title: "Late", operation_id: key}, actor: let_in)
+
+    assert Ash.read!(AshTemplate.Notes.Note, authorize?: false) |> mine(key) == []
+
+    # Each surface answers it as an agent no person paired.
+    %{"error" => over_http} =
+      Jason.decode!(http(:get, "/api/v1/notes", nil, from, wallet()).resp_body)
+
+    assert over_http["code"] == "agent_not_paired"
+    assert Jason.decode!(AshAi.ToToolError.to_tool_error(refused))["error"] == over_http
   end
 
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
@@ -640,6 +711,15 @@ defmodule AshTemplateWeb.McpAgentTest do
     {over_http.status, refused}
   end
 
+  # The note `id`'s saved revision and who saved it, as the database holds them.
+  defp saved(id) do
+    AshTemplate.Notes.Note
+    |> Ash.get!(id, authorize?: false)
+    |> Map.take([:revision, :changed_by_agent_id, :updated_at])
+  end
+
+  defp mine(notes, id), do: Enum.filter(notes, &(&1.id == id))
+
   # One request to the HTTP API, signed by `signer`'s wallet when there is one.
   defp http(method, path, body, from, signer) do
     conn(method, path, body && Jason.encode!(body))
@@ -714,18 +794,24 @@ defmodule AshTemplateWeb.McpAgentTest do
   defp posts, do: Ash.read!(Message, authorize?: false)
 
   # An agent's wallet, paired with a person's account here.
-  defp paired_wallet do
+  defp paired_wallet, do: hd(paired_wallets(1))
+
+  # `count` agents' wallets, each paired with the same new person's account here.
+  defp paired_wallets(count) do
     did = "did:privy:mcp-" <> Ecto.UUID.generate()
     person = wallet()
-    agent = wallet()
     Accounts.register_verified!(did, person, [person], actor: %System{})
-    code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: did})
 
-    RegentAgents.pair_agent!(code.code, "Agent", :codex,
-      actor: %RegentAgents.Agent{wallet: agent}
-    )
+    for _agent <- 1..count do
+      agent = wallet()
+      code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: did})
 
-    agent
+      RegentAgents.pair_agent!(code.code, "Agent", :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
+
+      agent
+    end
   end
 
   defp wallet, do: "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)

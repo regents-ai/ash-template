@@ -144,7 +144,7 @@ defmodule AshTemplate.Notes.Decision do
         with :ok <- NotPaired.check(actor),
              {:ok, decision} when not is_nil(decision) <-
                Notes.get_label_decision(id, actor: actor),
-             {:ok, decision} <- Notes.rate_label(decision, report, actor: actor) do
+             {:ok, decision} <- NotPaired.ended(Notes.rate_label(decision, report, actor: actor)) do
           {:ok, %{label: %{id: decision.id, rating: decision.report}}}
         else
           {:ok, nil} ->
