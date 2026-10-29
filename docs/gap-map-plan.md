@@ -107,6 +107,9 @@ and paid steps are protected as well.
   `changes read` with a cursor.
 - Mark all read: done 28 Oct as `activity mark-read`, the first fix under "an action only a
   person can do is a bug" (`docs/agent-parity.md`).
+- Chat with the assistant: done 28 Oct as `chat list`, `chat read <conversation>` and `chat
+  send` (G10 in `docs/agent-parity.md`; 10 messages a person a minute; the assistant's reply
+  follows the send).
 - Archive for notes: done 21 Oct as `notes archive <id>` and `notes unarchive <id>` (free; an
   archived note goes after the others and keeps its pin).
 - Account summary and budget: `account show`, `account budget`.

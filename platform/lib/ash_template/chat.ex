@@ -21,6 +21,7 @@ defmodule AshTemplate.Chat do
         default_options: [query: [sort: [inserted_at: :desc]]]
 
       define :create_message, action: :create
+      define :get_earlier_message, action: :earlier_send, args: [:id], not_found_error?: false
     end
   end
 

@@ -1333,6 +1333,78 @@
       "lifecycle": "immediate"
     },
     {
+      "operation": "listChatConversations",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/chat",
+      "may": "Chat with the assistant for you",
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "listChatMessages",
+      "effect": "read",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/chat",
+      "may": "Chat with the assistant for you",
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "sendChatMessage",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/chat",
+      "may": "Chat with the assistant for you",
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
+    },
+    {
       "operation": "listPolls",
       "effect": "read",
       "authority": "public",

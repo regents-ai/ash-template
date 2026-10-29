@@ -128,6 +128,27 @@ Autolaunch's `AuctionFinish` and Patchbay's `EventSubscription` are working exam
   `AshOban.schedule(Resource, :trigger)` in that change's `after_action`; the sweep
   is one job however many changes land.
 
+### A timer loop becomes a sweep
+
+A process that wakes on a timer to call another service for each waiting row (a
+chain read, a model call) becomes an AshOban trigger whose `where` matches those rows
+and whose `scheduler_cron` is the old interval. Patchbay's escrow Base reads and its
+agent repairs are worked examples.
+
+- When the next sweep is the retry, set `max_attempts 1` and let the sweep offer the
+  row again, rather than Oban's backoff. Give it no `on_error` that moves the row out
+  of `where`; that would end the retries.
+- The action makes its outside call with `transaction?(false)`, as above, so no
+  database transaction stays open across the network.
+- The trigger's one job per record (available, scheduled or executing) keeps a slow
+  call from running twice for the same row.
+- A guard that declines on purpose (a switch turned off, a daily cap spent) returns
+  the record unchanged without an error, so the job ends `:ok`, nothing is logged as
+  a failure, and the row waits for the next sweep.
+- The release note gives the outside-call rate, for example "one Base read per held
+  bounty every 5 minutes".
+- The same change deletes the old loop, its supervisor entry and its poll setting.
+
 ## Ordered delivery to subscribers (webhooks, event feeds)
 
 The pattern for "send each subscriber every event, in order, never skipping one

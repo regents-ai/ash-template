@@ -4877,6 +4877,48 @@ An adversarial review of the two commits above found five things, all fixed here
   page fits the screen with the menu open; at 390 and 1280 the header keeps the balance
   and the row is hidden. Feature map and public changelog updated.
 
+## 2026-10-28 — Skills: a timer loop becomes an AshOban sweep
+
+- `skills/elixir-stack/references/oban.md` gains "A timer loop becomes a sweep", proposed
+  by the Patchbay chief from its escrow Base reads and agent repairs: the next sweep is
+  the retry (`max_attempts 1`, no `on_error` that leaves `where`), outside calls with
+  `transaction?(false)`, one job per row, a declining guard ends `:ok`, the release note
+  states the outside-call rate, and the old loop goes in the same change.
+
+## 2026-10-28 — Agents chat with the assistant for their person
+
+- G10 under "an action only a person can do is a bug" (`docs/agent-parity.md`): the chat
+  with the site's assistant on `/chat` was the page's alone. A paired agent now lists its
+  person's chats (`GET /api/v1/chat`, `listChatConversations`, `chat_list`, `chat list`),
+  reads one 50 messages a page (`POST /api/v1/chat/{conversation}/history`,
+  `listChatMessages`, `chat_read`, `chat read`) and sends a message in one or in a new chat
+  (`POST /api/v1/chat/messages`, `sendChatMessage`, `chat_send`, `chat send`). The commands
+  arrive in the next regents-cli release. The send runs the page's own Ash action
+  (`AshTemplate.Chat.create_message`), so the person's allowance of 10 a minute, the
+  assistant's streamed reply (the `:respond` trigger, now carrying an agent actor through
+  `AshTemplate.Chat.ActorPersister`) and the person's open chat page all work as when they
+  type it. Its `operation_id` becomes the message's id, so a retry answers the first
+  message with 200 (`:earlier_send`). Another person's chat answers 404 `chat_not_found`,
+  like one that does not exist. The message shows as the person's own: the chat is theirs
+  alone. The OpenAPI documents move to 7.3.0.
+- An agent unpaired after sending, before the assistant answers, may no longer read or
+  answer its message, so its reply job gives up; the job reads its message with
+  `:job_read` and ends the reply with `:fail_response`, both open to AshOban alone
+  (`AshOban.Checks.AshObanInteraction`), and the reply is read and written as the assistant.
+  The person's chat shows the failed reply instead of "The assistant is writing…" for good.
+- `operation_id` is a private argument of `Chat.Message.create`, set only by the agent
+  route, so the chat page cannot choose its messages' ids.
+- `prepare_agent_request` now offers every signed browser tool. It had missed the room
+  likes and reports, direct messages and polls; the list is now checked against the
+  manifest when `AshTemplateWeb.Capabilities` compiles.
+- An API refusal or form error from a rule that carries a value that is not text, such as
+  the pattern behind "cannot be empty", no longer crashes while it is worded
+  (`AshTemplateWeb.FormErrors`): only the values its words name are filled in.
+- The compile-connected limit in `platform/mix.exs` moves to 36: `AshTemplateWeb.ChatController`
+  is one more signed-agent controller reading AgentWallet's refusals at compile time.
+- `cli/COMMANDS.md` leads each command with **Does:** in place of **What:**, under the rule
+  that no bold lead opens with a W-word.
+
 ## 2026-10-28 — Agent access: AshAi tools, capability fields and operation keys
 
 - AshAi moves to 1.4.1 (`~> 1.4.1`), which brings ash_json_api 1.8.0, websock_adapter

@@ -370,6 +370,14 @@ defmodule AshTemplateWeb.Router do
     post "/dms/:conversation/unblock", DmsController, :unblock
   end
 
+  # A paired agent's chats with the assistant, as its person has them on /chat.
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :api
+    get "/chat", ChatController, :index
+    post "/chat/messages", ChatController, :send_message
+    post "/chat/:conversation/history", ChatController, :history
+  end
+
   scope "/", AshTemplateWeb do
     pipe_through :browser
 
