@@ -44,6 +44,7 @@ defmodule AshTemplate.Agents do
 
         annotations(
           read_only_hint: hints.readOnlyHint,
+          idempotent_hint: hints.idempotentHint,
           destructive_hint: hints.destructiveHint,
           open_world_hint: hints.openWorldHint
         )

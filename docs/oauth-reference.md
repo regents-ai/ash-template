@@ -97,9 +97,11 @@ servers and one address carries many accounts; any other request counts 120 a
 minute (`mcp_address`, the API's figure). A tool's arguments are checked against its action before it
 runs (`AshTemplateWeb.ToolErrors.check_input/3`), so bad input is refused with the
 codes the HTTP API uses. A refused identity tool call is the tool's error, whose
-text is `{"error": {"code", "message", "hint"}}` with code
-`identity_request_refused` and the site's own words (`config :regent_mcp_agents,
-:config, refusal:`). `pair_identity` lists the harness and the name and code
+text is `{"error": {"code", "message", "hint"}}`: the site's own refusal of the
+signed request, with `retry_after` when it sent one (`agent_not_paired`, a rate
+limit), or the library's refusal made before signing (`pairing_code_unknown`).
+When no answer came, the code is `identity_request_refused` with the site's own
+words (`config :regent_mcp_agents, :config, refusal:`). `pair_identity` lists the harness and the name and code
 lengths the library takes.
 
 ## Issuer and resource from the site's host

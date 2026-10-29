@@ -5103,3 +5103,21 @@ An adversarial review of the two commits above found five things, all fixed here
 - The page tools walk no longer checks for the removed tool or the removed input
   shape; an unknown field (`colour`) proves an input is refused before signing.
 - Released only with the regents-cli release that carries `regents browser`.
+
+## 2026-10-29 — Hosted MCP: elixir-utils d4b5e9a, the site's own identity refusals
+
+- elixir-utils moves to `d4b5e9a` (claude/mcp-site-tools-1029; only `mcp_agents`
+  differs from `3bc18ae`). The identity tools' titles are one or two words
+  (Registration, Identity, Pairing, Check-in) and say whether calling again changes
+  anything; `AshTemplate.Agents` passes `idempotent_hint` on to AshAi.
+- A refused identity call is the tool's error with the site's own code, words and
+  `retry_after` (`agent_not_paired` after unpairing, a rate limit), or the library's
+  own refusal made before signing (`pairing_code_unknown`). Only a call with no
+  answer keeps `identity_request_refused` and the `refusal:` words.
+  `AshTemplate.Agents.Connection.Refused` carries the error.
+- The library's site tools (`RegentMCPAgents.SiteTools`, `act/5`, the plug's `tools:`
+  and `endpoint:`) are not wired: the template's `/mcp` is AshAi behind `McpAgent`,
+  not `RegentMCPAgents.Plug`. `docs/agent-parity.md` G11 has the plan for a connected
+  app to act as its paired agent, and regent-workflow says a connected app that can
+  only pair and check in is a gap.
+- Side branch, uncompiled: the Mac runs `mix deps.get` and `make check`.

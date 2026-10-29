@@ -1,11 +1,13 @@
 defmodule AshTemplate.Agents.Connection.Refused do
   @moduledoc """
-  A connected app's identity request could not be completed: the account's
-  pairing, its code or the hosted identity said no. The words are
-  `RegentMCPAgents`'s, the same for every reason, so a refusal tells the app
-  nothing about another account.
+  A connected app's identity request was refused. `error` is the
+  `{"code", "message", "hint"}` the site answered the signed request with, or
+  the one `RegentMCPAgents` made before signing anything, such as
+  `pairing_code_unknown`; `retry_after` is the site's `Retry-After`. With no
+  `error`, no answer came, and the words are `RegentMCPAgents.Tools.refusal/0`'s.
   """
-  use Splode.Error, fields: [], class: :forbidden
+  use Splode.Error, fields: [:error, :retry_after], class: :forbidden
 
+  def message(%{error: %{"message" => message}}), do: message
   def message(_error), do: "The identity request could not be completed."
 end

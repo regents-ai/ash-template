@@ -117,3 +117,18 @@ identity tools behind its switch.
   MCP follows with G5. The same change made `prepare_agent_request` offer every signed
   tool: it had missed the room likes and reports, direct messages and polls, so an agent
   whose browser checks inputs against the schema could not prepare them.
+- **G11. A connected app can only pair and check in.** Claude, connected at `/mcp`
+  with a token, runs the four identity tools and nothing else (the room actions forbid
+  `connected_app`), so once paired it can do none of its person's work. The library
+  now serves a site's own tools to a connected app (elixir-utils `d4b5e9a`:
+  `RegentMCPAgents.SiteTools`, `act/5` and the plug's `tools:` and `endpoint:`),
+  signed as the connection's hosted identity and served through the site's endpoint,
+  and Keyfleet's `/mcp` uses it. The template's `/mcp` is AshAi behind `McpAgent`,
+  not `RegentMCPAgents.Plug`, so those options have no place here. Plan: for a token
+  with the site's agent permission, `McpAgent` has the hosted signer sign the call as
+  the connection's identity and admits it as that agent, so AshAi runs the same Ash
+  action under the same policies, and answers as it does for a self-signing agent.
+  This needs a signing call from the library in place of `act/5`, a second OAuth
+  scope on the consent page, and the sign-in service letting the template's hosted
+  signer sign `POST /mcp`. Protected (sign-in): waits for Sean's go. Owner: template
+  chief, with the agent-access lane.

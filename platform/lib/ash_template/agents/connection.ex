@@ -6,8 +6,10 @@ defmodule AshTemplate.Agents.Connection do
   its connection holds; `RegentMCPAgents` does the work for the account the token
   names. register_identity prepares the identity, get_identity reads whether it
   is paired, pair_identity pairs it with the account's own pairing code, and
-  check_in tells the person it is active. A refusal says only that the request
-  could not be completed and how to find out where the connection stands
+  check_in tells the person it is active. A refusal carries the site's own
+  code, words and `retry_after` when the site answered, such as
+  `pairing_code_unknown` or `agent_not_paired`, and the library's words for
+  where the connection stands when no answer came
   (`AshTemplate.Agents.Connection.Refused`).
   """
 
@@ -70,5 +72,10 @@ defmodule AshTemplate.Agents.Connection do
   defp principal(%{actor: %AshTemplate.Actors.ConnectedApp{principal: principal}}), do: principal
 
   defp answer({:ok, answer}), do: {:ok, answer}
-  defp answer({:error, _reason}), do: {:error, Refused.exception([])}
+
+  defp answer({:answer, _status, %{"error" => %{} = error}, retry_after}),
+    do: {:error, Refused.exception(error: error, retry_after: retry_after)}
+
+  defp answer({:refused, _status, error}), do: {:error, Refused.exception(error: error)}
+  defp answer(_no_answer), do: {:error, Refused.exception([])}
 end

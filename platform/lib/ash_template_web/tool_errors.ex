@@ -5,7 +5,8 @@ defmodule AshTemplateWeb.ToolErrors do
   text (`AshAi.ToToolError`). A room's refusals take the rooms API's words
   (`AshTemplateWeb.RoomsController.refusal/1`), with the deleted message's `id`
   or the seconds in `retry_after` where the API sends them; a connected app's
-  identity refusal takes the words every Regent site gives it.
+  identity refusal takes the site's own code and words, or, when no answer came,
+  the words every Regent site gives it.
 
   Input a tool's action cannot take is refused before AshAi runs it
   (`check_input/3`, the server's `tool_argument_transformer`), with the code the
@@ -70,5 +71,17 @@ defimpl AshAi.ToToolError, for: AshTemplate.Rooms.Message.GuestPostsLimited do
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Agents.Connection.Refused do
-  def to_tool_error(_error), do: Jason.encode!(RegentMCPAgents.Tools.refusal())
+  def to_tool_error(%{error: %{} = error, retry_after: retry_after}),
+    do: Jason.encode!(%{error: with_retry(error, retry_after)})
+
+  def to_tool_error(_no_answer), do: Jason.encode!(RegentMCPAgents.Tools.refusal())
+
+  defp with_retry(error, retry_after) when is_binary(retry_after) do
+    case Integer.parse(retry_after) do
+      {seconds, ""} -> Map.put(error, "retry_after", seconds)
+      _not_seconds -> error
+    end
+  end
+
+  defp with_retry(error, _none), do: error
 end
