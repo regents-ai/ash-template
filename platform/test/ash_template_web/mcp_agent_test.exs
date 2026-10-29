@@ -301,6 +301,29 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert Jason.decode!(body)["error"]["hint"] =~ AshTemplateWeb.PublicDocuments.url("/docs")
   end
 
+  test "a GET for an event stream is answered 405, and a body that is not JSON 415, whatever it accepts",
+       %{from: from} do
+    stream =
+      conn(:get, "/mcp")
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("accept", "text/event-stream")
+      |> @endpoint.call([])
+
+    assert stream.status == 405
+    assert get_resp_header(stream, "allow") == ["POST"]
+    assert %{"code" => "method_not_allowed"} = error(stream)
+
+    form =
+      conn(:post, "/mcp", "jsonrpc=2.0&method=tools%2Flist")
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> put_req_header("accept", "text/event-stream")
+      |> @endpoint.call([])
+
+    assert form.status == 415
+    assert %{"code" => "unsupported_media_type"} = error(form)
+  end
+
   test "one address gets 120 requests a minute here, as on the API", %{from: from} do
     statuses = for _ <- 1..121, do: mcp(rpc("tools/list"), from: from).status
     assert Enum.take(statuses, 120) |> Enum.uniq() == [401]

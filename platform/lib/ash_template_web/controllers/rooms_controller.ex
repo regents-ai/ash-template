@@ -17,8 +17,9 @@ defmodule AshTemplateWeb.RoomsController do
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Refused, Report, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
-  alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
+  alias AshTemplateWeb.{ClientAddress, FormErrors}
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentHttp.UnexpectedFailure
 
   plug :paired_agent when action in [:create, :topic, :update, :delete, :like, :unlike, :report]
 

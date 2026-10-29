@@ -21,7 +21,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   alias AshTemplate.{Accounts, Agents}
   alias AshTemplate.Actors.{Agent, System}
-  alias AshTemplateWeb.UnexpectedFailure
+  alias RegentHttp.UnexpectedFailure
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
 

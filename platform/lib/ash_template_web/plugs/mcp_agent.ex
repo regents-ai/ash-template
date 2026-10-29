@@ -58,8 +58,9 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   alias AshTemplate.Actors.{Agent, ConnectedApp}
   alias AshTemplate.Agents.HostedAddress
-  alias AshTemplateWeb.{ClientAddress, PublicDocuments, UnexpectedFailure}
+  alias AshTemplateWeb.{ClientAddress, PublicDocuments}
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentHttp.UnexpectedFailure
 
   # 120 requests a minute for each connected account, after the endpoint's ceiling
   # for each address.

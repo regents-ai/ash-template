@@ -21,4 +21,15 @@ defmodule AshTemplate.LaunchGateTest do
     assert %{status: 503} = closed = get("/account")
     assert Plug.Conn.get_resp_header(closed, "retry-after") == ["3600"]
   end
+
+  test "the MCP address says it is not open yet in JSON, whatever its caller accepts" do
+    closed =
+      :get
+      |> conn("/mcp")
+      |> Plug.Conn.put_req_header("accept", "text/event-stream")
+      |> AshTemplateWeb.Endpoint.call(AshTemplateWeb.Endpoint.init([]))
+
+    assert closed.status == 503
+    assert %{"error" => %{"code" => "not_open_yet"}} = Jason.decode!(closed.resp_body)
+  end
 end

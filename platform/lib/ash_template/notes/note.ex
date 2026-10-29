@@ -214,7 +214,7 @@ defmodule AshTemplate.Notes.Note do
         max_attempts 5
         on_error :webhook_failed
         on_error_fails_job? true
-        # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
+        # A job that gives up logs one safe line (RegentHttp.UnexpectedFailure), not raw text.
         log_errors? false
         log_final_error? false
         lock_for_update? false

@@ -281,7 +281,7 @@ defmodule AshTemplate.Chat.Message do
         worker_read_action :job_read
         on_error :fail_response
         on_error_fails_job? true
-        # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
+        # A job that gives up logs one safe line (RegentHttp.UnexpectedFailure), not raw text.
         log_errors? false
         log_final_error? false
         queue :chat_responses

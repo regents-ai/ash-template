@@ -5519,6 +5519,45 @@ way, and the library's own site-tool serving is gone.
   and "Regents embedded wallet" rows are proven by the server tests and the browser walk's
   signed-in person, not live. Rollback: v137, `b90e680c`.
 
+## 2026-10-29 — elixir-utils b375f122, and a connected app told to wait hears how long
+
+- elixir-utils moves to `b375f122` on its main: the `dea334b` hosted-signing tools merged
+  into main (`ce944e3`), a site's own 429 whose `Retry-After` names no whole seconds
+  passed on as the site's answer, like any other (`69f0b9d`), and
+  `RegentHttp.UnexpectedFailure` (`b375f122`).
+- `AshTemplateWeb.UnexpectedFailure` is gone: every caller, and the one `attach_jobs/0`
+  at start, uses `RegentHttp.UnexpectedFailure`, which writes the same lines. The
+  library's property test covers it.
+- When the sign-in service or the site answers an identity tool with 429 and the seconds
+  to wait, the tool now answers `too_many_requests` with `retry_after` in those seconds, in
+  the library's words (`RegentMCPAgents.Tools.wait/1`), instead of "The identity request
+  could not be completed." `AshTemplate.Agents.Connection.Refused` carries the seconds as
+  `wait`.
+- Every wait an identity tool reports, from the signer or the site, is `retry_after` in whole
+  seconds (`tool_errors_test.exs`).
+
+## 2026-10-29 — The MCP address answers a GET for an event stream with 405
+
+- The `:mcp` pipeline no longer runs `plug :accepts, ["json"]`. A client that opens
+  `GET /mcp` with `Accept: text/event-stream`, as MCP clients do to look for a stream,
+  got a bare 406 "not acceptable" error; it now hears the 405 "takes POST only" refusal
+  with `Allow: POST`, and a body that is not JSON hears 415, whatever the caller accepts.
+  The endpoint already answers `/mcp` in JSON, so nothing else changes; with the site
+  closed, `/mcp` still says "not open yet" in JSON.
+
+## 2026-10-29 — Released v139
+
+- template.regents.sh v139 runs `e039f092` (live checks the way an agent does, and the
+  steadier walk), released 23:22Z under the shared release lock on one machine, as
+  before. No migration.
+- Live check from a copy of `e039f092`: `SIWA_AGENT_HOME=/Users/sean/.siwa-agent
+  SIWA_CLIENT=/Users/sean/keyfleet/claude-code/siwa_agent.py make live-check` exit 0.
+  `regents ash-template doctor` held every check and `agents whoami` answered "paired"
+  for the Claude Code test agent `0x5ff2..d164`; in headless Chromium at 1280 and 390,
+  `/capabilities.json` named `e039f092`, 151 passed and 1 skipped (the tools are called
+  once, from the desktop), and of the home page's 57 tools all 17 reads answered 200,
+  `polls_list` among them. WebKit is not run on the Mac. Rollback: v138, `14120655`.
+
 ## 2026-10-29 — Agents get their own tab
 
 - The account's agents and Pair New Agent move from `/account` to their own page,
