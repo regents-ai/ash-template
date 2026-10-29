@@ -5150,3 +5150,17 @@ An adversarial review of the two commits above found five things, all fixed here
 - `/api/v1/about` and `/api/v1/docs` go through the helper too. The Markdown answer of a
   public page (`RegentAgentAccess.Plug`) and the OAuth discovery documents
   (`RegentOAuth.Protocol`) still set no cache; both are elixir-utils changes.
+
+## 2026-10-29 — `make pins` shows where every site's shared-library pins stand
+
+- `scripts/pins.sh` (`make pins`, and now part of `make drift`) prints one table, also
+  written to `platform/_build/drift/pins.md`: each elixir-utils commit a site's
+  `platform/mix.lock` holds (a site may hold several, each with the apps at it), its
+  design-system and ash_postgres pins, the SIWA library it builds and the regents-cli
+  its Makefile checks commands with, each with how many commits and days it is behind
+  the template's pin and behind the library's main branch. Sites are read from their
+  main branch on GitHub at one commit; commits are counted in a local copy of each
+  library's history (no file contents) under `platform/_build/drift/libraries`.
+- `scripts/github.sh` holds the GitHub reading `scripts/drift.sh` already did, so both
+  scripts read sites the same way. `scripts/init.sh` removes both new scripts from a
+  new site, as it does `drift.sh`.

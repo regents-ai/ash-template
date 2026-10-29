@@ -126,19 +126,7 @@ compared() {
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 out="platform/_build/drift"
-
-# Prints a file from a site's repository at a commit; exits 44 when it is absent.
-site_file() {
-  local repo="$1" rev="$2" path="$3" body
-  if body="$(gh api -H "Accept: application/vnd.github.raw" "repos/$repo/contents/$path?ref=$rev" 2>&1)"; then
-    printf '%s\n' "$body"
-  elif [[ "$body" == *"HTTP 404"* ]]; then
-    return 44
-  else
-    echo "$repo $path: $body" >&2
-    exit 1
-  fi
-}
+source scripts/github.sh
 
 # Compares the template's files named after the heading with the current site's copies.
 compare() {
@@ -206,7 +194,7 @@ compare_live_homepages() {
 
 for site in "${@:-${sites[@]}}"; do
   repo="regents-ai/$site"
-  rev="$(gh api "repos/$repo/commits/main" --jq .sha)"
+  rev="$(main_commit "$repo")"
   mix_exs="$(site_file "$repo" "$rev" platform/mix.exs)"
   app="$(sed -nE 's/^[[:space:]]*app: :([a-z0-9_]+),.*/\1/p' <<<"$mix_exs" | head -1)"
   module="$(sed -nE 's/^defmodule ([A-Za-z0-9]+)\.MixProject do$/\1/p' <<<"$mix_exs")"
