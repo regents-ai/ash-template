@@ -563,7 +563,7 @@
     },
     {
       "operation": "checkInAgent",
-      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site.",
+      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with person_not_here until they sign in on this site.",
       "effect": "write",
       "authority": "paired_agent",
       "conditions": [],

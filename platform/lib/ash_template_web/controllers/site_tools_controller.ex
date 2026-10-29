@@ -14,6 +14,9 @@ defmodule AshTemplateWeb.SiteToolsController do
     "site_not_found" =>
       {404, "There is no site with that name.",
        "Use regents, patchbay, techtree, autolaunch or keyfleet."},
+    "invalid_input" =>
+      {422, "The site's tools could not be read with this input.",
+       "Send site only: regents, patchbay, techtree, autolaunch or keyfleet."},
     "site_unreachable" =>
       {503, "That site's tools could not be read right now.", "Try again in a minute."}
   }

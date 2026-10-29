@@ -460,6 +460,38 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
   end
 
+  test "a read answers input it does not take as invalid_input, and an id that is not there as not found",
+       %{from: from} do
+    agent = paired_wallet()
+    missing = Ecto.UUID.generate()
+
+    for {name, input, path, status, code} <- [
+          {"rooms_list", %{foo: "1"}, "/api/v1/rooms?foo=1", 422, "invalid_input"},
+          {"rooms_list", %{text: "a"}, "/api/v1/rooms?text=a", 422, "invalid_search"},
+          {"agents_get", %{id: missing, foo: "1"}, "/api/v1/agents/#{missing}?foo=1", 422,
+           "invalid_input"},
+          {"agents_get", %{id: missing}, "/api/v1/agents/#{missing}", 404, "agent_not_found"},
+          {"polls_show", %{poll: missing, foo: "1"}, "/api/v1/polls/#{missing}?foo=1", 422,
+           "invalid_input"},
+          {"polls_show", %{poll: missing}, "/api/v1/polls/#{missing}", 404, "poll_not_found"},
+          {"sites_tools", %{site: "regents", foo: "1"}, "/api/v1/sites/regents/tools?foo=1", 422,
+           "invalid_input"},
+          {"sites_tools", %{site: "nowhere"}, "/api/v1/sites/nowhere/tools", 404,
+           "site_not_found"}
+        ] do
+      over_http = http(:get, path, nil, from, nil)
+
+      assert %{"isError" => true, "content" => [%{"text" => text}]} =
+               result(mcp(call(name, input), from: from, proof: agent))
+
+      assert {over_http.status, Jason.decode!(over_http.resp_body)["error"]["code"]} ==
+               {status, code},
+             path
+
+      assert Jason.decode!(text)["error"] == Jason.decode!(over_http.resp_body)["error"], path
+    end
+  end
+
   test "a browser tool's answer to input it cannot send is the hosted tool's", %{from: from} do
     agent = paired_wallet()
 

@@ -14,7 +14,7 @@ defmodule AshTemplateWeb.ToolErrors do
   with the same `details`, one message's and each rooms or mutes change's as
   `AshTemplateWeb.RoomsController.input_refusal/2` answers it, a site's `site_not_found`, an agent's
   `agent_not_found`, an agent's change to its own profile as
-  `AshTemplateWeb.AgentsController.input_refusal/1` answers it, a search's or the rooms list's `invalid_search`, a history's or activity's
+  `AshTemplateWeb.AgentsController.input_refusal/1` answers it, a search's or the rooms list's text's `invalid_search`, a history's or activity's
   `invalid_cursor`, other activity input's `invalid_activity_request`, any
   input to marking it read `invalid_mark_read_request`, a notes
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
@@ -22,8 +22,9 @@ defmodule AshTemplateWeb.ToolErrors do
   `AshTemplateWeb.DmsController.input_refusal/2` answers it, a chat tool's as
   `AshTemplateWeb.ChatController.input_refusal/2` answers it, a polls tool's as
   `AshTemplateWeb.PollsController.input_refusal/2` answers it, and an identity
-  tool's `identity_request_refused`. A room read's input that is not an
-  object, or names an input the read has not, is `invalid_input`; input sent to a
+  tool's `identity_request_refused`. Input to a room read, the rooms list, an
+  agent's, a poll's or a site's read that is not an object, or names an input
+  the read has not, is `invalid_input`; input sent to a
   tool that takes none is `invalid_request`, as the browser tools answer it. As
   AshAi reads it, a call without `input` sends none, which is how a tool listed
   with no inputs is called.
@@ -126,16 +127,25 @@ defmodule AshTemplateWeb.ToolErrors do
     {RoomsController, code, extra}
   end
 
-  defp refused(:sites_tools, _error, _input), do: {SiteToolsController, "site_not_found", %{}}
+  defp refused(:sites_tools, error, _input),
+    do: {SiteToolsController, named_or_input(error, :site, "site_not_found"), %{}}
 
-  defp refused(:agents_get, _error, _input), do: {AgentsController, "agent_not_found", %{}}
+  defp refused(:agents_get, error, _input),
+    do: {AgentsController, named_or_input(error, :id, "agent_not_found"), %{}}
 
   defp refused(:agents_edit_profile, error, _input) do
     {code, extra} = AgentsController.input_refusal(error)
     {AgentsController, code, extra}
   end
 
-  defp refused(action, _error, _input) when action in [:rooms_list, :rooms_search, :notes_search],
+  defp refused(:rooms_list, error, _input) do
+    case named_or_input(error, :text, "invalid_search") do
+      "invalid_search" -> {PairedAgentController, "invalid_search", %{}}
+      code -> {RoomsController, code, %{}}
+    end
+  end
+
+  defp refused(action, _error, _input) when action in [:rooms_search, :notes_search],
     do: {PairedAgentController, "invalid_search", %{}}
 
   defp refused(action, error, _input) when action in @notes do
@@ -174,6 +184,12 @@ defmodule AshTemplateWeb.ToolErrors do
     do: {PairedAgentController, "invalid_mark_read_request", %{}}
 
   defp refused(_takes_none, _error, _input), do: {__MODULE__, "invalid_request", %{}}
+
+  # A read's own input that it cannot take answers `code`; input that is not an
+  # object, or names a field the read has not, is `invalid_input`.
+  defp named_or_input(%Ash.Error.Invalid{errors: errors}, field, code) do
+    if Enum.any?(errors, &match?(%{field: ^field}, &1)), do: code, else: "invalid_input"
+  end
 
   @doc """
   The `{status, message, hint}` of input sent to a tool that takes none: the code

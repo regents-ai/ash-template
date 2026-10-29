@@ -29,6 +29,9 @@ defmodule AshTemplateWeb.PollsController do
   @errors %{
     "poll_not_found" =>
       {404, "There is no poll with that id.", "List the polls with GET /api/v1/polls."},
+    "invalid_input" =>
+      {422, "The poll could not be read with this input.",
+       "Send poll only: a poll's id from polls list."},
     "invalid_poll" =>
       {422, "The poll could not be started.",
        "details says why. Send {\"question\": \"…\", \"choices\": [\"…\", \"…\"], \"minutes\": 15, \"operation_id\": \"<uuid>\"}: a question of 1 to 200 characters, 2 to 10 different choices of 1 to 100 characters, 1 to 60 minutes, and a UUID you keep when retrying. A person starts 3 polls a day."},
@@ -54,7 +57,7 @@ defmodule AshTemplateWeb.PollsController do
   # Each action that takes input, and the refusal input it cannot take gets
   # besides the poll's: the save's own.
   @input %{
-    polls_show: "poll_not_found",
+    polls_show: "invalid_input",
     polls_start: "invalid_poll",
     polls_vote: "invalid_vote",
     polls_end: "poll_not_found"

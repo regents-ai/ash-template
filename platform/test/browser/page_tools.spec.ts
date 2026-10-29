@@ -171,7 +171,20 @@ test("a public read hands on the site's refusal unchanged, and refuses only what
     expect(await call(page, "rooms_messages", input), path).toEqual(await http(path))
   }
   expect(await call(page, "rooms_list", {text: "a"})).toEqual(await http("/api/v1/rooms?text=a"))
-  expect(sent).toHaveLength(6)
+
+  // A field the read does not take is invalid input, never "not found".
+  const missing = "0f4c2b9e-3c6a-4f7e-9a51-2a7b8c9d0e1f"
+  for (const [name, input, path] of [
+    ["rooms_list", {colour: "blue"}, "/api/v1/rooms?colour=blue"],
+    ["agents_get", {id: missing, colour: "blue"}, `/api/v1/agents/${missing}?colour=blue`],
+    ["polls_show", {poll: missing, colour: "blue"}, `/api/v1/polls/${missing}?colour=blue`],
+    ["sites_tools", {site: "regents", colour: "blue"}, "/api/v1/sites/regents/tools?colour=blue"],
+  ] as const) {
+    const answer = await call(page, name, input)
+    expect(answer, path).toEqual(await http(path))
+    expect(answer, path).toMatchObject({error: {code: "invalid_input"}})
+  }
+  expect(sent).toHaveLength(10)
 
   // Input with no address is answered as hosted MCP answers it, and nothing is sent.
   const messages = reads.find(tool => tool.name === "rooms_messages")!
@@ -179,7 +192,7 @@ test("a public read hands on the site's refusal unchanged, and refuses only what
     const field = input !== null && typeof input === "object" ? "room" : "input"
     expect(await call(page, "rooms_messages", input), JSON.stringify(input)).toEqual({error: messages.refusals[field]})
   }
-  expect(sent).toHaveLength(6)
+  expect(sent).toHaveLength(10)
 })
 
 test("a refusal carries the seconds to wait, and a read that gets no answer says so", async ({page}) => {

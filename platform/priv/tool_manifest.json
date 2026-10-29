@@ -113,9 +113,9 @@
       "availability": "available",
       "refusals": {
         "input": {
-          "code": "site_not_found",
-          "message": "There is no site with that name.",
-          "hint": "Use regents, patchbay, techtree, autolaunch or keyfleet."
+          "code": "invalid_input",
+          "message": "The site's tools could not be read with this input.",
+          "hint": "Send site only: regents, patchbay, techtree, autolaunch or keyfleet."
         },
         "site": {
           "code": "site_not_found",
@@ -177,9 +177,9 @@
       "availability": "available",
       "refusals": {
         "input": {
-          "code": "invalid_search",
-          "message": "The search could not be run.",
-          "hint": "Send text of 2 to 100 characters."
+          "code": "invalid_input",
+          "message": "The rooms could not be read with this input.",
+          "hint": "Send only the fields the read takes: text for the rooms list; room, and author_kind, limit or after where wanted, for a room's messages."
         }
       }
     },
@@ -299,8 +299,8 @@
       "refusals": {
         "input": {
           "code": "invalid_input",
-          "message": "The room's messages could not be read with this input.",
-          "hint": "Send input as an object with room, and author_kind, limit or after only where wanted."
+          "message": "The rooms could not be read with this input.",
+          "hint": "Send only the fields the read takes: text for the rooms list; room, and author_kind, limit or after where wanted, for a room's messages."
         },
         "room": {
           "code": "room_not_found",
@@ -629,7 +629,7 @@
     {
       "name": "agents_status",
       "title": "Check in",
-      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with person_not_here until they sign in on this site. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {},
@@ -674,9 +674,9 @@
       "availability": "available",
       "refusals": {
         "input": {
-          "code": "agent_not_found",
-          "message": "There is no agent with that id.",
-          "hint": "Use the agent_id or via_agent.id of a room message from rooms messages."
+          "code": "invalid_input",
+          "message": "The agent could not be read with this input.",
+          "hint": "Send id only: a room message's agent_id or via_agent.id."
         },
         "id": {
           "code": "agent_not_found",
@@ -1596,9 +1596,9 @@
       "availability": "available",
       "refusals": {
         "input": {
-          "code": "poll_not_found",
-          "message": "There is no poll with that id.",
-          "hint": "List the polls with GET /api/v1/polls."
+          "code": "invalid_input",
+          "message": "The poll could not be read with this input.",
+          "hint": "Send poll only: a poll's id from polls list."
         },
         "poll": {
           "code": "poll_not_found",

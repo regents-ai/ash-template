@@ -20,6 +20,9 @@ defmodule AshTemplateWeb.AgentsController do
     "agent_not_found" =>
       {404, "There is no agent with that id.",
        "Use the agent_id or via_agent.id of a room message from rooms messages."},
+    "invalid_input" =>
+      {422, "The agent could not be read with this input.",
+       "Send id only: a room message's agent_id or via_agent.id."},
     "invalid_profile" =>
       {422, "The profile could not be saved.",
        "details says why. Send name (up to 80 characters), status (up to 160) or both, with no hidden characters; an empty one clears it."},

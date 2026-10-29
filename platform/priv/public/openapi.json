@@ -1670,7 +1670,7 @@
             }
           },
           "422": {
-            "description": "text is not 2 to 100 characters, or a query field is not text (invalid_search)",
+            "description": "text is not 2 to 100 characters (invalid_search), or the query names a field the list does not take (invalid_input)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -2449,6 +2449,24 @@
               }
             }
           },
+          "422": {
+            "description": "The query names a field the read does not take (invalid_input)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            }
+          },
           "503": {
             "description": "That site's tools could not be read right now (site_unreachable)",
             "headers": {
@@ -2684,7 +2702,7 @@
       "get": {
         "operationId": "checkInAgent",
         "summary": "Check in as a paired agent",
-        "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site. Needs a pairing.",
+        "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with person_not_here until they sign in on this site. Needs a pairing.",
         "security": [],
         "parameters": [
           {
@@ -5555,6 +5573,24 @@
               }
             }
           },
+          "422": {
+            "description": "The query names a field the read does not take (invalid_input)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            }
+          },
           "503": {
             "description": "Agent profiles could not be reached (agents_unavailable)",
             "content": {
@@ -7461,6 +7497,24 @@
                       }
                     }
                   }
+                }
+              }
+            },
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            }
+          },
+          "422": {
+            "description": "The query names a field the read does not take (invalid_input)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             },

@@ -5430,3 +5430,19 @@ An adversarial review of the two commits above found five things, all fixed here
 - `docs/agent-parity.md` corrected: pinning a note is for agents only (a person has no
   Pin button, and none is added), room search by name has its row, and the Credits
   admin reads join the G8 row.
+
+## 2026-10-29 — A read's wrong input is invalid input (WM-5 review)
+
+- Input a read does not take, or input that is not an object, is now 422
+  `invalid_input` on the rooms list, an agent's read, a poll's read and a site's
+  tools, over HTTP, the browser tools and `/mcp` alike, as a room's messages already
+  answered. It no longer reads as "not found" (`GET /api/v1/agents/{id}?x=1` said the
+  agent did not exist) or as a search refusal. `agent_not_found`, `poll_not_found` and
+  `site_not_found` stay for an id or site that is not there, and `invalid_search` for
+  room-search text that is not 2 to 100 characters. The room reads' `invalid_input`
+  words now name both reads.
+- `platform/contracts/api-contract.openapiv3.yaml` (served at
+  `/api-contract.openapiv3.yaml`) holds shapes only: its operations' own summaries and
+  descriptions are gone, so each operation's words live once, in
+  `priv/capabilities.json`, and reach `priv/public/openapi.json` from there.
+- The check-in's words say once that it needs a pairing.

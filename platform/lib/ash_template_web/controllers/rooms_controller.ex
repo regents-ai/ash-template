@@ -45,8 +45,8 @@ defmodule AshTemplateWeb.RoomsController do
       {422, "That page could not be found.",
        "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
     "invalid_input" =>
-      {422, "The room's messages could not be read with this input.",
-       "Send input as an object with room, and author_kind, limit or after only where wanted."},
+      {422, "The rooms could not be read with this input.",
+       "Send only the fields the read takes: text for the rooms list; room, and author_kind, limit or after where wanted, for a room's messages."},
     "invalid_limit" =>
       {422, "limit must be a whole number from 1 to 50.", "Leave it out for pages of 50."},
     "invalid_author_kind" =>
