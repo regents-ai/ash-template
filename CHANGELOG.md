@@ -5439,6 +5439,8 @@ way, and the library's own site-tool serving is gone.
   the library's words (`RegentMCPAgents.Tools.wait/1`), instead of "The identity request
   could not be completed." `AshTemplate.Agents.Connection.Refused` carries the seconds as
   `wait`.
+- Every wait an identity tool reports, from the signer or the site, is `retry_after` in whole
+  seconds (`tool_errors_test.exs`).
 
 ## 2026-10-29 — The MCP address answers a GET for an event stream with 405
 
