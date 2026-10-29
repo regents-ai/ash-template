@@ -35,7 +35,7 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
   @impl true
   def run(input, _opts, %{actor: actor}) do
     %{room: slug, body: body, operation_id: key} = input.arguments
-    fingerprint = Operation.fingerprint([slug, SquashBlankLines.squash(body)])
+    fingerprint = Operation.fingerprint(actor, [slug, SquashBlankLines.squash(body)])
 
     case spent(actor, key) do
       {:ok, nil} -> post(slug, body, key, fingerprint, actor, input.context)

@@ -7,9 +7,11 @@ defmodule AshTemplate.Agents.Operation do
   insert waits for the first to commit and then fails, and the caller reads the
   committed row instead.
 
-  `fingerprint` is the hash of what the key was spent on (for a room post, the
-  room and the text). A reuse with the same fingerprint answers the existing
-  result; any other is a conflict. Rows are kept for good, so a key whose result
+  `fingerprint` is the hash of the account the key was spent for and what it was
+  spent on (for a room post, the room and the text). An agent spends its keys
+  under its own id both for its person and as the account it owns, so a reuse
+  for the other account is a conflict, as is any other change; a reuse with the
+  same fingerprint answers the existing result. Rows are kept for good, so a key whose result
   was later deleted stays spent.
   """
 
@@ -51,10 +53,16 @@ defmodule AshTemplate.Agents.Operation do
     end
   end
 
-  @doc "The hash an operation key is spent on: `parts`, in order, as one JSON list."
-  @spec fingerprint([term()]) :: String.t()
-  def fingerprint(parts),
-    do: :sha256 |> :crypto.hash(Jason.encode!(parts)) |> Base.encode16(case: :lower)
+  @doc """
+  The hash an operation key is spent on: the account `actor` acts for, then
+  `parts`, in order, as one JSON list.
+  """
+  @spec fingerprint(%{human_account_id: Ecto.UUID.t()}, [term()]) :: String.t()
+  def fingerprint(%{human_account_id: account}, parts),
+    do:
+      :sha256
+      |> :crypto.hash(Jason.encode!([account | parts]))
+      |> Base.encode16(case: :lower)
 
   @doc """
   Whether `error`, from writing a key's row, says another call already spent the

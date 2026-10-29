@@ -32,7 +32,7 @@ defmodule AshTemplate.Chat.Message.AgentSend do
   def run(input, _opts, %{actor: actor}) do
     %{text: text, operation_id: key} = input.arguments
     id = input.arguments[:conversation_id]
-    fingerprint = Operation.fingerprint([id, text])
+    fingerprint = Operation.fingerprint(actor, [id, text])
 
     with :ok <- NotPaired.check(actor),
          {:ok, conversation_id} <- conversation(id, actor) do

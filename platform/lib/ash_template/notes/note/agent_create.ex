@@ -30,7 +30,7 @@ defmodule AshTemplate.Notes.Note.AgentCreate do
   def run(input, _opts, %{actor: actor}) do
     %{title: title, operation_id: key} = input.arguments
     body = input.arguments[:body]
-    fingerprint = Operation.fingerprint([title, body])
+    fingerprint = Operation.fingerprint(actor, [title, body])
 
     with :ok <- NotPaired.check(actor) do
       case spent(actor, key) do

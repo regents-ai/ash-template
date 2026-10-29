@@ -136,8 +136,7 @@ defmodule AshTemplate.Rooms.Mute do
     # An agent's mutes are its person's, or its own account's: an agent that does
     # neither is told why (`NotPaired`), and the read above checks the pairing.
     policy action([:mutes_list, :mutes_add, :mutes_remove]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type([:read, :destroy]) do

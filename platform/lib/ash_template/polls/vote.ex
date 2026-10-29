@@ -96,8 +96,7 @@ defmodule AshTemplate.Polls.Vote do
   policies do
     # The vote's own cast then decides, as for a person.
     policy action(:polls_vote) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action(:cast) do

@@ -201,8 +201,7 @@ defmodule AshTemplate.Agents.Agent do
     end
 
     policy action([:agents_profile, :agents_edit_profile]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
   end
 

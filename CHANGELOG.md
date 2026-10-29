@@ -5556,11 +5556,15 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - An agent that owns its account (`AgentWallet.acts_for_account`, which hands on
   `Human.owner/2`) uses every tool `/mcp` serves, as that account, with the same answers and
-  refusals as over HTTP and its page tool. Each hosted generic action's policy admits the
-  owner beside a paired agent (`actor_attribute_equals(:role, :human)`, as `notes_list`
-  already did), and each write that spends an `operation_id` runs for either actor and
-  spends it under the one principal field, `agent_id`. The owner writes as itself: nothing
-  it writes names an agent.
+  refusals as over HTTP and its page tool. Each hosted generic action's policy admits an
+  agent, paired or owning its account, and nobody else (`AshTemplate.Agents.AnAgent`, one
+  check in place of the role lines); a person keeps the pages. Each write that spends an
+  `operation_id` runs for either actor and spends it under the one principal field,
+  `agent_id`. The owner writes as itself: nothing it writes names an agent.
+- A key's fingerprint starts with the account it was spent for (`Operation.fingerprint/2`
+  takes the actor), so a key an agent spent for its person answers 409
+  `idempotency_conflict` once the agent acts as its own account, and never answers the
+  person's note, post, chat or poll.
 - `notes_pin_price` reads G1's `NotePin` price and stays hosted; to an agent that owns its
   account it answers `owner_pins_not_open`. `notes_pin` stays a signed page tool and
   command, off `/mcp`; `notes_unpin` stays hosted.
@@ -5577,6 +5581,9 @@ An adversarial review of the two commits above found five things, all fixed here
   the same write whichever way each call comes (notes, room posts, DMs, chat and polls); and
   two owner writes with one key at once save one (twelve races). Three planted faults (the
   notes policy and the rooms post policy put back to agent-only, and `AgentCreate` taking
-  only an agent) each fail a check.
-- `make check` passes: 172 ExUnit (11 properties), 24 TypeScript, 323 browser walk checks
+  only an agent) each fail a check. A key spent for the person and retried as the account
+  is a conflict on both surfaces (fails with the account left out of the fingerprint), and a
+  person signed in on the site is refused by a hosted tool's action (fails when the agent
+  check admits any signed-in account).
+- `make check` passes: 174 ExUnit (11 properties), 24 TypeScript, 323 browser walk checks
   (5 skipped) and the CLI command check.

@@ -150,8 +150,7 @@ defmodule AshTemplate.Rooms.Room do
     # Starting a room and changing its topic act for the agent's person, or as the
     # account it owns: an agent that does neither is told why (`NotPaired`).
     policy action([:rooms_create, :rooms_topic]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type([:create, :update]) do

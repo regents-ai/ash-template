@@ -143,8 +143,7 @@ defmodule AshTemplate.Dms.Message do
     # does neither is told why (`NotPaired`), and the reads and the send check the
     # pairing.
     policy action([:dms_read, :dms_send]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type(:read) do

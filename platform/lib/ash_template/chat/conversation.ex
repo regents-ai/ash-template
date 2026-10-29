@@ -102,8 +102,7 @@ defmodule AshTemplate.Chat.Conversation do
     # The agent tool checks the agent's pairing itself and lists only its
     # person's chats, or those of the account it owns.
     policy action(:chat_list) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
   end
 

@@ -200,8 +200,7 @@ defmodule AshTemplate.Notes.Decision do
     end
 
     policy action(:notes_rate_label) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type([:read, :update]) do

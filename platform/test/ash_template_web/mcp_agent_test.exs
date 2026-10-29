@@ -35,7 +35,8 @@ defmodule AshTemplateWeb.McpAgentTest do
   # - an agent that owns its account writes and reads as that account over HTTP,
   #   through its page tool and through /mcp, spends each operation_id once
   #   either way, even two at once, and one with neither a pairing nor an account
-  #   is refused alike on all three.
+  #   is refused alike on all three; a key it spent for its person is a conflict
+  #   once it acts as its own account.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
   # sign-in service is stubbed: it vouches for the wallet a request names when the
   # request carries the fixture proof. Each test calls from its own address, so it
@@ -1944,6 +1945,17 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert {:error, _none} = Ash.get(AshTemplate.Notes.Note, input.operation_id, authorize?: false)
   end
 
+  test "a person signed in on the site is not an agent to the hosted tools" do
+    %{account: account} = owned_account()
+    person = AshTemplate.Actors.Human.for_account(account)
+    key = Ecto.UUID.generate()
+
+    assert {:error, %Ash.Error.Forbidden{}} =
+             AshTemplate.Notes.notes_create(%{title: "Mine", operation_id: key}, actor: person)
+
+    assert {:error, _none} = Ash.get(AshTemplate.Notes.Note, key, authorize?: false)
+  end
+
   test "an owner's operation_id answers only the same write, whichever way each call comes",
        %{from: from} do
     %{agent: owner} = owned_account()
@@ -1978,6 +1990,28 @@ defmodule AshTemplateWeb.McpAgentTest do
       assert poll(first, from, owner, start) == {:sent, start.operation_id}
       assert poll(again, from, owner, start) == {:replayed, start.operation_id}
       assert poll(again, from, owner, %{start | minutes: 6}) == {:refused, "idempotency_conflict"}
+    end
+  end
+
+  test "a key an agent spent for its person is a conflict once the agent acts as its own account",
+       %{from: from} do
+    for first <- [:http, :mcp], again <- [:http, :mcp] do
+      agent = paired_wallet()
+      start = %{question: "Lunch?", choices: ["Soup", "Salad"], minutes: 5, operation_id: Ecto.UUID.generate()}
+      [note_key, post_key, chat_key] = for _ <- 1..3, do: Ecto.UUID.generate()
+
+      assert note(first, from, agent, "Same", note_key) == {:saved, note_key}
+      assert {:posted, _post} = post(first, from, agent, "Same", post_key)
+      assert {:sent, _message} = chat(first, from, agent, nil, "Same", chat_key)
+      assert poll(first, from, agent, start) == {:sent, start.operation_id}
+
+      own_account(agent)
+
+      # The same words for the account it owns never answer its person's records.
+      assert note(again, from, agent, "Same", note_key) == {:refused, "idempotency_conflict"}
+      assert post(again, from, agent, "Same", post_key) == {:refused, "idempotency_conflict"}
+      assert chat(again, from, agent, nil, "Same", chat_key) == {:refused, "idempotency_conflict"}
+      assert poll(again, from, agent, start) == {:refused, "idempotency_conflict"}
     end
   end
 
@@ -2287,8 +2321,10 @@ defmodule AshTemplateWeb.McpAgentTest do
   end
 
   # An agent's wallet that owns its account here, as `account_open` leaves it.
-  defp owned_account do
-    agent = wallet()
+  defp owned_account, do: own_account(wallet())
+
+  # `agent`'s wallet opening its own account here, as `account_open` leaves it.
+  defp own_account(agent) do
     did = "did:privy:mcp-owner-" <> Ecto.UUID.generate()
     account = Accounts.register_verified!(did, agent, [agent], actor: %System{})
 

@@ -393,15 +393,13 @@ defmodule AshTemplate.Rooms.Message do
     end
 
     policy action(:agent_post) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     # Changing, liking and reporting act for the agent's person, or as the account
     # it owns: an agent that does neither is told why (`NotPaired`).
     policy action([:rooms_edit, :rooms_delete, :rooms_like, :rooms_unlike, :rooms_report]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action(:rooms_message) do
@@ -412,8 +410,7 @@ defmodule AshTemplate.Rooms.Message do
     # Search acts for the agent's person, or as the account it owns: an agent that
     # does neither is told why (`NotPaired`).
     policy action(:rooms_search) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type([:update, :destroy]) do

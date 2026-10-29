@@ -255,8 +255,7 @@ defmodule AshTemplate.Chat.Message do
     # writes are the person's own, or those of the account the agent owns
     # (`AgentSend`, `page/2`).
     policy action([:chat_read, :chat_send]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
   end
 

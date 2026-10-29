@@ -229,8 +229,7 @@ defmodule AshTemplate.Polls.Poll do
 
     # The poll's own create and end then decide, as for a person.
     policy action([:polls_start, :polls_end]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type([:create, :update]) do

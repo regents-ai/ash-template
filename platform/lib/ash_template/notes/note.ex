@@ -372,8 +372,7 @@ defmodule AshTemplate.Notes.Note do
 
     # The notes a tool reads and changes are checked by the actions it calls.
     policy action([:notes_list, :notes_get, :notes_edit, :notes_delete]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action([
@@ -384,8 +383,7 @@ defmodule AshTemplate.Notes.Note do
              :notes_archive,
              :notes_unarchive
            ]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action_type(:create) do

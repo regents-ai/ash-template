@@ -29,7 +29,7 @@ defmodule AshTemplate.Polls.Poll.AgentStart do
   def run(input, _opts, %{actor: actor}) do
     %{operation_id: key} = input.arguments
     poll = Map.take(input.arguments, [:question, :choices, :minutes])
-    fingerprint = Operation.fingerprint([poll.question, poll.choices, poll.minutes])
+    fingerprint = Operation.fingerprint(actor, [poll.question, poll.choices, poll.minutes])
 
     with :ok <- NotPaired.check(actor) do
       case spent(actor, key) do

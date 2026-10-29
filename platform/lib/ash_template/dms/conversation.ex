@@ -212,8 +212,7 @@ defmodule AshTemplate.Dms.Conversation do
     # that does neither is told why (`NotPaired`), and the actions above check the
     # pairing.
     policy action([:dms_list, :dms_blocked, :dms_open, :dms_block, :dms_unblock]) do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
 
     policy action([:read, :inbox, :block, :unblock]) do

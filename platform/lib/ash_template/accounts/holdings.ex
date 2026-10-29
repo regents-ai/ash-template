@@ -92,8 +92,7 @@ defmodule AshTemplate.Accounts.Holdings do
 
   policies do
     policy always() do
-      authorize_if actor_attribute_equals(:role, :human)
-      authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Agents.AnAgent
     end
   end
 
