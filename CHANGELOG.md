@@ -5068,3 +5068,20 @@ An adversarial review of the two commits above found five things, all fixed here
   the Mac). Live check in headless Chromium: `/capabilities.json` build.commit `2e158726`;
   home, agents, account and pair pages answer 200 at 390 and 1280, no page errors and
   nothing wider than the screen. Rollback: v132, `637dcce8`.
+
+## 2026-10-29 — Shared Privy sign-in pieces
+
+- The sign-in pieces Sentinel needs now come from `regent_privy` and `regent_http`
+  (elixir-utils `6b91a541`, built on the `09afad89` this tree pinned), and the template
+  uses them instead of its own copies: `RegentPrivy.Proof.pair/1` reads the sign-in
+  request's two tokens, `RegentPrivy.Owners` keeps the error page for Credits admins,
+  `RegentPrivy.ContentSecurityPolicy.sign_in/0` lists Privy's sources (the policies are
+  unchanged, string for string), and `RegentHttp.ClientAddress.key/1` keys the rate
+  limits (`config :regent_http, :behind_fly_proxy`, true in production).
+- The browser reads and sends Privy's two tokens through the shared
+  `privy_sign_in.mjs`, copied in by `mix regent_privy.assets`.
+- `AshTemplateWeb.PrivyProof` is gone; `AshTemplateWeb.ClientAddress` keeps only the
+  hashed page key.
+- New checks: `platform/test/ash_template_web/errors_admin_test.exs`,
+  `platform/assets/test/privy_sign_in.test.ts` and
+  `platform/assets/test/privy_session.test.ts`.

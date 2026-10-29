@@ -172,7 +172,7 @@ config :ash_template, :build, %{commit: nil, release: nil}
 config :ash_template, :name_first, :chosen
 
 # Rate limits key on the direct peer. Production turns on Fly's client header.
-config :ash_template, :behind_fly_proxy, false
+config :regent_http, :behind_fly_proxy, false
 
 # Metrics listen on loopback, on a port the system picks, so this site runs beside the
 # other sites' local servers without taking the one port they all name in production.

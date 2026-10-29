@@ -24,7 +24,7 @@ defmodule AshTemplateWeb.Endpoint do
                 limit: 120,
                 window: 60,
                 admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
-                key: &AshTemplateWeb.ClientAddress.key/1
+                key: &RegentHttp.ClientAddress.key/1
               )
   # Claude's connector calls /mcp from Anthropic's servers, so one address carries
   # many people's requests: this is a ceiling against a flood, and each connected
@@ -34,7 +34,7 @@ defmodule AshTemplateWeb.Endpoint do
                     limit: 600,
                     window: 60,
                     admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
-                    key: &AshTemplateWeb.ClientAddress.key/1
+                    key: &RegentHttp.ClientAddress.key/1
                   )
   # Pairing also has its own small budget, since each try spends a guess at a code.
   @pair_rate_limit RegentAgentAccess.RateLimit.init(
@@ -42,7 +42,7 @@ defmodule AshTemplateWeb.Endpoint do
                      limit: 10,
                      window: 60,
                      admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
-                     key: &AshTemplateWeb.ClientAddress.key/1
+                     key: &RegentHttp.ClientAddress.key/1
                    )
 
   # fullsweep_after: 0 has each page's connection give back what it used to send

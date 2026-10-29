@@ -45,6 +45,8 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Sign in, refresh, sign in as someone else and sign out each run in a transaction Ash started, so none leaves an unsent notification; a lineage whose count ran out is refused and stays signed out | `platform/test/ash_template/accounts/session_authority_test.exs` (the test settings raise on a missed notification) |
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
 | Sign out lets go of every wallet Privy holds before Privy signs out, even one that refuses; signed in, a wallet app left from before is never the account's wallet | `platform/assets/test/privy_bridge.test.ts` |
+| Sign-in reads Privy's identity token, then its access token, and sends both or nothing, stopping between reads once the attempt is stale (the shared `regent_privy` reader) | `platform/assets/test/privy_sign_in.test.ts` |
+| The shared Privy sign-in logs Privy out only after the server ends the session, and renews a sign-in only for the person the server holds (the shared `regent_privy` sign-in) | `platform/assets/test/privy_session.test.ts` |
 | After a refused sign-in the page reloads once: a page that has begun to leave never asks the server for a session behind the page replacing it | `platform/assets/test/session_leaving.test.ts` |
 | A wallet send goes out when the wallet answers its account in other letter case, and nothing is sent when it answers for another account | `platform/assets/test/send_step.test.ts` |
 | Each account shows the name its person saved with this site's sign-in, never a name saved under another sign-in, in the order asked | `platform/test/ash_template/accounts/display_name_test.exs` (property test) |
@@ -87,6 +89,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Credits history read again after a change keeps the older pages already shown, newest first with nothing twice; when the new first page no longer reaches them, only the new first page shows | `platform/test/ash_template_web/credits_history_refresh_test.exs` (property test) |
 | A Buy pressed before its steps reached the page is never handed to the wallet when the fresh build finds it certain to fail (too little USDC, or no approval on the chain yet); a Buy that may go through, and an approval, are handed over | `platform/test/ash_template_web/credits_press_test.exs` (property test) |
 | A saved note's webhook the address never answers fails as a server fault, so the job that runs out of attempts shows on the error page | `platform/test/ash_template/notes/webhook_failure_test.exs` |
+| The error page is for Credits admins only: signed out, another account, or a sign-in that has ended finds the not-found page, and another account's Privy id is logged; an admin's page carries its own nonce (`RegentPrivy.Owners`) | `platform/test/ash_template_web/errors_admin_test.exs` |
 | A person's agents' notes earn the first-note Points once, in one entry, written at once or one after another; the Points answer names the agent that earned it | `platform/test/ash_template/points/first_agent_note_test.exs` (property test) |
 
 ## Agents

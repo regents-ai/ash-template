@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.OAuthController do
   end
 
   defp rate_limit(conn, _opts) do
-    {address, _source} = AshTemplateWeb.ClientAddress.key(conn)
+    {address, _source} = RegentHttp.ClientAddress.key(conn)
     action = action_name(conn)
     limit = if action == :register, do: 30, else: 120
 

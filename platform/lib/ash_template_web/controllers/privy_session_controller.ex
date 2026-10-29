@@ -4,7 +4,6 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   alias AshTemplate.AccessContext
   alias AshTemplate.Accounts.{RequestRateLimiter, SessionAuthority, VerifiedSession}
-  alias AshTemplateWeb.{ClientAddress, PrivyProof}
 
   require Logger
 
@@ -54,7 +53,7 @@ defmodule AshTemplateWeb.PrivySessionController do
   def failure(conn, _untrusted_params), do: diagnostic_accepted(conn)
 
   def create(conn, _untrusted_params) do
-    with {:ok, pair} <- PrivyProof.pair(conn),
+    with {:ok, pair} <- RegentPrivy.Proof.pair(conn),
          {:ok, verified} <-
            RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
          {:ok, account, identity_conflicts} <- establish(verified) do
@@ -96,7 +95,7 @@ defmodule AshTemplateWeb.PrivySessionController do
   defp admit_bootstrap(conn, nil) do
     budget = Application.fetch_env!(:ash_template, :session_bootstrap_rate_limit)
     window = Keyword.fetch!(budget, :window_seconds)
-    {key, source} = ClientAddress.key(conn)
+    {key, source} = RegentHttp.ClientAddress.key(conn)
 
     case RequestRateLimiter.admit(
            {:session_bootstrap, key},
@@ -134,7 +133,7 @@ defmodule AshTemplateWeb.PrivySessionController do
     do: conn |> put_resp_header("cache-control", "no-store") |> send_resp(:no_content, "")
 
   defp report_bounded_sign_in_failure(conn, reason) do
-    {key, _source} = ClientAddress.key(conn)
+    {key, _source} = RegentHttp.ClientAddress.key(conn)
     bucket = if reason == "flow_closed", do: :retryable, else: :actionable
 
     case RequestRateLimiter.admit(

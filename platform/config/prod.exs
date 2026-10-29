@@ -11,7 +11,7 @@ config :ash_template, AshTemplateWeb.Endpoint,
   force_ssl: [rewrite_on: [:x_forwarded_proto], exclude: ["localhost", "127.0.0.1"]]
 
 # Every request reaches production through Fly's proxy, which sets Fly-Client-IP.
-config :ash_template, :behind_fly_proxy, true
+config :regent_http, :behind_fly_proxy, true
 
 # The private port fly.toml names under [metrics]; Fly routes no public traffic to it.
 config :ash_template, :metrics_listener, ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: 9091
