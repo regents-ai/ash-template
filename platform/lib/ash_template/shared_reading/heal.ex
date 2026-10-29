@@ -4,9 +4,14 @@ defmodule AshTemplate.SharedReading.Heal do
   (`AshTemplate.SharedReading.heal/1`). The site's schedule runs it each minute
   for every kind a producer rereads on notice, because a notice is sent at most
   once and can be lost. One attempt: the next minute's run replaces a failed one.
+  One reread of a kind waits or runs at a time, so a busy queue never piles up a
+  minute's worth each minute.
   """
 
-  use Oban.Worker, queue: :default, max_attempts: 1
+  use Oban.Worker,
+    queue: :default,
+    max_attempts: 1,
+    unique: [keys: [:kind], period: :infinity, states: :incomplete]
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"kind" => kind}}),

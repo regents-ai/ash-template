@@ -5108,3 +5108,17 @@ An adversarial review of the two commits above found five things, all fixed here
   gets a queue of its own, how to choose a limit (the pool for database work, the other
   service and the budget for outside calls), and the oldest-job reading that says when
   to raise one. Sites adopt it in the next shared rollout.
+
+## 2026-10-29 — Each repeatable job says what makes it the same job
+
+- `AshTemplate.SharedReading.Heal` is one job per kind while it waits or runs, and
+  `AshTemplate.ErrorPruner` one run at a time, so a busy `default` queue no longer
+  gathers a heal each minute or a second prune behind the first.
+  `AshTemplate.IndexNow.submit/1` is one job per list of addresses while it waits to be
+  sent; a change after sending began is sent again. `AshTemplate.Credits.CheckPurchase`
+  and every AshOban trigger were already unique per purchase and per record.
+- `skills/elixir-stack/references/oban.md` gains "One job per thing, and effects safe
+  to repeat": explicit `keys:`, `period: :infinity`, which `states:` for which kind of
+  job, how the pruner ends `states: :all`, that Oban 2.24 merges `unique:` options key
+  by key, and stable operation keys for the effect, with Patchbay's
+  `client_request_id` as the request-level pattern.

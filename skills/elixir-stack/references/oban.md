@@ -79,6 +79,44 @@ only the jobs that wait on it, never a person's other work:
   its old queue and runs there while that queue is still configured, so keep the old
   queue in the list until it is empty.
 
+## One job per thing, and effects safe to repeat
+
+Every job that can be queued twice for the same thing (a refresh, a sync, a sweep, a
+notice) says what "the same" is, explicitly:
+
+- `keys:` the args that name the thing: an id, a kind, a release
+  (`unique: [keys: [:kind], ...]`). A job with no args names its worker:
+  `fields: [:worker]`.
+- `period: :infinity`: unique by state, not by a time window. A window lets a second
+  copy in once it passes, while the first may still be running.
+- `states:`, by what a second copy would add:
+  - `:incomplete` (available, scheduled, executing, retryable, suspended): one at a
+    time. Refreshes, syncs, sweeps, pruners (`AshTemplate.SharedReading.Heal`,
+    `AshTemplate.ErrorPruner`, `AshTemplate.Credits.CheckPurchase`).
+  - `[:available, :scheduled, :retryable]`: a notice of change. A copy queued while
+    one waits adds nothing, but a change after sending began must be sent again
+    (`AshTemplate.IndexNow.submit/1`).
+  - `:all`: once, for as long as the job's row is kept. The pruner deletes finished
+    jobs after `max_age`, and the same args can then be queued again: the template's
+    once-per-release sitemap goes to IndexNow again after a week on one release.
+- Oban 2.24 merges a worker's `unique:` with one passed to `new/2` key by key
+  (`Oban.Worker.merge_opts/2`; its docs still say the second replaces the first), so
+  a call that overrides names every key it means.
+- AshOban triggers are already one job per record while incomplete, unique over all
+  their args, so `extra_args` (a note's `revision`) gives each value its own job.
+- A cron entry is queued only by the leader, once per tick; it still needs uniqueness
+  when a slow run or a busy queue could leave the last tick's job waiting.
+
+Uniqueness stops a duplicate job, not a repeated effect: a job can still run twice
+(a retry, or Lifeline rescuing it from a stopped machine). Give each effect a stable
+operation key, the same args the uniqueness names, and let the receiver ignore a
+repeat of it: the event id in ordered delivery (below), a note webhook's `note_id` and
+`revision`, a Credits purchase's `tx_hash`, which Regent Credits credits once however
+often it is reported. A request from outside does the same with a key the caller
+chooses: Patchbay's `client_request_id` on `post_reply` returns the first reply for a
+repeat and refuses the same key with different words (`Patchbay.Forum.Reply`, unique on
+the session and the key, with a digest of the body).
+
 ## A plain worker
 
 ```elixir

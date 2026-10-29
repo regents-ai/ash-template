@@ -3,9 +3,12 @@ defmodule AshTemplate.ErrorPruner do
   Clears saved errors once a day: every occurrence older than a week, and every
   error not seen for a week, whatever its status. ErrorTracker's own pruner only
   clears resolved errors, so a fault that keeps happening would otherwise grow
-  the error tables without end.
+  the error tables without end. One run waits or runs at a time.
   """
-  use Oban.Worker, queue: :default, max_attempts: 3
+  use Oban.Worker,
+    queue: :default,
+    max_attempts: 3,
+    unique: [fields: [:worker], period: :infinity, states: :incomplete]
 
   import Ecto.Query
 
