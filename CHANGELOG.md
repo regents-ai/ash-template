@@ -4942,3 +4942,11 @@ An adversarial review of the two commits above found five things, all fixed here
   screen. The machine's health check passes; the boot log shows no crash. `bab38804`
   (docs and skills only) is on main and rides the next release. Rollback: v130,
   `cc74b3f3`.
+
+## 2026-10-29 — Signed-tools tests start with their own request budget
+
+- Every test request comes from 127.0.0.1, so the whole server suite shared one /api
+  budget of 120 a minute, and a late signed-tools test was now and then refused with
+  429 (seen once in four runs on the connector merge). `signed_tools_test.exs`, the
+  file that sends most of the suite's /api requests, clears the limiter's counters in
+  its setup. The limit itself is unchanged. Test-only; nothing to release.
