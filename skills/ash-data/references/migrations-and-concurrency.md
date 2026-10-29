@@ -66,8 +66,8 @@ its writes. Build the index concurrently:
    end
    ```
 
-3. **Keep the generated migration as it is.** `mix ash.codegen` puts each concurrent
-   index in a migration of its own that starts with `@disable_ddl_transaction true` and
+3. **Keep the generated migration as it is.** `mix ash.codegen` puts a run's concurrent
+   indexes in a migration of their own that starts with `@disable_ddl_transaction true` and
    `@disable_migration_lock true`: PostgreSQL refuses `CREATE INDEX CONCURRENTLY` inside
    a transaction, and Ecto's migration lock would hold one open. Add nothing else to
    that file. The template's is `20261019044403_unread_and_linked_account_indexes.exs`.

@@ -4,9 +4,8 @@ defmodule AshTemplateWeb.PublicPagesController do
   alias AshTemplateWeb.{AgentGuides, AgentSkills, Capabilities, PublicDocuments}
 
   # The served HTTP contract, copied from contracts/ by `mix ash_template.sync_api_contract`.
-  # The product CLI compares its major version and digest, sent in two headers, with
-  # the values it was built against before it changes anything; both come from the
-  # file itself, so a change to the contract moves them together.
+  # Its major version and digest go out in two headers, both read from the file
+  # itself, so a change to the contract moves them together.
   @contract_file Application.app_dir(:ash_template, "priv/static/api-contract.openapiv3.yaml")
   @external_resource @contract_file
   @contract File.read!(@contract_file)
@@ -106,7 +105,8 @@ defmodule AshTemplateWeb.PublicPagesController do
   # Every public document and agent file is sent here. Each changes only with a
   # release and is the same for everyone who asks, so it carries a sha256 ETag of
   # its body and a five-minute public cache, and a caller that already holds this
-  # body gets 304 with no body. Nothing that varies by the signed-in person is sent
+  # body gets 304 with no body. Like a static file, it is never a page: it carries
+  # the endpoint's static headers. Nothing that varies by the signed-in person is sent
   # this way. Every type and body comes from this site's own tables, never from the
   # request.
   # sobelow_skip ["XSS.ContentType", "XSS.SendResp"]
@@ -117,6 +117,7 @@ defmodule AshTemplateWeb.PublicPagesController do
       conn
       |> put_resp_header("etag", etag)
       |> put_resp_header("cache-control", "public, max-age=300")
+      |> merge_resp_headers(AshTemplateWeb.Endpoint.static_headers())
 
     if held?(conn, etag),
       do: send_resp(conn, 304, ""),

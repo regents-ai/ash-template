@@ -134,7 +134,7 @@ defmodule AshTemplate.Notes.Decision do
         action :ask_jev
         where expr(state == :pending)
         # A model call, so it waits in the model queue for labels, never with webhooks.
-        queue :note_labels
+        queue :labels
         max_attempts 3
         on_error :failed
         on_error_fails_job? true

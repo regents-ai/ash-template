@@ -51,8 +51,9 @@ defmodule AshTemplate.SchemaPrefixTest.Probes do
 end
 
 defmodule AshTemplate.SchemaPrefixTest do
-  # Regression: ash_postgres 2.13.1 through 2.15.2 built upserts and `Ash.update_many`
-  # with only the resource's own schema as the prefix, never the Repo's, so on the
+  # Regression: every Hex release of ash_postgres through 2.15.2 built `Ash.update_many`
+  # (and upserts, unless MERGE was turned off) with only the resource's own schema as
+  # the prefix, never the Repo's, so on the
   # shared database they went to an unqualified table: `public`'s copy when one
   # exists, an error when none does. ash-project/ash_postgres#910 keeps the Repo's
   # prefix. platform/mix.exs pins the commit that carries it; run this before moving

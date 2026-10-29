@@ -15,6 +15,9 @@ defmodule AshTemplateWeb.Endpoint do
     "referrer-policy" => "no-referrer"
   }
 
+  @doc "The headers every file and public document is sent with; it is never a page."
+  def static_headers, do: @static_headers
+
   # Chrome's WebMCP origin trial, issued to https://template.regents.sh and valid
   # until 30 Mar 2027. The token is public; Chrome ignores it on any other host.
   @webmcp_origin_trial "Anjl5/zD6iF9O/lRuJbhbnuaTCH/1+x83KMsVLt4KEl5eI5kKV0yqXI+xOxti+nzSe7uQ0UUj1Ot3fi/WVyczwEAAABTeyJvcmlnaW4iOiJodHRwczovL3RlbXBsYXRlLnJlZ2VudHMuc2g6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMH0="

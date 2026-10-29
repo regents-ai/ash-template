@@ -32,8 +32,6 @@ config :regent_credits,
 # (CVE-2026-82752).
 config :ash, default_string_length_count: :codepoints
 
-config :mime, :types, %{"application/yaml" => ["yaml"]}
-
 # The name this site goes by in Regent Credits and Regent Points. A site copied
 # from the template changes it here and nowhere else.
 site = "template"
@@ -72,7 +70,7 @@ config :ash_template, AshTemplate.Agents.ActivityReading,
 # (skills/elixir-stack/references/oban.md, "Queues"), so a slow or failing service
 # holds up only the jobs that wait on it: `default` and `points` work on the
 # database alone; `ens`, `purchase_checks` and `points_chain` read a chain;
-# `chat_responses`, `conversations` and `note_labels` ask a model; `outside_calls`
+# `chat_responses`, `conversations` and `labels` ask a model; `outside_calls`
 # makes every other call to another website (the notes webhook, IndexNow). `ens`
 # keeps a crowd signing in at once (one lookup each, seconds long for a name with a
 # picture) from holding up the other chain reads. AshOban adds each trigger's sweep
@@ -89,7 +87,7 @@ config :ash_template, Oban,
     ens: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10],
-    note_labels: 3,
+    labels: 3,
     outside_calls: 3
   ],
   # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end,

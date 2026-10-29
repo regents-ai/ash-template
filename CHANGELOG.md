@@ -5076,8 +5076,8 @@ An adversarial review of the two commits above found five things, all fixed here
   through a resource that names no schema, as the site's resources do. A create, read,
   update and destroy, a single upsert, a bulk upsert and `Ash.update_many` (one MERGE on
   PostgreSQL 17) change only the site's rows, and the rows planted in `public` stay as
-  they were. It is the check of the failure in ash_postgres 2.13.1 through 2.15.2,
-  which sent upserts and `update_many` to `public`; it has not yet been run against
+  they were. It is the check of the failure in every Hex release of ash_postgres through 2.15.2,
+  which sent `update_many` (and upserts, unless MERGE was off) to `public`; it has not yet been run against
   those releases to see it fail. The pin is ash_postgres main at `55db7d44` (#910), no
   longer `== 2.13.0`. `platform/mix.exs` names the test beside the pin, so the pin
   moves only after it passes. Test-only; nothing to release.
@@ -5098,10 +5098,10 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Every queue holds one class of work: the database alone (`default`, `points`), chain
   reads (`ens`, `purchase_checks`, `points_chain`), model calls (`chat_responses`,
-  `conversations`, `note_labels`) or other calls to another website (`outside_calls`).
+  `conversations`, `labels`) or other calls to another website (`outside_calls`).
   Jev's label for a saved note (`AshTemplate.Notes.Decision`, trigger `:ask_jev`) was a
   model call waiting in `outside_calls` beside the notes webhook and IndexNow, so a run
-  of saves could hold their posts back; it now has its own queue, `note_labels`, limit
+  of saves could hold their posts back; it now has its own queue, `labels`, limit
   3. A label already queued finishes in `outside_calls`. Every other job and trigger was
   already in its class.
 - `skills/elixir-stack/references/oban.md` gains "Queues": the four classes, when a kind
@@ -5164,3 +5164,17 @@ An adversarial review of the two commits above found five things, all fixed here
 - `scripts/github.sh` holds the GitHub reading `scripts/drift.sh` already did, so both
   scripts read sites the same way. `scripts/init.sh` removes both new scripts from a
   new site, as it does `drift.sh`.
+
+## 2026-10-29 — Review fixes for the queue, cache and schema-test changes
+
+- Public documents sent by `send_cached/4` now carry the endpoint's static headers
+  (`AshTemplateWeb.Endpoint.static_headers/0`: CSP `default-src 'none'`, nosniff, no
+  framing, no referrer), which the contract had under Plug.Static and the other
+  documents never had. The `application/yaml` MIME entry only Plug.Static used is gone.
+- `SharedReading.Heal` is unique over waiting states only, so a reread left running on a
+  stopped machine no longer holds up the next minute's.
+- Jev's label queue is `labels`, apart from the `:note_labels` settings key.
+- The schema test, README and Oban and migration references now say what the code does:
+  every Hex ash_postgres through 2.15.2 could send `update_many` (and upserts unless
+  MERGE was off) to `public`; AshOban sweeps run in the trigger's queue; one migration
+  holds a run's concurrent indexes; the contract's headers no longer claim a reader.

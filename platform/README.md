@@ -192,11 +192,12 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 `x-regents-contract-digest` headers. The table is a map, not the contract.
 
 Every public document and agent file (the contract, `/openapi.json`, `/llms.txt`,
-`/agents.md`, the skills, `/capabilities.json`, the sitemap and robots, the
-`.well-known` documents, `/indexnow-key.txt`, and `/api/v1/about` and `/api/v1/docs`)
+`/agents.md`, each skill's `skill.md`, `/capabilities.json`, the sitemap and robots,
+the agent skill files, `/.well-known/security.txt`, the API catalog, `/indexnow-key.txt`, and `/api/v1/about` and `/api/v1/docs`)
 is sent by one helper, `send_cached/4` in `AshTemplateWeb.PublicPagesController`: a
-strong ETag, the sha256 of the body, `cache-control: public, max-age=300`, and 304
-with no body when `If-None-Match` names that ETag. A page or answer that shows the
+strong ETag, the sha256 of the body, `cache-control: public, max-age=300`, the
+endpoint's static headers (no scripts, no framing, nosniff), and 304 with no body
+when `If-None-Match` names that ETag. A page or answer that shows the
 signed-in person is never sent this way. The Markdown of a public page
 (`Accept: text/markdown`) comes from `RegentAgentAccess.Plug` and the OAuth discovery
 documents from `RegentOAuth.Protocol`, which set no cache yet.
@@ -355,8 +356,9 @@ can do and the check that proves it. Among them:
   database.
 - It writes through a resource that names no schema while `public` holds a table of
   the same name, and checks that a create, update, destroy, upsert, bulk upsert and
-  `Ash.update_many` change only the site's schema, because ash_postgres releases after
-  2.13.0 sent upserts to `public`. Run it before moving the ash_postgres pin.
+  `Ash.update_many` change only the site's schema, because every Hex release of
+  ash_postgres through 2.15.2 could send them to `public`; only #910 (the pinned
+  commit) falls back to the Repo's prefix. Run it before moving the ash_postgres pin.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this

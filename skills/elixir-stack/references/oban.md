@@ -74,21 +74,25 @@ only the jobs that wait on it, never a person's other work:
 | --- | --- | --- |
 | Database | Work on the site's own rows: sweeps, pruning, rereads, jobs that only queue other jobs | `default`, `points` |
 | Chain reads | Reads through a chain node | `ens`, `purchase_checks`, `points_chain` |
-| Model calls | Questions to a model (OpenRouter, Anthropic) | `chat_responses`, `conversations`, `note_labels` |
+| Model calls | Questions to a model (OpenRouter, Anthropic) | `chat_responses`, `conversations`, `labels` |
 | Other outside calls | Every other request to another website: webhooks, IndexNow, an image or video service | `outside_calls` |
 
 - A chain read, a model call or another outside call never runs in `default`, and two
-  classes never share a queue. A job that only queues others (a cron dispatcher, a
-  sweep) is database work, whatever the jobs it queues do.
+  classes never share a queue. A job that only queues others (a cron dispatcher) is
+  database work, whatever the jobs it queues do; AshOban runs a trigger's sweep in the
+  trigger's own queue unless the trigger names a `scheduler_queue`.
 - Within a class, a kind gets its own queue when a burst of it must not hold up the
   rest of its class: every sign-in looks up one ENS name, so `ens` is apart from the
   other chain reads. Otherwise kinds share their class's queue.
 - Choose the limit by what the job waits on. A database job holds a connection for
-  most of its run, so the database queues' limits together stay near the Repo's pool
-  (5 on the shared database; ash-data, "Connections"). An outside-call job holds a
+  most of its run, so a database queue's limit stays at or under the Repo's pool
+  (5 on the shared database; ash-data, "Connections"); queues that are rarely busy at
+  once, such as `default` and `points`, may each take the pool's size. An outside-call job holds a
   connection only to read before and write after the call, so its limit is what the
   other service and the budget allow: its rate limit, a daily cap such as Jev's
-  `daily_questions`, and how long one call takes. Start at 1 to 3.
+  `daily_questions`, and how long one call takes. Start a call to an outside website at 1 to 3; a model
+  queue whose answers a person waits for (`chat_responses`) can go higher, within the
+  model's rate limit.
 - Raise a limit when `[:ash_template, :jobs, :oldest_unfinished]` shows that queue's
   jobs waiting, and lower it when the other service answers 429.
 - Moving a job to another queue needs no migration: a job already queued stays in
