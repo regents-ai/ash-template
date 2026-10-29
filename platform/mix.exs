@@ -5,6 +5,9 @@ defmodule AshTemplate.MixProject do
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
   @elixir_utils_ref "dea334b0cc9477a26fa9bbd03e4f803359ab420b"
+  # oauth with published identities (Claude's "Use Claude's published identity"),
+  # and the http package it reads them with (claude/cimd-1029).
+  @elixir_utils_oauth_ref "bbeb26f0b30a7a64f5323a5cc2325d2a8e80dddb"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "3134bab0a23452fb82d3248072327e1d0199cc9a"
 
@@ -42,7 +45,7 @@ defmodule AshTemplate.MixProject do
       # regent_mcp_agents names regent_oauth, regent_agents and regent_agent_access
       # by sibling paths; these pins replace them.
       {:regent_oauth,
-       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth", override: true},
+       git: @elixir_utils, ref: @elixir_utils_oauth_ref, sparse: "oauth", override: true},
       # The Claude connector's identity tools at /mcp (AshTemplate.Agents.Connection).
       {:regent_mcp_agents, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_agents"},
       {:lumis, "~> 0.1"},
@@ -96,8 +99,9 @@ defmodule AshTemplate.MixProject do
        sparse: "siwa/siwa-elixir/apps/siwa",
        override: true},
       {:regent_jev, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "jev"},
-      # regent_jev names regent_http by a sibling path; this pin replaces it.
-      {:regent_http, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
+      # regent_jev and regent_oauth name regent_http by a sibling path; this pin replaces it.
+      {:regent_http,
+       git: @elixir_utils, ref: @elixir_utils_oauth_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
       # Cachex 4.1.1 on consuming sites requires 6.x; Nebulex accepts 6.x or 7.x.
       {:ex_hash_ring, "== 6.0.4"},

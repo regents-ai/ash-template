@@ -12,6 +12,15 @@ account. Consent uses the browser pipeline's session authority and CSRF protecti
 No request header or account parameter can establish a person. Nothing here grants
 a paired-agent or wallet actor, and no new account store is introduced.
 
+An app names itself in one of two ways. Claude's "Use Claude's published
+identity" option uses its HTTPS address
+(`https://claude.ai/oauth/mcp-oauth-client-metadata`) as the `client_id`; server
+metadata says `client_id_metadata_document_supported: true`, and consent reads
+and checks that document, records it as an ordinary public client
+(`oauth_client_documents`, migration `20261029160000`) and reads it again once
+its cache lifetime passes (`RegentOAuth.ClientDocuments`). Other apps still
+register themselves at `/oauth/register`. Neither kind is ever taken for the other.
+
 API routes expose resource/server metadata (the resource's also at
 `/.well-known/oauth-protected-resource/mcp`, where RFC 9728 places it),
 `/oauth/register`, `/oauth/token` and `/oauth/revoke`. Browser routes are GET/POST
