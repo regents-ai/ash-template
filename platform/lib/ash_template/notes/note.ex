@@ -46,6 +46,7 @@ defmodule AshTemplate.Notes.Note do
     DeliverWebhook,
     Pin,
     RecordWebhook,
+    SendsAChange,
     WebhookAddressSet
   }
 
@@ -254,8 +255,7 @@ defmodule AshTemplate.Notes.Note do
       run AgentCreate
     end
 
-    # Only the title or text sent is changed; an edit that sends neither changes
-    # nothing and is refused, so it never saves the note again.
+    # Only the title or text sent is changed (`SendsAChange`).
     action :notes_edit, :map do
       argument :id, :uuid, allow_nil?: false, description: @note_id
 
@@ -267,7 +267,7 @@ defmodule AshTemplate.Notes.Note do
         constraints: [max_length: 10_000],
         description: "The text, up to 10,000 characters."
 
-      validate present([:title, :body], at_least: 1)
+      validate SendsAChange
 
       run fn %{arguments: arguments}, %{actor: actor} ->
         AshTemplate.Notes.Note.change_mine(
@@ -284,7 +284,7 @@ defmodule AshTemplate.Notes.Note do
       run fn %{arguments: %{id: id}}, %{actor: actor} ->
         with :ok <- NotPaired.check(actor),
              {:ok, note} <- AshTemplate.Notes.Note.mine(id, actor),
-             :ok <- NotPaired.ended(Notes.destroy_note(note, actor: actor)),
+             :ok <- NotPaired.ended(Notes.destroy_note(note, actor: actor), actor),
              do: {:ok, %{deleted: true, id: note.id}}
       end
     end
@@ -470,7 +470,7 @@ defmodule AshTemplate.Notes.Note do
           {:error, Refused.exception(code: "invalid_note", error: error)}
 
         error ->
-          NotPaired.ended(error)
+          NotPaired.ended(error, actor)
       end
     end
   end

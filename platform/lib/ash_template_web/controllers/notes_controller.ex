@@ -113,12 +113,13 @@ defmodule AshTemplateWeb.NotesController do
     end
   end
 
+  # The address names the note: an id in the body never chooses another.
   def update(conn, %{"id" => id}),
     do:
       respond(
         conn,
         :notes_edit,
-        Notes.notes_edit(id, conn.body_params, actor: conn.assigns.actor)
+        Notes.notes_edit(id, Map.delete(conn.body_params, "id"), actor: conn.assigns.actor)
       )
 
   def delete(conn, %{"id" => id}),

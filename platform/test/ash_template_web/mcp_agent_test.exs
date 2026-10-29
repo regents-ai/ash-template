@@ -450,6 +450,20 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert rated == %{"label" => %{"id" => label, "rating" => "fits"}}
     assert read_note(from, agent, key)["label"]["rating"] == "fits"
 
+    # The address names the label: an id in the body never chooses another.
+    second = Ecto.UUID.generate()
+
+    assert http(:post, "/api/v1/notes", %{title: "Second", operation_id: second}, from, agent).status ==
+             201
+
+    unrated = label(second, :answered)
+
+    rerated =
+      http(:post, "/api/v1/note-labels/#{unrated}/report", %{id: label, report: "does_not_fit"}, from, agent)
+
+    assert Jason.decode!(rerated.resp_body) == %{"label" => %{"id" => unrated, "rating" => "does_not_fit"}},
+           rerated.resp_body
+
     # Changes: each answers the note HTTP then reads.
     for {name, input} <- [
           {"notes_archive", %{id: key}},
@@ -464,6 +478,22 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
 
     assert %{"title" => "Parity, edited", "body" => "A walk"} = read_note(from, agent, key)
+
+    # Text sent empty clears it, either way; an id in the body never chooses another note.
+    assert %{"isError" => false, "structuredContent" => %{"note" => %{"body" => nil}}} =
+             result(mcp(call("notes_edit", %{id: key, body: nil}), from: from, proof: agent))
+
+    elsewhere = Ecto.UUID.generate()
+
+    assert http(:post, "/api/v1/notes", %{title: "Elsewhere", operation_id: elsewhere}, from, agent).status ==
+             201
+
+    cleared =
+      http(:patch, "/api/v1/notes/#{key}", %{id: elsewhere, title: "Parity", body: nil}, from, agent)
+
+    assert cleared.status == 200, cleared.resp_body
+    assert %{"id" => ^key, "title" => "Parity", "body" => nil} = Jason.decode!(cleared.resp_body)["note"]
+    assert %{"title" => "Elsewhere"} = read_note(from, agent, elsewhere)
 
     # Deleting answers the same way both ways, and the note is gone.
     other = Ecto.UUID.generate()

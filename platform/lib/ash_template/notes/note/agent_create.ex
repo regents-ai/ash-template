@@ -85,7 +85,7 @@ defmodule AshTemplate.Notes.Note.AgentCreate do
         {:error, Refused.exception(code: "invalid_note", error: error)}
 
       true ->
-        NotPaired.ended({:error, error})
+        NotPaired.ended({:error, error}, actor)
     end
   end
 

@@ -150,11 +150,12 @@ defmodule AshTemplateWeb.PairedAgentController do
   defp mark_read_result(conn, result),
     do: conn |> UnexpectedFailure.log(result) |> refuse("unavailable")
 
+  # The address names the label: an id in the body never chooses another.
   def report_label(conn, %{"id" => id}) do
     note_answer(
       conn,
       :notes_rate_label,
-      Notes.notes_rate_label(id, conn.body_params, actor: conn.assigns.actor)
+      Notes.notes_rate_label(id, Map.delete(conn.body_params, "id"), actor: conn.assigns.actor)
     )
   end
 

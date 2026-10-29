@@ -27,11 +27,14 @@ defmodule AshTemplate.Agents.NotPaired do
   def check(%Agent{} = actor), do: {:error, exception(code: code(actor))}
 
   @doc """
-  A write's `result`, with the refusal of an agent whose pairing ended after its
-  request was let in, which the write's own policy (`RegentAgents.Checks.Paired`)
-  then forbade, named `agent_not_paired`, as every surface answers it.
+  The `result` of a write by `actor`, with the refusal of an agent whose pairing
+  ended after its request was let in, which the write's own policy
+  (`RegentAgents.Checks.Paired`) then forbade, named `agent_not_paired`, as every
+  surface answers it.
   """
-  @spec ended(term()) :: term()
-  def ended({:error, %Ash.Error.Forbidden{}}), do: {:error, exception(code: "agent_not_paired")}
-  def ended(result), do: result
+  @spec ended(term(), Agent.t() | Human.t()) :: term()
+  def ended({:error, %Ash.Error.Forbidden{}}, %Agent{}),
+    do: {:error, exception(code: "agent_not_paired")}
+
+  def ended(result, _actor), do: result
 end

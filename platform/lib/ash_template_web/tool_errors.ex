@@ -48,14 +48,10 @@ defmodule AshTemplateWeb.ToolErrors do
          %{valid?: true} <- Ash.ActionInput.for_action(resource, action, input) do
       {:ok, arguments}
     else
+      # A validation's errors arrive as it returned them; the class gathers them
+      # as the action's own refusal over HTTP does.
       %Ash.ActionInput{errors: errors} ->
-        {:error,
-         refused(
-           resource,
-           action,
-           Ash.Error.Invalid.exception(errors: errors),
-           arguments["input"]
-         )}
+        {:error, refused(resource, action, Ash.Error.to_error_class(errors), arguments["input"])}
 
       _not_an_object ->
         {:error, refused(resource, action, Ash.Error.Invalid.exception(errors: []), nil)}

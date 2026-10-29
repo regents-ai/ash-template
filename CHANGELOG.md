@@ -5155,15 +5155,21 @@ An adversarial review of the two commits above found five things, all fixed here
   the change under Breaking changes, the agent guide and skill name `note_removed`, and
   the public changelog says it in plain words.
 - From the review: an edit that sends neither title nor body is refused as
-  `invalid_note` in `notes_edit` itself (`validate present`), so it never saves the
-  note, asks for a label or counts a write; a key that is already another note's id
+  `invalid_note` in `notes_edit` itself (`Note.SendsAChange`, which reads the keys
+  sent, so a body sent empty still clears the text), so it never saves the note, asks
+  for a label or counts a write; a key that is already another note's id
   (another agent's, or another person's) answers 409 `idempotency_conflict` with no
   details instead of 422 `invalid_note` naming the id; and a write by an agent whose
   pairing ended after its request was let in answers `agent_not_paired` on every
-  surface (`NotPaired.ended/1`) instead of 503 over HTTP.
+  surface (`NotPaired.ended/2`, for an agent only) instead of 503 over HTTP. The
+  address names the note or label: an `id` in the body of `PATCH /api/v1/notes/{id}`
+  or of a label's report is not read, where it had chosen the note the action changed.
+  A tool input a validation refuses is gathered into its error class
+  (`ToolErrors.check_input/3`), so `/mcp` gives the same `details` as HTTP.
 - `mcp_agent_test.exs` proves each notes tool answers and refuses through `/mcp` as
-  over HTTP, that a reused key answers the same both ways, and the three review
-  fixes; each of their checks fails on the code before them. `mix xref`'s
+  over HTTP, that a reused key answers the same both ways, the three review fixes, a
+  text cleared both ways and a body `id` that chooses nothing; each of their checks
+  fails on the code before them. `mix xref`'s
   compile-connected limit moves to 45 for the action module the create runs.
 - Not changed: `notes_pin` (spends Credits) waits for Sean's letter. A note an agent
   made before this change has no `agent_operations` row, so retrying its old
