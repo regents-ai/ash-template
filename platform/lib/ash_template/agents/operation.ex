@@ -57,7 +57,7 @@ defmodule AshTemplate.Agents.Operation do
   The hash an operation key is spent on: the account `actor` acts for, then
   `parts`, in order, as one JSON list.
   """
-  @spec fingerprint(%{human_account_id: Ecto.UUID.t()}, [term()]) :: String.t()
+  @spec fingerprint(%{human_account_id: integer()}, [term()]) :: String.t()
   def fingerprint(%{human_account_id: account}, parts),
     do:
       :sha256
