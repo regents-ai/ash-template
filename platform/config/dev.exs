@@ -35,6 +35,9 @@ if walk? do
   config :req, default_options: [adapter: AshTemplate.WalkOffline]
   config :ash_template, :walk_outside_file, Path.expand("../tmp/walk-outside.txt", __DIR__)
   config :ash_template, :indexnow_key, "walk-indexnow-key"
+  # The walk's three browsers stand in for many visitors, and all of them reach
+  # the server from 127.0.0.1, so one address's budget would cut it off.
+  config :ash_template, :address_rate_limit, 600
 end
 
 # Several sites run side by side locally, each on the port named by PORT.

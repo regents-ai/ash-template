@@ -5446,3 +5446,11 @@ An adversarial review of the two commits above found five things, all fixed here
   descriptions are gone, so each operation's words live once, in
   `priv/capabilities.json`, and reach `priv/public/openapi.json` from there.
 - The check-in's words say once that it needs a pairing.
+
+## 2026-10-29 — The browser walk has its own request budget
+
+- The requests one client address may send a minute to the API, and to `/mcp`
+  without a token, are one setting, `:address_rate_limit` (120, as before). The
+  browser walk's server raises it to 600 (`platform/config/dev.exs`): its three
+  browsers reach the server from the one address 127.0.0.1, and in its busiest minute
+  the walk sent 134 requests, so the agent tools list in the walk got 429.

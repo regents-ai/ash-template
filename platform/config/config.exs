@@ -175,6 +175,10 @@ config :ash_template, :name_first, :chosen
 # Rate limits key on the direct peer. Production turns on Fly's client header.
 config :ash_template, :behind_fly_proxy, false
 
+# Each client address may send this many requests a minute to the API, and to
+# /mcp without a token.
+config :ash_template, :address_rate_limit, 120
+
 # Metrics listen on loopback, on a port the system picks, so this site runs beside the
 # other sites' local servers without taking the one port they all name in production.
 config :ash_template, :metrics_listener, ip: {127, 0, 0, 1}, port: 0

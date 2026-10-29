@@ -19,21 +19,21 @@ defmodule AshTemplateWeb.Endpoint do
   # until 30 Mar 2027. The token is public; Chrome ignores it on any other host.
   @webmcp_origin_trial "Anjl5/zD6iF9O/lRuJbhbnuaTCH/1+x83KMsVLt4KEl5eI5kKV0yqXI+xOxti+nzSe7uQ0UUj1Ot3fi/WVyczwEAAABTeyJvcmlnaW4iOiJodHRwczovL3RlbXBsYXRlLnJlZ2VudHMuc2g6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMH0="
 
-  @rate_limit RegentAgentAccess.RateLimit.init(
-                policy: "default",
-                limit: 120,
-                window: 60,
-                admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
-                key: &AshTemplateWeb.ClientAddress.key/1
-              )
+  # One address's budget on the API, and on /mcp without a token. Its limit is read
+  # on each request (`per_address/2`), since the browser walk's server raises it.
+  @rate_limit [
+    policy: "default",
+    window: 60,
+    admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
+    key: &AshTemplateWeb.ClientAddress.key/1
+  ]
   # An agent's own request to /mcp counts against its address as on the API.
-  @mcp_rate_limit RegentAgentAccess.RateLimit.init(
-                    policy: "mcp_address",
-                    limit: 120,
-                    window: 60,
-                    admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
-                    key: &AshTemplateWeb.ClientAddress.key/1
-                  )
+  @mcp_rate_limit [
+    policy: "mcp_address",
+    window: 60,
+    admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
+    key: &AshTemplateWeb.ClientAddress.key/1
+  ]
   # Claude's connector calls /mcp from Anthropic's servers, so one address carries
   # many people's connected apps: this is a ceiling against a flood, and each
   # connected account's own budget (`AshTemplateWeb.Plugs.McpAgent`) is the
@@ -139,30 +139,39 @@ defmodule AshTemplateWeb.Endpoint do
   end
 
   defp limit_rate(%Plug.Conn{path_info: ["healthz"]} = conn, _opts),
-    do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
+    do: per_address(conn, @rate_limit)
 
   defp limit_rate(
          %Plug.Conn{method: "POST", path_info: ["api", "agents", "v1", "pair"]} = conn,
          _opts
        ) do
-    conn = RegentAgentAccess.RateLimit.call(conn, @rate_limit)
+    conn = per_address(conn, @rate_limit)
     if conn.halted, do: conn, else: RegentAgentAccess.RateLimit.call(conn, @pair_rate_limit)
   end
 
   defp limit_rate(%Plug.Conn{method: "POST", path_info: ["visit-log"]} = conn, _opts),
-    do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
+    do: per_address(conn, @rate_limit)
 
   defp limit_rate(%Plug.Conn{path_info: ["api" | _]} = conn, _opts),
-    do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
+    do: per_address(conn, @rate_limit)
 
   defp limit_rate(%Plug.Conn{path_info: ["mcp" | _]} = conn, _opts) do
     case Plug.Conn.get_req_header(conn, "authorization") do
       ["Bearer " <> _token] -> RegentAgentAccess.RateLimit.call(conn, @mcp_connected_rate_limit)
-      _no_token -> RegentAgentAccess.RateLimit.call(conn, @mcp_rate_limit)
+      _no_token -> per_address(conn, @mcp_rate_limit)
     end
   end
 
   defp limit_rate(conn, _opts), do: conn
+
+  defp per_address(conn, budget) do
+    limit = Application.fetch_env!(:ash_template, :address_rate_limit)
+
+    RegentAgentAccess.RateLimit.call(
+      conn,
+      RegentAgentAccess.RateLimit.init([limit: limit] ++ budget)
+    )
+  end
 
   # Production sets the cookie's `secure` flag in runtime.exs, after this module compiles.
   defp runtime_session(conn, _opts) do
