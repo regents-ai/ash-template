@@ -155,14 +155,16 @@ only what needs a session on the direct address:
   keeps a release's second machine from taking the database's connections, but what
   stays direct still doubles in a release: each machine's listening connection, the
   release command's own connections, and `keyfleet-code` (up to 20). With every release
-  at once that peak (55 pooled, about 12 listening, about 14 for release commands, 20,
-  plus Sentinel) passes the database's 97. So a site keeps
-  `lockf -k /tmp/regent-shared-db-release.lock` in its deploy when it moves to the pooler,
-  and the lock goes from every site together once the count after the last move, and the
-  founder's pooler limits, leave room for that peak
-  (`control/rollouts/2026-10-29-db-pooler.md` in the workspace). The template has
-  released without the lock since 27 October; its direct share in a release is three
-  connections.
+  at once that peak (55 pooled, about 13 listening, about 16 for release commands, 20,
+  plus Sentinel and an admin login: about 114) passes the database's 97; one release at a
+  time peaks at about 92. So a site keeps `lockf -k /tmp/regent-shared-db-release.lock`
+  in its deploy when it moves to the pooler. The lock is one file on the founder's Mac
+  that every site's deploy script takes, so releases started there take turns across
+  sites. It does not hold back a deploy started anywhere else, a restart from a secret
+  set without `--stage`, or the template, which has released without it since 27 October
+  (its direct share in a release is three connections). The lock goes from every site
+  together once the count after the last move, and the founder's pooler limits, leave
+  room for the peak (`control/rollouts/2026-10-29-db-pooler.md` in the workspace).
 - More connections for one site, or a larger database plan, is the founder's decision.
 
 ## Snapshots are generator state

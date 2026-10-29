@@ -5352,3 +5352,12 @@ way, and the library's own site-tool serving is gone.
   `keyfleet-code`) plus the pooler's 55 can pass the database's 97. The skill now says a
   site keeps the lock when it moves, and the lock goes from every site together once the
   count after the last move leaves room. Docs only.
+
+## 2026-10-29 — What the shared release lock covers
+
+- The ash-data skill now says what the release lock holds back: it is one file on the
+  founder's Mac that every site's deploy script takes, so releases started there take
+  turns across sites; a deploy started anywhere else, a restart from a secret set
+  without `--stage`, and the template's own releases are outside it. The peak figures
+  now count Keyfleet's graph machine (its own listening connection) and an admin login:
+  about 114 with every release at once, about 92 with one at a time. Docs only.
