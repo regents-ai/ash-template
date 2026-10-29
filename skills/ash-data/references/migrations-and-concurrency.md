@@ -110,14 +110,20 @@ only what needs a session on the direct address:
   `pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc`. Never turn the check
   off. If Fly replaces the authority, pooler connections fail until the new certificate
   is copied in.
-  The pooler opens at most 50 real connections (plus a reserve of 10) for up to 200
-  client connections, so a release's second machine waits a moment for a connection
-  instead of taking one from the database. Copy `AshTemplate.DatabaseConfig.serving/1`:
+  The pooler has run in transaction mode since 29 October 2026 16:27Z. It opens at most
+  45 real connections (plus a reserve of 10) for up to 200 client connections, so a
+  release's second machine waits a moment for a connection instead of taking one from
+  the database. It closes a client connection idle for 60 seconds and replaces its own
+  database connections every 300 seconds; it has no other limit on how long a client
+  connection lasts. The fewest connections it keeps open for each login (Min Pool Size)
+  and these limits are the founder's settings in Fly's dashboard.
+  Copy `AshTemplate.DatabaseConfig.serving/1`:
   a pool of 5 (never leave `pool_size` unset: Ecto's default is 10),
   `prepare: :unnamed` (named prepared statements do not survive a transaction pooler),
-  and `max_lifetime: 540_000..600_000`, which replaces each connection before the
-  pooler's ten-minute limit and spreads the reconnects. The health check reads through
-  the same pool (`AshTemplate.Health.database_ready?/0`).
+  and `max_lifetime: 540_000..600_000`, which spreads the pool's reconnects so they
+  never land at once. The pool's idle pings (every second) keep each connection well
+  inside the pooler's 60-second idle limit. The health check reads through the same
+  pool (`AshTemplate.Health.database_ready?/0`).
 - **Limits live on the serving login.** The pooler closes any connection whose startup
   settings name more than `application_name` (template v115 failed on
   `statement_timeout`), so a site's connection sends only its name. The limits that
@@ -137,7 +143,9 @@ only what needs a session on the direct address:
   with the release login on `DATABASE_DIRECT_URL`, `direct.dzx6qo6xqzvojpv5.flympg.net`.
 - **Everything else works through the pooler.** Oban's notices go over Erlang
   (`Oban.Notifiers.PG`); a lock held for one transaction
-  (`pg_advisory_xact_lock`) is fine. A session lock (`pg_advisory_lock`), `SET` outside
+  (`pg_advisory_xact_lock`) is fine, and so is sending a notice through the repository
+  (`pg_notify`, as `RegentCredits` and `RegentAgents` do): only listening needs the
+  direct connection. A session lock (`pg_advisory_lock`), `SET` outside
   a transaction or a temporary table kept between transactions is not: use the
   transaction form.
 - `keyfleet-code` runs the Twigpine git node (Rust, sqlx), not an Ash site. It holds at

@@ -5330,3 +5330,16 @@ way, and the library's own site-tool serving is gone.
   page load; home, agents, account, the General room, the app and pair pages answer 200
   at 390 and 1280, no page errors and nothing wider than the screen. Rollback: v133,
   `2e158726`.
+
+## 2026-10-29 — The pooler's limits, as they are in transaction mode
+
+- The shared database's pooler has run in transaction mode since 16:27Z. Its limits are
+  45 real connections plus a reserve of 10, 200 client connections, a client idle for
+  60 seconds closed, and its own database connections replaced every 300 seconds.
+- `AshTemplate.DatabaseConfig.serving/1`'s comment and the ash-data skill said the
+  serving pool's nine-to-ten-minute reconnects ran ahead of a ten-minute pooler limit.
+  The pooler has no such limit; the reconnects only keep the pool from reconnecting all
+  at once, and the pool's idle pings (every second) keep each connection inside the
+  60-second idle limit. Both now say so, and the skill gives the pooler's real figures
+  (45, not 50) and notes that sending `pg_notify` through the pooler works; only
+  listening needs the direct connection. No behaviour changes.

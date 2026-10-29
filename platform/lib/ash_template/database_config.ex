@@ -103,11 +103,13 @@ defmodule AshTemplate.DatabaseConfig do
   # The serving connection shares one database with every other site, so it holds
   # five connections, names itself in pg_stat_activity and keeps connection details
   # out of its errors. Each connection is replaced after nine to ten minutes, spread
-  # so the pool never reconnects at once, ahead of the pooler's own ten-minute limit.
-  # The pooler refuses every startup setting but the name, so the limits that stop a
-  # statement, a lock wait or an idle open transaction before it stalls anyone else
-  # live on the serving login itself (ash-data, "Connections to the shared production
-  # database"). Release commands connect with their own login and none of these limits.
+  # so the pool never reconnects at once. The pooler has no limit of its own on how
+  # long a connection lasts: it closes one idle for a minute, and the pool's idle
+  # pings keep every connection busier than that. The pooler refuses every startup
+  # setting but the name, so the limits that stop a statement, a lock wait or an idle
+  # open transaction before it stalls anyone else live on the serving login itself
+  # (ash-data, "Connections to the shared production database"). Release commands
+  # connect with their own login and none of these limits.
   defp serving(options) do
     Keyword.merge(options,
       pool_size: 5,
