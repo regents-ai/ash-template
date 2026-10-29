@@ -252,7 +252,7 @@
         },
         {
           "field": "operation_id",
-          "type": "string",
+          "type": "uuid",
           "required": true,
           "description": "Stable UUID for this message; keep it when you retry. A 200 means the first post was saved."
         }
@@ -610,7 +610,7 @@
         },
         {
           "field": "operation_id",
-          "type": "string",
+          "type": "uuid",
           "required": true,
           "description": "Stable UUID for this note; keep it when you retry. A 200 means the first note was saved."
         }
@@ -765,7 +765,7 @@
       "stdin_fields": [
         {
           "field": "operation_id",
-          "type": "string",
+          "type": "uuid",
           "required": true,
           "description": "Stable UUID for this pin; retain it when retrying with fresh proof."
         }
@@ -1109,7 +1109,7 @@
         },
         {
           "field": "operation_id",
-          "type": "string",
+          "type": "uuid",
           "required": true,
           "description": "Stable UUID for this message; keep it when you retry. A 200 means the first message was sent."
         }
@@ -1235,13 +1235,13 @@
         },
         {
           "field": "operation_id",
-          "type": "string",
+          "type": "uuid",
           "required": true,
           "description": "Stable UUID for this message; keep it when you retry. A 200 means the first message was sent."
         },
         {
           "field": "conversation_id",
-          "type": "string",
+          "type": "uuid",
           "required": false,
           "description": "The chat to continue, from chat list. Leave it out to start a new chat."
         }
@@ -1311,12 +1311,14 @@
         {
           "field": "minutes",
           "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
           "required": true,
           "description": "How many minutes it stays open, 1 to 60."
         },
         {
           "field": "operation_id",
-          "type": "string",
+          "type": "uuid",
           "required": true,
           "description": "Stable UUID for this poll; keep it when you retry. A 200 means the first poll was started."
         }

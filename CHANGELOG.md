@@ -4928,3 +4928,13 @@ An adversarial review of the two commits above found five things, all fixed here
   request). `skills/regent-workflow/SKILL.md` and `skills/ash-webmcp/SKILL.md` say so.
 - `docs/agent-parity.md` gains a Connector column. The connector's identity tools move
   there from the MCP column, and two rows with a missing surface but no gap now name G5.
+
+## 2026-10-29 — Typed command input
+
+- `cli/commands.json` describes every `operation_id` an agent pipes (rooms post, notes
+  create, notes pin, dms send, polls start and chat send) and chat send's `conversation_id`
+  as `uuid`, and a poll's `minutes` as a whole number from 1 to 60. regents-cli 1.10.21
+  refuses a value that breaks them before anything is signed or sent; the site's own checks
+  are unchanged. `make check-cli` needs `REGENTS_CLI_REV` at 1.10.21 or later to read them.
+- `docs/regents-cli-plan.md`, the September plan for the old npm command line, is now a
+  pointer to `cli/README.md` and `cli/COMMANDS.md`.
