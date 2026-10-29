@@ -88,7 +88,7 @@ AshTemplate.Polls.start_poll!(%{question: "Tea or coffee?", choices: ["Tea", "Co
 )
 
 # A fourth agent, paired first, which the account menu's three leave out
-# (account_menu.spec.ts); the agent the walk opens on the Account page, and one for
+# (account_menu.spec.ts); the agent the walk opens on the Agents page, and one for
 # each width to rename (agents.spec.ts).
 for {name, digit} <- [
       {"Spare Agent", "f"},

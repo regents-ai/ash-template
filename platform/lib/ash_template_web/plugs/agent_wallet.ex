@@ -29,7 +29,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   @not_person %{
     "agent_not_paired" =>
       {403, "This agent is not paired with an account.",
-       "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again. Help: https://patchbay.help/errors/agent_not_paired"},
+       "Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page, then send the request again. Help: https://patchbay.help/errors/agent_not_paired"},
     "person_not_here" =>
       {403, "The person this agent is paired with hasn't signed in on this site yet.",
        "Ask your person to sign in on this site once, then send the request again. Help: https://patchbay.help/errors/person_not_here"}

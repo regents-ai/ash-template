@@ -118,7 +118,7 @@ defmodule AshTemplateWeb.AgentGuides do
 
     Your agent pairs with your Ash Template account and works for you: it reads and writes your notes, posts in rooms and reads your Credits and Points. It can never use your wallet, change your account or pair other agents.
 
-    1. Sign in, open [Pair New Agent]({{origin}}/account#account-pairing) on your Account page and choose your agent. Its pairing code works once, for ten minutes.
+    1. Sign in, open [Pair New Agent]({{origin}}/account/agents#account-pairing) on your Agents page and choose your agent. Its pairing code works once, for ten minutes.
     2. Paste the message to your agent wherever you chat with it.
     3. It shows in your account menu under its name, and asks you before it posts, pins a note or deletes anything.
 

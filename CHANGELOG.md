@@ -5382,3 +5382,23 @@ way, and the library's own site-tool serving is gone.
   (docs.fly.io/mpg/client-configuration). Both now say so. The skill also says Fly's
   dashboard changes only the pool mode, and that the pooler keeps at least 5 connections
   per login, apparently on each of two processes. No behaviour change.
+
+## 2026-10-29 — Agents get their own tab
+
+- The account's agents and Pair New Agent move from `/account` to their own page,
+  `/account/agents`, the tab after Account (route `:account_agents`,
+  `AccountLive.agents/1`, laid out by design-system `Regent.Account.agents_layout`,
+  design-system `30b0cb18`). `/account` keeps the account card, Credits and the public
+  name. The account menu's Manage opens `/account/agents`, its Pair New Agent and the
+  agent guides' links open `/account/agents#account-pairing`, and the overview's Agents
+  card opens the new page.
+- New `AshTemplateWeb.AccountSite`: this site's own part beside each agent in the list
+  and under the pairing box once an agent pairs. The template has none; a site with its
+  own, such as Keyfleet's Keys, keeps it in its copy of this module, and the agents list
+  rereads it on `site_changed: true`.
+- Every hint, guide, tool description and command-line description that sent a person to
+  Pair New Agent "on their Account page" now says "on their Agents page" (OpenAPI,
+  capabilities, agent guides, `/llms.txt`, `/agents.md`, `/docs`, `cli/commands.json`).
+  The connected identity's `account_url` still opens `/account`; its description now
+  says the Agents tab is there. Browser walks open `/account/agents` for the agents and
+  pairing, and `pages.json` lists the new page.

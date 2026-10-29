@@ -3,7 +3,7 @@ import {expect, test} from "./support/test"
 import {ready, resting, signedIn, watch} from "./support/person"
 
 // The walk's person has three agents, paired by sign_in.exs. Walk Agent's window, opened from
-// the Account page, says who it is and shows its short address, which opens the
+// the Agents page, says who it is and shows its short address, which opens the
 // full address on a press, gives the press back to the address when Escape closes
 // it, and copies the full address from its icon. On the touch phone each of the
 // address's two targets is at least 44 pixels tall once the window rests.
@@ -14,7 +14,7 @@ const wallet = `0x${"c".repeat(40)}`
 test("an agent's window opens its full address and copies it", async ({page, hasTouch}) => {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
   const problems = watch(page)
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
   await press(page.getByRole("button", {name: "See Walk Agent’s actions"}))
 
@@ -47,10 +47,10 @@ test("an agent's window opens its full address and copies it", async ({page, has
 // wallet, so two agents with one name read alike. Each row names its own wallet beside
 // the name: its short form opens the full address on a press and its icon copies it,
 // and the row still fits on one line at both widths, beside an 80-letter name's page.
-test("each agent on the Account page names its own wallet", async ({page, hasTouch}) => {
+test("each agent on the Agents page names its own wallet", async ({page, hasTouch}) => {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
   const problems = watch(page)
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
 
   const list = page.locator("#account-agents")
@@ -87,7 +87,7 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   const problems = watch(page)
   const agent = testInfo.project.name === "phone" ? "Phone Agent" : "Desktop Agent"
   const renamed = `Ada 👩\u200D💻 ${testInfo.project.name}`
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
   await press(page.getByRole("button", {name: `See ${agent}’s actions`}))
 

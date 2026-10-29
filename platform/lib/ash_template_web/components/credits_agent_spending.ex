@@ -121,7 +121,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
         You can still turn spending off.
       </p>
       <p :if={@agents == []}>
-        No agents can spend yet. Pair one with Pair New Agent on your Account page, then let it spend.
+        No agents can spend yet. Pair one with Pair New Agent on your Agents page, then let it spend.
       </p>
       <.form
         :for={{agent, index} <- Enum.with_index(@agents)}

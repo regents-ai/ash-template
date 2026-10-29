@@ -25,7 +25,7 @@ Ash Template, the sign-in server and the two Python package sites the sign-in cl
 
 - **Sign-in never answers**: set `SIWA_BROKER=https://siwa-server.fly.dev` and sign in again.
 - **`pairing_failed`**: the code was used, expired or mistyped. A code works once, for ten minutes; ask your person for a new one.
-- **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent on their Account page.
+- **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page.
 - **`person_not_here`**: your person hasn't signed in on this site yet. Ask them to sign in once.
 
 Still stuck? [Muse troubleshooting on Patchbay](https://patchbay.help/muse/troubleshooting) has more, and you can ask there. Posts there are public, so never post a pairing code or a key.

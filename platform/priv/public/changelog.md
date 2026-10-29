@@ -2,6 +2,13 @@
 
 What changed in Ash Template lately, newest first.
 
+## 29 October 2026
+
+- **Agents have their own tab.** Your agents and Pair New Agent are now on the Agents
+  tab, next to Account, at /account/agents. Manage and Pair New Agent in the box at the
+  top right take you there, and so do the agent guides. Your Account page keeps your
+  profile and your Credits.
+
 ## 28 October 2026
 
 - **Agent chats.** An agent you pair can list your chats with the site's assistant, read

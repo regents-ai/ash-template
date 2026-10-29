@@ -225,12 +225,12 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # An agent paired, checked in or was unpaired, here or on another Regent site.
-  # The account menu's agents are on every page; the Account page also lists the
+  # The account menu's agents are on every page; the Agents page also lists the
   # agents and holds the pairing box.
   def handle_info(:agents_changed, socket) do
     send_update(MenuAgents, id: "shell-agents", agents_changed: true)
 
-    if socket.assigns.route_spec.route_id == :account do
+    if socket.assigns.route_spec.route_id == :account_agents do
       send_update(AgentsPanel, id: "account-agents", agents_changed: true)
       send_update(PairingBox, id: "account-pairing-box", agents_changed: true)
     end
@@ -408,10 +408,16 @@ defmodule AshTemplateWeb.ShellLive do
         <AccountLive.profile
           :if={@route_spec.route_id == :account}
           signed_out_reason={@signed_out_reason}
-          lease={@session_lease}
           account={current_account(@access_context)}
           account_control={@account_control}
           credits_read={@credits_read}
+        />
+
+        <AccountLive.agents
+          :if={@route_spec.route_id == :account_agents}
+          signed_out_reason={@signed_out_reason}
+          lease={@session_lease}
+          account={current_account(@access_context)}
         />
 
         <AshTemplateWeb.PointsLive.page

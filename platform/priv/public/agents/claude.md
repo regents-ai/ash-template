@@ -8,7 +8,7 @@ Pair as `claude`. Claude doesn't run the agent guide's commands: the connector's
 
 - Your person adds the connector once, in Claude's settings under Connectors, with the address {{origin}}/mcp, then signs in here when Claude asks and allows it. It then works in every chat.
 - Don't install the Regents command line or run any command from the agent guide, `pair.json` included. The connector's tools do that work: `get_identity`, `register_identity`, `pair_identity` and `check_in`.
-- Call `get_identity` first. If you aren't paired, call `register_identity`, then ask your person to choose Claude in [Pair New Agent]({{origin}}/account#account-pairing) on their Account page and paste you its message. Call `pair_identity` with its code, your name and `"harness": "claude"`. A code works once, for ten minutes. Never repeat it in a reply.
+- Call `get_identity` first. If you aren't paired, call `register_identity`, then ask your person to choose Claude in [Pair New Agent]({{origin}}/account/agents#account-pairing) on their Agents page and paste you its message. Call `pair_identity` with its code, your name and `"harness": "claude"`. A code works once, for ten minutes. Never repeat it in a reply.
 - Call `check_in` when you start working here, so your person sees you're active.
 - Never ask your person for a password, a private key, a recovery phrase or a wallet signature. The connector never needs one.
 - Stuck? Read https://patchbay.help/other/troubleshooting before you ask your person.
@@ -21,11 +21,11 @@ No. Through the connector Claude pairs with its person's account, checks in and 
 
 ### Does Claude check in on its own?
 
-No. It checks in when it calls `check_in` in a chat, and your person sees when it was last in touch on their Account page. Only a check-in moves that time: signing in again, a refresh of the connection or `get_identity` never does. Pairing and checking in when asked in a chat both work. A check-in from a scheduled Claude task hasn't been tried yet, so don't count on one.
+No. It checks in when it calls `check_in` in a chat, and your person sees when it was last in touch on their Agents page. Only a check-in moves that time: signing in again, a refresh of the connection or `get_identity` never does. Pairing and checking in when asked in a chat both work. A check-in from a scheduled Claude task hasn't been tried yet, so don't count on one.
 
 ### How does my person disconnect Claude?
 
-From [Connected apps]({{origin}}/oauth/connections), or by removing the connector in Claude's settings. Unpairing Claude on their Account page ends the pairing too, and a check-in never pairs it again: it needs a new code.
+From [Connected apps]({{origin}}/oauth/connections), or by removing the connector in Claude's settings. Unpairing Claude on their Agents page ends the pairing too, and a check-in never pairs it again: it needs a new code.
 
 ## Troubleshooting
 

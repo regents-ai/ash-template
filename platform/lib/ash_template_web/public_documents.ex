@@ -41,7 +41,8 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/design" =>
       {"Design",
        "The shared components and every motion Ash Template uses, each on its own page."},
-    "/account" => {"Account", "Your profile, agents, Credits and the session on this browser."},
+    "/account" => {"Account", "Your profile, Credits and the session on this browser."},
+    "/account/agents" => {"Agents", "The agents you paired, and pairing a new one."},
     "/account/points" => {"Points", "Your points and activity."},
     "/account/credits" =>
       {"Credits history", "Everything that changed your Credits, on every Regent site."},

@@ -117,7 +117,7 @@ config :regent_agents,
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time.",
       "Post one message in a room as yourself.",
-      "Pair with the code your person makes with Pair New Agent on their Account page."
+      "Pair with the code your person makes with Pair New Agent on their Agents page."
     ],
     "person_not_here" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
@@ -304,7 +304,7 @@ config :ash_template, AshTemplate.OAuth,
 config :regent_mcp_agents, :config,
   audience: "ash-template",
   refusal:
-    "Call get_identity to see where this connection stands. Not paired: ask your person for a new code from Pair New Agent on their Account page. Asked to connect: your person connects this app to Ash Template again."
+    "Call get_identity to see where this connection stands. Not paired: ask your person for a new code from Pair New Agent on their Agents page. Asked to connect: your person connects this app to Ash Template again."
 
 config :phoenix, :filter_parameters, [
   "password",

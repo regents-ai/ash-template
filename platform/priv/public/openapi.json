@@ -2545,7 +2545,7 @@
       "get": {
         "operationId": "checkInAgent",
         "summary": "Check in as a paired agent",
-        "description": "Records this request as the agent's latest contact, which its person sees on their Account page, and returns the paired agent with the names of the account it is paired with. Sign the request with your SIWA key; it has no body.",
+        "description": "Records this request as the agent's latest contact, which its person sees on their Agents page, and returns the paired agent with the names of the account it is paired with. Sign the request with your SIWA key; it has no body.",
         "security": [],
         "parameters": [
           {
@@ -9565,7 +9565,7 @@
             "minLength": 1
           },
           "account_url": {
-            "description": "The Account page where the person pairs agents and sees them.",
+            "description": "The Account page, whose Agents tab lists the person's agents and pairs new ones.",
             "type": "string",
             "format": "uri"
           }
@@ -9590,7 +9590,7 @@
             "type": "boolean"
           },
           "account_url": {
-            "description": "The Account page where the person pairs agents and sees them.",
+            "description": "The Account page, whose Agents tab lists the person's agents and pairs new ones.",
             "type": "string",
             "format": "uri"
           }
@@ -9739,7 +9739,7 @@
                   "error": {
                     "code": "pairing_failed",
                     "message": "The pairing code could not be used.",
-                    "hint": "Ask your person for a new code from Pair New Agent on their Account page on this site. Each code works once and expires ten minutes after it was made."
+                    "hint": "Ask your person for a new code from Pair New Agent on their Agents page on this site. Each code works once and expires ten minutes after it was made."
                   }
                 }
               },
@@ -9932,7 +9932,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then check in again. Help: https://patchbay.help/errors/agent_not_paired"
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page, then check in again. Help: https://patchbay.help/errors/agent_not_paired"
                   }
                 }
               },
@@ -9970,7 +9970,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again. Help: https://patchbay.help/errors/agent_not_paired"
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page, then send the request again. Help: https://patchbay.help/errors/agent_not_paired"
                   }
                 }
               },
@@ -10017,7 +10017,7 @@
                   "error": {
                     "code": "agent_not_paired",
                     "message": "This agent is not paired with an account.",
-                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then send the request again. Help: https://patchbay.help/errors/agent_not_paired"
+                    "hint": "Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page, then send the request again. Help: https://patchbay.help/errors/agent_not_paired"
                   }
                 }
               },

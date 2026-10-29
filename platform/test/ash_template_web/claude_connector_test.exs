@@ -265,7 +265,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert DateTime.after?(checked_in, paired_at)
     end
 
-    test "unpairing on the Account page holds: a check-in is refused and pairs nothing again" do
+    test "unpairing on the Agents page holds: a check-in is refused and pairs nothing again" do
       subject = "did:privy:connector-unpair"
       sign_in!(subject)
       %{access: token} = connect!(subject)

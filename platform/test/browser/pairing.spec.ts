@@ -2,8 +2,8 @@ import type {Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {ready, signedIn, watch} from "./support/person"
 
-// Pairing an agent, the way a person does it: from the Account page, the account
-// menu or the agent guide's link, to the Account page's pairing box, then choosing
+// Pairing an agent, the way a person does it: from the Agents page, the account
+// menu or the agent guide's link, to the Agents page's pairing box, then choosing
 // their agent.
 test.use(signedIn)
 
@@ -23,10 +23,10 @@ const pairButton = (page: Page) =>
 
 // Keyfleet, 27 Oct 2026: pressed a second time, after scrolling away from the
 // pairing box, Pair New Agent did nothing a person could see.
-test("Pair New Agent on the Account page moves to the pairing box, every press", async ({page}) => {
+test("Pair New Agent on the Agents page moves to the pairing box, every press", async ({page}) => {
   const problems = watch(page)
   await page.setViewportSize({width: page.viewportSize()!.width, height: 500})
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
   await pairButton(page).click()
   await expect(pairing(page)).toBeInViewport()
@@ -42,7 +42,7 @@ test("Pair New Agent on the Account page moves to the pairing box, every press",
 // once there is one.
 test("Pair New Agent gives focus to the chosen agent, or the first", async ({page}) => {
   const problems = watch(page)
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
   await pairButton(page).click()
   await expect(pairing(page).getByRole("radio").first()).toBeFocused()
@@ -59,17 +59,17 @@ test("Pair New Agent gives focus to the chosen agent, or the first", async ({pag
 test("the agent guide's link lands on the pairing box", async ({page}) => {
   const problems = watch(page)
   await page.setViewportSize({width: page.viewportSize()!.width, height: 500})
-  await page.goto("/account#account-pairing")
+  await page.goto("/account/agents#account-pairing")
   await ready(page)
   await expect(pairing(page)).toBeInViewport()
-  await expect(page.locator("#account-identity")).not.toBeInViewport()
+  await expect(page.locator("#account-agents-page h1")).not.toBeInViewport()
   await expect(pairing(page).getByRole("radio").first()).toBeFocused()
   await problems.expect()
 })
 
 test("each agent keeps its own code until a new one is asked for", async ({page}) => {
   const problems = watch(page)
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
   await expect(message(page)).toHaveCount(0)
 
@@ -104,7 +104,7 @@ test("the pairing form with nothing chosen leaves the box as it is", async ({pag
       if (String(frame.payload).includes('"phx_error"')) crashes.push(String(frame.payload).slice(0, 120))
     }),
   )
-  await page.goto("/account")
+  await page.goto("/account/agents")
   await ready(page)
   const form = page.locator("form#account-pairing-box")
   await expect(form.getByRole("radio", {checked: true})).toHaveCount(0)
