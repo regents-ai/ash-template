@@ -5151,3 +5151,16 @@ way, and the library's own site-tool serving is gone.
 - `postRoomMessage` lists `site_oauth` beside `siwa_request`; `Capabilities` lets an
   agent operation on hosted MCP name it, and the guide's proof words say so.
 - Protected (sign-in): ships on Sean's go naming the final commit.
+
+## 2026-10-29 — Hosted MCP: review fixes for a connected app's agent
+
+- `McpAgent` spends the account's budget before it reads the connection's identity,
+  so a call over the budget never reaches the sign-in service or signs the agent in.
+- An identity that can't be read is refused with 503 `identity_unavailable`, never
+  taken for an unpaired one; a database failure is logged as unexpected.
+- `HostedAddress` keeps a failed read for a minute, so while the sign-in service is
+  down each account asks it at most once a minute.
+- The consent note says every app the person connects works as the same paired agent;
+  the proof words say a connected app posts once paired.
+- The compile-link budget in `mix precommit` is 43: the identity tools' policy check
+  module (`Agents.Connection.Caller`) is one more compile-time link.

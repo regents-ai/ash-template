@@ -369,7 +369,7 @@ defmodule AshTemplateWeb.Capabilities do
 
   defp proof_words(%{fresh_proof: true, auth_modes: modes}) do
     if "site_oauth" in modes,
-      do: "A new signature on every request, or at MCP its person's connected app",
+      do: "A new signature on every request, or at MCP its person's connected app, once paired",
       else: "A new signature on every request"
   end
 
