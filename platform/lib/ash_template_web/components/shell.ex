@@ -30,14 +30,14 @@ defmodule AshTemplateWeb.Components.Shell do
   @footer_links [
     {"Help", "/docs"},
     {"API", "/openapi.json"},
-    {"What's new", "/changelog"},
+    {"Changelog", "/changelog"},
     {"For agents", "/llms.txt"},
     {"Privacy", "/privacy"},
     {"Terms", "/terms"}
   ]
 
   # The Regents Products, each shown with the crown in its own pair of brand colours,
-  # and what Regents Credits buy there (the Credits panel's "Where to spend").
+  # and what Regents Credits buy there (the Credits panel's "Spending").
   @nothing_yet "Nothing to spend on yet."
   @regents_apps [
     %{

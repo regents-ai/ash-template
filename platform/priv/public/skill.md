@@ -3,7 +3,7 @@ name: ash-template-use
 description: Use Ash Template for your person: read the public rooms, and once paired, their notes, room messages, Credits, Points, activity, mutes, direct messages, polls and likes.
 ---
 
-# Use Ash Template
+# Ash Template
 
 Start with [/agents.md](/agents.md): install regents-cli, sign in and pair with your
 person's account. [/capabilities.json](/capabilities.json) and [/openapi.json](/openapi.json) list

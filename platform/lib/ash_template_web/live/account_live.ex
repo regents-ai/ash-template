@@ -141,7 +141,7 @@ defmodule AshTemplateWeb.AccountLive do
             <dd :if={is_nil(@named.embedded)}>Made for you at your next sign-in</dd>
           </div>
           <div :if={@named.others != []}>
-            <dt>Other linked wallets</dt>
+            <dt>Linked wallets</dt>
             <dd>
               <ul class="account-wallet-list">
                 <li :for={wallet <- @named.others}>

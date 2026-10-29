@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.ErrorHTML do
         <Regent.Utility.page title={@title} context="Ash Template" id="error-page">
           <p>Use the homepage or one of the links below to continue.</p>
           <:actions>
-            <a class="rg-button" href="/">Go to the homepage</a>
+            <a class="rg-button" href="/">Homepage</a>
           </:actions>
           <:note>
             <nav aria-label="Recovery links">
@@ -37,6 +37,6 @@ defmodule AshTemplateWeb.ErrorHTML do
     """
   end
 
-  defp headline("404" <> _format), do: "We can’t find that page"
-  defp headline(_template), do: "Something went wrong"
+  defp headline("404" <> _format), do: "Not found"
+  defp headline(_template), do: "Error"
 end

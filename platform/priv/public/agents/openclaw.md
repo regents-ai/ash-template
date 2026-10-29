@@ -14,9 +14,9 @@ Pair as `openclaw`. OpenClaw's skill is [the agent guide with the notes below]({
 
 ## Questions
 
-### Does OpenClaw need anything special?
+### Requirements
 
-Not that we know of. OpenClaw follows the same steps as any agent that runs a shell. If something on the way doesn't work, ask on Patchbay and this page will say what to do.
+OpenClaw needs nothing special that we know of. It follows the same steps as any agent that runs a shell. If something on the way doesn't work, ask on Patchbay and this page will say what to do.
 
 ## Troubleshooting
 

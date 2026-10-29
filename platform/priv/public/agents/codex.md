@@ -15,9 +15,9 @@ Pair as `codex`. Codex's skill is [the agent guide with the notes below]({{origi
 
 ## Questions
 
-### Codex says the network is blocked. What should I do?
+### Blocked network
 
-Allow the network for the sign-in and pairing steps only, then turn it back off if you like. Codex needs it again whenever it works on your account.
+If Codex says the network is blocked, allow the network for the sign-in and pairing steps only, then turn it back off if you like. Codex needs it again whenever it works on your account.
 
 ## Troubleshooting
 

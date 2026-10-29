@@ -5383,6 +5383,142 @@ way, and the library's own site-tool serving is gone.
   dashboard changes only the pool mode, and that the pooler keeps at least 5 connections
   per login, apparently on each of two processes. No behaviour change.
 
+## 2026-10-29 — Short titles and blog tables on phones (design-system a5fe5c4)
+
+- Every title on screen is one or two words, and none opens with who, what, where, why,
+  when, which or how: page titles, headings, labels, buttons, links, tips and the bold
+  leads in the served Markdown. Copy only; no address, route, tool name or id changed.
+  Among them: Bring your agent → Pair agent, Connect your agent → Connect agent, What's
+  new → Changelog, Header and footer → Navigation, We can't find that page → Not found,
+  Not open yet → Coming soon, Go to the homepage → Homepage, Where to spend Credits →
+  Spending, and the footer's Agent guide links Setup steps and Site summary. Every row of
+  the Template table in `skills/regent-workflow/references/short-titles.md` is now done.
+- The public changelog page (`platform/priv/public/changelog.md`) is on screen, so its
+  past bold leads were shortened too, with the body of each entry carrying what the old
+  lead said. Entries in this file are a record and were not changed.
+- `scripts/readiness.sh` looks for the docs page's "Versioning" heading, and the route
+  catalog handoff (`platform/priv/handoff/route-catalog.json`) is regenerated.
+- design-system moves from 3134bab0 to a5fe5c4: at 40rem wide or less an article table's
+  cells drop their 10rem minimum and their padding goes to 10px 12px, so a two-column
+  table fits a 320px phone without splitting a word; desktop is unchanged. The pin also
+  brings a0affdc (an address's copy icon and arrow stay on one line) and 84642bc (a
+  discussion post's wallet author shows as an address with its copy icon).
+- Checks: server tests 137 passed (11 properties); script tests 24 passed; the browser walk
+  at 1280 and 390 in headless Chromium 322 passed, 5 skipped, 1 timeout under a machine
+  load near 100 (a harbour page's address after Escape), and harbour plus windows run
+  alone 42 passed, 2 skipped (WebKit is not run on the Mac); required fixes and the CLI
+  command check pass. `make check-siwa-latest` fails on main as it does here: elixir-utils
+  094ebe8 (the site verify key merge, 20:45Z) is newer than the pin, and moving it belongs
+  to the site verify keys release.
+
+## 2026-10-29 — Released v137
+
+- template.regents.sh v137 runs `b90e680c` (short titles, and design-system a5fe5c4 for
+  article tables on phones), released 21:19Z under the shared release lock on one machine,
+  as before. No migration.
+- Live check in headless Chromium: `/capabilities.json` build.commit `b90e680c`, `/healthz`
+  ok; home, pair, changelog, agents, showcase, USDC payments, Privy sign-in, discussion,
+  navigation and activity answer 200 at 320, 390 and 1280 in light and dark, each tab
+  title matching its heading, no page errors and nothing wider than the screen; an unknown
+  page answers 404 "Not found" with a Homepage button. The showcase's article table at
+  320: cells 10px 12px with no minimum width, no word split across lines, the page never
+  scrolls sideways and the three-column sample scrolls inside its own box; at 1280 it is
+  unchanged (12px 16px, 10rem minimum). Rollback: v136, `5bf7cd58`.
+
+## 2026-10-29 — Fixed labels put back: Regents embedded wallet, Pair New Agent
+
+- The short-titles change above renamed two labels that are fixed by name; `0cb98339`
+  puts them back. Account › Wallets names the wallet Privy makes "Regents embedded
+  wallet" again (it read "Regents wallet"), beside "User wallet" for people who signed
+  in with their own wallet. The pair page's title, its link label in the public pages,
+  the route catalog handoff (`platform/priv/handoff/route-catalog.json`, regenerated),
+  `llms.md`, the public changelog and the short-titles table say "Pair New Agent" (they
+  read "Pair agent"). "User wallet", "Public Display Name", "Sign in" and "Credits" were
+  never changed. So where the entry above says "Bring your agent → Pair agent", the
+  label is now Pair New Agent.
+- Checks: server tests 137 passed (11 properties), with
+  `platform/test/ash_template_web/sign_in_wallets_test.exs` reading the "Regents embedded
+  wallet" row; the browser walk on the account, pair, pairing, public name, addresses,
+  agents, layout, credits and pages walks in headless Chromium at 1280 and 390: 241
+  passed, 3 skipped (WebKit is not run on the Mac).
+
+## 2026-10-29 — Live checks run the way an agent does, and a steadier walk
+
+- `SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make
+  live-check` checks template.regents.sh the way a paired agent does
+  (`scripts/live-check.sh`): `regents ash-template doctor` and `agents whoami` as that
+  agent, then, in headless Chromium at 1280 and 390 wide (`platform/playwright.live.config.ts`,
+  `platform/test/live`), the health page, the live commit from `/capabilities.json`,
+  every public page and document in the walk's page map, and every read-only WebMCP tool
+  the home page offers that takes no input, the signed ones signed with the agent's own
+  key. The signer signs only the one request this checkout's manifest names for the tool
+  being called, from the page's own frame, and the live page must run this checkout's
+  commit and offer exactly its reads. It writes only the agent's own row on the site, when the agent was
+  last seen (added the first time), and the check's pages send Global Privacy Control,
+  so they start no visit. Pages that answer only on a developer's machine (the
+  wallet and Credits labs) are marked `local_only` in `platform/test/browser/pages.json`
+  and left out.
+- `skills/regent-workflow` gains "Live checks", signed off by Sean at 15:41Z on 28 Oct:
+  a live site is checked through the CLI as a paired agent and through WebMCP in headless
+  Chromium, never with raw `curl`, and every report names the surface, the agent, the
+  live commit and the result.
+- `.claude/settings.json` is committed so those checks never prompt: the
+  `regents ash-template` read commands, `make check` and its parts, `make live-check`,
+  `mix test`, `mix format`, `mix compile` and the headless Chromium walk. Deploys
+  (`scripts/deploy.sh`, `make release`), every `fly` command, release functions,
+  sign-in (`regents auth`), every CLI command that writes, any CLI command given another
+  `--base-url` (its signed request could be replayed at this site) and every SIWA client
+  command still ask: no pattern can hold the SIWA client's arguments to reads. `.env`
+  files and the agent's key folder are never read.
+- The live check's first run found that the page's `polls_list`, `polls_show` and
+  `agents_get` tools answered "The site could not be reached" without sending anything:
+  the page kept its own list of public read addresses, and those three were missing from
+  it. `public_tools.ts` now asks each public read at the route its manifest entry names,
+  and the list is gone. The live check calls `polls_list`; the other two take input.
+  A public read now refuses an empty, "." or ".." name in its address, as the signed
+  tools do, and text that has no address form.
+- The browser walk's server runs without the code reloader and live reload, as a release
+  does, and builds into its own folder, `platform/_build/walk`, so the everyday
+  development build is left as it is. The code reloader checks the build on every
+  request and every live connection, one at a time. In one paired run on a busy Mac
+  (load average about 100 to 205), with it on, a walk page took 0.5 to 12 seconds to answer,
+  29 of 37 live connections gave up their socket for long polling after 2.5 seconds, and
+  connecting took 3 to 28 seconds, past the checks' 5-second wait; with it off, pages
+  answered in 4 to 35 milliseconds and all 40 connected on their socket in 0.1 to 0.35
+  seconds.
+- `motion.spec.ts`'s settle check no longer races the lab's note timer. The server takes
+  a note away 3.2 seconds after sending it, and the check looked at the note from outside
+  the page, so on a busy machine it could look after the note had gone. The page now
+  records, frame by frame, each item and note that moved and then came to rest while
+  shown; the check reads that record, and the new item must still be at rest at the end.
+- The copy checks (`agents.spec.ts`, `addresses.spec.ts`, `agent_tools.spec.ts`) no
+  longer race the copy button's answer, which shows for 1.6 seconds: the page records
+  each answer a copy button shows, with the words on the button and in its status at
+  that moment (`test/browser/support/copies.ts`), and each check reads the button's
+  record before it reads the clipboard.
+- Each browser walk check reaches the walk's server as its own visitor. The server limits
+  each address to 120 API reads a minute, and the whole walk came from one address, so 20
+  repeats of the tools window (six reads each opening) were refused with "429 Too Many
+  Requests" and its copy-all button never woke. In the walk only (`config/dev.exs`), the
+  server keys its limits by `Fly-Client-IP`, as production does behind Fly's proxy, and
+  each check sends its own address from 198.18.0.0/15 (`test/browser/support/test.ts`).
+  Production's rule and limits are unchanged.
+- Basis: Sean, 29 Oct 20:49Z, "be on all of that work ... drive the work, complete it,
+  dont ask me questions".
+
+## 2026-10-29 — Released v138
+
+- template.regents.sh v138 runs `14120655` (v137 plus the fixed labels put back),
+  released 23:15Z under the shared release lock on one machine, as before; it waited its
+  turn behind a Patchbay release. No migration.
+- Live check in headless Chromium: `/capabilities.json` build.commit `14120655`,
+  `/healthz` ok. At 320 and 1280, light and dark: `/pair` is titled and headed "Pair New
+  Agent"; Account › Wallets, Account and Changelog answer 200 with no page errors and
+  nothing wider than the screen; `/llms.txt` says "Pair New Agent" six times and "Pair
+  agent" nowhere. Signed out, Account › Wallets asks you to sign in, so its "User wallet"
+  and "Regents embedded wallet" rows are proven by the server tests and the browser walk's
+  signed-in person, not live. Rollback: v137, `b90e680c`.
+
 ## 2026-10-29 — Agents get their own tab
 
 - The account's agents and Pair New Agent move from `/account` to their own page,

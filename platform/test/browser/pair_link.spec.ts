@@ -2,7 +2,7 @@ import type {Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {ready, signedIn, watch} from "./support/person"
 
-// A "Bring your agent" link (/pair?to=<page>): the person pairs their agent there,
+// A "Pair New Agent" link (/pair?to=<page>): the person pairs their agent there,
 // and the message they paste sends the agent to that page once it is paired. A
 // link to anywhere but a page on this site opens plain pairing.
 

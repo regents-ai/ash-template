@@ -6,6 +6,6 @@ Regent's sites are built from Ash Template, and these are the guides its builder
 
 Start with ash-stack: it says which of the others a task needs. Each skill links to its own reference pages.
 
-## For agents
+## Agents
 
 An agent can fetch every skill at once from the [skills index]({{origin}}/.well-known/agent-skills/index.json), which lists each one as a single download with a fingerprint to check it against. The [build guide for agents]({{origin}}/build/skill.md) explains how.

@@ -147,7 +147,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
         <P.field
           :let={field}
           id={"#{@id}-#{index}-max"}
-          label="Most per spend, in Credits"
+          label="Spend limit (Credits)"
           errors={FormErrors.messages(@forms[agent][:max_per_spend])}
         >
           <input
@@ -164,7 +164,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
         <P.field
           :let={field}
           id={"#{@id}-#{index}-daily"}
-          label="Daily limit, in Credits"
+          label="Daily limit (Credits)"
           errors={FormErrors.messages(@forms[agent][:daily_limit])}
         >
           <input
@@ -180,7 +180,7 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
           <:hint>Bids still held count until they come back.</:hint>
         </P.field>
         <fieldset>
-          <legend>Sites it may spend on</legend>
+          <legend>Sites</legend>
           <label :for={{site, label} <- @sites}>
             <input
               type="checkbox"

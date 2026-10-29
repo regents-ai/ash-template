@@ -103,7 +103,7 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
 
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="figures-head-heading">
-          <h2 id="figures-head-heading">Base's newest block</h2>
+          <h2 id="figures-head-heading">Latest block</h2>
           <p id="figures-head" class="payments-figure">
             <span id="figures-head-block">{@head.block || "No reading yet"}</span>
             <P.status :if={!@head.behind?} tone="success">Live</P.status>
@@ -136,7 +136,7 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="figures-rules-heading">
-          <h2 id="figures-rules-heading">What stays yours</h2>
+          <h2 id="figures-rules-heading">Ownership</h2>
           <p>
             Anything that differs from person to person, like your balance or what you may see, is
             still read for you alone.

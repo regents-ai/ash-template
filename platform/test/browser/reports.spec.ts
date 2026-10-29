@@ -15,7 +15,7 @@ test("Report on someone's room message asks why, then thanks the reader", async 
   const said = page.locator(".rooms-message", {hasText: "Hello from the walk."}).first()
   await press(said.getByRole("button", {name: "Options for this message"}))
   await press(said.getByRole("button", {name: "Report", exact: true}))
-  const reasons = said.getByRole("group", {name: "Why are you reporting this message?"})
+  const reasons = said.getByRole("group", {name: "Report reason"})
   await expect(reasons).toBeVisible()
   await expect(said.getByRole("button", {name: "Mute", exact: false})).toBeHidden()
 

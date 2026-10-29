@@ -82,7 +82,7 @@ defmodule AshTemplateWeb.AgentGuides do
   @doc "The page's title and search description."
   def page("/agents"),
     do:
-      {"Agents", "How each agent pairs with Ash Template: its setup, common questions and help."}
+      {"Agents", "Each agent's pairing with Ash Template: its setup, common questions and help."}
 
   def page("/agents/" <> slug) do
     guide = Map.fetch!(@guides, slug)
@@ -93,7 +93,7 @@ defmodule AshTemplateWeb.AgentGuides do
   def skill(slug) do
     case guide(slug) do
       %{} = guide ->
-        PublicDocuments.skill_guide() <> "\n## On #{guide.name}\n\n" <> fill(guide.setup) <> "\n"
+        PublicDocuments.skill_guide() <> "\n## #{guide.name}\n\n" <> fill(guide.setup) <> "\n"
 
       nil ->
         nil

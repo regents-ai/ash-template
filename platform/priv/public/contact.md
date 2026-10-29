@@ -1,4 +1,4 @@
-# Contact Ash Template
+# Contact
 
 Use the channel that matches your question.
 

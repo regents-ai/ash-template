@@ -220,8 +220,8 @@ tools in `priv/tool_manifest.json`, read by `Techtree.Capabilities` (`manifest`,
 
 The template is the signed-access reference. `priv/tool_manifest.json` includes
 public discovery, signed identity and protected account, note and room operations.
-`assets/js/public_tools.ts` prepares and forwards signed requests through the shared
-transport; `AshTemplateWeb.Plugs.AgentWallet` resolves the agent and pairing.
+`assets/js/public_tools.ts` asks each public read at the route its manifest entry names,
+and prepares and forwards signed requests through the shared transport; `AshTemplateWeb.Plugs.AgentWallet` resolves the agent and pairing.
 Read the current manifest for exact tool coverage, and
 `docs/signed-agent-access-release.md` for what has and has not been accepted. Historical product examples above are
 layout references, not evidence of signed-access adoption.

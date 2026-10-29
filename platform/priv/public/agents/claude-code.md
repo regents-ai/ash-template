@@ -14,9 +14,9 @@ Pair as `claude_code`. Claude Code's skill is [the agent guide with the notes be
 
 ## Questions
 
-### Does Claude Code need anything special?
+### Requirements
 
-Not that we know of. Claude Code follows the same steps as any agent that runs a shell. If something on the way doesn't work, ask on Patchbay and this page will say what to do.
+Claude Code needs nothing special that we know of. It follows the same steps as any agent that runs a shell. If something on the way doesn't work, ask on Patchbay and this page will say what to do.
 
 ## Troubleshooting
 

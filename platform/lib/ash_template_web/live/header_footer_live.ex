@@ -29,11 +29,9 @@ defmodule AshTemplateWeb.HeaderFooterLive do
       <main id="header-footer-lab" class="motion-lab">
         <header class="motion-lab__head">
           <p class="motion-lab__kicker">
-            <a href={~p"/"}>Ash Template</a>
-            / <a href={~p"/animations"}>Motion lab</a>
-            / Header and footer
+            <a href={~p"/"}>Ash Template</a> / <a href={~p"/animations"}>Motion lab</a> / Navigation
           </p>
-          <h1>Header and footer</h1>
+          <h1>Navigation</h1>
           <p class="motion-lab__lede">
             Rest on Products, or tap it. The footer keeps to the foot of the screen.
           </p>

@@ -19,7 +19,9 @@ nothing else on the machine is using, on a database made for that run and named 
 the port, which it drops when it ends, whatever happens, even when its server never
 starts (`platform/test/browser/walk.sh`, `platform/test/browser/support/drop.exs`), so
 two walks at once never reach each other's server or data. It builds the pages' scripts and styles before its server
-starts, and the server watches no files, so no page reloads under a check. Before
+starts, and the server sends no reloads, so no page reloads under a check. Its server
+runs without the code reloader, as a release does, built into its own folder
+(`platform/_build/walk`), so a busy machine slows its pages less. Before
 the first check it opens one signed-in page once, so no check meets a cold server
 (`platform/test/browser/support/warm_up.ts`).
 
@@ -157,6 +159,20 @@ on a first request with no credential, so `/mcp` serves no anonymous call.
 | A check-in from a scheduled Claude task | gap: not tried |
 | Claude is offered in the pairing box and accepted by the pair request only while the switch is on; with it off an agent's sign-in and pairing work as before | `platform/test/ash_template_web/claude_connector_test.exs` (off: no Claude in the box, a signed Claude pairing refused, a Codex pairing accepted); elixir-utils `ash_components/agents/test/regent_agents/hosted_pairing_test.exs`; gap: the box is not drawn with the switch on |
 
+## Live site
+
+`SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check`
+checks template.regents.sh the way a paired agent does (skills/regent-workflow, "Live
+checks"): through the CLI, then in headless Chromium at 1280 and 390 wide. It writes only
+the agent's own row on the site: when the agent was last seen, added the first time.
+
+| What | Check |
+| --- | --- |
+| The live site and its public reads answer, the agent's sign-in holds and the agent is paired | `scripts/live-check.sh`: `regents ash-template doctor`, then `agents whoami` |
+| The live site answers its health page and runs this checkout's commit | `platform/test/live/live.spec.ts` |
+| Every public page opens on the live site with no error, no failing request to the site and nothing wider than the screen, and every document answers with its type; the labs that answer only on a developer's machine are left out | same, over `platform/test/browser/pages.json` |
+| Every read-only WebMCP tool that takes no input answers on the live site, the signed ones signed with the agent's own key, and the agent reads as paired | same |
+
 ## Visit lines
 
 | What | Check |
@@ -189,8 +205,10 @@ on a first request with no credential, so `/mcp` serves no anonymous call.
   wallet note's.
 - Wallet buttons and paying with USDC: only the showcase pages open; no chain is
   attached to the walk.
-- Each WebMCP tool beyond `rooms_post`: built by `mix regent_agent_access.assets` and
-  listed by `platform/test/browser/page_tools.spec.ts`, not called by a check.
+- Each WebMCP tool beyond `rooms_post` in the walk: built by `mix regent_agent_access.assets`
+  and listed by `platform/test/browser/page_tools.spec.ts`. The live check calls every
+  read-only tool that takes no input on the live site; the reads that take an input and
+  every write are not called by a check.
 - The Credits panel's Held label and its link to the Credits history, the refund
   note on the Credits history, the header's figure staying while the balance is read
   again, and the Points page's bonus words while earning is off: opened by the walk,

@@ -96,14 +96,14 @@ defmodule AshTemplateWeb.SwarmCityLive do
 
   # What each district's own page says about it.
   defp about("inn"),
-    do: "Where agents chat. An agent circles the inn's tower while its last action is a chat."
+    do: "Agents chat here. An agent circles the inn's tower while its last action is a chat."
 
   defp about("forge"),
-    do: "Where agents work. An agent circles the forge's stacks while its last action is work."
+    do: "Agents work here. An agent circles the forge's stacks while its last action is work."
 
   defp about("castle"),
     do:
-      "Where agents make proposals. An agent circles the castle's spire while its last action is a proposal."
+      "Agents make proposals here. An agent circles the castle's spire while its last action is a proposal."
 
   # One agent, chosen at random, does something at a different place.
   @impl true
@@ -199,7 +199,7 @@ defmodule AshTemplateWeb.SwarmCityLive do
             <span>{place.action}</span>
           </li>
         </ul>
-        <ul class="harbour__crew" aria-label="Where each agent is" style={"--rows: #{length(@crew)}"}>
+        <ul class="harbour__crew" aria-label="Agent positions" style={"--rows: #{length(@crew)}"}>
           <li
             :for={{agent, row} <- Enum.with_index(@crew, 1)}
             style={"--sail: #{agent.color}; grid-area: #{row} / #{SampleCrew.column(agent.place)}"}

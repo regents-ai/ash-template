@@ -1,3 +1,4 @@
+import {copiesShown, recordCopies} from "./support/copies"
 import {expect, test} from "./support/test"
 
 // The walk's server answers every site's tools from the fixed lists in
@@ -20,6 +21,7 @@ test("the tools window copies every site's tools", async ({page}) => {
     await open
     socket.connectToServer()
   })
+  await recordCopies(page)
   await page.goto("/")
 
   await page.locator("#home-agent-tools-button").click()
@@ -34,15 +36,14 @@ test("the tools window copies every site's tools", async ({page}) => {
   await expect(dialog.locator("[data-agent-tools-note]")).toHaveText("11 tools from 5 sites")
 
   await copyAll.click()
-  // The button answers "Copied" in place of its words.
-  await expect(copyAll).toHaveAccessibleName("Copied")
+  await expect.poll(() => copiesShown(copyAll)).toEqual([{answer: "copied", shown: "Copied", said: "Copied"}])
   const text = await page.evaluate(() => navigator.clipboard.readText())
   expect(text.startsWith("# WebMCP tools on every Regent site\n\n## regents.sh\n\n2 WebMCP tools\n")).toBe(true)
   const headings = [...text.matchAll(/^## (.+)$/gm)].map(match => match[1])
   expect(headings).toEqual([...sites, "siwa-server"])
   for (const site of sites) expect(text).toContain(`\`browse_${site.replace(".", "_")}\``)
   expect(text).toContain("`post_patchbay_help`")
-  expect(text).toContain("### Get the client")
+  expect(text).toContain("### Install")
 
   // The copy of the window's own list stays beside it.
   await expect(dialog.getByRole("button", {name: "Copy as Markdown"})).toBeVisible()

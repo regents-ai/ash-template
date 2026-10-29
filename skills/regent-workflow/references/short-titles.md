@@ -100,7 +100,7 @@ at the end of the matching table.
 | Cash out to a bank | Cash out | `funds_showcase_live.ex` |
 | What you're paying for | Order | `payments_showcase_live.ex` |
 | What you might see next | Statuses | `payments_showcase_live.ex` |
-| Your USDC Balance | USDC balance | `payments_showcase_live.ex` |
+| Your USDC Balance | USDC Balance | `payments_showcase_live.ex` |
 | What stays yours | Ownership | `figures_showcase_live.ex` |
 | Base's newest block | Latest block | `figures_showcase_live.ex` |
 | Set up your own copy | Setup | `privy_showcase_live.ex` |
@@ -109,3 +109,16 @@ at the end of the matching table.
 | A number that turns over | Counter | `animations_live.ex` |
 | A list that rearranges | Reorder | `animations_live.ex` |
 | Too many pages open from this connection | Limit reached | `too_many_pages_controller.ex` |
+| Bring your agent | Pair New Agent | `pair_live.ex`, `route_catalog.ex` |
+| Connect your agent | Connect agent | `route_catalog.ex` |
+| What's new | Changelog | `information_navigation.ex`, `shell.ex` |
+| Header and footer | Navigation | `header_footer_live.ex` |
+| What agents can do here | Setup steps | `layouts.ex` footer link |
+| The whole site in brief | Site summary | `layouts.ex` footer link |
+| We can't find that page | Not found | `error_html.ex` |
+| Not open yet | Coming soon | `holding_controller.ex` |
+| Go to the homepage | Homepage | `error_html.ex` button |
+| What a fleet can use | Fleet Tools | `keyfleet_hero_live.ex` |
+| Message the assistant | Message | `chat_live.ex` field label |
+
+Every template row above changed on 29 Oct 2026.

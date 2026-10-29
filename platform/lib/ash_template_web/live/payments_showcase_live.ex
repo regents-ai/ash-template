@@ -50,7 +50,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Example</p>
-        <h1>Pay with USDC</h1>
+        <h1>USDC payments</h1>
         <p>
           This is how paying looks on every Regent site. You pay from your own wallet, straight to
           the person or project you're paying. Regents does not keep a balance for you.
@@ -63,7 +63,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
 
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-balance-heading">
-          <h2 id="payments-balance-heading">Your USDC Balance</h2>
+          <h2 id="payments-balance-heading">USDC Balance</h2>
           <p class="payments-figure">
             24.50 USDC
             <P.status>Sample</P.status>
@@ -75,7 +75,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-offer-heading">
-          <h2 id="payments-offer-heading">What you're paying for</h2>
+          <h2 id="payments-offer-heading">Order</h2>
           <dl class="payments-terms">
             <div>
               <dt>For</dt>
@@ -107,7 +107,7 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-answers-heading">
-          <h2 id="payments-answers-heading">What you might see next</h2>
+          <h2 id="payments-answers-heading">Statuses</h2>
           <ul class="payments-answers">
             <li :for={{{tone, word, parts}, index} <- Enum.with_index(@answers)}>
               <P.status tone={tone}>{word}</P.status>

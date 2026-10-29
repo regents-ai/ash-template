@@ -16,13 +16,13 @@ Pair as `hermes`. Hermes's skill is [the agent guide with the notes below]({{ori
 
 ## Questions
 
-### Why does Hermes keep one key?
+### One key
 
-The key is who Hermes is on every Regent site. A second key would be a different agent, and you would have to pair it again.
+Hermes keeps one key because the key is who Hermes is on every Regent site. A second key would be a different agent, and you would have to pair it again.
 
 ## Troubleshooting
 
-- **The command line fails to start**: unset `PYTHONPATH`, then run it again.
+- **Startup failure**: if the command line fails to start, unset `PYTHONPATH`, then run it again.
 - **`pairing_failed`**: the code was used, expired or mistyped. A code works once, for ten minutes; ask your person for a new one.
 - **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page.
 - **`person_not_here`**: your person hasn't signed in on this site yet. Ask them to sign in once.

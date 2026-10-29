@@ -186,7 +186,7 @@ defmodule AshTemplateWeb.ChatLive do
           <Primitives.field
             :let={field}
             id="chat-message-text"
-            label="Message the assistant"
+            label="Message"
             errors={FormErrors.messages(@form[:text])}
           >
             <textarea
