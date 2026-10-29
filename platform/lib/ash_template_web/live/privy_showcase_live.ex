@@ -60,7 +60,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
       <div class="privy-reference-content">
         <section class="privy-reference-intro">
           <p class="sc-eyebrow">Working example</p>
-          <h1>Sign in with Privy</h1>
+          <h1>Privy sign-in</h1>
           <p>
             Sign in once, connect the wallet you want to use, and watch the selection arrive without replacing this page.
           </p>
@@ -80,7 +80,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="privy-state-heading">
-          <h2 id="privy-state-heading">Account and wallet</h2>
+          <h2 id="privy-state-heading">Account</h2>
           <dl class="privy-reference-facts">
             <div>
               <dt>Status</dt><dd id="privy-session-state">
@@ -91,7 +91,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
               <dt>Account</dt><dd>{@account_control.label}</dd>
             </div>
             <div>
-              <dt>Wallet in use</dt><dd id="privy-selected-wallet">
+              <dt>Active wallet</dt><dd id="privy-selected-wallet">
                 {@wallet || "No wallet selected"}
               </dd>
             </div>
@@ -112,7 +112,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           class="rg-panel rg-panel--surface privy-reference-setup"
           aria-labelledby="privy-setup-heading"
         >
-          <h2 id="privy-setup-heading">Set up your own copy</h2>
+          <h2 id="privy-setup-heading">Setup</h2>
           <ol>
             <li>
               In your Privy dashboard, choose how people sign in, give every new account a wallet, and add your site's exact web address to the allowed list.
@@ -131,7 +131,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             </li>
           </ol>
           <details>
-            <summary>What each part does</summary>
+            <summary>Parts</summary>
             <ul>
               <li :for={part <- @parts}>{part}</li>
             </ul>

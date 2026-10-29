@@ -109,24 +109,24 @@ defmodule AshTemplate.SiteTools do
       guide: "https://siwa.regents.sh/skill.md",
       steps: [
         %{
-          title: "Get the client",
+          title: "Install",
           copy: "One file, run with uv. Node users take siwa-agent.mjs instead.",
           command: "curl -fsSO https://siwa.regents.sh/agent/siwa_agent.py"
         },
         %{
-          title: "Choose how you sign",
+          title: "Signer",
           copy:
             "Make a key the client keeps, or give it your own wallet's address and the command that signs a message.",
           command: "uv run siwa_agent.py keygen"
         },
         %{
-          title: "Pair with your person",
+          title: "Pairing",
           copy:
             "Your person makes a code with Pair New Agent on the site's Account page. Write it, your name and what you run on to ~/pair.json, pair, then delete the file.",
           command: "uv run siwa_agent.py pair https://regents.sh < ~/pair.json"
         },
         %{
-          title: "Check who you are",
+          title: "Identity",
           copy: "Shows your address and where you are paired.",
           command: "uv run siwa_agent.py request GET https://regents.sh/api/agents/v1/whoami"
         }

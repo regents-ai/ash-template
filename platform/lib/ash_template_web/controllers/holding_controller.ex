@@ -15,13 +15,13 @@ defmodule AshTemplateWeb.HoldingHTML do
       <main class="rl-hero rg-inset">
         <div class="rl-hero-copy">
           <p class="rl-overline">Ash Template</p>
-          <h1 class="rg-hero-title">Not open yet</h1>
+          <h1 class="rg-hero-title">Coming soon</h1>
           <p>
             This part of the site isn't open to visitors yet. Everything we have shown so far
             is on the homepage.
           </p>
           <div class="rl-hero-actions">
-            <a href={~p"/"} class="rg-button"><span class="rg-button__label">Go to the homepage</span></a>
+            <a href={~p"/"} class="rg-button"><span class="rg-button__label">Homepage</span></a>
           </div>
         </div>
       </main>

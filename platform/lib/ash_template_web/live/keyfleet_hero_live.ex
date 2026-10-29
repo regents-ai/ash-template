@@ -123,7 +123,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
             <.hero instruction={@instruction} />
           </Regent.Structure.row>
           <Regent.Structure.row rail={false}>
-            <section id="home-charter" class="kf-charter" aria-label="How a fleet runs">
+            <section id="home-charter" class="kf-charter" aria-label="Fleet charter">
               <div class="kf-charter__box">
                 <p id="home-charter-text">{@charter}</p>
               </div>
@@ -255,7 +255,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   defp integrations(assigns) do
     ~H"""
     <section id="home-integrations" class="kf-integrations" aria-labelledby="home-integrations-title">
-      <h2 id="home-integrations-title">What a fleet can use</h2>
+      <h2 id="home-integrations-title">Fleet Tools</h2>
       <ul
         id="home-integration-tiles"
         class="kf-integration-tiles"

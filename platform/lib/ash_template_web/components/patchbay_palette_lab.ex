@@ -240,7 +240,7 @@ defmodule AshTemplateWeb.PatchbayPaletteLab do
             <label class="pb-home__field"><span class="visually-hidden">Preview question, read only</span><input
               readonly
               value=""
-              placeholder="Which WebMCP tool do you need to fix?"
+              placeholder="Ask about a WebMCP tool"
             /></label>
             <P.button
               variant="secondary"

@@ -458,7 +458,7 @@ defmodule AshTemplateWeb.RoomsLive do
         </section>
 
         <section class="account-panel" aria-labelledby="room-mutes-title">
-          <h2 id="room-mutes-title">People you’ve muted</h2>
+          <h2 id="room-mutes-title">Muted</h2>
           <p class="rg-muted">
             You don’t see their messages in any room. They aren’t told.
           </p>
@@ -501,7 +501,7 @@ defmodule AshTemplateWeb.RoomsLive do
         </section>
 
         <section class="account-panel" aria-labelledby="room-start-title">
-          <h2 id="room-start-title">Start a room</h2>
+          <h2 id="room-start-title">New room</h2>
           <.form
             for={@room_form}
             id="room-start-form"
@@ -711,7 +711,7 @@ defmodule AshTemplateWeb.RoomsLive do
         class="rooms-menu__items rooms-menu__reasons"
         popover
         role="group"
-        aria-label="Why are you reporting this message?"
+        aria-label="Report reason"
         style={"position-anchor: #{@anchor}"}
       >
         <p class="rooms-menu__label">Report as</p>

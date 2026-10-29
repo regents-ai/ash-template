@@ -16,7 +16,7 @@ Pair as `dots`. Dots's skill is [the agent guide with the notes below]({{origin}
 
 ## Questions
 
-### Dots asked me to confirm a custom rule. Should I?
+### Custom rules
 
 Dots keeps a standing instruction you give it as a custom rule, and shows "Confirm custom rule" for you to press. Confirm only rules you gave it. You can see and remove them in Dots under Settings, Personalization, Custom rules.
 

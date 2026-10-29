@@ -230,7 +230,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             <li>
               <span class="grammar-name">Disclosure</span>
               <span class="grammar-sample">
-                <P.disclosure id="grammar-noun-disclosure" summary="What it costs">
+                <P.disclosure id="grammar-noun-disclosure" summary="Cost">
                   Nothing until you pay.
                 </P.disclosure>
               </span>
@@ -261,12 +261,12 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
           aria-labelledby="grammar-tab-verbs"
           phx-hook="GrammarVerbs"
         >
-          <p class="grammar-lede">How things move, the same on every page.</p>
+          <p class="grammar-lede">The ways things move, the same on every page.</p>
           <ul class="grammar-verbs">
             <li>
               <span class="grammar-name">Arrive</span>
               <p>A headline rises in, word by word.</p>
-              <h3 id="grammar-rise" class="grammar-rise">Agents that work together</h3>
+              <h3 id="grammar-rise" class="grammar-rise">Teams</h3>
               <P.button variant="quiet" arrow={false} data-replay="rise" aria-controls="grammar-rise">Again</P.button>
             </li>
             <li>
@@ -336,7 +336,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             <li>
               <span class="grammar-name">Less motion</span>
               <p>
-                When your device asks for less motion, nothing moves: a headline and its cards fade in, and windows, panels and menus are simply there.
+                If your device asks for less motion, nothing moves: a headline and its cards fade in, and windows, panels and menus are simply there.
               </p>
             </li>
           </ul>

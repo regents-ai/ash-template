@@ -70,7 +70,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
     {"/showcase/catalog", "Agent catalog"},
     {"/showcase/privy", "Privy sign-in"},
     {"/showcase/wallet", "Wallet buttons"},
-    {"/showcase/payments", "Pay with USDC"},
+    {"/showcase/payments", "USDC payments"},
     {"/showcase/funds", "Your funds"},
     {"/showcase/discussion", "Discussion"},
     {"/showcase/figures", "Live figures"},
@@ -141,7 +141,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
       </:agents>
       <:content>
         <div style="padding: 32px">
-          <h1>Page frame preview</h1>
+          <h1>Frame preview</h1>
           <p>
             The top bar, sections, lists, account menu and bottom bar around every signed-in page.
           </p>
@@ -311,7 +311,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           </S.technical_figure>
           <p>Geist Sans · body copy and interface.</p>
           <P.address id="type-address" address="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" />
-          <.disclosure id="type-tokens" summary="Type and spacing">
+          <.disclosure id="type-tokens" summary="Typography">
             <p>
               Titles and subtitles: Geist Pixel Square, weight 400. Body text and controls: Geist Sans. Addresses and code: Geist Mono. Space: 8 / 16 / 24 / 32 / 40 / 48 / 64 px.
             </p>
@@ -351,12 +351,12 @@ defmodule AshTemplateWeb.ShowcaseLive do
         </.card>
         <.card>
           <h3>Disclosure</h3>
-          <.disclosure id="disclosure-example" summary="What is shared?">
+          <.disclosure id="disclosure-example" summary="Sharing">
             <p>
               The shared pieces decide how things look. Each site decides what they do and who can use them.
             </p>
           </.disclosure>
-          <.disclosure id="disclosure-open" summary="Open by default" open>
+          <.disclosure id="disclosure-open" summary="Expanded" open>
             <p>
               A closed section still holds its text, so search and screen readers can find it.
             </p>
@@ -541,7 +541,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
               phx-click="forget_wallet"
             >Disconnect</P.button>
           </div>
-          <.disclosure id="slow-read-notes" summary="What to try">
+          <.disclosure id="slow-read-notes" summary="Testing">
             <p>
               Choose the slow wallet, then another before it answers: the slow answer is thrown away and never replaces the wallet you chose. Disconnect does the same. Tick the failure box and refresh to keep the last reading marked as old; choose a new wallet with it ticked to see a failed read shown as a failure, never as zero.
             </p>
@@ -613,13 +613,13 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <p>Each site fills these in from its own records.</p>
         </S.panel>
       </div>
-      <.disclosure id="shell-detail" summary="Page frame and theme switch">
-        <iframe id="shell-preview" title="Page frame preview" src="/showcase/preview" loading="lazy"></iframe>
+      <.disclosure id="shell-detail" summary="Page frame">
+        <iframe id="shell-preview" title="Frame preview" src="/showcase/preview" loading="lazy"></iframe>
         <p>
           This preview shows the frame around every signed-in page: the top bar, the sections, each section's list, the account menu and the bottom bar.
         </p>
       </.disclosure>
-      <.disclosure id="article-table-detail" summary="Readable article tables">
+      <.disclosure id="article-table-detail" summary="Article tables">
         <div class="rg-blog rg-blog__prose">
           <p>Example content. On phones, scroll the table sideways to read every column.</p>
           <div class="rg-blog-table" tabindex="0" role="region" aria-label="Example article table">
@@ -674,7 +674,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <P.button data-demo-send>Send practice transaction</P.button>
             <ol data-demo-results aria-live="polite"></ol>
           </div>
-          <.disclosure id="wallet-contract" summary="How the practice wallet works">
+          <.disclosure id="wallet-contract" summary="Practice wallet">
             <p>
               These practice pieces never touch a real wallet or network. Each press starts its own request, even while an earlier one is still waiting. Disconnect here only affects the practice wallet.
             </p>
@@ -703,7 +703,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
             </p>
           </div>
           <p id="account-auth-status" role="status" phx-update="ignore" hidden></p>
-          <.disclosure id="privy-scope" summary="Uses your real account">
+          <.disclosure id="privy-scope" summary="Real account">
             <p>
               These buttons use this site's real sign-in. You only see the button that
               fits where you are now. Signing in may open Privy. Signing out ends your
@@ -715,7 +715,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <a href="/app">Overview ↗</a>
             <a href="/account">Account ↗</a>
           </div>
-          <.disclosure id="real-actions" summary="What real actions need">
+          <.disclosure id="real-actions" summary="Real actions">
             <p>
               These pages use real sign-in and check your wallet. Anything sent from your wallet asks you to approve it there first. This page never sends anything for you.
             </p>
@@ -780,7 +780,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <ul id="sample-records">
             <li :for={record <- @records}>{record.title} × {record.quantity}</li>
           </ul>
-          <.disclosure id="ash-demo-notes" summary="Rules for this form">
+          <.disclosure id="ash-demo-notes" summary="Form rules">
             <p>
               Built with Ash. The title needs 2 to 80 characters and the quantity must be from 1 to 100. Items live only on this page and are never saved.
             </p>
@@ -806,7 +806,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           >
             Copy result
           </P.copy_button>
-          <.disclosure id="utility-notes" summary="What this checks">
+          <.disclosure id="utility-notes" summary="Checks">
             <p>
               Each example makes a practice sign-in and runs it through the same check the real site uses: one valid, one expired and one made for a different app. Practice sign-ins never sign anyone in, and they never touch a real wallet or network.
             </p>
@@ -851,7 +851,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <div :for={resource <- domain.resources} class="sc-inventory-row">
           <code>{resource.name}</code>
           <p>
-            What it can do: {Enum.map_join(resource.actions, ", ", &"#{&1.name} (#{&1.type})")}
+            Actions: {Enum.map_join(resource.actions, ", ", &"#{&1.name} (#{&1.type})")}
           </p>
           <small>Fields: {Enum.map_join(
             resource.attributes,
@@ -867,7 +867,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <p>{Enum.join(item.functions, " · ")}</p>
         </div>
       </.disclosure>
-      <.disclosure id="coverage-scope" summary="What this list covers">
+      <.disclosure id="coverage-scope" summary="Coverage">
         <p>
           This list covers every shared design component and the ones this site adds. Product pages are built from these pieces and keep their own behavior. The Ash groups show how the data is shaped, never the data itself. The shared tools are the libraries every site uses, plus this site's database settings.
         </p>

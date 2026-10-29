@@ -3,11 +3,11 @@ name: ash-template
 description: Build a Phoenix LiveView and Ash site the way Regent's sites are built. Fetch the build skills Ash Template publishes, check each download, see the working pages they describe, and know what only a person can do here.
 ---
 
-# Building with Ash Template
+# Build guide
 
 Ash Template is the starter kit Regent's sites are built from: Phoenix LiveView, Ash, sign-in with Privy and one shared look. This site shows it working. Your person asked you to build or change a site like it; this guide tells you where the build skills are and what this site can and can't do for you. Follow it in order.
 
-## 1. Get the skills
+## 1. Skills
 
 The skills are listed in an index in the Agent Skills Discovery format (v0.2.0). It needs no sign-in.
 
@@ -28,7 +28,9 @@ Start with `ash-stack`: it says which of the others a task needs. Every file can
 
 {{skills}}
 
-## 2. See them working
+## 2. Examples
+
+These pages show the skills working.
 
 - {{origin}}/showcase: every shared component, in light and dark, with the page layouts they build.
 - {{origin}}/showcase/privy: sign-in with Privy, as a product page runs it.
@@ -40,7 +42,9 @@ Start with `ash-stack`: it says which of the others a task needs. Every file can
 - {{origin}}/animations: every motion the kit uses, side by side.
 - {{origin}}/showcase/catalog: the components and their attributes as JSON.
 
-## 3. What only a person can do
+## 3. Person actions
+
+Only a person can do these things:
 
 - Change their account's security and unpair agents from their own account page, and pair an agent with Pair New Agent on that same page.
 - Press the wallet buttons. They send from the person's own wallet on Base Sepolia, and each press needs a little Base Sepolia test ETH for the network fee. Nothing there moves real money, but it is still their wallet: explain what a button does and let them press it.

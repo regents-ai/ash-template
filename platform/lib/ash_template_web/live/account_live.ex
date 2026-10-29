@@ -115,14 +115,14 @@ defmodule AshTemplateWeb.AccountLive do
             </dd>
           </div>
           <div>
-            <dt>Regents embedded wallet</dt>
+            <dt>Regents wallet</dt>
             <dd :if={@named.embedded}>
               <Regent.Primitives.address id="account-embedded-wallet" address={@named.embedded} />
             </dd>
             <dd :if={is_nil(@named.embedded)}>Made for you at your next sign-in</dd>
           </div>
           <div :if={@named.others != []}>
-            <dt>Other linked wallets</dt>
+            <dt>Linked wallets</dt>
             <dd>
               <ul class="account-wallet-list">
                 <li :for={wallet <- @named.others}>
