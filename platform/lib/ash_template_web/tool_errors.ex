@@ -14,8 +14,9 @@ defmodule AshTemplateWeb.ToolErrors do
   with the same `details`, one message's `room_not_found` or
   `public_message_not_found`, a site's `site_not_found`, an agent's
   `agent_not_found`, a search's `invalid_search`, a history's or activity's
-  `invalid_cursor`, other activity input's `invalid_activity_request`, and an
-  identity tool's `identity_request_refused`. A room read's input that is not an
+  `invalid_cursor`, other activity input's `invalid_activity_request`, a notes
+  tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
+  search's `invalid_search`), and an identity tool's `identity_request_refused`. A room read's input that is not an
   object, or names an input the read has not, is `invalid_input`; input sent to a
   tool that takes none is `invalid_request`, as the browser tools answer it. As
   AshAi reads it, a call without `input` sends none, which is how a tool listed
@@ -24,9 +25,13 @@ defmodule AshTemplateWeb.ToolErrors do
 
   alias AshTemplate.Agents.Connection
 
+  # The notes tools that take input, besides the search.
+  @notes ~w(notes_get notes_create notes_edit notes_delete notes_pin_price notes_unpin notes_archive notes_unarchive notes_rate_label)a
+
   alias AshTemplateWeb.{
     AgentsController,
     FormErrors,
+    NotesController,
     PairedAgentController,
     RoomsController,
     SiteToolsController
@@ -78,8 +83,13 @@ defmodule AshTemplateWeb.ToolErrors do
   defp refused(_resource, :agents_get, _error, _input),
     do: text(AgentsController, "agent_not_found")
 
-  defp refused(_resource, :rooms_search, _error, _input),
+  defp refused(_resource, action, _error, _input) when action in [:rooms_search, :notes_search],
     do: text(PairedAgentController, "invalid_search")
+
+  defp refused(_resource, action, error, _input) when action in @notes do
+    {code, extra} = NotesController.input_refusal(action, error)
+    text(NotesController, code, extra)
+  end
 
   defp refused(_resource, :account_credits_history, _error, _input),
     do: text(PairedAgentController, "invalid_cursor")
@@ -119,6 +129,13 @@ defimpl AshAi.ToToolError, for: AshTemplate.Rooms.Refused do
 
   def to_tool_error(%{code: code}),
     do: AshTemplateWeb.ToolErrors.text(AshTemplateWeb.RoomsController, code)
+end
+
+defimpl AshAi.ToToolError, for: AshTemplate.Notes.Refused do
+  def to_tool_error(refused) do
+    {code, extra} = AshTemplateWeb.NotesController.answer(refused)
+    AshTemplateWeb.ToolErrors.text(AshTemplateWeb.NotesController, code, extra)
+  end
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Rooms.Message.PostedBeforePairing do

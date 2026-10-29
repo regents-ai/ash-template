@@ -84,7 +84,7 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
 
   # The key was spent by a call that committed while this one waited.
   defp answer_spent(error, actor, key, slug, fingerprint) do
-    with true <- key_spent?(error),
+    with true <- Operation.key_spent?(error),
          {:ok, operation} <- spent(actor, key) do
       reuse(operation, slug, fingerprint)
     else
@@ -92,15 +92,6 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
       {:error, error} -> {:error, error}
     end
   end
-
-  defp key_spent?(%Ash.Error.Invalid{errors: errors}) do
-    Enum.any?(
-      errors,
-      &match?(%Ash.Error.Changes.InvalidAttribute{field: :principal, private_vars: _}, &1)
-    )
-  end
-
-  defp key_spent?(_error), do: false
 
   defp spent(actor, key),
     do: Agents.get_operation(actor.agent_id, @capability, key, actor: %System{})

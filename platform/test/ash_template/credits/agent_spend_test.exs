@@ -65,7 +65,7 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   test "a pin retried after its answer was lost, from fresh processes, pays once" do
     person = person(5)
     agent = agent(person, ["template"]) |> as_site_agent()
-    note = Notes.create_note!(%{title: "Retry", operation_id: Ecto.UUID.generate()}, actor: agent)
+    note = Notes.create_note!(%{title: "Retry"}, actor: agent)
     operation = Ecto.UUID.generate()
 
     # The first answer never reaches the agent; its process is gone.
@@ -89,7 +89,7 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   test "a pin after an unpin needs a new operation_id and pays again" do
     person = person(5)
     agent = agent(person, ["template"]) |> as_site_agent()
-    note = Notes.create_note!(%{title: "Again", operation_id: Ecto.UUID.generate()}, actor: agent)
+    note = Notes.create_note!(%{title: "Again"}, actor: agent)
     first = Ecto.UUID.generate()
 
     assert {:ok, pinned} = Notes.pin_note(note, first, actor: agent)
@@ -112,10 +112,10 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     person = person(5)
     agent = agent(person, ["template"])
     actor = as_site_agent(agent)
-    kept = Notes.create_note!(%{title: "Kept", operation_id: Ecto.UUID.generate()}, actor: actor)
+    kept = Notes.create_note!(%{title: "Kept"}, actor: actor)
 
     later =
-      Notes.create_note!(%{title: "Later", operation_id: Ecto.UUID.generate()}, actor: actor)
+      Notes.create_note!(%{title: "Later"}, actor: actor)
 
     assert {:ok, _pinned} = Notes.pin_note(kept, Ecto.UUID.generate(), actor: actor)
 

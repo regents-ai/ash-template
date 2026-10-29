@@ -5130,3 +5130,34 @@ An adversarial review of the two commits above found five things, all fixed here
   reads. Gaps kept: `sites_tools` success is not compared (it reads the other site
   live), `getAgentIdentity` is not hosted yet, and the three Privy-session profile rows
   stay off `/mcp`.
+
+## 2026-10-29 — Hosted MCP: notes
+
+- Every notes tool but the pin is now a hosted agent tool at `/mcp`, each one Ash action
+  its HTTP route and browser tool also call: `notes_list`, `notes_get`, `notes_search`,
+  `notes_create`, `notes_edit`, `notes_delete`, `notes_pin_price`, `notes_unpin`,
+  `notes_archive` and `notes_unarchive` on `AshTemplate.Notes.Note`, and
+  `notes_rate_label` on `AshTemplate.Notes.Decision`. `Note.present/1` replaces
+  `NotesJSON`, and the controllers shrink to one action call each.
+- An agent's new note (`Note.AgentCreate`) spends its `operation_id` in
+  `agent_operations` (capability `note_create`, fingerprint title and text) in the same
+  transaction as the note, as a room post does; the key still becomes the note's id.
+  A retry with the same title and text answers the note (HTTP 200, `replayed: true`),
+  other text answers 409 `idempotency_conflict`, and a retry after a delete answers 410
+  `note_removed` naming it. `Notes.earlier_note` and the create action's
+  `operation_id` argument are gone; a person's new note sends none. The shared
+  `Operation.key_spent?/1` replaces the room post's own copy.
+- `AshTemplate.Notes.Refused` carries each refusal's code; its words live in
+  `NotesController`, which now also owns `note_not_found`, `label_not_found` and
+  `invalid_label_report` for the paired-agent routes, with one `note_not_found`
+  wording. `NotPaired.check/1` answers `:ok` for a person.
+- Both OpenAPI documents add the 409 and 410 answers and move to 9.0.0; `/docs` lists
+  the change under Breaking changes, the agent guide and skill name `note_removed`, and
+  the public changelog says it in plain words.
+- `mcp_agent_test.exs` proves each notes tool answers and refuses through `/mcp` as
+  over HTTP, and that a reused key answers the same both ways. `mix xref`'s
+  compile-connected limit moves to 45 for the action module the create runs.
+- Not changed: `notes_pin` (spends Credits) waits for Sean's letter. A note an agent
+  made before this change has no `agent_operations` row, so retrying its old
+  `operation_id` is refused as `invalid_note` (the id is taken) instead of answering
+  the note.

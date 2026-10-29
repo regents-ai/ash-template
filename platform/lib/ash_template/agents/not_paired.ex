@@ -8,7 +8,7 @@ defmodule AshTemplate.Agents.NotPaired do
   """
   use Splode.Error, fields: [:code], class: :forbidden
 
-  alias AshTemplate.Actors.Agent
+  alias AshTemplate.Actors.{Agent, Human}
 
   def message(%{code: code}), do: "Refused: #{code}"
 
@@ -17,8 +17,12 @@ defmodule AshTemplate.Agents.NotPaired do
   def code(%Agent{pairing: :none}), do: "agent_not_paired"
   def code(%Agent{pairing: :person_not_here}), do: "person_not_here"
 
-  @doc "`:ok` while `actor` acts for its person, or this refusal naming what it is missing."
-  @spec check(Agent.t()) :: :ok | {:error, Exception.t()}
+  @doc """
+  `:ok` for a person, or for an agent while it acts for its person; otherwise this
+  refusal naming what the agent is missing.
+  """
+  @spec check(Agent.t() | Human.t()) :: :ok | {:error, Exception.t()}
+  def check(%Human{}), do: :ok
   def check(%Agent{pairing: :active}), do: :ok
   def check(%Agent{} = actor), do: {:error, exception(code: code(actor))}
 end

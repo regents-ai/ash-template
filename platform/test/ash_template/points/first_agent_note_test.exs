@@ -110,7 +110,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
   end
 
   defp note(actor) do
-    Notes.create_note!(%{title: "Note", operation_id: Ecto.UUID.generate()}, actor: actor).id
+    Notes.create_note!(%{title: "Note"}, actor: actor).id
   end
 
   defp person do

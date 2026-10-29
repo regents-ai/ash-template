@@ -52,7 +52,21 @@ defmodule AshTemplate.Agents.Operation do
   end
 
   @doc "The hash an operation key is spent on: `parts`, in order, as one JSON list."
-  @spec fingerprint([String.t()]) :: String.t()
+  @spec fingerprint([String.t() | nil]) :: String.t()
   def fingerprint(parts),
     do: :sha256 |> :crypto.hash(Jason.encode!(parts)) |> Base.encode16(case: :lower)
+
+  @doc """
+  Whether `error`, from writing a key's row, says another call already spent the
+  key: the unique identity's refusal.
+  """
+  @spec key_spent?(term()) :: boolean()
+  def key_spent?(%Ash.Error.Invalid{errors: errors}) do
+    Enum.any?(
+      errors,
+      &match?(%Ash.Error.Changes.InvalidAttribute{field: :principal, private_vars: _}, &1)
+    )
+  end
+
+  def key_spent?(_error), do: false
 end

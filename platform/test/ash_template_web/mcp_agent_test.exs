@@ -397,6 +397,136 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert Jason.decode!(text)["error"]["code"] == "invalid_request"
   end
 
+  test "each notes tool answers through /mcp as HTTP answers, and HTTP reads back what it changed",
+       %{from: from} do
+    agent = paired_wallet()
+
+    # A new note, then the same operation_id again over HTTP: the first note, saved once.
+    key = Ecto.UUID.generate()
+
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => false, "note" => made}} =
+             result(
+               mcp(call("notes_create", %{title: "Parity", body: "A walk", operation_id: key}),
+                 from: from,
+                 proof: agent
+               )
+             )
+
+    assert made["id"] == key
+    assert read_note(from, agent, key) == made
+
+    again =
+      http(:post, "/api/v1/notes", %{title: "Parity", body: "A walk", operation_id: key}, from, agent)
+
+    assert again.status == 200
+    assert Jason.decode!(again.resp_body) == %{"note" => made}
+
+    # Reads: the same answer both ways.
+    for {name, input, method, path, body} <- [
+          {"notes_list", %{}, :get, "/api/v1/notes", nil},
+          {"notes_get", %{id: key}, :get, "/api/v1/notes/#{key}", nil},
+          {"notes_search", %{text: "walk"}, :post, "/api/v1/notes/search", %{text: "walk"}},
+          {"notes_pin_price", %{id: key}, :get, "/api/v1/notes/#{key}/pin-price", nil}
+        ] do
+      over_http = http(method, path, body, from, agent)
+      assert over_http.status == 200, "#{name} over HTTP answered #{over_http.resp_body}"
+
+      assert %{"isError" => false, "structuredContent" => answer} =
+               result(mcp(call(name, input), from: from, proof: agent))
+
+      assert answer == Jason.decode!(over_http.resp_body), name
+    end
+
+    # A chosen label rated through /mcp; HTTP reads the rating on the note.
+    label = label(key, :answered)
+
+    assert %{"isError" => false, "structuredContent" => rated} =
+             result(mcp(call("notes_rate_label", %{id: label, report: "fits"}), from: from, proof: agent))
+
+    assert rated == %{"label" => %{"id" => label, "rating" => "fits"}}
+    assert read_note(from, agent, key)["label"]["rating"] == "fits"
+
+    # Changes: each answers the note HTTP then reads.
+    for {name, input} <- [
+          {"notes_archive", %{id: key}},
+          {"notes_unarchive", %{id: key}},
+          {"notes_unpin", %{id: key}},
+          {"notes_edit", %{id: key, title: "Parity, edited"}}
+        ] do
+      assert %{"isError" => false, "structuredContent" => %{"note" => note}} =
+               result(mcp(call(name, input), from: from, proof: agent))
+
+      assert note == read_note(from, agent, key), name
+    end
+
+    assert read_note(from, agent, key)["title"] == "Parity, edited"
+
+    # Deleting answers the same way both ways, and the note is gone.
+    other = Ecto.UUID.generate()
+    assert http(:post, "/api/v1/notes", %{title: "Other", operation_id: other}, from, agent).status == 201
+
+    assert %{"isError" => false, "structuredContent" => deleted} =
+             result(mcp(call("notes_delete", %{id: key}), from: from, proof: agent))
+
+    over_http = http(:delete, "/api/v1/notes/#{other}", nil, from, agent)
+    assert deleted == %{"deleted" => true, "id" => key}
+    assert Jason.decode!(over_http.resp_body) == %{"deleted" => true, "id" => other}
+    assert http(:get, "/api/v1/notes/#{key}", nil, from, agent).status == 404
+  end
+
+  test "each notes tool refuses through /mcp with the code and words HTTP gives", %{from: from} do
+    unpaired = wallet()
+    agent = paired_wallet()
+    missing = Ecto.UUID.generate()
+    key = Ecto.UUID.generate()
+
+    assert http(:post, "/api/v1/notes", %{title: "Mine", operation_id: key}, from, agent).status == 201
+    pending = label(key, :pending)
+
+    for {name, input, method, path, body, signer} <- [
+          {"notes_list", %{}, :get, "/api/v1/notes", nil, unpaired},
+          {"notes_get", %{id: key}, :get, "/api/v1/notes/#{key}", nil, unpaired},
+          {"notes_get", %{id: missing}, :get, "/api/v1/notes/#{missing}", nil, agent},
+          {"notes_get", %{id: "not-a-uuid"}, :get, "/api/v1/notes/not-a-uuid", nil, agent},
+          {"notes_search", %{text: "a"}, :post, "/api/v1/notes/search", %{text: "a"}, agent},
+          {"notes_create", %{title: "", operation_id: Ecto.UUID.generate()}, :post,
+           "/api/v1/notes", %{title: "", operation_id: Ecto.UUID.generate()}, agent},
+          {"notes_create", %{title: "No key"}, :post, "/api/v1/notes", %{title: "No key"}, agent},
+          {"notes_edit", %{id: key, title: String.duplicate("a", 121)}, :patch,
+           "/api/v1/notes/#{key}", %{title: String.duplicate("a", 121)}, agent},
+          {"notes_edit", %{id: missing, title: "Gone"}, :patch, "/api/v1/notes/#{missing}",
+           %{title: "Gone"}, agent},
+          {"notes_delete", %{id: missing}, :delete, "/api/v1/notes/#{missing}", nil, agent},
+          {"notes_pin_price", %{id: missing}, :get, "/api/v1/notes/#{missing}/pin-price", nil,
+           agent},
+          {"notes_unpin", %{id: missing}, :post, "/api/v1/notes/#{missing}/unpin", %{}, agent},
+          {"notes_archive", %{id: missing}, :post, "/api/v1/notes/#{missing}/archive", %{}, agent},
+          {"notes_unarchive", %{id: missing}, :post, "/api/v1/notes/#{missing}/unarchive", %{},
+           agent},
+          {"notes_rate_label", %{id: missing, report: "fits"}, :post,
+           "/api/v1/note-labels/#{missing}/report", %{report: "fits"}, agent},
+          {"notes_rate_label", %{id: pending, report: "fits"}, :post,
+           "/api/v1/note-labels/#{pending}/report", %{report: "fits"}, agent},
+          {"notes_rate_label", %{id: pending, report: "maybe"}, :post,
+           "/api/v1/note-labels/#{pending}/report", %{report: "maybe"}, agent}
+        ] do
+      over_http = http(method, path, body, from, signer)
+      %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+      assert %{"isError" => true, "content" => [%{"text" => text}]} =
+               result(mcp(call(name, input), from: from, proof: signer))
+
+      assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
+    end
+
+    # A reused operation_id: other text is a conflict, and after a delete the note is named gone.
+    assert {409, %{"code" => "idempotency_conflict"}} = refused_both_ways(from, agent, "Other", key)
+    assert http(:delete, "/api/v1/notes/#{key}", nil, from, agent).status == 200
+
+    assert {410, %{"code" => "note_removed", "id" => ^key}} =
+             refused_both_ways(from, agent, "Mine", key)
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -471,6 +601,43 @@ defmodule AshTemplateWeb.McpAgentTest do
       %{"isError" => true, "content" => [%{"text" => text}]} ->
         {:refused, Jason.decode!(text)["error"]["code"]}
     end
+  end
+
+  # The note `id` as HTTP reads it for `agent`'s person.
+  defp read_note(from, agent, id) do
+    conn = http(:get, "/api/v1/notes/#{id}", nil, from, agent)
+    assert conn.status == 200, conn.resp_body
+    Jason.decode!(conn.resp_body)["note"]
+  end
+
+  # A label on the note `id`, as the labelling service leaves it in `state`: its id.
+  defp label(id, state) do
+    note = Ash.get!(AshTemplate.Notes.Note, id, authorize?: false)
+    keys = AshTemplate.Notes.Labels.keys()
+
+    Ash.Seed.seed!(AshTemplate.Notes.Decision, %{
+      note_id: id,
+      human_account_id: note.human_account_id,
+      question: "Which fits?",
+      choices: keys,
+      state: state,
+      choice: if(state == :answered, do: hd(keys)),
+      confidence: if(state == :answered, do: 0.9)
+    }).id
+  end
+
+  # A new note with `key`, refused the same way over HTTP and through /mcp: HTTP's
+  # status and error.
+  defp refused_both_ways(from, agent, title, key) do
+    input = %{title: title, operation_id: key}
+    over_http = http(:post, "/api/v1/notes", input, from, agent)
+    %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+    assert %{"isError" => true, "content" => [%{"text" => text}]} =
+             result(mcp(call("notes_create", input), from: from, proof: agent))
+
+    assert Jason.decode!(text)["error"] == refused
+    {over_http.status, refused}
   end
 
   # One request to the HTTP API, signed by `signer`'s wallet when there is one.

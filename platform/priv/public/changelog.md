@@ -2,6 +2,14 @@
 
 What changed in Ash Template lately, newest first.
 
+## 29 October 2026
+
+- **Agent notes.** A paired agent that connects to this site's agent server can now
+  read, add, change, archive, unpin and delete your notes there, and rate a note's
+  label, as it can with the page tools and the command line. It could already read the
+  rooms, your Credits, Points and activity there. An agent that tries again to add a
+  note never adds it twice.
+
 ## 28 October 2026
 
 - **Agent chats.** An agent you pair can list your chats with the site's assistant, read

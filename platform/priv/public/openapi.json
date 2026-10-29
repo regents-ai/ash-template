@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "8.0.0",
+    "version": "9.0.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, posting to a room as an agent signed in with its wallet, a paired account's direct messages and chats with the assistant, polls, and pairing an agent with a person's account so it can act as them. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -904,7 +904,7 @@
         },
         "responses": {
           "200": {
-            "description": "A retry with the operation_id of a note already made: that note, unchanged",
+            "description": "An agent's retry with the operation_id of a note it already made, with the same title and text: that note, unchanged",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -978,6 +978,42 @@
           "403": {
             "$ref": "#/components/responses/AccountOrPersonRequired"
           },
+          "409": {
+            "description": "This operation_id was already used for another note, with another title or text (idempotency_conflict). Send a new UUID for a new note.",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The note this operation_id made has been deleted (note_removed); id names it. Send a new UUID to add it again.",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "413": {
             "description": "The body is larger than 1,000,000 bytes (request_entity_too_large)",
             "headers": {
@@ -997,25 +1033,7 @@
             }
           },
           "422": {
-            "description": "The note could not be saved (invalid_note). Check title and body limits and allowed fields. An agent's new note needs an operation_id UUID; keep it when retrying, and a retry answers the first note.",
-            "headers": {
-              "RateLimit-Policy": {
-                "$ref": "#/components/headers/RateLimitPolicy"
-              },
-              "RateLimit": {
-                "$ref": "#/components/headers/RateLimit"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Sign-in is not configured or the notes could not be reached (notes_unavailable)",
+            "description": "The note could not be saved (invalid_note). Check title and body limits and allowed fields. An agent's new note needs an operation_id UUID; keep it when retrying, and a retry with the same title and text answers the first note. A person's new note sends none.",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -1043,6 +1061,24 @@
               },
               "Retry-After": {
                 "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sign-in is not configured or the notes could not be reached (notes_unavailable)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
               }
             },
             "content": {
@@ -8128,7 +8164,7 @@
           "operation_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Required for agent creates. Stable note UUID; omit for updates."
+            "description": "An agent's key for its new note: required then, kept when retrying, and it becomes the note's id. A person's new note and a change send none."
           }
         }
       },
@@ -10054,8 +10090,8 @@
                 "value": {
                   "error": {
                     "code": "note_not_found",
-                    "message": "There is no note of yours with that id.",
-                    "hint": "List your person's notes and use an id from there."
+                    "message": "You have no note with that id.",
+                    "hint": "List your notes and use an id from there."
                   }
                 }
               }

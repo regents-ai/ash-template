@@ -22,6 +22,11 @@ defmodule AshTemplate.Notes.Note do
 
   Each new note is told as `:note_created`, and one an agent wrote for its
   person is offered to Regent Points (`AshTemplate.Points.Award`).
+
+  What the notes API, the browser tools, regents-cli and the hosted MCP server
+  do with notes is one action each, named after its tool (`notes_list` and the
+  rest), answering what every surface answers; an agent's new note spends its
+  operation key once (`AgentCreate`).
   """
 
   use Ash.Resource,
@@ -31,13 +36,20 @@ defmodule AshTemplate.Notes.Note do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
 
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Notes
+  alias AshTemplate.Notes.Refused
+
   alias AshTemplate.Notes.Note.{
+    AgentCreate,
     AskingJev,
     DeliverWebhook,
     Pin,
     RecordWebhook,
     WebhookAddressSet
   }
+
+  @note_id "The note's id, from notes_list or notes_search."
 
   postgres do
     table "notes"
@@ -121,20 +133,6 @@ defmodule AshTemplate.Notes.Note do
       primary? true
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:title, :body]
-      argument :operation_id, :uuid
-
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
-
-      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
       change set_attribute(:human_account_id, actor(:human_account_id))
       change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
@@ -198,6 +196,133 @@ defmodule AshTemplate.Notes.Note do
     update :webhook_failed do
       change {RecordWebhook, state: :failed}
     end
+
+    # The person's notes, newest first after the pinned ones, for them or an agent
+    # acting for them.
+    action :notes_list, :map do
+      run fn _input, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, notes} <- Notes.list_my_notes(actor: actor),
+             do: {:ok, %{notes: Enum.map(notes, &AshTemplate.Notes.Note.present/1)}}
+      end
+    end
+
+    action :notes_get, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, note} <- AshTemplate.Notes.Note.mine(id, actor),
+             do: {:ok, %{note: AshTemplate.Notes.Note.present(note)}}
+      end
+    end
+
+    # Up to 5 of the person's notes whose title or text holds `text`.
+    action :notes_search, :map do
+      argument :text, :string,
+        allow_nil?: false,
+        constraints: [min_length: 2, max_length: 100],
+        description: "Words to look for, 2 to 100 characters, in any case."
+
+      run fn %{arguments: %{text: text}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, notes} <-
+               Notes.search_my_notes(text,
+                 actor: actor,
+                 load: [:label_decision, :changed_by_agent]
+               ),
+             do: {:ok, %{notes: Enum.map(notes, &AshTemplate.Notes.Note.present/1)}}
+      end
+    end
+
+    # An agent's new note, its operation_id spent once (`AgentCreate`).
+    action :notes_create, :map do
+      argument :title, :string,
+        allow_nil?: false,
+        constraints: [max_length: 120],
+        description: "The title, 1 to 120 characters."
+
+      argument :body, :string,
+        constraints: [max_length: 10_000],
+        description: "The text, up to 10,000 characters."
+
+      argument :operation_id, :uuid,
+        allow_nil?: false,
+        description:
+          "A UUID you make for this note; it becomes the note's id. Keep it when retrying: a retry answers the first note, and a UUID already used for another note is refused."
+
+      run AgentCreate
+    end
+
+    # Only the title or text sent is changed.
+    action :notes_edit, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      argument :title, :string,
+        constraints: [max_length: 120],
+        description: "The title, 1 to 120 characters."
+
+      argument :body, :string,
+        constraints: [max_length: 10_000],
+        description: "The text, up to 10,000 characters."
+
+      run fn %{arguments: arguments}, %{actor: actor} ->
+        AshTemplate.Notes.Note.change_mine(
+          arguments.id,
+          actor,
+          &Notes.update_note(&1, Map.take(arguments, [:title, :body]), actor: actor)
+        )
+      end
+    end
+
+    action :notes_delete, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, note} <- AshTemplate.Notes.Note.mine(id, actor),
+             :ok <- Notes.destroy_note(note, actor: actor),
+             do: {:ok, %{deleted: true, id: note.id}}
+      end
+    end
+
+    # What pinning the note would cost, changing nothing: a pinned note stays as
+    # it is and costs nothing (`Pin`).
+    action :notes_pin_price, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, note} <- AshTemplate.Notes.Note.mine(id, actor) do
+          credits = if note.pinned_at, do: Decimal.new(0), else: Pin.price()
+          {:ok, %{note: %{id: note.id, pinned: !!note.pinned_at}, price: %{credits: credits}}}
+        end
+      end
+    end
+
+    action :notes_unpin, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        AshTemplate.Notes.Note.change_mine(id, actor, &Notes.unpin_note(&1, actor: actor))
+      end
+    end
+
+    action :notes_archive, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        AshTemplate.Notes.Note.change_mine(id, actor, &Notes.archive_note(&1, actor: actor))
+      end
+    end
+
+    action :notes_unarchive, :map do
+      argument :id, :uuid, allow_nil?: false, description: @note_id
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        AshTemplate.Notes.Note.change_mine(id, actor, &Notes.unarchive_note(&1, actor: actor))
+      end
+    end
   end
 
   oban do
@@ -227,6 +352,23 @@ defmodule AshTemplate.Notes.Note do
   policies do
     bypass AshOban.Checks.AshObanInteraction do
       authorize_if always()
+    end
+
+    # The notes a tool reads and changes are checked by the actions it calls.
+    policy action([:notes_list, :notes_get, :notes_edit, :notes_delete]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
+    policy action([
+             :notes_search,
+             :notes_create,
+             :notes_pin_price,
+             :notes_unpin,
+             :notes_archive,
+             :notes_unarchive
+           ]) do
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type(:create) do
@@ -269,4 +411,64 @@ defmodule AshTemplate.Notes.Note do
 
   @doc "The topic every change to `human_account_id`'s notes is published on."
   def topic(human_account_id), do: "notes:#{human_account_id}"
+
+  @doc """
+  A note as every surface answers it: its fields (`pinned_at` and `archived_at`
+  are nil unless it is pinned or archived), its latest `label`, or nil when none
+  was asked for, and `changed_by_agent`, or nil when its writer made the latest
+  save. `label_decision` and `changed_by_agent` must be loaded.
+  """
+  @spec present(t()) :: map()
+  def present(note) do
+    note
+    |> Map.take([:id, :title, :body, :pinned_at, :archived_at, :inserted_at, :updated_at])
+    |> Map.put(:label, label(note.label_decision))
+    |> Map.put(:changed_by_agent, agent(note.changed_by_agent))
+  end
+
+  defp agent(nil), do: nil
+  defp agent(agent), do: %{id: agent.id, wallet_address: agent.wallet_address}
+
+  defp label(nil), do: nil
+
+  defp label(decision) do
+    %{
+      id: decision.id,
+      state: decision.state,
+      choice: decision.choice,
+      confidence: decision.confidence,
+      rating: decision.report
+    }
+  end
+
+  @doc """
+  The note `id` of the actor's person, or `note_not_found`: another person's note
+  reads as absent, exactly like an id that names none.
+  """
+  def mine(id, actor) do
+    case Notes.get_my_note(id, actor: actor) do
+      {:ok, nil} -> {:error, Refused.exception(code: "note_not_found")}
+      result -> result
+    end
+  end
+
+  @doc """
+  `change` made to the note `id` of the actor's person, answered with the note;
+  a save the note refuses is `invalid_note`.
+  """
+  def change_mine(id, actor, change) do
+    with :ok <- NotPaired.check(actor),
+         {:ok, note} <- mine(id, actor) do
+      case change.(note) do
+        {:ok, note} ->
+          {:ok, %{note: present(note)}}
+
+        {:error, %Ash.Error.Invalid{} = error} ->
+          {:error, Refused.exception(code: "invalid_note", error: error)}
+
+        error ->
+          error
+      end
+    end
+  end
 end

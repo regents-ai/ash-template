@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 8.0.0
+  version: 9.0.0
 paths:
   /api/v1/health:
     get:
@@ -88,6 +88,8 @@ paths:
         "201": {$ref: "#/components/responses/Note"}
         "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
         "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "409": {$ref: "#/components/responses/NoteKeyConflict"}
+        "410": {$ref: "#/components/responses/NoteRemoved"}
         "422": {$ref: "#/components/responses/NoteInvalid"}
         "503": {$ref: "#/components/responses/NotesUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
@@ -4503,7 +4505,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/NoteEnvelope"}
     NoteRetried:
-      description: A retry with the operation_id of a note already made; that note, unchanged
+      description: An agent's retry with the operation_id of a note it already made, with the same title and text; that note, unchanged
       content:
         application/json:
           schema: {$ref: "#/components/schemas/NoteEnvelope"}
@@ -4534,7 +4536,7 @@ components:
           schema: {$ref: "#/components/schemas/NoteError"}
           examples:
             notFound:
-              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes with GET /api/v1/notes."}}
+              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes and use an id from there."}}
     NoteInvalid:
       description: The note is invalid
       content:
@@ -4542,7 +4544,23 @@ components:
           schema: {$ref: "#/components/schemas/NoteError"}
           examples:
             invalid:
-              value: {error: {code: invalid_note, message: "The note could not be saved.", hint: "Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. An agent's new note also needs operation_id, a UUID it keeps when retrying; a change sends none."}}
+              value: {error: {code: invalid_note, message: "The note could not be saved.", hint: "details says why. Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. An agent's new note also needs operation_id, a UUID it keeps when retrying; a person's new note and a change send none."}}
+    NoteKeyConflict:
+      description: This operation_id was already used for another note, with another title or text
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            conflict:
+              value: {error: {code: idempotency_conflict, message: "This operation_id was already used for another note.", hint: "Send a new UUID as operation_id for a new note. Keep an operation_id only to retry the same note."}}
+    NoteRemoved:
+      description: The note this operation_id made has been deleted; id names it
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RemovedNoteError"}
+          examples:
+            removed:
+              value: {error: {code: note_removed, message: "The note this operation_id made has been deleted.", hint: "id names the deleted note. Send a new UUID as operation_id to add it again.", id: "0b9a1e3c-6f0e-4c39-9d3a-2f6a8e1c4d55"}}
     NotesUnavailable:
       description: Sign-in is not configured or the notes could not be reached
       content:
@@ -4713,7 +4731,7 @@ components:
           schema: {$ref: "#/components/schemas/RecoveryError"}
           examples:
             noteNotFound:
-              value: {error: {code: note_not_found, message: "There is no note of yours with that id.", hint: "List your person's notes and use an id from there."}}
+              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes and use an id from there."}}
     AgentSignInRefused:
       description: The request's wallet signature was not accepted
       content:
@@ -5410,7 +5428,7 @@ components:
       type: object
       additionalProperties: false
       properties:
-        operation_id: {type: string, format: uuid, description: "Required for agent creates; stable note UUID. Omit for updates."}
+        operation_id: {type: string, format: uuid, description: "An agent's key for its new note: required then, kept when retrying, and it becomes the note's id. A person's new note and a change send none."}
         title: {type: string, minLength: 1, maxLength: 120}
         body: {type: [string, "null"], maxLength: 10000}
     NoteError:
@@ -5425,7 +5443,7 @@ components:
           properties:
             code:
               type: string
-              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, notes_unavailable]
+              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, idempotency_conflict, notes_unavailable]
             message: {type: string}
             hint: {type: string}
     Session:
@@ -5444,6 +5462,20 @@ components:
             avatar_src:
               type: [string, "null"]
               pattern: "^data:image/svg\\+xml;base64,"
+    RemovedNoteError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, hint, id]
+          properties:
+            code: {type: string, const: note_removed}
+            message: {type: string}
+            hint: {type: string}
+            id: {type: string, format: uuid, description: The deleted note the operation_id made.}
     RemovedMessageError:
       type: object
       additionalProperties: false

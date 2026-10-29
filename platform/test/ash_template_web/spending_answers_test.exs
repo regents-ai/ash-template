@@ -25,7 +25,7 @@ defmodule AshTemplateWeb.SpendingAnswersTest do
   test "while no grant can be made, a refused pin and the balances note agree" do
     Application.put_env(:regent_credits, :agent_grants_enabled, false)
     %{agent: agent, account: account} = paired()
-    note = Notes.create_note!(%{title: "Pin me", operation_id: Ecto.UUID.generate()}, actor: agent)
+    note = Notes.create_note!(%{title: "Pin me"}, actor: agent)
 
     balances = agent |> conn_for() |> PairedAgentController.balances(%{}) |> json_response(200)
 

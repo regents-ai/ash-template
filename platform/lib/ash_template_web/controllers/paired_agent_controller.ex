@@ -4,7 +4,8 @@ defmodule AshTemplateWeb.PairedAgentController do
   `assets/js/public_tools.ts`) and regents-cli alike: search, pins and label
   ratings on its person's notes, their Credits and Points, reading their activity
   and marking it read, room search, and the people and agents its person has
-  muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s.
+  muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s,
+  which also holds the words of every notes refusal.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -17,9 +18,9 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias AshTemplate.Activity.Refused, as: ActivityRefused
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Agents.NotPaired
-  alias AshTemplate.Notes.{Decision, Note}
+  alias AshTemplate.Notes.Note
   alias AshTemplate.Rooms.Mute
-  alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesController, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
 
@@ -29,14 +30,6 @@ defmodule AshTemplateWeb.PairedAgentController do
     "authentication_required" =>
       {401, "A signed request from a paired agent is required.",
        "Prepare the request, sign its exact bytes with your SIWA signer, then send the request and proof."},
-    "note_not_found" =>
-      {404, "There is no note of yours with that id.",
-       "List your person's notes and use an id from there."},
-    "label_not_found" =>
-      {404, "There is no label of yours with that id.", "Read the note and use its label.id."},
-    "invalid_label_report" =>
-      {422, "That label could not be rated.",
-       "Send report as fits or does_not_fit. Only an answered label can be rated, once. Read the note before retrying."},
     "invalid_cursor" =>
       {422, "That cursor is invalid.",
        "Send after as the previous page's pagination.next_cursor, unchanged, or omit it for the newest entries."},
@@ -78,10 +71,14 @@ defmodule AshTemplateWeb.PairedAgentController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
+  @notes ~w(note_not_found label_not_found invalid_label_report)
+
   @doc """
   The `{status, message, hint}` of the refusal `code`, for the hosted MCP
-  server's tool errors (`AshTemplateWeb.ToolErrors`).
+  server's tool errors (`AshTemplateWeb.ToolErrors`); a notes refusal is in the
+  notes' own words.
   """
+  def refusal(code) when code in @notes, do: NotesController.refusal(code)
   def refusal(code), do: Map.fetch!(@errors, code)
 
   # The refusals a change to the agent's grant would answer.
@@ -154,17 +151,11 @@ defmodule AshTemplateWeb.PairedAgentController do
     do: conn |> UnexpectedFailure.log(result) |> refuse("unavailable")
 
   def report_label(conn, %{"id" => id}) do
-    actor = conn.assigns.actor
-
-    with {:ok, %Decision{} = decision} <- Notes.get_label_decision(id, actor: actor),
-         {:ok, decision} <- Notes.rate_label(decision, conn.body_params["report"], actor: actor) do
-      json(conn, %{label: %{id: decision.id, rating: decision.report}})
-    else
-      {:ok, nil} -> refuse(conn, "label_not_found")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_label_report")
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
+    note_answer(
+      conn,
+      :notes_rate_label,
+      Notes.notes_rate_label(id, conn.body_params, actor: conn.assigns.actor)
+    )
   end
 
   # The muted authors' names are theirs: data, never instructions.
@@ -180,7 +171,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   def add_mute(conn, _params) do
     case Rooms.mute_author(conn.body_params["message_id"], actor: conn.assigns.actor) do
       {:ok, mute} -> json(conn, %{mute: Mute.present(mute)})
-      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_mute", error)
+      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_mute", details(error))
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
@@ -217,30 +208,20 @@ defmodule AshTemplateWeb.PairedAgentController do
   end
 
   def search_notes(conn, _params) do
-    case Notes.search_my_notes(conn.body_params["text"],
-           actor: conn.assigns.actor,
-           load: [:label_decision, :changed_by_agent]
-         ) do
-      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
+    case Notes.notes_search(conn.body_params["text"], actor: conn.assigns.actor) do
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_search")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+      result -> note_answer(conn, :notes_search, result)
     end
   end
 
-  # What pinning the note would cost, changing nothing: a pinned note stays as
-  # it is and costs nothing (`Note.Pin`).
-  def pin_price(conn, %{"id" => id}) do
-    for_note(conn, id, fn note ->
-      credits = if note.pinned_at, do: Decimal.new(0), else: Note.Pin.price()
-      json(conn, %{note: %{id: note.id, pinned: !!note.pinned_at}, price: %{credits: credits}})
-    end)
-  end
+  def pin_price(conn, %{"id" => id}),
+    do: note_answer(conn, :notes_pin_price, Notes.notes_pin_price(id, actor: conn.assigns.actor))
 
   # Pinning costs the person one Credit (`Note.Pin`); a refused spend pins nothing.
   def pin_note(conn, %{"id" => id}) do
     for_note(conn, id, fn note ->
       case Notes.pin_note(note, conn.body_params["operation_id"], actor: conn.assigns.actor) do
-        {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
+        {:ok, note} -> json(conn, %{note: Note.present(note)})
         {:error, %Ash.Error.Invalid{} = error} -> refuse_pin(conn, error)
         {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
@@ -250,7 +231,7 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   defp refuse_pin(conn, %Ash.Error.Invalid{errors: errors} = error) do
     case Enum.find_value(errors, &spending_code/1) do
-      nil -> refuse(conn, "invalid_pin", error)
+      nil -> refuse(conn, "invalid_pin", details(error))
       code when code in @granted -> refuse_spending(conn, code)
       code -> refuse(conn, code)
     end
@@ -275,20 +256,37 @@ defmodule AshTemplateWeb.PairedAgentController do
     |> json(%{error: %{code: code, message: message, hint: Holdings.spending_closed()}})
   end
 
-  def unpin_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.unpin_note/2)
-  def archive_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.archive_note/2)
-  def unarchive_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.unarchive_note/2)
+  def unpin_note(conn, %{"id" => id}),
+    do: note_answer(conn, :notes_unpin, Notes.notes_unpin(id, actor: conn.assigns.actor))
 
-  # A free change to one of the person's notes, answered with the note.
-  defp change_note(conn, id, change) do
-    for_note(conn, id, fn note ->
-      case change.(note, actor: conn.assigns.actor) do
-        {:ok, note} -> json(conn, %{note: NotesJSON.note(note)})
-        {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-      end
-    end)
+  def archive_note(conn, %{"id" => id}),
+    do: note_answer(conn, :notes_archive, Notes.notes_archive(id, actor: conn.assigns.actor))
+
+  def unarchive_note(conn, %{"id" => id}),
+    do: note_answer(conn, :notes_unarchive, Notes.notes_unarchive(id, actor: conn.assigns.actor))
+
+  # A note action's answer, or its refusal as every surface gives it
+  # (`NotesController.input_refusal/2`).
+  defp note_answer(conn, _action, {:ok, answer}), do: json(conn, answer)
+
+  defp note_answer(conn, action, {:error, %Ash.Error.Invalid{} = error}) do
+    {code, extra} = NotesController.input_refusal(action, error)
+    refuse(conn, code, extra)
   end
+
+  # The pairing was revoked after this request was let in.
+  defp note_answer(
+         conn,
+         _action,
+         {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: code}]}}
+       ),
+       do: refuse(conn, code)
+
+  defp note_answer(conn, _action, {:error, %Ash.Error.Forbidden{}}),
+    do: refuse(conn, "agent_not_paired")
+
+  defp note_answer(conn, _action, {:error, error}),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
 
   defp for_note(conn, id, respond) do
     case Notes.get_my_note(id, actor: conn.assigns.actor) do
@@ -326,10 +324,11 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  defp refuse(conn, code, error \\ nil) do
+  defp details(error), do: %{details: FormErrors.details(error)}
+
+  defp refuse(conn, code, extra \\ %{}) do
     {status, message, hint} = refusal(code)
-    body = %{code: code, message: message, hint: hint}
-    body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
+    body = Map.merge(%{code: code, message: message, hint: hint}, extra)
     conn |> put_status(status) |> json(%{error: body})
   end
 end
