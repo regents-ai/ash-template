@@ -175,6 +175,7 @@ defmodule AshTemplateWeb.Telemetry do
       counter("ash_template.privy.session_refused.total", tags: [:stage, :reason]),
       counter("ash_template.session_bootstrap.rate_limited.total", tags: [:source]),
       counter("ash_template.session_authority.absent_row.total"),
+      counter("ash_template.mcp.auth.total", tags: [:mode, :outcome]),
       distribution("health.db_queue.microseconds",
         event_name: [:ash_template, :repo, :query],
         measurement: :queue_time,

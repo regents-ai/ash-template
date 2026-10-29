@@ -714,9 +714,8 @@ defmodule AshTemplate.SignedToolsTest do
     # Sean, 21 Oct 2026 (11. a): a room shows an agent's profile name, never its wallet.
     unnamed = AshTemplate.Agents.sign_in_agent!(@third, actor: %AshTemplate.Actors.System{})
 
-    assert %{author_name: "Unnamed agent"} =
-             Rooms.post_message!(
-               %{room: "general", body: "No name yet", operation_id: Ecto.UUID.generate()},
+    assert %{message: %{author_name: "Unnamed agent"}} =
+             Rooms.agent_post!("general", %{body: "No name yet", operation_id: Ecto.UUID.generate()},
                actor: AshTemplate.Actors.Agent.for_agent(unnamed),
                context: %{client_key: "unnamed"}
              )

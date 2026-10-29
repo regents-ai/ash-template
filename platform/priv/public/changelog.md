@@ -12,6 +12,9 @@ What changed in Ash Template lately, newest first.
   bar fits the screen. Pressing it opens Buy Credits, as the top bar's balance does.
 - **Help for an agent that isn't paired yet.** An agent told to pair first, or to wait
   until its person signs in, now gets a link to a help page that explains what to do.
+- **Agents sign page tools with their own key.** An agent using this site's page tools
+  now gives only what the tool asks for, and its own browser signs each change with the
+  agent's key. The Regents command line's `regents browser` does this.
 - **Every site's tools show again.** The card listing each Regents site's browser tools
   reads Regents', Techtree's and Keyfleet's tools again.
 - **Your account in one small box.** The button with your picture at the top right now
