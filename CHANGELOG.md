@@ -5608,3 +5608,18 @@ way, and the library's own site-tool serving is gone.
   The connected identity's `account_url` still opens `/account`; its description now
   says the Agents tab is there. Browser walks open `/account/agents` for the agents and
   pairing, and `pages.json` lists the new page.
+
+## 2026-10-29 — Released v141
+
+- template.regents.sh v141 runs `816a5110`: `Fly-Client-IP` counts only from an IPv4 peer
+  (Fly's proxy), so another app on Fly's private network keys by its own address.
+  Released 23:44:57Z–23:52:41Z under the shared release lock, one machine. No migration
+  (the release step ran and found none). Rollback: v140, `017a3acd`.
+- Live check in headless Chromium: `/capabilities.json` build.commit `816a5110`. `GET /mcp`
+  with `Accept: text/event-stream` answers 405 with `Allow: POST`; an unsigned
+  `tools/list` POST answers 401 `connection_required`. The template's own live check as
+  the paired agent claude-code: 151 passed, 1 skipped; 57 WebMCP tools registered, 17 of 17
+  reads answer 200, the signed `agents_whoami` paired. Twelve `/api` requests in a row,
+  each in a fresh browser, read a remaining budget of 119, 118, then 117 down to 108: one
+  per request, so a visitor still has its own budget keyed by the proxy's header rather
+  than the proxy's shared one.
