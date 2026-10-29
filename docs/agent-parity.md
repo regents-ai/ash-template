@@ -120,7 +120,7 @@ identity tools behind its switch.
 - **G11. A connected app can only pair and check in.** Claude, connected at `/mcp`
   with a token, runs the four identity tools and nothing else (the room actions forbid
   `connected_app`), so once paired it can do none of its person's work. The library
-  now serves a site's own tools to a connected app (elixir-utils `8523c08`:
+  now serves a site's own tools to a connected app (elixir-utils `860c1db`:
   `RegentMCPAgents.SiteTools`, `act/5` and the plug's `tools:`, `endpoint:` and
   `tool_limit:`),
   signed as the connection's hosted identity and served through the site's endpoint,
@@ -131,7 +131,8 @@ identity tools behind its switch.
   action under the same policies, and answers as it does for a self-signing agent.
   Each such call is a hosted sign-in, so it spends a per-account budget of its own
   (Keyfleet: 30 a minute, policy `mcp_tools`; the template takes the same figure).
-  This needs a signing call from the library in place of `act/5`, a second OAuth
+  The library's `RegentMCPAgents.sign/3` (elixir-utils `860c1db`) signs that one exact
+  request for a site permission. Still needed: a second OAuth
   scope on the consent page, and the sign-in service letting the template's hosted
   signer sign `POST /mcp`. Protected (sign-in): waits for Sean's go. Owner: template
   chief, with the agent-access lane.

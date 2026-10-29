@@ -137,7 +137,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       end
     end
 
-    test "pair_identity takes what the library takes, and input it cannot take gets the identity refusal" do
+    test "pair_identity takes what the library takes, and input it cannot take gets the library's pairing refusal" do
       subject = "did:privy:connector-input"
       sign_in!(subject)
       %{access: token} = connect!(subject)
@@ -160,7 +160,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
                  tool(token, "pair_identity", args)
 
         refute text =~ "%{"
-        assert Jason.decode!(text)["error"]["code"] == "identity_request_refused"
+        assert Jason.decode!(text)["error"]["code"] == "invalid_request"
       end
 
       assert agents(subject) == []

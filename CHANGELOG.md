@@ -5104,9 +5104,9 @@ An adversarial review of the two commits above found five things, all fixed here
   shape; an unknown field (`colour`) proves an input is refused before signing.
 - Released only with the regents-cli release that carries `regents browser`.
 
-## 2026-10-29 — Hosted MCP: elixir-utils 8523c08, the site's own identity refusals
+## 2026-10-29 — Hosted MCP: elixir-utils 860c1db, the site's own identity refusals
 
-- elixir-utils moves to `8523c08` (claude/mcp-site-tools-1029; only `mcp_agents`
+- elixir-utils moves to `860c1db` (claude/mcp-site-tools-1029; only `mcp_agents`
   differs from `3bc18ae`). The identity tools' titles are one or two words
   (Registration, Identity, Pairing, Check-in) and say whether calling again changes
   anything; `AshTemplate.Agents` passes `idempotent_hint` on to AshAi.
@@ -5121,3 +5121,8 @@ An adversarial review of the two commits above found five things, all fixed here
   app to act as its paired agent, and regent-workflow says a connected app that can
   only pair and check in is a gap.
 - Side branch, uncompiled: the Mac runs `mix deps.get` and `make check`.
+- `pair_identity` input its action can't take is refused with the library's own
+  `invalid_request` words (`RegentMCPAgents.pairing_input_refusal/0`), as the library
+  refuses a malformed pairing itself.
+- The pin carries `RegentMCPAgents.sign/3`, the signing call G11's plan needs; the
+  template does not use it yet.

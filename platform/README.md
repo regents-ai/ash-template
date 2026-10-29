@@ -110,7 +110,7 @@ and `rooms_post` only an agent. Every call carries the client's address key
 its error, whose text is the HTTP refusal's JSON, `{"error": {"code", "message",
 "hint"}}` (`AshTemplateWeb.ToolErrors`); an input the action cannot take is checked
 before the tool runs (`ToolErrors.check_input/3`) and refused with the code the HTTP
-route uses (`invalid_limit`, `invalid_message`, `identity_request_refused`). `[:ash_template, :mcp, :auth]` counts each
+route uses (`invalid_limit`, `invalid_message`, a pairing's `invalid_request`). `[:ash_template, :mcp, :auth]` counts each
 request by how it came in and whether it was taken.
 
 `priv/capabilities.json` carries `contract_revision` and, for each operation, its

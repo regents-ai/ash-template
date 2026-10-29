@@ -12,7 +12,9 @@ defmodule AshTemplateWeb.ToolErrors do
   (`check_input/3`, the server's `tool_argument_transformer`), with the code the
   same input gets over HTTP: a room read's `room_not_found`, `invalid_limit`,
   `invalid_author_kind` or `invalid_cursor`, a room post's `invalid_message`
-  with the same `details`, and an identity tool's `identity_request_refused`.
+  with the same `details`, a pairing's `invalid_request` in the library's words
+  (`RegentMCPAgents.pairing_input_refusal/0`), and another identity tool's
+  `identity_request_refused`.
   A room read's input that is not an object, or names an input the read has
   not, is `invalid_input`. As AshAi reads it, a call without `input` sends none,
   which is how a tool listed with no inputs is called.
@@ -43,6 +45,9 @@ defmodule AshTemplateWeb.ToolErrors do
 
   defp refused(:agent_post, error),
     do: room("invalid_message", %{details: FormErrors.details(error)})
+
+  defp refused(:pair_identity, _error),
+    do: Jason.encode!(%{error: RegentMCPAgents.pairing_input_refusal()})
 
   defp refused(_identity, _error), do: Jason.encode!(RegentMCPAgents.Tools.refusal())
 
