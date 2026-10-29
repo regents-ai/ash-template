@@ -5371,3 +5371,27 @@ way, and the library's own site-tool serving is gone.
   database's 97 connections spare, so a template release overlapping a site's could go
   over. The lock goes from the template and every site together after the last move. The
   ash-data skill says so. No release.
+
+## 2026-10-29 — Agent access: this site's own verify key at the sign-in service
+
+- elixir-utils moves to `60e4b8de` (branch `agent-access/site-verify-template-pin-1029`):
+  the library this site already ran (`dea334b0`, hosted site tools) joined with the verify
+  key change (`a1b6e5db`), so one pin carries both. Every signed agent request the site
+  asks the sign-in service to check carries the site's own key, `SIWA_SITE_VERIFY_KEY`,
+  which names the audience; the `x-siwa-audience` header is gone. Production refuses to
+  start without the key, or with one the sign-in service would never take (fewer than 32
+  letters, digits, `-` or `_`; review finding: an empty key booted and refused every agent). Development uses the sign-in service's development key
+  (`config/dev.exs`), which only a sign-in service run on this machine accepts;
+  https://siwa.regents.sh refuses it.
+- If the service refuses the key, or answers for another site, the site logs an error and
+  agents get 503 `siwa_request_failed` until the settings are fixed. The shared plug makes
+  that check, so `AgentWallet.accept/3` no longer compares the audience itself.
+- The signed tools tests' sign-in service answers only the site's key, so those tests also
+  prove the key is sent.
+- `GET /api/agents/v1/whoami`'s `agent` also answers `human_backed` and
+  `same_person_agent_count`, as the sign-in service names them on that request, so
+  regents-cli checks a whole sign-in through a site instead of the sign-in service. The
+  person's World ID number is never answered. The OpenAPI documents move to 8.1.0.
+- Ported from `agent-access/template-verify-key-1028` (15fc22c8, built on main b9d8ef1c)
+  onto main `74403fb1`. Releases only in the joint verify-key release with siwa-server and
+  every site (control/rollouts/2026-10-28-site-verify-keys.md).
