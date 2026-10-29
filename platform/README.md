@@ -331,8 +331,10 @@ and check the browser console for "Content Security Policy" errors.
 
 Rate limits key on the client address from `AshTemplateWeb.ClientAddress`. In
 production (`:behind_fly_proxy`, set in `config/prod.exs`) that is the one
-`Fly-Client-IP` header Fly's proxy writes, replacing anything a client sent;
-everywhere else it is the direct peer. `X-Forwarded-For` is never read. A site
+`Fly-Client-IP` header Fly's proxy writes, replacing anything a client sent, on
+the proxy's own connection over the machine's private IPv4 address. Another of the
+organisation's apps reaching the machine directly over 6PN (IPv6) is keyed by its
+own address, whatever header it sends. Everywhere else it is the direct peer. `X-Forwarded-For` is never read. A site
 that puts another proxy in front of Fly must change this first.
 
 Prometheus metrics are served only by `AshTemplateWeb.Metrics` on port 9091
