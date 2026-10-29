@@ -133,7 +133,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
         assert json(refused)["error"]["code"] == "connection_required"
 
         assert get_resp_header(refused, "www-authenticate") ==
-                 [RegentOAuth.challenge(RegentMCPAgents.identity_scope())]
+                 [RegentOAuth.challenge(Enum.join(RegentOAuth.scopes(), " "))]
       end
     end
 

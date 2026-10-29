@@ -33,6 +33,8 @@ defmodule AshTemplate.Application do
         # there before the endpoint below serves a page.
         AshTemplate.SharedReading,
         AshTemplate.Agents.ActivityReading,
+        # The wallet of each connected app's own identity, asked for once.
+        AshTemplate.Agents.HostedAddress,
         # Each agent's reading for an open account menu, unlinked from the page.
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
         chain_head_children(),

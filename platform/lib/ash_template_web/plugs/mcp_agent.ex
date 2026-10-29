@@ -23,10 +23,19 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     is the actor.
   - A connected app's token (`Authorization: Bearer`) must be one this site gave
     for its `/mcp` address with the identity permission, as `RegentOAuth`
-    checks it; the app is the actor (`AshTemplate.Actors.ConnectedApp`) and
-    spends its account's budget. Any other token is asked to connect again, with
-    the `WWW-Authenticate` challenge naming this site's sign-in. While
-    connecting apps is off, a token is refused.
+    checks it, and spends its account's budget. While the app's own identity
+    is paired with that account and the person allowed the agent permission
+    (`AshTemplate.OAuth.agent_scope/0`), the actor is that paired agent, as an
+    agent signing its own requests would be (`AgentWallet.actor_for/2`, with
+    the token's principal as its `connection`), so AshAi lists and runs the
+    agent's tools under the same policies and its identity tools besides;
+    its pairing is checked again before the answer leaves. Otherwise the app
+    is the actor (`AshTemplate.Actors.ConnectedApp`) and has its identity
+    tools only. The identity's wallet is read once per account
+    (`AshTemplate.Agents.HostedAddress`), so a call never waits on the
+    sign-in service. Any other token is asked to connect again, with the
+    `WWW-Authenticate` challenge naming this site's sign-in and both
+    permissions. While connecting apps is off, a token is refused.
   - Both together are refused as `ambiguous_credentials`.
   - Neither is refused: while connecting apps is on, as `connection_required`
     with the challenge, so an app such as Claude starts its sign-in on its first
@@ -46,7 +55,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   import Plug.Conn
 
-  alias AshTemplate.Actors.ConnectedApp
+  alias AshTemplate.Actors.{Agent, ConnectedApp}
+  alias AshTemplate.Agents.HostedAddress
   alias AshTemplateWeb.{ClientAddress, PublicDocuments}
   alias AshTemplateWeb.Plugs.AgentWallet
 
@@ -94,7 +104,12 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   end
 
   @doc false
-  def account(conn), do: Ash.PlugHelpers.get_actor(conn).principal.subject
+  def account(conn) do
+    case Ash.PlugHelpers.get_actor(conn) do
+      %ConnectedApp{principal: principal} -> principal.subject
+      %Agent{connection: principal} -> principal.subject
+    end
+  end
 
   defp caller(conn) do
     case {Siwa.AgentAuthPlug.signed_request?(conn), get_req_header(conn, "authorization")} do
@@ -139,12 +154,30 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
          ["Bearer " <> bearer] <- token,
          {:ok, principal} <- RegentOAuth.verify(bearer, RegentOAuth.resource(), scope()) do
       conn
-      |> Ash.PlugHelpers.set_actor(%ConnectedApp{principal: principal})
+      |> as_connected_app(principal)
       |> RegentAgentAccess.RateLimit.call(@budget)
       |> counted(:site_oauth)
     else
       false -> refuse(conn, :site_oauth, "delegated_access_not_enabled")
       _not_this_sites -> connect(conn, :site_oauth)
+    end
+  end
+
+  # The app's paired identity, when the person allowed it to work here as that
+  # agent; the app itself otherwise. Only the token's own account chooses the
+  # identity, and only a pairing with that same account counts.
+  defp as_connected_app(conn, %{subject: subject} = principal) do
+    with true <- AshTemplate.OAuth.agent_scope() in principal.scopes,
+         {:ok, address} <- HostedAddress.fetch(principal),
+         {:ok, %Agent{pairing: :active, privy_user_id: ^subject} = agent} <-
+           AgentWallet.actor_for(address) do
+      agent = %{agent | connection: principal}
+
+      conn
+      |> Ash.PlugHelpers.set_actor(agent)
+      |> AgentWallet.recheck_before_send(agent)
+    else
+      _not_paired_here -> Ash.PlugHelpers.set_actor(conn, %ConnectedApp{principal: principal})
     end
   end
 
@@ -156,7 +189,10 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   defp connect(conn, mode) do
     conn
-    |> put_resp_header("www-authenticate", RegentOAuth.challenge(scope()))
+    |> put_resp_header(
+      "www-authenticate",
+      RegentOAuth.challenge(Enum.join(RegentOAuth.scopes(), " "))
+    )
     |> refuse(mode, "connection_required")
   end
 

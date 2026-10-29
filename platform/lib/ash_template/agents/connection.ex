@@ -2,9 +2,9 @@ defmodule AshTemplate.Agents.Connection do
   @moduledoc """
   The one Regents identity an app keeps when a person connects it to their
   account here, such as Claude: the identity tools of the hosted MCP server.
-  Only that app may run them (`AshTemplate.Actors.ConnectedApp`), with the token
-  its connection holds; `RegentMCPAgents` does the work for the account the token
-  names. register_identity prepares the identity, get_identity reads whether it
+  Only that app may run them (`AshTemplate.Agents.Connection.Caller`), with the
+  token its connection holds, as itself or as its paired identity;
+  `RegentMCPAgents` does the work for the account the token names. register_identity prepares the identity, get_identity reads whether it
   is paired, pair_identity pairs it with the account's own pairing code, and
   check_in tells the person it is active. A refusal carries the site's own
   code, words and `retry_after` when the site answered, such as
@@ -17,7 +17,8 @@ defmodule AshTemplate.Agents.Connection do
     domain: AshTemplate.Agents,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias AshTemplate.Agents.Connection.Refused
+  alias AshTemplate.Actors.{Agent, ConnectedApp}
+  alias AshTemplate.Agents.Connection.{Caller, Refused}
 
   actions do
     action :register_identity, :map do
@@ -65,11 +66,12 @@ defmodule AshTemplate.Agents.Connection do
 
   policies do
     policy always() do
-      authorize_if actor_attribute_equals(:role, :connected_app)
+      authorize_if Caller
     end
   end
 
-  defp principal(%{actor: %AshTemplate.Actors.ConnectedApp{principal: principal}}), do: principal
+  defp principal(%{actor: %ConnectedApp{principal: principal}}), do: principal
+  defp principal(%{actor: %Agent{connection: %{} = principal}}), do: principal
 
   defp answer({:ok, answer}), do: {:ok, answer}
 

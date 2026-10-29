@@ -5126,3 +5126,28 @@ An adversarial review of the two commits above found five things, all fixed here
   refuses a malformed pairing itself.
 - The pin carries `RegentMCPAgents.sign/3`, the signing call G11's plan needs; the
   template does not use it yet.
+
+## 2026-10-29 — Hosted MCP: a connected app works as its paired agent
+
+Correction to the entry above: the connected app's site tools are now built, the Ash
+way, and the library's own site-tool serving is gone.
+
+- elixir-utils moves to `dea334b` (claude/mcp-site-tools-1029; only `mcp_agents`
+  differs from `3bc18ae`): `RegentMCPAgents.address/1` gives the wallet of an
+  account's hosted identity; `act/5`, `sign/3`, `SiteTools` and the plug's
+  `tools:`, `endpoint:` and `tool_limit:` are removed.
+- Consent asks for a second permission, `ash-template.agent` ("work here as the agent
+  you paired"), and the sign-in challenge at `/mcp` names both.
+- `AshTemplateWeb.Plugs.McpAgent`: a token with that permission whose identity is
+  paired with the token's own account becomes that paired agent's actor
+  (`AgentWallet.actor_for/2`, the actor a signing agent gets, with the token's
+  principal as `connection`), its pairing checked again before the answer leaves.
+  AshAi then lists and runs the agent's tools under the same policies; the identity
+  tools stay the app's (`AshTemplate.Agents.Connection.Caller`). Otherwise the app
+  keeps its identity tools alone, as before.
+- `AshTemplate.Agents.HostedAddress` asks the sign-in service for the identity's
+  wallet once per account on each machine and keeps it in ETS, so no call at `/mcp`
+  waits on the service. The budget is `/mcp`'s own, 120 a minute per account.
+- `postRoomMessage` lists `site_oauth` beside `siwa_request`; `Capabilities` lets an
+  agent operation on hosted MCP name it, and the guide's proof words say so.
+- Protected (sign-in): ships on Sean's go naming the final commit.

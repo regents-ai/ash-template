@@ -206,7 +206,9 @@ defmodule AshTemplateWeb.Capabilities do
 
                      "siwa_request" in row["auth_modes"] != row["authority"] in @agents or
                        row["fresh_proof"] != "siwa_request" in row["auth_modes"] or
-                         "site_oauth" in row["auth_modes"] != (row["authority"] == @connected_app) ->
+                         "site_oauth" in row["auth_modes"] !=
+                           (row["authority"] == @connected_app or
+                              (row["authority"] in @agents and surfaces["hosted_mcp"] == true)) ->
                        "proof that differs from its authority"
 
                      row["actor"] != actors[row["authority"]] ->
@@ -365,10 +367,16 @@ defmodule AshTemplateWeb.Capabilities do
   defp proof_words(%{authority: @connected_app}),
     do: "The app's connection to its person's account"
 
-  defp proof_words(%{fresh_proof: true}), do: "A new signature on every request"
-  # Every call at /mcp is signed, so a read anyone may make elsewhere is signed there.
+  defp proof_words(%{fresh_proof: true, auth_modes: modes}) do
+    if "site_oauth" in modes,
+      do: "A new signature on every request, or at MCP its person's connected app",
+      else: "A new signature on every request"
+  end
+
+  # Every call at /mcp carries a credential, so a read anyone may make elsewhere
+  # needs one there.
   defp proof_words(%{auth_modes: [], surfaces: %{"hosted_mcp" => true}}),
-    do: "None, except at MCP: your agent's signature"
+    do: "None, except at MCP: your agent's signature or connected app"
 
   defp proof_words(%{auth_modes: []}), do: "None"
   defp proof_words(_row), do: "Its person's sign-in"

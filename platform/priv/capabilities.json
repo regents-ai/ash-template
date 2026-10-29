@@ -506,7 +506,8 @@
         "cli": true
       },
       "auth_modes": [
-        "siwa_request"
+        "siwa_request",
+        "site_oauth"
       ],
       "fresh_proof": true,
       "actor": "agent",

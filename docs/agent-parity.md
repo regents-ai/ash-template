@@ -64,7 +64,7 @@ identity tools behind its switch.
 | --- | --- | --- | --- | --- | --- | --- |
 | Notes: list, read, add, edit, delete, search | `/notes` | `notes_*` | — | `notes *` | no | G5 |
 | Notes: pin (spends 1 Credit), unpin, archive, rate a label | `/notes` | `notes_pin`, `notes_unpin`, `notes_archive`, `notes_unarchive`, `notes_rate_label` | — | `notes pin` and the rest | pin spends Credits within the allowance | G5 |
-| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_messages`, `rooms_post` | `rooms *` | no | G5 |
+| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_messages`, `rooms_post` (a paired connected app too, G11) | `rooms *` | no | G5 |
 | Mute and unmute an author | `/rooms/:room` | `mutes_*` | — | `mutes *` | no | G5 |
 | Direct messages: list, open, read, send, block, unblock | `/dms` | `dms_*` | — | `dms *` | no | G5 |
 | Polls: list, read, start, vote, end | `/polls` | `polls_*` | — | `polls *` | no | G5 |
@@ -117,22 +117,15 @@ identity tools behind its switch.
   MCP follows with G5. The same change made `prepare_agent_request` offer every signed
   tool: it had missed the room likes and reports, direct messages and polls, so an agent
   whose browser checks inputs against the schema could not prepare them.
-- **G11. A connected app can only pair and check in.** Claude, connected at `/mcp`
-  with a token, runs the four identity tools and nothing else (the room actions forbid
-  `connected_app`), so once paired it can do none of its person's work. The library
-  now serves a site's own tools to a connected app (elixir-utils `860c1db`:
-  `RegentMCPAgents.SiteTools`, `act/5` and the plug's `tools:`, `endpoint:` and
-  `tool_limit:`),
-  signed as the connection's hosted identity and served through the site's endpoint,
-  and Keyfleet's `/mcp` uses it. The template's `/mcp` is AshAi behind `McpAgent`,
-  not `RegentMCPAgents.Plug`, so those options have no place here. Plan: for a token
-  with the site's agent permission, `McpAgent` has the hosted signer sign the call as
-  the connection's identity and admits it as that agent, so AshAi runs the same Ash
-  action under the same policies, and answers as it does for a self-signing agent.
-  Each such call is a hosted sign-in, so it spends a per-account budget of its own
-  (Keyfleet: 30 a minute, policy `mcp_tools`; the template takes the same figure).
-  The library's `RegentMCPAgents.sign/3` (elixir-utils `860c1db`) signs that one exact
-  request for a site permission. Still needed: a second OAuth
-  scope on the consent page, and the sign-in service letting the template's hosted
-  signer sign `POST /mcp`. Protected (sign-in): waits for Sean's go. Owner: template
-  chief, with the agent-access lane.
+- **G11. A connected app works as its paired agent.** Built on side branch
+  `claude/mcp-site-tools-1029`, behind the connector's switch. A token with the
+  agent permission (`ash-template.agent`, asked for at sign-in beside the identity
+  one) whose identity is paired with the token's own account calls `/mcp` as that
+  paired agent: `McpAgent` reads the identity's wallet once per account
+  (`AshTemplate.Agents.HostedAddress`, from `RegentMCPAgents.address/1`) and builds
+  the same actor a signing agent gets (`AgentWallet.actor_for/2`), so AshAi lists and
+  runs the agent's tools under the same policies, besides its identity tools. No call
+  waits on the sign-in service. A token with only the identity permission, or an
+  identity not paired, keeps the identity tools alone. The per-account budget is
+  `/mcp`'s 120 a minute. Protected (sign-in): waits for Sean's go. Owner: template
+  chief.

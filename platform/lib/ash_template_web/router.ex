@@ -55,7 +55,8 @@ defmodule AshTemplateWeb.Router do
   # policies. McpAgent admits the request first: POST /mcp alone, JSON, one call,
   # no query string and no page from another site; then an agent signing with its
   # wallet or an app connected with a Bearer token from the sign-in above, never
-  # neither. So AshAi's own origin check takes whatever McpAgent let through.
+  # neither. A connected app whose identity is paired calls as that agent. So
+  # AshAi's own origin check takes whatever McpAgent let through.
   # A tool's input is checked as its action takes it, and refused with the code
   # HTTP gives (`AshTemplateWeb.ToolErrors.check_input/3`). No session, cookie or
   # CSRF token is read. Each account has its own budget here; the endpoint counts
@@ -83,7 +84,8 @@ defmodule AshTemplateWeb.Router do
                   "regents mcp signs each call for it. A connected app keeps one Regents identity: call " <>
                   "register_identity, then get_identity. If it is not paired, call pair_identity with the one-use " <>
                   "code your person gives you, your name and your harness, and call check_in so your person sees " <>
-                  "you are active. Never ask for a password, a private key or a wallet signature.",
+                  "you are active. Once paired, you work here as that agent: the room tools are yours as they are " <>
+                  "any paired agent's. Never ask for a password, a private key or a wallet signature.",
               list_ttl_ms: 0,
               read_ttl_ms: 0,
               cache_scope: "private",

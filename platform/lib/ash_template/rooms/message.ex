@@ -238,8 +238,9 @@ defmodule AshTemplate.Rooms.Message do
       authorize_if always()
     end
 
-    # Anyone reads a room, except an app connected to a person's account: its
-    # token is for its identity tools alone (`AshTemplate.Agents.Connection`).
+    # Anyone reads a room, except an app connected to a person's account calling
+    # as itself: its token is for its identity tools alone
+    # (`AshTemplate.Agents.Connection`). Paired, it calls as its agent instead.
     policy action(:room_messages) do
       forbid_if actor_attribute_equals(:role, :connected_app)
       authorize_if always()

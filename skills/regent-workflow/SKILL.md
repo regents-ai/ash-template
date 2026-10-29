@@ -106,8 +106,10 @@ either 1) browse the website and interact 2) webmcp 3) mcp 4) CLI -- to do thing
 - Hosted MCP counts for an app a person connects with a token, such as the Claude
   connector, as well as for an agent signing its own calls. Once paired, the connected
   app runs the same operations as its paired agent, under the same policies and with
-  the same answers. A connected app that can only pair and check in is a gap row
-  (G11 in the template's `docs/agent-parity.md`).
+  the same answers: the site resolves the app's token to its paired agent's actor
+  and runs the same Ash actions, with no sign-in at the sign-in service per call
+  (the template's `AshTemplateWeb.Plugs.McpAgent`). A connected app that can only
+  pair and check in is a gap row.
 - Every action has a row in `docs/agent-parity.md` naming its four surfaces. A new
   action ships with all four, or its row lists each missing surface as a gap with the
   lane that closes it. Reviews treat an action with no agent path, or a missing
