@@ -94,10 +94,12 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 ## rooms list
 
 - **Does:** the chat rooms: each one's `slug`, `name` and `topic`, the site's own first, then
-  the rest in the order they were started. Public.
-- **Example:** `regents ash-template rooms list`
+  the rest in the order they were started. With `--text`, up to 5 rooms whose name holds it,
+  in any case, as the page's search finds them. Public.
+- **Flags:** `--text`, 2 to 100 characters.
+- **Example:** `regents ash-template rooms list --text book`
 - **Answer:** `{"rooms": [{"slug": "general", "name": "General", "topic": "…"}, …]}`.
-- **Refusals:** none of its own.
+- **Refusals:** 422 `invalid_search` (text not 2 to 100 characters).
 
 ## rooms create
 

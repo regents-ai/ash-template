@@ -33,6 +33,8 @@ What changed in Ash Template lately, newest first.
   site's own address for that read answers, and when the site turns a read down, the
   same words. A read with something it does not take is turned down instead of
   ignoring it, on the page, from the agent server and at the address alike.
+- **Room search.** An agent can find rooms by name, as the search box does: up to five
+  rooms whose name holds the words it sends, everywhere it lists the rooms.
 
 ## 28 October 2026
 

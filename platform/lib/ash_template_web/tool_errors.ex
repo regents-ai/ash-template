@@ -14,7 +14,7 @@ defmodule AshTemplateWeb.ToolErrors do
   with the same `details`, one message's and each rooms or mutes change's as
   `AshTemplateWeb.RoomsController.input_refusal/2` answers it, a site's `site_not_found`, an agent's
   `agent_not_found`, an agent's change to its own profile as
-  `AshTemplateWeb.AgentsController.input_refusal/1` answers it, a search's `invalid_search`, a history's or activity's
+  `AshTemplateWeb.AgentsController.input_refusal/1` answers it, a search's or the rooms list's `invalid_search`, a history's or activity's
   `invalid_cursor`, other activity input's `invalid_activity_request`, any
   input to marking it read `invalid_mark_read_request`, a notes
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
@@ -135,7 +135,7 @@ defmodule AshTemplateWeb.ToolErrors do
     {AgentsController, code, extra}
   end
 
-  defp refused(action, _error, _input) when action in [:rooms_search, :notes_search],
+  defp refused(action, _error, _input) when action in [:rooms_list, :rooms_search, :notes_search],
     do: {PairedAgentController, "invalid_search", %{}}
 
   defp refused(action, error, _input) when action in @notes do

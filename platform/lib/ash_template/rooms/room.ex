@@ -86,11 +86,21 @@ defmodule AshTemplate.Rooms.Room do
               message: "You've started as many rooms as you can today. Start another tomorrow."}
     end
 
-    # The rooms as every surface lists them (`public/1`).
+    # The rooms as every surface lists them (`public/1`): every room, or with
+    # `text` the rooms whose name holds it, as the page's search finds them.
     action :rooms_list, :map do
-      run fn _input, _context ->
-        with {:ok, rooms} <- AshTemplate.Rooms.list_rooms(),
-             do: {:ok, %{rooms: Enum.map(rooms, &public/1)}}
+      argument :text, :string,
+        constraints: [min_length: 2, max_length: 100],
+        description: "Words a room's name holds, 2 to 100 characters, in any case."
+
+      run fn input, _context ->
+        found =
+          case input.arguments do
+            %{text: text} when is_binary(text) -> AshTemplate.Rooms.search_rooms(text)
+            _every_room -> AshTemplate.Rooms.list_rooms()
+          end
+
+        with {:ok, rooms} <- found, do: {:ok, %{rooms: Enum.map(rooms, &public/1)}}
       end
     end
 

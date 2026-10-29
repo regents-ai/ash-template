@@ -361,6 +361,7 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"docs", %{}, :get, "/api/v1/docs", nil, nil},
           {"siwa_help", %{}, :get, "/api/v1/siwa/help", nil, nil},
           {"rooms_list", %{}, :get, "/api/v1/rooms", nil, nil},
+          {"rooms_list", %{text: "GENER"}, :get, "/api/v1/rooms?text=GENER", nil, nil},
           {"rooms_message", %{room: "general", id: id}, :get,
            "/api/v1/rooms/general/messages/#{id}", nil, nil},
           {"agents_get", %{id: agent_id}, :get, "/api/v1/agents/#{agent_id}", nil, nil},
@@ -384,6 +385,10 @@ defmodule AshTemplateWeb.McpAgentTest do
 
     assert %{"mutes" => [%{"name" => _}]} =
              Jason.decode!(http(:get, "/api/v1/mutes", nil, from, agent).resp_body)
+
+    # Text finds the rooms whose name holds it, as the page's search does.
+    assert %{"rooms" => [%{"slug" => "general"}]} =
+             Jason.decode!(http(:get, "/api/v1/rooms?text=GENER", nil, from, nil).resp_body)
   end
 
   test "each read refuses through /mcp with the code and words HTTP gives", %{from: from} do
@@ -399,6 +404,7 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"rooms_search", %{text: "hello"}, :post, "/api/v1/rooms/search", %{text: "hello"},
            unpaired},
           {"rooms_search", %{text: "a"}, :post, "/api/v1/rooms/search", %{text: "a"}, agent},
+          {"rooms_list", %{text: "a"}, :get, "/api/v1/rooms?text=a", nil, agent},
           {"agents_get", %{id: missing}, :get, "/api/v1/agents/#{missing}", nil, agent},
           {"rooms_message", %{room: "general", id: missing}, :get,
            "/api/v1/rooms/general/messages/#{missing}", nil, agent},

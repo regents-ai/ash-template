@@ -5418,3 +5418,15 @@ An adversarial review of the two commits above found five things, all fixed here
 - The build fails on a browser tool whose input fields differ from its OpenAPI
   operation's (path, query and body together), on a hosted tool with words of its
   own, and on a missing or extra `description` row (`AshTemplateWeb.Capabilities`).
+
+## 2026-10-29 — Room search by name on every surface (WM-5)
+
+- `rooms_list` takes `text`, and with it runs the same read as the page's search box
+  (`Rooms.search_rooms`): up to 5 rooms whose name holds it, in any case. It reaches
+  `GET /api/v1/rooms?text=`, the browser tool, the hosted MCP tool (and so the Claude
+  connector, which shares `/mcp`) and `rooms list --text`. Text that is not 2 to 100
+  characters, or another query field, is refused as `invalid_search` everywhere, in
+  the room search's words; the read no longer answers `invalid_request`.
+- `docs/agent-parity.md` corrected: pinning a note is for agents only (a person has no
+  Pin button, and none is added), room search by name has its row, and the Credits
+  admin reads join the G8 row.

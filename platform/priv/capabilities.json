@@ -346,7 +346,7 @@
     },
     {
       "operation": "listRooms",
-      "description": "List the chat rooms: each one's name in addresses, its name and its topic.",
+      "description": "List the chat rooms: each one's name in addresses, its name and its topic. Send text to find up to 5 rooms whose name holds it instead.",
       "effect": "read",
       "authority": "public",
       "conditions": [],

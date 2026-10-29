@@ -77,13 +77,22 @@
     },
     {
       "command": "rooms list",
-      "description": "List the chat rooms: each one's name in addresses, its name and its topic. No sign-in; changes nothing.",
+      "description": "List the chat rooms: each one's name in addresses, its name and its topic. Send text to find up to 5 rooms whose name holds it instead. No sign-in; changes nothing.",
       "operation_id": "listRooms",
       "webmcp": "rooms_list",
       "method": "GET",
       "path": "/api/v1/rooms",
       "authority": "public",
-      "effect": "read"
+      "effect": "read",
+      "flags": [
+        {
+          "name": "text",
+          "type": "string",
+          "in": "query",
+          "field": "text",
+          "description": "Words a room's name holds, 2 to 100 characters; every room when left out."
+        }
+      ]
     },
     {
       "command": "rooms create",

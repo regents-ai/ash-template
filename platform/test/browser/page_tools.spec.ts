@@ -131,7 +131,7 @@ function asks(id: string): Record<string, [Record<string, unknown>, string]> {
     docs: [{}, "/api/v1/docs"],
     sites_tools: [{site: "regents"}, "/api/v1/sites/regents/tools"],
     siwa_help: [{}, "/api/v1/siwa/help"],
-    rooms_list: [{}, "/api/v1/rooms"],
+    rooms_list: [{text: "gener"}, "/api/v1/rooms?text=gener"],
     rooms_messages: [{room: "general", limit: 2}, "/api/v1/rooms/general/messages?limit=2"],
     rooms_message: [{room: "general", id}, `/api/v1/rooms/general/messages/${id}`],
     agents_get: [{id: missing}, `/api/v1/agents/${missing}`],
@@ -170,7 +170,8 @@ test("a public read hands on the site's refusal unchanged, and refuses only what
   ] as const) {
     expect(await call(page, "rooms_messages", input), path).toEqual(await http(path))
   }
-  expect(sent).toHaveLength(5)
+  expect(await call(page, "rooms_list", {text: "a"})).toEqual(await http("/api/v1/rooms?text=a"))
+  expect(sent).toHaveLength(6)
 
   // Input with no address is answered as hosted MCP answers it, and nothing is sent.
   const messages = reads.find(tool => tool.name === "rooms_messages")!
@@ -178,7 +179,7 @@ test("a public read hands on the site's refusal unchanged, and refuses only what
     const field = input !== null && typeof input === "object" ? "room" : "input"
     expect(await call(page, "rooms_messages", input), JSON.stringify(input)).toEqual({error: messages.refusals[field]})
   }
-  expect(sent).toHaveLength(5)
+  expect(sent).toHaveLength(6)
 })
 
 test("a refusal carries the seconds to wait, and a read that gets no answer says so", async ({page}) => {

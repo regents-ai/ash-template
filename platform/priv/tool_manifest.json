@@ -153,10 +153,17 @@
     {
       "name": "rooms_list",
       "title": "List the chat rooms",
-      "description": "List the chat rooms: each one's name in addresses, its name and its topic. No sign-in; changes nothing.",
+      "description": "List the chat rooms: each one's name in addresses, its name and its topic. Send text to find up to 5 rooms whose name holds it instead. No sign-in; changes nothing.",
       "input_schema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "description": "Words a room's name holds, 2 to 100 characters, in any case."
+          }
+        },
         "required": [],
         "additionalProperties": false
       },
@@ -170,9 +177,9 @@
       "availability": "available",
       "refusals": {
         "input": {
-          "code": "invalid_request",
-          "message": "This tool takes no input.",
-          "hint": "Check the input against this tool's schema, then call the tool again."
+          "code": "invalid_search",
+          "message": "The search could not be run.",
+          "hint": "Send text of 2 to 100 characters."
         }
       }
     },

@@ -194,9 +194,11 @@ paths:
   /api/v1/rooms:
     get:
       operationId: listRooms
+      parameters:
+        - {name: text, in: query, required: false, schema: {type: string, minLength: 2, maxLength: 100}}
       responses:
         "200": {$ref: "#/components/responses/Rooms"}
-        "422": {$ref: "#/components/responses/ReadTakesNoInput"}
+        "422": {$ref: "#/components/responses/RoomSearchInvalid"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
     post:
       operationId: createRoom
@@ -4673,6 +4675,14 @@ components:
           examples:
             notFound:
               value: {error: {code: room_not_found, message: "There is no room with that name.", hint: "List the rooms with GET /api/v1/rooms."}}
+    RoomSearchInvalid:
+      description: text is not 2 to 100 characters, or a query field is not text (invalid_search)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            invalidSearch:
+              value: {error: {code: invalid_search, message: "The search could not be run.", hint: "Send text of 2 to 100 characters."}}
     RoomPageInvalid:
       description: after is not a cursor this site gave, limit is not a whole number from 1 to 50, author_kind is not person or agent, or a query field is not one of these
       content:

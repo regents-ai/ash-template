@@ -148,7 +148,7 @@ defmodule AshTemplateWeb.RoomsController do
     do: conn |> refuse(NotPaired.code(conn.assigns.actor)) |> halt()
 
   def index(conn, _params) do
-    case Rooms.rooms_list() do
+    case Rooms.rooms_list(conn.query_params) do
       {:ok, rooms} -> json(conn, rooms)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
