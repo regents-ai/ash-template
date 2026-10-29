@@ -5544,3 +5544,16 @@ way, and the library's own site-tool serving is gone.
   with `Allow: POST`, and a body that is not JSON hears 415, whatever the caller accepts.
   The endpoint already answers `/mcp` in JSON, so nothing else changes; with the site
   closed, `/mcp` still says "not open yet" in JSON.
+
+## 2026-10-29 — Released v139
+
+- template.regents.sh v139 runs `e039f092` (live checks the way an agent does, and the
+  steadier walk), released 23:22Z under the shared release lock on one machine, as
+  before. No migration.
+- Live check from a copy of `e039f092`: `SIWA_AGENT_HOME=/Users/sean/.siwa-agent
+  SIWA_CLIENT=/Users/sean/keyfleet/claude-code/siwa_agent.py make live-check` exit 0.
+  `regents ash-template doctor` held every check and `agents whoami` answered "paired"
+  for the Claude Code test agent `0x5ff2..d164`; in headless Chromium at 1280 and 390,
+  `/capabilities.json` named `e039f092`, 151 passed and 1 skipped (the tools are called
+  once, from the desktop), and of the home page's 57 tools all 17 reads answered 200,
+  `polls_list` among them. WebKit is not run on the Mac. Rollback: v138, `14120655`.
