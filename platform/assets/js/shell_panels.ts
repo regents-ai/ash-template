@@ -3,7 +3,8 @@
 // dialog. Whether the sidebar shows lives on <html data-sidebar>, which the server
 // first draws from the cookie written here (AshTemplateWeb.Plugs.Panels), so
 // LiveView never patches it away. The account menu and the apps menu are popovers
-// the browser opens and closes itself; only following a link inside one is ours.
+// the browser opens and closes itself; only following a link inside one, or
+// pressing Sign out, is ours.
 
 const yearInSeconds = 60 * 60 * 24 * 365
 
@@ -118,6 +119,13 @@ export function installShellPanels(shell: HTMLElement) {
     if (creditsOpener) {
       creditsOpener.closest<HTMLElement>("[popover]")?.hidePopover()
       return openCredits()
+    }
+    // Sign out closes the menu, so a note that it couldn't finish shows under the
+    // account button with nothing over it. auth_lazy signs out.
+    const signOut = target.closest<HTMLElement>("[data-account-target='sign-out']")
+    if (signOut) {
+      signOut.closest<HTMLElement>("[popover]")?.hidePopover()
+      return
     }
     if (target.closest("[data-credits-close]")) return closeCredits()
     if (target === credits()) return closeCredits()

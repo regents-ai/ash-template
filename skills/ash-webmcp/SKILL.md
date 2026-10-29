@@ -47,8 +47,8 @@ assumption that every HTML page is public or supports Markdown.
 The inventory includes every action a signed-in owner can take on a page, not only
 the tools that exist. An action only a person can do is a bug (`regent-workflow`,
 "An action only a person can do is a bug"): each one gets a row in
-`docs/agent-parity.md` with its browser, WebMCP, hosted MCP and CLI surface, and a
-missing surface is a gap with an owner, never an exclusion.
+`docs/agent-parity.md` with its browser, WebMCP, hosted MCP, Claude connector and CLI
+surface, and a missing surface is a gap with an owner, never an exclusion.
 
 ### 2. Negotiate truthful Markdown at the same URL
 
