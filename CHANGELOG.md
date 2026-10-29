@@ -5043,3 +5043,17 @@ An adversarial review of the two commits above found five things, all fixed here
   16:42Z in headless Chromium: `/capabilities.json` build.commit `637dcce8`; home,
   agents, account and pair pages answer 200 at 390 and 1280 with the sign-in settings
   present, no page errors and nothing wider than the screen. Rollback: v131, `65c6e26c`.
+
+## 2026-10-29 — Chain numbers for Sentinel
+
+- A chain event reader's pass, `[:ash_template, :indexer, :lag]` with `blocks`, becomes
+  `health_indexer_lag_blocks` and `health_indexer_passes_total` by `indexer` and
+  `chain_id` on the private metrics listener, in Autolaunch's shape. The template reads no
+  chain events, so it reports none; the chain-events skill says each pass reports it.
+- `health_wallet_unconfirmed_oldest_seconds` by `flow`: a site that sends from its own
+  wallet names `unconfirmed_sends` in `config :ash_template, AshTemplateWeb.Telemetry`,
+  and the site poller reads it every ten seconds beside the oldest job, logging and
+  skipping a tick it cannot read. The template names none, so the step never runs and the
+  age is never published here.
+- `health_chain_request_failures_total` is unchanged. Sentinel's ON-8 handoff; the
+  numbers reach the five sites in one rollout after Sean's sign-off.
