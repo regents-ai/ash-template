@@ -5506,6 +5506,19 @@ way, and the library's own site-tool serving is gone.
 - Basis: Sean, 29 Oct 20:49Z, "be on all of that work ... drive the work, complete it,
   dont ask me questions".
 
+## 2026-10-29 — Released v138
+
+- template.regents.sh v138 runs `14120655` (v137 plus the fixed labels put back),
+  released 23:15Z under the shared release lock on one machine, as before; it waited its
+  turn behind a Patchbay release. No migration.
+- Live check in headless Chromium: `/capabilities.json` build.commit `14120655`,
+  `/healthz` ok. At 320 and 1280, light and dark: `/pair` is titled and headed "Pair New
+  Agent"; Account › Wallets, Account and Changelog answer 200 with no page errors and
+  nothing wider than the screen; `/llms.txt` says "Pair New Agent" six times and "Pair
+  agent" nowhere. Signed out, Account › Wallets asks you to sign in, so its "User wallet"
+  and "Regents embedded wallet" rows are proven by the server tests and the browser walk's
+  signed-in person, not live. Rollback: v137, `b90e680c`.
+
 ## 2026-10-29 — elixir-utils b375f122, and a connected app told to wait hears how long
 
 - elixir-utils moves to `b375f122` on its main: the `dea334b` hosted-signing tools merged
