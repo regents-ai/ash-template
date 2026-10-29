@@ -30,6 +30,7 @@ type Entry = {
   description: string
   input_schema: Schema
   annotations: Record<string, boolean>
+  route: string
   scope: string
   authentication: string
 }
@@ -44,20 +45,17 @@ type Reply =
 
 const segment = (value: string | number) => encodeURIComponent(String(value))
 
-// The public reads, by the path each one asks. Every other tool is signed.
-const paths: Record<string, (input: Input) => string> = {
-  health: () => "/api/v1/health",
-  about: () => "/api/v1/about",
-  docs: () => "/api/v1/docs",
-  sites_tools: ({site}) => `/api/v1/sites/${segment(site)}/tools`,
-  siwa_help: () => "/api/v1/siwa/help",
-  rooms_list: () => "/api/v1/rooms",
-  rooms_messages: ({room, ...page}) => {
-    const query = new URLSearchParams(Object.entries(page).map(([key, value]) => [key, String(value)])).toString()
-    const path = `/api/v1/rooms/${segment(room)}/messages`
-    return query ? `${path}?${query}` : path
-  },
-  rooms_message: ({room, id}) => `/api/v1/rooms/${segment(room)}/messages/${segment(id)}`,
+// The fields a tool's manifest route names, such as room in /api/v1/rooms/{room}/messages.
+const pathFields = (entry: Entry) => [...entry.route.matchAll(/\{([a-z_]+)\}/g)].map(([, field]) => field)
+
+// A public read asks the address its manifest route names: the route's {fields}
+// from the input, and the input's other fields as the query.
+function publicPath(entry: Entry, input: Input): string {
+  const named = pathFields(entry)
+  const path = entry.route.split(" ")[1].replace(/\{([a-z_]+)\}/g, (_match, field: string) => segment(input[field]))
+  const rest = Object.entries(input).filter(([key]) => !named.includes(key)).map(([key, value]) => [key, String(value)])
+  const query = new URLSearchParams(rest).toString()
+  return query ? `${path}?${query}` : path
 }
 
 // Every call names its tool and this visit, so the site's log can put the call
@@ -93,7 +91,8 @@ async function reply(response: Response): Promise<Reply> {
 // The browser does not check input against the schema, so each public call is
 // checked here, and a refusal names the field and what it must be. The server
 // checks lengths and everything else again.
-function inputProblem(input: unknown, schema: Schema) {
+function inputProblem(input: unknown, entry: Entry) {
+  const schema = entry.input_schema
   if (input === null || typeof input !== "object" || Array.isArray(input)) {
     return "Send an object of named fields."
   }
@@ -107,13 +106,17 @@ function inputProblem(input: unknown, schema: Schema) {
   const missing = schema.required.find(key => !Object.hasOwn(input, key))
   if (missing) return `${missing} is required.`
   const values = input as Record<string, unknown>
-  // URL parsing drops these path segments even when their dots are percent-encoded.
-  const dots = Object.keys(values).find(key => values[key] === "." || values[key] === "..")
-  if (dots) return `${dots} must be a name or id, not ${values[dots]}.`
+  // Text with a lone surrogate has no address form; encoding it throws.
   const wrong = Object.keys(values).find(key =>
-    schema.properties[key].type === "integer" ? !Number.isInteger(values[key]) : typeof values[key] !== "string")
-  if (!wrong) return null
-  return schema.properties[wrong].type === "integer" ? `${wrong} must be a whole number.` : `${wrong} must be text.`
+    schema.properties[key].type === "integer"
+      ? !Number.isInteger(values[key])
+      : typeof values[key] !== "string" || /[\uD800-\uDFFF]/u.test(values[key] as string))
+  if (wrong && schema.properties[wrong].type === "integer") return `${wrong} must be a whole number.`
+  if (wrong) return typeof values[wrong] === "string" ? `${wrong} has a broken character.` : `${wrong} must be text.`
+  // An empty path segment asks another address, and URL parsing drops "." and ".."
+  // even when their dots are percent-encoded; the signed tools refuse the same three.
+  const field = pathFields(entry).find(key => ["", ".", ".."].includes(values[key] as string))
+  return field ? `${field} must be a name: not empty, "." or "..".` : null
 }
 
 // A call that ended without an answer. Anything but a read may already have
@@ -223,13 +226,13 @@ const tools: ModelContextTool[] = entries.map(entry => ({
   annotations: entry.annotations,
   async execute(input: unknown, {signal}: {signal?: AbortSignal}) {
     if (entry.authentication === "siwa_per_request") return signed(entry, input as Record<string, unknown>, signal)
-    const problem = inputProblem(input, entry.input_schema)
+    const problem = inputProblem(input, entry)
     if (problem) return {ok: false, error: {code: "invalid_input", message: problem}}
     if (signal?.aborted) {
       return {ok: false, error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
     }
     try {
-      return await call(entry.name, paths[entry.name](input as Input), signal)
+      return await call(entry.name, publicPath(entry, input as Input), signal)
     } catch (_error) {
       return unanswered(entry, signal)
     }

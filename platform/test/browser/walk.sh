@@ -7,7 +7,10 @@
 set -eu
 
 port=$(node -e "const s = require('node:net').createServer().listen(0, '127.0.0.1', () => { console.log(s.address().port); s.close() })")
+# The walk's server is built without the code reloader (config/dev.exs), so it builds
+# into _build/walk and leaves the everyday development build as it is.
 export ASH_TEMPLATE_WALK_PORT="$port" ASH_TEMPLATE_DEV_PARTITION="_browser_$port"
+export ASH_TEMPLATE_WALK=true MIX_BUILD_PATH=_build/walk
 echo "The walk runs on port $port with its own database, ash_template_browser_${port}_dev."
 
 drop() {

@@ -21,7 +21,7 @@ if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateW
   end
 end
 
-# The browser walk's server (playwright.config.ts) writes its lines in production's
+# The browser walk's server (test/browser/walk.sh) writes its lines in production's
 # shape to a file, which test/browser/visits.spec.ts reads to replay a visit.
 if config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true" do
   config :logger, :default_handler,

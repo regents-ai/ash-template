@@ -1,5 +1,6 @@
 import type {Locator} from "@playwright/test"
 import {expect, test} from "./support/test"
+import {copiesShown, recordCopies} from "./support/copies"
 import {ready, resting, signedIn, watch} from "./support/person"
 
 // The walk's person has three agents, paired by sign_in.exs. Walk Agent's window, opened from
@@ -14,6 +15,7 @@ const wallet = `0x${"c".repeat(40)}`
 test("an agent's window opens its full address and copies it", async ({page, hasTouch}) => {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
   const problems = watch(page)
+  await recordCopies(page)
   await page.goto("/account")
   await ready(page)
   await press(page.getByRole("button", {name: "See Walk Agent’s actions"}))
@@ -38,7 +40,7 @@ test("an agent's window opens its full address and copies it", async ({page, has
   await expect(agentWindow).toBeVisible()
 
   await press(copy)
-  await expect(copy).toHaveAttribute("data-copy-state", "copied")
+  await expect.poll(() => copiesShown(copy)).toEqual([{answer: "copied", shown: "", said: "Copied"}])
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(wallet)
   await problems.expect()
 })
@@ -50,6 +52,7 @@ test("an agent's window opens its full address and copies it", async ({page, has
 test("each agent on the Account page names its own wallet", async ({page, hasTouch}) => {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
   const problems = watch(page)
+  await recordCopies(page)
   await page.goto("/account")
   await ready(page)
 
@@ -69,7 +72,7 @@ test("each agent on the Account page names its own wallet", async ({page, hasTou
 
     const copy = row.getByRole("button", {name: "Copy the full address"})
     await press(copy)
-    await expect(copy).toHaveAttribute("data-copy-state", "copied")
+    await expect.poll(() => copiesShown(copy)).toEqual([{answer: "copied", shown: "", said: "Copied"}])
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`0x${digit.repeat(40)}`)
 
     const line = row.locator(".rg-account__agent")

@@ -1,8 +1,9 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release drift readiness
+.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check drift readiness
 help:
 	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
+	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check to check template.regents.sh the way a paired agent does: the CLI, then WebMCP and every public page in headless Chromium."
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make readiness."
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
 check: check-platform check-required-fixes check-cli check-siwa-latest check-contracts
@@ -46,6 +47,12 @@ release:
 	@test -z "$$(git status --porcelain)" || { echo "Commit every change first: the release checks and builds the committed tree." >&2; exit 1; }
 	$(MAKE) check
 	scripts/release.sh
+# The live site, checked the way an agent checks it (skills/regent-workflow, "Live
+# checks"): the CLI as the paired agent whose key is in SIWA_AGENT_HOME, then WebMCP
+# and every public page in headless Chromium (scripts/live-check.sh). It writes only
+# the agent's own row on the site: when the agent was last seen.
+live-check:
+	scripts/live-check.sh
 # Lists where each site's copies of the template's shared files differ from these,
 # reading every site's main branch on GitHub, then measures this checkout the way
 # the agent-readiness scorer does. Needs `gh auth login`.

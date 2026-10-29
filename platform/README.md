@@ -423,9 +423,25 @@ can do and the check that proves it. Among them:
   It builds the pages' scripts and styles, starts its own server on a free port and a
   database made for the run, `ash_template_browser_<port>_dev`, which it drops at the
   end whatever happens, even when its server never starts (`test/browser/walk.sh`),
-  and signs in a local person with three agents first. Every page it opens
+  and signs in a local person with three agents first. Its server runs without the
+  code reloader, built into `_build/walk`. Every page it opens
   is listed in `test/browser/pages.json`; `mix test` fails when the router serves one
   that is not.
+
+`SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make
+live-check`, from the monorepo root, checks the live site the way a paired agent does
+and writes only the agent's own row there (when it was last seen, added the first
+time): `regents ash-template doctor` and `agents whoami` as
+the agent whose key is in `SIWA_AGENT_HOME`, then, in headless Chromium at both widths,
+the health page, the live commit from `/capabilities.json`, every public page and
+document in `test/browser/pages.json` (except `local_only` labs), and every read-only
+WebMCP tool that takes no input, the signed ones signed with the agent's own key through
+`SIWA_CLIENT` (`../scripts/live-check.sh`, `test/live`). The signer signs only the one
+request this checkout's manifest names for the tool being called. Set both, as full
+paths, in the session's environment (`env` in `.claude/settings.local.json`) so `make
+live-check` runs without a prompt. Run it after every release, from a checkout of the
+live commit: it checks the site against this checkout's page map and manifest, and
+fails first when the live commit is another.
 
 `mix test` first creates the local `ash_template_test` database when it is missing
 and brings it up to date, so a fresh copy needs only `mix setup` before `make check`.

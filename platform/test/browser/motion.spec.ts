@@ -7,11 +7,30 @@ import {signedIn} from "./support/person"
 // the script's.
 test.use(signedIn)
 
-const atRest = (el: Element) => ({style: el.getAttribute("style") ?? "", running: el.getAnimations().length})
-
 // Found by the motion pass of 19 Oct, in Patchbay: an item that slid or grew into
 // a list kept `translate: none` written on it once it settled.
+// The server takes a note away 3.2 seconds after sending it (AnimationsLive), so a
+// check that looked at the note from outside could look after it had gone on a busy
+// machine. The page itself records, every frame, each item and note that moved and
+// then came to rest while still shown, and the check reads that record.
 test("a new item in a list, and a new note, settle with nothing left on them", async ({page}) => {
+  await page.addInitScript(() => {
+    const moved = new Set<string>()
+    const settled = {item: new Set<string>(), note: new Set<string>()}
+    Object.assign(window, {settled})
+    const frame = () => {
+      for (const el of document.querySelectorAll<HTMLElement>("#lab-items [data-item-chip], #lab-toasts [data-toast]")) {
+        const atRest = !el.getAttribute("style") && el.getAnimations().length === 0 && !el.hidden
+        if (!atRest) moved.add(el.id)
+        else if (moved.has(el.id)) settled[el.matches("[data-toast]") ? "note" : "item"].add(el.id)
+      }
+      requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  })
+  const settled = (kind: "item" | "note") =>
+    page.evaluate(kind => [...(window as unknown as {settled: Record<string, Set<string>>}).settled[kind]], kind)
+
   await page.goto("/animations")
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
 
@@ -19,11 +38,15 @@ test("a new item in a list, and a new note, settle with nothing left on them", a
   const count = await items.count()
   await page.getByRole("button", {name: "Add one", exact: true}).click()
   await expect(items).toHaveCount(count + 1)
-  await expect.poll(() => items.first().evaluate(atRest)).toEqual({style: "", running: 0})
+  const item = await items.first().getAttribute("id")
+  await expect.poll(() => settled("item")).toContain(item)
+  // The item stays, so it is still at rest now: nothing wrote on it again after it
+  // settled. A note leaves by moving, so its record is the check.
+  await expect(items.first()).not.toHaveAttribute("style", /./)
+  expect(await items.first().evaluate(el => el.getAnimations().length)).toBe(0)
 
   await page.getByRole("button", {name: "Send a note", exact: true}).click()
-  const note = page.locator("#lab-toasts [data-toast]").first()
-  await expect.poll(() => note.evaluate(atRest)).toEqual({style: "", running: 0})
+  await expect.poll(async () => (await settled("note")).length).toBe(1)
 })
 
 // Found by the motion pass of 19 Oct, in Patchbay: a refusal shook an alert inside
