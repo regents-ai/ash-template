@@ -316,13 +316,18 @@ Two reports read the database and change nothing. Locally:
 
 ```sh
 mix product_events.cohorts   # weekly cohorts: accounts, activated, D1, D7, median value
+mix db.top_queries 20        # this schema's statements that took the most time
 ```
 
 On a deployment, over the serving login:
 
 ```sh
 fly ssh console --app <app> -C "/app/bin/product-cohorts"
+fly ssh console --app <app> -C "/app/bin/top-queries 20"
 ```
+
+`top-queries` needs `pg_stat_statements` on the database; without it, it says so
+and stops.
 
 ## Repository layout
 

@@ -5091,3 +5091,10 @@ An adversarial review of the two commits above found five things, all fixed here
   weekly cohorts by the account's first sign-in and source: accounts, activated, D1 and
   D7 return, and the median of value events per activated account. Accounts from before
   product events began join the week of their first sign-in after it.
+
+## 2026-10-29 — Top queries
+
+- `mix db.top_queries [count]`, and `/app/bin/top-queries [count]` on a deployment,
+  print the statements naming this site's schema that took the most database time, from
+  `pg_stat_statements`: calls, total and mean milliseconds, and rows. They only read;
+  when the extension is not on the database they say so and stop, and never create it.

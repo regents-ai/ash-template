@@ -146,6 +146,17 @@ defmodule AshTemplate.Release do
   def product_cohorts,
     do: IO.puts(with_serving_repo(&AshTemplate.ProductEvents.Cohorts.report/1))
 
+  @doc """
+  Prints the `count` statements on this site's schema that took the most
+  database time (`AshTemplate.TopQueries`), `count` being a whole number from 1
+  to 100 as text. Run as `/app/bin/top-queries [count]`. It only reads, and
+  never creates `pg_stat_statements`.
+  """
+  def top_queries(count) do
+    limit = AshTemplate.TopQueries.limit!(count)
+    IO.puts(with_serving_repo(&AshTemplate.TopQueries.report(&1, limit)))
+  end
+
   defp disagreements(repo) do
     path = migrations_path()
     prefix = repo.default_prefix()

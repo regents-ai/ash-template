@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+count="${1:-20}"
+
+ASH_TEMPLATE_RELEASE_COMMAND=migrate ASH_TEMPLATE_TOP_QUERIES="$count" exec "$(dirname "$0")/ash_template" eval 'AshTemplate.Release.top_queries(System.fetch_env!("ASH_TEMPLATE_TOP_QUERIES"))'
