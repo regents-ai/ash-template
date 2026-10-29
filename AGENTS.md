@@ -65,6 +65,14 @@ After renaming, a new site must still replace, by hand:
   wallet buttons, `data-panel`, `data-cascade`, `data-variant`), never with their
   own motion code. `/animations` is the lab where every version that was tried
   sits side by side; `skills/animejs/references/liveview-islands.md` explains it.
+- Account: `/account` is the same on every Regent site. Its files (the `account`
+  list in `scripts/drift.sh`) are copied from here unchanged, and a site's router
+  routes its tabs with `account_routes/1` to the shell, which calls
+  `AccountLive.attach/1` and shows `<AccountLive.page>`. A site's own sections and
+  tabs go in `platform/lib/ash_template_web/account_site.ex`, its one account
+  file, and show before the shared ones. Change the shared files here, never in a
+  site. `make account-drift` reads every site's main branch and fails naming each
+  site whose `/account` differs.
 - There is no `identity/` folder. The shared profile domain comes from the
   `regents/identity` package. It and the `design-system` and `elixir-utils`
   libraries are git dependencies pinned to one commit each in `platform/mix.exs`.

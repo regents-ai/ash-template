@@ -5043,3 +5043,22 @@ An adversarial review of the two commits above found five things, all fixed here
   16:42Z in headless Chromium: `/capabilities.json` build.commit `637dcce8`; home,
   agents, account and pair pages answer 200 at 390 and 1280 with the sign-in settings
   present, no page errors and nothing wider than the screen. Rollback: v131, `65c6e26c`.
+
+## 2026-10-29 — /account is the same on every site
+
+- Sean, 29 Oct 16:23Z: /account is to be the exact same route on every site, built here
+  and picked up by the other sites, never edited per site, with only the site's own
+  parts added and shown first. The five tabs (Account, Points, Credits, Wallets and
+  Connections), what each reads and when, and the Connections events now live in the
+  Account files, which every site copies unchanged: `account_routes.ex` routes the tabs
+  (`account_routes/1` in the router), and `AccountLive` readies them from the shell's
+  mount (`AccountLive.attach/1`, through `attach_hook`) and shows them
+  (`<AccountLive.page>`). ShellLive no longer holds any of it.
+- `account_site.ex` is a site's one account file: its own sections, shown at the top of
+  the Account tab, and its own tabs, shown before Account. The template has none.
+- `make account-drift` (`scripts/drift.sh --account`) reads every site's main branch and
+  fails naming each site whose Account files differ from these or whose router and shell
+  are not wired as above; `make drift` lists the same. On first run all five sites
+  differ, as expected before they take this.
+- The new walk `account.spec.ts` moves through the five tabs with the tab row, in light
+  and dark, at 1280, 390 and 320.

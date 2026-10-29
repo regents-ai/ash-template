@@ -2,6 +2,7 @@ defmodule AshTemplateWeb.RouteCatalog do
   @moduledoc "The route specs the shell renders, and the design handoff built from them."
 
   alias __MODULE__.RouteTarget
+  alias AshTemplateWeb.AccountLive
 
   # The site's own first room, which the migration that made the rooms table wrote.
   @first_room "/rooms/general"
@@ -85,13 +86,6 @@ defmodule AshTemplateWeb.RouteCatalog do
     home: [
       %RouteTarget{route_id: :app, label: "Overview", path: "/app"},
       %RouteTarget{route_id: :activity, label: "Activity", path: "/app/activity"}
-    ],
-    settings: [
-      %RouteTarget{route_id: :account, label: "Account", path: "/account"},
-      %RouteTarget{route_id: :points, label: "Points", path: "/account/points"},
-      %RouteTarget{route_id: :credits, label: "Credits", path: "/account/credits"},
-      %RouteTarget{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
-      %RouteTarget{route_id: :connections, label: "Connections", path: "/account/connections"}
     ]
   }
 
@@ -251,7 +245,7 @@ defmodule AshTemplateWeb.RouteCatalog do
   def fetch!(action, _params), do: fetch!(action)
 
   @doc "The spec of a live action as the catalog holds it."
-  def fetch!(action), do: Keyword.fetch!(@routes, action)
+  def fetch!(action), do: @routes |> Keyword.fetch!(action) |> with_account_tabs()
 
   @doc "The catalog as `mix ash_template.route_handoff` writes it, with its sha256 digest."
   def design_handoff do
@@ -260,7 +254,14 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{json: json, digest: Base.encode16(:crypto.hash(:sha256, json), case: :lower)}
   end
 
+  # The tabs of /account are the same on every Regent site (`AccountLive.tabs/0`).
+  # They are read when asked, so the catalog compiles without the Account pages.
+  defp with_account_tabs(%{section: :settings} = spec), do: %{spec | tabs: AccountLive.tabs()}
+  defp with_account_tabs(spec), do: spec
+
   defp handoff_route({action, spec}) do
+    spec = with_account_tabs(spec)
+
     sidebar = %{
       id: spec.sidebar_model.id,
       title: spec.sidebar_model.title,

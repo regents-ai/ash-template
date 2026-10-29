@@ -3,7 +3,8 @@
 # and deploy files, differ from the template's own, so drift is seen rather than
 # guessed.
 #
-#   scripts/drift.sh [site ...]      # default: every site below
+#   scripts/drift.sh [site ...]            # default: every site below
+#   scripts/drift.sh --account [site ...]  # /account alone; exits 1 on any drift
 #
 # Reads each site's main branch on GitHub at one commit, and this checkout's files
 # as they are. A site's copy is compared after the template's names are renamed to
@@ -14,6 +15,13 @@
 # listed as "not used", with why, from not_used below; a file a site keeps at its
 # own path is read there, from moved below. Of platform/mix.exs only the aliases
 # are compared, since each site's dependencies are its own.
+#
+# /account is the same on every site: its files are copied unchanged, and only
+# platform/lib/ash_template_web/account_site.ex is the site's own. So the account
+# files are compared without exceptions, and the site's wiring is read too: its
+# router routes the tabs with account_routes/1, and the shell LiveView it names
+# there readies them (AccountLive.attach) and shows them (<AccountLive.page>).
+# --account runs this part alone and fails when any site differs.
 #
 # The template's homepage tracks regents.sh's, so for regents two more checks
 # run: the homepage files the template copies from regents.sh, and the two live
@@ -33,7 +41,6 @@ shared=(
   platform/lib/ash_template/repo.ex
   platform/lib/ash_template_web/client_address.ex
   platform/lib/ash_template_web/components/credits_refund_rules.ex
-  platform/lib/ash_template_web/components/pairing_box.ex
   platform/lib/ash_template_web/content_security_policy.ex
   platform/lib/ash_template_web/metrics.ex
   platform/lib/ash_template_web/onchain_steps.ex
@@ -75,6 +82,24 @@ build=(
   platform/.formatter.exs
   platform/.credo.exs
   platform/.sobelow-conf
+)
+
+# The files of /account, copied unchanged by every site. The site's own parts are
+# in platform/lib/ash_template_web/account_site.ex, which is not compared.
+account=(
+  platform/lib/ash_template_web/account_routes.ex
+  platform/lib/ash_template_web/live/account_live.ex
+  platform/lib/ash_template_web/live/points_live.ex
+  platform/lib/ash_template_web/live/credits_history_live.ex
+  platform/lib/ash_template_web/points_entries.ex
+  platform/lib/ash_template_web/components/agents_panel.ex
+  platform/lib/ash_template_web/components/pairing_box.ex
+  platform/lib/ash_template_web/components/verified_connections.ex
+  platform/assets/css/pages/account.css
+  platform/assets/css/components/account_auth_status.css
+  platform/assets/js/hooks/account_picture.ts
+  platform/assets/js/hooks/public_name.ts
+  platform/assets/js/hooks/verified_connections.ts
 )
 
 # The files of the homepage the template copies from regents.sh, compared with
@@ -123,6 +148,13 @@ compared() {
   esac
 }
 
+account_only=false
+if [[ "${1:-}" == --account ]]; then
+  account_only=true
+  shift
+fi
+drifted=()
+
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 out="platform/_build/drift"
@@ -141,14 +173,22 @@ site_file() {
 }
 
 # Compares the template's files named after the heading with the current site's copies.
+# With --exact, no file is excused as not used or read at a moved path.
 compare() {
-  local heading="$1" path site_path why theirs ours diff_file added removed
+  local exact=false heading path site_path why theirs ours diff_file added removed
   local same=0 differ=0 missing=0 unused=0
+  if [[ "$1" == --exact ]]; then
+    exact=true
+    shift
+  fi
+  heading="$1"
   shift
   echo "  $heading"
   for path in "$@"; do
-    site_path="$(moved "$site" "$path")" || site_path="${path//ash_template/$app}"
-    if why="$(not_used "$site" "$path")"; then
+    if $exact || ! site_path="$(moved "$site" "$path")"; then
+      site_path="${path//ash_template/$app}"
+    fi
+    if ! $exact && why="$(not_used "$site" "$path")"; then
       printf '    not used %s  (%s)\n' "$site_path" "$why"
       unused=$((unused + 1))
       continue
@@ -173,6 +213,42 @@ compare() {
     fi
   done
   printf '    %s same, %s differ, %s missing, %s not used\n' "$same" "$differ" "$missing" "$unused"
+  compared_drift=$((differ + missing))
+}
+
+# Reads the site's /account wiring: account_routes/1 in its router, and the shell
+# LiveView named there readying and showing the tabs. Prints one line for each.
+account_wiring() {
+  local router shell shell_file shell_body
+  local web="platform/lib/${app}_web"
+  wiring_drift=0
+  echo "  Account wiring"
+  router="$(site_file "$repo" "$rev" "$web/router.ex")" || router=""
+  shell="$(sed -nE 's/^[[:space:]]*account_routes\(([A-Za-z0-9_.]+)\)[[:space:]]*$/\1/p' <<<"$router" | head -1)"
+  if [[ -z "$shell" ]]; then
+    printf '    missing  %s routes /account with account_routes/1\n' "$web/router.ex"
+    wiring_drift=1
+    return
+  fi
+  printf '    same     %s routes /account with account_routes(%s)\n' "$web/router.ex" "$shell"
+  shell_file="$web/live/$(perl -pe 's/^.*\.//; s/(?<=[a-z0-9])([A-Z])/_$1/g; $_ = lc' <<<"$shell").ex"
+  if ! shell_body="$(site_file "$repo" "$rev" "$shell_file")"; then
+    printf '    missing  %s, the shell account_routes names\n' "$shell_file"
+    wiring_drift=1
+    return
+  fi
+  if grep -q 'AccountLive\.attach' <<<"$shell_body"; then
+    printf '    same     %s readies the tabs (AccountLive.attach)\n' "$shell_file"
+  else
+    printf '    missing  %s readies the tabs (AccountLive.attach)\n' "$shell_file"
+    wiring_drift=1
+  fi
+  if grep -q '<AccountLive\.page' <<<"$shell_body"; then
+    printf '    same     %s shows the tabs (<AccountLive.page>)\n' "$shell_file"
+  else
+    printf '    missing  %s shows the tabs (<AccountLive.page>)\n' "$shell_file"
+    wiring_drift=1
+  fi
 }
 
 # A live homepage's tabs and cube as visitors see them: each piece of text and
@@ -217,12 +293,27 @@ for site in "${@:-${sites[@]}}"; do
   echo "$site  ($repo main ${rev:0:7}; app $app, $module)"
   mkdir -p "$out/$site"
   find "$out/$site" -name '*.diff' -delete
-  compare "Shared files" "${shared[@]}"
-  compare "Build and deploy files" "${build[@]}"
-  if [[ "$site" == regents ]]; then
-    compare "Homepage files" "${homepage[@]}"
-    compare_live_homepages
+  compare --exact "Account files" "${account[@]}"
+  account_wiring
+  if ((compared_drift + wiring_drift > 0)); then
+    drifted+=("$site")
+  fi
+  if ! $account_only; then
+    compare "Shared files" "${shared[@]}"
+    compare "Build and deploy files" "${build[@]}"
+    if [[ "$site" == regents ]]; then
+      compare "Homepage files" "${homepage[@]}"
+      compare_live_homepages
+    fi
   fi
   echo
 done
 echo "Differences are in $out/<site>/."
+if ((${#drifted[@]} > 0)); then
+  echo "/account differs from the template's on: ${drifted[*]}"
+  if $account_only; then
+    exit 1
+  fi
+else
+  echo "/account is the template's on every site checked."
+fi

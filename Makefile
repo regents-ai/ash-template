@@ -1,9 +1,10 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release drift readiness
+.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release drift account-drift readiness
 help:
 	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make readiness."
+	@echo "Run make account-drift to check that every site's /account is the template's, file for file; it fails when one differs."
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
 check: check-platform check-required-fixes check-cli check-siwa-latest check-contracts
 # mix precommit ends with the TypeScript typecheck, the script tests and the
@@ -52,6 +53,10 @@ release:
 drift:
 	scripts/drift.sh
 	$(MAKE) readiness
+# Checks that every site's /account is the template's: the same files, routed and
+# shown the same way. Fails naming each site that differs. Needs `gh auth login`.
+account-drift:
+	scripts/drift.sh --account
 # Starts the local server on a free port, checks what the agent-readiness scorer
 # looks for against it, and stops it. Needs the local development database.
 readiness:

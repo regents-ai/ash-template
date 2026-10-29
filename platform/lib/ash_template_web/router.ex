@@ -3,6 +3,8 @@ defmodule AshTemplateWeb.Router do
   use AshTemplateWeb, :router
   use ErrorTracker.Web, :router
 
+  import AshTemplateWeb.AccountRoutes
+
   alias AshTemplateWeb.{ContentSecurityPolicy, Live.Session, Showcase}
 
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
@@ -397,11 +399,7 @@ defmodule AshTemplateWeb.Router do
       live "/chat", ShellLive, :chat
       live "/chat/:conversation_id", ShellLive, :conversation
       live "/design", ShellLive, :design
-      live "/account", ShellLive, :account
-      live "/account/points", ShellLive, :points
-      live "/account/credits", ShellLive, :credits
-      live "/account/wallets", ShellLive, :wallets
-      live "/account/connections", ShellLive, :connections
+      account_routes(ShellLive)
       live "/pair", ShellLive, :pair
     end
   end

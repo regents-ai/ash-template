@@ -11,8 +11,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   import AshTemplateWeb.Components.Shell
 
-  alias AshTemplate.{Accounts, Activity, Chat, Dms, Notes, Polls, Rooms}
-  alias AshTemplate.Accounts.LinkedIdentity.Providers
+  alias AshTemplate.{Activity, Chat, Dms, Notes, Polls, Rooms}
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
   alias AshTemplate.Credits.CheckPurchase
@@ -22,9 +21,7 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplateWeb.{
     AccountLive,
     ActivityLive,
-    AgentsPanel,
     ChatLive,
-    CreditsHistoryLive,
     DesignLive,
     DmsLive,
     MenuAgents,
@@ -40,12 +37,6 @@ defmodule AshTemplateWeb.ShellLive do
     RoomsLive,
     RouteCatalog,
     Showcase
-  }
-
-  @actions %{"link" => :link, "unlink" => :unlink}
-  @refused %{
-    tone: :error,
-    message: "That connection couldn’t be updated. Refresh the page and try again."
   }
 
   @kinds %{"Pages" => :page, "Actions" => :action}
@@ -66,19 +57,13 @@ defmodule AshTemplateWeb.ShellLive do
        poll_id: nil,
        hearing_polls?: false,
        pair_start: nil,
-       verified_connections: %Read{},
-       points: %Read{},
        credits_read: %Read{},
-       credits_history: %Read{},
-       points_bonus: %Read{},
-       points_earning: [],
-       verified_connections_notice: nil,
-       connection_outcome: nil,
        notifications: %Read{},
        mark_read_failed?: false,
        healthy: AshTemplate.Health.database_ready?(),
        search: unsearched()
      )
+     |> AccountLive.attach()
      |> count_unread()
      |> read_credits()}
   end
@@ -98,9 +83,6 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(page_meta(room, page_path(action, uri)))
      |> assign(:route_spec, route_spec)
      |> assign(:pair_start, PairLive.start(params))
-     |> load_points(route_spec)
-     |> load_credits_history(route_spec)
-     |> load_verified_connections(route_spec)
      |> load_notifications(route_spec)
      |> assign(search: unsearched(), mark_read_failed?: false)
      |> enter_room(room)
@@ -111,41 +93,6 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   @impl true
-  def handle_event(
-        "request_verified_connection",
-        %{"action" => action, "provider" => provider},
-        socket
-      ) do
-    with %Human{} <- human_actor(socket),
-         {:ok, provider} <- Providers.parse(provider),
-         {:ok, action} <- Map.fetch(@actions, action),
-         {:ok, request} <-
-           identity_request(action, provider, socket.assigns.verified_connections.value) do
-      {:noreply,
-       socket
-       |> assign(
-         verified_connections_notice: %{tone: :info, message: connection_started(request)}
-       )
-       |> push_event("verified-connections:request", request)}
-    else
-      _refused -> {:noreply, assign(socket, verified_connections_notice: @refused)}
-    end
-  end
-
-  # The outcome is judged against the connections read after the provider came back.
-  def handle_event("refresh_verified_connections", params, socket) do
-    {:noreply,
-     socket
-     |> assign(connection_outcome: params, verified_connections_notice: nil)
-     |> read_verified_connections()
-     |> report_connection_outcome()}
-  end
-
-  # The Account page saved the person's name in the shared profile. Every event
-  # reads the account again first (`AshTemplateWeb.Live.Session`), so the page
-  # already shows the new name everywhere it appears.
-  def handle_event("public_name_saved", _params, socket), do: {:noreply, socket}
-
   def handle_event("mark_all_read", _params, socket) do
     failed? =
       case human_actor(socket) do
@@ -158,20 +105,6 @@ defmodule AshTemplateWeb.ShellLive do
 
   # A search of the saved notes and messages spends the address's search
   # allowance; past it, the last results stay.
-  def handle_event("credits_history_older", _params, socket) do
-    with %Read{value: %{more?: true} = history} <- socket.assigns.credits_history,
-         account when account != nil <- current_account(socket.assigns.access_context) do
-      actor = AshTemplate.Credits.person(account)
-
-      {:noreply,
-       Read.now(socket, :credits_history, account.privy_user_id, fn ->
-         CreditsHistoryLive.older(history, &RegentCredits.history(&1, actor: actor))
-       end)}
-    else
-      _no_more -> {:noreply, socket}
-    end
-  end
-
   def handle_event("search", %{"q" => query}, socket) do
     query = String.trim(query)
 
@@ -203,21 +136,10 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket |> count_unread() |> load_notifications(socket.assigns.route_spec)}
   end
 
-  # A points award or correction landed for this account; the Points page follows.
-  def handle_info(
-        %{topic: "points:" <> _},
-        %{assigns: %{route_spec: %{route_id: :points}}} = socket
-      ),
-      do: {:noreply, read_points(socket)}
-
-  def handle_info(%{topic: "points:" <> _}, socket), do: {:noreply, socket}
-
   # The balance changed on this or any Regent site: a purchase, a gift, a spend.
-  # The header, the Buy Credits panel, the Account page and the Credits history
-  # follow.
-  def handle_info(:credits_changed, socket) do
-    {:noreply, socket |> read_credits() |> load_credits_history(socket.assigns.route_spec)}
-  end
+  # The header and the Buy Credits panel follow, and the Account pages
+  # (`AccountLive.attach/1`).
+  def handle_info(:credits_changed, socket), do: {:noreply, read_credits(socket)}
 
   def handle_info({:credits_purchase, hash, shown}, socket) do
     send_update(AshTemplateWeb.CreditsPanel, id: "credits-panel", purchase: {hash, shown})
@@ -225,15 +147,10 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # An agent paired, checked in or was unpaired, here or on another Regent site.
-  # The account menu's agents are on every page; the Account page also lists the
-  # agents and holds the pairing box.
+  # The account menu's agents are on every page, and the Account page follows
+  # (`AccountLive.attach/1`).
   def handle_info(:agents_changed, socket) do
     send_update(MenuAgents, id: "shell-agents", agents_changed: true)
-
-    if socket.assigns.route_spec.route_id == :account do
-      send_update(AgentsPanel, id: "account-agents", agents_changed: true)
-      send_update(PairingBox, id: "account-pairing-box", agents_changed: true)
-    end
 
     if socket.assigns.route_spec.route_id == :pair,
       do: send_update(PairingBox, id: "pair-pairing-box", agents_changed: true)
@@ -405,36 +322,21 @@ defmodule AshTemplateWeb.ShellLive do
 
         <DesignLive.page :if={@route_spec.route_id == :design} />
 
-        <AccountLive.profile
-          :if={@route_spec.route_id == :account}
+        <AccountLive.page
+          :if={AccountLive.tab?(@live_action)}
+          tab={@live_action}
           signed_out_reason={@signed_out_reason}
           lease={@session_lease}
           account={current_account(@access_context)}
           account_control={@account_control}
-          credits_read={@credits_read}
-        />
-
-        <AshTemplateWeb.PointsLive.page
-          :if={@route_spec.route_id == :points}
-          signed_out_reason={@signed_out_reason}
-          account={current_account(@access_context)}
-          points={@points}
-          bonus={@points_bonus}
-          earning={@points_earning}
-        />
-
-        <CreditsHistoryLive.page
-          :if={@route_spec.route_id == :credits}
-          signed_out_reason={@signed_out_reason}
-          account={current_account(@access_context)}
-          history={@credits_history}
-        />
-
-        <AccountLive.wallets
-          :if={@route_spec.route_id == :wallets}
-          signed_out_reason={@signed_out_reason}
-          account={current_account(@access_context)}
           sign_in_wallets={@sign_in_wallets}
+          credits_read={@credits_read}
+          credits_history={@credits_history}
+          points={@points}
+          points_bonus={@points_bonus}
+          points_earning={@points_earning}
+          verified_connections={@verified_connections}
+          verified_connections_notice={@verified_connections_notice}
         />
 
         <PairLive.page
@@ -443,21 +345,12 @@ defmodule AshTemplateWeb.ShellLive do
           lease={@session_lease}
           start={@pair_start}
         />
-
-        <AccountLive.connections
-          :if={@route_spec.route_id == :connections}
-          signed_out_reason={@signed_out_reason}
-          account={current_account(@access_context)}
-          verified_connections={@verified_connections}
-          verified_connections_notice={@verified_connections_notice}
-        />
       </:content>
     </.shell>
     """
   end
 
   defp subscribe_to_own_topics(%{principal: {:human, account}}) do
-    Phoenix.PubSub.subscribe(AshTemplate.PubSub, "points:#{account.id}")
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Note.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Mute.topic(account.id))
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Notification.topic(account.id))
@@ -649,35 +542,6 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  # The newest page of the account's Credits history, read again on each
-  # change with the older pages already shown kept below it.
-  defp load_credits_history(socket, %{route_id: :credits}) do
-    case current_account(socket.assigns.access_context) do
-      nil ->
-        Read.clear(socket, :credits_history)
-
-      account ->
-        actor = AshTemplate.Credits.person(account)
-        shown = shown_history(socket.assigns.credits_history, account)
-
-        Read.now(socket, :credits_history, account.privy_user_id, fn ->
-          newest_history(actor, shown)
-        end)
-    end
-  end
-
-  defp load_credits_history(socket, _route_spec), do: Read.clear(socket, :credits_history)
-
-  defp newest_history(actor, shown) do
-    with {:ok, page} <- RegentCredits.history(%{}, actor: actor),
-         do: {:ok, CreditsHistoryLive.refreshed(page, shown)}
-  end
-
-  defp shown_history(%Read{owner: owner, value: %{} = history}, %{privy_user_id: owner}),
-    do: history
-
-  defp shown_history(_read, _account), do: nil
-
   defp count_unread(socket) do
     with %Human{} = actor <- human_actor(socket),
          {:ok, count} <- Activity.count_unread(actor: actor) do
@@ -806,134 +670,4 @@ defmodule AshTemplateWeb.ShellLive do
     tail = if start + @excerpt_length < length, do: "…", else: ""
     lead <> String.slice(text, start, @excerpt_length) <> tail
   end
-
-  # The NFT tier is read from Base once per page open, never on each award
-  # notice, and not at all while nothing earns.
-  defp load_points(socket, %{route_id: :points}) do
-    socket
-    |> assign(:points_earning, RegentPoints.Rules.active())
-    |> read_points()
-    |> read_points_bonus()
-  end
-
-  defp load_points(socket, _), do: socket |> Read.clear(:points) |> Read.clear(:points_bonus)
-
-  defp read_points(socket) do
-    case human_actor(socket) do
-      %Human{} = actor ->
-        Read.now(socket, :points, actor.human_account_id, fn ->
-          RegentPoints.summary(actor: actor)
-        end)
-
-      nil ->
-        Read.clear(socket, :points)
-    end
-  end
-
-  defp read_points_bonus(%{assigns: %{points_earning: []}} = socket),
-    do: Read.clear(socket, :points_bonus)
-
-  defp read_points_bonus(socket) do
-    case human_actor(socket) do
-      %Human{human_account_id: id} ->
-        Read.start(socket, :points_bonus, id, fn -> points_bonus(id) end)
-
-      nil ->
-        Read.clear(socket, :points_bonus)
-    end
-  end
-
-  # Base is read for the person's NFTs, counted against the same per-account
-  # allowance as the Buy panel's reads.
-  defp points_bonus(id) do
-    case AshTemplate.Limits.spend(:wallet_read, {:human, id}) do
-      :ok -> RegentPoints.Bonus.current(id)
-      :limited -> {:error, :limited}
-    end
-  end
-
-  defp load_verified_connections(socket, %{route_id: :connections}),
-    do: read_verified_connections(socket)
-
-  defp load_verified_connections(socket, _route_spec) do
-    socket
-    |> Read.clear(:verified_connections)
-    |> assign(verified_connections_notice: nil, connection_outcome: nil)
-  end
-
-  # The account's own record is the only thing a connection is read from, so
-  # nothing the browser reports can name a connection the record does not hold.
-  defp read_verified_connections(socket) do
-    case human_actor(socket) do
-      %Human{} = actor ->
-        Read.now(socket, :verified_connections, actor.human_account_id, fn ->
-          Accounts.list_my_linked_identities(actor: actor)
-        end)
-
-      nil ->
-        Read.clear(socket, :verified_connections)
-    end
-  end
-
-  defp identity_request(:link, provider, _identities),
-    do: {:ok, %{action: :link, provider: provider}}
-
-  defp identity_request(:unlink, provider, identities) when is_list(identities) do
-    case Enum.find(identities, &(&1.provider == provider)) do
-      nil -> :error
-      identity -> {:ok, %{action: :unlink, provider: provider, subject: identity.subject}}
-    end
-  end
-
-  defp identity_request(_action, _provider, _identities), do: :error
-
-  # X and GitHub take the whole tab to their own approval page and bring it
-  # back; Farcaster asks for a scan here.
-  defp connection_started(%{action: :link, provider: :farcaster}),
-    do: "Scan the code with Farcaster to approve the connection."
-
-  defp connection_started(%{action: :link, provider: provider}),
-    do: "Taking you to #{Providers.label(provider)} to approve the connection."
-
-  defp connection_started(%{action: :unlink, provider: provider}),
-    do: "Disconnecting #{Providers.label(provider)}…"
-
-  defp report_connection_outcome(%{assigns: %{connection_outcome: nil}} = socket), do: socket
-
-  defp report_connection_outcome(%{assigns: assigns} = socket) do
-    notice = connection_outcome(assigns.connection_outcome, assigns.verified_connections)
-    assign(socket, verified_connections_notice: notice, connection_outcome: nil)
-  end
-
-  defp connection_outcome(%{"error" => "already-connected"}, _read),
-    do: %{tone: :error, message: "That account is already connected to another account here."}
-
-  defp connection_outcome(%{"error" => error}, _read) when is_binary(error) and error != "",
-    do: %{tone: :error, message: "That connection couldn’t be verified. Try again."}
-
-  defp connection_outcome(params, %Read{state: state, value: identities})
-       when state in [:ready, :empty] do
-    with {:ok, provider} <- Providers.parse(params["provider"]),
-         {:ok, action} <- Map.fetch(@actions, params["action"]) do
-      label = Providers.label(provider)
-
-      case {action, Enum.any?(identities, &(&1.provider == provider))} do
-        {:link, true} ->
-          %{tone: :success, message: "#{label} connected."}
-
-        {:link, false} ->
-          %{tone: :error, message: "#{label} didn’t come back connected. Try again."}
-
-        {:unlink, false} ->
-          %{tone: :success, message: "#{label} disconnected."}
-
-        {:unlink, true} ->
-          %{tone: :error, message: "#{label} is still connected. Try again."}
-      end
-    else
-      :error -> nil
-    end
-  end
-
-  defp connection_outcome(_params, _read), do: nil
 end
