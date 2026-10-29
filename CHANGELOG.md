@@ -4850,6 +4850,56 @@ An adversarial review of the two commits above found five things, all fixed here
   sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
   `b9d8ef1c`.
 
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
+  main `9da44bdc` merged with the connector's oauth and mcp_agents work).
+  `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` answers at `/mcp`
+  with Claude's handshake, the 401 sign-in challenge, each connected account's own budget
+  and the identity tools. `regent_oauth` and `regent_agent_access` carry `override: true`,
+  since `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on the
+  sign-in under `/oauth` and `/.well-known/oauth-*`, `/mcp`, Claude in the pairing box
+  and the pair request, and the Claude guide at `/agents/claude`. With the switch on, the
+  boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed. With it off, an agent's
+  sign-in, pairing and rate limits are as before: the endpoint only adds a budget for
+  `/mcp` paths (600 a minute from one address) and the `/api` budget is unchanged.
+- The connector's sign-in signs, through the sign-in service, only `whoami`, `me` and
+  `pair` for the account's one hosted identity, asked with the site's own key; the
+  connection's Bearer token never leaves the site. Connecting again or refreshing keeps
+  that identity and its one agent, a pairing code must be the authorizing account's own,
+  only `check_in` moves when the agent was last in touch, unpairing on the Account page
+  holds, and disconnecting at Connected apps revokes the app's access and refresh tokens
+  at once. `platform/test/ash_template_web/claude_connector_test.exs` checks each through
+  this site's endpoint; `docs/feature-map.md` lists them and the gaps left.
+- Pairing and checking in when asked in a chat are supported. A check-in from a scheduled
+  Claude task has not been tried, and Claude's guide says so.
+- Claude's guide and the connector's refusal send people to Pair New Agent on their
+  Account page. The pairing box uses the library's `Harness.offered/0`; its own copy is
+  gone.
+- Migrations: `20261014170000_add_oauth_provider` now calls `RegentOAuth.Migration.up()`
+  (the shape a new database gets; production already ran it).
+  `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL lock_timeout = '5s'`) runs
+  `RegentOAuth.Migration.V2`: it drops the token table's issuer and resource defaults
+  (each code and token now has them written as it is issued) and rewrites every stored
+  access token row in place as hashes. The template has OAuth rows on the shared
+  production database, so the release that carries it waits for Sean's letter naming it.
+  Tokens issued for the old resource stay refused and their apps connect again.
+- Lifetimes stay the library's: a Bearer token lives at most an hour, a refresh token 30
+  days, and a refresh token reused within 30 seconds of its rotation is only refused
+  (`config/config.exs` notes where each is set).
+- Not yet: the sign-in service's hosted signing allows the `patchbay` and `keyfleet`
+  audiences only, so with the switch on here every signed tool call would be refused
+  until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
+  version before any site takes it.
+
+## 2026-10-28 — Claude connector brought onto main 2362ad83
+
+- Merged with template main `2362ad83` (the help links on refusals; design-system
+  `99c99d14`). elixir-utils moves to its main `09afad89`, which holds `aa5512f4` (the
+  connector), pay with Credits' library work (`ff7927c0`) and the help links (`9539469f`);
+  its files are the same as `4295e7ce`, where `make check` ran green. Reviewer,
+  28 Oct 22:32Z: a re-pin with no other change needs no new review.
 
 ## 2026-10-28 — Titles are one or two words
 
@@ -4942,3 +4992,21 @@ An adversarial review of the two commits above found five things, all fixed here
   screen. The machine's health check passes; the boot log shows no crash. `bab38804`
   (docs and skills only) is on main and rides the next release. Rollback: v130,
   `cc74b3f3`.
+
+## 2026-10-29 — Claude connector brought onto main 17fa9881
+
+- Sean, 29 Oct 05:48Z, answered the connector decisions: 3 a (count the template's
+  token rows, then the one-time rewrite, then the connector goes live with Claude still
+  switched off), 4 a (a refreshed token's old one keeps working for 30 seconds) and 5 a
+  (Claude on for the template once the connector is live and the sign-in service
+  accepts the template).
+- The connector branch (`cbe48cde`) merges with main `17fa9881` (v131 and its release
+  record). elixir-utils stays at `09afad89`, the version the connector was reviewed on:
+  it already holds the 30-second grace and contains the Credits library change
+  `ff7927c`. Later elixir-utils main also changes how signed page tools are signed
+  (`3bc18ae`), which the template takes only with its own agent-access change, so this
+  merge does not move past it. design-system stays at main's `3134bab0`, which contains
+  Claude Duet's picture (`99c99d14`).
+- Not released by this merge: the release runs the connector migration, which rewrites
+  the template's stored connector tokens once, so it waits for the read-only count of
+  those rows first.

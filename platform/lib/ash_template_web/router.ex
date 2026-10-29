@@ -29,10 +29,13 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
-  # API credentials never use cookies; consent uses the verified browser and CSRF pipeline.
+  # The Claude connector's sign-in (AshTemplate.OAuth). API credentials never use
+  # cookies; consent uses the verified browser and CSRF pipeline. The resource's
+  # metadata also answers under its /mcp path, where RFC 9728 places it.
   scope "/", AshTemplateWeb do
     pipe_through :api
     get "/.well-known/oauth-protected-resource", OAuthController, :resource_metadata
+    get "/.well-known/oauth-protected-resource/mcp", OAuthController, :resource_metadata
     get "/.well-known/oauth-authorization-server", OAuthController, :server_metadata
     post "/oauth/register", OAuthController, :register, log: false
     post "/oauth/token", OAuthController, :token, log: false
@@ -45,6 +48,36 @@ defmodule AshTemplateWeb.Router do
     post "/authorize", OAuthController, :approve, log: false
     get "/connections", OAuthController, :connections, log: false
     post "/connections/revoke", OAuthController, :revoke_connection, log: false
+  end
+
+  # The Claude connector's MCP address: one JSON-RPC message per POST, with a
+  # Bearer token from the sign-in above (RegentMCPAgents.Plug). The plug answers
+  # a GET itself (405), so nothing here narrows the formats; it is 404 while the
+  # connector is off, and closes with the site. Each account has its own budget
+  # here; the endpoint counts each address first. Tool calls carry pairing codes,
+  # so nothing is logged.
+  pipeline :mcp do
+    plug AshTemplateWeb.Plugs.LaunchGate
+  end
+
+  scope "/" do
+    pipe_through :mcp
+
+    forward "/mcp",
+            RegentMCPAgents.Plug,
+            [
+              app: :ash_template,
+              title: "Ash Template",
+              about:
+                "Ash Template, where people keep notes, talk in rooms and pair the agents that work for them.",
+              rate_limit: [
+                policy: "mcp",
+                limit: 120,
+                window: 60,
+                admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3
+              ]
+            ],
+            log: false
   end
 
   # An agent's request, signed with its wallet; the signature is its only sign-in.
