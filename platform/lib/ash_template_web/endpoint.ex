@@ -56,7 +56,6 @@ defmodule AshTemplateWeb.Endpoint do
     longpoll: [connect_info: [:peer_data, :uri, session: @session_options]]
 
   plug AshTemplateWeb.Plugs.CanonicalHost
-  plug AshTemplateWeb.Plugs.ContractHeaders
 
   # esbuild names every file in assets/js/chunks after its contents, so a
   # changed file has a new name: a browser keeps them for a year without asking

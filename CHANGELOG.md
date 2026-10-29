@@ -5134,3 +5134,19 @@ An adversarial review of the two commits above found five things, all fixed here
   `max_age` (a bare `pruner: Oban.Pruner` keeps jobs 60 seconds), keep `rescue_after`
   above the slowest single run, never `plugins: false`, and a job unique over
   `states: :all` is unique only until it is pruned. Docs only.
+
+## 2026-10-29 — Public documents answer 304 when the caller has them
+
+- Every public document and agent file is sent by `send_cached/4` in
+  `AshTemplateWeb.PublicPagesController`, which already gave each a sha256 ETag of its
+  body and `cache-control: public, max-age=300`, and now answers 304 with no body when
+  `If-None-Match` names that ETag (or `*`, or the same tag marked weak). Before, a cache
+  holding the ETag got the whole body again every time.
+- `/api-contract.openapiv3.yaml` moves from the static files to that helper, so it has
+  the same ETag and five-minute cache (Plug.Static gave it a tag made from the file's
+  size and time and no `max-age`). `AshTemplateWeb.Plugs.ContractHeaders` goes; the
+  action sets the same `x-regents-contract-major` and `x-regents-contract-digest`
+  headers from the same file. The walk opens it as a document.
+- `/api/v1/about` and `/api/v1/docs` go through the helper too. The Markdown answer of a
+  public page (`RegentAgentAccess.Plug`) and the OAuth discovery documents
+  (`RegentOAuth.Protocol`) still set no cache; both are elixir-utils changes.

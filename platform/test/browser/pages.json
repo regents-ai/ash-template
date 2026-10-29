@@ -64,6 +64,7 @@
   "documents": [
     {"route": "/healthz", "purpose": "Tell the host the site is up.", "type": "text/plain"},
     {"route": "/openapi.json", "purpose": "Describe the site's API.", "type": "application/json"},
+    {"route": "/api-contract.openapiv3.yaml", "purpose": "Give the CLI everything the site serves.", "type": "application/yaml"},
     {"route": "/sitemap.xml", "purpose": "List the pages for search engines.", "type": "application/xml"},
     {"route": "/robots.txt", "purpose": "Tell crawlers what they may read.", "type": "text/plain"},
     {"route": "/llms.txt", "purpose": "Give language models the site in brief.", "type": "text/plain"},

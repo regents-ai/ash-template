@@ -191,6 +191,16 @@ Credits when Stripe says the payment went through.
 is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 `x-regents-contract-digest` headers. The table is a map, not the contract.
 
+Every public document and agent file (the contract, `/openapi.json`, `/llms.txt`,
+`/agents.md`, the skills, `/capabilities.json`, the sitemap and robots, the
+`.well-known` documents, `/indexnow-key.txt`, and `/api/v1/about` and `/api/v1/docs`)
+is sent by one helper, `send_cached/4` in `AshTemplateWeb.PublicPagesController`: a
+strong ETag, the sha256 of the body, `cache-control: public, max-age=300`, and 304
+with no body when `If-None-Match` names that ETag. A page or answer that shows the
+signed-in person is never sent this way. The Markdown of a public page
+(`Accept: text/markdown`) comes from `RegentAgentAccess.Plug` and the OAuth discovery
+documents from `RegentOAuth.Protocol`, which set no cache yet.
+
 | Route | Method | Purpose |
 | --- | --- | --- |
 | `/healthz` | GET | Liveness check; plain text `ok`. |
