@@ -312,6 +312,18 @@ config :ash_template, AshTemplate.ProductEvents,
   value_actions: %{{AshTemplate.Notes.Note, :create} => "note"}
 ```
 
+Two reports read the database and change nothing. Locally:
+
+```sh
+mix product_events.cohorts   # weekly cohorts: accounts, activated, D1, D7, median value
+```
+
+On a deployment, over the serving login:
+
+```sh
+fly ssh console --app <app> -C "/app/bin/product-cohorts"
+```
+
 ## Repository layout
 
 ```text

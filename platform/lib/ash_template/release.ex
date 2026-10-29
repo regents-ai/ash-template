@@ -138,6 +138,14 @@ defmodule AshTemplate.Release do
     if shared != [], do: IO.puts("shared-pending: #{Enum.join(shared, ", ")}")
   end
 
+  @doc """
+  Prints the weekly account cohorts from the product events
+  (`AshTemplate.ProductEvents.Cohorts`). Run as `/app/bin/product-cohorts`. It
+  only reads.
+  """
+  def product_cohorts,
+    do: IO.puts(with_serving_repo(&AshTemplate.ProductEvents.Cohorts.report/1))
+
   defp disagreements(repo) do
     path = migrations_path()
     prefix = repo.default_prefix()
@@ -206,6 +214,16 @@ defmodule AshTemplate.Release do
   defp with_release_repo(fun) do
     :ok = Application.ensure_loaded(@app)
     Application.put_env(@app, AshTemplate.Repo, AshTemplate.DatabaseConfig.release_config!())
+    {:ok, result, _started} = Ecto.Migrator.with_repo(AshTemplate.Repo, fun)
+    result
+  end
+
+  # The read-only reports connect as the running site does, on the serving login
+  # with its statement, lock and idle limits, so a slow report gives up before it
+  # holds up the shared database, and sees the site's own statements.
+  defp with_serving_repo(fun) do
+    :ok = Application.ensure_loaded(@app)
+    Application.put_env(@app, AshTemplate.Repo, AshTemplate.DatabaseConfig.runtime_config!(:prod))
     {:ok, result, _started} = Ecto.Migrator.with_repo(AshTemplate.Repo, fun)
     result
   end

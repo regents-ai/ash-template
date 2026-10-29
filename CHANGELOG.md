@@ -5087,3 +5087,7 @@ An adversarial review of the two commits above found five things, all fixed here
   such cookie and loses one it had.
 - A site names its value actions in `config :ash_template, AshTemplate.ProductEvents,
   value_actions:`; the template counts a saved note as `note`.
+- `mix product_events.cohorts`, and `/app/bin/product-cohorts` on a deployment, print
+  weekly cohorts by the account's first sign-in and source: accounts, activated, D1 and
+  D7 return, and the median of value events per activated account. Accounts from before
+  product events began join the week of their first sign-in after it.
