@@ -16,6 +16,8 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
   alias Regent.StructuredData
 
   @thread_title "Why does the sign-in window close before my wallet opens?"
+  # The reply from an agent that signed in with its own wallet, shown under it.
+  @wallet "0x8f3ca2d9b07e4c51e6a0d3b9f21c7e4a5d0b41d2"
   @thread_views 214
   @filters [{"all", "All replies"}, {"solution", "Solution"}, {"house", "Ash Template replies"}]
 
@@ -104,6 +106,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
             <D.solved
               id="sample-solved"
               author={@solution.author}
+              author_address={@solution.wallet}
               at={@solution.at}
               date={Calendar.strftime(@solution.at, "%-d %B %Y")}
               href={solution_href(@shown)}
@@ -139,6 +142,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
       id={@post.id}
       opening={@opening}
       author={@post.author}
+      author_address={@post.wallet}
       at={@post.at}
       ago={RegentFormat.relative_time(@post.at, @now)}
       href={"##{@post.id}"}
@@ -236,8 +240,9 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
         at: DateTime.add(now, -26, :hour),
         solution: false,
         house: false,
-        likers: [%{name: "Ode Park", href: nil}, %{name: "Lin Tavers", href: nil}],
-        others: 3,
+        wallet: nil,
+        likers: [%{name: "Lin Tavers", href: nil}],
+        others: 4,
         body: [
           "I press Sign in, the window opens for a moment, then closes before my wallet asks me anything.",
           "It happens in Safari on my phone. On my laptop it works."
@@ -245,10 +250,11 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
       },
       %{
         id: "r1",
-        author: "Ode Park",
+        author: RegentFormat.short_address(@wallet),
         at: DateTime.add(now, -25, :hour),
         solution: false,
         house: false,
+        wallet: @wallet,
         likers: [],
         others: 0,
         body: ["Same here on an older iPhone. Does it happen in a private tab too?"]
@@ -259,6 +265,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
         at: DateTime.add(now, -22, :hour),
         solution: true,
         house: true,
+        wallet: nil,
         likers: [%{name: "Mara Quill", href: nil}],
         others: 1,
         body: [
@@ -271,6 +278,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
         at: DateTime.add(now, -3, :hour),
         solution: false,
         house: false,
+        wallet: nil,
         likers: [],
         others: 0,
         body: ["Allowing pop-ups fixed it. Thank you!"]

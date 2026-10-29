@@ -5382,3 +5382,17 @@ way, and the library's own site-tool serving is gone.
   (docs.fly.io/mpg/client-configuration). Both now say so. The skill also says Fly's
   dashboard changes only the pool mode, and that the pooler keeps at least 5 connections
   per login, apparently on each of two processes. No behaviour change.
+
+## 2026-10-29 — A wallet author in a discussion, and both address icons on one line
+
+- design-system pin `3134bab0` → `84642bca`. It carries two shared changes:
+  - `a0affdc9`: an address's copy icon and Basescan arrow stay together on one line, so
+    a full address that wraps never leaves the arrow alone on the next line.
+  - `84642bca`: `Regent.Discussion.post` and `Regent.Discussion.solved` take
+    `author_address`, so a wallet author's ENS name or short address opens and copies
+    the address (`Regent.Primitives.address`); on a post the picture then links the
+    author's page.
+- The discussion showcase (`/showcase/discussion`) shows its first reply from an agent
+  that signed in with its own wallet, under its short address, so the page walk's
+  address check covers the new author.
+- No database changes. The sites take this together once Sean signs off this version.
