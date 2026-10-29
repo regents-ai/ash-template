@@ -83,7 +83,7 @@ defmodule AshTemplate.Rooms do
     end
 
     tool :rooms_create, AshTemplate.Rooms.Room, :rooms_create do
-      description "Start a room for your person with a name and a topic; anyone can read it. Its address comes from the name. A person starts 3 rooms a day; a retry with the same name answers the room already started. Ask your person first. Needs a pairing."
+      description "Start a room for your person with a name and a topic; anyone can read it. Its address comes from the name. A person starts 3 rooms a day; a retry with the same name and topic answers the room already started. Ask your person first. Needs a pairing."
     end
 
     tool :rooms_topic, AshTemplate.Rooms.Room, :rooms_topic do

@@ -1,12 +1,14 @@
 defmodule AshTemplate.Rooms.Room.AgentStart do
   @moduledoc """
   A room an agent starts for its person, the same on every surface: `%{room:
-  Room.public/1, replayed: boolean}`. A retry with the name of a room that person
-  already started answers that room (`replayed: true`) and starts nothing, so it
-  never spends the day's allowance again; of two calls with one name at once,
-  the second answers the room the first started. A name another room has is
-  `room_name_taken`; a start the room refuses is `invalid_room`, with the refused
-  save; one its pairing no longer allows is `agent_not_paired`.
+  Room.public/1, replayed: boolean}`. A retry, the same name and topic as a room
+  that person already started, answers that room (`replayed: true`) and starts
+  nothing, so it never spends the day's allowance again; of two such calls at
+  once, the second answers the room the first started. A name another room has,
+  or one of the person's own rooms with another name or topic, is
+  `room_name_taken` and changes nothing; a start the room refuses is
+  `invalid_room`, with the refused save; one its pairing no longer allows is
+  `agent_not_paired`.
   """
 
   use Ash.Resource.Actions.Implementation
@@ -23,7 +25,7 @@ defmodule AshTemplate.Rooms.Room.AgentStart do
          {:ok, nil} <- started(name, actor) do
       start(name, topic, actor)
     else
-      {:ok, %Room{} = room} -> {:ok, %{room: Room.public(room), replayed: true}}
+      {:ok, %Room{} = room} -> retried(room, name, topic)
       error -> error
     end
   end
@@ -35,7 +37,7 @@ defmodule AshTemplate.Rooms.Room.AgentStart do
 
       {:error, %Ash.Error.Invalid{} = error} ->
         if Room.name_taken?(error),
-          do: taken(name, actor),
+          do: taken(name, topic, actor),
           else: {:error, Refused.exception(code: "invalid_room", error: error)}
 
       error ->
@@ -43,15 +45,19 @@ defmodule AshTemplate.Rooms.Room.AgentStart do
     end
   end
 
-  # A call with the same name that started the room while this one ran: the
-  # person's own room answers as a retry.
-  defp taken(name, actor) do
+  # A call that started the person's room with this name while this one ran.
+  defp taken(name, topic, actor) do
     case started(name, actor) do
-      {:ok, %Room{} = room} -> {:ok, %{room: Room.public(room), replayed: true}}
+      {:ok, %Room{} = room} -> retried(room, name, topic)
       {:ok, nil} -> {:error, Refused.exception(code: "room_name_taken")}
       error -> error
     end
   end
+
+  defp retried(%Room{name: name, topic: topic} = room, name, topic),
+    do: {:ok, %{room: Room.public(room), replayed: true}}
+
+  defp retried(_room, _name, _topic), do: {:error, Refused.exception(code: "room_name_taken")}
 
   # A name with no letter or number has no address, so no room was started with it.
   defp started(name, actor) do

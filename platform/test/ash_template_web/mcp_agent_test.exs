@@ -941,6 +941,74 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert listed_room(from, "general")["topic"] != "Mine now"
   end
 
+  test "a room's name again answers the room only with its topic, both ways", %{from: from} do
+    agent = paired_wallet()
+    name = "Design #{:erlang.unique_integer([:positive])}"
+
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => false, "room" => room}} =
+             result(
+               mcp(call("rooms_create", %{name: name, topic: "A"}), from: from, proof: agent)
+             )
+
+    # Another topic under the name is refused, and the room keeps its topic.
+    over_http = http(:post, "/api/v1/rooms", %{name: name, topic: "B"}, from, agent)
+    %{"error" => refused} = Jason.decode!(over_http.resp_body)
+    assert {over_http.status, refused["code"]} == {409, "room_name_taken"}
+
+    assert %{"isError" => true, "content" => [%{"text" => text}]} =
+             result(
+               mcp(call("rooms_create", %{name: name, topic: "B"}), from: from, proof: agent)
+             )
+
+    assert Jason.decode!(text)["error"] == refused
+    assert %{"topic" => "A"} = listed_room(from, room["slug"])
+
+    # The same name and topic answers the room, started once.
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => true, "room" => ^room}} =
+             result(
+               mcp(call("rooms_create", %{name: name, topic: "A"}), from: from, proof: agent)
+             )
+
+    again = http(:post, "/api/v1/rooms", %{name: name, topic: "A"}, from, agent)
+    assert {again.status, Jason.decode!(again.resp_body)} == {200, %{"room" => room}}
+  end
+
+  test "two starts of one room at once leave one room, and both answer it", %{from: from} do
+    for ways <- [[:http, :http], [:mcp, :mcp], [:http, :mcp], [:mcp, :http]], _ <- 1..5 do
+      agent = paired_wallet()
+      name = "Race #{:erlang.unique_integer([:positive])}"
+
+      answers =
+        ways
+        |> Enum.map(fn way -> Task.async(fn -> start_room(way, from, agent, name) end) end)
+        |> Task.await_many()
+
+      assert [%{"slug" => slug} = room, room] = Enum.map(answers, &elem(&1, 1))
+      assert answers |> Enum.map(&elem(&1, 0)) |> Enum.sort() == [false, true]
+      rooms = Jason.decode!(http(:get, "/api/v1/rooms", nil, from, nil).resp_body)["rooms"]
+      assert Enum.filter(rooms, &(&1["slug"] == slug)) == [room]
+    end
+  end
+
+  test "two removals of one mute at once: one removes it, the other finds no mute, both ways",
+       %{from: from} do
+    for ways <- [[:http, :http], [:mcp, :mcp], [:http, :mcp]], _ <- 1..3 do
+      agent = paired_wallet()
+      theirs = said(from, paired_wallet(), "general", "Mute me")
+
+      %{"mute" => %{"id" => id}} =
+        Jason.decode!(http(:post, "/api/v1/mutes", %{message_id: theirs}, from, agent).resp_body)
+
+      answers =
+        ways
+        |> Enum.map(fn way -> Task.async(fn -> remove_mute(way, from, agent, id) end) end)
+        |> Task.await_many()
+
+      assert Enum.sort(answers) == [{:refused, "mute_not_found"}, {:removed, id}], inspect(ways)
+      assert mutes(from, agent) == []
+    end
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -1011,6 +1079,42 @@ defmodule AshTemplateWeb.McpAgentTest do
         "structuredContent" => %{"replayed" => true, "message" => %{"id" => id}}
       } ->
         {:replayed, id}
+
+      %{"isError" => true, "content" => [%{"text" => text}]} ->
+        {:refused, Jason.decode!(text)["error"]["code"]}
+    end
+  end
+
+  # `agent` starting the room `name` through `way`: whether it was replayed, and the room.
+  defp start_room(:http, from, agent, name) do
+    conn = http(:post, "/api/v1/rooms", %{name: name, topic: "Race"}, from, agent)
+    assert conn.status in [200, 201], conn.resp_body
+    {conn.status == 200, Jason.decode!(conn.resp_body)["room"]}
+  end
+
+  defp start_room(:mcp, from, agent, name) do
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => replayed, "room" => room}} =
+             result(
+               mcp(call("rooms_create", %{name: name, topic: "Race"}), from: from, proof: agent)
+             )
+
+    {replayed, room}
+  end
+
+  # `agent` lifting the mute `id` through `way`: removed, or refused with its code (404 over HTTP).
+  defp remove_mute(:http, from, agent, id) do
+    conn = http(:delete, "/api/v1/mutes/#{id}", nil, from, agent)
+
+    case {conn.status, Jason.decode!(conn.resp_body)} do
+      {200, %{"removed" => true, "id" => ^id}} -> {:removed, id}
+      {404, %{"error" => %{"code" => code}}} -> {:refused, code}
+    end
+  end
+
+  defp remove_mute(:mcp, from, agent, id) do
+    case result(mcp(call("mutes_remove", %{id: id}), from: from, proof: agent)) do
+      %{"isError" => false, "structuredContent" => %{"removed" => true, "id" => ^id}} ->
+        {:removed, id}
 
       %{"isError" => true, "content" => [%{"text" => text}]} ->
         {:refused, Jason.decode!(text)["error"]["code"]}

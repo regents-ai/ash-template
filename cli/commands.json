@@ -87,7 +87,7 @@
     },
     {
       "command": "rooms create",
-      "description": "Start a room for your person with a name and a topic; anyone can read it. Its address comes from the name. A person starts 3 rooms a day; a retry with the same name answers the room already started. Pipe name and topic on stdin.",
+      "description": "Start a room for your person with a name and a topic; anyone can read it. Its address comes from the name. A person starts 3 rooms a day; a retry with the same name and topic answers the room already started. Pipe name and topic on stdin.",
       "operation_id": "createRoom",
       "webmcp": "rooms_create",
       "method": "POST",

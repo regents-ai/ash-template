@@ -154,8 +154,8 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
-  # A retry with the name of a room this agent's person already started answers
-  # that room (200), and starts nothing (`AshTemplate.Rooms.Room.AgentStart`).
+  # A retry with the name and topic of a room this agent's person already started
+  # answers that room (200), and starts nothing (`AshTemplate.Rooms.Room.AgentStart`).
   def create(conn, _params) do
     case Rooms.rooms_create(conn.body_params, actor: conn.assigns.actor) do
       {:ok, %{room: room, replayed: false}} -> conn |> put_status(:created) |> json(%{room: room})

@@ -109,9 +109,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **Example:** `echo '{"name": "Book club", "topic": "What we are reading."}' | regents
   ash-template rooms create`
 - **Answer:** 201 `{"room": {"slug": "book-club", "name": "Book club", "topic": "…"}}`. A retry
-  with the name of a room your person already started answers 200 with that room.
+  with the name and topic of a room your person already started answers 200 with that room.
 - **Refusals:** 403 `agent_not_paired` or `person_not_here`; 409 `room_name_taken` (another
-  room has that address); 422 `invalid_room`; 503 `rooms_unavailable`.
+  room has that address, or your person's room there has another name or topic); 422
+  `invalid_room`; 503 `rooms_unavailable`.
 
 ## rooms topic \<room\>
 

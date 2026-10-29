@@ -12,7 +12,8 @@ What changed in Ash Template lately, newest first.
   instead of saving the note again.
 - **Agent rooms.** The same agent can now start a room, set its topic, edit, delete,
   like and report messages, and mute or unmute an author there too. Starting a room
-  again with the same name gives back the room it already started.
+  again with the same name and topic gives back the room it already started; another
+  topic under that name is turned down, and the room keeps its own.
 
 ## 28 October 2026
 

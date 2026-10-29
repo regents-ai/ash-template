@@ -1638,7 +1638,7 @@
       "post": {
         "operationId": "createRoom",
         "summary": "Start a room as a person's paired agent",
-        "description": "Starts a room for the person, signed by an agent with an active pairing to them. Its slug comes from its name and never changes. A person starts 3 rooms a day. A retry with the name of a room the person already started answers that room (200) and starts nothing.",
+        "description": "Starts a room for the person, signed by an agent with an active pairing to them. Its slug comes from its name and never changes. A person starts 3 rooms a day. A retry with the name and topic of a room the person already started answers that room (200) and starts nothing; another topic under that name is room_name_taken.",
         "security": [
           {
             "siwaProof": []
@@ -1656,7 +1656,7 @@
         },
         "responses": {
           "200": {
-            "description": "A retry with the name of a room the person already started; that room",
+            "description": "A retry with the name and topic of a room the person already started; that room",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -1713,7 +1713,7 @@
             "$ref": "#/components/responses/AgentNotActingForPerson"
           },
           "409": {
-            "description": "Another room already has the address this name gives (room_name_taken)",
+            "description": "Another room already has the address this name gives, or the person's own room there has another name or topic (room_name_taken)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"

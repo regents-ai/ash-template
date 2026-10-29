@@ -4598,7 +4598,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/RoomEnvelope"}
     RoomRetried:
-      description: A retry with the name of a room the person already started; that room, unchanged
+      description: A retry with the name and topic of a room the person already started; that room, unchanged
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RoomEnvelope"}
@@ -4608,7 +4608,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/RoomEnvelope"}
     RoomNameTaken:
-      description: Another room already has the address this name gives
+      description: Another room already has the address this name gives, or the person's own room there has another name or topic
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RecoveryError"}

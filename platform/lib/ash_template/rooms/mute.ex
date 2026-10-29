@@ -179,14 +179,20 @@ defmodule AshTemplate.Rooms.Mute do
   end
 
   @doc """
-  Lifts `mute` for `actor`. An agent's pairing, rechecked inside the transaction
-  (`RegentAgents.RequirePairing`), may have ended since its request was let in:
-  that is `agent_not_paired`.
+  Lifts `mute` for `actor`. A refused lift is read again: a call that lifted the
+  mute while this one ran left nothing to lift, `mute_not_found`; a mute still
+  there was kept by the agent's pairing, rechecked inside the transaction
+  (`RegentAgents.RequirePairing`) and ended since its request was let in,
+  `agent_not_paired`.
   """
   def lift(mute, actor) do
     case Rooms.unmute(mute, actor: actor) do
-      {:error, %Ash.Error.Invalid{}} -> {:error, NotPaired.exception(code: "agent_not_paired")}
-      result -> NotPaired.ended(result, actor)
+      {:error, %error{}} when error in [Ash.Error.Invalid, Ash.Error.Forbidden] ->
+        with {:ok, _kept} <- mine(mute.id, actor),
+             do: {:error, NotPaired.exception(code: "agent_not_paired")}
+
+      result ->
+        result
     end
   end
 

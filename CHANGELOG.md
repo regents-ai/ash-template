@@ -5210,3 +5210,22 @@ An adversarial review of the two commits above found five things, all fixed here
   limit moves to 46 for the action module a room start runs.
 - Not proven by a check: two starts of one room at once (the race needs two
   transactions to meet).
+
+## 2026-10-29 — Hosted MCP: room retries and mute removals
+
+- A room's name sent again answers the room only when its topic matches too
+  (`Room.AgentStart`). The same name with another topic, or another spelling of the
+  name, is 409 `room_name_taken` and changes nothing; before, it answered the room as a
+  retry and left the agent thinking its topic was saved. The same rule holds when two
+  starts run at once.
+- A mute removed by two calls at once answers the second with 404 `mute_not_found`
+  (`Mute.lift/2`). A refused removal now reads the mute again: gone means another call
+  removed it; still there means the agent's pairing, rechecked inside the transaction,
+  ended (403 `agent_not_paired`). Before, every refused removal said `agent_not_paired`.
+- `mcp_agent_test.exs` checks both ways that another topic under a name is refused and
+  the room keeps its topic, twenty races of two starts of one room (one room, both
+  answer it), and nine races of two removals of one mute (one `removed: true`, one
+  `mute_not_found`). The topic and removal checks fail on the earlier code; the race
+  check fails when the start that finds the name taken refuses instead of answering.
+- The tool descriptions, `/docs`, the API contract, the CLI's command list, the public
+  changelog and the feature map say a retry is the same name and topic.
