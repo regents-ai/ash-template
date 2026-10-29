@@ -5371,3 +5371,14 @@ way, and the library's own site-tool serving is gone.
   database's 97 connections spare, so a template release overlapping a site's could go
   over. The lock goes from the template and every site together after the last move. The
   ash-data skill says so. No release.
+
+## 2026-10-29 — The nine-to-ten-minute reconnects have a reason after all
+
+- Earlier today `AshTemplate.DatabaseConfig.serving/1`'s comment and the ash-data skill
+  dropped the "ten-minute limit" behind the pool's nine-to-ten-minute reconnects,
+  because the pooler has none. The limit is Fly's: when its proxy in front of the
+  database restarts, it closes any connection still open ten minutes later, and Fly's
+  client guide for Ecto recycles every nine to ten minutes to stay ahead of it
+  (docs.fly.io/mpg/client-configuration). Both now say so. The skill also says Fly's
+  dashboard changes only the pool mode, and that the pooler keeps at least 5 connections
+  per login, apparently on each of two processes. No behaviour change.

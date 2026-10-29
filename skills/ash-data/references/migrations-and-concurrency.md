@@ -115,12 +115,17 @@ only what needs a session on the direct address:
   release's second machine waits a moment for a connection instead of taking one from
   the database. It closes a client connection idle for 60 seconds and replaces its own
   database connections every 300 seconds; it has no other limit on how long a client
-  connection lasts. The fewest connections it keeps open for each login (Min Pool Size)
-  and these limits are the founder's settings in Fly's dashboard.
+  connection lasts. It keeps at least 5 database connections open for each login it
+  serves (Min Pool Size), apparently on each of two pooler processes (the template holds
+  10 for 7 clients). Fly's dashboard lets the founder change only the pool mode; these
+  limits are fixed.
   Copy `AshTemplate.DatabaseConfig.serving/1`:
   a pool of 5 (never leave `pool_size` unset: Ecto's default is 10),
   `prepare: :unnamed` (named prepared statements do not survive a transaction pooler),
-  and `max_lifetime: 540_000..600_000`, which spreads the pool's reconnects so they
+  and `max_lifetime: 540_000..600_000`: when Fly's proxy in front of the database
+  restarts it closes any connection still open ten minutes later, and Fly's guide for
+  Ecto recycles every nine to ten minutes to stay ahead of it
+  (docs.fly.io/mpg/client-configuration); the range spreads the reconnects so they
   never land at once. The pool's idle pings (every second) keep each connection well
   inside the pooler's 60-second idle limit. The health check reads through the same
   pool (`AshTemplate.Health.database_ready?/0`).
