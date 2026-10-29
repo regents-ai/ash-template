@@ -41,10 +41,17 @@ defmodule AshTemplateWeb.VisitLog do
   - `step`: one of `steps/0`, the shared journey from first look to a paired
     agent, with the agent's harness where there is one.
 
+  The first visit's arrival is also kept for 30 days in the signed
+  `_first_touch` cookie, as the source's name and the link's `utm_campaign` when
+  it is a short plain name, never an address, so the account a browser signs in
+  to first is counted under where it first came from (`account_created` in
+  `AshTemplate.ProductEvents`).
+
   A browser that sends Global Privacy Control (`Sec-GPC: 1`) starts no visit: it
-  gets no `_visit` cookie, none of its requests or pages carries a `visit`, and it
-  writes no `arrival` or `step` line. Its other lines are written without a
-  visit, like calls from outside a page, so nothing groups them into one visit.
+  gets no `_visit` or `_first_touch` cookie and loses any it had, none of its
+  requests or pages carries a `visit`, and it writes no `arrival` or `step` line
+  and no product event. Its other lines are written without a visit, like calls
+  from outside a page, so nothing groups them into one visit.
   """
 
   @behaviour Plug
@@ -53,7 +60,11 @@ defmodule AshTemplateWeb.VisitLog do
 
   import Plug.Conn
 
+  alias AshTemplateWeb.Endpoint
+
   @cookie "_visit"
+  @first_touch "_first_touch"
+  @first_touch_age 30 * 24 * 60 * 60
   # Set in each request's and page's process when its browser sent Global Privacy Control.
   @gpc {__MODULE__, :gpc}
   @visit ~r/\A[A-Za-z0-9_-]{22}\z/
@@ -62,6 +73,7 @@ defmodule AshTemplateWeb.VisitLog do
   @program ~r/\A([a-z][a-z0-9._-]{0,31}\/[0-9][0-9A-Za-z.+-]{0,31})(?: |\z)/
   @where ~r/\A[A-Za-z0-9_.:\/@* -]{1,120}\z/
   @outcome ~r/\A[a-z0-9_]{1,48}\z/
+  @campaign ~r/\A[a-z0-9][a-z0-9_-]{0,47}\z/
   @names ~w(request tool.call page press action job outgoing page.error tool.unsent press.unsent arrival step)
   @steps ~w(sign_in_opened signed_in pairing_code_shown agent_paired)
   # Where a visit came from, by the referring site's address or `utm_source`.
@@ -99,9 +111,12 @@ defmodule AshTemplateWeb.VisitLog do
   is one. Nothing is written for a browser that sends Global Privacy Control.
   """
   def step(name, harness \\ nil) when name in @steps do
-    unless Process.get(@gpc), do: record("step", name, harness)
+    unless gpc?(), do: record("step", name, harness)
     :ok
   end
+
+  @doc "Whether this request or page came from a browser that sent Global Privacy Control."
+  def gpc?, do: Process.get(@gpc) == true
 
   @doc "Writes one event line (`event/4`); its message is its name, where and outcome."
   def record(name, where, outcome \\ nil, ms \\ nil, client \\ nil) do
@@ -150,7 +165,7 @@ defmodule AshTemplateWeb.VisitLog do
     case :persistent_term.get(__MODULE__, nil) do
       nil ->
         key =
-          AshTemplateWeb.Endpoint.config(:secret_key_base)
+          Endpoint.config(:secret_key_base)
           |> Plug.Crypto.KeyGenerator.generate("visit log actor", length: 32)
 
         :persistent_term.put(__MODULE__, key)
@@ -189,6 +204,7 @@ defmodule AshTemplateWeb.VisitLog do
     gpc = gpc?(conn)
     {surface, client} = surface(conn)
     {conn, visit} = if gpc, do: {forget(conn), nil}, else: visit(conn, surface)
+    conn = if gpc, do: conn, else: keep_first_touch(conn)
     # Only a browser sends Global Privacy Control, so its API calls are its page's own.
     surface = if surface == "agent_http" and (visit || gpc), do: "page", else: surface
     Logger.metadata(visit: visit, surface: surface)
@@ -255,11 +271,58 @@ defmodule AshTemplateWeb.VisitLog do
   @doc "Whether the browser sent Global Privacy Control: no visit, cookie, `arrival` or `step` line for it."
   def gpc?(conn), do: get_req_header(conn, "sec-gpc") == ["1"]
 
-  # A browser that now asks not to be tracked loses the visit it was given before.
-  defp forget(%Plug.Conn{cookies: %{@cookie => _visit}} = conn),
-    do: delete_resp_cookie(conn, @cookie)
+  # A browser that now asks not to be tracked loses the visit and the first touch
+  # it was given before.
+  defp forget(conn) do
+    Enum.reduce([@cookie, @first_touch], conn, fn name, conn ->
+      if Map.has_key?(conn.req_cookies, name), do: delete_resp_cookie(conn, name), else: conn
+    end)
+  end
 
-  defp forget(conn), do: conn
+  # The browser keeps the first touch its cookie holds, or takes it from the
+  # arrival of the visit this request starts.
+  defp keep_first_touch(conn) do
+    case touched(conn.req_cookies[@first_touch]) do
+      {:ok, touch} -> put_private(conn, :visit_log_first_touch, touch)
+      :error -> if arrival = conn.assigns[:arrival], do: touch(conn, arrival), else: conn
+    end
+  end
+
+  defp touched(nil), do: :error
+
+  defp touched(token) do
+    case Phoenix.Token.verify(Endpoint, @first_touch, token, max_age: @first_touch_age) do
+      {:ok, {source, campaign}} -> {:ok, %{source: source, campaign: campaign}}
+      _invalid_or_expired -> :error
+    end
+  end
+
+  defp touch(conn, arrival) do
+    campaign = conn |> fetch_query_params() |> Map.fetch!(:query_params) |> campaign()
+    token = Phoenix.Token.sign(Endpoint, @first_touch, {arrival, campaign})
+
+    conn
+    |> put_resp_cookie(@first_touch, token,
+      http_only: true,
+      same_site: "Lax",
+      secure: conn.scheme == :https,
+      max_age: @first_touch_age
+    )
+    |> put_private(:visit_log_first_touch, %{source: arrival, campaign: campaign})
+  end
+
+  defp campaign(%{"utm_campaign" => sent}) when is_binary(sent) do
+    sent = String.downcase(sent)
+    if Regex.match?(@campaign, sent), do: sent
+  end
+
+  defp campaign(_params), do: nil
+
+  @doc """
+  Where this browser first came from, as the `_first_touch` cookie keeps it:
+  `%{source: name, campaign: name or nil}`, or `%{}` when it keeps none.
+  """
+  def first_touch(conn), do: conn.private[:visit_log_first_touch] || %{}
 
   @doc "Where a visit that starts with this request came from (see the moduledoc)."
   def arrival(conn) do
@@ -353,7 +416,11 @@ defmodule AshTemplateWeb.VisitLog do
       %URI{path: path, host: host} = URI.parse(uri)
       Logger.metadata(actor: actor(socket.assigns[:access_context]))
       route = route(socket.router, "GET", path, host)
-      if arrival = socket.assigns.arrival, do: record("arrival", route, arrival)
+      if arrival = socket.assigns.arrival do
+        record("arrival", route, arrival)
+        AshTemplate.ProductEvents.record(:visited, socket.assigns[:access_context])
+      end
+
       record("page", route)
       {:cont, Phoenix.Component.assign(socket, :arrival, nil)}
     else

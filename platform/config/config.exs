@@ -49,10 +49,18 @@ config :ash_template,
     AshTemplate.Polls,
     AshTemplate.Notes,
     AshTemplate.Points,
+    AshTemplate.ProductEvents,
     AshTemplate.Rooms
   ],
   ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]
+
+# The actions that count as reaching this site's value, each `{resource, action}`
+# with the kind its `value_reached` product event names. A site copied from the
+# template names its own here, and adds AshTemplate.ProductEvents.Notifier to each
+# resource it names.
+config :ash_template, AshTemplate.ProductEvents,
+  value_actions: %{{AshTemplate.Notes.Note, :create} => "note"}
 
 config :ash_template, AshTemplate.Repo,
   database: "ash_template_disabled",

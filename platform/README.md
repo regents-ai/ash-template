@@ -287,6 +287,31 @@ a running total as a whole number. So times are measured in whole microseconds
 buckets count observations at or below their bound
 (`AshTemplateWeb.Telemetry.Buckets`).
 
+## Product events
+
+The site keeps one row in `product_events` for each thing a person or agent
+reached, with the same seven names on every site (`AshTemplate.ProductEvents`):
+`account_created`, `signed_in`, `visited`, `agent_paired`, `agent_acted`,
+`value_reached` and `credits_bought`. Rows are only written and read, and each
+is written once the change it follows has committed; a row that cannot be
+written is logged and dropped, never failing what the person did. A row names
+the account and agent by the site's ids, the surface and a short `kind`, and
+nothing a person wrote. A browser that sends Global Privacy Control writes none.
+
+`account_created` also carries where the account's browser first came from: the
+source's name and, when it is a short plain name, the link's `utm_campaign`, kept
+for 30 days in the signed `_first_touch` cookie (`AshTemplateWeb.VisitLog`). The
+referring address is never kept.
+
+Each site names the actions that count as reaching its value, with the `kind`
+each is written as, and adds `AshTemplate.ProductEvents.Notifier` to each of
+those resources. The template counts a saved note:
+
+```elixir
+config :ash_template, AshTemplate.ProductEvents,
+  value_actions: %{{AshTemplate.Notes.Note, :create} => "note"}
+```
+
 ## Repository layout
 
 ```text

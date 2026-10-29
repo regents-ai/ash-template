@@ -28,7 +28,7 @@ defmodule AshTemplate.Notes.Note do
     domain: AshTemplate.Notes,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub],
+    notifiers: [Ash.Notifier.PubSub, AshTemplate.ProductEvents.Notifier],
     extensions: [AshOban]
 
   alias AshTemplate.Notes.Note.{

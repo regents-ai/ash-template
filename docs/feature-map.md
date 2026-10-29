@@ -187,3 +187,6 @@ gap here.
 - The agent harbour's drawing and ripples: the walk turns WebGPU on for the harbour's
   sea and presses ships and islands on it, but nothing checks what the sea looks like
   or that a ripple spreads.
+- Product events (`AshTemplate.ProductEvents`), the `_first_touch` cookie and the
+  cohort and top-queries reports: no check writes or reads them yet, nor the Global
+  Privacy Control rule for them; read by hand with `mix product_events.cohorts`.

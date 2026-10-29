@@ -17,11 +17,16 @@ defmodule AshTemplateWeb.VisitLog.Events do
   - `outgoing`: a call to another site, by method and host, and its status.
   - `step` `signed_in`: the browser's sign-in exchange succeeded.
 
+  Each answer and each Ash write is also shown to
+  `AshTemplateWeb.VisitLog.ProductEvents`, which writes the product events the
+  answer shows.
+
   Actions and outgoing calls are written only inside a request, page or job, so
   the chain reader's own polling writes nothing.
   """
 
   alias AshTemplateWeb.VisitLog
+  alias AshTemplateWeb.VisitLog.ProductEvents
 
   # The reasons the wallet hook reports (`Failure` in send_step.ts).
   @wallet_failures ~w(step_unknown wallet_unavailable network_mismatch wallet_declined insufficient_funds send_unconfirmed)
@@ -53,12 +58,13 @@ defmodule AshTemplateWeb.VisitLog.Events do
 
   @doc false
   def handle([:phoenix, :endpoint, :stop], %{duration: duration}, %{conn: conn}, _config) do
+    route = VisitLog.route(AshTemplateWeb.Router, conn.method, conn.request_path, conn.host)
+    ProductEvents.observe(conn, route)
+
     unless quiet?(conn) do
       Logger.metadata(
         actor: VisitLog.actor(conn.assigns[:actor] || conn.assigns[:current_human_account])
       )
-
-      route = VisitLog.route(AshTemplateWeb.Router, conn.method, conn.request_path, conn.host)
 
       case conn.path_info do
         ["api" | _] ->
@@ -109,7 +115,9 @@ defmodule AshTemplateWeb.VisitLog.Events do
     end
   end
 
-  def handle([:ash, _domain, _kind, :stop], %{duration: duration}, metadata, _config) do
+  def handle([:ash, _domain, kind, :stop], %{duration: duration}, metadata, _config) do
+    if kind in [:create, :update, :destroy], do: ProductEvents.agent_wrote(metadata[:actor])
+
     if Logger.metadata()[:surface] do
       VisitLog.record(
         "action",

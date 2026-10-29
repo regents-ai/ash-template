@@ -5068,3 +5068,22 @@ An adversarial review of the two commits above found five things, all fixed here
   the Mac). Live check in headless Chromium: `/capabilities.json` build.commit `2e158726`;
   home, agents, account and pair pages answer 200 at 390 and 1280, no page errors and
   nothing wider than the screen. Rollback: v132, `637dcce8`.
+
+## 2026-10-29 — Product events
+
+- Each site keeps one row in its own `product_events` table for each thing a person or
+  agent reached, under seven names shared by every site: `account_created`, `signed_in`,
+  `visited`, `agent_paired`, `agent_acted`, `value_reached` (with the site's `kind`) and
+  `credits_bought`. Rows are only created and read. Each is written after the change it
+  follows has committed, from where the site already sees it: the visit log's telemetry
+  for sign-in, pairing and signed agent writes, the page's arrival for a visit, a notifier
+  on each value action, and Credits' signals as a job. A row that cannot be written is
+  logged by its kind of failure and dropped, so it never fails what the person did. A
+  browser that sends Global Privacy Control writes none. No sign-in, session, Privy or
+  agent-access code changed.
+- The first arrival's source, and a short plain `utm_campaign`, are kept for 30 days in a
+  signed `_first_touch` cookie and written once, on the account's `account_created`. The
+  referring address is never kept. A browser that sends Global Privacy Control gets no
+  such cookie and loses one it had.
+- A site names its value actions in `config :ash_template, AshTemplate.ProductEvents,
+  value_actions:`; the template counts a saved note as `note`.
