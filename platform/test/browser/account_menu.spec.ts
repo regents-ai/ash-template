@@ -143,6 +143,30 @@ test("Manage Account opens this site's Account page and the menu closes", async 
   await problems.expect()
 })
 
+// Sign out closes the menu, so when the site can't be reached the note that it
+// couldn't finish shows under the account button with nothing over it.
+test("Sign out closes the menu, and the note that it couldn't finish is on top", async ({page}) => {
+  const problems = watch(page)
+  await page.goto("/rooms/general")
+  await ready(page)
+  await page.route("**/auth/privy/session", route =>
+    route.request().method() === "DELETE" ? route.abort() : route.continue())
+  await openMenu(page)
+  await menu(page).getByRole("button", {name: "Sign out"}).click()
+  await expect(menu(page)).toBeHidden()
+  const note = page.locator("#account-auth-status")
+  await expect(note).toHaveText("Sign out couldn’t finish. Try again.")
+  // The note lets presses through, so for this one look it takes them, and the
+  // middle of it is the note unless something is drawn over it.
+  const onTop = await note.evaluate(element => {
+    element.style.pointerEvents = "auto"
+    const box = element.getBoundingClientRect()
+    return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)?.closest("#account-auth-status") === element
+  })
+  expect(onTop).toBe(true)
+  await problems.expect()
+})
+
 test("Pair New Agent in the menu lands on the Account page's pairing box", async ({page}) => {
   const problems = watch(page)
   await page.goto("/rooms/general")

@@ -4929,6 +4929,39 @@ An adversarial review of the two commits above found five things, all fixed here
 - `docs/agent-parity.md` gains a Connector column. The connector's identity tools move
   there from the MCP column, and two rows with a missing surface but no gap now name G5.
 
+## 2026-10-29 — Released v131
+
+- template.regents.sh v131 runs `65c6e26c`, released 05:53Z: refusals that say an agent is
+  not paired or its person is not here link to their help page, the Credits balance moves
+  into the account menu on the narrowest phones, and a paired agent chats with the site's
+  assistant for its person. Checks on that tree: `make check` exit 0 (100 server tests,
+  24 script tests, the browser walk at 1280 and 390 in headless Chromium; WebKit is not
+  run on the Mac). Live check 05:56Z in headless Chromium: `/capabilities.json`
+  build.commit `65c6e26c`; home, agents, account, rooms and pair pages answer 200 at 390
+  and 1280 with the sign-in settings present, no page errors and nothing wider than the
+  screen. The machine's health check passes; the boot log shows no crash. `bab38804`
+  (docs and skills only) is on main and rides the next release. Rollback: v130,
+  `cc74b3f3`.
+
+## 2026-10-29 — Signed-tools tests start with their own request budget
+
+- Every test request comes from 127.0.0.1, so the whole server suite shared one /api
+  budget of 120 a minute, and a late signed-tools test was now and then refused with
+  429 (seen once in four runs on the connector merge). `signed_tools_test.exs`, the
+  file that sends most of the suite's /api requests, clears the limiter's counters in
+  its setup. The limit itself is unchanged. Test-only; nothing to release.
+
+## 2026-10-29 — WebMCP trial runs to Chrome 162
+
+- `skills/ash-webmcp/references/build.md` says Chrome's WebMCP origin trial runs Chrome
+  149–162, as Chrome's trial registration page now says (reported by the Autolaunch
+  release lead, 29 Oct; Autolaunch's token expires 29 Mar 2027). Docs only.
+
+## 2026-10-29 — Sign out closes the account menu
+
+- Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
+- The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
 ## 2026-10-29 — Typed command input
 
 - `cli/commands.json` describes every `operation_id` an agent pipes (rooms post, notes
