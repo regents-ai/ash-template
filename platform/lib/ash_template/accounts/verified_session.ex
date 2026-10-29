@@ -8,10 +8,9 @@ defmodule AshTemplate.Accounts.VerifiedSession do
   @actor %System{}
 
   @doc """
-  Registers or refreshes the account the verified session names, reconciles
-  its linked socials, moves Credits waiting under its wallets to it and asks
-  Ethereum for its wallet's ENS name again, returning the providers another
-  account already holds.
+  Registers or refreshes the account the verified session names (`register/3`),
+  gives the person their shared profile when they have none and reconciles its
+  linked socials, returning the providers another account already holds.
   Without a linked wallet the account's wallet evidence is withdrawn instead.
   """
   def establish(%RegentPrivy.Session{privy_user_id: did} = verified) do
@@ -21,6 +20,7 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     case verified do
       %{wallet_address: primary, wallet_addresses: [_ | _] = addresses} when is_binary(primary) ->
         with {:ok, account} <- register(did, primary, addresses),
+             {:ok, _profile} <- RegentIdentity.ensure(verified),
              {:ok, conflicts} <- reconcile(account.id, verified.linked_socials) do
           {:ok, account, conflicts}
         end

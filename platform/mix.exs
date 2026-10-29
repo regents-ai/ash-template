@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "e4c79bd0fd3d7bcbf25fc196cd5d6b151ca6e7ef"
+  @elixir_utils_ref "f19aed04ea997bb3a547587a358efef03a45fd27"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "3134bab0a23452fb82d3248072327e1d0199cc9a"
 
@@ -39,7 +39,12 @@ defmodule AshTemplate.MixProject do
 
   defp deps do
     [
-      {:regent_oauth, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth"},
+      # regent_mcp_agents names regent_oauth, regent_agents and regent_agent_access
+      # by sibling paths; these pins replace them.
+      {:regent_oauth,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth", override: true},
+      # The Claude connector's MCP address at /mcp (RegentMCPAgents.Plug).
+      {:regent_mcp_agents, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_agents"},
       {:lumis, "~> 0.1"},
       {:req_llm, "~> 1.18"},
       {:castore, "~> 1.0"},
@@ -73,7 +78,8 @@ defmodule AshTemplate.MixProject do
       {:regent_agents,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/agents", override: true},
       {:regent_ui, git: @design_system, ref: @design_system_ref, sparse: "regent_ui"},
-      {:regent_agent_access, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access"},
+      {:regent_agent_access,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "agent_access", override: true},
       # regent_identity and regent_agents name regent_format by path; this pin replaces it.
       {:regent_format,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format", override: true},
@@ -81,7 +87,11 @@ defmodule AshTemplate.MixProject do
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},
       {:regent_points, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "points"},
-      {:regent_credits, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits"},
+      # regent_payments names regent_credits by a sibling path; this pin replaces it.
+      {:regent_credits,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits", override: true},
+      {:regent_payments,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/payments"},
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
       # ens_elixir names siwa by a sibling path; this pin replaces it.
       {:siwa,
@@ -134,11 +144,13 @@ defmodule AshTemplate.MixProject do
       {_, root} ->
         paths = %{
           regent_oauth: "oauth",
+          regent_mcp_agents: "mcp_agents",
           regent_agents: "ash_components/agents",
           regent_identity: "ash_components/identity",
           regent_points: "points",
           regent_privy: "privy",
           regent_credits: "credits",
+          regent_payments: "ash_components/payments",
           regent_chain: "chain",
           regent_agent_access: "agent_access",
           siwa: "siwa/siwa-elixir/apps/siwa"

@@ -389,13 +389,11 @@
       "operation": "pinNote",
       "effect": "payment",
       "authority": "paired_agent",
-      "conditions": [
-        "spending_allowed"
-      ],
+      "conditions": [],
       "person_page": "/notes",
-      "may": "Pin a note for 1 Credit, within the spending you allow",
+      "may": "Pin a note for 1 USDC from its own wallet, or 1 of your Credits within the spending you allow",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_pending": true
     },
     {
       "operation": "unpinNote",

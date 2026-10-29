@@ -417,30 +417,38 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **Does:** what pinning one of your person's notes would cost now. Signed; needs a pairing;
   changes nothing and spends nothing.
 - **Example:** `regents ash-template notes pin-price <id>`
-- **Answer:** `{"note": {"id", "pinned"}, "price": {"credits": "1"}}`. A note already pinned
+- **Answer:** `{"note": {"id", "pinned"}, "price": {"usdc": "1", "credits": "1"}}`. A note already pinned
   costs `"0"`. Next: `notes pin <id>`, if your person wants it pinned.
-- **Refusals:** 403 `agent_not_paired` or `person_not_here`; 404 `note_not_found`; 503 `unavailable`.
+- **Refusals:** 403 `agent_not_paired`, `person_not_here` or `owner_pins_not_open`; 404
+  `note_not_found`; 503 `unavailable`.
 
 ## notes pin \<id\>
 
-- **Does:** pins one of your person's notes to the top of their notes. Costs 1 of their
-  Credits, within the spending they allow you on their Regents account at
-  regents.sh/account. Signed; needs a pairing.
+- **Does:** pins one of your person's notes to the top of their notes. Costs 1 USDC from
+  your own wallet, or 1 of your person's Credits within the spending they allow you on
+  their Regents account at regents.sh/account. Signed; needs a pairing.
 - **Arguments:** `<id>`, the note's id from `notes list`.
-- **Stdin:** `{"operation_id": "<UUID>"}`: a UUID you make and keep when retrying.
+- **Stdin:** nothing, to get the terms; then `{"payment": "…"}` with your x402 payment for
+  those terms, signed by your own wallet, or `{"pay_with": "credits"}`.
 - **Example:**
 
   ```sh
-  echo '{"operation_id": "<UUID>"}' | regents ash-template notes pin <id>
+  regents ash-template notes pin <id>
+  echo '{"pay_with": "credits"}' | regents ash-template notes pin <id>
   ```
 
-- **Answer:** 200 `{"note": …}`, with `pinned_at`.
-- **Paying:** a refused pin, or a note already pinned, costs nothing, and the same
-  `operation_id` never pays twice. 402 `not_enough_credits`: your person needs more Credits.
-  403 `spending_not_allowed`, `spending_not_on_this_site`, `spending_over_limit_per_spend` or
-  `spending_over_daily_limit`: your person has not allowed this spend; `account balances`
-  shows your limits.
-- **Refusals:** 403 `agent_not_paired` or `person_not_here`; 404 `note_not_found`; 503 `unavailable`; 422 `invalid_pin` when `operation_id` is missing or already paid for an earlier pin of this note.
+- **Answer:** 200 `{"note": …}`, with `pinned_at`; after a payment also `payment_intent_id`
+  and `receipt` (`paid_with` is `usdc` or `credits`).
+- **Paying:** 402 `payment_required` carries `payment_terms`, `price` (`usdc` and `credits`)
+  and `payment_intent_id`. Asking again for the same note pays those same terms, so a retry
+  never pays twice; a refused pin, or a note already pinned, costs nothing. 402
+  `credits_refused`: your person's Credits could not pay, and the message says why;
+  `account balances` shows your limits, or pay in USDC. 202 `pin_settled` or 409
+  `settlement_pending`: paid, still finishing; ask again. 410 `terms_expired`: ask again
+  with nothing for new terms. 502 `payment_service_unavailable`: nothing was charged.
+- **Refusals:** 403 `agent_not_paired`, `person_not_here`, `person_needs_sign_in` or
+  `owner_pins_not_open` (an account an agent opened has no pins yet); 404 `note_not_found`;
+  422 `invalid_pin`; 503 `pins_not_set_up` or `unavailable`.
 - **If the answer is lost:** run `notes get <id>`; a pinned note has `pinned_at`.
 
 ## notes unpin \<id\>
@@ -732,7 +740,7 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 ## Changes
 
 - 2026-10-29: New: `account open`, for an agent that owns its account. The OpenAPI documents
-  move to 7.4.0.
+  move to 8.1.0.
 
 - 2026-10-28: CLI 1.10.20 carries every command described here except `activity mark-read`,
   which arrives in the next release. Install it with Python 3.14.
@@ -741,6 +749,11 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   chats with the site's assistant. The OpenAPI documents move to 7.3.0.
 
 - 2026-10-28: New: `activity mark-read`. The OpenAPI documents move to 7.2.0.
+
+- 2026-10-28: `notes pin` takes 1 USDC or 1 Credit and no longer takes `operation_id`: run it
+  with nothing for the terms, then pipe `{"payment": "…"}` or `{"pay_with": "credits"}`.
+  `notes pin-price` answers `price.usdc` too. The OpenAPI documents move to 8.0.0. The next
+  regents-cli release carries it.
 
 - 2026-10-28: CLI 1.10.19 carries every command described here; install it, since every
   Regent site moves to the newest release.

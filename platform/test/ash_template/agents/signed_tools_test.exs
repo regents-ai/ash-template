@@ -179,7 +179,9 @@ defmodule AshTemplate.SignedToolsTest do
                privy_user_id: person.privy_user_id,
                wallet_address: "0x3333333333333333333333333333333333333333",
                wallet_addresses: ["0x3333333333333333333333333333333333333333"],
-               linked_socials: []
+               linked_socials: [],
+               issued_at: System.system_time(:second),
+               expires_at: System.system_time(:second) + 3600
              })
 
     checked_in = request(:get, "/api/agents/v1/me")
@@ -230,7 +232,9 @@ defmodule AshTemplate.SignedToolsTest do
       privy_user_id: "did:privy:tool-test",
       wallet_address: @wallet,
       wallet_addresses: [@wallet],
-      linked_socials: []
+      linked_socials: [],
+      issued_at: System.system_time(:second),
+      expires_at: System.system_time(:second) + 3600
     }
 
     assert {:ok, account, []} = VerifiedSession.establish(session)
@@ -596,7 +600,7 @@ defmodule AshTemplate.SignedToolsTest do
     human = AshTemplate.Actors.Human.for_account(account)
     older = AshTemplate.Notes.create_note!(%{title: "Older"}, actor: human)
     newer = AshTemplate.Notes.create_note!(%{title: "Newer"}, actor: human)
-    AshTemplate.Notes.pin_note!(newer, Ecto.UUID.generate(), actor: human)
+    AshTemplate.Notes.pin_note!(newer.id)
     order = fn -> Enum.map(AshTemplate.Notes.list_my_notes!(actor: human), & &1.id) end
     assert order.() == [newer.id, older.id]
 
@@ -947,7 +951,9 @@ defmodule AshTemplate.SignedToolsTest do
         privy_user_id: privy_user_id,
         wallet_address: @wallet,
         wallet_addresses: [@wallet],
-        linked_socials: []
+        linked_socials: [],
+        issued_at: System.system_time(:second),
+        expires_at: System.system_time(:second) + 3600
       })
 
     person = %RegentAgents.Person{privy_user_id: privy_user_id}
@@ -994,20 +1000,19 @@ defmodule AshTemplate.SignedToolsTest do
 
     assert_status("owner")
 
-    # The owner writes as the person signed in on the site would: no operation id,
-    # no agent named beside the note, and a pin costs nothing.
+    # The owner writes as the person signed in on the site would: no operation id
+    # and no agent named beside the note. A pin is paid for by an agent a person
+    # paired, so the owner's pin is refused and charges nothing.
     created = request(:post, "/api/v1/notes", Jason.encode!(%{title: "Mine"}))
     assert created.status == 201, created.resp_body
     note = Jason.decode!(created.resp_body)["note"]
     assert note["changed_by_agent"] == nil
 
-    price = request(:get, "/api/v1/notes/#{note["id"]}/pin-price")
-    assert Jason.decode!(price.resp_body)["price"]["credits"] == "0"
+    assert error_code(request(:get, "/api/v1/notes/#{note["id"]}/pin-price")) ==
+             "owner_pins_not_open"
 
-    pinned =
-      request(:post, "/api/v1/notes/#{note["id"]}/pin", Jason.encode!(%{operation_id: Ecto.UUID.generate()}))
-
-    assert pinned.status == 200, pinned.resp_body
+    assert error_code(request(:post, "/api/v1/notes/#{note["id"]}/pin", "{}")) ==
+             "owner_pins_not_open"
 
     balances = request(:get, "/api/v1/account/balances")
     assert balances.status == 200, balances.resp_body
@@ -1091,7 +1096,9 @@ defmodule AshTemplate.SignedToolsTest do
         privy_user_id: "did:privy:real-person",
         wallet_address: @wallet,
         wallet_addresses: [@wallet, @other],
-        linked_socials: []
+        linked_socials: [],
+        issued_at: System.system_time(:second),
+        expires_at: System.system_time(:second) + 3600
       })
 
     assert_status("not_paired")

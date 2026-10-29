@@ -20,6 +20,10 @@ config :ash_template, :privy,
   app_secret: "test-secret",
   req_options: [plug: {Req.Test, RegentPrivy.Users}]
 
+# Paid pins are paid into this wallet, which also takes Credits.
+config :ash_template, :payments_wallet_address, "0x00000000000000000000000000000000000000a1"
+config :regent_payments, credits_pay_to: ["0x00000000000000000000000000000000000000a1"]
+
 # Jobs are only recorded, never run, while a test holds its transaction.
 config :ash_template, Oban, testing: :manual
 

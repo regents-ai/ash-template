@@ -4850,6 +4850,56 @@ An adversarial review of the two commits above found five things, all fixed here
   sites' tools load. Sentinel's after-read is asked (control `d52d6609`). Rollback: v129,
   `b9d8ef1c`.
 
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
+  main `9da44bdc` merged with the connector's oauth and mcp_agents work).
+  `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` answers at `/mcp`
+  with Claude's handshake, the 401 sign-in challenge, each connected account's own budget
+  and the identity tools. `regent_oauth` and `regent_agent_access` carry `override: true`,
+  since `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on the
+  sign-in under `/oauth` and `/.well-known/oauth-*`, `/mcp`, Claude in the pairing box
+  and the pair request, and the Claude guide at `/agents/claude`. With the switch on, the
+  boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed. With it off, an agent's
+  sign-in, pairing and rate limits are as before: the endpoint only adds a budget for
+  `/mcp` paths (600 a minute from one address) and the `/api` budget is unchanged.
+- The connector's sign-in signs, through the sign-in service, only `whoami`, `me` and
+  `pair` for the account's one hosted identity, asked with the site's own key; the
+  connection's Bearer token never leaves the site. Connecting again or refreshing keeps
+  that identity and its one agent, a pairing code must be the authorizing account's own,
+  only `check_in` moves when the agent was last in touch, unpairing on the Account page
+  holds, and disconnecting at Connected apps revokes the app's access and refresh tokens
+  at once. `platform/test/ash_template_web/claude_connector_test.exs` checks each through
+  this site's endpoint; `docs/feature-map.md` lists them and the gaps left.
+- Pairing and checking in when asked in a chat are supported. A check-in from a scheduled
+  Claude task has not been tried, and Claude's guide says so.
+- Claude's guide and the connector's refusal send people to Pair New Agent on their
+  Account page. The pairing box uses the library's `Harness.offered/0`; its own copy is
+  gone.
+- Migrations: `20261014170000_add_oauth_provider` now calls `RegentOAuth.Migration.up()`
+  (the shape a new database gets; production already ran it).
+  `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL lock_timeout = '5s'`) runs
+  `RegentOAuth.Migration.V2`: it drops the token table's issuer and resource defaults
+  (each code and token now has them written as it is issued) and rewrites every stored
+  access token row in place as hashes. The template has OAuth rows on the shared
+  production database, so the release that carries it waits for Sean's letter naming it.
+  Tokens issued for the old resource stay refused and their apps connect again.
+- Lifetimes stay the library's: a Bearer token lives at most an hour, a refresh token 30
+  days, and a refresh token reused within 30 seconds of its rotation is only refused
+  (`config/config.exs` notes where each is set).
+- Not yet: the sign-in service's hosted signing allows the `patchbay` and `keyfleet`
+  audiences only, so with the switch on here every signed tool call would be refused
+  until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
+  version before any site takes it.
+
+## 2026-10-28 — Claude connector brought onto main 2362ad83
+
+- Merged with template main `2362ad83` (the help links on refusals; design-system
+  `99c99d14`). elixir-utils moves to its main `09afad89`, which holds `aa5512f4` (the
+  connector), pay with Credits' library work (`ff7927c0`) and the help links (`9539469f`);
+  its files are the same as `4295e7ce`, where `make check` ran green. Reviewer,
+  28 Oct 22:32Z: a re-pin with no other change needs no new review.
 
 ## 2026-10-28 — Titles are one or two words
 
@@ -4943,6 +4993,24 @@ An adversarial review of the two commits above found five things, all fixed here
   (docs and skills only) is on main and rides the next release. Rollback: v130,
   `cc74b3f3`.
 
+## 2026-10-29 — Claude connector brought onto main 17fa9881
+
+- Sean, 29 Oct 05:48Z, answered the connector decisions: 3 a (count the template's
+  token rows, then the one-time rewrite, then the connector goes live with Claude still
+  switched off), 4 a (a refreshed token's old one keeps working for 30 seconds) and 5 a
+  (Claude on for the template once the connector is live and the sign-in service
+  accepts the template).
+- The connector branch (`cbe48cde`) merges with main `17fa9881` (v131 and its release
+  record). elixir-utils stays at `09afad89`, the version the connector was reviewed on:
+  it already holds the 30-second grace and contains the Credits library change
+  `ff7927c`. Later elixir-utils main also changes how signed page tools are signed
+  (`3bc18ae`), which the template takes only with its own agent-access change, so this
+  merge does not move past it. design-system stays at main's `3134bab0`, which contains
+  Claude Duet's picture (`99c99d14`).
+- Not released by this merge: the release runs the connector migration, which rewrites
+  the template's stored connector tokens once, so it waits for the read-only count of
+  those rows first.
+
 ## 2026-10-29 — Signed-tools tests start with their own request budget
 
 - Every test request comes from 127.0.0.1, so the whole server suite shared one /api
@@ -4961,6 +5029,61 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-28 — Pay for a pin with USDC or Credits
+
+- elixir-utils moves to `ff7927c` (branch `credits-pay-tpl-1028`: elixir-utils main
+  `9da44bd` with the refusal help links `9539469`, waiting for Sean's sign-off): `RegentPayments.Purchase.pay_with_credits/4`
+  pays an offer's terms in Credits, one Credit per USDC, holding and charging them with
+  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`; the
+  profile `:person` and `:names` reads are closed to every actor. A pin paid but not yet
+  carried out is still found after its terms run out, so asking again finishes it instead of taking a second
+  payment.
+- The note pin is a payment offer (`AshTemplate.Payments.NotePin`, 1 USDC to
+  `PAYMENTS_WALLET_ADDRESS`, Credits accepted). `POST /api/v1/notes/{id}/pin` answers 402
+  with x402 terms, then takes `payment` (signed by the agent's own wallet, inside the
+  signed body) or `pay_with: "credits"`. The terms are chosen under the note's row lock
+  and reused while unpaid, so a pin asked for several times at once pays once, and a pin
+  after an unpin pays again. `operation_id` is gone from the route, the browser tool and
+  the command; the contract moves to 8.0.0.
+- Sign-in makes sure the person has a shared Regent profile, which a paired agent's
+  payments name as the person paid for. An agent whose person has none yet is told
+  `person_needs_sign_in`; no fill runs for existing accounts.
+- A pin whose payment is still being checked answers 409 `settlement_pending`: the
+  purchase is waiting on a check of its payment, so do not pay again and ask again later.
+- `config :regent_payments, credits_pay_to:` is the payments wallet: the one wallet
+  Credits may stand in for.
+- `config :regent_credits, agent_grants_enabled: true`: agents may spend their person's
+  Credits, each person's allowance still off until they turn it on. It opens with this
+  release, under the same go from Sean as its shared migration.
+- The local database fixture runs the payments migration. No shared database runs it
+  before Sean's go.
+
+## 2026-10-29 — The buying wallet: buy on the chain with Credits
+
+- `AshTemplate.Payments.ChainBuy` buys something on the chain for a person, or their
+  paired agent within its limits, with Regents' own USDC, paid for in purchased Credits
+  only (one Credit per USDC; given Credits never pay). The price is read from the sale
+  before the buy's transaction; in it the day's limit is checked under a lock (500 USDC,
+  `daily_limit_atomic`) and the price is held. One send at a time, never twice, on the
+  new `chain_buys` queue: an approval of exactly the price, then the sale's call, each
+  at the wallet's next nonce after any still waiting, with the item sent to one of the
+  buyer's own wallets. The outcome and its hashes are committed first; the Credits are
+  settled in their own step: bought charges them, a refused approval or call gives
+  them back, and a call that may still land stays held while `CheckReceipt` reads its
+  receipt. A buy left for a person logs one line for Sentinel. No Points are earned on
+  a buy.
+- The template sells nothing (`sale: nil`), so buying is off here. A site names its
+  sale module (`AshTemplate.Payments.Sale`) and sets `BUYING_WALLET_PRIVATE_KEY` and
+  `BASE_RPC_URL` in Fly secrets after Sean's go. Migrations `20261029054225_chain_buys`,
+  `20261029062853_chain_buy_hold` and `20261029084006_chain_buy_began_at` add
+  `chain_buys`.
+- elixir-utils moves to `46054355`: `RegentPayments.BuyingWallet`, each send at the
+  wallet's next nonce, and `RegentCredits` holds with `purchased_only?: true`.
+
+## 2026-10-29 — Connector, Credits and the buying wallet together
+
+- The Claude connector (with main up to 0a8a4234), Credits step 1 and the buying wallet sit on one branch, in that release order. The shared library pin is elixir-utils 94b0fde, the buying wallet merged onto 09afad89, which keeps the browser's signed tools on the API public_tools.ts uses.
 
 ## 2026-10-29 — Agents open their own accounts (agent parity G1)
 
@@ -4984,8 +5107,12 @@ An adversarial review of the two commits above found five things, all fixed here
   `AgentWallet` checks ownership before any pairing: the request's actor is then
   `AshTemplate.Actors.Human.owner/2`, the account's own person with the agent's id, so
   every page action and policy the person has applies unchanged. Notes need no
-  `operation_id` and name no agent, a pin is free, `account_balances` answers the agent's
-  own Credits with `spending_grant: null`. Before the answer leaves, the wallet is read
+  `operation_id` and name no agent, and `account_balances` answers the agent's own
+  Credits with `spending_grant: null`. A pin is paid for by an agent a person paired, so
+  an owner's `notes pin` and `notes pin-price` answer 403 `owner_pins_not_open` and
+  charge nothing. An agent-opened account has no shared profile until someone signs in
+  with its Privy user on a page, since `RegentIdentity.ensure/1` takes a signed-in
+  session. Before the answer leaves, the wallet is read
   again; an account it no longer signs in to answers `agent_not_paired`. The account and
   its opening are written in one transaction, so an opening that stops half-way
   finishes when tried again.
@@ -4996,9 +5123,11 @@ An adversarial review of the two commits above found five things, all fixed here
   `account_not_opened`, and a sixth opening a day from one network with
   `account_openings_limited` and `Retry-After` (`:account_open_address`, 5 a day).
 - Privy's server API needs the app secret: `PRIVY_APP_SECRET` in `config/runtime.exs`. It
-  must be set on the site before this is released. The OpenAPI documents move to 7.4.0:
+  must be set on the site before this is released. The OpenAPI documents move to 8.1.0:
   `AgentStatus` gains `owner` and `account`, and pairing and check-in document the 409
-  `agent_owns_account` beside `request_replayed`. elixir-utils moves to `e4c79bd0`.
+  `agent_owns_account` beside `request_replayed`, and both pin refusals list
+  `owner_pins_not_open`. elixir-utils moves to `f19aed04`, the agent mark `e4c79bd0`
+  merged with this line's `94b0fde`.
 - A signed-tools test signs with a person's own sign-in wallet and checks it is only ever
   their paired agent: refused before pairing, allowed while paired, refused after unpairing.
 - The compile-connected limit in `platform/mix.exs` moves to 37: the Accounts domain reads

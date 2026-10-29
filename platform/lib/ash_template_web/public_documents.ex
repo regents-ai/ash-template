@@ -16,7 +16,9 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi_path Path.join(@directory, "openapi.json")
   @external_resource @openapi_path
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
-  @documents ~w(/ /docs /about /contact /changelog /privacy /terms) ++ AgentGuides.paths()
+  # The agents' pages join these when served (`documents/0`): which are shown is
+  # read at runtime (AshTemplateWeb.AgentGuides).
+  @documents ~w(/ /docs /about /contact /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
   @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /skills)
   @site_name "Ash Template"
@@ -203,12 +205,14 @@ defmodule AshTemplateWeb.PublicDocuments do
       description: description,
       canonical: url(path),
       image: url(AshTemplateWeb.Endpoint.static_path("/images/og-image.png")),
-      markdown?: path in @documents,
+      markdown?: path in documents(),
       site_type: @site_type
     }
   end
 
   defp title(path), do: @pages |> Map.fetch!(path) |> elem(0)
+
+  defp documents, do: @documents ++ AgentGuides.paths()
 
   def openapi do
     @openapi
@@ -228,7 +232,9 @@ defmodule AshTemplateWeb.PublicDocuments do
   @doc "Every public page's address, as the sitemap lists them."
   def sitemap_urls do
     pages =
-      if AshTemplateWeb.Showcase.public?(), do: @documents ++ @showcase_pages, else: @documents
+      if AshTemplateWeb.Showcase.public?(),
+        do: documents() ++ @showcase_pages,
+        else: documents()
 
     Enum.map(pages, &url/1)
   end
@@ -326,13 +332,18 @@ defmodule AshTemplateWeb.PublicDocuments do
   end
 
   # The `{{showcase}}` line and the blank line after it become the showcase
-  # section only when the showcase is public. `{{supported_host}}` is the one
-  # section every Regent site's guide carries word for word. `{{what_you_can_do}}`
-  # is what an agent may do in each status, as whoami tells it. `{{origin}}` goes
-  # last, since the other sections all name it.
+  # section only when the showcase is public, and the `{{claude_connector}}` line
+  # and its blank line become the Claude connector's paragraph only while it is
+  # on; `{{hosted_mcp}}` says whether the site has a hosted MCP address, read at
+  # runtime too. `{{supported_host}}` is the one section every Regent site's guide
+  # carries word for word. `{{what_you_can_do}}` is what an agent may do in each
+  # status, as whoami tells it. `{{origin}}` goes last, since the other sections
+  # all name it.
   defp source(name) do
     @sources[name]
     |> String.replace("{{showcase}}\n\n", showcase_section(AshTemplateWeb.Showcase.public?()))
+    |> String.replace("{{claude_connector}}\n\n", claude_connector(AshTemplate.OAuth.enabled?()))
+    |> String.replace("{{hosted_mcp}}", hosted_mcp(AshTemplate.OAuth.enabled?()))
     |> String.replace("{{key_facts}}", @key_facts)
     |> String.replace("{{supported_host}}", String.trim_trailing(@sources["supported-host"]))
     |> String.replace("{{what_you_can_do}}", what_you_can_do())
@@ -375,6 +386,24 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   defp showcase_section(false), do: ""
   defp showcase_section(true), do: @sources["llms-showcase"] <> "\n"
+
+  defp claude_connector(false), do: ""
+
+  defp claude_connector(true),
+    do:
+      "Claude doesn't use these steps: it pairs through this site's connector, with no " <>
+        "command line or key of its own. [Claude]({{origin}}/agents/claude) has the setup.\n\n"
+
+  defp hosted_mcp(false), do: "Ash Template does not offer a hosted MCP endpoint."
+
+  defp hosted_mcp(true),
+    do:
+      "Ash Template's hosted MCP endpoint is {{origin}}/mcp, for Claude's connector: the " <>
+        "person adds it in Claude's settings, then signs in here when Claude asks and allows " <>
+        "it. Its tools (`get_identity`, `register_identity`, `pair_identity` and `check_in`) " <>
+        "only keep an identity for the connection, pair it with the person's account and " <>
+        "check in; everything else is the browser tools and signed requests. " <>
+        "[Claude]({{origin}}/agents/claude) has the setup."
 
   defp skill_list,
     do: Enum.map_join(AgentSkills.skills(), "\n", &"- **#{skill_link(&1)}**: #{&1.description}")

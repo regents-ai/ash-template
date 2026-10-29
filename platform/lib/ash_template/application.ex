@@ -10,7 +10,10 @@ defmodule AshTemplate.Application do
     # Debian image can lag by weeks. Req, Finch and Mint read this list through
     # `:public_key.cacerts_get/0`, so it is loaded before anything connects.
     :ok = :public_key.cacerts_load(CAStore.file_path())
+    # The Claude connector stays off until its one switch turns it on
+    # (config/runtime.exs); these only check and store its settings.
     :ok = RegentOAuth.configure(AshTemplate.OAuth)
+    :ok = RegentMCPAgents.configure!()
     :ok = AshTemplateWeb.UnexpectedFailure.attach_jobs()
     :ok = AshTemplate.IdleDisconnects.attach()
     :ok = AshTemplateWeb.VisitLog.Events.attach()
@@ -23,6 +26,8 @@ defmodule AshTemplate.Application do
         AshTemplate.SiteTools,
         AshTemplate.Repo,
         if(RegentOAuth.enabled?(), do: RegentOAuth.Repo),
+        # The payment service's connections, after the repository its records use.
+        RegentPayments.Supervisor,
         {Phoenix.PubSub, name: AshTemplate.PubSub},
         AshTemplateWeb.Presence,
         # The figures every visitor sees alike, then the readers that keep them.
