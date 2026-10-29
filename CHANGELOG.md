@@ -5424,3 +5424,20 @@ way, and the library's own site-tool serving is gone.
   320: cells 10px 12px with no minimum width, no word split across lines, the page never
   scrolls sideways and the three-column sample scrolls inside its own box; at 1280 it is
   unchanged (12px 16px, 10rem minimum). Rollback: v136, `5bf7cd58`.
+
+## 2026-10-29 — Fixed labels put back: Regents embedded wallet, Pair New Agent
+
+- The short-titles change above renamed two labels that are fixed by name; `0cb98339`
+  puts them back. Account › Wallets names the wallet Privy makes "Regents embedded
+  wallet" again (it read "Regents wallet"), beside "User wallet" for people who signed
+  in with their own wallet. The pair page's title, its link label in the public pages,
+  the route catalog handoff (`platform/priv/handoff/route-catalog.json`, regenerated),
+  `llms.md`, the public changelog and the short-titles table say "Pair New Agent" (they
+  read "Pair agent"). "User wallet", "Public Display Name", "Sign in" and "Credits" were
+  never changed. So where the entry above says "Bring your agent → Pair agent", the
+  label is now Pair New Agent.
+- Checks: server tests 137 passed (11 properties), with
+  `platform/test/ash_template_web/sign_in_wallets_test.exs` reading the "Regents embedded
+  wallet" row; the browser walk on the account, pair, pairing, public name, addresses,
+  agents, layout, credits and pages walks in headless Chromium at 1280 and 390: 241
+  passed, 3 skipped (WebKit is not run on the Mac).
