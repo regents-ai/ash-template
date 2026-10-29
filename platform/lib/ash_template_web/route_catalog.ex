@@ -158,7 +158,8 @@ defmodule AshTemplateWeb.RouteCatalog do
          destination: "/account/connections",
          page_display_label: "Connections"
        }},
-    pair: {:settings, %{route_id: :pair, destination: "/pair", page_display_label: "Pair agent"}}
+    pair:
+      {:settings, %{route_id: :pair, destination: "/pair", page_display_label: "Pair New Agent"}}
   ]
   @routes Enum.map(@routes, fn
             {action, {section, page}} ->

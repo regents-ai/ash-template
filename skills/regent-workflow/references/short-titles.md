@@ -109,7 +109,7 @@ at the end of the matching table.
 | A number that turns over | Counter | `animations_live.ex` |
 | A list that rearranges | Reorder | `animations_live.ex` |
 | Too many pages open from this connection | Limit reached | `too_many_pages_controller.ex` |
-| Bring your agent | Pair agent | `pair_live.ex`, `route_catalog.ex` |
+| Bring your agent | Pair New Agent | `pair_live.ex`, `route_catalog.ex` |
 | Connect your agent | Connect agent | `route_catalog.ex` |
 | What's new | Changelog | `information_navigation.ex`, `shell.ex` |
 | Header and footer | Navigation | `header_footer_live.ex` |

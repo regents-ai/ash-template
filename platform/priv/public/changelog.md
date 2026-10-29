@@ -4,7 +4,7 @@ Changes to Ash Template, newest first.
 
 ## 29 October 2026
 
-- **Short titles.** Page titles, headings and labels now take one or two words: Pair agent,
+- **Short titles.** Page titles, headings and labels now take one or two words: Pair New Agent,
   Connect agent, Changelog, Navigation, Spending and the rest.
 - **Article tables.** On a phone, a table in an article fits the screen, and a wider one
   scrolls inside its own box.
@@ -50,7 +50,7 @@ Changes to Ash Template, newest first.
 
 ## 27 October 2026
 
-- **Agent links.** A Pair agent link opens one page where you pair your agent, and the message you send it ends with the page it should start on once
+- **Agent links.** A Pair New Agent link opens one page where you pair your agent, and the message you send it ends with the page it should start on once
   it is paired.
 - **Privacy signal.** If your browser sends Global Privacy Control, the site respects your
   wish not to be tracked and keeps no record of where your visit came from or how far it
@@ -127,7 +127,7 @@ Changes to Ash Template, newest first.
 - **Home page.** The home page matches regents.sh, with the same product tabs, the Regents
   Labs cube with its six worlds, and the agent tools window, which now copies every Regents
   site's tools at once.
-- **Regents wallet.** Everyone gets a Regents wallet at their next
+- **Regents embedded wallet.** Everyone gets a Regents wallet at their next
   sign-in. The Wallets page shows it beside the wallet you signed in with, which
   stays your main wallet and keeps its name, and you stay signed in from page to
   page without pressing Sign in again.
