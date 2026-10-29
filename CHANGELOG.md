@@ -5029,6 +5029,307 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-29 — Released v132
+
+- template.regents.sh v132 runs `637dcce8`, released 16:41Z on Sean's "1. a" (count, then
+  release with the switch off). The Claude connector ships behind its switch, which stays
+  off: `/mcp` and `/.well-known/oauth-authorization-server` answer 404. Sign out closes the
+  account menu, so its failure note is on top. Production held 0 OAuth clients and 0
+  tokens before the release, so the token-hashing migration ran on empty tables;
+  `/app/bin/pending-migrations` answers none. Checks on that tree: `make check` exit 0
+  (110 server tests with 9 properties, 24 script tests, the browser walk 315 passed and 5
+  skipped at 1280 and 390 in headless Chromium; WebKit is not run on the Mac). Live check
+  16:42Z in headless Chromium: `/capabilities.json` build.commit `637dcce8`; home,
+  agents, account and pair pages answer 200 at 390 and 1280 with the sign-in settings
+  present, no page errors and nothing wider than the screen. Rollback: v131, `65c6e26c`.
+
+## 2026-10-29 — Chain numbers for Sentinel
+
+- A chain event reader's pass, `[:ash_template, :indexer, :lag]` with `blocks`, becomes
+  `health_indexer_lag_blocks` and `health_indexer_passes_total` by `indexer` and
+  `chain_id` on the private metrics listener, in Autolaunch's shape. The template reads no
+  chain events, so it reports none; the chain-events skill says each pass reports it.
+- `health_wallet_unconfirmed_oldest_seconds` by `flow`: a site that sends from its own
+  wallet names `unconfirmed_sends` in `config :ash_template, AshTemplateWeb.Telemetry`,
+  and the site poller reads it every ten seconds beside the oldest job, logging and
+  skipping a tick it cannot read. The template names none, so the step never runs and the
+  age is never published here.
+- `health_chain_request_failures_total` is unchanged. Sentinel's ON-8 handoff; the
+  numbers reach the five sites in one rollout after Sean's sign-off.
+
+## 2026-10-29 — Released v133
+
+- template.regents.sh v133 runs `2e158726`, released 17:04Z: Sentinel's chain numbers
+  (indexer lag and passes, unconfirmed sends by flow). The template reads no chain events
+  and names no sending query, so neither row is published here. Checks on that tree:
+  `make check` exit 0 (114 server tests with 9 properties, 24 script tests, the browser
+  walk 315 passed and 5 skipped at 1280 and 390 in headless Chromium; WebKit is not run on
+  the Mac). Live check in headless Chromium: `/capabilities.json` build.commit `2e158726`;
+  home, agents, account and pair pages answer 200 at 390 and 1280, no page errors and
+  nothing wider than the screen. Rollback: v132, `637dcce8`.
+
+## 2026-10-28 — Agent access: AshAi tools, capability fields and operation keys
+
+- AshAi moves to 1.4.1 (`~> 1.4.1`), which brings ash_json_api 1.8.0, websock_adapter
+  0.7.0 and llm_db 2026.10.7. The chat assistant now names its own two
+  tools, so it never reaches another domain's.
+- The Rooms domain hands AshAi two tools, `rooms_messages` and `rooms_post`. They run
+  `Message.room_messages` and `Message.agent_post`, the same actions `GET` and
+  `POST /api/v1/rooms/{room}/messages` now call, so the browser tool, the command, the
+  route and hosted MCP answer alike. The `/mcp` route is not mounted yet.
+- `priv/capabilities.json` gains `contract_revision` and, per operation, `surfaces`
+  (with a reason for each surface left out), `auth_modes`, `fresh_proof`, `actor`,
+  `context`, `retry` and `lifecycle`; `/capabilities.json` adds each operation's
+  `output_schema` from `/openapi.json`. The build stops on a hosted tool with no AshAi
+  tool, an AshAi tool named like a browser tool but not hosted, hosted input that
+  differs from the browser tool's, a public operation that needs proof, an
+  operation-key retry with no `operation_id` field, or a surface left out with no
+  reason. The agent guide's operations table gains Surfaces and Proof columns, and its
+  heading is now "Agent operations".
+- An agent's room post spends its `operation_id` once in the new `agent_operations`
+  table, in the same transaction as the post. The message's id is no longer the key.
+  The same key with another room or other text answers 409 `idempotency_conflict`, and
+  after its message was deleted 410 `message_removed` with that message's `id`; two
+  calls with one key at once post one message. `read :earlier_post` is gone. The
+  OpenAPI documents move to 8.0.0. The migration
+  `20261028154117_agent_operations` needs Sean's letter naming the release before it
+  runs in production.
+- The compile-connected limit in `mix precommit` moves from 35 to 39: the new resource,
+  the two actions' modules, and the capability check naming the chat domain whose tools
+  are never hosted.
+- Review fixes: the key's fingerprint is taken from the text as the message stores it
+  (blank lines squashed), so a retry with the text the first answer gave back replays
+  instead of answering 409; the property test now always sends text with blank lines,
+  and fails on the earlier fingerprint. `agent_post` takes the client address from
+  every caller's context, never optionally. The build now stops unless `hosted_mcp`
+  is marked on exactly the operations whose browser tool is an AshAi tool, both ways;
+  the chat assistant's own tools are never hosted. `interfaces.hosted_mcp` names the
+  hosted tool. The agent guide's "Who may" column is now "Allowed", and the three
+  profile rows say "Not for agents yet." where they said only the person does this.
+- This change releases together with the `/mcp` mount (agent access work item 5),
+  never before it: until then two operations would be marked hosted on a route that
+  is not there.
+
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
+  main `9da44bdc` merged with the connector's oauth and mcp_agents work).
+  `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` answers at `/mcp`
+  with Claude's handshake, the 401 sign-in challenge, each connected account's own budget
+  and the identity tools. `regent_oauth` and `regent_agent_access` carry `override: true`,
+  since `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on the
+  sign-in under `/oauth` and `/.well-known/oauth-*`, `/mcp`, Claude in the pairing box
+  and the pair request, and the Claude guide at `/agents/claude`. With the switch on, the
+  boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed. With it off, an agent's
+  sign-in, pairing and rate limits are as before: the endpoint only adds a budget for
+  `/mcp` paths (600 a minute from one address) and the `/api` budget is unchanged.
+- The connector's sign-in signs, through the sign-in service, only `whoami`, `me` and
+  `pair` for the account's one hosted identity, asked with the site's own key; the
+  connection's Bearer token never leaves the site. Connecting again or refreshing keeps
+  that identity and its one agent, a pairing code must be the authorizing account's own,
+  only `check_in` moves when the agent was last in touch, unpairing on the Account page
+  holds, and disconnecting at Connected apps revokes the app's access and refresh tokens
+  at once. `platform/test/ash_template_web/claude_connector_test.exs` checks each through
+  this site's endpoint; `docs/feature-map.md` lists them and the gaps left.
+- Pairing and checking in when asked in a chat are supported. A check-in from a scheduled
+  Claude task has not been tried, and Claude's guide says so.
+- Claude's guide and the connector's refusal send people to Pair New Agent on their
+  Account page. The pairing box uses the library's `Harness.offered/0`; its own copy is
+  gone.
+- Migrations: `20261014170000_add_oauth_provider` now calls `RegentOAuth.Migration.up()`
+  (the shape a new database gets; production already ran it).
+  `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL lock_timeout = '5s'`) runs
+  `RegentOAuth.Migration.V2`: it drops the token table's issuer and resource defaults
+  (each code and token now has them written as it is issued) and rewrites every stored
+  access token row in place as hashes. The template has OAuth rows on the shared
+  production database, so the release that carries it waits for Sean's letter naming it.
+  Tokens issued for the old resource stay refused and their apps connect again.
+- Lifetimes stay the library's: a Bearer token lives at most an hour, a refresh token 30
+  days, and a refresh token reused within 30 seconds of its rotation is only refused
+  (`config/config.exs` notes where each is set).
+- Not yet: the sign-in service's hosted signing allows the `patchbay` and `keyfleet`
+  audiences only, so with the switch on here every signed tool call would be refused
+  until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
+  version before any site takes it.
+
+## 2026-10-28 — Hosted MCP on AshAi
+
+- `/mcp` is now the site's hosted MCP server, `forward "/mcp", AshAi.Mcp.Router`, serving
+  exactly the tools `platform/priv/capabilities.json` marks hosted: `rooms_messages` and
+  `rooms_post`, the same Ash actions, inputs, answers and refusals as the browser tools and
+  the CLI, and the Claude connector's four identity tools.
+- `AshTemplateWeb.Plugs.McpAgent` says who is calling (agent access spec 4.3): an agent's
+  signature is checked by `AgentWallet` unchanged and the agent is the actor; the
+  connector's Bearer token makes the connected app the actor, under its account's budget,
+  and runs only the identity tools; both together get 401 `ambiguous_credentials`; neither
+  may list the tools and read a room, and a call to a tool that needs a sign-in gets 401
+  `agent_auth_required`. Every call carries the client's address key; answers are
+  `cache-control: private, no-store`; a page from another site is refused.
+- The identity tools are Ash actions on `AshTemplate.Agents.Connection`, over the
+  library's `RegentMCPAgents` functions; the template no longer mounts
+  `RegentMCPAgents.Plug`. A connected app can no longer read a room.
+- Refusals are the tool's error, whose text is the HTTP refusal's JSON
+  (`AshTemplateWeb.ToolErrors`). `[:ash_template, :mcp, :auth]` counts requests by how
+  they came in and whether they were taken.
+- The capabilities check allows a hosted-only operation, named after its tool, with its
+  answer among the OpenAPI components (`ConnectedIdentity`, `ConnectedIdentityStatus`,
+  `ConnectedIdentityPairing`, `ConnectedIdentityCheckIn`), and the `connected_app`
+  authority with the `site_oauth` proof.
+- While the connector switch is off, `/mcp` serves the room tools and refuses a Bearer
+  token with 401 `delegated_access_not_enabled`, where it answered 404 before.
+
+## 2026-10-28 — Hosted MCP review fixes
+
+- Every `/mcp` request carries an agent's signature or a connected app's token; there is
+  no anonymous MCP. With the Claude connector switch on, a request with neither gets 401
+  `connection_required` with the `WWW-Authenticate` challenge, so Claude's first request
+  starts its sign-in; with it off, 401 `agent_auth_required`. Reading a room without
+  signing in is the HTTP API and the browser tools, which replace the spec's anonymous
+  `/mcp` read (C02).
+- `AshTemplateWeb.Plugs.McpAgent` refuses, before any credential is read and in the
+  site's `{"error": {"code", "message", "hint"}}` shape: a query string (400
+  `unsupported_query`), any address but `/mcp` (404) and any method but POST (405), a
+  page on another site, `null` included (403 `origin_not_allowed`; no `Origin` goes on),
+  a body that is not JSON (415) and a JSON-RPC batch (400 `batch_not_supported`), so one
+  signature covers one call. The `:mcp` pipeline takes JSON only again. A signature is
+  told apart with `Siwa.AgentAuthPlug.signed_request?/1`.
+- A tool's input is checked against its action before it runs
+  (`AshTemplateWeb.ToolErrors.check_input/3`, AshAi's `tool_argument_transformer`), so a
+  bad input gets the HTTP route's code and words: `invalid_limit`, `invalid_author_kind`,
+  `invalid_message`, `room_not_found`, and `identity_request_refused` for the identity
+  tools. `RoomsController.page_refusal/1` is shared with it.
+- `pair_identity` lists the harness the library takes (`claude`) and limits the name to
+  100 characters and the code to 128.
+- `/mcp` takes 120 requests a minute from one address, the API's figure, where it took
+  600. A body over the limit and a form body point to the guide's Hosted MCP section.
+- The router's MCP instructions are written in place, so it no longer depends on McpAgent
+  at compile time; the compile-connected limit is 41 (the tools list and the input check).
+  `Capabilities.sign_in_needed?/1` and `proof_headers/0`, and the context keys nothing
+  read, are gone.
+
+## 2026-10-28 — Hosted MCP: identity tools as listed, room read input, connector budget
+
+- A tool listed with no inputs (`register_identity`, `get_identity`, `check_in`) runs
+  when called as its schema says, with empty `arguments` or none: the input check reads
+  a missing `input` as AshAi does. Before this, Claude's first call was refused.
+- `rooms_messages` answers `invalid_input` for input that is not an object or names
+  something the read does not take, where it answered `invalid_cursor`. A bad `after`
+  still answers `invalid_cursor`.
+- `/mcp` requests with a Bearer token share 600 a minute per address
+  (`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
+  servers; other requests keep 120 a minute per address. Each connected account keeps
+  its own 120 a minute.
+- The batch test sends a JSON array, as clients do.
+
+## 2026-10-28 — Signed browser tools take only their input
+
+- elixir-utils moves to `5d6ccf6`: a signed browser tool now builds its request, asks
+  the browser host's `window.regentsSign` to sign it, and sends exactly those bytes
+  with the proof and no cookie. With no signer it sends nothing and answers
+  `agent_auth_required`, naming `regents browser --site`; a signer's refusal is the
+  tool's answer.
+- Hard cutover in `platform/priv/tool_manifest.json`: each signed tool's
+  `input_schema` is its own input (the former `operation_input_schema`, now gone), and
+  `prepare_agent_request` is removed. `Capabilities` reads `input_schema`.
+- `platform/assets/js/public_tools.ts` answers a refusal in the site's error shape, and
+  explains a signer's incomplete answer.
+- The public guide and the supported-host page say a signed tool takes only its input
+  and the browser host signs it; the supported-host heading is now "Agent setups".
+- `platform/test/browser/page_tools.spec.ts` proves the four cases at both widths.
+
+## 2026-10-28 — Signed browser tools: review fixes
+
+- elixir-utils moves to `6d0d40e`: a signer that fails (its browser host went away)
+  answers `signer_unavailable`, and a call cancelled while the signer works answers
+  `cancelled`; neither sends anything, so neither is reported as an unknown outcome.
+- `public_tools.ts` names the site's own faults (`invalid_operation`, `invalid_path`,
+  `invalid_request_header`, `unsupported_field_type`) as the site's, with their own
+  hint, and explains a read sent a body, a bad raw body, and `.` or `..` as a name.
+- `/agents.md` gains a Browser tools section on `regents browser`, which `/docs` links
+  to; `/docs` lists the signed-tool change under Breaking changes, and the public
+  changelog says it in plain words.
+- The page tools walk no longer checks for the removed tool or the removed input
+  shape; an unknown field (`colour`) proves an input is refused before signing.
+- Released only with the regents-cli release that carries `regents browser`.
+
+## 2026-10-29 — Hosted MCP: elixir-utils 860c1db, the site's own identity refusals
+
+- elixir-utils moves to `860c1db` (claude/mcp-site-tools-1029; only `mcp_agents`
+  differs from `3bc18ae`). The identity tools' titles are one or two words
+  (Registration, Identity, Pairing, Check-in) and say whether calling again changes
+  anything; `AshTemplate.Agents` passes `idempotent_hint` on to AshAi.
+- A refused identity call is the tool's error with the site's own code, words and
+  `retry_after` (`agent_not_paired` after unpairing, a rate limit), or the library's
+  own refusal made before signing (`pairing_code_unknown`). Only a call with no
+  answer keeps `identity_request_refused` and the `refusal:` words.
+  `AshTemplate.Agents.Connection.Refused` carries the error.
+- The library's site tools (`RegentMCPAgents.SiteTools`, `act/5`, the plug's `tools:`,
+  `endpoint:` and `tool_limit:`) are not wired: the template's `/mcp` is AshAi behind `McpAgent`,
+  not `RegentMCPAgents.Plug`. `docs/agent-parity.md` G11 has the plan for a connected
+  app to act as its paired agent, and regent-workflow says a connected app that can
+  only pair and check in is a gap.
+- Side branch, uncompiled: the Mac runs `mix deps.get` and `make check`.
+- `pair_identity` input its action can't take is refused with the library's own
+  `invalid_request` words (`RegentMCPAgents.pairing_input_refusal/0`), as the library
+  refuses a malformed pairing itself.
+- The pin carries `RegentMCPAgents.sign/3`, the signing call G11's plan needs; the
+  template does not use it yet.
+
+## 2026-10-29 — Hosted MCP: a connected app works as its paired agent
+
+Correction to the entry above: the connected app's site tools are now built, the Ash
+way, and the library's own site-tool serving is gone.
+
+- elixir-utils moves to `dea334b` (claude/mcp-site-tools-1029; only `mcp_agents`
+  differs from `3bc18ae`): `RegentMCPAgents.address/1` gives the wallet of an
+  account's hosted identity; `act/5`, `sign/3`, `SiteTools` and the plug's
+  `tools:`, `endpoint:` and `tool_limit:` are removed.
+- Consent asks for a second permission, `ash-template.agent` ("work here as the agent
+  you paired"), and the sign-in challenge at `/mcp` names both.
+- `AshTemplateWeb.Plugs.McpAgent`: a token with that permission whose identity is
+  paired with the token's own account becomes that paired agent's actor
+  (`AgentWallet.actor_for/2`, the actor a signing agent gets, with the token's
+  principal as `connection`), its pairing checked again before the answer leaves.
+  AshAi then lists and runs the agent's tools under the same policies; the identity
+  tools stay the app's (`AshTemplate.Agents.Connection.Caller`). Otherwise the app
+  keeps its identity tools alone, as before.
+- `AshTemplate.Agents.HostedAddress` asks the sign-in service for the identity's
+  wallet once per account on each machine and keeps it in ETS, so no call at `/mcp`
+  waits on the service. The budget is `/mcp`'s own, 120 a minute per account.
+- `postRoomMessage` lists `site_oauth` beside `siwa_request`; `Capabilities` lets an
+  agent operation on hosted MCP name it, and the guide's proof words say so.
+- Protected (sign-in): ships on Sean's go naming the final commit.
+
+## 2026-10-29 — Hosted MCP: review fixes for a connected app's agent
+
+- `McpAgent` spends the account's budget before it reads the connection's identity,
+  so a call over the budget never reaches the sign-in service or signs the agent in.
+- An identity that can't be read is refused with 503 `identity_unavailable`, never
+  taken for an unpaired one; a database failure is logged as unexpected.
+- `HostedAddress` keeps a failed read for a minute, so while the sign-in service is
+  down each account asks it at most once a minute.
+- The consent note says every app the person connects works as the same paired agent;
+  the proof words say a connected app posts once paired.
+- The compile-link budget in `mix precommit` is 43: the identity tools' policy check
+  module (`Agents.Connection.Caller`) is one more compile-time link.
+
+## 2026-10-29 — Released v134
+
+- template.regents.sh v134 runs `5bf7cd58`, released 17:48Z on Sean's go for `7c75a17`:
+  the hosted MCP door at `/mcp`, where a connected app works as the agent its account
+  paired, merged onto main `932d8162` (v133). Its migration adds `agent_operations`;
+  the release step ran it. `SIWA_HOSTED_SIGNING_KEY`, staged by the sign-in service,
+  went out with it. `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` stays off, so the sign-in
+  metadata answers 404 and the agent guide names no connector.
+- Checks on that tree: `make check` exit 0 (137 server tests with 11 properties, 24
+  script tests, the browser walk 323 passed and 5 skipped at 1280 and 390 in headless
+  Chromium; WebKit is not run on the Mac). Live check in headless Chromium:
+  `/capabilities.json` build.commit `5bf7cd58`, `/healthz` ok, `/mcp` answers 405 to a
+  page load; home, agents, account, the General room, the app and pair pages answer 200
+  at 390 and 1280, no page errors and nothing wider than the screen. Rollback: v133,
+  `2e158726`.
 ## 2026-10-28 — Pay for a pin with USDC or Credits
 
 - elixir-utils moves to `ff7927c` (branch `credits-pay-tpl-1028`: elixir-utils main
@@ -5067,3 +5368,14 @@ An adversarial review of the two commits above found five things, all fixed here
   buys on the chain with Credits. `AshTemplate.Payments.ChainBuy`, its `chain_buys`
   queue and three migrations, and the `BUYING_WALLET_PRIVATE_KEY` and `BASE_RPC_URL`
   secrets are gone.
+
+## 2026-10-29 — Credits brought up to main 74403fb1
+
+- The pin keeps the signed browser tools' shape main moved to: `notes_pin` takes `id`,
+  `payment` and `pay_with` as its own input, and your browser host signs it. Its
+  capabilities row retries as `none`, since the pin has no `operation_id` and asking
+  again pays the terms already offered.
+- The pin's change to the contract lands after main's 8.0.0, so `info.version` moves
+  to 9.0.0.
+- Pin payments on the template go to Sean's own wallet (Sean, 29 Oct 18:00Z, "1. c"),
+  set as `PAYMENTS_WALLET_ADDRESS`.

@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "09afad89658916918ce718abf9f485b032b12a21"
+  @elixir_utils_ref "dea334b0cc9477a26fa9bbd03e4f803359ab420b"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "3134bab0a23452fb82d3248072327e1d0199cc9a"
 
@@ -43,7 +43,7 @@ defmodule AshTemplate.MixProject do
       # by sibling paths; these pins replace them.
       {:regent_oauth,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "oauth", override: true},
-      # The Claude connector's MCP address at /mcp (RegentMCPAgents.Plug).
+      # The Claude connector's identity tools at /mcp (AshTemplate.Agents.Connection).
       {:regent_mcp_agents, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "mcp_agents"},
       {:lumis, "~> 0.1"},
       {:req_llm, "~> 1.18"},
@@ -66,7 +66,7 @@ defmodule AshTemplate.MixProject do
       {:nebulex, "~> 3.0"},
       {:nebulex_local, "~> 3.0"},
       {:ash_oban, "~> 0.10.3"},
-      {:ash_ai, "~> 1.3.0"},
+      {:ash_ai, "~> 1.4.1"},
       {:igniter, "== 0.8.4", only: :dev, runtime: false},
       {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
       {:mdex, "== 0.14.2"},
@@ -215,7 +215,13 @@ defmodule AshTemplate.MixProject do
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
-        "xref graph --label compile-connected --fail-above 36",
+        # A generic action adds one for the module it runs (Ash checks `run` at compile time).
+        # The capability check adds one: it names the chat domain, whose tools are never hosted.
+        # The hosted MCP forward adds two: the router reads its tools from the capability list,
+        # and its input check from ToolErrors (AshAi takes it only as a function), at compile time.
+        # The identity tools' policy check adds one (`Agents.Connection.Caller`: Ash reads an
+        # `authorize_if` check module at compile time).
+        "xref graph --label compile-connected --fail-above 43",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

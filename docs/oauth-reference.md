@@ -27,14 +27,14 @@ boot by `config/runtime.exs`; anything else leaves all of it off:
 
 - the sign-in above (`AshTemplate.OAuth`, `RegentOAuth.enabled?/0`), with
   `RegentOAuth.Repo` supervised;
-- the MCP address at `/mcp` (below);
+- the identity tools at `/mcp` and a Bearer token there (below);
 - Claude in the pairing box and the signed pair request
   (`config :regent_agents, hosted_pairing: [:claude]`; empty while off);
 - the Claude guide at `/agents/claude` and its skill, its line on `/agents` and in
   the sitemap, the connector paragraph in `/agents.md` and the hosted MCP line in
   `/llms.txt`. These are read on each request (`AshTemplate.OAuth.enabled?/0`);
-  while off, `/agents/claude` is not found and `/llms.txt` says the site has no
-  hosted MCP endpoint.
+  while off, `/agents/claude` is not found and `/llms.txt` names only the room
+  tools at `/mcp`.
 
 With the switch on, the boot stops unless `SIWA_HOSTED_SIGNING_KEY` is this site's
 hosted signing key at the sign-in service (32 or more letters, digits, `-` or `_`),
@@ -52,24 +52,57 @@ connects again.
 
 ## The MCP address
 
-`forward "/mcp", RegentMCPAgents.Plug` in the router, as the library's README
-documents, after the sign-in routes and outside the `:api` pipeline: its own `:mcp`
-pipeline holds only the launch gate, so the plug answers a GET with 405 itself
-rather than the API's format check refusing it, and the site's closing closes it
-too. The plug answers 404 while the switch is off. Each POST is one JSON-RPC
-message: `initialize`, `notifications/initialized` (202), `ping`, `tools/list` and
-`tools/call` for `register_identity`, `get_identity`, `pair_identity` and
-`check_in`. A request without a live Bearer token carrying `regent.identity.manage`
-gets 401 with `WWW-Authenticate: Bearer resource_metadata=…`, which starts
-Claude's sign-in. The route is not logged: tool calls carry pairing codes.
+`/mcp` is the site's one hosted MCP server, `forward "/mcp", AshAi.Mcp.Router` in
+the router, after the sign-in routes and outside the `:api` pipeline. Its own `:mcp`
+pipeline takes JSON only, runs the launch gate, so the site's closing closes it
+too, then `AshTemplateWeb.Plugs.McpAgent`, which admits the request and says who
+is calling (agent access spec 4.3). The connector's four tools,
+`register_identity`, `get_identity`, `pair_identity` and `check_in`, are Ash
+actions on `AshTemplate.Agents.Connection` that only a connected app may run
+(`AshTemplate.Actors.ConnectedApp`); they call `RegentMCPAgents` with the token's
+account, and take their titles, words and hints from `RegentMCPAgents.Tools`. The
+same server offers the room tools (`rooms_messages` and `rooms_post`) to an agent
+signing each call, which a connected app neither sees nor runs.
 
-Two budgets: the endpoint counts each address first (`mcp_address`, 600 a minute,
-since Claude's requests come from Anthropic's shared addresses and a request
-without a token is answered before any account is known), then the plug counts
-each connected account under its OAuth subject (`mcp`, 120 a minute) through
-`RegentAgentAccess.RateLimit` and the site's `RequestRateLimiter`. A refused tool
-call ends with the site's own words (`config :regent_mcp_agents, :config,
-refusal:`).
+Before any credential is looked at, McpAgent refuses, in the site's
+`{"error": {"code", "message", "hint"}}` shape: a query string
+(`unsupported_query`, 400), any address but `/mcp` itself (404) and any method but
+POST (405), a page on another site (`origin_not_allowed`, 403: any `Origin` but the
+site's own, `null` included; no `Origin`, as MCP clients send, goes on), a body
+that is not JSON (415) and a JSON-RPC batch (`batch_not_supported`, 400), so one
+signature covers one call.
+
+Every request then carries exactly one credential; there is no anonymous MCP.
+Public reads are on the HTTP API and the browser tools. A Bearer token selects the
+connector: it must be live, for this site's `/mcp` resource and carry
+`regent.identity.manage` (`RegentOAuth.verify/3`); any other is refused with 401
+and `WWW-Authenticate: Bearer resource_metadata=…`, which starts Claude's sign-in.
+A request with no credential at all gets the same: 401 `connection_required` with
+the challenge, so Claude's first request starts the sign-in, and the hint also
+tells an agent to sign its calls with `regents mcp`. While the switch is off a
+token is refused with 401 `delegated_access_not_enabled`, a request with no
+credential with 401 `agent_auth_required`, neither with a challenge, and the
+connector's tools are not listed. A token beside an agent's signature is refused
+as `ambiguous_credentials`. The route is not logged: tool calls carry pairing
+codes. AshAi serves each POST as one JSON-RPC message in the version the client
+asks for, `initialize`, `ping`, `tools/list` and `tools/call` among them, and keeps
+nothing between requests.
+
+Two budgets: the endpoint counts each address first, then McpAgent counts each
+connected account under its OAuth subject (`mcp`, 120 a minute), both through
+`RegentAgentAccess.RateLimit` and the site's `RequestRateLimiter`. A request with
+a Bearer token counts against its address's ceiling of 600 a minute
+(`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
+servers and one address carries many accounts; any other request counts 120 a
+minute (`mcp_address`, the API's figure). A tool's arguments are checked against its action before it
+runs (`AshTemplateWeb.ToolErrors.check_input/3`), so bad input is refused with the
+codes the HTTP API uses. A refused identity tool call is the tool's error, whose
+text is `{"error": {"code", "message", "hint"}}`: the site's own refusal of the
+signed request, with `retry_after` when it sent one (`agent_not_paired`, a rate
+limit), or the library's refusal made before signing (`pairing_code_unknown`).
+When no answer came, the code is `identity_request_refused` with the site's own
+words (`config :regent_mcp_agents, :config, refusal:`). `pair_identity` lists the harness and the name and code
+lengths the library takes.
 
 ## Issuer and resource from the site's host
 
@@ -112,20 +145,21 @@ sites at once in one rollout file. Each site makes its own version (its own
 switch name, title, about line, refusal words and guide in its own voice), runs
 its own hashing migration on its own schema with its own letter, and records its
 commit, release and rollback in its row. Keyfleet's hand-written MCP controller
-(branch `claude/claude-connector-fixes-1027`) is replaced by this plug and is not
+(branch `claude/claude-connector-fixes-1027`) is replaced by this server and is not
 taken. Patchbay keeps `hosted_pairing: [:chatgpt]` and its own refusal words.
 
 Before the switch is turned on anywhere, the site must have completed consent,
-callback, refresh, disconnect and host checks, and the `/mcp` checks: initialize,
-tools/list, 401 without a token, a revoked token refused and the per-account
-limit. One shared piece is still missing: design-system's `Regent.Account` has no
+callback, refresh, disconnect and host checks, and the `/mcp` checks: a first
+request with no token answered 401 `connection_required` with the
+`WWW-Authenticate` challenge (`claude_connector_test.exs`), initialize and
+tools/list with a token, a revoked token refused and the per-account limit. One shared piece is still missing: design-system's `Regent.Account` has no
 picture for the `claude` harness (`@agent_pictures`, `Map.fetch!`), so a pairing
 box offering Claude, or any list showing a paired Claude, raises until
 design-system adds one and the template takes that `regent_ui` pin.
 
 All shared packages use one reviewed `elixir-utils` Git commit, including OAuth.
 The template's existing `REGENT_ELIXIR_UTILS_PATH` development override also covers
-OAuth and the MCP plug; production refuses that override. Normal local integration
+OAuth and the MCP identity library; production refuses that override. Normal local integration
 checks fetch the exact pins from the local shared repository without changing the
 recorded URLs. Publish the reviewed shared commit before a separately authorized
 consumer release so its builds can fetch the exact pin.

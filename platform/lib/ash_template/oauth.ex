@@ -1,12 +1,17 @@
 defmodule AshTemplate.OAuth do
   @moduledoc """
   Consent for connected apps, such as Claude's connector, through the person's
-  verified account. The one permission lets the app keep an identity, pair it
-  with this account and check in through the MCP address at `/mcp`; nothing else.
+  verified account. The identity permission lets the app keep an identity, pair
+  it with this account and check in through the MCP address at `/mcp`; the
+  agent permission (`agent_scope/0`) lets it then work here as that paired
+  agent, with that agent's rights and nothing more.
   """
   @behaviour RegentOAuth
 
   def config, do: Application.fetch_env!(:ash_template, __MODULE__)
+
+  @doc "The permission to work here as the paired agent, beside the identity one."
+  def agent_scope, do: "ash-template.agent"
   def repo, do: AshTemplate.Repo
 
   @doc """

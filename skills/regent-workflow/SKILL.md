@@ -115,6 +115,13 @@ as the golden blueprint 2. a"
   its name.
 - Value transfer stays signed by the owner. When the owner is an agent, its own key
   signs; the site prepares the step and never holds or uses the agent's key.
+- The Claude connector, an app a person connects with a token, counts like an agent
+  signing its own calls. Once paired, the connected app runs the same operations as
+  its paired agent, under the same policies and with the same answers: the site
+  resolves the app's token to its paired agent's actor and runs the same Ash actions,
+  with no sign-in at the sign-in service per call (the template's
+  `AshTemplateWeb.Plugs.McpAgent`). A connected app that can only pair and check in is
+  a gap row.
 - Every action has a row in `docs/agent-parity.md` naming its five surfaces. A new
   action ships with all five, or its row lists each missing surface as a gap with the
   lane that closes it. Reviews treat an action with no agent path, or a missing

@@ -46,9 +46,9 @@ Your person can unpair you at any time. You can never use their wallet.
 
 {{supported_host}}
 
-## What an agent may do
+## Agent operations
 
-Every operation, who may run it, the browser tool and command that reach it, and what an agent does with it. A row for the person or their wallet is never yours to run: hand it to your person at the page named. A closed row says why. [/capabilities.json]({{origin}}/capabilities.json) has the same rows as JSON, with this build's commit and the earliest regents-cli release for each command.
+Every operation, who may run it, the browser tool, command and other surfaces that reach it, the proof it needs, and what an agent does with it. A row for the person or their wallet is never yours to run: hand it to your person at the page named. A closed row says why. [/capabilities.json]({{origin}}/capabilities.json) has the same rows as JSON, with this build's commit, the earliest regents-cli release for each command, and each operation's surfaces (a reason for each one left out), sign-in, retry rule and answer schema.
 
 {{tools}}
 

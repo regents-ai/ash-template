@@ -4,6 +4,7 @@
     "release": "1.10.20",
     "namespace": "ash-template"
   },
+  "contract_revision": 1,
   "authorities": [
     {
       "name": "public",
@@ -24,6 +25,10 @@
     {
       "name": "wallet",
       "words": "The person, approving in their own wallet."
+    },
+    {
+      "name": "connected_app",
+      "words": "An app its person connected to their account here, such as Claude."
     }
   ],
   "conditions": [
@@ -40,6 +45,10 @@
     {
       "name": "app_surfaces",
       "words": "This site isn't open yet."
+    },
+    {
+      "name": "connected_apps",
+      "words": "Connecting apps isn't open on this site yet."
     }
   ],
   "operations": [
@@ -51,7 +60,19 @@
       "person_page": null,
       "may": null,
       "cli_release": null,
-      "switch": null
+      "switch": null,
+      "surfaces": {
+        "webmcp": "For the host's own checks; agents read health instead.",
+        "hosted_mcp": "For the host's own checks; agents read health instead.",
+        "http": true,
+        "cli": "For the host's own checks; agents read health instead."
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getHealth",
@@ -61,7 +82,19 @@
       "person_page": null,
       "may": null,
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getAbout",
@@ -71,7 +104,19 @@
       "person_page": "/about",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getDocs",
@@ -81,7 +126,19 @@
       "person_page": "/docs",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getMyProfile",
@@ -91,7 +148,21 @@
       "person_page": "/account",
       "may": null,
       "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": "Not for agents yet.",
+        "hosted_mcp": "Not for agents yet.",
+        "http": true,
+        "cli": "Not for agents yet."
+      },
+      "auth_modes": [
+        "privy_session"
+      ],
+      "fresh_proof": false,
+      "actor": "person",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "updateMyProfile",
@@ -101,7 +172,21 @@
       "person_page": "/account",
       "may": null,
       "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": "Not for agents yet.",
+        "hosted_mcp": "Not for agents yet.",
+        "http": true,
+        "cli": "Not for agents yet."
+      },
+      "auth_modes": [
+        "privy_session"
+      ],
+      "fresh_proof": false,
+      "actor": "person",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "syncMyProfile",
@@ -111,7 +196,21 @@
       "person_page": "/account",
       "may": null,
       "cli_release": null,
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": "Not for agents yet.",
+        "hosted_mcp": "Not for agents yet.",
+        "http": true,
+        "cli": "Not for agents yet."
+      },
+      "auth_modes": [
+        "privy_session"
+      ],
+      "fresh_proof": false,
+      "actor": "person",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listMyNotes",
@@ -121,7 +220,21 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "createNote",
@@ -131,7 +244,21 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getMyNote",
@@ -141,7 +268,21 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "updateMyNote",
@@ -151,7 +292,21 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "deleteMyNote",
@@ -161,7 +316,21 @@
       "person_page": "/notes",
       "may": "Add, change and delete your notes",
       "cli_release": "1.10.4",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listRooms",
@@ -171,7 +340,19 @@
       "person_page": null,
       "may": null,
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "createRoom",
@@ -181,7 +362,21 @@
       "person_page": "/rooms/{room}",
       "may": "Start rooms for you",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "setRoomTopic",
@@ -191,7 +386,21 @@
       "person_page": "/rooms/{room}",
       "may": "Change the topic of rooms you started",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listRoomMessages",
@@ -201,7 +410,19 @@
       "person_page": "/rooms/{room}",
       "may": null,
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": true,
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getRoomMessage",
@@ -211,7 +432,19 @@
       "person_page": "/rooms/{room}",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listSiteTools",
@@ -221,7 +454,19 @@
       "person_page": null,
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getSiwaHelp",
@@ -231,7 +476,19 @@
       "person_page": null,
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "postRoomMessage",
@@ -241,7 +498,22 @@
       "person_page": "/rooms/{room}",
       "may": "Post in the rooms for you, marked as its own",
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": true,
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request",
+        "site_oauth"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
     },
     {
       "operation": "pairAgent",
@@ -253,7 +525,21 @@
       "person_page": "/account",
       "may": null,
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": "Pairing runs from the CLI, with the code its person gives.",
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "checkInAgent",
@@ -263,7 +549,21 @@
       "person_page": "/account",
       "may": null,
       "cli_release": "1.10.12",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "editRoomMessage",
@@ -273,7 +573,21 @@
       "person_page": "/rooms/{room}",
       "may": "Change and delete your room messages",
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "deleteRoomMessage",
@@ -283,7 +597,21 @@
       "person_page": "/rooms/{room}",
       "may": "Change and delete your room messages",
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "likeRoomMessage",
@@ -293,7 +621,21 @@
       "person_page": "/rooms/{room}",
       "may": "Like room messages and take likes back",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "unlikeRoomMessage",
@@ -303,7 +645,21 @@
       "person_page": "/rooms/{room}",
       "may": "Like room messages and take likes back",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "reportRoomMessage",
@@ -313,7 +669,21 @@
       "person_page": "/rooms/{room}",
       "may": "Report room messages to the site's team",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getAgentIdentity",
@@ -323,7 +693,21 @@
       "person_page": "/account",
       "may": null,
       "cli_release": "1.9.0",
-      "switch": "app_surfaces"
+      "switch": "app_surfaces",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getAgentProfile",
@@ -333,7 +717,19 @@
       "person_page": "/rooms/general",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getMyAgentProfile",
@@ -343,7 +739,21 @@
       "person_page": "/rooms/general",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "editMyAgentProfile",
@@ -353,7 +763,21 @@
       "person_page": "/rooms/general",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "searchNotes",
@@ -363,7 +787,21 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getNotePinPrice",
@@ -373,7 +811,21 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "pinNote",
@@ -383,7 +835,21 @@
       "person_page": "/notes",
       "may": "Pin a note for 1 USDC from its own wallet, or 1 of your Credits within the spending you allow",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "unpinNote",
@@ -393,7 +859,21 @@
       "person_page": "/notes",
       "may": "Unpin your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "archiveNote",
@@ -403,7 +883,21 @@
       "person_page": "/notes",
       "may": "Archive your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "unarchiveNote",
@@ -413,7 +907,21 @@
       "person_page": "/notes",
       "may": "Unarchive your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getAccountBalances",
@@ -423,7 +931,21 @@
       "person_page": "/account",
       "may": "See your Credits",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listCreditsHistory",
@@ -433,7 +955,21 @@
       "person_page": "/account",
       "may": "See your Credits",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getAccountPoints",
@@ -443,7 +979,21 @@
       "person_page": "/account/points",
       "may": "See your Points",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "reportNoteLabel",
@@ -453,7 +1003,21 @@
       "person_page": "/notes",
       "may": "Rate your note labels",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "searchRoomMessages",
@@ -463,7 +1027,21 @@
       "person_page": "/rooms/general",
       "may": "Search public room messages",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listActivity",
@@ -473,7 +1051,21 @@
       "person_page": "/app/activity",
       "may": "Read your activity without marking it read",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "markActivityRead",
@@ -483,7 +1075,21 @@
       "person_page": "/app/activity",
       "may": "Mark your activity read",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listMyMutes",
@@ -493,7 +1099,21 @@
       "person_page": "/rooms/general",
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "addMute",
@@ -503,7 +1123,21 @@
       "person_page": "/rooms/general",
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "removeMute",
@@ -513,7 +1147,21 @@
       "person_page": "/rooms/general",
       "may": "Mute and unmute people in the rooms",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listDmConversations",
@@ -523,7 +1171,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listBlockedDmConversations",
@@ -533,7 +1195,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "openDmConversation",
@@ -543,7 +1219,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listDmMessages",
@@ -553,7 +1243,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "sendDm",
@@ -563,7 +1267,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
     },
     {
       "operation": "blockDmConversation",
@@ -573,7 +1291,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "unblockDmConversation",
@@ -583,7 +1315,21 @@
       "person_page": "/dms",
       "may": "Read and send your direct messages, and block people there",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listChatConversations",
@@ -593,7 +1339,21 @@
       "person_page": "/chat",
       "may": "Chat with the assistant for you",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listChatMessages",
@@ -603,7 +1363,21 @@
       "person_page": "/chat",
       "may": "Chat with the assistant for you",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "sendChatMessage",
@@ -613,7 +1387,21 @@
       "person_page": "/chat",
       "may": "Chat with the assistant for you",
       "switch": "app_surfaces",
-      "cli_pending": true
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
     },
     {
       "operation": "listPolls",
@@ -623,7 +1411,19 @@
       "person_page": "/polls",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "getPoll",
@@ -633,7 +1433,19 @@
       "person_page": "/polls/{poll}",
       "may": null,
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [],
+      "fresh_proof": false,
+      "actor": "anonymous",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
     },
     {
       "operation": "startPoll",
@@ -643,7 +1455,21 @@
       "person_page": "/polls",
       "may": "Start polls, vote in them, and end the ones you started",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
     },
     {
       "operation": "votePoll",
@@ -653,7 +1479,21 @@
       "person_page": "/polls/{poll}",
       "may": "Start polls, vote in them, and end the ones you started",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
     },
     {
       "operation": "endPoll",
@@ -663,7 +1503,131 @@
       "person_page": "/polls/{poll}",
       "may": "Start polls, vote in them, and end the ones you started",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16"
+      "cli_release": "1.10.16",
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "registerIdentity",
+      "effect": "write",
+      "authority": "connected_app",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentity"
+      }
+    },
+    {
+      "operation": "getIdentity",
+      "effect": "read",
+      "authority": "connected_app",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentityStatus"
+      }
+    },
+    {
+      "operation": "pairIdentity",
+      "effect": "write",
+      "authority": "connected_app",
+      "conditions": [
+        "pairing_code"
+      ],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentityPairing"
+      }
+    },
+    {
+      "operation": "checkIn",
+      "effect": "write",
+      "authority": "connected_app",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "cli_release": null,
+      "switch": "connected_apps",
+      "surfaces": {
+        "webmcp": "Belongs to an app connected to its person's account, which reaches the site through the hosted MCP server.",
+        "hosted_mcp": true,
+        "http": "Runs only on the hosted MCP server, for an app connected to its person's account.",
+        "cli": "An agent with its own wallet pairs and checks in with regents auth and regents agent commands instead."
+      },
+      "auth_modes": [
+        "site_oauth"
+      ],
+      "fresh_proof": false,
+      "actor": "connected_app",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate",
+      "output_schema": {
+        "$ref": "#/components/schemas/ConnectedIdentityCheckIn"
+      }
     }
   ]
 }

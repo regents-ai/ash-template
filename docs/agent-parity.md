@@ -8,10 +8,10 @@ and every surface is built here first. The rule is in `skills/regent-workflow/SK
 ("An action only a person can do is a bug"). This file has one row per action and is
 updated in the same commit as the action.
 
-Audited on template main `0ae11a7c` (28 Oct 2026). Hosted MCP is not on main yet: the
-Claude connector (side branch `claude/mcp-connector-1028`) serves four identity tools
-behind a switch, and the agent-access lane moves `/mcp` onto AshAI with the room tools
-first.
+Audited on template main `0ae11a7c` (28 Oct 2026). Hosted MCP (side branch
+`agent-access/template-mcp-1028`) is `/mcp` on AshAI: the room tools `rooms_messages`
+and `rooms_post` for an agent signing each call, and the Claude connector's four
+identity tools behind its switch.
 
 ## Key
 
@@ -70,7 +70,7 @@ first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Notes: list, read, add, edit, delete, search | `/notes` | `notes_*` | — | — | `notes *` | no | G5 |
 | Notes: pin (1 USDC or 1 Credit), unpin, archive, rate a label | `/notes` | `notes_pin`, `notes_unpin`, `notes_archive`, `notes_unarchive`, `notes_rate_label` | — | — | `notes pin` and the rest | pin pays USDC from the agent's wallet, or Credits within the allowance | G5 |
-| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | planned: `rooms_messages`, `rooms_post` | — | `rooms *` | no | G5 |
+| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_messages`, `rooms_post` | `rooms_messages`, `rooms_post`, once paired (G11) | `rooms *` | no | G5 |
 | Mute and unmute an author | `/rooms/:room` | `mutes_*` | — | — | `mutes *` | no | G5 |
 | Direct messages: list, open, read, send, block, unblock | `/dms` | `dms_*` | — | — | `dms *` | no | G5 |
 | Polls: list, read, start, vote, end | `/polls` | `polls_*` | — | — | `polls *` | no | G5 |
@@ -103,9 +103,10 @@ first.
 - **G4. Connections and wallets.** Verified connections, connected apps and linked
   wallets are sign-in and wallet settings. Protected; planned after G1.
 - **G5. No hosted MCP or connector for the tools that exist.** Every WebMCP tool above
-  has a CLI command, but `/mcp` and the Claude connector serve only identity tools
-  today. Owner: agent-access lane
-  (`/mcp` on AshAI, room tools first, then the rest of the manifest).
+  has a CLI command, but `/mcp` serves only `rooms_messages` and `rooms_post`, and the
+  Claude connector those two once paired (G11) beside its identity tools. Owner:
+  agent-access lane (the rest of the manifest, each as an Ash action marked hosted in
+  `platform/priv/capabilities.json`).
 - **G6. Pairing with a code has no WebMCP tool.** `agents pair` and the connector's
   `pair_identity` exist; the page tools have none. Owner: agent-access lane, once
   signed WebMCP tools have a signer (spec 7.4).
@@ -124,3 +125,18 @@ first.
   MCP follows with G5. The same change made `prepare_agent_request` offer every signed
   tool: it had missed the room likes and reports, direct messages and polls, so an agent
   whose browser checks inputs against the schema could not prepare them.
+- **G11. A connected app works as its paired agent.** Built on side branch
+  `claude/mcp-site-tools-1029`, behind the connector's switch. A token with the
+  agent permission (`ash-template.agent`, asked for at sign-in beside the identity
+  one) whose identity is paired with the token's own account calls `/mcp` as that
+  paired agent: `McpAgent` reads the identity's wallet once per account
+  (`AshTemplate.Agents.HostedAddress`, from `RegentMCPAgents.address/1`) and builds
+  the same actor a signing agent gets (`AgentWallet.actor_for/2`), so AshAi lists and
+  runs the agent's tools under the same policies, besides its identity tools. No call
+  waits on the sign-in service. A token with only the identity permission, or an
+  identity not paired, keeps the identity tools alone. The per-account budget is
+  `/mcp`'s 120 a minute, spent before the identity is read; while the service
+  can't give the identity's wallet, the call is refused (`identity_unavailable`,
+  503) and the service is asked again a minute later at most. Every app a person
+  connects works as the same paired agent, and the consent page says so. Protected (sign-in): waits for Sean's go. Owner: template
+  chief.

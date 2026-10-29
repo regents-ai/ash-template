@@ -24,7 +24,11 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
    last seen and when, and `rescan_from` when the watcher is stopped.
 4. **Each pass** reads the head, reads the last 30 recorded blocks again, then reads
    forward up to the head in stretches of at most 10,000 blocks, halving a stretch the node
-   refuses down to one block.
+   refuses down to one block. When it ends, the pass reports `[:<site>, :indexer, :lag]`
+   with `blocks`, the head less the last block it has now read, for the reader's fixed
+   `indexer` name and `chain_id`. The site's telemetry turns that into Sentinel's
+   `health_indexer_lag_blocks` and `health_indexer_passes_total`, as ash-template's
+   `AshTemplateWeb.Telemetry` does.
 5. **Rows and the cursor move in one transaction.** The cursor moves only if it still
    stands where the pass found it and is not stopped, so a second machine's pass or a hand
    fix is never undone.

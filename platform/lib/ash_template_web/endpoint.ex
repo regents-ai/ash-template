@@ -26,16 +26,25 @@ defmodule AshTemplateWeb.Endpoint do
                 admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
                 key: &AshTemplateWeb.ClientAddress.key/1
               )
-  # Claude's connector calls /mcp from Anthropic's servers, so one address carries
-  # many people's requests: this is a ceiling against a flood, and each connected
-  # account's own budget (`forward "/mcp"` in the router) is the working limit.
+  # An agent's own request to /mcp counts against its address as on the API.
   @mcp_rate_limit RegentAgentAccess.RateLimit.init(
                     policy: "mcp_address",
-                    limit: 600,
+                    limit: 120,
                     window: 60,
                     admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
                     key: &AshTemplateWeb.ClientAddress.key/1
                   )
+  # Claude's connector calls /mcp from Anthropic's servers, so one address carries
+  # many people's connected apps: this is a ceiling against a flood, and each
+  # connected account's own budget (`AshTemplateWeb.Plugs.McpAgent`) is the
+  # working limit.
+  @mcp_connected_rate_limit RegentAgentAccess.RateLimit.init(
+                              policy: "mcp_connected_address",
+                              limit: 600,
+                              window: 60,
+                              admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
+                              key: &AshTemplateWeb.ClientAddress.key/1
+                            )
   # Pairing also has its own small budget, since each try spends a guess at a code.
   @pair_rate_limit RegentAgentAccess.RateLimit.init(
                      policy: "pair",
@@ -146,8 +155,12 @@ defmodule AshTemplateWeb.Endpoint do
   defp limit_rate(%Plug.Conn{path_info: ["api" | _]} = conn, _opts),
     do: RegentAgentAccess.RateLimit.call(conn, @rate_limit)
 
-  defp limit_rate(%Plug.Conn{path_info: ["mcp" | _]} = conn, _opts),
-    do: RegentAgentAccess.RateLimit.call(conn, @mcp_rate_limit)
+  defp limit_rate(%Plug.Conn{path_info: ["mcp" | _]} = conn, _opts) do
+    case Plug.Conn.get_req_header(conn, "authorization") do
+      ["Bearer " <> _token] -> RegentAgentAccess.RateLimit.call(conn, @mcp_connected_rate_limit)
+      _no_token -> RegentAgentAccess.RateLimit.call(conn, @mcp_rate_limit)
+    end
+  end
 
   defp limit_rate(conn, _opts), do: conn
 

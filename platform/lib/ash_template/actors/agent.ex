@@ -1,5 +1,12 @@
 defmodule AshTemplate.Actors.Agent do
-  @moduledoc "A SIWA agent retains its own identity and its current account delegation."
+  @moduledoc """
+  A SIWA agent retains its own identity and its current account delegation.
+
+  `connection` is set when the agent is a connected app's own identity, acting
+  through the hosted MCP server with the token its person approved: what
+  `RegentOAuth.verify/3` answered for that token. The same app may then also run
+  its identity tools (`AshTemplate.Agents.Connection`).
+  """
   @enforce_keys [:agent_id, :wallet_address, :name]
   defstruct [
     :id,
@@ -10,6 +17,7 @@ defmodule AshTemplate.Actors.Agent do
     :privy_user_id,
     :pairing_id,
     :acting_agent_id,
+    :connection,
     # The person's shared profile (`RegentIdentity.profile_id/2`), whom a
     # payment the agent makes is for; nil until they have one.
     :beneficiary_profile_id,
@@ -17,6 +25,8 @@ defmodule AshTemplate.Actors.Agent do
     pairing: :none,
     role: :agent
   ]
+
+  @type t :: %__MODULE__{}
 
   def for_agent(agent, pairing \\ :none) do
     %__MODULE__{

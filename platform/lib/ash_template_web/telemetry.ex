@@ -12,6 +12,15 @@ defmodule AshTemplateWeb.Telemetry do
   available, running or retrying job in each running `queue`, 0 when there is
   none, every ten seconds. A paused queue keeps its jobs waiting on purpose, so it
   is not measured.
+  A site's chain event reader reports each pass with `[:ash_template, :indexer, :lag]`:
+  `blocks` between the head it follows and the last block it has read, for its
+  fixed `indexer` name and `chain_id` (the chain-events skill). A site that sends
+  from its own wallet names, as `unconfirmed_sends` in
+  `config :ash_template, AshTemplateWeb.Telemetry`, the function that answers each
+  of its fixed sending flows with when its oldest signed, unconfirmed transaction
+  was signed, or nil; every ten seconds `[:ash_template, :wallet, :unconfirmed_oldest]`
+  carries that `age_ms` for each `flow`, 0 when none waits. The template reads no
+  chain events and sends from no wallet of its own, so neither is reported here.
   The engine's memory, run queues and process counts come from telemetry_poller's
   default poller, every 10 seconds (`config/config.exs`).
   Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
@@ -64,12 +73,23 @@ defmodule AshTemplateWeb.Telemetry do
   def site_poller,
     do:
       {:telemetry_poller,
-       measurements: [
-         {AshTemplate.SharedReading, :measure, []},
-         {__MODULE__, :oldest_unfinished_jobs, []}
-       ],
+       measurements:
+         [
+           {AshTemplate.SharedReading, :measure, []},
+           {__MODULE__, :oldest_unfinished_jobs, []}
+         ] ++ unconfirmed_sends_step(),
        period: 10_000,
        name: :ash_template_site_poller}
+
+  # Only a site that sends from its own wallet names its query. Without one the
+  # age is never published, so Sentinel never reads a steady 0 that only means
+  # nothing was asked.
+  defp unconfirmed_sends_step do
+    case Application.get_env(:ash_template, __MODULE__)[:unconfirmed_sends] do
+      nil -> []
+      query -> [{__MODULE__, :oldest_unconfirmed_sends, [query]}]
+    end
+  end
 
   # The poller drops for good a measurement that raises or exits, and the row
   # would then keep its last number. So whatever stops this tick (a database
@@ -79,12 +99,38 @@ defmodule AshTemplateWeb.Telemetry do
   def oldest_unfinished_jobs do
     measure_oldest_unfinished_jobs()
   rescue
-    error -> not_measured(Exception.message(error))
+    error -> not_measured("background job age", Exception.message(error))
   catch
-    :exit, reason -> not_measured(Exception.format_exit(reason))
+    :exit, reason -> not_measured("background job age", Exception.format_exit(reason))
   end
 
-  defp not_measured(why), do: Logger.warning("background job age not measured: #{why}")
+  # The site's query, `{module, function, args}`, answers `{flow, signed_at}`
+  # for each of its sending flows, `signed_at` nil when nothing waits. Logged
+  # and skipped like the job age.
+  @doc false
+  def oldest_unconfirmed_sends({module, function, args}) do
+    now = DateTime.utc_now()
+
+    for {flow, signed_at} <- apply(module, function, args) do
+      age_ms =
+        case signed_at do
+          nil -> 0
+          signed_at -> DateTime.diff(now, signed_at, :millisecond)
+        end
+
+      :telemetry.execute([:ash_template, :wallet, :unconfirmed_oldest], %{age_ms: age_ms}, %{
+        flow: flow
+      })
+    end
+
+    :ok
+  rescue
+    error -> not_measured("unconfirmed send age", Exception.message(error))
+  catch
+    :exit, reason -> not_measured("unconfirmed send age", Exception.format_exit(reason))
+  end
+
+  defp not_measured(what, why), do: Logger.warning("#{what} not measured: #{why}")
 
   # Only running queues are measured: a paused queue holds its jobs on purpose,
   # and its age would only grow. Where no queue runs (tests), nothing is read.
@@ -129,6 +175,7 @@ defmodule AshTemplateWeb.Telemetry do
       counter("ash_template.privy.session_refused.total", tags: [:stage, :reason]),
       counter("ash_template.session_bootstrap.rate_limited.total", tags: [:source]),
       counter("ash_template.session_authority.absent_row.total"),
+      counter("ash_template.mcp.auth.total", tags: [:mode, :outcome]),
       distribution("health.db_queue.microseconds",
         event_name: [:ash_template, :repo, :query],
         measurement: :queue_time,
@@ -153,6 +200,26 @@ defmodule AshTemplateWeb.Telemetry do
         tags: [:queue],
         description:
           "Age of the oldest unfinished background job in the queue, counted from when it was added"
+      ),
+      last_value("health.indexer.lag.blocks",
+        event_name: [:ash_template, :indexer, :lag],
+        measurement: :blocks,
+        tags: [:indexer, :chain_id],
+        description:
+          "Blocks between the chain head a reader follows and the last block it has read"
+      ),
+      counter("health.indexer.passes.total",
+        event_name: [:ash_template, :indexer, :lag],
+        tags: [:indexer, :chain_id],
+        description: "Passes each chain reader made"
+      ),
+      last_value("health.wallet_unconfirmed_oldest.seconds",
+        event_name: [:ash_template, :wallet, :unconfirmed_oldest],
+        measurement: :age_ms,
+        unit: {:millisecond, :second},
+        tags: [:flow],
+        description:
+          "Age of the oldest transaction the site's own wallet signed that is not yet confirmed"
       ),
       counter("ash_template.jobs.finished.total",
         event_name: [:oban, :job, :stop],
