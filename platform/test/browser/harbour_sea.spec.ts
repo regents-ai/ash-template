@@ -60,7 +60,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 
       // An agent sails on every 7 seconds; just after one has, the ships stay put
       // long enough to be found and pressed.
-      const where = () => page.getByRole("list", {name: "Where each agent is"}).getByRole("listitem").allTextContents()
+      const where = () => page.getByRole("list", {name: "Crew"}).getByRole("listitem").allTextContents()
       const before = await where()
       await expect.poll(where, {timeout: 10_000}).not.toEqual(before)
 

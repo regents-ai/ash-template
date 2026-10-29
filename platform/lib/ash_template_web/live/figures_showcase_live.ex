@@ -14,7 +14,6 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
 
   alias AshTemplate.{ChainHead, ChainRefresh, Rooms, SharedReading}
   alias AshTemplate.Rooms.Activity
-  alias AshTemplateWeb.Components.Shell
   alias Regent.Primitives, as: P
 
   @key ChainHead.key(8453)
@@ -88,22 +87,25 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
       <header class="sc-header figures-page-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
-        <Shell.theme_toggle id="figures-page-theme" />
       </header>
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Working example</p>
         <h1>Live figures</h1>
         <p>
-          Some figures are the same for everyone: a price, a count, the newest block. The site
-          reads each one once and shows it on every open page, so a crowd costs no more than one
-          visitor.
+          One reading, shown on every open page.
+          <P.tip id="figures-intro-tip" label="About live figures">
+            Some figures are the same for everyone: a price, a count, the newest block. The site
+            reads each one once and shows it on every open page, so a crowd costs no more than one
+            visitor. Anything that differs from person to person, like your balance, is still read
+            for you alone, and a live figure never holds up a wallet button.
+          </P.tip>
         </p>
       </section>
 
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="figures-head-heading">
-          <h2 id="figures-head-heading">Base's newest block</h2>
+          <h2 id="figures-head-heading">Latest block</h2>
           <p id="figures-head" class="payments-figure">
             <span id="figures-head-block">{@head.block || "No reading yet"}</span>
             <P.status :if={!@head.behind?} tone="success">Live</P.status>
@@ -132,19 +134,7 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
               </dd>
             </div>
           </dl>
-          <p id="figures-rooms-state">Counted once for everyone, when someone posts.</p>
-        </section>
-
-        <section class="rg-panel rg-panel--surface" aria-labelledby="figures-rules-heading">
-          <h2 id="figures-rules-heading">What stays yours</h2>
-          <p>
-            Anything that differs from person to person, like your balance or what you may see, is
-            still read for you alone.
-          </p>
-          <p>
-            A live figure never holds up a wallet button. If it falls behind, every button still
-            works.
-          </p>
+          <p id="figures-rooms-state" class="rg-muted">Counted once, when someone posts.</p>
         </section>
       </div>
     </main>

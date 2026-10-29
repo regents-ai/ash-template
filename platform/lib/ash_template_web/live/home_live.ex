@@ -130,7 +130,7 @@ defmodule AshTemplateWeb.HomeLive do
             dialog="home-agent-tools"
             class="rg-button rg-button--secondary rg-button--no-arrow"
           >
-            <span class="rg-button__label">WebMCP Tools</span>
+            <span class="rg-button__label">Agent Tools</span>
           </AgentTools.button>
         </div>
       </div>

@@ -10,12 +10,11 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
   """
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.Components.Shell
   alias Regent.Discussion, as: D
   alias Regent.Primitives, as: P
   alias Regent.StructuredData
 
-  @thread_title "Why does the sign-in window close before my wallet opens?"
+  @thread_title "Sign-in window closes before my wallet opens"
   @thread_views 214
   @filters [{"all", "All replies"}, {"solution", "Solution"}, {"house", "Ash Template replies"}]
 
@@ -69,12 +68,11 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
       <header class="sc-header payments-page-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
-        <Shell.theme_toggle id="discussion-page-theme" />
       </header>
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Example</p>
-        <h1>A discussion thread</h1>
+        <h1>Discussion</h1>
         <p>
           This is how a question and its replies read on a Regent site: one column, a picture
           beside each name, the answer that worked quoted under the question, and a heart on

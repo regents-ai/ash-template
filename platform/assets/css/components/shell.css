@@ -94,7 +94,7 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  min-height: 2.75rem;
+  min-height: var(--ash-control);
   height: 100%;
   padding: 0.45rem 0.85rem;
   border: 0;
@@ -199,8 +199,8 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--ash-control);
+  height: var(--ash-control);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -396,11 +396,11 @@
   white-space: nowrap;
 }
 
-/* Signed in, the balance and the name share the icon buttons' 44px height, so
-   the header keeps its height. */
+/* Signed in, the balance and the name share the icon buttons' height, so the
+   header keeps its height. */
 #app-shell .shell-credits,
 .account-control > .account-chip {
-  min-height: 2.75rem;
+  min-height: var(--ash-control);
   margin-block: 0;
   padding-block: 0;
 }
@@ -541,11 +541,11 @@
   z-index: var(--rg-layer-card);
   display: grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--ash-control);
+  height: var(--ash-control);
   min-height: 0;
   margin-block: calc(-1 * var(--shell-credits-pad-top))
-    calc(var(--shell-credits-pad-top) - 2.75rem);
+    calc(var(--shell-credits-pad-top) - var(--ash-control));
   margin-inline: auto calc(-1 * var(--shell-credits-pad-side));
   padding: 0;
   border: 0;
@@ -861,8 +861,7 @@
   height: 0.95rem;
 }
 
-/* The footer holds the 2.75rem theme press and tool count without growing past
-   them. */
+/* The footer holds the theme press and tool count without growing past them. */
 #shell-footer :is(.theme-control, .agent-tools-button) {
   margin-block: -0.25rem;
 }
@@ -1128,7 +1127,7 @@
   }
 
   #app-shell .shell-search__close {
-    min-height: 2.75rem;
+    min-height: var(--ash-control);
     padding-inline: 0.5rem;
   }
 }
@@ -1189,8 +1188,8 @@
   #app-shell .shell-search-button {
     flex: 0 0 auto;
     justify-content: center;
-    width: 2.75rem;
-    min-height: 2.75rem;
+    width: var(--ash-control);
+    min-height: var(--ash-control);
     margin-inline-start: auto;
     padding: 0;
     border: 0;
@@ -1281,7 +1280,7 @@
     display: block;
     grid-area: close;
     width: 100%;
-    min-height: 2.75rem;
+    min-height: var(--ash-control);
     border: 0;
     border-block-end: 1px solid var(--color-border);
     border-radius: 0;

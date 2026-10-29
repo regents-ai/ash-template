@@ -71,7 +71,6 @@ defmodule AshTemplateWeb.SiteButtonsLive do
           <P.button variant="secondary" phx-click="reduced" aria-pressed={to_string(@reduced?)}>
             Less motion
           </P.button>
-          <Regent.ThemeToggle.button id="sb-theme" data-theme-toggle />
           <span class="sb-tag">Candidate · not a site default</span>
         </div>
       </header>

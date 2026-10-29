@@ -54,13 +54,12 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           enabled={@mode == :configured}
           menu={false}
         />
-        <Shell.theme_toggle id="privy-reference-theme" />
       </header>
 
       <div class="privy-reference-content">
         <section class="privy-reference-intro">
           <p class="sc-eyebrow">Working example</p>
-          <h1>Sign in with Privy</h1>
+          <h1>Privy</h1>
           <p>
             Sign in once, connect the wallet you want to use, and watch the selection arrive without replacing this page.
           </p>
@@ -75,7 +74,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
               else: "Sign in with Privy"}
           </P.button>
           <p :if={@mode == :unconfigured} role="status">
-            Sign-in isn't available on this copy of the site.
+            Sign-in is off here.
           </p>
         </section>
 
@@ -112,30 +111,13 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
           class="rg-panel rg-panel--surface privy-reference-setup"
           aria-labelledby="privy-setup-heading"
         >
-          <h2 id="privy-setup-heading">Set up your own copy</h2>
-          <ol>
-            <li>
-              In your Privy dashboard, choose how people sign in, give every new account a wallet, and add your site's exact web address to the allowed list.
-            </li>
-            <li>
-              Give your copy of the site its Privy app ID and verification key, named
-              <code>PRIVY_APP_ID</code>
-              and <code>PRIVY_VERIFICATION_KEY</code>. Keep the Privy app secret off the page people load.
-            </li>
-            <li>
-              Create your database, then prepare sign-in with the command <code>mix ash_template.setup_local_auth</code>.
-            </li>
-            <li>
-              Start the site with the commands <code>mix assets.build</code>
-              and <code>mix phx.server</code>, then open this page.
-            </li>
-          </ol>
-          <details>
-            <summary>What each part does</summary>
+          <h2 id="privy-setup-heading">Setup</h2>
+          <p><.link navigate={~p"/docs"}>Sign-in setup</.link> for your own copy.</p>
+          <P.disclosure id="privy-parts" summary="Parts">
             <ul>
               <li :for={part <- @parts}>{part}</li>
             </ul>
-          </details>
+          </P.disclosure>
           <p>
             The look comes from Regent's shared design kit, and the sign-in check comes from a shared Regent library. The Privy connection shown here belongs to this site.
           </p>

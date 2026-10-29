@@ -8,7 +8,7 @@ const sites = ["regents.sh", "patchbay.help", "techtree.sh", "autolaunch.sh", "k
 test.use({permissions: ["clipboard-read", "clipboard-write"]})
 
 // Sean, 19 Oct (regents.sh) and 21 Oct (this homepage tracks regents.sh's): the
-// "Agents see" window copies every Regent site's tools at once, each site its own
+// Agent Tools window copies every Regent site's tools at once, each site its own
 // section, then how an agent signs in.
 test("the tools window copies every site's tools", async ({page}) => {
   // The page's live connection waits until the window is open, so it is opened
@@ -23,13 +23,13 @@ test("the tools window copies every site's tools", async ({page}) => {
   await page.goto("/")
 
   await page.locator("#home-agent-tools-button").click()
-  const dialog = page.getByRole("dialog", {name: /^Agents see \d+ WebMCP Tools$/})
+  const dialog = page.getByRole("dialog", {name: /^\d+ Agent Tools$/})
   await expect(dialog).toBeVisible()
   opened()
   await page.locator(".phx-connected").first().waitFor()
   await expect(dialog).toBeVisible()
   const copyAll = dialog.locator("#home-agent-tools-copy-all")
-  await expect(copyAll).toHaveAccessibleName("Copy all Regents WebMCP tools")
+  await expect(copyAll).toHaveAccessibleName("Copy every site's tools")
   await expect(copyAll).toBeEnabled()
   await expect(dialog.locator("[data-agent-tools-note]")).toHaveText("11 tools from 5 sites")
 
@@ -42,7 +42,7 @@ test("the tools window copies every site's tools", async ({page}) => {
   expect(headings).toEqual([...sites, "siwa-server"])
   for (const site of sites) expect(text).toContain(`\`browse_${site.replace(".", "_")}\``)
   expect(text).toContain("`post_patchbay_help`")
-  expect(text).toContain("### Get the client")
+  expect(text).toContain("### Install")
 
   // The copy of the window's own list stays beside it.
   await expect(dialog.getByRole("button", {name: "Copy as Markdown"})).toBeVisible()

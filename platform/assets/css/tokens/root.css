@@ -58,3 +58,15 @@
   --ash-accent: light-dark(color-mix(in oklab, var(--palette-powder-blue) 50%, var(--palette-charcoal)), var(--palette-powder-blue));
   --ash-accent-warm: light-dark(color-mix(in oklab, var(--palette-tangerine-tango) 68%, var(--palette-charcoal)), var(--palette-tangerine-tango));
 }
+
+/* A button's height: 2.5rem for a mouse, 44px for a finger (founder rule,
+   29 Oct 2026). Every template control takes it. */
+:root {
+  --ash-control: 2.5rem;
+}
+
+@media (hover: none), (pointer: coarse) {
+  :root {
+    --ash-control: 44px;
+  }
+}

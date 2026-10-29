@@ -15,6 +15,7 @@ defmodule AshTemplate.Rooms.Mute do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshTemplate.Accounts.HumanAccount
+  alias AshTemplate.Rooms.Author
   alias AshTemplate.Rooms.Mute.MuteAuthor
 
   postgres do
@@ -32,8 +33,10 @@ defmodule AshTemplate.Rooms.Mute do
   attributes do
     uuid_primary_key :id
 
-    # The muted author's name when they were last muted, for the muter's list.
-    attribute :muted_name, :string, allow_nil?: false, public?: true
+    # The muted author's display name when they were last muted, for the
+    # muter's list, or nil when they had none: the list then shows their wallet
+    # (`muted`).
+    attribute :muted_name, :string, public?: true
     create_timestamp :inserted_at, public?: true
   end
 
@@ -51,6 +54,13 @@ defmodule AshTemplate.Rooms.Mute do
     belongs_to :muted_agent, AshTemplate.Agents.Agent
   end
 
+  calculations do
+    # How the muter's list shows the muted author.
+    calculate :muted,
+              :map,
+              {Author, name: :muted_name, account: :muted_account_id, agent: :muted_agent}
+  end
+
   identities do
     # One mute per muter and author; the author column left empty counts as equal.
     identity :one_per_pair, [:muter_account_id, :muted_account_id, :muted_agent_id],
@@ -61,7 +71,7 @@ defmodule AshTemplate.Rooms.Mute do
     defaults [:read, :destroy]
 
     read :mine do
-      prepare build(sort: [inserted_at: :desc])
+      prepare build(sort: [inserted_at: :desc], load: [:muted])
     end
 
     # Muting an author already muted keeps the one mute and refreshes their name.

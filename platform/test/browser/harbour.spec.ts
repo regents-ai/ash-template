@@ -18,7 +18,7 @@ const islands = [
 
 const picture = (page: Page) => page.getByRole("img", {name: "The agent harbour"})
 const islandList = (page: Page) => page.getByRole("list", {name: "Islands"})
-const crewList = (page: Page) => page.getByRole("list", {name: "Where each agent is"})
+const crewList = (page: Page) => page.getByRole("list", {name: "Crew"})
 
 // A name pressed before the page is live loads the whole page again, and its card
 // opens only once that page is live. The walk presses once the page is live, as

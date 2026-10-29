@@ -88,7 +88,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .sc-between { justify-content: space-between; }
 .sc-segment { display: flex; flex-wrap: wrap; gap: 8px; }
-.sc-segment button { background: transparent; color: inherit; border: 1px solid var(--rg-page-rule); border-radius: 0; padding: 8px 12px; min-height: 44px; }
+.sc-segment button { background: transparent; color: inherit; border: 1px solid var(--rg-page-rule); border-radius: 0; padding: 0 12px; min-height: var(--ash-control); }
 .sc-segment button[aria-pressed="true"] { background: var(--color-accent); color: var(--color-fg-on-accent); border-color: var(--color-accent); }
 .sc-theme-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
 .sc-theme-options button { min-width: 0; padding: 8px; border: 1px solid var(--sc-card-fg, currentColor); border-radius: 0; color: var(--sc-card-fg, var(--color-fg)); background: var(--sc-card-bg, var(--color-bg)); text-align: left; }
@@ -110,7 +110,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-ratio-preview { max-width: 22rem; margin-bottom: 24px; }
 .sc-ratio-context { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
 .sc-ratio-context li { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; min-height: 48px; padding: 8px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); font: 11px var(--font-family-ui); }
-.sc-text-button { border: 0; background: none; color: inherit; padding: 8px 0; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; font-size: 12px; }
+.sc-text-button { border: 0; background: none; color: inherit; padding: 0; min-height: var(--ash-control); text-decoration: underline; text-underline-offset: 4px; font-size: 12px; }
 .sc-section { scroll-margin-top: 24px; margin-bottom: var(--rg-section-gap); }
 .sc-heading { margin-bottom: 24px; }
 .sc-heading h2 { font-size: 20px; }
@@ -128,11 +128,14 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 280px; overflow: auto; font: 12px/1.6 var(--font-family-mono); }
 .sc code { font: 12px/1.6 var(--font-family-mono); overflow-wrap: anywhere; }
 .sc-api-note { border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent); margin-top: 24px; padding-top: 8px; font-size: 11px; }
-.sc-api-note summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.sc-api-note summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: var(--ash-control); }
 .sc-api-note[open] summary span { transform: rotate(90deg); }
 .sc-api-note code { display: block; padding-top: 8px; }
 .sc-type-display { font: 400 42px/1.2 var(--font-family-title); margin: 16px 0; }
 .sc-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sc-reserve { display: grid; }
+.sc-reserve > * { grid-area: 1 / 1; min-width: 0; }
+.sc-reserve__sizer { visibility: hidden; }
 .sc-facts dd { margin: 0; text-align: right; }
 .sc-backgrounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .sc-backgrounds figure { margin: 0; padding: 16px; min-width: 0; border: 1px solid var(--rg-page-rule); }
@@ -197,15 +200,15 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .grammar-open__stage { position: relative; isolation: isolate; height: 8rem; overflow: hidden; border: 1px solid var(--color-border); background: var(--color-bg); }
 .grammar-panel { position: absolute; inset: 0 auto 0 0; z-index: var(--rg-layer-panel); display: grid; align-content: start; width: min(12rem, 70%); padding: 12px; border-inline-end: 1px solid color-mix(in srgb, var(--color-fg) 40%, var(--color-bg)); background: var(--color-bg); box-shadow: var(--rg-layer-panel-shadow); }
 .grammar-panel[hidden] { display: none; }
-.grammar-panel button { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; text-decoration: underline; text-underline-offset: 4px; }
+.grammar-panel button { justify-self: start; min-height: var(--ash-control); padding: 0; border: 0; background: none; color: inherit; text-decoration: underline; text-underline-offset: 4px; }
 .grammar-open__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .grammar-menu { position: relative; }
-.grammar-menu > summary { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--color-fg) 40%, var(--color-bg)); cursor: pointer; list-style: none; }
+.grammar-menu > summary { display: inline-flex; align-items: center; min-height: var(--ash-control); padding: 0 16px; border: 1px solid color-mix(in srgb, var(--color-fg) 40%, var(--color-bg)); cursor: pointer; list-style: none; }
 .grammar-menu > summary::-webkit-details-marker { display: none; }
 .grammar-menu__items { position: absolute; top: calc(100% + 4px); right: 0; z-index: var(--rg-layer-tip); display: grid; min-width: 9rem; border: 1px solid color-mix(in srgb, var(--color-fg) 55%, var(--color-bg)); background: var(--color-surface-elevated, var(--color-surface)); box-shadow: var(--rg-layer-tip-shadow); transform-origin: top right; }
 .grammar-menu__items a { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--color-fg); }
 .grammar-menu__items a + a { border-top: 1px solid var(--color-border); }
-.grammar-refused { min-height: 44px; padding: 0 16px; border: 1px solid var(--color-border); background: none; color: var(--color-fg-muted); }
+.grammar-refused { min-height: var(--ash-control); padding: 0 16px; border: 1px solid var(--color-border); background: none; color: var(--color-fg-muted); }
 .sc .grammar-refused { cursor: not-allowed; }
 .grammar-layers { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 32px; align-items: center; }
 .grammar-stack { display: block; width: 100%; height: auto; }

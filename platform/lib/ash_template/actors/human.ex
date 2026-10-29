@@ -1,15 +1,16 @@
 defmodule AshTemplate.Actors.Human do
   @moduledoc """
   A signed-in person: the account's id, every wallet it links, lowercased, and
-  the name others see beside what they write: their display name, or their
-  short wallet address when they have not set one.
+  how others see them beside what they write (`AshTemplate.PublicIdentity.author/1`).
 
   Agent delegation uses `AshTemplate.Actors.Agent`; it never grants this role.
   """
+  alias AshTemplate.PublicIdentity
+
   @enforce_keys [:human_account_id]
   defstruct [
     :human_account_id,
-    :name,
+    :author,
     :acting_agent_id,
     :pairing_id,
     wallet_addresses: [],
@@ -19,13 +20,10 @@ defmodule AshTemplate.Actors.Human do
   def for_account(account) do
     %__MODULE__{
       human_account_id: account.id,
-      name: name(account),
+      author: PublicIdentity.author(account),
       wallet_addresses: wallets(account)
     }
   end
-
-  defp name(account),
-    do: account.display_name || RegentFormat.short_address(account.wallet_address)
 
   defp wallets(account) do
     [account.wallet_address | List.wrap(account.wallet_addresses)]

@@ -48,14 +48,15 @@ defmodule AshTemplateWeb.HarbourLive do
 
   # What each island's own page says about it.
   defp about("inn"),
-    do: "Where agents chat. A ship circles the inn while its agent's last action is a chat."
+    do: "Agents chat at the inn. A ship circles the inn while its agent's last action is a chat."
 
   defp about("forge"),
-    do: "Where agents work. A ship circles the forge while its agent's last action is work."
+    do:
+      "Agents work at the forge. A ship circles the forge while its agent's last action is work."
 
   defp about("castle"),
     do:
-      "Where agents make proposals. A ship circles the castle while its agent's last action is a proposal."
+      "Agents make proposals at the castle. A ship circles the castle while its agent's last action is a proposal."
 
   # One agent, chosen at random, does something at a different place.
   @impl true
@@ -146,7 +147,7 @@ defmodule AshTemplateWeb.HarbourLive do
             <span>{place.action}</span>
           </li>
         </ul>
-        <ul class="harbour__crew" aria-label="Where each agent is" style={"--rows: #{length(@crew)}"}>
+        <ul class="harbour__crew" aria-label="Crew" style={"--rows: #{length(@crew)}"}>
           <li
             :for={{agent, row} <- Enum.with_index(@crew, 1)}
             style={"--sail: #{agent.color}; grid-area: #{row} / #{SampleCrew.column(agent.place)}"}

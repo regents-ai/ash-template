@@ -120,8 +120,8 @@
 }
 
 .motion-lab__picker button {
-  min-height: 2.25rem;
-  padding: 0.3rem 0.8rem;
+  min-height: var(--ash-control);
+  padding: 0 0.8rem;
   border: 0;
   border-inline-end: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -500,7 +500,8 @@
 }
 
 .motion-lab__tablist [role="tab"] {
-  padding: 0.8rem 1rem;
+  min-height: var(--ash-control);
+  padding: 0 1rem;
   border: 0;
   background: none;
   color: var(--color-fg-muted);
@@ -528,8 +529,20 @@
   pointer-events: none;
 }
 
+.motion-lab__views {
+  display: grid;
+}
+
+.motion-lab__views > .motion-lab__tabpanel {
+  grid-area: 1 / 1;
+}
+
 .motion-lab__tabpanel {
   padding: var(--space-2) 0;
+}
+
+.motion-lab__tabpanel[aria-hidden="true"] {
+  visibility: hidden;
 }
 
 .motion-lab__tabpanel ul {

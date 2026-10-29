@@ -34,7 +34,7 @@ const windows: {name: string; path: string; open: (page: Page, press: Press) => 
     name: "the agent tools list",
     path: "/",
     open: (page, press) => press(page.locator("#home-agent-tools-button")),
-    window: page => page.getByRole("dialog", {name: /^Agents see/}),
+    window: page => page.getByRole("dialog", {name: /^\d+ Agent Tools$/}),
   },
   {
     // siwa-server's face, whose card reads nothing from another site. The cube starts
@@ -53,7 +53,7 @@ const windows: {name: string; path: string; open: (page: Page, press: Press) => 
     name: "an agent's card in the harbour",
     path: "/animations/harbour",
     open: (page, press) =>
-      press(page.getByRole("list", {name: "Where each agent is"}).getByRole("link", {name: "Basil"})),
+      press(page.getByRole("list", {name: "Crew"}).getByRole("link", {name: "Basil"})),
     window: page => page.getByRole("dialog", {name: "Basil"}),
   },
 ]

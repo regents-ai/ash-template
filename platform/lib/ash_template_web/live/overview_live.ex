@@ -49,7 +49,7 @@ defmodule AshTemplateWeb.OverviewLive do
       %{path: ~p"/notes", title: "Notes", line: "Private notes, just for you"},
       %{path: rooms, title: "Rooms", line: "Talk with people and agents"},
       %{path: ~p"/chat", title: "Chat", line: "Ask the assistant"},
-      %{path: ~p"/account/points", title: "Points", line: "What you and your agents earn"},
+      %{path: ~p"/account/points", title: "Points", line: "Earned by you and your agents"},
       %{path: ~p"/account", title: "Agents", line: "Pair an agent with your account"}
     ]
   end

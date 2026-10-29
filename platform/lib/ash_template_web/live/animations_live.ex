@@ -316,7 +316,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           </div>
         </.section>
 
-        <.section number="2" id="slides" title="Panels that slide">
+        <.section number="2" id="slides" title="Panels">
           <:lede>Open and close each one a few times. Escape closes the one on top.</:lede>
           <dl class="motion-lab__pickers">
             <div :for={{part, label} <- @panels}>
@@ -327,12 +327,12 @@ defmodule AshTemplateWeb.AnimationsLive do
           <.slides variants={@variants} />
         </.section>
 
-        <.section number="3" id="changes" title="Things that change">
+        <.section number="3" id="changes" title="Changes">
           <:lede>
             Each of these waits for the page to decide, then moves from the old picture to the new one.
           </:lede>
           <div class="motion-lab__grid">
-            <.card title="Notes that pop up" part="toast" variants={@variants}>
+            <.card title="Toasts" part="toast" variants={@variants}>
               <div class="motion-lab__stage">
                 <P.button variant="secondary" phx-click="toast">Send a note</P.button>
                 <div class="motion-lab__toast-dock">
@@ -368,7 +368,7 @@ defmodule AshTemplateWeb.AnimationsLive do
               </div>
             </.card>
 
-            <.card title="A list that rearranges" part="list" variants={@variants}>
+            <.card title="Reorder" part="list" variants={@variants}>
               <div class="motion-lab__row motion-lab__row--tight">
                 <P.button
                   :for={{event, label} <- @controls}
@@ -398,7 +398,7 @@ defmodule AshTemplateWeb.AnimationsLive do
               </ul>
             </.card>
 
-            <.card title="A number that turns over" part="count" variants={@variants}>
+            <.card title="Counter" part="count" variants={@variants}>
               <p
                 id="lab-count"
                 class="motion-lab__count"
@@ -420,7 +420,7 @@ defmodule AshTemplateWeb.AnimationsLive do
               </div>
             </.card>
 
-            <.card title="Work marked done" part="stamp" variants={@variants}>
+            <.card title="Stamp" part="stamp" variants={@variants}>
               <div
                 id="lab-stamp"
                 class="motion-lab__task"
@@ -442,7 +442,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           </div>
         </.section>
 
-        <.section number="4" id="views" title="Moving between views">
+        <.section number="4" id="views" title="Views">
           <:lede>
             The underline travels to the tab you pick and the new view slides in the same way.
           </:lede>
@@ -475,15 +475,22 @@ defmodule AshTemplateWeb.AnimationsLive do
                 phx-mounted={JS.ignore_attributes(["style"])}
               ></span>
             </div>
-            <div
-              id={"lab-tabpanel-#{@tab}"}
-              class="motion-lab__tabpanel"
-              role="tabpanel"
-              aria-labelledby={"lab-tab-#{@tab}"}
-            >
-              <ul>
-                <li :for={line <- @views[@tab]}>{line}</li>
-              </ul>
+            <%!-- Every view sits in the same place, the others unseen, so the box keeps
+                  the longest one's height whichever is picked. --%>
+            <div class="motion-lab__views">
+              <div
+                :for={{key, _label} <- @tabs}
+                id={"lab-tabpanel-#{key}"}
+                class="motion-lab__tabpanel"
+                role={@tab == key && "tabpanel"}
+                aria-labelledby={@tab == key && "lab-tab-#{key}"}
+                aria-hidden={@tab != key && "true"}
+                inert={@tab != key}
+              >
+                <ul>
+                  <li :for={line <- @views[key]}>{line}</li>
+                </ul>
+              </div>
             </div>
           </div>
         </.section>
@@ -642,11 +649,11 @@ defmodule AshTemplateWeb.AnimationsLive do
 
       <div class="motion-lab__shade" data-shade hidden></div>
 
-      <.dialog name="drawer" title="Project details">
+      <.dialog name="drawer" title="Project">
         <p :for={line <- @drawer_lines} data-item>{line}</p>
       </.dialog>
 
-      <.dialog name="sheet" title="What would you like to do?">
+      <.dialog name="sheet" title="Actions">
         <ul>
           <li :for={line <- @sheet_lines} data-item>{line}</li>
         </ul>

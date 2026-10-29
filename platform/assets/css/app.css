@@ -106,8 +106,9 @@ h6 {
   }
 
   button:not(.rg-button) {
-    min-height: 2.75rem;
-    padding: 0.5rem 0.75rem;
+    box-sizing: border-box;
+    min-height: var(--ash-control);
+    padding: 0 0.75rem;
     cursor: pointer;
   }
 }
@@ -159,9 +160,9 @@ input:focus-visible,
 .regent-footer__social { display: flex; align-items: center; gap: var(--space-2); }
 .regent-footer__social > a, .regent-footer__social > a svg { display: inline-flex; width: 1.5rem; height: 1.5rem; }
 .regent-footer__links { display: flex; flex-wrap: wrap; column-gap: var(--space-3); }
-.regent-footer__links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: inherit; }
+.regent-footer__links a { display: inline-flex; align-items: center; min-height: var(--ash-control); color: inherit; }
 .regent-footer__links .regent-footer__guide {
-  display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0; border: 0;
+  display: inline-flex; align-items: center; min-height: var(--ash-control); padding: 0; border: 0;
   background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer;
 }
 /* The two legal documents stay together, apart from the rest by a hairline where
@@ -172,7 +173,7 @@ input:focus-visible,
 }
 @media (max-width: 47.99rem) { .regent-footer__legal { flex-basis: 100%; } }
 .regent-footer__guide-body p { margin: 0; color: var(--rg-p-muted); }
-.regent-footer__guide-body a { min-height: 2.75rem; }
+.regent-footer__guide-body a { min-height: var(--ash-control); }
 .regent-footer__guide-body:popover-open { display: grid; }
 
 /* A public page fills the screen with its footer, so the footer sits at the foot of

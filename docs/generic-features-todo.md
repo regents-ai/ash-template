@@ -163,6 +163,8 @@ counts it runs on every request.
 - 2026-10-03: rooms are a fixed list the site sets; only an author removes their own
   message; any signed-in person can mute any other, hiding that person's messages in
   every room for them; a name is the display name, or the short wallet address.
+  (29 Oct: a person with no display name now shows by their wallet through the
+  address piece, labelled by their ENS name when they have one.)
 - 2026-10-04 (defaults chosen while building, for Sean to confirm): labels are idea,
   task, question, reference and other; the site asks Jev at most 500 questions a day;
   the model is `~typesafe/jev-latest`; the tools are `notes_list`, `notes_get`,

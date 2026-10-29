@@ -271,8 +271,8 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--ash-control);
+  height: var(--ash-control);
   background: transparent;
   color: var(--color-fg);
 }

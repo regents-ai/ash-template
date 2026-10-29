@@ -20,6 +20,23 @@ defmodule AshTemplate.PublicIdentity do
       Enum.find_value(@name_fields, &present(Map.get(account, &1))) ||
         short_wallet(Map.get(account, :wallet_address))
 
+  @doc """
+  How a page names an author, as `%{name: name, ens_name: ens_name, wallet: wallet}`:
+  `name` is their display name when the `:name_first` setting shows it, else nil;
+  `ens_name` is their ENS name when it is shown instead; `wallet` is their full
+  wallet. A page draws a nil `name` with `Regent.Primitives.address`, labelled by
+  `ens_name`, so the full wallet is always a click away.
+  """
+  def author(account) do
+    wallet = account |> Map.get(:wallet_address) |> normalize_wallet()
+
+    case Enum.find(@name_fields, &present(Map.get(account, &1))) do
+      :display_name -> %{name: present(account.display_name), ens_name: nil, wallet: wallet}
+      :ens_name -> %{name: nil, ens_name: present(account.ens_name), wallet: wallet}
+      nil -> %{name: nil, ens_name: nil, wallet: wallet}
+    end
+  end
+
   def picture(account), do: present(Map.get(account, :ens_avatar_url))
 
   def ens_name(account), do: present(Map.get(account, :ens_name))

@@ -16,7 +16,7 @@ Pair as `hermes`. Hermes's skill is [the agent guide with the notes below]({{ori
 
 ## Questions
 
-### Why does Hermes keep one key?
+### One key per agent
 
 The key is who Hermes is on every Regent site. A second key would be a different agent, and you would have to pair it again.
 

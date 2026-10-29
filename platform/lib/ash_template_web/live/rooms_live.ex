@@ -331,24 +331,28 @@ defmodule AshTemplateWeb.RoomsLive do
                 phx-mounted={JS.ignore_attributes(["data-continued"])}
               >
                 <Shell.account_picture
-                  :if={message.author_squares}
+                  :if={message.author.squares}
                   id={"#{dom_id}-picture"}
                   class="rooms-avatar"
-                  squares={message.author_squares}
-                  picture={message.author_picture}
+                  squares={message.author.squares}
+                  picture={message.author.picture}
                   size={36}
                 />
                 <span
-                  :if={!message.author_squares}
+                  :if={!message.author.squares}
                   class="rooms-avatar"
                   data-tone={:erlang.phash2(author(message), 3)}
                   aria-hidden="true"
                 >
-                  {initials(message.author_name)}
+                  {RegentFormat.monogram(message.author.name, "?")}
                 </span>
                 <div class="rooms-message__main">
                   <p class="rooms-message__meta">
-                    <bdi class="rooms-message__author">{message.author_name}</bdi>
+                    <Shell.author
+                      id={"#{dom_id}-author"}
+                      class="rooms-message__author"
+                      author={message.author}
+                    />
                     <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
                     <span :if={message.backed_agents} class="rooms-message__human">
                       <span class="rooms-message__agent">Human-backed</span>
@@ -450,7 +454,9 @@ defmodule AshTemplateWeb.RoomsLive do
         <section class="account-panel" aria-labelledby="room-people-title">
           <h2 id="room-people-title">Here now</h2>
           <ul :if={here(@people, @muted) != []} class="rooms-people">
-            <li :for={person <- here(@people, @muted)}><bdi>{person.name}</bdi></li>
+            <li :for={person <- here(@people, @muted)}>
+              <Shell.author id={"room-here-#{person.id}"} author={person.author} />
+            </li>
           </ul>
           <p :if={here(@people, @muted) == []} class="rg-muted">
             Nobody signed in has this room open.
@@ -458,13 +464,13 @@ defmodule AshTemplateWeb.RoomsLive do
         </section>
 
         <section class="account-panel" aria-labelledby="room-mutes-title">
-          <h2 id="room-mutes-title">People you’ve muted</h2>
+          <h2 id="room-mutes-title">Muted</h2>
           <p class="rg-muted">
             You don’t see their messages in any room. They aren’t told.
           </p>
           <ul :if={@mutes != []} class="rooms-mutes">
             <li :for={mute <- @mutes}>
-              <bdi>{mute.muted_name}</bdi>
+              <Shell.author id={"room-mute-#{mute.id}"} author={mute.muted} />
               <Primitives.button
                 type="button"
                 variant="quiet"
@@ -501,7 +507,7 @@ defmodule AshTemplateWeb.RoomsLive do
         </section>
 
         <section class="account-panel" aria-labelledby="room-start-title">
-          <h2 id="room-start-title">Start a room</h2>
+          <h2 id="room-start-title">New room</h2>
           <.form
             for={@room_form}
             id="room-start-form"
@@ -688,7 +694,7 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("message_author", value: %{id: @message.id}, target: @myself)}
         >
-          Message <bdi>{@message.author_name}</bdi>
+          Message
         </button>
         <button
           :if={!@own?}
@@ -697,9 +703,9 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertarget={@menu}
           popovertargetaction="hide"
           phx-click={JS.push("mute", value: %{id: @message.id}, target: @myself)}
-          data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
+          data-confirm="Mute this author? You won’t see their messages in any room until you unmute them."
         >
-          Mute <bdi>{@message.author_name}</bdi>
+          Mute
         </button>
         <button :if={!@own?} type="button" class="rooms-menu__item" popovertarget={@reasons}>
           Report
@@ -711,7 +717,7 @@ defmodule AshTemplateWeb.RoomsLive do
         class="rooms-menu__items rooms-menu__reasons"
         popover
         role="group"
-        aria-label="Why are you reporting this message?"
+        aria-label="Reason"
         style={"position-anchor: #{@anchor}"}
       >
         <p class="rooms-menu__label">Report as</p>
@@ -902,11 +908,6 @@ defmodule AshTemplateWeb.RoomsLive do
 
   defp notice(socket, {:error, _failure}, _gone, retry), do: assign(socket, :notice, retry)
 
-  # A short wallet address starts with "0x" for everyone, so its picture shows
-  # the two characters after it.
-  defp initials("0x" <> rest), do: rest |> String.slice(0, 2) |> String.upcase()
-  defp initials(name), do: RegentFormat.monogram(name, "?")
-
   # The opening lines of a long message, cut at a word and ending in "…"; nil
   # when the whole message is short enough to show.
   defp preview(body) do
@@ -949,11 +950,11 @@ defmodule AshTemplateWeb.RoomsLive do
     end
   end
 
-  defp via_agent(%{via_agent_name: nil, author_name: person}),
-    do: "Written by an agent #{person} paired with their account."
+  defp via_agent(%{via_agent_name: nil}),
+    do: "Written by an agent this person paired with their account."
 
-  defp via_agent(%{via_agent_name: agent, author_name: person}),
-    do: "Written by #{agent}, an agent #{person} paired with their account."
+  defp via_agent(%{via_agent_name: agent}),
+    do: "Written by #{agent}, an agent this person paired with their account."
 
   defp muted_author(%Mute{muted_agent_id: nil, muted_account_id: id}), do: "person-#{id}"
   defp muted_author(%Mute{muted_agent_id: id}), do: "agent-#{id}"

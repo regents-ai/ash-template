@@ -29,8 +29,9 @@ defmodule AshTemplate.Rooms.Message do
 
   alias AshTemplate.Limits.LimitWrites
 
+  alias AshTemplate.Rooms.Author
+
   alias AshTemplate.Rooms.Message.{
-    AuthorPicture,
     ByAuthorKind,
     LeaveOutMuted,
     PostedByActor,
@@ -41,7 +42,7 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.{Like, Mute, Room}
 
   # What every room read and write loads for `public/1`.
-  @shown [:agent, :via_agent, :author_picture, :like_count]
+  @shown [:agent, :via_agent, :author, :like_count]
 
   postgres do
     table "room_messages"
@@ -65,10 +66,11 @@ defmodule AshTemplate.Rooms.Message do
     attribute :room, :string, allow_nil?: false, public?: true
     attribute :body, :string, allow_nil?: false, public?: true, constraints: [max_length: 2000]
 
-    # The author's display name, or their short wallet address, when they posted.
-    # Other people's accounts are private, so the name is kept with the message.
-    # An agent's is its profile name, or "Unnamed agent"; never its wallet.
-    attribute :author_name, :string, allow_nil?: false, public?: true
+    # The author's display name when they posted, or nil when they had none: a
+    # page then shows their wallet (`Author`). Other people's accounts are
+    # private, so the name is kept with the message. An agent's is its profile
+    # name, or "Unnamed agent"; never its wallet.
+    attribute :author_name, :string, public?: true
     attribute :edited_at, :utc_datetime_usec, public?: true
     create_timestamp :inserted_at, public?: true
   end
@@ -112,7 +114,10 @@ defmodule AshTemplate.Rooms.Message do
   end
 
   calculations do
-    calculate :author_picture, :map, AuthorPicture
+    calculate :author,
+              :map,
+              {Author, name: :author_name, account: :human_account_id, agent: :agent}
+
     calculate :liked_by_me, :boolean, expr(exists(likes, liker_id == ^actor(:human_account_id)))
   end
 
@@ -271,16 +276,15 @@ defmodule AshTemplate.Rooms.Message do
   page shows and what its topic carries. `backed_agents` is how many agents the
   World ID person behind the writing agent backs, `nil` when nobody does.
   `like_count` is how many people like it.
-  `author_squares` and `author_picture` are the picture the author's account
-  shows (`AuthorPicture`). What `@shown` names must be loaded, as every room
-  read and write loads it.
+  `author` is how the page shows its author: their name, or their wallet and ENS
+  name, and their picture (`AshTemplate.Rooms.Author`). What `@shown` names must
+  be loaded, as every room read and write loads it.
   """
   def public(message) do
     %{
       id: message.id,
       room: message.room,
       body: message.body,
-      author_name: message.author_name,
       human_account_id: message.human_account_id,
       agent_id: message.agent_id,
       via_agent_id: message.via_agent_id,
@@ -289,8 +293,7 @@ defmodule AshTemplate.Rooms.Message do
       like_count: message.like_count,
       backed_agents: message.agent && message.agent.world_id_agent_count,
       via_agent_name: message.via_agent && message.via_agent.name,
-      author_squares: message.author_picture.squares,
-      author_picture: message.author_picture.picture
+      author: message.author
     }
   end
 end

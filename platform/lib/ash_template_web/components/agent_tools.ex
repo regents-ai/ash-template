@@ -2,7 +2,8 @@ defmodule AshTemplateWeb.Components.AgentTools do
   @moduledoc """
   The WebMCP tools every page offers an agent, read when this module compiles
   from `priv/tool_manifest.json`, the file the pages register them from
-  (`assets/js/public_tools.ts` offers the entries scoped to the site). The bottom
+  (`assets/js/public_tools.ts` offers the entries scoped to the site). The page
+  calls them Agent Tools; only the open list's tip names WebMCP. The bottom
   bar's button says how many there are and opens a dialog listing each tool with
   its description, which copies the whole list as Markdown, or every Regent
   site's tools at once.
@@ -20,8 +21,7 @@ defmodule AshTemplateWeb.Components.AgentTools do
             %{name: tool["name"], title: tool["title"], description: tool["description"]}
           end)
 
-  @count "#{length(@tools)} WebMCP Tools"
-  @label "Agents see #{@count}"
+  @label "#{length(@tools)} Agent Tools"
 
   @markdown """
   # Ash Template: #{@label}
@@ -35,8 +35,8 @@ defmodule AshTemplateWeb.Components.AgentTools do
   slot :inner_block, doc: "Its own words, in place of the count."
 
   @doc """
-  The button naming how many tools agents see, which opens their list. A phone
-  shows only the count. Given its own words, it shows those instead.
+  The button naming how many tools agents see, which opens their list. Given its
+  own words, it shows those instead.
   """
   def button(%{inner_block: [_ | _]} = assigns) do
     ~H"""
@@ -54,7 +54,7 @@ defmodule AshTemplateWeb.Components.AgentTools do
   end
 
   def button(assigns) do
-    assigns = assign(assigns, label: @label, count: @count)
+    assigns = assign(assigns, label: @label)
 
     ~H"""
     <button
@@ -63,10 +63,9 @@ defmodule AshTemplateWeb.Components.AgentTools do
       type="button"
       aria-haspopup="dialog"
       aria-controls={@dialog}
-      aria-label={@label}
       data-agent-tools-open
     >
-      <span class="agent-tools-button__lead">Agents see</span> {@count}
+      {@label}
     </button>
     """
   end
@@ -101,7 +100,12 @@ defmodule AshTemplateWeb.Components.AgentTools do
       phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["open", "data-settled"])}
     >
       <header class="code-card__head">
-        <h2 id={"#{@id}-title"}>{@label}</h2>
+        <div class="code-card__title">
+          <h2 id={"#{@id}-title"}>{@label}</h2>
+          <Regent.Primitives.tip id={"#{@id}-tip"} label="About Agent Tools">
+            Agents call these through WebMCP, the browser's list of tools a page offers.
+          </Regent.Primitives.tip>
+        </div>
         <div class="code-card__copy">
           <Regent.Primitives.copy_button id={"#{@id}-copy"} text={@markdown}>
             Copy as Markdown
@@ -113,7 +117,7 @@ defmodule AshTemplateWeb.Components.AgentTools do
               data-agent-tools-copy-all
               {%{"disabled" => true}}
             >
-              Copy all Regents WebMCP tools
+              Copy every site's tools
             </Regent.Primitives.copy_button>
             <p class="agent-tools__note" data-agent-tools-note>Reading every site's tools…</p>
             <pre id={"#{@id}-all"} hidden data-agent-tools-all></pre>

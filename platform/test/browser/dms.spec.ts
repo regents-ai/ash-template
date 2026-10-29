@@ -14,7 +14,7 @@ test("Message on a room message opens the conversation, and a sent message shows
 
   const said = page.locator(".rooms-message", {hasText: "Hello from the walk."}).first()
   await press(said.getByRole("button", {name: "Options for this message"}))
-  await press(said.getByRole("button", {name: /^Message /}))
+  await press(said.getByRole("button", {name: "Message", exact: true}))
   await expect(page).toHaveURL(/\/dms\/[0-9a-f-]{36}$/)
   await expect(page.locator("#dms-conversation")).toBeVisible()
 

@@ -7,7 +7,6 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
   """
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
 
@@ -45,37 +44,35 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
       <header class="sc-header payments-page-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
-        <Shell.theme_toggle id="payments-page-theme" />
       </header>
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Example</p>
-        <h1>Pay with USDC</h1>
+        <h1>Payments</h1>
         <p>
-          This is how paying looks on every Regent site. You pay from your own wallet, straight to
-          the person or project you're paying. Regents does not keep a balance for you.
-        </p>
-        <p>
-          Paying is switched off on this copy of the site and the figures are samples, so nothing
-          here moves money.
+          Sample figures. Paying is off here.
+          <P.tip id="payments-intro-tip" label="About payments">
+            Paying looks like this on every Regent site. You pay from your own wallet, straight to
+            the person or project you're paying; Regents keeps no balance for you.
+          </P.tip>
         </p>
       </section>
 
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-balance-heading">
-          <h2 id="payments-balance-heading">Your USDC Balance</h2>
+          <h2 id="payments-balance-heading">USDC balance</h2>
           <p class="payments-figure">
             24.50 USDC
             <P.status>Sample</P.status>
-          </p>
-          <p>
-            Your USDC Balance is the USDC in the wallet you signed in with, on Base. Add to it by
-            sending USDC to your wallet's address or by buying it with a card.
+            <P.tip id="payments-balance-tip" label="About USDC balance">
+              The USDC in the wallet you signed in with, on Base. Send USDC to your wallet's address,
+              or buy it with a card, to add to it.
+            </P.tip>
           </p>
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-offer-heading">
-          <h2 id="payments-offer-heading">What you're paying for</h2>
+          <h2 id="payments-offer-heading">Order</h2>
           <dl class="payments-terms">
             <div>
               <dt>For</dt>
@@ -90,24 +87,26 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
               <dd><P.address id="payments-pay-to" address={@pay_to} /></dd>
             </div>
           </dl>
-          <p>Before you pay, you see exactly this:</p>
-          <blockquote>
-            Send 1.00 USDC to <P.address id="payments-quote-pay-to" address={@pay_to} />
-            as a tip for Pixel Garden.
-          </blockquote>
           <div class="payments-press">
             <P.button type="button" disabled aria-describedby="payments-off">Pay 1.00 USDC</P.button>
-            <p id="payments-off" class="rg-muted">Paying is switched off on this copy of the site.</p>
+            <p id="payments-off" class="rg-muted">Paying is off here.</p>
           </div>
-          <p>
-            Pressing Pay asks your wallet to sign once, with no network fee. The amount and the
-            wallet paid can't change after you see them, and pressing again signs the same payment,
-            so it's never taken twice.
-          </p>
+          <P.disclosure id="payments-confirm" summary="Confirmation">
+            <p>Before you pay, you see exactly this:</p>
+            <blockquote>
+              Send 1.00 USDC to <P.address id="payments-quote-pay-to" address={@pay_to} />
+              as a tip for Pixel Garden.
+            </blockquote>
+            <p>
+              Pressing Pay asks your wallet to sign once, with no network fee. The amount and the
+              wallet paid can't change after you see them, and pressing again signs the same
+              payment, so it's never taken twice.
+            </p>
+          </P.disclosure>
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="payments-answers-heading">
-          <h2 id="payments-answers-heading">What you might see next</h2>
+          <h2 id="payments-answers-heading">Statuses</h2>
           <ul class="payments-answers">
             <li :for={{{tone, word, parts}, index} <- Enum.with_index(@answers)}>
               <P.status tone={tone}>{word}</P.status>

@@ -195,7 +195,7 @@ defmodule AshTemplateWeb.Capabilities do
   @spec markdown_table() :: String.t()
   def markdown_table do
     """
-    | Operation | What it does | Who may | Browser tool | Command | For an agent |
+    | Operation | Action | Allowed | Browser tool | Command | For an agent |
     | --- | --- | --- | --- | --- | --- |
     #{Enum.map_join(operations(), "\n", &operation_row/1)}\
     """
@@ -212,7 +212,7 @@ defmodule AshTemplateWeb.Capabilities do
     rows = Map.new(@operations, &{&1.operation, &1})
 
     """
-    | Tool | Operation | Who may |
+    | Tool | Operation | Allowed |
     | --- | --- | --- |
     #{Enum.map_join(@manifest["tools"], "\n", &tool_row(&1, rows[&1["operation_id"]]))}\
     """

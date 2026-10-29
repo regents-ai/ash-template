@@ -91,7 +91,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  min-height: 2.75rem;
+  min-height: var(--ash-control);
   padding: 0;
   border: 0;
   background: none;
@@ -138,8 +138,8 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--ash-control);
+  height: var(--ash-control);
   margin: -0.75rem -0.75rem -0.75rem 0;
   padding: 0;
   border: 0;

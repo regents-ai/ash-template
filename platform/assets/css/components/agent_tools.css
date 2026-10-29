@@ -1,10 +1,10 @@
-/* How many tools agents see (`AgentTools.button`), which opens their list. A
-   phone shows only the count. */
+/* How many tools agents see (`AgentTools.button`), which opens their list. */
 .agent-tools-button {
   display: inline-flex;
   align-items: center;
   gap: 0.3em;
-  min-height: 2.75rem;
+  box-sizing: border-box;
+  min-height: var(--ash-control);
   padding: 0 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 0;
@@ -25,9 +25,25 @@
   .agent-tools-button {
     padding-inline: 0.5rem;
   }
+}
 
-  .agent-tools-button__lead {
-    display: none;
+/* The list's title with its tip, where the card's title alone would sit. */
+.code-card__title {
+  order: 1;
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.code-card__head .code-card__title h2 {
+  flex: 0 1 auto;
+}
+
+@media (min-width: 48rem) {
+  .code-card__title {
+    order: 0;
+    flex: 1;
   }
 }
 
@@ -59,7 +75,7 @@
 .code-card__copy .rg-button {
   --rg-local-fill: rgb(7 8 12 / 0.72);
   --rg-local-ink: var(--code-card-ink);
-  min-height: 2.75rem;
+  min-height: var(--ash-control);
   padding: 0 0.75rem;
   font-size: 0.8125rem;
 }

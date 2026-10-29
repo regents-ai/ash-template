@@ -20,8 +20,8 @@ defmodule AshTemplateWeb.TooManyPagesHTML do
       <main class="rl-hero rg-inset">
         <div class="rl-hero-copy">
           <p class="rl-overline">Ash Template</p>
-          <h1 class="rg-hero-title">Too many pages open from this connection</h1>
-          <p>Close one and try again.</p>
+          <h1 class="rg-hero-title">Limit reached</h1>
+          <p>This connection has too many pages open. Close one and try again.</p>
           <div class="rl-hero-actions">
             <a href={~p"/"} class="rg-button"><span class="rg-button__label">Go to the homepage</span></a>
           </div>

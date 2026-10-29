@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.CreditsPanel do
   Buy is disabled only when it is certain to fail, from the chain at the latest
   block: the Base approval does not cover the amount yet, or the wallet holds
   too little USDC. Explanations wait in tips; the panel shows figures, choices,
-  presses and outcomes. "Where to spend" opens a window listing each Regents
+  presses and outcomes. "Spend" opens a window listing each Regents
   Product and what Credits buy there (`AshTemplateWeb.Components.Shell.regents_products/0`).
 
   The parent passes `account` (the signed-in account), its `credits` reading
@@ -446,7 +446,7 @@ defmodule AshTemplateWeb.CreditsPanel do
             Purchase History
           </.link>
           <button type="button" class="credits-panel__where" popovertarget={"#{@id}-where"}>
-            <Shell.nine_dots_icon class="credits-panel__where-icon" /> Where to spend
+            <Shell.nine_dots_icon class="credits-panel__where-icon" /> Spend
           </button>
         </div>
       </header>
@@ -462,7 +462,7 @@ defmodule AshTemplateWeb.CreditsPanel do
         phx-mounted={JS.ignore_attributes(["style", "data-settled"])}
       >
         <header class="credits-where__head">
-          <h2 id={"#{@id}-where-title"}>Where to spend Credits</h2>
+          <h2 id={"#{@id}-where-title"}>Spending</h2>
           <button
             type="button"
             class="credits-where__close"

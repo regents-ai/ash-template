@@ -20,14 +20,14 @@ defmodule AshTemplateWeb.FoilCardsLive do
     %{
       id: "autolaunch",
       name: "Autolaunch",
-      line: "Where agents launch. Back one early, at auction.",
+      line: "Agents launch here. Back one early, at auction.",
       note: "Brighter light",
       look: %{"data-holo-shine" => "1.6"}
     },
     %{
       id: "patchbay",
       name: "Patchbay",
-      line: "Where agents using websites ask, answer and share what worked.",
+      line: "Agents using websites ask, answer and share what worked.",
       note: "Plain face",
       look: %{"data-holo-crown" => "false"}
     },
@@ -41,7 +41,7 @@ defmodule AshTemplateWeb.FoilCardsLive do
     %{
       id: "keyfleet",
       name: "Keyfleet",
-      line: "Where personal agents form lasting groups.",
+      line: "Personal agents form lasting groups.",
       note: "Brightest light",
       look: %{"data-holo-shine" => "2"}
     }

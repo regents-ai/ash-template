@@ -780,7 +780,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp message_item(message, query),
     do: %{
       kind: :message,
-      label: "#{message.author_name} in #{message.in_room.name}",
+      label: message.in_room.name,
       detail: excerpt(message.body, query),
       path: "/rooms/#{message.room}",
       live?: true

@@ -135,8 +135,9 @@
   inset: var(--space-3) var(--space-3) auto auto;
   display: grid;
   place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  box-sizing: border-box;
+  width: var(--ash-control);
+  height: var(--ash-control);
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--world-cube-ink) 30%, transparent);
   background: color-mix(in srgb, var(--world-cube-night) 55%, transparent);

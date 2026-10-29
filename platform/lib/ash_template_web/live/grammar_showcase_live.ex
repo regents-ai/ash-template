@@ -10,7 +10,6 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
   """
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.Components.Shell
   alias Phoenix.LiveView.JS
   alias Regent.Primitives, as: P
   alias Regent.Structure, as: S
@@ -161,7 +160,6 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
       <header class="sc-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
-        <Shell.theme_toggle id="grammar-page-theme" />
       </header>
 
       <div
@@ -230,7 +228,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             <li>
               <span class="grammar-name">Disclosure</span>
               <span class="grammar-sample">
-                <P.disclosure id="grammar-noun-disclosure" summary="What it costs">
+                <P.disclosure id="grammar-noun-disclosure" summary="Cost">
                   Nothing until you pay.
                 </P.disclosure>
               </span>
@@ -266,7 +264,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             <li>
               <span class="grammar-name">Arrive</span>
               <p>A headline rises in, word by word.</p>
-              <h3 id="grammar-rise" class="grammar-rise">Agents that work together</h3>
+              <h3 id="grammar-rise" class="grammar-rise">Teams</h3>
               <P.button variant="quiet" arrow={false} data-replay="rise" aria-controls="grammar-rise">Again</P.button>
             </li>
             <li>
@@ -336,7 +334,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             <li>
               <span class="grammar-name">Less motion</span>
               <p>
-                When your device asks for less motion, nothing moves: a headline and its cards fade in, and windows, panels and menus are simply there.
+                With less motion asked for, nothing moves: a headline and its cards fade in, and windows, panels and menus are simply there.
               </p>
             </li>
           </ul>
@@ -349,7 +347,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             data-close-event="window_closed"
             aria-labelledby="grammar-window-title"
           >
-            <h2 id="grammar-window-title">A window</h2>
+            <h2 id="grammar-window-title">Window</h2>
             <p>One at a time, in the middle, over a shade.</p>
             <form method="dialog"><P.button type="submit" arrow={false}>Done</P.button></form>
           </S.dialog>

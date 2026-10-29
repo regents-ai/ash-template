@@ -27,7 +27,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 
 | What | Check |
 | --- | --- |
-| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen, shows every ENS name, full address and short address with its copy icon, and lets a keyboard reach every box that scrolls (a wide code block or table takes focus), signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
+| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen, shows every ENS name, full address and short address with its copy icon, keeps every button at 2.5rem or less for a mouse and 44px or more for a finger, draws one theme switch at most, opens no title, label or name with who, what, where, why or when (the legal pages aside), and lets a keyboard reach every box that scrolls (a wide code block or table takes focus), signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
 | Every machine-readable document answers with its type | same, `documents` |
 | No page or document the site serves is left out of the walk, and the walk names none the site has dropped | `platform/test/ash_template_web/feature_map_test.exs` |
 | Every agent in the pairing box has a guide page and a skill the walk opens | same |
@@ -61,7 +61,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | The account menu hangs under its button inside the screen at desktop and phone width (320 too), closes on Escape, and on a phone covers the bottom bar; Manage Account and Pair New Agent in it lead to the Account page and close it; Sign out closes it, so a note that sign out couldn't finish shows under the account button with nothing over it | `platform/test/browser/account_menu.spec.ts` |
 | Narrower than 22.5rem (a 320px phone) the Credits balance leaves the header for a row in the account menu, in the header's words, and the row opens Buy Credits and closes the menu; wider, the balance stays in the header and the row is hidden; the sample account's 10.00 Credits header fits a 320px screen | `platform/test/browser/account_menu.spec.ts` |
-| The Credits panel's Where to spend opens a window naming each Regents Product, what Credits buy there and its link; it sits on the screen, and Close or Escape closes it, at both widths; the panel's Paying from wallet shows its copy icon | `platform/test/browser/credits.spec.ts` |
+| The Credits panel's Spend opens a window naming each Regents Product, what Credits buy there and its link; it sits on the screen, and Close or Escape closes it, at both widths; the panel's Paying from wallet shows its copy icon | `platform/test/browser/credits.spec.ts` |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon | design-system `regent_ui/test/regent/primitives_test.exs` |
 | Each agent on the Account page names its own wallet beside its name: the short form opens the full address on a press, its icon copies it, and the row fits on one line, at both widths; the contact line says "Last check-in" | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs; design-system `regent_ui/test/regent/account_test.exs` (a row without a wallet says "Address unavailable") |
 | An agent's window opens from the Account page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall once the window has risen into place | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
@@ -80,6 +80,8 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Agent harbour: each move sends one agent to another island, lists it first on its card and keeps four actions at most; an agent's address opens its card and an unknown agent opens none | `platform/test/ash_template_web/harbour_live_test.exs` |
 | Message on someone's room message opens the conversation with them, and a message sent there shows at once as the person's own and empties the box, at both widths | `platform/test/browser/dms.spec.ts` |
 | A person starts a poll, votes once and sees their vote, with no counts while it is open; ending it shows each choice's votes, at both widths | `platform/test/browser/polls.spec.ts` |
+| The motion lab's library and the showcase's slow read keep one height whichever tab or answer shows, at both widths | `platform/test/browser/heights.spec.ts` |
+| Someone with no display or ENS name shows in a room and on their poll by their wallet, which opens the full address and copies it; neither page shows an address without its copy icon, at both widths | `platform/test/browser/authors.spec.ts`, on the person `platform/test/browser/support/sign_in.exs` adds |
 | Like in a room message's menu shows a pressed heart with a count of 1 under it and turns the menu item into Remove like; pressing the heart takes the like back and the heart goes, at both widths | `platform/test/browser/likes.spec.ts` |
 | Report in someone's room message menu opens the four reasons in its place; choosing one closes both and thanks the reader, and the reader's own message offers no Report, at both widths | `platform/test/browser/reports.spec.ts` |
 | A sent Buy is followed by one job however often the page asks; however often it runs the purchase is credited once and the panel hears how it ended | `platform/test/ash_template/credits/check_purchase_test.exs` |
@@ -134,8 +136,6 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 - A poll closing by itself while its page is open, and another person's vote arriving there:
   the walk ends its poll with End poll and votes alone.
 - Someone else's like arriving on an open room page: the walk likes alone.
-- Someone with no name shows by a short wallet address in rooms and messages; the walk's
-  people all have names.
 - Connecting X on Connections, copying a wallet, searching and the theme switch: not
   walked. The search window opens, and nothing is typed in it.
 - An agent's signed pairing request: the walk's agent is paired with a code issued

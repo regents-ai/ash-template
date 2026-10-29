@@ -11,8 +11,8 @@ defmodule AshTemplate.Chat.ActorPersister do
 
   @agent_fields ~w(agent_id wallet_address name human_account_id privy_user_id pairing_id)a
 
-  def store(%Human{human_account_id: id, name: name}),
-    do: %{"type" => "human", "human_account_id" => id, "name" => name}
+  def store(%Human{human_account_id: id}),
+    do: %{"type" => "human", "human_account_id" => id}
 
   # The job's reads check the pairing again (`RegentAgents.Checks.Paired`), so an
   # agent unpaired before its reply is written reads nothing.
@@ -23,8 +23,8 @@ defmodule AshTemplate.Chat.ActorPersister do
       |> Map.new(fn {k, v} -> {to_string(k), v} end)
       |> Map.put("type", "agent")
 
-  def lookup(%{"type" => "human", "human_account_id" => id, "name" => name}),
-    do: {:ok, %Human{human_account_id: id, name: name}}
+  def lookup(%{"type" => "human", "human_account_id" => id}),
+    do: {:ok, %Human{human_account_id: id}}
 
   def lookup(%{"type" => "agent"} = stored) do
     fields = for field <- @agent_fields, do: {field, Map.fetch!(stored, to_string(field))}

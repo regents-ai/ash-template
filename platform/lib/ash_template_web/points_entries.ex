@@ -22,7 +22,7 @@ defmodule AshTemplateWeb.PointsEntries do
 
   def agent_name(_entry, _names), do: nil
 
-  def allowance_name("activity:account"), do: "You and your agents"
+  def allowance_name("activity:account"), do: "Combined"
   def allowance_name("credits"), do: "Credits purchases"
 
   @doc "The agent's Points answer: the same figures the Points page shows."

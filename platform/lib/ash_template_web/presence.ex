@@ -12,19 +12,27 @@ defmodule AshTemplateWeb.Presence do
 
   @doc "Shows `human` as here in `room` while the calling process lives."
   def join(room, human),
-    do: track(self(), topic(room), Integer.to_string(human.human_account_id), %{name: human.name})
+    do:
+      track(self(), topic(room), Integer.to_string(human.human_account_id), %{
+        author: human.author
+      })
 
   @doc "Stops showing the calling process in `room`."
   def leave(room, human),
     do: untrack(self(), topic(room), Integer.to_string(human.human_account_id))
 
-  @doc "Everyone in `room`, as `%{id: account_id, name: name}`, ordered by name."
+  @doc """
+  Everyone in `room`, as `%{id: account_id, author: author}`
+  (`AshTemplate.PublicIdentity.author/1`), ordered by name, then ENS name, then wallet.
+  """
   def people(room) do
     topic(room)
     |> list()
     |> Enum.map(fn {id, %{metas: [meta | _]}} ->
-      %{id: String.to_integer(id), name: meta.name}
+      %{id: String.to_integer(id), author: meta.author}
     end)
-    |> Enum.sort_by(&String.downcase(&1.name))
+    |> Enum.sort_by(
+      &String.downcase(&1.author.name || &1.author.ens_name || &1.author.wallet || "")
+    )
   end
 end

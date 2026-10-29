@@ -1,6 +1,6 @@
-# What's new
+# Changelog
 
-What changed in Ash Template lately, newest first.
+Changes to Ash Template, newest first.
 
 ## 28 October 2026
 

@@ -4961,3 +4961,28 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-29 — Names keep their wallet, buttons fit the pointer, fewer words (Lane A, UI-1 to UI-6)
+
+- Someone with no display or ENS name shows in a room and on their poll by their full
+  wallet, through the shared address piece, which opens and copies it; an ENS name goes
+  through the same piece. Rooms and polls no longer store the short form: a message's
+  `author_name`, a mute's name and a poll's `started_by.name` are null for such a person.
+  The migration that clears the stored short forms changes production rows and waits for
+  Sean's letter.
+- The motion lab's library and the showcase's slow read reserve their tallest state, so
+  the box below never moves whichever tab or answer shows.
+- Buttons are 2.5rem tall for a mouse and 44px only for a finger (`--ash-control`); the
+  shared design system's half is on design-system `tickets/ui-1029` (`254deecc`), pinned
+  here, and reaches the other sites only after Sean's sign-off.
+- Titles are one or two words and none opens with who, what, where, why or when: What's
+  new is Changelog, Bring your agent is Pair agent, Start a poll is New poll, the Credits
+  panel's Where to spend is Spend, and the showcase, motion lab, about page, guides and
+  money pages follow. The legal pages keep their headings.
+- The page says Agent Tools, not WebMCP Tools; WebMCP is named only in the open list's
+  tip. The Privy setup steps moved to /docs (Sign-in setup), "Built with Ash" and the Ash
+  data-group count are gone, and the showcase money pages show titles, figures and
+  buttons, with the explanations in tips and disclosures.
+- One theme switch per page: the showcase pages, the Keyfleet home lab and the site
+  buttons lab drop their own switch; the footer's stays.
+- The browser walk checks each of these on every page at 1280 and 390.

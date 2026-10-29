@@ -85,7 +85,7 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
   defp notification(message, human_account_id) do
     %{
       human_account_id: human_account_id,
-      title: "#{message.author_name} mentioned you in #{message.in_room.name}",
+      title: "#{message.author_name || "Someone"} mentioned you in #{message.in_room.name}",
       body: excerpt(message.body),
       path: "/rooms/#{message.room}"
     }

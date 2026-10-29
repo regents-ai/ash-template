@@ -34,27 +34,25 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
           enabled={@mode == :configured}
           menu={false}
         />
-        <Shell.theme_toggle id="wallet-page-theme" />
       </header>
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Working example</p>
         <h1>Wallet buttons</h1>
         <p>
-          Sign in, connect a wallet on your account, and press. Every press goes straight to your
-          wallet. The site prepares each step before you press and then reads what happened on the
-          network.
-        </p>
-        <p>
-          These buttons use {@chain.name}, a test network, so nothing here moves real money. Record and
-          Fail on purpose still need a little {@chain.name} test ETH in the wallet to pay the network
-          fee. Sign costs nothing.
+          {@chain.name}, a test network. Nothing here moves real money.
+          <P.tip id="wallet-intro-tip" label="About the wallet buttons">
+            Sign in, connect a wallet on your account, and press. Every press goes straight to your
+            wallet; the site prepares each step first and then reads what happened on the network.
+            Record and Fail on purpose need a little {@chain.name} test ETH for the network fee.
+            Sign costs nothing.
+          </P.tip>
         </p>
       </section>
 
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="wallet-account-heading">
-          <h2 id="wallet-account-heading">Your account</h2>
+          <h2 id="wallet-account-heading">Account</h2>
           <p id="wallet-account-state">
             {account_line(@account_control.kind, @access_context)}
           </p>
@@ -67,13 +65,11 @@ defmodule AshTemplateWeb.WalletShowcaseLive do
               do: "Connect or change wallet",
               else: "Sign in"}
           </P.button>
-          <p :if={@mode != :configured} role="status">
-            Sign-in isn't available on this copy of the site.
-          </p>
+          <p :if={@mode != :configured} role="status">Sign-in is off here.</p>
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="wallet-example-heading">
-          <h2 id="wallet-example-heading">The buttons</h2>
+          <h2 id="wallet-example-heading">Buttons</h2>
           <.live_component
             module={AshTemplateWeb.OnchainExample}
             id="onchain-example"

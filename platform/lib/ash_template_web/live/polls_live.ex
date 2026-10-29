@@ -19,6 +19,7 @@ defmodule AshTemplateWeb.PollsLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Polls
   alias AshTemplate.Polls.Poll
+  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
@@ -128,7 +129,7 @@ defmodule AshTemplateWeb.PollsLive do
             The polls couldn’t be loaded. Refresh the page to try again.
           </Primitives.notice>
           <.link patch={~p"/polls"} class="polls-new" aria-current={is_nil(@poll_id) && "page"}>
-            Start a poll
+            New poll
           </.link>
           <ul id="polls-list" class="shell-sidebar__list polls-list" data-state={@polls.state}>
             <li :if={@polls.value == []} class="shell-sidebar__empty">No polls yet.</li>
@@ -154,7 +155,7 @@ defmodule AshTemplateWeb.PollsLive do
       </.page_head>
 
       <section :if={is_nil(@poll_id)} class="account-panel" aria-labelledby="poll-start-title">
-        <h2 id="poll-start-title">Start a poll</h2>
+        <h2 id="poll-start-title">New poll</h2>
         <.signed_out :if={is_nil(@actor)} id="polls-signed-out">
           Sign in to start a poll.
         </.signed_out>
@@ -187,7 +188,7 @@ defmodule AshTemplateWeb.PollsLive do
           <Primitives.field
             :let={field}
             id="poll-start-choices"
-            label="Choices, one on each line"
+            label="Choices"
             errors={FormErrors.messages(@form[:choices])}
           >
             <textarea
@@ -231,7 +232,7 @@ defmodule AshTemplateWeb.PollsLive do
         data-open={to_string(@poll.value.open)}
       >
         <p class="polls-poll__meta rg-muted">
-          Started by <bdi>{@poll.value.starter.name}</bdi>
+          Started by <Shell.author id="poll-starter" author={@poll.value.starter} />
           <span :if={@poll.value.via_agent_id}>via agent</span>
           · {time_state(@poll.value, @now)} · {votes_label(@poll.value.votes_cast)}
         </p>

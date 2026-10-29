@@ -10,7 +10,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
 
   use AshTemplateWeb, :live_view
 
-  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.Motion
   alias Regent.Primitives, as: P
 
@@ -113,7 +112,6 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
           <P.button variant="secondary" phx-click="blueprint" aria-pressed={to_string(@blueprint?)}>
             Blueprint
           </P.button>
-          <Shell.theme_toggle id="keyfleet-lab-theme" />
         </div>
       </header>
 
@@ -255,7 +253,7 @@ defmodule AshTemplateWeb.KeyfleetHeroLive do
   defp integrations(assigns) do
     ~H"""
     <section id="home-integrations" class="kf-integrations" aria-labelledby="home-integrations-title">
-      <h2 id="home-integrations-title">What a fleet can use</h2>
+      <h2 id="home-integrations-title">Fleet Tools</h2>
       <ul
         id="home-integration-tiles"
         class="kf-integration-tiles"

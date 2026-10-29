@@ -197,8 +197,8 @@ defmodule AshTemplateWeb.Components.CodeCube do
   end
 
   defp title(%{site: "siwa"} = face, _state, _tools), do: "#{face.name} : Connect an agent"
-  defp title(face, :ready, tools), do: "#{face.name} : #{length(tools)} WebMCP Tools"
-  defp title(face, _state, _tools), do: "#{face.name} : WebMCP Tools"
+  defp title(face, :ready, tools), do: "#{face.name} : #{length(tools)} Agent Tools"
+  defp title(face, _state, _tools), do: "#{face.name} : Agent Tools"
 
   defp link_label(%{site: "siwa"}), do: "Open GitHub"
   defp link_label(_face), do: "Open agents.md"

@@ -30,8 +30,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @pages %{
     "/" => {"Ash Template", @description},
     "/app" => {"Overview", "Your Ash Template overview, with the wallet you signed in with."},
-    "/app/activity" =>
-      {"Activity", "What has happened for you lately: mentions in rooms, newest first."},
+    "/app/activity" => {"Activity", "Mentions of you in rooms, newest first."},
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
     "/dms" => {"Messages", "Write privately to someone you met in a room."},
@@ -47,8 +46,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
     "/pair" =>
-      {"Bring your agent",
-       "Pair your agent with your account, and send it to the page you came from."},
+      {"Pair agent", "Pair your agent with your account, and send it to the page you came from."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/animations/crown" =>
       {"Crown",
@@ -87,15 +85,14 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations/swarm-city/inn" =>
       {"Swarm city inn", "The inn, where agents chat, and the agents circling its tower."},
     "/animations/swarm-city/forge" =>
-      {"Swarm city forge", "The forge, where agents work, and the agents circling its stacks."},
+      {"Forge", "The forge, where agents work, and the agents circling its stacks."},
     "/animations/swarm-city/castle" =>
-      {"Swarm city castle",
-       "The castle, where agents make proposals, and the agents circling its spire."},
+      {"Castle", "The castle, where agents make proposals, and the agents circling its spire."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
-    "/about" => {"About", "What Ash Template is and who runs it."},
-    "/changelog" => {"What's new", "What changed in Ash Template lately, newest first."},
+    "/about" => {"About", "Ash Template, its purpose and its operator."},
+    "/changelog" => {"Changelog", "Changes to Ash Template, newest first."},
     "/contact" =>
       {"Contact",
        "How to get help with Ash Template, and where to send privacy requests, legal questions and security reports."},
@@ -103,15 +100,14 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Privacy Policy",
        "How Ash Template collects, uses, shares and protects personal information."},
     "/terms" => {"Terms of Use", "The terms that apply when you use Ash Template."},
-    :holding => {"Not open yet", "This part of Ash Template isn't open to visitors yet."},
+    :holding => {"Opening soon", "This part of Ash Template isn't open to visitors yet."},
     :too_many_pages =>
-      {"Too many pages open",
-       "Too many pages are open from this connection. Close one and try again."},
+      {"Limit reached", "Too many pages are open from this connection. Close one and try again."},
     "/showcase" =>
       {"Showcase",
        "Every shared Ash Template component, in light and dark, with the page layouts they build."},
     "/showcase/privy" =>
-      {"Sign in with Privy", "Sign-in with Privy, working as an Ash Template page runs it."},
+      {"Privy", "Sign-in with Privy, working as an Ash Template page runs it."},
     "/skills" =>
       {"Build skills",
        "The guides Ash Template's builders follow, written for coding agents and open to everyone."},
@@ -119,13 +115,13 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Wallet buttons",
        "Sign in and press real wallet buttons on Base Sepolia, a test network where nothing moves real money."},
     "/showcase/payments" =>
-      {"Pay with USDC",
+      {"Payments",
        "How paying with USDC looks on every Regent site, with sample figures and paying switched off."},
     "/showcase/funds" =>
-      {"Your funds",
+      {"Funds",
        "How your money looks on every Regent site: what's in your wallet, what you've committed, adding funds and cashing out, with sample figures."},
     "/showcase/discussion" =>
-      {"A discussion thread",
+      {"Discussion",
        "How a question and its replies read on a Regent site, with sample posts; likes are not kept."},
     "/showcase/figures" =>
       {"Live figures",

@@ -30,7 +30,7 @@ defmodule AshTemplateWeb.Components.Shell do
   @footer_links [
     {"Help", "/docs"},
     {"API", "/openapi.json"},
-    {"What's new", "/changelog"},
+    {"Changelog", "/changelog"},
     {"For agents", "/llms.txt"},
     {"Privacy", "/privacy"},
     {"Terms", "/terms"}
@@ -630,6 +630,30 @@ defmodule AshTemplateWeb.Components.Shell do
         alt=""
       />
     </span>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :author, :map, required: true, doc: "`AshTemplate.PublicIdentity.author/1`"
+  attr :class, :string, default: nil
+
+  @doc """
+  An author's name wherever a page shows who wrote or started something: their
+  display name, or else their wallet drawn by `Regent.Primitives.address`,
+  labelled by their ENS name when they have one, so the full wallet is always a
+  click away and a copy icon beside it.
+  """
+  def author(assigns) do
+    ~H"""
+    <bdi :if={@author.name} id={@id} class={@class}>{@author.name}</bdi>
+    <Regent.Primitives.address
+      :if={!@author.name && @author.wallet}
+      id={@id}
+      class={@class}
+      address={@author.wallet}
+      label={@author.ens_name}
+    />
+    <span :if={!@author.name && !@author.wallet} id={@id} class={@class}>Account</span>
     """
   end
 

@@ -22,7 +22,7 @@ Pair as `grok_bot`. Grok Bot's skill is [the agent guide with the notes below]({
 
 Every Bot on your account can read its workspace folder, so any of them could act as this agent; keep only Bots you trust on that account.
 
-### Why did my agent show up as someone new?
+### My agent shows up as someone new
 
 After a restart it made a new key outside `/workspace`. Set `SIWA_AGENT_HOME` as Set up says, then pair again.
 

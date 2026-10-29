@@ -87,6 +87,27 @@ AshTemplate.Polls.start_poll!(%{question: "Tea or coffee?", choices: ["Tea", "Co
   actor: Human.for_account(friend)
 )
 
+# Someone with no name at all writes in General and starts a poll, so the room and
+# the poll show them by their wallet, with its copy icon (authors.spec.ts).
+plain_wallet = "0x" <> String.duplicate("7", 40)
+
+plain =
+  AshTemplate.Accounts.register_verified!(
+    "did:privy:browser-walk-plain",
+    plain_wallet,
+    [plain_wallet],
+    actor: %AshTemplate.Actors.System{}
+  )
+
+AshTemplate.Rooms.post_message!(%{room: "general", body: "Hello from a wallet."},
+  actor: Human.for_account(plain),
+  context: %{client_key: "browser-walk-plain"}
+)
+
+AshTemplate.Polls.start_poll!(%{question: "Rain or shine?", choices: ["Rain", "Shine"], minutes: 60},
+  actor: Human.for_account(plain)
+)
+
 # A fourth agent, paired first, which the account menu's three leave out
 # (account_menu.spec.ts); the agent the walk opens on the Account page, and one for
 # each width to rename (agents.spec.ts).

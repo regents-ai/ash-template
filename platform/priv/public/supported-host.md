@@ -1,4 +1,4 @@
-## Where you run
+## Hosts
 
 The same on every Regent site.
 

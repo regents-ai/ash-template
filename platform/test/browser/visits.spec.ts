@@ -90,7 +90,7 @@ test("the agent tools list's reads belong to the page's visit", async ({page, co
   await page.goto("/")
   const button = page.locator("#home-agent-tools-button")
   await (hasTouch ? button.tap() : button.click())
-  await expect(page.getByRole("dialog", {name: /^Agents see/})).toBeVisible()
+  await expect(page.getByRole("dialog", {name: /^\d+ Agent Tools$/})).toBeVisible()
 
   const visit = (await context.cookies()).find(cookie => cookie.name === "_visit")!.value
   await expect.poll(() => lines(visit).map(step)).toContain("tool.call /api/v1/sites/:site/tools")

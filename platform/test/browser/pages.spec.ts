@@ -2,14 +2,21 @@ import type {Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import map from "./pages.json" with {type: "json"}
 import {bareAddresses} from "./support/addresses"
+import {misSizedControls, themeSwitches} from "./support/controls"
 import {unreachableScrollers} from "./support/scrollers"
+import {wWordTitles} from "./support/titles"
 import {ready, signedIn, watch} from "./support/person"
 
 // Every page in the feature map opens, shows what proves its purpose, raises no
-// error, fits the screen, shows every address with its copy icon and lets a keyboard
-// scroll every box that scrolls; every document answers with its type. The map lists
-// every page route (feature_map_test.exs), so a new page is walked from its first day.
+// error, fits the screen, shows every address with its copy icon, keeps its buttons
+// at a mouse's or a finger's height, draws one theme switch at most, opens no title
+// with a W-word (the legal pages aside) and lets a keyboard scroll every box that scrolls; every document answers
+// with its type. The map lists every page route (feature_map_test.exs), so a new page
+// is walked from its first day.
 type Entry = {route: string; paths?: string[]; check: string; status?: number}
+
+// The legal pages keep their versioned headings.
+const legal = ["/privacy", "/terms"]
 
 const paths = (entry: {route: string; paths?: string[]}) => entry.paths ?? [entry.route]
 
@@ -30,7 +37,7 @@ async function open(page: Page, path: string) {
 }
 
 function walk(entry: Entry, path: string, signedIn: boolean) {
-  test(`page ${path}`, async ({page}) => {
+  test(`page ${path}`, async ({page, hasTouch}) => {
     const problems = watch(page, entry.status)
     const response = await open(page, path)
     expect(response?.status()).toBe(entry.status ?? 200)
@@ -41,6 +48,10 @@ function walk(entry: Entry, path: string, signedIn: boolean) {
     }
     expect(await bareAddresses(page)).toEqual([])
     expect(await unreachableScrollers(page)).toEqual([])
+    expect(await misSizedControls(page, hasTouch)).toEqual([])
+    if (!legal.includes(path)) expect(await wWordTitles(page)).toEqual([])
+    const switches = await themeSwitches(page)
+    expect(switches.length, switches.join(", ")).toBeLessThanOrEqual(1)
     await problems.expect()
   })
 }

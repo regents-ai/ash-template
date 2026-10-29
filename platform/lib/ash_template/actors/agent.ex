@@ -1,5 +1,7 @@
 defmodule AshTemplate.Actors.Agent do
   @moduledoc "A SIWA agent retains its own identity and its current account delegation."
+  alias AshTemplate.PublicIdentity
+
   @enforce_keys [:agent_id, :wallet_address, :name]
   defstruct [
     :agent_id,
@@ -32,7 +34,7 @@ defmodule AshTemplate.Actors.Agent do
       | human_account_id: account.id,
         privy_user_id: pairing.privy_user_id,
         pairing_id: pairing.id,
-        name: account.display_name || RegentFormat.short_address(account.wallet_address),
+        name: PublicIdentity.author(account).name,
         pairing: :active
     }
   end
