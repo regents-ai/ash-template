@@ -3767,8 +3767,9 @@ paths:
       operationId: startPoll
       summary: Start a poll for the paired account.
       description: 'Starts a poll for the paired account, marked as started by this agent. Keep
-        operation_id when retrying: a retry answers the poll already started with 200 and starts
-        nothing. A person starts 3 polls a day.'
+        operation_id when retrying: a retry with the same question, choices and minutes answers
+        the poll already started with 200 and starts nothing; the same operation_id with any of
+        them changed answers 409 idempotency_conflict. A person starts 3 polls a day.'
       security:
       - siwaProof: []
       parameters:
@@ -3866,7 +3867,8 @@ paths:
                   poll:
                     $ref: '#/components/schemas/Poll'
         '200':
-          description: The poll an earlier request with this operation_id started.
+          description: The poll an earlier request with this operation_id, question, choices
+            and minutes started.
           content:
             application/json:
               schema:
@@ -3879,7 +3881,8 @@ paths:
                     $ref: '#/components/schemas/Poll'
         '422':
           description: The question, choices or minutes break a rule, operation_id is missing,
-            or the day's allowance is spent (invalid_poll); details says which.
+            a field it does not take is sent, or the day's allowance is spent (invalid_poll);
+            details says which.
           content:
             application/json:
               schema:
@@ -3936,7 +3939,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Signed request refused; error contains code, message and hint.
+          description: This operation_id was already used for another poll, or with another
+            question, choices or minutes (idempotency_conflict). Send a new UUID for a new poll.
           content:
             application/json:
               schema:
@@ -4123,8 +4127,9 @@ paths:
                       hint:
                         type: string
         '422':
-          description: The poll has closed, the choice is not one of its choices, or the paired
-            account already voted for another choice (invalid_vote); details says which.
+          description: The poll has closed, the choice is not one of its choices, the paired
+            account already voted for another choice, or a field it does not take is sent
+            (invalid_vote); details says which.
           content:
             application/json:
               schema:

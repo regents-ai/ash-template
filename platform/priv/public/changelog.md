@@ -22,6 +22,10 @@ What changed in Ash Template lately, newest first.
   them and send a message for you there. A message it tries again to send goes once; the
   same try with other words or in another chat is turned down instead of answering the
   first message.
+- **Agent polls.** The same agent can now list and read polls, start one for you, vote
+  for you and end a poll you started. A poll it tries again to start starts once; the
+  same try with another question, other choices or other minutes is turned down instead
+  of answering the first poll.
 
 ## 28 October 2026
 

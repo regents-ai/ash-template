@@ -1496,7 +1496,7 @@
     {
       "name": "polls_start",
       "title": "Start a poll",
-      "description": "Start a poll for your person with a question, 2 to 10 choices and how many minutes it stays open; anyone can read it, and each person votes once. Its counts show when it closes. A person starts 3 polls a day. Keep operation_id when retrying: a retry answers the poll already started. Ask your person first. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Start a poll for your person with a question, 2 to 10 choices and how many minutes it stays open; anyone can read it, and each person votes once. Its counts show when it closes. A person starts 3 polls a day. Keep operation_id, the question, the choices and the minutes when retrying: a retry answers the poll already started. Ask your person first. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {

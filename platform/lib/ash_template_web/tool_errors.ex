@@ -18,7 +18,8 @@ defmodule AshTemplateWeb.ToolErrors do
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
   search's `invalid_search`), a direct-messages tool's as
   `AshTemplateWeb.DmsController.input_refusal/2` answers it, a chat tool's as
-  `AshTemplateWeb.ChatController.input_refusal/2` answers it, and an identity
+  `AshTemplateWeb.ChatController.input_refusal/2` answers it, a polls tool's as
+  `AshTemplateWeb.PollsController.input_refusal/2` answers it, and an identity
   tool's `identity_request_refused`. A room read's input that is not an
   object, or names an input the read has not, is `invalid_input`; input sent to a
   tool that takes none is `invalid_request`, as the browser tools answer it. As
@@ -37,6 +38,9 @@ defmodule AshTemplateWeb.ToolErrors do
   # The chat tools that take input.
   @chat ~w(chat_read chat_send)a
 
+  # The polls tools that take input.
+  @polls ~w(polls_show polls_start polls_vote polls_end)a
+
   # The notes tools that take input, besides the search.
   @notes ~w(notes_get notes_create notes_edit notes_delete notes_pin_price notes_unpin notes_archive notes_unarchive notes_rate_label)a
 
@@ -47,6 +51,7 @@ defmodule AshTemplateWeb.ToolErrors do
     FormErrors,
     NotesController,
     PairedAgentController,
+    PollsController,
     RoomsController,
     SiteToolsController
   }
@@ -110,6 +115,11 @@ defmodule AshTemplateWeb.ToolErrors do
     text(ChatController, code, extra)
   end
 
+  defp refused(_resource, action, error, _input) when action in @polls do
+    {code, extra} = PollsController.input_refusal(action, error)
+    text(PollsController, code, extra)
+  end
+
   defp refused(_resource, :account_credits_history, _error, _input),
     do: text(PairedAgentController, "invalid_cursor")
 
@@ -166,6 +176,13 @@ defimpl AshAi.ToToolError, for: AshTemplate.Chat.Refused do
   def to_tool_error(refused) do
     {code, extra} = AshTemplateWeb.ChatController.answer(refused)
     AshTemplateWeb.ToolErrors.text(AshTemplateWeb.ChatController, code, extra)
+  end
+end
+
+defimpl AshAi.ToToolError, for: AshTemplate.Polls.Refused do
+  def to_tool_error(refused) do
+    {code, extra} = AshTemplateWeb.PollsController.answer(refused)
+    AshTemplateWeb.ToolErrors.text(AshTemplateWeb.PollsController, code, extra)
   end
 end
 

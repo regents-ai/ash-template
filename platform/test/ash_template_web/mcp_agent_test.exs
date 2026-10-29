@@ -23,6 +23,10 @@ defmodule AshTemplateWeb.McpAgentTest do
   #   alone names the chat a page is read from, a message's operation_id answers
   #   only the same words in the same chat, and two sends with one key at once
   #   send one message;
+  # - each polls tool answers and refuses as HTTP does, over HTTP the address
+  #   alone names the poll a vote is for, a start's operation_id answers only the
+  #   same question, choices and minutes, and two starts with one key at once
+  #   start one poll;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -1506,6 +1510,239 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert Ash.read!(AshTemplate.Chat.Conversation, authorize?: false) |> length() == 1
   end
 
+  test "each polls tool answers through /mcp as HTTP answers, and the address alone names the poll",
+       %{from: from} do
+    agent = paired_wallet()
+    voter = paired_wallet()
+    key = Ecto.UUID.generate()
+    start = %{question: "Lunch?", choices: ["Soup", "Salad"], minutes: 5, operation_id: key}
+
+    # Started through /mcp; its retry over HTTP answers the same poll.
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => false, "poll" => started}} =
+             result(mcp(call("polls_start", start), from: from, proof: agent))
+
+    assert %{"id" => ^key, "open" => true, "counts" => nil, "votes_cast" => 0} = started
+    again = http(:post, "/api/v1/polls", start, from, agent)
+    assert {again.status, Jason.decode!(again.resp_body)} == {200, %{"poll" => started}}
+    elsewhere = start_poll(from, voter)
+
+    # Voted over HTTP; a poll in the body never chooses another. The same vote
+    # through /mcp answers the same.
+    voted = http(:post, "/api/v1/polls/#{key}/vote", %{choice: "Soup", poll: elsewhere}, from, voter)
+    assert voted.status == 200, voted.resp_body
+
+    assert %{"vote" => %{"choice" => "Soup"}, "poll" => %{"id" => ^key, "votes_cast" => 1}} =
+             answer = Jason.decode!(voted.resp_body)
+
+    assert %{"isError" => false, "structuredContent" => ^answer} =
+             result(mcp(call("polls_vote", %{poll: key, choice: "Soup"}), from: from, proof: voter))
+
+    assert %{"votes_cast" => 0} = read_poll(from, elsewhere)
+
+    # Read the same both ways, by anyone.
+    assert %{"isError" => false, "structuredContent" => shown} =
+             result(mcp(call("polls_show", %{poll: key}), from: from, proof: wallet()))
+
+    assert shown == %{"poll" => read_poll(from, key)}
+
+    assert %{"isError" => false, "structuredContent" => listed} =
+             result(mcp(call("polls_list", %{}), from: from, proof: agent))
+
+    assert Jason.decode!(http(:get, "/api/v1/polls", nil, from, nil).resp_body) == listed
+    assert [^elsewhere, ^key | _] = Enum.map(listed["polls"], & &1["id"])
+
+    # Ended through /mcp; HTTP reads its counts.
+    assert %{"isError" => false, "structuredContent" => %{"poll" => ended}} =
+             result(mcp(call("polls_end", %{poll: key}), from: from, proof: agent))
+
+    assert %{"open" => false, "counts" => [%{"choice" => "Soup", "votes" => 1}, %{"choice" => "Salad", "votes" => 0}]} =
+             ended
+
+    assert read_poll(from, key) == ended
+  end
+
+  test "each polls tool refuses through /mcp with the code and words HTTP gives", %{from: from} do
+    unpaired = wallet()
+    agent = paired_wallet()
+    stranger = paired_wallet()
+    id = start_poll(from, agent)
+    theirs = start_poll(from, stranger)
+    closed = start_poll(from, agent)
+    assert %{"open" => false} = Jason.decode!(http(:post, "/api/v1/polls/#{closed}/end", nil, from, agent).resp_body)["poll"]
+    # A person starts three polls a day: the starts are another person's.
+    starter = paired_wallet()
+    key = Ecto.UUID.generate()
+    first = %{question: "Tea?", choices: ["Yes", "No"], minutes: 5, operation_id: key}
+    assert http(:post, "/api/v1/polls", first, from, starter).status == 201
+    assert http(:post, "/api/v1/polls/#{id}/vote", %{choice: "Soup"}, from, agent).status == 200
+    missing = Ecto.UUID.generate()
+    start = fn changes -> Map.merge(%{question: "Lunch?", choices: ["Soup", "Salad"], minutes: 5, operation_id: missing}, changes) end
+
+    codes =
+      for {name, input, method, path, body, signer} <- [
+            {"polls_show", %{poll: missing}, :get, "/api/v1/polls/#{missing}", nil, nil},
+            {"polls_show", %{poll: "not-a-uuid"}, :get, "/api/v1/polls/not-a-uuid", nil, nil},
+            {"polls_start", start.(%{}), :post, "/api/v1/polls", start.(%{}), unpaired},
+            {"polls_start", start.(%{choices: ["Soup", "Soup"]}), :post, "/api/v1/polls",
+             start.(%{choices: ["Soup", "Soup"]}), starter},
+            {"polls_start", start.(%{minutes: 0}), :post, "/api/v1/polls", start.(%{minutes: 0}),
+             starter},
+            {"polls_start", Map.delete(start.(%{}), :operation_id), :post, "/api/v1/polls",
+             Map.delete(start.(%{}), :operation_id), starter},
+            {"polls_start", start.(%{open: true}), :post, "/api/v1/polls", start.(%{open: true}),
+             starter},
+            {"polls_start", %{first | question: "Coffee?"}, :post, "/api/v1/polls",
+             %{first | question: "Coffee?"}, starter},
+            {"polls_start", start.(%{operation_id: theirs}), :post, "/api/v1/polls",
+             start.(%{operation_id: theirs}), starter},
+            {"polls_vote", %{poll: id, choice: "Soup"}, :post, "/api/v1/polls/#{id}/vote",
+             %{choice: "Soup"}, unpaired},
+            {"polls_vote", %{poll: missing, choice: "Soup"}, :post,
+             "/api/v1/polls/#{missing}/vote", %{choice: "Soup"}, agent},
+            {"polls_vote", %{poll: "not-a-uuid", choice: "Soup"}, :post,
+             "/api/v1/polls/not-a-uuid/vote", %{choice: "Soup"}, agent},
+            {"polls_vote", %{poll: id, choice: "Salad"}, :post, "/api/v1/polls/#{id}/vote",
+             %{choice: "Salad"}, agent},
+            {"polls_vote", %{poll: theirs, choice: "Pie"}, :post, "/api/v1/polls/#{theirs}/vote",
+             %{choice: "Pie"}, agent},
+            {"polls_vote", %{poll: theirs}, :post, "/api/v1/polls/#{theirs}/vote", %{}, agent},
+            {"polls_vote", %{poll: theirs, choice: "Soup", note: "Hi"}, :post,
+             "/api/v1/polls/#{theirs}/vote", %{choice: "Soup", note: "Hi"}, agent},
+            {"polls_vote", %{poll: closed, choice: "Soup"}, :post, "/api/v1/polls/#{closed}/vote",
+             %{choice: "Soup"}, stranger},
+            {"polls_end", %{poll: id}, :post, "/api/v1/polls/#{id}/end", nil, unpaired},
+            {"polls_end", %{poll: missing}, :post, "/api/v1/polls/#{missing}/end", nil, agent},
+            {"polls_end", %{poll: "not-a-uuid"}, :post, "/api/v1/polls/not-a-uuid/end", nil, agent},
+            {"polls_end", %{poll: theirs}, :post, "/api/v1/polls/#{theirs}/end", nil, agent},
+            {"polls_end", %{poll: closed}, :post, "/api/v1/polls/#{closed}/end", nil, agent}
+          ] do
+        over_http = http(method, path, body, from, signer)
+        %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 result(mcp(call(name, input), from: from, proof: signer || wallet()))
+
+        assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
+        {over_http.status, refused["code"]}
+      end
+
+    assert codes == [
+             {404, "poll_not_found"},
+             {404, "poll_not_found"},
+             {403, "agent_not_paired"},
+             {422, "invalid_poll"},
+             {422, "invalid_poll"},
+             {422, "invalid_poll"},
+             {422, "invalid_poll"},
+             {409, "idempotency_conflict"},
+             {409, "idempotency_conflict"},
+             {403, "agent_not_paired"},
+             {404, "poll_not_found"},
+             {404, "poll_not_found"},
+             {422, "invalid_vote"},
+             {422, "invalid_vote"},
+             {422, "invalid_vote"},
+             {422, "invalid_vote"},
+             {422, "invalid_vote"},
+             {403, "agent_not_paired"},
+             {404, "poll_not_found"},
+             {404, "poll_not_found"},
+             {403, "not_poll_starter"},
+             {422, "poll_closed"}
+           ]
+
+    # Nothing refused started, counted or ended anything.
+    assert %{"open" => true, "votes_cast" => 0} = read_poll(from, theirs)
+    assert %{"open" => true, "votes_cast" => 1} = read_poll(from, id)
+    assert %{"votes_cast" => 0} = read_poll(from, closed)
+    assert %{"question" => "Tea?"} = read_poll(from, key)
+    assert Ash.get(AshTemplate.Polls.Poll, missing, authorize?: false) |> elem(0) == :error
+  end
+
+  test "a poll's operation_id answers only the same question, choices and minutes, whichever way each call comes",
+       %{from: from} do
+    for first <- [:http, :mcp], again <- [:http, :mcp] do
+      agent = paired_wallet()
+      key = Ecto.UUID.generate()
+      poll = %{question: "Lunch?", choices: ["Soup", "Salad"], minutes: 5, operation_id: key}
+      assert poll(first, from, agent, poll) == {:sent, key}
+      assert poll(again, from, agent, poll) == {:replayed, key}
+
+      for changed <- [%{question: "Dinner?"}, %{choices: ["Salad", "Soup"]}, %{minutes: 6}] do
+        assert poll(again, from, agent, Map.merge(poll, changed)) == {:refused, "idempotency_conflict"}
+      end
+    end
+  end
+
+  test "two starts with one operation_id at once start one poll, and both answer it",
+       %{from: from} do
+    for ways <- [[:http, :http], [:mcp, :mcp], [:http, :mcp], [:mcp, :http]], _ <- 1..3 do
+      agent = paired_wallet()
+      key = Ecto.UUID.generate()
+      poll = %{question: "Once?", choices: ["Yes", "No"], minutes: 5, operation_id: key}
+      before = length(Ash.read!(AshTemplate.Polls.Poll, authorize?: false))
+
+      answers =
+        ways
+        |> Enum.map(fn way -> Task.async(fn -> poll(way, from, agent, poll) end) end)
+        |> Task.await_many()
+
+      assert Enum.sort(answers) == [{:replayed, key}, {:sent, key}], inspect(ways)
+      assert length(Ash.read!(AshTemplate.Polls.Poll, authorize?: false)) == before + 1
+    end
+  end
+
+  test "a polls action after the agent's pairing ended is refused as agent_not_paired",
+       %{from: from} do
+    did = "did:privy:mcp-" <> Ecto.UUID.generate()
+    person = wallet()
+    account = Accounts.register_verified!(did, person, [person], actor: %System{})
+    owner = %RegentAgents.Person{privy_user_id: did}
+    agent = wallet()
+
+    pairing =
+      RegentAgents.pair_agent!(
+        RegentAgents.issue_pairing_code!(actor: owner).code,
+        "Agent",
+        :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
+
+    id = start_poll(from, agent)
+    theirs = start_poll(from, paired_wallet())
+
+    # The agent as its signed request was let in, then the person unpairs it.
+    {:ok, active} = RegentAgents.Authority.resolve(Repo, agent)
+
+    let_in =
+      AshTemplate.Actors.Agent.paired(
+        AshTemplate.Agents.sign_in_agent!(agent, actor: %System{}),
+        account,
+        active
+      )
+
+    assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
+    key = Ecto.UUID.generate()
+
+    for call <- [
+          fn ->
+            AshTemplate.Polls.polls_start(
+              %{question: "Late?", choices: ["Yes", "No"], minutes: 5, operation_id: key},
+              actor: let_in
+            )
+          end,
+          fn -> AshTemplate.Polls.polls_vote(theirs, %{choice: "Soup"}, actor: let_in) end,
+          fn -> AshTemplate.Polls.polls_end(id, actor: let_in) end
+        ] do
+      assert {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"}]}} =
+               call.()
+    end
+
+    assert {:ok, nil} = AshTemplate.Polls.get_poll(key)
+    assert %{"open" => true, "votes_cast" => 0} = read_poll(from, theirs)
+    assert %{"open" => true} = read_poll(from, id)
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -1706,6 +1943,46 @@ defmodule AshTemplateWeb.McpAgentTest do
     conn = http(:post, "/api/v1/chat/#{id}/history", %{}, from, agent)
     assert conn.status == 200, conn.resp_body
     Jason.decode!(conn.resp_body)["messages"]
+  end
+
+  # A new poll `agent` starts for its person over HTTP: its id.
+  defp start_poll(from, agent) do
+    body = %{question: "Lunch?", choices: ["Soup", "Salad"], minutes: 5, operation_id: Ecto.UUID.generate()}
+    conn = http(:post, "/api/v1/polls", body, from, agent)
+    assert conn.status == 201, conn.resp_body
+    Jason.decode!(conn.resp_body)["poll"]["id"]
+  end
+
+  # One start of `poll` through `way`, as the answer's meaning: started, the
+  # earlier poll answered again, or refused with its code.
+  defp poll(:http, from, agent, poll) do
+    conn = http(:post, "/api/v1/polls", poll, from, agent)
+
+    case {conn.status, Jason.decode!(conn.resp_body)} do
+      {201, %{"poll" => %{"id" => id}}} -> {:sent, id}
+      {200, %{"poll" => %{"id" => id}}} -> {:replayed, id}
+      {_status, %{"error" => %{"code" => code}}} -> {:refused, code}
+    end
+  end
+
+  defp poll(:mcp, from, agent, poll) do
+    case result(mcp(call("polls_start", poll), from: from, proof: agent)) do
+      %{"isError" => false, "structuredContent" => %{"replayed" => false, "poll" => %{"id" => id}}} ->
+        {:sent, id}
+
+      %{"isError" => false, "structuredContent" => %{"replayed" => true, "poll" => %{"id" => id}}} ->
+        {:replayed, id}
+
+      %{"isError" => true, "content" => [%{"text" => text}]} ->
+        {:refused, Jason.decode!(text)["error"]["code"]}
+    end
+  end
+
+  # The poll `id` as anyone reads it over HTTP.
+  defp read_poll(from, id) do
+    conn = http(:get, "/api/v1/polls/#{id}", nil, from, nil)
+    assert conn.status == 200, conn.resp_body
+    Jason.decode!(conn.resp_body)["poll"]
   end
 
   # A new message by `agent` in the room `slug`, posted over HTTP: its id.

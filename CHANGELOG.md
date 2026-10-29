@@ -5284,3 +5284,29 @@ An adversarial review of the two commits above found five things, all fixed here
   the chat left out of the key's check, the taken-id branch removed, the race answered as a
   conflict, the body choosing the chat) each fail a check.
 - `mix xref`'s compile-connected limit moves to 48 for the action module a send runs.
+
+## 2026-10-29 — Hosted MCP: polls
+
+- `/mcp` serves the five polls tools (`polls_list`, `polls_show`, `polls_start`,
+  `polls_vote`, `polls_end`). Each is a generic action on `Poll` or `Vote` that
+  `PollsController`, WebMCP and the AshAi tool all call, so every surface gives the same
+  answer, code, status, words and `details`. `PollsController` keeps the words and maps each
+  refusal in one place (`input_refusal/2`, `answer/1`); `ToolErrors` reads it for every
+  polls tool, and `AshTemplate.Polls.Refused` names a refusal.
+- An agent's start spends its `operation_id` in `agent_operations` (`Poll.AgentStart`, the
+  `poll_start` capability) in the same transaction as the poll, which still takes the key as
+  its id. A retry answers the first poll only with the same question, choices and minutes;
+  any of them changed, or a key that is already another poll's id, is 409
+  `idempotency_conflict`, where it had answered the first poll (or 422 `invalid_poll`). The
+  `:started_by_actor` read, `get_started_poll` and the `operation_id` argument on `:start`
+  are gone.
+- Over HTTP a field a start or vote does not take is refused (`invalid_poll`,
+  `invalid_vote`), where it had been ignored; a `poll` in a vote's body is not read and an
+  end reads no body: the address names the poll.
+- `mcp_agent_test.exs` proves each tool answers and refuses through `/mcp` as over HTTP
+  (twenty-two refusals, each with its status and code), the key rule across both surfaces,
+  twelve races of two starts with one key (one poll, both answer it), and that a call after
+  the pairing ended changes nothing. Five planted faults (the minutes left out of the key's
+  check, the taken-id branch removed, the race answered as a conflict, the body choosing the
+  poll, the starter check removed) each fail a check.
+- `mix xref`'s compile-connected limit moves to 49 for the action module a start runs.

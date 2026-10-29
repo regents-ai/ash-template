@@ -1288,7 +1288,7 @@
     },
     {
       "command": "polls start",
-      "description": "Start a poll for your person; anyone can read it, and each person votes once. A person starts 3 polls a day. Pipe question, choices, minutes and a stable operation_id UUID on stdin; keep the UUID when retrying.",
+      "description": "Start a poll for your person; anyone can read it, and each person votes once. A person starts 3 polls a day. Pipe question, choices, minutes and a stable operation_id UUID on stdin; keep the UUID, question, choices and minutes when retrying.",
       "operation_id": "startPoll",
       "webmcp": "polls_start",
       "method": "POST",
