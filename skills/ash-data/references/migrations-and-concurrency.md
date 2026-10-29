@@ -151,11 +151,18 @@ only what needs a session on the direct address:
 - `keyfleet-code` runs the Twigpine git node (Rust, sqlx), not an Ash site. It holds at
   most 10 connections (since its v5, c9a59ea). Through the pooler, sqlx keeps no
   prepared statements between transactions: `statement_cache_capacity(0)`.
-- Releases do not take turns. The pooler, not a release lock, keeps a release's second
-  machine from taking the database's connections, so a site serving through it releases
-  whenever it is ready. A site still serving on the direct address moves to the pooler
-  in its next release, and drops `lockf -k /tmp/regent-shared-db-release.lock` from its
-  deploy in the same change.
+- Releases take turns until the last site is pooled. The pooler, not a release lock,
+  keeps a release's second machine from taking the database's connections, but what
+  stays direct still doubles in a release: each machine's listening connection, the
+  release command's own connections, and `keyfleet-code` (up to 20). With every release
+  at once that peak (55 pooled, about 12 listening, about 14 for release commands, 20,
+  plus Sentinel) passes the database's 97. So a site keeps
+  `lockf -k /tmp/regent-shared-db-release.lock` in its deploy when it moves to the pooler,
+  and the lock goes from every site together once the count after the last move, and the
+  founder's pooler limits, leave room for that peak
+  (`control/rollouts/2026-10-29-db-pooler.md` in the workspace). The template has
+  released without the lock since 27 October; its direct share in a release is three
+  connections.
 - More connections for one site, or a larger database plan, is the founder's decision.
 
 ## Snapshots are generator state

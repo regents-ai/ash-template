@@ -5343,3 +5343,12 @@ way, and the library's own site-tool serving is gone.
   60-second idle limit. Both now say so, and the skill gives the pooler's real figures
   (45, not 50) and notes that sending `pg_notify` through the pooler works; only
   listening needs the direct connection. No behaviour changes.
+
+## 2026-10-29 — Releases keep taking turns until every site is pooled
+
+- The ash-data skill said a site drops the shared release lock when it moves onto the
+  pooler. An independent review of the pooler round found that, with every release at
+  once, what stays on the direct address (listening connections, release commands,
+  `keyfleet-code`) plus the pooler's 55 can pass the database's 97. The skill now says a
+  site keeps the lock when it moves, and the lock goes from every site together once the
+  count after the last move leaves room. Docs only.
