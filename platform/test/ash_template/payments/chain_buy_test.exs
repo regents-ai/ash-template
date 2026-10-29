@@ -3,10 +3,14 @@ defmodule AshTemplate.Payments.ChainBuyTest do
   # - a buy is paid only in purchased Credits, held before anything is sent;
   # - the Credits are charged once the chain takes the sale's call, and given
   #   back when the approval or the call is refused;
+  # - the outcome and its hashes are committed before the Credits are settled;
   # - a call that may still land keeps them held until its receipt answers;
+  # - a buy left for a person keeps its Credits held and logs one line;
   # - everything bought in one day stays within the site's daily limit.
   use ExUnit.Case, async: false
   use Oban.Testing, repo: AshTemplate.Repo, prefix: "ash_template_app"
+
+  import ExUnit.CaptureLog
 
   alias AshTemplate.Payments
   alias AshTemplate.Payments.ChainBuy
@@ -21,7 +25,9 @@ defmodule AshTemplate.Payments.ChainBuyTest do
     @behaviour AshTemplate.Payments.Sale
 
     @impl true
-    def price("key-1"), do: {:ok, %{sale: "0x" <> String.duplicate("c", 40), price_atomic: 2_000_000}}
+    def price("key-1"),
+      do: {:ok, %{sale: "0x" <> String.duplicate("c", 40), price_atomic: 2_000_000}}
+
     def price(_item), do: {:error, "This Key is sold out."}
 
     @impl true
@@ -72,8 +78,12 @@ defmodule AshTemplate.Payments.ChainBuyTest do
     assert %{success: 1} = Oban.drain_queue(queue: :chain_buys)
     assert_received {:bought, %{sale: @sale, price_atomic: 2_000_000, call: %{data: _}}, _wallet}
 
-    assert %{state: :bought, approval_hash: approval, call_hash: call} = reload(buy)
+    assert %{state: :bought, hold: :held, approval_hash: approval, call_hash: call} = reload(buy)
     assert {approval, call} == {sent.approval, sent.call}
+    assert held(person) == %{available: "1", held: "2"}
+
+    assert %{success: 1} = Oban.drain_queue(queue: :default)
+    assert %{hold: :charged} = reload(buy)
     assert held(person) == %{available: "1", held: "0"}
     assert [%{status: :charged}] = holds(person)
   end
@@ -97,6 +107,7 @@ defmodule AshTemplate.Payments.ChainBuyTest do
     Process.put(:buy_answer, {:error, {:call_reverted, %{approval: hash(2), call: hash(3)}}})
     {:ok, second} = Payments.buy("key-1", person.wallet, actor: person.actor)
     Oban.drain_queue(queue: :chain_buys)
+    Oban.drain_queue(queue: :default)
 
     assert %{state: :failed, failure: "The approval did not go through."} = reload(first)
     assert %{state: :failed, failure: "The sale refused the purchase."} = reload(second)
@@ -113,15 +124,32 @@ defmodule AshTemplate.Payments.ChainBuyTest do
 
     assert %{state: :unknown} = reload(buy)
     assert held(person) == %{available: "0", held: "2"}
-    assert_enqueued worker: CheckReceipt, args: %{id: buy.id}
+    assert_enqueued(worker: CheckReceipt, args: %{id: buy.id})
 
     Process.put({:status, hash(2)}, :not_yet)
     assert {:snooze, 10} = perform_job(CheckReceipt, %{id: buy.id})
 
     Process.put({:status, hash(2)}, :ok)
     assert :ok = perform_job(CheckReceipt, %{id: buy.id})
-    assert %{state: :bought} = reload(buy)
+    Oban.drain_queue(queue: :default)
+    assert %{state: :bought, hold: :charged} = reload(buy)
     assert [%{status: :charged}] = holds(person)
+  end
+
+  test "a send that never finished is found, logged and keeps its Credits held" do
+    person = person(2)
+    {:ok, buy} = Payments.buy("key-1", person.wallet, actor: person.actor)
+
+    AshTemplate.Repo.query!(
+      "UPDATE ash_template_app.chain_buys SET updated_at = now() - interval '11 minutes' WHERE id = $1",
+      [Ecto.UUID.dump!(buy.id)]
+    )
+
+    log = capture_log(fn -> AshOban.Test.schedule_and_run_triggers(ChainBuy) end)
+
+    assert log =~ "Buy left for a person: id=#{buy.id} state=unknown"
+    assert %{state: :unknown, hold: :held} = reload(buy)
+    assert held(person) == %{available: "0", held: "2"}
   end
 
   test "the day's buys stay within the daily limit; failed buys do not count" do
@@ -189,9 +217,13 @@ defmodule AshTemplate.Payments.ChainBuyTest do
     %{available: Decimal.to_string(balance.available), held: Decimal.to_string(balance.held)}
   end
 
-  defp holds(person), do: person.actor |> then(&RegentCredits.holds!(actor: &1)) |> Enum.sort_by(& &1.held_at)
+  defp holds(person),
+    do: person.actor |> then(&RegentCredits.holds!(actor: &1)) |> Enum.sort_by(& &1.held_at)
+
   defp reload(buy), do: Ash.get!(ChainBuy, buy.id, authorize?: false)
+
   defp hash(n),
     do: "0x" <> (n |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0"))
+
   defp wallet, do: "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)
 end

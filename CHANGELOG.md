@@ -4954,13 +4954,16 @@ An adversarial review of the two commits above found five things, all fixed here
   only (one Credit per USDC; given Credits never pay). The price is read from the sale
   before the buy's transaction; in it the day's limit is checked under a lock (500 USDC,
   `daily_limit_atomic`) and the price is held. One send at a time, never twice, on the
-  new `chain_buys` queue: an approval of exactly the price, then the sale's call, with
-  the item sent to one of the buyer's own wallets. Bought charges the Credits; a refused
-  approval or call gives them back; a call that may still land stays held while
-  `CheckReceipt` reads its receipt. No Points are earned on a buy.
+  new `chain_buys` queue: an approval of exactly the price, then the sale's call, each
+  at the wallet's next nonce after any still waiting, with the item sent to one of the
+  buyer's own wallets. The outcome and its hashes are committed first; the Credits are
+  settled in their own step: bought charges them, a refused approval or call gives
+  them back, and a call that may still land stays held while `CheckReceipt` reads its
+  receipt. A buy left for a person logs one line for Sentinel. No Points are earned on
+  a buy.
 - The template sells nothing (`sale: nil`), so buying is off here. A site names its
   sale module (`AshTemplate.Payments.Sale`) and sets `BUYING_WALLET_PRIVATE_KEY` and
-  `BASE_RPC_URL` in Fly secrets after Sean's go. Migration `20261029054225_chain_buys`
-  adds `chain_buys`.
-- elixir-utils moves to `e73b6b8d`: `RegentPayments.BuyingWallet` and
-  `RegentCredits` holds with `purchased_only?: true`.
+  `BASE_RPC_URL` in Fly secrets after Sean's go. Migrations `20261029054225_chain_buys`
+  and `20261029062853_chain_buy_hold` add `chain_buys`.
+- elixir-utils moves to `46054355`: `RegentPayments.BuyingWallet`, each send at the
+  wallet's next nonce, and `RegentCredits` holds with `purchased_only?: true`.

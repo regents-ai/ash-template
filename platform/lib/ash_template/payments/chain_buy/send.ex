@@ -2,8 +2,8 @@ defmodule AshTemplate.Payments.ChainBuy.Send do
   @moduledoc """
   Sends the buy before the update's transaction starts: the wallet approves
   exactly the price to the sale, then sends the sale's call for the item,
-  addressed to the buyer's wallet. The update records what came back, and
-  `CloseHold` settles the Credits from it in the same transaction.
+  addressed to the buyer's wallet. The update commits what came back, and
+  `Follow` queues what happens next.
   """
 
   use Ash.Resource.Change

@@ -168,8 +168,15 @@ sale.
   to one of the buyer's own wallets.
 - One send at a time, never twice (`chain_buys` queue, limit 1, one attempt):
   `RegentPayments.BuyingWallet.buy/2` approves exactly the price, then sends the sale's
-  call. Bought charges the Credits; a refused approval or call gives them back; a call
-  that may still land keeps them held while `CheckReceipt` reads its receipt.
+  call, each at the wallet's next nonce after any still waiting. The limit holds per
+  machine: a site with more than one machine runs `chain_buys` on one of them only.
+- The send commits its outcome and hashes first; the Credits are settled in their own
+  step (`:close_hold`, queued with the outcome). Bought charges them; a refused approval
+  or call gives them back; a call that may still land keeps them held while
+  `CheckReceipt` reads its receipt.
+- A buy left for a person to look up on the chain (a stopped send, one still `:sending`
+  after ten minutes, a call never answered) keeps its Credits held and logs
+  `Buy left for a person: id=... state=...` for Sentinel.
 - No Points are earned on a buy.
 
 ## Checks

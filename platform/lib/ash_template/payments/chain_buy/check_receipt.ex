@@ -2,9 +2,10 @@ defmodule AshTemplate.Payments.ChainBuy.CheckReceipt do
   @moduledoc """
   Reads the receipt of a buy's call that may still have landed, every ten
   seconds for up to an hour, one job per buy. The chain's answer settles the
-  buy: charged if the call went through, given back if the sale refused it.
-  A call the chain still has not answered stays `:unknown`, its Credits
-  held, for a person to look up.
+  buy, which queues its Credits' settlement: charged if the call went
+  through, given back if the sale refused it. A call the chain still has not
+  answered stays `:unknown`, its Credits held, for a person to look up
+  (`LeftForAPerson`).
   """
 
   use Oban.Worker,
@@ -13,7 +14,7 @@ defmodule AshTemplate.Payments.ChainBuy.CheckReceipt do
 
   alias AshTemplate.Payments
   alias AshTemplate.Payments.ChainBuy
-  alias AshTemplate.Payments.ChainBuy.Settings
+  alias AshTemplate.Payments.ChainBuy.{LeftForAPerson, Settings}
 
   @wait_seconds 10
   @tries 360
@@ -28,7 +29,7 @@ defmodule AshTemplate.Payments.ChainBuy.CheckReceipt do
     case read(buy) do
       :settled -> :ok
       :not_yet when tries < @tries -> {:snooze, @wait_seconds}
-      :not_yet -> :ok
+      :not_yet -> left(buy)
       outcome -> with {:ok, _buy} <- Payments.settle_buy(buy, outcome), do: :ok
     end
   end
@@ -41,4 +42,9 @@ defmodule AshTemplate.Payments.ChainBuy.CheckReceipt do
   end
 
   defp read(_settled), do: :settled
+
+  defp left(buy) do
+    LeftForAPerson.log(buy)
+    :ok
+  end
 end
