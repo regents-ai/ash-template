@@ -4956,3 +4956,8 @@ An adversarial review of the two commits above found five things, all fixed here
 - `skills/ash-webmcp/references/build.md` says Chrome's WebMCP origin trial runs Chrome
   149–162, as Chrome's trial registration page now says (reported by the Autolaunch
   release lead, 29 Oct; Autolaunch's token expires 29 Mar 2027). Docs only.
+
+## 2026-10-29 — Sign out closes the account menu
+
+- Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
+- The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
