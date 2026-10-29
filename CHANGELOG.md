@@ -5388,7 +5388,7 @@ way, and the library's own site-tool serving is gone.
 - The account's agents and Pair New Agent move from `/account` to their own page,
   `/account/agents`, the tab after Account (route `:account_agents`,
   `AccountLive.agents/1`, laid out by design-system `Regent.Account.agents_layout`,
-  design-system `30b0cb18`). `/account` keeps the account card, Credits and the public
+  design-system `7a853f85`, where the list is headed Paired under the page's title). `/account` keeps the account card, Credits and the public
   name. The account menu's Manage opens `/account/agents`, its Pair New Agent and the
   agent guides' links open `/account/agents#account-pairing`, and the overview's Agents
   card opens the new page.

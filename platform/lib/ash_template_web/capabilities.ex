@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.Capabilities do
   and names its answer's schema among the OpenAPI document's components.
   Whether an operation is open is read from the site's switch on every request,
   never written down. Each agent operation also says,
-  in its person's words, what it lets an agent do, which the account page shows.
+  in its person's words, what it lets an agent do, which the Agents page shows.
   """
 
   alias AshTemplateWeb.Plugs.LaunchGate
