@@ -15,8 +15,9 @@ defmodule AshTemplateWeb.PollsController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Polls
   alias AshTemplate.Polls.Poll
-  alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentHttp.UnexpectedFailure
 
   plug :paired_agent when action in [:create, :vote, :end_poll]
 

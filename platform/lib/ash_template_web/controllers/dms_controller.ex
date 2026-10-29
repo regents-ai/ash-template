@@ -15,8 +15,9 @@ defmodule AshTemplateWeb.DmsController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Dms
   alias AshTemplate.Dms.{Conversation, Message}
-  alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentHttp.UnexpectedFailure
 
   plug :paired_agent
 

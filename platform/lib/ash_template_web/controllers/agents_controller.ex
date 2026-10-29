@@ -10,7 +10,8 @@ defmodule AshTemplateWeb.AgentsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Agents
-  alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
+  alias AshTemplateWeb.FormErrors
+  alias RegentHttp.UnexpectedFailure
 
   @errors %{
     "agent_not_found" =>

@@ -14,7 +14,7 @@ defmodule AshTemplate.Application do
     # (config/runtime.exs); these only check and store its settings.
     :ok = RegentOAuth.configure(AshTemplate.OAuth)
     :ok = RegentMCPAgents.configure!()
-    :ok = AshTemplateWeb.UnexpectedFailure.attach_jobs()
+    :ok = RegentHttp.UnexpectedFailure.attach_jobs()
     :ok = AshTemplate.IdleDisconnects.attach()
     :ok = AshTemplateWeb.VisitLog.Events.attach()
 

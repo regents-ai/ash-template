@@ -5382,3 +5382,18 @@ way, and the library's own site-tool serving is gone.
   (docs.fly.io/mpg/client-configuration). Both now say so. The skill also says Fly's
   dashboard changes only the pool mode, and that the pooler keeps at least 5 connections
   per login, apparently on each of two processes. No behaviour change.
+
+## 2026-10-29 — elixir-utils b375f122, and a connected app told to wait hears how long
+
+- elixir-utils moves to `b375f122` on its main: the `dea334b` hosted-signing tools merged
+  into main (`ce944e3`), a site's own 429 whose `Retry-After` names no whole seconds
+  passed on as the site's answer, like any other (`69f0b9d`), and
+  `RegentHttp.UnexpectedFailure` (`b375f122`).
+- `AshTemplateWeb.UnexpectedFailure` is gone: every caller, and the one `attach_jobs/0`
+  at start, uses `RegentHttp.UnexpectedFailure`, which writes the same lines. The
+  library's property test covers it.
+- When the sign-in service or the site answers an identity tool with 429 and the seconds
+  to wait, the tool now answers `too_many_requests` with `retry_after` in those seconds, in
+  the library's words (`RegentMCPAgents.Tools.wait/1`), instead of "The identity request
+  could not be completed." `AshTemplate.Agents.Connection.Refused` carries the seconds as
+  `wait`.

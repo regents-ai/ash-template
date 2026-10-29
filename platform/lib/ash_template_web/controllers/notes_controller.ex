@@ -13,8 +13,9 @@ defmodule AshTemplateWeb.NotesController do
   alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof}
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentHttp.UnexpectedFailure
 
   plug :authenticate
 

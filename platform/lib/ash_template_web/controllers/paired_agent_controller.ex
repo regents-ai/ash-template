@@ -16,9 +16,10 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Rooms.Mute
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
+  alias RegentHttp.UnexpectedFailure
   alias RegentPoints.Rules
 
   plug :paired_agent

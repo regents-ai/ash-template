@@ -167,6 +167,33 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert agents(subject) == []
     end
 
+    test "a signer that asks for a wait gives pair_identity the seconds to wait" do
+      subject = "did:privy:connector-wait"
+      sign_in!(subject)
+      %{access: token} = connect!(subject)
+
+      Req.Test.stub(RegentMCPAgents.HostedSigner, fn conn ->
+        {:ok, body, conn} = read_body(conn)
+
+        case Jason.decode!(body) do
+          %{"operation" => "register"} ->
+            Req.Test.json(conn, %{"address" => @wallet})
+
+          %{"operation" => "sign"} ->
+            conn
+            |> put_resp_header("retry-after", "45")
+            |> put_status(429)
+            |> Req.Test.json(%{})
+        end
+      end)
+
+      assert %{"isError" => true, "content" => [%{"text" => text}]} =
+               tool(token, "pair_identity", pair_args(code!(subject)))
+
+      assert %{"code" => "too_many_requests", "retry_after" => 45} = Jason.decode!(text)["error"]
+      assert agents(subject) == []
+    end
+
     test "a connected app lists and runs only its identity tools, never a room's" do
       subject = "did:privy:connector-scope"
       sign_in!(subject)

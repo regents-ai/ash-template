@@ -8,8 +8,9 @@ defmodule AshTemplate.Agents.Connection do
   is paired, pair_identity pairs it with the account's own pairing code, and
   check_in tells the person it is active. A refusal carries the site's own
   code, words and `retry_after` when the site answered, such as
-  `pairing_code_unknown` or `agent_not_paired`, and the library's words for
-  where the connection stands when no answer came
+  `pairing_code_unknown` or `agent_not_paired`, the seconds to wait when the
+  signer or the site answered 429 with them, and the library's words for where
+  the connection stands when no answer came
   (`AshTemplate.Agents.Connection.Refused`).
   """
 
@@ -79,5 +80,6 @@ defmodule AshTemplate.Agents.Connection do
     do: {:error, Refused.exception(error: error, retry_after: retry_after)}
 
   defp answer({:refused, _status, error}), do: {:error, Refused.exception(error: error)}
+  defp answer({:error, {:rate_limited, seconds}}), do: {:error, Refused.exception(wait: seconds)}
   defp answer(_no_answer), do: {:error, Refused.exception([])}
 end

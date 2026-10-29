@@ -16,8 +16,9 @@ defmodule AshTemplateWeb.ChatController do
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Chat
   alias AshTemplate.Chat.{Conversation, Message}
-  alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
+  alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentHttp.UnexpectedFailure
 
   plug :paired_agent
 
