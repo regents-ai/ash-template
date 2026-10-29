@@ -104,9 +104,10 @@
            [
              files: %{
                excluded: [
-                 # This task intentionally syncs into the checked-out repository;
+                 # These tasks intentionally sync into the checked-out repository;
                  # Application.app_dir/2 would point at the build output instead.
-                 "lib/mix/tasks/ash_template.sync_api_contract.ex"
+                 "lib/mix/tasks/ash_template.sync_api_contract.ex",
+                 "lib/mix/tasks/ash_template.sync_descriptions.ex"
                ]
              }
            ]},

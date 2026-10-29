@@ -23,6 +23,7 @@ defmodule AshTemplateWeb.Capabilities do
   in its person's words, what it lets an agent do, which the account page shows.
   """
 
+  alias AshTemplate.Descriptions
   alias AshTemplateWeb.Plugs.LaunchGate
   alias AshTemplateWeb.PublicDocuments
 
@@ -43,11 +44,47 @@ defmodule AshTemplateWeb.Capabilities do
   @to_person ~w(owner_only wallet)
   @connected_app "connected_app"
 
+  # A `$ref` into the OpenAPI document's components, followed to what it names.
+  resolve = fn
+    %{"$ref" => "#/components/" <> name} ->
+      get_in(files.openapi["components"], String.split(name, "/"))
+
+    value ->
+      value
+  end
+
+  # An operation's input as OpenAPI gives it: its address's parameters and the
+  # fields of its JSON body, each field's choices and format.
+  openapi_input = fn path_parameters, operation ->
+    parameters =
+      for parameter <- path_parameters ++ (operation["parameters"] || []),
+          %{"in" => place} = parameter = resolve.(parameter),
+          place in ~w(path query),
+          do: {parameter["name"], resolve.(parameter["schema"])}
+
+    body =
+      case operation["requestBody"] do
+        nil ->
+          %{}
+
+        body ->
+          resolve.(resolve.(body)["content"]["application/json"]["schema"])["properties"] || %{}
+      end
+
+    Map.new(parameters ++ Enum.map(body, fn {name, field} -> {name, resolve.(field)} end))
+  end
+
   openapi =
     for {path, methods} <- files.openapi["paths"],
         {method, %{"operationId" => id} = operation} <- methods,
         into: %{},
-        do: {id, %{http: "#{String.upcase(method)} #{path}", title: operation["summary"]}}
+        do:
+          {id,
+           %{
+             http: "#{String.upcase(method)} #{path}",
+             title: operation["summary"],
+             input: openapi_input.(methods["parameters"] || [], operation)
+           }}
 
   output_schemas =
     for {_path, methods} <- files.openapi["paths"],
@@ -76,6 +113,7 @@ defmodule AshTemplateWeb.Capabilities do
        %{
          input: schema["properties"]["input"],
          title: tool.title,
+         description: tool.description,
          runs: {tool.resource, tool.action}
        }}
     end
@@ -90,6 +128,13 @@ defmodule AshTemplateWeb.Capabilities do
     {Map.new(schema["properties"], fn {name, field} ->
        {name, Map.take(field, ~w(type enum format))}
      end), MapSet.new(schema["required"] || [])}
+  end
+
+  # A browser tool's fields against its OpenAPI operation's: the same names, each
+  # with the same choices and format. OpenAPI's input also serves a person's own
+  # apps, so which fields are required and whether one takes null may differ.
+  fields = fn properties ->
+    Map.new(properties, fn {name, field} -> {name, Map.take(field, ~w(enum format))} end)
   end
 
   surface_names = ~w(webmcp hosted_mcp http cli)
@@ -145,12 +190,14 @@ defmodule AshTemplateWeb.Capabilities do
                  hosted_tool = hosted_only && hosted[hosted_only]
 
                  %{http: http, title: title} =
+                   operation =
                    openapi[id] || %{http: nil, title: hosted_tool && hosted_tool.title}
 
                  tool = tools[id]
                  command = commands[id]
                  surfaces = row["surfaces"]
                  hosted_input = tool && hosted[tool["name"]][:input]
+                 hosted_words = tool && hosted[tool["name"]][:description]
                  browser_input = tool && tool["input_schema"]
 
                  "#/components/schemas/" <> answer =
@@ -172,6 +219,16 @@ defmodule AshTemplateWeb.Capabilities do
 
                      row["authority"] not in authorities ->
                        "an unknown authority"
+
+                     is_binary(row["description"]) == (row["authority"] == @connected_app) ->
+                       "a description on a connected app's tool, which keeps the shared library's words, or none on another operation"
+
+                     hosted_words && hosted_words != Descriptions.text(:hosted_mcp, id) ->
+                       "a hosted tool whose words are not its description's (take them from AshTemplate.Descriptions.hosted/1)"
+
+                     tool &&
+                         fields.(tool["input_schema"]["properties"]) != fields.(operation.input) ->
+                       "a browser tool whose input fields differ from its OpenAPI operation's"
 
                      not Enum.all?(row["conditions"], &(&1 in conditions)) ->
                        "an unknown condition"

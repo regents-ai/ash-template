@@ -622,7 +622,7 @@
     {
       "name": "agents_status",
       "title": "Check in",
-      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Check in as a paired agent: your pairing and the account you act for. Records the check-in time, which your person sees. Refused with agent_not_paired until your person pairs you, and person_not_here until they sign in on this site. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {},
@@ -1043,7 +1043,7 @@
     {
       "name": "notes_rate_label",
       "title": "Rate a note label",
-      "description": "Say once whether a note's label fits it. Changes neither the note nor its label. Needs a pairing. If the answer is lost, read the note before trying again. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Say once whether a note's label fits it. Changes neither the note nor its label. If the answer is lost, read the note before trying again. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -1077,7 +1077,7 @@
     {
       "name": "account_balances",
       "title": "Read Credits",
-      "description": "Read your person's Credits and your spending allowance. Spends nothing. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Read your person's Credits and your spending allowance. Changes nothing. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {},

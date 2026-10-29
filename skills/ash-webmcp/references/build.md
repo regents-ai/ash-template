@@ -147,6 +147,9 @@ const tools = manifest.tools.filter(tool => tool.scope === "site").map(tool => (
   undone, so the agent asks the customer first.
 - The description says when to use the tool, what it needs (sign-in, profile,
   wallet) and whether money moves. Schemas are typed with `additionalProperties: false`.
+- Write those words once, as the operation's `description` in `priv/capabilities.json`,
+  and let `mix ash_template.sync_descriptions` put them on every surface; the hosted
+  MCP tool takes them from `AshTemplate.Descriptions.hosted/1`.
 
 ### 4. Wallets and payments
 

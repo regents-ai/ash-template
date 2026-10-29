@@ -31,6 +31,8 @@ CLI and the Claude connector. The connector column comes with the connector's ch
   pairing, so for an agent-owned account they count once G1 and G2 are closed. A
   public read's browser tool sends its input as its HTTP route's address and answers
   what that route answers, refusals included, in the hosted tool's words.
+  Every surface describes an operation in the same words, its one `description` in
+  `platform/priv/capabilities.json`.
 - **MCP**: hosted `/mcp` for a signed agent. "Planned" means the agent-access lane's
   tool list.
 - **Connector**: the same site added to a Claude account as a custom connector, signed

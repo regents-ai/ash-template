@@ -61,15 +61,15 @@ defmodule AshTemplate.Accounts do
   # (`AshTemplateWeb.Capabilities` checks both).
   tools do
     tool :account_balances, AshTemplate.Accounts.Holdings, :account_balances do
-      description "Read your person's Credits and what you may spend of them on this site: your grant, its limits and what is left today. Changes nothing. Needs a pairing."
+      description AshTemplate.Descriptions.hosted(:account_balances)
     end
 
     tool :account_credits_history, AshTemplate.Accounts.Holdings, :account_credits_history do
-      description "Read what came into and went out of your person's Credits, newest first, a page at a time. Changes nothing. Needs a pairing."
+      description AshTemplate.Descriptions.hosted(:account_credits_history)
     end
 
     tool :account_points, AshTemplate.Accounts.Holdings, :account_points do
-      description "Read your person's Points: the total, today's, each daily allowance left and the latest entries, as the Points page shows them. Changes nothing. Needs a pairing."
+      description AshTemplate.Descriptions.hosted(:account_points)
     end
   end
 end

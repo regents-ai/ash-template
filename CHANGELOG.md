@@ -5402,3 +5402,19 @@ An adversarial review of the two commits above found five things, all fixed here
 - Checks: `page_tools.spec.ts` calls every public tool once against HTTP, hands on
   refusals and the wait, at 1280 and 390; `mcp_agent_test.exs` matches HTTP and
   `/mcp` refusals for every public read.
+
+## 2026-10-29 — One description per operation (WM-4)
+
+- Each operation's words are written once, as `description` on its row in
+  `platform/priv/capabilities.json`. Every surface takes them from there with the
+  same few words added (who may run it, whether it changes anything, and on a browser
+  tool how it is signed): the browser tool in `priv/tool_manifest.json`, the command
+  in `cli/commands.json`, the operation in `priv/public/openapi.json` and the hosted
+  MCP tool, whose domain `tools` blocks call `AshTemplate.Descriptions.hosted/1`.
+  A connected app's identity tools keep the shared library's words.
+- `mix ash_template.sync_descriptions` writes the three files; `--check`, in
+  `mix precommit`, fails while any of them has other words. Command descriptions no
+  longer repeat the stdin hint, which the CLI's help adds itself.
+- The build fails on a browser tool whose input fields differ from its OpenAPI
+  operation's (path, query and body together), on a hosted tool with words of its
+  own, and on a missing or extra `description` row (`AshTemplateWeb.Capabilities`).

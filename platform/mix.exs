@@ -222,6 +222,7 @@ defmodule AshTemplate.MixProject do
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",
         "ash_template.sync_api_contract --check",
+        "ash_template.sync_descriptions --check",
         "regent_ui.assets",
         "regent_identity.assets",
         "regent_agent_access.assets",
