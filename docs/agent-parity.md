@@ -32,7 +32,8 @@ CLI and the Claude connector. The connector column comes with the connector's ch
   public read's browser tool sends its input as its HTTP route's address and answers
   what that route answers, refusals included, in the hosted tool's words.
   Every surface describes an operation in the same words, its one `description` in
-  `platform/priv/capabilities.json`.
+  `platform/priv/capabilities.json`. A public read checks an agent's proof when the
+  request sends any, as `/mcp` checks every call, and reads anonymously without it.
 - **MCP**: hosted `/mcp` for a signed agent. "Planned" means the agent-access lane's
   tool list.
 - **Connector**: the same site added to a Claude account as a custom connector, signed
