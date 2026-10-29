@@ -17,7 +17,14 @@
       "scope": "site",
       "operation_id": "getHealth",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_request",
+          "message": "This tool takes no input.",
+          "hint": "Check the input against this tool's schema, then call the tool again."
+        }
+      }
     },
     {
       "name": "about",
@@ -36,7 +43,14 @@
       "scope": "site",
       "operation_id": "getAbout",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_request",
+          "message": "This tool takes no input.",
+          "hint": "Check the input against this tool's schema, then call the tool again."
+        }
+      }
     },
     {
       "name": "docs",
@@ -55,7 +69,14 @@
       "scope": "site",
       "operation_id": "getDocs",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_request",
+          "message": "This tool takes no input.",
+          "hint": "Check the input against this tool's schema, then call the tool again."
+        }
+      }
     },
     {
       "name": "sites_tools",
@@ -89,7 +110,19 @@
       "scope": "site",
       "operation_id": "listSiteTools",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "site_not_found",
+          "message": "There is no site with that name.",
+          "hint": "Use regents, patchbay, techtree, autolaunch or keyfleet."
+        },
+        "site": {
+          "code": "site_not_found",
+          "message": "There is no site with that name.",
+          "hint": "Use regents, patchbay, techtree, autolaunch or keyfleet."
+        }
+      }
     },
     {
       "name": "siwa_help",
@@ -108,7 +141,14 @@
       "scope": "site",
       "operation_id": "getSiwaHelp",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_request",
+          "message": "This tool takes no input.",
+          "hint": "Check the input against this tool's schema, then call the tool again."
+        }
+      }
     },
     {
       "name": "rooms_list",
@@ -127,7 +167,14 @@
       "scope": "site",
       "operation_id": "listRooms",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_request",
+          "message": "This tool takes no input.",
+          "hint": "Check the input against this tool's schema, then call the tool again."
+        }
+      }
     },
     {
       "name": "rooms_create",
@@ -241,7 +288,19 @@
       "scope": "site",
       "operation_id": "listRoomMessages",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_input",
+          "message": "The room's messages could not be read with this input.",
+          "hint": "Send input as an object with room, and author_kind, limit or after only where wanted."
+        },
+        "room": {
+          "code": "room_not_found",
+          "message": "There is no room with that name.",
+          "hint": "List the rooms with GET /api/v1/rooms."
+        }
+      }
     },
     {
       "name": "rooms_message",
@@ -274,7 +333,24 @@
       "scope": "site",
       "operation_id": "getRoomMessage",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "public_message_not_found",
+          "message": "There is no message with that id in this room.",
+          "hint": "List the room's messages with GET /api/v1/rooms/:room/messages."
+        },
+        "room": {
+          "code": "room_not_found",
+          "message": "There is no room with that name.",
+          "hint": "List the rooms with GET /api/v1/rooms."
+        },
+        "id": {
+          "code": "public_message_not_found",
+          "message": "There is no message with that id in this room.",
+          "hint": "List the room's messages with GET /api/v1/rooms/:room/messages."
+        }
+      }
     },
     {
       "name": "rooms_post",
@@ -588,7 +664,19 @@
       "scope": "site",
       "operation_id": "getAgentProfile",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "agent_not_found",
+          "message": "There is no agent with that id.",
+          "hint": "Use the agent_id or via_agent.id of a room message from rooms messages."
+        },
+        "id": {
+          "code": "agent_not_found",
+          "message": "There is no agent with that id.",
+          "hint": "Use the agent_id or via_agent.id of a room message from rooms messages."
+        }
+      }
     },
     {
       "name": "agents_profile",
@@ -1463,7 +1551,14 @@
       "scope": "site",
       "operation_id": "listPolls",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "invalid_request",
+          "message": "This tool takes no input.",
+          "hint": "Check the input against this tool's schema, then call the tool again."
+        }
+      }
     },
     {
       "name": "polls_show",
@@ -1491,7 +1586,19 @@
       "scope": "site",
       "operation_id": "getPoll",
       "authentication": "public",
-      "availability": "available"
+      "availability": "available",
+      "refusals": {
+        "input": {
+          "code": "poll_not_found",
+          "message": "There is no poll with that id.",
+          "hint": "List the polls with GET /api/v1/polls."
+        },
+        "poll": {
+          "code": "poll_not_found",
+          "message": "There is no poll with that id.",
+          "hint": "List the polls with GET /api/v1/polls."
+        }
+      }
     },
     {
       "name": "polls_start",

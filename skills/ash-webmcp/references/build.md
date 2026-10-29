@@ -124,13 +124,18 @@ const tools = manifest.tools.filter(tool => tool.scope === "site").map(tool => (
 - Use the shared signed transport described below: it omits credentials, refuses
   redirects and sends the exact prepared bytes with the supplied proof. Public
   reads also omit credentials. Pass the agent's `signal` through.
-- A write cancelled after the request left returns `{outcome: "unknown"}` with how to
-  check, never "cancelled".
+- A write whose answer was lost after the request left returns
+  `{error: {code: "outcome_unknown", message, hint}}` with how to check, never
+  "cancelled".
+- A public read builds its address from its manifest `route` and sends its input
+  there, so the server checks it as it checks that address and the page hands its
+  answer on unchanged. The page refuses only input it cannot put in an address, with
+  the refusals the manifest carries from the server's own words.
 - Keep results small and bounded. Refuse rather than truncate data into a lie.
 - A refusal is `isError: true` with the site's one error shape as `structuredContent`:
   `{error: {code, message, hint}}`, the same as its JSON errors, plus the message and
   hint as the text content. Anything more (field messages as `details`,
-  `retry_after_seconds`) goes inside `error`. No other refusal shape, in page tools or
+  `retry_after`, the seconds of `Retry-After`) goes inside `error`. No other refusal shape, in page tools or
   hosted MCP tools.
 
 ### 3. Mark what a tool does, truthfully

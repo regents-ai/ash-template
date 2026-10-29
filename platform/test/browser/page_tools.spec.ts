@@ -1,4 +1,5 @@
 import type {Page, Request} from "@playwright/test"
+import manifest from "../../priv/tool_manifest.json" with {type: "json"}
 import {expect, test} from "./support/test"
 
 // The page's browser tools as an agent's browser host sees them. Chromium here has
@@ -78,7 +79,7 @@ test("with no agent signer a signed tool sends nothing and says how to get one",
   await open(page, "none")
   const sent = toApi(page)
   const answer = await call(page, "rooms_post", post)
-  expect(answer).toMatchObject({ok: false, error: {code: "agent_auth_required"}})
+  expect(answer).toMatchObject({error: {code: "agent_auth_required"}})
   expect((answer as {error: {hint: string}}).error.hint).toContain("regents browser --site ash-template")
   expect(sent).toEqual([])
 })
@@ -87,7 +88,7 @@ test("a signer's refusal is the tool's answer, and nothing is sent", async ({pag
   await open(page, "refuses")
   const sent = toApi(page)
   const answer = await call(page, "rooms_post", post)
-  expect(answer).toEqual({ok: false, error: {code: "call_mismatch", message: "This is not the call your agent made.", hint: "Call the tool again."}})
+  expect(answer).toEqual({error: {code: "call_mismatch", message: "This is not the call your agent made.", hint: "Call the tool again."}})
   expect(sent).toEqual([])
 })
 
@@ -113,7 +114,85 @@ test("the page sends exactly the request the signer signed, with its proof and n
 
   // An input the tool does not take is refused before the signer is asked.
   const refused = await call(page, "rooms_post", {...post, colour: "blue"})
-  expect(refused).toMatchObject({ok: false, error: {code: "invalid_request"}})
+  expect(refused).toMatchObject({error: {code: "invalid_request"}})
   expect(await page.evaluate(() => (window as unknown as {signerAsked: unknown[]}).signerAsked.length)).toBe(1)
   expect(sent).toHaveLength(1)
+})
+
+type Public = {name: string; route: string; authentication: string; refusals: Record<string, unknown>}
+const reads = (manifest.tools as unknown as Public[]).filter(tool => tool.authentication === "public")
+
+// What each public read asks the site for: the tool's input, and the same read over HTTP.
+function asks(id: string): Record<string, [Record<string, unknown>, string]> {
+  const missing = "0f4c2b9e-3c6a-4f7e-9a51-2a7b8c9d0e1f"
+  return {
+    health: [{}, "/api/v1/health"],
+    about: [{}, "/api/v1/about"],
+    docs: [{}, "/api/v1/docs"],
+    sites_tools: [{site: "regents"}, "/api/v1/sites/regents/tools"],
+    siwa_help: [{}, "/api/v1/siwa/help"],
+    rooms_list: [{}, "/api/v1/rooms"],
+    rooms_messages: [{room: "general", limit: 2}, "/api/v1/rooms/general/messages?limit=2"],
+    rooms_message: [{room: "general", id}, `/api/v1/rooms/general/messages/${id}`],
+    agents_get: [{id: missing}, `/api/v1/agents/${missing}`],
+    polls_list: [{}, "/api/v1/polls"],
+    polls_show: [{poll: missing}, `/api/v1/polls/${missing}`],
+  }
+}
+
+test("every public read answers exactly as its HTTP read, from its manifest route", async ({page}) => {
+  await open(page, "none")
+  const sent = toApi(page)
+  const posted = await page.request.get("/api/v1/rooms/general/messages?limit=1").then(response => response.json())
+  const examples = asks(posted.messages[0]?.id ?? "0f4c2b9e-3c6a-4f7e-9a51-2a7b8c9d0e1f")
+  expect(Object.keys(examples).sort()).toEqual(reads.map(tool => tool.name).sort())
+
+  for (const tool of reads) {
+    const [input, path] = examples[tool.name]
+    const over_http = await page.request.get(path).then(response => response.json())
+    expect(await call(page, tool.name, input), tool.name).toEqual(over_http)
+  }
+  expect(sent.map(request => new URL(request.url()).pathname + new URL(request.url()).search).sort())
+    .toEqual(reads.map(tool => examples[tool.name][1]).sort())
+})
+
+test("a public read hands on the site's refusal unchanged, and refuses only what it cannot send", async ({page}) => {
+  await open(page, "none")
+  const sent = toApi(page)
+  const http = (path: string) => page.request.get(path).then(response => response.json())
+
+  for (const [input, path] of [
+    [{room: "general", limit: "x"}, "/api/v1/rooms/general/messages?limit=x"],
+    [{room: "general", limit: [5]}, "/api/v1/rooms/general/messages?limit=%5B5%5D"],
+    [{room: "general", colour: "blue"}, "/api/v1/rooms/general/messages?colour=blue"],
+    [{room: "nowhere"}, "/api/v1/rooms/nowhere/messages"],
+    [{room: "general", limit: null}, "/api/v1/rooms/general/messages?limit="],
+  ] as const) {
+    expect(await call(page, "rooms_messages", input), path).toEqual(await http(path))
+  }
+  expect(sent).toHaveLength(5)
+
+  // Input with no address is answered as hosted MCP answers it, and nothing is sent.
+  const messages = reads.find(tool => tool.name === "rooms_messages")!
+  for (const input of ["general", null, {}, {room: ""}, {room: ".."}]) {
+    const field = input !== null && typeof input === "object" ? "room" : "input"
+    expect(await call(page, "rooms_messages", input), JSON.stringify(input)).toEqual({error: messages.refusals[field]})
+  }
+  expect(sent).toHaveLength(5)
+})
+
+test("a refusal carries the seconds to wait, and a read that gets no answer says so", async ({page}) => {
+  await open(page, "none")
+  await page.route("**/api/v1/rooms", route => route.fulfill({
+    status: 429,
+    headers: {"retry-after": "30"},
+    contentType: "application/json",
+    body: JSON.stringify({error: {code: "rate_limited", message: "Too Many Requests", hint: "Wait, then try again."}}),
+  }))
+  expect(await call(page, "rooms_list", {})).toEqual({
+    error: {code: "rate_limited", message: "Too Many Requests", hint: "Wait, then try again.", retry_after: 30},
+  })
+
+  await page.route("**/api/v1/polls", route => route.abort("connectionfailed"))
+  expect(await call(page, "polls_list", {})).toEqual({error: {code: "unreachable", message: "The site could not be reached. Try again."}})
 })

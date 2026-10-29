@@ -426,6 +426,58 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert Jason.decode!(text)["error"]["code"] == "invalid_request"
   end
 
+  test "a public read takes over HTTP just the input its hosted tool takes, refused in its words",
+       %{from: from} do
+    agent = paired_wallet()
+
+    for {name, input, path} <- [
+          {"health", %{foo: "1"}, "/api/v1/health?foo=1"},
+          {"docs", %{foo: "1"}, "/api/v1/docs?foo=1"},
+          {"rooms_list", %{foo: "1"}, "/api/v1/rooms?foo=1"},
+          {"polls_list", %{foo: "1"}, "/api/v1/polls?foo=1"},
+          {"sites_tools", %{site: "regents", foo: "1"}, "/api/v1/sites/regents/tools?foo=1"},
+          {"rooms_messages", %{room: "general", foo: "1"}, "/api/v1/rooms/general/messages?foo=1"},
+          {"rooms_messages", %{room: "general", foo: "1", limit: "x"},
+           "/api/v1/rooms/general/messages?foo=1&limit=x"},
+          {"rooms_message", %{room: "general", id: "x"}, "/api/v1/rooms/general/messages/x"},
+          {"agents_get", %{id: "x"}, "/api/v1/agents/x"},
+          {"polls_show", %{poll: "x", foo: "1"}, "/api/v1/polls/x?foo=1"}
+        ] do
+      over_http = http(:get, path, nil, from, nil)
+      %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+      assert %{"isError" => true, "content" => [%{"text" => text}]} =
+               result(mcp(call(name, input), from: from, proof: agent))
+
+      assert over_http.status in [404, 422], path
+      assert Jason.decode!(text)["error"] == refused, path
+    end
+  end
+
+  test "a browser tool's answer to input it cannot send is the hosted tool's", %{from: from} do
+    agent = paired_wallet()
+
+    manifest =
+      Application.app_dir(:ash_template, "priv/tool_manifest.json")
+      |> File.read!()
+      |> Jason.decode!()
+
+    for %{"authentication" => "public", "name" => name, "route" => route} = tool <-
+          manifest["tools"] do
+      fields = Regex.scan(~r/\{(\w+)\}/, route, capture: :all_but_first) |> List.flatten()
+      assert Map.keys(tool["refusals"]) |> Enum.sort() == Enum.sort(["input" | fields]), name
+
+      for {field, refusal} <- tool["refusals"] do
+        input = if field == "input", do: "x", else: Map.new(fields -- [field], &{&1, "a"})
+
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 result(mcp(call(name, input), from: from, proof: agent))
+
+        assert Jason.decode!(text)["error"] == refusal, "#{name} #{field}"
+      end
+    end
+  end
+
   test "each notes tool answers through /mcp as HTTP answers, and HTTP reads back what it changed",
        %{from: from} do
     agent = paired_wallet()

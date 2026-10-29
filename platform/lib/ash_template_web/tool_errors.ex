@@ -27,6 +27,10 @@ defmodule AshTemplateWeb.ToolErrors do
   tool that takes none is `invalid_request`, as the browser tools answer it. As
   AshAi reads it, a call without `input` sends none, which is how a tool listed
   with no inputs is called.
+
+  A public read refuses the same input over HTTP in the same words
+  (`http_refusal/2`, which `AshTemplateWeb.Plugs.ToolInput` sends), so the browser
+  tools, which send their input as the read's address, hand on the same answer.
   """
 
   alias AshTemplate.Agents.Connection
@@ -63,86 +67,113 @@ defmodule AshTemplateWeb.ToolErrors do
   AshAi unchanged; any other is refused as `{:error, text}` with the HTTP code.
   """
   @spec check_input(AshAi.Tool.t(), term(), map()) :: {:ok, term()} | {:error, String.t()}
-  def check_input(%AshAi.Tool{resource: resource, action: %{name: action}}, arguments, _context) do
-    with %{} <- arguments,
-         %{} = input <- arguments["input"] || %{},
-         %{valid?: true} <- Ash.ActionInput.for_action(resource, action, input) do
-      {:ok, arguments}
-    else
-      # A validation's errors arrive as it returned them; the class gathers them
-      # as the action's own refusal over HTTP does.
-      %Ash.ActionInput{errors: errors} ->
-        {:error, refused(resource, action, Ash.Error.to_error_class(errors), arguments["input"])}
-
-      _not_an_object ->
-        {:error, refused(resource, action, Ash.Error.Invalid.exception(errors: []), nil)}
+  def check_input(%AshAi.Tool{resource: Connection, action: %{name: action}}, arguments, _context) do
+    case refusal(Connection, action, input(arguments)) do
+      nil -> {:ok, arguments}
+      _refused -> {:error, Jason.encode!(RegentMCPAgents.Tools.refusal())}
     end
   end
 
-  defp refused(Connection, _action, _error, _input),
-    do: Jason.encode!(RegentMCPAgents.Tools.refusal())
+  def check_input(%AshAi.Tool{resource: resource, action: %{name: action}}, arguments, _context) do
+    case refusal(resource, action, input(arguments)) do
+      nil -> {:ok, arguments}
+      {words, code, extra} -> {:error, text(words, code, extra)}
+    end
+  end
 
-  defp refused(_resource, :room_messages, error, _input),
-    do: text(RoomsController, RoomsController.page_refusal(error))
+  defp input(%{} = arguments), do: arguments["input"] || %{}
+  defp input(_not_an_object), do: nil
 
-  defp refused(_resource, :agent_post, error, _input),
-    do: text(RoomsController, "invalid_message", %{details: FormErrors.details(error)})
+  @doc """
+  The refusal of a public read's HTTP `params` (path and query together), as
+  its hosted tool refuses the same input: `{status, body}`, or nil when the
+  read takes them. `AshTemplateWeb.Plugs.ToolInput` sends it.
+  """
+  @spec http_refusal(atom(), map()) :: {pos_integer(), map()} | nil
+  def http_refusal(tool, params) do
+    {resource, action} = AshTemplateWeb.Capabilities.runs(tool)
 
-  defp refused(_resource, action, error, _input) when action in @rooms do
+    with {words, code, extra} <- refusal(resource, action, params) do
+      {status, message, hint} = words.refusal(code)
+      {status, %{error: Map.merge(%{code: code, message: message, hint: hint}, extra)}}
+    end
+  end
+
+  # The words table, code and extra fields `input` is refused with, or nil.
+  defp refusal(resource, action, %{} = input) do
+    case Ash.ActionInput.for_action(resource, action, input) do
+      %{valid?: true} ->
+        nil
+
+      # A validation's errors arrive as it returned them; the class gathers them
+      # as the action's own refusal over HTTP does.
+      %Ash.ActionInput{errors: errors} ->
+        refused(action, Ash.Error.to_error_class(errors), input)
+    end
+  end
+
+  defp refusal(_resource, action, _not_an_object),
+    do: refused(action, Ash.Error.Invalid.exception(errors: []), nil)
+
+  defp refused(:room_messages, error, _input),
+    do: {RoomsController, RoomsController.page_refusal(error), %{}}
+
+  defp refused(:agent_post, error, _input),
+    do: {RoomsController, "invalid_message", %{details: FormErrors.details(error)}}
+
+  defp refused(action, error, _input) when action in @rooms do
     {code, extra} = RoomsController.input_refusal(action, error)
-    text(RoomsController, code, extra)
+    {RoomsController, code, extra}
   end
 
-  defp refused(_resource, :sites_tools, _error, _input),
-    do: text(SiteToolsController, "site_not_found")
+  defp refused(:sites_tools, _error, _input), do: {SiteToolsController, "site_not_found", %{}}
 
-  defp refused(_resource, :agents_get, _error, _input),
-    do: text(AgentsController, "agent_not_found")
+  defp refused(:agents_get, _error, _input), do: {AgentsController, "agent_not_found", %{}}
 
-  defp refused(_resource, :agents_edit_profile, error, _input) do
+  defp refused(:agents_edit_profile, error, _input) do
     {code, extra} = AgentsController.input_refusal(error)
-    text(AgentsController, code, extra)
+    {AgentsController, code, extra}
   end
 
-  defp refused(_resource, action, _error, _input) when action in [:rooms_search, :notes_search],
-    do: text(PairedAgentController, "invalid_search")
+  defp refused(action, _error, _input) when action in [:rooms_search, :notes_search],
+    do: {PairedAgentController, "invalid_search", %{}}
 
-  defp refused(_resource, action, error, _input) when action in @notes do
+  defp refused(action, error, _input) when action in @notes do
     {code, extra} = NotesController.input_refusal(action, error)
-    text(NotesController, code, extra)
+    {NotesController, code, extra}
   end
 
-  defp refused(_resource, action, error, _input) when action in @dms do
+  defp refused(action, error, _input) when action in @dms do
     {code, extra} = DmsController.input_refusal(action, error)
-    text(DmsController, code, extra)
+    {DmsController, code, extra}
   end
 
-  defp refused(_resource, action, error, _input) when action in @chat do
+  defp refused(action, error, _input) when action in @chat do
     {code, extra} = ChatController.input_refusal(action, error)
-    text(ChatController, code, extra)
+    {ChatController, code, extra}
   end
 
-  defp refused(_resource, action, error, _input) when action in @polls do
+  defp refused(action, error, _input) when action in @polls do
     {code, extra} = PollsController.input_refusal(action, error)
-    text(PollsController, code, extra)
+    {PollsController, code, extra}
   end
 
-  defp refused(_resource, :account_credits_history, _error, _input),
-    do: text(PairedAgentController, "invalid_cursor")
+  defp refused(:account_credits_history, _error, _input),
+    do: {PairedAgentController, "invalid_cursor", %{}}
 
   # As over HTTP: a cursor that is text but not a page's is invalid_cursor; any
   # other input is not the read's.
-  defp refused(_resource, :activity_list, _error, %{"after" => cursor} = input)
+  defp refused(:activity_list, _error, %{"after" => cursor} = input)
        when map_size(input) == 1 and is_binary(cursor),
-       do: text(PairedAgentController, "invalid_cursor")
+       do: {PairedAgentController, "invalid_cursor", %{}}
 
-  defp refused(_resource, :activity_list, _error, _input),
-    do: text(PairedAgentController, "invalid_activity_request")
+  defp refused(:activity_list, _error, _input),
+    do: {PairedAgentController, "invalid_activity_request", %{}}
 
-  defp refused(_resource, :activity_mark_read, _error, _input),
-    do: text(PairedAgentController, "invalid_mark_read_request")
+  defp refused(:activity_mark_read, _error, _input),
+    do: {PairedAgentController, "invalid_mark_read_request", %{}}
 
-  defp refused(_resource, _takes_none, _error, _input), do: text(__MODULE__, "invalid_request")
+  defp refused(_takes_none, _error, _input), do: {__MODULE__, "invalid_request", %{}}
 
   @doc """
   The `{status, message, hint}` of input sent to a tool that takes none: the code

@@ -12,7 +12,8 @@ defmodule AshTemplateWeb.Capabilities do
   block of the operation's domain. These are checked against each other when this
   module compiles: every browser tool must be named after its command, every
   surface an operation leaves out gives a reason, and a hosted tool takes the
-  browser tool's input. Each operation's output schema is its success answer in
+  browser tool's input; a public browser tool is a GET read with the page's
+  refusals of input it cannot send as the address. Each operation's output schema is its success answer in
   the OpenAPI document, its references pointing there. A tool only the hosted MCP
   server has, such as a connected app's identity tools, is named after its
   operation (`getIdentity` is `get_identity`), takes its title from its AshAi tool
@@ -58,8 +59,8 @@ defmodule AshTemplateWeb.Capabilities do
 
   tools = for %{"operation_id" => id} = tool <- @manifest["tools"], into: %{}, do: {id, tool}
 
-  # The tools each domain hands AshAi for hosted MCP, by name, with their title
-  # and the input AshAi asks for. The chat assistant's own tools
+  # The tools each domain hands AshAi for hosted MCP, by name, with their title,
+  # the input AshAi asks for and the resource and action each runs. The chat assistant's own tools
   # (`AshTemplate.Chat.assistant_tools/0`) are never hosted.
   hosted =
     for domain <- Application.compile_env!(:ash_template, :ash_domains),
@@ -71,8 +72,15 @@ defmodule AshTemplateWeb.Capabilities do
       schema =
         AshAi.Tool.Schema.for_action(domain, tool.resource, action, nil, [], strict?: false)
 
-      {Atom.to_string(tool.name), %{input: schema["properties"]["input"], title: tool.title}}
+      {Atom.to_string(tool.name),
+       %{
+         input: schema["properties"]["input"],
+         title: tool.title,
+         runs: {tool.resource, tool.action}
+       }}
     end
+
+  @runs Map.new(hosted, fn {name, tool} -> {name, tool.runs} end)
 
   components = files.openapi["components"]["schemas"]
 
@@ -96,6 +104,22 @@ defmodule AshTemplateWeb.Capabilities do
     |> Enum.reject(&String.starts_with?(&1, "<"))
     |> Enum.join("_")
     |> String.replace("-", "_")
+  end
+
+  # The named parts of a route's address: `{room}` in `GET /api/v1/rooms/{room}/messages`.
+  path_fields = fn route ->
+    Regex.scan(~r/\{(\w+)\}/, route, capture: :all_but_first) |> List.flatten()
+  end
+
+  # A public browser tool is a GET read that sends its input as the address, so it
+  # refuses on the page only input it cannot put there: input that is not an
+  # object, and each named part. A signed tool sends its request as built.
+  sends_as_address = fn tool, http ->
+    fields = path_fields.(tool["route"])
+
+    match?("GET " <> _, http) and
+      Enum.sort(Map.keys(tool["refusals"] || %{})) == Enum.sort(["input" | fields]) and
+      MapSet.subset?(MapSet.new(fields), MapSet.new(tool["input_schema"]["required"] || []))
   end
 
   actors =
@@ -165,6 +189,9 @@ defmodule AshTemplateWeb.Capabilities do
                          tool["authentication"] == "siwa_per_request" !=
                            row["authority"] in @agents ->
                        "a browser tool signed differently"
+
+                     tool && tool["authentication"] == "public" != sends_as_address.(tool, http) ->
+                       "a public browser tool that is not a GET read with a refusal for each input it cannot send, or such refusals on a signed tool"
 
                      tool &&
                          !!tool["annotations"]["readOnlyHint"] !=
@@ -270,6 +297,10 @@ defmodule AshTemplateWeb.Capabilities do
   @doc "The hosted MCP server's tools, by the name AshAi gives each."
   @spec hosted_tools() :: [atom()]
   def hosted_tools, do: @hosted
+
+  @doc "The resource and action the hosted tool `name` runs, as its HTTP route runs them."
+  @spec runs(atom()) :: {module(), atom()}
+  def runs(name), do: Map.fetch!(@runs, Atom.to_string(name))
 
   @may @source["operations"] |> Enum.map(& &1["may"]) |> Enum.reject(&is_nil/1) |> Enum.uniq()
 

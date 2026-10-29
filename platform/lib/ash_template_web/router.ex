@@ -29,6 +29,14 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
+  # The public reads, each the HTTP route of a browser tool and a hosted MCP tool
+  # named in its `private` `:tool`: its input is checked as that tool's is.
+  pipeline :public_read do
+    plug :accepts, ["json"]
+    plug AshTemplateWeb.Plugs.LaunchGate
+    plug AshTemplateWeb.Plugs.ToolInput
+  end
+
   # The Claude connector's sign-in (AshTemplate.OAuth). API credentials never use
   # cookies; consent uses the verified browser and CSRF pipeline. The resource's
   # metadata also answers under its /mcp path, where RFC 9728 places it.
@@ -283,22 +291,33 @@ defmodule AshTemplateWeb.Router do
   end
 
   scope "/api/v1", AshTemplateWeb do
+    pipe_through :public_read
+    get "/health", HealthController, :status, private: %{tool: :health}
+
+    get "/about", PublicPagesController, :document,
+      assigns: %{document: "/about"},
+      private: %{tool: :about}
+
+    get "/docs", PublicPagesController, :document,
+      assigns: %{document: "/docs"},
+      private: %{tool: :docs}
+
+    get "/sites/:site/tools", SiteToolsController, :tools, private: %{tool: :sites_tools}
+    get "/siwa/help", SiteToolsController, :siwa_help, private: %{tool: :siwa_help}
+    get "/rooms", RoomsController, :index, private: %{tool: :rooms_list}
+    get "/rooms/:room/messages", RoomsController, :messages, private: %{tool: :rooms_messages}
+    get "/rooms/:room/messages/:id", RoomsController, :message, private: %{tool: :rooms_message}
+    get "/polls", PollsController, :index, private: %{tool: :polls_list}
+    get "/polls/:poll", PollsController, :show, private: %{tool: :polls_show}
+  end
+
+  scope "/api/v1", AshTemplateWeb do
     pipe_through :api
-    get "/health", HealthController, :status
-    get "/about", PublicPagesController, :document, assigns: %{document: "/about"}
-    get "/docs", PublicPagesController, :document, assigns: %{document: "/docs"}
-    get "/sites/:site/tools", SiteToolsController, :tools
-    get "/siwa/help", SiteToolsController, :siwa_help
     get "/notes", NotesController, :index
     post "/notes", NotesController, :create
     get "/notes/:id", NotesController, :show
     patch "/notes/:id", NotesController, :update
     delete "/notes/:id", NotesController, :delete
-    get "/rooms", RoomsController, :index
-    get "/rooms/:room/messages", RoomsController, :messages
-    get "/rooms/:room/messages/:id", RoomsController, :message
-    get "/polls", PollsController, :index
-    get "/polls/:poll", PollsController, :show
   end
 
   # The person's own profile, with the Privy proof pair (RegentIdentity.HTTP).
@@ -333,8 +352,8 @@ defmodule AshTemplateWeb.Router do
 
   # After /agents/me, so "me" never reads as an agent's id.
   scope "/api/v1", AshTemplateWeb do
-    pipe_through :api
-    get "/agents/:id", AgentsController, :show
+    pipe_through :public_read
+    get "/agents/:id", AgentsController, :show, private: %{tool: :agents_get}
   end
 
   # What only a paired agent does: search, pins and label ratings on its

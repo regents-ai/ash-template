@@ -28,7 +28,9 @@ CLI and the Claude connector. The connector column comes with the connector's ch
   gap G1.
 - **WebMCP / CLI**: the tool name in `platform/priv/tool_manifest.json` and the command
   in `cli/commands.json`. Today every one of them acts *for the agent's person* after
-  pairing, so for an agent-owned account they count once G1 and G2 are closed.
+  pairing, so for an agent-owned account they count once G1 and G2 are closed. A
+  public read's browser tool sends its input as its HTTP route's address and answers
+  what that route answers, refusals included, in the hosted tool's words.
 - **MCP**: hosted `/mcp` for a signed agent. "Planned" means the agent-access lane's
   tool list.
 - **Connector**: the same site added to a Claude account as a custom connector, signed

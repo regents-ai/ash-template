@@ -15,50 +15,25 @@ function signedTransport() { return signedTools({
   operations: manifest.tools.filter(entry => entry.authentication === "siwa_per_request") as unknown as SignedOperation[],
 }) }
 
-type Property = {type: "string" | "integer" | "object"; description?: string}
-
-type Schema = {
-  type: "object"
-  properties: Record<string, Property>
-  required: string[]
-  additionalProperties: false
-}
+type Refusal = {code: string; message: string; hint?: string; [more: string]: unknown}
 
 type Entry = {
   name: string
   title: string
   description: string
-  input_schema: Schema
+  input_schema: {properties: Record<string, unknown>}
   annotations: Record<string, boolean>
+  route: string
   scope: string
   authentication: string
+  // What the site answers input this read cannot send: `input` for input that is
+  // not an object, and each address field's for that field missing or not a name.
+  refusals?: Record<string, Refusal>
 }
 
-type Input = Record<string, string | number>
-
-type Refusal = {code: string; message: string; hint?: string; details?: unknown}
-
-type Reply =
-  | {ok: true; status: number; data: unknown}
-  | {ok: false; status?: number; outcome?: "unknown"; retry_after?: number; error: Refusal}
-
-const segment = (value: string | number) => encodeURIComponent(String(value))
-
-// The public reads, by the path each one asks. Every other tool is signed.
-const paths: Record<string, (input: Input) => string> = {
-  health: () => "/api/v1/health",
-  about: () => "/api/v1/about",
-  docs: () => "/api/v1/docs",
-  sites_tools: ({site}) => `/api/v1/sites/${segment(site)}/tools`,
-  siwa_help: () => "/api/v1/siwa/help",
-  rooms_list: () => "/api/v1/rooms",
-  rooms_messages: ({room, ...page}) => {
-    const query = new URLSearchParams(Object.entries(page).map(([key, value]) => [key, String(value)])).toString()
-    const path = `/api/v1/rooms/${segment(room)}/messages`
-    return query ? `${path}?${query}` : path
-  },
-  rooms_message: ({room, id}) => `/api/v1/rooms/${segment(room)}/messages/${segment(id)}`,
-}
+// A tool's answer is the site's own: the HTTP body, or {error: {code, message,
+// hint, ...}} with anything more, such as the seconds to wait, inside error.
+type Answer = unknown
 
 // Every call names its tool and this visit, so the site's log can put the call
 // beside the rest of the visit (AshTemplateWeb.VisitLog). Neither is a credential.
@@ -67,74 +42,78 @@ function client(tool: string): Record<string, string> {
   return {"x-regent-client": `webmcp/${tool}`, ...(visit && {"x-regent-visit": visit})}
 }
 
+async function answer(response: Response): Promise<Answer> {
+  const body = await response.json()
+  if (response.ok) return body
+  // Past a limit the agent is told how many seconds to wait.
+  const retryAfter = Number(response.headers.get("retry-after"))
+  return retryAfter > 0 ? {error: {...body.error, retry_after: retryAfter}} : body
+}
+
+// A value as the site reads it from the address, where everything is text.
+const text = (value: unknown) => typeof value === "string" ? value : JSON.stringify(value)
+
+// A public read's address is its manifest route: each {field} of the path is
+// that input, and every other input goes in the query, so the site checks it
+// as it checks the same input over HTTP and hosted MCP. Only input that cannot
+// be an address is answered here, in the site's own words for it.
+function address(entry: Entry, input: unknown): string | Refusal {
+  const refusals = entry.refusals!
+  if (input === null || typeof input !== "object" || Array.isArray(input)) return refusals.input
+  const values = {...input} as Record<string, unknown>
+  const [, route] = entry.route.split(" ")
+  const fields = [...route.matchAll(/\{(\w+)\}/g)].map(([, field]) => field)
+  // URL parsing drops "." and ".." segments even when their dots are percent-encoded.
+  const unsendable = fields.find(field =>
+    values[field] === undefined || values[field] === null || ["", ".", ".."].includes(text(values[field])))
+  if (unsendable) return refusals[unsendable]
+  const path = route.replace(/\{(\w+)\}/g, (_match, field: string) => encodeURIComponent(text(values[field])))
+  for (const field of fields) delete values[field]
+  // A null is sent empty, which the site reads as left out.
+  const query = new URLSearchParams(Object.entries(values).map(([key, value]) => [key, value === null ? "" : text(value)]))
+  return query.toString() ? `${path}?${query}` : path
+}
+
 // Public JSON without session authority. Every refusal it sends is
 // {"error": {"code", "message", "hint"}}, handed on as it came.
-async function call(tool: string, path: string, signal: AbortSignal | undefined): Promise<Reply> {
-  const response = await fetch(path, {
-    headers: {Accept: "application/json", ...client(tool)},
-    credentials: "omit",
-    cache: "no-store",
-    redirect: "error",
-    signal,
-  })
-  return reply(response)
-}
-
-async function reply(response: Response): Promise<Reply> {
-  const answer = await response.json()
-  if (response.ok) return {ok: true, status: response.status, data: answer}
-  // Past a rate limit the agent is told how many seconds to wait.
-  const retryAfter = Number(response.headers.get("retry-after"))
-  return response.status === 429 && retryAfter > 0
-    ? {ok: false, status: response.status, retry_after: retryAfter, error: answer.error}
-    : {ok: false, status: response.status, error: answer.error}
-}
-
-// The browser does not check input against the schema, so each public call is
-// checked here, and a refusal names the field and what it must be. The server
-// checks lengths and everything else again.
-function inputProblem(input: unknown, schema: Schema) {
-  if (input === null || typeof input !== "object" || Array.isArray(input)) {
-    return "Send an object of named fields."
+async function read(entry: Entry, input: unknown, signal: AbortSignal | undefined): Promise<Answer> {
+  const path = address(entry, input)
+  if (typeof path !== "string") return {error: path}
+  if (signal?.aborted) return {error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
+  let response: Response
+  try {
+    response = await fetch(path, {
+      headers: {Accept: "application/json", ...client(entry.name)},
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      signal,
+    })
+  } catch (_error) {
+    return unanswered(entry, signal)
   }
-  const unknown = Object.keys(input).find(key => !Object.hasOwn(schema.properties, key))
-  if (unknown) {
-    const fields = Object.keys(schema.properties)
-    return fields.length
-      ? `${unknown} is not a field of this tool; its fields are ${fields.join(", ")}.`
-      : `${unknown} is not a field of this tool; it takes none.`
+  try {
+    return await answer(response)
+  } catch (_error) {
+    return unanswered(entry, signal)
   }
-  const missing = schema.required.find(key => !Object.hasOwn(input, key))
-  if (missing) return `${missing} is required.`
-  const values = input as Record<string, unknown>
-  // URL parsing drops these path segments even when their dots are percent-encoded.
-  const dots = Object.keys(values).find(key => values[key] === "." || values[key] === "..")
-  if (dots) return `${dots} must be a name or id, not ${values[dots]}.`
-  const wrong = Object.keys(values).find(key =>
-    schema.properties[key].type === "integer" ? !Number.isInteger(values[key]) : typeof values[key] !== "string")
-  if (!wrong) return null
-  return schema.properties[wrong].type === "integer" ? `${wrong} must be a whole number.` : `${wrong} must be text.`
 }
 
 // A call that ended without an answer. Anything but a read may already have
 // reached the server, so its outcome is unknown, never cancelled. The site never
 // heard it, so the page reports it.
-function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
+function unanswered(entry: Entry, signal: AbortSignal | undefined): Answer {
   if (!entry.annotations.readOnlyHint) {
     report({name: "tool.unsent", where: entry.name, outcome: "outcome_unknown"})
-    return {
-      ok: false,
-      outcome: "unknown",
-      error: {
-        code: "outcome_unknown",
-        message: "The answer was lost, so it is not known whether this happened.",
-        hint: "Read it back by its operation_id or id before you try again.",
-      },
-    }
+    return {error: {
+      code: "outcome_unknown",
+      message: "The answer was lost, so it is not known whether this happened.",
+      hint: "Read it back by its operation_id or id before you try again.",
+    }}
   }
-  if (signal?.aborted) return {ok: false, error: {code: "cancelled", message: "The read was cancelled; nothing changed."}}
+  if (signal?.aborted) return {error: {code: "cancelled", message: "The read was cancelled; nothing changed."}}
   report({name: "tool.unsent", where: entry.name, outcome: "unreachable"})
-  return {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
+  return {error: {code: "unreachable", message: "The site could not be reached. Try again."}}
 }
 
 // Reasons that mean the tool itself is set up wrongly, not the agent's input.
@@ -142,9 +121,9 @@ const siteFaults = new Set(["invalid_operation", "invalid_path", "invalid_reques
 
 // The signing transport refuses with a reason such as "missing_field:title".
 // The agent reads it in words; the reason itself stays in details.
-const invalid = (error: unknown): Reply => {
+const invalid = (error: unknown): Answer => {
   const reason = error instanceof Error ? error.message : String(error)
-  return {ok: false, error: {
+  return {error: {
     code: "invalid_request",
     message: explain(reason),
     hint: siteFaults.has(reason.split(":", 1)[0])
@@ -193,19 +172,19 @@ function explain(reason: string): string {
 const lost = (error: unknown) =>
   error instanceof TypeError || (error instanceof DOMException && error.name === "AbortError")
 
-async function signed(entry: Entry, input: Record<string, unknown>, signal: AbortSignal | undefined): Promise<Reply> {
+async function signed(entry: Entry, input: Record<string, unknown>, signal: AbortSignal | undefined): Promise<Answer> {
   if (signal?.aborted) {
-    return {ok: false, error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
+    return {error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
   }
   let response: Response
   try {
     response = await signedTransport().execute(entry.name, input, signal)
   } catch (error) {
-    if (error instanceof Refused) return {ok: false, error: error.refusal}
+    if (error instanceof Refused) return {error: error.refusal}
     return lost(error) ? unanswered(entry, signal) : invalid(error)
   }
   try {
-    return await reply(response)
+    return await answer(response)
   } catch (_error) {
     return unanswered(entry, signal)
   }
@@ -221,19 +200,10 @@ const tools: ModelContextTool[] = entries.map(entry => ({
   description: entry.description,
   inputSchema: entry.input_schema,
   annotations: entry.annotations,
-  async execute(input: unknown, {signal}: {signal?: AbortSignal}) {
-    if (entry.authentication === "siwa_per_request") return signed(entry, input as Record<string, unknown>, signal)
-    const problem = inputProblem(input, entry.input_schema)
-    if (problem) return {ok: false, error: {code: "invalid_input", message: problem}}
-    if (signal?.aborted) {
-      return {ok: false, error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
-    }
-    try {
-      return await call(entry.name, paths[entry.name](input as Input), signal)
-    } catch (_error) {
-      return unanswered(entry, signal)
-    }
-  },
+  execute: (input: unknown, {signal}: {signal?: AbortSignal}) =>
+    entry.authentication === "siwa_per_request"
+      ? signed(entry, input as Record<string, unknown>, signal)
+      : read(entry, input, signal),
 }))
 
 // One registration per shown page: register now and again when the page comes

@@ -5381,3 +5381,24 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-29 — Public browser tools answer as their HTTP reads (WM-1 to WM-3)
+
+- Each public browser tool builds its address from its manifest `route`, so the
+  page's own path table is gone. Its input goes in the address: the named parts in
+  the path, the rest as the query.
+- The server is the one checker. A public read over HTTP takes just its hosted MCP
+  tool's input (`AshTemplateWeb.Plugs.ToolInput` on the new `:public_read` pipeline,
+  each route naming its tool), so a query field it does not take is refused with the
+  status, code and words that tool gives (`ToolErrors.http_refusal/2`), instead of
+  ignored. The page refuses only input it cannot put in an address, with refusals
+  `priv/tool_manifest.json` carries from `ToolErrors`, which a server test pins.
+- A browser tool's result is the HTTP body and its refusal `{"error": …}`, with
+  `retry_after` and `outcome_unknown` inside `error`; `ok`, `status`, `data` and
+  `outcome` are gone (hard cutover). `/docs` "Browser tools", "Hosted MCP" and a
+  breaking change say so; OpenAPI 10.0.0 lists the new 422 answers.
+- The build fails on a public browser tool that is not a GET read with a refusal
+  for each input it cannot send (`AshTemplateWeb.Capabilities`).
+- Checks: `page_tools.spec.ts` calls every public tool once against HTTP, hands on
+  refusals and the wait, at 1280 and 390; `mcp_agent_test.exs` matches HTTP and
+  `/mcp` refusals for every public read.

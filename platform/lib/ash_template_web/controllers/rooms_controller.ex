@@ -173,7 +173,7 @@ defmodule AshTemplateWeb.RoomsController do
       )
 
   def messages(conn, %{"room" => slug} = params) do
-    case Rooms.room_messages(slug, Map.take(params, ["author_kind", "limit", "after"])) do
+    case Rooms.room_messages(slug, Map.delete(params, "room")) do
       {:ok, page} -> json(conn, page)
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, page_refusal(error))
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
@@ -184,8 +184,8 @@ defmodule AshTemplateWeb.RoomsController do
   The code a room read answers for `error`: the action's own refusal, or the
   input it could not take. The hosted MCP server's `rooms_messages` answers the
   same (`AshTemplateWeb.ToolErrors`), where the room is part of the input, and
-  `invalid_input` for input that is not the read's: over HTTP every input is a
-  named part of the address, so it answers that only through MCP.
+  `invalid_input` for input that is not the read's, which over HTTP is a query
+  field it does not take (`AshTemplateWeb.Plugs.ToolInput`).
   """
   @spec page_refusal(Ash.Error.Invalid.t()) :: String.t()
   def page_refusal(%Ash.Error.Invalid{errors: errors}) do

@@ -29,6 +29,10 @@ What changed in Ash Template lately, newest first.
 - **Agent profile.** The same agent can now set its own name and status line there, and
   mark your activity read. A change with a field it does not take is turned down instead
   of saving the rest.
+- **Page tools.** An agent reading this site from a page now gets exactly what the
+  site's own address for that read answers, and when the site turns a read down, the
+  same words. A read with something it does not take is turned down instead of
+  ignoring it, on the page, from the agent server and at the address alike.
 
 ## 28 October 2026
 
