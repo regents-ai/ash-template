@@ -327,13 +327,16 @@ defmodule AshTemplate.SignedToolsTest do
     # A signed body reaches the action whole: the search finds the message to mute.
     found = request(:post, "/api/v1/rooms/search", Jason.encode!(%{text: "other side"}))
     assert found.status == 200, found.resp_body
-    assert [%{"id" => id}] = Jason.decode!(found.resp_body)["messages"]
+    assert [%{"id" => id, "author" => author}] = Jason.decode!(found.resp_body)["messages"]
     assert id == message.id
+    # A person with no display name answers with their wallet, as the page shows them.
+    assert author == %{"name" => nil, "ens_name" => nil, "wallet" => @other}
 
     added = request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id}))
     assert added.status == 200, added.resp_body
     mute = Jason.decode!(added.resp_body)["mute"]
     assert mute["author_kind"] == "person"
+    assert mute["author"] == %{"name" => nil, "ens_name" => nil, "wallet" => @other}
     assert Enum.map(Rooms.list_my_mutes!(actor: human), & &1.id) == [mute["id"]]
 
     # Muting again keeps the one mute.
@@ -496,7 +499,8 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:error, %Ash.Error.Invalid{}} = AshTemplate.Polls.vote(id, %{choice: "Soup"}, actor: late)
 
     listed = Jason.decode!(request(:get, "/api/v1/polls", nil, false).resp_body)["polls"]
-    assert [%{"id" => ^id, "started_by" => %{"name" => _}}] = listed
+    assert [%{"id" => ^id, "started_by" => started_by}] = listed
+    assert %{"name" => nil, "ens_name" => nil, "wallet" => @wallet, "picture" => nil} = started_by
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
     assert request(:post, "/api/v1/polls", start).status == 403
@@ -727,7 +731,10 @@ defmodule AshTemplate.SignedToolsTest do
 
     own = request(:post, "/api/v1/rooms/general/messages", post.())
     assert own.status == 201, own.resp_body
-    assert %{"author_name" => "Scout", "author_kind" => "agent"} = Jason.decode!(own.resp_body)["message"]
+    assert %{
+             "author" => %{"name" => "Scout", "ens_name" => nil, "wallet" => nil},
+             "author_kind" => "agent"
+           } = Jason.decode!(own.resp_body)["message"]
     refute own.resp_body =~ String.trim_leading(@wallet, "0x")
 
     paired_person("did:privy:agent-name-test")
@@ -738,7 +745,11 @@ defmodule AshTemplate.SignedToolsTest do
              Jason.decode!(paired.resp_body)["message"]
 
     assert map_size(via) == 2
-    refute paired.resp_body =~ String.trim_leading(@wallet, "0x")
+    # The writing agent never shows its wallet. The fixture person shares it and has
+    # no display name, so the message shows the person by their own wallet, as the
+    # page does.
+    assert %{"author" => %{"name" => nil, "wallet" => @wallet}} =
+             Jason.decode!(paired.resp_body)["message"]
   end
 
   test "an agent reads its person's activity a page at a time, each notification once, marking none read" do

@@ -24,18 +24,22 @@ defmodule AshTemplate.PublicIdentity do
   How a page names an author, as `%{name: name, ens_name: ens_name, wallet: wallet}`:
   `name` is their display name when the `:name_first` setting shows it, else nil;
   `ens_name` is their ENS name when it is shown instead; `wallet` is their full
-  wallet. A page draws a nil `name` with `Regent.Primitives.address`, labelled by
-  `ens_name`, so the full wallet is always a click away.
+  wallet whenever `name` is nil. A page draws a nil `name` with
+  `Regent.Primitives.address`, labelled by `ens_name`, so the full wallet is a
+  click away; the API answers the same three fields (`public/1`).
   """
   def author(account) do
     wallet = account |> Map.get(:wallet_address) |> normalize_wallet()
 
     case Enum.find(@name_fields, &present(Map.get(account, &1))) do
-      :display_name -> %{name: present(account.display_name), ens_name: nil, wallet: wallet}
+      :display_name -> %{name: present(account.display_name), ens_name: nil, wallet: nil}
       :ens_name -> %{name: nil, ens_name: present(account.ens_name), wallet: wallet}
       nil -> %{name: nil, ens_name: nil, wallet: wallet}
     end
   end
+
+  @doc "The three fields of `author/1` an API answer carries."
+  def public(author), do: Map.take(author, [:name, :ens_name, :wallet])
 
   def picture(account), do: present(Map.get(account, :ens_avatar_url))
 

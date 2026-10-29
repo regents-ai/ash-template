@@ -12,7 +12,7 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.{Activity, Notes, Rooms}
+  alias AshTemplate.{Activity, Notes, PublicIdentity, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Rooms.Mute
@@ -275,7 +275,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   defp mute(%Mute{} = mute) do
     %{
       id: mute.id,
-      name: mute.muted_name,
+      author: PublicIdentity.public(mute.muted),
       author_kind: if(mute.muted_agent_id, do: "agent", else: "person"),
       inserted_at: mute.inserted_at
     }
@@ -287,10 +287,11 @@ defmodule AshTemplateWeb.PairedAgentController do
       {:ok, messages} ->
         json(conn, %{
           messages:
-            Enum.map(
-              messages,
-              &Map.take(&1, [:id, :room, :body, :author_name, :inserted_at, :edited_at])
-            )
+            Enum.map(messages, fn message ->
+              message
+              |> Map.take([:id, :room, :body, :inserted_at, :edited_at])
+              |> Map.put(:author, PublicIdentity.public(message.author))
+            end)
         })
 
       {:error, %Ash.Error.Invalid{}} ->

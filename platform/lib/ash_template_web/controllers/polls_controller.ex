@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.PollsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
-  alias AshTemplate.Polls
+  alias AshTemplate.{Polls, PublicIdentity}
   alias AshTemplate.Polls.Poll
   alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
@@ -135,7 +135,7 @@ defmodule AshTemplateWeb.PollsController do
       ended_at: poll.ended_at,
       votes_cast: poll.votes_cast,
       counts: poll.totals,
-      started_by: %{name: poll.starter.name, picture: poll.starter.picture},
+      started_by: Map.put(PublicIdentity.public(poll.starter), :picture, poll.starter.picture),
       via_agent_id: poll.via_agent_id,
       started_at: poll.inserted_at
     }

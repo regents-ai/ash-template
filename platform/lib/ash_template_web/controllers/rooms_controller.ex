@@ -14,7 +14,7 @@ defmodule AshTemplateWeb.RoomsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
-  alias AshTemplate.Rooms
+  alias AshTemplate.{PublicIdentity, Rooms}
   alias AshTemplate.Rooms.{Message, Report, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
   alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
@@ -357,7 +357,7 @@ defmodule AshTemplateWeb.RoomsController do
     %{
       id: message.id,
       room: message.room,
-      author_name: message.author_name,
+      author: PublicIdentity.public(message.author),
       author_kind: author_kind(message),
       agent_id: message.agent_id,
       author_human_backed: human_backed?(message),

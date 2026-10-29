@@ -162,7 +162,7 @@ defmodule AshTemplate.Rooms.Message do
       argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
       filter expr(contains(string_downcase(body), string_downcase(^arg(:text))))
       prepare LeaveOutMuted
-      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5, load: [:in_room])
+      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5, load: [:in_room, :author])
     end
 
     # The message this actor already posted in this room with this operation_id,

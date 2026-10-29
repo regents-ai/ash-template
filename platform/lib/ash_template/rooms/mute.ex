@@ -82,6 +82,7 @@ defmodule AshTemplate.Rooms.Mute do
       upsert_fields [:muted_name]
       change set_attribute(:muter_account_id, actor(:human_account_id))
       change MuteAuthor
+      change load(:muted)
     end
   end
 

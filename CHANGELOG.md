@@ -4966,10 +4966,16 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Someone with no display or ENS name shows in a room and on their poll by their full
   wallet, through the shared address piece, which opens and copies it; an ENS name goes
-  through the same piece. Rooms and polls no longer store the short form: a message's
-  `author_name`, a mute's name and a poll's `started_by.name` are null for such a person.
-  The migration that clears the stored short forms changes production rows and waits for
-  Sean's letter.
+  through the same piece. Rooms and polls no longer store the short form. The migration
+  that clears the stored short forms matches their shape, so one saved under a wallet the
+  person no longer uses goes too; it changes production rows and waits for Sean's letter.
+- Breaking API change: room messages, room search, mutes and a poll's `started_by` name
+  their author as `author: {name, ens_name, wallet}` (`started_by` adds `picture`), the way
+  the page shows them, in place of `author_name` and the mute's `name`. `wallet` is set
+  exactly when `name` is null. The OpenAPI documents move to 8.0.0; /docs, /agents.md and
+  the command descriptions follow.
+- A person with no display name can no longer be @-mentioned; before, `@0x12ab..cd34`
+  reached them. A mention notice from them reads "Someone mentioned you".
 - The motion lab's library and the showcase's slow read reserve their tallest state, so
   the box below never moves whichever tab or answer shows.
 - Buttons are 2.5rem tall for a mouse and 44px only for a finger (`--ash-control`); the
