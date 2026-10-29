@@ -5410,3 +5410,17 @@ way, and the library's own site-tool serving is gone.
   command check pass. `make check-siwa-latest` fails on main as it does here: elixir-utils
   094ebe8 (the site verify key merge, 20:45Z) is newer than the pin, and moving it belongs
   to the site verify keys release.
+
+## 2026-10-29 — Released v137
+
+- template.regents.sh v137 runs `b90e680c` (short titles, and design-system a5fe5c4 for
+  article tables on phones), released 21:19Z under the shared release lock on one machine,
+  as before. No migration.
+- Live check in headless Chromium: `/capabilities.json` build.commit `b90e680c`, `/healthz`
+  ok; home, pair, changelog, agents, showcase, USDC payments, Privy sign-in, discussion,
+  navigation and activity answer 200 at 320, 390 and 1280 in light and dark, each tab
+  title matching its heading, no page errors and nothing wider than the screen; an unknown
+  page answers 404 "Not found" with a Homepage button. The showcase's article table at
+  320: cells 10px 12px with no minimum width, no word split across lines, the page never
+  scrolls sideways and the three-column sample scrolls inside its own box; at 1280 it is
+  unchanged (12px 16px, 10rem minimum). Rollback: v136, `5bf7cd58`.
