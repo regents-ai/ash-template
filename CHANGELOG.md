@@ -4950,3 +4950,9 @@ An adversarial review of the two commits above found five things, all fixed here
   429 (seen once in four runs on the connector merge). `signed_tools_test.exs`, the
   file that sends most of the suite's /api requests, clears the limiter's counters in
   its setup. The limit itself is unchanged. Test-only; nothing to release.
+
+## 2026-10-29 — WebMCP trial runs to Chrome 162
+
+- `skills/ash-webmcp/references/build.md` says Chrome's WebMCP origin trial runs Chrome
+  149–162, as Chrome's trial registration page now says (reported by the Autolaunch
+  release lead, 29 Oct; Autolaunch's token expires 29 Mar 2027). Docs only.

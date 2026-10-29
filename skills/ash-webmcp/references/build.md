@@ -51,7 +51,7 @@ scope.abort() // the only way to remove it
 Headers and browsers:
 
 - Send `Permissions-Policy: tools=(self)`. Never send `Origin-Agent-Cluster: ?0`.
-- Chrome runs WebMCP as an origin trial ("WebMCP", Chrome 149–156). The token is
+- Chrome runs WebMCP as an origin trial ("WebMCP", Chrome 149–162). The token is
   public, tied to one host and expires; keep it beside a comment naming its host and
   expiry, and send it as an `Origin-Trial` response header next to the
   Permissions-Policy, so Chrome knows it before reading `tools`. Locally, turn on
