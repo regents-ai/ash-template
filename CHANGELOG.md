@@ -5330,3 +5330,19 @@ way, and the library's own site-tool serving is gone.
   page load; home, agents, account, the General room, the app and pair pages answer 200
   at 390 and 1280, no page errors and nothing wider than the screen. Rollback: v133,
   `2e158726`.
+
+## 2026-10-29 — Connected apps: Claude's published identity
+
+- Sean, 29 Oct, of Claude's connector settings: "can we do the CIMD setting instead of
+  the 'register automatically'?", then "1. yes, do this asap". Claude may now name
+  itself by its published identity, `https://claude.ai/oauth/mcp-oauth-client-metadata`,
+  instead of registering a new app on every connection. Discovery says so
+  (`client_id_metadata_document_supported`); registration keeps working for other apps.
+- Every elixir-utils package moves to one commit, `4d30fea` (`claude/cimd-on-site-tools-1029`):
+  `dea334b`'s connector packages with published identities on top. Only oauth, http and
+  mcp_events differ from `dea334b`. Migration `20261029160000_oauth_client_documents`
+  adds one empty table (`RegentOAuth.Migration.V3`) and changes nothing existing.
+- Consent (`/oauth/authorize`, GET and POST) is limited to 120 requests a minute by
+  address, like token and revocation: a signed-in person's consent may read a connecting
+  app's published identity.
+- Protected (sign-in): ships on Sean's go naming the final commit.
