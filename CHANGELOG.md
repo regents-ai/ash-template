@@ -5029,3 +5029,17 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-29 — Released v132
+
+- template.regents.sh v132 runs `637dcce8`, released 16:41Z on Sean's "1. a" (count, then
+  release with the switch off). The Claude connector ships behind its switch, which stays
+  off: `/mcp` and `/.well-known/oauth-authorization-server` answer 404. Sign out closes the
+  account menu, so its failure note is on top. Production held 0 OAuth clients and 0
+  tokens before the release, so the token-hashing migration ran on empty tables;
+  `/app/bin/pending-migrations` answers none. Checks on that tree: `make check` exit 0
+  (110 server tests with 9 properties, 24 script tests, the browser walk 315 passed and 5
+  skipped at 1280 and 390 in headless Chromium; WebKit is not run on the Mac). Live check
+  16:42Z in headless Chromium: `/capabilities.json` build.commit `637dcce8`; home,
+  agents, account and pair pages answer 200 at 390 and 1280 with the sign-in settings
+  present, no page errors and nothing wider than the screen. Rollback: v131, `65c6e26c`.
