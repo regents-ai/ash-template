@@ -88,11 +88,23 @@ rule: 'Taken as a rule: any action only a human can do on keyfleet.ai is a bug'
 prepare for an agent being the owner of a privy address, and so it must be able to
 either 1) browse the website and interact 2) webmcp 3) mcp 4) CLI -- to do things ."
 
+Sean, 29 Oct 2026 05:30Z, verbatim: "1. a - except I would define it as: web ui, webmcp,
+mcp, CLI, and claude 'connector' , so it is 5. All of this has to start in ash-template
+as the golden blueprint 2. a"
+
 - On all five sites and the template, an action only a person can do is a bug. An
   agent may own a Privy account itself, so everything an account's owner can do, an
-  agent can do too, through each of four surfaces: the website in a browser, WebMCP,
-  hosted MCP at `/mcp`, and the regents CLI.
-- One operation, four surfaces. Each surface calls the same Ash action with the same
+  agent can do too, through each of five surfaces: the website in a browser, WebMCP,
+  hosted MCP at `/mcp` for a signed agent, the Claude connector (the same site added
+  to a person's or agent's Claude account as a custom connector), and the regents CLI.
+  "Either" is not enough: every action needs all five.
+- An agent owns its account through its own wallet (Sean, 2 a): its SIWA signing wallet
+  is the account's Privy login wallet. The site makes that account from the agent's
+  signed request, and the agent can also sign in on the website with the same wallet.
+  A request signed by an account's login wallet acts as that account's owner.
+- Template first: every surface of every shared action is built and checked in
+  ash-template, the golden blueprint, before any site takes it ("Shared changes").
+- One operation, five surfaces. Each surface calls the same Ash action with the same
   inputs, results, words and refusals; none rebuilds the rule. The agent access spec
   (`handoffs/regents-agent-access-spec-2026-10-28.md` in the project files) sets the
   identity model: the transport proves who is acting, and model-written arguments
@@ -103,15 +115,15 @@ either 1) browse the website and interact 2) webmcp 3) mcp 4) CLI -- to do thing
   its name.
 - Value transfer stays signed by the owner. When the owner is an agent, its own key
   signs; the site prepares the step and never holds or uses the agent's key.
-- Hosted MCP counts for an app a person connects with a token, such as the Claude
-  connector, as well as for an agent signing its own calls. Once paired, the connected
-  app runs the same operations as its paired agent, under the same policies and with
-  the same answers: the site resolves the app's token to its paired agent's actor
-  and runs the same Ash actions, with no sign-in at the sign-in service per call
-  (the template's `AshTemplateWeb.Plugs.McpAgent`). A connected app that can only
-  pair and check in is a gap row.
-- Every action has a row in `docs/agent-parity.md` naming its four surfaces. A new
-  action ships with all four, or its row lists each missing surface as a gap with the
+- The Claude connector, an app a person connects with a token, counts like an agent
+  signing its own calls. Once paired, the connected app runs the same operations as
+  its paired agent, under the same policies and with the same answers: the site
+  resolves the app's token to its paired agent's actor and runs the same Ash actions,
+  with no sign-in at the sign-in service per call (the template's
+  `AshTemplateWeb.Plugs.McpAgent`). A connected app that can only pair and check in is
+  a gap row.
+- Every action has a row in `docs/agent-parity.md` naming its five surfaces. A new
+  action ships with all five, or its row lists each missing surface as a gap with the
   lane that closes it. Reviews treat an action with no agent path, or a missing
   surface with no gap row, as a defect.
 - Protected areas stay protected: parity work on sign-in, wallets and money is built

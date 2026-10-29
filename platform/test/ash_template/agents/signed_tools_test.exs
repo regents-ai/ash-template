@@ -90,6 +90,9 @@ defmodule AshTemplate.SignedToolsTest do
   end
 
   setup do
+    # Every test request comes from 127.0.0.1, one per-minute budget for the whole
+    # suite; each test here starts with its own.
+    :ets.delete_all_objects(AshTemplate.Accounts.RequestRateLimiter)
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
     old = Application.fetch_env(:regent_agents, :req_options)
     Application.put_env(:regent_agents, :req_options, plug: {Req.Test, RegentAgents.Broker})
