@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "09afad89658916918ce718abf9f485b032b12a21"
+  @elixir_utils_ref "94b0fde3a707764e4d86cf92be7babd0e1b8a584"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "3134bab0a23452fb82d3248072327e1d0199cc9a"
 
@@ -87,7 +87,11 @@ defmodule AshTemplate.MixProject do
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},
       {:regent_points, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "points"},
-      {:regent_credits, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits"},
+      # regent_payments names regent_credits by a sibling path; this pin replaces it.
+      {:regent_credits,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits", override: true},
+      {:regent_payments,
+       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/payments"},
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
       # ens_elixir names siwa by a sibling path; this pin replaces it.
       {:siwa,
@@ -146,6 +150,7 @@ defmodule AshTemplate.MixProject do
           regent_points: "points",
           regent_privy: "privy",
           regent_credits: "credits",
+          regent_payments: "ash_components/payments",
           regent_chain: "chain",
           regent_agent_access: "agent_access",
           siwa: "siwa/siwa-elixir/apps/siwa"
@@ -210,7 +215,7 @@ defmodule AshTemplate.MixProject do
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
-        "xref graph --label compile-connected --fail-above 36",
+        "xref graph --label compile-connected --fail-above 37",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

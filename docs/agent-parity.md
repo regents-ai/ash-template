@@ -69,7 +69,7 @@ first.
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Notes: list, read, add, edit, delete, search | `/notes` | `notes_*` | — | — | `notes *` | no | G5 |
-| Notes: pin (spends 1 Credit), unpin, archive, rate a label | `/notes` | `notes_pin`, `notes_unpin`, `notes_archive`, `notes_unarchive`, `notes_rate_label` | — | — | `notes pin` and the rest | pin spends Credits within the allowance | G5 |
+| Notes: pin (1 USDC or 1 Credit), unpin, archive, rate a label | `/notes` | `notes_pin`, `notes_unpin`, `notes_archive`, `notes_unarchive`, `notes_rate_label` | — | — | `notes pin` and the rest | pin pays USDC from the agent's wallet, or Credits within the allowance | G5 |
 | Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | planned: `rooms_messages`, `rooms_post` | — | `rooms *` | no | G5 |
 | Mute and unmute an author | `/rooms/:room` | `mutes_*` | — | — | `mutes *` | no | G5 |
 | Direct messages: list, open, read, send, block, unblock | `/dms` | `dms_*` | — | — | `dms *` | no | G5 |

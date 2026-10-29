@@ -1,6 +1,6 @@
 ---
 name: payments
-description: Taking USDC payments on Regent's Phoenix and Ash sites with the shared RegentPayments library — tips, paid actions and fees paid from a person's own wallet on Base through x402, their USDC Balance, and paid tools for agents. Use when adding or changing anything a person or agent pays for, an offer, a pay button, the USDC Balance shown on a page, a paid HTTP endpoint or MCP tool, a paid-fix fee forwarded to REGENT staking, or the words shown for a payment's outcome.
+description: Taking payments on Regent's Phoenix and Ash sites with the shared RegentPayments library — tips, paid actions and fees paid in USDC from a person's own wallet on Base through x402 or in Regent Credits, their USDC Balance, and paid tools for agents. Use when adding or changing anything a person or agent pays for, an offer, a pay button, the USDC Balance shown on a page, a paid HTTP endpoint or MCP tool, a paid-fix fee forwarded to REGENT staking, or the words shown for a payment's outcome.
 ---
 
 # Payments
@@ -18,23 +18,30 @@ a site fits around it.
 
 ## Rules
 
-1. **Regents keeps no balance for anyone.** Available funds stay in the person's own
-   wallet; there is no Regent-kept balance, top-up or withdrawal (founder, 2026-09-28,
-   confirmed 2026-10-05). A payment goes from the payer's own wallet straight to the
-   wallet the offer names, settled by an x402 facilitator. Funds committed to a product
-   sit in that product's own escrow under its stated rules (Patchbay Offers) and are
-   shown apart from wallet funds. The library stores what was promised and what happened.
-   Say "Regents does not keep a balance for you", never "Regent never holds your money".
-2. **USDC Balance** is what the person's signed-in Privy wallet holds in USDC on Base,
-   read live with `RegentPayments.Balance.usdc_balance_atomic/1`. It gets there when they
-   send USDC to their address or buy it by card through Privy. Call it "USDC Balance" on
-   every site, never Credits, credit or account balance (founder, 2026-10-05). The
+1. **Two ways to pay: USDC from the person's wallet, or Regent Credits.** USDC goes
+   from the payer's own wallet straight to the wallet the offer names, settled by an
+   x402 facilitator; Regents keeps no USDC for anyone, with no top-up or withdrawal.
+   Regent Credits are the one balance Regents keeps (`regent_credits`), and they pay
+   anywhere the money ends in a Regents wallet: the offer's terms say
+   `credits: :accepted`, the site lists that wallet in `credits_pay_to`, and
+   `Purchase.pay_with_credits/4` spends the same amount in Credits, one Credit per
+   USDC. Terms that pay another person's wallet, or pass the money on to others
+   (tips, paid fixes whose fee goes to stakers), answer `credits: :refused` until
+   the founder decides how those receivers are paid. Funds committed to a product sit
+   in that product's own escrow under its stated rules (Patchbay Offers) and are shown
+   apart from wallet funds.
+2. **USDC Balance and Credits are two figures, never one.** USDC Balance is what the
+   person's signed-in Privy wallet holds in USDC on Base, read live with
+   `RegentPayments.Balance.usdc_balance_atomic/1`. Credits is the person's Regent
+   Credits, read from `regent_credits`. Call them "USDC Balance" and "Credits" on every
+   site, never "credit" or "account balance", and never add them together. The
    template's `/showcase/funds` shows funds on other networks, commitments, card
    purchases and cash-outs; the plan is `docs/wallet-funds-plan.md`.
 3. **One offer per paid action.** A site writes a module implementing
    `RegentPayments.Offer` for each thing it sells (a tip, a paid fix, a run) and lists it
    in `config :regent_payments, offers: [...]`. The offer freezes the terms (`freeze/2`:
-   amount, the wallet paid, what it is for, the sentence the payer sees). It then carries
+   amount, the wallet paid, what it is for, the sentence the payer sees, and whether
+   Credits may pay it). It then carries
    out what was bought (`carry_out/4`). The library owns everything between.
 4. **Terms are frozen, never taken from the request.** Amount and destination are read
    from the stored intent on every call. Nothing a page or agent sends changes them.
@@ -59,7 +66,8 @@ config :regent_payments,
   offers: [MySite.Payments.Tip],
   base_rpc_url: System.get_env("BASE_RPC_URL"),
   payment_chain: %{name: "Base", rpc_url: "https://mainnet.base.org"},
-  wallet_proof: [name: "MySite", version: "1", endpoint: MySiteWeb.Endpoint]
+  wallet_proof: [name: "MySite", version: "1", endpoint: MySiteWeb.Endpoint],
+  credits_pay_to: [System.get_env("PAYMENTS_WALLET_ADDRESS")]   # Regents wallets Credits may pay into
 
 config :regent_payments, RegentPayments.Facilitator,
   url: X402.Facilitator.Auth.CDP.facilitator_url(),
@@ -67,6 +75,9 @@ config :regent_payments, RegentPayments.Facilitator,
 ```
 
 - Start `RegentPayments.Supervisor` after the repository.
+- `regent_credits` uses the same repository, since the Credits charge and the settled
+  intent are written in one transaction. Pin it from git with `override: true`,
+  because `regent_payments` names it by a sibling path.
 - The CDP key goes in Fly secrets. `BASE_RPC_URL` may carry a provider key; the library
   never logs it, so don't log it either.
 - **No deployment migrates the tables.** Every site carries the same `bin/migrate-shared`,
@@ -124,8 +135,9 @@ Legacy pending intents without a frozen wallet or receipt are refused by this ne
 API; legacy settled/applied intents require the receipt payer to match the signer.
 Do not guess historical ownership or widen authorization to make recovery succeed.
 
-The template documents this integration and keeps its payment showcase illustrative;
-it does not configure a payable offer. Product sites adopt the shared implementation.
+The template's note pin (`AshTemplate.Payments.NotePin`) is the reference offer: a
+paired agent pays 1 USDC from its own wallet over x402, or 1 of its person's Credits
+within the limits the person set. Product sites copy its wiring.
 
 ## Fees handed on to REGENT staking
 
@@ -135,6 +147,39 @@ operator-signed transactions: an approval of exactly the fee, then the deposit. 
 decides when to forward. It stops a second forward of one fee under a row lock on its own
 forward record. An answer of `:deposit_unknown` means look on the chain before running
 the forward again.
+
+## Buying on the chain with Credits
+
+Some things on the chain (a Keyfleet Key) are bought for a person with Regents' own
+USDC, after the person pays in purchased Credits, one Credit per USDC.
+`AshTemplate.Payments.ChainBuy` is the template's wiring; a site copies it and names its
+sale.
+
+- The site writes a module implementing `AshTemplate.Payments.Sale`: `price/1` reads the
+  sale and the item's price at the latest block, or answers in a few words why it cannot
+  be bought now; `call/3` builds the sale's call for the item, sent to the buyer's wallet.
+  Name it as `sale:` in `config :ash_template, AshTemplate.Payments.ChainBuy`.
+- The buying wallet is a small wallet on Base. Its key is `BUYING_WALLET_PRIVATE_KEY` and
+  its endpoint `BASE_RPC_URL`, both only in Fly secrets. Creating the wallet and setting
+  the key are Sean's go.
+- `AshTemplate.Payments.buy(item, receiver, actor: credits_actor)`, for a person or a
+  paired agent, holds the price in purchased Credits only (`purchased_only?: true`; given
+  Credits never pay) under the day's limit (`daily_limit_atomic`, 500 USDC). The item goes
+  to one of the buyer's own wallets.
+- One send at a time, never twice (`chain_buys` queue, limit 1, one attempt):
+  `RegentPayments.BuyingWallet.buy/2` approves exactly the price, then sends the sale's
+  call, each at the wallet's next nonce after any still waiting. The limit holds per
+  machine: a site with more than one machine runs `chain_buys` on one of them only.
+- The send commits its outcome and hashes first; the Credits are settled in their own
+  step (`:close_hold`, queued with the outcome). Bought charges them; a refused approval
+  or call gives them back; a call that may still land keeps them held while
+  `CheckReceipt` reads its receipt.
+- A buy left for a person to look up on the chain (a stopped send, a send that began
+  ten minutes ago and never finished, a call never answered, Credits that could not be
+  settled) keeps its Credits held and logs `Buy left for a person: id=... state=...` for
+  Sentinel. A buy still waiting its turn in the queue has not begun, so it is never
+  taken for one.
+- No Points are earned on a buy.
 
 ## Checks
 

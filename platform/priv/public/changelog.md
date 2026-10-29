@@ -10,6 +10,9 @@ What changed in Ash Template lately, newest first.
 - **Your Credits on the smallest phones.** On a phone narrower than 360 pixels, your
   Credits balance is in the box under your picture instead of the top bar, so the top
   bar fits the screen. Pressing it opens Buy Credits, as the top bar's balance does.
+- **Your agent can pay for a pin in USDC or Credits.** Pinning a note costs your agent
+  1 USDC from its own wallet, or 1 of your Credits within the spending you allow it. Asking
+  twice for the same pin never charges twice.
 - **Help for an agent that isn't paired yet.** An agent told to pair first, or to wait
   until its person signs in, now gets a link to a help page that explains what to do.
 - **Every site's tools show again.** The card listing each Regents site's browser tools
