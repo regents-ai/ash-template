@@ -12,11 +12,12 @@ defmodule AshTemplateWeb.PollsController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Actors.Agent
   alias AshTemplate.Polls
   alias AshTemplate.Polls.Poll
   alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
+
+  require AgentWallet
 
   plug :paired_agent when action in [:create, :vote, :end_poll]
 
@@ -41,7 +42,9 @@ defmodule AshTemplateWeb.PollsController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
-  defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
+  defp paired_agent(%{assigns: %{actor: actor}} = conn, _opts)
+       when AgentWallet.acts_for_account(actor),
+       do: conn
 
   defp paired_agent(conn, _opts),
     do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()

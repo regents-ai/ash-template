@@ -10,7 +10,9 @@ require Logger
 if config_env() != :test do
   config :ash_template, :privy,
     app_id: System.get_env("PRIVY_APP_ID"),
-    verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
+    verification_key: System.get_env("PRIVY_VERIFICATION_KEY"),
+    # Only an agent opening its own account uses it (AshTemplate.Accounts.AgentAccount).
+    app_secret: System.get_env("PRIVY_APP_SECRET")
 end
 
 # Without its Privy settings a local server answers every page while nobody can

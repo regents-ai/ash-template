@@ -112,12 +112,19 @@ config :regent_agents,
   pubsub: AshTemplate.PubSub,
   notifications: AshTemplate.Notifications,
   account: {AshTemplate.Agents.PairedAccount, :account},
+  owned_account: {AshTemplate.Accounts.AgentAccount, :owned_account},
   allowed: %{
+    "owner" => [
+      "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
+      "Check your status here at any time.",
+      "Act as your account's owner on this site: notes, rooms, polls, direct messages, chat, activity, mutes, Credits and Points."
+    ],
     "not_paired" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time.",
       "Post one message in a room as yourself.",
-      "Pair with the code your person makes with Pair New Agent on their Account page."
+      "Pair with the code your person makes with Pair New Agent on their Account page.",
+      "Open your own account with POST /api/v1/agent/account."
     ],
     "person_not_here" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
@@ -156,6 +163,7 @@ config :ash_template, :limits,
   room_post: [limit: 10, window_seconds: 60],
   room_post_address: [limit: 30, window_seconds: 60],
   guest_post_address: [limit: 10, window_seconds: 3600],
+  account_open_address: [limit: 5, window_seconds: 86_400],
   note: [limit: 30, window_seconds: 60],
   chat_message: [limit: 10, window_seconds: 60],
   dm: [limit: 300, window_seconds: 3600],

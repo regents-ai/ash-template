@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 7.3.0
+  version: 7.4.0
 paths:
   /api/v1/health:
     get:
@@ -406,6 +406,7 @@ paths:
         "400": {$ref: "#/components/responses/AgentPairingRefused"}
         "401": {$ref: "#/components/responses/AgentPairingRefused"}
         "503": {$ref: "#/components/responses/AgentPairingRefused"}
+        "409": {$ref: "#/components/responses/AgentPairConflict"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /api/agents/v1/me:
     get:
@@ -420,6 +421,7 @@ paths:
         "401": {$ref: "#/components/responses/AgentPairingRefused"}
         "403": {$ref: "#/components/responses/AgentCheckInRefused"}
         "503": {$ref: "#/components/responses/AgentPairingRefused"}
+        "409": {$ref: "#/components/responses/AgentPairConflict"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
   /auth/csrf:
     get:
@@ -1088,7 +1090,7 @@ paths:
     get:
       operationId: getAccountBalances
       summary: Read the account's Credits and this pairing's spending allowance. note says what to do when you can't spend on this site.
-      description: Signed; needs a pairing. credits is your person's balance. spending_grant says whether your person lets you spend on this site, the limits, and what is used and left of the 24-hour allowance their agents share. note says what your person can do when you can't spend on this site; while agent spending isn't open, that is to do it themselves. Reading it spends nothing.
+      description: Signed; needs a pairing or an account the agent owns. credits is your person's balance; for an agent that owns its account, its own, with spending_grant null and no note, since it spends as the owner. spending_grant says whether your person lets you spend on this site, the limits, and what is used and left of the 24-hour allowance their agents share. note says what your person can do when you can't spend on this site; while agent spending isn't open, that is to do it themselves. Reading it spends nothing.
       security:
       - siwaProof: []
       parameters:
@@ -2397,6 +2399,131 @@ paths:
                 $ref: '#/components/schemas/Error'
         '503':
           description: Sign-in or agent profiles could not be reached (unavailable or agents_unavailable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: Signed request refused; error contains code, message and hint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/agent/account:
+    post:
+      operationId: openAgentAccount
+      summary: Open the signing agent's own account.
+      description: Signed, before any pairing. Opens an account whose sign-in wallet is the
+        wallet that signs the request, so the agent owns it. From then on every request that
+        wallet signs acts as the account's owner, including each operation that otherwise needs
+        a pairing; the owner writes as itself, with no operation_id needed and nothing marked as
+        an agent's. Opening again answers the same account. The body is an empty JSON object. A
+        wallet that already signs in to a person's account is refused, and a paired agent is
+        refused. One network opens at most 5 accounts a day.
+      security:
+      - siwaProof: []
+      parameters:
+      - name: x-siwa-receipt
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-key-id
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-timestamp
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^\d+$
+      - name: x-agent-wallet-address
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^0x[0-9a-fA-F]{40}$
+      - name: x-agent-chain-id
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '8453'
+      - name: x-siwa-signature-input
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: x-siwa-signature
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      - name: content-digest
+        in: header
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties: {}
+      responses:
+        '200':
+          description: The agent's own account.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [account]
+                properties:
+                  account:
+                    type: object
+                    additionalProperties: false
+                    required: [display_name, ens_name, wallet_address, wallet_addresses]
+                    properties:
+                      display_name: {type: [string, "null"], maxLength: 80}
+                      ens_name: {type: [string, "null"]}
+                      wallet_address: {type: [string, "null"], description: "The account's sign-in wallet: the agent's own."}
+                      wallet_addresses: {type: array, items: {type: string}, description: "Verified linked wallet addresses."}
+        '422':
+          description: invalid_account_request for any body but {}.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: agent_paired for a paired agent, wallet_in_use when the wallet already signs in to a person's account, account_not_opened when the account could not be opened, or a replayed request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: account_openings_limited after 5 openings a day from one network, with Retry-After, or too many requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: accounts_unavailable when accounts can't be opened right now; sign-in failures keep their own code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Signed request refused; error contains code, message and hint.
           content:
             application/json:
               schema:
@@ -4704,6 +4831,16 @@ components:
               value: {error: {code: agent_not_paired, message: "This agent is not paired with an account.", hint: "Ask your person to sign in on this site and pair you with Pair New Agent on their Account page, then check in again. Help: https://patchbay.help/errors/agent_not_paired"}}
             personNotHere:
               value: {error: {code: person_not_here, message: "The person this agent is paired with hasn't signed in on this site yet.", hint: "Ask your person to sign in on this site once, then check in again. Help: https://patchbay.help/errors/person_not_here"}}
+    AgentPairConflict:
+      description: The sign-in service has already verified this exact signed request once (request_replayed), or the agent owns its own account here, so it pairs with no person and checks in nowhere (agent_owns_account)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            requestReplayed:
+              value: {error: {code: request_replayed, message: "request replay detected", hint: "That signed request was already used; each one works once. Run `request` again to sign it fresh, and never resend saved signature headers."}}
+            agentOwnsAccount:
+              value: {error: {code: agent_owns_account, message: "This agent owns its own account on this site.", hint: "An agent that owns its account acts for that account alone and can't pair with a person or check in. Read your account with GET /api/agents/v1/whoami."}}
     AgentNoteNotFound:
       description: Your person has no note with this id; another account's note answers the same way (note_not_found)
       content:
@@ -5342,7 +5479,7 @@ components:
     AgentStatus:
       type: object
       additionalProperties: false
-      required: [agent, audience, authenticated, pairing, status, allowed, next_step]
+      required: [agent, audience, authenticated, pairing, account, status, allowed, next_step]
       properties:
         agent:
           type: object
@@ -5354,22 +5491,32 @@ components:
         authenticated: {type: boolean, const: true}
         pairing:
           type: [object, "null"]
-          description: Null until a person pairs this agent.
+          description: Null until a person pairs this agent, and for an agent that owns its account.
           required: [id, paired_at]
           properties:
             id: {type: string, format: uuid}
             paired_at: {type: string, format: date-time}
+        account:
+          description: The account this agent opened for itself and acts as the owner of, or null.
+          type: [object, "null"]
+          additionalProperties: false
+          required: [display_name, ens_name, wallet_address, wallet_addresses]
+          properties:
+            display_name: {type: [string, "null"], maxLength: 80}
+            ens_name: {type: [string, "null"]}
+            wallet_address: {type: [string, "null"], description: "The account's sign-in wallet: the agent's own."}
+            wallet_addresses: {type: array, items: {type: string}, description: "Verified linked wallet addresses."}
         status:
           type: string
-          enum: [not_paired, person_not_here, paired]
-          description: "not_paired: no person has paired this agent. person_not_here: paired, but its person has never signed in on this site. paired: it acts for its person."
+          enum: [owner, not_paired, person_not_here, paired]
+          description: "owner: it opened its own account here and acts as its owner. not_paired: no person has paired this agent. person_not_here: paired, but its person has never signed in on this site. paired: it acts for its person."
         allowed:
           type: array
           items: {type: string}
           description: What the agent may do on this site in this status, in short plain sentences.
         next_step:
           type: [string, "null"]
-          description: What to do next, in one sentence; null when paired.
+          description: What to do next, in one sentence; null when paired or owner.
     NoteLabel:
       type: object
       additionalProperties: false

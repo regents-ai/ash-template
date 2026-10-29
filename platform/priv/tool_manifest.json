@@ -390,6 +390,7 @@
               "agents_status",
               "agents_profile",
               "agents_edit_profile",
+              "account_open",
               "notes_list",
               "notes_get",
               "notes_create",
@@ -1229,6 +1230,51 @@
             "description": "A status line, up to 160 characters; empty clears it."
           }
         },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "account_open",
+      "title": "Open my own account",
+      "description": "Open your own account on this site: the wallet you sign with becomes its sign-in wallet, and from then on you act as its owner, with no person to pair with. Opening again answers the same account. Takes no input. Refused once a person has paired you, or when your wallet already signs in to a person's account. Signed: prepare it with prepare_agent_request, sign it with your SIWA signer, then pass input, request and proof.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "request",
+          "proof"
+        ],
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": false
+          },
+          "request": {
+            "type": "object",
+            "description": "The exact request prepare_agent_request returned."
+          },
+          "proof": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The proof headers your SIWA signer made for that request."
+          }
+        }
+      },
+      "annotations": {},
+      "route": "POST /api/v1/agent/account",
+      "scope": "site",
+      "operation_id": "openAgentAccount",
+      "authentication": "siwa_per_request",
+      "availability": "available",
+      "operation_input_schema": {
+        "type": "object",
+        "properties": {},
         "required": [],
         "additionalProperties": false
       }

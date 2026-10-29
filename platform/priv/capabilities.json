@@ -356,6 +356,16 @@
       "cli_release": "1.10.16"
     },
     {
+      "operation": "openAgentAccount",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
       "operation": "searchNotes",
       "effect": "read",
       "authority": "paired_agent",

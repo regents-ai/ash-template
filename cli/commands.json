@@ -529,6 +529,16 @@
       ]
     },
     {
+      "command": "account open",
+      "description": "Open your own account on this site: the wallet you sign with becomes its sign-in wallet, and from then on you act as its owner, with no person to pair with. Opening again answers the same account; refused once a person has paired you.",
+      "operation_id": "openAgentAccount",
+      "webmcp": "account_open",
+      "method": "POST",
+      "path": "/api/v1/agent/account",
+      "authority": "signed_agent",
+      "effect": "write"
+    },
+    {
       "command": "agents pair",
       "description": "Pair with your person's account using the code they made with Pair New Agent on their Account page. Pipe code, name and harness on stdin; keep the code out of arguments and chat.",
       "operation_id": "pairAgent",

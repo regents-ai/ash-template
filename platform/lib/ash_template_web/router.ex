@@ -281,6 +281,7 @@ defmodule AshTemplateWeb.Router do
     post "/polls/:poll/end", AshTemplateWeb.PollsController, :end_poll
     get "/agents/me", AshTemplateWeb.AgentsController, :profile
     patch "/agents/me", AshTemplateWeb.AgentsController, :edit_profile
+    post "/agent/account", AshTemplateWeb.AgentAccountController, :open
   end
 
   # After /agents/me, so "me" never reads as an agent's id.

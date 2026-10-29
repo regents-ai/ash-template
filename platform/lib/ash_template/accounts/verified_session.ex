@@ -20,20 +20,30 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     # inside it.
     case verified do
       %{wallet_address: primary, wallet_addresses: [_ | _] = addresses} when is_binary(primary) ->
-        with {:ok, account} <- Accounts.register_verified(did, primary, addresses, actor: @actor),
-             {:ok, account} <-
-               Accounts.refresh_verified(account, primary, addresses, actor: @actor),
-             {:ok, conflicts} <- reconcile(account.id, verified.linked_socials),
-             {:ok, _moved} <-
-               RegentCredits.attach_wallets(did, addresses,
-                 actor: AshTemplate.Credits.site_actor()
-               ),
-             :ok <- request_ens_lookup(account) do
+        with {:ok, account} <- register(did, primary, addresses),
+             {:ok, conflicts} <- reconcile(account.id, verified.linked_socials) do
           {:ok, account, conflicts}
         end
 
       _no_linked_wallet ->
         withdraw_wallet_evidence(did)
+    end
+  end
+
+  @doc """
+  Registers or refreshes the account of Privy user `did` with its main wallet
+  and every wallet it links, moves Credits waiting under those wallets to it and
+  asks Ethereum for its wallet's ENS name again. A sign-in on the site and an
+  agent opening its own account (`AshTemplate.Accounts.AgentAccount`) both
+  register here.
+  """
+  def register(did, primary, addresses) do
+    with {:ok, account} <- Accounts.register_verified(did, primary, addresses, actor: @actor),
+         {:ok, account} <- Accounts.refresh_verified(account, primary, addresses, actor: @actor),
+         {:ok, _moved} <-
+           RegentCredits.attach_wallets(did, addresses, actor: AshTemplate.Credits.site_actor()),
+         :ok <- request_ens_lookup(account) do
+      {:ok, account}
     end
   end
 

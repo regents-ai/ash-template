@@ -13,11 +13,13 @@ defmodule AshTemplateWeb.PairedAgentController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.{Activity, Notes, Rooms}
-  alias AshTemplate.Actors.Agent
+  alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Rooms.Mute
   alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
+
+  require AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
   alias RegentPoints.Rules
 
@@ -82,6 +84,10 @@ defmodule AshTemplateWeb.PairedAgentController do
   @points_off "Earning Points is off on this site."
   @spending_closed "Agent spending isn't open yet. Your person can do this themselves."
   @spending_ask "Your person can allow you to spend Credits on this site on their Regents account at regents.sh/account."
+
+  # An agent that owns its account spends as its owner, under no grant.
+  def balances(%{assigns: %{actor: %Human{} = owner}} = conn, _params),
+    do: json(conn, %{credits: RegentCredits.balance(owner.privy_user_id), spending_grant: nil})
 
   # What the agent may spend, and the note, both come from the agent's budget
   # (`RegentCredits.agent_budget/1`): its grant, and whether a grant can be made.
@@ -316,7 +322,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   # it is and costs nothing (`Note.Pin`).
   def pin_price(conn, %{"id" => id}) do
     for_note(conn, id, fn note ->
-      credits = if note.pinned_at, do: Decimal.new(0), else: Note.Pin.price()
+      credits = Note.Pin.cost(note, conn.assigns.actor)
       json(conn, %{note: %{id: note.id, pinned: !!note.pinned_at}, price: %{credits: credits}})
     end)
   end
@@ -393,6 +399,10 @@ defmodule AshTemplateWeb.PairedAgentController do
   defp spending_code(%Refused{reason: :agent_not_paired}), do: "agent_not_paired"
   defp spending_code(_error), do: nil
 
+  defp credit_actor(%{assigns: %{actor: %Human{} = owner}}),
+    do:
+      RegentCredits.Actor.person(owner.privy_user_id, owner.wallet_addresses, AshTemplate.site())
+
   defp credit_actor(conn) do
     actor = conn.assigns.actor
 
@@ -417,7 +427,7 @@ defmodule AshTemplateWeb.PairedAgentController do
       %{halted: true} = conn ->
         conn
 
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
+      %{assigns: %{actor: actor}} = conn when AgentWallet.acts_for_account(actor) ->
         conn
 
       %{assigns: %{actor: %Agent{} = actor}} = conn ->

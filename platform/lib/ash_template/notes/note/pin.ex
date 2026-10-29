@@ -24,6 +24,14 @@ defmodule AshTemplate.Notes.Note.Pin do
   @spec price() :: Decimal.t()
   def price, do: @price
 
+  @doc """
+  What pinning `note` costs `actor`, in Credits: the price for an agent acting for
+  its person, and nothing for a note already pinned or for the account's owner.
+  """
+  @spec cost(struct(), struct()) :: Decimal.t()
+  def cost(%{pinned_at: nil}, %Agent{}), do: @price
+  def cost(_note, _actor), do: Decimal.new(0)
+
   @impl true
   def change(changeset, _opts, %{actor: actor}) do
     Ash.Changeset.before_action(changeset, fn

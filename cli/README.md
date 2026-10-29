@@ -63,7 +63,7 @@ three places named at its top (its agent guide, the folders holding install line
 
 An action only a person can do is a bug: everything a person does on the site gets a
 command. [docs/agent-parity.md](../docs/agent-parity.md) lists the actions that have none yet
-and who is building each one, starting with signing in.
+and who is building each one.
 
 ## A command that signs
 

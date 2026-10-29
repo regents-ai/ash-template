@@ -11,16 +11,18 @@ defmodule AshTemplate.Agents.PairedAccount do
   # Nil until the person first signs in here; the check-in then asks for that sign-in.
   def account(privy_user_id) do
     case Accounts.get_by_privy_did(privy_user_id, actor: %System{}) do
-      {:ok, %{} = account} ->
-        %{
-          display_name: account.display_name,
-          ens_name: account.ens_name,
-          wallet_address: account.wallet_address,
-          wallet_addresses: account.wallet_addresses || []
-        }
-
-      {:ok, nil} ->
-        nil
+      {:ok, %{} = account} -> present(account)
+      {:ok, nil} -> nil
     end
+  end
+
+  @doc "An account as an agent's check-in and its whoami name it."
+  def present(account) do
+    %{
+      display_name: account.display_name,
+      ens_name: account.ens_name,
+      wallet_address: account.wallet_address,
+      wallet_addresses: account.wallet_addresses || []
+    }
   end
 end

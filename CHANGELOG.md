@@ -4961,3 +4961,45 @@ An adversarial review of the two commits above found five things, all fixed here
 
 - Sign out closes the account menu, so when the site can't be reached the note "Sign out couldn’t finish. Try again." shows under the account button with nothing over it. Before, the open menu covered it. Found by regents.sh's walk.
 - The account menu walk aborts the sign-out request, presses Sign out and checks the menu is closed and the note is on top; it fails on the old code.
+
+## 2026-10-29 — Agents open their own accounts (agent parity G1)
+
+- Sean's 29 Oct answer 2 a, built: an agent opens its own account with signed
+  `POST /api/v1/agent/account` and the body `{}` (`openAgentAccount`), the browser tool
+  `account_open` and the command `account open` (next regents-cli release).
+  `AshTemplate.Accounts.AgentAccount.open/1` asks Privy for the wallet's user
+  (`RegentPrivy.Users.by_wallet`): a user an agent opening made, here or on another
+  Regent site, is taken; none is made with `RegentPrivy.Users.create_with_wallet`, which
+  marks it with Privy's server-only custom metadata `regent_agent`, the agent's wallet;
+  any other user is a person's, even one who signs in with nothing but that wallet, and
+  another wallet later linked to the agent's user opens nothing, refused with
+  `wallet_in_use`. The account is then registered as a sign-in is
+  (`VerifiedSession.register/3`, now shared with `establish`). Opening again answers the
+  same account without asking Privy.
+- An agent owns only the account it opened: the opening is recorded in
+  `AshTemplate.Accounts.AgentOwnedAccount` (migration `20261029084905_agent_owned_accounts`,
+  one row per agent wallet), and `AgentAccount.owned/1` reads that row, while the account
+  still signs in with the agent's wallet and its session is current. A person's account is
+  never an agent's, even when the agent signs with the person's own sign-in wallet.
+  `AgentWallet` checks ownership before any pairing: the request's actor is then
+  `AshTemplate.Actors.Human.owner/2`, the account's own person with the agent's id, so
+  every page action and policy the person has applies unchanged. Notes need no
+  `operation_id` and name no agent, a pin is free, `account_balances` answers the agent's
+  own Credits with `spending_grant: null`. Before the answer leaves, the wallet is read
+  again; an account it no longer signs in to answers `agent_not_paired`. The account and
+  its opening are written in one transaction, so an opening that stops half-way
+  finishes when tried again.
+- `agents whoami` says `owner`, with the account, and the agent guides' status list
+  (`/llms.txt`, `/agents.md`, `/skill.md`) has it; pairing such an agent is refused with
+  `agent_owns_account` (elixir-utils agents). A paired agent is refused with
+  `agent_paired`, any body but `{}` with `invalid_account_request`, Privy's refusal with
+  `account_not_opened`, and a sixth opening a day from one network with
+  `account_openings_limited` and `Retry-After` (`:account_open_address`, 5 a day).
+- Privy's server API needs the app secret: `PRIVY_APP_SECRET` in `config/runtime.exs`. It
+  must be set on the site before this is released. The OpenAPI documents move to 7.4.0:
+  `AgentStatus` gains `owner` and `account`, and pairing and check-in document the 409
+  `agent_owns_account` beside `request_replayed`. elixir-utils moves to `e4c79bd0`.
+- A signed-tools test signs with a person's own sign-in wallet and checks it is only ever
+  their paired agent: refused before pairing, allowed while paired, refused after unpairing.
+- The compile-connected limit in `platform/mix.exs` moves to 37: the Accounts domain reads
+  its new `AgentOwnedAccount` resource at compile time.

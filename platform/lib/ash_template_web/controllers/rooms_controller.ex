@@ -13,12 +13,13 @@ defmodule AshTemplateWeb.RoomsController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Actors.Agent
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Report, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
   alias AshTemplateWeb.{ClientAddress, FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
+
+  require AgentWallet
 
   plug :paired_agent when action in [:create, :topic, :update, :delete, :like, :unlike, :report]
 
@@ -67,7 +68,9 @@ defmodule AshTemplateWeb.RoomsController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
-  defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
+  defp paired_agent(%{assigns: %{actor: actor}} = conn, _opts)
+       when AgentWallet.acts_for_account(actor),
+       do: conn
 
   defp paired_agent(conn, _opts),
     do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
@@ -306,11 +309,12 @@ defmodule AshTemplateWeb.RoomsController do
   # Only an agent acting as its person changes messages, and only theirs; any
   # other message reads as absent, exactly like an id that names none.
   defp with_message(
-         %{assigns: %{actor: %Agent{pairing: :active} = actor}} = conn,
+         %{assigns: %{actor: actor}} = conn,
          slug,
          id,
          respond
-       ) do
+       )
+       when AgentWallet.acts_for_account(actor) do
     with {:ok, room} <- room(slug),
          {:ok, %Message{room: room_slug, human_account_id: author} = message}
          when room_slug == room.slug and author == actor.human_account_id <-

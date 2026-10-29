@@ -15,7 +15,10 @@ config :ash_template, :chain_nodes, %{}
 
 # Every test signs in to this one Privy app, so shared profiles and sessions a
 # test writes match the app the site reads them for.
-config :ash_template, :privy, app_id: "test-app"
+config :ash_template, :privy,
+  app_id: "test-app",
+  app_secret: "test-secret",
+  req_options: [plug: {Req.Test, RegentPrivy.Users}]
 
 # Jobs are only recorded, never run, while a test holds its transaction.
 config :ash_template, Oban, testing: :manual

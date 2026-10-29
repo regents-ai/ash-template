@@ -10,11 +10,13 @@ defmodule AshTemplateWeb.NotesController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Accounts.VerifiedSession
-  alias AshTemplate.Actors.{Agent, Human}
+  alias AshTemplate.Actors.Human
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
   alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
+
+  require AgentWallet
 
   plug :authenticate
 
@@ -85,11 +87,12 @@ defmodule AshTemplateWeb.NotesController do
       else: authenticate_person(conn)
   end
 
-  # An agent's signed request acts as the person it is paired with, or not at all.
+  # An agent's signed request acts as the account it owns or the person it is
+  # paired with, or not at all.
   defp authenticate_agent(conn) do
     case AgentWallet.call(conn, []) do
       %{halted: true} = conn -> conn
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn -> conn
+      %{assigns: %{actor: actor}} = conn when AgentWallet.acts_for_account(actor) -> conn
       conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
     end
   end

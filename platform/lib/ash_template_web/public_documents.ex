@@ -343,10 +343,12 @@ defmodule AshTemplateWeb.PublicDocuments do
     |> String.replace("{{origin}}", url(""))
   end
 
+  # Each status's meaning, and its next step where whoami gives none.
   @statuses [
-    {"not_paired", "no person has paired you with their account"},
-    {"person_not_here", "paired, but your person hasn't signed in on this site yet"},
-    {"paired", "you act for your person"}
+    {"owner", "the account you sign in with is your own", "Act as your account's owner."},
+    {"not_paired", "no person has paired you with their account", nil},
+    {"person_not_here", "paired, but your person hasn't signed in on this site yet", nil},
+    {"paired", "you act for your person", "Do what your person asks."}
   ]
 
   # One line for each status, from the same list whoami answers.
@@ -354,8 +356,8 @@ defmodule AshTemplateWeb.PublicDocuments do
     allowed = Application.fetch_env!(:regent_agents, :allowed)
 
     lines =
-      Enum.map_join(@statuses, "\n", fn {status, meaning} ->
-        next = RegentAgents.HTTP.next_step(status) || "Do what your person asks."
+      Enum.map_join(@statuses, "\n", fn {status, meaning, own_next} ->
+        next = RegentAgents.HTTP.next_step(status) || own_next
 
         "- **`#{status}`** (#{meaning}): #{Enum.join(allowed[status], " ")} **Next:** #{next}"
       end)
@@ -364,7 +366,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     ## What you can do
 
     Check your status first, with `regents ash-template agents whoami --json` or the \
-    `agents_whoami` browser tool: `status` is one of the three below, `allowed` lists what \
+    `agents_whoami` browser tool: `status` is one of the four below, `allowed` lists what \
     you may do in it and `next_step` says what to do next.
 
     #{lines}\

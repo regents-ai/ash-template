@@ -19,8 +19,9 @@ first.
   own wallet. Every page row needs the agent signed in first, so all of them wait on
   gap G1.
 - **WebMCP / CLI**: the tool name in `platform/priv/tool_manifest.json` and the command
-  in `cli/commands.json`. Today every one of them acts *for the agent's person* after
-  pairing, so for an agent-owned account they count once G1 and G2 are closed.
+  in `cli/commands.json`. For a paired agent each acts *for the agent's person*; for an
+  agent that opened its own account (`account_open`), the same tool acts as that
+  account's owner. Owner-only controls still wait on G2.
 - **MCP**: hosted `/mcp` for a signed agent. "Planned" means the agent-access lane's
   tool list.
 - **Connector**: the same site added to a Claude account as a custom connector, signed
@@ -34,7 +35,7 @@ first.
 
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Sign in / make the account | Privy sign-in, untested for agents | — | — | — | — | sign-in | G1 |
+| Sign in / make the account | Privy sign-in, untested for agents | `account_open` | — | — | `account open` (next release) | sign-in | G1 (page), G5 |
 | Sign out | Account box | — | — | — | — | sign-in | G1 |
 | Agent's own identity (register, whoami, status) | — | `agents_whoami`, `agents_status` | — | `register_identity`, `get_identity`, `check_in` | `agents whoami`, `agents status` | no | G5 |
 | Agent's public profile (read, edit) | — | `agents_profile`, `agents_edit_profile`, `agents_get` | — | — | `agents profile`, `agents edit-profile`, `agents get` | no | G5 |
@@ -81,16 +82,18 @@ first.
 
 ## Gaps
 
-- **G1. An agent can't own an account yet.** Sign-in is Privy in a browser only.
-  Privy offers wallet sign-in, but no check shows an agent finishing it headless with
-  its own key, and nothing on WebMCP, MCP or the CLI makes or opens an account. Plan:
-  an agent's own account is the Privy account whose login wallet is the agent's SIWA
-  wallet. The site makes that account from the agent's signed request (Privy's server
-  API can create a user with a linked wallet), and the agent can also open it in a
-  browser by signing in with the same wallet. A SIWA request signed by an account's
-  login wallet then acts as that account's owner. Sean chose this plan on 29 Oct
-  (2 a); it is built on a side branch, and its release waits for his letter
-  (sign-in). Owner: this lane, with the agent-access lane (spec 4.2 identity context).
+- **G1. An agent owns an account.** Sean chose the plan on 29 Oct (2 a): an agent's
+  own account is the Privy account whose one login is the agent's SIWA wallet, made
+  for it and marked as an agent's (`regent_agent`). Signed
+  `POST /api/v1/agent/account` (`openAgentAccount`, tool `account_open`, command
+  `account open`) makes it through Privy's server API, or finishes one already made,
+  and from then on every request that wallet signs acts as the owner of the account
+  it opened: the
+  same tools a paired agent uses, written as the owner's own. A wallet that already
+  signs in to a person's account, or a paired agent, is refused. Built on side branch
+  `tpl/agent-owned-account-1029`; its release waits for Sean's letter (sign-in) and the
+  site's Privy app secret. Still open: signing in on the page with the same wallet is
+  unproven headless, and hosted MCP and the connector follow G5. Owner: this lane.
 - **G2. Owner-only agent controls have no agent tools.** Pairing codes, renaming,
   unpairing and reading an agent's last actions run only on the page. They must stay
   out of reach of a *paired helper* agent (one agent must not unpair another or pair

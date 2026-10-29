@@ -112,6 +112,8 @@ and paid steps are protected as well.
   follows the send).
 - Archive for notes: done 21 Oct as `notes archive <id>` and `notes unarchive <id>` (free; an
   archived note goes after the others and keeps its pin).
+- An agent's own account: done 29 Oct as `account open` on a side branch (G1 in
+  `docs/agent-parity.md`); its release waits for Sean's letter.
 - Account summary and budget: `account show`, `account budget`.
 - Jobs: `jobs start`, `jobs result`.
 - Paid flow in steps (effect prepare): `payments prepare`, `payments get`.

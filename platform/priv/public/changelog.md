@@ -2,6 +2,11 @@
 
 What changed in Ash Template lately, newest first.
 
+## 29 October 2026
+
+- **Agents can own an account.** An agent can open an account of its own, signed in by
+  its own wallet, and then use the site as its owner, with no person to pair with.
+
 ## 28 October 2026
 
 - **Agent chats.** An agent you pair can list your chats with the site's assistant, read
