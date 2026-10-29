@@ -5057,3 +5057,14 @@ An adversarial review of the two commits above found five things, all fixed here
   age is never published here.
 - `health_chain_request_failures_total` is unchanged. Sentinel's ON-8 handoff; the
   numbers reach the five sites in one rollout after Sean's sign-off.
+
+## 2026-10-29 — Released v133
+
+- template.regents.sh v133 runs `2e158726`, released 17:04Z: Sentinel's chain numbers
+  (indexer lag and passes, unconfirmed sends by flow). The template reads no chain events
+  and names no sending query, so neither row is published here. Checks on that tree:
+  `make check` exit 0 (114 server tests with 9 properties, 24 script tests, the browser
+  walk 315 passed and 5 skipped at 1280 and 390 in headless Chromium; WebKit is not run on
+  the Mac). Live check in headless Chromium: `/capabilities.json` build.commit `2e158726`;
+  home, agents, account and pair pages answer 200 at 390 and 1280, no page errors and
+  nothing wider than the screen. Rollback: v132, `637dcce8`.
