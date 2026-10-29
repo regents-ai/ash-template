@@ -99,8 +99,7 @@ defmodule AshTemplate.MixProject do
        override: true},
       {:regent_jev, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "jev"},
       # regent_jev and regent_oauth name regent_http by a sibling path; this pin replaces it.
-      {:regent_http,
-       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
+      {:regent_http, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
       # Cachex 4.1.1 on consuming sites requires 6.x; Nebulex accepts 6.x or 7.x.
       {:ex_hash_ring, "== 6.0.4"},
