@@ -7,7 +7,7 @@ defmodule AshTemplate.MixProject do
   @elixir_utils_ref "dea334b0cc9477a26fa9bbd03e4f803359ab420b"
   # oauth with published identities (Claude's "Use Claude's published identity"),
   # and the http package it reads them with (claude/cimd-1029).
-  @elixir_utils_oauth_ref "36de34ee88695369001fd36af1645df3ffad554d"
+  @elixir_utils_oauth_ref "141500e02504a40e50ab8c9516797888510436cc"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "3134bab0a23452fb82d3248072327e1d0199cc9a"
 
