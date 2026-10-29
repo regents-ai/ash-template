@@ -5215,8 +5215,9 @@ way, and the library's own site-tool serving is gone.
   itself by its published identity, `https://claude.ai/oauth/mcp-oauth-client-metadata`,
   instead of registering a new app on every connection. Discovery says so
   (`client_id_metadata_document_supported`); registration keeps working for other apps.
-- `regent_oauth` and `regent_http` move to elixir-utils `claude/cimd-1029`; every other
-  shared package stays on `dea334b`. Migration `20261029160000_oauth_client_documents`
+- Every elixir-utils package moves to one commit, `4d30fea` (`claude/cimd-on-site-tools-1029`):
+  `dea334b`'s connector packages with published identities on top. Only oauth, http and
+  mcp_events differ from `dea334b`. Migration `20261029160000_oauth_client_documents`
   adds one empty table (`RegentOAuth.Migration.V3`) and changes nothing existing.
 - Consent (`/oauth/authorize`, GET and POST) is limited to 120 requests a minute by
   address, like token and revocation: a signed-in person's consent may read a connecting
