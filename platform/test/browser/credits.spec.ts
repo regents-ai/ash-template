@@ -2,7 +2,7 @@ import type {Locator} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {resting, signedIn, watch} from "./support/person"
 
-// The Credits panel's "Where to spend" opens a window naming each Regents Product
+// The Credits panel's "Spending" opens a window naming each Regents Product
 // and what Credits buy there, and the panel's "Paying from" wallet carries its copy icon.
 test.use(signedIn)
 
@@ -15,7 +15,7 @@ const sites = [
   ["$REGENT Staking", nothingYet, "https://regents.sh/stake"],
 ]
 
-test("Where to spend lists each site and what Credits buy there", async ({page, hasTouch}) => {
+test("Spending lists each site and what Credits buy there", async ({page, hasTouch}) => {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
   const problems = watch(page)
   await page.goto("/showcase/credits")
@@ -24,8 +24,8 @@ test("Where to spend lists each site and what Credits buy there", async ({page, 
   const panel = page.locator("#credits-panel")
   await expect(panel.locator(".credits-panel__wallet").getByRole("button", {name: "Copy the full address"})).toBeVisible()
 
-  const open = panel.getByRole("button", {name: "Where to spend"})
-  const window = page.getByRole("dialog", {name: "Where to spend Credits"})
+  const open = panel.getByRole("button", {name: "Spending"})
+  const window = page.getByRole("dialog", {name: "Spending"})
   await press(open)
   await expect(window).toBeVisible()
   const rows = window.getByRole("listitem")

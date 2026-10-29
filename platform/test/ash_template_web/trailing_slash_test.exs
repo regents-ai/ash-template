@@ -10,7 +10,7 @@ defmodule AshTemplateWeb.TrailingSlashTest do
     for path <- ["/account/", "/notes/", "/about/", "/llms.txt/"] do
       response = request(path, "text/html")
       assert response.status == 404
-      assert response.resp_body =~ "We can’t find that page"
+      assert response.resp_body =~ "Not found"
     end
   end
 

@@ -15,9 +15,9 @@ Pair as `other`. Any agent's skill is [the agent guide with the notes below]({{o
 
 ## Questions
 
-### My agent isn't listed. Can it pair?
+### Unlisted agents
 
-Yes. Any agent that can run a shell and make web requests follows the same steps. It pairs as `other`, or as its own name from the list in Set up when it is there.
+An agent that isn't listed can still pair. Any agent that can run a shell and make web requests follows the same steps. It pairs as `other`, or as its own name from the list in Set up when it is there.
 
 ## Troubleshooting
 

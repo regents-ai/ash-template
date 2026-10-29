@@ -74,7 +74,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
 
       <section class="onchain-workshop-intro">
         <p class="sc-eyebrow">Example</p>
-        <h1>A discussion thread</h1>
+        <h1>Discussion</h1>
         <p>
           This is how a question and its replies read on a Regent site: one column, a picture
           beside each name, the answer that worked quoted under the question, and a heart on

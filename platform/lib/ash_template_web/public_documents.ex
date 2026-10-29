@@ -32,8 +32,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @pages %{
     "/" => {"Ash Template", @description},
     "/app" => {"Overview", "Your Ash Template overview, with the wallet you signed in with."},
-    "/app/activity" =>
-      {"Activity", "What has happened for you lately: mentions in rooms, newest first."},
+    "/app/activity" => {"Activity", "Your mentions in rooms lately, newest first."},
     "/notes" => {"Notes", "Notes only you can read, kept current on every page you have open."},
     "/chat" => {"Chat", "Talk with the assistant; its replies arrive a few words at a time."},
     "/dms" => {"Messages", "Write privately to someone you met in a room."},
@@ -49,7 +48,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
     "/pair" =>
-      {"Bring your agent",
+      {"Pair New Agent",
        "Pair your agent with your account, and send it to the page you came from."},
     "/animations" => {"Motion lab", "Every motion Ash Template uses, side by side."},
     "/animations/crown" =>
@@ -66,7 +65,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Site buttons",
        "Each site's main button today beside the template's motion, in that site's own colours."},
     "/animations/header-footer" =>
-      {"Header and footer",
+      {"Navigation",
        "The header and footer every public page shares: every Regents product under one menu, and the footer at the foot of the screen."},
     "/animations/twin-cube" =>
       {"Twin cubes",
@@ -96,24 +95,23 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
-    "/about" => {"About", "What Ash Template is and who runs it."},
-    "/changelog" => {"What's new", "What changed in Ash Template lately, newest first."},
+    "/about" => {"About", "Ash Template and the people who run it."},
+    "/changelog" => {"Changelog", "Changes to Ash Template, newest first."},
     "/contact" =>
       {"Contact",
-       "How to get help with Ash Template, and where to send privacy requests, legal questions and security reports."},
+       "Help with Ash Template, and the addresses for privacy requests, legal questions and security reports."},
     "/privacy" =>
       {"Privacy Policy",
-       "How Ash Template collects, uses, shares and protects personal information."},
+       "The ways Ash Template collects, uses, shares and protects personal information."},
     "/terms" => {"Terms of Use", "The terms that apply when you use Ash Template."},
-    :holding => {"Not open yet", "This part of Ash Template isn't open to visitors yet."},
+    :holding => {"Coming soon", "This part of Ash Template isn't open to visitors yet."},
     :too_many_pages =>
-      {"Too many pages open",
-       "Too many pages are open from this connection. Close one and try again."},
+      {"Limit reached", "Too many pages are open from this connection. Close one and try again."},
     "/showcase" =>
       {"Showcase",
        "Every shared Ash Template component, in light and dark, with the page layouts they build."},
     "/showcase/privy" =>
-      {"Sign in with Privy", "Sign-in with Privy, working as an Ash Template page runs it."},
+      {"Privy sign-in", "Sign-in with Privy, working as an Ash Template page runs it."},
     "/skills" =>
       {"Build skills",
        "The guides Ash Template's builders follow, written for coding agents and open to everyone."},
@@ -121,21 +119,21 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Wallet buttons",
        "Sign in and press real wallet buttons on Base Sepolia, a test network where nothing moves real money."},
     "/showcase/payments" =>
-      {"Pay with USDC",
-       "How paying with USDC looks on every Regent site, with sample figures and paying switched off."},
+      {"USDC payments",
+       "Paying with USDC on every Regent site, with sample figures and paying switched off."},
     "/showcase/funds" =>
       {"Your funds",
-       "How your money looks on every Regent site: what's in your wallet, what you've committed, adding funds and cashing out, with sample figures."},
+       "Your money on every Regent site: what's in your wallet, what you've committed, adding funds and cashing out, with sample figures."},
     "/showcase/discussion" =>
-      {"A discussion thread",
-       "How a question and its replies read on a Regent site, with sample posts; likes are not kept."},
+      {"Discussion",
+       "A question and its replies on a Regent site, with sample posts; likes are not kept."},
     "/showcase/figures" =>
       {"Live figures",
-       "How a figure that is the same for everyone reaches every open page: Base's newest block and each room's activity, read once and shown to all."},
+       "A figure that is the same for everyone, reaching every open page: Base's newest block and each room's activity, read once and shown to all."},
     "/showcase/grammar" => {"Grammar", "The pieces every Regent page is made of, by name."},
     "/showcase/grammar/verbs" =>
       {"Grammar: verbs",
-       "How things move on every Regent page: arriving, opening, answering a press and leaving."},
+       "The ways things move on every Regent page: arriving, opening, answering a press and leaving."},
     "/showcase/grammar/layers" =>
       {"Grammar: layers",
        "The six layers of a Regent page, from the ground to a tip, and how each shows its height."},
@@ -372,7 +370,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       end)
 
     """
-    ## What you can do
+    ## Permissions
 
     Check your status first, with `regents ash-template agents whoami --json` or the \
     `agents_whoami` browser tool: `status` is one of the three below, `allowed` lists what \

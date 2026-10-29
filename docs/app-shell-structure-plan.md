@@ -39,7 +39,7 @@ each page (its sidebar, header controls and scroll rule).
 | Tabs | Views of the open section. Home: Overview, Activity. Settings: Profile, Wallets, Connections. A section with one view shows no tabs. |
 | Main content | The page itself, as today. |
 | Account menu | Signed in only, on every page, opened by the account's button at the top right and hanging under it. It holds the person's picture, name and wallet, their three most recently active agents, Pair New Agent (on the Account page), Manage Account and Sign out. A room's "Here now" and muted people sit below the room. |
-| Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Help, API, What's new, For agents, Privacy, Terms) and the running version with its commit. |
+| Bottom bar | A status dot (the site's own health check), the number of background jobs running right now, links (Help, API, Changelog, For agents, Privacy, Terms) and the running version with its commit. |
 
 ### Phones and small screens
 

@@ -93,7 +93,7 @@
     },
     {
       "name": "siwa_help",
-      "title": "How to connect an agent",
+      "title": "Connect an agent",
       "description": "Read the steps to connect an agent through siwa-server, with the commands to run. No sign-in; changes nothing.",
       "input_schema": {
         "type": "object",

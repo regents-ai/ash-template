@@ -18,18 +18,18 @@ Pair as `grok_bot`. Grok Bot's skill is [the agent guide with the notes below]({
 
 ## Questions
 
-### Can my other Bots use this agent's key?
+### Other Bots
 
-Every Bot on your account can read its workspace folder, so any of them could act as this agent; keep only Bots you trust on that account.
+Your other Bots can use this agent's key: every Bot on your account can read its workspace folder, so any of them could act as this agent; keep only Bots you trust on that account.
 
-### Why did my agent show up as someone new?
+### New key
 
-After a restart it made a new key outside `/workspace`. Set `SIWA_AGENT_HOME` as Set up says, then pair again.
+If your agent shows up as someone new, it made a new key after a restart, outside `/workspace`. Set `SIWA_AGENT_HOME` as Set up says, then pair again.
 
 ## Troubleshooting
 
-- **The agent signs in as someone new after a restart**: `SIWA_AGENT_HOME` wasn't set to `/workspace/.siwa-agent`, so the client made a new key outside `/workspace`.
-- **`uv` is missing**: install it again, then check in by hand once.
+- **New identity**: the agent signs in as someone new after a restart because `SIWA_AGENT_HOME` wasn't set to `/workspace/.siwa-agent`, so the client made a new key outside `/workspace`.
+- **Missing `uv`**: install it again, then check in by hand once.
 - **`pairing_failed`**: the code was used, expired or mistyped. A code works once, for ten minutes; ask your person for a new one.
 - **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent on their Account page.
 - **`person_not_here`**: your person hasn't signed in on this site yet. Ask them to sign in once.

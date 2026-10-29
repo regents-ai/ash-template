@@ -1,6 +1,6 @@
 defmodule AshTemplateWeb.PairLive do
   @moduledoc """
-  The page a "Bring your agent" link opens: `/pair?to=<path>`, where `to` is a
+  The page a "Pair New Agent" link opens: `/pair?to=<path>`, where `to` is a
   page on this site. A person pairs their agent in the same pairing box as the
   Account page's (`AshTemplateWeb.PairingBox`), and the message they paste ends by
   sending the agent to that page once it is paired. A link with no `to`, or one
@@ -25,7 +25,7 @@ defmodule AshTemplateWeb.PairLive do
   def page(assigns) do
     ~H"""
     <article id="pair-page" class="account-page pair-page">
-      <.page_head title="Bring your agent">
+      <.page_head title="Pair New Agent">
         <:tip>Pair your agent with your account, then send it the message.</:tip>
       </.page_head>
       <p :if={@start} id="pair-start">

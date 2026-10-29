@@ -53,7 +53,7 @@ const windows: {name: string; path: string; open: (page: Page, press: Press) => 
     name: "an agent's card in the harbour",
     path: "/animations/harbour",
     open: (page, press) =>
-      press(page.getByRole("list", {name: "Where each agent is"}).getByRole("link", {name: "Basil"})),
+      press(page.getByRole("list", {name: "Agent positions"}).getByRole("link", {name: "Basil"})),
     window: page => page.getByRole("dialog", {name: "Basil"}),
   },
 ]

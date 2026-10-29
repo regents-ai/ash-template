@@ -70,10 +70,10 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
 
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-have-heading">
-          <h2 id="funds-have-heading">What you have</h2>
+          <h2 id="funds-have-heading">Balance</h2>
           <dl class="funds-rows">
             <div>
-              <dt>Ready to use here</dt>
+              <dt>Available</dt>
               <dd>
                 <p class="payments-figure">
                   140.00 USDC on Base
@@ -85,7 +85,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
               </dd>
             </div>
             <div>
-              <dt>On other networks</dt>
+              <dt>Other networks</dt>
               <dd>
                 <ul class="funds-list">
                   <li>25.00 USDC on Ethereum</li>
@@ -119,7 +119,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
               </dd>
             </div>
             <div>
-              <dt>On its way</dt>
+              <dt>Incoming</dt>
               <dd>
                 <p>
                   50.00 USDC card purchase
@@ -132,7 +132,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-ready-heading">
-          <h2 id="funds-ready-heading">Ready to pay?</h2>
+          <h2 id="funds-ready-heading">Checkout</h2>
           <ul class="payments-answers">
             <li>
               <P.status tone="success">Ready</P.status>
@@ -146,7 +146,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
               </span>
             </li>
           </ul>
-          <h3>Move USDC to Base</h3>
+          <h3>Transfer</h3>
           <dl class="payments-terms">
             <div>
               <dt>Move</dt>
@@ -161,7 +161,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
               <dd>24.90 USDC on Base, in about 2 minutes</dd>
             </div>
             <div>
-              <dt>Price good until</dt>
+              <dt>Expires</dt>
               <dd>14:32 UTC</dd>
             </div>
           </dl>
@@ -177,7 +177,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-card-heading">
-          <h2 id="funds-card-heading">Add funds with a card</h2>
+          <h2 id="funds-card-heading">Card</h2>
           <dl class="payments-terms">
             <div>
               <dt>To</dt>
@@ -224,7 +224,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-send-heading">
-          <h2 id="funds-send-heading">Send to another wallet</h2>
+          <h2 id="funds-send-heading">Send</h2>
           <dl class="payments-terms">
             <div>
               <dt>From</dt>
@@ -255,7 +255,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-bank-heading">
-          <h2 id="funds-bank-heading">Cash out to a bank</h2>
+          <h2 id="funds-bank-heading">Cash out</h2>
           <ol class="funds-list">
             <li>Check your identity with Bridge, once.</li>
             <li>Add your bank account.</li>
@@ -271,7 +271,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
               <dd>1.00 US dollars</dd>
             </div>
             <div>
-              <dt>Your bank gets</dt>
+              <dt>Payout</dt>
               <dd>99.00 US dollars</dd>
             </div>
             <div>
@@ -296,7 +296,7 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="funds-wallet-heading">
-          <h2 id="funds-wallet-heading">Which wallet</h2>
+          <h2 id="funds-wallet-heading">Wallet</h2>
           <p>
             <P.address id="funds-wallet" address={@signed_in} />
             <P.status tone="success">Signed in</P.status>
