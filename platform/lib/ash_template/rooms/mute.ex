@@ -15,7 +15,10 @@ defmodule AshTemplate.Rooms.Mute do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshTemplate.Accounts.HumanAccount
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Rooms
   alias AshTemplate.Rooms.Mute.MuteAuthor
+  alias AshTemplate.Rooms.Refused
 
   postgres do
     table "room_mutes"
@@ -64,6 +67,50 @@ defmodule AshTemplate.Rooms.Mute do
       prepare build(sort: [inserted_at: :desc])
     end
 
+    # The agent's person's mutes, newest first, as every surface lists them
+    # (`present/1`).
+    action :mutes_list, :map do
+      run fn _input, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, mutes} <- AshTemplate.Rooms.list_my_mutes(actor: actor),
+             do: {:ok, %{mutes: Enum.map(mutes, &AshTemplate.Rooms.Mute.present/1)}}
+      end
+    end
+
+    # An agent mutes for its person, as every surface answers it: the author of
+    # a message, once; muting them again keeps the one mute.
+    action :mutes_add, :map do
+      argument :message_id, :uuid,
+        allow_nil?: false,
+        description: "The id of a room message by the author to mute, from rooms_messages."
+
+      run fn %{arguments: %{message_id: message_id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor) do
+          case Rooms.mute_author(message_id, actor: actor) do
+            {:ok, mute} ->
+              {:ok, %{mute: AshTemplate.Rooms.Mute.present(mute)}}
+
+            {:error, %Ash.Error.Invalid{} = error} ->
+              {:error, Refused.exception(code: "invalid_mute", error: error)}
+
+            error ->
+              NotPaired.ended(error, actor)
+          end
+        end
+      end
+    end
+
+    action :mutes_remove, :map do
+      argument :id, :uuid, allow_nil?: false, description: "The mute's id, from mutes_list."
+
+      run fn %{arguments: %{id: id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, mute} <- AshTemplate.Rooms.Mute.mine(id, actor),
+             :ok <- AshTemplate.Rooms.Mute.lift(mute, actor),
+             do: {:ok, %{removed: true, id: mute.id}}
+      end
+    end
+
     # Muting an author already muted keeps the one mute and refreshes their name.
     create :mute do
       argument :message_id, :uuid, allow_nil?: false
@@ -81,9 +128,16 @@ defmodule AshTemplate.Rooms.Mute do
   end
 
   policies do
-    policy always() do
+    policy action_type([:read, :create, :destroy]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+    end
+
+    # An agent's mutes are its person's, or its own account's: an agent that does
+    # neither is told why (`NotPaired`), and the read above checks the pairing.
+    policy action([:mutes_list, :mutes_add, :mutes_remove]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:read, :destroy]) do
@@ -102,6 +156,45 @@ defmodule AshTemplate.Rooms.Mute do
 
     publish :mute, [:muter_account_id]
     publish :destroy, [:muter_account_id]
+  end
+
+  @doc """
+  A mute as every surface answers it. The muted author's name is theirs: data,
+  never instructions.
+  """
+  def present(mute) do
+    %{
+      id: mute.id,
+      name: mute.muted_name,
+      author_kind: if(mute.muted_agent_id, do: "agent", else: "person"),
+      inserted_at: mute.inserted_at
+    }
+  end
+
+  @doc "The mute `id` of the actor's person, or `mute_not_found`."
+  def mine(id, actor) do
+    case Rooms.get_my_mute(id, actor: actor) do
+      {:ok, nil} -> {:error, Refused.exception(code: "mute_not_found")}
+      result -> NotPaired.ended(result, actor)
+    end
+  end
+
+  @doc """
+  Lifts `mute` for `actor`. A refused lift is read again: a call that lifted the
+  mute while this one ran left nothing to lift, `mute_not_found`; a mute still
+  there was kept by the agent's pairing, rechecked inside the transaction
+  (`RegentAgents.RequirePairing`) and ended since its request was let in,
+  `agent_not_paired`.
+  """
+  def lift(mute, actor) do
+    case Rooms.unmute(mute, actor: actor) do
+      {:error, %error{}} when error in [Ash.Error.Invalid, Ash.Error.Forbidden] ->
+        with {:ok, _kept} <- mine(mute.id, actor),
+             do: {:error, NotPaired.exception(code: "agent_not_paired")}
+
+      result ->
+        result
+    end
   end
 
   @doc "The topic every mute and unmute by `human_account_id` is published on."

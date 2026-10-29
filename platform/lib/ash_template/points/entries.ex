@@ -1,8 +1,9 @@
-defmodule AshTemplateWeb.PointsEntries do
+defmodule AshTemplate.Points.Entries do
   @moduledoc """
-  How the Points page and the agent's Points answer describe one account's
-  Points summary (`RegentPoints.summary/1`), so both say the same thing about
-  each entry and allowance.
+  How the Points page and the agent's Points answer
+  (`AshTemplate.Accounts.Holdings`) describe one account's Points summary
+  (`RegentPoints.summary/1`), so both say the same thing about each entry and
+  allowance.
   """
 
   alias RegentPoints.Amount

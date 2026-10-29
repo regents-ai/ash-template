@@ -4,6 +4,9 @@ defmodule AshTemplate.Chat.Conversation do
   generates it, owned by the signed-in account, which an agent it paired may
   also start and read. After the assistant's first reply, a job names the
   conversation from its opening messages.
+
+  An agent lists its person's chats through `:chat_list`, which every surface
+  runs.
   """
 
   use Ash.Resource,
@@ -13,6 +16,10 @@ defmodule AshTemplate.Chat.Conversation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
+
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Chat
+  alias AshTemplate.Chat.Refused
 
   attributes do
     uuid_v7_primary_key :id
@@ -36,7 +43,7 @@ defmodule AshTemplate.Chat.Conversation do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
       accept [:title]
@@ -53,6 +60,12 @@ defmodule AshTemplate.Chat.Conversation do
     read :my_conversations do
       filter expr(human_account_id == ^actor(:human_account_id))
       prepare build(sort: [inserted_at: :desc])
+    end
+
+    # The person's chats, newest first, the latest 100, as every surface answers
+    # them.
+    action :chat_list, :map do
+      run fn _input, %{actor: actor} -> AshTemplate.Chat.Conversation.listed(actor) end
     end
   end
 
@@ -77,13 +90,20 @@ defmodule AshTemplate.Chat.Conversation do
       authorize_if always()
     end
 
-    policy always() do
+    policy action_type([:read, :create, :update]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
-    policy action_type([:read, :update, :destroy]) do
+    policy action_type([:read, :update]) do
       authorize_if expr(human_account_id == ^actor(:human_account_id))
+    end
+
+    # The agent tool checks the agent's pairing itself and lists only its
+    # person's chats, or those of the account it owns.
+    policy action(:chat_list) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
     end
   end
 
@@ -116,6 +136,29 @@ defmodule AshTemplate.Chat.Conversation do
         worker_module_name AshTemplate.Chat.Conversation.Workers.NameConversation
         where expr(needs_title)
       end
+    end
+  end
+
+  @doc "A chat as every surface answers it."
+  def present(conversation),
+    do: %{id: conversation.id, title: conversation.title, inserted_at: conversation.inserted_at}
+
+  @doc "The actor's person's chats, newest first, the latest 100."
+  def listed(actor) do
+    with :ok <- NotPaired.check(actor),
+         {:ok, conversations} <-
+           NotPaired.ended(Chat.my_conversations(actor: actor, query: [limit: 100]), actor),
+         do: {:ok, %{conversations: Enum.map(conversations, &present/1)}}
+  end
+
+  @doc """
+  The actor's person's chat `id`; one that is not theirs, or names none, is
+  `chat_not_found`.
+  """
+  def mine(id, actor) do
+    case Chat.get_conversation(id, actor: actor) do
+      {:error, %Ash.Error.Invalid{}} -> {:error, Refused.exception(code: "chat_not_found")}
+      result -> NotPaired.ended(result, actor)
     end
   end
 end

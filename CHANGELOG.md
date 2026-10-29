@@ -5132,3 +5132,451 @@ An adversarial review of the two commits above found five things, all fixed here
   their paired agent: refused before pairing, allowed while paired, refused after unpairing.
 - The compile-connected limit in `platform/mix.exs` moves to 37: the Accounts domain reads
   its new `AgentOwnedAccount` resource at compile time.
+## 2026-10-28 — Agent access: AshAi tools, capability fields and operation keys
+
+- AshAi moves to 1.4.1 (`~> 1.4.1`), which brings ash_json_api 1.8.0, websock_adapter
+  0.7.0 and llm_db 2026.10.7. The chat assistant now names its own two
+  tools, so it never reaches another domain's.
+- The Rooms domain hands AshAi two tools, `rooms_messages` and `rooms_post`. They run
+  `Message.room_messages` and `Message.agent_post`, the same actions `GET` and
+  `POST /api/v1/rooms/{room}/messages` now call, so the browser tool, the command, the
+  route and hosted MCP answer alike. The `/mcp` route is not mounted yet.
+- `priv/capabilities.json` gains `contract_revision` and, per operation, `surfaces`
+  (with a reason for each surface left out), `auth_modes`, `fresh_proof`, `actor`,
+  `context`, `retry` and `lifecycle`; `/capabilities.json` adds each operation's
+  `output_schema` from `/openapi.json`. The build stops on a hosted tool with no AshAi
+  tool, an AshAi tool named like a browser tool but not hosted, hosted input that
+  differs from the browser tool's, a public operation that needs proof, an
+  operation-key retry with no `operation_id` field, or a surface left out with no
+  reason. The agent guide's operations table gains Surfaces and Proof columns, and its
+  heading is now "Agent operations".
+- An agent's room post spends its `operation_id` once in the new `agent_operations`
+  table, in the same transaction as the post. The message's id is no longer the key.
+  The same key with another room or other text answers 409 `idempotency_conflict`, and
+  after its message was deleted 410 `message_removed` with that message's `id`; two
+  calls with one key at once post one message. `read :earlier_post` is gone. The
+  OpenAPI documents move to 8.0.0. The migration
+  `20261028154117_agent_operations` needs Sean's letter naming the release before it
+  runs in production.
+- The compile-connected limit in `mix precommit` moves from 35 to 39: the new resource,
+  the two actions' modules, and the capability check naming the chat domain whose tools
+  are never hosted.
+- Review fixes: the key's fingerprint is taken from the text as the message stores it
+  (blank lines squashed), so a retry with the text the first answer gave back replays
+  instead of answering 409; the property test now always sends text with blank lines,
+  and fails on the earlier fingerprint. `agent_post` takes the client address from
+  every caller's context, never optionally. The build now stops unless `hosted_mcp`
+  is marked on exactly the operations whose browser tool is an AshAi tool, both ways;
+  the chat assistant's own tools are never hosted. `interfaces.hosted_mcp` names the
+  hosted tool. The agent guide's "Who may" column is now "Allowed", and the three
+  profile rows say "Not for agents yet." where they said only the person does this.
+- This change releases together with the `/mcp` mount (agent access work item 5),
+  never before it: until then two operations would be marked hosted on a route that
+  is not there.
+
+## 2026-10-28 — Claude connector, behind one switch (side branch, not released)
+
+- The elixir-utils packages are pinned to `aa5512f4` (branch `claude/mcp-self-calls-1028`:
+  main `9da44bdc` merged with the connector's oauth and mcp_agents work).
+  `regent_mcp_agents` joins as a dependency: `RegentMCPAgents.Plug` answers at `/mcp`
+  with Claude's handshake, the 401 sign-in challenge, each connected account's own budget
+  and the identity tools. `regent_oauth` and `regent_agent_access` carry `override: true`,
+  since `regent_mcp_agents` names them by sibling paths. No new Hex package.
+- One switch, `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED`, off unless `true`, turns on the
+  sign-in under `/oauth` and `/.well-known/oauth-*`, `/mcp`, Claude in the pairing box
+  and the pair request, and the Claude guide at `/agents/claude`. With the switch on, the
+  boot stops unless `SIWA_HOSTED_SIGNING_KEY` is well formed. With it off, an agent's
+  sign-in, pairing and rate limits are as before: the endpoint only adds a budget for
+  `/mcp` paths (600 a minute from one address) and the `/api` budget is unchanged.
+- The connector's sign-in signs, through the sign-in service, only `whoami`, `me` and
+  `pair` for the account's one hosted identity, asked with the site's own key; the
+  connection's Bearer token never leaves the site. Connecting again or refreshing keeps
+  that identity and its one agent, a pairing code must be the authorizing account's own,
+  only `check_in` moves when the agent was last in touch, unpairing on the Account page
+  holds, and disconnecting at Connected apps revokes the app's access and refresh tokens
+  at once. `platform/test/ash_template_web/claude_connector_test.exs` checks each through
+  this site's endpoint; `docs/feature-map.md` lists them and the gaps left.
+- Pairing and checking in when asked in a chat are supported. A check-in from a scheduled
+  Claude task has not been tried, and Claude's guide says so.
+- Claude's guide and the connector's refusal send people to Pair New Agent on their
+  Account page. The pairing box uses the library's `Harness.offered/0`; its own copy is
+  gone.
+- Migrations: `20261014170000_add_oauth_provider` now calls `RegentOAuth.Migration.up()`
+  (the shape a new database gets; production already ran it).
+  `20261028120000_oauth_connector_tokens` (up only, `SET LOCAL lock_timeout = '5s'`) runs
+  `RegentOAuth.Migration.V2`: it drops the token table's issuer and resource defaults
+  (each code and token now has them written as it is issued) and rewrites every stored
+  access token row in place as hashes. The template has OAuth rows on the shared
+  production database, so the release that carries it waits for Sean's letter naming it.
+  Tokens issued for the old resource stay refused and their apps connect again.
+- Lifetimes stay the library's: a Bearer token lives at most an hour, a refresh token 30
+  days, and a refresh token reused within 30 seconds of its rotation is only refused
+  (`config/config.exs` notes where each is set).
+- Not yet: the sign-in service's hosted signing allows the `patchbay` and `keyfleet`
+  audiences only, so with the switch on here every signed tool call would be refused
+  until siwa-server allows `ash-template`. Shared change: Sean signs off the template's
+  version before any site takes it.
+
+## 2026-10-28 — Hosted MCP on AshAi
+
+- `/mcp` is now the site's hosted MCP server, `forward "/mcp", AshAi.Mcp.Router`, serving
+  exactly the tools `platform/priv/capabilities.json` marks hosted: `rooms_messages` and
+  `rooms_post`, the same Ash actions, inputs, answers and refusals as the browser tools and
+  the CLI, and the Claude connector's four identity tools.
+- `AshTemplateWeb.Plugs.McpAgent` says who is calling (agent access spec 4.3): an agent's
+  signature is checked by `AgentWallet` unchanged and the agent is the actor; the
+  connector's Bearer token makes the connected app the actor, under its account's budget,
+  and runs only the identity tools; both together get 401 `ambiguous_credentials`; neither
+  may list the tools and read a room, and a call to a tool that needs a sign-in gets 401
+  `agent_auth_required`. Every call carries the client's address key; answers are
+  `cache-control: private, no-store`; a page from another site is refused.
+- The identity tools are Ash actions on `AshTemplate.Agents.Connection`, over the
+  library's `RegentMCPAgents` functions; the template no longer mounts
+  `RegentMCPAgents.Plug`. A connected app can no longer read a room.
+- Refusals are the tool's error, whose text is the HTTP refusal's JSON
+  (`AshTemplateWeb.ToolErrors`). `[:ash_template, :mcp, :auth]` counts requests by how
+  they came in and whether they were taken.
+- The capabilities check allows a hosted-only operation, named after its tool, with its
+  answer among the OpenAPI components (`ConnectedIdentity`, `ConnectedIdentityStatus`,
+  `ConnectedIdentityPairing`, `ConnectedIdentityCheckIn`), and the `connected_app`
+  authority with the `site_oauth` proof.
+- While the connector switch is off, `/mcp` serves the room tools and refuses a Bearer
+  token with 401 `delegated_access_not_enabled`, where it answered 404 before.
+
+## 2026-10-28 — Hosted MCP review fixes
+
+- Every `/mcp` request carries an agent's signature or a connected app's token; there is
+  no anonymous MCP. With the Claude connector switch on, a request with neither gets 401
+  `connection_required` with the `WWW-Authenticate` challenge, so Claude's first request
+  starts its sign-in; with it off, 401 `agent_auth_required`. Reading a room without
+  signing in is the HTTP API and the browser tools, which replace the spec's anonymous
+  `/mcp` read (C02).
+- `AshTemplateWeb.Plugs.McpAgent` refuses, before any credential is read and in the
+  site's `{"error": {"code", "message", "hint"}}` shape: a query string (400
+  `unsupported_query`), any address but `/mcp` (404) and any method but POST (405), a
+  page on another site, `null` included (403 `origin_not_allowed`; no `Origin` goes on),
+  a body that is not JSON (415) and a JSON-RPC batch (400 `batch_not_supported`), so one
+  signature covers one call. The `:mcp` pipeline takes JSON only again. A signature is
+  told apart with `Siwa.AgentAuthPlug.signed_request?/1`.
+- A tool's input is checked against its action before it runs
+  (`AshTemplateWeb.ToolErrors.check_input/3`, AshAi's `tool_argument_transformer`), so a
+  bad input gets the HTTP route's code and words: `invalid_limit`, `invalid_author_kind`,
+  `invalid_message`, `room_not_found`, and `identity_request_refused` for the identity
+  tools. `RoomsController.page_refusal/1` is shared with it.
+- `pair_identity` lists the harness the library takes (`claude`) and limits the name to
+  100 characters and the code to 128.
+- `/mcp` takes 120 requests a minute from one address, the API's figure, where it took
+  600. A body over the limit and a form body point to the guide's Hosted MCP section.
+- The router's MCP instructions are written in place, so it no longer depends on McpAgent
+  at compile time; the compile-connected limit is 41 (the tools list and the input check).
+  `Capabilities.sign_in_needed?/1` and `proof_headers/0`, and the context keys nothing
+  read, are gone.
+
+## 2026-10-28 — Hosted MCP: identity tools as listed, room read input, connector budget
+
+- A tool listed with no inputs (`register_identity`, `get_identity`, `check_in`) runs
+  when called as its schema says, with empty `arguments` or none: the input check reads
+  a missing `input` as AshAi does. Before this, Claude's first call was refused.
+- `rooms_messages` answers `invalid_input` for input that is not an object or names
+  something the read does not take, where it answered `invalid_cursor`. A bad `after`
+  still answers `invalid_cursor`.
+- `/mcp` requests with a Bearer token share 600 a minute per address
+  (`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
+  servers; other requests keep 120 a minute per address. Each connected account keeps
+  its own 120 a minute.
+- The batch test sends a JSON array, as clients do.
+
+## 2026-10-28 — Signed browser tools take only their input
+
+- elixir-utils moves to `5d6ccf6`: a signed browser tool now builds its request, asks
+  the browser host's `window.regentsSign` to sign it, and sends exactly those bytes
+  with the proof and no cookie. With no signer it sends nothing and answers
+  `agent_auth_required`, naming `regents browser --site`; a signer's refusal is the
+  tool's answer.
+- Hard cutover in `platform/priv/tool_manifest.json`: each signed tool's
+  `input_schema` is its own input (the former `operation_input_schema`, now gone), and
+  `prepare_agent_request` is removed. `Capabilities` reads `input_schema`.
+- `platform/assets/js/public_tools.ts` answers a refusal in the site's error shape, and
+  explains a signer's incomplete answer.
+- The public guide and the supported-host page say a signed tool takes only its input
+  and the browser host signs it; the supported-host heading is now "Agent setups".
+- `platform/test/browser/page_tools.spec.ts` proves the four cases at both widths.
+
+## 2026-10-28 — Signed browser tools: review fixes
+
+- elixir-utils moves to `6d0d40e`: a signer that fails (its browser host went away)
+  answers `signer_unavailable`, and a call cancelled while the signer works answers
+  `cancelled`; neither sends anything, so neither is reported as an unknown outcome.
+- `public_tools.ts` names the site's own faults (`invalid_operation`, `invalid_path`,
+  `invalid_request_header`, `unsupported_field_type`) as the site's, with their own
+  hint, and explains a read sent a body, a bad raw body, and `.` or `..` as a name.
+- `/agents.md` gains a Browser tools section on `regents browser`, which `/docs` links
+  to; `/docs` lists the signed-tool change under Breaking changes, and the public
+  changelog says it in plain words.
+- The page tools walk no longer checks for the removed tool or the removed input
+  shape; an unknown field (`colour`) proves an input is refused before signing.
+- Released only with the regents-cli release that carries `regents browser`.
+
+## 2026-10-29 — Hosted MCP: every read
+
+- Fifteen reads are now hosted agent tools at `/mcp`, each one Ash action that its HTTP
+  route, browser tool and regents-cli command also call: `health`, `about`, `docs`,
+  `sites_tools` and `siwa_help` (the new `AshTemplate.Site` domain), `rooms_list`,
+  `rooms_message`, `rooms_search` and `mutes_list`, `agents_get` and `agents_profile`,
+  `account_balances`, `account_credits_history` and `account_points` (the new
+  `AshTemplate.Accounts.Holdings`), and `activity_list`.
+- A tool's refusal has the code, message and hint the same request gets over HTTP,
+  read from the answering controller's table (`ToolErrors.text/3`); not-paired
+  answers come from `AshTemplate.Agents.NotPaired` for every door. Input a read cannot
+  take is refused before it runs with the HTTP code (`invalid_cursor`,
+  `invalid_activity_request`, `invalid_search`, `agent_not_found`, `site_not_found`,
+  `room_not_found`, `public_message_not_found`), and input to a tool that takes none
+  answers `invalid_request`.
+- The points answer moves from `AshTemplateWeb.PointsEntries` to
+  `AshTemplate.Points.Entries`, so the action owns it; a page cursor's refusal is read
+  by `AshTemplate.PageCursor`.
+- `capabilities.json` marks the fifteen as hosted; the `/mcp` instructions say the
+  tools share the browser tools' and regents-cli's names, input and answers.
+- `mcp_agent_test.exs` proves each read answers through `/mcp` exactly as over HTTP,
+  and each refusal with the same code and words.
+- `docs/feature-map.md` and `docs/agent-parity.md` fill the MCP column for these
+  reads. Gaps kept: `sites_tools` success is not compared (it reads the other site
+  live), `getAgentIdentity` is not hosted yet, and the three Privy-session profile rows
+  stay off `/mcp`.
+
+## 2026-10-29 — Hosted MCP: notes
+
+- Every notes tool but the pin is now a hosted agent tool at `/mcp`, each one Ash action
+  its HTTP route and browser tool also call: `notes_list`, `notes_get`, `notes_search`,
+  `notes_create`, `notes_edit`, `notes_delete`, `notes_pin_price`, `notes_unpin`,
+  `notes_archive` and `notes_unarchive` on `AshTemplate.Notes.Note`, and
+  `notes_rate_label` on `AshTemplate.Notes.Decision`. `Note.present/1` replaces
+  `NotesJSON`, and the controllers shrink to one action call each.
+- An agent's new note (`Note.AgentCreate`) spends its `operation_id` in
+  `agent_operations` (capability `note_create`, fingerprint title and text) in the same
+  transaction as the note, as a room post does; the key still becomes the note's id.
+  A retry with the same title and text answers the note (HTTP 200, `replayed: true`),
+  other text answers 409 `idempotency_conflict`, and a retry after a delete answers 410
+  `note_removed` naming it. `Notes.earlier_note` and the create action's
+  `operation_id` argument are gone; a person's new note sends none. The shared
+  `Operation.key_spent?/1` replaces the room post's own copy.
+- `AshTemplate.Notes.Refused` carries each refusal's code; its words live in
+  `NotesController`, which now also owns `note_not_found`, `label_not_found` and
+  `invalid_label_report` for the paired-agent routes, with one `note_not_found`
+  wording. `NotPaired.check/1` answers `:ok` for a person.
+- Both OpenAPI documents add the 409 and 410 answers and move to 9.0.0; `/docs` lists
+  the change under Breaking changes, the agent guide and skill name `note_removed`, and
+  the public changelog says it in plain words.
+- From the review: an edit that sends neither title nor body is refused as
+  `invalid_note` in `notes_edit` itself (`Note.SendsAChange`, which reads the keys
+  sent, so a body sent empty still clears the text), so it never saves the note, asks
+  for a label or counts a write; a key that is already another note's id
+  (another agent's, or another person's) answers 409 `idempotency_conflict` with no
+  details instead of 422 `invalid_note` naming the id; and a write by an agent whose
+  pairing ended after its request was let in answers `agent_not_paired` on every
+  surface (`NotPaired.ended/2`, for an agent only) instead of 503 over HTTP. The
+  address names the note or label: an `id` in the body of `PATCH /api/v1/notes/{id}`
+  or of a label's report is not read, where it had chosen the note the action changed.
+  A tool input a validation refuses is gathered into its error class
+  (`ToolErrors.check_input/3`), so `/mcp` gives the same `details` as HTTP.
+- `mcp_agent_test.exs` proves each notes tool answers and refuses through `/mcp` as
+  over HTTP, that a reused key answers the same both ways, the three review fixes, a
+  text cleared both ways and a body `id` that chooses nothing; each of their checks
+  fails on the code before them. `mix xref`'s
+  compile-connected limit moves to 45 for the action module the create runs.
+- Not changed: `notes_pin` (spends Credits) waits for Sean's letter. A note an agent
+  made before this change has no `agent_operations` row, so retrying its old
+  `operation_id` is refused as `idempotency_conflict` (the id is taken) instead of
+  answering the note.
+
+## 2026-10-29 — Hosted MCP: rooms and mutes
+
+- Every rooms and mutes change is now a hosted agent tool at `/mcp`, each one Ash action
+  its HTTP route and browser tool also call: `rooms_create` and `rooms_topic` on
+  `AshTemplate.Rooms.Room`, `rooms_edit`, `rooms_delete`, `rooms_like`, `rooms_unlike`
+  and `rooms_report` on `AshTemplate.Rooms.Message`, and `mutes_add` and `mutes_remove`
+  on `AshTemplate.Rooms.Mute`. The controllers shrink to one action call each, and the
+  mutes routes answer through `RoomsController.respond/3`.
+- A room an agent starts (`Room.AgentStart`) answers a retry with the name of a room
+  its person already started as that room (HTTP 200, `replayed: true`), as before, and
+  now also when two calls with one name run at once. The room's name is its retry key,
+  so it declares no `operation_id`; the earlier-room read moves from the controller
+  into the action.
+- `RoomsController` keeps every rooms word, the mutes' included, and maps each action's
+  refusal in one place (`input_refusal/2`, `answer/1`), so `/mcp` and HTTP give the same
+  code, status, words and `details`. `ToolErrors` reads it for every rooms tool.
+- Over HTTP the address alone names the record: a `room` or `id` in the body of a
+  topic, an edit or a report is not read, since the code interface's arguments would
+  let it choose the room or message the action changed. A field a route does not take
+  is refused with that route's code (`invalid_room`, `invalid_message`,
+  `invalid_report`, `invalid_mute`), as the API contract already said, where it had
+  been ignored.
+- An unexpected failure on `POST /api/v1/mutes` or `DELETE /api/v1/mutes/{id}` answers
+  503 `rooms_unavailable`, the rooms' word, instead of 503 `unavailable`.
+- `mcp_agent_test.exs` proves each rooms and mutes tool answers and refuses through
+  `/mcp` as over HTTP (twenty refusals, each with its status and code), and one body
+  check per route; the topic, edit and report checks each fail when the body is read
+  again, and a removal refuses any body before it runs.
+- A report's reason is its own enum type (`AshTemplate.Rooms.Report.Reason`), which the
+  report and `rooms_report` both take, so the message no longer reads the report
+  resource at compile time; `Report.reasons/0` is gone. `mix xref`'s compile-connected
+  limit moves to 46 for the action module a room start runs.
+- Not proven by a check: two starts of one room at once (the race needs two
+  transactions to meet).
+
+## 2026-10-29 — Hosted MCP: room retries and mute removals
+
+- A room's name sent again answers the room only when its topic matches too
+  (`Room.AgentStart`). The same name with another topic, or another spelling of the
+  name, is 409 `room_name_taken` and changes nothing; before, it answered the room as a
+  retry and left the agent thinking its topic was saved. The same rule holds when two
+  starts run at once.
+- A mute removed by two calls at once answers the second with 404 `mute_not_found`
+  (`Mute.lift/2`). A refused removal now reads the mute again: gone means another call
+  removed it; still there means the agent's pairing, rechecked inside the transaction,
+  ended (403 `agent_not_paired`). Before, every refused removal said `agent_not_paired`.
+- `mcp_agent_test.exs` checks both ways that another topic under a name is refused and
+  the room keeps its topic, twenty races of two starts of one room (one room, both
+  answer it), and nine races of two removals of one mute (one `removed: true`, one
+  `mute_not_found`). The topic and removal checks fail on the earlier code; the race
+  check fails when the start that finds the name taken refuses instead of answering.
+- The tool descriptions, `/docs`, the API contract, the CLI's command list, the public
+  changelog and the feature map say a retry is the same name and topic.
+
+## 2026-10-29 — Hosted MCP: direct messages
+
+- `/mcp` serves the seven direct-messages tools (`dms_list`, `dms_blocked`, `dms_open`,
+  `dms_read`, `dms_send`, `dms_block`, `dms_unblock`). Each is a generic action on
+  `Conversation` or `Message` that `DmsController`, WebMCP and the AshAi tool all call, so
+  every surface gives the same answer, code, status, words and `details`. `DmsController`
+  keeps the words and maps each refusal in one place (`input_refusal/2`, `answer/1`);
+  `ToolErrors` reads it for every DMs tool, and `AshTemplate.Dms.Refused` names a refusal.
+- An agent's send spends its `operation_id` in `agent_operations` (`Message.AgentSend`, the
+  `dm_send` capability) in the same transaction as the message, which still takes the key as
+  its id. A retry answers the first message only in the same conversation with the same
+  words; another conversation or other words, or a key that is already another message's
+  id, is 409 `idempotency_conflict`, where it had answered the first message (or 422
+  `invalid_message`). The `:earlier_send` read and the `operation_id` argument on `:send` are
+  gone.
+- Over HTTP the address alone names the conversation: a `conversation` in a send's body is
+  not read, and a block or unblock reads no body. A field a send, an open or a page does not
+  take is refused (`invalid_message`, `invalid_open`, `invalid_cursor`), where it had been
+  ignored.
+- `mcp_agent_test.exs` proves each tool answers and refuses through `/mcp` as over HTTP
+  (eighteen refusals, each with its status and code), the key rule across both surfaces,
+  twelve races of two sends with one key (one message, both answer it), and that a call
+  after the pairing ended changes nothing. Five planted faults (the body or the conversation
+  left out of the key's check, the taken-id branch removed, the race answered as a
+  conflict, the body choosing the conversation) each fail a check.
+- `mix xref`'s compile-connected limit moves to 47 for the action module a send runs.
+
+## 2026-10-29 — Hosted MCP: chat
+
+- `/mcp` serves the three chat tools (`chat_list`, `chat_read`, `chat_send`). Each is a
+  generic action on `Conversation` or `Message` that `ChatController`, WebMCP and the AshAi
+  tool all call, so every surface gives the same answer, code, status, words and `details`.
+  `ChatController` keeps the words and maps each refusal in one place (`input_refusal/2`,
+  `answer/1`); `ToolErrors` reads it for every chat tool, and `AshTemplate.Chat.Refused`
+  names a refusal.
+- The assistant's own tools (`chat_list_conversations`, `chat_message_history`) stay its
+  own: `AshTemplate.Chat.assistant_tools/0` names them for the reply and for the capability
+  check, which no longer leaves the whole Chat domain off `/mcp`.
+- An agent's send spends its `operation_id` in `agent_operations` (`Message.AgentSend`, the
+  `chat_send` capability) in the same transaction as the message, which still takes the key
+  as its id. A retry answers the first message only with the same text and
+  `conversation_id` (a new chat's retry included); other text or another chat, or a key that
+  is already another message's id, is 409 `idempotency_conflict`, where it had answered the
+  first message (or 422 `invalid_message`). The `:earlier_send` read, `get_earlier_message`
+  and the `operation_id` argument on `:create` are gone.
+- Over HTTP a field a send does not take is refused (`invalid_message`), where it had been
+  ignored, and a `conversation` in a page's body is not read: the address names the chat.
+- `mcp_agent_test.exs` proves each tool answers and refuses through `/mcp` as over HTTP
+  (fourteen refusals, each with its status and code), the key rule across both surfaces,
+  twelve races of two new-chat sends with one key (one chat, one message, both answer it),
+  and that a call after the pairing ended saves nothing. Five planted faults (the text or
+  the chat left out of the key's check, the taken-id branch removed, the race answered as a
+  conflict, the body choosing the chat) each fail a check.
+- `mix xref`'s compile-connected limit moves to 48 for the action module a send runs.
+
+## 2026-10-29 — Hosted MCP: polls
+
+- `/mcp` serves the five polls tools (`polls_list`, `polls_show`, `polls_start`,
+  `polls_vote`, `polls_end`). Each is a generic action on `Poll` or `Vote` that
+  `PollsController`, WebMCP and the AshAi tool all call, so every surface gives the same
+  answer, code, status, words and `details`. `PollsController` keeps the words and maps each
+  refusal in one place (`input_refusal/2`, `answer/1`); `ToolErrors` reads it for every
+  polls tool, and `AshTemplate.Polls.Refused` names a refusal.
+- An agent's start spends its `operation_id` in `agent_operations` (`Poll.AgentStart`, the
+  `poll_start` capability) in the same transaction as the poll, which still takes the key as
+  its id. A retry answers the first poll only with the same question, choices and minutes;
+  any of them changed, or a key that is already another poll's id, is 409
+  `idempotency_conflict`, where it had answered the first poll (or 422 `invalid_poll`). The
+  `:started_by_actor` read, `get_started_poll` and the `operation_id` argument on `:start`
+  are gone.
+- Over HTTP a field a start or vote does not take is refused (`invalid_poll`,
+  `invalid_vote`), where it had been ignored; a `poll` in a vote's body is not read and an
+  end reads no body: the address names the poll.
+- `mcp_agent_test.exs` proves each tool answers and refuses through `/mcp` as over HTTP
+  (twenty-two refusals, each with its status and code), the key rule across both surfaces,
+  twelve races of two starts with one key (one poll, both answer it), and that a call after
+  the pairing ended changes nothing. Five planted faults (the minutes left out of the key's
+  check, the taken-id branch removed, the race answered as a conflict, the body choosing the
+  poll, the starter check removed) each fail a check.
+- `mix xref`'s compile-connected limit moves to 49 for the action module a start runs.
+
+## 2026-10-29 — Hosted MCP: the agent's own profile and marking activity read
+
+- `/mcp` serves `agents_edit_profile` and `activity_mark_read`, each a generic action
+  (`Agent.agents_edit_profile`, `Notification.activity_mark_read`) that its HTTP route,
+  WebMCP and the AshAi tool all call. `AgentsController` keeps the profile words and maps
+  each refusal once (`input_refusal/1`, `answer/1`); `AshTemplate.Agents.Refused` carries the
+  refused save for `invalid_profile`.
+- `PATCH /api/v1/agents/me` refuses a field it does not take (`invalid_profile` with
+  `details`), where it had been ignored. `POST /api/v1/activity/read` still refuses any body
+  but `{}`; a body that is not an object, which Phoenix hands on as `_json` and Ash skips, is
+  refused by the route before the action.
+- Marking read checks the agent's pairing again in the change itself
+  (`RegentAgents.Checks.Paired` on `:mark_read`), as every other agent write does, so a
+  request let in before its person unpaired the agent marks nothing and answers
+  `agent_not_paired`.
+- The check-in (`GET /api/agents/v1/me`) and whoami stay off `/mcp`: they are
+  `RegentAgents.HTTP`'s routes, and hosting them needs the library to offer each as a
+  function. The note pin waits for Sean's letter.
+- Chat conversations and messages lose the unused `:destroy` action, so a chat and its
+  messages are never deleted, as `Message.AgentSend` relies on.
+- `mix xref`'s comment names each generic action's module that adds a compile-connected
+  file; the limit stays 49.
+- `mcp_agent_test.exs` proves both tools answer and refuse through `/mcp` as over HTTP
+  (eight refusals, with their `details`), and that marking read after the pairing ended
+  marks nothing. Five planted faults (the non-object body let through, the pairing check
+  removed, an empty change saved, the mark-read input refusal dropped, the profile
+  `details` dropped) each fail a check.
+
+## 2026-10-29 — Hosted MCP on agent-owned accounts (merge)
+
+- An agent that owns its account (`AgentWallet.acts_for_account`, which hands on
+  `Human.owner/2`) uses every tool `/mcp` serves, as that account, with the same answers and
+  refusals as over HTTP and its page tool. Each hosted generic action's policy admits the
+  owner beside a paired agent (`actor_attribute_equals(:role, :human)`, as `notes_list`
+  already did), and each write that spends an `operation_id` runs for either actor and
+  spends it under the one principal field, `agent_id`. The owner writes as itself: nothing
+  it writes names an agent.
+- `notes_pin_price` reads G1's `NotePin` price and stays hosted; to an agent that owns its
+  account it answers `owner_pins_not_open`. `notes_pin` stays a signed page tool and
+  command, off `/mcp`; `notes_unpin` stays hosted.
+- Tool descriptions that said "Needs a pairing." say "Needs a pairing, or an account of
+  your own."; `notes_pin` says the owner has no pins yet.
+- The OpenAPI documents move to 10.0.0. /docs lists the lane's six 29 October breaking
+  changes, G1's 28 October pin change and the lane's two 28 October changes, in that order.
+- `mix xref`'s compile-connected limit is 51, measured on the merge: the lane's 49, plus
+  Payments' `ChainBuy` and Accounts' `AgentOwnedAccount`, each a resource its domain reads at
+  compile time.
+- `mcp_agent_test.exs` proves the owner writes, reads and lists a note over HTTP, its page
+  tool and `/mcp`; an agent with neither a pairing nor an account of its own is refused with
+  the same `agent_not_paired` answer on all three; an owner's `operation_id` answers only
+  the same write whichever way each call comes (notes, room posts, DMs, chat and polls); and
+  two owner writes with one key at once save one (twelve races). Three planted faults (the
+  notes policy and the rooms post policy put back to agent-only, and `AgentCreate` taking
+  only an agent) each fail a check.
+- `make check` passes: 172 ExUnit (11 properties), 24 TypeScript, 323 browser walk checks
+  (5 skipped) and the CLI command check.

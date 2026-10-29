@@ -65,7 +65,7 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   test "a pin asked for three times at once, in Credits, pays once" do
     person = person(5)
     agent = agent(person, ["template"]) |> as_site_agent()
-    note = Notes.create_note!(%{title: "Retry", operation_id: Ecto.UUID.generate()}, actor: agent)
+    note = Notes.create_note!(%{title: "Retry"}, actor: agent)
 
     answers =
       1..3
@@ -81,7 +81,7 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   test "a pin after an unpin pays again" do
     person = person(5)
     agent = agent(person, ["template"]) |> as_site_agent()
-    note = Notes.create_note!(%{title: "Again", operation_id: Ecto.UUID.generate()}, actor: agent)
+    note = Notes.create_note!(%{title: "Again"}, actor: agent)
 
     assert pin(agent, note).status == 200
     pinned = Notes.get_my_note!(note.id, actor: agent)
@@ -97,10 +97,10 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     person = person(5)
     agent = agent(person, ["template"])
     actor = as_site_agent(agent)
-    kept = Notes.create_note!(%{title: "Kept", operation_id: Ecto.UUID.generate()}, actor: actor)
+    kept = Notes.create_note!(%{title: "Kept"}, actor: actor)
 
     later =
-      Notes.create_note!(%{title: "Later", operation_id: Ecto.UUID.generate()}, actor: actor)
+      Notes.create_note!(%{title: "Later"}, actor: actor)
 
     assert pin(actor, kept).status == 200
 

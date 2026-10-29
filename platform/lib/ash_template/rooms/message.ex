@@ -27,18 +27,24 @@ defmodule AshTemplate.Rooms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Limits.LimitWrites
+  alias AshTemplate.Rooms
 
   alias AshTemplate.Rooms.Message.{
+    AgentPost,
     AuthorPicture,
     ByAuthorKind,
     LeaveOutMuted,
-    PostedByActor,
+    RoomMessages,
     SetAuthor,
     SquashBlankLines
   }
 
-  alias AshTemplate.Rooms.{Like, Mute, Room}
+  alias AshTemplate.Rooms.{Like, Mute, Refused, Room}
+
+  @room "The room's name, as rooms_list gives it, such as general."
+  @message_id "The message's id, from rooms_messages."
 
   # What every room read and write loads for `public/1`.
   @shown [:agent, :via_agent, :author_picture, :like_count]
@@ -160,33 +166,187 @@ defmodule AshTemplate.Rooms.Message do
       prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5, load: [:in_room])
     end
 
-    # The message this actor already posted in this room with this operation_id,
-    # so a retry answers the first post.
-    read :earlier_post do
-      get? true
-      argument :room, :string, allow_nil?: false
-      argument :operation_id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:operation_id) and room == ^arg(:room))
-      prepare PostedByActor
-      prepare build(load: @shown)
+    # A page of a room's messages, as every surface answers it (`RoomMessages`).
+    action :room_messages, :map do
+      argument :room, :string,
+        allow_nil?: false,
+        description: "The room's name, as rooms_list gives it, such as general."
+
+      argument :author_kind, :atom,
+        constraints: [one_of: [:person, :agent]],
+        description:
+          "person for people's messages (with what their agents wrote for them), agent for agents' own. Leave it out for everyone's."
+
+      argument :limit, :integer,
+        constraints: [min: 1, max: 50],
+        description: "Messages a page, 1 to 50; 50 when left out."
+
+      argument :after, :string,
+        constraints: [max_length: 2048],
+        description: "The previous page's pagination.next_cursor, for older messages."
+
+      run RoomMessages
+    end
+
+    # An agent's post, its operation_id spent once, as every surface answers it
+    # (`AgentPost`).
+    action :agent_post, :map do
+      argument :room, :string,
+        allow_nil?: false,
+        description: "The room's name, as rooms_list gives it, such as general."
+
+      argument :body, :string,
+        allow_nil?: false,
+        constraints: [max_length: 2000],
+        description: "The message, 1 to 2,000 characters."
+
+      argument :operation_id, :uuid,
+        allow_nil?: false,
+        description:
+          "A UUID you make for this message. Keep it when retrying: a retry answers the first post, and a UUID already used for another message is refused."
+
+      run AgentPost
+    end
+
+    # One message of a room by its id, as its room shows a signed-out reader,
+    # whoever asks.
+    action :rooms_message, :map do
+      argument :room, :string, allow_nil?: false, description: @room
+      argument :id, :uuid, allow_nil?: false, description: @message_id
+
+      run fn %{arguments: %{room: slug, id: id}}, _context ->
+        with {:ok, message} <- AshTemplate.Rooms.Message.in_room(slug, id, nil),
+             do: {:ok, %{message: AshTemplate.Rooms.Message.present(message)}}
+      end
+    end
+
+    # The agent's person's own message, changed or deleted; any other reads as
+    # absent (`mine/3`).
+    action :rooms_edit, :map do
+      argument :room, :string, allow_nil?: false, description: @room
+      argument :id, :uuid, allow_nil?: false, description: @message_id
+
+      argument :body, :string,
+        allow_nil?: false,
+        constraints: [max_length: 2000],
+        description: "The new text, 1 to 2,000 characters."
+
+      run fn %{arguments: %{room: slug, id: id, body: body}}, %{actor: actor} ->
+        with {:ok, message} <- AshTemplate.Rooms.Message.mine(slug, id, actor) do
+          case Rooms.edit_message(message, %{body: body}, actor: actor) do
+            {:ok, message} ->
+              {:ok, %{message: AshTemplate.Rooms.Message.present(message)}}
+
+            {:error, %Ash.Error.Invalid{} = error} ->
+              {:error, Refused.exception(code: "invalid_message", error: error)}
+
+            error ->
+              NotPaired.ended(error, actor)
+          end
+        end
+      end
+    end
+
+    action :rooms_delete, :map do
+      argument :room, :string, allow_nil?: false, description: @room
+      argument :id, :uuid, allow_nil?: false, description: @message_id
+
+      run fn %{arguments: %{room: slug, id: id}}, %{actor: actor} ->
+        with {:ok, message} <- AshTemplate.Rooms.Message.mine(slug, id, actor),
+             :ok <- NotPaired.ended(Rooms.delete_message(message, actor: actor), actor),
+             do: {:ok, %{deleted: true, id: message.id}}
+      end
+    end
+
+    # A like, and a like taken back, answer the message as it stands and whether
+    # the agent's person likes it now. Liking twice, or taking back a like never
+    # given, changes nothing.
+    action :rooms_like, :map do
+      argument :room, :string, allow_nil?: false, description: @room
+      argument :id, :uuid, allow_nil?: false, description: @message_id
+
+      run fn %{arguments: %{room: slug, id: id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, message} <- AshTemplate.Rooms.Message.in_room(slug, id, actor) do
+          case Rooms.like_message(message.id, actor: actor) do
+            {:ok, _like} ->
+              AshTemplate.Rooms.Message.liked(message, actor)
+
+            # The message was deleted since it was read.
+            {:error, %Ash.Error.Invalid{}} ->
+              {:error, Refused.exception(code: "public_message_not_found")}
+
+            error ->
+              NotPaired.ended(error, actor)
+          end
+        end
+      end
+    end
+
+    action :rooms_unlike, :map do
+      argument :room, :string, allow_nil?: false, description: @room
+      argument :id, :uuid, allow_nil?: false, description: @message_id
+
+      run fn %{arguments: %{room: slug, id: id}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, message} <- AshTemplate.Rooms.Message.in_room(slug, id, actor),
+             {:ok, like} <- NotPaired.ended(Rooms.get_my_like(message.id, actor: actor), actor),
+             :ok <- AshTemplate.Rooms.Message.take_back(like, actor),
+             do: AshTemplate.Rooms.Message.liked(message, actor)
+      end
+    end
+
+    # Reporting a message again answers the first report, with its first reason.
+    action :rooms_report, :map do
+      argument :room, :string, allow_nil?: false, description: @room
+      argument :id, :uuid, allow_nil?: false, description: @message_id
+
+      argument :reason, AshTemplate.Rooms.Report.Reason,
+        allow_nil?: false,
+        description: "Why: spam, abuse, steers_agents (text that tries to steer agents) or other."
+
+      run fn %{arguments: %{room: slug, id: id, reason: reason}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, message} <- AshTemplate.Rooms.Message.in_room(slug, id, actor) do
+          case Rooms.report_message(message.id, reason, actor: actor) do
+            {:ok, report} ->
+              {:ok, %{report: AshTemplate.Rooms.Report.public(report)}}
+
+            {:error, %Ash.Error.Invalid{} = error} ->
+              {:error, Refused.exception(code: "invalid_report", error: error)}
+
+            error ->
+              NotPaired.ended(error, actor)
+          end
+        end
+      end
+    end
+
+    # Up to 5 messages from every room that hold `text`, newest first, for an
+    # agent acting for its person.
+    action :rooms_search, :map do
+      argument :text, :string,
+        allow_nil?: false,
+        constraints: [min_length: 2, max_length: 100],
+        description: "Words to look for, 2 to 100 characters, in any case."
+
+      run fn %{arguments: %{text: text}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, messages} <- Rooms.search_messages(text, actor: actor) do
+          {:ok,
+           %{
+             messages:
+               Enum.map(
+                 messages,
+                 &Map.take(&1, [:id, :room, :body, :author_name, :inserted_at, :edited_at])
+               )
+           }}
+        end
+      end
     end
 
     create :post do
       accept [:room, :body]
-      argument :operation_id, :uuid
-
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
-
-      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change SetAuthor
       change SquashBlankLines
 
@@ -220,7 +380,38 @@ defmodule AshTemplate.Rooms.Message do
       authorize_if always()
     end
 
+    # Anyone reads a room, except an app connected to a person's account: its
+    # token is for its identity tools alone (`AshTemplate.Agents.Connection`).
+    policy action(:room_messages) do
+      forbid_if actor_attribute_equals(:role, :connected_app)
+      authorize_if always()
+    end
+
     policy action(:post) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
+    policy action(:agent_post) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
+    # Changing, liking and reporting act for the agent's person, or as the account
+    # it owns: an agent that does neither is told why (`NotPaired`).
+    policy action([:rooms_edit, :rooms_delete, :rooms_like, :rooms_unlike, :rooms_report]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
+    policy action(:rooms_message) do
+      forbid_if actor_attribute_equals(:role, :connected_app)
+      authorize_if always()
+    end
+
+    # Search acts for the agent's person, or as the account it owns: an agent that
+    # does neither is told why (`NotPaired`).
+    policy action(:rooms_search) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if actor_attribute_equals(:role, :agent)
     end
@@ -293,4 +484,73 @@ defmodule AshTemplate.Rooms.Message do
       author_picture: message.author_picture.picture
     }
   end
+
+  @doc """
+  A message as the rooms API, the agent tools and the CLI answer it: its author
+  as `author_kind`, the agent a person paired that wrote it (`via_agent`, by its
+  profile name, never its wallet) and whether a person verified with World ID
+  stands behind the agent that wrote it. What `@shown` names must be loaded.
+  """
+  def present(message) do
+    %{
+      id: message.id,
+      room: message.room,
+      author_name: message.author_name,
+      author_kind: if(message.agent_id, do: "agent", else: "person"),
+      agent_id: message.agent_id,
+      author_human_backed: human_backed?(message),
+      via_agent: message.via_agent && %{id: message.via_agent.id, name: message.via_agent.name},
+      body: message.body,
+      like_count: message.like_count,
+      inserted_at: message.inserted_at,
+      edited_at: message.edited_at
+    }
+  end
+
+  @doc """
+  The message `id` of the room `slug`, as the room shows `actor`: `room_not_found`
+  or `public_message_not_found` when there is none.
+  """
+  def in_room(slug, id, actor) do
+    with {:ok, room} <- Room.named(slug) do
+      case Rooms.get_room_message(room.slug, id, actor: actor) do
+        {:ok, nil} -> {:error, Refused.exception(code: "public_message_not_found")}
+        result -> result
+      end
+    end
+  end
+
+  @doc """
+  The message `id` of the room `slug` that the actor's person wrote, or that an
+  agent wrote as them; any other, or none, is `message_not_found`.
+  """
+  def mine(slug, id, actor) do
+    with :ok <- NotPaired.check(actor),
+         {:ok, room} <- Room.named(slug) do
+      case Rooms.get_message(id, actor: actor) do
+        {:ok, %__MODULE__{room: room_slug, human_account_id: author} = message}
+        when room_slug == room.slug and author == actor.human_account_id ->
+          {:ok, message}
+
+        {:ok, _absent} ->
+          {:error, Refused.exception(code: "message_not_found")}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  @doc "The message as it stands after a like or one taken back, and whether `actor`'s person likes it."
+  def liked(message, actor) do
+    with {:ok, message} <- in_room(message.room, message.id, actor),
+         do: {:ok, %{message: present(message), liked: message.liked_by_me}}
+  end
+
+  @doc "Takes back `like`, `actor`'s person's like, when they gave one."
+  def take_back(nil, _actor), do: :ok
+  def take_back(like, actor), do: NotPaired.ended(Rooms.unlike(like, actor: actor), actor)
+
+  defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
+  defp human_backed?(_message), do: false
 end

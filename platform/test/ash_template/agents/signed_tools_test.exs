@@ -143,8 +143,10 @@ defmodule AshTemplate.SignedToolsTest do
     :ok
   end
 
+  # The file's requests come from an address of their own, so they spend their own
+  # rate budget, not the one the rest of the suite's 127.0.0.1 requests share.
   defp request(method, path, body \\ nil, proof \\ true) do
-    conn = conn(method, path, body)
+    conn = method |> conn(path, body) |> Map.put(:remote_ip, {10, 0, 0, 1})
     conn = if body, do: put_req_header(conn, "content-type", "application/json"), else: conn
     conn = if proof, do: put_req_header(conn, "x-siwa-signature", "fixture-proof"), else: conn
 
@@ -718,9 +720,8 @@ defmodule AshTemplate.SignedToolsTest do
     # Sean, 21 Oct 2026 (11. a): a room shows an agent's profile name, never its wallet.
     unnamed = AshTemplate.Agents.sign_in_agent!(@third, actor: %AshTemplate.Actors.System{})
 
-    assert %{author_name: "Unnamed agent"} =
-             Rooms.post_message!(
-               %{room: "general", body: "No name yet", operation_id: Ecto.UUID.generate()},
+    assert %{message: %{author_name: "Unnamed agent"}} =
+             Rooms.agent_post!("general", %{body: "No name yet", operation_id: Ecto.UUID.generate()},
                actor: AshTemplate.Actors.Agent.for_agent(unnamed),
                context: %{client_key: "unnamed"}
              )
@@ -898,7 +899,7 @@ defmodule AshTemplate.SignedToolsTest do
     assert error_code(request(:post, "/api/v1/chat/messages", into_theirs)) == "chat_not_found"
 
     stolen = Jason.encode!(%{text: "Theirs", operation_id: theirs.id, conversation_id: chat})
-    assert error_code(request(:post, "/api/v1/chat/messages", stolen)) == "invalid_message"
+    assert error_code(request(:post, "/api/v1/chat/messages", stolen)) == "idempotency_conflict"
     their_chat = AshTemplate.Chat.message_history!(theirs.conversation_id, actor: other)
     assert [%{text: "Mine alone"}] = Enum.filter(their_chat, &(&1.source == :user))
 
@@ -928,7 +929,7 @@ defmodule AshTemplate.SignedToolsTest do
     refute_received %Phoenix.Socket.Broadcast{}
 
     human = AshTemplate.Actors.Human.for_account(account)
-    sent = AshTemplate.Chat.get_earlier_message!(operation_id, actor: human)
+    sent = AshTemplate.Chat.get_message!(operation_id, actor: human)
     assert [reply, %{id: ^operation_id}] =
              AshTemplate.Chat.message_history!(sent.conversation_id, actor: human)
 
@@ -1000,10 +1001,15 @@ defmodule AshTemplate.SignedToolsTest do
 
     assert_status("owner")
 
-    # The owner writes as the person signed in on the site would: no operation id
-    # and no agent named beside the note. A pin is paid for by an agent a person
+    # The owner writes as itself, with the operation id a paired agent sends, and
+    # no agent named beside the note. A pin is paid for by an agent a person
     # paired, so the owner's pin is refused and charges nothing.
-    created = request(:post, "/api/v1/notes", Jason.encode!(%{title: "Mine"}))
+    created =
+      request(
+        :post,
+        "/api/v1/notes",
+        Jason.encode!(%{title: "Mine", operation_id: Ecto.UUID.generate()})
+      )
     assert created.status == 201, created.resp_body
     note = Jason.decode!(created.resp_body)["note"]
     assert note["changed_by_agent"] == nil

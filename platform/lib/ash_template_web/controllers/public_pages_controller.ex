@@ -12,10 +12,18 @@ defmodule AshTemplateWeb.PublicPagesController do
 
   def skills(conn, _params), do: show_document(conn, PublicDocuments.skills_page())
 
-  @doc "A public page as JSON, `{title, markdown}`: the `about` and `docs` tools and commands."
+  @doc """
+  A public page as JSON, `{title, markdown}`: the `about` and `docs` tools and
+  commands, the same answer as the hosted tools (`AshTemplate.Site.Info`).
+  """
   def document(conn, _params) do
-    %{title: title, markdown: markdown} = PublicDocuments.document(conn.assigns.document)
-    json(conn, %{title: title, markdown: markdown})
+    {:ok, page} =
+      case conn.assigns.document do
+        "/about" -> AshTemplate.Site.about()
+        "/docs" -> AshTemplate.Site.docs()
+      end
+
+    json(conn, page)
   end
 
   def agents(conn, _params), do: send_cached(conn, "text/markdown", PublicDocuments.agents())

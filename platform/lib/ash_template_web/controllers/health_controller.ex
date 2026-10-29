@@ -15,22 +15,30 @@ defmodule AshTemplateWeb.HealthController do
     |> send_resp(status, body)
   end
 
+  # The same answer as the hosted `health` tool (`AshTemplate.Site.Info`).
   def status(conn, _params) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
-    if database_ready?() do
-      json(conn, %{status: "ok"})
-    else
-      conn
-      |> put_status(:service_unavailable)
-      |> json(%{
-        error: %{
-          code: "unavailable",
-          message: "The site is up but its database is not answering.",
-          hint: "Try again in a minute."
-        }
-      })
+    case AshTemplate.Site.health() do
+      {:ok, status} -> json(conn, status)
+      {:error, _unavailable} -> refuse(conn, "unavailable")
     end
+  end
+
+  @errors %{
+    "unavailable" =>
+      {503, "The site is up but its database is not answering.", "Try again in a minute."}
+  }
+
+  @doc """
+  The `{status, message, hint}` of the refusal `code`, for the hosted MCP
+  server's tool errors (`AshTemplateWeb.ToolErrors`).
+  """
+  def refusal(code), do: Map.fetch!(@errors, code)
+
+  defp refuse(conn, code) do
+    {status, message, hint} = refusal(code)
+    conn |> put_status(status) |> json(%{error: %{code: code, message: message, hint: hint}})
   end
 
   defp database_ready?, do: AshTemplate.Health.database_ready?()

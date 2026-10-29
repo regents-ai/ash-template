@@ -53,7 +53,8 @@ config :ash_template,
     AshTemplate.Notes,
     AshTemplate.Payments,
     AshTemplate.Points,
-    AshTemplate.Rooms
+    AshTemplate.Rooms,
+    AshTemplate.Site
   ],
   ecto_repos: [AshTemplate.Repo],
   generators: [timestamp_type: :utc_datetime]

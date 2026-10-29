@@ -1,7 +1,13 @@
 defmodule AshTemplate.Accounts do
-  @moduledoc "Human accounts, their verified sessions, linked social identities, ENS names and the accounts agents opened."
+  @moduledoc """
+  Human accounts, their verified sessions, linked social identities and ENS
+  names, the accounts agents opened, and what a paired agent or an agent that
+  owns its account reads of that account's Credits and Points
+  (`AshTemplate.Accounts.Holdings`). Those reads are also hosted agent tools
+  (`tools`).
+  """
 
-  use Ash.Domain
+  use Ash.Domain, extensions: [AshAi]
 
   resources do
     resource AshTemplate.Accounts.HumanAccount do
@@ -47,6 +53,33 @@ defmodule AshTemplate.Accounts do
         not_found_error?: false
 
       define :remove_linked_identity, action: :remove_verified
+    end
+
+    resource AshTemplate.Accounts.Holdings do
+      define :account_balances, action: :account_balances
+
+      define :account_credits_history,
+        action: :account_credits_history,
+        args: [:after]
+
+      define :account_points, action: :account_points
+    end
+  end
+
+  # The hosted agent tools: each runs the same action as its HTTP route, its
+  # browser tool and its regents-cli command, and is named after them
+  # (`AshTemplateWeb.Capabilities` checks both).
+  tools do
+    tool :account_balances, AshTemplate.Accounts.Holdings, :account_balances do
+      description "Read your person's Credits and what you may spend of them on this site: your grant, its limits and what is left today. Changes nothing. Needs a pairing, or an account of your own."
+    end
+
+    tool :account_credits_history, AshTemplate.Accounts.Holdings, :account_credits_history do
+      description "Read what came into and went out of your person's Credits, newest first, a page at a time. Changes nothing. Needs a pairing, or an account of your own."
+    end
+
+    tool :account_points, AshTemplate.Accounts.Holdings, :account_points do
+      description "Read your person's Points: the total, today's, each daily allowance left and the latest entries, as the Points page shows them. Changes nothing. Needs a pairing, or an account of your own."
     end
   end
 end

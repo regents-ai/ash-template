@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.PointsLive do
   @moduledoc "Private Account Points presentation; the NFT bonus is added at the end of each 30-day period."
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
-  alias AshTemplateWeb.PointsEntries
+  alias AshTemplate.Points.Entries
   alias RegentPoints.{Amount, Rules}
   attr :account, :map, default: nil
   attr :signed_out_reason, :atom, default: :signed_out
@@ -51,7 +51,7 @@ defmodule AshTemplateWeb.PointsLive do
             Enum.map(
               @points.value.allowances,
               &%{
-                label: PointsEntries.allowance_name(&1.scope),
+                label: Entries.allowance_name(&1.scope),
                 value: "#{Amount.format(&1.remaining)} remaining"
               }
             )
@@ -98,7 +98,7 @@ defmodule AshTemplateWeb.PointsLive do
           <ol>
             <li :for={entry <- @points.value.entries}>
               <p>
-                {Rules.label(entry.rule_id)} · {PointsEntries.agent_name(
+                {Rules.label(entry.rule_id)} · {Entries.agent_name(
                   entry,
                   @points.value.agent_names
                 ) || "You"}
@@ -114,7 +114,7 @@ defmodule AshTemplateWeb.PointsLive do
                 )} awarded. {Amount.format(entry.cap_reduction_micro)} exceeded the daily or per-action allowance.
               </Regent.Primitives.tip>
               <p>
-                {PointsEntries.status_label(PointsEntries.status(entry))} · {Calendar.strftime(
+                {Entries.status_label(Entries.status(entry))} · {Calendar.strftime(
                   entry.earned_at,
                   "%d %b %Y %H:%M UTC"
                 )}

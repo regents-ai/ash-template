@@ -22,6 +22,8 @@ defmodule AshTemplate.Agents.Agent do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias AshTemplate.Agents.Refused
+
   postgres do
     table "agents"
     repo(AshTemplate.Repo)
@@ -136,6 +138,46 @@ defmodule AshTemplate.Agents.Agent do
       accept [:name, :status]
       change set_attribute(:status_set_at, &DateTime.utc_now/0), where: [changing(:status)]
     end
+
+    # An agent's public profile, as every surface shows it (`public/1`).
+    action :agents_get, :map do
+      argument :id, :uuid,
+        allow_nil?: false,
+        description:
+          "The agent's id: a room message's agent_id or via_agent.id, from rooms_messages."
+
+      run fn %{arguments: %{id: id}}, _context ->
+        case AshTemplate.Agents.get_agent(id) do
+          {:ok, agent} -> {:ok, %{agent: public(agent)}}
+          {:error, %Ash.Error.Invalid{}} -> {:error, Refused.exception(code: "agent_not_found")}
+          error -> error
+        end
+      end
+    end
+
+    # The calling agent's own profile, with its wallet (`own/1`), paired or not.
+    action :agents_profile, :map do
+      run fn _input, %{actor: actor} ->
+        with {:ok, agent} <- AshTemplate.Agents.get_agent(actor.agent_id),
+             do: {:ok, %{agent: own(agent)}}
+      end
+    end
+
+    # The calling agent's change to its own profile, paired or not: the name, the
+    # status or both, as sent; an empty one clears it (`edit_own/2`).
+    action :agents_edit_profile, :map do
+      argument :name, :string,
+        constraints: [allow_empty?: true, trim?: false],
+        description: "Your name, up to 80 characters; empty clears it."
+
+      argument :status, :string,
+        constraints: [allow_empty?: true, trim?: false],
+        description: "A status line, up to 160 characters; empty clears it."
+
+      run fn input, %{actor: actor} ->
+        AshTemplate.Agents.Agent.edit_own(Map.take(input.arguments, [:name, :status]), actor)
+      end
+    end
   end
 
   policies do
@@ -149,6 +191,55 @@ defmodule AshTemplate.Agents.Agent do
 
     policy action_type(:read) do
       authorize_if always()
+    end
+
+    # Anyone reads a profile, except an app connected to a person's account: its
+    # token is for its identity tools alone (`AshTemplate.Agents.Connection`).
+    policy action(:agents_get) do
+      forbid_if actor_attribute_equals(:role, :connected_app)
+      authorize_if always()
+    end
+
+    policy action([:agents_profile, :agents_edit_profile]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+  end
+
+  @doc "An agent's profile as anyone reads it; it never shows the wallet."
+  def public(agent) do
+    %{
+      id: agent.id,
+      name: agent.name,
+      status: agent.status,
+      status_set_at: agent.status_set_at,
+      human_backed: is_binary(agent.world_id_human_id),
+      joined_at: agent.inserted_at
+    }
+  end
+
+  @doc "An agent's profile as the agent itself reads it, with its wallet."
+  def own(agent), do: Map.put(public(agent), :wallet_address, agent.wallet_address)
+
+  @doc """
+  The `actor`'s own profile after its `profile` change, as `own/1` shows it:
+  `invalid_profile` for a change that names nothing, or with the refused save.
+  """
+  def edit_own(profile, _actor) when profile == %{},
+    do: {:error, Refused.exception(code: "invalid_profile")}
+
+  def edit_own(profile, actor) do
+    with {:ok, agent} <- AshTemplate.Agents.get_agent(actor.agent_id) do
+      case AshTemplate.Agents.edit_agent_profile(agent, profile, actor: actor) do
+        {:ok, agent} ->
+          {:ok, %{agent: own(agent)}}
+
+        {:error, %Ash.Error.Invalid{} = error} ->
+          {:error, Refused.exception(code: "invalid_profile", error: error)}
+
+        {:error, error} ->
+          {:error, error}
+      end
     end
   end
 end

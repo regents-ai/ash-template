@@ -8,12 +8,16 @@ defmodule AshTemplateWeb.PollsController do
   A poll's counts are `null` while it is open, so nobody sees which way it
   leans; `votes_cast` says how many have voted. Nobody's vote is shown but
   their own.
+
+  Each route runs the polls action its browser tool and hosted MCP tool run,
+  and this table holds the words of every polls refusal, on each surface.
   """
 
   use AshTemplateWeb, :controller
 
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Polls
-  alias AshTemplate.Polls.Poll
+  alias AshTemplate.Polls.Refused
   alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
 
@@ -32,6 +36,9 @@ defmodule AshTemplateWeb.PollsController do
     "invalid_vote" =>
       {422, "The vote could not be counted.",
        "details says why. Send {\"choice\": \"…\"} with one of the poll's choices, exactly as listed, while it is open. A person votes once in each poll, and a vote can't be changed."},
+    "idempotency_conflict" =>
+      {409, "This operation_id was already used for another poll.",
+       "Send a new UUID as operation_id for a new poll. Keep an operation_id only to retry the same question, choices and minutes."},
     "not_poll_starter" =>
       {403, "Only the person who started this poll ends it.",
        "End a poll your person started, or let it close by itself."},
@@ -42,112 +49,101 @@ defmodule AshTemplateWeb.PollsController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
+  @doc "The `{status, message, hint}` of the polls refusal `code`, for every surface that answers it."
+  def refusal(code), do: Map.fetch!(@errors, code)
+
+  # Each action that takes input, and the refusal input it cannot take gets
+  # besides the poll's: the save's own.
+  @input %{
+    polls_show: "poll_not_found",
+    polls_start: "invalid_poll",
+    polls_vote: "invalid_vote",
+    polls_end: "poll_not_found"
+  }
+
+  # The refusals of a save, which say why in `details`.
+  @saves ~w(invalid_poll invalid_vote)
+
+  @doc """
+  The refusal `{code, extra}` a polls `action` answers for `error`: the action's
+  own refusal, or the input it could not take. A poll it cannot take reads as
+  one that names none; other input is the action's own refusal, with `details`
+  for a save. The agent routes and the hosted MCP server answer the same.
+  """
+  @spec input_refusal(atom(), Ash.Error.Invalid.t()) :: {String.t(), map()}
+  def input_refusal(action, %Ash.Error.Invalid{errors: errors} = error) do
+    other = Map.fetch!(@input, action)
+
+    cond do
+      refused = Enum.find(errors, &match?(%Refused{}, &1)) -> answer(refused)
+      Enum.any?(errors, &match?(%{field: :poll}, &1)) -> {"poll_not_found", %{}}
+      other in @saves -> {other, details(error)}
+      true -> {other, %{}}
+    end
+  end
+
+  @doc "A polls action's own refusal as `{code, extra}`: what the code alone leaves out."
+  @spec answer(Refused.t()) :: {String.t(), map()}
+  def answer(%Refused{code: code, error: %Ash.Error.Invalid{} = error}),
+    do: {code, details(error)}
+
+  def answer(%Refused{code: code}), do: {code, %{}}
+
+  defp details(error), do: %{details: FormErrors.details(error)}
+
   defp paired_agent(%{assigns: %{actor: actor}} = conn, _opts)
        when AgentWallet.acts_for_account(actor),
        do: conn
 
   defp paired_agent(conn, _opts),
-    do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
+    do: conn |> refuse(NotPaired.code(conn.assigns.actor)) |> halt()
 
-  def index(conn, _params) do
-    case Polls.list_polls() do
-      {:ok, polls} -> json(conn, %{polls: Enum.map(polls, &present/1)})
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
-    end
-  end
+  def index(conn, _params), do: respond(conn, :polls_list, Polls.polls_list())
 
-  def show(conn, %{"poll" => id}) do
-    with_poll(conn, id, nil, fn conn, poll -> json(conn, %{poll: present(poll)}) end)
-  end
+  def show(conn, %{"poll" => id}), do: respond(conn, :polls_show, Polls.polls_show(id))
 
-  # A retry with the operation_id of a poll this agent's person already started
-  # answers that poll (200), and starts nothing.
+  # A retry with the operation_id, question, choices and minutes of a poll this
+  # agent already started answers that poll (200), and starts nothing
+  # (`AshTemplate.Polls.Poll.AgentStart`).
   def create(conn, _params) do
-    actor = conn.assigns.actor
-
-    with {:ok, nil} <- earlier_start(conn.body_params["operation_id"], actor),
-         {:ok, poll} <-
-           Polls.start_poll(
-             Map.take(conn.body_params, ["question", "choices", "minutes", "operation_id"]),
-             actor: actor
-           ) do
-      conn |> put_status(:created) |> json(%{poll: present(poll)})
-    else
-      {:ok, %Poll{} = earlier} -> json(conn, %{poll: present(earlier)})
-      {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_poll", error)
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
-    end
-  end
-
-  # A missing or malformed operation_id finds no earlier poll; the start refuses it.
-  defp earlier_start(operation_id, actor) do
-    case Polls.get_started_poll(operation_id, actor: actor) do
-      {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
-      result -> result
+    case Polls.polls_start(conn.body_params, actor: conn.assigns.actor) do
+      {:ok, %{poll: poll, replayed: false}} -> conn |> put_status(:created) |> json(%{poll: poll})
+      {:ok, %{poll: poll, replayed: true}} -> json(conn, %{poll: poll})
+      {:error, error} -> refuse_error(conn, :polls_start, error)
     end
   end
 
   # Sending the choice already made answers that vote again.
-  def vote(conn, %{"poll" => id}) do
-    actor = conn.assigns.actor
+  def vote(conn, %{"poll" => id}),
+    do:
+      respond(conn, :polls_vote, Polls.polls_vote(id, addressed(conn), actor: conn.assigns.actor))
 
-    with_poll(conn, id, actor, fn conn, poll ->
-      case Polls.vote(poll.id, Map.take(conn.body_params, ["choice"]), actor: actor) do
-        {:ok, vote} ->
-          {:ok, poll} = Polls.get_poll(poll.id, actor: actor)
-          json(conn, %{poll: present(poll), vote: %{choice: vote.choice}})
+  def end_poll(conn, %{"poll" => id}),
+    do: respond(conn, :polls_end, Polls.polls_end(id, actor: conn.assigns.actor))
 
-        {:error, %Ash.Error.Invalid{} = error} ->
-          refuse(conn, "invalid_vote", error)
+  # The address names the poll: one in the body never chooses another.
+  defp addressed(conn), do: Map.delete(conn.body_params, "poll")
 
-        {:error, error} ->
-          conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
-      end
-    end)
-  end
+  defp respond(conn, _action, {:ok, answer}), do: json(conn, answer)
+  defp respond(conn, action, {:error, error}), do: refuse_error(conn, action, error)
 
-  def end_poll(conn, %{"poll" => id}) do
-    actor = conn.assigns.actor
+  defp refuse_error(conn, action, %Ash.Error.Invalid{} = error),
+    do: refuse_with(conn, input_refusal(action, error))
 
-    with_poll(conn, id, actor, fn conn, poll ->
-      case Polls.end_poll(poll, actor: actor) do
-        {:ok, poll} -> json(conn, %{poll: present(poll)})
-        {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "not_poll_starter")
-        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "poll_closed")
-        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
-      end
-    end)
-  end
+  # The pairing was revoked after this request was let in.
+  defp refuse_error(conn, _action, %Ash.Error.Forbidden{errors: [%NotPaired{code: code}]}),
+    do: refuse(conn, code)
 
-  defp with_poll(conn, id, actor, respond) do
-    case Polls.get_poll(id, actor: actor) do
-      {:ok, %Poll{} = poll} -> respond.(conn, poll)
-      {:ok, nil} -> refuse(conn, "poll_not_found")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "poll_not_found")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
-    end
-  end
+  defp refuse_error(conn, _action, error),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
 
-  defp present(%Poll{} = poll) do
-    %{
-      id: poll.id,
-      question: poll.question,
-      choices: poll.choices,
-      open: poll.open,
-      closes_at: poll.closes_at,
-      ended_at: poll.ended_at,
-      votes_cast: poll.votes_cast,
-      counts: poll.totals,
-      started_by: %{name: poll.starter.name, picture: poll.starter.picture},
-      via_agent_id: poll.via_agent_id,
-      started_at: poll.inserted_at
-    }
-  end
+  defp refuse_with(conn, {code, extra}), do: refuse(conn, code, extra)
 
-  defp refuse(conn, code, error \\ nil) do
-    {status, message, hint} = Map.fetch!(@errors, code)
-    body = %{code: code, message: message, hint: hint}
-    body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
-    conn |> put_status(status) |> json(%{error: body})
+  defp refuse(conn, code, extra \\ %{}) do
+    {status, message, hint} = refusal(code)
+
+    conn
+    |> put_status(status)
+    |> json(%{error: Map.merge(%{code: code, message: message, hint: hint}, extra)})
   end
 end

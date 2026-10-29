@@ -205,17 +205,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   end
 
   @doc """
-  The `{status, message, hint}` of each refusal `not_person_code/1` names, for a
-  door's own table of refusals.
+  The `{status, message, hint}` of each refusal `AshTemplate.Agents.NotPaired`
+  names, for a door's own table of refusals.
   """
   def not_person_refusals, do: @not_person
-
-  @doc """
-  The refusal code for an agent that acts as itself where only an agent acting as
-  its person may go, naming what it is missing.
-  """
-  def not_person_code(%Agent{pairing: :none}), do: "agent_not_paired"
-  def not_person_code(%Agent{pairing: :person_not_here}), do: "person_not_here"
 
   # The person World ID says stands behind the wallet, once the wallet has accepted
   # them. Null names nobody and changes nothing: the link, once made, stays.

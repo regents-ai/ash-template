@@ -68,7 +68,7 @@ priv/tool_manifest.json ─┘      └─► llms.txt and docs tables
         └─► assets/js/webmcp/tools.ts ──► document.modelContext.registerTool
                                               │ execute(input, {signal})
                                               ▼
-                     prepare exact request → existing SIWA signer
+                     exact request → agent's browser host signs (window.regentsSign)
                      → named JSON operation (credentials omitted, signal)
                                               ▼
                      SIWA verification → current pairing → Domain interface (user + agent)
@@ -95,7 +95,8 @@ rows. ash-template's `platform/priv/capabilities.json` and
 Each manifest entry: `name`, `title`, `description`, `input_schema`, `annotations`,
 and for a tool that calls an operation, `route` and `operation_id`; signed tools also
 carry what the shared signing transport reads (`authentication`, `availability`,
-`request_body`, `operation_id_field`, `operation_input_schema`). A site with tools only
+`request_body`, `operation_id_field`). A signed tool's `input_schema` is its
+operation's own input; nothing else passes through the tool. A site with tools only
 some pages register adds `scope` (`site` or that page). Include page-scoped tools and
 the shared profile tools too, so the published list never denies a tool a page
 registers.
@@ -235,12 +236,15 @@ ownership. Mutations lock the exact pairing in their transaction. Queued work
 rechecks before starting. Security, pairing and grant management remain owner-only.
 
 Use `elixir-utils/agent_access/assets/signed_tools.ts`, copied by
-`mix regent_agent_access.assets`, for manifest-restricted request preparation and
-exact-byte forwarding. Bind it to the server's configured trusted origin. It is
-transport only: signer access must be supplied and demonstrated by each runtime.
-No arbitrary URL/signing proxy, browser keys, replayed proofs or automatic retries.
-Declare typed inputs in `operation_input_schema`; the shared transport validates
-its bounded JSON Schema subset before preparing a request. Use declared array
+`mix regent_agent_access.assets`: `signedTools(config).execute(name, input)` builds
+the exact request from the manifest, has the agent's browser host sign it through
+`window.regentsSign` (regents-cli's `regents browser` is the reference host), and
+sends those same bytes. Bind it to the server's configured trusted origin. It never
+signs and never sees a key; with no host signer, or a refusal, it rejects with
+`Refused` before anything is sent, and the tool answers that refusal. No arbitrary
+URL/signing proxy, browser keys, replayed proofs or automatic retries. Declare
+typed inputs in the signed tool's `input_schema`; the shared transport validates
+its bounded JSON Schema subset before building a request. Use declared array
 items and object properties instead of encoding structured product data as strings.
 Opaque JSON objects must opt into `additionalProperties: true` and a byte bound.
 

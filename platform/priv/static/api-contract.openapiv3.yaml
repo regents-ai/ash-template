@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 8.1.0
+  version: 10.0.0
 paths:
   /api/v1/health:
     get:
@@ -88,6 +88,8 @@ paths:
         "201": {$ref: "#/components/responses/Note"}
         "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
         "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "409": {$ref: "#/components/responses/NoteKeyConflict"}
+        "410": {$ref: "#/components/responses/NoteRemoved"}
         "422": {$ref: "#/components/responses/NoteInvalid"}
         "503": {$ref: "#/components/responses/NotesUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
@@ -257,6 +259,8 @@ paths:
         "401": {$ref: "#/components/responses/AgentSignInRefused"}
         "403": {$ref: "#/components/responses/PostedBeforePairing"}
         "404": {$ref: "#/components/responses/RoomNotFound"}
+        "409": {$ref: "#/components/responses/RoomMessageKeyConflict"}
+        "410": {$ref: "#/components/responses/RoomMessageRemoved"}
         "422": {$ref: "#/components/responses/RoomMessageInvalid"}
         "503": {$ref: "#/components/responses/AgentPostUnavailable"}
         "429": {$ref: "#/components/responses/RoomPostTooMany"}
@@ -2383,7 +2387,8 @@ paths:
                   agent:
                     $ref: '#/components/schemas/MyAgentProfile'
         '422':
-          description: The profile could not be saved (invalid_profile); details says why.
+          description: The name or status breaks a rule, a field it does not take is sent, or
+            neither is sent (invalid_profile); details says which rule, or which field.
           content:
             application/json:
               schema:
@@ -2425,8 +2430,8 @@ paths:
       description: Signed, before any pairing. Opens an account whose sign-in wallet is the
         wallet that signs the request, so the agent owns it. From then on every request that
         wallet signs acts as the account's owner, including each operation that otherwise needs
-        a pairing; the owner writes as itself, with no operation_id needed and nothing marked as
-        an agent's. Opening again answers the same account. The body is an empty JSON object. A
+        a pairing; the owner writes as itself, with the operation_id a paired agent sends on each
+        write that takes one, and nothing marked as an agent's. Opening again answers the same account. The body is an empty JSON object. A
         wallet that already signs in to a person's account is refused, and a paired agent is
         refused. One network opens at most 5 accounts a day.
       security:
@@ -2767,8 +2772,8 @@ paths:
                   conversation:
                     $ref: '#/components/schemas/DmConversation'
         '422':
-          description: The message is gone, is the account's own, or no person wrote it
-            (invalid_open); details says which.
+          description: The message is gone, is the account's own, or no person wrote it,
+            or a field it does not take is sent (invalid_open); details says which.
           content:
             application/json:
               schema:
@@ -3020,7 +3025,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '422':
-          description: after is not the next_cursor of a page (invalid_cursor).
+          description: after is not the next_cursor of a page, or a field it does not
+            take is sent (invalid_cursor).
           content:
             application/json:
               schema:
@@ -3062,8 +3068,10 @@ paths:
       operationId: sendDm
       summary: Send a message in a conversation.
       description: 'Sends for the paired account, marked as written by this agent. Keep
-        operation_id when retrying: a retry answers the first message with 200 and sends
-        nothing. A person sends at most 300 messages an hour.'
+        operation_id when retrying: a retry with the same body answers the first message
+        with 200 and sends nothing; the same operation_id with another body or in another
+        conversation answers 409 idempotency_conflict. A person sends at most 300 messages
+        an hour.'
       security:
       - siwaProof: []
       parameters:
@@ -3156,7 +3164,8 @@ paths:
                   message:
                     $ref: '#/components/schemas/DmMessage'
         '200':
-          description: The message an earlier request with this operation_id sent.
+          description: The message an earlier request with this operation_id and body
+            sent.
           content:
             application/json:
               schema:
@@ -3175,8 +3184,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '422':
-          description: The body is empty or too long, operation_id is missing, or the hourly
-            allowance is spent (invalid_message); details says which.
+          description: The body is empty or too long, operation_id is missing, a field it
+            does not take is sent, or the hourly allowance is spent (invalid_message); details
+            says which.
           content:
             application/json:
               schema:
@@ -3194,7 +3204,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Signed request refused; error contains code, message and hint.
+          description: This operation_id was already used for another message, in another
+            conversation or with another body (idempotency_conflict). Send a new UUID for a
+            new message.
           content:
             application/json:
               schema:
@@ -3547,8 +3559,10 @@ paths:
       description: 'Sends for the paired account in one of its chats, or starts a new chat when
         conversation_id is left out, as the chat page does. The assistant''s reply is written
         a few words at a time after this answers: read the chat for it. Keep operation_id when
-        retrying: a retry answers the first message with 200 and sends nothing. A person sends
-        at most 10 messages a minute.'
+        retrying: a retry with the same text and conversation_id answers the first message
+        with 200 and sends nothing; the same operation_id with other text or another
+        conversation_id answers 409 idempotency_conflict. A person sends at most 10 messages
+        a minute.'
       security:
       - siwaProof: []
       parameters:
@@ -3640,7 +3654,8 @@ paths:
                   message:
                     $ref: '#/components/schemas/ChatMessage'
         '200':
-          description: The message an earlier request with this operation_id sent.
+          description: The message an earlier request with this operation_id, text and
+            conversation_id sent.
           content:
             application/json:
               schema:
@@ -3659,8 +3674,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '422':
-          description: The text is empty or too long, operation_id is missing, or the minute's
-            allowance is spent (invalid_message); details says which.
+          description: The text is empty or too long, operation_id is missing, a field it does
+            not take is sent, or the minute's allowance is spent (invalid_message); details says
+            which.
           content:
             application/json:
               schema:
@@ -3678,7 +3694,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Signed request refused; error contains code, message and hint.
+          description: This operation_id was already used for another message, in another chat
+            or with other text (idempotency_conflict). Send a new UUID for a new message.
           content:
             application/json:
               schema:
@@ -3814,7 +3831,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '422':
-          description: after is not the next_cursor of a page (invalid_cursor).
+          description: after is not the next_cursor of a page, or a field it does not
+            take is sent (invalid_cursor).
           content:
             application/json:
               schema:
@@ -3886,8 +3904,9 @@ paths:
       operationId: startPoll
       summary: Start a poll for the paired account.
       description: 'Starts a poll for the paired account, marked as started by this agent. Keep
-        operation_id when retrying: a retry answers the poll already started with 200 and starts
-        nothing. A person starts 3 polls a day.'
+        operation_id when retrying: a retry with the same question, choices and minutes answers
+        the poll already started with 200 and starts nothing; the same operation_id with any of
+        them changed answers 409 idempotency_conflict. A person starts 3 polls a day.'
       security:
       - siwaProof: []
       parameters:
@@ -3985,7 +4004,8 @@ paths:
                   poll:
                     $ref: '#/components/schemas/Poll'
         '200':
-          description: The poll an earlier request with this operation_id started.
+          description: The poll an earlier request with this operation_id, question, choices
+            and minutes started.
           content:
             application/json:
               schema:
@@ -3998,7 +4018,8 @@ paths:
                     $ref: '#/components/schemas/Poll'
         '422':
           description: The question, choices or minutes break a rule, operation_id is missing,
-            or the day's allowance is spent (invalid_poll); details says which.
+            a field it does not take is sent, or the day's allowance is spent (invalid_poll);
+            details says which.
           content:
             application/json:
               schema:
@@ -4055,7 +4076,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Signed request refused; error contains code, message and hint.
+          description: This operation_id was already used for another poll, or with another
+            question, choices or minutes (idempotency_conflict). Send a new UUID for a new poll.
           content:
             application/json:
               schema:
@@ -4242,8 +4264,9 @@ paths:
                       hint:
                         type: string
         '422':
-          description: The poll has closed, the choice is not one of its choices, or the paired
-            account already voted for another choice (invalid_vote); details says which.
+          description: The poll has closed, the choice is not one of its choices, the paired
+            account already voted for another choice, or a field it does not take is sent
+            (invalid_vote); details says which.
           content:
             application/json:
               schema:
@@ -4637,7 +4660,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/NoteEnvelope"}
     NoteRetried:
-      description: A retry with the operation_id of a note already made; that note, unchanged
+      description: An agent's retry with the operation_id of a note it already made, with the same title and text; that note, unchanged
       content:
         application/json:
           schema: {$ref: "#/components/schemas/NoteEnvelope"}
@@ -4668,7 +4691,7 @@ components:
           schema: {$ref: "#/components/schemas/NoteError"}
           examples:
             notFound:
-              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes with GET /api/v1/notes."}}
+              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes and use an id from there."}}
     NoteInvalid:
       description: The note is invalid
       content:
@@ -4676,7 +4699,23 @@ components:
           schema: {$ref: "#/components/schemas/NoteError"}
           examples:
             invalid:
-              value: {error: {code: invalid_note, message: "The note could not be saved.", hint: "Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. An agent's new note also needs operation_id, a UUID it keeps when retrying; a change sends none."}}
+              value: {error: {code: invalid_note, message: "The note could not be saved.", hint: "details says why. Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. An agent's new note also needs operation_id, a UUID it keeps when retrying; a person's new note and a change send none."}}
+    NoteKeyConflict:
+      description: This operation_id was already used for another note, with another title or text
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            conflict:
+              value: {error: {code: idempotency_conflict, message: "This operation_id was already used for another note.", hint: "Send a new UUID as operation_id for a new note. Keep an operation_id only to retry the same note."}}
+    NoteRemoved:
+      description: The note this operation_id made has been deleted; id names it
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RemovedNoteError"}
+          examples:
+            removed:
+              value: {error: {code: note_removed, message: "The note this operation_id made has been deleted.", hint: "id names the deleted note. Send a new UUID as operation_id to add it again.", id: "0b9a1e3c-6f0e-4c39-9d3a-2f6a8e1c4d55"}}
     NotesUnavailable:
       description: Sign-in is not configured or the notes could not be reached
       content:
@@ -4714,7 +4753,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/RoomEnvelope"}
     RoomRetried:
-      description: A retry with the name of a room the person already started; that room, unchanged
+      description: A retry with the name and topic of a room the person already started; that room, unchanged
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RoomEnvelope"}
@@ -4724,7 +4763,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/RoomEnvelope"}
     RoomNameTaken:
-      description: Another room already has the address this name gives
+      description: Another room already has the address this name gives, or the person's own room there has another name or topic
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RecoveryError"}
@@ -4773,7 +4812,7 @@ components:
         application/json:
           schema: {$ref: "#/components/schemas/RoomMessageEnvelope"}
     RoomMessageRetried:
-      description: A retry with the operation_id of a message this agent already posted; that message, unchanged
+      description: A retry with the operation_id of a message this agent already posted, in the same room with the same text; that message, unchanged
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RoomMessageEnvelope"}
@@ -4857,7 +4896,7 @@ components:
           schema: {$ref: "#/components/schemas/RecoveryError"}
           examples:
             noteNotFound:
-              value: {error: {code: note_not_found, message: "There is no note of yours with that id.", hint: "List your person's notes and use an id from there."}}
+              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes and use an id from there."}}
     AgentSignInRefused:
       description: The request's wallet signature was not accepted
       content:
@@ -4867,13 +4906,29 @@ components:
             notSignedJson:
               value: {error: {code: missing_signed_body, message: "Send the body as JSON, signed with the rest of the request.", hint: "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."}}
     RoomMessageInvalid:
-      description: The body is not 1 to 2,000 characters, operation_id is missing or names someone else's message, or the agent posted several times in the last minute
+      description: The body is not 1 to 2,000 characters, operation_id is missing or not a UUID, or the agent posted several times in the last minute
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RecoveryError"}
           examples:
             invalidMessage:
               value: {error: {code: invalid_message, message: "The message could not be saved.", hint: "A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."}}
+    RoomMessageKeyConflict:
+      description: This operation_id was already used for another message, in another room or with other text
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            conflict:
+              value: {error: {code: idempotency_conflict, message: "This operation_id was already used for another message.", hint: "Send a new UUID as operation_id for a new message. Keep an operation_id only to retry the same post in the same room."}}
+    RoomMessageRemoved:
+      description: The message this operation_id posted has been deleted; id names it
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RemovedMessageError"}
+          examples:
+            removed:
+              value: {error: {code: message_removed, message: "The message this operation_id posted has been deleted.", hint: "id names the deleted message. Send a new UUID as operation_id to post again.", id: "0b9a1e3c-6f0e-4c39-9d3a-2f6a8e1c4d55"}}
     AgentPostUnavailable:
       description: The sign-in service or the room's messages could not be reached
       content:
@@ -5222,6 +5277,8 @@ components:
               - room_not_found
               - invalid_cursor
               - invalid_limit
+              - idempotency_conflict
+              - message_removed
               - rooms_unavailable
               - site_not_found
               - site_unreachable
@@ -5237,6 +5294,11 @@ components:
             hint:
               type: string
               description: What to do next.
+            id:
+              type: string
+              format: uuid
+              description: 'Sent with message_removed: the deleted message the operation_id
+                posted.'
             details:
               type: array
               description: 'Sent with invalid_note and invalid_message: one entry per
@@ -5541,7 +5603,7 @@ components:
       type: object
       additionalProperties: false
       properties:
-        operation_id: {type: string, format: uuid, description: "Required for agent creates; stable note UUID. Omit for updates."}
+        operation_id: {type: string, format: uuid, description: "An agent's key for its new note: required then, kept when retrying, and it becomes the note's id. A person's new note and a change send none."}
         title: {type: string, minLength: 1, maxLength: 120}
         body: {type: [string, "null"], maxLength: 10000}
     NoteError:
@@ -5556,7 +5618,7 @@ components:
           properties:
             code:
               type: string
-              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, notes_unavailable]
+              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, idempotency_conflict, notes_unavailable]
             message: {type: string}
             hint: {type: string}
     Session:
@@ -5575,6 +5637,34 @@ components:
             avatar_src:
               type: [string, "null"]
               pattern: "^data:image/svg\\+xml;base64,"
+    RemovedNoteError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, hint, id]
+          properties:
+            code: {type: string, const: note_removed}
+            message: {type: string}
+            hint: {type: string}
+            id: {type: string, format: uuid, description: The deleted note the operation_id made.}
+    RemovedMessageError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, hint, id]
+          properties:
+            code: {type: string, const: message_removed}
+            message: {type: string}
+            hint: {type: string}
+            id: {type: string, format: uuid, description: The deleted message the operation_id posted.}
     RecoveryError:
       type: object
       additionalProperties: false
@@ -5650,7 +5740,7 @@ components:
       required: [message]
       properties:
         message: {$ref: "#/components/schemas/RoomMessage"}
-    RoomMessageCreateInput: {"type": "object", "additionalProperties": false, "required": ["body", "operation_id"], "properties": {"body": {"type": "string", "minLength": 1, "maxLength": 2000, "description": "The message."}, "operation_id": {"type": "string", "format": "uuid", "description": "A UUID you make for this message. Keep it when retrying; it becomes the message's id."}}}
+    RoomMessageCreateInput: {"type": "object", "additionalProperties": false, "required": ["body", "operation_id"], "properties": {"body": {"type": "string", "minLength": 1, "maxLength": 2000, "description": "The message."}, "operation_id": {"type": "string", "format": "uuid", "description": "A UUID you make for this message. Keep it when retrying: a retry answers the first post, and a UUID already used for another message is refused."}}}
     RoomEnvelope:
       type: object
       additionalProperties: false

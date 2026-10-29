@@ -1,6 +1,8 @@
-// Manifest-listed WebMCP operations. SIWA keys stay in the caller’s existing signer.
+// Manifest-listed WebMCP operations. A signed tool takes only its input; the agent's
+// browser host signs the exact request (window.regentsSign), so no key, signature or
+// receipt passes through the page.
 import manifest from "../../priv/tool_manifest.json" with {type: "json"}
-import {signedTools, type SignedOperation, type SignedInput} from "../vendor/regent_agent_access/signed_tools"
+import {Refused, signedTools, type SignedOperation} from "../vendor/regent_agent_access/signed_tools"
 import {report, visitId} from "./visit_log"
 
 function signedTransport() { return signedTools({
@@ -9,10 +11,8 @@ function signedTransport() { return signedTools({
   audience: manifest.audience,
   proofHeaders: manifest.proof_headers,
   requestHeaders: client,
-  // Only the signed tools are operations; each is sent with its operation's own inputs.
-  operations: manifest.tools.flatMap(entry =>
-    "operation_input_schema" in entry ? [{...entry, input_schema: entry.operation_input_schema}] : [],
-  ) as unknown as SignedOperation[],
+  // Only the signed tools are operations.
+  operations: manifest.tools.filter(entry => entry.authentication === "siwa_per_request") as unknown as SignedOperation[],
 }) }
 
 type Property = {type: "string" | "integer" | "object"; description?: string}
@@ -44,8 +44,7 @@ type Reply =
 
 const segment = (value: string | number) => encodeURIComponent(String(value))
 
-// The public reads, by the path each one asks. Every other tool except
-// prepare_agent_request is signed.
+// The public reads, by the path each one asks. Every other tool is signed.
 const paths: Record<string, (input: Input) => string> = {
   health: () => "/api/v1/health",
   about: () => "/api/v1/about",
@@ -138,6 +137,9 @@ function unanswered(entry: Entry, signal: AbortSignal | undefined): Reply {
   return {ok: false, error: {code: "unreachable", message: "The site could not be reached. Try again."}}
 }
 
+// Reasons that mean the tool itself is set up wrongly, not the agent's input.
+const siteFaults = new Set(["invalid_operation", "invalid_path", "invalid_request_header", "unsupported_field_type"])
+
 // The signing transport refuses with a reason such as "missing_field:title".
 // The agent reads it in words; the reason itself stays in details.
 const invalid = (error: unknown): Reply => {
@@ -145,7 +147,9 @@ const invalid = (error: unknown): Reply => {
   return {ok: false, error: {
     code: "invalid_request",
     message: explain(reason),
-    hint: "Check the input against this tool's schema, then prepare and sign the request again.",
+    hint: siteFaults.has(reason.split(":", 1)[0])
+      ? "Use another way in, such as the API, and tell the site's team."
+      : "Check the input against this tool's schema, then call the tool again.",
     details: {reason},
   }}
 }
@@ -153,21 +157,28 @@ const invalid = (error: unknown): Reply => {
 function explain(reason: string): string {
   const [kind, field] = reason.split(":", 2)
   switch (kind) {
+    case "invalid_input": return "Send an object of named fields."
     case "missing_field": return `${field} is required.`
     case "invalid_field": return `${field} is not a field of this tool, or is not the kind of value it takes.`
-    case "invalid_path_field": return `${field} must be a name, not empty.`
+    case "invalid_path_field": return `${field} must be a name: not empty, "." or "..".`
+    case "unexpected_read_body": return "This tool reads only. Send only the fields its address names."
+    case "invalid_raw_body": return "Send the body as JSON text, and nothing else."
+    case "invalid_operation":
+    case "invalid_path":
+    case "invalid_request_header":
+    case "unsupported_field_type":
+      return "This tool is set up wrongly on the site, so nothing was sent."
     case "operation_unavailable": return "No signed tool has that name. Use a name from this page's tools."
     case "operation_id_required": return "operation_id is required. Use a new one for each change and keep it when retrying."
     case "body_too_large": return "The input is too large."
     case "input_complexity_exceeded": return "The input has too many parts or is nested too deeply."
-    case "prepared_request_mismatch": return "The signed request is not the one prepared for this input. Prepare it again with the same input, then sign it."
-    case "signed_request_required": return "Send the prepared request as request, with its proof."
+    case "invalid_signer_answer":
     case "proof_required":
     case "invalid_proof":
     case "incomplete_proof":
     case "body_proof_required":
     case "unexpected_body_proof":
-      return "The proof is missing or incomplete. Sign the prepared request with your SIWA signer and send every header it returns."
+      return "Your agent's signer gave an incomplete answer, so nothing was sent. Update regents-cli and open this site again with regents browser."
     case "untrusted_origin":
     case "insecure_origin":
       return "This page can't send signed requests."
@@ -176,12 +187,13 @@ function explain(reason: string): string {
 }
 
 // fetch fails with a TypeError when the network fails and an AbortError when
-// cancelled; the transport's own refusals, made before anything is sent, are
-// plain Errors.
+// cancelled. Before anything is sent, the transport refuses with a plain Error, or
+// with Refused when there is no agent signer, it fails or says no, or the call was
+// cancelled while it signed; Refused carries the words for the agent.
 const lost = (error: unknown) =>
   error instanceof TypeError || (error instanceof DOMException && error.name === "AbortError")
 
-async function signed(entry: Entry, input: SignedInput, signal: AbortSignal | undefined): Promise<Reply> {
+async function signed(entry: Entry, input: Record<string, unknown>, signal: AbortSignal | undefined): Promise<Reply> {
   if (signal?.aborted) {
     return {ok: false, error: {code: "cancelled", message: "The call was cancelled before it was sent; nothing changed."}}
   }
@@ -189,6 +201,7 @@ async function signed(entry: Entry, input: SignedInput, signal: AbortSignal | un
   try {
     response = await signedTransport().execute(entry.name, input, signal)
   } catch (error) {
+    if (error instanceof Refused) return {ok: false, error: error.refusal}
     return lost(error) ? unanswered(entry, signal) : invalid(error)
   }
   try {
@@ -209,15 +222,7 @@ const tools: ModelContextTool[] = entries.map(entry => ({
   inputSchema: entry.input_schema,
   annotations: entry.annotations,
   async execute(input: unknown, {signal}: {signal?: AbortSignal}) {
-    if (entry.name === "prepare_agent_request") {
-      try {
-        const args = input as {operation: string; input: Record<string, unknown>}
-        return {ok: true, request: signedTransport().prepare(args.operation, args.input)}
-      } catch (error) {
-        return invalid(error)
-      }
-    }
-    if (entry.authentication === "siwa_per_request") return signed(entry, input as SignedInput, signal)
+    if (entry.authentication === "siwa_per_request") return signed(entry, input as Record<string, unknown>, signal)
     const problem = inputProblem(input, entry.input_schema)
     if (problem) return {ok: false, error: {code: "invalid_input", message: problem}}
     if (signal?.aborted) {

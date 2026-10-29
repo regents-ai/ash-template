@@ -10,11 +10,13 @@ defmodule AshTemplate.Rooms.Message.SquashBlankLines do
   def change(changeset, _opts, _context),
     do: Ash.Changeset.update_change(changeset, :body, &squash/1)
 
-  defp squash(body) when is_binary(body) do
+  @doc "The text as a message stores it."
+  @spec squash(String.t() | nil) :: String.t() | nil
+  def squash(body) when is_binary(body) do
     body
     |> String.replace(~r/\r\n?/, "\n")
     |> String.replace(~r/\n(?:[ \t]*\n){2,}/, "\n\n")
   end
 
-  defp squash(body), do: body
+  def squash(body), do: body
 end

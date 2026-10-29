@@ -7,7 +7,8 @@ defmodule AshTemplateWeb.SiteToolsController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.SiteTools
+  alias AshTemplate.Site
+  alias AshTemplate.Site.Refused
 
   @errors %{
     "site_not_found" =>
@@ -17,22 +18,30 @@ defmodule AshTemplateWeb.SiteToolsController do
       {503, "That site's tools could not be read right now.", "Try again in a minute."}
   }
 
+  @doc """
+  The `{status, message, hint}` of the refusal `code`, for the hosted MCP
+  server's tool errors (`AshTemplateWeb.ToolErrors`).
+  """
+  def refusal(code), do: Map.fetch!(@errors, code)
+
+  # The same answers as the hosted tools (`AshTemplate.Site.Info`).
   def siwa_help(conn, _params) do
-    json(conn, %{site: "siwa-server", connection: SiteTools.connection_help()})
+    {:ok, help} = Site.siwa_help()
+    json(conn, help)
   end
 
   def tools(conn, %{"site" => site}) do
-    case SiteTools.tools(site) do
-      {:ok, tools} -> json(conn, %{site: SiteTools.name(site), tools: tools})
-      {:error, :unknown_site} -> refuse(conn, "site_not_found")
-      {:error, :unreachable} -> refuse(conn, "site_unreachable")
+    case Site.sites_tools(site) do
+      {:ok, tools} -> json(conn, tools)
+      {:error, %Ash.Error.Invalid{errors: [%Refused{code: code}]}} -> refuse(conn, code)
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "site_not_found")
     end
   end
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
   defp refuse(conn, code) do
-    {status, message, hint} = Map.fetch!(@errors, code)
+    {status, message, hint} = refusal(code)
     conn |> put_status(status) |> json(%{error: %{code: code, message: message, hint: hint}})
   end
 end

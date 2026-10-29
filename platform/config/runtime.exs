@@ -123,8 +123,8 @@ if broker_url do
 end
 
 # The Claude connector, behind one switch (AshTemplate.OAuth.enabled?/0): its
-# sign-in under /oauth and /.well-known/oauth-*, its MCP address at /mcp
-# (RegentMCPAgents.Plug), Claude in the pairing box and the Claude guide at
+# sign-in under /oauth and /.well-known/oauth-*, its identity tools at /mcp
+# (AshTemplate.Agents.Connection), Claude in the pairing box and the Claude guide at
 # /agents/claude, which /agents, the sitemap, /llms.txt and /agents.md then name.
 # Anything but "true" leaves all of it off. Switch it on only after the
 # migrations have run. The connector's identities are held by the same sign-in

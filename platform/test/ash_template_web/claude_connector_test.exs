@@ -62,9 +62,16 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   describe "with the connector off, as config/test.exs and production leave it" do
-    test "its addresses are not found and Claude is neither offered nor accepted" do
-      assert post_mcp(rpc("ping"), nil).status == 404
-      assert @endpoint.call(conn(:get, "/.well-known/oauth-authorization-server"), []).status == 404
+    test "its sign-in is not found, /mcp takes no app's token, and Claude is neither offered nor accepted" do
+      for token <- ["any-token", nil] do
+        refused = post_mcp(rpc("ping"), token)
+        assert refused.status == 401
+        assert get_resp_header(refused, "www-authenticate") == []
+      end
+
+      assert @endpoint.call(conn(:get, "/.well-known/oauth-authorization-server"), []).status ==
+               404
+
       assert @endpoint.call(conn(:post, "/oauth/register", %{}), []).status == 404
 
       refute :claude in RegentAgents.Harness.offered()
@@ -119,6 +126,64 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert [%{harness: :claude, wallet: @wallet, name: "Claude"}] = agents(subject)
     end
 
+    test "a first request with no token is asked to connect, so the app starts its sign-in" do
+      for body <- [rpc("initialize", %{"protocolVersion" => "2025-06-18"}), rpc("tools/list")] do
+        refused = post_mcp(body, nil)
+        assert refused.status == 401
+        assert json(refused)["error"]["code"] == "connection_required"
+
+        assert get_resp_header(refused, "www-authenticate") ==
+                 [RegentOAuth.challenge(RegentMCPAgents.identity_scope())]
+      end
+    end
+
+    test "pair_identity takes what the library takes, and input it cannot take gets the identity refusal" do
+      subject = "did:privy:connector-input"
+      sign_in!(subject)
+      %{access: token} = connect!(subject)
+
+      listed = json(post_mcp(rpc("tools/list"), token))["result"]["tools"]
+
+      schema =
+        Enum.find(listed, &(&1["name"] == "pair_identity"))["inputSchema"]["properties"]["input"]
+
+      assert schema["properties"]["harness"]["enum"] == RegentMCPAgents.hosted_names()
+      assert Enum.sort(schema["required"]) == ["code", "harness", "name"]
+
+      for args <- [
+            %{pair_args("A-CODE") | "name" => String.duplicate("n", 101)},
+            %{pair_args("A-CODE") | "code" => String.duplicate("c", 129)},
+            %{pair_args("A-CODE") | "harness" => "codex"},
+            Map.delete(pair_args("A-CODE"), "name")
+          ] do
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 tool(token, "pair_identity", args)
+
+        refute text =~ "%{"
+        assert Jason.decode!(text)["error"]["code"] == "identity_request_refused"
+      end
+
+      assert agents(subject) == []
+    end
+
+    test "a connected app lists and runs only its identity tools, never a room's" do
+      subject = "did:privy:connector-scope"
+      sign_in!(subject)
+      %{access: token} = connect!(subject)
+
+      listed = json(post_mcp(rpc("tools/list"), token))["result"]["tools"]
+      assert Enum.sort(Enum.map(listed, & &1["name"])) == Enum.sort(RegentMCPAgents.Tools.names())
+
+      for name <- ["rooms_messages", "rooms_post"] do
+        call =
+          rpc("tools/call", %{"name" => name, "arguments" => %{"input" => %{"room" => "general"}}})
+
+        assert %{"error" => _} = json(post_mcp(call, token))
+      end
+
+      assert signer_asks() == []
+    end
+
     test "the hosted signer signs only the identity requests, as the account's one identity, and the connection's token stays here" do
       subject = "did:privy:connector-allowlist"
       sign_in!(subject)
@@ -127,7 +192,11 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert %{"isError" => false} = tool(token, "register_identity")
       assert %{"isError" => false} = tool(token, "get_identity")
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
-      assert %{"isError" => false} = tool(token, "check_in")
+
+      # A call may also leave arguments out.
+      assert %{"isError" => false} =
+               json(post_mcp(rpc("tools/call", %{"name" => "check_in"}), token))["result"]
+
       assert %{"error" => _} = json(post_mcp(rpc("tools/call", %{"name" => "post"}), token))
 
       key = RegentMCPAgents.identity_key("ash-template", subject)
@@ -154,7 +223,10 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       subject = "did:privy:connector-again"
       sign_in!(subject)
       first = connect!(subject)
-      assert %{"isError" => false} = tool(first.access, "pair_identity", pair_args(code!(subject)))
+
+      assert %{"isError" => false} =
+               tool(first.access, "pair_identity", pair_args(code!(subject)))
+
       [%{id: agent_id}] = agents(subject)
 
       again = connect!(subject)
@@ -287,8 +359,11 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       send(test, {:signer, get_req_header(conn, "authorization"), body, asked})
 
       case asked do
-        %{"operation" => "register"} -> Req.Test.json(conn, %{"address" => @wallet})
-        %{"operation" => "sign", "request" => r} -> Req.Test.json(conn, Map.put(r, "headers", @signed))
+        %{"operation" => "register"} ->
+          Req.Test.json(conn, %{"address" => @wallet})
+
+        %{"operation" => "sign", "request" => r} ->
+          Req.Test.json(conn, Map.put(r, "headers", @signed))
       end
     end)
 
@@ -367,8 +442,16 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     {conn.status, json(conn)}
   end
 
-  defp tool(token, name, arguments \\ %{}),
-    do: json(post_mcp(rpc("tools/call", %{"name" => name, "arguments" => arguments}), token))["result"]
+  # AshAi takes a tool's arguments as its action's input.
+  # A call as tools/list lists the tool: one with no inputs is sent empty
+  # arguments; one with inputs takes them under `input`.
+  defp tool(token, name),
+    do: json(post_mcp(rpc("tools/call", %{"name" => name, "arguments" => %{}}), token))["result"]
+
+  defp tool(token, name, input) do
+    call = rpc("tools/call", %{"name" => name, "arguments" => %{"input" => input}})
+    json(post_mcp(call, token))["result"]
+  end
 
   defp post_mcp(body, token) do
     conn =

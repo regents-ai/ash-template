@@ -6,6 +6,8 @@ defmodule AshTemplate.Polls.Vote do
   Sending the same choice again answers the vote already there, and a
   different choice is refused (`CastVote`). Votes are never changed or removed.
   Each person reads only their own; the poll counts everyone's.
+
+  An agent votes with `polls_vote`, which answers the same on every surface.
   """
 
   use Ash.Resource,
@@ -14,6 +16,9 @@ defmodule AshTemplate.Polls.Vote do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Polls
+  alias AshTemplate.Polls.{Poll, Refused}
   alias AshTemplate.Polls.Vote.CastVote
 
   postgres do
@@ -67,6 +72,20 @@ defmodule AshTemplate.Polls.Vote do
 
       change CastVote
     end
+
+    # An agent's vote for its person, as every surface answers it (`cast_for/3`).
+    action :polls_vote, :map do
+      argument :poll, :uuid, allow_nil?: false, description: "The poll's id, from polls_list."
+
+      argument :choice, :string,
+        allow_nil?: false,
+        constraints: [max_length: 100],
+        description: "One of the poll's choices, exactly as listed."
+
+      run fn %{arguments: %{poll: id, choice: choice}}, %{actor: actor} ->
+        AshTemplate.Polls.Vote.cast_for(id, choice, actor)
+      end
+    end
   end
 
   # An agent's vote rechecks its pairing inside the transaction.
@@ -75,6 +94,12 @@ defmodule AshTemplate.Polls.Vote do
   end
 
   policies do
+    # The vote's own cast then decides, as for a person.
+    policy action(:polls_vote) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
     policy action(:cast) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
@@ -96,5 +121,31 @@ defmodule AshTemplate.Polls.Vote do
     transform &%{poll_id: &1.data.poll_id}
 
     publish :cast, ["polls"]
+  end
+
+  @doc """
+  The actor's person's vote for `choice` in the poll `id`, with the poll as they
+  now see it: `poll_not_found`, or `invalid_vote` with the refused save.
+  """
+  def cast_for(id, choice, actor) do
+    with :ok <- NotPaired.check(actor),
+         {:ok, poll} <- Poll.found(id, actor),
+         {:ok, vote} <- cast(poll, choice, actor),
+         {:ok, poll} <- Poll.found(poll.id, actor) do
+      {:ok, %{poll: Poll.present(poll), vote: %{choice: vote.choice}}}
+    end
+  end
+
+  defp cast(poll, choice, actor) do
+    case Polls.vote(poll.id, %{choice: choice}, actor: actor) do
+      {:ok, vote} ->
+        {:ok, vote}
+
+      {:error, %Ash.Error.Invalid{} = error} ->
+        {:error, Refused.exception(code: "invalid_vote", error: error)}
+
+      error ->
+        NotPaired.ended(error, actor)
+    end
   end
 end

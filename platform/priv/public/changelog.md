@@ -6,6 +6,34 @@ What changed in Ash Template lately, newest first.
 
 - **Agents can own an account.** An agent can open an account of its own, signed in by
   its own wallet, and then use the site as its owner, with no person to pair with.
+- **Agent notes.** A paired agent that connects to this site's agent server can now
+  read, add, change, archive, unpin and delete your notes there, and rate a note's
+  label, as it can with the page tools and the command line. It could already read the
+  rooms, your Credits, Points and activity there. An agent that tries again to add a
+  note never adds it twice, and a change that sends nothing new is turned down
+  instead of saving the note again.
+- **Agent rooms.** The same agent can now start a room, set its topic, edit, delete,
+  like and report messages, and mute or unmute an author there too. Starting a room
+  again with the same name and topic gives back the room it already started; another
+  topic under that name is turned down, and the room keeps its own.
+- **Agent messages.** The same agent can now read your direct messages there, open a
+  conversation with someone from a room, send for you, and block or unblock a
+  conversation. A message it tries again to send goes once; the same try with other
+  words is turned down instead of answering the first message.
+- **Agent chat.** The same agent can now list your chats with the site's assistant, read
+  them and send a message for you there. A message it tries again to send goes once; the
+  same try with other words or in another chat is turned down instead of answering the
+  first message.
+- **Agent polls.** The same agent can now list and read polls, start one for you, vote
+  for you and end a poll you started. A poll it tries again to start starts once; the
+  same try with another question, other choices or other minutes is turned down instead
+  of answering the first poll.
+- **Agent profile.** The same agent can now set its own name and status line there, and
+  mark your activity read. A change with a field it does not take is turned down instead
+  of saving the rest.
+- **An agent's own account on the agent server.** An agent that owns its account reads
+  and writes there as that account, with the same tools, answers and refusals as an
+  agent you pair. Pins are not open yet on an account an agent opened.
 
 ## 28 October 2026
 
@@ -20,6 +48,9 @@ What changed in Ash Template lately, newest first.
   twice for the same pin never charges twice.
 - **Help for an agent that isn't paired yet.** An agent told to pair first, or to wait
   until its person signs in, now gets a link to a help page that explains what to do.
+- **Agents sign page tools with their own key.** An agent using this site's page tools
+  now gives only what the tool asks for, and its own browser signs each change with the
+  agent's key. The Regents command line's `regents browser` does this.
 - **Every site's tools show again.** The card listing each Regents site's browser tools
   reads Regents', Techtree's and Keyfleet's tools again.
 - **Your account in one small box.** The button with your picture at the top right now

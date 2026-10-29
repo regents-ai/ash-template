@@ -4,8 +4,10 @@ defmodule AshTemplate.Chat.Message do
   person's message, or the assistant's reply, which a job writes a few words at
   a time and publishes to the conversation's open pages as it goes.
 
-  A paired agent writes for its person with an `operation_id`, which becomes the
-  message's id, so a retry answers the message it already sent (`:earlier_send`).
+  An agent reads and sends for its person through `:chat_read` and `:chat_send`
+  (`AgentSend`), which every surface runs: its `operation_id` becomes the
+  message's id, so a retry with the same words answers the message it already
+  sent.
   """
 
   use Ash.Resource,
@@ -15,6 +17,11 @@ defmodule AshTemplate.Chat.Message do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
+
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Chat
+  alias AshTemplate.Chat.{Conversation, Refused}
+  alias AshTemplate.Chat.Message.AgentSend
 
   attributes do
     timestamps()
@@ -58,7 +65,7 @@ defmodule AshTemplate.Chat.Message do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     read :for_conversation do
       pagination keyset?: true, required?: false
@@ -72,12 +79,38 @@ defmodule AshTemplate.Chat.Message do
     # job whose agent was unpaired after sending still reaches `:fail_response`.
     read :job_read
 
-    # The message the actor's person already sent with this id, so a retry
-    # answers the first send.
-    read :earlier_send do
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id) and source == :user)
+    # A chat's messages, as every surface answers them.
+    action :chat_read, :map do
+      argument :conversation, :uuid,
+        allow_nil?: false,
+        description: "The chat's id, from chat_list."
+
+      argument :after, :string,
+        constraints: [max_length: 2048],
+        description: "The previous page's next_cursor, unchanged, for older messages."
+
+      run fn %{arguments: arguments}, %{actor: actor} ->
+        AshTemplate.Chat.Message.page(arguments, actor)
+      end
+    end
+
+    # A message an agent sends to the assistant for its person, as every surface
+    # answers it (`AgentSend`).
+    action :chat_send, :map do
+      argument :conversation_id, :uuid,
+        description: "The chat to continue, from chat_list. Leave it out to start a new chat."
+
+      argument :text, :string,
+        allow_nil?: false,
+        constraints: [max_length: 4000],
+        description: "The message, 1 to 4,000 characters."
+
+      argument :operation_id, :uuid,
+        allow_nil?: false,
+        description:
+          "A UUID you make for this message. Keep it when retrying; it becomes the message's id."
+
+      run AgentSend
     end
 
     create :create do
@@ -90,23 +123,6 @@ defmodule AshTemplate.Chat.Message do
       argument :conversation_id, :uuid do
         public? false
       end
-
-      argument :operation_id, :uuid do
-        public? false
-      end
-
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
-
-      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
 
       change {AshTemplate.Limits.LimitWrites, allowance: :chat_message, field: :text}
       change AshTemplate.Chat.Message.Changes.CreateConversationIfNotProvided
@@ -226,13 +242,21 @@ defmodule AshTemplate.Chat.Message do
       authorize_if AshOban.Checks.AshObanInteraction
     end
 
-    policy always() do
+    policy action_type([:read, :create, :update]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
-    policy always() do
+    policy action_type([:read, :create, :update]) do
       authorize_if expr(conversation.human_account_id == ^actor(:human_account_id))
+    end
+
+    # The agent tools: each checks the agent's pairing itself, and its reads and
+    # writes are the person's own, or those of the account the agent owns
+    # (`AgentSend`, `page/2`).
+    policy action([:chat_read, :chat_send]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
     end
   end
 
@@ -293,4 +317,52 @@ defmodule AshTemplate.Chat.Message do
       end
     end
   end
+
+  @doc "A message as every surface answers it; `from` is `person` or `assistant`."
+  def present(message) do
+    %{
+      id: message.id,
+      conversation_id: message.conversation_id,
+      from: from(message.source),
+      text: message.text,
+      complete: message.complete,
+      response_to_id: message.response_to_id,
+      inserted_at: message.inserted_at
+    }
+  end
+
+  defp from(:user), do: "person"
+  defp from(:agent), do: "assistant"
+
+  @doc """
+  The messages of the chat `id` of the actor's person, newest first, 50 a page,
+  after the cursor `after` when it is sent: `%{messages, pagination: %{has_more,
+  next_cursor}}`. A cursor that is not a page's is `invalid_cursor`.
+  """
+  def page(%{conversation: id} = arguments, actor) do
+    page = if cursor = arguments[:after], do: [after: cursor, limit: 50], else: [limit: 50]
+
+    with :ok <- NotPaired.check(actor),
+         {:ok, conversation} <- Conversation.mine(id, actor) do
+      case Chat.message_history(conversation.id, actor: actor, page: page) do
+        {:ok, page} ->
+          {:ok,
+           %{
+             messages: Enum.map(page.results, &present/1),
+             pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
+           }}
+
+        {:error, %Ash.Error.Invalid{}} ->
+          {:error, Refused.exception(code: "invalid_cursor")}
+
+        error ->
+          NotPaired.ended(error, actor)
+      end
+    end
+  end
+
+  defp next_cursor(%{more?: true, results: results}),
+    do: List.last(results).__metadata__.keyset
+
+  defp next_cursor(_page), do: nil
 end

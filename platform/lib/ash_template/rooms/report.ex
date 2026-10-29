@@ -16,9 +16,7 @@ defmodule AshTemplate.Rooms.Report do
   alias AshTemplate.Accounts.HumanAccount
   alias AshTemplate.Limits.LimitWrites
   alias AshTemplate.Rooms.Message
-  alias AshTemplate.Rooms.Report.SomeoneElses
-
-  @reasons [:spam, :abuse, :steers_agents, :other]
+  alias AshTemplate.Rooms.Report.{Reason, SomeoneElses}
 
   postgres do
     table "room_message_reports"
@@ -32,10 +30,7 @@ defmodule AshTemplate.Rooms.Report do
   attributes do
     uuid_primary_key :id
 
-    attribute :reason, :atom,
-      allow_nil?: false,
-      public?: true,
-      constraints: [one_of: @reasons]
+    attribute :reason, Reason, allow_nil?: false, public?: true
 
     create_timestamp :inserted_at, public?: true
   end
@@ -87,9 +82,6 @@ defmodule AshTemplate.Rooms.Report do
       authorize_if expr(reporter_id == ^actor(:human_account_id))
     end
   end
-
-  @doc "Why a person may report a message."
-  def reasons, do: @reasons
 
   @doc "A report as its reporter's agent reads it."
   def public(%__MODULE__{} = report) do

@@ -18,7 +18,10 @@ defmodule AshTemplate.Rooms.Room do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
-  alias AshTemplate.Rooms.Room.SlugFromName
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Rooms
+  alias AshTemplate.Rooms.Refused
+  alias AshTemplate.Rooms.Room.{AgentStart, SlugFromName}
 
   @shown_text "Use letters, numbers and marks you can see."
   @name_taken "A room with this name is already here."
@@ -83,6 +86,47 @@ defmodule AshTemplate.Rooms.Room do
               message: "You've started as many rooms as you can today. Start another tomorrow."}
     end
 
+    # The rooms as every surface lists them (`public/1`).
+    action :rooms_list, :map do
+      run fn _input, _context ->
+        with {:ok, rooms} <- AshTemplate.Rooms.list_rooms(),
+             do: {:ok, %{rooms: Enum.map(rooms, &public/1)}}
+      end
+    end
+
+    # A room an agent starts for its person, as every surface answers it
+    # (`AgentStart`).
+    action :rooms_create, :map do
+      argument :name, :string,
+        allow_nil?: false,
+        constraints: [max_length: 40],
+        description:
+          "The room's name, 1 to 40 characters with at least one letter from A to Z or a number; its address comes from it."
+
+      argument :topic, :string,
+        allow_nil?: false,
+        constraints: [max_length: 200],
+        description: "What the room is about, 1 to 200 characters."
+
+      run AgentStart
+    end
+
+    # The topic of a room the agent's person started, as every surface answers it.
+    action :rooms_topic, :map do
+      argument :room, :string,
+        allow_nil?: false,
+        description: "The room's name, as rooms_list gives it, such as general."
+
+      argument :topic, :string,
+        allow_nil?: false,
+        constraints: [max_length: 200],
+        description: "What the room is about, 1 to 200 characters."
+
+      run fn %{arguments: %{room: slug, topic: topic}}, %{actor: actor} ->
+        AshTemplate.Rooms.Room.change_topic(slug, topic, actor)
+      end
+    end
+
     update :set_topic do
       accept [:topic]
       require_atomic? false
@@ -94,6 +138,20 @@ defmodule AshTemplate.Rooms.Room do
   policies do
     policy action_type(:read) do
       authorize_if always()
+    end
+
+    # Anyone lists the rooms, except an app connected to a person's account: its
+    # token is for its identity tools alone (`AshTemplate.Agents.Connection`).
+    policy action(:rooms_list) do
+      forbid_if actor_attribute_equals(:role, :connected_app)
+      authorize_if always()
+    end
+
+    # Starting a room and changing its topic act for the agent's person, or as the
+    # account it owns: an agent that does neither is told why (`NotPaired`).
+    policy action([:rooms_create, :rooms_topic]) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:create, :update]) do
@@ -123,6 +181,44 @@ defmodule AshTemplate.Rooms.Room do
 
   @doc "What anyone may see of a room: its address, its name and its topic."
   def public(room), do: %{slug: room.slug, name: room.name, topic: room.topic}
+
+  @doc """
+  The room named `slug` in its address, or `room_not_found`.
+  """
+  def named(slug) do
+    case Rooms.get_room(slug) do
+      {:ok, nil} -> {:error, Refused.exception(code: "room_not_found")}
+      result -> result
+    end
+  end
+
+  @doc """
+  `topic` set on the room `slug`, which the actor's person started, answered with
+  the room; a room someone else started is `not_room_maker`, and a topic the room
+  refuses `invalid_room`.
+  """
+  def change_topic(slug, topic, actor) do
+    with :ok <- NotPaired.check(actor),
+         {:ok, room} <- named(slug),
+         :ok <- made_by(room, actor) do
+      case Rooms.set_room_topic(room, %{topic: topic}, actor: actor) do
+        {:ok, room} ->
+          {:ok, %{room: public(room)}}
+
+        {:error, %Ash.Error.Invalid{} = error} ->
+          {:error, Refused.exception(code: "invalid_room", error: error)}
+
+        error ->
+          NotPaired.ended(error, actor)
+      end
+    end
+  end
+
+  # Refused by name before the save, which the topic's policy still guards.
+  defp made_by(%{created_by_id: maker}, %{human_account_id: maker}) when not is_nil(maker),
+    do: :ok
+
+  defp made_by(_room, _actor), do: {:error, Refused.exception(code: "not_room_maker")}
 
   @doc "Whether a refused start was refused because another room has its address."
   def name_taken?(%Ash.Error.Invalid{errors: errors}),

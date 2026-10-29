@@ -7,7 +7,8 @@ defmodule AshTemplate.Notes.Decision do
   outside any transaction (`AskJev`). The row records what Jev chose, the model
   that answered, the tokens and what OpenRouter charged. A request that does
   not get through retries with backoff, then records its failure. The writer
-  can say once whether the label fits.
+  can say once whether the label fits; an agent acting for them says it with
+  `notes_rate_label`, the same on every surface.
 
   Every decision counts against the site's daily number of questions and the
   writer's share of it, checked by the create policy (`UnderDailyBudget`). Only
@@ -30,7 +31,9 @@ defmodule AshTemplate.Notes.Decision do
     UnderDailyBudget
   }
 
-  alias AshTemplate.Notes.Labels
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Notes
+  alias AshTemplate.Notes.{Labels, Refused}
 
   postgres do
     table "note_decisions"
@@ -126,6 +129,36 @@ defmodule AshTemplate.Notes.Decision do
       validate present(:report)
       validate RateOnce, always_atomic?: true
     end
+
+    action :notes_rate_label, :map do
+      argument :id, :uuid,
+        allow_nil?: false,
+        description: "The label's id: label.id on the note, not the note's id."
+
+      argument :report, :atom,
+        allow_nil?: false,
+        constraints: [one_of: [:fits, :does_not_fit]],
+        description: "fits or does_not_fit."
+
+      run fn %{arguments: %{id: id, report: report}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, decision} when not is_nil(decision) <-
+               Notes.get_label_decision(id, actor: actor),
+             {:ok, decision} <-
+               NotPaired.ended(Notes.rate_label(decision, report, actor: actor), actor) do
+          {:ok, %{label: %{id: decision.id, rating: decision.report}}}
+        else
+          {:ok, nil} ->
+            {:error, Refused.exception(code: "label_not_found")}
+
+          {:error, %Ash.Error.Invalid{}} ->
+            {:error, Refused.exception(code: "invalid_label_report")}
+
+          error ->
+            error
+        end
+      end
+    end
   end
 
   oban do
@@ -164,6 +197,11 @@ defmodule AshTemplate.Notes.Decision do
     policy action(:report) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+    end
+
+    policy action(:notes_rate_label) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:read, :update]) do

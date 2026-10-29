@@ -32,7 +32,8 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
     prompt
     |> AshAi.ToolLoop.stream(
       otp_app: :ash_template,
-      tools: true,
+      # Only the assistant's own tools; every other tool is for agents.
+      tools: AshTemplate.Chat.assistant_tools(),
       model: %{provider: :stand_in, id: "reply"},
       actor: context.actor,
       tenant: context.tenant,
