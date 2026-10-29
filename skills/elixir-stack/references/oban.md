@@ -41,6 +41,22 @@ and read the installed version's docs before relying on an option.
    The migration takes the same schema the repo migrates into:
    `Oban.Migrations.up(prefix: prefix() || "public")`.
 
+   The top-level `pruner:`, `lifeline:` and `cron:` keys are what start Oban's
+   maintenance: `Oban.Config` turns each into its plugin (`Oban.Pruner`,
+   `Oban.Lifeline`, `Oban.Cron`), and `AshOban.config/2` keeps them and their leader
+   (checked in Oban 2.24.2 and AshOban 0.10.1 to 0.10.3). Never write the old
+   `plugins: [{Oban.Plugins.Pruner, ...}]`, and never `plugins: false`, which turns all
+   three off. The baseline every site keeps:
+
+   - `pruner: [max_age: {7, :days}]`. The pruner deletes completed, cancelled and
+     discarded jobs older than that, up to 10,000 every 30 seconds, from the leader.
+     Always give `max_age`: a bare `pruner: Oban.Pruner` keeps jobs 60 seconds. A job
+     that is unique with `states: :all` is unique only until it is pruned.
+   - `lifeline: [rescue_after: {10, :minutes}]`, longer than the slowest single run of
+     any job, or Lifeline takes a job still running for one whose machine stopped and
+     runs it again (Autolaunch keeps 20 minutes, above its 15-minute volume reads).
+   - `cron: [crontab: [...]]`, even empty, with AshOban.
+
 4. Supervision, after the repo. With AshOban, wrap the config so triggers and
    scheduled actions get their queues and cron entries:
 

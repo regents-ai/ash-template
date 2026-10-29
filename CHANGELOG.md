@@ -5122,3 +5122,15 @@ An adversarial review of the two commits above found five things, all fixed here
   job, how the pruner ends `states: :all`, that Oban 2.24 merges `unique:` options key
   by key, and stable operation keys for the effect, with Patchbay's
   `client_request_id` as the request-level pattern.
+
+## 2026-10-29 — Oban's pruning is checked, not assumed
+
+- `pruner: [max_age: {7, :days}]` and `lifeline: [rescue_after: {10, :minutes}]` at the
+  top of `config :ash_template, Oban` do run Oban's pruner and Lifeline: Oban 2.24.2's
+  `Oban.Config` turns each top-level service key into its plugin, and AshOban 0.10's
+  `config/2` keeps them and the leader that runs them. Nothing changes in the
+  configuration; every site uses the same keys.
+- `skills/elixir-stack/references/oban.md` says so and sets the baseline: always give
+  `max_age` (a bare `pruner: Oban.Pruner` keeps jobs 60 seconds), keep `rescue_after`
+  above the slowest single run, never `plugins: false`, and a job unique over
+  `states: :all` is unique only until it is pruned. Docs only.
