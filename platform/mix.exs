@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "ff7927c089f84c7c097fa76c0b403636cb495266"
+  @elixir_utils_ref "e73b6b8d1b1329dec362ea6e891cb767c8b74e21"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "3134bab0a23452fb82d3248072327e1d0199cc9a"
 
@@ -208,7 +208,7 @@ defmodule AshTemplate.MixProject do
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
-        "xref graph --label compile-connected --fail-above 36",
+        "xref graph --label compile-connected --fail-above 37",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

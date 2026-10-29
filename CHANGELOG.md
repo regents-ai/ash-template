@@ -4946,3 +4946,21 @@ An adversarial review of the two commits above found five things, all fixed here
   release, under the same go from Sean as its shared migration.
 - The local database fixture runs the payments migration. No shared database runs it
   before Sean's go.
+
+## 2026-10-29 — The buying wallet: buy on the chain with Credits
+
+- `AshTemplate.Payments.ChainBuy` buys something on the chain for a person, or their
+  paired agent within its limits, with Regents' own USDC, paid for in purchased Credits
+  only (one Credit per USDC; given Credits never pay). The price is read from the sale
+  before the buy's transaction; in it the day's limit is checked under a lock (500 USDC,
+  `daily_limit_atomic`) and the price is held. One send at a time, never twice, on the
+  new `chain_buys` queue: an approval of exactly the price, then the sale's call, with
+  the item sent to one of the buyer's own wallets. Bought charges the Credits; a refused
+  approval or call gives them back; a call that may still land stays held while
+  `CheckReceipt` reads its receipt. No Points are earned on a buy.
+- The template sells nothing (`sale: nil`), so buying is off here. A site names its
+  sale module (`AshTemplate.Payments.Sale`) and sets `BUYING_WALLET_PRIVATE_KEY` and
+  `BASE_RPC_URL` in Fly secrets after Sean's go. Migration `20261029054225_chain_buys`
+  adds `chain_buys`.
+- elixir-utils moves to `e73b6b8d`: `RegentPayments.BuyingWallet` and
+  `RegentCredits` holds with `purchased_only?: true`.

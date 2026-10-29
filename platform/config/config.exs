@@ -51,6 +51,7 @@ config :ash_template,
     AshTemplate.Dms,
     AshTemplate.Polls,
     AshTemplate.Notes,
+    AshTemplate.Payments,
     AshTemplate.Points,
     AshTemplate.Rooms
   ],
@@ -74,7 +75,9 @@ config :ash_template, AshTemplate.Agents.ActivityReading,
 # about new jobs through Erlang process groups. `outside_calls` keeps slow calls
 # to other websites from holding up the default queue, and `ens` keeps a
 # crowd signing in at once (one lookup each, seconds long for a name with a
-# picture) from holding up those. AshOban adds each trigger's sweep to `cron`.
+# picture) from holding up those. `chain_buys` sends one buy at a time, since
+# each uses the buying wallet's next nonce. AshOban adds each trigger's sweep
+# to `cron`.
 config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
@@ -85,6 +88,7 @@ config :ash_template, Oban,
     points_chain: 2,
     outside_calls: 3,
     purchase_checks: 5,
+    chain_buys: 1,
     ens: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10]
@@ -150,6 +154,17 @@ config :regent_payments,
   site: site,
   ash_domains: [RegentPayments],
   offers: [AshTemplate.Payments.NotePin]
+
+# The buying wallet: a small Regents wallet on Base that buys on the chain for
+# a person who pays in purchased Credits (AshTemplate.Payments.ChainBuy). `sale`
+# names the module for what a site sells; the template sells nothing, so buying
+# is off here. Everything bought in one UTC day stays within
+# `daily_limit_atomic`, in USDC millionths. The wallet's key and Base endpoint
+# come from the server's secrets (config/runtime.exs).
+config :ash_template, AshTemplate.Payments.ChainBuy,
+  sale: nil,
+  wallet: RegentPayments.BuyingWallet,
+  daily_limit_atomic: 500_000_000
 
 # Jev picks a label for each saved note while the server has an OpenRouter key
 # (AshTemplate.Notes.Labels); the whole site asks at most daily_questions a day,
