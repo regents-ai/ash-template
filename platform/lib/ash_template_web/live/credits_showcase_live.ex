@@ -291,7 +291,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="lab-agents-heading">
-          <h2 id="lab-agents-heading">Agent spending, as on regents.sh/account</h2>
+          <h2 id="lab-agents-heading">Agent spending</h2>
+          <p>As on regents.sh/account.</p>
           <%!-- Credits saves these only for a person signed in at regents.sh, so the lab stands in for it. --%>
           <.live_component
             module={AshTemplateWeb.CreditsAgentSpending}
@@ -310,7 +311,8 @@ defmodule AshTemplateWeb.CreditsShowcaseLive do
         </section>
 
         <section class="rg-panel rg-panel--surface" aria-labelledby="lab-admin-heading">
-          <h2 id="lab-admin-heading">Admin, as on regents.sh/admin/credits</h2>
+          <h2 id="lab-admin-heading">Admin</h2>
+          <p>As on regents.sh/admin/credits.</p>
           <p :if={!@admin?}>
             Run the site with <code>REGENT_CREDITS_ADMINS=did:privy:credits-lab-admin</code>
             to act as the lab admin; until then every action here is refused.

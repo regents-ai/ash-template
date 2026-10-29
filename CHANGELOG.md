@@ -5382,3 +5382,31 @@ way, and the library's own site-tool serving is gone.
   (docs.fly.io/mpg/client-configuration). Both now say so. The skill also says Fly's
   dashboard changes only the pool mode, and that the pooler keeps at least 5 connections
   per login, apparently on each of two processes. No behaviour change.
+
+## 2026-10-29 — Short titles and blog tables on phones (design-system a5fe5c4)
+
+- Every title on screen is one or two words, and none opens with who, what, where, why,
+  when, which or how: page titles, headings, labels, buttons, links, tips and the bold
+  leads in the served Markdown. Copy only; no address, route, tool name or id changed.
+  Among them: Bring your agent → Pair agent, Connect your agent → Connect agent, What's
+  new → Changelog, Header and footer → Navigation, We can't find that page → Not found,
+  Not open yet → Coming soon, Go to the homepage → Homepage, Where to spend Credits →
+  Spending, and the footer's Agent guide links Setup steps and Site summary. Every row of
+  the Template table in `skills/regent-workflow/references/short-titles.md` is now done.
+- The public changelog page (`platform/priv/public/changelog.md`) is on screen, so its
+  past bold leads were shortened too, with the body of each entry carrying what the old
+  lead said. Entries in this file are a record and were not changed.
+- `scripts/readiness.sh` looks for the docs page's "Versioning" heading, and the route
+  catalog handoff (`platform/priv/handoff/route-catalog.json`) is regenerated.
+- design-system moves from 3134bab0 to a5fe5c4: at 40rem wide or less an article table's
+  cells drop their 10rem minimum and their padding goes to 10px 12px, so a two-column
+  table fits a 320px phone without splitting a word; desktop is unchanged. The pin also
+  brings a0affdc (an address's copy icon and arrow stay on one line) and 84642bc (a
+  discussion post's wallet author shows as an address with its copy icon).
+- Checks: server tests 137 passed (11 properties); script tests 24 passed; the browser walk
+  at 1280 and 390 in headless Chromium 322 passed, 5 skipped, 1 timeout under a machine
+  load near 100 (a harbour page's address after Escape), and harbour plus windows run
+  alone 42 passed, 2 skipped (WebKit is not run on the Mac); required fixes and the CLI
+  command check pass. `make check-siwa-latest` fails on main as it does here: elixir-utils
+  094ebe8 (the site verify key merge, 20:45Z) is newer than the pin, and moving it belongs
+  to the site verify keys release.

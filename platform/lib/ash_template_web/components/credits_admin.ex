@@ -244,9 +244,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
           Given Credits never expire and are never refunded. A gift to a wallet nobody has signed in with yet waits until someone does.
         </p>
         <form id={"#{@id}-give-form"} phx-submit="give" phx-target={@myself}>
-          <P.field :let={field} id={"#{@id}-to"} label="Wallet addresses or Privy account ids">
+          <P.field :let={field} id={"#{@id}-to"} label="Recipients">
             <textarea id={field.id} name="to" rows="4" required></textarea>
-            <:hint>One per line, or separated by commas.</:hint>
+            <:hint>Wallet addresses or Privy account ids, one per line or separated by commas.</:hint>
           </P.field>
           <P.field :let={field} id={"#{@id}-amount"} label="Credits each">
             <input id={field.id} name="amount" inputmode="decimal" autocomplete="off" required />
@@ -264,8 +264,9 @@ defmodule AshTemplateWeb.CreditsAdmin do
       <section class="credits-admin__part" aria-labelledby={"#{@id}-find"}>
         <h2 id={"#{@id}-find"}>Purchases</h2>
         <form id={"#{@id}-find-form"} phx-submit="find" phx-target={@myself}>
-          <P.field :let={field} id={"#{@id}-search"} label="Wallet address or Privy account id">
+          <P.field :let={field} id={"#{@id}-search"} label="Account">
             <input id={field.id} name="search" value={@search} autocomplete="off" />
+            <:hint>A wallet address or Privy account id.</:hint>
           </P.field>
           <P.button type="submit" variant="secondary">Find</P.button>
         </form>
@@ -309,7 +310,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
       </section>
 
       <section class="credits-admin__part" aria-labelledby={"#{@id}-refunds"}>
-        <h2 id={"#{@id}-refunds"}>Refunds to send</h2>
+        <h2 id={"#{@id}-refunds"}>Pending refunds</h2>
         <P.notice
           :if={@refund_note}
           tone={if elem(@refund_note, 0) == :ok, do: "success", else: "error"}
@@ -338,10 +339,11 @@ defmodule AshTemplateWeb.CreditsAdmin do
       </section>
 
       <section class="credits-admin__part" aria-labelledby={"#{@id}-history"}>
-        <h2 id={"#{@id}-history"}>A person's Credits history</h2>
+        <h2 id={"#{@id}-history"}>Credits history</h2>
         <form id={"#{@id}-history-form"} phx-submit="history_of" phx-target={@myself}>
-          <P.field :let={field} id={"#{@id}-history-of"} label="Privy account id">
+          <P.field :let={field} id={"#{@id}-history-of"} label="Account">
             <input id={field.id} name="privy_user_id" value={@history_of} autocomplete="off" />
+            <:hint>The person's Privy account id.</:hint>
           </P.field>
           <P.button type="submit" variant="secondary">Show history</P.button>
         </form>

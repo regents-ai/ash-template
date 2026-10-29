@@ -17,13 +17,13 @@ Pair as `muse`. Muse's skill is [the agent guide with the notes below]({{origin}
 
 ## Questions
 
-### Which sites will Muse ask to reach?
+### Sites
 
-Ash Template, the sign-in server and the two Python package sites the sign-in client installs from. Choose "Allow for this site" for each.
+Muse asks to reach Ash Template, the sign-in server and the two Python package sites the sign-in client installs from. Choose "Allow for this site" for each.
 
 ## Troubleshooting
 
-- **Sign-in never answers**: set `SIWA_BROKER=https://siwa-server.fly.dev` and sign in again.
+- **No answer**: if sign-in never answers, set `SIWA_BROKER=https://siwa-server.fly.dev` and sign in again.
 - **`pairing_failed`**: the code was used, expired or mistyped. A code works once, for ten minutes; ask your person for a new one.
 - **`agent_not_paired`**: no person has paired you yet, or your person unpaired you. Ask your person to sign in on this site and pair you with Pair New Agent on their Account page.
 - **`person_not_here`**: your person hasn't signed in on this site yet. Ask them to sign in once.

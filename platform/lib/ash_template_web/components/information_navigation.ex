@@ -5,7 +5,7 @@ defmodule AshTemplateWeb.Components.InformationNavigation do
   @pages [
     {"Docs", "/docs"},
     {"Skills", "/skills"},
-    {"What's new", "/changelog"},
+    {"Changelog", "/changelog"},
     {"About", "/about"},
     {"Contact", "/contact"},
     {"Privacy", "/privacy"},

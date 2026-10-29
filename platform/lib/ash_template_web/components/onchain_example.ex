@@ -193,7 +193,7 @@ defmodule AshTemplateWeb.OnchainExample do
     ~H"""
     <section id={@id} class="onchain-example" phx-hook="OnchainSteps">
       <form class="onchain-example-form" phx-change="change" phx-submit="change" phx-target={@myself}>
-        <label for={"#{@id}-amount"}>Number to record</label>
+        <label for={"#{@id}-amount"}>Number</label>
         <input
           id={"#{@id}-amount"}
           name="amount"

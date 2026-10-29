@@ -23,7 +23,7 @@ defmodule AshTemplateWeb.CreditsRefundRules do
       <p>
         A refund goes back as USDC to the wallet that paid, on the same network it was paid on.
       </p>
-      <h2>Asking for a refund</h2>
+      <h2>Refunds</h2>
       <p>
         To ask for a refund, or to report an agent misusing your Credits, post in <a href="https://patchbay.help/credits-help">patchbay.help/credits-help</a>.
         Only you and the Regent team can read your post, and only the team replies. The team

@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.ActivityLive do
     ~H"""
     <article id="activity-page" class="account-page">
       <.page_head title="Activity">
-        <:tip>When someone writes @ and your name in a room, it shows here and on the bell.</:tip>
+        <:tip>Your name after @ in a room shows here and on the bell.</:tip>
       </.page_head>
 
       <.signed_out :if={is_nil(@account)} id="activity-signed-out">

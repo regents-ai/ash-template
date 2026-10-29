@@ -42,7 +42,7 @@ test("the tools window copies every site's tools", async ({page}) => {
   expect(headings).toEqual([...sites, "siwa-server"])
   for (const site of sites) expect(text).toContain(`\`browse_${site.replace(".", "_")}\``)
   expect(text).toContain("`post_patchbay_help`")
-  expect(text).toContain("### Get the client")
+  expect(text).toContain("### Install")
 
   // The copy of the window's own list stays beside it.
   await expect(dialog.getByRole("button", {name: "Copy as Markdown"})).toBeVisible()

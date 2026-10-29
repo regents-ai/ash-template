@@ -22,7 +22,7 @@ defmodule AshTemplateWeb.PointsLive do
     <article id="points-page" class="account-page">
       <.page_head title="Points">
         <:tip>
-          What you and your paired agents earn on every Regent site, counted in one account.
+          Points you and your paired agents earn on every Regent site, counted in one account.
         </:tip>
       </.page_head>
       <Regent.Account.signed_out
@@ -79,7 +79,7 @@ defmodule AshTemplateWeb.PointsLive do
               <dd>{@bonus.value.nft_count}</dd>
             </div>
             <div>
-              <dt>Bonus this period</dt>
+              <dt>Bonus</dt>
               <dd>+{@bonus.value.percent}%</dd>
             </div>
           </dl>
@@ -93,7 +93,7 @@ defmodule AshTemplateWeb.PointsLive do
           </dl>
         </section>
         <section class="account-panel">
-          <h2>Recent points activity</h2>
+          <h2>Activity</h2>
           <p :if={@points.value.entries == []}>No confirmed points activity yet.</p>
           <ol>
             <li :for={entry <- @points.value.entries}>
@@ -125,7 +125,7 @@ defmodule AshTemplateWeb.PointsLive do
         </section>
       </div>
       <section id="points-earn" class="account-panel points-earn">
-        <h2>What earns points</h2>
+        <h2>Earning</h2>
         <p :if={@earning == []} role="status">Earning hasn’t opened yet.</p>
         <h3 :if={@daily != []}>Every day</h3>
         <.ways :if={@earning == []} rules={@daily} />
@@ -167,7 +167,7 @@ defmodule AshTemplateWeb.PointsLive do
             <h3>Daily limits</h3>
             <dl>
               <div>
-                <dt>You and your agents</dt>
+                <dt>Combined</dt>
                 <dd>Up to {whole(Rules.daily_cap("activity:account"))} a day on {names(@apps)}</dd>
               </div>
             </dl>

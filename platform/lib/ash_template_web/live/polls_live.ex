@@ -154,7 +154,7 @@ defmodule AshTemplateWeb.PollsLive do
       </.page_head>
 
       <section :if={is_nil(@poll_id)} class="account-panel" aria-labelledby="poll-start-title">
-        <h2 id="poll-start-title">Start a poll</h2>
+        <h2 id="poll-start-title">New poll</h2>
         <.signed_out :if={is_nil(@actor)} id="polls-signed-out">
           Sign in to start a poll.
         </.signed_out>
@@ -187,7 +187,7 @@ defmodule AshTemplateWeb.PollsLive do
           <Primitives.field
             :let={field}
             id="poll-start-choices"
-            label="Choices, one on each line"
+            label="Choices"
             errors={FormErrors.messages(@form[:choices])}
           >
             <textarea
@@ -198,6 +198,7 @@ defmodule AshTemplateWeb.PollsLive do
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
             >{@form.params["choices_text"]}</textarea>
+            <:hint>One on each line.</:hint>
           </Primitives.field>
           <Primitives.field
             :let={field}

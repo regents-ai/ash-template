@@ -6,7 +6,7 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
   (`RegentCredits.History`, `RegentCredits.History.Words`), so every site
   shows the same thing the same way. A purchase's View opens its payment on
   its chain's explorer. Buy Credits opens the header's own Buy
-  Credits panel. What Credits buy lists each place to spend them, for everyone:
+  Credits panel. Uses lists each place to spend them, for everyone:
   the other Regent sites' uses, and this site's own (here, a pinned note). A
   site keeps the other sites' rows and puts its own in place of the template's.
   """
@@ -77,7 +77,7 @@ defmodule AshTemplateWeb.CreditsHistoryLive do
         For a refund, write to <a href="mailto:support@regents.sh">support@regents.sh</a>.
       </p>
       <section id="credits-uses" class="account-panel credits-uses">
-        <h2>What Credits buy</h2>
+        <h2>Uses</h2>
         <ul>
           <li :for={use <- @uses}>
             <span class="account-kicker">{use.site}</span>
