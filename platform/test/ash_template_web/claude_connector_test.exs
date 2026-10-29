@@ -25,6 +25,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     "x-agent-chain-id" => "8453"
   }
   # Every request the hosted signer may be asked to sign for this site.
+  @agent_scopes "regent.identity.manage " <> AshTemplate.OAuth.agent_scope()
   @signable [
     {"GET", "/api/agents/v1/whoami"},
     {"GET", "/api/agents/v1/me"},
@@ -302,6 +303,89 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     end
   end
 
+  describe "with the connector on and the agent permission" do
+    setup :connector_on
+
+    test "a paired account's app lists the room tools and posts as its agent" do
+      subject = "did:privy:agent-paired"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      assert "rooms_post" in tool_names(token)
+      assert %{"isError" => false} = post_room(token)
+    end
+
+    test "a token without the agent permission stays the app, paired or not" do
+      subject = "did:privy:agent-identity-only"
+      sign_in!(subject)
+      %{access: token} = connect!(subject)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      refute "rooms_post" in tool_names(token)
+    end
+
+    test "another account's token never acts as the first account's paired agent" do
+      paired = "did:privy:agent-first"
+      other = "did:privy:agent-other"
+      sign_in!(paired)
+      sign_in!(other)
+      %{access: first} = connect!(paired, @agent_scopes)
+      assert %{"isError" => false} = tool(first, "pair_identity", pair_args(code!(paired)))
+
+      # The hosted signer answers every account with the same wallet, paired to the first.
+      %{access: token} = connect!(other, @agent_scopes)
+      refute "rooms_post" in tool_names(token)
+      assert %{"error" => _} = json(post_mcp(room_call(), token))
+    end
+
+    test "unpairing takes the room tools away on the next call" do
+      subject = "did:privy:agent-unpair"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      assert %{"isError" => false} = post_room(token)
+
+      [agent] = agents(subject)
+      :ok = RegentAgents.unpair_agent!(agent, actor: person(subject))
+      refute "rooms_post" in tool_names(token)
+    end
+
+    test "the hosted signer is asked for the account's address once, not on every call" do
+      subject = "did:privy:agent-once"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      for _ <- 1..3, do: post_mcp(rpc("ping"), token)
+      assert Enum.count(signer_asks(), &match?({_, _, %{"operation" => "register"}}, &1)) <= 1
+    end
+
+    test "while the hosted signer is down, it is asked once for many calls" do
+      subject = "did:privy:agent-down"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      test = self()
+
+      Req.Test.stub(RegentMCPAgents.HostedSigner, fn conn ->
+        send(test, :signer_down)
+        conn |> put_status(503) |> Req.Test.json(%{})
+      end)
+
+      for _ <- 1..5, do: post_mcp(rpc("ping"), token)
+      assert down_asks() == 1
+    end
+
+    test "only a check-in moves when the agent was last in touch" do
+      subject = "did:privy:agent-touch"
+      sign_in!(subject)
+      %{access: token} = connect!(subject, @agent_scopes)
+      assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
+      [%{last_contact_at: paired_at}] = agents(subject)
+
+      Process.sleep(1100)
+      assert post_mcp(rpc("ping"), token).status == 200
+      assert "rooms_post" in tool_names(token)
+      assert [%{last_contact_at: ^paired_at}] = agents(subject)
+    end
+  end
+
   # Switches the connector on for one test as config/runtime.exs does with
   # ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true, and starts its sign-in store in
   # this test's transaction; everything is put back after.
@@ -405,7 +489,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
 
   # An app connected by `subject`, as consent leaves it: its client id and the
   # plain access and refresh tokens it holds.
-  defp connect!(subject) do
+  defp connect!(subject, scope \\ "regent.identity.manage") do
     register =
       conn(:post, "/oauth/register", %{
         "client_name" => "Claude",
@@ -419,7 +503,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
 
     {:ok, token} =
       RegentOAuth.AccessTokens.create(
-        %{client: client, sub: subject, scope: "regent.identity.manage"},
+        %{client: client, sub: subject, scope: scope},
         refresh_token: true
       )
 
@@ -495,6 +579,26 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       {:signer, auth, raw, asked} -> [{auth, raw, asked} | signer_asks()]
     after
       0 -> []
+    end
+  end
+
+  defp tool_names(token) do
+    json(post_mcp(rpc("tools/list"), token))["result"]["tools"]
+    |> Enum.map(& &1["name"])
+  end
+
+  defp room_call do
+    input = %{"room" => "general", "body" => "hi", "operation_id" => Ecto.UUID.generate()}
+    rpc("tools/call", %{"name" => "rooms_post", "arguments" => %{"input" => input}})
+  end
+
+  defp post_room(token), do: json(post_mcp(room_call(), token))["result"]
+
+  defp down_asks do
+    receive do
+      :signer_down -> 1 + down_asks()
+    after
+      0 -> 0
     end
   end
 
