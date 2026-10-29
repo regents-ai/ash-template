@@ -33,7 +33,17 @@ export async function onThisMachine(context: BrowserContext, baseURL: string) {
   return outside
 }
 
+// Each check's own visitor address, from 198.18.0.0/15, the block kept for tests
+// (config/dev.exs). A repeat of a check is another visitor.
+function visitor(id: string) {
+  let hash = 0x811c9dc5
+  for (const char of id) hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193)
+  return `198.${18 + ((hash >>> 16) & 1)}.${(hash >>> 8) & 255}.${hash & 255}`
+}
+
 export const test = base.extend<{onThisMachine: void}>({
+  extraHTTPHeaders: async ({}, use, info) =>
+    use({"fly-client-ip": visitor(`${info.testId}:${info.repeatEachIndex}:${info.retry}`)}),
   onThisMachine: [async ({context, baseURL}, use) => {
     const outside = await onThisMachine(context, baseURL!)
     await use()

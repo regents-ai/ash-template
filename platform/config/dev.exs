@@ -15,7 +15,7 @@ config :ash_template, :chain_nodes, %{
   31_337 => "http://127.0.0.1:58600"
 }
 
-# The browser walk's server (playwright.config.ts) never leaves the machine. Its
+# The browser walk's server (test/browser/walk.sh) never leaves the machine. Its
 # chain nodes and sign-in service are a closed port on this machine, so their reads
 # fail at once, and any other request outside it is refused and fails the walk
 # (AshTemplate.WalkOffline).
@@ -35,6 +35,11 @@ if walk? do
   config :req, default_options: [adapter: AshTemplate.WalkOffline]
   config :ash_template, :walk_outside_file, Path.expand("../tmp/walk-outside.txt", __DIR__)
   config :ash_template, :indexnow_key, "walk-indexnow-key"
+  # The walk is many visitors from this one machine. Each check arrives with its own
+  # address in Fly's header (test/browser/support/test.ts), and the server keys its
+  # request limits by that header, as it does behind Fly, so one run of many checks
+  # never spends a single visitor's budget.
+  config :ash_template, :behind_fly_proxy, true
 end
 
 # Several sites run side by side locally, each on the port named by PORT.
@@ -44,7 +49,13 @@ config :ash_template, AshTemplateWeb.Endpoint,
   url: [host: "localhost", port: port],
   http: [ip: {127, 0, 0, 1}, port: port],
   check_origin: ["http://localhost:#{port}", "http://127.0.0.1:#{port}"],
-  code_reloader: true,
+  # The walk's server runs as a release does, with no code reloader and no live reload.
+  # The code reloader checks the build on every request and every live connection, one
+  # at a time, which made pages answer so slowly on a busy machine that their live
+  # connections gave up and checks timed out; live reload adds a socket to each page.
+  # The walk builds into its own folder (test/browser/walk.sh), so this never
+  # recompiles the everyday build.
+  code_reloader: not walk?,
   # Signal listeners added while the server runs are picked up on reload.
   reloadable_compilers: [:ash_signals, :phoenix_live_view, :elixir, :app],
   # `make readiness` sets this to off, so error pages answer as they do in a release.
@@ -60,14 +71,18 @@ config :ash_template, AshTemplateWeb.Endpoint,
         esbuild: {Esbuild, :install_and_run, [:ash_template, ~w(--sourcemap=inline --watch)]}
       ]
     ),
-  live_reload: [
-    web_console_logger: true,
-    patterns: [
-      ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg)$"E,
-      ~r"lib/ash_template_web/router\.ex$"E,
-      ~r"lib/ash_template_web/(controllers|live|components)/.*\.(ex|heex)$"E
-    ]
-  ]
+  live_reload:
+    if(walk?,
+      do: [],
+      else: [
+        web_console_logger: true,
+        patterns: [
+          ~r"priv/static/(?!uploads/).*\.(js|css|png|jpeg|jpg|gif|svg)$"E,
+          ~r"lib/ash_template_web/router\.ex$"E,
+          ~r"lib/ash_template_web/(controllers|live|components)/.*\.(ex|heex)$"E
+        ]
+      ]
+    )
 
 config :logger, :default_formatter, format: "[$level] $message\n"
 
