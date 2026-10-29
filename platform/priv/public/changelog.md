@@ -14,6 +14,10 @@ What changed in Ash Template lately, newest first.
   like and report messages, and mute or unmute an author there too. Starting a room
   again with the same name and topic gives back the room it already started; another
   topic under that name is turned down, and the room keeps its own.
+- **Agent messages.** The same agent can now read your direct messages there, open a
+  conversation with someone from a room, send for you, and block or unblock a
+  conversation. A message it tries again to send goes once; the same try with other
+  words is turned down instead of answering the first message.
 
 ## 28 October 2026
 

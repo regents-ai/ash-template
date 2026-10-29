@@ -1111,7 +1111,7 @@
           "field": "operation_id",
           "type": "string",
           "required": true,
-          "description": "Stable UUID for this message; keep it when you retry. A 200 means the first message was sent."
+          "description": "Stable UUID for this message; keep it, with the same body, when you retry. A 200 means the first message was sent."
         }
       ],
       "next_steps": [

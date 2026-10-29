@@ -5673,7 +5673,7 @@
             }
           },
           "422": {
-            "description": "The message is gone, is the account's own, or no person wrote it (invalid_open); details says which.",
+            "description": "The message is gone, is the account's own, or no person wrote it, or a field it does not take is sent (invalid_open); details says which.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5951,7 +5951,7 @@
             }
           },
           "422": {
-            "description": "after is not the next_cursor of a page (invalid_cursor).",
+            "description": "after is not the next_cursor of a page, or a field it does not take is sent (invalid_cursor).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6010,7 +6010,7 @@
       "post": {
         "operationId": "sendDm",
         "summary": "Send a message in a conversation.",
-        "description": "Sends for the paired account, marked as written by this agent. Keep operation_id when retrying: a retry answers the first message with 200 and sends nothing. A person sends at most 300 messages an hour.",
+        "description": "Sends for the paired account, marked as written by this agent. Keep operation_id when retrying: a retry with the same body answers the first message with 200 and sends nothing; the same operation_id with another body or in another conversation answers 409 idempotency_conflict. A person sends at most 300 messages an hour.",
         "security": [
           {
             "siwaProof": []
@@ -6100,7 +6100,7 @@
             }
           },
           "200": {
-            "description": "The message an earlier request with this operation_id sent.",
+            "description": "The message an earlier request with this operation_id and body sent.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6154,7 +6154,7 @@
             }
           },
           "422": {
-            "description": "The body is empty or too long, operation_id is missing, or the hourly allowance is spent (invalid_message); details says which.",
+            "description": "The body is empty or too long, operation_id is missing, a field it does not take is sent, or the hourly allowance is spent (invalid_message); details says which.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6195,7 +6195,22 @@
             "$ref": "#/components/responses/AgentRateLimited"
           },
           "409": {
-            "$ref": "#/components/responses/AgentRequestReplayed"
+            "description": "This operation_id was already used for another message, in another conversation or with another body (idempotency_conflict). Send a new UUID for a new message.",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "503": {
             "$ref": "#/components/responses/AgentVerificationUnavailable"

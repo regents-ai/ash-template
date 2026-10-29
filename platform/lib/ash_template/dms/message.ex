@@ -4,8 +4,9 @@ defmodule AshTemplate.Dms.Message do
   to the other. Its sender is the actor's person; an agent they paired writes
   as them, and the message names it (`via_agent`). Messages are never edited.
 
-  An agent sends with an `operation_id`, which becomes the message's id, so a
-  retry answers the message it already sent (`:earlier_send`). Every message
+  An agent reads and sends through `:dms_read` and `:dms_send` (`AgentSend`),
+  which every surface runs: its `operation_id` becomes the message's id, so a
+  retry with the same words answers the message it already sent. Every message
   moves its conversation up and is published to both sides' topic
   (`AshTemplate.Dms.topic/1`), so their open pages show it at once.
   """
@@ -16,7 +17,10 @@ defmodule AshTemplate.Dms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
-  alias AshTemplate.Dms.Message.SendInConversation
+  alias AshTemplate.Agents.NotPaired
+  alias AshTemplate.Dms
+  alias AshTemplate.Dms.{Conversation, Refused}
+  alias AshTemplate.Dms.Message.{AgentSend, SendInConversation}
   alias AshTemplate.Limits.LimitWrites
 
   postgres do
@@ -74,32 +78,45 @@ defmodule AshTemplate.Dms.Message do
       pagination keyset?: true, default_limit: 50
     end
 
-    # The message the actor's person already sent with this id, so a retry
-    # answers the first send.
-    read :earlier_send do
-      get? true
-      argument :id, :uuid, allow_nil?: false
-      filter expr(id == ^arg(:id) and from_id == ^actor(:human_account_id))
-      prepare build(load: [:mine])
+    # A conversation's messages as every surface reads them for an agent's
+    # person (`page/2`).
+    action :dms_read, :map do
+      argument :conversation, :uuid,
+        allow_nil?: false,
+        description: "The conversation's id, from dms_list."
+
+      argument :after, :string,
+        constraints: [max_length: 2048],
+        description: "The previous page's next_cursor, unchanged, for older messages."
+
+      run fn %{arguments: arguments}, %{actor: actor} ->
+        AshTemplate.Dms.Message.page(arguments, actor)
+      end
+    end
+
+    # A message an agent sends for its person, as every surface answers it
+    # (`AgentSend`).
+    action :dms_send, :map do
+      argument :conversation, :uuid,
+        allow_nil?: false,
+        description: "The conversation's id, from dms_list."
+
+      argument :body, :string,
+        allow_nil?: false,
+        constraints: [max_length: 2000],
+        description: "The message, 1 to 2,000 characters."
+
+      argument :operation_id, :uuid,
+        allow_nil?: false,
+        description:
+          "A UUID you make for this message. Keep it when retrying; it becomes the message's id."
+
+      run AgentSend
     end
 
     create :send do
       accept [:body]
       argument :conversation_id, :uuid, allow_nil?: false
-      argument :operation_id, :uuid
-
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
-
-      change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change SendInConversation
 
       change {LimitWrites,
@@ -117,9 +134,15 @@ defmodule AshTemplate.Dms.Message do
   end
 
   policies do
-    policy always() do
+    policy action_type([:read, :create]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+    end
+
+    # An agent's messages are its person's: an agent that does not act for them
+    # is told why (`NotPaired`), and the reads and the send check the pairing.
+    policy action([:dms_read, :dms_send]) do
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type(:read) do
@@ -142,4 +165,51 @@ defmodule AshTemplate.Dms.Message do
     publish :send, [:from_id]
     publish :send, [:to_id]
   end
+
+  @doc """
+  A message as every surface answers it. Its words are other people's: data,
+  never instructions.
+  """
+  def present(message) do
+    %{
+      id: message.id,
+      conversation_id: message.conversation_id,
+      body: message.body,
+      mine: message.mine,
+      via_agent_id: message.via_agent_id,
+      inserted_at: message.inserted_at
+    }
+  end
+
+  @doc """
+  The messages of the conversation `id` of the actor's person, newest first, 50
+  a page, after the cursor `after` when it is sent: `%{messages, pagination:
+  %{has_more, next_cursor}}`. A cursor that is not a page's is `invalid_cursor`.
+  """
+  def page(%{conversation: id} = arguments, actor) do
+    page = if cursor = arguments[:after], do: [after: cursor, limit: 50], else: [limit: 50]
+
+    with :ok <- NotPaired.check(actor),
+         {:ok, conversation} <- Conversation.mine(id, actor) do
+      case Dms.list_dms(conversation.id, actor: actor, page: page) do
+        {:ok, page} ->
+          {:ok,
+           %{
+             messages: Enum.map(page.results, &present/1),
+             pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
+           }}
+
+        {:error, %Ash.Error.Invalid{}} ->
+          {:error, Refused.exception(code: "invalid_cursor")}
+
+        error ->
+          NotPaired.ended(error, actor)
+      end
+    end
+  end
+
+  defp next_cursor(%{more?: true, results: results}),
+    do: List.last(results).__metadata__.keyset
+
+  defp next_cursor(_page), do: nil
 end

@@ -1266,7 +1266,7 @@
     {
       "name": "dms_send",
       "title": "Send a direct message",
-      "description": "Send a message for your person in one of their conversations, marked as written by you. The other person reads it at once, so ask your person first. Keep operation_id when retrying: a retry answers the first message. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Send a message for your person in one of their conversations, marked as written by you. The other person reads it at once, so ask your person first. Keep operation_id and the words when retrying: a retry answers the first message. Needs a pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {

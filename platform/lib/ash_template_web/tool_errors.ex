@@ -16,7 +16,9 @@ defmodule AshTemplateWeb.ToolErrors do
   `agent_not_found`, a search's `invalid_search`, a history's or activity's
   `invalid_cursor`, other activity input's `invalid_activity_request`, a notes
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
-  search's `invalid_search`), and an identity tool's `identity_request_refused`. A room read's input that is not an
+  search's `invalid_search`), a direct-messages tool's as
+  `AshTemplateWeb.DmsController.input_refusal/2` answers it, and an identity
+  tool's `identity_request_refused`. A room read's input that is not an
   object, or names an input the read has not, is `invalid_input`; input sent to a
   tool that takes none is `invalid_request`, as the browser tools answer it. As
   AshAi reads it, a call without `input` sends none, which is how a tool listed
@@ -28,11 +30,15 @@ defmodule AshTemplateWeb.ToolErrors do
   # The rooms and mutes tools that change something, and one message's read.
   @rooms ~w(rooms_create rooms_topic rooms_message rooms_edit rooms_delete rooms_like rooms_unlike rooms_report mutes_add mutes_remove)a
 
+  # The direct-messages tools that take input.
+  @dms ~w(dms_open dms_read dms_send dms_block dms_unblock)a
+
   # The notes tools that take input, besides the search.
   @notes ~w(notes_get notes_create notes_edit notes_delete notes_pin_price notes_unpin notes_archive notes_unarchive notes_rate_label)a
 
   alias AshTemplateWeb.{
     AgentsController,
+    DmsController,
     FormErrors,
     NotesController,
     PairedAgentController,
@@ -89,6 +95,11 @@ defmodule AshTemplateWeb.ToolErrors do
     text(NotesController, code, extra)
   end
 
+  defp refused(_resource, action, error, _input) when action in @dms do
+    {code, extra} = DmsController.input_refusal(action, error)
+    text(DmsController, code, extra)
+  end
+
   defp refused(_resource, :account_credits_history, _error, _input),
     do: text(PairedAgentController, "invalid_cursor")
 
@@ -131,6 +142,13 @@ defimpl AshAi.ToToolError, for: AshTemplate.Notes.Refused do
   def to_tool_error(refused) do
     {code, extra} = AshTemplateWeb.NotesController.answer(refused)
     AshTemplateWeb.ToolErrors.text(AshTemplateWeb.NotesController, code, extra)
+  end
+end
+
+defimpl AshAi.ToToolError, for: AshTemplate.Dms.Refused do
+  def to_tool_error(refused) do
+    {code, extra} = AshTemplateWeb.DmsController.answer(refused)
+    AshTemplateWeb.ToolErrors.text(AshTemplateWeb.DmsController, code, extra)
   end
 end
 

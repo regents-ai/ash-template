@@ -214,7 +214,7 @@ defmodule AshTemplate.MixProject do
         # The capability check adds one: it names the chat domain, whose tools are never hosted.
         # The hosted MCP forward adds two: the router reads its tools from the capability list,
         # and its input check from ToolErrors (AshAi takes it only as a function), at compile time.
-        "xref graph --label compile-connected --fail-above 46",
+        "xref graph --label compile-connected --fail-above 47",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

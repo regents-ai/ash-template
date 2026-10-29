@@ -5229,3 +5229,30 @@ An adversarial review of the two commits above found five things, all fixed here
   check fails when the start that finds the name taken refuses instead of answering.
 - The tool descriptions, `/docs`, the API contract, the CLI's command list, the public
   changelog and the feature map say a retry is the same name and topic.
+
+## 2026-10-29 — Hosted MCP: direct messages
+
+- `/mcp` serves the seven direct-messages tools (`dms_list`, `dms_blocked`, `dms_open`,
+  `dms_read`, `dms_send`, `dms_block`, `dms_unblock`). Each is a generic action on
+  `Conversation` or `Message` that `DmsController`, WebMCP and the AshAi tool all call, so
+  every surface gives the same answer, code, status, words and `details`. `DmsController`
+  keeps the words and maps each refusal in one place (`input_refusal/2`, `answer/1`);
+  `ToolErrors` reads it for every DMs tool, and `AshTemplate.Dms.Refused` names a refusal.
+- An agent's send spends its `operation_id` in `agent_operations` (`Message.AgentSend`, the
+  `dm_send` capability) in the same transaction as the message, which still takes the key as
+  its id. A retry answers the first message only in the same conversation with the same
+  words; another conversation or other words, or a key that is already another message's
+  id, is 409 `idempotency_conflict`, where it had answered the first message (or 422
+  `invalid_message`). The `:earlier_send` read and the `operation_id` argument on `:send` are
+  gone.
+- Over HTTP the address alone names the conversation: a `conversation` in a send's body is
+  not read, and a block or unblock reads no body. A field a send, an open or a page does not
+  take is refused (`invalid_message`, `invalid_open`, `invalid_cursor`), where it had been
+  ignored.
+- `mcp_agent_test.exs` proves each tool answers and refuses through `/mcp` as over HTTP
+  (eighteen refusals, each with its status and code), the key rule across both surfaces,
+  twelve races of two sends with one key (one message, both answer it), and that a call
+  after the pairing ended changes nothing. Five planted faults (the body or the conversation
+  left out of the key's check, the taken-id branch removed, the race answered as a
+  conflict, the body choosing the conversation) each fail a check.
+- `mix xref`'s compile-connected limit moves to 47 for the action module a send runs.

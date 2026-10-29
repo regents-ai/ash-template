@@ -15,6 +15,10 @@ defmodule AshTemplateWeb.McpAgentTest do
   # - each rooms and mutes tool answers and refuses as HTTP does, and over HTTP the
   #   address alone names the room, message or mute: a body never chooses another,
   #   and a removal takes no body at all;
+  # - each direct-messages tool answers and refuses as HTTP does, over HTTP the
+  #   address alone names the conversation, a message's operation_id answers
+  #   only the same words in the same conversation, and two sends with one key at
+  #   once send one message;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -1009,6 +1013,283 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
   end
 
+  test "each direct-messages tool answers through /mcp as HTTP answers, and the address alone names the conversation",
+       %{from: from} do
+    [agent, other, third] = for _person <- 1..3, do: paired_wallet()
+    theirs = said(from, other, "general", "Write to me")
+
+    # Opened through /mcp; opening it again over HTTP answers the same conversation.
+    assert %{"isError" => false, "structuredContent" => %{"conversation" => opened}} =
+             result(mcp(call("dms_open", %{message_id: theirs}), from: from, proof: agent))
+
+    assert %{"id" => id, "blocked" => false, "last_message" => nil} = opened
+    reopened = http(:post, "/api/v1/dms", %{message_id: theirs}, from, agent)
+    assert Jason.decode!(reopened.resp_body) == %{"conversation" => opened}
+    elsewhere = conversation(from, agent, third)
+
+    # Sent through /mcp; its retry over HTTP answers the same message.
+    key = Ecto.UUID.generate()
+
+    assert %{"isError" => false, "structuredContent" => %{"replayed" => false, "message" => sent}} =
+             result(
+               mcp(call("dms_send", %{conversation: id, body: "Hi", operation_id: key}),
+                 from: from,
+                 proof: agent
+               )
+             )
+
+    assert %{"id" => ^key, "conversation_id" => ^id, "body" => "Hi", "mine" => true} = sent
+    again = http(:post, "/api/v1/dms/#{id}/messages", %{body: "Hi", operation_id: key}, from, agent)
+    assert {again.status, Jason.decode!(again.resp_body)} == {200, %{"message" => sent}}
+
+    # Over HTTP a conversation in the body never chooses another.
+    here =
+      http(
+        :post,
+        "/api/v1/dms/#{id}/messages",
+        %{conversation: elsewhere, body: "Here", operation_id: Ecto.UUID.generate()},
+        from,
+        agent
+      )
+
+    assert here.status == 201
+    assert %{"message" => %{"conversation_id" => ^id}} = Jason.decode!(here.resp_body)
+
+    # Read the same both ways; the other person reads both, written for this one.
+    assert %{"isError" => false, "structuredContent" => read} =
+             result(mcp(call("dms_read", %{conversation: id}), from: from, proof: agent))
+
+    assert %{
+             "messages" => [%{"body" => "Here"}, ^sent],
+             "pagination" => %{"has_more" => false, "next_cursor" => nil}
+           } = read
+
+    reread = http(:post, "/api/v1/dms/#{id}/history", %{conversation: elsewhere}, from, agent)
+    assert Jason.decode!(reread.resp_body) == read
+
+    assert [%{"body" => "Here", "mine" => false}, %{"id" => ^key, "mine" => false}] =
+             history(from, other, id)
+
+    # Listed the same both ways, newest message first.
+    assert %{"isError" => false, "structuredContent" => listed} =
+             result(mcp(call("dms_list", %{}), from: from, proof: agent))
+
+    assert %{"conversations" => [%{"id" => ^id, "last_message" => "Here"}, %{"id" => ^elsewhere}]} =
+             listed
+
+    assert Jason.decode!(http(:get, "/api/v1/dms", nil, from, agent).resp_body) == listed
+
+    # Blocked through /mcp, it is on the blocked list both ways; unblocked over HTTP
+    # (whatever the body names), then through /mcp, it is back.
+    assert %{
+             "isError" => false,
+             "structuredContent" => %{"conversation" => %{"id" => ^id, "blocked" => true} = blocked}
+           } = result(mcp(call("dms_block", %{conversation: id}), from: from, proof: agent))
+
+    assert %{"isError" => false, "structuredContent" => %{"conversations" => [^blocked]}} =
+             result(mcp(call("dms_blocked", %{}), from: from, proof: agent))
+
+    assert Jason.decode!(http(:get, "/api/v1/dms/blocked", nil, from, agent).resp_body) ==
+             %{"conversations" => [blocked]}
+
+    unblocked = http(:post, "/api/v1/dms/#{id}/unblock", %{conversation: elsewhere}, from, agent)
+    assert %{"conversation" => %{"id" => ^id, "blocked" => false} = back} =
+             Jason.decode!(unblocked.resp_body)
+
+    assert %{"isError" => false, "structuredContent" => %{"conversation" => ^back}} =
+             result(mcp(call("dms_unblock", %{conversation: id}), from: from, proof: agent))
+
+    assert %{"conversations" => [%{"id" => ^id, "blocked" => false}, %{"id" => ^elsewhere}]} =
+             Jason.decode!(http(:get, "/api/v1/dms", nil, from, agent).resp_body)
+  end
+
+  test "each direct-messages tool refuses through /mcp with the code and words HTTP gives",
+       %{from: from} do
+    unpaired = wallet()
+    [agent, same_person] = paired_wallets(2)
+    [other, third] = for _person <- 1..2, do: paired_wallet()
+    mine = said(from, agent, "general", "Mine")
+    id = conversation(from, agent, other)
+    strangers = conversation(from, third, other)
+
+    # A message the other side sent: its id is a key no agent of this person spent.
+    %{"message" => %{"id" => taken}} =
+      Jason.decode!(
+        http(
+          :post,
+          "/api/v1/dms/#{id}/messages",
+          %{body: "Theirs", operation_id: Ecto.UUID.generate()},
+          from,
+          other
+        ).resp_body
+      )
+
+    key = Ecto.UUID.generate()
+
+    assert http(:post, "/api/v1/dms/#{id}/messages", %{body: "First", operation_id: key}, from, agent).status ==
+             201
+
+    missing = Ecto.UUID.generate()
+    history = "/api/v1/dms/#{id}/history"
+    messages = "/api/v1/dms/#{id}/messages"
+
+    codes =
+      for {name, input, method, path, body, signer} <- [
+            {"dms_list", %{}, :get, "/api/v1/dms", nil, unpaired},
+            {"dms_open", %{message_id: mine}, :post, "/api/v1/dms", %{message_id: mine},
+             same_person},
+            {"dms_open", %{message_id: missing}, :post, "/api/v1/dms", %{message_id: missing},
+             agent},
+            {"dms_open", %{message_id: "not-a-uuid"}, :post, "/api/v1/dms",
+             %{message_id: "not-a-uuid"}, agent},
+            {"dms_read", %{conversation: missing}, :post, "/api/v1/dms/#{missing}/history", %{},
+             agent},
+            {"dms_read", %{conversation: strangers}, :post, "/api/v1/dms/#{strangers}/history",
+             %{}, agent},
+            {"dms_read", %{conversation: id, after: "not-a-cursor"}, :post, history,
+             %{after: "not-a-cursor"}, agent},
+            {"dms_read", %{conversation: id, after: 5}, :post, history, %{after: 5}, agent},
+            {"dms_read", %{conversation: id, limit: 5}, :post, history, %{limit: 5}, agent},
+            {"dms_send", %{conversation: id, body: "", operation_id: missing}, :post, messages,
+             %{body: "", operation_id: missing}, agent},
+            {"dms_send", %{conversation: id, body: "No key"}, :post, messages,
+             %{body: "No key"}, agent},
+            {"dms_send", %{conversation: id, body: "Hi", operation_id: missing, pinned: true},
+             :post, messages, %{body: "Hi", operation_id: missing, pinned: true}, agent},
+            {"dms_send", %{conversation: "not-a-uuid", body: "Hi", operation_id: missing}, :post,
+             "/api/v1/dms/not-a-uuid/messages", %{body: "Hi", operation_id: missing}, agent},
+            {"dms_send", %{conversation: strangers, body: "Hi", operation_id: missing}, :post,
+             "/api/v1/dms/#{strangers}/messages", %{body: "Hi", operation_id: missing}, agent},
+            {"dms_send", %{conversation: id, body: "Other words", operation_id: key}, :post,
+             messages, %{body: "Other words", operation_id: key}, agent},
+            {"dms_send", %{conversation: id, body: "Theirs", operation_id: taken}, :post,
+             messages, %{body: "Theirs", operation_id: taken}, agent},
+            {"dms_block", %{conversation: missing}, :post, "/api/v1/dms/#{missing}/block", nil,
+             agent},
+            {"dms_unblock", %{conversation: "not-a-uuid"}, :post,
+             "/api/v1/dms/not-a-uuid/unblock", nil, agent}
+          ] do
+        over_http = http(method, path, body, from, signer)
+        %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 result(mcp(call(name, input), from: from, proof: signer))
+
+        assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
+        {over_http.status, refused["code"]}
+      end
+
+    assert codes == [
+             {403, "agent_not_paired"},
+             {422, "invalid_open"},
+             {422, "invalid_open"},
+             {422, "invalid_open"},
+             {404, "conversation_not_found"},
+             {404, "conversation_not_found"},
+             {422, "invalid_cursor"},
+             {422, "invalid_cursor"},
+             {422, "invalid_cursor"},
+             {422, "invalid_message"},
+             {422, "invalid_message"},
+             {422, "invalid_message"},
+             {404, "conversation_not_found"},
+             {404, "conversation_not_found"},
+             {409, "idempotency_conflict"},
+             {409, "idempotency_conflict"},
+             {404, "conversation_not_found"},
+             {404, "conversation_not_found"}
+           ]
+
+    # Nothing refused sent a message or opened a conversation.
+    assert [%{"body" => "First"}, %{"id" => ^taken}] = history(from, agent, id)
+    assert history(from, third, strangers) == []
+
+    assert [%{"id" => ^id}] =
+             Jason.decode!(http(:get, "/api/v1/dms", nil, from, agent).resp_body)["conversations"]
+  end
+
+  test "an operation_id answers only the same words in the same conversation, whichever way each call comes",
+       %{from: from} do
+    agent = paired_wallet()
+    id = conversation(from, agent, paired_wallet())
+    elsewhere = conversation(from, agent, paired_wallet())
+
+    for first <- [:http, :mcp], again <- [:http, :mcp] do
+      key = Ecto.UUID.generate()
+      assert dm(first, from, agent, id, "Same", key) == {:sent, key}
+      assert dm(again, from, agent, id, "Same", key) == {:replayed, key}
+      assert dm(again, from, agent, id, "Other", key) == {:refused, "idempotency_conflict"}
+      assert dm(again, from, agent, elsewhere, "Same", key) == {:refused, "idempotency_conflict"}
+    end
+
+    assert length(history(from, agent, id)) == 4
+    assert history(from, agent, elsewhere) == []
+  end
+
+  test "two sends with one operation_id at once send one message, and both answer it",
+       %{from: from} do
+    for ways <- [[:http, :http], [:mcp, :mcp], [:http, :mcp], [:mcp, :http]], _ <- 1..3 do
+      agent = paired_wallet()
+      id = conversation(from, agent, paired_wallet())
+      key = Ecto.UUID.generate()
+
+      answers =
+        ways
+        |> Enum.map(fn way -> Task.async(fn -> dm(way, from, agent, id, "Once", key) end) end)
+        |> Task.await_many()
+
+      assert Enum.sort(answers) == [{:replayed, key}, {:sent, key}], inspect(ways)
+      assert [%{"id" => ^key}] = history(from, agent, id)
+    end
+  end
+
+  test "a direct-messages action after the agent's pairing ended is refused as agent_not_paired",
+       %{from: from} do
+    did = "did:privy:mcp-" <> Ecto.UUID.generate()
+    person = wallet()
+    account = Accounts.register_verified!(did, person, [person], actor: %System{})
+    owner = %RegentAgents.Person{privy_user_id: did}
+    agent = wallet()
+
+    pairing =
+      RegentAgents.pair_agent!(
+        RegentAgents.issue_pairing_code!(actor: owner).code,
+        "Agent",
+        :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
+
+    id = conversation(from, agent, paired_wallet())
+
+    # The agent as its signed request was let in, then the person unpairs it.
+    {:ok, active} = RegentAgents.Authority.resolve(Repo, agent)
+
+    let_in =
+      AshTemplate.Actors.Agent.paired(
+        AshTemplate.Agents.sign_in_agent!(agent, actor: %System{}),
+        account,
+        active
+      )
+
+    assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
+    key = Ecto.UUID.generate()
+
+    for call <- [
+          fn -> AshTemplate.Dms.dms_list(actor: let_in) end,
+          fn -> AshTemplate.Dms.dms_read(id, %{}, actor: let_in) end,
+          fn -> AshTemplate.Dms.dms_send(id, %{body: "Late", operation_id: key}, actor: let_in) end,
+          fn -> AshTemplate.Dms.dms_block(id, actor: let_in) end
+        ] do
+      assert {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"}]}} =
+               call.()
+    end
+
+    assert AshTemplate.Dms.Message |> Ash.read!(authorize?: false) |> mine(key) == []
+
+    refute Ash.get!(AshTemplate.Dms.Conversation, id, authorize?: false).blocked_by_a or
+             Ash.get!(AshTemplate.Dms.Conversation, id, authorize?: false).blocked_by_b
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -1119,6 +1400,53 @@ defmodule AshTemplateWeb.McpAgentTest do
       %{"isError" => true, "content" => [%{"text" => text}]} ->
         {:refused, Jason.decode!(text)["error"]["code"]}
     end
+  end
+
+  # The conversation `agent`'s person opened over HTTP with `other`'s person, from
+  # a room message `other` wrote: its id.
+  defp conversation(from, agent, other) do
+    theirs = said(from, other, "general", "Write to me")
+    conn = http(:post, "/api/v1/dms", %{message_id: theirs}, from, agent)
+    assert conn.status == 200, conn.resp_body
+    Jason.decode!(conn.resp_body)["conversation"]["id"]
+  end
+
+  # One direct message with `key` in the conversation `id`, through `way`, as the
+  # answer's meaning: sent, the earlier message answered again, or refused with its code.
+  defp dm(:http, from, agent, id, text, key) do
+    conn = http(:post, "/api/v1/dms/#{id}/messages", %{body: text, operation_id: key}, from, agent)
+
+    case {conn.status, Jason.decode!(conn.resp_body)} do
+      {201, %{"message" => %{"id" => message}}} -> {:sent, message}
+      {200, %{"message" => %{"id" => message}}} -> {:replayed, message}
+      {_status, %{"error" => %{"code" => code}}} -> {:refused, code}
+    end
+  end
+
+  defp dm(:mcp, from, agent, id, text, key) do
+    conn =
+      mcp(call("dms_send", %{conversation: id, body: text, operation_id: key}),
+        from: from,
+        proof: agent
+      )
+
+    case result(conn) do
+      %{"isError" => false, "structuredContent" => %{"replayed" => false, "message" => message}} ->
+        {:sent, message["id"]}
+
+      %{"isError" => false, "structuredContent" => %{"replayed" => true, "message" => message}} ->
+        {:replayed, message["id"]}
+
+      %{"isError" => true, "content" => [%{"text" => text}]} ->
+        {:refused, Jason.decode!(text)["error"]["code"]}
+    end
+  end
+
+  # The conversation `id`'s messages, newest first, as HTTP reads them for `agent`'s person.
+  defp history(from, agent, id) do
+    conn = http(:post, "/api/v1/dms/#{id}/history", %{}, from, agent)
+    assert conn.status == 200, conn.resp_body
+    Jason.decode!(conn.resp_body)["messages"]
   end
 
   # A new message by `agent` in the room `slug`, posted over HTTP: its id.
