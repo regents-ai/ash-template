@@ -140,8 +140,10 @@ defmodule AshTemplate.SignedToolsTest do
     :ok
   end
 
+  # The file's requests come from an address of their own, so they spend their own
+  # rate budget, not the one the rest of the suite's 127.0.0.1 requests share.
   defp request(method, path, body \\ nil, proof \\ true) do
-    conn = conn(method, path, body)
+    conn = method |> conn(path, body) |> Map.put(:remote_ip, {10, 0, 0, 1})
     conn = if body, do: put_req_header(conn, "content-type", "application/json"), else: conn
     conn = if proof, do: put_req_header(conn, "x-siwa-signature", "fixture-proof"), else: conn
 
