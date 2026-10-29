@@ -5314,3 +5314,19 @@ way, and the library's own site-tool serving is gone.
   the proof words say a connected app posts once paired.
 - The compile-link budget in `mix precommit` is 43: the identity tools' policy check
   module (`Agents.Connection.Caller`) is one more compile-time link.
+
+## 2026-10-29 — Released v134
+
+- template.regents.sh v134 runs `5bf7cd58`, released 17:48Z on Sean's go for `7c75a17`:
+  the hosted MCP door at `/mcp`, where a connected app works as the agent its account
+  paired, merged onto main `932d8162` (v133). Its migration adds `agent_operations`;
+  the release step ran it. `SIWA_HOSTED_SIGNING_KEY`, staged by the sign-in service,
+  went out with it. `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` stays off, so the sign-in
+  metadata answers 404 and the agent guide names no connector.
+- Checks on that tree: `make check` exit 0 (137 server tests with 11 properties, 24
+  script tests, the browser walk 323 passed and 5 skipped at 1280 and 390 in headless
+  Chromium; WebKit is not run on the Mac). Live check in headless Chromium:
+  `/capabilities.json` build.commit `5bf7cd58`, `/healthz` ok, `/mcp` answers 405 to a
+  page load; home, agents, account, the General room, the app and pair pages answer 200
+  at 390 and 1280, no page errors and nothing wider than the screen. Rollback: v133,
+  `2e158726`.
