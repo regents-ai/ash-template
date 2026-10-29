@@ -68,10 +68,15 @@ config :ash_template, AshTemplate.Agents.ActivityReading,
   max_size: 10_000
 
 # Background jobs live in the site's own schema, beside its tables. Queues hear
-# about new jobs through Erlang process groups. `outside_calls` keeps slow calls
-# to other websites from holding up the default queue, and `ens` keeps a
-# crowd signing in at once (one lookup each, seconds long for a name with a
-# picture) from holding up those. AshOban adds each trigger's sweep to `cron`.
+# about new jobs through Erlang process groups. Each queue holds one class of work
+# (skills/elixir-stack/references/oban.md, "Queues"), so a slow or failing service
+# holds up only the jobs that wait on it: `default` and `points` work on the
+# database alone; `ens`, `purchase_checks` and `points_chain` read a chain;
+# `chat_responses`, `conversations` and `note_labels` ask a model; `outside_calls`
+# makes every other call to another website (the notes webhook, IndexNow). `ens`
+# keeps a crowd signing in at once (one lookup each, seconds long for a name with a
+# picture) from holding up the other chain reads. AshOban adds each trigger's sweep
+# to `cron`.
 config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
@@ -80,11 +85,12 @@ config :ash_template, Oban,
     default: 5,
     points: 5,
     points_chain: 2,
-    outside_calls: 3,
     purchase_checks: 5,
     ens: 3,
     chat_responses: [limit: 10],
-    conversations: [limit: 10]
+    conversations: [limit: 10],
+    note_labels: 3,
+    outside_calls: 3
   ],
   # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end,
   # and Regent Credits' purchase checks and deposit reads (AshTemplate.Application).

@@ -5093,3 +5093,18 @@ An adversarial review of the two commits above found five things, all fixed here
   for every site through `bin/migrate-shared`. The template's unread-notifications index
   is the example. `skills/ash-data/SKILL.md` and `platform/README.md` point to it. Docs
   only.
+
+## 2026-10-29 — One class of work per queue
+
+- Every queue holds one class of work: the database alone (`default`, `points`), chain
+  reads (`ens`, `purchase_checks`, `points_chain`), model calls (`chat_responses`,
+  `conversations`, `note_labels`) or other calls to another website (`outside_calls`).
+  Jev's label for a saved note (`AshTemplate.Notes.Decision`, trigger `:ask_jev`) was a
+  model call waiting in `outside_calls` beside the notes webhook and IndexNow, so a run
+  of saves could hold their posts back; it now has its own queue, `note_labels`, limit
+  3. A label already queued finishes in `outside_calls`. Every other job and trigger was
+  already in its class.
+- `skills/elixir-stack/references/oban.md` gains "Queues": the four classes, when a kind
+  gets a queue of its own, how to choose a limit (the pool for database work, the other
+  service and the budget for outside calls), and the oldest-job reading that says when
+  to raise one. Sites adopt it in the next shared rollout.

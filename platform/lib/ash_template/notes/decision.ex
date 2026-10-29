@@ -133,7 +133,8 @@ defmodule AshTemplate.Notes.Decision do
       trigger :ask_jev do
         action :ask_jev
         where expr(state == :pending)
-        queue :outside_calls
+        # A model call, so it waits in the model queue for labels, never with webhooks.
+        queue :note_labels
         max_attempts 3
         on_error :failed
         on_error_fails_job? true
