@@ -58,10 +58,18 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   def init(opts), do: opts
 
   @impl Plug
-  def call(conn, _opts) do
+  def call(conn, _opts), do: check(conn, __MODULE__)
+
+  @doc """
+  Checks `conn`'s signed request with the sign-in service, then hands its answer
+  to `hooks` (a `Siwa.AgentAuthPlug.Hooks`): this plug signs the agent in, and
+  `AshTemplateWeb.Plugs.PublicProof` only checks the proof.
+  """
+  @spec check(Plug.Conn.t(), module()) :: Plug.Conn.t()
+  def check(conn, hooks) do
     Siwa.AgentAuthPlug.call(conn,
       client: RegentAgents.Broker,
-      hooks: __MODULE__,
+      hooks: hooks,
       audience: RegentAgents.Broker.audience()
     )
   end
@@ -76,27 +84,32 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   end
 
   @impl Siwa.AgentAuthPlug.Hooks
-  def accept(
-        conn,
-        %{
-          "verified" => true,
-          "walletAddress" => address,
-          "agentBook" => book,
-          "principal" => %{
-            "kind" => "wallet",
-            "wallet_address" => address,
-            "chain_id" => 8453,
-            "audience" => audience
-          }
-        },
-        _context
-      ) do
+  def accept(conn, data, _context) do
+    with {:ok, address, book} <- vouched(data), do: sign_in(conn, address, book)
+  end
+
+  @doc """
+  The wallet the sign-in service vouches for in its answer `data`, signed in to
+  this site: `{:ok, address, agent_book}`, or the refusal for any other principal.
+  """
+  @spec vouched(map()) :: {:ok, String.t(), map() | nil} | {:error, map()}
+  def vouched(%{
+        "verified" => true,
+        "walletAddress" => address,
+        "agentBook" => book,
+        "principal" => %{
+          "kind" => "wallet",
+          "wallet_address" => address,
+          "chain_id" => 8453,
+          "audience" => audience
+        }
+      }) do
     if audience == RegentAgents.Broker.audience(),
-      do: sign_in(conn, address, book),
+      do: {:ok, address, book},
       else: refused(:unsupported_principal)
   end
 
-  def accept(_conn, _data, _context), do: refused(:unsupported_principal)
+  def vouched(_data), do: refused(:unsupported_principal)
 
   defp sign_in(conn, address, book) do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}),

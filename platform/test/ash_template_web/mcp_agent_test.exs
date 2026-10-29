@@ -404,7 +404,6 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"rooms_search", %{text: "hello"}, :post, "/api/v1/rooms/search", %{text: "hello"},
            unpaired},
           {"rooms_search", %{text: "a"}, :post, "/api/v1/rooms/search", %{text: "a"}, agent},
-          {"rooms_list", %{text: "a"}, :get, "/api/v1/rooms?text=a", nil, agent},
           {"agents_get", %{id: missing}, :get, "/api/v1/agents/#{missing}", nil, agent},
           {"rooms_message", %{room: "general", id: missing}, :get,
            "/api/v1/rooms/general/messages/#{missing}", nil, agent},
@@ -440,6 +439,7 @@ defmodule AshTemplateWeb.McpAgentTest do
           {"health", %{foo: "1"}, "/api/v1/health?foo=1"},
           {"docs", %{foo: "1"}, "/api/v1/docs?foo=1"},
           {"rooms_list", %{foo: "1"}, "/api/v1/rooms?foo=1"},
+          {"rooms_list", %{text: "a"}, "/api/v1/rooms?text=a"},
           {"polls_list", %{foo: "1"}, "/api/v1/polls?foo=1"},
           {"sites_tools", %{site: "regents", foo: "1"}, "/api/v1/sites/regents/tools?foo=1"},
           {"rooms_messages", %{room: "general", foo: "1"}, "/api/v1/rooms/general/messages?foo=1"},
@@ -490,6 +490,67 @@ defmodule AshTemplateWeb.McpAgentTest do
 
       assert Jason.decode!(text)["error"] == Jason.decode!(over_http.resp_body)["error"], path
     end
+  end
+
+  test "a public read checks proof headers when they are sent, and reads anonymously without",
+       %{from: from} do
+    anonymous = http(:get, "/api/v1/rooms", nil, from, nil)
+    assert anonymous.status == 200
+
+    for signer <- [paired_wallet(), wallet()] do
+      signed = http(:get, "/api/v1/rooms", nil, from, signer)
+      assert {signed.status, signed.resp_body} == {200, anonymous.resp_body}
+    end
+
+    # Proof that holds signs nobody in: a wallet the site has never seen stays unsaved.
+    unseen = wallet()
+    assert http(:get, "/api/v1/rooms", nil, from, unseen).status == 200
+
+    assert AshTemplate.Agents.Agent
+           |> Ash.read!(authorize?: false)
+           |> Enum.filter(&(String.downcase(&1.wallet_address) == unseen)) == []
+
+    # Nor is the pairing checked again before the answer leaves, so an agent its
+    # person unpairs during the read still gets the answer anyone gets.
+    %{agent: agent, pairing: pairing, owner: owner} = paired_person()
+
+    checked =
+      conn(:get, "/api/v1/rooms")
+      |> Map.put(:remote_ip, from)
+      |> signed(agent, "fixture-proof")
+      |> AshTemplateWeb.Plugs.PublicProof.call([])
+
+    refute checked.halted
+    refute Map.has_key?(checked.assigns, :actor)
+    assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
+
+    sent = Plug.Conn.send_resp(checked, 200, anonymous.resp_body)
+    assert {sent.status, sent.resp_body} == {200, anonymous.resp_body}
+
+    refused = fn conn -> {conn.status, Jason.decode!(conn.resp_body)} end
+
+    forged =
+      conn(:get, "/api/v1/rooms")
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("accept", "application/json")
+      |> signed(wallet(), "not-the-proof")
+      |> @endpoint.call([])
+
+    assert {401, %{"error" => %{"code" => "http_signature_invalid"} = error}} = refused.(forged)
+    assert Map.keys(error) |> Enum.sort() == ~w(code hint message)
+
+    half =
+      conn(:get, "/api/v1/agents/#{Ecto.UUID.generate()}")
+      |> Map.put(:remote_ip, from)
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("x-agent-wallet-address", wallet())
+      |> @endpoint.call([])
+
+    assert {401, %{"error" => %{"code" => _, "message" => _, "hint" => _}}} = refused.(half)
+
+    # The signature does not cover a query string, so a signed read with one is refused.
+    assert {401, %{"error" => %{"code" => "unsupported_query"}}} =
+             refused.(http(:get, "/api/v1/rooms?text=gener", nil, from, paired_wallet()))
   end
 
   test "a browser tool's answer to input it cannot send is the hosted tool's", %{from: from} do

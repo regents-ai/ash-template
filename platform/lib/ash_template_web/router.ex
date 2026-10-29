@@ -30,10 +30,13 @@ defmodule AshTemplateWeb.Router do
   end
 
   # The public reads, each the HTTP route of a browser tool and a hosted MCP tool
-  # named in its `private` `:tool`: its input is checked as that tool's is.
+  # named in its `private` `:tool`: proof headers, when sent, have their proof
+  # checked as a signed request's is, signing nobody in, and its input is checked
+  # as that tool's is.
   pipeline :public_read do
     plug :accepts, ["json"]
     plug AshTemplateWeb.Plugs.LaunchGate
+    plug AshTemplateWeb.Plugs.PublicProof
     plug AshTemplateWeb.Plugs.ToolInput
   end
 

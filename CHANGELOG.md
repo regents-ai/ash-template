@@ -5454,3 +5454,16 @@ An adversarial review of the two commits above found five things, all fixed here
   browser walk's server raises it to 600 (`platform/config/dev.exs`): its three
   browsers reach the server from the one address 127.0.0.1, and in its busiest minute
   the walk sent 134 requests, so the agent tools list in the walk got 429.
+
+## 2026-10-29 — Public reads check proof when it is sent (WM-6)
+
+- The public reads (`:public_read`) check the proof of a request that carries any
+  agent proof header (`AshTemplateWeb.Plugs.PublicProof`): the sign-in service checks
+  it as it checks every signed request, for the same wallet
+  (`AshTemplateWeb.Plugs.AgentWallet.vouched/1`). Proof that fails, half the headers,
+  or a signed read with a query string (which the signature does not cover) is
+  refused in the site's one shape; before, the proof was ignored. Proof that holds
+  signs nobody in: no agent is saved, the read has no actor, and no pairing check
+  can replace its answer. A request with no proof headers still reads anonymously.
+  `/docs` lists it as a breaking change.
+- Release waits for Sean's letter (sign-in).
