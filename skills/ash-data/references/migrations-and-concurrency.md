@@ -43,10 +43,54 @@ drops a column the old code still declares makes every read on the old machines 
 
 Autolaunch's move from its own runner to Oban (da6cbf58, then d5e7a4c5) did it this way.
 
-Concurrent index creation and constraint validation have PostgreSQL/Ecto-specific
-transaction and locking requirements. Inspect the installed migration APIs and DB
-version before choosing them. Do not paste a raw SQL pattern from another version
-without checking its safety and Ash's representation of the intended index.
+### An index on a busy table
+
+A plain `CREATE INDEX` blocks every write to the table until it finishes. On the shared
+database that stalls the site, and the serving login's 5-second lock limit then fails
+its writes. Build the index concurrently:
+
+1. **Measure first.** Run the slow read with `EXPLAIN (ANALYZE, BUFFERS)` against rows
+   shaped like production's (`ANALYZE` runs the statement, so only ever a read). Add an
+   index only when the plan shows a `Seq Scan` that discards most rows or reads many
+   buffers, and run it again afterwards to see the index used.
+2. **Declare it on the resource** with `concurrently: true` (AshPostgres
+   `custom_indexes`). The template's unread-notifications index is the example:
+
+   ```elixir
+   custom_indexes do
+     index([:human_account_id],
+       name: "notifications_unread_index",
+       where: "read_at IS NULL",
+       concurrently: true
+     )
+   end
+   ```
+
+3. **Keep the generated migration as it is.** `mix ash.codegen` puts each concurrent
+   index in a migration of its own that starts with `@disable_ddl_transaction true` and
+   `@disable_migration_lock true`: PostgreSQL refuses `CREATE INDEX CONCURRENTLY` inside
+   a transaction, and Ecto's migration lock would hold one open. Add nothing else to
+   that file. The template's is `20261019044403_unread_and_linked_account_indexes.exs`.
+4. **If the build fails** (a unique index meeting a duplicate, a cancelled release) it
+   leaves an invalid index that is kept up on every write but never read. Find it with
+   `SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid`, remove it with
+   `DROP INDEX CONCURRENTLY`, fix the cause and release again.
+
+A concurrent build lets reads and writes carry on, but waits for every transaction
+already open on the table and reads the table twice, so the release command takes
+longer on a large table.
+
+Only the owner of a schema adds an index to it. A site's own schema (`ash_template_app`,
+`regents_app`, `autolaunch_app`, ...) belongs to that site's migrations. The shared
+schemas (`regent_identity`, `regent_agents`, `regent_credits`, `regent_points`,
+`regent_payments`) belong to their library in elixir-utils: an index there is a library
+migration, built there first and applied once for every site by `bin/migrate-shared`
+after Sean's go (`AshTemplate.Release`). `regent_names.platform_human_users` belongs to
+Regents. A site never indexes another site's schema or a shared table from its own
+migrations.
+
+Constraint validation has its own steps: `NOT VALID`, then `VALIDATE CONSTRAINT`
+(above).
 
 ## Raw SQL names its schema
 

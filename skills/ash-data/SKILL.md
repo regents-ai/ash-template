@@ -21,6 +21,9 @@ A limit or once-only rule on an update is an atomic validation, never
 `change filter(expr(...))`: Ash 3.33.11 drops that filter from single-record atomic
 updates ([details](references/migrations-and-concurrency.md#four-distinct-concurrency-questions)).
 
+An index on a busy table is built concurrently, after measuring the read, and only by
+the schema's owner ([an index on a busy table](references/migrations-and-concurrency.md#an-index-on-a-busy-table)).
+
 Every site shares one production database: it serves through the pooler with a pool of
 5 and listens on one direct connection per machine ([connections](references/migrations-and-concurrency.md#connections-to-the-shared-production-database)).
 

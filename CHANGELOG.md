@@ -5081,3 +5081,15 @@ An adversarial review of the two commits above found five things, all fixed here
   those releases to see it fail. The pin is ash_postgres main at `55db7d44` (#910), no
   longer `== 2.13.0`. `platform/mix.exs` names the test beside the pin, so the pin
   moves only after it passes. Test-only; nothing to release.
+
+## 2026-10-29 — Indexes on busy tables are built concurrently
+
+- `skills/ash-data/references/migrations-and-concurrency.md` gains "An index on a busy
+  table": measure the read with `EXPLAIN (ANALYZE, BUFFERS)` first, declare the index in
+  `custom_indexes` with `concurrently: true`, keep the migration `mix ash.codegen` writes
+  for it on its own with `@disable_ddl_transaction true` and `@disable_migration_lock
+  true`, and drop an invalid index a failed build leaves. A site indexes only its own
+  schema; the shared schemas belong to their elixir-utils library and are changed once
+  for every site through `bin/migrate-shared`. The template's unread-notifications index
+  is the example. `skills/ash-data/SKILL.md` and `platform/README.md` point to it. Docs
+  only.

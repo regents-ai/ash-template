@@ -377,6 +377,11 @@ database migrations. Every deployment names its venue in
 `ASH_TEMPLATE_DEPLOYMENT_ROLE`, and each role admits only its own database
 hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `ASH_TEMPLATE_SHOWCASE`, `PHX_HOST` and a 64-byte `SECRET_KEY_BASE` are set.
+An index on a table that is already in use is added with `concurrently: true` in
+the resource's `custom_indexes`, after `EXPLAIN (ANALYZE, BUFFERS)` shows the read
+needs it, so writes carry on while it builds; the site adds indexes only to its own
+schema. `skills/ash-data/references/migrations-and-concurrency.md` ("An index on a
+busy table") has the steps.
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything: `pending:`,
 `applied-without-file:`, and `shared-pending:` for each shared Identity, Agents,
