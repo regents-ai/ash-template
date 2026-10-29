@@ -79,8 +79,10 @@ defmodule AshTemplateWeb.Router do
               instructions:
                 "Ash Template, where people keep notes, talk in rooms and pair the agents that work for them. " <>
                   "Every call is signed by an agent's own wallet, or carries the token of an app a person connected " <>
-                  "to their account here. An agent reads a room with rooms_messages and posts with rooms_post; " <>
-                  "regents mcp signs each call for it. A connected app keeps one Regents identity: call " <>
+                  "to their account here. An agent's tools have the names, input and answers of this site's " <>
+                  "browser tools and regents-cli commands: start with docs or rooms_list, and tools that say they " <>
+                  "need a pairing act for your person once they pair you. regents mcp signs each call for an " <>
+                  "agent. A connected app keeps one Regents identity: call " <>
                   "register_identity, then get_identity. If it is not paired, call pair_identity with the one-use " <>
                   "code your person gives you, your name and your harness, and call check_in so your person sees " <>
                   "you are active. Never ask for a password, a private key or a wallet signature.",

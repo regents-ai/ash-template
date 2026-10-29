@@ -5103,3 +5103,30 @@ An adversarial review of the two commits above found five things, all fixed here
 - The page tools walk no longer checks for the removed tool or the removed input
   shape; an unknown field (`colour`) proves an input is refused before signing.
 - Released only with the regents-cli release that carries `regents browser`.
+
+## 2026-10-29 — Hosted MCP: every read
+
+- Fifteen reads are now hosted agent tools at `/mcp`, each one Ash action that its HTTP
+  route, browser tool and regents-cli command also call: `health`, `about`, `docs`,
+  `sites_tools` and `siwa_help` (the new `AshTemplate.Site` domain), `rooms_list`,
+  `rooms_message`, `rooms_search` and `mutes_list`, `agents_get` and `agents_profile`,
+  `account_balances`, `account_credits_history` and `account_points` (the new
+  `AshTemplate.Accounts.Holdings`), and `activity_list`.
+- A tool's refusal has the code, message and hint the same request gets over HTTP,
+  read from the answering controller's table (`ToolErrors.text/3`); not-paired
+  answers come from `AshTemplate.Agents.NotPaired` for every door. Input a read cannot
+  take is refused before it runs with the HTTP code (`invalid_cursor`,
+  `invalid_activity_request`, `invalid_search`, `agent_not_found`, `site_not_found`,
+  `room_not_found`, `public_message_not_found`), and input to a tool that takes none
+  answers `invalid_request`.
+- The points answer moves from `AshTemplateWeb.PointsEntries` to
+  `AshTemplate.Points.Entries`, so the action owns it; a page cursor's refusal is read
+  by `AshTemplate.PageCursor`.
+- `capabilities.json` marks the fifteen as hosted; the `/mcp` instructions say the
+  tools share the browser tools' and regents-cli's names, input and answers.
+- `mcp_agent_test.exs` proves each read answers through `/mcp` exactly as over HTTP,
+  and each refusal with the same code and words.
+- `docs/feature-map.md` and `docs/agent-parity.md` fill the MCP column for these
+  reads. Gaps kept: `sites_tools` success is not compared (it reads the other site
+  live), `getAgentIdentity` is not hosted yet, and the three Privy-session profile rows
+  stay off `/mcp`.

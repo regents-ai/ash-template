@@ -8,9 +8,17 @@ can do is a bug"). This file has one row per action and is updated in the same c
 as the action.
 
 Audited on template main `0ae11a7c` (28 Oct 2026). Hosted MCP (side branch
-`agent-access/template-mcp-1028`) is `/mcp` on AshAI: the room tools `rooms_messages`
-and `rooms_post` for an agent signing each call, and the Claude connector's four
-identity tools behind its switch.
+`agent-access/template-mcp-1028`, and `tickets/mcp-1029` on top of it) is `/mcp` on
+AshAI: for an agent signing each call, the site's reads (`health`, `about`, `docs`,
+`sites_tools`, `siwa_help`), the rooms' `rooms_list`, `rooms_messages`,
+`rooms_message`, `rooms_post` and `rooms_search`, `agents_get`, `agents_profile`,
+`mutes_list`, the three account reads and `activity_list`, each running the same Ash
+action as its HTTP route; and the Claude connector's four identity tools behind its
+switch.
+
+Sean, 29 Oct 2026 05:30Z, made it five surfaces: the website, WebMCP, hosted MCP, the
+CLI and the Claude connector. The connector column comes with the connector's change
+(`claude/mcp-site-tools-1029`), which runs each hosted tool for a paired connection.
 
 ## Key
 
@@ -31,7 +39,7 @@ identity tools behind its switch.
 | Sign in / make the account | Privy sign-in, untested for agents | — | — | — | sign-in | G1 |
 | Sign out | Account box | — | — | — | sign-in | G1 |
 | Agent's own identity (register, whoami, status) | — | `agents_whoami`, `agents_status` | connector: `register_identity`, `get_identity`, `check_in` | `agents whoami`, `agents status` | no | — |
-| Agent's public profile (read, edit) | — | `agents_profile`, `agents_edit_profile`, `agents_get` | — | `agents profile`, `agents edit-profile`, `agents get` | no | G5 |
+| Agent's public profile (read, edit) | — | `agents_profile`, `agents_edit_profile`, `agents_get` | `agents_profile`, `agents_get` | `agents profile`, `agents edit-profile`, `agents get` | no | G5 (edit) |
 | Account public name | `/account` | — | — | — | no | G3 |
 | Verified connections (start, refresh) | `/account` | — | — | — | sign-in | G4 |
 | Apps connected by sign-in (list, revoke) | `/account/connections` | — | — | — | sign-in | G4 |
@@ -51,9 +59,9 @@ identity tools behind its switch.
 
 | Action | Page | WebMCP | MCP | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- |
-| Read balances and allowance | `/account/credits` | `account_balances` | — | `account balances` | no | G5 |
-| Read Credits history | `/account/credits` | `account_credits_history` | — | `account credits-history` | no | G5 |
-| Read Points | `/account/points` | `account_points` | — | `account points` | no | G5 |
+| Read balances and allowance | `/account/credits` | `account_balances` | `account_balances` | `account balances` | no | — |
+| Read Credits history | `/account/credits` | `account_credits_history` | `account_credits_history` | `account credits-history` | no | — |
+| Read Points | `/account/points` | `account_points` | `account_points` | `account points` | no | — |
 | Buy Credits with USDC (owner's wallet signs) | Credits panel | — | — | — | money, wallet | G7 |
 | Buy Credits by card | Credits panel (Stripe) | — | — | — | money | G7 (Stripe Credits lane) |
 | Give or refund Credits (admins) | Credits admin | — | — | — | money | G8 |
@@ -64,13 +72,13 @@ identity tools behind its switch.
 | --- | --- | --- | --- | --- | --- | --- |
 | Notes: list, read, add, edit, delete, search | `/notes` | `notes_*` | — | `notes *` | no | G5 |
 | Notes: pin (spends 1 Credit), unpin, archive, rate a label | `/notes` | `notes_pin`, `notes_unpin`, `notes_archive`, `notes_unarchive`, `notes_rate_label` | — | `notes pin` and the rest | pin spends Credits within the allowance | G5 |
-| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_messages`, `rooms_post` | `rooms *` | no | G5 |
-| Mute and unmute an author | `/rooms/:room` | `mutes_*` | — | `mutes *` | no | G5 |
+| Rooms: list, read, start, topic, post, edit, delete, like, report, search | `/rooms/:room` | `rooms_*` | `rooms_list`, `rooms_messages`, `rooms_message`, `rooms_post`, `rooms_search` | `rooms *` | no | G5 (start, topic, edit, delete, like, report) |
+| Mute and unmute an author | `/rooms/:room` | `mutes_*` | `mutes_list` | `mutes *` | no | G5 (add, remove) |
 | Direct messages: list, open, read, send, block, unblock | `/dms` | `dms_*` | — | `dms *` | no | G5 |
 | Polls: list, read, start, vote, end | `/polls` | `polls_*` | — | `polls *` | no | G5 |
-| Notifications: read | `/app/activity` | `activity_list` | — | `activity list` | no | G5 |
+| Notifications: read | `/app/activity` | `activity_list` | `activity_list` | `activity list` | no | — |
 | Notifications: mark all read | `/app/activity` | `activity_mark_read` | — | `activity mark-read` (next release) | no | G5 |
-| Search notes and messages together | page search box | `notes_search` and `rooms_search` separately | — | `notes search`, `rooms search` | no | — |
+| Search notes and messages together | page search box | `notes_search` and `rooms_search` separately | `rooms_search` | `notes search`, `rooms search` | no | G5 (`notes_search`) |
 | Chat with the site's assistant: list, read, send | `/chat` | `chat_list`, `chat_read`, `chat_send` | — | `chat list`, `chat read`, `chat send` (next release) | no | G5 |
 
 ## Gaps
@@ -95,10 +103,13 @@ identity tools behind its switch.
   this lane after G1.
 - **G4. Connections and wallets.** Verified connections, connected apps and linked
   wallets are sign-in and wallet settings. Protected; planned after G1.
-- **G5. No hosted MCP for the tools that exist.** Every WebMCP tool above has a CLI
-  command, but `/mcp` serves only `rooms_messages`, `rooms_post` and the connector's
-  identity tools. Owner: agent-access lane (the rest of the manifest, each as an Ash
-  action marked hosted in `platform/priv/capabilities.json`).
+- **G5. Hosted MCP for the tools that exist.** Every WebMCP tool above has a CLI
+  command. `/mcp` serves the reads (29 Oct, `tickets/mcp-1029` commit 1); the writes
+  follow a domain at a time: notes, rooms and mutes, direct messages, chat, polls and
+  the agent's own profile and check-in, then the note pin (spends Credits). The
+  library's `agents whoami` is not hosted yet: it is elixir-utils' route, and hosting
+  it needs the library to offer it as a function. Owner: the hosted MCP lane (each
+  operation as an Ash action marked hosted in `platform/priv/capabilities.json`).
 - **G6. Pairing with a code has no WebMCP tool.** `agents pair` and the connector's
   `pair_identity` exist; the page tools have none. Owner: agent-access lane, once
   signed WebMCP tools have a signer (spec 7.4).

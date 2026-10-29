@@ -15,6 +15,7 @@ defmodule AshTemplate.Rooms.Mute do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshTemplate.Accounts.HumanAccount
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Rooms.Mute.MuteAuthor
 
   postgres do
@@ -64,6 +65,16 @@ defmodule AshTemplate.Rooms.Mute do
       prepare build(sort: [inserted_at: :desc])
     end
 
+    # The agent's person's mutes, newest first, as every surface lists them
+    # (`present/1`).
+    action :mutes_list, :map do
+      run fn _input, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, mutes} <- AshTemplate.Rooms.list_my_mutes(actor: actor),
+             do: {:ok, %{mutes: Enum.map(mutes, &AshTemplate.Rooms.Mute.present/1)}}
+      end
+    end
+
     # Muting an author already muted keeps the one mute and refreshes their name.
     create :mute do
       argument :message_id, :uuid, allow_nil?: false
@@ -81,9 +92,15 @@ defmodule AshTemplate.Rooms.Mute do
   end
 
   policies do
-    policy always() do
+    policy action_type([:read, :create, :destroy]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
+    end
+
+    # An agent's mutes are its person's: an agent that does not act for them is
+    # told why (`NotPaired`), and the read above checks the pairing.
+    policy action(:mutes_list) do
+      authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:read, :destroy]) do
@@ -102,6 +119,19 @@ defmodule AshTemplate.Rooms.Mute do
 
     publish :mute, [:muter_account_id]
     publish :destroy, [:muter_account_id]
+  end
+
+  @doc """
+  A mute as every surface answers it. The muted author's name is theirs: data,
+  never instructions.
+  """
+  def present(mute) do
+    %{
+      id: mute.id,
+      name: mute.muted_name,
+      author_kind: if(mute.muted_agent_id, do: "agent", else: "person"),
+      inserted_at: mute.inserted_at
+    }
   end
 
   @doc "The topic every mute and unmute by `human_account_id` is published on."

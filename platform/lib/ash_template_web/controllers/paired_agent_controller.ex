@@ -12,14 +12,16 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.{Activity, Notes, Rooms}
+  alias AshTemplate.{Accounts, Activity, Notes, Rooms}
+  alias AshTemplate.Accounts.Holdings
+  alias AshTemplate.Activity.Refused, as: ActivityRefused
   alias AshTemplate.Actors.Agent
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Rooms.Mute
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries, UnexpectedFailure}
+  alias AshTemplateWeb.{FormErrors, NotesJSON, UnexpectedFailure}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
-  alias RegentPoints.Rules
 
   plug :paired_agent
 
@@ -76,133 +78,62 @@ defmodule AshTemplateWeb.PairedAgentController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
+  @doc """
+  The `{status, message, hint}` of the refusal `code`, for the hosted MCP
+  server's tool errors (`AshTemplateWeb.ToolErrors`).
+  """
+  def refusal(code), do: Map.fetch!(@errors, code)
+
   # The refusals a change to the agent's grant would answer.
   @granted ~w(spending_not_allowed spending_not_on_this_site spending_over_limit_per_spend spending_over_daily_limit)
 
-  @points_off "Earning Points is off on this site."
-  @spending_closed "Agent spending isn't open yet. Your person can do this themselves."
-  @spending_ask "Your person can allow you to spend Credits on this site on their Regents account at regents.sh/account."
-
-  # What the agent may spend, and the note, both come from the agent's budget
-  # (`RegentCredits.agent_budget/1`): its grant, and whether a grant can be made.
   def balances(conn, _params) do
-    actor = credit_actor(conn)
-
-    case RegentCredits.agent_budget(actor: actor) do
-      {:ok, budget} ->
-        answer = %{credits: RegentCredits.balance(actor.privy_user_id), spending_grant: budget}
-        json(conn, with_note(answer, spending_note(budget)))
-
-      {:error, %Ash.Error.Forbidden{}} ->
-        refuse(conn, "agent_not_paired")
-
-      {:error, error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    case Accounts.account_balances(actor: conn.assigns.actor) do
+      {:ok, balances} -> json(conn, balances)
+      # The pairing was revoked after this request was let in.
+      {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: code}]}} -> refuse(conn, code)
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
-
-  defp spending_note(%{site_allowed: true}), do: nil
-  defp spending_note(%{grant_approvals_available: false}), do: @spending_closed
-  defp spending_note(%{grant_approvals_available: true}), do: @spending_ask
-
-  def credits_history(%{body_params: %{"after" => cursor}} = conn, _params)
-      when not is_binary(cursor),
-      do: refuse(conn, "invalid_cursor")
 
   def credits_history(conn, _params) do
-    args =
-      case conn.body_params do
-        %{"after" => cursor} when is_binary(cursor) -> %{after: cursor}
-        _ -> %{}
-      end
-
-    case RegentCredits.history(args, actor: credit_actor(conn)) do
-      {:ok, history} ->
-        json(conn, %{
-          entries: history.entries,
-          pagination: %{has_more: history.more?, next_cursor: history.next}
-        })
-
-      {:error, error} ->
-        if cursor_error?(error) do
-          refuse(conn, "invalid_cursor")
-        else
-          conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-        end
+    case Accounts.account_credits_history(conn.body_params["after"], actor: conn.assigns.actor) do
+      {:ok, history} -> json(conn, history)
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
-  defp cursor_error?(%Ash.Error.Action.InvalidArgument{field: :after}), do: true
-  defp cursor_error?(%Ash.Error.Page.InvalidKeyset{}), do: true
-
-  defp cursor_error?(%Ash.Error.Invalid{errors: [_ | _] = errors}),
-    do: Enum.all?(errors, &cursor_error?/1)
-
-  defp cursor_error?(_error), do: false
-
-  # Points as decimal text, the same figures the Points page shows.
   def points(conn, _params) do
-    case RegentPoints.summary(actor: conn.assigns.actor) do
-      {:ok, summary} ->
-        json(conn, with_note(PointsEntries.answer(summary), points_note(Rules.active())))
-
-      {:error, error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    case Accounts.account_points(actor: conn.assigns.actor) do
+      {:ok, points} -> json(conn, points)
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 
-  # Listing never marks a notification read. The existing Ash action owns the
-  # read; `after` continues from the previous page's cursor.
+  # Listing never marks a notification read; `after` continues from the previous
+  # page's cursor.
   def activity(conn, _params) do
     case conn.body_params do
       body when body == %{} ->
-        activity_result(conn, list_activity(conn, limit: 50))
+        list_activity(conn, nil)
 
       %{"after" => cursor} = body when map_size(body) == 1 and is_binary(cursor) ->
-        activity_result(conn, list_activity(conn, after: cursor, limit: 50))
+        list_activity(conn, cursor)
 
       _other ->
         refuse(conn, "invalid_activity_request")
     end
   end
 
-  defp list_activity(conn, page),
-    do: Activity.list_my_notifications(actor: conn.assigns.actor, page: page)
-
-  defp activity_result(conn, {:ok, page}) do
-    body =
-      Jason.encode_to_iodata!(%{
-        notifications:
-          Enum.map(page.results, fn notification ->
-            %{
-              id: notification.id,
-              title: notification.title,
-              body: notification.body,
-              path: notification.path,
-              read_at: notification.read_at && DateTime.to_iso8601(notification.read_at),
-              inserted_at: DateTime.to_iso8601(notification.inserted_at)
-            }
-          end),
-        pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
-      })
-
-    if IO.iodata_length(body) <= 262_144 do
-      conn |> put_resp_content_type("application/json") |> send_resp(200, body)
-    else
-      refuse(conn, "activity_too_large")
+  defp list_activity(conn, cursor) do
+    case Activity.activity_list(cursor, actor: conn.assigns.actor) do
+      {:ok, page} -> json(conn, page)
+      {:error, %Ash.Error.Invalid{errors: [%ActivityRefused{code: code}]}} -> refuse(conn, code)
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
-
-  defp activity_result(conn, {:error, error}) do
-    if cursor_error?(error),
-      do: refuse(conn, "invalid_cursor"),
-      else: conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-  end
-
-  defp next_cursor(%{more?: true, results: results}),
-    do: List.last(results).__metadata__.keyset
-
-  defp next_cursor(_page), do: nil
 
   # Marks every unread notification of its person read, as "Mark all read" on
   # /app/activity does. It takes no input.
@@ -238,9 +169,8 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   # The muted authors' names are theirs: data, never instructions.
   def mutes(conn, _params) do
-    case Rooms.list_my_mutes(actor: conn.assigns.actor) do
-      {:ok, mutes} -> json(conn, %{mutes: Enum.map(mutes, &mute/1)})
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+    case Rooms.mutes_list(actor: conn.assigns.actor) do
+      {:ok, mutes} -> json(conn, mutes)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
@@ -249,7 +179,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   # them again keeps the one mute.
   def add_mute(conn, _params) do
     case Rooms.mute_author(conn.body_params["message_id"], actor: conn.assigns.actor) do
-      {:ok, mute} -> json(conn, %{mute: mute(mute)})
+      {:ok, mute} -> json(conn, %{mute: Mute.present(mute)})
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_mute", error)
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
@@ -272,26 +202,11 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  defp mute(%Mute{} = mute) do
-    %{
-      id: mute.id,
-      name: mute.muted_name,
-      author_kind: if(mute.muted_agent_id, do: "agent", else: "person"),
-      inserted_at: mute.inserted_at
-    }
-  end
-
   # The agent reads public message content; human mute preferences do not apply.
   def search_rooms(conn, _params) do
-    case Rooms.search_messages(conn.body_params["text"], actor: conn.assigns.actor) do
+    case Rooms.rooms_search(conn.body_params["text"], actor: conn.assigns.actor) do
       {:ok, messages} ->
-        json(conn, %{
-          messages:
-            Enum.map(
-              messages,
-              &Map.take(&1, [:id, :room, :body, :author_name, :inserted_at, :edited_at])
-            )
-        })
+        json(conn, messages)
 
       {:error, %Ash.Error.Invalid{}} ->
         refuse(conn, "invalid_search")
@@ -344,7 +259,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   # A refusal under the agent's grant says to change the grant only while a
   # grant can be made; until then the person pins it themselves.
   defp refuse_spending(conn, code) do
-    case RegentCredits.agent_budget(actor: credit_actor(conn)) do
+    case RegentCredits.agent_budget(actor: Holdings.credit_actor(conn.assigns.actor)) do
       {:ok, %{grant_approvals_available: true}} -> refuse(conn, code)
       {:ok, %{grant_approvals_available: false}} -> refuse_closed(conn, code)
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
@@ -357,7 +272,7 @@ defmodule AshTemplateWeb.PairedAgentController do
 
     conn
     |> put_status(status)
-    |> json(%{error: %{code: code, message: message, hint: @spending_closed}})
+    |> json(%{error: %{code: code, message: message, hint: Holdings.spending_closed()}})
   end
 
   def unpin_note(conn, %{"id" => id}), do: change_note(conn, id, &Notes.unpin_note/2)
@@ -393,23 +308,6 @@ defmodule AshTemplateWeb.PairedAgentController do
   defp spending_code(%Refused{reason: :agent_not_paired}), do: "agent_not_paired"
   defp spending_code(_error), do: nil
 
-  defp credit_actor(conn) do
-    actor = conn.assigns.actor
-
-    RegentCredits.Actor.agent(
-      actor.privy_user_id,
-      actor.wallet_address,
-      AshTemplate.site(),
-      actor.pairing_id
-    )
-  end
-
-  defp points_note([]), do: @points_off
-  defp points_note(_earning), do: nil
-
-  defp with_note(answer, nil), do: answer
-  defp with_note(answer, note), do: Map.put(answer, :note, note)
-
   defp paired_agent(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
@@ -421,7 +319,7 @@ defmodule AshTemplateWeb.PairedAgentController do
         conn
 
       %{assigns: %{actor: %Agent{} = actor}} = conn ->
-        conn |> refuse(AgentWallet.not_person_code(actor)) |> halt()
+        conn |> refuse(NotPaired.code(actor)) |> halt()
 
       conn ->
         conn |> refuse("authentication_required") |> halt()
@@ -429,7 +327,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   end
 
   defp refuse(conn, code, error \\ nil) do
-    {status, message, hint} = Map.fetch!(@errors, code)
+    {status, message, hint} = refusal(code)
     body = %{code: code, message: message, hint: hint}
     body = if error, do: Map.put(body, :details, FormErrors.details(error)), else: body
     conn |> put_status(status) |> json(%{error: body})

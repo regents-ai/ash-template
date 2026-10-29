@@ -14,6 +14,7 @@ defmodule AshTemplateWeb.ChatController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Chat
   alias AshTemplate.Chat.{Conversation, Message}
   alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
@@ -158,7 +159,7 @@ defmodule AshTemplateWeb.ChatController do
         conn
 
       %{assigns: %{actor: %Agent{} = actor}} = conn ->
-        conn |> refuse(AgentWallet.not_person_code(actor)) |> halt()
+        conn |> refuse(NotPaired.code(actor)) |> halt()
 
       conn ->
         conn |> refuse("authentication_required") |> halt()

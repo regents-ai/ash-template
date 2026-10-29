@@ -13,6 +13,7 @@ defmodule AshTemplateWeb.PollsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Polls
   alias AshTemplate.Polls.Poll
   alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
@@ -44,7 +45,7 @@ defmodule AshTemplateWeb.PollsController do
   defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
 
   defp paired_agent(conn, _opts),
-    do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
+    do: conn |> refuse(NotPaired.code(conn.assigns.actor)) |> halt()
 
   def index(conn, _params) do
     case Polls.list_polls() do

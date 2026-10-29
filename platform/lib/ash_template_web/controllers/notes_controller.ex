@@ -11,6 +11,7 @@ defmodule AshTemplateWeb.NotesController do
 
   alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.{Agent, Human}
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
   alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof, UnexpectedFailure}
@@ -90,7 +91,7 @@ defmodule AshTemplateWeb.NotesController do
     case AgentWallet.call(conn, []) do
       %{halted: true} = conn -> conn
       %{assigns: %{actor: %Agent{pairing: :active}}} = conn -> conn
-      conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
+      conn -> conn |> refuse(NotPaired.code(conn.assigns.actor)) |> halt()
     end
   end
 

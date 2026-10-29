@@ -27,7 +27,9 @@ defmodule AshTemplate.Rooms.Message do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Limits.LimitWrites
+  alias AshTemplate.Rooms
 
   alias AshTemplate.Rooms.Message.{
     AgentPost,
@@ -39,7 +41,7 @@ defmodule AshTemplate.Rooms.Message do
     SquashBlankLines
   }
 
-  alias AshTemplate.Rooms.{Like, Mute, Room}
+  alias AshTemplate.Rooms.{Like, Mute, Refused, Room}
 
   # What every room read and write loads for `public/1`.
   @shown [:agent, :via_agent, :author_picture, :like_count]
@@ -203,6 +205,53 @@ defmodule AshTemplate.Rooms.Message do
       run AgentPost
     end
 
+    # One message of a room by its id, as its room shows a signed-out reader,
+    # whoever asks.
+    action :rooms_message, :map do
+      argument :room, :string,
+        allow_nil?: false,
+        description: "The room's name, as rooms_list gives it, such as general."
+
+      argument :id, :uuid,
+        allow_nil?: false,
+        description: "The message's id, from rooms_messages."
+
+      run fn %{arguments: %{room: slug, id: id}}, _context ->
+        with {:room, {:ok, %Room{} = room}} <- {:room, Rooms.get_room(slug)},
+             {:ok, message} when not is_nil(message) <- Rooms.get_room_message(room.slug, id) do
+          {:ok, %{message: AshTemplate.Rooms.Message.present(message)}}
+        else
+          {:room, {:ok, nil}} -> {:error, Refused.exception(code: "room_not_found")}
+          {:room, error} -> error
+          {:ok, nil} -> {:error, Refused.exception(code: "public_message_not_found")}
+          error -> error
+        end
+      end
+    end
+
+    # Up to 5 messages from every room that hold `text`, newest first, for an
+    # agent acting for its person.
+    action :rooms_search, :map do
+      argument :text, :string,
+        allow_nil?: false,
+        constraints: [min_length: 2, max_length: 100],
+        description: "Words to look for, 2 to 100 characters, in any case."
+
+      run fn %{arguments: %{text: text}}, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor),
+             {:ok, messages} <- Rooms.search_messages(text, actor: actor) do
+          {:ok,
+           %{
+             messages:
+               Enum.map(
+                 messages,
+                 &Map.take(&1, [:id, :room, :body, :author_name, :inserted_at, :edited_at])
+               )
+           }}
+        end
+      end
+    end
+
     create :post do
       accept [:room, :body]
       change SetAuthor
@@ -251,6 +300,17 @@ defmodule AshTemplate.Rooms.Message do
     end
 
     policy action(:agent_post) do
+      authorize_if actor_attribute_equals(:role, :agent)
+    end
+
+    policy action(:rooms_message) do
+      forbid_if actor_attribute_equals(:role, :connected_app)
+      authorize_if always()
+    end
+
+    # Search acts for the agent's person: an agent that does not act for them is
+    # told why (`NotPaired`).
+    policy action(:rooms_search) do
       authorize_if actor_attribute_equals(:role, :agent)
     end
 

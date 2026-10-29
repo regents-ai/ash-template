@@ -14,6 +14,7 @@ defmodule AshTemplateWeb.RoomsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Actors.Agent
+  alias AshTemplate.Agents.NotPaired
   alias AshTemplate.Rooms
   alias AshTemplate.Rooms.{Message, Refused, Report, Room}
   alias AshTemplate.Rooms.Message.{GuestPostsLimited, PostedBeforePairing}
@@ -85,11 +86,11 @@ defmodule AshTemplateWeb.RoomsController do
   defp paired_agent(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts), do: conn
 
   defp paired_agent(conn, _opts),
-    do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
+    do: conn |> refuse(NotPaired.code(conn.assigns.actor)) |> halt()
 
   def index(conn, _params) do
-    case Rooms.list_rooms() do
-      {:ok, rooms} -> json(conn, %{rooms: Enum.map(rooms, &Room.public/1)})
+    case Rooms.rooms_list() do
+      {:ok, rooms} -> json(conn, rooms)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
@@ -179,12 +180,9 @@ defmodule AshTemplateWeb.RoomsController do
 
   # Anyone may read one message by its id, as its room shows it.
   def message(conn, %{"room" => slug, "id" => id}) do
-    with {:ok, room} <- room(slug),
-         {:ok, %Message{} = message} <- Rooms.get_room_message(room.slug, id) do
-      json(conn, %{message: Message.present(message)})
-    else
-      :error -> refuse(conn, "room_not_found")
-      {:ok, nil} -> refuse(conn, "public_message_not_found")
+    case Rooms.rooms_message(slug, id) do
+      {:ok, message} -> json(conn, message)
+      {:error, %Ash.Error.Invalid{errors: [%Refused{code: code}]}} -> refuse(conn, code)
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "public_message_not_found")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
@@ -353,7 +351,7 @@ defmodule AshTemplateWeb.RoomsController do
   end
 
   defp with_message(conn, _slug, _id, _respond),
-    do: refuse(conn, AgentWallet.not_person_code(conn.assigns.actor))
+    do: refuse(conn, NotPaired.code(conn.assigns.actor))
 
   # `details` says why invalid input was refused; `id` names the message a
   # refused operation_id posted.

@@ -85,7 +85,7 @@
       "switch": "app_surfaces",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -107,7 +107,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -129,7 +129,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -343,7 +343,7 @@
       "switch": "app_surfaces",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -435,7 +435,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -457,7 +457,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -479,7 +479,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -719,7 +719,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -741,7 +741,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -935,7 +935,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -959,7 +959,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -983,7 +983,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -1031,7 +1031,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -1055,7 +1055,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },
@@ -1103,7 +1103,7 @@
       "cli_release": "1.10.16",
       "surfaces": {
         "webmcp": true,
-        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "hosted_mcp": true,
         "http": true,
         "cli": true
       },

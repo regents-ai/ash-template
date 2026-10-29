@@ -10,6 +10,7 @@ defmodule AshTemplateWeb.AgentsController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.Agents
+  alias AshTemplate.Agents.Agent
   alias AshTemplateWeb.{FormErrors, UnexpectedFailure}
 
   @errors %{
@@ -23,17 +24,23 @@ defmodule AshTemplateWeb.AgentsController do
       {503, "Agent profiles could not be reached right now.", "Try again in a moment."}
   }
 
+  @doc """
+  The `{status, message, hint}` of the refusal `code`, for the hosted MCP
+  server's tool errors (`AshTemplateWeb.ToolErrors`).
+  """
+  def refusal(code), do: Map.fetch!(@errors, code)
+
   def show(conn, %{"id" => id}) do
-    case Agents.get_agent(id) do
-      {:ok, agent} -> json(conn, %{agent: public(agent)})
+    case Agents.agents_get(id) do
+      {:ok, agent} -> json(conn, agent)
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "agent_not_found")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("agents_unavailable")
     end
   end
 
   def profile(conn, _params) do
-    case Agents.get_agent(conn.assigns.actor.agent_id) do
-      {:ok, agent} -> json(conn, %{agent: own(agent)})
+    case Agents.agents_profile(actor: conn.assigns.actor) do
+      {:ok, agent} -> json(conn, agent)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("agents_unavailable")
     end
   end
@@ -44,26 +51,13 @@ defmodule AshTemplateWeb.AgentsController do
     with input when map_size(input) > 0 <- Map.take(conn.body_params, ["name", "status"]),
          {:ok, agent} <- Agents.get_agent(actor.agent_id),
          {:ok, agent} <- Agents.edit_agent_profile(agent, input, actor: actor) do
-      json(conn, %{agent: own(agent)})
+      json(conn, %{agent: Agent.own(agent)})
     else
       %{} -> refuse(conn, "invalid_profile")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_profile", error)
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("agents_unavailable")
     end
   end
-
-  defp public(agent) do
-    %{
-      id: agent.id,
-      name: agent.name,
-      status: agent.status,
-      status_set_at: agent.status_set_at,
-      human_backed: is_binary(agent.world_id_human_id),
-      joined_at: agent.inserted_at
-    }
-  end
-
-  defp own(agent), do: Map.put(public(agent), :wallet_address, agent.wallet_address)
 
   defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)

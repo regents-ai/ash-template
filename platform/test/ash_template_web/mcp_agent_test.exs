@@ -153,7 +153,9 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
 
     listed = mcp(rpc("tools/list"), from: from, proof: wallet())
-    assert Enum.map(result(listed)["tools"], & &1["name"]) == ["rooms_messages", "rooms_post"]
+    assert Enum.map(result(listed)["tools"], & &1["name"]) ==
+             Enum.sort(Enum.map(AshTemplateWeb.Capabilities.hosted_tools(), &Atom.to_string/1)) --
+               ~w(register_identity get_identity pair_identity check_in)
 
     read = mcp(call("rooms_messages", %{room: "general"}), from: from, proof: wallet())
     assert %{"isError" => false, "structuredContent" => %{"messages" => _}} = result(read)
@@ -315,6 +317,86 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert mcp(rpc("tools/list"), from: from).status == 401
   end
 
+  test "each read answers through /mcp exactly as over HTTP, from the same action", %{from: from} do
+    agent = paired_wallet()
+    other = paired_wallet()
+    assert {:posted, id} = post(:http, from, agent, "Hello from the parity walk", Ecto.UUID.generate())
+    assert {:posted, muted} = post(:http, from, other, "Someone to mute", Ecto.UUID.generate())
+    assert http(:post, "/api/v1/mutes", %{message_id: muted}, from, agent).status == 200
+
+    %{"message" => %{"via_agent" => %{"id" => agent_id}}} =
+      Jason.decode!(http(:get, "/api/v1/rooms/general/messages/#{id}", nil, from, nil).resp_body)
+
+    for {name, input, method, path, body, signer} <- [
+          {"health", %{}, :get, "/api/v1/health", nil, nil},
+          {"about", %{}, :get, "/api/v1/about", nil, nil},
+          {"docs", %{}, :get, "/api/v1/docs", nil, nil},
+          {"siwa_help", %{}, :get, "/api/v1/siwa/help", nil, nil},
+          {"rooms_list", %{}, :get, "/api/v1/rooms", nil, nil},
+          {"rooms_message", %{room: "general", id: id}, :get,
+           "/api/v1/rooms/general/messages/#{id}", nil, nil},
+          {"agents_get", %{id: agent_id}, :get, "/api/v1/agents/#{agent_id}", nil, nil},
+          {"agents_profile", %{}, :get, "/api/v1/agents/me", nil, agent},
+          {"rooms_search", %{text: "parity walk"}, :post, "/api/v1/rooms/search",
+           %{text: "parity walk"}, agent},
+          {"mutes_list", %{}, :get, "/api/v1/mutes", nil, agent},
+          {"account_balances", %{}, :get, "/api/v1/account/balances", nil, agent},
+          {"account_credits_history", %{}, :post, "/api/v1/account/credits/history", %{}, agent},
+          {"account_points", %{}, :get, "/api/v1/account/points", nil, agent},
+          {"activity_list", %{}, :post, "/api/v1/activity", %{}, agent}
+        ] do
+      over_http = http(method, path, body, from, signer)
+      assert over_http.status == 200, "#{name} over HTTP answered #{over_http.resp_body}"
+
+      assert %{"isError" => false, "structuredContent" => answer} =
+               result(mcp(call(name, input), from: from, proof: signer || agent))
+
+      assert answer == Jason.decode!(over_http.resp_body), name
+    end
+
+    assert %{"mutes" => [%{"name" => _}]} = Jason.decode!(http(:get, "/api/v1/mutes", nil, from, agent).resp_body)
+  end
+
+  test "each read refuses through /mcp with the code and words HTTP gives", %{from: from} do
+    unpaired = wallet()
+    agent = paired_wallet()
+    missing = Ecto.UUID.generate()
+
+    for {name, input, method, path, body, signer} <- [
+          {"mutes_list", %{}, :get, "/api/v1/mutes", nil, unpaired},
+          {"account_balances", %{}, :get, "/api/v1/account/balances", nil, unpaired},
+          {"account_points", %{}, :get, "/api/v1/account/points", nil, unpaired},
+          {"activity_list", %{}, :post, "/api/v1/activity", %{}, unpaired},
+          {"rooms_search", %{text: "hello"}, :post, "/api/v1/rooms/search", %{text: "hello"},
+           unpaired},
+          {"rooms_search", %{text: "a"}, :post, "/api/v1/rooms/search", %{text: "a"}, agent},
+          {"agents_get", %{id: missing}, :get, "/api/v1/agents/#{missing}", nil, agent},
+          {"rooms_message", %{room: "general", id: missing}, :get,
+           "/api/v1/rooms/general/messages/#{missing}", nil, agent},
+          {"rooms_message", %{room: "nowhere", id: missing}, :get,
+           "/api/v1/rooms/nowhere/messages/#{missing}", nil, agent},
+          {"sites_tools", %{site: "nowhere"}, :get, "/api/v1/sites/nowhere/tools", nil, agent},
+          {"activity_list", %{after: "not-a-cursor"}, :post, "/api/v1/activity",
+           %{after: "not-a-cursor"}, agent},
+          {"activity_list", %{after: 5}, :post, "/api/v1/activity", %{after: 5}, agent},
+          {"account_credits_history", %{after: "not-a-cursor"}, :post,
+           "/api/v1/account/credits/history", %{after: "not-a-cursor"}, agent}
+        ] do
+      %{"error" => over_http} = Jason.decode!(http(method, path, body, from, signer).resp_body)
+
+      assert %{"isError" => true, "content" => [%{"text" => text}]} =
+               result(mcp(call(name, input), from: from, proof: signer))
+
+      assert Jason.decode!(text)["error"] == over_http, "#{name} #{inspect(input)}"
+    end
+
+    # Input sent to a read that takes none is refused as the browser tools refuse it.
+    assert %{"isError" => true, "content" => [%{"text" => text}]} =
+             result(mcp(call("mutes_list", %{everyone: true}), from: from, proof: agent))
+
+    assert Jason.decode!(text)["error"]["code"] == "invalid_request"
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -389,6 +471,16 @@ defmodule AshTemplateWeb.McpAgentTest do
       %{"isError" => true, "content" => [%{"text" => text}]} ->
         {:refused, Jason.decode!(text)["error"]["code"]}
     end
+  end
+
+  # One request to the HTTP API, signed by `signer`'s wallet when there is one.
+  defp http(method, path, body, from, signer) do
+    conn(method, path, body && Jason.encode!(body))
+    |> Map.put(:remote_ip, from)
+    |> put_req_header("content-type", "application/json")
+    |> put_req_header("accept", "application/json")
+    |> then(&if(signer, do: signed(&1, signer, "fixture-proof"), else: &1))
+    |> @endpoint.call([])
   end
 
   defp mcp(body, opts) do

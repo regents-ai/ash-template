@@ -70,7 +70,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
       {:ok, summary} = RegentPoints.summary(actor: hd(actors))
 
       assert [%{by: "agent", agent: name, status: :counted}] =
-               AshTemplateWeb.PointsEntries.answer(summary).entries
+               AshTemplate.Points.Entries.answer(summary).entries
 
       assert name in names
     end

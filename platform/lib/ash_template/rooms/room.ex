@@ -83,6 +83,14 @@ defmodule AshTemplate.Rooms.Room do
               message: "You've started as many rooms as you can today. Start another tomorrow."}
     end
 
+    # The rooms as every surface lists them (`public/1`).
+    action :rooms_list, :map do
+      run fn _input, _context ->
+        with {:ok, rooms} <- AshTemplate.Rooms.list_rooms(),
+             do: {:ok, %{rooms: Enum.map(rooms, &public/1)}}
+      end
+    end
+
     update :set_topic do
       accept [:topic]
       require_atomic? false
@@ -93,6 +101,13 @@ defmodule AshTemplate.Rooms.Room do
 
   policies do
     policy action_type(:read) do
+      authorize_if always()
+    end
+
+    # Anyone lists the rooms, except an app connected to a person's account: its
+    # token is for its identity tools alone (`AshTemplate.Agents.Connection`).
+    policy action(:rooms_list) do
+      forbid_if actor_attribute_equals(:role, :connected_app)
       authorize_if always()
     end
 
