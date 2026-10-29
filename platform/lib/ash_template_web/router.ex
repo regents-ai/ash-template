@@ -61,9 +61,9 @@ defmodule AshTemplateWeb.Router do
   # HTTP gives (`AshTemplateWeb.ToolErrors.check_input/3`). No session, cookie or
   # CSRF token is read. Each account has its own budget here; the endpoint counts
   # each address first. Nothing is kept between requests. Tool calls carry pairing
-  # codes, so nothing is logged.
+  # codes, so nothing is logged. There is no `:accepts`: the endpoint already answers
+  # /mcp in JSON, so a GET for an event stream hears McpAgent's 405, not a 406.
   pipeline :mcp do
-    plug :accepts, ["json"]
     plug AshTemplateWeb.Plugs.LaunchGate
     plug AshTemplateWeb.Plugs.McpAgent
   end

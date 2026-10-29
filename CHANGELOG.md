@@ -5397,3 +5397,12 @@ way, and the library's own site-tool serving is gone.
   the library's words (`RegentMCPAgents.Tools.wait/1`), instead of "The identity request
   could not be completed." `AshTemplate.Agents.Connection.Refused` carries the seconds as
   `wait`.
+
+## 2026-10-29 — The MCP address answers a GET for an event stream with 405
+
+- The `:mcp` pipeline no longer runs `plug :accepts, ["json"]`. A client that opens
+  `GET /mcp` with `Accept: text/event-stream`, as MCP clients do to look for a stream,
+  got a bare 406 "not acceptable" error; it now hears the 405 "takes POST only" refusal
+  with `Allow: POST`, and a body that is not JSON hears 415, whatever the caller accepts.
+  The endpoint already answers `/mcp` in JSON, so nothing else changes; with the site
+  closed, `/mcp` still says "not open yet" in JSON.
