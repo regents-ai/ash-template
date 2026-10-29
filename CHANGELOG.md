@@ -5361,3 +5361,13 @@ way, and the library's own site-tool serving is gone.
   without `--stage`, and the template's own releases are outside it. The peak figures
   now count Keyfleet's graph machine (its own listening connection) and an admin login:
   about 114 with every release at once, about 92 with one at a time. Docs only.
+
+## 2026-10-29 — The template's releases take turns again
+
+- `scripts/deploy.sh` runs its build and release under
+  `lockf -k /tmp/regent-shared-db-release.lock` again, the lock every site's deploy takes
+  on the founder's Mac. It was dropped on 27 October when the template moved onto the
+  pooler; while the five sites move, one release at a time leaves about 5 of the
+  database's 97 connections spare, so a template release overlapping a site's could go
+  over. The lock goes from the template and every site together after the last move. The
+  ash-data skill says so. No release.

@@ -44,8 +44,13 @@ if ! git merge-base --is-ancestor "$live" "$commit" 2>/dev/null; then
   exit 1
 fi
 
-echo "==> Deploying ${commit:0:7} to $app"
-exec fly deploy . \
+# Every site shares one production database, and until every site serves through
+# the pooler a release's direct connections still add up, so releases from this
+# machine take turns: the build and release run under one lock that every site's
+# deploy takes, and wait for it.
+lock=/tmp/regent-shared-db-release.lock
+echo "==> Deploying ${commit:0:7} to $app (waits for any other release holding $lock)"
+exec lockf -k "$lock" fly deploy . \
   --config platform/fly.toml \
   --app "$app" \
   --ha=false \

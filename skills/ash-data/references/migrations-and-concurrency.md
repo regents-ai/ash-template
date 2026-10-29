@@ -160,9 +160,9 @@ only what needs a session on the direct address:
   time peaks at about 92. So a site keeps `lockf -k /tmp/regent-shared-db-release.lock`
   in its deploy when it moves to the pooler. The lock is one file on the founder's Mac
   that every site's deploy script takes, so releases started there take turns across
-  sites. It does not hold back a deploy started anywhere else, a restart from a secret
-  set without `--stage`, or the template, which has released without it since 27 October
-  (its direct share in a release is three connections). The lock goes from every site
+  sites; the template's `scripts/deploy.sh` takes it too. It does not hold back a deploy
+  started anywhere else or a restart from a secret set without `--stage`, so nobody
+  deploys from another machine while the sites move. The lock goes from every site
   together once the count after the last move, and the founder's pooler limits, leave
   room for the peak (`control/rollouts/2026-10-29-db-pooler.md` in the workspace).
 - More connections for one site, or a larger database plan, is the founder's decision.
