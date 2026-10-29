@@ -103,15 +103,6 @@ if config_env() != :test do
   config :regent_payments, credits_pay_to: List.wrap(payments_wallet)
 end
 
-# The buying wallet's key (BUYING_WALLET_PRIVATE_KEY), kept only in the
-# server's secrets, and the Base endpoint its transactions go through
-# (BASE_RPC_URL). Without either, buying is off.
-if config_env() != :test do
-  config :ash_template, AshTemplate.Payments.ChainBuy,
-    private_key: System.get_env("BUYING_WALLET_PRIVATE_KEY"),
-    rpc_url: System.get_env("BASE_RPC_URL")
-end
-
 # Agents' signed requests are checked by this sign-in service instead, such as one
 # running on this machine.
 broker_url = System.get_env("ASH_TEMPLATE_SIWA_BROKER_URL")

@@ -5057,29 +5057,13 @@ An adversarial review of the two commits above found five things, all fixed here
   release, under the same go from Sean as its shared migration.
 - The local database fixture runs the payments migration. No shared database runs it
   before Sean's go.
+## 2026-10-29 — Connector and Credits together
 
-## 2026-10-29 — The buying wallet: buy on the chain with Credits
-
-- `AshTemplate.Payments.ChainBuy` buys something on the chain for a person, or their
-  paired agent within its limits, with Regents' own USDC, paid for in purchased Credits
-  only (one Credit per USDC; given Credits never pay). The price is read from the sale
-  before the buy's transaction; in it the day's limit is checked under a lock (500 USDC,
-  `daily_limit_atomic`) and the price is held. One send at a time, never twice, on the
-  new `chain_buys` queue: an approval of exactly the price, then the sale's call, each
-  at the wallet's next nonce after any still waiting, with the item sent to one of the
-  buyer's own wallets. The outcome and its hashes are committed first; the Credits are
-  settled in their own step: bought charges them, a refused approval or call gives
-  them back, and a call that may still land stays held while `CheckReceipt` reads its
-  receipt. A buy left for a person logs one line for Sentinel. No Points are earned on
-  a buy.
-- The template sells nothing (`sale: nil`), so buying is off here. A site names its
-  sale module (`AshTemplate.Payments.Sale`) and sets `BUYING_WALLET_PRIVATE_KEY` and
-  `BASE_RPC_URL` in Fly secrets after Sean's go. Migrations `20261029054225_chain_buys`,
-  `20261029062853_chain_buy_hold` and `20261029084006_chain_buy_began_at` add
-  `chain_buys`.
-- elixir-utils moves to `46054355`: `RegentPayments.BuyingWallet`, each send at the
-  wallet's next nonce, and `RegentCredits` holds with `purchased_only?: true`.
-
-## 2026-10-29 — Connector, Credits and the buying wallet together
-
-- The Claude connector (with main up to 0a8a4234), Credits step 1 and the buying wallet sit on one branch, in that release order. The shared library pin is elixir-utils 94b0fde, the buying wallet merged onto 09afad89, which keeps the browser's signed tools on the API public_tools.ts uses.
+- The Claude connector (with main up to 0a8a4234) and Credits step 1 sit on one branch,
+  in that release order. The shared library pin is elixir-utils 09afad89, which keeps the
+  browser's signed tools on the API public_tools.ts uses.
+- The buying wallet is taken out before it was ever released. Sean, 29 Oct 16:27Z:
+  Keyfleet's Keys are bought with USDC only, never with Credits, so nothing on any site
+  buys on the chain with Credits. `AshTemplate.Payments.ChainBuy`, its `chain_buys`
+  queue and three migrations, and the `BUYING_WALLET_PRIVATE_KEY` and `BASE_RPC_URL`
+  secrets are gone.

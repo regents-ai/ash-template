@@ -148,39 +148,6 @@ decides when to forward. It stops a second forward of one fee under a row lock o
 forward record. An answer of `:deposit_unknown` means look on the chain before running
 the forward again.
 
-## Buying on the chain with Credits
-
-Some things on the chain (a Keyfleet Key) are bought for a person with Regents' own
-USDC, after the person pays in purchased Credits, one Credit per USDC.
-`AshTemplate.Payments.ChainBuy` is the template's wiring; a site copies it and names its
-sale.
-
-- The site writes a module implementing `AshTemplate.Payments.Sale`: `price/1` reads the
-  sale and the item's price at the latest block, or answers in a few words why it cannot
-  be bought now; `call/3` builds the sale's call for the item, sent to the buyer's wallet.
-  Name it as `sale:` in `config :ash_template, AshTemplate.Payments.ChainBuy`.
-- The buying wallet is a small wallet on Base. Its key is `BUYING_WALLET_PRIVATE_KEY` and
-  its endpoint `BASE_RPC_URL`, both only in Fly secrets. Creating the wallet and setting
-  the key are Sean's go.
-- `AshTemplate.Payments.buy(item, receiver, actor: credits_actor)`, for a person or a
-  paired agent, holds the price in purchased Credits only (`purchased_only?: true`; given
-  Credits never pay) under the day's limit (`daily_limit_atomic`, 500 USDC). The item goes
-  to one of the buyer's own wallets.
-- One send at a time, never twice (`chain_buys` queue, limit 1, one attempt):
-  `RegentPayments.BuyingWallet.buy/2` approves exactly the price, then sends the sale's
-  call, each at the wallet's next nonce after any still waiting. The limit holds per
-  machine: a site with more than one machine runs `chain_buys` on one of them only.
-- The send commits its outcome and hashes first; the Credits are settled in their own
-  step (`:close_hold`, queued with the outcome). Bought charges them; a refused approval
-  or call gives them back; a call that may still land keeps them held while
-  `CheckReceipt` reads its receipt.
-- A buy left for a person to look up on the chain (a stopped send, a send that began
-  ten minutes ago and never finished, a call never answered, Credits that could not be
-  settled) keeps its Credits held and logs `Buy left for a person: id=... state=...` for
-  Sentinel. A buy still waiting its turn in the queue has not begun, so it is never
-  taken for one.
-- No Points are earned on a buy.
-
 ## Checks
 
 - The library's own suite covers the payment path; a site tests its offers' `freeze/2`
