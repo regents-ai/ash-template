@@ -1,6 +1,7 @@
 import type {Locator} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {bareAddresses} from "./support/addresses"
+import {copiesShown, recordCopies} from "./support/copies"
 import {watch} from "./support/person"
 
 // The on-chain lab's account links wallets A and B. With wallet C open in the lab's
@@ -13,6 +14,7 @@ const walletC = "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
 test("a wallet note opens and copies each wallet it names", async ({page, hasTouch}) => {
   const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
   const problems = watch(page)
+  await recordCopies(page)
   await page.goto("/showcase/onchain")
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
   await press(page.locator('[data-lab-wallet="C"]'))
@@ -38,7 +40,7 @@ test("a wallet note opens and copies each wallet it names", async ({page, hasTou
 
   const copy = note.getByRole("button", {name: "Copy the full address"}).first()
   await press(copy)
-  await expect(copy).toHaveAttribute("data-copy-state", "copied")
+  await expect.poll(() => copiesShown(copy)).toEqual([{answer: "copied", shown: "", said: "Copied"}])
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(walletC)
 
   expect(await bareAddresses(page)).toEqual([])

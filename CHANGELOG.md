@@ -5441,3 +5441,67 @@ way, and the library's own site-tool serving is gone.
   wallet" row; the browser walk on the account, pair, pairing, public name, addresses,
   agents, layout, credits and pages walks in headless Chromium at 1280 and 390: 241
   passed, 3 skipped (WebKit is not run on the Mac).
+
+## 2026-10-29 — Live checks run the way an agent does, and a steadier walk
+
+- `SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make
+  live-check` checks template.regents.sh the way a paired agent does
+  (`scripts/live-check.sh`): `regents ash-template doctor` and `agents whoami` as that
+  agent, then, in headless Chromium at 1280 and 390 wide (`platform/playwright.live.config.ts`,
+  `platform/test/live`), the health page, the live commit from `/capabilities.json`,
+  every public page and document in the walk's page map, and every read-only WebMCP tool
+  the home page offers that takes no input, the signed ones signed with the agent's own
+  key. The signer signs only the one request this checkout's manifest names for the tool
+  being called, from the page's own frame, and the live page must run this checkout's
+  commit and offer exactly its reads. It writes only the agent's own row on the site, when the agent was
+  last seen (added the first time), and the check's pages send Global Privacy Control,
+  so they start no visit. Pages that answer only on a developer's machine (the
+  wallet and Credits labs) are marked `local_only` in `platform/test/browser/pages.json`
+  and left out.
+- `skills/regent-workflow` gains "Live checks", signed off by Sean at 15:41Z on 28 Oct:
+  a live site is checked through the CLI as a paired agent and through WebMCP in headless
+  Chromium, never with raw `curl`, and every report names the surface, the agent, the
+  live commit and the result.
+- `.claude/settings.json` is committed so those checks never prompt: the
+  `regents ash-template` read commands, `make check` and its parts, `make live-check`,
+  `mix test`, `mix format`, `mix compile` and the headless Chromium walk. Deploys
+  (`scripts/deploy.sh`, `make release`), every `fly` command, release functions,
+  sign-in (`regents auth`), every CLI command that writes, any CLI command given another
+  `--base-url` (its signed request could be replayed at this site) and every SIWA client
+  command still ask: no pattern can hold the SIWA client's arguments to reads. `.env`
+  files and the agent's key folder are never read.
+- The live check's first run found that the page's `polls_list`, `polls_show` and
+  `agents_get` tools answered "The site could not be reached" without sending anything:
+  the page kept its own list of public read addresses, and those three were missing from
+  it. `public_tools.ts` now asks each public read at the route its manifest entry names,
+  and the list is gone. The live check calls `polls_list`; the other two take input.
+  A public read now refuses an empty, "." or ".." name in its address, as the signed
+  tools do, and text that has no address form.
+- The browser walk's server runs without the code reloader and live reload, as a release
+  does, and builds into its own folder, `platform/_build/walk`, so the everyday
+  development build is left as it is. The code reloader checks the build on every
+  request and every live connection, one at a time. In one paired run on a busy Mac
+  (load average about 100 to 205), with it on, a walk page took 0.5 to 12 seconds to answer,
+  29 of 37 live connections gave up their socket for long polling after 2.5 seconds, and
+  connecting took 3 to 28 seconds, past the checks' 5-second wait; with it off, pages
+  answered in 4 to 35 milliseconds and all 40 connected on their socket in 0.1 to 0.35
+  seconds.
+- `motion.spec.ts`'s settle check no longer races the lab's note timer. The server takes
+  a note away 3.2 seconds after sending it, and the check looked at the note from outside
+  the page, so on a busy machine it could look after the note had gone. The page now
+  records, frame by frame, each item and note that moved and then came to rest while
+  shown; the check reads that record, and the new item must still be at rest at the end.
+- The copy checks (`agents.spec.ts`, `addresses.spec.ts`, `agent_tools.spec.ts`) no
+  longer race the copy button's answer, which shows for 1.6 seconds: the page records
+  each answer a copy button shows, with the words on the button and in its status at
+  that moment (`test/browser/support/copies.ts`), and each check reads the button's
+  record before it reads the clipboard.
+- Each browser walk check reaches the walk's server as its own visitor. The server limits
+  each address to 120 API reads a minute, and the whole walk came from one address, so 20
+  repeats of the tools window (six reads each opening) were refused with "429 Too Many
+  Requests" and its copy-all button never woke. In the walk only (`config/dev.exs`), the
+  server keys its limits by `Fly-Client-IP`, as production does behind Fly's proxy, and
+  each check sends its own address from 198.18.0.0/15 (`test/browser/support/test.ts`).
+  Production's rule and limits are unchanged.
+- Basis: Sean, 29 Oct 20:49Z, "be on all of that work ... drive the work, complete it,
+  dont ask me questions".

@@ -5,7 +5,7 @@
   "scripts": {
     "assets:build": "mix assets.build",
     "test": "vitest run",
-    "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit",
+    "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit && tsc --project test/live/tsconfig.json --noEmit",
     "test:browser": "sh test/browser/walk.sh"
   },
   "dependencies": {
