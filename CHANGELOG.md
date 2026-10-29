@@ -4963,7 +4963,8 @@ An adversarial review of the two commits above found five things, all fixed here
   a buy.
 - The template sells nothing (`sale: nil`), so buying is off here. A site names its
   sale module (`AshTemplate.Payments.Sale`) and sets `BUYING_WALLET_PRIVATE_KEY` and
-  `BASE_RPC_URL` in Fly secrets after Sean's go. Migrations `20261029054225_chain_buys`
-  and `20261029062853_chain_buy_hold` add `chain_buys`.
+  `BASE_RPC_URL` in Fly secrets after Sean's go. Migrations `20261029054225_chain_buys`,
+  `20261029062853_chain_buy_hold` and `20261029084006_chain_buy_began_at` add
+  `chain_buys`.
 - elixir-utils moves to `46054355`: `RegentPayments.BuyingWallet`, each send at the
   wallet's next nonce, and `RegentCredits` holds with `purchased_only?: true`.

@@ -5,7 +5,8 @@ defmodule AshTemplate.Payments.ChainBuyTest do
   #   back when the approval or the call is refused;
   # - the outcome and its hashes are committed before the Credits are settled;
   # - a call that may still land keeps them held until its receipt answers;
-  # - a buy left for a person keeps its Credits held and logs one line;
+  # - a buy left for a person keeps its Credits held and logs one line, and a
+  #   buy still waiting its turn is never taken for one;
   # - everything bought in one day stays within the site's daily limit.
   use ExUnit.Case, async: false
   use Oban.Testing, repo: AshTemplate.Repo, prefix: "ash_template_app"
@@ -136,14 +137,26 @@ defmodule AshTemplate.Payments.ChainBuyTest do
     assert [%{status: :charged}] = holds(person)
   end
 
-  test "a send that never finished is found, logged and keeps its Credits held" do
+  test "a buy still waiting its turn after ten minutes is sent, never called stuck" do
+    person = person(2)
+    Process.put(:buy_answer, {:ok, %{approval: hash(1), call: hash(2)}})
+    {:ok, buy} = Payments.buy("key-1", person.wallet, actor: person.actor)
+    back(buy, "updated_at")
+
+    AshOban.Test.schedule_and_run_triggers(ChainBuy)
+    Oban.drain_queue(queue: :chain_buys)
+
+    assert %{state: :bought, began_at: %DateTime{}} = reload(buy)
+  end
+
+  test "a send that began ten minutes ago and never finished is logged and keeps its Credits held" do
     person = person(2)
     {:ok, buy} = Payments.buy("key-1", person.wallet, actor: person.actor)
 
-    AshTemplate.Repo.query!(
-      "UPDATE ash_template_app.chain_buys SET updated_at = now() - interval '11 minutes' WHERE id = $1",
-      [Ecto.UUID.dump!(buy.id)]
-    )
+    # The machine stopped mid-send: its send job is gone and the buy is left
+    # `:sending` with the time its send began.
+    Oban.cancel_all_jobs(Oban.Job)
+    back(buy, "began_at")
 
     log = capture_log(fn -> AshOban.Test.schedule_and_run_triggers(ChainBuy) end)
 
@@ -219,6 +232,13 @@ defmodule AshTemplate.Payments.ChainBuyTest do
 
   defp holds(person),
     do: person.actor |> then(&RegentCredits.holds!(actor: &1)) |> Enum.sort_by(& &1.held_at)
+
+  defp back(buy, column) do
+    AshTemplate.Repo.query!(
+      "UPDATE ash_template_app.chain_buys SET #{column} = now() - interval '11 minutes' WHERE id = $1",
+      [Ecto.UUID.dump!(buy.id)]
+    )
+  end
 
   defp reload(buy), do: Ash.get!(ChainBuy, buy.id, authorize?: false)
 

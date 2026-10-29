@@ -1,8 +1,10 @@
 defmodule AshTemplate.Payments.ChainBuy.Send do
   @moduledoc """
-  Sends the buy before the update's transaction starts: the wallet approves
-  exactly the price to the sale, then sends the sale's call for the item,
-  addressed to the buyer's wallet. The update commits what came back, and
+  Sends the buy before the update's transaction starts. It first commits when
+  the send began (`:begin`), so a buy that stops mid-send is told apart from
+  one still waiting its turn. The wallet then approves exactly the price to
+  the sale and sends the sale's call for the item, addressed to the buyer's
+  wallet. The update commits what came back, and
   `Follow` queues what happens next.
   """
 
@@ -13,9 +15,14 @@ defmodule AshTemplate.Payments.ChainBuy.Send do
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.before_transaction(changeset, fn changeset ->
-      Ash.Changeset.force_change_attributes(changeset, changeset.data |> send() |> outcome())
+      buy = begin(changeset.data)
+      Ash.Changeset.force_change_attributes(changeset, buy |> send() |> outcome())
     end)
   end
+
+  # Runs inside the send job, which the trigger already authorized for this
+  # one buy; marking when its send began is part of that same job.
+  defp begin(buy), do: Ash.update!(buy, %{}, action: :begin, authorize?: false)
 
   defp send(buy) do
     with {:ok, sale} <- Settings.sale(),

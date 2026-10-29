@@ -11,8 +11,9 @@ defmodule AshTemplate.Payments.ChainBuy do
   buy's id (`Reserve`) and the send is queued.
 
   The send runs once and one at a time, since every send takes the wallet's
-  next nonce (`Send`): it approves exactly the price to the sale, then sends
-  the sale's call, and commits what came back. The `chain_buys` queue's limit
+  next nonce (`Send`): it marks when it began in its own write, approves
+  exactly the price to the sale, then sends the sale's call, and commits what
+  came back. The `chain_buys` queue's limit
   of one holds on each machine, so the wallet has one sender only while one
   machine runs that queue: a site with more machines runs it on one of them.
 
@@ -22,7 +23,8 @@ defmodule AshTemplate.Payments.ChainBuy do
   them held while `CheckReceipt` reads its receipt; it is never sent again.
   A buy left for a person to look up on the chain (a send that stopped part
   way, one whose machine stopped mid-send, or a call the chain never
-  answered) keeps its Credits held and logs one line (`LeftForAPerson`).
+  answered, or Credits that could not be settled) keeps its Credits held and
+  logs one line (`LeftForAPerson`).
   """
 
   use Ash.Resource,
@@ -75,6 +77,9 @@ defmodule AshTemplate.Payments.ChainBuy do
       public?: true,
       constraints: [one_of: [:held, :charged, :given_back]]
 
+    # When the send began; a buy still waiting in the queue has none.
+    attribute :began_at, :utc_datetime_usec, public?: true
+
     attribute :approval_hash, :string, public?: true
     attribute :call_hash, :string, public?: true
     attribute :failure, :string, public?: true
@@ -95,6 +100,10 @@ defmodule AshTemplate.Payments.ChainBuy do
       change Quote
       change Reserve
       change run_oban_trigger(:send)
+    end
+
+    update :begin do
+      change set_attribute(:began_at, &DateTime.utc_now/0)
     end
 
     update :send do
@@ -127,6 +136,12 @@ defmodule AshTemplate.Payments.ChainBuy do
     update :close_hold do
       require_atomic? false
       change CloseHold
+    end
+
+    update :hold_left do
+      require_atomic? false
+      argument :error, :term
+      change LeftForAPerson
     end
 
     update :stopped do
@@ -175,7 +190,7 @@ defmodule AshTemplate.Payments.ChainBuy do
         where expr(state in [:bought, :failed] and hold == :held)
         queue :default
         max_attempts 3
-        # A job that gives up logs one safe line (UnexpectedFailure), not raw text.
+        on_error :hold_left
         log_errors? false
         log_final_error? false
         scheduler_cron false
@@ -183,10 +198,11 @@ defmodule AshTemplate.Payments.ChainBuy do
       end
 
       # A machine that stops mid-send leaves its buy `:sending`; a send takes
-      # two minutes at most, so one still sending after ten has stopped.
+      # two minutes at most, so one that began ten minutes ago has stopped. A
+      # buy still waiting its turn in the queue has not begun.
       trigger :stuck do
         action :stuck
-        where expr(state == :sending and updated_at < ago(10, :minute))
+        where expr(state == :sending and not is_nil(began_at) and began_at < ago(10, :minute))
         queue :default
         max_attempts 3
         log_errors? false

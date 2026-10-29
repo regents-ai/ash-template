@@ -174,9 +174,11 @@ sale.
   step (`:close_hold`, queued with the outcome). Bought charges them; a refused approval
   or call gives them back; a call that may still land keeps them held while
   `CheckReceipt` reads its receipt.
-- A buy left for a person to look up on the chain (a stopped send, one still `:sending`
-  after ten minutes, a call never answered) keeps its Credits held and logs
-  `Buy left for a person: id=... state=...` for Sentinel.
+- A buy left for a person to look up on the chain (a stopped send, a send that began
+  ten minutes ago and never finished, a call never answered, Credits that could not be
+  settled) keeps its Credits held and logs `Buy left for a person: id=... state=...` for
+  Sentinel. A buy still waiting its turn in the queue has not begun, so it is never
+  taken for one.
 - No Points are earned on a buy.
 
 ## Checks
