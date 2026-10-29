@@ -343,6 +343,10 @@ can do and the check that proves it. Among them:
   than its person has, never pays twice, and stops the moment its allowance
   is off. These run on real separate connections, so their rows stay in the test
   database.
+- It writes through a resource that names no schema while `public` holds a table of
+  the same name, and checks that a create, update, destroy, upsert, bulk upsert and
+  `Ash.update_many` change only the site's schema, because ash_postgres releases after
+  2.13.0 sent upserts to `public`. Run it before moving the ash_postgres pin.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this

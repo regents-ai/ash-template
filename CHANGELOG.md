@@ -5068,3 +5068,16 @@ An adversarial review of the two commits above found five things, all fixed here
   the Mac). Live check in headless Chromium: `/capabilities.json` build.commit `2e158726`;
   home, agents, account and pair pages answer 200 at 390 and 1280, no page errors and
   nothing wider than the screen. Rollback: v132, `637dcce8`.
+
+## 2026-10-29 — A test holds every write to the site's own schema
+
+- `platform/test/ash_template/schema_prefix_test.exs` makes a table of the same name in
+  `ash_template_app` and in `public`, inside the test's own transaction, and writes
+  through a resource that names no schema, as the site's resources do. A create, read,
+  update and destroy, a single upsert, a bulk upsert and `Ash.update_many` (one MERGE on
+  PostgreSQL 17) change only the site's rows, and the rows planted in `public` stay as
+  they were. It is the check of the failure in ash_postgres 2.13.1 through 2.15.2,
+  which sent upserts and `update_many` to `public`; it has not yet been run against
+  those releases to see it fail. The pin is ash_postgres main at `55db7d44` (#910), no
+  longer `== 2.13.0`. `platform/mix.exs` names the test beside the pin, so the pin
+  moves only after it passes. Test-only; nothing to release.
