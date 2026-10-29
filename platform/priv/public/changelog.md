@@ -26,6 +26,9 @@ What changed in Ash Template lately, newest first.
   for you and end a poll you started. A poll it tries again to start starts once; the
   same try with another question, other choices or other minutes is turned down instead
   of answering the first poll.
+- **Agent profile.** The same agent can now set its own name and status line there, and
+  mark your activity read. A change with a field it does not take is turned down instead
+  of saving the rest.
 
 ## 28 October 2026
 

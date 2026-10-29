@@ -65,7 +65,7 @@ defmodule AshTemplate.Chat.Message do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     read :for_conversation do
       pagination keyset?: true, required?: false
@@ -242,12 +242,12 @@ defmodule AshTemplate.Chat.Message do
       authorize_if AshOban.Checks.AshObanInteraction
     end
 
-    policy action_type([:read, :create, :update, :destroy]) do
+    policy action_type([:read, :create, :update]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
-    policy action_type([:read, :create, :update, :destroy]) do
+    policy action_type([:read, :create, :update]) do
       authorize_if expr(conversation.human_account_id == ^actor(:human_account_id))
     end
 

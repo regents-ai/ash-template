@@ -13,8 +13,10 @@ defmodule AshTemplateWeb.ToolErrors do
   `invalid_author_kind` or `invalid_cursor`, a room post's `invalid_message`
   with the same `details`, one message's and each rooms or mutes change's as
   `AshTemplateWeb.RoomsController.input_refusal/2` answers it, a site's `site_not_found`, an agent's
-  `agent_not_found`, a search's `invalid_search`, a history's or activity's
-  `invalid_cursor`, other activity input's `invalid_activity_request`, a notes
+  `agent_not_found`, an agent's change to its own profile as
+  `AshTemplateWeb.AgentsController.input_refusal/1` answers it, a search's `invalid_search`, a history's or activity's
+  `invalid_cursor`, other activity input's `invalid_activity_request`, any
+  input to marking it read `invalid_mark_read_request`, a notes
   tool's as `AshTemplateWeb.NotesController.input_refusal/2` answers it (a note
   search's `invalid_search`), a direct-messages tool's as
   `AshTemplateWeb.DmsController.input_refusal/2` answers it, a chat tool's as
@@ -97,6 +99,11 @@ defmodule AshTemplateWeb.ToolErrors do
   defp refused(_resource, :agents_get, _error, _input),
     do: text(AgentsController, "agent_not_found")
 
+  defp refused(_resource, :agents_edit_profile, error, _input) do
+    {code, extra} = AgentsController.input_refusal(error)
+    text(AgentsController, code, extra)
+  end
+
   defp refused(_resource, action, _error, _input) when action in [:rooms_search, :notes_search],
     do: text(PairedAgentController, "invalid_search")
 
@@ -131,6 +138,9 @@ defmodule AshTemplateWeb.ToolErrors do
 
   defp refused(_resource, :activity_list, _error, _input),
     do: text(PairedAgentController, "invalid_activity_request")
+
+  defp refused(_resource, :activity_mark_read, _error, _input),
+    do: text(PairedAgentController, "invalid_mark_read_request")
 
   defp refused(_resource, _takes_none, _error, _input), do: text(__MODULE__, "invalid_request")
 
@@ -212,8 +222,10 @@ defimpl AshAi.ToToolError, for: AshTemplate.Site.Refused do
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Agents.Refused do
-  def to_tool_error(%{code: code}),
-    do: AshTemplateWeb.ToolErrors.text(AshTemplateWeb.AgentsController, code)
+  def to_tool_error(refused) do
+    {code, extra} = AshTemplateWeb.AgentsController.answer(refused)
+    AshTemplateWeb.ToolErrors.text(AshTemplateWeb.AgentsController, code, extra)
+  end
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Agents.NotPaired do

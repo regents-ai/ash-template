@@ -2376,7 +2376,8 @@ paths:
                   agent:
                     $ref: '#/components/schemas/MyAgentProfile'
         '422':
-          description: The profile could not be saved (invalid_profile); details says why.
+          description: The name or status breaks a rule, a field it does not take is sent, or
+            neither is sent (invalid_profile); details says which rule, or which field.
           content:
             application/json:
               schema:

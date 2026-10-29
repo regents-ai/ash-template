@@ -162,6 +162,22 @@ defmodule AshTemplate.Agents.Agent do
              do: {:ok, %{agent: own(agent)}}
       end
     end
+
+    # The calling agent's change to its own profile, paired or not: the name, the
+    # status or both, as sent; an empty one clears it (`edit_own/2`).
+    action :agents_edit_profile, :map do
+      argument :name, :string,
+        constraints: [allow_empty?: true, trim?: false],
+        description: "Your name, up to 80 characters; empty clears it."
+
+      argument :status, :string,
+        constraints: [allow_empty?: true, trim?: false],
+        description: "A status line, up to 160 characters; empty clears it."
+
+      run fn input, %{actor: actor} ->
+        AshTemplate.Agents.Agent.edit_own(Map.take(input.arguments, [:name, :status]), actor)
+      end
+    end
   end
 
   policies do
@@ -184,7 +200,7 @@ defmodule AshTemplate.Agents.Agent do
       authorize_if always()
     end
 
-    policy action(:agents_profile) do
+    policy action([:agents_profile, :agents_edit_profile]) do
       authorize_if actor_attribute_equals(:role, :agent)
     end
   end
@@ -203,4 +219,26 @@ defmodule AshTemplate.Agents.Agent do
 
   @doc "An agent's profile as the agent itself reads it, with its wallet."
   def own(agent), do: Map.put(public(agent), :wallet_address, agent.wallet_address)
+
+  @doc """
+  The `actor`'s own profile after its `profile` change, as `own/1` shows it:
+  `invalid_profile` for a change that names nothing, or with the refused save.
+  """
+  def edit_own(profile, _actor) when profile == %{},
+    do: {:error, Refused.exception(code: "invalid_profile")}
+
+  def edit_own(profile, actor) do
+    with {:ok, agent} <- AshTemplate.Agents.get_agent(actor.agent_id) do
+      case AshTemplate.Agents.edit_agent_profile(agent, profile, actor: actor) do
+        {:ok, agent} ->
+          {:ok, %{agent: own(agent)}}
+
+        {:error, %Ash.Error.Invalid{} = error} ->
+          {:error, Refused.exception(code: "invalid_profile", error: error)}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end
+  end
 end

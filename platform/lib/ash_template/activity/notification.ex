@@ -108,6 +108,22 @@ defmodule AshTemplate.Activity.Notification do
     update :mark_read do
       change atomic_update(:read_at, expr(now()))
     end
+
+    # Every unread notification of the agent's person marked read, as Mark all
+    # read on /app/activity does. It takes no input.
+    action :activity_mark_read, :map do
+      run fn _input, %{actor: actor} ->
+        with :ok <- NotPaired.check(actor) do
+          case AshTemplate.Activity.mark_all_read(actor: actor) do
+            %Ash.BulkResult{status: :success} ->
+              {:ok, %{marked_read: true}}
+
+            %Ash.BulkResult{errors: errors} ->
+              NotPaired.ended({:error, Ash.Error.to_error_class(errors)}, actor)
+          end
+        end
+      end
+    end
   end
 
   policies do
@@ -121,12 +137,19 @@ defmodule AshTemplate.Activity.Notification do
       authorize_if actor_attribute_equals(:role, :system)
     end
 
-    policy action(:activity_list) do
+    policy action([:activity_list, :activity_mark_read]) do
       authorize_if actor_attribute_equals(:role, :agent)
     end
 
     policy action_type([:read, :update]) do
       authorize_if expr(human_account_id == ^actor(:human_account_id))
+    end
+
+    # An agent marks its person's notifications read only while it is paired,
+    # checked again when the change is made, as every agent write is.
+    policy action(:mark_read) do
+      authorize_if actor_attribute_equals(:role, :human)
+      authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
   end
 

@@ -5310,3 +5310,31 @@ An adversarial review of the two commits above found five things, all fixed here
   check, the taken-id branch removed, the race answered as a conflict, the body choosing the
   poll, the starter check removed) each fail a check.
 - `mix xref`'s compile-connected limit moves to 49 for the action module a start runs.
+
+## 2026-10-29 — Hosted MCP: the agent's own profile and marking activity read
+
+- `/mcp` serves `agents_edit_profile` and `activity_mark_read`, each a generic action
+  (`Agent.agents_edit_profile`, `Notification.activity_mark_read`) that its HTTP route,
+  WebMCP and the AshAi tool all call. `AgentsController` keeps the profile words and maps
+  each refusal once (`input_refusal/1`, `answer/1`); `AshTemplate.Agents.Refused` carries the
+  refused save for `invalid_profile`.
+- `PATCH /api/v1/agents/me` refuses a field it does not take (`invalid_profile` with
+  `details`), where it had been ignored. `POST /api/v1/activity/read` still refuses any body
+  but `{}`; a body that is not an object, which Phoenix hands on as `_json` and Ash skips, is
+  refused by the route before the action.
+- Marking read checks the agent's pairing again in the change itself
+  (`RegentAgents.Checks.Paired` on `:mark_read`), as every other agent write does, so a
+  request let in before its person unpaired the agent marks nothing and answers
+  `agent_not_paired`.
+- The check-in (`GET /api/agents/v1/me`) and whoami stay off `/mcp`: they are
+  `RegentAgents.HTTP`'s routes, and hosting them needs the library to offer each as a
+  function. The note pin waits for Sean's letter.
+- Chat conversations and messages lose the unused `:destroy` action, so a chat and its
+  messages are never deleted, as `Message.AgentSend` relies on.
+- `mix xref`'s comment names each generic action's module that adds a compile-connected
+  file; the limit stays 49.
+- `mcp_agent_test.exs` proves both tools answer and refuse through `/mcp` as over HTTP
+  (eight refusals, with their `details`), and that marking read after the pairing ended
+  marks nothing. Five planted faults (the non-object body let through, the pairing check
+  removed, an empty change saved, the mark-read input refusal dropped, the profile
+  `details` dropped) each fail a check.

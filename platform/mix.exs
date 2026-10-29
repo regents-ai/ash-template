@@ -210,7 +210,10 @@ defmodule AshTemplate.MixProject do
         # ErrorTracker's dashboard route adds one link: the router reads its on_mount at compile time.
         # Each Ash domain adds one for each of its resources (it reads them at compile time), and
         # each signed-agent controller adds one (it reads AgentWallet's refusals into its error table).
-        # A generic action adds one for the module it runs (Ash checks `run` at compile time).
+        # A generic action adds one for the module it runs (Ash checks `run` at compile time):
+        # Rooms.Message.RoomMessages and AgentPost, and each agent write that spends an
+        # operation key, Notes.Note.AgentCreate, Rooms.Room.AgentStart, Dms.Message.AgentSend,
+        # Chat.Message.AgentSend and Polls.Poll.AgentStart.
         # The capability check adds one: it reads the chat assistant's tools, which are never hosted.
         # The hosted MCP forward adds two: the router reads its tools from the capability list,
         # and its input check from ToolErrors (AshAi takes it only as a function), at compile time.

@@ -27,6 +27,9 @@ defmodule AshTemplateWeb.McpAgentTest do
   #   alone names the poll a vote is for, a start's operation_id answers only the
   #   same question, choices and minutes, and two starts with one key at once
   #   start one poll;
+  # - an agent's change to its own profile and its marking its person's activity
+  #   read answer and refuse as HTTP does, and marking read after the pairing
+  #   ended marks nothing;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
   # A connected app's own calls are in AshTemplateWeb.ClaudeConnectorTest. The
@@ -1743,6 +1746,125 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert %{"open" => true} = read_poll(from, id)
   end
 
+  test "an agent's own profile and marking its person's activity read answer through /mcp as over HTTP",
+       %{from: from} do
+    # Before pairing: set through /mcp, read and cleared over HTTP.
+    agent = wallet()
+
+    assert %{"isError" => false, "structuredContent" => %{"agent" => set}} =
+             result(
+               mcp(call("agents_edit_profile", %{name: " Scout ", status: "Reading"}),
+                 from: from,
+                 proof: agent
+               )
+             )
+
+    assert %{"name" => "Scout", "status" => "Reading", "wallet_address" => ^agent} = set
+    assert Jason.decode!(http(:get, "/api/v1/agents/me", nil, from, agent).resp_body) == %{"agent" => set}
+
+    # A change names only what it changes; an empty one clears it.
+    cleared = http(:patch, "/api/v1/agents/me", %{status: ""}, from, agent)
+    assert cleared.status == 200, cleared.resp_body
+    assert %{"agent" => %{"name" => "Scout", "status" => nil}} = answer = Jason.decode!(cleared.resp_body)
+
+    assert %{"isError" => false, "structuredContent" => ^answer} =
+             result(mcp(call("agents_profile", %{}), from: from, proof: agent))
+
+    # Marked read through /mcp, then over HTTP: only the agent's person's.
+    %{account: account, agent: paired} = paired_person()
+    other = paired_person().account
+    notify([account, account, other])
+    assert {unread(account), unread(other)} == {2, 1}
+
+    assert %{"isError" => false, "structuredContent" => %{"marked_read" => true}} =
+             result(mcp(call("activity_mark_read", %{}), from: from, proof: paired))
+
+    assert {unread(account), unread(other)} == {0, 1}
+    notify([account])
+    again = http(:post, "/api/v1/activity/read", %{}, from, paired)
+    assert {again.status, Jason.decode!(again.resp_body)} == {200, %{"marked_read" => true}}
+    assert {unread(account), unread(other)} == {0, 1}
+  end
+
+  test "an agent's own profile and marking activity read refuse through /mcp with the code and words HTTP gives",
+       %{from: from} do
+    agent = wallet()
+    unpaired = wallet()
+    %{account: account, agent: paired} = paired_person()
+    notify([account])
+
+    codes =
+      for {name, input, method, path, body, signer} <- [
+            {"agents_edit_profile", %{}, :patch, "/api/v1/agents/me", %{}, agent},
+            {"agents_edit_profile", %{name: "Fix\u200bture"}, :patch, "/api/v1/agents/me",
+             %{name: "Fix\u200bture"}, agent},
+            {"agents_edit_profile", %{status: String.duplicate("a", 161)}, :patch,
+             "/api/v1/agents/me", %{status: String.duplicate("a", 161)}, agent},
+            {"agents_edit_profile", %{name: 5}, :patch, "/api/v1/agents/me", %{name: 5}, agent},
+            {"agents_edit_profile", %{name: "Scout", wallet_address: unpaired}, :patch,
+             "/api/v1/agents/me", %{name: "Scout", wallet_address: unpaired}, agent},
+            {"activity_mark_read", %{}, :post, "/api/v1/activity/read", %{}, unpaired},
+            {"activity_mark_read", %{all: true}, :post, "/api/v1/activity/read", %{all: true},
+             paired},
+            {"activity_mark_read", %{after: "x"}, :post, "/api/v1/activity/read", %{after: "x"},
+             paired}
+          ] do
+        over_http = http(method, path, body, from, signer)
+        %{"error" => refused} = Jason.decode!(over_http.resp_body)
+
+        assert %{"isError" => true, "content" => [%{"text" => text}]} =
+                 result(mcp(call(name, input), from: from, proof: signer))
+
+        assert Jason.decode!(text)["error"] == refused, "#{name} #{inspect(input)}"
+        {over_http.status, refused["code"], Map.has_key?(refused, "details")}
+      end
+
+    assert codes == [
+             {422, "invalid_profile", false},
+             {422, "invalid_profile", true},
+             {422, "invalid_profile", true},
+             {422, "invalid_profile", true},
+             {422, "invalid_profile", true},
+             {403, "agent_not_paired", false},
+             {422, "invalid_mark_read_request", false},
+             {422, "invalid_mark_read_request", false}
+           ]
+
+    # A body that is not an object is refused over HTTP too.
+    listed = http(:post, "/api/v1/activity/read", [], from, paired)
+    assert Jason.decode!(listed.resp_body)["error"]["code"] == "invalid_mark_read_request"
+
+    # Nothing refused changed a profile or marked anything read.
+    assert %{"agent" => %{"name" => nil, "status" => nil}} =
+             Jason.decode!(http(:get, "/api/v1/agents/me", nil, from, agent).resp_body)
+
+    assert unread(account) == 1
+  end
+
+  test "marking activity read after the agent's pairing ended is refused as agent_not_paired",
+       %{from: from} do
+    %{account: account, agent: agent, pairing: pairing, owner: owner} = paired_person()
+    notify([account])
+
+    # The agent as its signed request was let in, then the person unpairs it.
+    {:ok, active} = RegentAgents.Authority.resolve(Repo, agent)
+
+    let_in =
+      AshTemplate.Actors.Agent.paired(
+        AshTemplate.Agents.sign_in_agent!(agent, actor: %System{}),
+        account,
+        active
+      )
+
+    assert :ok = RegentAgents.unpair_agent(pairing, actor: owner)
+
+    assert {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: "agent_not_paired"}]}} =
+             AshTemplate.Activity.activity_mark_read(%{}, actor: let_in)
+
+    assert unread(account) == 1
+    assert http(:post, "/api/v1/activity/read", %{}, from, agent).status == 403
+  end
+
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",
            %{from: from} do
     check all(
@@ -2155,6 +2277,42 @@ defmodule AshTemplateWeb.McpAgentTest do
 
       agent
     end
+  end
+
+  # A new person's account here, with one agent paired to it.
+  defp paired_person do
+    did = "did:privy:mcp-" <> Ecto.UUID.generate()
+    person = wallet()
+    account = Accounts.register_verified!(did, person, [person], actor: %System{})
+    owner = %RegentAgents.Person{privy_user_id: did}
+    agent = wallet()
+
+    pairing =
+      RegentAgents.pair_agent!(
+        RegentAgents.issue_pairing_code!(actor: owner).code,
+        "Agent",
+        :codex,
+        actor: %RegentAgents.Agent{wallet: agent}
+      )
+
+    %{account: account, agent: agent, pairing: pairing, owner: owner}
+  end
+
+  # One unread notification for each account in `accounts`.
+  defp notify(accounts) do
+    Ash.bulk_create!(
+      for(account <- accounts, do: %{human_account_id: account.id, title: "Notice", path: "/notes"}),
+      AshTemplate.Activity.Notification,
+      :notify,
+      actor: %System{}
+    )
+  end
+
+  defp unread(account) do
+    {:ok, count} =
+      AshTemplate.Activity.count_unread(actor: AshTemplate.Actors.Human.for_account(account))
+
+    count
   end
 
   defp wallet, do: "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)

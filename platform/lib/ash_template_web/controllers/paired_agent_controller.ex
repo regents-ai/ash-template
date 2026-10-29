@@ -129,22 +129,20 @@ defmodule AshTemplateWeb.PairedAgentController do
   end
 
   # Marks every unread notification of its person read, as "Mark all read" on
-  # /app/activity does. It takes no input.
-  def mark_activity_read(conn, _params) do
-    case conn.body_params do
-      body when body == %{} ->
-        mark_read_result(conn, Activity.mark_all_read(actor: conn.assigns.actor))
+  # /app/activity does. It takes no input: any is refused, and a body that is not
+  # an object, which Phoenix hands on as `_json` and Ash skips, never reaches it.
+  def mark_activity_read(%{body_params: %{"_json" => _body}} = conn, _params),
+    do: refuse(conn, "invalid_mark_read_request")
 
-      _other ->
-        refuse(conn, "invalid_mark_read_request")
+  def mark_activity_read(conn, _params) do
+    case Activity.activity_mark_read(conn.body_params, actor: conn.assigns.actor) do
+      {:ok, marked} -> json(conn, marked)
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_mark_read_request")
+      # The pairing was revoked after this request was let in.
+      {:error, %Ash.Error.Forbidden{errors: [%NotPaired{code: code}]}} -> refuse(conn, code)
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
-
-  defp mark_read_result(conn, %Ash.BulkResult{status: :success}),
-    do: json(conn, %{marked_read: true})
-
-  defp mark_read_result(conn, result),
-    do: conn |> UnexpectedFailure.log(result) |> refuse("unavailable")
 
   # The address names the label: an id in the body never chooses another.
   def report_label(conn, %{"id" => id}) do

@@ -43,7 +43,7 @@ defmodule AshTemplate.Chat.Conversation do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
       accept [:title]
@@ -90,12 +90,12 @@ defmodule AshTemplate.Chat.Conversation do
       authorize_if always()
     end
 
-    policy action_type([:read, :create, :update, :destroy]) do
+    policy action_type([:read, :create, :update]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
 
-    policy action_type([:read, :update, :destroy]) do
+    policy action_type([:read, :update]) do
       authorize_if expr(human_account_id == ^actor(:human_account_id))
     end
 

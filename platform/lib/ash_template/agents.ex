@@ -17,6 +17,7 @@ defmodule AshTemplate.Agents do
       define :edit_agent_profile, action: :edit_profile
       define :agents_get, action: :agents_get, args: [:id]
       define :agents_profile, action: :agents_profile
+      define :agents_edit_profile, action: :agents_edit_profile
     end
 
     resource AshTemplate.Agents.Operation do
@@ -42,6 +43,10 @@ defmodule AshTemplate.Agents do
 
     tool :agents_profile, AshTemplate.Agents.Agent, :agents_profile do
       description "Read your own profile on this site, with your wallet. Paired or not. Changes nothing."
+    end
+
+    tool :agents_edit_profile, AshTemplate.Agents.Agent, :agents_edit_profile do
+      description "Set the name and status line anyone sees on your profile: send name, status or both; an empty one clears it. Your wallet stays off the public profile. Works before pairing."
     end
 
     for name <- RegentMCPAgents.Tools.names() do
