@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.{Activity, AgentPicture, Notes, Rooms}
+  alias AshTemplate.{Activity, AgentPicture, Limits, Notes, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Rooms.Mute
@@ -87,7 +87,7 @@ defmodule AshTemplateWeb.PairedAgentController do
        "Send picture as the file's bytes in standard base64, with no line breaks: a PNG, JPEG or WebP of up to 45 KB."},
     "picture_too_large" =>
       {413, "That picture is too large.",
-       "Send a PNG, JPEG or WebP of up to 45 KB and 100 million pixels."},
+       "Send a PNG, JPEG or WebP of up to 45 KB and 40 million pixels."},
     "not_a_picture" =>
       {422, "That file is not a picture we take.", "Send a whole PNG, JPEG or WebP file."},
     "picture_too_detailed" =>
@@ -95,6 +95,9 @@ defmodule AshTemplateWeb.PairedAgentController do
        "Send a simpler picture: it is kept as a 256 × 256 WebP of up to 64 KB."},
     "picture_not_found" =>
       {404, "You have no picture.", "Set one with agents_picture_set first."},
+    "pictures_limited" =>
+      {429, "You have set your picture 10 times this hour.",
+       "Wait the number of seconds in Retry-After, then send it again."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
@@ -298,20 +301,34 @@ defmodule AshTemplateWeb.PairedAgentController do
   # The agent's own picture, re-made as its person's upload is
   # (`AshTemplate.AgentPicture`). Its pairing names the agent, so it can never
   # name another. A signed body is read up to 64 KB
-  # (`AshTemplateWeb.SignedBodyReader`), so nothing larger reaches the decoder.
+  # (`AshTemplateWeb.SignedBodyReader`), so nothing larger reaches the decoder,
+  # and each agent sends at most 10 an hour, counted before decoding.
   def set_picture(conn, _params) do
     actor = conn.assigns.actor
 
-    with {:ok, bytes} <- sent_picture(conn.body_params),
+    with :ok <- Limits.spend_until(:agent_picture, {:agent, actor.wallet_address}),
+         {:ok, bytes} <- sent_picture(conn.body_params),
          {:ok, webp} <- AgentPicture.make(bytes),
          {:ok, picture} <-
            RegentAgents.set_own_agent_picture(actor.pairing_id, webp, actor: actor) do
       json(conn, %{picture: picture(actor, picture)})
     else
-      {:error, reason} when is_atom(reason) -> refuse(conn, picture_code(reason))
-      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
-      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "agent_not_paired")
-      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+      {:limited, seconds} ->
+        conn
+        |> put_resp_header("retry-after", Integer.to_string(seconds))
+        |> refuse("pictures_limited")
+
+      {:error, reason} when is_atom(reason) ->
+        refuse(conn, picture_code(reason))
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        refuse(conn, "agent_not_paired")
+
+      {:error, %Ash.Error.Invalid{}} ->
+        refuse(conn, "agent_not_paired")
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
 

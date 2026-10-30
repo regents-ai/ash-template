@@ -2497,7 +2497,7 @@ paths:
                   picture:
                     $ref: '#/components/schemas/AgentPicture'
         '413':
-          description: The body is over 64 KB (request_entity_too_large), or the picture opens to more than 100 million pixels (picture_too_large).
+          description: The body is over 64 KB (request_entity_too_large), or the picture opens to more than 40 million pixels (picture_too_large).
           content:
             application/json:
               schema:
@@ -2515,7 +2515,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '429':
-          description: Signed request refused; error contains code, message and hint.
+          description: Signed request refused, or this agent already set its picture 10 times
+            this hour (pictures_limited, with Retry-After); error contains code, message and hint.
           content:
             application/json:
               schema:

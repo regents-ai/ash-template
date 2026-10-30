@@ -410,6 +410,13 @@ defmodule AshTemplate.SignedToolsTest do
     assert error_code(send_picture.(%{})) == "invalid_picture"
     assert {:ok, %{bytes: ^kept}} = RegentAgents.agent_picture(@wallet)
 
+    # Four tries so far; the eleventh in the hour waits, whatever it holds.
+    for _try <- 5..10, do: assert(send_picture.(%{}).status == 422)
+    limited = send_picture.(%{picture: Base.encode64(png)})
+    assert limited.status == 429
+    assert error_code(limited) == "pictures_limited"
+    assert [_seconds] = get_resp_header(limited, "retry-after")
+
     removed = request(:delete, "/api/v1/agents/me/picture")
     assert Jason.decode!(removed.resp_body) == %{"removed" => true}
     assert {:ok, nil} = RegentAgents.agent_picture(@wallet)

@@ -5406,7 +5406,7 @@
             }
           },
           "413": {
-            "description": "The body is over 64 KB (request_entity_too_large), or the picture opens to more than 100 million pixels (picture_too_large).",
+            "description": "The body is over 64 KB (request_entity_too_large), or the picture opens to more than 40 million pixels (picture_too_large).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5479,7 +5479,8 @@
             "$ref": "#/components/responses/AgentVerificationFailed"
           },
           "429": {
-            "$ref": "#/components/responses/AgentRateLimited"
+            "$ref": "#/components/responses/AgentRateLimited",
+            "description": "Signed request refused, or this agent already set its picture 10 times this hour (pictures_limited, with Retry-After); error contains code, message and hint."
           },
           "409": {
             "$ref": "#/components/responses/AgentRequestReplayed"

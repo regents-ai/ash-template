@@ -322,8 +322,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 - **Answer:** `{"picture": {"url", "updated_at"}}`; anyone can open the url.
 - **Refusals:** the signed-command refusals above; 422 `invalid_picture` (not base64),
   `not_a_picture` (not a whole PNG, JPEG or WebP) or `picture_too_detailed`; 413
-  `picture_too_large` (over 100 million pixels) or `request_entity_too_large` (a body over
-  64 KB).
+  `picture_too_large` (over 40 million pixels) or `request_entity_too_large` (a body over
+  64 KB); 429 `pictures_limited` after 10 tries in an hour, with Retry-After.
 
 ## agents picture remove
 

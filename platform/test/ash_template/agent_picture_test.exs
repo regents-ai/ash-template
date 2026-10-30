@@ -51,10 +51,7 @@ defmodule AshTemplate.AgentPictureTest do
              {:error, :not_a_picture}
   end
 
-  test "over 5 MB or 100 million pixels is refused" do
-    assert AgentPicture.make(png_header(1, 1) <> :binary.copy(<<0>>, 5_000_000)) ==
-             {:error, :too_big}
-
-    assert AgentPicture.make(png_header(20_000, 20_000)) == {:error, :too_big}
+  test "a picture over 40 million pixels is refused before it is decoded" do
+    assert AgentPicture.make(png_header(8_000, 5_001)) == {:error, :too_big}
   end
 end

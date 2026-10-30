@@ -1,9 +1,10 @@
 defmodule AshTemplateWeb.AgentPictureController do
   @moduledoc """
   The picture a person chose for their agent, by the agent's wallet, for
-  anyone. Pages link it with `?v=` set to when it was last set (`path/2`);
-  only that link is kept for long, so a changed or removed picture is never
-  served from an old copy under its current link.
+  anyone. Pages link it with `?v=` set to when it was last set (`path/2`), and
+  only that link may be kept, for a day. Removing or replacing a picture
+  answers every new request at once, but a browser or cache that already holds
+  the old link may show the old picture for up to a day.
   """
   use AshTemplateWeb, :controller
 
@@ -33,7 +34,7 @@ defmodule AshTemplateWeb.AgentPictureController do
 
   defp cache(version, updated_at) do
     if version == to_string(DateTime.to_unix(updated_at, :microsecond)),
-      do: "public, max-age=31536000, immutable",
+      do: "public, max-age=86400",
       else: "public, max-age=0, must-revalidate"
   end
 end
