@@ -23,9 +23,9 @@ persistence in each product. Extract only code with actual equivalent consumers.
 
 All five sites use the wallet identity and transaction-state rules in
 `regent-workflow`: Privy's active wallet acts when the server finds it among the
-signed-in account's linked wallets, and the page shows its data. Any other wallet
-shows no data of its own and sends nothing; the page asks the person to switch to
-one of their wallets. Match record and chain as well as signer.
+signed-in account's linked wallets, and the page shows its data. Any other wallet is
+ignored: it shows no data of its own, sends nothing, and no note asks the person to
+switch. Match record and chain as well as signer.
 
 Never preserve pending transactions in browser storage or database recovery
 machinery. Do not restore/replay pending transactions on reload or build a recovery

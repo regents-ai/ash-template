@@ -121,6 +121,16 @@ export function accountActiveWallet<W extends {address: string}>(
   return held && (!authenticated || linked.includes(address)) ? active : null
 }
 
+// A wallet the visitor picked in Privy's connect window counts the same way when
+// signed in: only when the account is linked to it. Signed out there are no
+// linked wallets, and the wallet picked is the page's wallet.
+export function accountWalletSelection<S extends {address: string}>(
+  selection: S | null,
+  linked: ReadonlyArray<string>,
+): S | null {
+  return selection && (linked.length === 0 || linked.includes(selection.address)) ? selection : null
+}
+
 // A refusal the server itself answered, told apart from a failure on the way.
 class ServerReportedSessionError extends Error {
   constructor() {
@@ -994,7 +1004,9 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
       authenticated,
       linked,
     )
-    const pendingSelection = pendingEthereumWalletSelection()
+    const remembered = pendingEthereumWalletSelection()
+    const pendingSelection = accountWalletSelection(remembered, linked)
+    if (remembered && !pendingSelection) forgetEthereumWalletSelection()
     if (pendingSelection) {
       const matches = ready && walletsReady ? wallets.filter(wallet =>
         wallet.type === "ethereum" && wallet.address.toLowerCase() === pendingSelection.address &&

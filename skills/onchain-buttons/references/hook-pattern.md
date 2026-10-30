@@ -126,8 +126,9 @@ OnchainSteps.put_review(socket, review)
 
 ## Which wallet sends
 
-Founder decision "1 a", 2026-09-27: Privy's active wallet is the only wallet that acts,
-and only when the signed-in account links it.
+Founder decision "1 a", 2026-09-27, as the founder's 21 Oct 2026 ruling leaves it: Privy's
+active wallet is the only wallet that acts, and only when the signed-in account links it;
+a wallet it does not link is ignored, never asked to be switched.
 
 - The page passes the component `linked={AccessContext.linked_wallets(@access_context)}`:
   the account's own `wallet_addresses`, lowercase and each once, or `nil` signed out.
@@ -137,11 +138,11 @@ and only when the signed-in account links it.
 - `OnchainSteps.active_wallet/1` reads it; `OnchainSteps.signer(linked, active)` is the
   wallet that may act, or `nil` when signed out, when none is active, or when the account
   does not link it.
-- With no signer there is no review. `OnchainSteps.mismatch_note/2` names both short
-  addresses and asks the person to switch when the wallet app has another wallet open
-  ("Your wallet is on 0x9a8b..c1d2, which isn't linked to this account. Switch to
-  0x1234..abcd.").
-- `failure_note/4` and `mismatch_note/2` return the note as parts: words, and
+- With no signer there is no review and no note beside the buttons. A wallet the account
+  does not link is ignored, as if none were open; nothing asks the person to switch. The
+  browser bridge never reports one signed in (`accountActiveWallet` and
+  `accountWalletSelection` in `privy_bridge.tsx`), and the server treats one as no wallet.
+- `failure_note/4` returns the note as parts: words, and
   `{:address, address}` for each wallet it names. The component draws them with
   `<OnchainSteps.note id=... parts=... />`, so every wallet in a note opens its full
   address and has a copy icon (`Regent.Primitives.address`), as every address on a
@@ -151,7 +152,7 @@ and only when the signed-in account links it.
   (`AccessContext.own_wallet/1`), so a wrong or missing active wallet never empties the
   panel. Signed out, it is the active wallet. The line naming it says "Paying from" or
   "Sending from" only for the signer; any other shown wallet is just "Wallet", so the
-  panel never names a wallet nothing will send from beside the note asking to switch.
+  panel never names a wallet nothing will send from.
   A page that already says which wallet acts (a Key page naming its holder) passes
   `names_sender={false}`: the line is then not drawn and its balance not read. It is
   drawn by default, since elsewhere nothing else says which wallet pays.
@@ -229,8 +230,7 @@ The hook sends only reason codes; the words live in `OnchainSteps.failure_note/4
 | Reason or outcome | Meaning | Words |
 | --- | --- | --- |
 | Signed out | No account | No words: the press opens Privy's sign-in |
-| `wallet_unavailable`, none active | Signed in, but no wallet is open in the wallet app | "You're signed in with 0x1234..abcd, but your wallet app has no wallet open. Open 0x1234..abcd there, then press again. Nothing was sent." |
-| Active wallet not linked | Another wallet is open in the wallet app | "Your wallet is on 0x9a8b..c1d2, which isn't linked to this account. Switch to 0x1234..abcd. Nothing was sent." |
+| `wallet_unavailable` or `step_unknown`, no account wallet | Signed in, and none of the account's wallets is open in the wallet app (another wallet counts as none) | "You're signed in with 0x1234..abcd. Open 0x1234..abcd in your wallet app, then press again. Nothing was sent." |
 | `step_unknown` | No step by that name for these figures | "This can't be sent as it stands. Check the details above, then press again. Nothing was sent." |
 | `wallet_unavailable`, mid-press | Privy swapped the wallet during the press | "Your wallet changed during the press, so nothing was sent. Press again." |
 | `network_mismatch` | The wallet would not move to the chain, or moved away | "Your wallet is on a different network. Switch it to Base, then press again. Nothing was sent." |

@@ -21,7 +21,7 @@ this page.
 | Group | Situation |
 | --- | --- |
 | Who is pressing | Signed out |
-| | Privy's active wallet is not linked to the signed-in account |
+| | A wallet the signed-in account does not link is open (ignored: no switch note) |
 | | No wallet is active in this tab |
 | | The person switches to a second wallet linked to the same account (the figures move to it) |
 | What the wallet does | A repeat press while the wallet is open |

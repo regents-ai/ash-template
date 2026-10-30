@@ -7,10 +7,10 @@ authority are related but not interchangeable.
 ## Keep three state machines separate
 
 The product's acting wallet is Privy's active wallet when the server finds it among
-the verified session's linked wallets (founder, 2026-09-27: "the Privy active wallet is the only wallet that can make actions, and so if the user wallet differs, make them switch"). Then the page shows
-that wallet's data and the server builds its steps. Any other selection, including
-an extension account that is not linked, shows none of its private data and sends
-nothing; the page asks the person to switch to one of their own wallets. Linking a
+the verified session's linked wallets. Then the page shows that wallet's data and the
+server builds its steps. Any other selection, including an extension account that is
+not linked, is ignored (founder, 21 Oct 2026): it shows none of its private data,
+sends nothing, and no note asks the person to switch. Linking a
 new wallet happens through Privy and a fresh verified session, never from the page's
 own report of a wallet.
 Use the shared `regent-workflow` rule: never preserve pending transactions; refresh

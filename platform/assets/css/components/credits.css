@@ -37,10 +37,6 @@
   visibility: hidden;
 }
 
-.credits-panel__mismatch {
-  min-block-size: 2lh;
-}
-
 .credits-panel__press-notes {
   min-block-size: 3lh;
 }

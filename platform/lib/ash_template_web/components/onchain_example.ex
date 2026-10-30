@@ -138,9 +138,7 @@ defmodule AshTemplateWeb.OnchainExample do
         do: assign(socket, signer: signer),
         else: socket |> assign(signer: signer, wallet: wallet, balance: nil) |> read_balance()
 
-    socket
-    |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
-    |> OnchainSteps.put_review(review)
+    OnchainSteps.put_review(socket, review)
   end
 
   defp steps(amount, chain) do
@@ -214,9 +212,6 @@ defmodule AshTemplateWeb.OnchainExample do
           {if @signer, do: "Sending from", else: "Wallet"}
           <P.address id={"#{@id}-wallet"} address={@wallet} /> on {@chain.name} · {balance(@balance)}
         <% end %>
-      </p>
-      <p class="onchain-example-note" hidden={!@mismatch}>
-        <OnchainSteps.note :if={@mismatch} id={"#{@id}-mismatch"} parts={@mismatch} />
       </p>
 
       <div class="onchain-example-actions">

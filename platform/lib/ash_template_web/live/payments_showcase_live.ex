@@ -11,22 +11,18 @@ defmodule AshTemplateWeb.PaymentsShowcaseLive do
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
 
-  # Sample wallets, plainly not anyone's: the one paid, the one signed in with
-  # and another the wallet app has open.
+  # A sample wallet, plainly not anyone's: the one paid.
   @pay_to "0x1111111111111111111111111111111111111111"
-  @signed_in "0x2222222222222222222222222222222222222222"
-  @other "0x3333333333333333333333333333333333333333"
 
   @impl true
   def mount(_params, _session, socket) do
-    # The words for each answer `RegentPayments.WalletPayment.pay/4` can give, as
+    # The words for each way a payment from the account's own wallet can end, as
     # parts for `OnchainSteps.note/1`.
     answers = [
       {"success", "Paid", ["1.00 USDC went to ", {:address, @pay_to}, "."]},
       {"info", "Going through",
        ["Your payment is still going through. Check again in a moment."]},
       {"warning", "Expired", ["This price has expired. Start again for a fresh one."]},
-      {"warning", "Other wallet", OnchainSteps.mismatch_note([@signed_in], @other)},
       {"error", "Refused", ["Those payment terms have changed since your wallet saw them."]},
       {"error", "Unavailable", ["Payments aren't available right now. Try again shortly."]}
     ]

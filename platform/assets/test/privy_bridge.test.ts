@@ -9,7 +9,7 @@ import type {PrivyEvents} from "@privy-io/react-auth"
 vi.mock("@privy-io/react-auth", () => ({}))
 vi.mock("react-dom/client", () => ({}))
 
-const {accountActiveWallet, createConnectWalletRequest, createPrivyLoginCallbacks, signOutOfProvider} =
+const {accountActiveWallet, accountWalletSelection, createConnectWalletRequest, createPrivyLoginCallbacks, signOutOfProvider} =
   await import("../js/privy_bridge")
 
 const disconnected = "regent:wallet-disconnected:v1"
@@ -70,6 +70,16 @@ it("signed in, a wallet app left from before is never the account's wallet", () 
   expect(accountActiveWallet(zerion, held, true, [zerion.address.toLowerCase()])).toBe(zerion)
   expect(accountActiveWallet(zerion, held, false, [])).toBe(zerion)
   expect(accountActiveWallet(zerion, [regents], false, [])).toBeNull()
+})
+
+it("signed in, a wallet picked in the connect window counts only when the account links it", () => {
+  const zerion = {address: "0x0cb2000000000000000000000000000000003c37"}
+  const regents = {address: "0x2c95000000000000000000000000000000008cf6"}
+
+  expect(accountWalletSelection(zerion, [regents.address])).toBeNull()
+  expect(accountWalletSelection(regents, [regents.address])).toBe(regents)
+  expect(accountWalletSelection(zerion, [])).toBe(zerion)
+  expect(accountWalletSelection(null, [regents.address])).toBeNull()
 })
 
 it("signing out lets go of every wallet before Privy signs out, even one that refuses", async () => {

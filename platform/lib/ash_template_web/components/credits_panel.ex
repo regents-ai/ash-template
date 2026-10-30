@@ -282,7 +282,6 @@ defmodule AshTemplateWeb.CreditsPanel do
           |> read_funds()
 
     socket
-    |> assign(mismatch: OnchainSteps.mismatch_note(linked, active))
     |> remember_number(review)
     |> OnchainSteps.put_review(review)
   end
@@ -540,9 +539,6 @@ defmodule AshTemplateWeb.CreditsPanel do
             <P.address :if={@wallet} id={"#{@id}-wallet"} address={@wallet} />
             <span class="credits-panel__usdc">{usdc(@usdc)}</span>
           </div>
-          <p class="credits-panel__note credits-panel__mismatch">
-            <OnchainSteps.note :if={@mismatch} id={"#{@id}-mismatch"} parts={@mismatch} />
-          </p>
 
           <ol class="credits-panel__steps">
             <li class="credits-panel__step" data-state={@approve.state}>

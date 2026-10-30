@@ -132,19 +132,15 @@ defmodule AshTemplateWeb.OnchainSteps do
       when reason in ~w(step_unknown wallet_unavailable),
       do: ["#{@no_wallet} Nothing was sent."]
 
-  def failure_note(reason, linked, nil, _chain_name)
-      when reason in ~w(step_unknown wallet_unavailable),
-      do:
-        ["You're signed in with "] ++
-          wallets(linked, " and ") ++
-          [", but your wallet app has no wallet open. Open "] ++
-          wallets(linked, " or ") ++ [" there, then press again. Nothing was sent."]
-
   def failure_note(reason, linked, active, _chain_name)
       when reason in ~w(step_unknown wallet_unavailable) do
     cond do
+      # A wallet the account doesn't link is ignored, as if none were open.
       signer(linked, active) == nil ->
-        mismatch_note(linked, active) ++ [" Nothing was sent."]
+        ["You're signed in with "] ++
+          wallets(linked, " and ") ++
+          [". Open "] ++
+          wallets(linked, " or ") ++ [" in your wallet app, then press again. Nothing was sent."]
 
       reason == "step_unknown" ->
         [
@@ -172,26 +168,6 @@ defmodule AshTemplateWeb.OnchainSteps do
   def failure_note("send_unconfirmed", _linked, _active, _chain_name),
     do: ["Your wallet may have sent this. Check your wallet activity."]
 
-  @doc """
-  The note beside the buttons while the wallet app has open a wallet the
-  signed-in account does not link, naming both and asking the person to switch,
-  as parts for `note/1`.
-  """
-  def mismatch_note([], active) when is_binary(active), do: [@no_wallet]
-
-  def mismatch_note(linked, active) when is_list(linked) and is_binary(active) do
-    if signer(linked, active) == nil do
-      [
-        "Your wallet is on ",
-        {:address, active},
-        ", which isn't linked to this account. Switch to "
-      ] ++
-        wallets(linked, " or ") ++ ["."]
-    end
-  end
-
-  def mismatch_note(_linked, _active), do: nil
-
   attr :id, :string, required: true
 
   attr :parts, :list,
@@ -199,7 +175,7 @@ defmodule AshTemplateWeb.OnchainSteps do
     doc: "words, and `{:address, address}` for each wallet the note names"
 
   @doc """
-  A note from `failure_note/4` or `mismatch_note/2`: its words, with each wallet
+  A note from `failure_note/4`: its words, with each wallet
   it names opening and copying its full address (`Regent.Primitives.address`).
   """
   def note(assigns) do

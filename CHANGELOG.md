@@ -5810,3 +5810,16 @@ way, and the library's own site-tool serving is gone.
   In General, other checks' messages could push the reported message out of the room's
   scrolling area while its menu was open; the menu then hides, and the tap landed on a
   message beneath it.
+
+## 2026-10-30 — No note asks to switch wallets
+
+- A wallet the signed-in account doesn't link is now ignored everywhere, as if no
+  wallet were open (founder ruling, 21 Oct). The old note that named the other
+  wallet and asked the person to switch is gone from the on-chain example, the
+  Credits panel and the payments showcase. A press with no account wallet open sends
+  nothing and names the account's wallets, asking the person to open one.
+- A wallet picked in Privy's connect window while signed in now counts only when the
+  account links it; otherwise it is forgotten.
+- The on-chain buttons skill and the Privy and integration references describe the
+  one rule. The shared payments library still carries its own switch note; that is
+  listed in the template backlog as its own item.

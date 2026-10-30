@@ -10,7 +10,7 @@ evidence) never come in.
 
 | Part | From | Now in | Keeps | Site step |
 | --- | --- | --- | --- | --- |
-| Signed-in wallet shown at once | Autolaunch `SignedInWallet` (e3ab1e5) | `OnchainSteps.signer/2`, `mismatch_note/2` and the example's "from" line (template 5702314, 345b9f1) | A wallet panel shows the signed-in wallet on mount; only Privy's active wallet acts, and only when the account links it | Adopt the wallet standard (template-standard-adoption.md section 3) and delete the site's own version |
+| Signed-in wallet shown at once | Autolaunch `SignedInWallet` (e3ab1e5) | `OnchainSteps.signer/2` and the example's "from" line (template 5702314, 345b9f1) | A wallet panel shows the signed-in wallet on mount; only Privy's active wallet acts, and only when the account links it | Adopt the wallet standard (template-standard-adoption.md section 3) and delete the site's own version |
 | Health that checks the database | Autolaunch `health_controller.ex` (e7f296f) | `HealthController` | `/healthz` answers "ok" only when a read of the site's own table succeeds, within 1 s, never cached, with no error detail | Point the read at one of the site's own tables |
 | Page titles and descriptions | Regents `public_documents.ex` (7f866f87) | `PublicDocuments.page/1`, `metadata/3`, the root layout | Every page names itself; the site name is added once; the layout fails to render a page that sets no title | One `@pages` table; every page and controller assigns `PublicDocuments.page/1` |
 | Friendly error pages | Keyfleet `error_html.ex` (73145ed) | `ErrorHTML` | "We can't find that page" / "Something went wrong", with recovery links | Take the two headlines |
