@@ -318,6 +318,41 @@ defmodule AshTemplateWeb.ShowcaseLive do
           </.disclosure>
         </.card>
         <.card>
+          <h3>Addresses</h3>
+          <dl class="sc-facts">
+            <dt>Base</dt>
+            <dd>
+              <P.address id="address-base" address="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" />
+            </dd>
+            <dt>Robinhood</dt>
+            <dd>
+              <P.address
+                id="address-robinhood"
+                address="0x9a3f6e1c4b7d2a8e5f0c3b6d9e2a5f8c1b4e7d0a3f6c9b2e5d8a1f4c7b0e3d6a"
+                kind="tx"
+                chain="robinhood"
+              />
+            </dd>
+            <dt>Test network</dt>
+            <dd>
+              <P.address
+                id="address-local"
+                address="0x5FbDB2315678afecb367f032d93F642f64180aa3"
+                chain={nil}
+              />
+            </dd>
+            <dt>Pool ID</dt>
+            <dd>
+              <P.address
+                id="address-pool"
+                address="0x21c67e77068de97969ba93d4aab21826d33ca12bb9f565d8496e8fda8a82ca27"
+                kind="id"
+              />
+            </dd>
+          </dl>
+          <.api module="Regent.Primitives" function="address" />
+        </.card>
+        <.card>
           <h3>Fields</h3>
           <P.field :let={field} id="preview-email" label="Email">
             <input

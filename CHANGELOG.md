@@ -5748,3 +5748,11 @@ way, and the library's own site-tool serving is gone.
 - The cube lab pages at 390 and 1280 stand as on v147; the twin cubes stage is 22 px taller at
   1280 for the longer staking sentence. `GET /mcp` 405, `POST` 401; the live check as the paired
   agent 151 passed, 1 skipped. Rollback: v147, `3de766a8`.
+
+## 2026-10-30 — Addresses on Robinhood, on a test network, and long IDs
+
+- The design-system pin moves to `968b12bb`, whose address primitive opens an address
+  or transaction on Robinhood in Blockscout, leaves the arrow out on a test network
+  with no explorer, and copies a long ID such as a Uniswap v4 pool ID with no arrow.
+  Autolaunch asked for both for its stock page. The components page (`/showcase`)
+  shows the four forms under Addresses, after Typography.
