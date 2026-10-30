@@ -4,6 +4,7 @@ defmodule AshTemplate.SignedToolsTest do
   use ExUnit.Case, async: false
   import Plug.Test
   import Plug.Conn
+  import Phoenix.ConnTest, only: [assert_error_sent: 2]
   require Ash.Query
   alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Rooms
@@ -363,6 +364,61 @@ defmodule AshTemplate.SignedToolsTest do
     added_after = request(:post, "/api/v1/mutes", Jason.encode!(%{message_id: message.id}))
     assert added_after.status == 403
     assert Rooms.list_my_mutes!(actor: human) == []
+  end
+
+  test "an agent sets and removes only its own picture, never one over 64 KB, and only while paired" do
+    # Invariant: the agent's pairing names the picture it changes, so another agent
+    # of the same person keeps theirs; a picture is re-made before it is kept, and
+    # one too large is refused before it is opened.
+    {_account, person, paired} = paired_person("did:privy:picture-test")
+    code = RegentAgents.issue_pairing_code!(actor: person)
+
+    sibling =
+      RegentAgents.pair_agent!(code.code, "Sibling", :hermes,
+        actor: %RegentAgents.Agent{wallet: @other}
+      )
+
+    {:ok, png} =
+      640 |> Vix.Vips.Operation.black!(360, bands: 3) |> Vix.Vips.Image.write_to_buffer(".png")
+
+    {:ok, theirs} = AshTemplate.AgentPicture.make(png)
+    {:ok, _picture} = RegentAgents.set_agent_picture(sibling.id, theirs, actor: person)
+    send_picture = &request(:post, "/api/v1/agents/me/picture", Jason.encode!(&1))
+
+    set = send_picture.(%{picture: Base.encode64(png)})
+    assert set.status == 200, set.resp_body
+    url = URI.parse(Jason.decode!(set.resp_body)["picture"]["url"])
+    assert url.path == "/agents/#{@wallet}/picture"
+
+    shown = request(:get, url.path <> "?" <> url.query, nil, false)
+    assert shown.status == 200
+    assert get_resp_header(shown, "content-type") == ["image/webp"]
+    assert {:ok, %{bytes: kept}} = RegentAgents.agent_picture(@wallet)
+    assert shown.resp_body == kept
+    assert {:ok, %{bytes: ^theirs}} = RegentAgents.agent_picture(@other)
+
+    # Zeros would be refused as no picture once opened; too large comes first.
+    {413, _headers, too_large} =
+      assert_error_sent(413, fn ->
+        send_picture.(%{picture: Base.encode64(:binary.copy(<<0>>, 65_536))})
+      end)
+
+    assert Jason.decode!(too_large)["error"]["code"] == "request_entity_too_large"
+
+    assert error_code(send_picture.(%{picture: Base.encode64("<svg/>")})) == "not_a_picture"
+    assert error_code(send_picture.(%{picture: "not base64!"})) == "invalid_picture"
+    assert error_code(send_picture.(%{})) == "invalid_picture"
+    assert {:ok, %{bytes: ^kept}} = RegentAgents.agent_picture(@wallet)
+
+    removed = request(:delete, "/api/v1/agents/me/picture")
+    assert Jason.decode!(removed.resp_body) == %{"removed" => true}
+    assert {:ok, nil} = RegentAgents.agent_picture(@wallet)
+    assert error_code(request(:delete, "/api/v1/agents/me/picture")) == "picture_not_found"
+    assert {:ok, %{bytes: ^theirs}} = RegentAgents.agent_picture(@other)
+
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert send_picture.(%{picture: Base.encode64(png)}).status == 403
+    assert {:ok, nil} = RegentAgents.agent_picture(@wallet)
   end
 
   test "an agent's direct messages are its person's alone, a retry sends once, and a block moves only the blocker's list" do

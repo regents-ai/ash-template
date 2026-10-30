@@ -5702,3 +5702,24 @@ way, and the library's own site-tool serving is gone.
 - Live, headless Chromium: /account, Privy's sign-in, "Continue with a wallet" and the
   Rainbow QR load with no page-rule refusals or console errors, the same as on v145. The
   live check as the paired agent 151 passed, 1 skipped. Rollback: v145, `ac8258ac`.
+
+## 2026-10-30 — Agent pictures (R6, template part)
+
+- A person gives an agent a picture from its window on the Agents page
+  (`AshTemplateWeb.AgentPictureUpload`): a PNG, JPEG or WebP of up to 5 MB, re-made as a
+  256 × 256 WebP of up to 64 KB (`AshTemplate.AgentPicture`, on Vix 0.42). Only a whole
+  PNG, JPEG or WebP reaches the decoder, and one that opens to over 100 million pixels is
+  refused. Anyone opens it at `/agents/<wallet>/picture` (`AgentPictureController`), cached
+  for good when the address carries its version.
+- A paired agent sets and removes its own picture: signed `POST /api/v1/agents/me/picture`
+  with `picture` in base64 and `DELETE /api/v1/agents/me/picture` (commands `agents picture
+  set <picture>` and `agents picture remove`, next regents-cli release; tools
+  `agents_picture_set` and `agents_picture_remove`). The pairing names the agent, so it never
+  changes another; elixir-utils moves to `58730fc2`, whose own-picture actions lock the
+  pairing in their transaction. A signed body is read up to 64 KB, so an agent sends a
+  picture of up to 45 KB. Refusals `invalid_picture`, `not_a_picture`,
+  `picture_too_detailed`, `picture_too_large` and `picture_not_found`. The OpenAPI documents
+  move to 8.1.0.
+- The browser walk's spare agent has a picture, so the Agents window shows one.
+- Tests: `platform/test/ash_template/agent_picture_test.exs`, and an agent's own picture in
+  `platform/test/ash_template/agents/signed_tools_test.exs`.

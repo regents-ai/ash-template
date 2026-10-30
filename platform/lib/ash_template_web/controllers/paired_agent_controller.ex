@@ -3,8 +3,9 @@ defmodule AshTemplateWeb.PairedAgentController do
   What only a paired agent does, for the browser tools (`priv/tool_manifest.json`,
   `assets/js/public_tools.ts`) and regents-cli alike: search, pins and label
   ratings on its person's notes, their Credits and Points, reading their activity
-  and marking it read, room search, and the people and agents its person has
-  muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s.
+  and marking it read, room search, the people and agents its person has muted
+  in the rooms, and its own picture. The notes themselves are
+  `AshTemplateWeb.NotesController`'s.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority.
@@ -12,11 +13,19 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.{Activity, Notes, Rooms}
+  alias AshTemplate.{Activity, AgentPicture, Notes, Rooms}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Rooms.Mute
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries}
+
+  alias AshTemplateWeb.{
+    AgentPictureController,
+    FormErrors,
+    NotesJSON,
+    PointsEntries,
+    PublicDocuments
+  }
+
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentCredits.Errors.{NotEnoughCredits, Refused}
   alias RegentHttp.UnexpectedFailure
@@ -73,6 +82,19 @@ defmodule AshTemplateWeb.PairedAgentController do
     "spending_over_daily_limit" =>
       {403, "This would go over the daily limit your person set for you.",
        "account_balances shows what is left over the last 24 hours. Retry once enough is left, or ask your person to raise the limit."},
+    "invalid_picture" =>
+      {422, "Send the picture as base64.",
+       "Send picture as the file's bytes in standard base64, with no line breaks: a PNG, JPEG or WebP of up to 45 KB."},
+    "picture_too_large" =>
+      {413, "That picture is too large.",
+       "Send a PNG, JPEG or WebP of up to 45 KB and 100 million pixels."},
+    "not_a_picture" =>
+      {422, "That file is not a picture we take.", "Send a whole PNG, JPEG or WebP file."},
+    "picture_too_detailed" =>
+      {422, "That picture is too detailed.",
+       "Send a simpler picture: it is kept as a 256 × 256 WebP of up to 64 KB."},
+    "picture_not_found" =>
+      {404, "You have no picture.", "Set one with agents_picture_set first."},
     "unavailable" => {503, "That could not be reached right now.", "Try again in a moment."}
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
@@ -272,6 +294,67 @@ defmodule AshTemplateWeb.PairedAgentController do
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
   end
+
+  # The agent's own picture, re-made as its person's upload is
+  # (`AshTemplate.AgentPicture`). Its pairing names the agent, so it can never
+  # name another. A signed body is read up to 64 KB
+  # (`AshTemplateWeb.SignedBodyReader`), so nothing larger reaches the decoder.
+  def set_picture(conn, _params) do
+    actor = conn.assigns.actor
+
+    with {:ok, bytes} <- sent_picture(conn.body_params),
+         {:ok, webp} <- AgentPicture.make(bytes),
+         {:ok, picture} <-
+           RegentAgents.set_own_agent_picture(actor.pairing_id, webp, actor: actor) do
+      json(conn, %{picture: picture(actor, picture)})
+    else
+      {:error, reason} when is_atom(reason) -> refuse(conn, picture_code(reason))
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "agent_not_paired")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  def remove_picture(conn, _params) do
+    actor = conn.assigns.actor
+
+    case RegentAgents.remove_own_agent_picture(actor.pairing_id, actor: actor) do
+      :ok ->
+        json(conn, %{removed: true})
+
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{}]}} ->
+        refuse(conn, "picture_not_found")
+
+      {:error, %Ash.Error.Forbidden{}} ->
+        refuse(conn, "agent_not_paired")
+
+      {:error, %Ash.Error.Invalid{}} ->
+        refuse(conn, "agent_not_paired")
+
+      {:error, error} ->
+        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+    end
+  end
+
+  defp sent_picture(%{"picture" => encoded}) when is_binary(encoded) do
+    with :error <- Base.decode64(encoded), do: {:error, :not_base64}
+  end
+
+  defp sent_picture(_params), do: {:error, :not_base64}
+
+  defp picture_code(:not_base64), do: "invalid_picture"
+  defp picture_code(:too_big), do: "picture_too_large"
+  defp picture_code(:not_a_picture), do: "not_a_picture"
+  defp picture_code(:too_detailed), do: "picture_too_detailed"
+
+  defp picture(actor, picture),
+    do: %{
+      url:
+        PublicDocuments.url(
+          AgentPictureController.path(String.downcase(actor.wallet_address), picture.updated_at)
+        ),
+      updated_at: picture.updated_at
+    }
 
   defp mute(%Mute{} = mute) do
     %{

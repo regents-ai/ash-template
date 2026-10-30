@@ -76,6 +76,7 @@
       "purpose": "Give one agent its skill.",
       "type": "text/markdown"
     },
+    {"route": "/agents/:wallet/picture", "paths": ["/agents/0xffffffffffffffffffffffffffffffffffffffff/picture"], "purpose": "Show an agent's picture.", "type": "image/webp"},
     {"route": "/capabilities.json", "purpose": "List what agents can do here.", "type": "application/json"},
     {"route": "/.well-known/security.txt", "purpose": "Say how to report a security problem.", "type": "text/plain"},
     {"route": "/indexnow-key.txt", "purpose": "Prove the pages this site sends to search engines came from it.", "type": "text/plain"},

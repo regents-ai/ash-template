@@ -5,7 +5,8 @@ defmodule AshTemplateWeb.AgentsPanel do
   New Agent leading to the pairing box below it (`AshTemplateWeb.PairingBox`),
   and a larger view of one agent with where it has been active across the Regent
   sites, a line for each site and day (`AshTemplate.Agents.ActivityReading`), its
-  name, which the person may change, and Unpair.
+  name, which the person may change, its picture (`AshTemplateWeb.AgentPictureUpload`),
+  and Unpair.
 
   Pairing immediately lets an agent do what `AshTemplateWeb.Capabilities.may/0`
   lists, which the list's tip and the agent's view show the person, and the
@@ -216,6 +217,13 @@ defmodule AshTemplateWeb.AgentsPanel do
             data-close-event="close_agent"
           >
             <:actions>
+              <.live_component
+                module={AshTemplateWeb.AgentPictureUpload}
+                id="account-agent-picture"
+                lease={@lease}
+                account={@account}
+                agent={@detail.agent}
+              />
               <P.button
                 type="button"
                 variant="secondary"
@@ -344,7 +352,10 @@ defmodule AshTemplateWeb.AgentsPanel do
   defp show_agent(socket, id) do
     with {:ok, id} <- Ecto.UUID.cast(id),
          {:ok, %PairedAgent{} = agent} <-
-           RegentAgents.get_my_agent(id, actor: socket.assigns.person) do
+           RegentAgents.get_my_agent(id,
+             actor: socket.assigns.person,
+             load: [:picture_updated_at]
+           ) do
       case socket.assigns.detail do
         %{agent: %{id: ^id}} = shown ->
           socket |> assign(detail: %{shown | agent: agent}) |> read_detail(agent)
