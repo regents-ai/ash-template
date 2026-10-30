@@ -51,6 +51,7 @@ identity tools behind its switch.
 | Pair with a code | — | — | — | `pair_identity` | `agents pair` | no | G6 |
 | Rename or unpair an agent | Agents panel | — | — | — | — | no (owner only) | G2 |
 | Read an agent's last actions | Agents panel | — | — | — | — | no (owner only) | G2 |
+| Set or remove its own picture | Agents panel (the person) | `agents_picture_set`, `agents_picture_remove` | — | — | `agents picture set`, `agents picture remove` (next regents-cli release) | no | G5 |
 | Set an agent's Credits allowance | `/account/credits` | — | — | — | — | money | G7 |
 
 ## Credits and Points

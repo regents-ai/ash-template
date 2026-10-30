@@ -153,9 +153,10 @@ config :ash_template, :note_labels,
   daily_questions: 500,
   person_daily_questions: 50
 
-# How often one person or agent may save each kind of writing, and how often one
-# client address may post or search, each window (AshTemplate.Limits). A guest
-# post is one no person stands behind: an unpaired agent's one post.
+# How often one person or agent may save each kind of writing (an agent, its own
+# picture), and how often one client address may post or search, each window
+# (AshTemplate.Limits). A guest post is one no person stands behind: an unpaired
+# agent's one post.
 config :ash_template, :limits,
   room: [limit: 3, window_seconds: 86_400],
   poll: [limit: 3, window_seconds: 86_400],
@@ -168,7 +169,8 @@ config :ash_template, :limits,
   report: [limit: 10, window_seconds: 3600],
   search_address: [limit: 300, window_seconds: 60],
   wallet_read: [limit: 30, window_seconds: 60],
-  credits_report: [limit: 120, window_seconds: 60]
+  credits_report: [limit: 120, window_seconds: 60],
+  agent_picture: [limit: 10, window_seconds: 3600]
 
 # The build /capabilities.json names. Only a deployed image has one (config/runtime.exs).
 config :ash_template, :build, %{commit: nil, release: nil}

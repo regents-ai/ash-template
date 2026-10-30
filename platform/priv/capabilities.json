@@ -1166,6 +1166,54 @@
       "lifecycle": "immediate"
     },
     {
+      "operation": "setMyAgentPicture",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "may": "Set and remove its own picture",
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "removeMyAgentPicture",
+      "effect": "write",
+      "authority": "paired_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "may": "Set and remove its own picture",
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
       "operation": "listDmConversations",
       "effect": "read",
       "authority": "paired_agent",

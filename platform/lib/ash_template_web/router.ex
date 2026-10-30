@@ -248,6 +248,7 @@ defmodule AshTemplateWeb.Router do
     get "/agents.md", PublicPagesController, :agents
     get "/skill.md", PublicPagesController, :skill_guide
     get "/agents/:agent/skill.md", PublicPagesController, :agent_skill_guide
+    get "/agents/:wallet/picture", AgentPictureController, :show
     get "/capabilities.json", PublicPagesController, :capabilities
     get "/.well-known/security.txt", PublicPagesController, :security
     get "/indexnow-key.txt", PublicPagesController, :indexnow_key
@@ -339,9 +340,11 @@ defmodule AshTemplateWeb.Router do
 
   # What only a paired agent does: search, pins and label ratings on its
   # person's notes, their Credits and Points, reading their activity and marking
-  # it read, room search, and mutes.
+  # it read, room search, mutes, and its own picture.
   scope "/api/v1", AshTemplateWeb do
     pipe_through :api
+    post "/agents/me/picture", PairedAgentController, :set_picture
+    delete "/agents/me/picture", PairedAgentController, :remove_picture
     post "/rooms/search", PairedAgentController, :search_rooms
     get "/mutes", PairedAgentController, :mutes
     post "/mutes", PairedAgentController, :add_mute

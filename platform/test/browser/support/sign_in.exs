@@ -2,7 +2,7 @@
 # signed in through the site's own sign-in step with a fresh session, one chat of
 # their own, one direct message to someone who wrote in General, a room that friend wrote in, the longest unbroken Public Display Name the site takes (so every
 # signed-in page proves a long name fits the screen), three agents paired the way an
-# agent pairs, and the signed cookie the walk sends; the friend who writes in General
+# agent pairs, one of them with a picture, and the signed cookie the walk sends; the friend who writes in General
 # gets one too, and starts a quiet room for each width's busy room (busy_room.spec.ts).
 # Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
@@ -95,26 +95,36 @@ conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
 AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
 
 # A poll the friend started, open for the whole walk, for the poll page to show.
-AshTemplate.Polls.start_poll!(%{question: "Tea or coffee?", choices: ["Tea", "Coffee"], minutes: 60},
+AshTemplate.Polls.start_poll!(
+  %{question: "Tea or coffee?", choices: ["Tea", "Coffee"], minutes: 60},
   actor: Human.for_account(friend)
 )
 
 # A fourth agent, paired first, which the account menu's three leave out
 # (account_menu.spec.ts); the agent the walk opens on the Agents page, and one for
 # each width to rename (agents.spec.ts).
-for {name, digit} <- [
-      {"Spare Agent", "f"},
-      {"Walk Agent", "c"},
-      {"Desktop Agent", "d"},
-      {"Phone Agent", "e"}
-    ] do
-  code =
-    RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: account.privy_user_id})
+[spare | _rest] =
+  for {name, digit} <- [
+        {"Spare Agent", "f"},
+        {"Walk Agent", "c"},
+        {"Desktop Agent", "d"},
+        {"Phone Agent", "e"}
+      ] do
+    code =
+      RegentAgents.issue_pairing_code!(
+        actor: %RegentAgents.Person{privy_user_id: account.privy_user_id}
+      )
 
-  RegentAgents.pair_agent!(code.code, name, :hermes,
-    actor: %RegentAgents.Agent{wallet: "0x" <> String.duplicate(digit, 40)}
-  )
-end
+    RegentAgents.pair_agent!(code.code, name, :hermes,
+      actor: %RegentAgents.Agent{wallet: "0x" <> String.duplicate(digit, 40)}
+    )
+  end
+
+# The spare agent has a picture, for the walk to open at /agents/<wallet>/picture.
+{:ok, png} = Vix.Vips.Operation.black!(300, 200) |> Vix.Vips.Image.write_to_buffer(".png")
+{:ok, webp} = AshTemplate.AgentPicture.make(png)
+owner = %RegentAgents.Person{privy_user_id: account.privy_user_id}
+{:ok, _picture} = RegentAgents.set_agent_picture(spare.id, webp, actor: owner)
 
 options = Plug.Session.init(Application.fetch_env!(:ash_template, :session_options))
 
