@@ -5957,3 +5957,12 @@ way, and the library's own site-tool serving is gone.
   the Mac.
 - Shared change: the five sites take it from
   `control/rollouts/2026-10-30-visit-lines-handler.md`.
+
+## 2026-10-30 — Pages fit a 320px phone
+
+- The showcase's label and value lists (Addresses, the balance reading and Facts) made the
+  page wider than a 320px screen, and at 390 a long label ran into its address. Each label
+  and value now share a row, and the value drops under its label when the row has no room
+  (`platform/priv/showcase.css`, `platform/lib/ash_template_web/live/showcase_live.ex`).
+- The browser walk opens every page again on a touch phone 320 wide (`narrow` in
+  `platform/playwright.config.ts`); every other page already fit.

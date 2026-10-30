@@ -5,7 +5,8 @@ import {defineConfig, devices} from "@playwright/test"
 // drops it at the end. Here it builds the pages' scripts and styles, starts its own
 // local server on that database, and signs its person in and pairs their agents
 // first (test/browser/support/sign_in.exs). It walks a desktop at 1280 wide and a
-// touch phone at 390 wide. Chromium only: WebKit is not run on the Mac.
+// touch phone at 390 wide, and opens every page on a touch phone at 320 wide.
+// Chromium only: WebKit is not run on the Mac.
 // Neither the browser nor the server leaves this machine: the browser's outside
 // requests fail the check that made them (test/browser/support/test.ts), and the
 // server, with the outside services' settings cleared, refuses its own and the walk
@@ -47,5 +48,7 @@ export default defineConfig({
   projects: [
     {name: "desktop", use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}},
     {name: "phone", use: {...devices["Pixel 7"], viewport: {width: 390, height: 844}}},
+    // The narrowest phones: every page opens and fits the screen at 320 wide.
+    {name: "narrow", testMatch: "pages.spec.ts", use: {...devices["Pixel 7"], viewport: {width: 320, height: 640}}},
   ],
 })

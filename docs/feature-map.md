@@ -7,7 +7,8 @@ copy this file's shape.
 
 `make check` runs every check below. The browser walk (`make check-browser`) runs
 headless Chromium as a desktop 1280 wide and as a touch phone 390 wide (Playwright's
-Pixel 7 at that width); WebKit is not run on the Mac. The walk never
+Pixel 7 at that width), and opens every page again on a touch phone 320 wide; WebKit is
+not run on the Mac. The walk never
 leaves the machine. In the browser, Privy is answered by a stand-in that holds no
 sign-in, and any other outside request fails the check that made it
 (`platform/test/browser/support/test.ts`). The walk's server reads its chains and
@@ -29,7 +30,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 
 | What | Check |
 | --- | --- |
-| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen, shows every ENS name, full address and short address with its copy icon, and lets a keyboard reach every box that scrolls (a wide code block or table takes focus), signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
+| Every page opens, shows what proves its purpose, raises no error, makes no failing request to the site, fits the screen (320 wide too), shows every ENS name, full address and short address with its copy icon, and lets a keyboard reach every box that scrolls (a wide code block or table takes focus), signed out and signed in | `platform/test/browser/pages.spec.ts` over `platform/test/browser/pages.json` |
 | Every machine-readable document answers with its type | same, `documents` |
 | No page or document the site serves is left out of the walk, and the walk names none the site has dropped | `platform/test/ash_template_web/feature_map_test.exs` |
 | Every agent in the pairing box has a guide page and a skill the walk opens | same |

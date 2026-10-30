@@ -132,8 +132,9 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-api-note[open] summary span { transform: rotate(90deg); }
 .sc-api-note code { display: block; padding-top: 8px; }
 .sc-type-display { font: 400 42px/1.2 var(--font-family-title); margin: 16px 0; }
-.sc-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.sc-facts dd { margin: 0; text-align: right; }
+.sc-facts { display: grid; gap: 12px; }
+.sc-facts > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+.sc-facts dd { margin: 0 0 0 auto; text-align: right; }
 .sc-backgrounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .sc-backgrounds figure { margin: 0; padding: 16px; min-width: 0; border: 1px solid var(--rg-page-rule); }
 /* Keep compatibility components in the DOM without restoring retired page art. */

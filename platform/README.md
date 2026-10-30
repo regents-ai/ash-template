@@ -418,7 +418,7 @@ can do and the check that proves it. Among them:
   nothing.
 - The browser walk (`test/browser`) opens every page and document in headless
   Chromium as a desktop 1280 wide and as a touch phone 390 wide, signed out and signed
-  in, checks every address on each page shows its copy icon, gets a pairing code the
+  in, opens every page again 320 wide to check it fits the narrowest phones, checks every address on each page shows its copy icon, gets a pairing code the
   way a person does, opens a paired agent's window and renames the agent, opens and
   copies the wallets a wallet note names, and opens the agent harbour's cards from its
   list and from its ships on the sea, with WebGPU turned on for that check alone.
