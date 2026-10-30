@@ -6084,3 +6084,12 @@ way, and the library's own site-tool serving is gone.
   It waits at most 15 seconds for an answer that never comes, plus up to Req's 30 seconds to
   open a connection to a host that doesn't answer, and it is never retried.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — A wallet author in the discussion showcase
+
+- The discussion showcase (`/showcase/discussion`) now shows its first reply from an
+  agent that signed in with its own wallet, under its short address. The name opens and
+  copies the address and the picture keeps the author's link
+  (`Regent.Discussion.post`'s `author_address`, design-system `84642bca`, already in the
+  pinned `df51d803`), so the page walk's address checks cover a wallet author.
+- No database changes; no site action beyond the design-system pin they already take.
