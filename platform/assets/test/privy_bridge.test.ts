@@ -72,14 +72,16 @@ it("signed in, a wallet app left from before is never the account's wallet", () 
   expect(accountActiveWallet(zerion, [regents], false, [])).toBeNull()
 })
 
-it("signed in, a wallet picked in the connect window counts only when the account links it", () => {
+it("signed in, a wallet picked in the connect window counts only once the account's wallets are known and link it", () => {
   const zerion = {address: "0x0cb2000000000000000000000000000000003c37"}
   const regents = {address: "0x2c95000000000000000000000000000000008cf6"}
 
-  expect(accountWalletSelection(zerion, [regents.address])).toBeNull()
-  expect(accountWalletSelection(regents, [regents.address])).toBe(regents)
-  expect(accountWalletSelection(zerion, [])).toBe(zerion)
-  expect(accountWalletSelection(null, [regents.address])).toBeNull()
+  expect(accountWalletSelection(zerion, true, null)).toEqual({use: null, forget: false})
+  expect(accountWalletSelection(zerion, true, [])).toEqual({use: null, forget: true})
+  expect(accountWalletSelection(zerion, true, [regents.address])).toEqual({use: null, forget: true})
+  expect(accountWalletSelection(regents, true, [regents.address])).toEqual({use: regents, forget: false})
+  expect(accountWalletSelection(zerion, false, null)).toEqual({use: zerion, forget: false})
+  expect(accountWalletSelection(null, true, [regents.address])).toEqual({use: null, forget: false})
 })
 
 it("signing out lets go of every wallet before Privy signs out, even one that refuses", async () => {

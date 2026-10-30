@@ -5833,3 +5833,12 @@ way, and the library's own site-tool serving is gone.
   nothing overflows.
 - `GET /mcp` 405, `POST` 401; the live check as the paired agent 151 passed, 1 skipped.
   Rollback: v150, `a5ac9a92`.
+
+## 2026-10-30 — A wallet pick waits for the account's wallets
+
+- Signed in, a wallet picked in Privy's connect window is now neither used nor
+  forgotten until Privy has loaded the account's linked wallets. Once they are known,
+  a linked pick is used and any other pick is forgotten. v151 decided "signed out" from
+  an empty linked list, so a signed-in account whose wallets had not loaded yet, or
+  that had none yet, still took any picked wallet. Signed out, the pick is still the
+  page's wallet.

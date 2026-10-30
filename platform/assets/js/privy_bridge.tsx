@@ -122,13 +122,18 @@ export function accountActiveWallet<W extends {address: string}>(
 }
 
 // A wallet the visitor picked in Privy's connect window counts the same way when
-// signed in: only when the account is linked to it. Signed out there are no
-// linked wallets, and the wallet picked is the page's wallet.
+// signed in: only when the account is linked to it. Until Privy has loaded the
+// account (`linked` is null) the pick is neither used nor forgotten. Signed out,
+// the wallet picked is the page's wallet. Both addresses are lowercase: the pick
+// is stored that way and the linked list is lowered where it is read.
 export function accountWalletSelection<S extends {address: string}>(
   selection: S | null,
-  linked: ReadonlyArray<string>,
-): S | null {
-  return selection && (linked.length === 0 || linked.includes(selection.address)) ? selection : null
+  authenticated: boolean,
+  linked: ReadonlyArray<string> | null,
+): {use: S | null; forget: boolean} {
+  if (!selection || !authenticated) return {use: selection, forget: false}
+  if (!linked) return {use: null, forget: false}
+  return linked.includes(selection.address) ? {use: selection, forget: false} : {use: null, forget: true}
 }
 
 // A refusal the server itself answered, told apart from a failure on the way.
@@ -770,13 +775,14 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   const setActiveWallet = providerState?.setActiveWallet ?? providerActiveWallet.setActiveWallet
   const connectWallet = providerState?.connectWallet ?? providerWalletConnector.connectWallet
   // The Ethereum wallets the signed-in account is linked to, joined so a render
-  // with the same accounts leaves the wallet sync below alone.
+  // with the same accounts leaves the wallet sync below alone. Undefined until
+  // Privy has loaded the account.
   const linkedWallets = (
     providerState?.linkedWallets ??
-    (privy.user?.linkedAccounts ?? []).flatMap(account =>
+    privy.user?.linkedAccounts.flatMap(account =>
       account.type === "wallet" && account.chainType === "ethereum" ? [account.address] : [],
     )
-  ).map(address => address.toLowerCase()).join(",")
+  )?.map(address => address.toLowerCase()).join(",")
   const signOutOnly = mode === "sign-out-only"
   const signOutOnlyState = React.useRef<"preterminal" | "terminal">(
     signOutOnly ? "preterminal" : "terminal",
@@ -836,7 +842,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   const subject = providerState?.userId ?? privy.user?.id ?? null
   // A person who signs in with email or Google gets their Privy wallet just
   // after Privy signs them in, and the site's sign-in needs a wallet.
-  const hasWallet = linkedWallets !== ""
+  const hasWallet = Boolean(linkedWallets)
   const provider = React.useRef({authenticated, hasWallet, login, logout, ready, subject})
   // Counts the times the signed-in person changed, so work started for one
   // never finishes on behalf of the next.
@@ -997,16 +1003,20 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
       return
     }
 
-    const linked = linkedWallets ? linkedWallets.split(",") : []
+    const linked = linkedWallets?.split(",").filter(Boolean) ?? null
     let selectedWallet = accountActiveWallet(
       activeWallet?.type === "ethereum" ? activeWallet : null,
       wallets,
       authenticated,
-      linked,
+      linked ?? [],
     )
     const remembered = pendingEthereumWalletSelection()
-    const pendingSelection = accountWalletSelection(remembered, linked)
-    if (remembered && !pendingSelection) forgetEthereumWalletSelection()
+    const pick = accountWalletSelection(remembered, authenticated, linked)
+    if (pick.forget) forgetEthereumWalletSelection()
+    // A pick still in play, used now or waiting for Privy to load the account,
+    // keeps the choices below from naming another wallet.
+    const held = pick.forget ? null : remembered
+    const pendingSelection = pick.use
     if (pendingSelection) {
       const matches = ready && walletsReady ? wallets.filter(wallet =>
         wallet.type === "ethereum" && wallet.address.toLowerCase() === pendingSelection.address &&
@@ -1027,7 +1037,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
     // connected wallet the account is linked to, or, when this tab has several,
     // the account's own wallet the page was drawn for. Several and none of them
     // the account's own is no wallet; the press opens Privy's connect window.
-    if (!selectedWallet && !pendingSelection && ready && walletsReady && linked.length > 0) {
+    if (!selectedWallet && !held && ready && walletsReady && linked && linked.length > 0) {
       const signedIn = wallets.filter(wallet =>
         wallet.type === "ethereum" && linked.includes(wallet.address.toLowerCase()),
       )
@@ -1040,7 +1050,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
         setActiveWallet(selectedWallet)
       }
     }
-    const switchedAccount = selectedWallet || pendingSelection ? null : switchedAccountOf(selectedWalletRef.current, wallets)
+    const switchedAccount = selectedWallet || held ? null : switchedAccountOf(selectedWalletRef.current, wallets)
 
     // The wallet the customer just left stops being the active wallet here, before
     // any of the work below can await, so nothing can be prepared or sent for it

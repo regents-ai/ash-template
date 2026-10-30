@@ -142,6 +142,8 @@ a wallet it does not link is ignored, never asked to be switched.
   does not link is ignored, as if none were open; nothing asks the person to switch. The
   browser bridge never reports one signed in (`accountActiveWallet` and
   `accountWalletSelection` in `privy_bridge.tsx`), and the server treats one as no wallet.
+  A wallet picked in Privy's connect window before Privy has loaded the account's wallets
+  waits: it is neither used nor forgotten until the linked list is known.
 - `failure_note/4` returns the note as parts: words, and
   `{:address, address}` for each wallet it names. The component draws them with
   `<OnchainSteps.note id=... parts=... />`, so every wallet in a note opens its full
