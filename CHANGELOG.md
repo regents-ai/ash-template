@@ -6084,3 +6084,34 @@ way, and the library's own site-tool serving is gone.
   It waits at most 15 seconds for an answer that never comes, plus up to Req's 30 seconds to
   open a connection to a host that doesn't answer, and it is never retried.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — Written words hold no hidden characters; smaller bodies and messages; nosniff everywhere
+
+- A room or direct message, a note's title and body, and a message to the assistant
+  now refuse hidden characters, such as the mark that turns a file's name the other
+  way round, a zero-width space or a control character. The refusal says "Use letters,
+  numbers and marks you can see." under the box, or in the API's refusal. Line breaks,
+  tabs, emoji and joined emoji are kept. The rule is elixir-utils `RegentFormat.Text`
+  (main `de9f481d`, which holds format `703ef7a8`): each line follows the name rule,
+  `RegentFormat.Name`, and a note's title follows the name rule itself. It is an Ash
+  validation only, with no database change. Words saved before stay as they are, an
+  edit that leaves a note's title or body as it was doesn't check it, and an edit that
+  keeps a hidden character is refused under its box, never with a failure.
+- A body over 256 KB is refused with 413 before it is read; the limit was 1 MB. Bodies
+  an agent signs, on the API, `/mcp` and Stripe's notices, already stop at 64 KB. No
+  page takes a file.
+- A page's connection refuses a message over 256 KB; the limit was 10 MB. The longest
+  note the boxes take is about 91 KB once sent.
+- Pages connect by websocket only. The fallback to long polling, which a page switched
+  to when its websocket took over 2.5 seconds, read up to 8 MB a request, past both
+  limits above. A slow websocket now keeps trying until it connects. A network that
+  blocks websockets gets the pages as served, without their live parts.
+- Every answer now says `x-content-type-options: nosniff`, set once at the start of
+  the endpoint: pages, files, redirects, `/mcp` and every refusal, as a page or as
+  JSON. Before, only pages and files had it: a redirect, `/mcp`'s answers and the 404,
+  406 and 413 refusals had none.
+- The walk's tall-message check now sends a short message first, then checks that the
+  tall one lands inside the room. On the Send code before v156 it fails about one
+  phone run in four, with the message 187 pixels below the room. It can't be made to
+  fail every time, because the old fault depended on timing.
+- WebKit is not run on the Mac.

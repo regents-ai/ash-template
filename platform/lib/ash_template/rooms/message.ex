@@ -43,6 +43,7 @@ defmodule AshTemplate.Rooms.Message do
 
   # What every room read and write loads for `public/1`.
   @shown [:agent, :via_agent, :author_picture, :like_count]
+  @shown_text "Use letters, numbers and marks you can see."
 
   postgres do
     table "room_messages"
@@ -207,6 +208,7 @@ defmodule AshTemplate.Rooms.Message do
       accept [:room, :body]
       change SetAuthor
       change SquashBlankLines
+      validate match(:body, RegentFormat.Text.pattern()), message: @shown_text
 
       change {LimitWrites,
               allowance: :room_post, address_allowance: :room_post_address, field: :body}
@@ -222,6 +224,7 @@ defmodule AshTemplate.Rooms.Message do
       accept [:body]
       require_atomic? false
       change SquashBlankLines
+      validate match(:body, RegentFormat.Text.pattern()), message: @shown_text
       change atomic_update(:edited_at, expr(now()))
       change set_attribute(:via_agent_id, actor(:acting_agent_id))
       change load(@shown)

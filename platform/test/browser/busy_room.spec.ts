@@ -521,16 +521,24 @@ test("A message menu stays usable while new messages arrive, and closes once its
   await problems.expect()
 })
 
-test("A tall message's menu closes once its button is scrolled away, while the message is still in view", async ({page, hasTouch}, info) => {
+test("A tall message sent straight after a short one lands in view, and its menu closes once its button is scrolled away", async ({page, hasTouch}, info) => {
   const press = presser(hasTouch)
   const problems = watch(page)
   const tag = randomUUID().slice(0, 8)
   await page.goto("/rooms/general")
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
 
-  // Taller than the room at either width once opened in full.
+  // Taller than the room at either width once opened in full. Sent straight after a
+  // short one, it lands in view: Send brings the room to exactly its end, where Chrome
+  // keeps the newest message in view as it arrives. A pixel short of it, as asking for
+  // the full height can leave a phone, the older messages stay put and this one lands
+  // below the room.
+  await send(page, hasTouch, `Short ${info.project.name} ${tag}`)
   const lines = Array.from({length: 40}, (_, k) => `Tall ${info.project.name} ${tag}, line ${k + 1}.`)
   const said = await send(page, hasTouch, lines.join("\n"))
+  await still(page)
+  expect(await shown(said)).toBe(true)
+  expect(await scrollTop(page)).toBeGreaterThan(-2)
   await press(said.getByRole("button", {name: "Show more"}))
   await expect(said.getByText(lines[39])).toBeVisible()
   const button = said.getByRole("button", {name: "Options for this message"})

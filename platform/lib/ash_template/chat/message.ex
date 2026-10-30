@@ -87,6 +87,9 @@ defmodule AshTemplate.Chat.Message do
         message "Message cannot be empty"
       end
 
+      validate match(:text, RegentFormat.Text.pattern()),
+        message: "Use letters, numbers and marks you can see."
+
       argument :conversation_id, :uuid do
         public? false
       end

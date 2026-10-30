@@ -39,6 +39,8 @@ defmodule AshTemplate.Notes.Note do
     WebhookAddressSet
   }
 
+  @shown_text "Use letters, numbers and marks you can see."
+
   postgres do
     table "notes"
     repo(AshTemplate.Repo)
@@ -122,6 +124,8 @@ defmodule AshTemplate.Notes.Note do
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:title, :body]
       argument :operation_id, :uuid
+      validate match(:title, RegentFormat.Name.pattern()), message: @shown_text
+      validate match(:body, RegentFormat.Text.pattern()), message: @shown_text
 
       change fn changeset, %{actor: actor} ->
         if Map.get(actor || %{}, :role) == :agent and
@@ -153,6 +157,16 @@ defmodule AshTemplate.Notes.Note do
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       accept [:title, :body]
       require_atomic? false
+      # A title or body left as it was is not checked again, so an older note holding
+      # a hidden character can still be renamed, or its words rewritten.
+      validate match(:title, RegentFormat.Name.pattern()),
+        message: @shown_text,
+        where: changing(:title)
+
+      validate match(:body, RegentFormat.Text.pattern()),
+        message: @shown_text,
+        where: changing(:body)
+
       change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
       change atomic_update(:revision, expr(revision + 1))
       change set_attribute(:changed_by_agent_id, actor(:acting_agent_id))
