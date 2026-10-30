@@ -5966,3 +5966,13 @@ way, and the library's own site-tool serving is gone.
   (`platform/priv/showcase.css`, `platform/lib/ash_template_web/live/showcase_live.ex`).
 - The browser walk opens every page again on a touch phone 320 wide (`narrow` in
   `platform/playwright.config.ts`); every other page already fit.
+
+## 2026-10-30 — Released v155: pages fit a 320px phone
+
+- v155 = template main `80077a44`, no migration. Rollback: v154, `92ae53ea`.
+- Live, headless Chromium: `/capabilities.json` names `80077a44`; all 34 public pages with a
+  fixed address open on a 320-wide touch phone with nothing wider than the screen and no label
+  over its value (the two labs that open only on the machine answer 404, as they should); the
+  showcase pages at 390 and 1280 overflow nothing; `GET /mcp` 405; the live check as the paired
+  agent 151 passed, 1 skipped. Fly's log feed after the release shows no error.
+- WebKit is not run on the Mac.
