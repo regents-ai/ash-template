@@ -5710,3 +5710,12 @@ way, and the library's own site-tool serving is gone.
   the guide's address, under the card's own title, the way the agent tools window copies
   its list on this site and on regents.sh (whose main has no code cube copy yet). Checked by
   `platform/test/browser/code_card.spec.ts` at both widths.
+
+## 2026-10-30 — Released v147: a code cube card copies its list
+
+- v147 runs main `3de766a8`, released 00:59:55Z–01:05:07Z. No migration.
+- Live, headless Chromium at 390 and 1280 wide: the regents.sh and siwa-server cards on the
+  twin cubes page each show one Copy as Markdown button. Pressed live, the regents.sh card
+  copied "# regents.sh : 25 WebMCP Tools" and its 25 tools; the siwa-server card copied
+  "# siwa-server : Connect an agent" with each step and command. `GET /mcp` 405, `POST` 401;
+  the live check as the paired agent 151 passed, 1 skipped. Rollback: v146, `052faf13`.
