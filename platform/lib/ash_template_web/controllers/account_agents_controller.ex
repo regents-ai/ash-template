@@ -11,10 +11,9 @@ defmodule AshTemplateWeb.AccountAgentsController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.Actors.{Agent, Human}
+  alias AshTemplate.Actors.Human
   alias AshTemplate.Agents.ActivityReading
   alias AshTemplate.Limits
-  alias AshTemplateWeb.Plugs.AgentWallet
   alias AshTemplateWeb.UnexpectedFailure
   alias RegentAgents.{Harness, HumanBacking, PairedAgent, PairingMessage, Person}
 
@@ -23,7 +22,7 @@ defmodule AshTemplateWeb.AccountAgentsController do
   @errors %{
     "not_account_owner" =>
       {403, "Only an agent that opened its own account can manage the agents paired with it.",
-       "A paired agent can't change its person's agents: your person does that on their Account page."},
+       "An agent your person paired can't change their agents: your person does that on their Account page. An agent with no account opens its own with account_open first."},
     "agent_not_found" =>
       {404, "There is no agent paired with your account with that id.",
        "List your account's agents and use an id from there."},
@@ -38,8 +37,6 @@ defmodule AshTemplateWeb.AccountAgentsController do
     "agents_unavailable" =>
       {503, "Your agents could not be reached right now.", "Try again in a moment."}
   }
-
-  @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   def index(conn, _params) do
     case RegentAgents.list_my_agents(actor: person(conn)) do
@@ -82,6 +79,7 @@ defmodule AshTemplateWeb.AccountAgentsController do
     else
       :not_found -> refuse(conn, "agent_not_found")
       :invalid_name -> refuse(conn, "invalid_name")
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_found")
       {:error, %Ash.Error.Invalid{} = error} -> name_refused(conn, error)
       {:unavailable, error} -> unavailable(conn, error)
       {:error, error} -> unavailable(conn, error)
@@ -94,6 +92,7 @@ defmodule AshTemplateWeb.AccountAgentsController do
       json(conn, %{unpaired: true})
     else
       :not_found -> refuse(conn, "agent_not_found")
+      {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_found")
       {:unavailable, error} -> unavailable(conn, error)
       {:error, error} -> unavailable(conn, error)
     end
@@ -123,7 +122,8 @@ defmodule AshTemplateWeb.AccountAgentsController do
   end
 
   # The owner's Privy user names its agents, as the person's does on the page.
-  defp person(conn), do: %Person{privy_user_id: conn.assigns.actor.privy_user_id}
+  # Only the owner has one here: a paired agent's actor carries its person's.
+  defp person(%{assigns: %{actor: %Human{privy_user_id: id}}}), do: %Person{privy_user_id: id}
 
   defp harness(%{"harness" => value} = body) when map_size(body) == 1 and is_binary(value) do
     with {:ok, harness} <- Harness.match(value),
@@ -170,11 +170,8 @@ defmodule AshTemplateWeb.AccountAgentsController do
   defp owner(%{assigns: %{actor: %Human{}}} = conn, _opts),
     do: put_resp_header(conn, "cache-control", "no-store")
 
-  defp owner(%{assigns: %{actor: %Agent{pairing: :active}}} = conn, _opts),
-    do: conn |> refuse("not_account_owner") |> halt()
-
-  defp owner(%{assigns: %{actor: actor}} = conn, _opts),
-    do: conn |> refuse(AgentWallet.not_person_code(actor)) |> halt()
+  # Any other agent: pairing, or a person signing in here, never opens these.
+  defp owner(conn, _opts), do: conn |> refuse("not_account_owner") |> halt()
 
   defp harness_unknown(conn) do
     harnesses = Enum.map_join(Harness.offered(), ", ", &Atom.to_string/1)

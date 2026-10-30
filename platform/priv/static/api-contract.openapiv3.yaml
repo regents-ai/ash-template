@@ -2613,9 +2613,9 @@ paths:
                     items:
                       $ref: '#/components/schemas/AccountAgent'
         '403':
-          description: not_account_owner for an agent a person paired; person_not_here when that
-            person hasn't signed in here yet; agent_not_paired for an agent with no account, or
-            when the wallet stopped signing in to the account during the request.
+          description: not_account_owner for any agent that did not open this account itself, paired
+            or not; agent_not_paired when the wallet stopped signing in to the account during the
+            request.
           content:
             application/json:
               schema:
@@ -2739,9 +2739,9 @@ paths:
                   pairing_code:
                     $ref: '#/components/schemas/AccountPairingCode'
         '403':
-          description: not_account_owner for an agent a person paired; person_not_here when that
-            person hasn't signed in here yet; agent_not_paired for an agent with no account, or
-            when the wallet stopped signing in to the account during the request.
+          description: not_account_owner for any agent that did not open this account itself, paired
+            or not; agent_not_paired when the wallet stopped signing in to the account during the
+            request.
           content:
             application/json:
               schema:
@@ -2880,9 +2880,9 @@ paths:
                   agent:
                     $ref: '#/components/schemas/AccountAgent'
         '403':
-          description: not_account_owner for an agent a person paired; person_not_here when that
-            person hasn't signed in here yet; agent_not_paired for an agent with no account, or
-            when the wallet stopped signing in to the account during the request.
+          description: not_account_owner for any agent that did not open this account itself, paired
+            or not; agent_not_paired when the wallet stopped signing in to the account during the
+            request.
           content:
             application/json:
               schema:
@@ -3005,9 +3005,9 @@ paths:
                     type: boolean
                     const: true
         '403':
-          description: not_account_owner for an agent a person paired; person_not_here when that
-            person hasn't signed in here yet; agent_not_paired for an agent with no account, or
-            when the wallet stopped signing in to the account during the request.
+          description: not_account_owner for any agent that did not open this account itself, paired
+            or not; agent_not_paired when the wallet stopped signing in to the account during the
+            request.
           content:
             application/json:
               schema:
@@ -3124,9 +3124,9 @@ paths:
                   activity:
                     $ref: '#/components/schemas/AccountAgentActivity'
         '403':
-          description: not_account_owner for an agent a person paired; person_not_here when that
-            person hasn't signed in here yet; agent_not_paired for an agent with no account, or
-            when the wallet stopped signing in to the account during the request.
+          description: not_account_owner for any agent that did not open this account itself, paired
+            or not; agent_not_paired when the wallet stopped signing in to the account during the
+            request.
           content:
             application/json:
               schema:

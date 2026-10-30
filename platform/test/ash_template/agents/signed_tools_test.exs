@@ -1226,7 +1226,7 @@ defmodule AshTemplate.SignedToolsTest do
     ]
 
     for {method, path, body} <- doors,
-        do: assert(error_code(request(method, path, body)) == "agent_not_paired")
+        do: assert(error_code(request(method, path, body)) == "not_account_owner")
 
     paired_person("did:privy:helper-person")
 

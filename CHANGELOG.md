@@ -5148,10 +5148,10 @@ An adversarial review of the two commits above found five things, all fixed here
   action the Account page does, as the owner's Privy user; the activity is the page's
   five-minute reading (`AshTemplate.Agents.ActivityReading`). The commands arrive in the
   next regents-cli release.
-- Only the owner reaches them: a paired agent is refused with 403 `not_account_owner`, so
-  one agent never unpairs another or pairs more agents for its person, and an agent with no
-  account with `agent_not_paired`. An id that names no agent paired with the account,
-  another person's agent included, is 404 `agent_not_found`; a harness the site doesn't
+- Only the owner reaches them: any other agent, paired or not, is refused with 403
+  `not_account_owner`, so one agent never unpairs another or pairs more agents for its
+  person. An id that names no agent paired with the account, another person's agent
+  included, or one unpaired at the same moment, is 404 `agent_not_found`; a harness the site doesn't
   offer is 422 `harness_unknown`; a blank, over-long or hidden-character name is 422
   `invalid_name`; an unreadable activity is 503 `activity_unavailable`. An owner makes at
   most 20 pairing codes an hour (`:pairing_code`), the 21st answering 429
@@ -5161,5 +5161,3 @@ An adversarial review of the two commits above found five things, all fixed here
   says it manages the agents paired with its account. The OpenAPI documents move to 8.2.0
   with the schemas `AccountAgent`, `AccountPairingCode` and `AccountAgentActivity`.
 - Built on G1 (`tpl/agent-owned-account-1029`); released with it on Sean's letter.
-- The compile-connected limit in `platform/mix.exs` moves to 38: the new controller reads
-  `AgentWallet`'s refusals into its error table, as every signed-agent controller does.
