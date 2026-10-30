@@ -5694,3 +5694,11 @@ way, and the library's own site-tool serving is gone.
   a long crafted address took quadratic time to decode in the browser). The lock changes in
   that one entry; `npm ls decode-uri-component` shows only 0.5.1. Sign-in reaches the
   Rainbow QR with no page-rule refusals or console errors, as before.
+
+## 2026-10-30 — Released v146: decode-uri-component 0.5.1
+
+- v146 runs main `052faf13`, released 00:34:29Z–00:37:24Z. No migration. GitHub's alert for
+  GHSA-qr28-fpjm-wq7f closed itself at 00:34:17Z, when the commit reached main.
+- Live, headless Chromium: /account, Privy's sign-in, "Continue with a wallet" and the
+  Rainbow QR load with no page-rule refusals or console errors, the same as on v145. The
+  live check as the paired agent 151 passed, 1 skipped. Rollback: v145, `ac8258ac`.
