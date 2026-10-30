@@ -48,7 +48,7 @@ identity tools behind its switch.
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Make a pairing code, choose the agent | Pair New Agent | — | — | — | — | no (owner only) | G2 |
-| Pair with a code | — | — | — | `pair_identity` | `agents pair` | no | G6 |
+| Pair with a code | — | `agents_pair` | — | `pair_identity` | `agents pair` | no | G5 |
 | Rename or unpair an agent | Agents panel | — | — | — | — | no (owner only) | G2 |
 | Read an agent's last actions | Agents panel | — | — | — | — | no (owner only) | G2 |
 | Set an agent's Credits allowance | `/account/credits` | — | — | — | — | money | G7 |
@@ -107,9 +107,8 @@ identity tools behind its switch.
   Claude connector those two once paired (G11) beside its identity tools. Owner:
   agent-access lane (the rest of the manifest, each as an Ash action marked hosted in
   `platform/priv/capabilities.json`).
-- **G6. Pairing with a code has no WebMCP tool.** `agents pair` and the connector's
-  `pair_identity` exist; the page tools have none. Owner: agent-access lane, once
-  signed WebMCP tools have a signer (spec 7.4).
+- **G6. Pairing with a code.** Closed on WebMCP 30 Oct (`agents_pair`, `POST
+  /api/agents/v1/pair`, signed by the agent's browser host); hosted MCP follows with G5.
 - **G7. Money from an owner agent.** Buying Credits with USDC needs the owner's own
   key to sign the transfer: the site prepares the steps, the agent signs and sends
   them, the site checks the receipt as it does for a person. Card buys for agents are

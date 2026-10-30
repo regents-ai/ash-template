@@ -2530,7 +2530,7 @@
             "$ref": "#/components/responses/AgentRateLimited"
           },
           "409": {
-            "$ref": "#/components/responses/AgentRequestReplayed"
+            "$ref": "#/components/responses/AgentPairingConflict"
           },
           "503": {
             "$ref": "#/components/responses/AgentVerificationUnavailable"
@@ -10056,6 +10056,44 @@
                     "code": "note_not_found",
                     "message": "There is no note of yours with that id.",
                     "hint": "List your person's notes and use an id from there."
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AgentPairingConflict": {
+        "description": "The account already has 100 paired agents (agent_limit), or the sign-in service has already verified this exact signed request once (request_replayed)",
+        "headers": {
+          "RateLimit": {
+            "$ref": "#/components/headers/RateLimit"
+          },
+          "RateLimit-Policy": {
+            "$ref": "#/components/headers/RateLimitPolicy"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "agentLimit": {
+                "value": {
+                  "error": {
+                    "code": "agent_limit",
+                    "message": "This account already has 100 paired agents.",
+                    "hint": "Ask your person to unpair an agent on their Account page on this site, then pair again. The same code works until it expires."
+                  }
+                }
+              },
+              "requestReplayed": {
+                "value": {
+                  "error": {
+                    "code": "request_replayed",
+                    "hint": "That signed request was already used; each one works once. Run `request` again to sign it fresh, and never resend saved signature headers.",
+                    "message": "request replay detected"
                   }
                 }
               }

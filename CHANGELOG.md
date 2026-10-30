@@ -6140,3 +6140,18 @@ way, and the library's own site-tool serving is gone.
   whose 80-letter name does not wrap in its identity section; this happens in any font and
   is not part of this change.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — Agents pair from the page
+
+- A signed `agents_pair` browser tool pairs an agent with its person's account on the
+  existing `POST /api/agents/v1/pair`, as `agents pair` does: the same code, name and
+  harness, the same refusals (`pairing_failed`, `invalid_name`, `harness_unknown`,
+  `agent_limit`). The agent's browser host signs it; the code is never written to
+  the visit log.
+- The pairing contract lists every refusal it sends: `invalid_name`,
+  `harness_unknown` and `agent_limit` join `pairing_failed` in
+  `/api-contract.openapiv3.yaml`, and `/openapi.json` answers 409 with
+  `agent_limit` or `request_replayed` (`AgentPairingConflict`).
+- `agents pair` names its browser tool, `/capabilities.json` marks pairing as on
+  WebMCP, the agent guide says how, and `docs/agent-parity.md` closes G6 on WebMCP
+  (hosted MCP follows with G5).
