@@ -33,6 +33,21 @@ async function drag(page: Page, hasTouch: boolean, distance: number) {
   }
 }
 
+// A finger's quick swipe, which carries the room on after the finger lifts.
+async function fling(page: Page, distance: number) {
+  const box = (await page.locator("[data-conversation-scroller]").boundingBox())!
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send("Input.synthesizeScrollGesture", {
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2,
+    yDistance: -distance,
+    gestureSourceType: "touch",
+    speed: 3000,
+    preventFling: false,
+  })
+  await cdp.detach()
+}
+
 const scrollTop = (page: Page) =>
   page.locator("[data-conversation-scroller]").evaluate(scroller => scroller.scrollTop)
 
@@ -69,25 +84,34 @@ async function settled(page: Page) {
 
 const drawn = (page: Page) => page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))))
 
-async function send(page: Page, press: (target: Locator) => Promise<void>, words: string) {
+// A finger's tap on a phone and a mouse's click on a desktop, on a button in the room
+// where the reader sees it. The walk never scrolls the room to reach it, as no
+// reader's press does: Playwright, finding a button still squishing from the last
+// press, would scroll it to the room's edge before trying again.
+const presser = (hasTouch: boolean) => (target: Locator) =>
+  hasTouch ? target.tap({scroll: "none"}) : target.click({scroll: "none"})
+
+// The form sits below the room, so the page scrolls to its Send button as a reader's would.
+async function send(page: Page, hasTouch: boolean, words: string) {
   await page.locator("#room-message-body").fill(words)
-  await press(page.locator("#room-message-form").getByRole("button", {name: "Send"}))
+  const button = page.locator("#room-message-form").getByRole("button", {name: "Send"})
+  await (hasTouch ? button.tap() : button.click())
   const said = page.locator(".rooms-message", {hasText: words.split("\n").at(-1)!})
   await expect(said).toBeVisible()
   return said
 }
 
 test("A message menu stays usable while new messages arrive, and closes once its message is scrolled away", async ({page, browser, baseURL, extraHTTPHeaders, hasTouch}, info) => {
-  const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
+  const press = presser(hasTouch)
   const problems = watch(page)
   const tag = randomUUID().slice(0, 8)
   const busy = `/rooms/walk-busy-${info.project.name}`
   await page.goto(busy)
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
 
-  const earlier = await send(page, press, `Earlier on the ${info.project.name} walk, ${tag}.`)
+  const earlier = await send(page, hasTouch, `Earlier on the ${info.project.name} walk, ${tag}.`)
   const words = `Busy room on the ${info.project.name} walk, ${tag}.`
-  const said = await send(page, press, words)
+  const said = await send(page, hasTouch, words)
   await press(said.getByRole("button", {name: "Options for this message"}))
   const menu = said.getByRole("group", {name: "Message options"})
   await expect(menu).toBeVisible()
@@ -189,24 +213,21 @@ test("A message menu stays usable while new messages arrive, and closes once its
     await expect(earlier.locator(".rg-discussion__heart")).toHaveAttribute("aria-pressed", "true")
     await expect.poll(() => shown(third)).toBe(true)
 
-    // The reader scrolls up and back to the newest message by hand, which can leave
-    // the list a pixel off where it rests, and opens the newest message's menu.
-    // A message arrives below and the newest stays put; once the menu closes, the
-    // list is back on the newest.
+    // The reader scrolls up and back to the newest message by hand, a little past it
+    // as a hand does, which can leave the list a pixel off where it rests, and opens
+    // the newest message's menu. A message arrives below and the newest stays put;
+    // once the menu closes, the list is back on the newest.
     await drag(page, hasTouch, -300)
     await expect.poll(() => scrollTop(page)).toBeLessThan(-100)
-    await drag(page, hasTouch, 3000)
+    await drag(page, hasTouch, 40 - (await scrollTop(page)))
     await settled(page)
     await press(third.getByRole("button", {name: "Options for this message"}))
     await expect(third.getByRole("group", {name: "Message options"})).toBeVisible()
-    // A phone that a fling left a pixel past the list's end eases the list a pixel at
-    // a time after the next change, a few pixels in all, and the message moves with it;
-    // a mouse wheel leaves no fling.
     const at = await place(third)
     const fourth = await post(4)
     await expect(fourth).toBeAttached()
     await still(page)
-    expect(Math.abs((await place(third)) - at)).toBeLessThanOrEqual(hasTouch ? 8 : 1)
+    expect(Math.abs((await place(third)) - at)).toBeLessThanOrEqual(1)
 
     // A message below grows and the reader scrolls before the room is next drawn;
     // the message moves by the reader's scroll alone (the room behaving as Safari's).
@@ -310,8 +331,8 @@ test("A message menu stays usable while new messages arrive, and closes once its
       await expect.poll(() => scrollTop(page)).toBeLessThan(-30)
       const resting = await scrollTop(page)
       const topic = page.locator(".page-head [role=tooltip]")
-      const tip = (await page.locator(".page-head .rg-tip-button").boundingBox())!
-      await page.mouse.move(tip.x + tip.width / 2, tip.y + tip.height / 2)
+      const tip = page.locator(".page-head .rg-tip-button")
+      await tip.hover()
       await expect(topic).toBeVisible()
       await expect(fourth.getByRole("group", {name: "Message options"})).toBeHidden()
       await drawn(page)
@@ -327,7 +348,7 @@ test("A message menu stays usable while new messages arrive, and closes once its
       // menu a screen reader opens next, with a click and no press, goes back to the
       // newest message once closed.
       await settled(page)
-      await page.mouse.move(tip.x + tip.width / 2, tip.y + tip.height / 2)
+      await tip.hover()
       await expect(topic).toBeVisible()
       await page.mouse.move(4, 4)
       await expect(topic).toBeHidden()
@@ -477,16 +498,31 @@ test("A message menu stays usable while new messages arrive, and closes once its
     await friend.close()
   }
 
+  // The reader goes back toward the newest message with the menu open: on a phone by
+  // a quick swipe, whose glide after the finger lifts is the reader's too, and on a
+  // desktop by Shift+Tab from the message box to the newest message. The message
+  // goes with the room, and its menu closes once it has gone. The message has gone up
+  // out of the room by now, so the reader first scrolls back up to it.
+  await said.scrollIntoViewIfNeeded()
   await press(said.getByRole("button", {name: "Options for this message"}))
   await expect(menu).toBeVisible()
-  await page.locator("[data-conversation-scroller]").evaluate(scroller => scroller.scrollTo({top: 0}))
+  if (hasTouch) {
+    const before = await scrollTop(page)
+    await fling(page, 150)
+    await still(page)
+    expect((await scrollTop(page)) - before).toBeGreaterThan(300)
+  } else {
+    await page.locator("#room-message-body").focus()
+    await page.keyboard.press("Shift+Tab")
+    await expect(page.locator("[data-conversation-scroller] :focus")).toBeVisible()
+  }
   await expect.poll(() => shown(said)).toBe(false)
   await expect(menu).toBeHidden()
   await problems.expect()
 })
 
 test("A tall message's menu closes once its button is scrolled away, while the message is still in view", async ({page, hasTouch}, info) => {
-  const press = (target: Locator) => (hasTouch ? target.tap() : target.click())
+  const press = presser(hasTouch)
   const problems = watch(page)
   const tag = randomUUID().slice(0, 8)
   await page.goto("/rooms/general")
@@ -494,7 +530,7 @@ test("A tall message's menu closes once its button is scrolled away, while the m
 
   // Taller than the room at either width once opened in full.
   const lines = Array.from({length: 40}, (_, k) => `Tall ${info.project.name} ${tag}, line ${k + 1}.`)
-  const said = await send(page, press, lines.join("\n"))
+  const said = await send(page, hasTouch, lines.join("\n"))
   await press(said.getByRole("button", {name: "Show more"}))
   await expect(said.getByText(lines[39])).toBeVisible()
   const button = said.getByRole("button", {name: "Options for this message"})

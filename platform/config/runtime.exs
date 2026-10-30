@@ -32,7 +32,9 @@ config :ash_template, :logger, [
 # The browser walk's server (test/browser/walk.sh) writes its visit lines in
 # production's shape to a file, which test/browser/visits.spec.ts reads to replay a
 # visit.
-if config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true" do
+walk? = config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true"
+
+if walk? do
   config :ash_template, :logger, [
     AshTemplateWeb.VisitLog.handler(
       %{file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__))},
@@ -105,8 +107,16 @@ end
 # Anything but "true" leaves all of it off. Switch it on only after the
 # migrations have run. The connector's identities are held by the same sign-in
 # service, asked with this site's own key there.
-claude_connector? = System.get_env("ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED") == "true"
-hosted_signing_key = System.get_env("SIWA_HOSTED_SIGNING_KEY")
+# The browser walk's server has it on, as production does, so the walk opens the
+# connector's pages; its key is made when the server starts and its sign-in service
+# is a closed port (config/dev.exs).
+claude_connector? =
+  walk? or System.get_env("ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED") == "true"
+
+hosted_signing_key =
+  if walk?,
+    do: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
+    else: System.get_env("SIWA_HOSTED_SIGNING_KEY")
 
 if claude_connector? and
      not (is_binary(hosted_signing_key) and

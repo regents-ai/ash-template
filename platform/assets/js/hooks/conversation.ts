@@ -156,11 +156,14 @@ export const Conversation: Hook = {
     }
     this.el.addEventListener("keydown", this.keydown)
 
-    // The newest message is at the bottom, which is where the list rests. An open
-    // menu would keep its message in place and push the one just sent out of view.
+    // The newest message is at the bottom, which is where the list rests: at 0, the
+    // one place Chrome keeps the bottom in view as a message arrives. A pixel off,
+    // as asking for the full height can leave a phone, it holds the messages above
+    // in place and the one just sent lands out of view. An open menu would do the
+    // same, keeping its message in place.
     this.submitted = () => {
       scroller?.querySelectorAll<HTMLElement>(openMenu).forEach(menu => menu.hidePopover())
-      scroller?.scrollTo({top: scroller.scrollHeight})
+      scroller?.scrollTo({top: 0})
     }
     this.el.addEventListener("submit", this.submitted)
 

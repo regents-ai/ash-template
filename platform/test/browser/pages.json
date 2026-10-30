@@ -32,6 +32,8 @@
     {"route": "/account/points", "purpose": "See your Points and how to earn them.", "check": "#points-earn", "signed_in": true},
     {"route": "/account/credits", "purpose": "See your Credits history.", "check": "#credits-history", "signed_in": true},
     {"route": "/account/wallets", "purpose": "See and copy the wallets your sign-in verified.", "check": "#account-embedded-wallet-copy", "signed_in": true},
+    {"route": "/oauth/connections", "purpose": "See and disconnect the apps connected to your account.", "check": "main h1", "signed_in": true, "spec": "oauth.spec.ts"},
+    {"route": "/oauth/authorize", "purpose": "Allow or cancel an app's connection to your account.", "check": "main h1", "signed_in": true, "spec": "oauth.spec.ts"},
     {"route": "/account/connections", "purpose": "Connect the accounts that help people recognize your work.", "check": "#account-verified-connections", "signed_in": true},
     {"route": "/pair", "paths": ["/pair?to=%2Frooms%2Fgeneral"], "purpose": "Pair your agent and send it to one page once it is paired.", "check": "#pair-pairing-box", "signed_in": true},
     {"route": "/showcase", "purpose": "See the shared components and palette.", "check": "#foundations"},

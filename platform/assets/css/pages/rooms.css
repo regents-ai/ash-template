@@ -11,13 +11,16 @@
 
 /* The conversation scrolls on its own and rests at its newest message: the
    reversed column keeps the view at the bottom as messages arrive, while the
-   messages themselves stay oldest first for reading and keyboard order. */
+   messages themselves stay oldest first for reading and keyboard order. It does
+   not bounce at its ends: Chrome would play the rest of a bounce as a scroll once a
+   new message moves the list away from its end, and an open menu would take that
+   for the reader's. */
 .rooms-scroller {
   display: flex;
   flex-direction: column-reverse;
   block-size: clamp(20rem, 60dvh, 42rem);
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   border-block-end: 1px solid var(--color-border);
 }
 

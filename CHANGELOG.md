@@ -5976,3 +5976,56 @@ way, and the library's own site-tool serving is gone.
   showcase pages at 390 and 1280 overflow nothing; `GET /mcp` 405; the live check as the paired
   agent 151 passed, 1 skipped. Fly's log feed after the release shows no error.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — The walk opens the connector's pages
+
+- The browser walk registers an app with a long name and a long return address and opens
+  its consent page at 1280, 390 and 320 wide, signed out and signed in, presses Allow,
+  trades the code for tokens, then finds the app on Connected apps and disconnects it
+  (`platform/test/browser/oauth.spec.ts`). Both pages already fit; nothing on them changed.
+- The walk's own server turns the connector on, with a signing key made fresh each time it
+  starts; only the development server started for the walk can do this
+  (`platform/config/runtime.exs`).
+- Connected apps and the consent page are listed in `platform/test/browser/pages.json`
+  under the spec that walks them, since each opens only after an app has registered.
+
+## 2026-10-30 — A sent message stays in view; a room no longer bounces at its ends
+
+- Fault since 4 October, in rooms and in the chat with the assistant: on a phone, a message
+  the reader sent could land below the conversation, out of view. On Send the room asked to
+  scroll to its full height, which in a room whose newest message is at the bottom Chrome
+  can round to a pixel past the end on a phone; a pixel off
+  the end, Chrome holds the messages above in place as a message arrives, so the one just
+  sent was pushed under the message box (in a headless Chromium phone, a 40-line message
+  sent after four short ones began 327px below the room). The room now scrolls to exactly
+  its end, 0, as it already did when a menu closes, and the message sits inside it
+  (`platform/assets/js/hooks/conversation.ts`).
+- Fault in v153: on a phone, a message's open menu could let its message slide a few pixels
+  (up to 21 seen) after a new message arrived. A finger that drags a room past its newest
+  message starts Chrome's bounce at the end; if a message arrives before the bounce has
+  finished, the list is no longer at its end and Chrome plays the rest of the bounce as an
+  ordinary scroll, a pixel a frame, which the menu took for the reader's own. In a plain test
+  page in headless Chromium (touch phone, a drag 40px past the end, a message added 250 to
+  400ms later) the list slid in 9 of 24 tries with the room's old `overscroll-behavior:
+  contain` and in 0 of 24 with `none`; switching off scroll anchoring did not stop it (6 of
+  15). The CSS Overscroll Behavior draft says `contain` keeps the element's own bounce and
+  `none` turns it off (https://drafts.csswg.org/css-overscroll-1/).
+- Rooms and direct messages no longer bounce at their ends (`overscroll-behavior: none` in
+  `platform/assets/css/pages/rooms.css`). The menu code is unchanged: every scroll it did not
+  make itself is the reader's, so a finger's glide after it lifts, the scroll bar, Tab, find
+  in page and a screen reader all move the message with the room.
+- The busy-room check (`platform/test/browser/busy_room.spec.ts`) drags back past the end
+  as a hand does, allows the room's one-pixel rest at its end, rests the mouse on the room's
+  tip with `hover()` so the sticky page head cannot cover it, and ends with the reader going
+  back toward the newest message with the menu open: a quick swipe on the phone, whose glide
+  goes on after the finger lifts, and Shift+Tab from the message box on the desktop.
+- The same check also failed about once in ten walks on the desktop, and there the fault was
+  the check's: its press on a message's menu button sometimes came while the button was still
+  squishing from the press before (a 0.45s motion), and Playwright, finding the button moving,
+  scrolled it to the room's bottom edge before trying again (`scrollIntoView({block: "end"})`
+  on a retry, in `playwright-core`). The room was then 77px from its newest message when the
+  menu opened, so the menu code rightly left it there once the menu closed. Every press on a
+  button inside the room now uses Playwright's `scroll: "none"`, pressing it where the reader
+  sees it; the Send button below the room is still scrolled to, as a reader would.
+- Not walked: dragging the scroll bar, since headless Chromium hides scroll bars. WebKit is
+  not run on the Mac.

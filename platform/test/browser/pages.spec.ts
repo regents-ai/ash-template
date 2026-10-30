@@ -9,7 +9,10 @@ import {ready, signedIn, watch} from "./support/person"
 // error, fits the screen, shows every address with its copy icon and lets a keyboard
 // scroll every box that scrolls; every document answers with its type. The map lists
 // every page route (feature_map_test.exs), so a new page is walked from its first day.
+// A page that opens only after other steps names the spec that walks it (`spec`).
 type Entry = {route: string; paths?: string[]; check: string; status?: number}
+
+const pages = map.pages.filter(entry => !("spec" in entry))
 
 const paths = (entry: {route: string; paths?: string[]}) => entry.paths ?? [entry.route]
 
@@ -53,13 +56,13 @@ test("the site starts with its sign-in settings", async ({page}) => {
 })
 
 test.describe("visitor", () => {
-  for (const entry of map.pages.filter(entry => !("signed_in" in entry)))
+  for (const entry of pages.filter(entry => !("signed_in" in entry)))
     for (const path of paths(entry)) walk(entry, path, false)
 })
 
 test.describe("signed in", () => {
   test.use(signedIn)
-    for (const entry of map.pages.filter(entry => "signed_in" in entry))
+    for (const entry of pages.filter(entry => "signed_in" in entry))
     for (const path of paths(entry)) walk(entry, path, true)
 })
 

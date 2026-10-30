@@ -49,6 +49,6 @@ export default defineConfig({
     {name: "desktop", use: {...devices["Desktop Chrome"], viewport: {width: 1280, height: 900}}},
     {name: "phone", use: {...devices["Pixel 7"], viewport: {width: 390, height: 844}}},
     // The narrowest phones: every page opens and fits the screen at 320 wide.
-    {name: "narrow", testMatch: "pages.spec.ts", use: {...devices["Pixel 7"], viewport: {width: 320, height: 640}}},
+    {name: "narrow", testMatch: ["pages.spec.ts", "oauth.spec.ts"], use: {...devices["Pixel 7"], viewport: {width: 320, height: 640}}},
   ],
 })
