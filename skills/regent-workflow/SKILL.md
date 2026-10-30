@@ -352,7 +352,7 @@ that thread. `control/rollouts/README.md` describes the rollout file and the liv
 
 Before changing a product UI, read [the shared design and showcase contract](references/design-system.md)
 and the current working `repos/design-system/STYLE.md`. The reference records source
-ownership, Pixel/Sans typography, shared button/card behavior, the distinct homepage
+ownership, Geist Serif typography, shared button/card behavior, the distinct homepage
 contracts, and the actual-component showcase/build workflow.
 
 Sean, 28 Oct 06:59Z: "always use the new stacked design language and vgpu.sh skills

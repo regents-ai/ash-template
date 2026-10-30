@@ -29,7 +29,7 @@
   margin: 0;
   padding-top: var(--space-4);
   color: color-mix(in srgb, var(--twin-cube-ink) 74%, transparent);
-  font: 0.75rem/1.4 var(--font-family-mono);
+  font: 0.75rem/1.4 var(--font-family-ui);
   letter-spacing: var(--tracking-microlabel);
   text-transform: uppercase;
   opacity: 0;

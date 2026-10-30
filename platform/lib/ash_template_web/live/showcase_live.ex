@@ -307,13 +307,13 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <h3>Typography</h3>
           <S.technical_figure class="rg-support-figure">
             <p class="sc-type-display">Aa / 0123</p>
-            <:caption>Pixel Square / regular 400</:caption>
+            <:caption>Geist Serif / regular 400</:caption>
           </S.technical_figure>
-          <p>Geist Sans · body copy and interface.</p>
+          <p>Geist Serif · titles, body copy and interface.</p>
           <P.address id="type-address" address="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" />
           <.disclosure id="type-tokens" summary="Typography">
             <p>
-              Titles and subtitles: Geist Pixel Square, weight 400. Body text and controls: Geist Sans. Addresses and code: Geist Mono. Space: 8 / 16 / 24 / 32 / 40 / 48 / 64 px.
+              Titles, body text, controls and addresses: Geist Serif, weight 400. Code: Geist Mono. Space: 8 / 16 / 24 / 32 / 40 / 48 / 64 px.
             </p>
           </.disclosure>
         </.card>

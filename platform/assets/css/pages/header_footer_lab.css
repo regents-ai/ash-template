@@ -226,7 +226,7 @@
   border-inline-end: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-fg-muted);
-  font: 0.8rem/1 var(--font-family-mono);
+  font: 0.8rem/1 var(--font-family-ui);
   text-decoration: none;
 }
 

@@ -48,7 +48,7 @@
     border-block-end: 1px solid var(--hairline);
     font-size: .8125rem;
   }
-  .kf-lab__crumb { margin: 0; color: var(--color-fg-muted); font-family: var(--font-family-mono); }
+  .kf-lab__crumb { margin: 0; color: var(--color-fg-muted); font-family: var(--font-family-ui); }
   .kf-lab__crumb a { color: var(--color-fg); text-underline-offset: .2em; }
   .kf-lab__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
 
@@ -96,7 +96,7 @@
   .kf-buy__tag {
     position: absolute; inset-inline-start: calc(100% * 214 / 714); inset-block-end: calc(100% * 54 / 913);
     padding: .25rem .5rem; background: rgb(22 22 22 / .82); color: var(--palette-platinum);
-    font-family: var(--font-family-mono); font-size: .75rem; font-variant-numeric: tabular-nums;
+    font-family: var(--font-family-ui); font-size: .75rem; font-variant-numeric: tabular-nums;
     border: 1px solid rgb(229 227 210 / .18);
     transition: transform 200ms var(--kf-ease), opacity 200ms var(--kf-ease);
   }

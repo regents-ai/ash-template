@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 30 October 2026
+
+- **New type.** Every page is now set in Geist Serif: titles, text, buttons, labels and
+  addresses. Code keeps its fixed-width type so its lines stay lined up.
+
 ## 29 October 2026
 
 - **Short titles.** Page titles, headings and labels now take one or two words: Pair New Agent,

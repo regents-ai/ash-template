@@ -6093,3 +6093,21 @@ way, and the library's own site-tool serving is gone.
   (`Regent.Discussion.post`'s `author_address`, design-system `84642bca`, already in the
   pinned `df51d803`), so the page walk's address checks cover a wallet author.
 - No database changes; no site action beyond the design-system pin they already take.
+
+## 2026-10-30 — Geist Serif everywhere
+
+- Every page is set in Geist Serif (Vercel, SIL Open Font License 1.1): titles, body text,
+  buttons, labels, figures and addresses. Code (`code`, `pre`, `kbd`, `samp`, the legal
+  pages' code and the components page's code) and the Keyfleet hero's key text keep Geist
+  Mono so their columns line up.
+- design-system pinned to `cb4e3fb4` ("Geist Serif everywhere"): one serif face for every
+  role token (`--font-family-title`, `-ui`, `-paragraph`), Geist Mono for code, Geist Pixel
+  and Geist Sans removed. Vercel ships the serif in regular upright 400 only, so the page
+  never draws a fake bold (`font-synthesis-weight: none`); a 600 weight renders at 400.
+- About fifty interface rules that used the mono or sans family for labels, figures and
+  addresses now use `--font-family-ui`. The home page's `rl-mono` class is `rl-copy`. The
+  components page describes the new type.
+- The home page's product tabs have 0.75rem of side padding instead of 1rem: in the serif,
+  "AUTOLAUNCH" is 99px wide and the 1rem tab left 99px at 1280 wide, so it ended in an
+  ellipsis. It now fits whole at 800, 1024, 1232, 1280 and 1440 wide.
+- WebKit is not run on the Mac.

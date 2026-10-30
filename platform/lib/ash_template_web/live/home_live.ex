@@ -225,7 +225,7 @@ defmodule AshTemplateWeb.HomeLive do
           </span>
           <p class="rl-eyebrow">{product.action}</p>
           <h3 class="rl-product-card__name">{product.name}</h3>
-          <p class="rl-mono">{product.title}</p>
+          <p class="rl-copy">{product.title}</p>
           <a
             href={product.site}
             target="_blank"
@@ -260,7 +260,7 @@ defmodule AshTemplateWeb.HomeLive do
           <.card_diagram id="home-staking-diagram" variant={8} />
         </span>
         <p class="rl-staking__line">Stake $REGENT. Share the lab's revenue.</p>
-        <p class="rl-mono">{@summary}</p>
+        <p class="rl-copy">{@summary}</p>
         <a href="https://regents.sh/stake" class="rg-button rl-staking__link">
           <span class="rg-button__label">Stake</span>
         </a>
@@ -286,7 +286,7 @@ defmodule AshTemplateWeb.HomeLive do
         <li :for={step <- @steps} class="rl-how__step">
           <.card_diagram id={"home-how-#{step.id}"} variant={step.variant} />
           <h3 class="rl-how__title">{step.title}</h3>
-          <p class="rl-mono">{step.copy}</p>
+          <p class="rl-copy">{step.copy}</p>
           <a href={step.href} class="rg-button rg-button--secondary rl-panel-link">
             <span class="rg-button__label">{step.link}</span>
           </a>

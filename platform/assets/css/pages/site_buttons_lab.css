@@ -2,8 +2,8 @@
    site's own colours. Page layout lives in the product layer. */
 @layer regents-product {
 .sb { display: grid; gap: 3rem; min-width: 0; }
-.sb-tag { border: 1px solid var(--color-border); padding: .3rem .5rem; color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-mono); }
-.sb-index { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sb-tag { border: 1px solid var(--color-border); padding: .3rem .5rem; color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-ui); }
+.sb-index { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-ui); letter-spacing: .06em; text-transform: uppercase; }
 .sb-notes { max-width: 52rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); color: var(--color-fg-muted); font-size: .875rem; }
 .sb-notes strong { color: var(--color-fg); font-weight: 500; }
 
@@ -39,7 +39,7 @@
 .sb-site-head { display: grid; gap: .5rem; }
 .sb-site-head h3 { font-size: 1.375rem; line-height: 1.2; }
 .sb-site-head p, .sb-col h4 { color: var(--color-fg-muted); font-size: .875rem; }
-.sb-col h4 { font: .6875rem/1.4 var(--font-family-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sb-col h4 { font: .6875rem/1.4 var(--font-family-ui); letter-spacing: .06em; text-transform: uppercase; }
 .sb-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
 .sb-col { display: grid; align-content: start; gap: .75rem; min-width: 0; }
 
@@ -62,7 +62,7 @@
 .sb-context p { color: var(--color-fg-muted); font-size: .875rem; overflow-wrap: anywhere; }
 .sb-context--form .sb-button { width: 100%; }
 .sb-context--panel { --sb-panel-ink: #e5e3d2; border-color: color-mix(in srgb, #e5e3d2 22%, #161616); color: var(--sb-panel-ink); }
-.sb-context--panel p { color: var(--sb-panel-ink); font-family: var(--font-family-mono); }
+.sb-context--panel p { color: var(--sb-panel-ink); font-family: var(--font-family-ui); }
 .sb-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 .sb-panel-label { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
 .sb-context--header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
@@ -73,7 +73,7 @@
 .sb-specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; }
 .sb-specs > li { display: grid; align-content: start; gap: .625rem; min-width: 0; padding: .875rem; border: 1px solid var(--color-border); background: var(--color-surface); }
 .sb-site[data-site="techtree"] .sb-specs > li { color: #e5e3d2; border-color: color-mix(in srgb, #e5e3d2 22%, #161616); }
-.sb-spec-name { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-mono); letter-spacing: .06em; text-transform: uppercase; }
+.sb-spec-name { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-ui); letter-spacing: .06em; text-transform: uppercase; }
 .sb-site[data-site="techtree"] .sb-spec-name { color: color-mix(in srgb, #e5e3d2 70%, #161616); }
 .sb-spec-body { display: grid; justify-items: start; gap: .375rem; min-width: 0; }
 .sb-site:is([data-site="regents"], [data-site="autolaunch"]) .sb-spec-body { justify-items: stretch; }

@@ -22,10 +22,11 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Current visual defaults
 
-- **Geist Pixel Square, upright 400** for titles/headings and title-like subtitles;
-  **Geist UI Sans** for body, navigation, controls and general UI. Keep Geist Mono
-  selectively for code, addresses, hashes and technical identifiers. Do not restore
-  Mono as the general body font or synthesize bold Pixel.
+- **Geist Serif, upright 400** for everything: titles, headings, body, navigation,
+  controls, labels, addresses, hashes and amounts (Sean, 30 Oct 2026). Geist Mono only
+  for code (`code`, `kbd`, `pre`, `samp`, pairing messages). Use the role tokens
+  (`--font-family-title`, `--font-family-ui`, `--font-family-paragraph`, `--font-family-mono`
+  for code), never a face name. Never synthesize bold: Vercel ships Serif in 400 only.
 - Root brand IDs are `platform` (Regents), `techtree`, `autolaunch`, `patchbay`;
   mode IDs are `light` and `dark`. Preserve the eight canonical palette definitions
   and Patchbay aliases. Use paired supporting surface/ink roles rather than recoloring

@@ -103,7 +103,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .sc-swatches input[type="color"] { width: 100%; height: 48px; padding: 0; border: 1px solid currentColor; border-radius: 0; background: transparent; cursor: pointer; }
 .sc-swatches input::-webkit-color-swatch-wrapper { padding: 0; }
 .sc-swatches input::-webkit-color-swatch { border: 0; border-radius: 0; }
-.sc-swatches output, .sc-mono { font: 11px var(--font-family-mono); }
+.sc-swatches output, .sc-mono { font: 11px var(--font-family-ui); }
 .sc-shimmer-control { margin-top: 16px; }
 .sc-shimmer-control input[type="color"] { width: 48px; height: 44px; padding: 0; border: 1px solid currentColor; background: transparent; cursor: pointer; }
 .sc-shimmer-control output { font: 11px var(--font-family-ui); }
@@ -170,7 +170,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
   .sc *, .sc *::before, .sc *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 .discussion-page .rg-discussion { margin-block-end: 48px; }
-.discussion-avatar { display: grid; place-items: center; border: 1px solid var(--color-border); background: var(--color-surface); font: 600 14px/1 var(--font-family-mono); }
+.discussion-avatar { display: grid; place-items: center; border: 1px solid var(--color-border); background: var(--color-surface); font: 600 14px/1 var(--font-family-ui); }
 .discussion-avatar--house { background: var(--color-fg); color: var(--color-bg); }
 /* The grammar page (/showcase/grammar): nouns, verbs and layers. Every floating
    part of it takes its stacking place and its shadow from the layer tokens. */
