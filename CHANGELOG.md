@@ -5636,3 +5636,18 @@ way, and the library's own site-tool serving is gone.
   shared lock, and only the template serves through the pooler. The move part of
   `control/rollouts/2026-10-29-db-pooler.md` is closed, and the lock comment in
   `scripts/deploy.sh` no longer waits for a move. No code change, no release.
+
+## 2026-10-30 — Released v143 (one-read probe) and v144 (probe removed)
+
+- The client-address rule (v141) assumed from Fly's docs that its proxy reaches a machine
+  over IPv4. To prove it on production, v143 (`523bf3ce`, side branch
+  `probe/client-address-source-v142-1030`, never on main) was main `2ed295fb` plus one
+  response header naming which source keyed a request's limits, never the address.
+  Released 00:05Z–00:08:08Z. Read in headless Chromium at 00:08:18Z: `/api/health`, `/`
+  and `/capabilities.json` each answered `x-client-address-source: client_header`, so the
+  proxy is an IPv4 peer and visitors are keyed by `Fly-Client-IP`.
+- v144 runs main `2ed295fb` (the Agents tab release `927ae6ea`, v142, plus a changelog
+  line), released 00:08:34Z–00:09:09Z, which removed the probe; read at 00:09:18Z the
+  header is gone. `GET /mcp` 405, the template's live check as the paired agent 151 passed,
+  1 skipped. No migration. Rollback: v142, `927ae6ea` (with the client-address rule);
+  without it, v140 `017a3acd`.
