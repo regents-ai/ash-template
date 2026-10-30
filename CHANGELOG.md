@@ -5736,3 +5736,15 @@ way, and the library's own site-tool serving is gone.
   scroll at 1280 and 1440; with less motion it scrolls with them; at 320 and 390 it comes
   first) and `platform/test/ash_template_web/home_live_test.exs`. `scripts/drift.sh regents`
   finds the homepage files the same.
+
+## 2026-10-30 — Released v148: the homepage follows regents.sh's two columns of panels
+
+- v148 = template main `72938d15`, deployed 01:29:56Z–01:32:24Z, no migration.
+- Live, headless Chromium at 390 and 1280 wide, template.regents.sh beside regents.sh: every panel
+  and the cube stand in the same place and size at both widths, nothing overflows, and the words
+  match apart from the template's own name, line, header links and link targets.
+  `scripts/drift.sh regents`, with its live read through headless Chromium: the five homepage files
+  the same, and the two live homepages' tabs, links and every word in the cube the same.
+- The cube lab pages at 390 and 1280 stand as on v147; the twin cubes stage is 22 px taller at
+  1280 for the longer staking sentence. `GET /mcp` 405, `POST` 401; the live check as the paired
+  agent 151 passed, 1 skipped. Rollback: v147, `3de766a8`.
