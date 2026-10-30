@@ -6124,3 +6124,19 @@ way, and the library's own site-tool serving is gone.
   character of `0x…`. The rooms page draws wallet names the same way; the fix belongs in the
   shared library, not here.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — Released v159: Geist Serif everywhere
+
+- v159 = template main `3f8d628d`, no migration. Rollback: v158, `06db5a63` (the discussion
+  author change, which v159 also carries).
+- Live, headless Chromium: `/capabilities.json` names `3f8d628d` and `/healthz` answers ok.
+  /, /about, /docs, /privacy, /terms, /agents and /changelog at 1280, 390 and 320 wide draw
+  every visible word in Geist Serif, with Geist Mono only inside code; the only font files
+  fetched are GeistSerif-Regular and GeistMono-Regular; no page scrolls sideways and no home
+  product tab ends in an ellipsis. The live check as the paired agent: 151 passed, 1 skipped.
+- Rollout to the five sites: `control/rollouts/2026-10-30-geist-serif.md`, waiting for Sean's
+  sign-off.
+- The local components page still scrolls sideways when signed in as the walk's person,
+  whose 80-letter name does not wrap in its identity section; this happens in any font and
+  is not part of this change.
+- WebKit is not run on the Mac.
