@@ -5891,3 +5891,17 @@ way, and the library's own site-tool serving is gone.
   room; a tall message's menu stays open) and passes on the fix. Eleven adversarial
   review rounds shaped the rule above; each step of the check fails when the part of
   the fix it covers is taken out.
+
+## 2026-10-30 — Released v153: a message menu stays usable in a busy room
+
+- v153 = template main `8f76bfe0`, no migration. It also carries `8a67e588` (the bridge
+  reads the account's wallets in one place) and `224ebfeb` (payments: every linked wallet
+  pays as the account).
+- Live, headless Chromium at 390 and 1280 wide: `/capabilities.json` names `8f76bfe0`; the
+  payments showcase and components pages load with nothing overflowing; the served page
+  script carries the new message menu code, which v152's did not.
+- `GET /mcp` 405; the live check as the paired agent 151 passed, 1 skipped.
+  Rollback: v152, `00ca5492`.
+- Not proven live: the busy room itself, which needs messages posted on the live site; the
+  walk proves it at both widths. WebKit is not run on the Mac, so Safari's own behaviour is
+  imitated in Chromium, not run.
