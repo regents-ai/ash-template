@@ -5785,3 +5785,10 @@ way, and the library's own site-tool serving is gone.
   test-network address and the pool ID copy with no arrow; nothing overflows.
 - `GET /mcp` 405, `POST` 401; the live check as the paired agent 151 passed, 1 skipped.
   Rollback: v149, `173bf681`.
+
+## 2026-10-30 — The walk keeps every visit line
+
+- The browser walk's server writes every log line its visit replay reads. Its log handler
+  dropped lines past 500 a second without a word, so on a busy walk `visits.spec.ts` could
+  miss a line of the visit it replays. The walk's handler now has that limit off; production
+  is unchanged.

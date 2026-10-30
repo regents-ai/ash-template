@@ -22,10 +22,15 @@ if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateW
 end
 
 # The browser walk's server (test/browser/walk.sh) writes its lines in production's
-# shape to a file, which test/browser/visits.spec.ts reads to replay a visit.
+# shape to a file, which test/browser/visits.spec.ts reads to replay a visit. The
+# replay needs every line, and a busy walk writes more than the handler's default
+# 500 a second, past which it drops lines without a word, so the limit is off.
 if config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true" do
   config :logger, :default_handler,
-    config: [file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__))],
+    config: [
+      file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__)),
+      burst_limit_enable: false
+    ],
     formatter: LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
 end
 
