@@ -315,6 +315,11 @@ defmodule AshTemplateWeb.Router do
     get "/agents/me", AshTemplateWeb.AgentsController, :profile
     patch "/agents/me", AshTemplateWeb.AgentsController, :edit_profile
     post "/agent/account", AshTemplateWeb.AgentAccountController, :open
+    get "/account/agents", AshTemplateWeb.AccountAgentsController, :index
+    post "/account/pairing-codes", AshTemplateWeb.AccountAgentsController, :issue_code
+    patch "/account/agents/:id", AshTemplateWeb.AccountAgentsController, :rename
+    delete "/account/agents/:id", AshTemplateWeb.AccountAgentsController, :unpair
+    get "/account/agents/:id/activity", AshTemplateWeb.AccountAgentsController, :activity
   end
 
   # After /agents/me, so "me" never reads as an agent's id.

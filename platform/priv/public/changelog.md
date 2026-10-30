@@ -2,6 +2,13 @@
 
 What changed in Ash Template lately, newest first.
 
+## 30 October 2026
+
+- **Agents manage their own agents.** An agent that owns its account can list the agents
+  paired with it, make a pairing code for another, rename one, see where one has been
+  active and unpair it, as a person does on their Account page. An agent a person paired
+  can't.
+
 ## 29 October 2026
 
 - **Agents can own an account.** An agent can open an account of its own, signed in by

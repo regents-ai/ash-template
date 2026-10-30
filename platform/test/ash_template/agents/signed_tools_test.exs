@@ -106,41 +106,43 @@ defmodule AshTemplate.SignedToolsTest do
       end
     end)
 
-    Req.Test.stub(RegentAgents.Broker, fn conn ->
-      {:ok, body, conn} = read_body(conn)
-      envelope = Jason.decode!(body)
-      send(self(), {:proof_checked, envelope})
-
-      if envelope["headers"]["x-siwa-signature"] == "fixture-proof" do
-        Req.Test.json(conn, %{
-          code: "http_envelope_valid",
-          data: %{
-            verified: true,
-            walletAddress: @wallet,
-            agentBook: nil,
-            agentRegistration: nil,
-            principal: %{
-              kind: "wallet",
-              wallet_address: @wallet,
-              chain_id: 8453,
-              audience: "ash-template"
-            }
-          }
-        })
-      else
-        conn
-        |> put_status(401)
-        |> Req.Test.json(%{
-          error: %{
-            code: "http_headers_missing",
-            message: "Signed agent proof required",
-            hint: "Sign with SIWA"
-          }
-        })
-      end
-    end)
-
+    Req.Test.stub(RegentAgents.Broker, &broker/1)
     :ok
+  end
+
+  # The sign-in service: a fixture proof verifies as @wallet, anything else is refused.
+  defp broker(conn) do
+    {:ok, body, conn} = read_body(conn)
+    envelope = Jason.decode!(body)
+    send(self(), {:proof_checked, envelope})
+
+    if envelope["headers"]["x-siwa-signature"] == "fixture-proof" do
+      Req.Test.json(conn, %{
+        code: "http_envelope_valid",
+        data: %{
+          verified: true,
+          walletAddress: @wallet,
+          agentBook: nil,
+          agentRegistration: nil,
+          principal: %{
+            kind: "wallet",
+            wallet_address: @wallet,
+            chain_id: 8453,
+            audience: "ash-template"
+          }
+        }
+      })
+    else
+      conn
+      |> put_status(401)
+      |> Req.Test.json(%{
+        error: %{
+          code: "http_headers_missing",
+          message: "Signed agent proof required",
+          hint: "Sign with SIWA"
+        }
+      })
+    end
   end
 
   defp request(method, path, body \\ nil, proof \\ true) do
@@ -1132,6 +1134,145 @@ defmodule AshTemplate.SignedToolsTest do
     limited = request(:post, "/api/v1/agent/account", "{}")
     assert error_code(limited) == "account_openings_limited"
     assert [_seconds] = get_resp_header(limited, "retry-after")
+  end
+
+  # Sean, 28 Oct 2026: an action only a person can do is a bug. An agent that owns
+  # its account manages the agents paired with it, as a person does on the Account page.
+  test "an agent that owns its account pairs, renames, reads and unpairs its agents" do
+    privy_answers([{"/v1/users/wallet/address", 200, agent_user("did:privy:fleet-owner")}])
+    assert request(:post, "/api/v1/agent/account", "{}").status == 200
+    assert agents() == []
+
+    made = request(:post, "/api/v1/account/pairing-codes", Jason.encode!(%{harness: "codex"}))
+    assert made.status == 200, made.resp_body
+    assert %{"code" => code, "message" => message} = Jason.decode!(made.resp_body)["pairing_code"]
+    assert message =~ code
+
+    for body <- [%{harness: "not-a-harness"}, %{harness: "codex", name: "Extra"}, %{}] do
+      assert error_code(request(:post, "/api/v1/account/pairing-codes", Jason.encode!(body))) ==
+               "harness_unknown"
+    end
+
+    helper =
+      RegentAgents.pair_agent!(code, "Helper", :codex, actor: %RegentAgents.Agent{wallet: @other})
+
+    assert [%{"id" => id, "name" => "Helper", "harness" => "codex", "wallet_address" => @other}] =
+             agents()
+
+    assert id == helper.id
+
+    renamed = request(:patch, "/api/v1/account/agents/#{id}", Jason.encode!(%{name: "Scout"}))
+    assert renamed.status == 200, renamed.resp_body
+    assert Jason.decode!(renamed.resp_body)["agent"]["name"] == "Scout"
+
+    for body <- [%{name: " "}, %{name: String.duplicate("a", 81)}, %{name: "Scout", status: "On"}] do
+      assert error_code(request(:patch, "/api/v1/account/agents/#{id}", Jason.encode!(body))) ==
+               "invalid_name"
+    end
+
+    day = %{
+      audience: "regents",
+      day: "2026-10-29",
+      first_seen_at: "2026-10-29T09:00:00Z",
+      last_seen_at: "2026-10-29T10:00:00Z"
+    }
+
+    listing = %{registryUrl: "https://8004scan.io/agents/base/42", tokenId: "42"}
+    activity_answers(%{days: [day], agentRegistration: listing})
+    read = request(:get, "/api/v1/account/agents/#{id}/activity")
+    assert read.status == 200, read.resp_body
+
+    assert Jason.decode!(read.resp_body)["activity"] == %{
+             "days" => [
+               %{
+                 "site" => "Regents Labs",
+                 "day" => "2026-10-29",
+                 "first_seen_at" => "2026-10-29T09:00:00Z",
+                 "last_seen_at" => "2026-10-29T10:00:00Z"
+               }
+             ],
+             "listing" => %{"url" => "https://8004scan.io/agents/base/42", "number" => "42"}
+           }
+
+    # Another person's agent, and an id that names no agent, are the same to the owner.
+    other_person = %RegentAgents.Person{privy_user_id: "did:privy:another-person"}
+
+    theirs =
+      RegentAgents.pair_agent!(RegentAgents.issue_pairing_code!(actor: other_person).code,
+        "Theirs", :codex, actor: %RegentAgents.Agent{wallet: @third})
+
+    for path <- ["/api/v1/account/agents/#{theirs.id}", "/api/v1/account/agents/not-an-id"] do
+      assert error_code(request(:delete, path)) == "agent_not_found"
+      assert error_code(request(:get, path <> "/activity")) == "agent_not_found"
+      assert error_code(request(:patch, path, Jason.encode!(%{name: "Mine"}))) == "agent_not_found"
+    end
+
+    unpaired = request(:delete, "/api/v1/account/agents/#{id}")
+    assert unpaired.status == 200, unpaired.resp_body
+    assert Jason.decode!(unpaired.resp_body) == %{"unpaired" => true}
+    assert agents() == []
+    assert {:ok, [_theirs]} = RegentAgents.list_my_agents(actor: other_person)
+  end
+
+  test "only an agent that owns its account manages agents" do
+    id = Ecto.UUID.generate()
+
+    doors = [
+      {:get, "/api/v1/account/agents", nil},
+      {:post, "/api/v1/account/pairing-codes", Jason.encode!(%{harness: "codex"})},
+      {:patch, "/api/v1/account/agents/#{id}", Jason.encode!(%{name: "Scout"})},
+      {:delete, "/api/v1/account/agents/#{id}", nil},
+      {:get, "/api/v1/account/agents/#{id}/activity", nil}
+    ]
+
+    for {method, path, body} <- doors,
+        do: assert(error_code(request(method, path, body)) == "agent_not_paired")
+
+    paired_person("did:privy:helper-person")
+
+    for {method, path, body} <- doors,
+        do: assert(error_code(request(method, path, body)) == "not_account_owner")
+  end
+
+  test "an owner makes at most 20 pairing codes an hour" do
+    privy_answers([{"/v1/users/wallet/address", 200, agent_user("did:privy:busy-owner")}])
+    assert request(:post, "/api/v1/agent/account", "{}").status == 200
+    body = Jason.encode!(%{harness: "codex"})
+
+    for _code <- 1..20,
+        do: assert(request(:post, "/api/v1/account/pairing-codes", body).status == 200)
+
+    limited = request(:post, "/api/v1/account/pairing-codes", body)
+    assert error_code(limited) == "pairing_codes_limited"
+    assert [_seconds] = get_resp_header(limited, "retry-after")
+  end
+
+  defp agents do
+    listed = request(:get, "/api/v1/account/agents")
+    assert listed.status == 200, listed.resp_body
+    Jason.decode!(listed.resp_body)["agents"]
+  end
+
+  # The sign-in service answers the activity read with `data`; proofs as always.
+  defp activity_answers(data) do
+    siwa = Application.fetch_env(:regent_agents, :siwa)
+    token = Application.fetch_env(:regent_agents, :activity_read_token)
+    Application.put_env(:regent_agents, :siwa, url: "https://siwa.test", audience: "ash-template")
+    Application.put_env(:regent_agents, :activity_read_token, "test-token")
+
+    on_exit(fn ->
+      for {key, value} <- [siwa: siwa, activity_read_token: token] do
+        case value do
+          {:ok, value} -> Application.put_env(:regent_agents, key, value)
+          :error -> Application.delete_env(:regent_agents, key)
+        end
+      end
+    end)
+
+    Req.Test.stub(RegentAgents.Broker, fn
+      %{request_path: "/api/shared/siwa/activity"} = conn -> Req.Test.json(conn, %{data: data})
+      conn -> broker(conn)
+    end)
   end
 
   # Privy answers each path it is asked, and the test hears what was sent.

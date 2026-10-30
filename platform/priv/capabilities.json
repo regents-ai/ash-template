@@ -34,6 +34,10 @@
     {
       "name": "spending_allowed",
       "words": "Spending the person allowed on their Regents account."
+    },
+    {
+      "name": "account_owner",
+      "words": "An account the agent opened itself with account open."
     }
   ],
   "switches": [
@@ -360,6 +364,66 @@
       "effect": "write",
       "authority": "signed_agent",
       "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "listAccountAgents",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "issueAccountPairingCode",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "renameAccountAgent",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "unpairAccountAgent",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true
+    },
+    {
+      "operation": "readAccountAgentActivity",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
       "person_page": "/account",
       "may": null,
       "switch": "app_surfaces",

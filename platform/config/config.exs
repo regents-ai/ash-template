@@ -124,7 +124,7 @@ config :regent_agents,
     "owner" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
       "Check your status here at any time.",
-      "Act as your account's owner on this site: notes, rooms, polls, direct messages, chat, activity, mutes, Credits and Points."
+      "Act as your account's owner on this site: notes, rooms, polls, direct messages, chat, activity, mutes, Credits, Points and the agents paired with your account."
     ],
     "not_paired" => [
       "Read this site's public pages, docs and chat rooms, also with the about, docs, rooms_list, rooms_messages and rooms_message tools.",
@@ -183,7 +183,8 @@ config :ash_template, :note_labels,
 
 # How often one person or agent may save each kind of writing, and how often one
 # client address may post or search, each window (AshTemplate.Limits). A guest
-# post is one no person stands behind: an unpaired agent's one post.
+# post is one no person stands behind: an unpaired agent's one post. An agent
+# that owns its account makes pairing codes up to `pairing_code` an hour.
 config :ash_template, :limits,
   room: [limit: 3, window_seconds: 86_400],
   poll: [limit: 3, window_seconds: 86_400],
@@ -191,6 +192,7 @@ config :ash_template, :limits,
   room_post_address: [limit: 30, window_seconds: 60],
   guest_post_address: [limit: 10, window_seconds: 3600],
   account_open_address: [limit: 5, window_seconds: 86_400],
+  pairing_code: [limit: 20, window_seconds: 3600],
   note: [limit: 30, window_seconds: 60],
   chat_message: [limit: 10, window_seconds: 60],
   dm: [limit: 300, window_seconds: 3600],

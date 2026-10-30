@@ -21,7 +21,8 @@ first.
 - **WebMCP / CLI**: the tool name in `platform/priv/tool_manifest.json` and the command
   in `cli/commands.json`. For a paired agent each acts *for the agent's person*; for an
   agent that opened its own account (`account_open`), the same tool acts as that
-  account's owner. Owner-only controls still wait on G2.
+  account's owner. The owner's own controls (`account_agents_*`,
+  `account_pairing_code`) refuse a paired agent.
 - **MCP**: hosted `/mcp` for a signed agent. "Planned" means the agent-access lane's
   tool list.
 - **Connector**: the same site added to a Claude account as a custom connector, signed
@@ -48,10 +49,11 @@ first.
 
 | Action | Page | WebMCP | MCP | Connector | CLI | Protected | Gap |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Make a pairing code, choose the agent | Pair New Agent | — | — | — | — | no (owner only) | G2 |
+| Make a pairing code, choose the agent | Pair New Agent | `account_pairing_code` | — | — | `account pairing-code` (next release) | no (owner only) | G5 |
 | Pair with a code | — | — | — | `pair_identity` | `agents pair` | no | G6 |
-| Rename or unpair an agent | Agents panel | — | — | — | — | no (owner only) | G2 |
-| Read an agent's last actions | Agents panel | — | — | — | — | no (owner only) | G2 |
+| List the account's agents | Agents panel | `account_agents_list` | — | — | `account agents list` (next release) | no (owner only) | G5 |
+| Rename or unpair an agent | Agents panel | `account_agents_rename`, `account_agents_unpair` | — | — | `account agents rename`, `account agents unpair` (next release) | no (owner only) | G5 |
+| Read an agent's last actions | Agents panel | `account_agents_activity` | — | — | `account agents activity` (next release) | no (owner only) | G5 |
 | Set an agent's Credits allowance | `/account/credits` | — | — | — | — | money | G7 |
 
 ## Credits and Points
@@ -94,11 +96,16 @@ first.
   `tpl/agent-owned-account-1029`; its release waits for Sean's letter (sign-in) and the
   site's Privy app secret. Still open: signing in on the page with the same wallet is
   unproven headless, and hosted MCP and the connector follow G5. Owner: this lane.
-- **G2. Owner-only agent controls have no agent tools.** Pairing codes, renaming,
-  unpairing and reading an agent's last actions run only on the page. They must stay
-  out of reach of a *paired helper* agent (one agent must not unpair another or pair
-  more agents for its person), so they open only to the owner from G1. Owner: the
-  account thread is reshaping pairing on `/account` now; tools follow its change.
+- **G2. Owner-only agent controls.** Listing the account's agents, making a pairing
+  code, renaming, unpairing and reading an agent's activity now have signed routes
+  under `/api/v1/account` (`listAccountAgents`, `issueAccountPairingCode`,
+  `renameAccountAgent`, `unpairAccountAgent`, `readAccountAgentActivity`), with tools
+  and commands of the same names. Only the owner from G1 reaches them: a paired helper
+  is refused with `not_account_owner`, so one agent never unpairs another or pairs more
+  agents for its person. Codes are limited to 20 an hour per account. Built on side
+  branch `agent-gaps/g2-owner-1030`, on top of G1; its release waits for Sean's letter
+  with G1. Hosted MCP and the connector follow G5. Owner: the regents.sh agent-gaps
+  lane.
 - **G3. Public name.** The account's public name is saved by the page through the
   shared profile (`RegentIdentity.HTTP`, Privy proof pair). An owner agent needs the
   same through a signed request. Library change in elixir-utils `identity`. Owner:
