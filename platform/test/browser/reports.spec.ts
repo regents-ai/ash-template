@@ -4,9 +4,8 @@ import {signedIn, watch} from "./support/person"
 
 // Report on someone's room message opens the reasons in the menu's place; choosing
 // one closes both and thanks the walk's person. Their own messages offer no Report.
-// The message reported is in a room only sign_in.exs's friend writes in: a menu is
-// hidden once its message leaves the room's scrolling area, and in General the rest
-// of the walk's messages can push a message out while its menu is open.
+// The message reported is in a room only sign_in.exs's friend writes in, so nothing
+// the rest of the walk posts moves it while the walk reads its menu.
 test.use(signedIn)
 
 test("Report on someone's room message asks why, then thanks the reader", async ({page, hasTouch}, info) => {

@@ -5865,3 +5865,29 @@ way, and the library's own site-tool serving is gone.
   with its own wallet. The payments skill's page row and finishing rule say so. The
   template does not use the payments library, so nothing here is re-pinned; Patchbay
   is the one site that calls it.
+
+## 2026-10-30 — A message menu stays usable in a busy room
+
+- On a phone in a busy room, new messages pushed an open message menu's message out of
+  the room; the menu hid, but its choices could still be pressed, so a tap landed on a
+  message beneath. Now, while a menu is open, its message stays where it is as messages
+  arrive or messages below grow, so a press lands on the choice shown. The reader can
+  still scroll; the message moves only as far as they scroll it, and scrolling the
+  menu's button out of the room closes the menu, a tall message's too. Opening another
+  message's menu leaves the room where it is, also on a phone, where the tap closes the
+  first menu before it reaches the second (`platform/assets/js/hooks/conversation.ts`).
+- When the reader closes the menus with a key or a press, the room goes back to the
+  newest message if it rested there and they hadn't scrolled away. A finger's or a
+  pen's tap waits for its click first, which the phone may move onto a button nearby;
+  a tap with no click (a disabled button, or plain words on an iPhone) leaves the room
+  where it is until the reader next presses or uses a key. A tap on a tip while a menu
+  is open closes the menu and leaves the room where it is. A menu closed any other way leaves the room where it is: its button
+  scrolled or moved out of the room, the page taking it off (a delete or a sign-out),
+  or a tip opening under a resting mouse. Sending a message closes an open menu and
+  shows the message sent.
+- New walk check `platform/test/browser/busy_room.spec.ts`, at both widths, in a quiet
+  room for each width that the walk's friend (now signed in too) fills; the Walk Reports
+  room stays the report check's own. It fails on v152's code (the message leaves the
+  room; a tall message's menu stays open) and passes on the fix. Eleven adversarial
+  review rounds shaped the rule above; each step of the check fails when the part of
+  the fix it covers is taken out.

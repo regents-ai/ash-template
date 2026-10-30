@@ -2,7 +2,9 @@
 # signed in through the site's own sign-in step with a fresh session, one chat of
 # their own, one direct message to someone who wrote in General, a room that friend wrote in, the longest unbroken Public Display Name the site takes (so every
 # signed-in page proves a long name fits the screen), three agents paired the way an
-# agent pairs, and the signed cookie the walk sends. Run by playwright.config.ts
+# agent pairs, and the signed cookie the walk sends; the friend who writes in General
+# gets one too, and starts a quiet room for each width's busy room (busy_room.spec.ts).
+# Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
 alias AshTemplate.Actors.Human
@@ -52,12 +54,13 @@ AshTemplate.Chat.create_conversation!(%{title: "Browser walk"}, actor: person)
 # Someone else, with a name of their own, writes in General, and the person
 # messages them from it.
 friend_wallet = "0x" <> String.duplicate("a", 40)
+friend_id = "did:privy:browser-walk-friend"
 
 Ash.Seed.upsert!(
   RegentIdentity.Profile,
   %{
     app_id: app_id,
-    privy_user_id: "did:privy:browser-walk-friend",
+    privy_user_id: friend_id,
     display_name: "Walk Friend",
     wallet_addresses: [friend_wallet],
     proof_issued_at: System.system_time(:second)
@@ -67,31 +70,26 @@ Ash.Seed.upsert!(
 
 friend =
   AshTemplate.Accounts.register_verified!(
-    "did:privy:browser-walk-friend",
+    friend_id,
     friend_wallet,
     [friend_wallet],
     actor: %AshTemplate.Actors.System{}
   )
 
-said =
-  AshTemplate.Rooms.post_message!(%{room: "general", body: "Hello from the walk."},
-    actor: Human.for_account(friend),
-    context: %{client_key: "browser-walk-friend"}
-  )
+as_friend = [actor: Human.for_account(friend), context: %{client_key: "browser-walk-friend"}]
+said = AshTemplate.Rooms.post_message!(%{room: "general", body: "Hello from the walk."}, as_friend)
 
 # A room the friend started and wrote in, which the walk only reads, for each width to
 # report their message (reports.spec.ts): with nobody else writing there, the message
 # stays where its menu points.
-reports =
-  AshTemplate.Rooms.create_room!(%{name: "Walk Reports", topic: "Reports from the walk"},
-    actor: Human.for_account(friend),
-    context: %{client_key: "browser-walk-friend"}
-  )
+reports = AshTemplate.Rooms.create_room!(%{name: "Walk Reports", topic: "Reports from the walk"}, as_friend)
+AshTemplate.Rooms.post_message!(%{room: reports.slug, body: "Report this one."}, as_friend)
 
-AshTemplate.Rooms.post_message!(%{room: reports.slug, body: "Report this one."},
-  actor: Human.for_account(friend),
-  context: %{client_key: "browser-walk-friend"}
-)
+# A room for each width's busy room (busy_room.spec.ts), where only the person and
+# the friend write, so nothing else moves the list while the walk measures it.
+for width <- ["Desktop", "Phone"] do
+  AshTemplate.Rooms.create_room!(%{name: "Walk Busy #{width}", topic: "A busy room on the walk"}, as_friend)
+end
 
 conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
 AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
@@ -118,44 +116,63 @@ for {name, digit} <- [
   )
 end
 
-{:bootstrap, claim} = SessionAuthority.renew(nil)
-{:ok, _account, bound} = SessionAuthority.sign_in(claim, account.id)
-
 options = Plug.Session.init(Application.fetch_env!(:ash_template, :session_options))
-
-conn =
-  Plug.Test.conn(:get, "/")
-  |> Map.put(:secret_key_base, AshTemplateWeb.Endpoint.config(:secret_key_base))
-  |> Plug.Session.call(options)
-  |> Plug.Conn.fetch_session()
-
-conn =
-  bound
-  |> SessionAuthority.session()
-  |> Map.put("wallets", VerifiedSession.wallet_labels(verified))
-  |> Enum.reduce(conn, fn {key, value}, conn -> Plug.Conn.put_session(conn, key, value) end)
-  |> Plug.Conn.send_resp(200, "")
-
-%{value: value} = conn.resp_cookies[options.key]
 
 File.mkdir_p!("test/browser/.auth")
 
-# Playwright's own saved-sign-in shape, which the walk's signed-in tests load.
-File.write!(
-  "test/browser/.auth/person.json",
-  Jason.encode!(%{
-    cookies: [
-      %{
-        name: options.key,
-        value: value,
-        domain: "127.0.0.1",
-        path: "/",
-        expires: -1,
-        httpOnly: true,
-        secure: false,
-        sameSite: "Lax"
-      }
-    ],
-    origins: []
-  })
+# Signs `account` in through the site's own sign-in step with a fresh session and
+# writes the cookie in Playwright's own saved-sign-in shape, which a test loads.
+save_sign_in = fn account, verified, file ->
+  {:bootstrap, claim} = SessionAuthority.renew(nil)
+  {:ok, _account, bound} = SessionAuthority.sign_in(claim, account.id)
+
+  conn =
+    Plug.Test.conn(:get, "/")
+    |> Map.put(:secret_key_base, AshTemplateWeb.Endpoint.config(:secret_key_base))
+    |> Plug.Session.call(options)
+    |> Plug.Conn.fetch_session()
+
+  conn =
+    bound
+    |> SessionAuthority.session()
+    |> Map.put("wallets", VerifiedSession.wallet_labels(verified))
+    |> Enum.reduce(conn, fn {key, value}, conn -> Plug.Conn.put_session(conn, key, value) end)
+    |> Plug.Conn.send_resp(200, "")
+
+  %{value: value} = conn.resp_cookies[options.key]
+
+  File.write!(
+    "test/browser/.auth/#{file}",
+    Jason.encode!(%{
+      cookies: [
+        %{
+          name: options.key,
+          value: value,
+          domain: "127.0.0.1",
+          path: "/",
+          expires: -1,
+          httpOnly: true,
+          secure: false,
+          sameSite: "Lax"
+        }
+      ],
+      origins: []
+    })
+  )
+end
+
+save_sign_in.(account, verified, "person.json")
+
+save_sign_in.(
+  friend,
+  %RegentPrivy.Session{
+    app_id: app_id,
+    privy_user_id: friend_id,
+    session_id: "browser-walk-friend",
+    wallet_address: friend_wallet,
+    wallet_addresses: [friend_wallet],
+    user_wallet_address: friend_wallet,
+    linked_socials: []
+  },
+  "friend.json"
 )
