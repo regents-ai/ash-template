@@ -5776,3 +5776,12 @@ way, and the library's own site-tool serving is gone.
   chains. Every other address on the site uses the default (Base), and
   the Credits admin's transaction passes its purchase's chain, which is only ever Base
   or Ethereum.
+
+## 2026-10-30 — Released v150: a test network is chain="test"
+
+- v150 = template main `a5ac9a92` (design-system pin `df51d803`), released 02:29:14Z, no migration.
+- Live, headless Chromium at 390 and 1280 wide, the components page's Addresses card: Base opens
+  Basescan, Ethereum opens Etherscan, the Robinhood transaction opens Blockscout, the
+  test-network address and the pool ID copy with no arrow; nothing overflows.
+- `GET /mcp` 405, `POST` 401; the live check as the paired agent 151 passed, 1 skipped.
+  Rollback: v149, `173bf681`.
