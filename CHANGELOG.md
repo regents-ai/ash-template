@@ -5702,3 +5702,10 @@ way, and the library's own site-tool serving is gone.
 - Live, headless Chromium: /account, Privy's sign-in, "Continue with a wallet" and the
   Rainbow QR load with no page-rule refusals or console errors, the same as on v145. The
   live check as the paired agent 151 passed, 1 skipped. Rollback: v145, `ac8258ac`.
+
+## 2026-10-30 — A code cube card copies its list
+
+- Each face's card on the twin cubes page has a Copy as Markdown button once it holds a
+  list: a site's card copies its tools, siwa-server's card each step with its command and
+  the guide's address. The words take the section shape the agent tools window uses when
+  it copies every site. Checked by `platform/test/browser/code_card.spec.ts` at both widths.

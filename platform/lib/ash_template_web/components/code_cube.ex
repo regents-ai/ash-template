@@ -11,12 +11,16 @@ defmodule AshTemplateWeb.Components.CodeCube do
 
   A face's card lists the browser tools that site offers agents, or, for
   siwa-server, how an agent connects to it. The page owns the read behind it and
-  hands the card where the read stands.
+  hands the card where the read stands. A card holding a list copies it as
+  Markdown, in the section shape the agent tools window copies every site in
+  (`assets/js/agent_tools.ts`).
   """
 
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
+
+  @connect "One sign-in for agents on every Regent site."
 
   # Each face and the site it stands for. The face fixes the code the renderer
   # draws on it: 0 amber, 1 magenta hex, 2 cyan binary, 3 gold dots on blue,
@@ -130,6 +134,11 @@ defmodule AshTemplateWeb.Components.CodeCube do
         </form>
       </header>
       <div class="code-card__body">
+        <div :if={@face.site == "siwa" or @state == :ready} class="code-card__copy">
+          <Regent.Primitives.copy_button id={"#{@id}-copy"} text={markdown(@face, @tools, @help)}>
+            Copy as Markdown
+          </Regent.Primitives.copy_button>
+        </div>
         <.connection :if={@face.site == "siwa"} help={@help} />
         <.tools
           :if={@face.site != "siwa"}
@@ -179,8 +188,10 @@ defmodule AshTemplateWeb.Components.CodeCube do
   end
 
   defp connection(assigns) do
+    assigns = assign(assigns, :connect, @connect)
+
     ~H"""
-    <p class="code-card__note">One sign-in for agents on every Regent site.</p>
+    <p class="code-card__note">{@connect}</p>
     <ol class="code-card__list">
       <li :for={step <- @help.steps} class="code-card__tool">
         <h3>{step.title}</h3>
@@ -194,6 +205,24 @@ defmodule AshTemplateWeb.Components.CodeCube do
       </span>
     </a>
     """
+  end
+
+  defp markdown(%{site: "siwa"} = face, _tools, help) do
+    steps =
+      Enum.map_join(help.steps, "\n\n", fn step ->
+        "## #{step.title}\n\n#{step.copy}\n\n```sh\n#{step.command}\n```"
+      end)
+
+    "# #{face.name}\n\n#{@connect}\n\n#{steps}\n\nThe whole guide: #{help.guide}\n"
+  end
+
+  defp markdown(face, tools, _help) do
+    listed =
+      Enum.map_join(tools, "\n\n", fn tool ->
+        "## #{tool.title}\n\n`#{tool.name}`\n\n#{tool.description}"
+      end)
+
+    "# #{face.name}\n\n#{length(tools)} WebMCP tools\n\n#{listed}\n"
   end
 
   defp title(%{site: "siwa"} = face, _state, _tools), do: "#{face.name} : Connect an agent"
