@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto"
 import {expect, test} from "./support/test"
 import {signedIn, watch} from "./support/person"
 
@@ -24,7 +25,7 @@ test("Report on someone's room message asks why, then thanks the reader", async 
   await expect(said.getByRole("group", {name: "Message options"})).toBeHidden()
   await expect(page.getByText("Thanks. The site’s team will read your report.")).toBeVisible()
 
-  const words = `Not reported on the ${info.project.name} walk.`
+  const words = `Not reported on the ${info.project.name} walk, ${randomUUID().slice(0, 8)}.`
   await page.locator("#room-message-body").fill(words)
   await press(page.locator("#room-message-form").getByRole("button", {name: "Send"}))
   const mine = page.locator(".rooms-message", {hasText: words})

@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto"
 import {expect, test} from "./support/test"
 import {signedIn, watch} from "./support/person"
 
@@ -11,7 +12,7 @@ test("Like on a room message shows a pressed heart, and pressing it takes the li
   await page.goto("/rooms/general")
   await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
 
-  const words = `Liked on the ${info.project.name} walk.`
+  const words = `Liked on the ${info.project.name} walk, ${randomUUID().slice(0, 8)}.`
   await page.locator("#room-message-body").fill(words)
   await press(page.locator("#room-message-form").getByRole("button", {name: "Send"}))
   const said = page.locator(".rooms-message", {hasText: words})

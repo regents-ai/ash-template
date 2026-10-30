@@ -5798,3 +5798,8 @@ way, and the library's own site-tool serving is gone.
 - The walk's hero check opens each window size on a page of its own. LiveView remembers
   the window's scroll in the page's history and scrolls back to it when the page opens
   again, so the second size could start scrolled by the first.
+
+## 2026-10-30 — Walk messages are new each run
+
+- The like, report and message checks each write words with a short random tag, so a
+  repeated check finds only the message it just wrote.

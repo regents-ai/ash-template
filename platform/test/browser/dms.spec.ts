@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto"
 import {expect, test} from "./support/test"
 import {signedIn, watch} from "./support/person"
 
@@ -18,7 +19,7 @@ test("Message on a room message opens the conversation, and a sent message shows
   await expect(page).toHaveURL(/\/dms\/[0-9a-f-]{36}$/)
   await expect(page.locator("#dms-conversation")).toBeVisible()
 
-  const words = `Sent from the ${info.project.name} walk.`
+  const words = `Sent from the ${info.project.name} walk, ${randomUUID().slice(0, 8)}.`
   await page.locator("#dms-message-body").fill(words)
   await press(page.locator("#dms-message-form").getByRole("button", {name: "Send"}))
   const mine = page.locator('#dms-messages .rooms-message[data-mine]', {hasText: words})
