@@ -5803,3 +5803,10 @@ way, and the library's own site-tool serving is gone.
 
 - The like, report and message checks each write words with a short random tag, so a
   repeated check finds only the message it just wrote.
+
+## 2026-10-30 — The walk's Report check has a room of its own
+
+- The walk reports a message in "Walk Reports", a room only the walk's friend writes in.
+  In General, other checks' messages could push the reported message out of the room's
+  scrolling area while its menu was open; the menu then hides, and the tap landed on a
+  message beneath it.

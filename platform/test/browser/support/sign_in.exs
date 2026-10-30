@@ -1,6 +1,6 @@
 # The browser walk's person: a local account on the database made for this run,
 # signed in through the site's own sign-in step with a fresh session, one chat of
-# their own, one direct message to someone who wrote in General, the longest unbroken Public Display Name the site takes (so every
+# their own, one direct message to someone who wrote in General, a room that friend wrote in, the longest unbroken Public Display Name the site takes (so every
 # signed-in page proves a long name fits the screen), three agents paired the way an
 # agent pairs, and the signed cookie the walk sends. Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
@@ -78,6 +78,20 @@ said =
     actor: Human.for_account(friend),
     context: %{client_key: "browser-walk-friend"}
   )
+
+# A room the friend started and wrote in, which the walk only reads, for each width to
+# report their message (reports.spec.ts): with nobody else writing there, the message
+# stays where its menu points.
+reports =
+  AshTemplate.Rooms.create_room!(%{name: "Walk Reports", topic: "Reports from the walk"},
+    actor: Human.for_account(friend),
+    context: %{client_key: "browser-walk-friend"}
+  )
+
+AshTemplate.Rooms.post_message!(%{room: reports.slug, body: "Report this one."},
+  actor: Human.for_account(friend),
+  context: %{client_key: "browser-walk-friend"}
+)
 
 conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
 AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
