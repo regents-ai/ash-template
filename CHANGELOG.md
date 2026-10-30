@@ -5792,3 +5792,9 @@ way, and the library's own site-tool serving is gone.
   dropped lines past 500 a second without a word, so on a busy walk `visits.spec.ts` could
   miss a line of the visit it replays. The walk's handler now has that limit off; production
   is unchanged.
+
+## 2026-10-30 — The homepage hero check opens each size fresh
+
+- The walk's hero check opens each window size on a page of its own. LiveView remembers
+  the window's scroll in the page's history and scrolls back to it when the page opens
+  again, so the second size could start scrolled by the first.

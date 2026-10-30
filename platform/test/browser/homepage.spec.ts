@@ -27,24 +27,25 @@ const scrollBy240 = async (page: Page) => {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(240)
 }
 
-test("the hero stays top right while the sheets scroll", async ({page}) => {
-  for (const [width, height] of [[1280, 720], [1440, 900]]) {
-    await test.step(`${width}x${height}`, async () => {
-      await open(page, width, height)
-      const first = await edges(page)
-      expect(first.hero.left, "the hero is the right column").toBeGreaterThanOrEqual(first.mission.right)
-      expect(first.hero.top, "level with Mission").toBeCloseTo(first.mission.top, 0)
+// Each size has a page of its own: LiveView keeps the window's scroll in the page's
+// history 100ms after a scroll and scrolls back to it when that page loads again, so
+// a size opened on the page another size scrolled could start scrolled.
+for (const [width, height] of [[1280, 720], [1440, 900]]) {
+  test(`the hero stays top right while the sheets scroll at ${width}x${height}`, async ({page}) => {
+    await open(page, width, height)
+    const first = await edges(page)
+    expect(first.hero.left, "the hero is the right column").toBeGreaterThanOrEqual(first.mission.right)
+    expect(first.hero.top, "level with Mission").toBeCloseTo(first.mission.top, 0)
 
-      await scrollBy240(page)
-      const scrolled = await edges(page)
-      expect(scrolled.mission.top, "the sheets scroll").toBeCloseTo(first.mission.top - 240, 0)
-      expect(scrolled.hero.top, "the hero holds near the top").toBeGreaterThanOrEqual(0)
-      expect(scrolled.hero.top).toBeLessThan(first.hero.top)
-      expect(scrolled.hero.bottom, "the whole hero is in view").toBeLessThanOrEqual(height)
-      expect(scrolled.worlds.bottom, "the worlds too").toBeLessThanOrEqual(height)
-    })
-  }
-})
+    await scrollBy240(page)
+    const scrolled = await edges(page)
+    expect(scrolled.mission.top, "the sheets scroll").toBeCloseTo(first.mission.top - 240, 0)
+    expect(scrolled.hero.top, "the hero holds near the top").toBeGreaterThanOrEqual(0)
+    expect(scrolled.hero.top).toBeLessThan(first.hero.top)
+    expect(scrolled.hero.bottom, "the whole hero is in view").toBeLessThanOrEqual(height)
+    expect(scrolled.worlds.bottom, "the worlds too").toBeLessThanOrEqual(height)
+  })
+}
 
 test("with less motion the hero scrolls with the page", async ({page}) => {
   await page.emulateMedia({reducedMotion: "reduce"})
