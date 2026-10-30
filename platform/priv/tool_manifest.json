@@ -565,7 +565,7 @@
     {
       "name": "agents_pair",
       "title": "Pair",
-      "description": "Pair with your person's account using the code they made with Pair New Agent on their Agents page. The code works once, for ten minutes: take it from your person, keep it out of chat and never repeat it. Refused with pairing_failed when the code is wrong, used or expired, and agent_limit when the account already has 100 agents. Works before pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
+      "description": "Pair with your person's account using the code they made with Pair New Agent on their Agents page. The code works once, for ten minutes: take it from your person, keep it out of chat and never repeat it. Name yourself in 1 to 80 characters with no hidden characters. Refused with pairing_failed when the code is wrong, used or expired, invalid_name when the name breaks that rule, harness_unknown when this site does not offer your harness, and agent_limit when the account already has 100 agents. Works before pairing. Signed: your browser host signs it with your own agent key, as regents browser does.",
       "input_schema": {
         "type": "object",
         "properties": {

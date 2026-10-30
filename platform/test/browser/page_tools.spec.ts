@@ -1,5 +1,5 @@
 import {randomUUID} from "node:crypto"
-import {readFileSync} from "node:fs"
+import {existsSync, readFileSync} from "node:fs"
 import type {Page, Request} from "@playwright/test"
 import {expect, test} from "./support/test"
 
@@ -143,5 +143,12 @@ test("pairing sends the code only in the signed request", async ({page}) => {
 
   // The stand-in proof is refused by the sign-in service, so the answer is a refusal.
   expect(answer).toMatchObject({ok: false})
-  expect(readFileSync("tmp/walk-lines.jsonl", "utf8")).not.toContain(pairing.code)
+
+  // The server's line for this request is written before its lines are read.
+  const requestId = (await sent[0].response())!.headers()["x-request-id"]
+  expect(requestId).toBeTruthy()
+  const file = "tmp/walk-lines.jsonl"
+  const logged = () => existsSync(file) ? readFileSync(file, "utf8") : ""
+  await expect.poll(() => logged().split("\n").some(line => line.includes(requestId) && line.includes("POST /api/agents/v1/pair"))).toBe(true)
+  expect(logged()).not.toContain(pairing.code)
 })
