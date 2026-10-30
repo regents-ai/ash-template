@@ -6104,8 +6104,17 @@ way, and the library's own site-tool serving is gone.
   note the boxes take is about 91 KB once sent.
 - Pages connect by websocket only. The fallback to long polling, which a page switched
   to when its websocket took over 2.5 seconds, read up to 8 MB a request, past both
-  limits above. A slow websocket now keeps trying until it connects. A network that
-  blocks websockets gets the pages as served, without their live parts.
+  limits above. A slow websocket now keeps trying until it connects. On a network that
+  blocks websockets, the pages show as served and their links work. Signing in and out
+  still work, because neither uses the live connection: Sign in is the account
+  script's own press (`auth_lazy.ts:1106`), the sign-in bridge sends one request to
+  `/auth/privy/session` (`privy_bridge.tsx:428`) and reloads the page
+  (`privy_bridge.tsx:612`), the page as served shows the account, and Sign out in its
+  menu is the same script's press (`auth_lazy.ts:1122`). Choosing an agent to pair
+  (`pairing_box.ex:75`), Send in a room (`rooms_live.ex:411`) and every other form on
+  a live page need the live connection, so on that network they do nothing and say
+  nothing. `blocked_websocket.spec.ts` checks sign-in, the signed-in page and its Sign
+  out with websockets refused.
 - Every answer now says `x-content-type-options: nosniff`, set once at the start of
   the endpoint: pages, files, redirects, `/mcp` and every refusal, as a page or as
   JSON. Before, only pages and files had it: a redirect, `/mcp`'s answers and the 404,
