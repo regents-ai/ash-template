@@ -5623,3 +5623,16 @@ way, and the library's own site-tool serving is gone.
   each in a fresh browser, read a remaining budget of 119, 118, then 117 down to 108: one
   per request, so a visitor still has its own budget keyed by the proxy's header rather
   than the proxy's shared one.
+
+## 2026-10-30 — Sites stay on the direct address
+
+- The pooler's process count, read twice through the template's own running app (one
+  read-only transaction each, 00:00:46Z and 00:06:15Z): `template-runtime` holds 10 real
+  connections for at most 7 clients, two sets of five replaced on their own 300-second
+  schedules. The pooler runs two processes, each keeping 5 per login, so a pooled site
+  would hold 10 at rest against 5 to 7 direct and the five sites would not fit in 97.
+- The ash-data skill now says so: sites serve on the direct address with a pool of 5 and
+  send their three limits as startup settings, releases keep taking turns under the
+  shared lock, and only the template serves through the pooler. The move part of
+  `control/rollouts/2026-10-29-db-pooler.md` is closed, and the lock comment in
+  `scripts/deploy.sh` no longer waits for a move. No code change, no release.
