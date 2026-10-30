@@ -6153,3 +6153,12 @@ way, and the library's own site-tool serving is gone.
   step's words muted under its name) and the Activity list (each notice's body muted under
   its title).
 - Public changelog: "Clear emphasis".
+
+## 2026-10-30 — A wallet name's picture shows its address, not "0"
+
+- A wallet author's picture, in the discussion showcase (`/showcase/discussion`) and in
+  rooms, shows the two characters after `0x` in capitals, such as "8F" for `0x8f3c..41d2`,
+  instead of "0". elixir-utils is pinned to `fd597f51`: `466ca10f` plus `RegentFormat.monogram/2`
+  reading a `0x` name that way (also on elixir-utils main as `ea2a676d`, which the template
+  does not pin because it carries the payments changes).
+- No database changes. Sites get it with their next elixir-utils pin.
