@@ -85,7 +85,7 @@ config :regent_payments, RegentPayments.Facilitator,
 
 | Who pays | Call | Notes |
 | --- | --- | --- |
-| A person on a page | `RegentPayments.WalletPayment.pay/4` | Unsigned, it answers `{:review, intent, review}`: a `RegentChain.Review` with one signature step for the signed-in wallet. The hook signs it and sends back the `review_id` and signature; the same call then settles. `{:wallet_mismatch, id, note}` carries the note to show beside the button. |
+| A person on a page | `RegentPayments.WalletPayment.pay/4` | The actor carries `wallet_address` and `wallet_addresses`, every wallet the account links; each pays as the account. Unsigned, it answers `{:review, intent, review}`: a `RegentChain.Review` with one signature step for the page's open wallet, when the account links it. The hook signs it and sends back the `review_id` and signature; the same call then settles. Any other wallet, or none, answers `{:wallet_unavailable, id}`; the note beside the button names the account's wallets and asks the person to open one. |
 | An agent over HTTP | `RegentPayments.Purchase.prepare/3`, then `execute/3` | No payment answers `{:payment_required, intent}`; send `Purchase.terms/3` as the x402 402 body. A signed `payment-signature` then settles. `on_offer/3` answers a repeated request with the purchase already started. |
 | An agent over hosted MCP | `Purchase` with `RegentPayments.MCP` | The tool names the wallet (`MCP.wallet/1`); the payment is in `_meta` (`MCP.payment/1`) and must come from that wallet. An action that moves money without a payment proves the wallet with `RegentPayments.WalletProof`. |
 
@@ -121,7 +121,8 @@ For recovery after unpairing, authenticate the original agent signer, then use
 `Purchase.complete(actor, intent_id)`. Accept no payment signature on this route and
 return only intent ID, status and receipt. It never starts or retries settlement.
 Legacy pending intents without a frozen wallet or receipt are refused by this new
-API; legacy settled/applied intents require the receipt payer to match the signer.
+API. A person's settled or applied intent is finished by the account whose wallets
+(`wallet_address` and `wallet_addresses`) include the receipt's payer.
 Do not guess historical ownership or widen authorization to make recovery succeed.
 
 The template documents this integration and keeps its payment showcase illustrative;

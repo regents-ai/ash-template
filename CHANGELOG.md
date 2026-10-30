@@ -5850,3 +5850,18 @@ way, and the library's own site-tool serving is gone.
   payments showcase and components pages load with nothing overflowing.
 - `GET /mcp` 405; the live check as the paired agent 151 passed, 1 skipped.
   Rollback: v151, `34ed0e95`.
+
+## 2026-10-30 — The bridge reads the account's wallets in one place
+
+- `accountLinkedWallets` in `privy_bridge.tsx` (`8a67e588`) turns Privy's account into
+  its Ethereum wallets, with a test; nothing a person sees changes.
+
+## 2026-10-30 — Payments: every linked wallet pays as the account
+
+- The shared payments library (elixir-utils `e4bc94b`) now takes a payment from any
+  wallet the account links, with no special first wallet; a wallet the account doesn't
+  link counts as none open, and the "switch wallets" answer is gone. A person signed in
+  without a wallet can finish a payment made from a linked one. An agent still pays only
+  with its own wallet. The payments skill's page row and finishing rule say so. The
+  template does not use the payments library, so nothing here is re-pinned; Patchbay
+  is the one site that calls it.
