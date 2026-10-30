@@ -1,7 +1,7 @@
 # Ash Template Privacy Policy
 
-**Effective date:** October 27, 2026  
-**Version:** 1.3
+**Effective date:** October 30, 2026  
+**Version:** 1.4
 
 This Privacy Policy explains how **Regents Labs, Inc.** ("Regents Labs," "we," "us," or "our") collects, uses, discloses, and protects personal information when you use the website, applications, APIs, documentation, and related services that we operate under the **Ash Template** name at `template.regents.sh` (collectively, the "Services").
 
@@ -20,6 +20,7 @@ Email: **[build@regents.sh](mailto:build@regents.sh)**
 
 - **Do not send us private keys or recovery phrases.** We do not need them to provide the Services.
 - **We do not sell personal information for money or share it for cross-context behavioral advertising.**
+- **We run no analytics or advertising scripts from other companies.** Signing in, connecting a wallet and paying by card connect your browser to the services listed in section 6.B, each under its own privacy policy.
 - **Agents may submit information automatically.** The person or organization operating an agent is responsible for configuring it appropriately.
 
 ## 3. Information we collect
@@ -88,6 +89,7 @@ We may use automated systems to detect abuse, fraud, or security threats and to 
 We use service providers to operate the Services. Depending on the feature, these may include:
 
 - **Privy** for authentication and wallet functionality;
+- **Stripe** for card and Link payments;
 - hosting, database, and infrastructure providers;
 - email, support, monitoring, and error-diagnostic providers; and
 - professional advisers such as lawyers, accountants, auditors, and insurers.
@@ -98,11 +100,12 @@ These providers receive information needed to perform services for us and are su
 
 When you connect a social account, identity, or wallet, we disclose information needed to complete the connection. The third party may separately collect information under its own policy.
 
-Signing in, and staying signed in, also connects your browser to these services, each under its own privacy policy:
+Signing in, staying signed in and paying by card also connect your browser to these services, each under its own privacy policy:
 
 - **Privy**, which runs sign-in and the wallets linked to your account;
-- **Cloudflare**, which checks that a person is signing in; and
-- **WalletConnect** and **Coinbase Wallet**, when you connect a wallet through them.
+- **Cloudflare**, which checks that a person is signing in;
+- **WalletConnect** and **Coinbase Wallet**, when you connect a wallet through them; and
+- **Stripe**, when you buy Credits by card or with Link.
 
 If your wallet has an ENS name with a picture, your browser loads that picture from the ENS avatar service, which can see your internet address and ENS name.
 
