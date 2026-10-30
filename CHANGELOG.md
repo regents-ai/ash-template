@@ -5756,3 +5756,13 @@ way, and the library's own site-tool serving is gone.
   with no explorer, and copies a long ID such as a Uniswap v4 pool ID with no arrow.
   Autolaunch asked for both for its stock page. The components page (`/showcase`)
   shows the four forms under Addresses, after Typography.
+
+## 2026-10-30 — Released v149: addresses on Robinhood, on a test network, and long IDs
+
+- v149 = template main `173bf681`, released 02:10:27Z, machine up 02:10:46Z, no migration.
+- Live, headless Chromium at 390 and 1280 wide, the components page's Addresses card: the Base
+  address opens Basescan, the Robinhood transaction opens Blockscout
+  (`robinhoodchain.blockscout.com/tx/…`, "Open on Blockscout"), the test-network address and the
+  pool ID copy with no arrow ("Copy the full address", "Copy the full ID"); nothing overflows.
+- `GET /mcp` 405, `POST` 401; the live check as the paired agent 151 passed, 1 skipped.
+  Rollback: v148, `72938d15`.
