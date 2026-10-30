@@ -5662,3 +5662,27 @@ way, and the library's own site-tool serving is gone.
   `RegentOAuth.Migration.ClientScopes`, which only inserts. It runs in the release step,
   before the new release serves. Every token still needs the person's consent for each
   permission.
+
+## 2026-10-30 — Released v145: connected apps keep their permissions
+
+- v145 runs main `ac8258ac`, released 00:16:50Z–00:21:53Z. The release step ran migration
+  `20261029220000` once (00:21:33Z, both inserts, "Migrated in 0.0s", exit 0) before the
+  release served.
+- elixir-utils `8cea309d` against the `b375f122` it replaces (`git diff --stat`):
+
+  ```
+   oauth/CHANGELOG.md                                |   6 +
+   oauth/README.md                                   |   9 ++
+   oauth/lib/regent_oauth/migration/client_scopes.ex |  53 +++++++++
+   oauth/lib/regent_oauth/protocol.ex                |  25 +----
+   oauth/test/regent_oauth/client_scopes_test.exs    | 127 ++++++++++++++++++++++
+   oauth/test/support/site.ex                        |  14 ++-
+   6 files changed, 209 insertions(+), 25 deletions(-)
+  ```
+
+  Nothing under `siwa`, `siwa-elixir`, `apps`, `ash_components` or `agents` changed.
+- Live, headless Chromium: a new app registered itself (201, both permissions, no secret),
+  its consent page opened signed out ("Sign in to connect", no console errors), and the
+  same app with an unregistered return address was refused (400). `GET /mcp` 405, `POST`
+  401; the live check as the paired agent 151 passed, 1 skipped, its 17 signed reads 200.
+  Rollback: v144, `2ed295fb`.
