@@ -5823,3 +5823,13 @@ way, and the library's own site-tool serving is gone.
 - The on-chain buttons skill and the Privy and integration references describe the
   one rule. The shared payments library still carries its own switch note; that is
   listed in the template backlog as its own item.
+
+## 2026-10-30 — Released v151: no note asks to switch wallets
+
+- v151 = template main `34ed0e95`, no migration. Also carries the walk fixes `fdbdd3dc`,
+  `fc13229e`, `b31bf6bf` and `4aaa6242` (test-only).
+- Live, headless Chromium at 390 and 1280 wide: `/capabilities.json` names `34ed0e95`; the
+  payments showcase has no "Other wallet" row and no page says a wallet "isn't linked";
+  nothing overflows.
+- `GET /mcp` 405, `POST` 401; the live check as the paired agent 151 passed, 1 skipped.
+  Rollback: v150, `a5ac9a92`.
