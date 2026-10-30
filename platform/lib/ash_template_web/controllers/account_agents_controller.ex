@@ -29,9 +29,6 @@ defmodule AshTemplateWeb.AccountAgentsController do
     "invalid_name" =>
       {422, "That name can't be used.",
        "Send a name of 1 to 80 characters with no hidden characters: no control, line-break, text-direction or zero-width characters, except a zero-width joiner between two visible characters, as in an emoji."},
-    "pairing_codes_limited" =>
-      {429, "You have made 20 pairing codes this hour.",
-       "Wait the number of seconds in Retry-After, then ask again. Codes you made still work until they expire."},
     "activity_unavailable" =>
       {503, "This agent's activity could not be read right now.", "Try again in a moment."},
     "agents_unavailable" =>
@@ -61,9 +58,7 @@ defmodule AshTemplateWeb.AccountAgentsController do
         harness_unknown(conn)
 
       {:limited, seconds} ->
-        conn
-        |> put_resp_header("retry-after", Integer.to_string(seconds))
-        |> refuse("pairing_codes_limited")
+        pairing_codes_limited(conn, seconds)
 
       {:error, error} ->
         unavailable(conn, error)
@@ -183,6 +178,23 @@ defmodule AshTemplateWeb.AccountAgentsController do
         code: "harness_unknown",
         message: "That harness is not one we know.",
         hint: "Send harness alone, one of: #{harnesses}. Send other if the agent's is not listed."
+      }
+    })
+  end
+
+  # Its words count the codes from the allowance itself, so the two never differ.
+  defp pairing_codes_limited(conn, seconds) do
+    limit = Limits.allowance(:pairing_code)[:limit]
+
+    conn
+    |> put_resp_header("retry-after", Integer.to_string(seconds))
+    |> put_status(429)
+    |> json(%{
+      error: %{
+        code: "pairing_codes_limited",
+        message: "You have made #{limit} pairing codes this hour.",
+        hint:
+          "Wait the number of seconds in Retry-After, then ask again. Codes you made still work until they expire."
       }
     })
   end

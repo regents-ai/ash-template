@@ -19,13 +19,18 @@ defmodule AshTemplate.Limits do
   @doc "As `spend/2`, saying when limited how many seconds are left of the window."
   @spec spend_until(atom(), term()) :: :ok | {:limited, pos_integer()}
   def spend_until(name, who) do
-    config = :ash_template |> Application.fetch_env!(:limits) |> Keyword.fetch!(name)
+    config = allowance(name)
 
     case RequestRateLimiter.admit({name, who}, config[:limit], config[:window_seconds]) do
       {:ok, _budget} -> :ok
       {:error, :rate_limited, budget} -> {:limited, budget.reset}
     end
   end
+
+  @doc "`name`'s allowance: its `limit` each `window_seconds`, as configured."
+  @spec allowance(atom()) :: [limit: pos_integer(), window_seconds: pos_integer()]
+  def allowance(name),
+    do: :ash_template |> Application.fetch_env!(:limits) |> Keyword.fetch!(name)
 
   @doc "Who an actor's writing counts against: the person, or the agent."
   def writer(%Human{human_account_id: id}), do: {:human, id}

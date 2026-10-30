@@ -5155,7 +5155,9 @@ An adversarial review of the two commits above found five things, all fixed here
   offer is 422 `harness_unknown`; a blank, over-long or hidden-character name is 422
   `invalid_name`; an unreadable activity is 503 `activity_unavailable`. An owner makes at
   most 20 pairing codes an hour (`:pairing_code`), the 21st answering 429
-  `pairing_codes_limited` with `Retry-After`.
+  `pairing_codes_limited` with `Retry-After`; its message counts the codes from that
+  setting (`AshTemplate.Limits.allowance/1`), and the API description gives it its own
+  example beside the client-address `rate_limited` one.
 - `/capabilities.json` gains the condition `account_owner` ("An account the agent opened
   itself with account open.") on the five `signed_agent` rows. The owner's status list
   says it manages the agents paired with its account. The OpenAPI documents move to 8.2.0

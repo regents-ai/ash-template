@@ -5611,8 +5611,45 @@
             }
           },
           "429": {
-            "$ref": "#/components/responses/AgentRateLimited",
-            "description": "pairing_codes_limited after 20 codes an hour, with Retry-After, or too many requests from the client address."
+            "description": "pairing_codes_limited after 20 codes an hour, with Retry-After, or too many requests from the client address.",
+            "headers": {
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              },
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "pairingCodesLimited": {
+                    "value": {
+                      "error": {
+                        "code": "pairing_codes_limited",
+                        "message": "You have made 20 pairing codes this hour.",
+                        "hint": "Wait the number of seconds in Retry-After, then ask again. Codes you made still work until they expire."
+                      }
+                    }
+                  },
+                  "rateLimited": {
+                    "value": {
+                      "error": {
+                        "code": "rate_limited",
+                        "message": "Too many requests.",
+                        "hint": "Wait the number of seconds in Retry-After, then try again."
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "503": {
             "description": "agents_unavailable when your agents could not be reached; sign-in failures keep their own code.",
