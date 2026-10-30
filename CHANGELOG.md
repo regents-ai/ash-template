@@ -5686,3 +5686,11 @@ way, and the library's own site-tool serving is gone.
   same app with an unregistered return address was refused (400). `GET /mcp` 405, `POST`
   401; the live check as the paired agent 151 passed, 1 skipped, its 17 signed reads 200.
   Rollback: v144, `2ed295fb`.
+
+## 2026-10-30 — decode-uri-component 0.5.1
+
+- The override for `decode-uri-component`, which the wallet sign-in bundle reaches through
+  WalletConnect's `query-string`, moves from 0.5.0 to 0.5.1 (GitHub alert GHSA-qr28-fpjm-wq7f:
+  a long crafted address took quadratic time to decode in the browser). The lock changes in
+  that one entry; `npm ls decode-uri-component` shows only 0.5.1. Sign-in reaches the
+  Rainbow QR with no page-rule refusals or console errors, as before.
