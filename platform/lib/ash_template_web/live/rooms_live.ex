@@ -426,7 +426,11 @@ defmodule AshTemplateWeb.RoomsLive do
               aria-describedby={"room-message-hint #{field.described_by}"}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
           </Primitives.field>
-          <div class="rooms-composer__actions">
+          <AshTemplateWeb.LiveConnection.offline
+            id="room-message-offline"
+            controls="#room-message-actions"
+          />
+          <fieldset id="room-message-actions" class="rooms-composer__actions">
             <p id="room-message-hint" class="rooms-composer__hint rg-muted">
               Enter sends. Shift+Enter starts a new line.
             </p>
@@ -442,7 +446,7 @@ defmodule AshTemplateWeb.RoomsLive do
             <Primitives.button type="submit" phx-disable-with="Sending…">
               {if @editing, do: "Save", else: "Send"}
             </Primitives.button>
-          </div>
+          </fieldset>
         </.form>
       </section>
 

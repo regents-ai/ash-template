@@ -278,3 +278,13 @@
     block-size: 2rem;
   }
 }
+
+/* With no live connection the pairing box's agents and its new-code button are
+   disabled (AshTemplateWeb.LiveConnection), and look it. Unlayered, like the
+   shared pairing box it adjusts. */
+.rg-account__choices:disabled .rg-account__choice,
+.rg-account__renew:disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}

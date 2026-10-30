@@ -6111,10 +6111,20 @@ way, and the library's own site-tool serving is gone.
   `/auth/privy/session` (`privy_bridge.tsx:428`) and reloads the page
   (`privy_bridge.tsx:612`), the page as served shows the account, and Sign out in its
   menu is the same script's press (`auth_lazy.ts:1122`). Choosing an agent to pair
-  (`pairing_box.ex:75`), Send in a room (`rooms_live.ex:411`) and every other form on
-  a live page need the live connection, so on that network they do nothing and say
-  nothing. `blocked_websocket.spec.ts` checks sign-in, the signed-in page and its Sign
-  out with websockets refused.
+  and Send need the live connection.
+- While a page has no live connection (it could not connect, or the connection
+  dropped half a second ago or more), the pairing box and the Send box of a room, a
+  direct message and the assistant chat say "Not connected. Trying again…" in the
+  design system's notice, and their buttons are disabled: the agents and the new-code
+  button in the pairing box, Send (and Cancel) in the others, and Enter, which sends.
+  The box can still be typed in. Once the connection is back, the notice goes and the
+  buttons return. LiveView's own `phx-disconnected` and `phx-connected` do it
+  (`AshTemplateWeb.LiveConnection`), on what the server never disables itself. Other
+  live forms (notes, polls, a room's topic, new rooms, Credits and the search box)
+  don't show it yet. `blocked_websocket.spec.ts` checks it with websockets refused
+  and with a connection dropped and restored; a real restart of the walk's server
+  showed the notice about a second after it stopped and cleared it about two
+  seconds after it was back, and a message and a pairing code went through after.
 - Every answer now says `x-content-type-options: nosniff`, set once at the start of
   the endpoint: pages, files, redirects, `/mcp` and every refusal, as a page or as
   JSON. Before, only pages and files had it: a redirect, `/mcp`'s answers and the 404,

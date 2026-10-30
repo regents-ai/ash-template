@@ -105,6 +105,10 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .chat-composer__hint {

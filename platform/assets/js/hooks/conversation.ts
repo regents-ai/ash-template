@@ -152,6 +152,9 @@ export const Conversation: Hook = {
       if (event.key !== "Enter" || event.shiftKey || event.isComposing) return
       if (window.matchMedia("(pointer: coarse)").matches) return
       event.preventDefault()
+      // Enter is Send, so it waits whenever Send does: while sending, and while the
+      // page has no live connection (AshTemplateWeb.LiveConnection).
+      if (box.form.querySelector("button[type=submit]")?.matches(":disabled")) return
       box.form.requestSubmit()
     }
     this.el.addEventListener("keydown", this.keydown)
