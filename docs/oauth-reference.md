@@ -88,13 +88,19 @@ codes. AshAi serves each POST as one JSON-RPC message in the version the client
 asks for, `initialize`, `ping`, `tools/list` and `tools/call` among them, and keeps
 nothing between requests.
 
-Two budgets: the endpoint counts each address first, then McpAgent counts each
-connected account under its OAuth subject (`mcp`, 120 a minute), both through
-`RegentAgentAccess.RateLimit` and the site's `RequestRateLimiter`. A request with
-a Bearer token counts against its address's ceiling of 600 a minute
-(`mcp_connected_address`), since Claude's connector calls from Anthropic's shared
-servers and one address carries many accounts; any other request counts 120 a
-minute (`mcp_address`, the API's figure). A tool's arguments are checked against its action before it
+Budgets, all through `RegentAgentAccess.RateLimit` and the site's
+`RequestRateLimiter`: every request whose token has not been checked counts 120 a
+minute against its address (`mcp_address`, the API's figure), a request with no
+token in the endpoint before its body is read, one with a token that isn't this
+site's when McpAgent refuses it. Only a token `RegentOAuth.verify/3` accepts counts
+against its address's ceiling of 600 a minute (`mcp_connected_address`) instead,
+since Claude's connector calls from Anthropic's shared servers and one address
+carries many accounts, and then against its connected account's own 120 under its
+OAuth subject (`mcp`). Once an address has spent its 120, its next request with a
+token is refused 429 in the endpoint, before the token is looked up, so a stream of
+made-up tokens costs the sign-in store at most 120 lookups a minute from one
+address. Every answer from `/mcp` says `cache-control: private, no-store`, set as it
+leaves, over AshAi's own `no-cache` on a streamed answer. A tool's arguments are checked against its action before it
 runs (`AshTemplateWeb.ToolErrors.check_input/3`), so bad input is refused with the
 codes the HTTP API uses. A refused identity tool call is the tool's error, whose
 text is `{"error": {"code", "message", "hint"}}`: the site's own refusal of the

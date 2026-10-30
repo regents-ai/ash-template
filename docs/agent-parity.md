@@ -129,14 +129,14 @@ identity tools behind its switch.
   `claude/mcp-site-tools-1029`, behind the connector's switch. A token with the
   agent permission (`ash-template.agent`, asked for at sign-in beside the identity
   one) whose identity is paired with the token's own account calls `/mcp` as that
-  paired agent: `McpAgent` reads the identity's wallet once per account
-  (`AshTemplate.Agents.HostedAddress`, from `RegentMCPAgents.address/1`) and builds
+  paired agent: `McpAgent` reads the identity's wallet once per account and keeps
+  it (`AshTemplate.Agents.HostedAddress`, from `RegentMCPAgents.address/1`) and builds
   the same actor a signing agent gets (`AgentWallet.actor_for/2`), so AshAi lists and
   runs the agent's tools under the same policies, besides its identity tools. No call
   waits on the sign-in service. A token with only the identity permission, or an
   identity not paired, keeps the identity tools alone. The per-account budget is
   `/mcp`'s 120 a minute, spent before the identity is read; while the service
   can't give the identity's wallet, the call is refused (`identity_unavailable`,
-  503) and the service is asked again a minute later at most. Every app a person
+  503) and the next call asks again. Every app a person
   connects works as the same paired agent, and the consent page says so. Protected (sign-in): waits for Sean's go. Owner: template
   chief.

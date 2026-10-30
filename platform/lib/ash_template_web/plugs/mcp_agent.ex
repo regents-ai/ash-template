@@ -16,6 +16,15 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     JSON-RPC batch (`batch_not_supported`): one call a request, so one signature
     covers one call.
 
+  Before any of this, while the body is still unread, the endpoint counts each
+  address (`limit_address/1`): 120 requests a minute (`mcp_address`, the API's
+  figure) for every request that carries no checked token. A connected app's
+  token joins its address's ceiling of 600 a minute (`mcp_connected_address`) only
+  once `RegentOAuth` has checked it, since Claude's connector calls from
+  Anthropic's shared servers and one address carries many accounts. A token that
+  isn't this site's spends the 120, and once an address has spent them its next
+  token is refused before it is looked up.
+
   Then every request carries exactly one credential:
 
   - An agent's own signature (`Siwa.AgentAuthPlug.signed_request?/1`) is checked
@@ -32,11 +41,12 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     its pairing is checked again before the answer leaves. Otherwise the app
     is the actor (`AshTemplate.Actors.ConnectedApp`) and has its identity
     tools only. The budget is spent first. The identity's wallet is read
-    once per account (`AshTemplate.Agents.HostedAddress`), so a call never
-    waits on the sign-in service; while it can't be read the call is refused
-    (`identity_unavailable`). Any other token is asked to connect again, with the
-    `WWW-Authenticate` challenge naming this site's sign-in and both
-    permissions. While connecting apps is off, a token is refused.
+    from the sign-in service once per account and kept
+    (`AshTemplate.Agents.HostedAddress`); while it can't be read the call is
+    refused (`identity_unavailable`), and the next call asks again. Any other
+    token is asked to connect again, with the `WWW-Authenticate` challenge
+    naming this site's sign-in and both permissions. While connecting apps is
+    off, a token is refused.
   - Both together are refused as `ambiguous_credentials`.
   - Neither is refused: while connecting apps is on, as `connection_required`
     with the challenge, so an app such as Claude starts its sign-in on its first
@@ -45,7 +55,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   Every call carries the client's address key (`client_key`), which an agent's
   room post spends its allowances under. Each answer is private and never kept
-  (`cache-control: private, no-store`). Refusals answer
+  (`cache-control: private, no-store`, set as the answer leaves, so it stands
+  over AshAi's own `no-cache` on a streamed answer). Refusals answer
   `{"error": {"code", "message", "hint"}}`, the site's one shape; what the tool
   itself refuses comes back as the tool's error, in the same shape
   (`AshTemplateWeb.ToolErrors`). Which way each request came in is counted as
@@ -56,28 +67,58 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   import Plug.Conn
 
+  alias AshTemplate.Accounts.RequestRateLimiter
   alias AshTemplate.Actors.{Agent, ConnectedApp}
   alias AshTemplate.Agents.HostedAddress
   alias AshTemplateWeb.{ClientAddress, PublicDocuments}
   alias AshTemplateWeb.Plugs.AgentWallet
+  alias RegentAgentAccess.RateLimit
   alias RegentHttp.UnexpectedFailure
+
+  @address RateLimit.init(
+             policy: "mcp_address",
+             limit: 120,
+             window: 60,
+             admit: &RequestRateLimiter.admit/3,
+             key: &ClientAddress.key/1
+           )
+  @connected_address RateLimit.init(
+                       policy: "mcp_connected_address",
+                       limit: 600,
+                       window: 60,
+                       admit: &RequestRateLimiter.admit/3,
+                       key: &ClientAddress.key/1
+                     )
 
   # 120 requests a minute for each connected account, after the endpoint's ceiling
   # for each address.
-  @budget RegentAgentAccess.RateLimit.init(
+  @budget RateLimit.init(
             policy: "mcp",
             limit: 120,
             window: 60,
-            admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
+            admit: &RequestRateLimiter.admit/3,
             key: &__MODULE__.account/1
           )
 
   @impl true
   def init(opts), do: opts
 
+  @doc """
+  Counts the request against its address before the body is read. One with a
+  token waits for the token's check, unless its address has spent its 120.
+  """
+  def limit_address(conn) do
+    if get_req_header(conn, "authorization") == [] or spent?(conn, @address),
+      do: RateLimit.call(conn, @address),
+      else: conn
+  end
+
+  defp spent?(conn, %{policy: policy, limit: limit, window: window, key: key}),
+    do: RequestRateLimiter.spent?({policy, key.(conn)}, limit, window)
+
   @impl true
   def call(conn, _opts) do
-    conn = put_resp_header(conn, "cache-control", "private, no-store")
+    conn = register_before_send(conn, &put_resp_header(&1, "cache-control", "private, no-store"))
 
     cond do
       conn.query_string != "" ->
@@ -152,14 +193,18 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
          {:ok, principal} <- RegentOAuth.verify(bearer, RegentOAuth.resource(), scope()) do
       conn
       |> Ash.PlugHelpers.set_actor(%ConnectedApp{principal: principal})
-      |> RegentAgentAccess.RateLimit.call(@budget)
+      |> spend(@connected_address)
+      |> spend(@budget)
       |> as_paired_agent(principal)
       |> counted(:site_oauth)
     else
       false -> refuse(conn, :site_oauth, "delegated_access_not_enabled")
-      _not_this_sites -> connect(conn, :site_oauth)
+      _not_this_sites -> refuse(conn, :site_oauth, &challenge/1)
     end
   end
+
+  defp spend(%{halted: true} = conn, _budget), do: conn
+  defp spend(conn, budget), do: RateLimit.call(conn, budget)
 
   # Within its account's budget, the app calls as its paired identity when the
   # person allowed it to work here as that agent; as itself otherwise. Only the
@@ -170,7 +215,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   defp as_paired_agent(conn, %{subject: subject} = principal) do
     with true <- AshTemplate.OAuth.agent_scope() in principal.scopes,
-         {:ok, address} <- HostedAddress.fetch(principal),
+         {:ok, address} <- HostedAddress.read(principal),
          {:ok, %Agent{pairing: :active, privy_user_id: ^subject} = agent} <-
            AgentWallet.actor_for(address) do
       agent = %{agent | connection: principal}
@@ -195,22 +240,33 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   defp no_one(conn) do
     if AshTemplate.OAuth.enabled?(),
-      do: connect(conn, :none),
+      do: refuse(conn, :none, &challenge/1),
       else: refuse(conn, :none, "agent_auth_required")
   end
 
-  defp connect(conn, mode) do
+  defp challenge(conn) do
     conn
     |> put_resp_header(
       "www-authenticate",
       RegentOAuth.challenge(Enum.join(RegentOAuth.scopes(), " "))
     )
-    |> refuse(mode, "connection_required")
+    |> refusal("connection_required")
   end
 
   defp scope, do: RegentMCPAgents.identity_scope()
 
-  defp refuse(conn, mode, code), do: conn |> refusal(code) |> counted(mode)
+  # Refused before any token was checked. A request with one spends its address's
+  # 120 here, as one without did in the endpoint.
+  defp refuse(conn, mode, code) when is_binary(code), do: refuse(conn, mode, &refusal(&1, code))
+
+  defp refuse(conn, mode, refusal) do
+    conn =
+      if get_req_header(conn, "authorization") == [],
+        do: conn,
+        else: RateLimit.call(conn, @address)
+
+    if conn.halted, do: counted(conn, mode), else: conn |> refusal.() |> counted(mode)
+  end
 
   defp refusal(conn, code) do
     {status, message, hint} = words(code)

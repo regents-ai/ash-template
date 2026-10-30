@@ -67,6 +67,12 @@ config :ash_template, AshTemplate.Agents.ActivityReading,
   gc_interval: :timer.minutes(10),
   max_size: 10_000
 
+# Each account's hosted identity wallet, which never changes once the sign-in
+# service has given it. One that leaves with a collected generation is asked for again.
+config :ash_template, AshTemplate.Agents.HostedAddress,
+  gc_interval: :timer.hours(12),
+  max_size: 100_000
+
 # Background jobs live in the site's own schema, beside its tables. Queues hear
 # about new jobs through Erlang process groups. `outside_calls` keeps slow calls
 # to other websites from holding up the default queue, and `ens` keeps a

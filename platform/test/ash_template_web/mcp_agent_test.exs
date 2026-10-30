@@ -330,12 +330,14 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert List.last(statuses) == 429
   end
 
-  test "requests with a token share 600 a minute from one address, Claude's servers among them",
+  test "a token that isn't checked spends the same 120 from its address, each request once",
        %{from: from} do
-    statuses = for _ <- 1..601, do: mcp(rpc("tools/list"), from: from, token: "not-a-token").status
-    assert Enum.take(statuses, 600) |> Enum.uniq() == [401]
+    statuses =
+      for n <- 1..121,
+          do: mcp(rpc("tools/list"), from: from, token: if(rem(n, 2) == 0, do: "not-a-token")).status
+
+    assert Enum.take(statuses, 120) |> Enum.uniq() == [401]
     assert List.last(statuses) == 429
-    assert mcp(rpc("tools/list"), from: from).status == 401
   end
 
   property "an operation_id reused through /mcp answers as it does over HTTP, whichever way each call comes",

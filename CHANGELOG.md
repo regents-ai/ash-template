@@ -6040,3 +6040,28 @@ way, and the library's own site-tool serving is gone.
   1 skipped. Fly's log feed after the release shows no error.
 - Sending in a room was walked on the machine, not on the live site: the live checks write
   nothing. WebKit is not run on the Mac.
+
+## 2026-10-30 — Hosted MCP: a token counts as checked only once it is; answers never kept
+
+- `/mcp` counts every request whose token has not been checked against its address's 120 a
+  minute (`mcp_address`), the same budget as a request with no token, each request once. Only
+  a token `RegentOAuth.verify/3` accepts moves to the address's 600 a minute
+  (`mcp_connected_address`) and then its account's own 120 (`mcp`). Before, any
+  `Authorization: Bearer` header, made up or not, took the 600 and cost a sign-in store
+  lookup on its pool of two. Once an address has spent its 120, its next request with a
+  token is refused 429 in the endpoint before the token is looked up
+  (`RequestRateLimiter.spent?/3` reads the count without adding to it). A checked token from
+  an address whose 120 is spent waits for the next minute too.
+- Every `/mcp` answer leaves with `cache-control: private, no-store`, now set as the answer
+  leaves (`register_before_send`), so AshAi's own `no-cache` on a streamed answer
+  (`subscriptions/listen` in protocol 2026-07-28) no longer replaces it.
+- `AshTemplate.Agents.HostedAddress` is a Nebulex local cache, as `ActivityReading` is,
+  in place of its own GenServer and ETS table. It keeps each account's hosted identity wallet
+  once the sign-in service has given it, and keeps no failure: while the service can't answer,
+  each call is refused `identity_unavailable` and the next call asks again, within the
+  account's 120 a minute.
+- elixir-utils pinned to `466ca10f` (hosted MCP audiences for Regents, Autolaunch and
+  Techtree; nothing the template runs changes). elixir-utils main is `de9f481d`, which also
+  holds the payments change `e4bc94b` the template does not take yet.
+- Checks: `claude_connector_test.exs` ("the hosted MCP server's address budgets") and
+  `mcp_agent_test.exs`; each new check fails on `78ebd169` and passes here.
