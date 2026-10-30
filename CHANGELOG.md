@@ -6321,3 +6321,21 @@ way, and the library's own site-tool serving is gone.
   change in the lock.
 - No template code signs requests: browser tools hand the request to the agent's host
   signer (regents-cli), and the template's tests carry fixed headers only.
+
+## 2026-10-30 — One window asks before an action that can't be undone
+
+- design-system pinned to `42abac56` (branch `dm/confirm-window-1030`, not yet on main):
+  `b38a9149` adds `Regent.Structure.confirm` and `confirm.mjs`, and `42abac56` moves
+  Techtree's three account fixes into `account.css` for every site.
+- The root layout renders `<Regent.Structure.confirm />` once and `app.ts` imports
+  `confirm.mjs`. A press on any `data-confirm` control (Delete a note or message, Unpair
+  in the list and in an agent's window, Block, Mute, End poll, Refund) now opens the shared
+  cut-corner window, worded by its `data-confirm-action`; every caller has one. Cancel or
+  Escape hands focus back; going ahead presses the control again without asking.
+- Hard cutover: `import "phoenix_html"` and its type stub are gone (they were only there
+  for `data-confirm`), so the browser's own confirm box never shows. The polls walk
+  presses End in the window instead of accepting the browser's box.
+- Account parts: a wallet's words are 28px tall beside an agent with a mouse (were 22px),
+  an identity heading goes under its picture below 12rem of name instead of overflowing
+  at 320, and the pairing box's five pictures fit a 254px row at 44px each.
+- Public changelog: "Ask first" and "Phone fit". No database changes.

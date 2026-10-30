@@ -281,6 +281,7 @@ defmodule AshTemplateWeb.NotesLive do
                   phx-value-id={note.id}
                   phx-target={@myself}
                   data-confirm="Delete this note?"
+                  data-confirm-action="Delete"
                 >
                   Delete
                 </Primitives.button>

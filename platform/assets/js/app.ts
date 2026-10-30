@@ -1,10 +1,9 @@
 import "../css/app.css"
+import "../vendor/regent_ui/confirm.mjs"
 import "../vendor/regent_ui/discussion.mjs"
 import "../vendor/regent_ui/pill_select.mjs"
 import "../vendor/regent_ui/tip.mjs"
 
-// Asks before any element carrying data-confirm acts, such as deleting a note.
-import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/ash_template"
