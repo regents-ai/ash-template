@@ -6173,3 +6173,17 @@ way, and the library's own site-tool serving is gone.
   nothing scrolls sideways and the page logs no error. Fly's log feed shows no error.
 - Rooms draw names the same way; they need a signed-in visit, so they were not walked live.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — Chain events at Base's five blocks a second
+
+- `skills/chain-events`: Base makes five 200 ms blocks a second from 5 November 2026
+  18:00 UTC (Denim; Base Sepolia since 21 October). New rule 13: every allowance counted
+  in blocks names its chain and the time it keeps (on Base the re-read is 300 blocks and
+  "catching up" 3,000), rows are ordered by block number then log index, never by a
+  block's timestamp, and `safe`/`finalized` reads stay as they are. The watcher tests
+  gain a catch-up check at Base's pace, and `sites-today.md` lists each site's block
+  counts to change with their owners.
+- elixir-utils main `63557bb`: the shared Credits deposit reader stays 3,000 Base blocks
+  behind the newest, not 300. The template pins `fd597f51`, so it and the sites get this
+  with their next pin of elixir-utils main.
+- Skills only in this repository; no code, pin or database change.

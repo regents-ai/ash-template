@@ -11,8 +11,8 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
 
 ## Rules
 
-1. **Read at `latest`** (founder decision, 2026-09-22). Base confirms a block in about two
-   seconds; nothing waits for `safe`, `finalized` or a confirmation count. A reorg that
+1. **Read at `latest`** (founder decision, 2026-09-22). Base makes five blocks a second;
+   nothing here waits for `safe`, `finalized` or a confirmation count. A reorg that
    changes recorded history stops the watcher and a person fixes the record by hand.
 2. **One reading job per contract per chain**, an Oban job unique by its contract that
    runs a pass, then snoozes five minutes and runs again, and runs early when asked
@@ -22,7 +22,8 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
    every five minutes makes sure each contract has its job.
 3. **A cursor row per chain and contract** holds the first block not read yet, the head
    last seen and when, and `rescan_from` when the watcher is stopped.
-4. **Each pass** reads the head, reads the last 30 recorded blocks again, then reads
+4. **Each pass** reads the head, reads its newest recorded blocks again (on Base the last
+   300, one minute; rule 13), then reads
    forward up to the head in stretches of at most 10,000 blocks, halving a stretch the node
    refuses down to one block. When it ends, the pass reports `[:<site>, :indexer, :lag]`
    with `blocks`, the head less the last block it has now read, for the reader's fixed
@@ -49,7 +50,7 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
    `ash-frontend` [public figures](../ash-frontend/references/public-figures.md).
 10. **Say when the record is behind.** Show a "catching up" notice while the head was read
     more than 420 seconds ago (one five-minute turn and two retries a minute apart) or the
-    record is more than 300 blocks behind it.
+    record is more than ten minutes behind it (on Base 3,000 blocks; rule 13).
 11. **All four sites share one production database.** A new table or column needs the
     founder's approval before it reaches production.
 12. **Read the chain on a slow clock** (founder, 23 Oct 2026: "every 5 minutes, with
@@ -68,6 +69,23 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
     ([watcher.md](references/watcher.md)), so presses that keep coming cannot keep
     pushing the read off; a supervised reader wakes on a
     `Phoenix.PubSub` topic on every machine (`AshTemplate.ChainHead`).
+13. **Count blocks per chain, from the time they stand for.** Base makes five blocks a
+    second, each 200 ms after its parent (Denim, 5 November 2026 18:00 UTC; Base Sepolia
+    since 21 October), and a block's `timestamp` is still whole seconds, so up to five
+    blocks share one. Every allowance counted in blocks names its chain and the time it
+    keeps: on Base the one-minute re-read is 300 blocks and the ten-minute "catching up"
+    allowance 3,000; a chain that did not change keeps its own counts. Never turn blocks
+    into time, or time into blocks, at two seconds a block.
+    - Order rows by chain position: `block_number`, then `log_index`. A log's index counts
+      across its whole block, so it already follows transaction order. Never order by a
+      block's timestamp.
+    - Show when something happened from the block's `timestamp` in seconds. Base's
+      `timestampMs` and `blockTimestampMs` are missing on older and pruned blocks, so
+      nothing depends on them.
+    - A read that settles at `safe` or `finalized` keeps doing so: more blocks do not
+      reach Ethereum any sooner.
+    - Keep each log search to a bounded stretch. A day of Base is 432,000 blocks.
+    - Base's gas limit per block is about 40M, so a step near that size is checked again.
 
 ## References
 

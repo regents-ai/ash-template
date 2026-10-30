@@ -36,3 +36,16 @@ Each is a backlog item for that site.
    instead of stopping the watcher.
 4. **Keyfleet's rows carry no `chain_id`** in their identity, and its pages hear through
    plain PubSub topics rather than the resource's notifier.
+
+## Base block counts to change for Denim (rule 13)
+
+Checked 2026-10-30 against each repository's main. The full list and owners are in
+`control/coordination/BASE-DENIM-2026-11-05.md`; each owner records progress there.
+
+| Where | Today | On Base from 5 Nov 2026 | Owner |
+| --- | --- | --- | --- |
+| Shared Credits deposit reader (`RegentCredits.Deposits`) | 300 blocks behind | 3,000 (elixir-utils 63557bb) | Template chief; sites re-pin |
+| Keyfleet scanner | 30-block re-read, 300-block freshness | 300 and 3,000 | Keyfleet chief |
+| Sentinel chain watch | 1,350-block window | 13,500, in bounded stretches | Sentinel chief |
+| Autolaunch | Two-second block estimates, launch discovery offsets, Base ledger pass and walk-back of 8, 1,000-block admissions re-read, REGENT page logs over 302,400 blocks (seven days) | Counts from time per rule 13, offsets by contract version; bids and trades in chain order | Autolaunch chiefs |
+| regents.sh staking revenue history | 302,400 blocks for seven days | 3,024,000 | Regents chief |

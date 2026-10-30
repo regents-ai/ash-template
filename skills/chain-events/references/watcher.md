@@ -82,8 +82,8 @@ end
 ```elixir
 defmodule MyApp.Chain.Cursor do
   @moduledoc """
-  How far one contract's events have been read on one chain. Base confirms a
-  block in about two seconds and nothing here waits longer. A reading that
+  How far one contract's events have been read on one chain, read at the
+  latest block. A reading that
   disagrees with the record sets `rescan_from` and stops the watcher until
   someone corrects the record by hand.
   """
@@ -406,7 +406,7 @@ Write the pass after `Keyfleet.Chain.Scanner`
 
 1. A stopped cursor returns `{:stopped, block}` and reads nothing.
 2. Read the head.
-3. Read the last 30 recorded blocks again: every recorded row's block must still have the
+3. Read the newest recorded blocks again (on Base the last 300): every recorded row's block must still have the
    same hash (`block_hash/1`), and every log read again goes through `record`, which
    refuses a row that differs. Record a log that was not there before; it is new history.
 4. Read forward from `next_block` to the head in stretches, committing each with
@@ -558,8 +558,8 @@ end
 - Every read goes through the code interface with the viewer's actor; the notice
   carries no row data to show.
 - For the "catching up" notice, read the cursor through a `fresh?` calculation
-  (`observed_at` within 420 seconds and `head_block - next_block` within 300 blocks, as
-  Keyfleet's cursor has) and show plain words: "Catching up with the chain. Recent
+  (`observed_at` within 420 seconds and `head_block - next_block` within ten minutes of
+  blocks, 3,000 on Base, as Keyfleet's cursor has) and show plain words: "Catching up with the chain. Recent
   activity may take a moment to appear."
 
 ## Tests
@@ -572,5 +572,10 @@ end
   it; a refused range is asked for in halves.
 - **The page**: a notice leads to one re-read showing the new row. Send the notice with
   `Ash.Notifier.notify/1` or by running the pass in the test.
+- **At Base's pace**: a pass five blocks a second behind. A day missed (432,000 blocks)
+  is caught up in capped stretches, each block asked for once (the stub records the
+  ranges asked); rows from blocks sharing one timestamp come back in chain order; a
+  changed hash anywhere in the 300-block re-read stops the cursor.
+  `RegentCredits.DepositTest` in elixir-utils shows the catch-up check.
 - Capture expected warnings with `ExUnit.CaptureLog` so the output stays clean.
 - **Against a real chain**: anvil tests tagged `:external`, left out of the default run.
