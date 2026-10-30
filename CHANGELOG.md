@@ -5651,3 +5651,13 @@ way, and the library's own site-tool serving is gone.
   header is gone. `GET /mcp` 405, the template's live check as the paired agent 151 passed,
   1 skipped. No migration. Rollback: v142, `927ae6ea` (with the client-address rule);
   without it, v140 `017a3acd`.
+
+## 2026-10-30 — Agents pair from the page
+
+- A signed `agents_pair` browser tool pairs an agent with its person's account on the
+  existing `POST /api/agents/v1/pair`, as `agents pair` does: the same code, name and
+  harness, the same refusals (`pairing_failed`, `invalid_name`, `agent_limit`). The
+  agent's browser host signs it; the code is never written to the visit log.
+- `agents pair` names its browser tool, `/capabilities.json` marks pairing as on
+  WebMCP, the agent guide says how, and `docs/agent-parity.md` closes G6 on WebMCP
+  (hosted MCP follows with G5).

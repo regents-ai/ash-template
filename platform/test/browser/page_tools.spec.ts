@@ -1,3 +1,5 @@
+import {randomUUID} from "node:crypto"
+import {readFileSync} from "node:fs"
 import type {Page, Request} from "@playwright/test"
 import {expect, test} from "./support/test"
 
@@ -116,4 +118,30 @@ test("the page sends exactly the request the signer signed, with its proof and n
   expect(refused).toMatchObject({ok: false, error: {code: "invalid_request"}})
   expect(await page.evaluate(() => (window as unknown as {signerAsked: unknown[]}).signerAsked.length)).toBe(1)
   expect(sent).toHaveLength(1)
+})
+
+// Pairing from the page: the code travels only in the signed body, the answer never
+// repeats it and the server's lines (tmp/walk-lines.jsonl) never hold it.
+test("pairing sends the code only in the signed request", async ({page}) => {
+  await open(page, "signs")
+  const sent = toApi(page)
+  const pairing = {code: `code-${randomUUID()}`, name: "Ada", harness: "claude_code"}
+
+  // A harness the site does not offer is refused before the signer is asked.
+  expect(await call(page, "agents_pair", {...pairing, harness: "robot"})).toMatchObject({ok: false, error: {code: "invalid_request"}})
+  expect(await page.evaluate(() => (window as unknown as {signerAsked: unknown[]}).signerAsked.length)).toBe(0)
+
+  const answer = await call(page, "agents_pair", pairing)
+  const [signed] = await page.evaluate(() => (window as unknown as {signerAsked: Array<Record<string, string>>}).signerAsked)
+  expect(signed).toMatchObject({operation: "agents_pair", method: "POST", path: "/api/agents/v1/pair"})
+  expect(JSON.parse(signed.body)).toEqual(pairing)
+
+  expect(sent).toHaveLength(1)
+  expect(new URL(sent[0].url()).search).toBe("")
+  expect(sent[0].postData()).toBe(signed.body)
+  expect(JSON.stringify(answer)).not.toContain(pairing.code)
+
+  // The stand-in proof is refused by the sign-in service, so the answer is a refusal.
+  expect(answer).toMatchObject({ok: false})
+  expect(readFileSync("tmp/walk-lines.jsonl", "utf8")).not.toContain(pairing.code)
 })

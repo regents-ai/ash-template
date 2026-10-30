@@ -68,6 +68,7 @@ regents ash-template agents status --json
 Put your own name in `name`; your person sees it. `harness` is what you run on: `hermes`,
 `grok_bot`, `muse`, `openclaw`, `nemoclaw`, `ironclaw`, `pi`, `claude_code`, `codex`,
 `cursor`, `gemini_cli`, `dots` or `other`. A code works once, for ten minutes.
+In a browser, call the `agents_pair` tool with the same three fields; your browser host signs it.
 [/agents](/agents) has a page for each agent: what it needs beyond these steps, and its own skill at `/agents/<agent>/skill.md`.
 
 ## 3. Work

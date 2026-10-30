@@ -527,7 +527,7 @@
       "cli_release": "1.9.0",
       "switch": "app_surfaces",
       "surfaces": {
-        "webmcp": "Pairing runs from the CLI, with the code its person gives.",
+        "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",
         "http": true,
         "cli": true
