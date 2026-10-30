@@ -26,6 +26,9 @@ defmodule AshTemplateWeb.Layouts do
   # REGENT on Base, the token every Regent site names in its footer.
   @buy_regent "https://app.uniswap.org/explore/tokens/base/0x6f89bcA4eA5931EdFCB09786267b251DeE752b07"
 
+  @doc "Where the footer's Buy $REGENT opens: REGENT on Uniswap, on Base."
+  def buy_regent, do: @buy_regent
+
   attr :theme_toggle, :boolean,
     default: true,
     doc: "false on the home page, which is always dark"

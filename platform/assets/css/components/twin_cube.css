@@ -1,6 +1,6 @@
 @layer regents-product {
 /* The twin cubes: the world cube for people and the code cube for agents, on
-   one night stage. On a wide screen they share it, the world cube drawn on the
+   one night stage. On a wide column they share it, the world cube drawn on the
    left and the code cube over the right half; on a narrow one the code cube
    has a stage of its own below. A room fills the whole stage, so the code cube
    steps aside while the visitor is in one. "Human Browsing" and "Agentic
@@ -55,7 +55,8 @@
   }
 }
 
-@media (min-width: 48rem) {
+/* Wide or narrow by the lab's column, as the world cube inside reads it. */
+@container (min-width: 48rem) {
   .twin-cube {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

@@ -154,7 +154,9 @@
    nothing else: the list would only flash before the cube took its place.
    Where the cube cannot draw (`data-world-ready="false"`) the list fades in.
    Without scripts, or for a visitor who asked for less motion, the cube is
-   never drawn, so the list shows from the start. */
+   never drawn, so the list shows from the start. The unseen list stays in the
+   keyboard order, since the cube only starts once it is on screen, and shows
+   as soon as a keyboard reaches one of its links. */
 .world-cube__worlds {
   transition: opacity 320ms ease-out;
 }
@@ -162,7 +164,12 @@
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
   .world-cube:not([data-world-ready]) .world-cube__worlds {
     opacity: 0;
-    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .world-cube:not([data-world-ready]):focus-within .world-cube__worlds {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -371,10 +378,12 @@
   visibility: visible;
 }
 
-/* Reserve the same phone stage before and after the renderer loads. The
-   fallback list scrolls inside it instead of leaving a list-sized empty band
-   beneath the cube. svh keeps browser chrome changes from resizing the stage. */
-@media (max-width: 47.99rem) {
+/* The stage's layout answers to the width of the box it stands in, which the
+   page makes a container (`container-type: inline-size`), not to the window.
+   A narrow stage keeps the same height before and after the renderer loads.
+   The fallback list scrolls inside it instead of leaving a list-sized empty
+   band beneath the cube. svh keeps browser chrome changes from resizing it. */
+@container (max-width: 47.99rem) {
   .world-cube {
     --world-cube-stage-height: clamp(32rem, 72svh, 38rem);
     height: var(--world-cube-stage-height);
@@ -394,7 +403,22 @@
   }
 }
 
-@media (min-width: 48rem) {
+/* Without scripts, or with less motion asked for, the cube is never drawn and
+   that is known before the first paint, so the stage simply grows to its list. */
+@media (scripting: none), (prefers-reduced-motion: reduce) {
+  @container (max-width: 47.99rem) {
+    .world-cube {
+      height: auto;
+      grid-template-rows: auto;
+    }
+
+    .world-cube__worlds {
+      overflow: visible;
+    }
+  }
+}
+
+@container (min-width: 48rem) {
   .world-cube {
     min-height: clamp(30rem, 72vh, 46rem);
     padding: var(--space-5);

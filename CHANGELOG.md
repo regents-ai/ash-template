@@ -5719,3 +5719,20 @@ way, and the library's own site-tool serving is gone.
   copied "# regents.sh : 25 WebMCP Tools" and its 25 tools; the siwa-server card copied
   "# siwa-server : Connect an agent" with each step and command. `GET /mcp` 405, `POST` 401;
   the live check as the paired agent 151 passed, 1 skipped. Rollback: v146, `052faf13`.
+
+## 2026-10-30 — The homepage follows regents.sh's two columns of panels
+
+- The homepage is regents.sh's as it runs live (a15edd32): the hero, with the tools button,
+  a line for agents on the command line and the world cube, stands top right and stays in
+  view while Mission, Products, Staking and How it works scroll past on the left; a phone
+  reads the hero first. `home.css` and `world_cube.css` are regents.sh's files unchanged, so
+  the cube sizes itself to the box it stands in; the cube lab pages make their stage that
+  box. Staking reads regents.sh's sentence: a share of the USDC revenue in proportion to
+  the REGENT staked, plus 20% a year in REGENT, for now.
+- The template's own: its name in the hero and on the Mission panel, its line under the
+  name, its header links, App and Enter App to /app, the command-line line to /agents, and
+  Stake to regents.sh's staking page. The page's Markdown copy reads in the page's order.
+- Checked by `platform/test/browser/homepage.spec.ts` (the hero holds while the sheets
+  scroll at 1280 and 1440; with less motion it scrolls with them; at 320 and 390 it comes
+  first) and `platform/test/ash_template_web/home_live_test.exs`. `scripts/drift.sh regents`
+  finds the homepage files the same.

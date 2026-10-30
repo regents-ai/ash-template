@@ -12,6 +12,14 @@
   padding: var(--space-5) var(--rg-page-gutter) var(--space-8);
 }
 
+/* The cube labs' column is the box the world cube's stage measures itself
+   against, as the homepage's hero is. A container no longer takes its width
+   from what it holds, so the column says its own. */
+.motion-lab--cube {
+  container-type: inline-size;
+  width: 100%;
+}
+
 /* Panels and items the page hides stay hidden whatever layout they have. */
 .motion-lab [hidden] {
   display: none;

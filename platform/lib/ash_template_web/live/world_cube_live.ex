@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.WorldCubeLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <main id="world-cube-lab" class="motion-lab">
+    <main id="world-cube-lab" class="motion-lab motion-lab--cube">
       <header class="motion-lab__head">
         <p class="motion-lab__kicker">
           <a href={~p"/"}>Ash Template</a> / <a href={~p"/animations"}>Motion lab</a> / World cube
