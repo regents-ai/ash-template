@@ -6029,3 +6029,14 @@ way, and the library's own site-tool serving is gone.
   sees it; the Send button below the room is still scrolled to, as a reader would.
 - Not walked: dragging the scroll bar, since headless Chromium hides scroll bars. WebKit is
   not run on the Mac.
+
+## 2026-10-30 — Released v156: a sent message stays in view; a room no longer bounces
+
+- v156 = template main `3e0b75f8`, no migration. Rollback: v155, `80077a44`.
+- Live, headless Chromium: `/capabilities.json` names `3e0b75f8`; `/rooms/general` serves the
+  room with `overscroll-behavior: none` and the Send code that scrolls to exactly 0; all 34
+  public pages with a fixed address fit a 320-wide touch phone (the two labs that open only on
+  the machine answer 404, as they should); the live check as the paired agent 151 passed,
+  1 skipped. Fly's log feed after the release shows no error.
+- Sending in a room was walked on the machine, not on the live site: the live checks write
+  nothing. WebKit is not run on the Mac.
