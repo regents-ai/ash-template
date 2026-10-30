@@ -6140,3 +6140,28 @@ way, and the library's own site-tool serving is gone.
   whose 80-letter name does not wrap in its identity section; this happens in any font and
   is not part of this change.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — Agent pictures (R6, template part)
+
+- A person gives an agent a picture from its window on the Agents page
+  (`AshTemplateWeb.AgentPictureUpload`): a PNG, JPEG or WebP of up to 5 MB, re-made as a
+  256 × 256 WebP of up to 64 KB (`AshTemplate.AgentPicture`, on Vix 0.42). Only a whole
+  PNG, JPEG or WebP reaches the decoder, opened with that format's own loader, and one that
+  opens to over 40 million pixels is refused before decoding. Anyone opens it at
+  `/agents/<wallet>/picture` (`AgentPictureController`), cached for a day when the address
+  carries its version, so a removed picture can still show for up to a day where it was
+  already cached.
+- A paired agent sets and removes its own picture: signed `POST /api/v1/agents/me/picture`
+  with `picture` in base64 and `DELETE /api/v1/agents/me/picture` (commands `agents picture
+  set <picture>` and `agents picture remove`, next regents-cli release; tools
+  `agents_picture_set` and `agents_picture_remove`). The pairing names the agent, so it never
+  changes another; elixir-utils moves to `62b7b785` (the template's pin `466ca10f` with
+  agent pictures `58730fc2` merged in), whose own-picture actions lock the
+  pairing in their transaction. A signed body is read up to 64 KB, so an agent sends a
+  picture of up to 45 KB, at most 10 times an hour (`:agent_picture` in the limits).
+  Refusals `invalid_picture`, `not_a_picture`, `picture_too_detailed`, `picture_too_large`,
+  `pictures_limited` and `picture_not_found`. The OpenAPI documents
+  move to 8.1.0.
+- The browser walk's spare agent has a picture, so the Agents window shows one.
+- Tests: `platform/test/ash_template/agent_picture_test.exs`, and an agent's own picture in
+  `platform/test/ash_template/agents/signed_tools_test.exs`.
