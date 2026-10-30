@@ -106,6 +106,7 @@ defmodule AshTemplateWeb.Endpoint do
   # reports and every /api path, answered or not; pairing counts against its own
   # budget too, and the MCP address has its own. Every answer says what is left of
   # each; past one, 429 with Retry-After.
+  plug :client_address_source
   plug :limit_rate
 
   # Before the parsers, so a body they reject on an /api path or the MCP address
@@ -136,6 +137,13 @@ defmodule AshTemplateWeb.Endpoint do
     conn
     |> Plug.Conn.put_resp_header("permissions-policy", "tools=(self)")
     |> Plug.Conn.put_resp_header("origin-trial", @webmcp_origin_trial)
+  end
+
+  # Temporary probe for one live read: which source keyed this request's limits,
+  # never the address. Released once and removed by redeploying the live commit.
+  defp client_address_source(conn, _opts) do
+    {_address, source} = AshTemplateWeb.ClientAddress.key(conn)
+    put_resp_header(conn, "x-client-address-source", Atom.to_string(source))
   end
 
   defp limit_rate(%Plug.Conn{path_info: ["healthz"]} = conn, _opts),
