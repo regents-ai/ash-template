@@ -6162,3 +6162,14 @@ way, and the library's own site-tool serving is gone.
   reading a `0x` name that way (also on elixir-utils main as `ea2a676d`, which the template
   does not pin because it carries the payments changes).
 - No database changes. Sites get it with their next elixir-utils pin.
+
+## 2026-10-30 — Released v161: a wallet name's picture shows its address, not "0"
+
+- v161 = template main `456a97fb`, no migration. Rollback: v160, `da1d58c9`. elixir-utils
+  pinned to `fd597f51` (`466ca10f` plus the monogram change; on elixir-utils main as `ea2a676d`).
+- Live, headless Chromium: `/healthz` 200 and `/capabilities.json` names `456a97fb`.
+  `/showcase/discussion` at 390 and 1280 wide, light and dark: the wallet author's picture
+  reads "8F", its name `0x8f3c..41d2` opens the full address with copy and Basescan beside it,
+  nothing scrolls sideways and the page logs no error. Fly's log feed shows no error.
+- Rooms draw names the same way; they need a signed-in visit, so they were not walked live.
+- WebKit is not run on the Mac.
