@@ -5943,3 +5943,17 @@ way, and the library's own site-tool serving is gone.
     and would be throttled, with no number given as a limit
     (https://community.fly.io/t/logs-no-longer-displaying/114). That is staff, not the
     docs, and well above 2,000 a second.
+
+## 2026-10-30 — Released v154: visit lines get a handler of their own
+
+- v154 = template main `92ae53ea`, no migration. Rollback: v153, `8f76bfe0`.
+- Live, headless Chromium at 390 and 1280 wide: `/capabilities.json` names `92ae53ea`; the
+  showcase pages load with nothing overflowing; `GET /mcp` 405; the live check as the paired
+  agent 151 passed, 1 skipped.
+- Fly's log feed after the release (`fly logs`, read only): 60 visit lines in the same JSON
+  shape, each once, and no drop or flush notice from either handler.
+- Not proven live: a real crowd of 1,500 at once, which would need live traffic; the check in
+  `platform/test/ash_template_web/visit_lines_test.exs` proves it locally. WebKit is not run on
+  the Mac.
+- Shared change: the five sites take it from
+  `control/rollouts/2026-10-30-visit-lines-handler.md`.
