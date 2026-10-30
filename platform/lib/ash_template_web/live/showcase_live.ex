@@ -324,6 +324,14 @@ defmodule AshTemplateWeb.ShowcaseLive do
             <dd>
               <P.address id="address-base" address="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" />
             </dd>
+            <dt>Ethereum</dt>
+            <dd>
+              <P.address
+                id="address-ethereum"
+                address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+                chain="ethereum"
+              />
+            </dd>
             <dt>Robinhood</dt>
             <dd>
               <P.address
@@ -338,7 +346,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
               <P.address
                 id="address-local"
                 address="0x5FbDB2315678afecb367f032d93F642f64180aa3"
-                chain={nil}
+                chain="test"
               />
             </dd>
             <dt>Pool ID</dt>

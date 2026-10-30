@@ -5766,3 +5766,13 @@ way, and the library's own site-tool serving is gone.
   pool ID copy with no arrow ("Copy the full address", "Copy the full ID"); nothing overflows.
 - `GET /mcp` 405, `POST` 401; the live check as the paired agent 151 passed, 1 skipped.
   Rollback: v148, `72938d15`.
+
+## 2026-10-30 — A test network is chain="test"
+
+- The design-system pin moves to `df51d803`: the address primitive takes `chain="test"`
+  for a test network with no explorer, in place of `chain={nil}`, and any other chain
+  value raises when the page renders. The components page's test-network address now
+  passes `chain="test"`, and an Ethereum address joins it, so the page shows all four
+  chains. Every other address on the site uses the default (Base), and
+  the Credits admin's transaction passes its purchase's chain, which is only ever Base
+  or Ethereum.
