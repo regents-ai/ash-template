@@ -48,7 +48,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 600;
 }
 
 .activity-list__new {
@@ -56,12 +55,12 @@
   background: var(--ash-accent-warm);
   color: var(--color-bg);
   font-size: 0.68rem;
-  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .activity-list__body {
+  color: var(--color-fg-muted);
   overflow-wrap: anywhere;
 }
 

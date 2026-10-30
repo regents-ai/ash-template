@@ -170,7 +170,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
   .sc *, .sc *::before, .sc *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 .discussion-page .rg-discussion { margin-block-end: 48px; }
-.discussion-avatar { display: grid; place-items: center; border: 1px solid var(--color-border); background: var(--color-surface); font: 600 14px/1 var(--font-family-ui); }
+.discussion-avatar { display: grid; place-items: center; border: 1px solid var(--color-border); background: var(--color-surface); font: 14px/1 var(--font-family-ui); }
 .discussion-avatar--house { background: var(--color-fg); color: var(--color-bg); }
 /* The grammar page (/showcase/grammar): nouns, verbs and layers. Every floating
    part of it takes its stacking place and its shadow from the layer tokens. */
@@ -221,6 +221,6 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .grammar-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .grammar-table :is(th, td) { padding: 10px 8px 10px 0; border-top: 1px solid var(--color-border); text-align: start; vertical-align: baseline; overflow-wrap: anywhere; }
 .grammar-table thead th { border-top: 0; color: var(--color-fg-muted); font-size: 11px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; }
-.grammar-table tbody th { font-weight: 600; overflow-wrap: normal; white-space: nowrap; }
+.grammar-table tbody th { overflow-wrap: normal; white-space: nowrap; }
 @media (max-width: 1023px) { .grammar-layers { grid-template-columns: 1fr; } }
 @media (max-width: 767px) { .grammar { padding: 16px; } .grammar-table table { font-size: 12px; } .grammar-stack__label { font-size: 26px; } }

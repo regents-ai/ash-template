@@ -57,6 +57,11 @@
   overflow-wrap: anywhere;
 }
 
+/* The step's name stands out by colour; Geist Serif has no bold. */
+.onchain-example-sent li > span {
+  color: var(--color-fg-muted);
+}
+
 .onchain-example-sent li[data-state="reverted"],
 .onchain-example-sent li[data-state="not_this_step"],
 .onchain-example-sent li[data-state="unknown"] {

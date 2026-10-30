@@ -60,7 +60,6 @@
   margin: 0;
   color: var(--color-fg-muted);
   font-size: 0.8rem;
-  font-weight: 600;
 }
 
 .chat-message__body {

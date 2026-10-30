@@ -67,7 +67,7 @@
   block-size: 2.25rem;
   background: var(--palette-platinum);
   color: var(--palette-charcoal);
-  font: 600 0.8rem/1 var(--font-family-ui);
+  font: 0.8rem/1 var(--font-family-ui);
 }
 
 .rooms-avatar[data-tone="0"] {
@@ -109,7 +109,6 @@
 }
 
 .rooms-message__author {
-  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
@@ -117,7 +116,7 @@
   padding: 0 0.35rem;
   border: 1px solid var(--color-border);
   color: var(--color-fg-muted);
-  font: 600 0.7rem/1.4 var(--font-family-ui);
+  font: 0.7rem/1.4 var(--font-family-ui);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -315,7 +314,6 @@
   cursor: pointer;
   color: var(--color-fg-muted);
   font: inherit;
-  font-weight: 600;
 }
 
 .rooms-menu .rooms-menu__button:hover,
@@ -352,7 +350,6 @@
   background: transparent;
   color: var(--ash-accent-warm);
   font: inherit;
-  font-weight: 600;
 }
 
 .rooms-long .rooms-more[hidden] {

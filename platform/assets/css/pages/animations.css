@@ -230,7 +230,7 @@
 .motion-lab__fx-stitch {
   margin: -0.6em 0 0 -0.3em;
   color: var(--fx-color);
-  font: 700 1.3rem/1 var(--font-family-ui);
+  font: 1.3rem/1 var(--font-family-ui);
 }
 
 /* Panels */
@@ -360,10 +360,6 @@
   box-shadow: var(--rg-layer-tip-shadow);
   rotate: -2deg;
   transform-origin: 0 100%;
-}
-
-.motion-lab__note p {
-  font-weight: var(--font-weight-semibold);
 }
 
 .motion-lab__note .motion-lab__close {
@@ -512,7 +508,7 @@
   border: 0;
   background: none;
   color: var(--color-fg-muted);
-  font: var(--font-weight-semibold) 0.95rem/1 var(--font-family-ui);
+  font: 0.95rem/1 var(--font-family-ui);
   cursor: pointer;
 }
 

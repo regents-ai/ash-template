@@ -90,7 +90,7 @@
   .rl-staking__line { font: 400 clamp(1.5rem, 2.6vw, 2rem)/1.15 var(--font-family-title); text-wrap: pretty; }
   .rl-staking > .rl-copy, .rl-staking__link { grid-column: 1 / -1; }
   .rl-staking__link { justify-self: start; }
-  .rl-how__title { font: var(--font-weight-semibold) .8125rem/1.4 var(--font-family-ui); letter-spacing: var(--tracking-microlabel); text-transform: uppercase; }
+  .rl-how__title { font: .8125rem/1.4 var(--font-family-ui); letter-spacing: var(--tracking-microlabel); text-transform: uppercase; }
 
   /* The hero is the right column's panel: its words, then the cube's stage
      below them, the cube drawn in the middle. The stage is the hero's width, so

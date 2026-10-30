@@ -65,7 +65,6 @@
 
 .credits-panel__figures dd {
   margin: 0;
-  font-weight: 600;
   text-align: end;
 }
 
@@ -472,5 +471,14 @@
 
 .credits-admin__list li > button {
   justify-self: start;
+}
+
+/* Amounts and chains stand out by colour; Geist Serif has no bold. */
+.credits-admin__list li p {
+  color: var(--color-fg-muted);
+}
+
+.credits-admin__list li strong {
+  color: var(--color-fg);
 }
 }

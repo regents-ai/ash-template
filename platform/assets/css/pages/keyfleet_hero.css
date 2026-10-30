@@ -57,7 +57,7 @@
   .kf-root :is(h1, h2, h3) { font-weight: 400; }
 
   .kf-eyebrow {
-    color: var(--color-fg-muted); font-size: .8125rem; font-weight: 500;
+    color: var(--color-fg-muted); font-size: .8125rem;
     letter-spacing: .14em; text-transform: uppercase;
   }
 

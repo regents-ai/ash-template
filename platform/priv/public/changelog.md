@@ -6,6 +6,8 @@ Changes to Ash Template, newest first.
 
 - **New type.** Every page is now set in Geist Serif: titles, text, buttons, labels and
   addresses. Code keeps its fixed-width type so its lines stay lined up.
+- **Clear emphasis.** The new type has one weight, so names, amounts and headings stand
+  out by size and colour instead of bold.
 
 ## 29 October 2026
 

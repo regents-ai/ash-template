@@ -271,7 +271,6 @@
   background: var(--ash-accent-warm);
   color: var(--color-bg);
   font-size: 0.66rem;
-  font-weight: 600;
   line-height: 1.1rem;
   text-align: center;
 }
@@ -659,7 +658,6 @@
   color: var(--color-fg-muted);
   font-family: var(--font-family-ui);
   font-size: 0.68rem;
-  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -981,7 +979,6 @@
   color: var(--color-fg-muted);
   font-family: var(--font-family-ui);
   font-size: 0.7rem;
-  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1089,7 +1086,6 @@
 
 .shell-search__empty strong {
   color: var(--color-fg);
-  font-weight: 500;
   overflow-wrap: anywhere;
 }
 

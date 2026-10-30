@@ -5,7 +5,6 @@
   display: block;
   padding: 0.5rem 0.75rem;
   color: var(--color-fg);
-  font-weight: 600;
 }
 
 /* Each poll in the sidebar: its question, then whether it is open and how many
@@ -104,5 +103,4 @@ label.polls-choice {
 
 .polls-poll__mine {
   margin: 0;
-  font-weight: 600;
 }

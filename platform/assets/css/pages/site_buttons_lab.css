@@ -5,7 +5,7 @@
 .sb-tag { border: 1px solid var(--color-border); padding: .3rem .5rem; color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-ui); }
 .sb-index { color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-ui); letter-spacing: .06em; text-transform: uppercase; }
 .sb-notes { max-width: 52rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); color: var(--color-fg-muted); font-size: .875rem; }
-.sb-notes strong { color: var(--color-fg); font-weight: 500; }
+.sb-notes strong { color: var(--color-fg); }
 
 /* Each site's own colours, from its brand tokens. light-dark() follows the page theme. */
 .sb-site[data-site="regents"], .sb-site[data-site="keyfleet"] {
@@ -66,7 +66,6 @@
 .sb-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 .sb-panel-label { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
 .sb-context--header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-.sb-brand { font-weight: 600; }
 .sb-preview-post { color: var(--color-fg) !important; font-size: 1rem !important; }
 .sb-context--preview .sb-button { justify-self: start; }
 
@@ -104,7 +103,6 @@
 #site-buttons .sb-button:is([data-state="done"]) [data-word="done"] { visibility: visible; }
 
 #site-buttons .sb-spinner { flex: none; display: inline-block; width: .95em; height: .95em; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; }
-#site-buttons .sb-tick { font-weight: 700; }
 
 /* Each site's own button sizing and words. */
 #site-buttons .sb-site[data-site="regents"] .sb-button { letter-spacing: .1em; text-transform: uppercase; }

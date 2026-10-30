@@ -6140,3 +6140,16 @@ way, and the library's own site-tool serving is gone.
   whose 80-letter name does not wrap in its identity section; this happens in any font and
   is not part of this change.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — No weight above 400
+
+- design-system pinned to `13e92072` ("No weight above 400"): the package drops every
+  font weight above 400 and the `--font-weight-semibold` token, since Geist Serif has one
+  weight and they did nothing.
+- Template CSS: every `font-weight` above 400, every `font: 600 …` and every
+  `var(--font-weight-semibold)` is gone (17 files); rules left empty are deleted.
+- Where bold alone set something apart, colour does now: the Credits admin lists (amounts
+  and chains in `--color-fg` against muted detail), the on-chain example's sent steps (the
+  step's words muted under its name) and the Activity list (each notice's body muted under
+  its title).
+- Public changelog: "Clear emphasis".

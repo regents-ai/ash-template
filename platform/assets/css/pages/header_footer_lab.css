@@ -263,10 +263,6 @@
   margin: var(--space-2) 0 0;
 }
 
-.hf-lab__facts dt {
-  font-weight: 500;
-}
-
 .hf-lab__facts dd {
   margin: 0.25rem 0 0;
   color: var(--color-fg-muted);
