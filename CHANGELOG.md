@@ -6111,3 +6111,16 @@ way, and the library's own site-tool serving is gone.
   "AUTOLAUNCH" is 99px wide and the 1rem tab left 99px at 1280 wide, so it ended in an
   ellipsis. It now fits whole at 800, 1024, 1232, 1280 and 1440 wide.
 - WebKit is not run on the Mac.
+
+## 2026-10-30 — Released v158: a wallet author in the discussion showcase
+
+- v158 = template main `06db5a63`, no migration, no pin change. Rollback: v157, `32877704`.
+- Live, headless Chromium: `/healthz` 200 and `/capabilities.json` names `06db5a63`.
+  `/showcase/discussion` at 390 and 1280 wide, light and dark: the first reply's author reads
+  `0x8f3c..41d2`, pressing it opens the full address, the copy icon and the Basescan arrow sit
+  beside it, nothing scrolls sideways, and the page logs no error. Fly's log feed after the
+  release shows only the usual health check during the six seconds before the server listened.
+- The wallet author's picture shows "0", because `RegentFormat.monogram` takes the first
+  character of `0x…`. The rooms page draws wallet names the same way; the fix belongs in the
+  shared library, not here.
+- WebKit is not run on the Mac.
