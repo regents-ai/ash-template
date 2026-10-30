@@ -247,6 +247,18 @@ if config_env() == :prod do
     formatter: LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
 
   unless migrating? do
+    # This site's own key at the sign-in service, which names the audience it checks
+    # agents' signed requests for (RegentAgents.Broker). The service takes only keys
+    # of this shape, so any other value would refuse every agent check.
+    verify_key = System.fetch_env!("SIWA_SITE_VERIFY_KEY")
+
+    unless Regex.match?(~r/\A[A-Za-z0-9_-]{32,}\z/, verify_key) do
+      raise "SIWA_SITE_VERIFY_KEY must be this site's verify key from the sign-in service: " <>
+              "32 or more letters, digits, - or _"
+    end
+
+    config :regent_agents, :siwa, verify_key: verify_key
+
     host = String.trim(System.fetch_env!("PHX_HOST"))
     secret_key_base = System.fetch_env!("SECRET_KEY_BASE")
 

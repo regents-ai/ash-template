@@ -15,6 +15,11 @@ config :ash_template, :chain_nodes, %{
   31_337 => "http://127.0.0.1:58600"
 }
 
+# The sign-in service's development key for this site, from its `config/dev.exs`,
+# so a sign-in service run on this machine (ASH_TEMPLATE_SIWA_BROKER_URL) checks
+# agents' signed requests. https://siwa.regents.sh refuses it.
+config :regent_agents, :siwa, verify_key: "siwa-dev-ash-template-site-verify-key-01"
+
 # The browser walk's server (test/browser/walk.sh) never leaves the machine. Its
 # chain nodes and sign-in service are a closed port on this machine, so their reads
 # fail at once, and any other request outside it is refused and fails the walk
