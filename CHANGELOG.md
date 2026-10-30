@@ -5905,3 +5905,41 @@ way, and the library's own site-tool serving is gone.
 - Not proven live: the busy room itself, which needs messages posted on the live site; the
   walk proves it at both widths. WebKit is not run on the Mac, so Safari's own behaviour is
   imitated in Chromium, not run.
+
+## 2026-10-30 — Visit lines have a handler of their own
+
+- A crowd's second of visit lines now reaches the site's output whole. Until now every
+  line shared Erlang's default handler, which keeps 500 lines a second and, past 1,000
+  waiting, lets the whole queue go: 1,500 presses in one second left one visit line, and
+  the handler noted that it had dropped 1,171.
+- Visit lines (`AshTemplateWeb.VisitLog.record`) carry the domain `[:visit]` (Elixir
+  writes `[:elixir, :visit]`). `VisitLog.handler/2` is a standard output handler that takes
+  only those lines. As the application starts it adds that handler
+  (`config :ash_template, :logger`, `Logger.add_handlers/1`) and gives the default handler
+  `VisitLog.default_filter/0`, which leaves visit lines to it; Elixir's own filters stay.
+- The visit handler's limits (`platform/lib/ash_template_web/visit_log.ex`): 2,000 lines a
+  second and 2,000 waiting before it drops (Erlang's defaults are 500 and 200), the crowd
+  the site is built for; past 10 waiting each process waits for its line to be written
+  (Erlang's default), which keeps the queue near the number of processes writing at once;
+  past 4,000 waiting it lets them go, so a flood still cannot exhaust the machine. Every
+  other line keeps the default handler and its stock limits.
+- Same JSON shape as before in production, from both handlers, so Fly Sentinel reads it
+  unchanged: the exact line the new handler wrote passes through Sentinel's own
+  `FlySentinel.Logs.receive_line/1` (at `788ba14`, run locally) and is kept as an event.
+- The browser walk writes its visit lines to `platform/tmp/walk-lines.jsonl` through the
+  same handler, so the walk-only `burst_limit_enable: false` on the default handler is gone.
+- New check `platform/test/ash_template_web/visit_lines_test.exs`: 1,500 visit lines from
+  1,500 processes in under a second reach the output, each once, and an ordinary line is
+  written once, by the default handler. It fails on `71259cad` (1 of 1,500 kept) and passes
+  here. Feature map row under Visit lines.
+- Capacity downstream, read only:
+  - Fly Sentinel's writer has no queue limit: lines wait in its mailbox and are written in
+    batches of 500 or each second, and a batch is lost only when the database refuses it,
+    which it logs.
+  - Fly publishes no limit for log shipping. Its logging docs give only the seven-day
+    retention (https://fly.io/docs/monitoring/logging-overview/,
+    https://fly.io/docs/monitoring/exporting-logs/). In September 2020, Fly staff wrote in
+    its community forum that some apps were sending tens of thousands of lines a second
+    and would be throttled, with no number given as a limit
+    (https://community.fly.io/t/logs-no-longer-displaying/114). That is staff, not the
+    docs, and well above 2,000 a second.

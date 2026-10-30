@@ -21,17 +21,24 @@ if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateW
   end
 end
 
-# The browser walk's server (test/browser/walk.sh) writes its lines in production's
-# shape to a file, which test/browser/visits.spec.ts reads to replay a visit. The
-# replay needs every line, and a busy walk writes more than the handler's default
-# 500 a second, past which it drops lines without a word, so the limit is off.
+# Visit lines (AshTemplateWeb.VisitLog) have a handler of their own, sized for a crowd
+# acting at once, which the application adds as it starts. Every other line stays on
+# the default handler, whose limit of 500 a second still guards against a flood of
+# errors.
+config :ash_template, :logger, [
+  AshTemplateWeb.VisitLog.handler(%{type: :standard_io}, Logger.default_formatter())
+]
+
+# The browser walk's server (test/browser/walk.sh) writes its visit lines in
+# production's shape to a file, which test/browser/visits.spec.ts reads to replay a
+# visit.
 if config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true" do
-  config :logger, :default_handler,
-    config: [
-      file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__)),
-      burst_limit_enable: false
-    ],
-    formatter: LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
+  config :ash_template, :logger, [
+    AshTemplateWeb.VisitLog.handler(
+      %{file: String.to_charlist(Path.expand("../tmp/walk-lines.jsonl", __DIR__))},
+      LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
+    )
+  ]
 end
 
 # The server reads a chain through its own node when one is set, such as a
@@ -247,9 +254,11 @@ if config_env() == :prod do
   config :ash_template, :session_options, secure: true, http_only: true
 
   # One JSON object a line, which Fly Sentinel reads, carrying only the visit
-  # fields (AshTemplateWeb.VisitLog). Release commands write the same shape.
-  config :logger, :default_handler,
-    formatter: LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
+  # fields (AshTemplateWeb.VisitLog), from both handlers. Release commands write the
+  # same shape.
+  json = LoggerJSON.Formatters.Basic.new(metadata: AshTemplateWeb.VisitLog.fields())
+  config :logger, :default_handler, formatter: json
+  config :ash_template, :logger, [AshTemplateWeb.VisitLog.handler(%{type: :standard_io}, json)]
 
   unless migrating? do
     host = String.trim(System.fetch_env!("PHX_HOST"))
