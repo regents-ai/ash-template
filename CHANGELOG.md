@@ -5842,3 +5842,11 @@ way, and the library's own site-tool serving is gone.
   an empty linked list, so a signed-in account whose wallets had not loaded yet, or
   that had none yet, still took any picked wallet. Signed out, the pick is still the
   page's wallet.
+
+## 2026-10-30 — Released v152: a wallet pick waits for the account's wallets
+
+- v152 = template main `00ca5492`, no migration.
+- Live, headless Chromium at 390 and 1280 wide: `/capabilities.json` names `00ca5492`; the
+  payments showcase and components pages load with nothing overflowing.
+- `GET /mcp` 405; the live check as the paired agent 151 passed, 1 skipped.
+  Rollback: v151, `34ed0e95`.
