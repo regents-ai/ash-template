@@ -6065,3 +6065,22 @@ way, and the library's own site-tool serving is gone.
   holds the payments change `e4bc94b` the template does not take yet.
 - Checks: `claude_connector_test.exs` ("the hosted MCP server's address budgets") and
   `mcp_agent_test.exs`; each new check fails on `78ebd169` and passes here.
+
+## 2026-10-30 — Released v157: hosted MCP counts a token as checked only once it is; answers never kept
+
+- v157 = template main `32877704`, no migration. Rollback: v156, `3e0b75f8`. elixir-utils pinned
+  to exactly `466ca10f`; elixir-utils main is `de9f481d`, its merge.
+- Live, headless Chromium: `/capabilities.json` names `32877704`, and the connector's four
+  operations (registerIdentity, getIdentity, pairIdentity, checkIn) are open. That means the
+  connector is switched on. An unsigned POST to `/mcp` and one with a token that isn't checked
+  both get 401 with `cache-control: private, no-store` and the `mcp_address` budget of 120 a
+  minute. GET gets 405. All 34 public pages with a fixed address fit a 320-wide touch phone,
+  and the two labs that open only on the machine answer 404, as they should. The live check
+  as the paired agent: 151 passed, 1 skipped. Fly's log feed after the release shows no error.
+- A 429 from the address budget is sent before the hosted MCP plug runs, so it carries
+  Plug's own `cache-control: max-age=0, private, must-revalidate`: no shared cache keeps it.
+- With no failure hold, an account whose address is not yet kept asks the sign-in service on
+  each call. While that service is down, a call fails as soon as the connection is refused.
+  It waits at most 15 seconds for an answer that never comes, plus up to Req's 30 seconds to
+  open a connection to a host that doesn't answer, and it is never retried.
+- WebKit is not run on the Mac.
