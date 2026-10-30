@@ -9,7 +9,7 @@ import type {PrivyEvents} from "@privy-io/react-auth"
 vi.mock("@privy-io/react-auth", () => ({}))
 vi.mock("react-dom/client", () => ({}))
 
-const {accountActiveWallet, accountWalletSelection, createConnectWalletRequest, createPrivyLoginCallbacks, signOutOfProvider} =
+const {accountActiveWallet, accountLinkedWallets, accountWalletSelection, createConnectWalletRequest, createPrivyLoginCallbacks, signOutOfProvider} =
   await import("../js/privy_bridge")
 
 const disconnected = "regent:wallet-disconnected:v1"
@@ -70,6 +70,18 @@ it("signed in, a wallet app left from before is never the account's wallet", () 
   expect(accountActiveWallet(zerion, held, true, [zerion.address.toLowerCase()])).toBe(zerion)
   expect(accountActiveWallet(zerion, held, false, [])).toBe(zerion)
   expect(accountActiveWallet(zerion, [regents], false, [])).toBeNull()
+})
+
+it("the account's linked wallets are unknown until Privy has loaded the user, and empty when it links none", () => {
+  const wallet = {type: "wallet", chainType: "ethereum", address: "0x2C95000000000000000000000000000000008cf6"}
+
+  expect(accountLinkedWallets(null)).toBeNull()
+  expect(accountLinkedWallets({linkedAccounts: [{type: "google_oauth"}]})).toEqual([])
+  expect(accountLinkedWallets({linkedAccounts: [
+    {type: "google_oauth"},
+    {type: "wallet", chainType: "solana", address: "So1ana"},
+    wallet,
+  ]})).toEqual([wallet.address])
 })
 
 it("signed in, a wallet picked in the connect window counts only once the account's wallets are known and link it", () => {

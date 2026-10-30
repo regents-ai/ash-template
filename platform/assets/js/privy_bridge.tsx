@@ -121,6 +121,15 @@ export function accountActiveWallet<W extends {address: string}>(
   return held && (!authenticated || linked.includes(address)) ? active : null
 }
 
+// The Ethereum wallets `user` links, or null until Privy has loaded the user.
+export function accountLinkedWallets(
+  user: {linkedAccounts: ReadonlyArray<{type: string; chainType?: string; address?: string}>} | null,
+): string[] | null {
+  return user?.linkedAccounts.flatMap(account =>
+    account.type === "wallet" && account.chainType === "ethereum" && account.address ? [account.address] : [],
+  ) ?? null
+}
+
 // A wallet the visitor picked in Privy's connect window counts the same way when
 // signed in: only when the account is linked to it. Until Privy has loaded the
 // account (`linked` is null) the pick is neither used nor forgotten. Signed out,
@@ -777,12 +786,8 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   // The Ethereum wallets the signed-in account is linked to, joined so a render
   // with the same accounts leaves the wallet sync below alone. Undefined until
   // Privy has loaded the account.
-  const linkedWallets = (
-    providerState?.linkedWallets ??
-    privy.user?.linkedAccounts.flatMap(account =>
-      account.type === "wallet" && account.chainType === "ethereum" ? [account.address] : [],
-    )
-  )?.map(address => address.toLowerCase()).join(",")
+  const linkedWallets = (providerState?.linkedWallets ?? accountLinkedWallets(privy.user))
+    ?.map(address => address.toLowerCase()).join(",")
   const signOutOnly = mode === "sign-out-only"
   const signOutOnlyState = React.useRef<"preterminal" | "terminal">(
     signOutOnly ? "preterminal" : "terminal",
