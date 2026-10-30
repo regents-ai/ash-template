@@ -8,6 +8,11 @@ Changes to Ash Template, newest first.
   addresses. Code keeps its fixed-width type so its lines stay lined up.
 - **Clear emphasis.** The new type has one weight, so names, amounts and headings stand
   out by size and colour instead of bold.
+- **Ask first.** Deleting a note or a message, unpairing an agent, blocking, muting, ending
+  a poll or locking Credits for a refund now asks in the site's own window. Cancel or
+  Escape leaves everything as it was.
+- **Phone fit.** On the narrowest phones your name sits under your picture, and the agents
+  to pair fit the screen five to a row.
 
 ## 29 October 2026
 

@@ -183,6 +183,7 @@ defmodule AshTemplateWeb.DmsLive do
             phx-click="block"
             phx-target={@myself}
             data-confirm={"Block #{@conversation.other_person.name}? Their messages still arrive, under Blocked, and they aren’t told."}
+            data-confirm-action="Block"
           >
             Block
           </Primitives.button>

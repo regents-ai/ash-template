@@ -302,6 +302,7 @@ defmodule AshTemplateWeb.CreditsAdmin do
               phx-value-id={purchase.id}
               phx-target={@myself}
               data-confirm={"Lock #{exact(purchase.amount)} purchased Credits for a refund?"}
+              data-confirm-action="Lock"
             >
               Refund
             </P.button>

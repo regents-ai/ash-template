@@ -187,6 +187,7 @@ defmodule AshTemplateWeb.AgentsPanel do
             phx-target={@myself}
             aria-label={"Unpair #{agent.name}"}
             data-confirm={"Unpair #{agent.name}? It will need a new code to pair again."}
+            data-confirm-action="Unpair"
           >
             Unpair
           </P.button>
@@ -223,6 +224,7 @@ defmodule AshTemplateWeb.AgentsPanel do
                 phx-value-id={@detail.agent.id}
                 phx-target={@myself}
                 data-confirm={"Unpair #{@detail.agent.name}? It will need a new code to pair again."}
+                data-confirm-action="Unpair"
               >
                 Unpair
               </P.button>

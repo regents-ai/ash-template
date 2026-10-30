@@ -26,8 +26,8 @@ test("A person starts a poll, votes once, and sees the counts when they end it",
   await expect(page.locator("#poll-vote-form")).toHaveCount(0)
   await expect(page.locator("#poll-counts")).toHaveCount(0)
 
-  page.once("dialog", (dialog) => dialog.accept())
   await press(page.locator("#poll-end"))
+  await press(page.locator("#rg-confirm").getByRole("button", {name: "End"}))
   const counts = page.locator("#poll-counts .polls-count")
   await expect(counts).toHaveCount(2)
   await expect(counts.first()).toContainText("North")
