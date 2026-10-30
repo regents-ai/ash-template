@@ -5651,3 +5651,14 @@ way, and the library's own site-tool serving is gone.
   header is gone. `GET /mcp` 405, the template's live check as the paired agent 151 passed,
   1 skipped. No migration. Rollback: v142, `927ae6ea` (with the client-address rule);
   without it, v140 `017a3acd`.
+
+## 2026-10-29 — Connected apps keep the permissions they were given; a migration adds the agent one
+
+- elixir-utils moves to `8cea309d`, its main with the OAuth change merged
+  (`b375f122` plus `oauth/` only): the consent page only reads a connected app; it no
+  longer rewrites the app's permissions while a person looks at it.
+- Migration `20261029220000_oauth_client_scopes` gives every connected app registered
+  before the agent permission both permissions, through
+  `RegentOAuth.Migration.ClientScopes`, which only inserts. It runs in the release step,
+  before the new release serves. Every token still needs the person's consent for each
+  permission.
