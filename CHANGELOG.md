@@ -6233,3 +6233,20 @@ way, and the library's own site-tool serving is gone.
 - `security/required-fixes.json` adds bandit `>= 1.14.1` (EEF-CVE-2026-116078: an HTTP/2
   request body sent as 1-byte DATA frames grew memory far beyond its size). The template
   and all five sites' mains already lock 1.14.1, so no gate changes for them today.
+
+## 2026-11-01 — Signed requests name their site (SIWA v2 window)
+
+- `platform/mix.exs` and `platform/mix.lock` move every elixir-utils package from
+  `fd597f51` to the SIWA v2 commit `64475364` (branch `siwa/authority-v2-1031`, on main
+  `86903d0`); at the window the pin moves to the main hash the siwa chief lands. Every
+  signed agent request now covers `@authority`, the host it is sent to, and hosted signing
+  sends the site's own host (Sean "1. a", 31 Oct). The same move brings the Credits deposit
+  reader's 3,000-block wait for Base Denim (`63557bb`), pairing on the Agents page
+  (`30d7a04`), the payments and hosted-identity changes since `fd597f51`, and the lock-only
+  advisories. No new migrations.
+- No template code signs requests: browser tools hand the request to the agent's host
+  signer (regents-cli), and the template's tests carry fixed headers only. Lock otherwise
+  unchanged.
+- make check on this tree: exit 0 (required fixes, command list, server tests 150 with 11
+  properties, script tests 26, browser walk 443 passed and 5 skipped). WebKit is not run on
+  the Mac.
