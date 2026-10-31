@@ -49,8 +49,9 @@ defmodule AshTemplateWeb.VisitLog do
   `steps/0` is the product-event vocabulary, the same fixed list on every site;
   its names never change. Every step but `sign_in_opened` (a press only the
   browser sees) is written by the server once the change it names has
-  succeeded: `signed_in`, `pairing_code_shown`, `agent_paired`, and each site's
-  value action from `values/0` (`value/2`).
+  succeeded: `signed_in`, `pairing_code_shown`, `agent_paired`, and the value
+  names of `values/0` (`value/2`), one per site, to which each site maps its own
+  value action.
 
   A browser that sends Global Privacy Control (`Sec-GPC: 1`) starts no visit: it
   gets no `_visit` cookie, none of its requests or pages carries a `visit`, and it
@@ -148,10 +149,11 @@ defmodule AshTemplateWeb.VisitLog do
   def sources, do: @sources |> Map.values() |> Enum.uniq()
 
   @doc """
-  Writes one `step` line: one of `steps/0`, with the agent's harness where there
-  is one. Nothing is written for a browser that sends Global Privacy Control.
+  Writes one `step` line: one of `steps/0` that is not a value step (those go
+  through `value/2`), with the agent's harness where there is one. Nothing is
+  written for a browser that sends Global Privacy Control.
   """
-  def step(name, harness \\ nil) when name in @steps do
+  def step(name, harness \\ nil) when name in @steps and name not in @values do
     unless Process.get(@gpc), do: record("step", name, harness)
     :ok
   end
@@ -163,18 +165,22 @@ defmodule AshTemplateWeb.VisitLog do
   `person` or `agent`. Its visit and surface are the request's or page's own.
   Nothing is written for a browser that sends Global Privacy Control.
 
-  It is called inside the action's own transaction (`AshTemplate.Journey.Value`),
-  so it answers `:ok` whatever happens: a line is never a reason for the action
-  to fail.
+  It is called from the action's own process once its transaction has committed
+  (`AshTemplate.Journey.Value`), so it answers `:ok` whatever happens, a name
+  outside `values/0` included: a line is never a reason for the action to fail.
   """
-  def value(name, actor) when name in @values do
-    unless Process.get(@gpc) do
-      write(event("step", name, by(actor), nil), actor: account(actor))
+  def value(name, actor) do
+    cond do
+      name not in @values -> Logger.warning("#{inspect(name)} is not a value step")
+      Process.get(@gpc) -> :ok
+      true -> write(event("step", name, by(actor), nil), actor: account(actor))
     end
 
     :ok
   rescue
-    error -> Logger.warning("A #{name} step was not written: #{inspect(error.__struct__)}")
+    error -> Logger.warning("A value step was not written: #{inspect(error.__struct__)}")
+  catch
+    _kind, _reason -> :ok
   end
 
   defp by(%AshTemplate.Actors.Agent{}), do: "agent"

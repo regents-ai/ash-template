@@ -192,12 +192,15 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - The product-event vocabulary (`docs/logging-replay-plan.md`, "Product events"):
   a note created on the page, through the API or through `/mcp` writing one
   `note_created` step for the note's account with the right surface and outcome, a
-  refused or failed create writing none, and a Global Privacy Control browser writing
+  refused, failed or rolled-back create writing none, a misnamed value never raising
+  into the save, `step/2` refusing value names, and a Global Privacy Control browser writing
   none; `/api/agents/v1` and `/mcp` calls written as `tool.call` lines with the caller
   as actor. No check yet: these checks are added once the change has worked live.
 - The cohort report (`mix visit_log.cohorts`): weekly cohorts, sources, activation,
-  D1 and D7 over a fixed set of lines, the three line shapes it reads, and a sign-in
-  no later line names left out. No check yet, as above.
+  D1 and D7 over a fixed set of lines (a return only from lines with a visit, never
+  the agent's value steps), the same account for a sign-in whatever order its lines
+  arrive in, the three line shapes it reads, and a sign-in no later line names left
+  out. No check yet, as above.
 - `mix db.top_queries` and `/app/bin/top-queries`: the stop when
   `pg_stat_statements` is missing, and a statement on another schema whose name
   starts or ends with the site's left out. No check yet, as above.

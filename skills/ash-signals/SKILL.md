@@ -20,12 +20,18 @@ all five sites at once (regent-workflow, "Shared changes").
 | --- | --- | --- | --- |
 | `AshTemplate.Rooms.Signals` | `:message_posted` (`message_id`) | `Rooms.Message` `:post` | `Activity.Notification` `:notify_mentions`, which runs `NotifyMentions` |
 | `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, which runs `RequestLabel` |
-| `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note`; `Journey.Value` `:note_created`, which writes the site's value step in the visit log |
+| `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note` |
+| `AshTemplate.Notes.Signals` | `:note_committed` (`note_id`), `phase :after_transaction` | `Notes.Note` `:create`, `emit ..., phase: :after_transaction`, only once the create has committed | `Journey.Value` `:note_created`, which writes the site's value step in the visit log |
 | `RegentCredits.Signals` (elixir-utils `credits`) | `:purchase_credited`, `:purchase_attributed` (`purchase_id`, `privy_user_id`) | `RegentCredits.Purchase`, when a purchase is credited or a waiting one finds its account | `Points.Award` `:credits_purchase` |
 
-Every listener uses the default inline delivery. Its work commits with the action that
-emitted the signal, and a listener that fails rolls that action back. The template has
-no job-delivered listener yet.
+Every listener uses the default inline delivery. For a signal in the default
+`:after_action` phase, its work commits with the action that emitted the signal, and a
+listener that fails rolls that action back. `:note_committed` is declared and emitted in
+the `:after_transaction` phase: Ash emits it only once the action answered
+`{:ok, record}`, after the commit, so its listener sees only committed work and must never
+fail (a failing one turns the committed action's answer into an error). Use that phase
+for a reaction that must not happen for rolled-back work and changes nothing, such as a
+log line. The template has no job-delivered listener yet.
 
 ## Adopt it in a site, in this order
 

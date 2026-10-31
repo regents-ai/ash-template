@@ -5,9 +5,11 @@ defmodule Mix.Tasks.VisitLog.Cohorts do
   Prints weekly sign-in cohorts by source, activation, D1 and D7 return and the
   median value steps of an activated account (`AshTemplateWeb.VisitLog.Cohorts`),
   from exported visit lines: a file of one JSON object a line, or standard input
-  when no file, or `-`, is given. Sentinel's export of a site's visit lines and
-  Fly's JSON log lines both read. It reads only the lines, never the database,
-  and the window is only what the export holds (Sentinel keeps 30 days).
+  when no file, or `-`, is given. The site's own JSON lines, Fly's JSON log lines
+  and the same fields at the top level (the shape Sentinel's export is expected to
+  take) all read. It reads only the lines, never the database, and the window is
+  only what the export holds: `fly logs` is a short buffer, and no 30-day export
+  exists yet.
 
       mix visit_log.cohorts visit-lines.jsonl
       fly logs --app template-regents-sh --json --no-tail | mix visit_log.cohorts

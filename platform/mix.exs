@@ -219,6 +219,8 @@ defmodule AshTemplate.MixProject do
         # `authorize_if` check module at compile time).
         # The hosted MCP server's address budgets add one: McpAgent builds them at compile time
         # with ClientAddress's key.
+        # The Journey domain (AshTemplate.Journey.Value) adds one or two; the Mac sets the
+        # measured count here.
         "xref graph --label compile-connected --fail-above 44",
         "ash.codegen --check",
         "usage_rules.sync --check",

@@ -6196,19 +6196,30 @@ way, and the library's own site-tool serving is gone.
   (template), `contribution_made` (Keyfleet), `fix_succeeded` (Patchbay),
   `eval_completed` (Techtree) and `launch_confirmed` (Autolaunch). Every name but
   `sign_in_opened` is written by the server once its change has succeeded.
-- A note created on any surface writes a `note_created` step, from the notes' own
-  `:note_created` signal (`AshTemplate.Journey.Value`, in a small `Journey` domain that
-  stores nothing), never from Ash telemetry, whose `:stop` event also comes for a failed
-  action. The line names the note's account as `person:`, whether the person or their
-  agent acted, says which in its outcome, and keeps the visit and surface of the request
-  or page. It answers `:ok` whatever happens, so it never fails the save. A browser that
-  sends Global Privacy Control writes no step, as before.
+- A note created on any surface writes a `note_created` step once its transaction has
+  committed, from the notes' new `:note_committed` signal (declared and emitted with
+  `phase: :after_transaction`, which Ash emits only for `{:ok, record}`), heard by
+  `AshTemplate.Journey.Value` in a small `Journey` domain that stores nothing; never from
+  Ash telemetry, whose `:stop` event also comes for a failed action. A refused, failed or
+  rolled-back create writes none. The line names the note's account as `person:`,
+  whether the person or their agent acted, says which in its outcome, and keeps the
+  visit and surface of the request or page. `VisitLog.value/2` answers `:ok` whatever
+  happens, a misnamed value included, so it never fails the save, and `VisitLog.step/2`
+  refuses the value names. The listener's own run also writes an
+  `action value.note_created` line. A browser that sends Global Privacy Control writes
+  no step, as before.
+- The value names are one fixed list shared by every site; each site maps its own value
+  action to its name.
 - Calls to the hosted MCP server at `/mcp` have the surface `mcp`, and they and the calls
   a router forward holds (`/api/agents/v1`, `/api/v1/profile`) are `tool.call` lines: the
   answer is read inside the forwarded plug, which sees only the rest of the path, so the
   call is told by its whole path (`VisitLog.call?/1`). An MCP call names the agent that
   made it, and an API call made as a signed-in person (`Actors.Human`) names the person,
   where both were `anonymous` before.
+- For Sentinel: lines for forwarded calls change shape. `/api/agents/v1/*`,
+  `/api/v1/profile*` and `/mcp` were `request` lines with the surface `agent_http` or
+  `page` and no `client`; they are now `tool.call` lines, with `client`, the forward's
+  route as `where`, the caller as actor, and for `/mcp` the surface `mcp`.
 - No new table, cookie or field, and no sign-in, session, Privy, pairing or agent-access
   code changed. Not run here: the Mac runs `make check`; the checks for these lines come
   once they have worked live (`docs/feature-map.md`, Gaps).
@@ -6235,12 +6246,22 @@ way, and the library's own site-tool serving is gone.
   exported visit lines (`AshTemplateWeb.VisitLog.Cohorts`): weekly cohorts by each
   account's first `signed_in` in the export, its source (the sign-in visit's
   `arrival`), activated (a value step at or after it), D1 and D7 return as
-  returned/covered (any line 24 to 48 hours, or 7 to 8 days, later, counted only once
-  the export runs past the window), and the median value steps of an activated account.
-- It reads Sentinel's export, the site's own JSON lines or Fly's JSON log lines, one
-  object a line, and never the database. It says at the top that its window is what
-  the export holds, 30 days at most. Pure functions over a stream; it stores nothing.
-- `AshTemplate.TextTable` draws operator reports as plain text tables.
+  returned/covered (a line 24 to 48 hours, or 7 to 8 days, later, counted only once the
+  export runs past the window; only lines with a visit count, and never a value step the
+  account's agent did), and the median value steps of an activated account.
+- A sign-in's account is the `person:` code with the earliest line of its visit strictly
+  after it, to the millisecond, a code new to the visit first, ties by code, so the same
+  lines always give the same answer.
+- It reads the site's own JSON lines, Fly's JSON log lines and the same fields at the
+  top level (the shape Sentinel's export is expected to take, not built yet), one
+  object a line, never the database. It says at the top that its window is only what
+  the export holds. No export holds 30 days yet: `fly logs` is a short buffer and
+  Sentinel's planned export covers one day, so the plan now lists a 30-day export as a
+  piece Sentinel still needs. Lines from before this release also counted a refresh of
+  the same account as `signed_in`, and the report says so. Pure functions over a
+  stream; it stores nothing.
+- `AshTemplate.TextTable` draws operator reports as plain text tables, floats with at
+  most two decimals and never an exponent.
 
 ## 2026-10-31 — Slowest statements on the site's schema
 
@@ -6257,3 +6278,17 @@ way, and the library's own site-tool serving is gone.
 - It only reads: when the extension is missing it says so and stops, and it never
   creates it. On a deployment it connects on the serving login, whose statement timeout
   bounds it. Built from the earlier `560bab6` with its review's two fixes.
+
+## 2026-10-31 — Review fixes to the measurement changes
+
+- The value step now follows a commit: `:note_committed` (`phase :after_transaction`)
+  replaces `:note_created` as `Journey.Value`'s signal, so a create rolled back by a later
+  listener no longer leaves a `note_created` line behind.
+- `VisitLog.value/2` checks the name in its body and catches throws and exits as well as
+  errors; `VisitLog.step/2` refuses value names.
+- The cohort report keeps times to the millisecond, picks a sign-in's account
+  deterministically, counts a return only from lines with a visit that are not the
+  account's agent's value steps, and words its window honestly. The entries above
+  describe the result.
+- `mix.exs` notes that the Journey domain adds one or two compile-connected links to
+  the xref limit; the Mac sets the measured count.

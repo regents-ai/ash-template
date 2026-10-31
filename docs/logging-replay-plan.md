@@ -75,8 +75,8 @@ so the code is enough to know the message without logging its text.
 
 The `step` names are the product-event vocabulary
 (`AshTemplateWeb.VisitLog.steps/0`): one fixed list, the same on every site, whose
-names never change. A site writes only the names it has; its value action is the
-one value name that is its own. Each is a `step` line with the visit, actor and
+names never change. A site writes only the names it has; it maps its own value
+action to its one value name in the list. Each is a `step` line with the visit, actor and
 surface of the request or page it happened in, so it needs no field, table or
 cookie of its own.
 
@@ -86,22 +86,24 @@ cookie of its own.
 | `signed_in` | The sign-in exchange (`POST /auth/privy/session`) bound this browser to an account: a 2xx answer saying `x-ash-session-changed: true`; a refresh of the account it already has is not one | `VisitLog.Events`, as the answer is sent | The browser's from before the exchange, usually `anonymous` (see "First touch") | none |
 | `pairing_code_shown` | The pairing box issued a pairing code | `AshTemplateWeb.PairingBox` | The person | The harness |
 | `agent_paired` | An agent paired with one of the codes the person's pairing box shows | same | The person | The harness |
-| `note_created` | The template's value action: a note was created | `AshTemplate.Journey.Value`, on `AshTemplate.Notes.Signals` `:note_created` | The note's account, as `person:`, whoever acted | `person`, or `agent` for the account's agent |
+| `note_created` | The template's value action: a note was created and committed | `AshTemplate.Journey.Value`, on `AshTemplate.Notes.Signals` `:note_committed` | The note's account, as `person:`, whoever acted | `person`, or `agent` for the account's agent |
 | `contribution_made` | Keyfleet's value action: a contribution was accepted | Keyfleet's own `Journey.Value` | same | same |
 | `fix_succeeded` | Patchbay's value action: a fix succeeded | Patchbay's | same | same |
 | `eval_completed` | Techtree's value action: an eval completed | Techtree's | same | same |
 | `launch_confirmed` | Autolaunch's value action: a launch was confirmed | Autolaunch's | same | same |
 
-A value step comes from the signal the site's own domain emits for its value
-action, heard by an Ash signal listener (`AshTemplate.Journey.Value`), and never from
-the Ash telemetry the `action` lines use: an action's `:stop` event comes whether
-it succeeded or failed, while the signal is emitted only once the action's checks
-and its write have passed. The listener runs in the action's own process and
-transaction, so the line carries that request's or page's visit and surface (a
-note an agent writes through `/mcp` says `mcp`), and it answers `:ok` whatever
-happens, so a line never fails the action. One case remains: when a
-later listener of the same signal fails and rolls the action back, the line has
-already been written.
+A value step comes from a signal the site's own domain emits for its value
+action in the `:after_transaction` phase (declared on the signal and on its `emit`),
+heard by an Ash signal listener (`AshTemplate.Journey.Value`), and never from the Ash
+telemetry the `action` lines use: an action's `:stop` event comes whether it
+succeeded or failed. Ash emits an `:after_transaction` signal from a hook that runs
+only when the action answered `{:ok, record}` (`Ash.Resource.Change.EmitSignal`), so
+a refused, failed or rolled-back action writes no line. The listener runs in the
+action's own process, after the commit, so the line carries that request's or page's
+visit and surface (a note an agent writes through `/mcp` says `mcp`), and
+`VisitLog.value/2` answers `:ok` whatever happens, a misnamed value included, so a
+line never fails the action. Ash's own telemetry also writes an
+`action value.note_created` line for the listener.
 
 A value step names the account the value belongs to, so a person whose agent does
 the work still activates. A browser that sends Global Privacy Control writes no
@@ -109,8 +111,9 @@ step at all, value steps included, exactly as before.
 
 Each site copies `Journey.Value` with its own signal: Keyfleet `contribution_made`,
 Patchbay `fix_succeeded`, Techtree `eval_completed`, Autolaunch `launch_confirmed`.
-A site whose value action emits no signal yet adds one (`emit` in the action, a
-`Signals` module in its domain; `skills/ash-signals`).
+A site whose value action emits no such signal yet adds one (a signal with
+`phase :after_transaction` in its domain's `Signals` module, and `emit ...,
+phase: :after_transaction` in the action; `skills/ash-signals`).
 
 ## First touch
 
@@ -121,10 +124,14 @@ nothing stored:
 - The `signed_in` line is written as the exchange's answer is sent, before that
   request has read the account, and reading it there would mean a database read
   inside the sign-in answer. So the line carries the browser's actor from before
-  (`anonymous`), and the account is the first `person:` actor on a later line of
-  the same visit. Once the exchange binds, the page reloads signed in, and that
-  request and its page each name the account; a sign-in whose page closes first
-  names none, and the report counts it apart.
+  (`anonymous`), and the account is the `person:` code with the earliest line of
+  the same visit strictly after it, to the millisecond. A code the visit had not
+  shown before the sign-in comes before one it had (a shared browser where one
+  person signed out and another signed in), and an exact tie goes to the first
+  code by name, so the same lines always give the same account. Once the exchange
+  binds, the page reloads signed in, and that request and its page each name the
+  account; a sign-in whose page closes first names none, and the report counts it
+  apart.
 - The source an account is counted under is the `arrival` of the visit in which it
   first signed in. When a person first came on one visit and signs in on a later
   one (the `_visit` cookie ends when the browser closes), the sign-in visit's own
@@ -137,9 +144,13 @@ nothing stored:
 
 `mix visit_log.cohorts PATH` (or lines on standard input) reads exported visit
 lines and prints a plain text table (`AshTemplateWeb.VisitLog.Cohorts`). It reads
-Sentinel's export or Fly's JSON log lines, one JSON object a line, and never the
-database; it stores nothing. Its window is only what the export holds, 30 days at
-most from Sentinel, and it says so at the top of every report.
+the site's own JSON lines, Fly's JSON log lines whose `message` is the site's line,
+and the same fields at the top level, the shape Sentinel's export is expected to take
+(not built yet); one JSON object a line, never the database, and it stores nothing.
+Its window is only what the export holds, and it says so at the top of every report.
+No export holds 30 days yet: `fly logs` is a short buffer, and Sentinel's export
+below covers one day. The 30-day export in "Sentinel's part" is what the report is
+built for.
 
 | Column | Meaning |
 | --- | --- |
@@ -147,13 +158,16 @@ most from Sentinel, and it says so at the top of every report.
 | Source | That sign-in visit's `arrival` ("First touch"); a week with several sources ends with an `all` row |
 | Accounts | Accounts whose first sign-in in the export fell in that week |
 | Activated | Those with at least one value step at or after that first sign-in |
-| D1 | Returned/covered: any line from the account 24 to 48 hours after its first sign-in, out of the accounts whose 48 hours the export runs past |
+| D1 | Returned/covered: a line from the account 24 to 48 hours after its first sign-in, out of the accounts whose 48 hours the export runs past. Only lines that carry a visit count, and never a value step its agent did (outcome `agent`), so a Global Privacy Control browser, calls from outside a page and the account's agent at work are not the person returning |
 | D7 | The same, 7 to 8 days after |
 | Median value | The median number of value steps of an activated account |
 
 An account that signed in before the export began, and signs in again inside it,
-counts in the week of that later sign-in. Times are kept to the minute. The report
-also counts the sign-ins no later line of their visit names, and leaves them out.
+counts in the week of that later sign-in. Lines written before the 31 October 2026
+release also wrote `signed_in` for a refresh of the account a browser already had,
+so an export that reaches back before it can count such a refresh as a sign-in; the
+report says so. Times are kept to the millisecond. The report also counts the
+sign-ins no later line of their visit names, and leaves them out.
 
 ## Where the lines come from
 
@@ -163,6 +177,9 @@ All standard tools; nothing is queued or stored by the site.
   `surface` and the caller's tool on the process, and writes lines.
 - `AshTemplateWeb.VisitLog.Events`: `:telemetry` handlers for Phoenix endpoint and
   LiveView, Ash, Oban and Finch events.
+- `AshTemplate.Journey.Value`: an Ash signal listener that writes the site's value
+  step from its value action's `:after_transaction` signal (`VisitLog.value/2`).
+  Its own run also writes an `action value.note_created` line.
 - `POST /visit-log` (`AshTemplateWeb.VisitLogController`): the browser's reports,
   at most 20 lines a batch, rate limited with the other browser reports. The
   browser sends a batch every 5 seconds or when the page is hidden
@@ -192,6 +209,10 @@ All standard tools; nothing is queued or stored by the site.
 - A page that shows one visit's events in order, joined with that visit's
   warning and error lines. This is the replay.
 - A read-only export of the last 24 hours for one app, which the daily review reads.
+- Needed for the cohort report (`mix visit_log.cohorts`): a read-only export of
+  one app's visit lines for the whole 30 days kept, one JSON object a line with
+  `time`, `visit`, `actor`, `surface` and `event` at the top level. Until it exists
+  the report reads only what a shorter export or `fly logs` holds.
 - Sentinel's code and releases belong to the Sentinel chief; each Sentinel
   release needs Sean's letter in that lane.
 

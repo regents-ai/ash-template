@@ -20,9 +20,10 @@ defmodule AshTemplate.Notes.Note do
   An archived note goes after all the others and keeps everything else,
   its pin included; archiving and unarchiving are free.
 
-  Each new note is told as `:note_created`: the visit log writes its value step
-  (`AshTemplate.Journey.Value`), and one an agent wrote for its person is
-  offered to Regent Points (`AshTemplate.Points.Award`).
+  Each new note is told as `:note_created`, and one an agent wrote for its
+  person is offered to Regent Points (`AshTemplate.Points.Award`). Once its
+  transaction has committed it is told again as `:note_committed`, and the visit
+  log writes its value step (`AshTemplate.Journey.Value`).
   """
 
   use Ash.Resource,
@@ -145,6 +146,10 @@ defmodule AshTemplate.Notes.Note do
       change run_oban_trigger(:send_webhook), where: [WebhookAddressSet]
       emit AshTemplate.Notes.Signals, :note_saved, fields: [note_id: :id], where: [AskingJev]
       emit AshTemplate.Notes.Signals, :note_created, fields: [note_id: :id]
+
+      emit AshTemplate.Notes.Signals, :note_committed,
+        fields: [note_id: :id],
+        phase: :after_transaction
     end
 
     # The save allowance is counted before the statement, so an edit is not a

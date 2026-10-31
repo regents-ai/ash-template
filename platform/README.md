@@ -276,11 +276,13 @@ Every request, press, Ash action, job and outside call writes one visit line in
 production's JSON (`AshTemplateWeb.VisitLog`, `docs/logging-replay-plan.md`), naming
 accounts and agents only by a one-way code. The `step` lines are the product-event
 vocabulary every site shares (`VisitLog.steps/0`): `sign_in_opened`, `signed_in`,
-`pairing_code_shown`, `agent_paired` and each site's value action, here
-`note_created`, written by `AshTemplate.Journey.Value` from the notes' own
-`:note_created` signal. A site names its value action in `VisitLog.values/0` and
-listens to its own signal in its copy of `Journey.Value`. Calls to `/api` and to
-`/mcp` (surface `mcp`) are `tool.call` lines, forwarded ones included.
+`pairing_code_shown`, `agent_paired` and one value name for each site, one fixed
+list shared by every site (`VisitLog.values/0`). The template's is `note_created`,
+written by `AshTemplate.Journey.Value` from the notes' `:note_committed` signal, which
+Ash emits only after a create has committed. A site maps its own value action to its
+name in that list and listens to that action's signal in its copy of
+`Journey.Value`. Calls to `/api` and to `/mcp` (surface `mcp`) are `tool.call` lines,
+forwarded ones included.
 
 Weekly sign-in cohorts by source, activation (a first value step), D1 and D7
 return and the median value steps of an activated account come from exported
@@ -291,8 +293,11 @@ mix visit_log.cohorts visit-lines.jsonl
 fly logs --app template-regents-sh --json --no-tail | mix visit_log.cohorts
 ```
 
-It reads Sentinel's export or Fly's JSON log lines, one JSON object a line, and its
-window is only what the export holds (Sentinel keeps visit lines 30 days). A sign-in
+It reads the site's own JSON lines and Fly's JSON log lines, one JSON object a line,
+and the same fields at the top level, the shape Sentinel's export is expected to take.
+Its window is only what the export holds, and no export holds 30 days yet: `fly logs`
+is a short buffer, and Sentinel's planned export covers one day; a 30-day export is
+still to be built (`docs/logging-replay-plan.md`, "Sentinel's part"). A sign-in
 is tied to its source by the visit id alone (`docs/logging-replay-plan.md`, "First
 touch" and "Cohort report").
 
