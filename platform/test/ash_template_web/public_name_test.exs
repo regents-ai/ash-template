@@ -36,11 +36,10 @@ defmodule AshTemplateWeb.PublicNameTest do
     proof: proof,
     pem: pem
   } do
+    # Signing in gives the person their shared profile, with no name yet.
     {:ok, account, []} = proof |> verified(pem) |> VerifiedSession.establish()
 
-    assert profile(:get, proof).status == 404
-    assert profile(:patch, proof, %{display_name: "Ada"}).status == 422
-    assert profile(:post_sync, proof).status == 200
+    assert Jason.decode!(profile(:get, proof).resp_body)["profile"]["display_name"] == nil
 
     assert profile(:patch, %{proof | identity: "forged"}, %{display_name: "Mallory"}).status ==
              401
@@ -54,7 +53,6 @@ defmodule AshTemplateWeb.PublicNameTest do
     assert html =~ "<h2>Ada Lovelace</h2>"
   end
 
-  defp profile(:post_sync, proof), do: call(:post, "/api/v1/profile/sync", proof, nil)
   defp profile(:get, proof), do: call(:get, "/api/v1/profile", proof, nil)
   defp profile(:patch, proof, body), do: call(:patch, "/api/v1/profile", proof, body)
 

@@ -25,7 +25,9 @@ defmodule AshTemplateWeb.FirstRenderTest do
         privy_user_id: "did:privy:first-render",
         wallet_address: @wallet,
         wallet_addresses: [@wallet],
-        linked_socials: []
+        linked_socials: [],
+        issued_at: System.system_time(:second),
+        expires_at: System.system_time(:second) + 3600
       })
 
     {:bootstrap, claim} = SessionAuthority.renew(nil)

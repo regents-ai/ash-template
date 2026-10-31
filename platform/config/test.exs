@@ -17,6 +17,10 @@ config :ash_template, :chain_nodes, %{}
 # test writes match the app the site reads them for.
 config :ash_template, :privy, app_id: "test-app"
 
+# Paid pins are paid into this wallet, which also takes Credits.
+config :ash_template, :payments_wallet_address, "0x00000000000000000000000000000000000000a1"
+config :regent_payments, credits_pay_to: ["0x00000000000000000000000000000000000000a1"]
+
 # Jobs are only recorded, never run, while a test holds its transaction.
 config :ash_template, Oban, testing: :manual
 

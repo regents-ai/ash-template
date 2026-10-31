@@ -6233,3 +6233,51 @@ way, and the library's own site-tool serving is gone.
 - `security/required-fixes.json` adds bandit `>= 1.14.1` (EEF-CVE-2026-116078: an HTTP/2
   request body sent as 1-byte DATA frames grew memory far beyond its size). The template
   and all five sites' mains already lock 1.14.1, so no gate changes for them today.
+
+## 2026-10-28 — Pay for a pin with USDC or Credits
+
+- elixir-utils moves to `ff7927c` (branch `credits-pay-tpl-1028`: elixir-utils main
+  `9da44bd` with the refusal help links `9539469`, waiting for Sean's sign-off): `RegentPayments.Purchase.pay_with_credits/4`
+  pays an offer's terms in Credits, one Credit per USDC, holding and charging them with
+  the receipt in one transaction; `RegentIdentity.ensure/1` and `profile_id/2`; the
+  profile `:person` and `:names` reads are closed to every actor. A pin paid but not yet
+  carried out is still found after its terms run out, so asking again finishes it instead of taking a second
+  payment.
+- The note pin is a payment offer (`AshTemplate.Payments.NotePin`, 1 USDC to
+  `PAYMENTS_WALLET_ADDRESS`, Credits accepted). `POST /api/v1/notes/{id}/pin` answers 402
+  with x402 terms, then takes `payment` (signed by the agent's own wallet, inside the
+  signed body) or `pay_with: "credits"`. The terms are chosen under the note's row lock
+  and reused while unpaid, so a pin asked for several times at once pays once, and a pin
+  after an unpin pays again. `operation_id` is gone from the route, the browser tool and
+  the command; the contract moves to 8.0.0.
+- Sign-in makes sure the person has a shared Regent profile, which a paired agent's
+  payments name as the person paid for. An agent whose person has none yet is told
+  `person_needs_sign_in`; no fill runs for existing accounts.
+- A pin whose payment is still being checked answers 409 `settlement_pending`: the
+  purchase is waiting on a check of its payment, so do not pay again and ask again later.
+- `config :regent_payments, credits_pay_to:` is the payments wallet: the one wallet
+  Credits may stand in for.
+- `config :regent_credits, agent_grants_enabled: true`: agents may spend their person's
+  Credits, each person's allowance still off until they turn it on. It opens with this
+  release, under the same go from Sean as its shared migration.
+- The local database fixture runs the payments migration. No shared database runs it
+  before Sean's go.
+## 2026-10-29 — Connector and Credits together
+
+- The Claude connector (with main up to 0a8a4234) and Credits step 1 sit on one branch,
+  in that release order. The shared library pin is elixir-utils 09afad89, which keeps the
+  browser's signed tools on the API public_tools.ts uses.
+- The buying wallet is taken out before it was ever released. Sean, 29 Oct 16:27Z:
+  Keyfleet's Keys are bought with USDC only, never with Credits, so nothing on any site
+  buys on the chain with Credits. `AshTemplate.Payments.ChainBuy`, its `chain_buys`
+  queue and three migrations, and the `BUYING_WALLET_PRIVATE_KEY` and `BASE_RPC_URL`
+  secrets are gone.
+## 2026-10-31 — Credits landing on main
+
+- Credits alone from 08a14241 lands on main 31b0f439, keeping the elixir-utils fd597f51
+  pin. The CIMD part of land/connector-credits-1029 stays off: it needs library commits
+  not yet on elixir-utils main.
+- `notes pin` takes 1 USDC or 1 Credit (`pay_with: "credits"`), and its browser tool is
+  signed by the browser host, as on main. The contract moves to 9.0.0.
+- Released under Sean's 7a; its shared migration `20261028090000_receipts_paid_with`
+  runs only on Sean's letter, through `/app/bin/migrate-shared` on template-regents-sh.

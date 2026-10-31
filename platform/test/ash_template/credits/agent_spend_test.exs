@@ -2,9 +2,9 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   # Invariants for switching agent spending on (Sean 111 a, 12 Oct 2026):
   # - two agents spending one person's last Credits at once, from two sites,
   #   never spend more than the person has;
-  # - a pin retried after its answer was lost pays once and pins once;
-  # - each new pin of a note costs one Credit: an operation_id that already
-  #   paid an earlier pin is refused and pins nothing (Sean 2 a, 19 Oct 2026);
+  # - a pin asked for several times at once, in Credits, pays once and pins once;
+  # - each new pin of a note costs one Credit, a pin after an unpin included
+  #   (Sean 2 a, 19 Oct 2026);
   # - a revoked allowance refuses the agent's next spend at once, keeps what it
   #   already bought, and the person's record says which agent spent, on which
   #   site, for what, under which pairing, and whether the charge completed;
@@ -19,7 +19,7 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   alias AshTemplate.{Accounts, Agents, Notes, Repo}
   alias AshTemplate.Actors.{Agent, System}
   alias RegentCredits.Actor
-  alias RegentCredits.Errors.{NotEnoughCredits, Refused}
+  alias RegentCredits.Errors.NotEnoughCredits
 
   setup do
     Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
@@ -62,48 +62,33 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     assert Decimal.eq?(balance.available, 1)
   end
 
-  test "a pin retried after its answer was lost, from fresh processes, pays once" do
+  test "a pin asked for three times at once, in Credits, pays once" do
     person = person(5)
     agent = agent(person, ["template"]) |> as_site_agent()
     note = Notes.create_note!(%{title: "Retry", operation_id: Ecto.UUID.generate()}, actor: agent)
-    operation = Ecto.UUID.generate()
 
-    # The first answer never reaches the agent; its process is gone.
-    first = Task.async(fn -> Notes.pin_note(note, operation, actor: agent) end)
-    assert {:ok, %{pinned_at: %DateTime{}}} = Task.await(first)
-
-    # The agent sends the same request again, three times at once, with the
-    # note as it last saw it: unpinned.
-    retries =
+    answers =
       1..3
-      |> Task.async_stream(fn _ -> Notes.pin_note(note, operation, actor: agent) end,
-        max_concurrency: 3
-      )
-      |> Enum.map(fn {:ok, result} -> result end)
+      |> Task.async_stream(fn _ -> pin(agent, note) end, max_concurrency: 3)
+      |> Enum.map(fn {:ok, conn} -> conn.status end)
 
-    assert Enum.all?(retries, &match?({:ok, %{pinned_at: %DateTime{}}}, &1))
+    assert answers == [200, 200, 200]
+    assert %{pinned_at: %DateTime{}} = Notes.get_my_note!(note.id, actor: human(person))
     assert Decimal.eq?(RegentCredits.balance(person.did).available, 4)
     assert [%{status: :charged}] = holds(person)
   end
 
-  test "a pin after an unpin needs a new operation_id and pays again" do
+  test "a pin after an unpin pays again" do
     person = person(5)
     agent = agent(person, ["template"]) |> as_site_agent()
     note = Notes.create_note!(%{title: "Again", operation_id: Ecto.UUID.generate()}, actor: agent)
-    first = Ecto.UUID.generate()
 
-    assert {:ok, pinned} = Notes.pin_note(note, first, actor: agent)
-    assert {:ok, unpinned} = Notes.unpin_note(pinned, actor: agent)
+    assert pin(agent, note).status == 200
+    pinned = Notes.get_my_note!(note.id, actor: agent)
+    assert {:ok, _unpinned} = Notes.unpin_note(pinned, actor: agent)
+    assert pin(agent, note).status == 200
 
-    assert {:error, %Ash.Error.Invalid{errors: errors}} =
-             Notes.pin_note(unpinned, first, actor: agent)
-
-    assert Enum.any?(errors, &match?(%Ash.Error.Changes.InvalidArgument{field: :operation_id}, &1))
-    assert Decimal.eq?(RegentCredits.balance(person.did).available, 4)
-
-    assert {:ok, %{pinned_at: %DateTime{}}} =
-             Notes.pin_note(unpinned, Ecto.UUID.generate(), actor: agent)
-
+    assert %{pinned_at: %DateTime{}} = Notes.get_my_note!(note.id, actor: human(person))
     assert Decimal.eq?(RegentCredits.balance(person.did).available, 3)
     assert [%{status: :charged}, %{status: :charged}] = holds(person)
   end
@@ -117,19 +102,17 @@ defmodule AshTemplate.Credits.AgentSpendTest do
     later =
       Notes.create_note!(%{title: "Later", operation_id: Ecto.UUID.generate()}, actor: actor)
 
-    assert {:ok, _pinned} = Notes.pin_note(kept, Ecto.UUID.generate(), actor: actor)
+    assert pin(actor, kept).status == 200
 
     # The person turns the allowance off while the agent is still signed in.
     allow(person, agent.wallet, ["template"], false)
 
-    assert {:error, %Ash.Error.Invalid{errors: errors}} =
-             Notes.pin_note(later, Ecto.UUID.generate(), actor: actor)
+    refused = pin(actor, later)
+    assert refused.status == 402
+    assert Jason.decode!(refused.resp_body)["error"]["code"] == "credits_refused"
 
-    assert Enum.any?(errors, &match?(%Refused{reason: :agent_off}, &1))
-
-    human = AshTemplate.Actors.Human.for_account(person.account)
-    assert %{pinned_at: %DateTime{}} = Notes.get_my_note!(kept.id, actor: human)
-    assert %{pinned_at: nil} = Notes.get_my_note!(later.id, actor: human)
+    assert %{pinned_at: %DateTime{}} = Notes.get_my_note!(kept.id, actor: human(person))
+    assert %{pinned_at: nil} = Notes.get_my_note!(later.id, actor: human(person))
     assert Decimal.eq?(RegentCredits.balance(person.did).available, 4)
 
     # What the person's Credits record keeps about the spend.
@@ -227,8 +210,18 @@ defmodule AshTemplate.Credits.AgentSpendTest do
   defp as_site_agent(agent) do
     record = Agents.sign_in_agent!(agent.wallet, actor: %System{})
     {:ok, pairing} = RegentAgents.Authority.resolve(Repo, agent.wallet)
-    Agent.paired(record, agent.person.account, pairing)
+    Agent.paired(record, agent.person.account, pairing, Ecto.UUID.generate())
   end
+
+  # The agent's pin, paid in its person's Credits.
+  defp pin(agent, note) do
+    Phoenix.ConnTest.build_conn()
+    |> Map.put(:body_params, %{"pay_with" => "credits"})
+    |> Plug.Conn.assign(:actor, agent)
+    |> AshTemplateWeb.PairedAgentController.pin_note(%{"id" => note.id})
+  end
+
+  defp human(person), do: AshTemplate.Actors.Human.for_account(person.account)
 
   defp holds(person) do
     RegentCredits.holds!(actor: Actor.person(person.did, [person.wallet], "template"))

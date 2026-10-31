@@ -133,7 +133,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
 
     record = Agents.sign_in_agent!(wallet, actor: %System{})
     {:ok, pairing} = RegentAgents.Authority.resolve(Repo, wallet)
-    Agent.paired(record, person.account, pairing)
+    Agent.paired(record, person.account, pairing, Ecto.UUID.generate())
   end
 
   defp wallet, do: "0x" <> Base.encode16(:crypto.strong_rand_bytes(20), case: :lower)

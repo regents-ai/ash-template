@@ -3,6 +3,8 @@ defmodule AshTemplate.Notes do
 
   use Ash.Domain, extensions: [AshPhoenix]
 
+  require Ash.Query
+
   resources do
     resource AshTemplate.Notes.Note do
       define :list_my_notes,
@@ -25,10 +27,12 @@ defmodule AshTemplate.Notes do
         action: :update,
         default_options: [load: [:label_decision, :changed_by_agent]]
 
+      # Only `AshTemplate.Payments.NotePin` calls this, once the payment for the
+      # pin has settled and been checked; nobody is asked to authorize it.
       define :pin_note,
         action: :pin,
-        args: [:operation_id],
-        default_options: [load: [:label_decision, :changed_by_agent]]
+        get_by: [:id],
+        default_options: [authorize?: false]
 
       define :unpin_note,
         action: :unpin,
@@ -63,5 +67,13 @@ defmodule AshTemplate.Notes do
       {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
       result -> result
     end
+  end
+
+  @doc "The actor's person's note `id`, locked until the surrounding transaction ends."
+  def lock_my_note(id, opts) do
+    AshTemplate.Notes.Note
+    |> Ash.Query.filter(id == ^id)
+    |> Ash.Query.lock(:for_update)
+    |> Ash.read_one(opts)
   end
 end

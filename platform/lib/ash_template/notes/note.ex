@@ -14,8 +14,9 @@ defmodule AshTemplate.Notes.Note do
   (`AshTemplate.Notes.Signals`), and a question asks which label fits the note
   (`AshTemplate.Notes.Decision`); `label_decision` is the latest one.
 
-  A pinned note comes first among its writer's notes. An agent pinning one
-  costs that person one Regent Credit (`Pin`); unpinning is free.
+  A pinned note comes first among its writer's notes. An agent pins one by
+  paying 1 USDC or 1 of its person's Credits (`AshTemplate.Payments.NotePin`).
+  Unpinning is free.
 
   An archived note goes after all the others and keeps everything else,
   its pin included; archiving and unarchiving are free.
@@ -162,10 +163,9 @@ defmodule AshTemplate.Notes.Note do
       emit AshTemplate.Notes.Signals, :note_saved, fields: [note_id: :id], where: [AskingJev]
     end
 
+    # Run by `AshTemplate.Payments.NotePin` once an agent's pin is paid for.
     update :pin do
       require_atomic? false
-      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
-      argument :operation_id, :uuid, allow_nil?: false
       change get_and_lock_for_update()
       change Pin
     end
@@ -241,6 +241,12 @@ defmodule AshTemplate.Notes.Note do
 
     policy action_type([:read, :update, :destroy]) do
       authorize_if expr(human_account_id == ^actor(:human_account_id))
+    end
+
+    # Only a settled payment pins, and its offer checks the payment
+    # (`AshTemplate.Payments.NotePin.carry_out/4`) before running it unauthorized.
+    policy action(:pin) do
+      forbid_if always()
     end
   end
 

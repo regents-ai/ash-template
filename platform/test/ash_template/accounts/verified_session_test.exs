@@ -21,7 +21,9 @@ defmodule AshTemplate.Accounts.VerifiedSessionTest do
       privy_user_id: "did:privy:sign-in-test",
       wallet_address: @first,
       wallet_addresses: [@first],
-      linked_socials: []
+      linked_socials: [],
+      issued_at: System.system_time(:second),
+      expires_at: System.system_time(:second) + 3600
     }
 
     assert {:ok, account, []} = VerifiedSession.establish(session)
