@@ -6227,3 +6227,9 @@ way, and the library's own site-tool serving is gone.
 - `docs/regents-cli-plan.md`, the September plan for the old npm command line, is now a
   pointer to `cli/README.md` and `cli/COMMANDS.md`.
 - Remade on main from Lane D's `33cfbddf` (tickets CLI-3 and CLI-6), which no longer applied.
+
+## 2026-10-31 — Required fix: Bandit 1.14.1
+
+- `security/required-fixes.json` adds bandit `>= 1.14.1` (EEF-CVE-2026-116078: an HTTP/2
+  request body sent as 1-byte DATA frames grew memory far beyond its size). The template
+  and all five sites' mains already lock 1.14.1, so no gate changes for them today.

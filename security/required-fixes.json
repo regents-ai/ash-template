@@ -48,6 +48,13 @@
       "requirement": ">= 0.3.2"
     },
     {
+      "id": "EEF-CVE-2026-116078",
+      "summary": "Bandit before 1.14.1 let an HTTP/2 request body sent as 1-byte DATA frames grow memory far beyond the body's size.",
+      "kind": "hex",
+      "package": "bandit",
+      "requirement": ">= 1.14.1"
+    },
+    {
       "id": "2026-10-26-ash-required-v7",
       "summary": "regent_credits' first migration installs ash_postgres's version 6 ash_required in public, which cannot find ash_raise_error under its empty search path, so a missing required value raised \"function does not exist\"; on a fresh database it also replaced the site's version 7. Its migration 20261026220000 installs version 7 in public.",
       "kind": "git",
