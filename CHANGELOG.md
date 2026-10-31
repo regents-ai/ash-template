@@ -6216,3 +6216,14 @@ way, and the library's own site-tool serving is gone.
   unverified Sign in with Apple callback parameter overrode the verified ID token's claims).
   Only Autolaunch locks assent, already at 0.3.2; a site that adds an outside sign-in later
   is gated. Registry only, so no release.
+
+## 2026-10-31 — Typed command input
+
+- `cli/commands.json` describes every `operation_id` an agent pipes (rooms post, notes
+  create, notes pin, dms send, polls start and chat send) and chat send's `conversation_id`
+  as `uuid`, and a poll's `minutes` as a whole number from 1 to 60. regents-cli 1.10.21
+  reads these types; it refuses a value that breaks them before anything is signed or sent
+  once its next release pins this list. The site's own checks are unchanged.
+- `docs/regents-cli-plan.md`, the September plan for the old npm command line, is now a
+  pointer to `cli/README.md` and `cli/COMMANDS.md`.
+- Remade on main from Lane D's `33cfbddf` (tickets CLI-3 and CLI-6), which no longer applied.
