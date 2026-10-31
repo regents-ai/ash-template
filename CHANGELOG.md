@@ -6205,3 +6205,14 @@ way, and the library's own site-tool serving is gone.
   capabilities.json's release, llms.md and the CLI command docs name 1.10.21. Rollback is
   the 1.10.20 pin `0e3768f5`. The typed command input from `33cfbddf` (Lane D, CLI-3 and
   CLI-6) no longer applies to `cli/commands.json` and lands as its own change.
+- v162 live at `8460e18f` (31 Oct 2026); rollback v161 `456a97fb`. Live: `/capabilities.json`
+  names commit `8460e18f` and CLI 1.10.21, `/agents.md` names 1.10.21 with its commit and
+  wheel hash, the public changelog shows both new lines, and `/`, `/agents`, `/changelog`,
+  `/docs`, `/about`, `/skills` and `/account` open with no page errors and nothing scrolling
+  sideways at 1280 and 390 in headless Chromium; `/rooms/general` answers 200. Fly's log
+  shows no error.
+  WebKit is not run on the Mac.
+- `security/required-fixes.json` adds assent `>= 0.3.2` (EEF-CVE-2026-117656, critical: an
+  unverified Sign in with Apple callback parameter overrode the verified ID token's claims).
+  Only Autolaunch locks assent, already at 0.3.2; a site that adds an outside sign-in later
+  is gated. Registry only, so no release.
