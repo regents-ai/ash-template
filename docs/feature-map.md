@@ -198,6 +198,9 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - The cohort report (`mix visit_log.cohorts`): weekly cohorts, sources, activation,
   D1 and D7 over a fixed set of lines, the three line shapes it reads, and a sign-in
   no later line names left out. No check yet, as above.
+- `mix db.top_queries` and `/app/bin/top-queries`: the stop when
+  `pg_stat_statements` is missing, and a statement on another schema whose name
+  starts or ends with the site's left out. No check yet, as above.
 - First touch through sign-in: a sign-in exchange that binds writes one `signed_in`
   step and a refresh writes none, and the reloaded page's next line in the same visit
   names the account. No check yet, as above.

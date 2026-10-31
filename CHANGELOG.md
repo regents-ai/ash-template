@@ -6241,3 +6241,19 @@ way, and the library's own site-tool serving is gone.
   object a line, and never the database. It says at the top that its window is what
   the export holds, 30 days at most. Pure functions over a stream; it stores nothing.
 - `AshTemplate.TextTable` draws operator reports as plain text tables.
+
+## 2026-10-31 — Slowest statements on the site's schema
+
+- `mix db.top_queries [count]` and `/app/bin/top-queries [count]`
+  (`AshTemplate.Release.top_queries/1`) print the statements on this site's schema that
+  took the most database time, 20 unless a count from 1 to 100 is given, from
+  `pg_stat_statements`: calls, total and mean milliseconds, rows and the statement on
+  one line (`AshTemplate.TopQueries`).
+- A statement counts as the site's only when it names a table in the site's schema,
+  quoted (`"ash_template_app".`, as Ecto writes it) or bare at the start of a word
+  (`ash_template_app.`), so another schema whose name contains the site's is left out.
+  Both the extension's schema and the site's are quoted as identifiers, inner quotes
+  doubled, and the site's reaches the statement only as parameters.
+- It only reads: when the extension is missing it says so and stops, and it never
+  creates it. On a deployment it connects on the serving login, whose statement timeout
+  bounds it. Built from the earlier `560bab6` with its review's two fixes.

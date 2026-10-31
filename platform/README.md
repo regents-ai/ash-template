@@ -490,6 +490,16 @@ Credits, Points or Payments change the release carries that is not applied yet
 site carries the same command; after the founder's go, the site whose release
 first carries a shared change runs it from the new image before deploying.
 
+`/app/bin/top-queries [count]` (locally `mix db.top_queries [count]`) prints the
+statements on this site's schema that took the most database time, 20 unless a
+count from 1 to 100 is given, from `pg_stat_statements`, with calls, total and mean
+milliseconds and rows (`AshTemplate.TopQueries`). It counts a statement as the
+site's when it names a table in the site's schema, `"ash_template_app".` or
+`ash_template_app.`, never a bare mention of the name. It only reads: when the
+extension is missing it says so and stops, and it never creates it. On a
+deployment it connects on the serving login, so the login's statement timeout
+bounds it and it sees that login's own statements.
+
 The image is built from `Dockerfile` with the repository root as its context:
 the app is in `platform/`, and when it compiles it reads the build skills it
 serves from `skills/` and the commands its capability list names from
