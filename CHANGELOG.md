@@ -6228,3 +6228,16 @@ way, and the library's own site-tool serving is gone.
 - The plan's "Product events" and "First touch" sections now follow the "One line"
   section whole. No sign-in, session or Privy code changed; the step reads the answer's
   header as it already read its status.
+
+## 2026-10-31 — Activation and D1/D7 cohorts from visit lines
+
+- `mix visit_log.cohorts PATH` (or standard input) prints a plain text table from
+  exported visit lines (`AshTemplateWeb.VisitLog.Cohorts`): weekly cohorts by each
+  account's first `signed_in` in the export, its source (the sign-in visit's
+  `arrival`), activated (a value step at or after it), D1 and D7 return as
+  returned/covered (any line 24 to 48 hours, or 7 to 8 days, later, counted only once
+  the export runs past the window), and the median value steps of an activated account.
+- It reads Sentinel's export, the site's own JSON lines or Fly's JSON log lines, one
+  object a line, and never the database. It says at the top that its window is what
+  the export holds, 30 days at most. Pure functions over a stream; it stores nothing.
+- `AshTemplate.TextTable` draws operator reports as plain text tables.

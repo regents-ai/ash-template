@@ -133,6 +133,28 @@ nothing stored:
   `unknown`. A Global Privacy Control browser has no visit and writes no `arrival`
   or `signed_in`, so it never reaches a cohort.
 
+## Cohort report
+
+`mix visit_log.cohorts PATH` (or lines on standard input) reads exported visit
+lines and prints a plain text table (`AshTemplateWeb.VisitLog.Cohorts`). It reads
+Sentinel's export or Fly's JSON log lines, one JSON object a line, and never the
+database; it stores nothing. Its window is only what the export holds, 30 days at
+most from Sentinel, and it says so at the top of every report.
+
+| Column | Meaning |
+| --- | --- |
+| Week | The Monday (UTC) of the week each account first signed in, within the export |
+| Source | That sign-in visit's `arrival` ("First touch"); a week with several sources ends with an `all` row |
+| Accounts | Accounts whose first sign-in in the export fell in that week |
+| Activated | Those with at least one value step at or after that first sign-in |
+| D1 | Returned/covered: any line from the account 24 to 48 hours after its first sign-in, out of the accounts whose 48 hours the export runs past |
+| D7 | The same, 7 to 8 days after |
+| Median value | The median number of value steps of an activated account |
+
+An account that signed in before the export began, and signs in again inside it,
+counts in the week of that later sign-in. Times are kept to the minute. The report
+also counts the sign-ins no later line of their visit names, and leaves them out.
+
 ## Where the lines come from
 
 All standard tools; nothing is queued or stored by the site.

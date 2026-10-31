@@ -282,6 +282,20 @@ vocabulary every site shares (`VisitLog.steps/0`): `sign_in_opened`, `signed_in`
 listens to its own signal in its copy of `Journey.Value`. Calls to `/api` and to
 `/mcp` (surface `mcp`) are `tool.call` lines, forwarded ones included.
 
+Weekly sign-in cohorts by source, activation (a first value step), D1 and D7
+return and the median value steps of an activated account come from exported
+lines alone, never the database:
+
+```sh
+mix visit_log.cohorts visit-lines.jsonl
+fly logs --app template-regents-sh --json --no-tail | mix visit_log.cohorts
+```
+
+It reads Sentinel's export or Fly's JSON log lines, one JSON object a line, and its
+window is only what the export holds (Sentinel keeps visit lines 30 days). A sign-in
+is tied to its source by the visit id alone (`docs/logging-replay-plan.md`, "First
+touch" and "Cohort report").
+
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the

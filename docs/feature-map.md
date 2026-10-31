@@ -195,6 +195,9 @@ the agent's own row on the site: when the agent was last seen, added the first t
   refused or failed create writing none, and a Global Privacy Control browser writing
   none; `/api/agents/v1` and `/mcp` calls written as `tool.call` lines with the caller
   as actor. No check yet: these checks are added once the change has worked live.
+- The cohort report (`mix visit_log.cohorts`): weekly cohorts, sources, activation,
+  D1 and D7 over a fixed set of lines, the three line shapes it reads, and a sign-in
+  no later line names left out. No check yet, as above.
 - First touch through sign-in: a sign-in exchange that binds writes one `signed_in`
   step and a refresh writes none, and the reloaded page's next line in the same visit
   names the account. No check yet, as above.
