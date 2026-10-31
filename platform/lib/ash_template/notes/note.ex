@@ -20,8 +20,9 @@ defmodule AshTemplate.Notes.Note do
   An archived note goes after all the others and keeps everything else,
   its pin included; archiving and unarchiving are free.
 
-  Each new note is told as `:note_created`, and one an agent wrote for its
-  person is offered to Regent Points (`AshTemplate.Points.Award`).
+  Each new note is told as `:note_created`: the visit log writes its value step
+  (`AshTemplate.Journey.Value`), and one an agent wrote for its person is
+  offered to Regent Points (`AshTemplate.Points.Award`).
   """
 
   use Ash.Resource,

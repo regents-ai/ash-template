@@ -38,7 +38,7 @@ Only five metadata fields can reach a line (`AshTemplateWeb.VisitLog.fields/0`):
 | --- | --- |
 | `visit` | A random id for one browser visit, kept in an httpOnly cookie for the browser session. A page's scripts that send no cookies send it in `x-regent-visit`. It is not linked to the account |
 | `request_id` | The request id Phoenix already gives every request |
-| `surface` | `page`, `webmcp`, `cli`, `agent_http` or `job`. An `/api` call that names no tool or command but carries a visit, in the cookie or the header, is the page's own script, so it is `page` |
+| `surface` | `page`, `webmcp`, `cli`, `agent_http`, `mcp` or `job`. An `/api` call that names no tool or command but carries a visit, in the cookie or the header, is the page's own script, so it is `page`. A call to the hosted MCP server at `/mcp` is `mcp` |
 | `actor` | `person:`, `agent:` or `anonymous`, then the first 8 bytes of an HMAC of the account or agent id, keyed from the site's secret. The same person always gets the same code; the code can't be turned back into the id |
 | `event` | `name`, `where`, `outcome` and `ms` (below); a `tool.call` also has `client` |
 
@@ -48,7 +48,7 @@ they are written as `other`. Nothing a person typed can reach a line.
 | Event | Written when | `where` | `outcome` |
 | --- | --- | --- | --- |
 | `request` | A page request finishes | The route, such as `/rooms/:room` | `ok` or `status_404` |
-| `tool.call` | An `/api` request finishes | The tool name from `x-regent-client`, else the route | `ok`, the error's code, or `status_N`; `client` is `webmcp`, `regents-cli/<version>`, another program's `<name>/<version>`, `other` or `none` |
+| `tool.call` | An `/api` or `/mcp` request finishes, told by its whole path even inside a plug the router forwards to (`RegentAgents.HTTP` under `/api/agents/v1`, AshAi's MCP router) | The tool name from `x-regent-client`, else the route | `ok`, the error's code, or `status_N`; `client` is `webmcp`, `regents-cli/<version>`, another program's `<name>/<version>`, `other` or `none` |
 | `page` | A connected page opens or changes address | The route | none |
 | `press` | A page or component event finishes | `View:event` | `ok`, `failed`, or for wallet steps `sent`, `signed` or the failure reason |
 | `action` | An Ash create, update, destroy or generic action finishes during a request, press or job | `resource.action` | none |
@@ -58,11 +58,52 @@ they are written as `other`. Nothing a person typed can reach a line.
 | `tool.unsent` | A browser tool's call never got an answer | The tool | `unreachable` or `outcome_unknown` |
 | `press.unsent` | A wallet step's answer never reached the server | The step | `lost` |
 | `arrival` | The first page of a visit has connected (a crawler that runs no script writes none) | The route | Where the visit came from: `chatgpt`, `perplexity`, `claude`, `gemini`, `copilot`, `google`, `bing`, `duckduckgo`, `x`, `linkedin`, `github`, `hackernews`, `reddit` (from `utm_source`, else the referring site), `site`, `other_site` or `direct`. The referring address is never written |
-| `step` | A step of the shared journey | `sign_in_opened` (a Sign in button pressed), `signed_in` (the sign-in exchange succeeded), `pairing_code_shown`, `agent_paired` | The agent's harness for the two pairing steps, else none |
+| `step` | A step of the shared journey, from the product-event vocabulary below | One of `steps/0` | The agent's harness for the two pairing steps; `person` or `agent` for a value step; else none |
 
 Where people stop is read from these alone: per visit, its `arrival`, then how far
 it got along `sign_in_opened`, `signed_in`, `pairing_code_shown`, `agent_paired`,
-then its first `action`. A returning person is an `actor` seen on an earlier day.
+then its first value step. A returning person is an `actor` seen on an earlier day.
+
+## Product events
+
+The `step` names are the product-event vocabulary
+(`AshTemplateWeb.VisitLog.steps/0`): one fixed list, the same on every site, whose
+names never change. A site writes only the names it has; its value action is the
+one value name that is its own. Each is a `step` line with the visit, actor and
+surface of the request or page it happened in, so it needs no field, table or
+cookie of its own.
+
+| Name | Written when | Written by | `actor` | `outcome` |
+| --- | --- | --- | --- | --- |
+| `sign_in_opened` | A Sign in button was pressed: the one step only the browser sees | `POST /visit-log` | The browser's | none |
+| `signed_in` | The sign-in exchange (`POST /auth/privy/session`) succeeded | `VisitLog.Events`, as the answer is sent | The browser's | none |
+| `pairing_code_shown` | The pairing box issued a pairing code | `AshTemplateWeb.PairingBox` | The person | The harness |
+| `agent_paired` | An agent paired with one of the codes the person's pairing box shows | same | The person | The harness |
+| `note_created` | The template's value action: a note was created | `AshTemplate.Journey.Value`, on `AshTemplate.Notes.Signals` `:note_created` | The note's account, as `person:`, whoever acted | `person`, or `agent` for the account's agent |
+| `contribution_made` | Keyfleet's value action: a contribution was accepted | Keyfleet's own `Journey.Value` | same | same |
+| `fix_succeeded` | Patchbay's value action: a fix succeeded | Patchbay's | same | same |
+| `eval_completed` | Techtree's value action: an eval completed | Techtree's | same | same |
+| `launch_confirmed` | Autolaunch's value action: a launch was confirmed | Autolaunch's | same | same |
+
+A value step comes from the signal the site's own domain emits for its value
+action, heard by an Ash signal listener (`AshTemplate.Journey.Value`), and never from
+the Ash telemetry the `action` lines use: an action's `:stop` event comes whether
+it succeeded or failed, while the signal is emitted only once the action's checks
+and its write have passed. The listener runs in the action's own process and
+transaction, so the line carries that request's or page's visit and surface (a
+note an agent writes through `/mcp` says `mcp`), and it answers `:ok` whatever
+happens, so a line never fails the action. One case remains: when a
+later listener of the same signal fails and rolls the action back, the line has
+already been written.
+
+A value step names the account the value belongs to, so a person whose agent does
+the work still activates. A browser that sends Global Privacy Control writes no
+step at all, value steps included, exactly as before.
+
+Each site copies `Journey.Value` with its own signal: Keyfleet `contribution_made`,
+Patchbay `fix_succeeded`, Techtree `eval_completed`, Autolaunch `launch_confirmed`.
+A site whose value action emits no signal yet adds one (`emit` in the action, a
+`Signals` module in its domain; `skills/ash-signals`).
 
 A press line is written when the press finishes, so the actions it caused come
 just before it. Phoenix's own request lines are off in production: they repeat

@@ -189,6 +189,12 @@ the agent's own row on the site: when the agent was last seen, added the first t
 
 ## Gaps
 
+- The product-event vocabulary (`docs/logging-replay-plan.md`, "Product events"):
+  a note created on the page, through the API or through `/mcp` writing one
+  `note_created` step for the note's account with the right surface and outcome, a
+  refused or failed create writing none, and a Global Privacy Control browser writing
+  none; `/api/agents/v1` and `/mcp` calls written as `tool.call` lines with the caller
+  as actor. No check yet: these checks are added once the change has worked live.
 - Saving a name in a real browser, and the page's Privy bridge itself: the walk
   answers for Privy with a stand-in, so it proves the refusal; the server check
   proves the save and `public_name.test.ts` the save path.

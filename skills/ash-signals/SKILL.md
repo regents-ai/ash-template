@@ -20,7 +20,7 @@ all five sites at once (regent-workflow, "Shared changes").
 | --- | --- | --- | --- |
 | `AshTemplate.Rooms.Signals` | `:message_posted` (`message_id`) | `Rooms.Message` `:post` | `Activity.Notification` `:notify_mentions`, which runs `NotifyMentions` |
 | `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, which runs `RequestLabel` |
-| `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note` |
+| `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note`; `Journey.Value` `:note_created`, which writes the site's value step in the visit log |
 | `RegentCredits.Signals` (elixir-utils `credits`) | `:purchase_credited`, `:purchase_attributed` (`purchase_id`, `privy_user_id`) | `RegentCredits.Purchase`, when a purchase is credited or a waiting one finds its account | `Points.Award` `:credits_purchase` |
 
 Every listener uses the default inline delivery. Its work commits with the action that

@@ -5,9 +5,13 @@ defmodule AshTemplateWeb.VisitLog.Events do
   `AshTemplateWeb.VisitLog.on_mount/4`:
 
   - `request`: a page or file answered over HTTP, by route and outcome.
-  - `tool.call`: an `/api` call, named by the tool or command the caller gave in
-    `x-regent-client`, else by its route; the outcome is `ok` or the error code
-    the answer carried; `client` names the program that called.
+  - `tool.call`: an `/api` call or a hosted MCP call at `/mcp`, named by the tool
+    or command the caller gave in `x-regent-client`, else by its route; the
+    outcome is `ok` or the error code the answer carried; `client` names the
+    program that called. The answer is read as it is sent, when a plug the
+    router forwards to (`RegentAgents.HTTP`, `RegentIdentity.HTTP`, AshAi's MCP
+    router) holds the request with only the rest of its path, so the call is
+    told by its whole path (`AshTemplateWeb.VisitLog.call?/1`).
   - `press`: an event a page or one of its components handled, as `View:event`.
     A wallet step reports what the wallet answered: `sent`, `signed` or why
     nothing was sent.
@@ -16,6 +20,10 @@ defmodule AshTemplateWeb.VisitLog.Events do
   - `job`: a background job's run, by worker and how it ended.
   - `outgoing`: a call to another site, by method and host, and its status.
   - `step` `signed_in`: the browser's sign-in exchange succeeded.
+
+  A site's value action writes its own `step` from the domain signal it emits
+  (`AshTemplate.Journey.Value`), not from these events: an Ash action's `:stop`
+  event comes whether the action succeeded or failed.
 
   Actions and outgoing calls are written only inside a request, page or job, so
   the chain reader's own polling writes nothing.
@@ -54,24 +62,19 @@ defmodule AshTemplateWeb.VisitLog.Events do
   @doc false
   def handle([:phoenix, :endpoint, :stop], %{duration: duration}, %{conn: conn}, _config) do
     unless quiet?(conn) do
-      Logger.metadata(
-        actor: VisitLog.actor(conn.assigns[:actor] || conn.assigns[:current_human_account])
-      )
-
+      Logger.metadata(actor: VisitLog.actor(requester(conn)))
       route = VisitLog.route(AshTemplateWeb.Router, conn.method, conn.request_path, conn.host)
 
-      case conn.path_info do
-        ["api" | _] ->
-          VisitLog.record(
-            "tool.call",
-            VisitLog.client(conn) || route,
-            answer(conn),
-            ms(duration),
-            VisitLog.caller(conn)
-          )
-
-        _page ->
-          requested(conn, route, ms(duration))
+      if VisitLog.call?(conn) do
+        VisitLog.record(
+          "tool.call",
+          VisitLog.client(conn) || route,
+          answer(conn),
+          ms(duration),
+          VisitLog.caller(conn)
+        )
+      else
+        requested(conn, route, ms(duration))
       end
     end
   end
@@ -140,6 +143,11 @@ defmodule AshTemplateWeb.VisitLog.Events do
     do: status in 200..299
 
   defp signed_in?(_conn, _route), do: false
+
+  # Who asked: the API's own actor, the hosted MCP server's (kept for Ash on the
+  # connection), else the browser session's account.
+  defp requester(%Plug.Conn{assigns: assigns} = conn),
+    do: assigns[:actor] || Ash.PlugHelpers.get_actor(conn) || assigns[:current_human_account]
 
   # The health check and the browser's own reports would only describe themselves.
   defp quiet?(%Plug.Conn{path_info: ["healthz"]}), do: true

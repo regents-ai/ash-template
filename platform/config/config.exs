@@ -47,6 +47,7 @@ config :ash_template,
     AshTemplate.Agents,
     AshTemplate.Dms,
     AshTemplate.Polls,
+    AshTemplate.Journey,
     AshTemplate.Notes,
     AshTemplate.Points,
     AshTemplate.Rooms

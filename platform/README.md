@@ -270,6 +270,18 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/oauth/authorize`, `/oauth/connections`, `/oauth/connections/revoke` | GET, POST | The consent page under the signed-in browser session, and Connected apps, where a person sees and disconnects their apps (`RegentOAuth.Consent`). They refuse while the connector is off. |
 | `/api/stripe/notices` | POST | Stripe's signed notices about card and Link purchases of Credits; found only while `STRIPE_SECRET_KEY` is set. |
 
+## Visit lines
+
+Every request, press, Ash action, job and outside call writes one visit line in
+production's JSON (`AshTemplateWeb.VisitLog`, `docs/logging-replay-plan.md`), naming
+accounts and agents only by a one-way code. The `step` lines are the product-event
+vocabulary every site shares (`VisitLog.steps/0`): `sign_in_opened`, `signed_in`,
+`pairing_code_shown`, `agent_paired` and each site's value action, here
+`note_created`, written by `AshTemplate.Journey.Value` from the notes' own
+`:note_created` signal. A site names its value action in `VisitLog.values/0` and
+listens to its own signal in its copy of `Journey.Value`. Calls to `/api` and to
+`/mcp` (surface `mcp`) are `tool.call` lines, forwarded ones included.
+
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the

@@ -6,7 +6,8 @@ defmodule AshTemplate.Notes.Signals do
 
     * `:note_created`: a note was written; `changed_by_agent_id` names the agent
       that wrote it for its person, if one did. Points offers an agent's note to
-      Regent Points (`AshTemplate.Points.Award`).
+      Regent Points (`AshTemplate.Points.Award`), and the visit log writes the
+      template's value step, `note_created` (`AshTemplate.Journey.Value`).
     * `:note_saved`: a note was created or edited while the server can ask Jev.
       A label question is created for it (`AshTemplate.Notes.Decision`).
   """

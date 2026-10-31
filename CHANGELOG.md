@@ -6187,3 +6187,28 @@ way, and the library's own site-tool serving is gone.
   behind the newest, not 300. The template pins `fd597f51`, so it and the sites get this
   with their next pin of elixir-utils main.
 - Skills only in this repository; no code, pin or database change.
+
+## 2026-10-31 — Product events in the visit log
+
+- The visit log's `step` names are now the product-event vocabulary every site shares,
+  one fixed list (`AshTemplateWeb.VisitLog.steps/0`): `sign_in_opened`, `signed_in`,
+  `pairing_code_shown`, `agent_paired`, and one value action a site, `note_created`
+  (template), `contribution_made` (Keyfleet), `fix_succeeded` (Patchbay),
+  `eval_completed` (Techtree) and `launch_confirmed` (Autolaunch). Every name but
+  `sign_in_opened` is written by the server once its change has succeeded.
+- A note created on any surface writes a `note_created` step, from the notes' own
+  `:note_created` signal (`AshTemplate.Journey.Value`, in a small `Journey` domain that
+  stores nothing), never from Ash telemetry, whose `:stop` event also comes for a failed
+  action. The line names the note's account as `person:`, whether the person or their
+  agent acted, says which in its outcome, and keeps the visit and surface of the request
+  or page. It answers `:ok` whatever happens, so it never fails the save. A browser that
+  sends Global Privacy Control writes no step, as before.
+- Calls to the hosted MCP server at `/mcp` have the surface `mcp`, and they and the calls
+  a router forward holds (`/api/agents/v1`, `/api/v1/profile`) are `tool.call` lines: the
+  answer is read inside the forwarded plug, which sees only the rest of the path, so the
+  call is told by its whole path (`VisitLog.call?/1`). An MCP call names the agent that
+  made it, and an API call made as a signed-in person (`Actors.Human`) names the person,
+  where both were `anonymous` before.
+- No new table, cookie or field, and no sign-in, session, Privy, pairing or agent-access
+  code changed. Not run here: the Mac runs `make check`; the checks for these lines come
+  once they have worked live (`docs/feature-map.md`, Gaps).
