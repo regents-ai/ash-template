@@ -6187,3 +6187,21 @@ way, and the library's own site-tool serving is gone.
   behind the newest, not 300. The template pins `fd597f51`, so it and the sites get this
   with their next pin of elixir-utils main.
 - Skills only in this repository; no code, pin or database change.
+
+## 2026-10-31 — phoenix_html 4.4.0; two new required fixes
+
+- `platform/mix.lock` moves phoenix_html from 4.3.0 to 4.4.0, which fixes advisory
+  EEF-CVE-2026-117645 (medium, attribute injection through `attributes_escape/1`). Lock only.
+- `security/required-fixes.json` adds phoenix_html `>= 4.4.0` and ssl_verify_fun `>= 1.1.8`
+  (EEF-CVE-2026-117666, critical: a partial-label wildcard certificate matched across a
+  dot). Every site's `make check-required-fixes` reads this list from template main, so a
+  site that locks either package below the fixed version fails its next gate until it
+  bumps. The template does not lock ssl_verify_fun.
+- The same phoenix_html bump is on elixir-utils main `09d0441` (oauth, mcp_agents) and
+  design-system main `e897314` (regent_ui). elixir-utils main `86903d0` also moves
+  mcp_agents' own lock to jose 1.11.13 and oauth's to plug_crypto 2.2.1. No database changes.
+- regents-cli 1.10.21 is on PyPI (tag commit `8c29aff8`, wheel sha256 `81b2a30c...`). The
+  Makefile pin, the agent guide's install line and expected source commit,
+  capabilities.json's release, llms.md and the CLI command docs name 1.10.21. Rollback is
+  the 1.10.20 pin `0e3768f5`. The typed command input from `33cfbddf` (Lane D, CLI-3 and
+  CLI-6) no longer applies to `cli/commands.json` and lands as its own change.

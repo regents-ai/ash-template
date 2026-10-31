@@ -2,6 +2,13 @@
 
 Changes to Ash Template, newest first.
 
+## 31 October 2026
+
+- **Command line 1.10.21.** The agent guide now asks for version 1.10.21 of the command
+  line. It signs only for an address this site's sign-in lists, and refuses any other.
+- **Safer pages.** A library that writes the site's pages is updated, which closes a way
+  to slip extra attributes into a page.
+
 ## 30 October 2026
 
 - **New type.** Every page is now set in Geist Serif: titles, text, buttons, labels and
