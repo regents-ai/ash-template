@@ -6212,3 +6212,19 @@ way, and the library's own site-tool serving is gone.
 - No new table, cookie or field, and no sign-in, session, Privy, pairing or agent-access
   code changed. Not run here: the Mac runs `make check`; the checks for these lines come
   once they have worked live (`docs/feature-map.md`, Gaps).
+
+## 2026-10-31 — First touch through sign-in
+
+- The `signed_in` step is written only when the sign-in exchange binds the browser to an
+  account (a 2xx answer saying `x-ash-session-changed: true`), not when it refreshes the
+  account the browser already has, so it is the state change the vocabulary names.
+- Its line is written as the answer is sent, before the request has read the account, so
+  it carries the browser's earlier actor, usually `anonymous`; naming the account there
+  would need a database read inside the sign-in answer. The page reloads signed in at
+  once, and that next line of the same visit names the account. The visit id alone joins
+  a visit's `arrival` source to the account, with no cookie beyond `_visit`
+  (`docs/logging-replay-plan.md`, "First touch"). A person who first signs in on a later
+  visit than their first arrival is counted under the sign-in visit's own source.
+- The plan's "Product events" and "First touch" sections now follow the "One line"
+  section whole. No sign-in, session or Privy code changed; the step reads the answer's
+  header as it already read its status.

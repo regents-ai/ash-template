@@ -64,6 +64,13 @@ Where people stop is read from these alone: per visit, its `arrival`, then how f
 it got along `sign_in_opened`, `signed_in`, `pairing_code_shown`, `agent_paired`,
 then its first value step. A returning person is an `actor` seen on an earlier day.
 
+A press line is written when the press finishes, so the actions it caused come
+just before it. Phoenix's own request lines are off in production: they repeat
+each raw path and its parameters.
+
+"What the person saw" is the outcome. Each outcome code picks the words shown,
+so the code is enough to know the message without logging its text.
+
 ## Product events
 
 The `step` names are the product-event vocabulary
@@ -76,7 +83,7 @@ cookie of its own.
 | Name | Written when | Written by | `actor` | `outcome` |
 | --- | --- | --- | --- | --- |
 | `sign_in_opened` | A Sign in button was pressed: the one step only the browser sees | `POST /visit-log` | The browser's | none |
-| `signed_in` | The sign-in exchange (`POST /auth/privy/session`) succeeded | `VisitLog.Events`, as the answer is sent | The browser's | none |
+| `signed_in` | The sign-in exchange (`POST /auth/privy/session`) bound this browser to an account: a 2xx answer saying `x-ash-session-changed: true`; a refresh of the account it already has is not one | `VisitLog.Events`, as the answer is sent | The browser's from before the exchange, usually `anonymous` (see "First touch") | none |
 | `pairing_code_shown` | The pairing box issued a pairing code | `AshTemplateWeb.PairingBox` | The person | The harness |
 | `agent_paired` | An agent paired with one of the codes the person's pairing box shows | same | The person | The harness |
 | `note_created` | The template's value action: a note was created | `AshTemplate.Journey.Value`, on `AshTemplate.Notes.Signals` `:note_created` | The note's account, as `person:`, whoever acted | `person`, or `agent` for the account's agent |
@@ -105,12 +112,26 @@ Patchbay `fix_succeeded`, Techtree `eval_completed`, Autolaunch `launch_confirme
 A site whose value action emits no signal yet adds one (`emit` in the action, a
 `Signals` module in its domain; `skills/ash-signals`).
 
-A press line is written when the press finishes, so the actions it caused come
-just before it. Phoenix's own request lines are off in production: they repeat
-each raw path and its parameters.
+## First touch
 
-"What the person saw" is the outcome. Each outcome code picks the words shown,
-so the code is enough to know the message without logging its text.
+A visit's `arrival` line says where it came from; its `signed_in` line says the
+same visit signed in. The visit id joins them, with no cookie beyond `_visit` and
+nothing stored:
+
+- The `signed_in` line is written as the exchange's answer is sent, before that
+  request has read the account, and reading it there would mean a database read
+  inside the sign-in answer. So the line carries the browser's actor from before
+  (`anonymous`), and the account is the first `person:` actor on a later line of
+  the same visit. Once the exchange binds, the page reloads signed in, and that
+  request and its page each name the account; a sign-in whose page closes first
+  names none, and the report counts it apart.
+- The source an account is counted under is the `arrival` of the visit in which it
+  first signed in. When a person first came on one visit and signs in on a later
+  one (the `_visit` cookie ends when the browser closes), the sign-in visit's own
+  source counts, often `direct`; their first visit's source is not carried over.
+- A visit with no `arrival` line (its first page never connected) has the source
+  `unknown`. A Global Privacy Control browser has no visit and writes no `arrival`
+  or `signed_in`, so it never reaches a cohort.
 
 ## Where the lines come from
 

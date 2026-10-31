@@ -19,7 +19,13 @@ defmodule AshTemplateWeb.VisitLog.Events do
     `resource.action`, with its time.
   - `job`: a background job's run, by worker and how it ended.
   - `outgoing`: a call to another site, by method and host, and its status.
-  - `step` `signed_in`: the browser's sign-in exchange succeeded.
+  - `step` `signed_in`: the browser's sign-in exchange bound it to an account
+    (the answer says `x-ash-session-changed: true`). The line is written as the
+    answer is sent, before the request knows the account, so its actor is the
+    browser's from before; the page reloads at once, signed in, and that next
+    line of the same visit names the account. The visit id alone, with no
+    cookie beyond `_visit`, ties the account to the visit's `arrival`
+    (docs/logging-replay-plan.md, "First touch").
 
   A site's value action writes its own `step` from the domain signal it emits
   (`AshTemplate.Journey.Value`), not from these events: an Ash action's `:stop`
@@ -139,8 +145,11 @@ defmodule AshTemplateWeb.VisitLog.Events do
     if signed_in?(conn, route), do: VisitLog.step("signed_in")
   end
 
-  defp signed_in?(%Plug.Conn{method: "POST", status: status}, "/auth/privy/session"),
-    do: status in 200..299
+  # Only a bind: an exchange that refreshes the account the browser already has is
+  # not a new sign-in.
+  defp signed_in?(%Plug.Conn{method: "POST", status: status} = conn, "/auth/privy/session") do
+    status in 200..299 and Plug.Conn.get_resp_header(conn, "x-ash-session-changed") == ["true"]
+  end
 
   defp signed_in?(_conn, _route), do: false
 
