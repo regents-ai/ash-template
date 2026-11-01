@@ -6281,3 +6281,19 @@ way, and the library's own site-tool serving is gone.
   signed by the browser host, as on main. The contract moves to 9.0.0.
 - Released under Sean's 7a; its shared migration `20261028090000_receipts_paid_with`
   runs only on Sean's letter, through `/app/bin/migrate-shared` on template-regents-sh.
+
+## 2026-11-01 — Released v163: notes pin takes 1 USDC or 1 Credit
+
+- Fly v163, image 03173c2 (03173c28, the Credits landing), live 00:15Z under Sean's
+  "1a" on SIWA-V2-SHARED-DB (template first), relayed by the orchestrator; rollback
+  v162 (8460e18f). Main fast-forwarded 31b0f439..03173c28 before the build.
+- Before the deploy, from the 03173c2 image on temporary machines that removed
+  themselves (never-add-machines set aside for this step, as for v111):
+  `pending-migrations` printed only `shared-pending: regent_payments 20261028090000`;
+  `migrate-shared` printed `applied: regent_payments 20261028090000`
+  (receipts_paid_with). The release step printed "Migrations already up".
+- After: `/capabilities.json` reports 03173c28; the API contract is 9.0.0 and the
+  pin tool takes `"pay_with": "credits"`; `/`, `/notes`, `/account`,
+  `/account/credits`, `/account/agents`, `/skill.md`, `/agents.md`, `/healthz`,
+  `/api/v1/health` answer 200; no errors in the logs. One web machine, as before.
+- Not yet proven live: a Credits pin by a paired agent, which is Sean's trial.
