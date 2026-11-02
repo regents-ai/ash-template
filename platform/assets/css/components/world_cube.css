@@ -112,23 +112,11 @@
   white-space: nowrap;
 }
 
-.world-cube__hint,
 .world-cube__leave {
   position: absolute;
   opacity: 0;
   visibility: hidden;
   transition: opacity 320ms ease-out, visibility 0s 320ms;
-}
-
-.world-cube__hint {
-  inset: auto var(--space-3) var(--space-3);
-  margin: 0;
-  color: color-mix(in srgb, var(--world-cube-ink) 62%, transparent);
-  font: 0.72rem/1.5 var(--font-family-ui);
-  letter-spacing: var(--tracking-microlabel);
-  text-align: center;
-  text-transform: uppercase;
-  pointer-events: none;
 }
 
 .world-cube__leave {
@@ -194,7 +182,6 @@
   translate: 0 0.75rem;
 }
 
-.world-cube[data-world-ready="true"][data-world-state="orbit"] .world-cube__hint,
 .world-cube[data-world-ready="true"]:is([data-world-state="entering"], [data-world-state="inside"])
   .world-cube__leave {
   opacity: 1;

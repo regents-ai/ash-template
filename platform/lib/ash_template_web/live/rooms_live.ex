@@ -423,13 +423,10 @@ defmodule AshTemplateWeb.RoomsLive do
               rows="2"
               maxlength="2000"
               aria-invalid={field.aria_invalid}
-              aria-describedby={"room-message-hint #{field.described_by}"}
+              aria-describedby={field.described_by}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
           </Primitives.field>
           <div class="rooms-composer__actions">
-            <p id="room-message-hint" class="rooms-composer__hint rg-muted">
-              Enter sends. Shift+Enter starts a new line.
-            </p>
             <Primitives.button
               :if={@editing}
               type="button"
@@ -458,10 +455,12 @@ defmodule AshTemplateWeb.RoomsLive do
         </section>
 
         <section class="account-panel" aria-labelledby="room-mutes-title">
-          <h2 id="room-mutes-title">Muted</h2>
-          <p class="rg-muted">
-            You don’t see their messages in any room. They aren’t told.
-          </p>
+          <h2 id="room-mutes-title">
+            Muted
+            <Primitives.tip id="room-mutes-about" label="About muting">
+              You don’t see their messages in any room. They aren’t told.
+            </Primitives.tip>
+          </h2>
           <ul :if={@mutes != []} class="rooms-mutes">
             <li :for={mute <- @mutes}>
               <bdi>{mute.muted_name}</bdi>
@@ -484,7 +483,6 @@ defmodule AshTemplateWeb.RoomsLive do
           aria-labelledby="room-topic-title"
         >
           <h2 id="room-topic-title">Room topic</h2>
-          <p class="rg-muted">You started this room, so you choose what it’s about.</p>
           <.form
             for={@topic_form}
             id="room-topic-form"

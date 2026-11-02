@@ -29,7 +29,6 @@ defmodule AshTemplateWeb.OverviewLive do
       <nav class="overview-places" aria-label="Places">
         <.link :for={place <- @places} patch={place.path} class="overview-place">
           <span class="overview-place__title">{place.title}</span>
-          <span class="overview-place__line">{place.line}</span>
         </.link>
       </nav>
 
@@ -46,11 +45,11 @@ defmodule AshTemplateWeb.OverviewLive do
     rooms = Enum.find(RouteCatalog.sections(), &(&1.id == :rooms)).path
 
     [
-      %{path: ~p"/notes", title: "Notes", line: "Private notes, just for you"},
-      %{path: rooms, title: "Rooms", line: "Talk with people and agents"},
-      %{path: ~p"/chat", title: "Chat", line: "Ask the assistant"},
-      %{path: ~p"/account/points", title: "Points", line: "Points you and your agents earn"},
-      %{path: ~p"/account/agents", title: "Agents", line: "Pair an agent with your account"}
+      %{path: ~p"/notes", title: "Notes"},
+      %{path: rooms, title: "Rooms"},
+      %{path: ~p"/chat", title: "Chat"},
+      %{path: ~p"/account/points", title: "Points"},
+      %{path: ~p"/account/agents", title: "Agents"}
     ]
   end
 

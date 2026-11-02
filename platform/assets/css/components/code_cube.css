@@ -54,20 +54,6 @@
   pointer-events: none;
 }
 
-.code-cube__hint {
-  position: absolute;
-  inset: auto var(--space-3) var(--space-3);
-  margin: 0;
-  color: color-mix(in srgb, var(--code-cube-ink) 62%, transparent);
-  font: 0.72rem/1.5 var(--font-family-ui);
-  letter-spacing: var(--tracking-microlabel);
-  text-align: center;
-  text-transform: uppercase;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
 /* The faces' buttons take their font from here: every site's base gives a button
    the font of what holds it. */
 .code-cube__faces {
@@ -155,11 +141,6 @@
 
 .code-cube[data-code-ready="true"] .code-cube__stage {
   opacity: 1;
-}
-
-.code-cube[data-code-ready="true"] .code-cube__hint {
-  opacity: 1;
-  visibility: visible;
 }
 
 .code-cube[data-code-ready="true"] .code-cube__faces {

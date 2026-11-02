@@ -198,7 +198,11 @@ defmodule AshTemplateWeb.PollsLive do
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
             >{@form.params["choices_text"]}</textarea>
-            <:hint>One on each line.</:hint>
+            <:tip>
+              <Primitives.tip id="poll-start-choices-about" label="About choices">
+                One on each line.
+              </Primitives.tip>
+            </:tip>
           </Primitives.field>
           <Primitives.field
             :let={field}
@@ -287,9 +291,6 @@ defmodule AshTemplateWeb.PollsLive do
           You voted for “{@poll.value.my_choice}”.
         </p>
         <p :if={@poll.value.open && is_nil(@actor)} class="rg-muted">Sign in to vote.</p>
-        <p :if={@poll.value.open && is_nil(@poll.value.totals)} class="rg-muted">
-          The counts show when the poll closes.
-        </p>
 
         <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
 

@@ -20,9 +20,14 @@
   border-block-end: 1px solid var(--color-border);
 }
 
-/* A chat with no messages yet takes only the room its prompt needs. */
+/* A chat with no messages yet shows only the message box. */
 .chat-scroller:has(.chat-messages[data-state="empty"]) {
   block-size: auto;
+  border-block-end: 0;
+}
+
+.chat-scroller:has(.chat-messages[data-state="empty"]) .chat-scroller__inner {
+  padding-block: 0;
 }
 
 .chat-scroller__inner {
@@ -106,29 +111,4 @@
   gap: 0.5rem;
 }
 
-.chat-composer__hint {
-  margin: 0 auto 0 0;
-  font-size: 0.8rem;
-}
-
-@media (pointer: coarse) {
-  .chat-composer__hint {
-    display: none;
-  }
-}
-
-/* The empty line shows only when it is the list's one child, and only once
-   a read has landed. */
-.chat-empty {
-  display: none;
-  padding: 0.5rem 0.75rem;
-}
-
-.chat-empty:only-child {
-  display: block;
-}
-
-.chat-messages:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .chat-empty {
-  display: none;
-}
 }

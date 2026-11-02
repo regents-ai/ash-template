@@ -239,14 +239,20 @@ defmodule AshTemplateWeb.CreditsAdmin do
     ~H"""
     <div id={@id} class="credits-admin">
       <section class="credits-admin__part" aria-labelledby={"#{@id}-give"}>
-        <h2 id={"#{@id}-give"}>Give Credits</h2>
-        <p>
-          Given Credits never expire and are never refunded. A gift to a wallet nobody has signed in with yet waits until someone does.
-        </p>
+        <h2 id={"#{@id}-give"}>
+          Give Credits
+          <P.tip id={"#{@id}-give-about"} label="About given Credits">
+            Given Credits never expire and are never refunded. A gift to a wallet nobody has signed in with yet waits until someone does.
+          </P.tip>
+        </h2>
         <form id={"#{@id}-give-form"} phx-submit="give" phx-target={@myself}>
           <P.field :let={field} id={"#{@id}-to"} label="Recipients">
             <textarea id={field.id} name="to" rows="4" required></textarea>
-            <:hint>Wallet addresses or Privy account ids, one per line or separated by commas.</:hint>
+            <:tip>
+              <P.tip id={"#{@id}-to-about"} label="About recipients">
+                Wallet addresses or Privy account ids, one per line or separated by commas.
+              </P.tip>
+            </:tip>
           </P.field>
           <P.field :let={field} id={"#{@id}-amount"} label="Credits each">
             <input id={field.id} name="amount" inputmode="decimal" autocomplete="off" required />
@@ -266,7 +272,11 @@ defmodule AshTemplateWeb.CreditsAdmin do
         <form id={"#{@id}-find-form"} phx-submit="find" phx-target={@myself}>
           <P.field :let={field} id={"#{@id}-search"} label="Account">
             <input id={field.id} name="search" value={@search} autocomplete="off" />
-            <:hint>A wallet address or Privy account id.</:hint>
+            <:tip>
+              <P.tip id={"#{@id}-search-about"} label="About accounts">
+                A wallet address or Privy account id.
+              </P.tip>
+            </:tip>
           </P.field>
           <P.button type="submit" variant="secondary">Find</P.button>
         </form>
@@ -344,7 +354,11 @@ defmodule AshTemplateWeb.CreditsAdmin do
         <form id={"#{@id}-history-form"} phx-submit="history_of" phx-target={@myself}>
           <P.field :let={field} id={"#{@id}-history-of"} label="Account">
             <input id={field.id} name="privy_user_id" value={@history_of} autocomplete="off" />
-            <:hint>The person's Privy account id.</:hint>
+            <:tip>
+              <P.tip id={"#{@id}-history-of-about"} label="About accounts">
+                The person's Privy account id.
+              </P.tip>
+            </:tip>
           </P.field>
           <P.button type="submit" variant="secondary">Show history</P.button>
         </form>

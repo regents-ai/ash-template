@@ -46,7 +46,7 @@ defmodule AshTemplateWeb.ActivityLive do
           Your activity couldn’t be loaded. Refresh the page to try again.
         </Primitives.notice>
         <p :if={@notifications.state == :empty} class="rg-muted">
-          Nothing yet. When someone mentions you in a room, it appears here.
+          Nothing yet
         </p>
         <ol :if={@notifications.value not in [nil, []]} class="activity-list">
           <li

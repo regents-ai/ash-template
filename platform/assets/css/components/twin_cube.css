@@ -72,10 +72,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .twin-cube .world-cube__hint {
-    right: 50%;
-  }
-
   .twin-cube__label:nth-child(2) {
     grid-area: 1 / 2;
   }

@@ -290,13 +290,10 @@ defmodule AshTemplateWeb.DmsLive do
               rows="2"
               maxlength="2000"
               aria-invalid={field.aria_invalid}
-              aria-describedby={"dms-message-hint #{field.described_by}"}
+              aria-describedby={field.described_by}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
           </Primitives.field>
           <div class="rooms-composer__actions">
-            <p id="dms-message-hint" class="rooms-composer__hint rg-muted">
-              Enter sends. Shift+Enter starts a new line.
-            </p>
             <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
           </div>
         </.form>

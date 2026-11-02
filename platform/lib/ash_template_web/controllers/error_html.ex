@@ -1,5 +1,5 @@
 defmodule AshTemplateWeb.ErrorHTML do
-  @moduledoc "Errors on HTML requests: a headline and recovery links, in the visitor's chosen theme."
+  @moduledoc "Errors on HTML requests: a headline and the ways back, in the visitor's chosen theme."
   use AshTemplateWeb, :html
 
   def render(template, assigns) do
@@ -17,11 +17,7 @@ defmodule AshTemplateWeb.ErrorHTML do
         <link rel="stylesheet" href="/assets/js/app.css" />
       </head>
       <body>
-        <Regent.Utility.page title={@title} context="Ash Template" id="error-page">
-          <p>Use the homepage or one of the links below to continue.</p>
-          <:actions>
-            <a class="rg-button" href="/">Homepage</a>
-          </:actions>
+        <Regent.Utility.page title={@title} id="error-page">
           <:note>
             <nav aria-label="Recovery links">
               <ul class="rg-utility__links">

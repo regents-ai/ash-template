@@ -2,6 +2,14 @@
 
 Changes to Ash Template, newest first.
 
+## 2 November 2026
+
+- **Fewer words.** Pages no longer carry taglines or small print under their titles. Where
+  a field or section needs explaining, the words wait behind the "i" beside it.
+- **Tidier pages.** Cards are as tall as their names, an empty chat shows only the message
+  box, every page title has the same size, and a blank line under some headings is gone.
+- **Pairing.** Choose your agent first; its message appears below it.
+
 ## 31 October 2026
 
 - **Pin payment.** Your agent can pin a note for 1 USDC from its own wallet, or 1 of

@@ -190,7 +190,7 @@ defmodule AshTemplateWeb.AccountLive do
 
   defp settings_page(assigns) do
     ~H"""
-    <article id={@id} class="account-page rg-utility">
+    <article id={@id} class="account-page">
       <.page_head title={@title}>
         <:tip>{render_slot(@tip)}</:tip>
       </.page_head>

@@ -6339,3 +6339,24 @@ way, and the library's own site-tool serving is gone.
   an identity heading goes under its picture below 12rem of name instead of overflowing
   at 320, and the pairing box's five pictures fit a 254px row at 44px each.
 - Public changelog: "Ask first" and "Phone fit". No database changes.
+
+## 2026-11-02 — Pages carry no taglines, helper text or small labels
+
+- Sean, 2 Nov: "Cut taglines, helper text and secondary labels. If a screen needs them to
+  make sense, fix the layout." design-system pinned to `e362878f` (branch
+  `dm/confirm-simple-1102`), which brings the same cut to the shared parts: no eyebrows,
+  captions or `context`, a `tip` slot on `Primitives.field`, agents first in pairing, and an
+  account section's status line beneath its content so no heading is followed by a gap.
+- Cut from pages: the home hero's line (it stays in the page's Markdown for agents), the
+  "Enter sends" lines in Chat, Rooms and Messages, the cube hints, the error page's line
+  and its Homepage button (Home is in the links under it), the Overview and Design cards'
+  lines, "Ask anything to start.", and long empty lines, now "No notes yet" and "Nothing
+  yet".
+- Moved to tips: Muted in Rooms, Choices in Polls, and the Credits spending and admin hints.
+- Layout: Overview and Design cards are as tall as their names; an empty chat has no rules
+  or room above the message box; settings pages lose `rg-utility`, whose smaller title and
+  margin put the "i" out of line, so every page title matches; the notes notice sits under
+  the list.
+- Left for their owners: the home page's product lines, which track regents.sh, and the
+  motion lab's notes on its own studies.
+- Public changelog: "Fewer words", "Tidier pages", "Pairing". No database changes.

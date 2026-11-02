@@ -98,7 +98,6 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   const name = agentWindow.getByRole("textbox", {name: "Name"})
   const save = agentWindow.getByRole("button", {name: "Save", exact: true})
   await expect(name).toHaveValue(agent)
-  await expect(agentWindow.getByText("Only you see this name.")).toBeVisible()
   await resting(agentWindow)
   if (hasTouch)
     for (const target of [name, save])
@@ -118,7 +117,7 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   await expect(
     renamedWindow.getByText(`Saved. This agent is now called ${renamed} on every Regent site.`),
   ).toBeVisible()
-  await expect(renamedWindow.getByRole("alert")).toHaveCount(0)
+  await expect(renamedWindow.getByRole("alert")).toBeEmpty()
   await expect(page.getByRole("button", {name: `See ${renamed}’s actions`})).toBeAttached()
   await problems.expect()
 })

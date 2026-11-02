@@ -141,7 +141,7 @@ defmodule AshTemplateWeb.NotesLive do
       <.portal id="notes-sidebar" target="#shell-sidebar-page">
         <div class="shell-sidebar__page">
           <ul :if={@actor} id="notes-sidebar-list" class="shell-sidebar__list" phx-update="stream">
-            <li id="notes-sidebar-empty" class="shell-sidebar__empty">No notes yet.</li>
+            <li id="notes-sidebar-empty" class="shell-sidebar__empty">No notes yet</li>
             <li :for={{dom_id, note} <- @streams.note_links} id={dom_id}>
               <button type="button" phx-click="edit" phx-value-id={note.id} phx-target={@myself}>
                 {note.title}
@@ -223,14 +223,12 @@ defmodule AshTemplateWeb.NotesLive do
 
         <section class="account-panel" aria-labelledby="notes-list-title">
           <h2 id="notes-list-title">Your notes</h2>
-          <%!-- Always one line tall, so the list below never moves. --%>
-          <p class="notes-notice" aria-live="polite">{@notice}</p>
           <Primitives.notice :if={@notes.state in [:error, :stale]} tone="error">
             Your notes couldn’t be loaded. Refresh the page to try again.
           </Primitives.notice>
           <ul id="notes-list" class="notes-list" data-state={@notes.state} phx-update="stream">
             <li id="notes-empty" class="notes-empty rg-muted">
-              No notes yet. Write your first one with the form.
+              No notes yet
             </li>
             <li :for={{dom_id, note} <- @streams.notes} id={dom_id} class="notes-item">
               <Primitives.status :if={note.pinned_at} tone="info">Pinned</Primitives.status>
@@ -288,6 +286,8 @@ defmodule AshTemplateWeb.NotesLive do
               </div>
             </li>
           </ul>
+          <%!-- Always one line tall, so nothing moves when it speaks. --%>
+          <p class="notes-notice" aria-live="polite">{@notice}</p>
         </section>
       </div>
     </article>

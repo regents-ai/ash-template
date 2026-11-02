@@ -240,17 +240,6 @@
   justify-content: flex-end;
 }
 
-.rooms-composer__hint {
-  margin: 0 auto 0 0;
-  font-size: 0.8rem;
-}
-
-@media (pointer: coarse) {
-  .rooms-composer__hint {
-    display: none;
-  }
-}
-
 .rooms-mutes li {
   justify-content: space-between;
 }

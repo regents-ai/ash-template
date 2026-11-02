@@ -177,7 +177,11 @@ defmodule AshTemplateWeb.CreditsAgentSpending do
             aria-invalid={field.aria_invalid}
             aria-describedby={field.described_by}
           />
-          <:hint>Bids still held count until they come back.</:hint>
+          <:tip>
+            <P.tip id={"#{@id}-#{index}-daily-about"} label="About the daily limit">
+              Bids still held count until they come back.
+            </P.tip>
+          </:tip>
         </P.field>
         <fieldset>
           <legend>Sites</legend>

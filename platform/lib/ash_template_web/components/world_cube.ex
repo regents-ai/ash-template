@@ -45,7 +45,6 @@ defmodule AshTemplateWeb.Components.WorldCube do
         <canvas class="world-cube__canvas" data-world-canvas></canvas>
         <p class="world-cube__caption" data-world-caption></p>
       </div>
-      <p class="world-cube__hint">Drag to turn. Click a side to enter.</p>
       <ol class="world-cube__worlds">
         <li :for={world <- @worlds} class="world-cube__world" data-world={world.face}>
           <h3>{world.name}</h3>

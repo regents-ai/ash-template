@@ -297,7 +297,7 @@ defmodule AshTemplateWeb.HomeLive do
   end
 
   defp hero(assigns) do
-    assigns = assign(assigns, name: @name, tagline: @tagline)
+    assigns = assign(assigns, name: @name)
 
     ~H"""
     <section
@@ -308,7 +308,6 @@ defmodule AshTemplateWeb.HomeLive do
     >
       <div class="rl-hero-copy">
         <h1 id="home-title" class="rl-hero-title">{@name}</h1>
-        <p class="rl-hero-description">{@tagline}</p>
         <div class="rl-hero-actions">
           <a href={~p"/app"} class="rg-button rl-hero-cta">
             <span class="rg-button__label">Enter App</span>

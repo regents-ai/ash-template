@@ -152,9 +152,6 @@ defmodule AshTemplateWeb.ChatLive do
               data-conversation-messages
               phx-update="stream"
             >
-              <li id="chat-messages-empty" class="chat-empty rg-muted">
-                Ask anything to start.
-              </li>
               <li
                 :for={{dom_id, message} <- @streams.messages}
                 id={dom_id}
@@ -195,13 +192,10 @@ defmodule AshTemplateWeb.ChatLive do
               rows="2"
               maxlength="4000"
               aria-invalid={field.aria_invalid}
-              aria-describedby={"chat-message-hint #{field.described_by}"}
+              aria-describedby={field.described_by}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:text].value)}</textarea>
           </Primitives.field>
           <div class="chat-composer__actions">
-            <p id="chat-message-hint" class="chat-composer__hint rg-muted">
-              Enter sends. Shift+Enter starts a new line.
-            </p>
             <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
           </div>
         </.form>

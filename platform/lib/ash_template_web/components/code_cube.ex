@@ -63,7 +63,6 @@ defmodule AshTemplateWeb.Components.CodeCube do
         <canvas class="code-cube__canvas" data-code-canvas></canvas>
         <p class="code-cube__caption" data-code-caption></p>
       </div>
-      <p class="code-cube__hint">Drag to turn. Click a side for its tools.</p>
       <ul class="code-cube__faces">
         <li :for={face <- @faces}>
           <button
