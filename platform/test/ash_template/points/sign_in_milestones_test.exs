@@ -63,7 +63,7 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
     assert {:ok, account, []} = did |> session([x]) |> VerifiedSession.establish()
     assert {:ok, _account, []} = did |> session([%{x | username: "renamed"}]) |> VerifiedSession.establish()
 
-    assert {:ok, %{username: "renamed"}} =
+    assert {:ok, %{username: "renamed", inserted_at: linked_at}} =
              Accounts.get_linked_identity_by_subject(:x, x.subject, actor: %System{})
 
     assert [_offer] = offers("social.x")
@@ -71,6 +71,11 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
     other = %{x | subject: "x-" <> Ecto.UUID.generate()}
     assert {:ok, _account, []} = did |> session([other]) |> VerifiedSession.establish()
     assert length(offers("social.x")) == 2
+
+    assert {:ok, %{inserted_at: relinked_at}} =
+             Accounts.get_linked_identity_by_subject(:x, other.subject, actor: %System{})
+
+    assert DateTime.after?(relinked_at, linked_at)
 
     Repo.transaction(fn ->
       Accounts.upsert_linked_identity!(
@@ -99,18 +104,27 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
     wallet = wallet()
     account = Accounts.register_verified!(did, wallet, [wallet], actor: %System{})
 
-    for name <- ["First", "Second"] do
-      code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: did})
+    agents =
+      for name <- ["First", "Second"] do
+        code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: did})
 
-      RegentAgents.pair_agent!(code.code, name, :codex,
-        actor: %RegentAgents.Agent{wallet: wallet()}
-      )
-    end
+        RegentAgents.pair_agent!(code.code, name, :codex,
+          actor: %RegentAgents.Agent{wallet: wallet()}
+        )
+      end
 
     assert length(offers("agent.activated")) == 2
 
     award("agent.activated", account.id)
     assert [25_000_000] = points(account.id, "agent.activated")
+
+    # The award's agent is a paired wallet, and the Points page names it.
+    assert [%{actor_id: wallet}] =
+             Ash.Query.filter(Entry, account_id == ^account.id and rule_id == "agent.activated")
+             |> Ash.read!(actor: Store.system())
+
+    assert %{name: name} = Enum.find(agents, &(&1.wallet == wallet))
+    assert {:ok, %{^wallet => ^name}} = AshTemplate.Points.Accounts.agent_names(account.id, [wallet])
   end
 
   defp offers(rule) do

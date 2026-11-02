@@ -1,5 +1,11 @@
 defmodule AshTemplate.Accounts.LinkedIdentity do
-  @moduledoc "A social account Privy verified for one human account, one per provider."
+  @moduledoc """
+  A social account Privy verified for one human account, one per provider.
+
+  `inserted_at` is when this subject was linked to this account: a later
+  sign-in with the same subject leaves it, and linking a different subject for
+  the provider resets it. `verified_at` is Privy's newest check of the link.
+  """
 
   use Ash.Resource,
     domain: AshTemplate.Accounts,
@@ -58,10 +64,11 @@ defmodule AshTemplate.Accounts.LinkedIdentity do
 
       upsert? true
       upsert_identity :unique_provider_per_account
-      upsert_fields [:subject, :username, :display_name, :verified_at, :metadata]
-
       # Reached only for a subject new to the account: a first link for the
-      # provider, or one that replaces the account's earlier subject.
+      # provider, or one that replaces the account's earlier subject, so
+      # `inserted_at` is always when this subject was linked.
+      upsert_fields [:subject, :username, :display_name, :verified_at, :metadata, :inserted_at]
+
       emit AshTemplate.Accounts.Signals, :social_linked
     end
 

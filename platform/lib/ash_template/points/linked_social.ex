@@ -27,9 +27,9 @@ defmodule AshTemplate.Points.LinkedSocial do
       account_id: identity.human_account_id,
       actor_kind: "human",
       actor_id: to_string(identity.human_account_id),
-      # When Privy last verified the link: the sign-in that linked it, or a later one.
-      source_action_at: identity.verified_at,
-      qualified_at: identity.verified_at,
+      # When this subject was linked to the account; a later sign-in never moves it.
+      source_action_at: identity.inserted_at,
+      qualified_at: identity.inserted_at,
       evidence_ref: "linked_identity:" <> identity.id,
       evidence: %{"subject_key" => key}
     }

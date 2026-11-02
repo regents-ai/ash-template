@@ -116,12 +116,18 @@ The template configures five adapters:
   `social.github` and `social.farcaster`, source `template`/`linked_identity` keyed
   `provider:subject`, recorded by `LinkedIdentity` `:upsert_verified` only for a subject new
   to the account; a sign-in with the same subject refreshes it through
-  `:refresh_verified`).
+  `:refresh_verified`). It earns at the link's `inserted_at`, when that subject was linked.
 - A paired agent (`AshTemplate.Points.PairedAgent`, rule `agent.activated`, source
   `template`/`pairing`, recorded by the pairing through `RegentAgents.Signals`).
 - A note an agent writes for its person (`AshTemplate.Points.AgentNote`, rule
   `template.first_agent_note`, source `template`/`note`, recorded by the note's create
   action).
+
+Both agent awards read the pairing through `RegentAgents.pairing_history/1`, which keeps
+unpaired agents, and name the agent's wallet as the actor; the pairing id stays in the
+evidence. `AshTemplate.Points.Accounts.agent_names/2` names each wallet from the person's
+newest pairing of it (`RegentAgents.pairing_histories/1`). The site never queries
+`regent_agents` itself.
 
 See the package README for the adapter contract, actor policy and migration instructions.
 
