@@ -6297,3 +6297,11 @@ way, and the library's own site-tool serving is gone.
   `/account/credits`, `/account/agents`, `/skill.md`, `/agents.md`, `/healthz`,
   `/api/v1/health` answer 200; no errors in the logs. One web machine, as before.
 - Not yet proven live: a Credits pin by a paired agent, which is Sean's trial.
+
+## 2026-11-02 — Required fix: jsv 0.26.2
+
+- `platform/mix.lock` moves jsv from 0.26.1 to 0.26.2 and `security/required-fixes.json`
+  adds jsv `>= 0.26.2` (EEF-CVE-2026-117680, published 1 November: a regular expression
+  that ran out of its match budget counted as a non-match, so `patternProperties` and
+  `not` schemas could let invalid input through). The dependency audit in `make check`
+  stopped on 0.26.1. No other lock line changes.
