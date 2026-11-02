@@ -6305,3 +6305,19 @@ way, and the library's own site-tool serving is gone.
   that ran out of its match budget counted as a non-match, so `patternProperties` and
   `not` schemas could let invalid input through). The dependency audit in `make check`
   stopped on 0.26.1. No other lock line changes.
+
+## 2026-11-02 — Signed requests name their site (SIWA v2 window)
+
+- `platform/mix.exs` and `platform/mix.lock` move every elixir-utils package from
+  `fd597f51` to the SIWA v2 commit `64475364` (branch `siwa/authority-v2-1031`, on main
+  `86903d0`); at the window the pin moves to the main hash the siwa chief lands. Every
+  signed agent request now covers `@authority`, the host it is sent to, and hosted signing
+  sends the site's own host (Sean "1. a", 31 Oct). The same move brings the Credits deposit
+  reader's 3,000-block wait for Base Denim (`63557bb`), pairing on the Agents page
+  (`30d7a04`), the payments and hosted-identity changes since `fd597f51`, and the lock-only
+  advisories. No new migrations.
+- The window row replayed onto main `4dca401f` (v163, Credits) in place of `09d47f7b`,
+  which was built on `31b0f439` and would have taken Credits back out. Only the pin lines
+  change in the lock.
+- No template code signs requests: browser tools hand the request to the agent's host
+  signer (regents-cli), and the template's tests carry fixed headers only.
