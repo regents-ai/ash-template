@@ -15,7 +15,7 @@ defmodule AshTemplate.WalkOffline do
     "https://regents.sh/capabilities.json",
     "https://patchbay.help/forum/capabilities",
     "https://techtree.sh/capabilities.json",
-    "https://autolaunch.sh/capabilities",
+    "https://autolaunch.sh/capabilities.json",
     "https://keyfleet.ai/capabilities.json"
   ]
 

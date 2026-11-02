@@ -41,7 +41,7 @@ defmodule AshTemplate.SiteTools do
     },
     "autolaunch" => %{
       name: "autolaunch.sh",
-      url: "https://autolaunch.sh/capabilities",
+      url: "https://autolaunch.sh/capabilities.json",
       scopes: :home
     },
     "keyfleet" => %{

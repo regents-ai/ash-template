@@ -6321,3 +6321,10 @@ way, and the library's own site-tool serving is gone.
   change in the lock.
 - No template code signs requests: browser tools hand the request to the agent's host
   signer (regents-cli), and the template's tests carry fixed headers only.
+
+## 2026-11-02 — Autolaunch's tool list address
+
+- `AshTemplate.SiteTools` and the browser walk's stand-in read Autolaunch's tools from
+  `https://autolaunch.sh/capabilities.json`, where Autolaunch v233 (`9699f0c0`) moved them;
+  `/capabilities` there now answers 404. The answer's shape is unchanged, so the Autolaunch
+  card reads as before.
