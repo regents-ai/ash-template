@@ -59,6 +59,16 @@ defmodule AshTemplate.Accounts.LinkedIdentity do
       upsert? true
       upsert_identity :unique_provider_per_account
       upsert_fields [:subject, :username, :display_name, :verified_at, :metadata]
+
+      # Reached only for a subject new to the account: a first link for the
+      # provider, or one that replaces the account's earlier subject.
+      emit AshTemplate.Accounts.Signals, :social_linked
+    end
+
+    # A sign-in that finds the same subject already linked to the account.
+    update :refresh_verified do
+      accept [:username, :display_name, :verified_at, :metadata]
+      require_atomic? false
     end
 
     read :read_mine do
@@ -86,7 +96,13 @@ defmodule AshTemplate.Accounts.LinkedIdentity do
   end
 
   policies do
-    policy action([:upsert_verified, :for_account, :by_provider_subject, :remove_verified]) do
+    policy action([
+             :upsert_verified,
+             :refresh_verified,
+             :for_account,
+             :by_provider_subject,
+             :remove_verified
+           ]) do
       authorize_if actor_attribute_equals(:role, :system)
     end
 

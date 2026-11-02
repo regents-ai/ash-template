@@ -291,7 +291,12 @@ config :regent_points,
   starts_at: nil,
   approved_rules: [],
   adapters: %{
+    "account.activated" => AshTemplate.Points.AccountActivated,
+    "agent.activated" => AshTemplate.Points.PairedAgent,
     "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
+    "social.farcaster" => AshTemplate.Points.LinkedSocial,
+    "social.github" => AshTemplate.Points.LinkedSocial,
+    "social.x" => AshTemplate.Points.LinkedSocial,
     "template.first_agent_note" => AshTemplate.Points.AgentNote
   }
 

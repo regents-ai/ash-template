@@ -106,17 +106,31 @@ back together; an insert failure rolls back the action.
 The configured adapter verifies committed facts in the background. Invalid evidence
 and conflicting source identities receive a private, durable rejection audit.
 Events save the rule's Credits rate and daily caps; delayed awards use that snapshot.
-The template configures two adapters: Credits purchases
-(`AshTemplate.Points.CreditsPurchase`) and a note an agent writes for its person
-(`AshTemplate.Points.AgentNote`, rule `template.first_agent_note`, source
-`template`/`note`, recorded by the note's create action). See the package README for the adapter
-contract, actor policy and migration instructions.
+The template configures five adapters:
+
+- Credits purchases (`AshTemplate.Points.CreditsPurchase`).
+- A new account (`AshTemplate.Points.AccountActivated`, rule `account.activated`, source
+  `regents`/`account`, recorded by `HumanAccount` `:register_verified` only when the
+  sign-in inserted the account).
+- A linked social account (`AshTemplate.Points.LinkedSocial`, rules `social.x`,
+  `social.github` and `social.farcaster`, source `template`/`linked_identity` keyed
+  `provider:subject`, recorded by `LinkedIdentity` `:upsert_verified` only for a subject new
+  to the account; a sign-in with the same subject refreshes it through
+  `:refresh_verified`).
+- A paired agent (`AshTemplate.Points.PairedAgent`, rule `agent.activated`, source
+  `template`/`pairing`, recorded by the pairing through `RegentAgents.Signals`).
+- A note an agent writes for its person (`AshTemplate.Points.AgentNote`, rule
+  `template.first_agent_note`, source `template`/`note`, recorded by the note's create
+  action).
+
+See the package README for the adapter contract, actor policy and migration instructions.
 
 ## Account Points page
 
 `/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
 site has an adapter for, so it never offers an action nothing records. Today that is
-Credits bought and "First note written by your agent", plus the NFT bonus tiers. The
+Credits bought, "Account activated", the three linked social accounts, "First paired
+agent" and "First note written by your agent", plus the NFT bonus tiers. The
 daily allowances shown are those of the rules earning now (`RegentPoints.Summary`),
 so none show while earning is off. Each entry says who earned it (you or the agent's
 name) and whether it counted in full, reached an allowance, or is a correction. The

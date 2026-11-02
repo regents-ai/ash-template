@@ -6321,3 +6321,25 @@ way, and the library's own site-tool serving is gone.
   change in the lock.
 - No template code signs requests: browser tools hand the request to the agent's host
   signer (regents-cli), and the template's tests carry fixed headers only.
+
+## 2026-11-02 — Points: new account, linked socials, first paired agent
+
+- `platform/mix.exs` and `platform/mix.lock` move every elixir-utils package from
+  `64475364` to `b7c073d2` (branch `eu/points-signals-1101`, siwa chief's stack tip, which
+  Keyfleet already pins): `RegentAgents.Signals` `:agent_paired`, plus the Points wallet
+  owner and tally-finished changes. Only the pin lines change in the lock.
+- `AshTemplate.Accounts.Signals` adds `:account_registered` and `:social_linked`.
+  `HumanAccount` `:register_verified` now skips the upsert for an existing account
+  (`upsert_condition expr(false)`, `return_skipped_upsert? true`), and
+  `HumanAccount.AnnounceRegistration` emits only when the account was inserted.
+  `LinkedIdentity` `:upsert_verified` emits `:social_linked`, and a sign-in that finds the
+  same subject already on the account goes through the new `:refresh_verified` instead.
+- `Points.Award` hears all three inside the emitting transaction (`record_event` and
+  `Oban.insert!` only). New adapters: `AccountActivated` (`account.activated`, source
+  `regents`, retried while the account's second-rounded `created_at` is ahead of the
+  clock), `LinkedSocial` (`social.x`, `social.github`, `social.farcaster`, subject key
+  `provider:subject`, times from the committed link's `verified_at`) and `PairedAgent`
+  (`agent.activated`, from `regent_agents.pairing_history`). `approved_rules` stays `[]`
+  and `starts_at` stays `nil`, so nothing earns yet; the Points page lists the new rules.
+- No migrations.
+
