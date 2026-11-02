@@ -6325,10 +6325,10 @@ way, and the library's own site-tool serving is gone.
 ## 2026-11-02 — Points: new account, linked socials, first paired agent
 
 - `platform/mix.exs` and `platform/mix.lock` move every elixir-utils package from
-  `64475364` to `ab3cc853` (branch `eu/points-tally-telemetry-1102`, siwa chief's stack
-  tip): `RegentAgents.Signals` `:agent_paired`, `RegentAgents.pairing_history/1` and
-  `pairing_histories/1`, plus the Points wallet owner and tally-finished changes. Only the
-  pin lines change in the lock.
+  `64475364` to `e37cb01d` (branch `eu/points-tally-telemetry-1102`, the window's final
+  library tip): `RegentAgents.Signals` `:agent_paired`, `RegentAgents.pairing_history/1`,
+  `pairing_histories/1` and `pairing_at/2`, plus the Points wallet owner and tally-finished
+  changes. Only the pin lines change in the lock.
 - `AshTemplate.Accounts.Signals` adds `:account_registered` and `:social_linked`.
   `HumanAccount` `:register_verified` now skips the upsert for an existing account
   (`upsert_condition expr(false)`, `return_skipped_upsert? true`), and
