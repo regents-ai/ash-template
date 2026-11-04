@@ -7,7 +7,6 @@ defmodule AshTemplateWeb.Components.InformationNavigation do
     {"Skills", "/skills"},
     {"Changelog", "/changelog"},
     {"About", "/about"},
-    {"Contact", "/contact"},
     {"Privacy", "/privacy"},
     {"Terms", "/terms"}
   ]

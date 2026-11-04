@@ -270,7 +270,6 @@ defmodule AshTemplateWeb.Router do
     pipe_through :public_documents
     get "/docs", PublicPagesController, :show
     get "/about", PublicPagesController, :show
-    get "/contact", PublicPagesController, :show
     get "/changelog", PublicPagesController, :show
     get "/agents", PublicPagesController, :show
     get "/agents/:agent", PublicPagesController, :show

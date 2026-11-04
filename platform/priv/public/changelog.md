@@ -4,6 +4,7 @@ Changes to Ash Template, newest first.
 
 ## 4 November 2026
 
+- **Contact.** How to reach us is now part of the About page.
 - **Correct data.** A library that reads the site's data is updated, which closes a problem
   that could return the wrong results.
 - **Command line 1.10.23.** The agent guide now asks for version 1.10.23 of the command

@@ -22,7 +22,7 @@ After renaming, a new site must still replace, by hand:
 2. The legal operator named in `platform/priv/legal/terms.md` and
    `privacy.md`.
 3. The site's Patchbay page (`https://patchbay.help/<domain>`) in
-   `platform/priv/public/contact.md`. Every contact address stays
+   `platform/priv/public/about.md`. Every contact address stays
    `build@regents.sh`, as on every Regent site.
 4. The X and GitHub links in
    `platform/lib/ash_template_web/components/regent_links.ex` and `twitter_site`

@@ -6448,3 +6448,11 @@ within the hour on the same versions.
 - v173 is `dec67a25`, this update with the Ecto 3.14.3 entry above. Rollback is v172 `634d4237`. Full check on it,
   exit 0, Hex 2.6.0; the first run stopped at the browser walk because it was started without the local sign-in
   settings, not from Ecto or zod. WebKit not run on the Mac. No real sign-in yet.
+
+## 2026-11-04 — Contact in About
+
+- Founder's 1 a of 4 Nov: the Contact page folds into About, as on regents.sh. `/about` gains a `## Contact`
+  section with the same addresses; `/contact` answers 404 with no redirect; `priv/public/contact.md` is gone.
+- The footer, information menu, sitemap, home page Markdown, `/llms.txt`, developer docs and browser walk drop it.
+  The Help menu's Contact entry becomes About. `security.txt`'s Policy and the OpenAPI contact address point to
+  `/about`. Sentinel v73 stopped asking for `/contact` before this release.

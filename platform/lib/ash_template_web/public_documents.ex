@@ -5,7 +5,7 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   @directory Application.app_dir(:ash_template, "priv/public")
   @files Enum.map(
-           ~w(docs about contact changelog llms llms-showcase skill skills agents build-skill supported-host),
+           ~w(docs about changelog llms llms-showcase skill skills agents build-skill supported-host),
            &Path.join(@directory, &1 <> ".md")
          )
   for file <- @files, do: @external_resource(file)
@@ -18,7 +18,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   @openapi @openapi_path |> File.read!() |> Jason.decode!()
   # The agents' pages join these when served (`documents/0`): which are shown is
   # read at runtime (AshTemplateWeb.AgentGuides).
-  @documents ~w(/ /docs /about /contact /changelog /privacy /terms)
+  @documents ~w(/ /docs /about /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
   @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /skills)
   @site_name "Ash Template"
@@ -96,11 +96,8 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
-    "/about" => {"About", "Ash Template and the people who run it."},
+    "/about" => {"About", "Ash Template, the people who run it and how to reach them."},
     "/changelog" => {"Changelog", "Changes to Ash Template, newest first."},
-    "/contact" =>
-      {"Contact",
-       "Help with Ash Template, and the addresses for privacy requests, legal questions and security reports."},
     "/privacy" =>
       {"Privacy Policy",
        "The ways Ash Template collects, uses, shares and protects personal information."},
@@ -223,7 +220,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       "description" =>
         "Developer documentation: errors, rate limits, and the versioning and deprecation policy"
     })
-    |> put_in(["info", "contact", "url"], url("/contact"))
+    |> put_in(["info", "contact", "url"], url("/about"))
     |> put_in(["info", "termsOfService"], url("/terms"))
   end
 
@@ -263,7 +260,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     Expires: #{@released_at |> DateTime.shift(year: 1) |> DateTime.to_iso8601()}
     Preferred-Languages: en
     Canonical: #{url("/.well-known/security.txt")}
-    Policy: #{url("/contact")}
+    Policy: #{url("/about")}
     """
   end
 

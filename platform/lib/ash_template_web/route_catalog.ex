@@ -74,7 +74,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       targets: [
         %RouteTarget{route_id: :agents, label: "Connect agent", path: "/agents"},
         %RouteTarget{route_id: :docs, label: "Documentation", path: "/docs"},
-        %RouteTarget{route_id: :contact, label: "Contact", path: "/contact"},
+        %RouteTarget{route_id: :about, label: "About", path: "/about"},
         %RouteTarget{route_id: :privacy, label: "Privacy", path: "/privacy"},
         %RouteTarget{route_id: :terms, label: "Terms", path: "/terms"}
       ]

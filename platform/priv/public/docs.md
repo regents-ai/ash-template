@@ -161,4 +161,4 @@ Each request is one JSON-RPC call, POSTed to `{{origin}}/mcp` itself with `Conte
 - [YAML contract]({{origin}}/api-contract.openapiv3.yaml): everything the site serves, including its own browser sign-in.
 - [API catalog]({{origin}}/.well-known/api-catalog) and [security.txt]({{origin}}/.well-known/security.txt).
 
-Need help? [Contact]({{origin}}/contact).
+Need help? [About]({{origin}}/about).

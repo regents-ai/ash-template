@@ -6,7 +6,6 @@
     {"route": "/terms", "purpose": "Read the terms of use.", "check": "main h1"},
     {"route": "/docs", "purpose": "Read the developer documentation.", "check": "main h1"},
     {"route": "/about", "purpose": "Read what the site is.", "check": "main h1"},
-    {"route": "/contact", "purpose": "Find how to reach the team.", "check": "main h1"},
     {"route": "/changelog", "purpose": "Read what changed on the site.", "check": "main h1"},
     {"route": "/skills", "purpose": "Find the skills that build a site like this one.", "check": "main h1"},
     {"route": "/agents", "purpose": "Choose your agent and learn how it pairs with your account.", "check": "main h1"},

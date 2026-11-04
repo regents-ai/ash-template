@@ -261,7 +261,7 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/api/v1/profile`, `/api/v1/profile/sync` | GET, PATCH, POST | The signed-in person's shared profile, served by the `regent_identity` package with paired Privy proofs. |
 | `/auth/csrf`, `/auth/session`, `/auth/privy/session`, `/auth/privy/failure` | GET, POST, DELETE | Browser session start, read and end. |
 | `/openapi.json`, `/llms.txt`, `/sitemap.xml`, `/robots.txt` | GET | Discovery documents. |
-| `/`, `/docs`, `/about`, `/contact`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
+| `/`, `/docs`, `/about`, `/privacy`, `/terms` | GET | Public pages; `Accept: text/markdown` returns Markdown. |
 | `/agents`, `/agents/<agent>` | GET | The agents people pair and a page for each, from `priv/public/agents/`; `Accept: text/markdown` returns Markdown. Open while the site is closed. Claude's page exists only while the Claude connector is on. |
 | `/agents/<agent>/skill.md` | GET | That agent's skill: the agent guide with its set-up notes. |
 | `/app`, `/account` | GET | The signed-in shell. |

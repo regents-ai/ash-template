@@ -100,10 +100,10 @@ Goal: every ordinary page answers `Accept: text/markdown` with a markdown docume
 - `/docs` redirects to `/developers`.
 - Link it from the footer and from the home page.
 
-## 6. Trust pages: `/about`, `/contact`, `/privacy`
+## 6. Trust pages: `/about`, `/privacy`
 
 - Same controller as item 5. Each page over 500 characters of real copy in the main
-  element; contact carries a real email. Footer links to all three.
+  element; About carries a real email in its Contact section. Footer links to both.
 - Keep customer-facing copy free of implementation words.
 - Test: Floki text length of `main` ≥ 500 for each, footer contains each href.
 
