@@ -6351,3 +6351,14 @@ way, and the library's own site-tool serving is gone.
 - regents-cli 8c29aff to 8e8f2af (1.10.23): Makefile pin, agent guide and wheel SHA256,
   install lines, capabilities.
 - v165 is `ac0138d7`, Autolaunch's tool list address.
+- v166 is `e45ff469`, this update. Rollback is v165.
+
+## 2026-11-04 — elixir-utils d73265f: ash_double_entry 1.1
+
+- elixir-utils `6447536` to `d73265f`: `blog` allows mdex 0.14.6, `credits` allows
+  ash_double_entry 1.1, and every library's lock moves off the retired ash_sql. The pin also
+  brings the agents and Points commits already on elixir-utils main (`f671800` to `e37cb01`);
+  nothing on the template calls them yet.
+- ash_double_entry 1.0.19 to 1.1.1. Its one behaviour change is to deleting a transfer, and
+  Credits never deletes one. No table change: `ash.codegen --check` is clean.
+- Still behind: puid and ex_hash_ring, for the reasons in the entry above.

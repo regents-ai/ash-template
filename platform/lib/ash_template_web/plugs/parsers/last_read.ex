@@ -1,6 +1,6 @@
 defmodule AshTemplateWeb.Plugs.Parsers.LastRead do
   @moduledoc """
-  One of Plug's own parsers (`:json`, `:urlencoded`), whose refusals carry the
+  One of Plug's own parsers (`Plug.Parsers.JSON`, `Plug.Parsers.URLENCODED`), whose refusals carry the
   request its last body read returned. Bandit answers only on that request, so
   a body over its limit or one that does not decode otherwise became a server
   error instead of 413 or 400. `Plug.Parsers` raises both without the request,
