@@ -6445,3 +6445,6 @@ within the hour on the same versions.
   template: the sign-in download is unchanged at 2.13 MB, and the part that loads only on demand, which checks x402
   payment requests, grows from 51 KB to 130 KB compressed and accepted a typical USDC request on Base and refused a
   bad one under zod 4.
+- v173 is `dec67a25`, this update with the Ecto 3.14.3 entry above. Rollback is v172 `634d4237`. Full check on it,
+  exit 0, Hex 2.6.0; the first run stopped at the browser walk because it was started without the local sign-in
+  settings, not from Ecto or zod. WebKit not run on the Mac. No real sign-in yet.
