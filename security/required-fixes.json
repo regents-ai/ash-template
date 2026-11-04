@@ -27,6 +27,13 @@
   ],
   "fixes": [
     {
+      "id": "EEF-CVE-2026-118391",
+      "summary": "Ecto before 3.14.3 kept a query cache entry, and with ecto_sql a prepared statement on each connection, for every distinct interpolated JSON path key and splice list length, so request data reaching either could exhaust memory in the application and the database.",
+      "kind": "hex",
+      "package": "ecto",
+      "requirement": ">= 3.14.3"
+    },
+    {
       "id": "2026-11-04-ash-sql-query-cache",
       "summary": "ash_sql 0.8.3 through 0.8.5 are retired on Hex for security: an Ecto query cache issue causes unpredictable query returns. 0.8.6 fixes it.",
       "kind": "hex",

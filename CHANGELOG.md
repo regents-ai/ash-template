@@ -6427,3 +6427,10 @@ within the hour on the same versions.
   picks for this Elixir and OTP.
 - Postgres stays 17.7. The template pins no Python.
 - v172 is `634d4237`, this update. Rollback is v171. First boot on trixie.
+
+## 2026-11-04 — Ecto 3.14.3
+
+- Moved ecto 3.14.2 to 3.14.3 for EEF-CVE-2026-118391 (high): queries with interpolated JSON paths or
+  `splice/1` lists are no longer cached. Nothing in the template, ash_sql, ash_postgres, Oban or elixir-utils
+  builds those queries, so this is the audit finding closed, not a fault found here.
+- Added the fix to `security/required-fixes.json`.
