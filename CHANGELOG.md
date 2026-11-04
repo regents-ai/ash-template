@@ -6408,3 +6408,10 @@ within the hour on the same versions.
   them), which ask for zod 3 and no newer Privy changes that. Only a forced move to zod 4 would
   clear them, and it would break those packages.
 - Sign-in libraries stay as on v169.
+- v170 is `edc91001`, this update. Rollback is v169.
+
+## 2026-11-04 — Strict headers on every answer
+
+- The endpoint now sets the strict content security policy, referrer policy and nosniff on every
+  answer, including `/api/v1/health` and pages that do not exist, which had none of the three.
+  A route that needs a wider policy still sets its own over it.

@@ -79,9 +79,11 @@ defmodule AshTemplateWeb.Endpoint do
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   # Every answer, including the Markdown and refusals the next plug gives before
-  # the router, lets browser agents use the tools this site's pages register and
-  # carries the origin-trial token, so Chrome knows it before reading `tools`.
-  plug :allow_page_tools
+  # the router and pages that do not exist, runs under the strict policy unless its
+  # route sets a wider one. It lets browser agents use the tools this site's pages
+  # register and carries the origin-trial token, so Chrome knows it before reading
+  # `tools`.
+  plug :secure_every_answer
 
   # One budget per client address, shared by the health check, the browser's visit
   # reports and every /api path, answered or not; pairing counts against its own
@@ -113,10 +115,14 @@ defmodule AshTemplateWeb.Endpoint do
   plug :runtime_session
   plug AshTemplateWeb.Router
 
-  defp allow_page_tools(conn, _opts) do
-    conn
-    |> Plug.Conn.put_resp_header("permissions-policy", "tools=(self)")
-    |> Plug.Conn.put_resp_header("origin-trial", @webmcp_origin_trial)
+  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
+  # sobelow_skip ["Config.CSP"]
+  defp secure_every_answer(conn, _opts) do
+    Phoenix.Controller.put_secure_browser_headers(conn, %{
+      "content-security-policy" => AshTemplateWeb.ContentSecurityPolicy.reading(),
+      "permissions-policy" => "tools=(self)",
+      "origin-trial" => @webmcp_origin_trial
+    })
   end
 
   defp limit_rate(%Plug.Conn{path_info: ["healthz"]} = conn, _opts),
