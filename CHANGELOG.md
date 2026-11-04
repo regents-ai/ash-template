@@ -6475,6 +6475,28 @@ within the hour on the same versions.
   one balances read answer. No new real sign-in: gcc is used only at build time, and Sean's sign-in of 18:14Z on v174
   covered these runtimes.
 
+## 2026-11-04 — v176: a crash that cannot be saved stays one line, and a copy button can fetch its page
+
+- A crash that finds every database connection in use now writes one warning line, `Crash not saved: <exception name>`,
+  and the next crash is saved. Before this, telemetry removed ErrorTracker's handler for good and crashes went unsaved
+  until the next restart, as on regents.sh on 4 Nov. The crash that hit the full pool stays off the error list. The code
+  is `RegentHttp.ErrorSaving`, elixir-utils `4e527975`, attached from `application.ex`.
+- `Regent.Primitives.copy_button` takes `url`, design-system `46e68fab`: a page too long to carry in the HTML is fetched
+  when the button is pressed. Nothing on a public page uses it yet; `/showcase/grammar` has the sample.
+- The elixir-utils pin moves from `c4a78d22` to `4e527975`, which also carries `d32b045d` (a Credits deposit whose chain
+  node does not answer waits a minute instead of crashing) and `35e022b5` (lock files only). No migration, no sign-in
+  change, no change to what Credits spend.
+- v176 is `d46015d4`, image `sha256:05cb7ae58d8fcd4c6b041c8c94dc6c9ba06fd8bc5a5745a01fda230482fb9272`, created 23:29:04Z.
+  Rollback is v175 `ff1eb3c3`. Full check on it, exit 0, Hex 2.6.0: 152 Elixir, 444 browser walks with 5 skipped, 26 script
+  tests. WebKit not run on the Mac. First boot started 23:29:23Z; the endpoint was listening at 23:29:29Z and health
+  passing at 23:29:30Z.
+- Read live: capabilities names `d46015d4`, `/account` answers 200 and opens Privy's window at 1280, 390 and 320, strict
+  headers have no gaps on any page read, one signed agent read and one balances read answer. On `/showcase/grammar` the
+  copy button fetched nothing until pressed, then copied all 31,003 characters of `/llms.txt` at 1280 and 390.
+- Not proven live: the saver has not met a real failed save, and attaching it writes no line. The start line reads
+  `:ok =`, so a failed attach would have stopped the boot; reading the handlers on the live machine needs Sean's go, so
+  they were read on this commit in test mode instead, all 12 of ErrorTracker's events running through the saver.
+
 ## 2026-11-04 — Points: new account, linked socials, first paired agent
 
 - The Points work of 2 Nov (`f942d3b4` on `tpl/points-adapters-1101`) replayed on main. That
