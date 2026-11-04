@@ -27,6 +27,13 @@
   ],
   "fixes": [
     {
+      "id": "2026-11-04-ash-sql-query-cache",
+      "summary": "ash_sql 0.8.3 through 0.8.5 are retired on Hex for security: an Ecto query cache issue causes unpredictable query returns. 0.8.6 fixes it.",
+      "kind": "hex",
+      "package": "ash_sql",
+      "requirement": ">= 0.8.6"
+    },
+    {
       "id": "EEF-CVE-2026-117645",
       "summary": "phoenix_html before 4.4.0 let unvalidated attribute names through attributes_escape/1, allowing attribute injection.",
       "kind": "hex",

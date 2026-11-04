@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Released `regents ash-template` commands in CLI 1.10.21, against
+Released `regents ash-template` commands in CLI 1.10.23, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -15,7 +15,7 @@ stdin. Check the installed command's `--help` before use.
 ## Setup
 
 ```sh
-uv tool install --python 3.14 regents-cli==1.10.21
+uv tool install --python 3.14 regents-cli==1.10.23
 regents auth login --site ash-template
 regents ash-template doctor
 ```
@@ -725,6 +725,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   poll someone else started, and 422 `poll_closed` for one that has already closed.
 
 ## Changes
+
+- 2026-11-04: CLI 1.10.23 carries every command described here.
 
 - 2026-10-31: `notes pin` takes 1 USDC or 1 Credit and no longer takes `operation_id`: run it
   with nothing for the terms, then pipe `{"payment": "…"}` or `{"pay_with": "credits"}`.

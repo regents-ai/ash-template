@@ -66,10 +66,10 @@ defmodule AshTemplate.MixProject do
       {:nebulex, "~> 3.0"},
       {:nebulex_local, "~> 3.0"},
       {:ash_oban, "~> 0.10.3"},
-      {:ash_ai, "~> 1.4.1"},
-      {:igniter, "== 0.8.4", only: :dev, runtime: false},
-      {:usage_rules, "~> 1.2.8", only: :dev, runtime: false},
-      {:mdex, "== 0.14.2"},
+      {:ash_ai, "~> 1.5"},
+      {:igniter, "== 0.8.5", only: :dev, runtime: false},
+      {:usage_rules, "~> 1.3", only: :dev, runtime: false},
+      {:mdex, "== 0.14.6"},
       # regent_identity pins its own elixir-utils commit; this pin replaces it.
       {:regent_privy,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "privy", override: true},
@@ -122,7 +122,7 @@ defmodule AshTemplate.MixProject do
       {:ex_slop, "~> 0.4", only: :dev, runtime: false},
       {:credo_ash,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credo_ash", only: :dev, runtime: false},
-      {:sobelow, "~> 0.16", only: :dev, runtime: false},
+      {:sobelow, "~> 0.18", only: :dev, runtime: false},
       # Property tests. Ash already ships it in every environment, so it cannot be test-only.
       {:stream_data, "~> 1.4"}
     ]

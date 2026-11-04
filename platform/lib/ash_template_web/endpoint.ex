@@ -104,7 +104,7 @@ defmodule AshTemplateWeb.Endpoint do
   # anything past a megabyte is refused before it is read.
   plug AshTemplateWeb.Plugs.Parsers,
     body_reader: {AshTemplateWeb.SignedBodyReader, :read_body, []},
-    parsers: [:urlencoded, :json],
+    parsers: [Plug.Parsers.URLENCODED, Plug.Parsers.JSON],
     pass: ["*/*"],
     length: 1_000_000,
     json_decoder: Phoenix.json_library()

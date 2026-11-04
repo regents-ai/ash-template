@@ -6328,3 +6328,26 @@ way, and the library's own site-tool serving is gone.
   `https://autolaunch.sh/capabilities.json`, where Autolaunch v233 (`9699f0c0`) moved them;
   `/capabilities` there now answers 404. The answer's shape is unchanged, so the Autolaunch
   card reads as before.
+
+## 2026-11-04 — Packages to latest (Sean's order); ash_sql withdrawal
+
+- hex retired ash_sql 0.8.3 to 0.8.5 for security ("Ecto query cache issue causes
+  unpredictable query returns. Upgrade to 0.8.6."). The lock moves from 0.8.4 to 0.8.7, and
+  `security/required-fixes.json` requires `>= 0.8.6` on every site.
+- Hex, 21 moved: ash_ai 1.5.0, ash_money 0.2.7, ash_sql 0.8.7, ex_money 6.3.0, ex_money_sql
+  2.2.0, fine 0.2.0, igniter 0.8.5, jsv 0.27.0, lazy_html 0.1.14, llm_db 2026.11.0, localize
+  1.6.1, localize_sql 1.1.0, lumis 0.10.6, mdex 0.14.6, mdex_native 0.3.1, nimble_options
+  1.2.0, req_llm 1.30.0, rustler_precompiled 0.10.1, sobelow 0.18.1, usage_rules 1.3.1, zoi
+  0.19.0. No new migrations.
+- JavaScript, test only: @types/node 26.6.6, vitest 5.1.0. Sign-in, wallet and payment
+  libraries (Privy, viem, Solana, Stripe) are not in this release.
+- Still behind: ash_double_entry 1.0.19 (regent_credits asks for `~> 1.0.19`, a second step),
+  puid 1.1.2 (boruta asks for `~> 1.0`), ex_hash_ring 6.0.4 (`== 6.0.4` in `mcp_agents`, for
+  Cachex on Autolaunch). ash_postgres stays on its commit: no Hex release carries #910.
+- sobelow 0.18 reports two new low-confidence findings, both removed in the code rather than
+  skipped. The endpoint names `Plug.Parsers.URLENCODED` and `Plug.Parsers.JSON` itself, so
+  `Parsers.LastRead` builds no module name; `AgentSkills`' rebuild check uses
+  `:erlang.phash2`, not MD5. A site moving to sobelow 0.18 gets the same two.
+- regents-cli 8c29aff to 8e8f2af (1.10.23): Makefile pin, agent guide and wheel SHA256,
+  install lines, capabilities.
+- v165 is `ac0138d7`, Autolaunch's tool list address.

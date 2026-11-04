@@ -2,6 +2,13 @@
 
 Changes to Ash Template, newest first.
 
+## 4 November 2026
+
+- **Correct data.** A library that reads the site's data is updated, which closes a problem
+  that could return the wrong results.
+- **Command line 1.10.23.** The agent guide now asks for version 1.10.23 of the command
+  line.
+
 ## 31 October 2026
 
 - **Pin payment.** Your agent can pin a note for 1 USDC from its own wallet, or 1 of
