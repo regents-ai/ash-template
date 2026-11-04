@@ -6427,3 +6427,30 @@ within the hour on the same versions.
   picks for this Elixir and OTP.
 - Postgres stays 17.7. The template pins no Python.
 - v172 is `634d4237`, this update. Rollback is v171. First boot on trixie.
+
+## 2026-11-04 — Points: new account, linked socials, first paired agent
+
+- The Points work of 2 Nov (`f942d3b4` on `tpl/points-adapters-1101`) replayed on main. That
+  branch is superseded by this commit. Its library pin is not taken: main's elixir-utils
+  `c4a78d22` already holds everything it needs, and the catalog there has lost the ENS-name,
+  Marimo and dDocs rules, so `docs/points-foundation.md` totals 290.
+- `AshTemplate.Accounts.Signals` adds `:account_registered` and `:social_linked`.
+  `HumanAccount` `:register_verified` now skips the upsert for an existing account
+  (`upsert_condition expr(false)`, `return_skipped_upsert? true`), and
+  `HumanAccount.AnnounceRegistration` emits only when the account was inserted.
+  `LinkedIdentity` `:upsert_verified` emits `:social_linked`, and a sign-in that finds the
+  same subject already on the account goes through the new `:refresh_verified` instead.
+  `:upsert_verified` now also sets `inserted_at`, so it always means when this subject was
+  linked to this account (no new column).
+- `Points.Award` hears all three inside the emitting transaction (`record_event` and
+  `Oban.insert!` only). New adapters: `AccountActivated` (`account.activated`, source
+  `regents`, retried while the account's second-rounded `created_at` is ahead of the
+  clock), `LinkedSocial` (`social.x`, `social.github`, `social.farcaster`, subject key
+  `provider:subject`, times from the link's `inserted_at`) and `PairedAgent`
+  (`agent.activated`, from `RegentAgents.pairing_history/1`). `approved_rules` stays `[]`
+  and `starts_at` stays `nil`, so nothing earns yet; the Points page lists the new rules.
+- Agent awards name the agent's wallet as the actor, on both `PairedAgent` and
+  `AgentNote` (the pairing id stays in `evidence_ref` and `evidence`), and
+  `Points.Accounts.agent_names/2` names wallets from `RegentAgents.pairing_histories/1`.
+  The template's own SQL against `regent_agents.pairing_history` is gone.
+- No migrations.

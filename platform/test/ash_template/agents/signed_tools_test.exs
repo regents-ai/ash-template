@@ -286,7 +286,7 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:ok, %{actor_id: episode}} =
              AshTemplate.Points.AgentNote.verify(%{"source_event_key" => id})
 
-    assert episode == paired.id
+    assert episode == paired.wallet
 
     saved =
       AshTemplate.Notes.get_my_note!(id, actor: AshTemplate.Actors.Human.for_account(account))
