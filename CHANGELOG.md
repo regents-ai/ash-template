@@ -6362,3 +6362,19 @@ way, and the library's own site-tool serving is gone.
 - ash_double_entry 1.0.19 to 1.1.1. Its one behaviour change is to deleting a transfer, and
   Credits never deletes one. No table change: `ash.codegen --check` is clean.
 - Still behind: puid and ex_hash_ring, for the reasons in the entry above.
+- v167 is `409fb9ba`, this update. Rollback is v166.
+
+## 2026-11-04 — Sign-in, wallet and payment libraries to latest
+
+These go first and alone on the template, then Sean's real sign-in here, then every site
+within the hour on the same versions.
+
+- @privy-io/react-auth 3.49.1 to 3.51.1.
+- @solana-program/system 0.15.0 to 0.16.0, @solana-program/token 0.17.0 to 0.18.0,
+  @solana/kit 8.5.0 to 8.6.0.
+- @stripe/stripe-js 10.0.0 to 10.2.1.
+- viem 2.57.7 to 2.57.16.
+- No majors, no code change. Nothing else on npm is behind.
+- `npm audit` lists 21 high, down from 23. They come from zod and decode-uri-component inside
+  Privy's own packages, and no newer Privy clears them.
+- Rollback is v167.
