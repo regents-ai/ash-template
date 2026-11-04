@@ -6434,3 +6434,14 @@ within the hour on the same versions.
   `splice/1` lists are no longer cached. Nothing in the template, ash_sql, ash_postgres, Oban or elixir-utils
   builds those queries, so this is the audit finding closed, not a fault found here.
 - Added the fix to `security/required-fixes.json`.
+
+## 2026-11-04 — One zod
+
+- `platform/package.json` forces zod 4.6.7 across the whole package tree, including Privy's wallet
+  packages, in place of their own zod 3. Founder's ZOD-WHOLE-TREE a of 4 Nov, which replaces ZOD-OVERRIDE b
+  of 28 Oct. One top-level override replaces the per-package ones under vgpu and @modelcontextprotocol.
+- `npm audit` goes from 20 high to 0. The dismissed alert GHSA-mrhx-c7xc-m3w5 is reopened and closes through this.
+- Correction to the esbuild 0.28.2 entry above: "it would break those packages" was untested. Measured on the
+  template: the sign-in download is unchanged at 2.13 MB, and the part that loads only on demand, which checks x402
+  payment requests, grows from 51 KB to 130 KB compressed and accepted a typical USDC request on Base and refused a
+  bad one under zod 4.
