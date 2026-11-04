@@ -240,6 +240,10 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
               <span class="grammar-sample"><P.copy_button id="grammar-noun-copy" text="regents.sh">regents.sh</P.copy_button></span>
             </li>
             <li>
+              <span class="grammar-name">Page copy</span>
+              <span class="grammar-sample"><P.copy_button id="grammar-noun-copy-page" url="/llms.txt">Copy Page</P.copy_button></span>
+            </li>
+            <li>
               <span class="grammar-name">Empty</span>
               <span class="grammar-sample"><P.empty_state title="No goals yet" /></span>
             </li>
