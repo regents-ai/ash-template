@@ -6465,3 +6465,12 @@ within the hour on the same versions.
   stopped at 15.3 by mistake: the tag list it was chosen from was cut short and hid 16. Every other runtime on
   that entry is still the newest stable on 4 Nov: Erlang 29.1.2, Elixir 1.20.5, Node 26.13.0 (27 is alpha only),
   Hex 2.6.0, rebar3 3.28.0, Debian trixie-20261027. Postgres stays 17.7.
+- The image digest is `sha256:07280eb2e744f1b7a2d8d4a3894c089ea07266c109758afc388a634bd098e4eb`. The build log shows no
+  C or C++ compile: the template's native code arrives as four ready-made downloads, so a site compiles C only if its
+  own build log shows it.
+- v175 is `ff1eb3c3`, this update. Rollback is v174 `eb94293d`. Full check on it, exit 0, Hex 2.6.0: 152 Elixir, 440
+  browser walks with 5 skipped, 26 script tests. WebKit not run on the Mac. First boot started 21:01:18Z; the endpoint
+  was listening and health passing at 21:01:25Z. Read live: capabilities names `ff1eb3c3`, `/account` answers 200 and
+  opens Privy's window at 1280, 390 and 320, strict headers have no gaps on any page read, one signed agent read and
+  one balances read answer. No new real sign-in: gcc is used only at build time, and Sean's sign-in of 18:14Z on v174
+  covered these runtimes.
