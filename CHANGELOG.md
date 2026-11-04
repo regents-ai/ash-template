@@ -6416,3 +6416,13 @@ within the hour on the same versions.
   answer, including `/api/v1/health` and pages that do not exist, which had none of the three.
   A route that needs a wider policy still sets its own over it.
 - v171 is `87c0f7d4`, this update. Rollback is v170.
+
+## 2026-11-04 — Runtimes to latest
+
+- Moved Elixir 1.20.4 to 1.20.5 and Node 26.12.0 to 26.13.0. Erlang stays 29.1.2.
+- Moved every base image from Debian bookworm to trixie: `gcc:15.3.0-trixie`,
+  `hexpm/elixir:1.20.5-erlang-29.1.2-debian-trixie-20261027-slim`,
+  `node:26.13.0-trixie-slim`, `debian:trixie-20261027-slim`.
+- Moved the image's Hex 2.5.1 to 2.6.0 and rebar3 3.25.1 to 3.28.0, the build Mix
+  picks for this Elixir and OTP.
+- Postgres stays 17.7. The template pins no Python.
