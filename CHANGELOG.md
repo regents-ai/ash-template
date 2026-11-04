@@ -6458,3 +6458,10 @@ within the hour on the same versions.
   `/about`. Sentinel v73 stopped asking for `/contact` before this release.
 - v174 is `eb94293d`, this update. Rollback is v173 `dec67a25`. Full check on it, exit 0; WebKit not run on the Mac.
   Read live once: `/contact` answers 404 with no redirect.
+
+## 2026-11-04 — gcc 16
+
+- Moved the build image `gcc:15.3.0-trixie` to `gcc:16.2.0-trixie`, the newest stable. The runtimes entry above
+  stopped at 15.3 by mistake: the tag list it was chosen from was cut short and hid 16. Every other runtime on
+  that entry is still the newest stable on 4 Nov: Erlang 29.1.2, Elixir 1.20.5, Node 26.13.0 (27 is alpha only),
+  Hex 2.6.0, rebar3 3.28.0, Debian trixie-20261027. Postgres stays 17.7.

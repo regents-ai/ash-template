@@ -1,5 +1,5 @@
-# gcc:15.3.0-trixie
-FROM docker.io/library/gcc@sha256:b803fd6fd7ebde53965c3e9bd9ce5403932e9fca382467b190c2bb41528eb3d8 AS native
+# gcc:16.2.0-trixie
+FROM docker.io/library/gcc@sha256:07280eb2e744f1b7a2d8d4a3894c089ea07266c109758afc388a634bd098e4eb AS native
 # hexpm/elixir:1.20.5-erlang-29.1.2-debian-trixie-20261027-slim
 FROM docker.io/hexpm/elixir@sha256:bb266918bb26de22fb02ff19430f47e76331001601df0fc820806c21cd4164e0 AS elixir
 # node:26.13.0-trixie-slim
