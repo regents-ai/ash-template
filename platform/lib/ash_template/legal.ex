@@ -31,7 +31,7 @@ defmodule AshTemplate.Legal do
   # sobelow_skip ["XSS.Raw"]
   defp to_safe_html(markdown) do
     markdown
-    |> MDEx.to_html!(sanitize: @sanitize)
+    |> AshTemplate.Markdown.to_html!(sanitize: @sanitize)
     |> Phoenix.HTML.raw()
   end
 end

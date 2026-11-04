@@ -184,7 +184,9 @@ defmodule AshTemplateWeb.PublicDocuments do
   # The HTML is MDEx-sanitized from the committed public markdown.
   # sobelow_skip ["XSS.Raw"]
   def html(markdown) do
-    markdown |> MDEx.to_html!(extension: [table: true], sanitize: @sanitize) |> Phoenix.HTML.raw()
+    markdown
+    |> AshTemplate.Markdown.to_html!(extension: [table: true], sanitize: @sanitize)
+    |> Phoenix.HTML.raw()
   end
 
   @doc "The `page_title` and `page_description` assigns the root layout reads from every page."

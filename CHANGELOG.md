@@ -6378,3 +6378,21 @@ within the hour on the same versions.
 - `npm audit` lists 21 high, down from 23. They come from zod and decode-uri-component inside
   Privy's own packages, and no newer Privy clears them.
 - Rollback is v167.
+- v168 is `2d169ccd`, this update. Rollback is v167.
+
+## 2026-11-04 — The last of the libraries, and forced versions to latest
+
+- uuid 11.1.1 to 14.0.3 (major, forced for the wallet packages).
+- axios 1.20.0 to 1.21.0, ws 8.22.0 to 8.22.1, @modelcontextprotocol/server and core 2.3.1 to 2.4.0.
+- follow-redirects 1.16.1 to 1.16.2, closing Dependabot alert ash-template/3.
+- elixir-utils `d73265f` to `c4a78d2`: every library's packages at newest, and the Points catalog
+  loses `identity.ens_selected`, `keyfleet.integration.marimo` and `keyfleet.integration.ddocs`.
+- `AshTemplate.Markdown` is now the one way to render Markdown: mdex 0.14.6 reads
+  `` `run`{limit: 3} `` as attributes and drops the braces, so it sets
+  `inline_code_attributes: false`. Chat, public documents and legal pages go through it. The
+  loss was live from v166 to v168.
+- Stopped, both majors with no newer release allowing them: ex_hash_ring 6.0.4 (newest 7.0.0;
+  the newest Cachex, 4.1.1, asks for `~> 6.0`), puid 1.1.2 (newest 2.8.0; the newest boruta,
+  2.3.8, asks for `~> 1.0`). ws 7.5.13 stays where a wallet package asks for it. `npm audit`
+  still lists high notices inside Privy's own packages, which no newer Privy clears.
+- Sean's real sign-in on this release proves the sign-in libraries. Rollback is v168.

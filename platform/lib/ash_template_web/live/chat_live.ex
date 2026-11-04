@@ -287,7 +287,7 @@ defmodule AshTemplateWeb.ChatLive do
   # sobelow_skip ["XSS.Raw"]
   defp markdown(text) do
     text
-    |> MDEx.to_html!(
+    |> AshTemplate.Markdown.to_html!(
       extension: [strikethrough: true, tagfilter: true, table: true, autolink: true],
       render: [unsafe: true],
       # A code block too wide for the panel scrolls sideways, so a keyboard can
