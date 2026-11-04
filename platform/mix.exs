@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "d32b045d274b1a13a59e010f31693c5197ee1d1a"
+  @elixir_utils_ref "4e5279759859f9e35e070789fe6b7fcdb78c47c3"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "46e68fab1ca8242efd0c2bcd82c392f085afbc3f"
 
@@ -100,8 +100,9 @@ defmodule AshTemplate.MixProject do
        sparse: "siwa/siwa-elixir/apps/siwa",
        override: true},
       {:regent_jev, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "jev"},
-      # The site's unexpected-failure lines (RegentHttp.UnexpectedFailure). regent_jev
-      # names regent_http by a sibling path; this pin replaces it.
+      # The site's unexpected-failure lines (RegentHttp.UnexpectedFailure) and its crash
+      # saving (RegentHttp.ErrorSaving). regent_jev names regent_http by a sibling path;
+      # this pin replaces it.
       {:regent_http, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
       # Cachex 4.1.1 on consuming sites requires 6.x; Nebulex accepts 6.x or 7.x.
