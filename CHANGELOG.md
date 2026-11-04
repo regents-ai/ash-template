@@ -6456,3 +6456,5 @@ within the hour on the same versions.
 - The footer, information menu, sitemap, home page Markdown, `/llms.txt`, developer docs and browser walk drop it.
   The Help menu's Contact entry becomes About. `security.txt`'s Policy and the OpenAPI contact address point to
   `/about`. Sentinel v73 stopped asking for `/contact` before this release.
+- v174 is `eb94293d`, this update. Rollback is v173 `dec67a25`. Full check on it, exit 0; WebKit not run on the Mac.
+  Read live once: `/contact` answers 404 with no redirect.
