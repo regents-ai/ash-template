@@ -16,6 +16,7 @@ defmodule AshTemplate.Application do
     :ok = RegentMCPAgents.configure!()
     :ok = RegentHttp.UnexpectedFailure.attach_jobs()
     :ok = AshTemplate.IdleDisconnects.attach()
+    :ok = AshTemplate.ErrorSaving.attach()
     :ok = AshTemplateWeb.VisitLog.Events.attach()
     # Visit lines' own handler (config/runtime.exs), and the default handler leaves them to it.
     :ok = Logger.add_handlers(:ash_template)
