@@ -253,7 +253,7 @@ config :ash_template, AshTemplateWeb.Endpoint,
   live_view: [signing_salt: "RH19ZPg2"]
 
 config :esbuild,
-  version: "0.25.4",
+  version: "0.28.2",
   ash_template: [
     args:
       ~w(js/app.ts js/privy_bridge.tsx --bundle --splitting --format=esm --target=es2022 --outdir=../priv/static/assets/js --chunk-names=chunks/[name]-[hash] --asset-names=chunks/[name]-[hash] --external:/fonts/* --external:/images/* --alias:@=. --loader:.woff2=file --loader:.woff=file --loader:.ttf=file),

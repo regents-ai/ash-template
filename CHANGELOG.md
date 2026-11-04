@@ -6396,3 +6396,15 @@ within the hour on the same versions.
   2.3.8, asks for `~> 1.0`). ws 7.5.13 stays where a wallet package asks for it. `npm audit`
   still lists high notices inside Privy's own packages, which no newer Privy clears.
 - Sean's real sign-in on this release proves the sign-in libraries. Rollback is v168.
+- v169 is `76190173`, this update. Rollback is v168. Sean signed in on it, 4 Nov ("1 a 2 a 3. a"),
+  so every site takes the same sign-in libraries.
+
+## 2026-11-04 — esbuild 0.28.2, design-system pin 4c7bbaa5
+
+- esbuild 0.25.4 to 0.28.2, the `version:` line in `platform/config/config.exs`.
+- design-system `13e92072` to `4c7bbaa5`: only the regent_ui lock changes. Same pin as every site.
+- `npm audit` lists 20 high, every one from zod below 4.6.6: zod 3.22.4 and 3.25.76 sit inside
+  Privy's wallet packages (@reown/appkit-wallet, abitype, x402, @coinbase/cdp-sdk and those above
+  them), which ask for zod 3 and no newer Privy changes that. Only a forced move to zod 4 would
+  clear them, and it would break those packages.
+- Sign-in libraries stay as on v169.
