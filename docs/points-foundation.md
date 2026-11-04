@@ -60,15 +60,15 @@ the cap; the entry reads "Allowance reached".
 Each milestone earns once per account, across every site, wallet, key and agent.
 Once one has earned, a later qualifying action records nothing more, and two
 qualifying actions at the same moment still earn it once. The catalog totals
-**335 points**:
+**290 points**:
 
 | Group | Milestones | Total |
 | --- | --- | ---: |
-| Account | Activated 25; X, GitHub and Farcaster linked 10 each; verified ENS name chosen 25 | 80 |
+| Account | Activated 25; X, GitHub and Farcaster linked 10 each | 55 |
 | Agents | First paired agent 25; first note written by your agent 10 (`template.first_agent_note`) | 35 |
 | Patchbay | First report 10; first reply 10 | 20 |
 | Autolaunch | First launch 20; first graduation 50; first auction settled 10; token staked 40 | 120 |
-| Keyfleet | First membership 10; key revealed 5; agent authorized 10; message 5; vote 10; marimo, dDocs, Twigpine and ActiveGraph used 10 each | 80 |
+| Keyfleet | First membership 10; key revealed 5; agent authorized 10; message 5; vote 10; Twigpine and ActiveGraph used 10 each | 60 |
 
 Availability of a catalog row does not assert that its verifier or source hook
 exists. Milestones do not reset by program, season, site, wallet, agent, rule
@@ -106,17 +106,37 @@ back together; an insert failure rolls back the action.
 The configured adapter verifies committed facts in the background. Invalid evidence
 and conflicting source identities receive a private, durable rejection audit.
 Events save the rule's Credits rate and daily caps; delayed awards use that snapshot.
-The template configures two adapters: Credits purchases
-(`AshTemplate.Points.CreditsPurchase`) and a note an agent writes for its person
-(`AshTemplate.Points.AgentNote`, rule `template.first_agent_note`, source
-`template`/`note`, recorded by the note's create action). See the package README for the adapter
-contract, actor policy and migration instructions.
+The template configures five adapters:
+
+- Credits purchases (`AshTemplate.Points.CreditsPurchase`).
+- A new account (`AshTemplate.Points.AccountActivated`, rule `account.activated`, source
+  `regents`/`account`, recorded by `HumanAccount` `:register_verified` only when the
+  sign-in inserted the account).
+- A linked social account (`AshTemplate.Points.LinkedSocial`, rules `social.x`,
+  `social.github` and `social.farcaster`, source `template`/`linked_identity` keyed
+  `provider:subject`, recorded by `LinkedIdentity` `:upsert_verified` only for a subject new
+  to the account; a sign-in with the same subject refreshes it through
+  `:refresh_verified`). It earns at the link's `inserted_at`, when that subject was linked.
+- A paired agent (`AshTemplate.Points.PairedAgent`, rule `agent.activated`, source
+  `template`/`pairing`, recorded by the pairing through `RegentAgents.Signals`).
+- A note an agent writes for its person (`AshTemplate.Points.AgentNote`, rule
+  `template.first_agent_note`, source `template`/`note`, recorded by the note's create
+  action).
+
+Both agent awards read the pairing through `RegentAgents.pairing_history/1`, which keeps
+unpaired agents, and name the agent's wallet as the actor; the pairing id stays in the
+evidence. `AshTemplate.Points.Accounts.agent_names/2` names each wallet from the person's
+newest pairing of it (`RegentAgents.pairing_histories/1`). The site never queries
+`regent_agents` itself.
+
+See the package README for the adapter contract, actor policy and migration instructions.
 
 ## Account Points page
 
 `/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
 site has an adapter for, so it never offers an action nothing records. Today that is
-Credits bought and "First note written by your agent", plus the NFT bonus tiers. The
+Credits bought, "Account activated", the three linked social accounts, "First paired
+agent" and "First note written by your agent", plus the NFT bonus tiers. The
 daily allowances shown are those of the rules earning now (`RegentPoints.Summary`),
 so none show while earning is off. Each entry says who earned it (you or the agent's
 name) and whether it counted in full, reached an allowance, or is a correction. The
