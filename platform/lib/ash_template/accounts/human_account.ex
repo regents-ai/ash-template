@@ -89,16 +89,7 @@ defmodule AshTemplate.Accounts.HumanAccount do
       accept [:privy_user_id, :wallet_address, :wallet_addresses]
       upsert? true
       upsert_identity :unique_privy_user_id
-      # A sign-in to an existing account writes nothing to it, and the account
-      # comes back marked as skipped.
-      upsert_condition expr(false)
-      return_skipped_upsert? true
-
-      emit AshTemplate.Accounts.Signals, :account_registered,
-        dynamic?: true,
-        description: "Only when the sign-in inserted the account."
-
-      change AshTemplate.Accounts.HumanAccount.AnnounceRegistration
+      upsert_fields []
       change load([:display_name])
     end
 

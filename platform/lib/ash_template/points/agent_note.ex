@@ -19,11 +19,20 @@ defmodule AshTemplate.Points.AgentNote do
   end
 
   defp with_pairing(note) do
-    privy_user_id = note.human_account.privy_user_id
-
-    case RegentAgents.pairing_history(note.created_by_pairing_id) do
-      {:ok, %{privy_user_id: ^privy_user_id} = pairing} -> {:ok, facts(note, pairing)}
+    case Ecto.Adapters.SQL.query(
+           AshTemplate.Repo,
+           """
+           SELECT id FROM regent_agents.pairing_history
+           WHERE id = $1 AND privy_user_id = $2
+           """,
+           [
+             Ecto.UUID.dump!(note.created_by_pairing_id),
+             note.human_account.privy_user_id
+           ]
+         ) do
+      {:ok, %{rows: [[id]]}} -> {:ok, facts(note, %{id: Ecto.UUID.load!(id)})}
       {:ok, _} -> {:error, :agent_not_paired_with_writer}
+      {:error, reason} -> {:retry, reason}
     end
   end
 
@@ -34,8 +43,8 @@ defmodule AshTemplate.Points.AgentNote do
       source_event_key: note.id,
       account_id: note.human_account_id,
       actor_kind: "agent",
-      # The agent's wallet, so the Points page names the agent the person paired.
-      actor_id: pairing.wallet,
+      # The pairing's id, so the Points page names the agent the person paired.
+      actor_id: pairing.id,
       source_action_at: note.inserted_at,
       qualified_at: note.inserted_at,
       evidence_ref: "note:" <> note.id,
