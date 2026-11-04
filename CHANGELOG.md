@@ -6426,3 +6426,4 @@ within the hour on the same versions.
 - Moved the image's Hex 2.5.1 to 2.6.0 and rebar3 3.25.1 to 3.28.0, the build Mix
   picks for this Elixir and OTP.
 - Postgres stays 17.7. The template pins no Python.
+- v172 is `634d4237`, this update. Rollback is v171. First boot on trixie.
