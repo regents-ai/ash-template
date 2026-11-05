@@ -432,6 +432,8 @@ and adversarially review the threads." Every chief, on the Mac and in Claude Pro
   that would not fit in a Stripe or Coinbase dashboard, a simple pill form or a small
   trade widget is too complicated. The hard engineering is hiding the complexity behind
   beautiful UIs and vgpu graphics, and every agent does it.
+- A change under `skills/` is not live until `skills/regent-workflow/scripts/sync_live_skills.py`
+  has run after its push: agents load the working files of a checkout that stays behind main.
 - A site change that uses a new shared-library pin is not done until that pin is on
   main.
 - Push to GitHub main with notes (16 Oct, Sean: "make sure the agents are pushing to
