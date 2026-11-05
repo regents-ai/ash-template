@@ -2,6 +2,10 @@
 
 Changes to Ash Template, newest first.
 
+## 5 November 2026
+
+- **Icons.** Every icon on a button now comes from one set and sits at one line weight.
+
 ## 4 November 2026
 
 - **Contact.** How to reach us is now part of the About page.

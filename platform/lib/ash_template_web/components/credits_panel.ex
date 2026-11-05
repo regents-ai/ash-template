@@ -445,7 +445,7 @@ defmodule AshTemplateWeb.CreditsPanel do
             Purchase History
           </.link>
           <button type="button" class="credits-panel__where" popovertarget={"#{@id}-where"}>
-            <Shell.nine_dots_icon class="credits-panel__where-icon" /> Spending
+            <Regent.Icons.icon name="grip" class="credits-panel__where-icon" /> Spending
           </button>
         </div>
       </header>
@@ -469,7 +469,7 @@ defmodule AshTemplateWeb.CreditsPanel do
             popovertargetaction="hide"
             aria-label="Close"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <Regent.Icons.icon name="x" />
           </button>
         </header>
         <ul>

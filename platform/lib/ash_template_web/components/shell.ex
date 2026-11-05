@@ -132,7 +132,7 @@ defmodule AshTemplateWeb.Components.Shell do
           aria-label="Search"
           aria-keyshortcuts="Meta+K Control+K"
         >
-          <.icon name={:search} />
+          <Regent.Icons.icon name="search" class="shell-icon" />
           <span class="shell-search-button__label">Search</span>
           <kbd
             id="shell-search-keys"
@@ -154,7 +154,7 @@ defmodule AshTemplateWeb.Components.Shell do
             patch={~p"/app/activity"}
             aria-label={bell_label(@unread)}
           >
-            <.icon name={:bell} />
+            <Regent.Icons.icon name="bell" class="shell-icon" />
             <span :if={@unread > 0} class="shell-tool__count" aria-hidden="true">
               {if @unread > 99, do: "99+", else: @unread}
             </span>
@@ -233,7 +233,7 @@ defmodule AshTemplateWeb.Components.Shell do
                 aria-label={section.label}
                 aria-current={@route_spec.section == section.id && "page"}
               >
-                <.icon name={section.icon} />
+                <Regent.Icons.icon name={section.icon} class="shell-icon" />
                 <span class="shell-rail__label">{section.label}</span>
                 <span class="shell-tool__tip" aria-hidden="true">{section.label}</span>
               </.link>
@@ -267,7 +267,7 @@ defmodule AshTemplateWeb.Components.Shell do
               aria-controls="shell-sidebar"
               aria-label="Hide this list"
             >
-              <.icon name={:collapse} />
+              <Regent.Icons.icon name="panel-left-close" class="shell-icon" />
             </button>
           </div>
           <ul :if={@route_spec.sidebar_model.targets != []}>
@@ -296,7 +296,7 @@ defmodule AshTemplateWeb.Components.Shell do
           type="button"
           aria-controls="shell-sidebar"
         >
-          <.icon name={:expand} />
+          <Regent.Icons.icon name="panel-left-open" class="shell-icon" />
           <span>Show {@route_spec.sidebar_model.title}</span>
         </button>
         <nav
@@ -341,7 +341,7 @@ defmodule AshTemplateWeb.Components.Shell do
         phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
       >
         <form id="shell-search-form" role="search" phx-change="search" phx-submit="search">
-          <.icon name={:search} class="shell-icon shell-search__glass" />
+          <Regent.Icons.icon name="search" class="shell-icon shell-search__glass" />
           <input
             id="shell-search-input"
             name="q"
@@ -371,7 +371,7 @@ defmodule AshTemplateWeb.Components.Shell do
           data-query={@search.query}
         >
           <div :if={@search.query != "" and @search.results == []} class="shell-search__empty">
-            <.icon name={:search} />
+            <Regent.Icons.icon name="search" class="shell-icon" />
             <p><strong>No results for “{@search.query}”</strong></p>
             <p>Try a page name, a note title or words from a room message.</p>
           </div>
@@ -394,7 +394,7 @@ defmodule AshTemplateWeb.Components.Shell do
               phx-mounted={JS.ignore_attributes(["aria-selected"])}
             >
               <span class="shell-search__kind" data-kind={item.kind}>
-                <.icon name={kind_icon(item.kind)} />
+                <Regent.Icons.icon name={kind_icon(item.kind)} class="shell-icon" />
               </span>
               <span class="shell-search__text">
                 <span class="shell-search__label">{marked(item.label, @search.query)}</span>
@@ -430,7 +430,7 @@ defmodule AshTemplateWeb.Components.Shell do
           aria-label="Close"
           data-credits-close
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          <Regent.Icons.icon name="x" />
         </Regent.Primitives.button>
         {render_slot(@credits_panel)}
       </Regent.Structure.dialog>
@@ -468,10 +468,10 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  defp kind_icon(:page), do: :page
-  defp kind_icon(:action), do: :action
-  defp kind_icon(:note), do: :notes
-  defp kind_icon(:message), do: :rooms
+  defp kind_icon(:page), do: "file"
+  defp kind_icon(:action), do: "zap"
+  defp kind_icon(:note), do: "file-text"
+  defp kind_icon(:message), do: "message-square-text"
 
   defp result_count(%{query: ""}), do: ""
 
@@ -678,7 +678,7 @@ defmodule AshTemplateWeb.Components.Shell do
       popovertarget="shell-apps"
       aria-label="Regents Products"
     >
-      <.icon name={:apps} class="shell-icon shell-icon--apps" />
+      <Regent.Icons.icon name="grip" class="shell-icon shell-icon--apps" />
       <span class="shell-tool__tip" aria-hidden="true">Regents Products</span>
     </button>
     <nav id="shell-apps" class="shell-apps" popover aria-labelledby="shell-apps-title">
@@ -704,66 +704,9 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
-  attr :class, :string, default: "shell-icon"
-
-  @doc "The nine-dot icon of the Regents Products menu."
-  def nine_dots_icon(assigns) do
-    ~H"""
-    <.icon name={:apps} class={@class} />
-    """
-  end
-
-  defp nine_dots, do: for(y <- [1.5, 9.75, 18], x <- [1.5, 9.75, 18], do: {x, y})
-
   defp crown_blocks do
     top = for x <- [31, 103, 175], do: {x, 46}
     rows = for y <- [82, 118], x <- [31, 67, 103, 139, 175], do: {x, y}
     top ++ rows
-  end
-
-  attr :name, :atom, required: true
-  attr :class, :string, default: "shell-icon"
-
-  defp icon(assigns) do
-    ~H"""
-    <svg
-      class={@class}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="square"
-      stroke-linejoin="miter"
-      aria-hidden="true"
-    >
-      <path :if={@name == :home} d="M4 11 12 4l8 7M6 9.5V20h12V9.5M10 20v-6h4v6" />
-      <path :if={@name == :notes} d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7" />
-      <path :if={@name == :rooms} d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" />
-      <path :if={@name == :dms} d="M3 5h18v14H3zM3 5l9 8 9-8" />
-      <path :if={@name == :polls} d="M3 20h18M6 20v-8M12 20V5M18 20v-5" />
-      <g :if={@name == :design}>
-        <path d="M4 4h7v7H4zM17.5 13l3.5 7h-7z" /><circle cx="17.5" cy="7.5" r="3.5" />
-        <path d="M4 14h7v6H4z" />
-      </g>
-      <path
-        :if={@name == :chat}
-        d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"
-      />
-      <g :if={@name == :settings}>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" />
-      </g>
-      <path :if={@name == :logout} d="M10 4H4v16h6M14 8l4 4-4 4M8 12h10" />
-      <g :if={@name == :search}><circle cx="10.5" cy="10.5" r="6" /><path d="m15 15 5 5" /></g>
-      <path :if={@name == :page} d="M6 3h9l4 4v14H6zM14 3v5h5" />
-      <path :if={@name == :action} d="M13 3 5 13h6l-1 8 8-10h-6z" />
-      <path :if={@name == :bell} d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4" />
-      <path :if={@name == :collapse} d="M3 4h18v16H3zM9 4v16M15 10l-2 2 2 2" />
-      <path :if={@name == :expand} d="M3 4h18v16H3zM9 4v16M13 10l2 2-2 2" />
-      <g :if={@name == :apps} fill="currentColor" stroke="none">
-        <rect :for={{x, y} <- nine_dots()} x={x} y={y} width="4.5" height="4.5" />
-      </g>
-    </svg>
-    """
   end
 end

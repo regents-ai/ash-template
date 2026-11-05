@@ -40,10 +40,11 @@ defmodule AshTemplateWeb.FeedbackLab do
           </p>
           <div class="flair-touch">
             <P.button variant="secondary" class="flair-button" data-press="flair" data-flair-press>
-              <span data-flair-label>Try a press <span class="flair-arrow" aria-hidden="true">↗</span></span>
+              <span data-flair-label>Try a press
+              <span class="flair-arrow"><Regent.Icons.icon name="arrow-up-right" /></span></span>
             </P.button>
             <a href="#flair-material-title" class="flair-link">Explore the materials
-            <span aria-hidden="true">→</span></a>
+            <span><Regent.Icons.icon name="arrow-right" /></span></a>
           </div>
           <p class="flair-spec">140ms down / 105ms up · 0.98 scale · stable hit area</p>
         </article>
@@ -73,7 +74,7 @@ defmodule AshTemplateWeb.FeedbackLab do
                 aria-describedby="flair-name-hint"
                 aria-invalid={to_string(@validity == "invalid")}
               />
-              <span class="flair-valid-mark" data-valid-mark aria-hidden="true">✓</span>
+              <span class="flair-valid-mark" data-valid-mark><Regent.Icons.icon name="check" /></span>
             </div>
             <p id="flair-name-hint" class="flair-hint" aria-live="polite">
               <%= case @validity do %>
@@ -91,7 +92,7 @@ defmodule AshTemplateWeb.FeedbackLab do
           </.form>
           <p class="flair-receipt" role="status" data-receipt-mark>
             <%= if @receipt > 0 do %>
-              <span aria-hidden="true">✓</span> Demo confirmed · {@receipt}
+              <Regent.Icons.icon name="check" /> Demo confirmed · {@receipt}
             <% else %>
               Your confirmation will appear here.
             <% end %>
@@ -128,7 +129,7 @@ defmodule AshTemplateWeb.FeedbackLab do
               <span class="flair-typing" data-typing><span aria-hidden="true">●</span>
               <span data-typing-label>Ready when you are</span></span>
               <P.button variant="secondary" type="submit" data-press="flair" data-flair-press><span data-flair-label>Preview message
-              <span aria-hidden="true">↑</span></span></P.button>
+              <Regent.Icons.icon name="arrow-up" /></span></P.button>
             </div>
           </.form>
           <p class="flair-spec">First-input state cue · no per-character animation</p>
@@ -180,7 +181,7 @@ defmodule AshTemplateWeb.FeedbackLab do
               <span class="flair-index">Edge light</span><h4>Release checklist</h4>
               <p>Useful detail at the perimeter. No moving light behind the words.</p>
               <p class="flair-state-label" role="status">
-                <span aria-hidden="true">{state_icon(@state)}</span> {state_label(@state)}
+                <Regent.Icons.icon name={state_icon(@state)} /> {state_label(@state)}
               </p>
             </div>
           </div>
@@ -190,14 +191,15 @@ defmodule AshTemplateWeb.FeedbackLab do
               <span class="flair-index">Signal rail</span><h4>Review queue</h4>
               <p>A smaller accent for denser screens. State always has a written label.</p>
               <p class="flair-state-label">
-                <span aria-hidden="true">{state_icon(@state)}</span> {state_label(@state)}
+                <Regent.Icons.icon name={state_icon(@state)} /> {state_label(@state)}
               </p>
             </div>
           </div>
         </div>
         <p class="flair-spec">
           VGPU material study + CSS edge treatments · no idle loop ·
-          <a href="https://vgpu.sh/examples/gradient" target="_blank" rel="noreferrer">Gradient reference ↗</a>
+          <a href="https://vgpu.sh/examples/gradient" target="_blank" rel="noreferrer">Gradient reference
+          <Regent.Icons.icon name="arrow-up-right" /></a>
         </p>
       </article>
       <footer class="flair-notes">
@@ -208,10 +210,10 @@ defmodule AshTemplateWeb.FeedbackLab do
     """
   end
 
-  defp state_icon("ready"), do: "○"
-  defp state_icon("working"), do: "◷"
-  defp state_icon("confirmed"), do: "✓"
-  defp state_icon("attention"), do: "!"
+  defp state_icon("ready"), do: "circle"
+  defp state_icon("working"), do: "clock"
+  defp state_icon("confirmed"), do: "check"
+  defp state_icon("attention"), do: "circle-alert"
   defp state_label("ready"), do: "Ready for review"
   defp state_label("working"), do: "Review in progress"
   defp state_label("confirmed"), do: "Review confirmed"

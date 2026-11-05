@@ -160,7 +160,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
       <header class="sc-header">
         <a class="sc-wordmark" href="/showcase">Ash <span>Workshop</span></a>
         <span :if={@local?} class="sc-local">Local only</span>
-        <a :for={{href, label} <- @pages} href={href} class="sc-api">{label} ↗</a>
+        <a :for={{href, label} <- @pages} href={href} class="sc-api">{label}
+        <Regent.Icons.icon name="arrow-up-right" /></a>
       </header>
       <div class="sc-layout">
         <aside class="sc-sidebar">
@@ -203,7 +204,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <.inventory catalog={@catalog} />
           <footer class="sc-footer">
             <span>Ash / Component workshop</span>
-            <a href="#showcase">Back to top ↑</a>
+            <a href="#showcase">Back to top <Regent.Icons.icon name="arrow-up" /></a>
           </footer>
         </main>
       </div>
@@ -462,7 +463,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
             </svg>
           </:media>
           <:actions>
-            <a href={card.href} class="rg-button rg-button--quiet">{card.action} ↗</a>
+            <a href={card.href} class="rg-button rg-button--quiet">{card.action}
+            <Regent.Icons.icon name="arrow-up-right" /></a>
           </:actions>
         </S.capability_card>
       </div>
@@ -769,8 +771,8 @@ defmodule AshTemplateWeb.ShowcaseLive do
           </.disclosure>
           <h3>Product pages</h3>
           <div class="sc-row">
-            <a href="/app">Overview ↗</a>
-            <a href="/account">Account ↗</a>
+            <a href="/app">Overview <Regent.Icons.icon name="arrow-up-right" /></a>
+            <a href="/account">Account <Regent.Icons.icon name="arrow-up-right" /></a>
           </div>
           <.disclosure id="real-actions" summary="Real actions">
             <p>

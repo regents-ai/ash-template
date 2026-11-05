@@ -53,9 +53,7 @@ defmodule AshTemplateWeb.Components.SiteHeader do
 
   defp chevron(assigns) do
     ~H"""
-    <svg class="site-header__chevron" viewBox="0 0 12 12" aria-hidden="true">
-      <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" />
-    </svg>
+    <Regent.Icons.icon name="chevron-down" class="site-header__chevron" />
     """
   end
 end
