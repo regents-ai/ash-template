@@ -26,6 +26,10 @@ pipeline around them. Verify generated helper signatures against the installed v
 Every Regent site follows these. The design-system `STYLE.md` sections named here hold
 the detail.
 
+- **Icons** come from Lucide through `Regent.Icons.icon`, at the library's one line
+  weight (founder, 2026-11-05; `STYLE.md`, Icons). Never draw an icon by hand in a site;
+  logos and artwork are not icons. Look at any new icon zoomed in 3-6x beside its
+  neighbours for weight, height, baseline and colour: width checks do not catch this.
 - **Contract addresses and transaction hashes** always show the short form, then a copy
   icon and a diagonal arrow (up and to the right) that opens the address or transaction
   on Basescan in a new tab, the three tight together. They come from one shared
