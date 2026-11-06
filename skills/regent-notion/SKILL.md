@@ -95,7 +95,7 @@ The agent completing the work writes here, under a heading per Spec item (S1, S2
 ## Everything is public
 
 - **Never write:** secret values or their names, private keys, RPC URLs, `.env`
-  contents, private user data, wallet addresses of private people, private chat links,
+  contents, private user data, private chat links,
   or anything a founder decision kept private.
 - **Only if Sean has said the item may be public:** partners or other companies,
   money, pricing, revenue, fundraising or token allocations.
