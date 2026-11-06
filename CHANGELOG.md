@@ -6526,7 +6526,7 @@ within the hour on the same versions.
 
 ## 2026-11-06 — Points: what people had before the start
 
-- Library pin moves to elixir-utils `7fde8cce` (from `4e527975`): `RegentPoints.StartAwards`,
+- Library pin moves to elixir-utils `567f319a` (from `4e527975`): `RegentPoints.StartAwards`,
   versioned rules, `Rules.tracked/0` lists only approved rules with a checker, and the
   catalog loses `patchbay.first_report`, `patchbay.first_reply` and
   `autolaunch.first_launch` (250 in the catalog, 240 at launch), with
