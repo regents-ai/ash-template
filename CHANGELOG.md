@@ -6519,7 +6519,7 @@ within the hour on the same versions.
 
 ## 2026-11-06 — Pair New Agent opens one window
 
-- design-system `ae6a62ab` (branch `ds/pair-window-1106`): `Regent.Account.pairing` is the
+- design-system `768719f3` (branch `ds/pair-window-1106`): `Regent.Account.pairing` is the
   pairing window's insides in one layout, the menu takes `pair_window`, and
   `agents_layout` is gone (Sean, 5 Nov, "1a").
 - The shell holds the pairing window (`#shell-pairing`, `AshTemplateWeb.PairingBox` as
@@ -6533,4 +6533,7 @@ within the hour on the same versions.
   outside the shut window, closed the list waiting in it (`pill_select.mjs` now closes a
   pill only on presses in its own layer), and a chosen agent's picture made the dropdown
   2px taller (its pill has no block padding now).
+  The rerun of the failing walks then found Escape no longer closed the account menu: the
+  list waiting open in the shut window took every Escape. Escape now goes only to a
+  dropdown a person can see.
 
