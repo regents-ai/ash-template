@@ -119,6 +119,27 @@ test("Escape closes the account menu before an open section behind it", async ({
   await problems.expect()
 })
 
+// 6 Nov 2026: with Buy Credits open over an open section, Escape closed the section
+// behind and left the window open. Escape is the window's, and the section stays.
+test("Escape closes Buy Credits before an open section behind it", async ({page}) => {
+  const problems = watch(page)
+  await page.goto("/rooms/general")
+  await ready(page)
+  await page.locator("#route-content").evaluate(content => {
+    const details = document.createElement("details")
+    details.open = true
+    details.id = "walk-open-section"
+    details.innerHTML = "<summary>Section</summary><p>Inside</p>"
+    content.prepend(details)
+  })
+  await page.locator("#shell-credits-button").click()
+  await expect(page.locator("#shell-credits")).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page.locator("#shell-credits")).toBeHidden()
+  await expect(page.locator("#walk-open-section")).toHaveAttribute("open", "")
+  await problems.expect()
+})
+
 test("asked for less motion, the account menu appears at once", async ({page}) => {
   const problems = watch(page)
   await page.emulateMedia({reducedMotion: "reduce"})

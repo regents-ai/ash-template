@@ -6536,4 +6536,9 @@ within the hour on the same versions.
   The rerun of the failing walks then found Escape no longer closed the account menu: the
   list waiting open in the shut window took every Escape. Escape now goes only to a
   dropdown a person can see.
+- The shell's Escape rule (`app.ts`) closed the last open section anywhere in the shell,
+  so with Buy Credits open over an open section, Escape closed the section behind and
+  left the window open; on the narrowest phones it closed the unseen agent list instead.
+  It now looks only inside the top open window, or else the shell, at sections a person
+  can see. A walk beside the account menu's Escape walk holds it.
 
