@@ -6496,3 +6496,16 @@ within the hour on the same versions.
 - Not proven live: the saver has not met a real failed save, and attaching it writes no line. The start line reads
   `:ok =`, so a failed attach would have stopped the boot; reading the handlers on the live machine needs Sean's go, so
   they were read on this commit in test mode instead, all 12 of ErrorTracker's events running through the saver.
+
+## 2026-11-06 — Pair New Agent opens one window
+
+- design-system `47b5b31f` (branch `ds/pair-window-1106`): `Regent.Account.pairing` is the
+  pairing window's insides in one layout, the menu takes `pair_window`, and
+  `agents_layout` is gone (Sean, 5 Nov, "1a").
+- The shell holds the pairing window (`#shell-pairing`, `AshTemplateWeb.PairingBox` as
+  `shell-pairing-box`) on every signed-in page. The account menu's Pair New Agent and
+  the Agents page's open it (`data-pair-open`, `shell_panels.ts`); the Agents page no
+  longer holds a pairing box. `/pair` shows the same box in the page.
+- The agent guides' Pair New Agent links lead to `/pair`.
+- The shell's two windows share one close button rule (`.shell-dialog-close`).
+

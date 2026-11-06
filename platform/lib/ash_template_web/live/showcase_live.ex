@@ -122,6 +122,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
       <:credits_panel>
         <p style="padding: 24px">Buying Credits needs a signed-in account.</p>
       </:credits_panel>
+      <:pairing_panel>
+        <Regent.Account.pairing id="preview-pairing" harnesses={AshTemplateWeb.PairingBox.choices()} />
+      </:pairing_panel>
       <:agents>
         <Regent.Account.agents_brief
           id="preview-agents"

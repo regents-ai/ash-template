@@ -530,28 +530,32 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The Buy Credits dialog's close button, square in the dialog's top right
-   corner, and kept there while the dialog scrolls. Its margins give back the
-   room it takes, so the panel keeps its place. It sits here, outside the
-   product layer, so it wins over the shared button's padding. */
-.shell-credits-dialog__close {
+/* The close button of the shell's windows, Buy Credits and Pair New Agent,
+   square in the window's top right corner, and kept there while the window
+   scrolls. Its margins give back the room it takes, so what is under it keeps
+   its place. It sits here, outside the product layer, so it wins over the shared
+   button's padding. The pad is the window frame's own. */
+:is(.shell-credits-dialog, .shell-pairing-dialog) {
+  --shell-dialog-pad: clamp(var(--space-2), 4vw, var(--space-4));
+}
+
+.shell-dialog-close {
   position: sticky;
-  inset-block-start: calc(-1 * var(--shell-credits-pad-top));
+  inset-block-start: calc(-1 * var(--shell-dialog-pad));
   z-index: var(--rg-layer-card);
   display: grid;
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
   min-height: 0;
-  margin-block: calc(-1 * var(--shell-credits-pad-top))
-    calc(var(--shell-credits-pad-top) - 2.75rem);
-  margin-inline: auto calc(-1 * var(--shell-credits-pad-side));
+  margin-block: calc(-1 * var(--shell-dialog-pad)) calc(var(--shell-dialog-pad) - 2.75rem);
+  margin-inline: auto calc(-1 * var(--shell-dialog-pad));
   padding: 0;
   border: 0;
   border-radius: 0 calc(1.25rem - 1px) 0 0.75rem;
 }
 
-.shell-credits-dialog__close svg {
+.shell-dialog-close svg {
   width: 1.5rem;
   height: 1.5rem;
 }

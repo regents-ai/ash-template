@@ -167,26 +167,26 @@ test("Sign out closes the menu, and the note that it couldn't finish is on top",
   await problems.expect()
 })
 
-test("Pair New Agent in the menu lands on the Agents page's pairing box", async ({page}) => {
+test("Pair New Agent in the menu opens the pairing window over the page", async ({page}) => {
   const problems = watch(page)
   await page.goto("/rooms/general")
   await ready(page)
   await openMenu(page)
-  await menu(page).getByRole("link", {name: "Pair New Agent"}).click()
-  await expect(page).toHaveURL(/\/account\/agents#account-pairing$/)
+  await menu(page).getByRole("button", {name: "Pair New Agent"}).click()
   await expect(menu(page)).toBeHidden()
-  await expect(page.locator("#account-pairing")).toBeInViewport()
-  // The keyboard starts on the agent choice.
-  await expect(page.locator("#account-pairing").getByRole("radio").first()).toBeFocused()
+  const pairing = page.locator("#shell-pairing")
+  await expect(pairing).toBeVisible()
+  await expect(page).toHaveURL(/\/rooms\/general$/)
+  // The keyboard starts in the window, on the agent dropdown.
+  await expect(pairing.locator("summary")).toBeFocused()
 
-  // Pressed again from the same address after scrolling away, it moves there again.
-  await page.locator("#app-shell-scroller").evaluate(scroller => scroller.scrollTo({top: 0}))
-  await expect(page.locator("#account-pairing").getByRole("heading", {name: "Pair New Agent"})).not.toBeInViewport()
+  // Closed, focus goes back to the account button; pressed again, it opens again.
+  await pairing.getByRole("button", {name: "Close"}).click()
+  await expect(pairing).toBeHidden()
+  await expect(page.locator("#account-chip")).toBeFocused()
   await openMenu(page)
-  await menu(page).getByRole("link", {name: "Pair New Agent"}).click()
-  await expect(menu(page)).toBeHidden()
-  await expect(page.locator("#account-pairing")).toBeInViewport()
-  await expect(page.locator("#account-pairing").getByRole("radio").first()).toBeFocused()
+  await menu(page).getByRole("button", {name: "Pair New Agent"}).click()
+  await expect(pairing).toBeVisible()
   await problems.expect()
 })
 

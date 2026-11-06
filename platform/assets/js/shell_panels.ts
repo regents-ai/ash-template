@@ -1,6 +1,6 @@
 // The app shell's panels that the browser alone opens and closes: the section
-// sidebar, the search dialog, with the dialog's highlight, and the Buy Credits
-// dialog. Whether the sidebar shows lives on <html data-sidebar>, which the server
+// sidebar, the search dialog, with the dialog's highlight, the Buy Credits
+// dialog and the pairing window. Whether the sidebar shows lives on <html data-sidebar>, which the server
 // first draws from the cookie written here (AshTemplateWeb.Plugs.Panels), so
 // LiveView never patches it away. The account menu and the apps menu are popovers
 // the browser opens and closes itself; only following a link inside one, or
@@ -38,6 +38,7 @@ export function arriveAt(target: HTMLElement) {
 export function installShellPanels(shell: HTMLElement) {
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
   const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
+  const pairing = () => shell.querySelector<HTMLDialogElement>("#shell-pairing")
 
   const setSidebar = (shown: boolean) => {
     const value = shown ? "shown" : "hidden"
@@ -105,6 +106,13 @@ export function installShellPanels(shell: HTMLElement) {
 
   const closeCredits = () => credits()?.close()
 
+  const openPairing = () => {
+    const dialog = pairing()
+    if (dialog && !dialog.open) dialog.showModal()
+  }
+
+  const closePairing = () => pairing()?.close()
+
   const onClick = (event: MouseEvent) => {
     const target = event.target instanceof Element ? event.target : null
     if (!target) return
@@ -129,6 +137,15 @@ export function installShellPanels(shell: HTMLElement) {
     }
     if (target.closest("[data-credits-close]")) return closeCredits()
     if (target === credits()) return closeCredits()
+    // Pair New Agent, in the account menu and on the Agents page, opens the one
+    // pairing window. The menu closes first, as for Buy Credits.
+    const pairOpener = target.closest<HTMLElement>("[data-pair-open]")
+    if (pairOpener) {
+      pairOpener.closest<HTMLElement>("[popover]")?.hidePopover()
+      return openPairing()
+    }
+    if (target.closest("[data-pair-close]")) return closePairing()
+    if (target === pairing()) return closePairing()
     if (target.closest("[data-search-close], [data-search-result]")) return closeSearch()
     // A press on the dialog's own backdrop lands on the dialog itself.
     if (target === search()) return closeSearch()

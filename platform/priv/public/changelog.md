@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 6 November 2026
+
+- **Pairing.** Pair New Agent, in the account menu and on the Agents page, opens one
+  window over the page you are on: choose your agent from the list, copy its message,
+  paste it, and a tick shows once it has paired.
+
 ## 5 November 2026
 
 - **Icons.** Every icon on a button now comes from one set and sits at one line weight.
