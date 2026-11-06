@@ -63,7 +63,7 @@
 }
 
 /* A link drawn as a button keeps the button's own text colour. */
-#app-shell a:not(.rg-button) {
+#app-shell a:not(.rg-button, .shell-tool) {
   color: inherit;
 }
 
@@ -215,7 +215,7 @@
   height: 1.3rem;
 }
 
-/* The nine dots fill their box, as the X and GitHub marks beside them do. */
+/* The nine dots sit further inside their box than the bell beside them. */
 .shell-icon--apps {
   width: 1.5rem;
   height: 1.5rem;
@@ -554,10 +554,6 @@
 .shell-credits-dialog__close svg {
   width: 1.5rem;
   height: 1.5rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
 }
 
 #shell-rail {

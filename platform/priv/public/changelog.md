@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 5 November 2026
+
+- **Icons.** Every icon on a button now comes from one set and sits at one line weight.
+- **Command line 1.10.24.** The agent guide now asks for version 1.10.24 of the command
+  line.
+
 ## 4 November 2026
 
 - **Contact.** How to reach us is now part of the About page.

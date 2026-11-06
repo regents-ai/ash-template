@@ -122,13 +122,11 @@ defmodule AshTemplateWeb.Components.CodeCube do
           rel="noopener noreferrer"
         >
           {link_label(@face)}
-          <span aria-hidden="true">↗</span><span class="visually-hidden">, opens in a new tab</span>
+          <Regent.Icons.icon name="arrow-up-right" /><span class="visually-hidden">, opens in a new tab</span>
         </a>
         <form method="dialog">
           <button type="submit" class="code-card__close" aria-label="Close">
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" stroke-width="1.5" />
-            </svg>
+            <Regent.Icons.icon name="x" />
           </button>
         </form>
       </header>

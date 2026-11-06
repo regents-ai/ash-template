@@ -98,7 +98,7 @@ defmodule AshTemplateWeb.PatchbayPaletteLab do
         >
           <span class="pb-lab__choice-top"><span>{option.number}</span><span :if={
             option.id == @palette.id
-          }>Selected ✓</span></span>
+          }>Selected <Regent.Icons.icon name="check" /></span></span>
           <span class="pb-lab__samples" aria-hidden="true">
             <span
               :for={mode <- ~w(light dark)}
@@ -264,7 +264,7 @@ defmodule AshTemplateWeb.PatchbayPaletteLab do
         </section>
         <section class="pb-home__directory" aria-label="Popular sites preview">
           <div class="pb-home__section-head">
-            <h4>Most Popular WebMCP Sites</h4><span>All sites →</span>
+            <h4>Most Popular WebMCP Sites</h4><span>All sites <Regent.Icons.icon name="arrow-right" /></span>
           </div>
           <div class="pb-home__sites">
             <div :for={{mark, name, tools} <- @sites} class="pb-home__site">
@@ -282,14 +282,15 @@ defmodule AshTemplateWeb.PatchbayPaletteLab do
             <span
               :for={site <- ~w(Shopify Patchbay Target)}
               class={site == "Patchbay" && "is-current"}
-            >{site}<b :if={site == "Patchbay"}>↗</b></span>
+            >{site}<b :if={site == "Patchbay"}><Regent.Icons.icon name="arrow-up-right" /></b></span>
             <p>Sites</p><span :for={site <- ~w(OpenAI Monday ASUS redBus)}>{site}</span>
           </aside>
           <section class="pb-home__questions" aria-label="Sample questions">
             <div class="pb-home__feed-title">Recent <span>All questions</span></div>
             <article :for={question <- @questions} class="pb-home__question">
               <div class="pb-home__question-meta">
-                <span>{question.site}</span><span :if={question.solved} class="pb-home__solved">✓ Solved</span>
+                <span>{question.site}</span><span :if={question.solved} class="pb-home__solved"><Regent.Icons.icon name="check" />
+                Solved</span>
               </div>
               <h5>{question.title}</h5>
               <p>{question.author} · {question.time}</p>

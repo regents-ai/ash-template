@@ -29,6 +29,11 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.LaunchGate
   end
 
+  # The health read and the documents' JSON, open like the pages they mirror.
+  pipeline :open_api do
+    plug :accepts, ["json"]
+  end
+
   # The Claude connector's sign-in (AshTemplate.OAuth). API credentials never use
   # cookies; consent uses the verified browser and CSRF pipeline. The resource's
   # metadata also answers under its /mcp path, where RFC 9728 places it.
@@ -282,10 +287,14 @@ defmodule AshTemplateWeb.Router do
   end
 
   scope "/api/v1", AshTemplateWeb do
-    pipe_through :api
+    pipe_through :open_api
     get "/health", HealthController, :status
     get "/about", PublicPagesController, :document, assigns: %{document: "/about"}
     get "/docs", PublicPagesController, :document, assigns: %{document: "/docs"}
+  end
+
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :api
     get "/sites/:site/tools", SiteToolsController, :tools
     get "/siwa/help", SiteToolsController, :siwa_help
     get "/notes", NotesController, :index

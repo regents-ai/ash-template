@@ -22,6 +22,18 @@ defmodule AshTemplate.LaunchGateTest do
     assert Plug.Conn.get_resp_header(closed, "retry-after") == ["3600"]
   end
 
+  test "the health read and the documents' JSON stay open while the site is closed" do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(AshTemplate.Repo)
+
+    assert %{status: 200} = get("/api/v1/health")
+    assert %{status: 200, resp_body: docs} = get("/api/v1/docs")
+    assert %{"title" => _, "markdown" => _} = Jason.decode!(docs)
+    assert %{status: 200} = get("/api/v1/about")
+
+    # The rest of the API is closed with the site.
+    assert %{status: 503} = get("/api/v1/rooms")
+  end
+
   test "the MCP address says it is not open yet in JSON, whatever its caller accepts" do
     closed =
       :get

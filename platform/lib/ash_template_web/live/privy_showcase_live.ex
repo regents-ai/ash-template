@@ -143,7 +143,7 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             href="https://docs.privy.io/authentication/user-authentication/logout"
             target="_blank"
             rel="noopener noreferrer"
-          >Privy's guide to signing out ↗</a>
+          >Privy's guide to signing out <Regent.Icons.icon name="arrow-up-right" /></a>
         </section>
       </div>
     </main>

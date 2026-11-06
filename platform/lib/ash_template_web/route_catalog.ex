@@ -9,14 +9,14 @@ defmodule AshTemplateWeb.RouteCatalog do
   # The rail's sections, in order. Each page belongs to one; its sidebar holds
   # the section's own list and its tabs the section's views.
   @sections [
-    %{id: :home, label: "Home", path: "/app", icon: :home},
-    %{id: :notes, label: "Notes", path: "/notes", icon: :notes},
-    %{id: :rooms, label: "Rooms", path: @first_room, icon: :rooms},
-    %{id: :dms, label: "Messages", path: "/dms", icon: :dms},
-    %{id: :polls, label: "Polls", path: "/polls", icon: :polls},
-    %{id: :chat, label: "Chat", path: "/chat", icon: :chat},
-    %{id: :design, label: "Design", path: "/design", icon: :design},
-    %{id: :settings, label: "Account", path: "/account", icon: :settings}
+    %{id: :home, label: "Home", path: "/app", icon: "house"},
+    %{id: :notes, label: "Notes", path: "/notes", icon: "file-text"},
+    %{id: :rooms, label: "Rooms", path: @first_room, icon: "message-square-text"},
+    %{id: :dms, label: "Messages", path: "/dms", icon: "mail"},
+    %{id: :polls, label: "Polls", path: "/polls", icon: "chart-column"},
+    %{id: :chat, label: "Chat", path: "/chat", icon: "sparkles"},
+    %{id: :design, label: "Design", path: "/design", icon: "shapes"},
+    %{id: :settings, label: "Account", path: "/account", icon: "settings"}
   ]
 
   @sidebars %{

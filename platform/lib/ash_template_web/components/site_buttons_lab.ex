@@ -317,7 +317,7 @@ defmodule AshTemplateWeb.SiteButtonsLab do
           <span :if={words != @idle or @motion?} class="sb-spinner" aria-hidden="true"></span>{words}
         </span>
         <span :if={@done} data-word="done" aria-hidden={to_string(@state != "done")}>
-          <span :if={@motion?} class="sb-tick" aria-hidden="true">✓</span>{@done}
+          <span :if={@motion?} class="sb-tick"><Regent.Icons.icon name="check" /></span>{@done}
         </span>
       </span>
     </P.button>

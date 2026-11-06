@@ -6,7 +6,9 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Ownership and sources
 
-- `repos/design-system/STYLE.md` describes the canonical visual language.
+- `STYLE.md` on design-system's main describes the canonical visual language. Read it with
+  `git -C repos/design-system show origin/main:STYLE.md`: the local checkout holds other
+  sessions' work and can sit far behind main.
 - `repos/design-system/design_system_tokens.css` owns palette and typography values.
   Generate mirrors with `node scripts/generate-tokens-json.mjs`; do not hand-edit
   generated JSON/CSS or a consumer's `assets/vendor/regent_ui/` copies.
