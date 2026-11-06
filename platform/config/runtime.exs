@@ -46,16 +46,15 @@ end
 # The server reads a chain through its own node when one is set, such as a
 # private node whose address carries a key, or a local copy of the chain for a
 # lab run; wallets still add the public address. The wallet chain's node is
-# ASH_TEMPLATE_CHAIN_NODE_URL; Credits purchases are checked through the Base
-# and Ethereum ones. Tests read no chain, whatever the shell sets.
+# ASH_TEMPLATE_CHAIN_NODE_URL; Points reads NFTs through the Base one. Tests
+# read no chain, whatever the shell sets.
 if config_env() != :test do
   %{chain_id: wallet_chain_id} = Application.fetch_env!(:ash_template, :wallet_chain)
 
   node_overrides =
     for {chain_id, setting} <- [
           {wallet_chain_id, "ASH_TEMPLATE_CHAIN_NODE_URL"},
-          {8453, "ASH_TEMPLATE_BASE_NODE_URL"},
-          {1, "ASH_TEMPLATE_ETHEREUM_NODE_URL"}
+          {8453, "ASH_TEMPLATE_BASE_NODE_URL"}
         ],
         node_url = System.get_env(setting),
         into: %{} do
@@ -74,29 +73,17 @@ if config_env() != :test do
          Map.merge(Application.fetch_env!(:ash_template, :chain_nodes), node_overrides)
 end
 
-# The Privy accounts that may give Credits and handle refunds, comma separated.
+# The Privy accounts that run this site, comma separated (config/config.exs).
 if admins = System.get_env("REGENT_CREDITS_ADMINS") do
-  config :regent_credits,
-    admins: admins |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
-end
-
-# Credits by card or Link through Stripe while its keys are set (RegentCredits.Stripe).
-# Tests answer for Stripe themselves (config/test.exs), whatever the shell sets.
-if config_env() != :test do
-  if secret_key = System.get_env("STRIPE_SECRET_KEY") do
-    config :regent_credits, :stripe,
-      secret_key: secret_key,
-      webhook_secret: System.fetch_env!("STRIPE_WEBHOOK_SECRET")
-
-    config :ash_template, :stripe_publishable_key, System.fetch_env!("STRIPE_PUBLISHABLE_KEY")
-  end
+  admins = admins |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+  config :ash_template, :admins, admins
+  config :regent_agents, admins: admins
 end
 
 # Payments in USDC are verified and settled by Coinbase's hosted x402
 # facilitator, whose address is public. CDP_API_KEY_ID and CDP_API_KEY_SECRET
-# are its credentials; without them the site still starts, and a payment in
-# USDC answers that the payment service can't be reached. Payments in Credits
-# need neither.
+# are its credentials; without them the site still starts, and a payment
+# answers that the payment service can't be reached.
 config :regent_payments, RegentPayments.Facilitator,
   url: X402.Facilitator.Auth.CDP.facilitator_url(),
   auth:
@@ -108,13 +95,10 @@ config :regent_payments, RegentPayments.Facilitator,
          nil
      end)
 
-# The Regents wallet on Base that paid actions are paid into, and so the one
-# wallet a payment in Credits may stand in for. Until it is set, an agent's pin
-# answers that paid pins are not set up here.
+# The Regents wallet on Base that paid actions are paid into. Until it is set,
+# an agent's pin answers that paid pins are not set up here.
 if config_env() != :test do
-  payments_wallet = System.get_env("PAYMENTS_WALLET_ADDRESS")
-  config :ash_template, :payments_wallet_address, payments_wallet
-  config :regent_payments, credits_pay_to: List.wrap(payments_wallet)
+  config :ash_template, :payments_wallet_address, System.get_env("PAYMENTS_WALLET_ADDRESS")
 end
 
 # Agents' signed requests are checked by this sign-in service instead, such as one

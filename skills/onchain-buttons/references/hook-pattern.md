@@ -47,7 +47,7 @@ Register `OnchainSteps` in the `hooks` passed to `LiveSocket`. The hook element 
 
 - Whenever a person types an amount, the step names what the press sends, read from the
   review itself (founder decision, 2026-09-27: a review screen, not browser-built
-  steps): "Approve 5 USDC", "Buy 5 Credits". Keep it to that label; why the step exists
+  steps): "Approve 5 USDC", "Stake 5 REGENT". Keep it to that label; why the step exists
   and how long it takes go in a `Regent.Primitives.tip` beside it (STYLE.md, "Few words
   on screen"). A done step shows a tick, a waiting one a dashed box.
 - A button names its step with `data-onchain-step`. It has no `phx-click` and sits
@@ -186,7 +186,7 @@ The hook's own click listener runs every press on its own:
    is empty instead: the press came while the page still showed another wallet or form,
    and the button now re-renders disabled with its reason. Keyfleet, 27 Oct: Mark present
    opened a Privy wallet holding no Keys because this reply skipped the check
-   (`AshTemplateWeb.CreditsPanel` shows it). An empty reply is `step_unknown`; no reply
+   An empty reply is `step_unknown`; no reply
    at all (a lost connection) shows the `data-onchain-lost` line.
 4. **Otherwise** it sends the step from the review it holds, if the active wallet is the
    review's signer.

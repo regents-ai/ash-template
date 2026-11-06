@@ -35,7 +35,7 @@ ash_postgres comes from ash-project/ash_postgres main at 55db7d44, which carries
 An upgrade must never enable Points earning or change production data as a
 side effect of package alignment.
 
-The release prerequisite checks every carried Agents, Credits and Points
+The release prerequisite checks every carried Identity, Agents, Points and Payments
 migration against its separate shared ledger. A site moving from an older
 shared-library pin may need separately authorized migrations, including
 `regent_agents` version `20261014150000` for agent pictures. The prerequisite

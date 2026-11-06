@@ -15,9 +15,7 @@ defmodule AshTemplateWeb.Components.Shell do
   wallet, the agents paired with the account (the `agents` slot), Pair New Agent,
   Manage Account and Sign out. Pair New Agent opens the pairing window (the
   `pairing_panel` slot) over the page; the agents are on the Agents page, and
-  everything else about the account is on the Account page. On a screen narrower than 22.5rem the header has no room
-  for the Credits balance, so the menu shows it instead, under the wallet, and it
-  opens the same Buy Credits panel.
+  everything else about the account is on the Account page.
   """
 
   use Phoenix.Component
@@ -37,30 +35,13 @@ defmodule AshTemplateWeb.Components.Shell do
     {"Terms", "/terms"}
   ]
 
-  # The Regents Products, each shown with the crown in its own pair of brand colours,
-  # and what Regents Credits buy there (the Credits panel's "Spending").
-  @nothing_yet "Nothing to spend on yet."
+  # The Regents Products, each shown with the crown in its own pair of brand colours.
   @regents_apps [
-    %{
-      name: "Patchbay",
-      url: "https://patchbay.help",
-      tone: "patchbay",
-      credits: "Bid for Agent Offer slots."
-    },
-    %{
-      name: "Autolaunch",
-      url: "https://autolaunch.sh",
-      tone: "autolaunch",
-      credits: @nothing_yet
-    },
-    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree", credits: @nothing_yet},
-    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet", credits: @nothing_yet},
-    %{
-      name: "$REGENT Staking",
-      url: "https://regents.sh/stake",
-      tone: "protocol",
-      credits: @nothing_yet
-    }
+    %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
+    %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
+    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
+    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet"},
+    %{name: "$REGENT Staking", url: "https://regents.sh/stake", tone: "protocol"}
   ]
 
   @doc "The Regents Products, in the order every menu of them lists them."
@@ -72,21 +53,13 @@ defmodule AshTemplateWeb.Components.Shell do
 
   attr :unread, :integer, default: nil, doc: "Unread notifications; nil when signed out."
 
-  attr :credits, :map,
-    default: nil,
-    doc: "The account's Credits reading (`state` and `value`); nil when signed out."
-
   attr :healthy, :boolean, required: true
   attr :search, :map, required: true, doc: "`%{query, results}` for the search dialog."
   slot :content, required: true
 
   # Required, so a page that draws the shell without one of these does not compile:
-  # signed in, it would show a menu without agents or a balance that opens nothing.
-  # A caller leaves one out for someone signed out with `:if`.
-  slot :credits_panel,
-    required: true,
-    doc: "The Buy Credits panel, opened from the header's balance."
-
+  # signed in, it would show a menu without agents or a Pair New Agent that opens
+  # nothing. A caller leaves one out for someone signed out with `:if`.
   slot :agents, required: true, doc: "The agents paired with the account, in the account menu."
 
   slot :pairing_panel,
@@ -169,21 +142,6 @@ defmodule AshTemplateWeb.Components.Shell do
 
         <.apps_menu />
 
-        <Regent.Primitives.button
-          :if={@credits}
-          id="shell-credits-button"
-          class="shell-credits"
-          arrow={false}
-          aria-haspopup="dialog"
-          aria-controls="shell-credits"
-          aria-label={credits_label(@credits)}
-          data-credits-open
-          phx-hook="MotionCount"
-          data-variant="flash"
-        >
-          <.credits_amount amount={@credits} />
-        </Regent.Primitives.button>
-
         <.account_control account_control={@account_control} />
 
         <Regent.Account.menu
@@ -203,18 +161,6 @@ defmodule AshTemplateWeb.Components.Shell do
               size={40}
             />
           </:picture>
-          <:balance :if={@credits}>
-            <button
-              type="button"
-              id="account-menu-credits"
-              aria-haspopup="dialog"
-              aria-controls="shell-credits"
-              aria-label={credits_label(@credits)}
-              data-credits-open
-            >
-              <.credits_amount amount={@credits} />
-            </button>
-          </:balance>
           <:agents>{render_slot(@agents)}</:agents>
         </Regent.Account.menu>
       </header>
@@ -422,25 +368,6 @@ defmodule AshTemplateWeb.Components.Shell do
       </Regent.Structure.dialog>
 
       <Regent.Structure.dialog
-        :if={@credits_panel != []}
-        id="shell-credits"
-        class="shell-credits-dialog"
-        aria-label="Buy Credits"
-        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
-      >
-        <Regent.Primitives.button
-          variant="quiet"
-          type="button"
-          class="shell-dialog-close"
-          aria-label="Close"
-          data-credits-close
-        >
-          <Regent.Icons.icon name="x" />
-        </Regent.Primitives.button>
-        {render_slot(@credits_panel)}
-      </Regent.Structure.dialog>
-
-      <Regent.Structure.dialog
         :if={@pairing_panel != []}
         id="shell-pairing"
         class="shell-pairing-dialog"
@@ -462,34 +389,6 @@ defmodule AshTemplateWeb.Components.Shell do
 
       <AgentTools.dialog id="shell-agent-tools" />
     </div>
-    """
-  end
-
-  defp credits_label(%{state: state, value: %{} = balance}) when state in [:ready, :loading],
-    do: RegentCredits.Amount.format(balance.available)
-
-  defp credits_label(%{state: state}) when state in [:error, :stale], do: "Credits unavailable"
-  defp credits_label(_reading), do: "Credits loading"
-
-  attr :amount, :map, required: true
-
-  # "12.40 Credits", whose unit a phone's header leaves out for room. The last
-  # balance read stays while it is read again; before the first read, or when
-  # it can't be read, the figure is a dash. The button and the Buy Credits panel
-  # behind it are there either way.
-  defp credits_amount(%{amount: %{state: state, value: %{} = balance}} = assigns)
-       when state in [:ready, :loading] do
-    [number, unit] = String.split(RegentCredits.Amount.format(balance.available), " ", parts: 2)
-    assigns = assign(assigns, number: number, unit: unit)
-
-    ~H"""
-    <span data-count>{@number}</span> <span class="shell-credits__unit">{@unit}</span>
-    """
-  end
-
-  defp credits_amount(assigns) do
-    ~H"""
-    <span data-count>—</span> <span class="shell-credits__unit">Credits</span>
     """
   end
 

@@ -68,15 +68,6 @@ at the end of the matching table.
 
 | Title | Replacement | Where |
 | --- | --- | --- |
-| Where to spend Credits | Spending | `credits_panel.ex` |
-| What Credits buy | Uses | `credits_history_live.ex` |
-| Asking for a refund | Refunds | `credits_refund_rules.ex` |
-| Refunds to send | Pending refunds | `credits_admin.ex` |
-| A person's Credits history | Credits history | `credits_admin.ex` |
-| Sites it may spend on | Sites | `credits_agent_spending.ex` legend |
-| Most per spend, in Credits | Spend limit (Credits) | `credits_agent_spending.ex` field label |
-| Daily limit, in Credits | Daily limit (Credits) | `credits_agent_spending.ex` field label |
-| Wallet address or Privy account id | Account | `credits_admin.ex` field label |
 | Get the client | Install | `site_tools.ex` step |
 | Choose how you sign | Signer | `site_tools.ex` step |
 | Pair with your person | Pairing | `site_tools.ex` step |

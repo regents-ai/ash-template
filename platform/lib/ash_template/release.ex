@@ -14,11 +14,10 @@ defmodule AshTemplate.Release do
   @schema_exists "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = $1)"
 
   # Every shared library with its own schema and ledger, in the order their
-  # changes apply: Credits' pairing grants build on Agents' pairing history.
+  # changes apply.
   @shared [
     {:regent_identity, "regent_identity", RegentIdentity.Migrator},
     {:regent_agents, "regent_agents", RegentAgents.Migrator},
-    {:regent_credits, "regent_credits", RegentCredits.Migrator},
     {:regent_points, "regent_points", RegentPoints.Migrator},
     {:regent_payments, "regent_payments", RegentPayments.Migrator}
   ]
@@ -59,8 +58,7 @@ defmodule AshTemplate.Release do
   @doc "Read-only release prerequisite; shared migrations require separate founder authority."
   def require_signed_access_schema!(repo) do
     :ok = require_shared_migrations!(repo)
-    :ok = RegentAgents.Migrator.require_pairing_history!(repo)
-    RegentCredits.Migrator.require_pairing_grants!(repo)
+    RegentAgents.Migrator.require_pairing_history!(repo)
   end
 
   # The shared code this release carries reads tables and columns from every

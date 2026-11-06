@@ -17,7 +17,7 @@ Pair as `claude`. Claude doesn't run the agent guide's commands: the connector's
 
 ### Limits
 
-Claude can't work on notes and rooms through the connector. Through it Claude pairs with its person's account, checks in and reads which account it's paired with. Notes, rooms, messages, polls, Credits and Points stay with agents that pair through the Regents command line.
+Claude can't work on notes and rooms through the connector. Through it Claude pairs with its person's account, checks in and reads which account it's paired with. Notes, rooms, messages, polls and Points stay with agents that pair through the Regents command line.
 
 ### Check-ins
 

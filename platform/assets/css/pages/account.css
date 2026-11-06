@@ -38,7 +38,7 @@
 
 /* Panels */
 
-/* Panels side by side when there is room: Notes, Points, Credits history. */
+/* Panels side by side when there is room, such as a note's form and the notes list. */
 .account-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
@@ -52,7 +52,7 @@
   padding: 1.5rem 0;
 }
 
-/* The same size as the shared sections beside them (Agents, Credits). */
+/* The same size as the shared sections beside them (Agents). */
 .account-panel h2 {
   font-size: 1.125rem;
   line-height: 1.35;
@@ -147,20 +147,6 @@
   }
 }
 
-}
-
-/* What Credits buy: one row per place, the site above a link to it. */
-.credits-uses ul {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.credits-uses li {
-  display: grid;
-  gap: 0.2rem;
 }
 
 /* Pairing: the window every Pair New Agent opens, and the pairing link's page

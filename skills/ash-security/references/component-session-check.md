@@ -1,7 +1,7 @@
 # Pages and components check the session before every event, push and result
 
-A server push (`handle_info`: a PubSub notification such as a points award or a
-Credits change) and a background result (`handle_async`) arrive with no navigation or
+A server push (`handle_info`: a PubSub notification such as a points award or an
+agent change) and a background result (`handle_async`) arrive with no navigation or
 event in between. A socket idle past the sign-in lifetime would otherwise read and show
 fresh private data with the actor it saved at mount. The session module that holds a
 signed-in socket attaches `:handle_params`, `:handle_event`, `:handle_info` and

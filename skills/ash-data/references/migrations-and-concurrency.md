@@ -155,7 +155,7 @@ The template's pooled connection is set up this way:
 - **Listening: one direct connection per machine.** The pooler drops `LISTEN`, so the
   template opens one `Postgrex.Notifications` connection on `direct.<cluster>` with the
   serving login (`AshTemplate.DatabaseConfig.notifications_config!/2`), and
-  `RegentCredits.Listener`, `RegentAgents.Listener` and any listener of its own
+  `RegentAgents.Listener` and any listener of its own
   share it under one `:rest_for_one` supervisor (`AshTemplate.SharedChanges`). Never
   open a second listening connection, and never listen through the pooled repository.
 - **Release commands: the direct address.** Migrations take session locks, so they run
@@ -163,7 +163,7 @@ The template's pooled connection is set up this way:
 - **Everything else works through the pooler.** Oban's notices go over Erlang
   (`Oban.Notifiers.PG`); a lock held for one transaction
   (`pg_advisory_xact_lock`) is fine, and so is sending a notice through the repository
-  (`pg_notify`, as `RegentCredits` and `RegentAgents` do): only listening needs the
+  (`pg_notify`, as `RegentAgents` does): only listening needs the
   direct connection. A session lock (`pg_advisory_lock`), `SET` outside
   a transaction or a temporary table kept between transactions is not: use the
   transaction form.

@@ -1,6 +1,6 @@
 // The app shell's panels that the browser alone opens and closes: the section
-// sidebar, the search dialog, with the dialog's highlight, the Buy Credits
-// dialog and the pairing window. Whether the sidebar shows lives on <html data-sidebar>, which the server
+// sidebar, the search dialog, with the dialog's highlight, and the pairing
+// window. Whether the sidebar shows lives on <html data-sidebar>, which the server
 // first draws from the cookie written here (AshTemplateWeb.Plugs.Panels), so
 // LiveView never patches it away. The account menu and the apps menu are popovers
 // the browser opens and closes itself; only following a link inside one, or
@@ -37,7 +37,6 @@ export function arriveAt(target: HTMLElement) {
  */
 export function installShellPanels(shell: HTMLElement) {
   const search = () => shell.querySelector<HTMLDialogElement>("#shell-search")
-  const credits = () => shell.querySelector<HTMLDialogElement>("#shell-credits")
   const pairing = () => shell.querySelector<HTMLDialogElement>("#shell-pairing")
 
   const setSidebar = (shown: boolean) => {
@@ -93,19 +92,6 @@ export function installShellPanels(shell: HTMLElement) {
 
   const closeSearch = () => search()?.close()
 
-  // Opening Buy Credits reads the wallet's funds again, so Buy is held back
-  // only by what the chain says now.
-  const openCredits = () => {
-    const dialog = credits()
-    if (!dialog || dialog.open) return
-    dialog.showModal()
-    dialog
-      .querySelectorAll("[data-refresh-funds]")
-      .forEach(panel => panel.dispatchEvent(new CustomEvent("ash:refresh-funds")))
-  }
-
-  const closeCredits = () => credits()?.close()
-
   // The window opens on the list of agents while none is chosen, with the keyboard
   // on the dropdown.
   const openPairing = () => {
@@ -127,14 +113,6 @@ export function installShellPanels(shell: HTMLElement) {
     if (target.closest("#shell-sidebar-button")) return setSidebar(false)
     if (target.closest("#shell-sidebar-show")) return setSidebar(true)
     if (target.closest("#shell-search-button")) return openSearch()
-    // The header's balance, the account menu's balance row on the narrowest phones,
-    // and a page's own Buy Credits button open the one panel. The menu closes first,
-    // so focus goes back to the account button and returns there when the panel closes.
-    const creditsOpener = target.closest<HTMLElement>("[data-credits-open]")
-    if (creditsOpener) {
-      creditsOpener.closest<HTMLElement>("[popover]")?.hidePopover()
-      return openCredits()
-    }
     // Sign out closes the menu, so a note that it couldn't finish shows under the
     // account button with nothing over it. auth_lazy signs out.
     const signOut = target.closest<HTMLElement>("[data-account-target='sign-out']")
@@ -142,10 +120,9 @@ export function installShellPanels(shell: HTMLElement) {
       signOut.closest<HTMLElement>("[popover]")?.hidePopover()
       return
     }
-    if (target.closest("[data-credits-close]")) return closeCredits()
-    if (target === credits()) return closeCredits()
     // Pair New Agent, in the account menu and on the Agents page, opens the one
-    // pairing window. The menu closes first, as for Buy Credits.
+    // pairing window. The menu closes first, so focus goes back to the account
+    // button and returns there when the window closes.
     const pairOpener = target.closest<HTMLElement>("[data-pair-open]")
     if (pairOpener) {
       pairOpener.closest<HTMLElement>("[popover]")?.hidePopover()

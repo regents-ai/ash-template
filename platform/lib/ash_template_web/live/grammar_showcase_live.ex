@@ -221,9 +221,9 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             <li>
               <span class="grammar-name">Tip</span>
               <span class="grammar-sample">
-                Credits
-                <P.tip id="grammar-noun-tip" label="About Credits">
-                  Credits pay for agent work on every Regent site.
+                Points
+                <P.tip id="grammar-noun-tip" label="About Points">
+                  Points count what you do on every Regent site.
                 </P.tip>
               </span>
             </li>

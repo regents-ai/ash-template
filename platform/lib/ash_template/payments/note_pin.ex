@@ -1,10 +1,8 @@
 defmodule AshTemplate.Payments.NotePin do
   @moduledoc """
-  A paired agent pinning one of its person's notes pays for the pin: 1 USDC
-  from its own wallet, settled through x402, or 1 of its person's Credits,
-  within the limits the person set for it. Either way the money ends in the
-  Regents wallet this site names (`:payments_wallet_address`), so the terms
-  accept Credits.
+  A paired agent pinning one of its person's notes pays for the pin: 1 USDC on
+  Base from its own wallet, settled through x402, into the Regents wallet this
+  site names (`:payments_wallet_address`).
 
   The terms are frozen for one note. Once the payment settles, the note is
   pinned in the same transaction that marks the payment applied. Pinning is
@@ -19,7 +17,7 @@ defmodule AshTemplate.Payments.NotePin do
 
   @price_atomic 1_000_000
 
-  @doc "What a pin costs, in millionths of a USDC or a Credit."
+  @doc "What a pin costs, in millionths of a USDC."
   @spec price_atomic() :: pos_integer()
   def price_atomic, do: @price_atomic
 
@@ -48,8 +46,7 @@ defmodule AshTemplate.Payments.NotePin do
            target_id: note.id,
            payload: %{"note_id" => note.id},
            recipient_snapshot: [%{"wallet_address" => pay_to()}],
-           effect_summary: "Pins your person's note \"#{note.title}\" to the top of their notes.",
-           credits: :accepted
+           effect_summary: "Pins your person's note \"#{note.title}\" to the top of their notes."
          }}
 
       {:ok, nil} ->

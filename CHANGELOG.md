@@ -6698,3 +6698,45 @@ remove it from points".
   `/app`, `/account/points`, `/agents.md`, `/openapi.json` and `/changelog` answer 200,
   `/openapi.json` reads "leaderboard by name or wallet". No migration, no `starts_at`:
   nothing earns until HQ names the start.
+
+## 2026-11-06 — Credits are gone
+
+Sean, 6 November 2026: drop Credits entirely. HQ's order of 19:20Z: library and
+template first as one shared change, paid pins on USDC through x402 only, no table or
+column dropped, no production data touched.
+
+- Removed from the site: Buy Credits, the header and account menu balance, the
+  Credits panel on `/account`, `/account/credits` and `/showcase/credits`, the Credits
+  admin, the agent spending limits, the refund rules, the card purchase through Stripe
+  and `/api/stripe/notices`, the `purchase_checks` queue and
+  `AshTemplate.Credits.CheckPurchase`, and the `regent_credits` dependency, its
+  migrator and its listener. `@stripe/stripe-js` leaves `package.json`; Stripe's and
+  Link's hosts leave the content security policy.
+- The note pin (`AshTemplate.Payments.NotePin`) takes 1 USDC on Base from the agent's
+  own wallet through x402, and nothing else: `pay_with` and the 402 `credits_refused`
+  answer are gone, and `GET /api/v1/notes/{id}/pin-price` answers `price.usdc` only.
+- Removed operations: `GET /api/v1/account/balances` (`account_balances`,
+  `account balances`) and `POST /api/v1/account/credits/history`
+  (`account_credits_history`, `account credits-history`). Both OpenAPI documents move
+  to 11.0.0 and `capabilities.json` to contract revision 2; the tool list, the command
+  list, COMMANDS.md, the agent guides, `/docs`, `/llms.txt`, `/skill.md` and the public
+  changelog say so.
+- The site's admins are `config :ash_template, :admins` (with
+  `config :regent_agents, :admins`), both set from `REGENT_CREDITS_ADMINS`; they open
+  `/admin/errors` and may remove an agent's picture. The variable keeps its name until
+  its secret is renamed.
+- Chain node 1 is gone: only Credits read Ethereum through it; ENS keeps its own
+  setting and Points reads NFTs on Base.
+- elixir-utils moves to `f8801d79` (payments on USDC only; receipts keep `paid_with`
+  as a private `usdc` default with no migration; the payments lock loses the packages
+  only Credits needed) and design-system to `d3845c6d` (no Credits summary, menu
+  balance or layout slot; the account page is one column; an agent's window has no
+  Spending section).
+- Shared skills: `payments` describes USDC from the payer's own wallet only; the other
+  skills lose their Credits examples and title rows.
+- Removed tests: `agent_spend_test.exs`, `check_purchase_test.exs`,
+  `credited_test.exs`, `card_purchase_test.exs`, `credits_admin_test.exs`,
+  `credits_history_refresh_test.exs`, `credits_press_test.exs`,
+  `spending_answers_test.exs` and `credits.spec.ts`. The account menu's balance walks
+  become one walk that the header and open menu fit a 320px screen.
+- The `regent_credits` schema and every table and column stay; nothing is migrated.

@@ -11,7 +11,6 @@ config :ash_template, :lab_chain, %{
 config :ash_template, :chain_nodes, %{
   84_532 => "https://sepolia.base.org",
   8453 => "https://mainnet.base.org",
-  1 => "https://ethereum-rpc.publicnode.com",
   31_337 => "http://127.0.0.1:58600"
 }
 
@@ -27,7 +26,6 @@ if walk? do
   config :ash_template, :chain_nodes, %{
     84_532 => closed,
     8453 => closed,
-    1 => closed,
     31_337 => closed
   }
 

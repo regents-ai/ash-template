@@ -27,7 +27,6 @@ import {
 } from "./shell_state"
 import {arriveAt, installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
-import {CardCheckout} from "./hooks/card_checkout"
 import {HolographicCard} from "./hooks/holographic_card"
 import {CubeLabel} from "./hooks/cube_label"
 import {WorldCube} from "./hooks/world_cube"
@@ -355,7 +354,6 @@ const hooks = {
   ...labPageHooks,
   ...colocatedHooks,
   AccountPicture,
-  CardCheckout,
   CubeLabel,
   HolographicCard,
   InfoDialog,

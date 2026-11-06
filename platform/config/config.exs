@@ -7,27 +7,10 @@ config :req_llm, custom_providers: [AshTemplate.Chat.StandIn]
 
 config :regent_identity, repo: AshTemplate.Repo, ash_domains: [RegentIdentity]
 
-# Regent Credits: one prepaid balance per Privy account, shared by every Regent
-# site. Credits are the private currency XRC, kept to the millionth. Admins come
-# from REGENT_CREDITS_ADMINS at runtime.
-config :ex_money,
-  custom_currencies: [{:XRC, name: "Credits", digits: 6}],
-  auto_start_exchange_rate_service: false
-
-config :regent_credits,
-  repo: AshTemplate.Repo,
-  pubsub: AshTemplate.PubSub,
-  notifications: AshTemplate.Notifications,
-  ash_domains: [RegentCredits],
-  admins: [],
-  # A paired agent may spend its person's Credits, within the limits that person
-  # sets for it on their account page; nothing until they turn it on.
-  agent_grants_enabled: true,
-  chain_client: AshTemplate.ChainClient,
-  chains: %{
-    base: %{chain_id: 8453, name: "Base", rpc_url: "https://mainnet.base.org"},
-    ethereum: %{chain_id: 1, name: "Ethereum", rpc_url: "https://ethereum-rpc.publicnode.com"}
-  }
+# The Privy accounts that run this site: they see the saved errors at
+# /admin/errors and may remove an agent's picture (`RegentAgents.Checks.Admin`).
+# Set at runtime (config/runtime.exs).
+config :ash_template, :admins, []
 
 # Ash 3.33 requires an explicit string length unit. Codepoints match how
 # PostgreSQL counts `length()`, so `max_length` bounds stored size; graphemes
@@ -37,7 +20,7 @@ config :ash, default_string_length_count: :codepoints
 
 config :mime, :types, %{"application/yaml" => ["yaml"]}
 
-# The name this site goes by in Regent Credits and Regent Points. A site copied
+# The name this site goes by in the shared Regent libraries. A site copied
 # from the template changes it here and nowhere else.
 site = "template"
 
@@ -90,13 +73,11 @@ config :ash_template, Oban,
     points: 5,
     points_chain: 2,
     outside_calls: 3,
-    purchase_checks: 5,
     ens: 3,
     chat_responses: [limit: 10],
     conversations: [limit: 10]
   ],
-  # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end,
-  # and Regent Credits' purchase checks and deposit reads (AshTemplate.Application).
+  # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end.
   cron: [
     crontab: [
       {"17 4 * * *", AshTemplate.ErrorPruner},
@@ -143,8 +124,8 @@ config :regent_agents,
       "Post in rooms for your person, and change or delete their room messages.",
       "Search the chat rooms.",
       "Read your person's latest activity.",
-      "Read your person's Credits and Points.",
-      "Pin your person's notes, each pin paid with 1 USDC from your own wallet or 1 of your person's Credits, within the limits they set for you."
+      "Read your person's Points.",
+      "Pin your person's notes, each pin paid with 1 USDC from your own wallet."
     ]
   },
   ash_domains: [RegentAgents],
@@ -152,7 +133,7 @@ config :regent_agents,
 
 # Paid actions, through the Regents payments library shared by every Regent
 # site: an agent's note pin (AshTemplate.Payments.NotePin), paid in USDC from
-# its wallet or in its person's Credits. The records live in the shared
+# its wallet on Base. The records live in the shared
 # `regent_payments` schema; this site reads and writes only its own rows.
 config :regent_payments,
   repo: AshTemplate.Repo,
@@ -182,8 +163,7 @@ config :ash_template, :limits,
   dm: [limit: 300, window_seconds: 3600],
   report: [limit: 10, window_seconds: 3600],
   search_address: [limit: 300, window_seconds: 60],
-  wallet_read: [limit: 30, window_seconds: 60],
-  credits_report: [limit: 120, window_seconds: 60]
+  wallet_read: [limit: 30, window_seconds: 60]
 
 # The build /capabilities.json names. Only a deployed image has one (config/runtime.exs).
 config :ash_template, :build, %{commit: nil, release: nil}
@@ -226,8 +206,7 @@ config :ash_template, :wallet_chain, %{
 # lab fork instead, and this address never reaches the browser.
 config :ash_template, :chain_nodes, %{
   84_532 => "https://sepolia.base.org",
-  8453 => "https://mainnet.base.org",
-  1 => "https://ethereum-rpc.publicnode.com"
+  8453 => "https://mainnet.base.org"
 }
 
 # A sign-in lasts 30 days: the cookie expires then, and
@@ -269,7 +248,7 @@ config :logger, :default_formatter,
   metadata: [:request_id, :visit, :actor, :surface, :event]
 
 # Failed requests, pages and jobs are saved in the site's own schema and shown
-# to Credits admins at /admin/errors. Only server faults are saved
+# to the site's admins at /admin/errors. Only server faults are saved
 # (AshTemplate.ErrorIgnorer), only where each one happened is kept
 # (AshTemplate.ErrorFilter), and AshTemplate.ErrorPruner clears each one a week
 # after it was last seen.

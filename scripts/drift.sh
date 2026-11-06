@@ -32,7 +32,6 @@ shared=(
   platform/lib/ash_template/chain_client.ex
   platform/lib/ash_template/repo.ex
   platform/lib/ash_template_web/client_address.ex
-  platform/lib/ash_template_web/components/credits_refund_rules.ex
   platform/lib/ash_template_web/components/pairing_box.ex
   platform/lib/ash_template_web/content_security_policy.ex
   platform/lib/ash_template_web/metrics.ex

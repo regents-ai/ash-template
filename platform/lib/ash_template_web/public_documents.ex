@@ -40,11 +40,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/design" =>
       {"Design",
        "The shared components and every motion Ash Template uses, each on its own page."},
-    "/account" => {"Account", "Your profile, Credits and the session on this browser."},
+    "/account" => {"Account", "Your profile and the session on this browser."},
     "/account/agents" => {"Agents", "The agents you paired, and pairing a new one."},
     "/account/points" => {"Points", "Your points and activity."},
-    "/account/credits" =>
-      {"Credits history", "Everything that changed your Credits, on every Regent site."},
     "/account/wallets" => {"Wallets", "The wallets your sign-in verified."},
     "/account/connections" =>
       {"Connections", "The accounts you have connected, such as X, GitHub and Farcaster."},
@@ -136,9 +134,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Grammar: layers",
        "The six layers of a Regent page, from the ground to a tip, and how each shows its height."},
     "/showcase/onchain" =>
-      {"Wallet lab", "Wallet buttons against a practice network on this machine."},
-    "/showcase/credits" =>
-      {"Credits lab", "Buying Credits against a practice copy of Base on this machine."}
+      {"Wallet lab", "Wallet buttons against a practice network on this machine."}
   }
   # The public documents change only with a release, so the release time is when
   # each last changed.

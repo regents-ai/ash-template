@@ -1,4 +1,4 @@
-# Wallet funds and Credits: the golden plan
+# Wallet funds: the golden plan
 
 Plan, 5 October 2026, ash-template chief. It records Sean's decisions of 5 Oct (with the cloud agent) and how every Regent site will show, add, move and commit money. Nothing here is built yet. Production money flows, provider accounts, server spending and the Offers escrow each need their own go from Sean.
 
@@ -160,7 +160,7 @@ Checked at desktop and phone widths, in light and dark, and with the keyboard, a
 
 ## Agent spending (Sean, 12 Oct 2026: 92, 98, 99, 100)
 
-- An agent never signs with, or for, a person's Privy wallet. A paired agent has its own wallet, its SIWA agent key, and the pairing lets it spend the person's Regents Credits within the limits the person sets (98).
+- An agent never signs with, or for, a person's Privy wallet. A paired agent has its own wallet and its SIWA agent key, and pays from its own wallet.
 - Privy's "Enable for CLI and agent access" is off (92).
 - Dropped: Privy's agent approval, and agents as limited signers on a person's Privy wallet. The app's embedded wallets lack the TEE access agent signers need (100).
 - Network fees: Regent sponsors them (99 b); what that covers with no payments wallet is open with Sean.

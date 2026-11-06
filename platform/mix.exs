@@ -4,9 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "faa538d4028732a6b187165ebc0187cb9c573193"
+  @elixir_utils_ref "f8801d79228282459ede9421a51260c3bd292f44"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "871c3fe69f2501e9deb5de5626c7c9e7a5941d5e"
+  @design_system_ref "d3845c6d9fe34b7131937bafa051e6e04c9b09dd"
 
   def project do
     [
@@ -83,13 +83,10 @@ defmodule AshTemplate.MixProject do
       # regent_identity and regent_agents name regent_format by path; this pin replaces it.
       {:regent_format,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "format", override: true},
-      # regent_credits names regent_chain by a sibling path; this pin replaces it.
+      # regent_payments names regent_chain by a sibling path; this pin replaces it.
       {:regent_chain,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "chain", override: true},
       {:regent_points, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "points"},
-      # regent_payments names regent_credits by a sibling path; this pin replaces it.
-      {:regent_credits,
-       git: @elixir_utils, ref: @elixir_utils_ref, sparse: "credits", override: true},
       {:regent_payments,
        git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ash_components/payments"},
       {:ens_elixir, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "ens"},
@@ -151,7 +148,6 @@ defmodule AshTemplate.MixProject do
           regent_identity: "ash_components/identity",
           regent_points: "points",
           regent_privy: "privy",
-          regent_credits: "credits",
           regent_payments: "ash_components/payments",
           regent_chain: "chain",
           regent_agent_access: "agent_access",

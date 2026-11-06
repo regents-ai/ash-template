@@ -123,7 +123,7 @@ defmodule AshTemplateWeb.Router do
     }
   end
 
-  # The saved errors: Credits admins only. Anyone else gets the not-found page under
+  # The saved errors: the site's admins only. Anyone else gets the not-found page under
   # the reading policy; an admin's page replaces it with one carrying this
   # request's nonce (AshTemplateWeb.ErrorsAdmin).
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
@@ -240,7 +240,6 @@ defmodule AshTemplateWeb.Router do
       session: {Session, :render_context, []},
       on_mount: [{Showcase, :lab}, {Session, :load_human}] do
       live "/onchain", OnchainShowcaseLive, :index
-      live "/credits", CreditsShowcaseLive, :index
     end
   end
 
@@ -278,12 +277,6 @@ defmodule AshTemplateWeb.Router do
     get "/changelog", PublicPagesController, :show
     get "/agents", PublicPagesController, :show
     get "/agents/:agent", PublicPagesController, :show
-  end
-
-  # Stripe's signed notices about card purchases of Credits.
-  scope "/api/stripe", AshTemplateWeb do
-    pipe_through :api
-    post "/notices", StripeController, :notice
   end
 
   scope "/api/v1", AshTemplateWeb do
@@ -346,7 +339,7 @@ defmodule AshTemplateWeb.Router do
   end
 
   # What only a paired agent does: search, pins and label ratings on its
-  # person's notes, their Credits and Points, reading their activity and marking
+  # person's notes, their Points, reading their activity and marking
   # it read, room search, and mutes.
   scope "/api/v1", AshTemplateWeb do
     pipe_through :api
@@ -354,8 +347,6 @@ defmodule AshTemplateWeb.Router do
     get "/mutes", PairedAgentController, :mutes
     post "/mutes", PairedAgentController, :add_mute
     delete "/mutes/:id", PairedAgentController, :remove_mute
-    get "/account/balances", PairedAgentController, :balances
-    post "/account/credits/history", PairedAgentController, :credits_history
     get "/account/points", PairedAgentController, :points
     post "/activity", PairedAgentController, :activity
     post "/activity/read", PairedAgentController, :mark_activity_read
@@ -423,7 +414,6 @@ defmodule AshTemplateWeb.Router do
       live "/account", ShellLive, :account
       live "/account/agents", ShellLive, :account_agents
       live "/account/points", ShellLive, :points
-      live "/account/credits", ShellLive, :credits
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
       live "/pair", ShellLive, :pair

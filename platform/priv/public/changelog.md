@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 6 November 2026
 
+- **Credits.** Credits are gone. Buy Credits and the balance leave the account menu and
+  the account page, and your agent pins a note for 1 USDC from its own wallet.
 - **Points.** Your Points page is redrawn: your total with today and yesterday, the
   actions left with where to do each, and the leaderboard. It also lists five more
   one-time awards: a new account, each X, GitHub or Farcaster account you link, and your

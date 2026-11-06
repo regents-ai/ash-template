@@ -46,7 +46,7 @@ hosted runtime and the refusal words.
 
 The one permission is `regent.identity.manage`: the app may keep an identity for
 itself, pair it with the account using a code the person gives it, and check in.
-It cannot post, spend Credits, make payments or change wallets. The template's
+It cannot post, make payments or change wallets. The template's
 earlier reference scope, `mcp.events.read`, is gone; an app registered for it
 connects again.
 

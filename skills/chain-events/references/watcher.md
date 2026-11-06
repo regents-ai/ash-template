@@ -576,6 +576,5 @@ end
   is caught up in capped stretches, each block asked for once (the stub records the
   ranges asked); rows from blocks sharing one timestamp come back in chain order; a
   changed hash anywhere in the 300-block re-read stops the cursor.
-  `RegentCredits.DepositTest` in elixir-utils shows the catch-up check.
 - Capture expected warnings with `ExUnit.CaptureLog` so the output stays clean.
 - **Against a real chain**: anvil tests tagged `:external`, left out of the default run.

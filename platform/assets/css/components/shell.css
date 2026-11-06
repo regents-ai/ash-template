@@ -305,7 +305,7 @@
   white-space: nowrap;
 }
 
-/* Account and balance controls share the icon buttons' height, not the whole header. */
+/* The account control shares the icon buttons' height, not the whole header. */
 #shell-header > .account-control {
   align-self: center;
 }
@@ -395,9 +395,8 @@
   white-space: nowrap;
 }
 
-/* Signed in, the balance and the name share the icon buttons' 44px height, so
-   the header keeps its height. */
-#app-shell .shell-credits,
+/* Signed in, the name shares the icon buttons' 44px height, so the header keeps
+   its height. */
 .account-control > .account-chip {
   min-height: 2.75rem;
   margin-block: 0;
@@ -522,20 +521,11 @@
   display: none;
 }
 
-/* The header's Credits balance, which opens Buy Credits, in the same
-   cut-corner frame as Sign in and the account's name beside it. */
-#app-shell .shell-credits {
-  align-self: center;
-  margin-inline-end: var(--space-1);
-  font-variant-numeric: tabular-nums;
-}
-
-/* The close button of the shell's windows, Buy Credits and Pair New Agent,
-   square in the window's top right corner, and kept there while the window
-   scrolls. Its margins give back the room it takes, so what is under it keeps
-   its place. It sits here, outside the product layer, so it wins over the shared
+/* The close button of the pairing window, square in its top right corner, and
+   kept there while the window scrolls. Its margins give back the room it takes,
+   so what is under it keeps its place. It sits here, outside the product layer, so it wins over the shared
    button's padding. The pad is the window frame's own. */
-:is(.shell-credits-dialog, .shell-pairing-dialog) {
+.shell-pairing-dialog {
   --shell-dialog-pad: clamp(var(--space-2), 4vw, var(--space-4));
 }
 
@@ -1313,18 +1303,6 @@
     font-size: 0.875rem;
   }
 
-  /* The balance keeps its full width; the brand's name gives way first. */
-  #app-shell .shell-credits {
-    flex: 0 0 auto;
-    margin-inline-end: 0;
-    padding-inline: 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  #app-shell .shell-credits .shell-credits__unit {
-    display: none;
-  }
-
   #route-content {
     padding: 1rem;
   }
@@ -1353,12 +1331,8 @@
 /* The narrowest phones: a tighter Menu keeps the whole header, and the bottom
    bar, on one row at 320px. */
 @media (max-width: 23.75rem) {
-  #app-shell .mobile-menu-button,
-  #app-shell .shell-credits {
-    padding-inline: 0.35rem;
-  }
-
   #app-shell .mobile-menu-button {
+    padding-inline: 0.35rem;
     letter-spacing: 0.04em;
   }
 
@@ -1369,14 +1343,6 @@
 
   #shell-footer {
     padding-inline: 0.5rem;
-  }
-}
-
-/* Narrower than 22.5rem the header has no room for the balance: the account
-   menu shows it instead, as its balance row, which opens the same panel. */
-@media (max-width: 22.49rem) {
-  #app-shell #shell-credits-button {
-    display: none;
   }
 }
 

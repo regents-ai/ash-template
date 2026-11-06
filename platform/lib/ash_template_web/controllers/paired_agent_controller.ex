@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   @moduledoc """
   What only a paired agent does, for the browser tools (`priv/tool_manifest.json`,
   `assets/js/public_tools.ts`) and regents-cli alike: search, pins and label
-  ratings on its person's notes, their Credits and Points, reading their activity
+  ratings on its person's notes, their Points, reading their activity
   and marking it read, room search, and the people and agents its person has
   muted in the rooms. The notes themselves are `AshTemplateWeb.NotesController`'s.
 
@@ -81,58 +81,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
   @points_off "Earning Points is off on this site."
-  @spending_closed "Agent spending isn't open yet. Your person can do this themselves."
-  @spending_ask "Your person can allow you to spend Credits on this site on their Regents account at regents.sh/account."
-  @pay_hint ~s(Sign the payment terms with your own wallet and send the signed payment as "payment" in the body, or send {"pay_with": "credits"} to pay with your person's Credits. Asking again the same way never pays twice.)
-
-  # What the agent may spend, and the note, both come from the agent's budget
-  # (`RegentCredits.agent_budget/1`): its grant, and whether a grant can be made.
-  def balances(conn, _params) do
-    actor = credit_actor(conn)
-
-    case RegentCredits.agent_budget(actor: actor) do
-      {:ok, budget} ->
-        answer = %{credits: RegentCredits.balance(actor.privy_user_id), spending_grant: budget}
-        json(conn, with_note(answer, spending_note(budget)))
-
-      {:error, %Ash.Error.Forbidden{}} ->
-        refuse(conn, "agent_not_paired")
-
-      {:error, error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-    end
-  end
-
-  defp spending_note(%{site_allowed: true}), do: nil
-  defp spending_note(%{grant_approvals_available: false}), do: @spending_closed
-  defp spending_note(%{grant_approvals_available: true}), do: @spending_ask
-
-  def credits_history(%{body_params: %{"after" => cursor}} = conn, _params)
-      when not is_binary(cursor),
-      do: refuse(conn, "invalid_cursor")
-
-  def credits_history(conn, _params) do
-    args =
-      case conn.body_params do
-        %{"after" => cursor} when is_binary(cursor) -> %{after: cursor}
-        _ -> %{}
-      end
-
-    case RegentCredits.history(args, actor: credit_actor(conn)) do
-      {:ok, history} ->
-        json(conn, %{
-          entries: history.entries,
-          pagination: %{has_more: history.more?, next_cursor: history.next}
-        })
-
-      {:error, error} ->
-        if cursor_error?(error) do
-          refuse(conn, "invalid_cursor")
-        else
-          conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
-        end
-    end
-  end
+  @pay_hint ~s(Sign the payment terms with your own wallet and send the signed payment as "payment" in the body. Asking again the same way never pays twice.)
 
   defp cursor_error?(%Ash.Error.Action.InvalidArgument{field: :after}), do: true
   defp cursor_error?(%Ash.Error.Page.InvalidKeyset{}), do: true
@@ -327,7 +276,7 @@ defmodule AshTemplateWeb.PairedAgentController do
 
       json(conn, %{
         note: %{id: note.id, pinned: !!note.pinned_at},
-        price: %{usdc: USDC.format(price), credits: USDC.format(price)}
+        price: %{usdc: USDC.format(price)}
       })
     end)
   end
@@ -335,8 +284,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   @doc """
   Pins the note once its pin is paid for (`AshTemplate.Payments.NotePin`): 1 USDC
   from the agent's own wallet, an x402 payment sent as `"payment"` in the signed
-  body, or 1 of its person's Credits when the body says `"pay_with": "credits"`.
-  Without either it answers 402 with the terms. Asked again for the same note,
+  body. Without one it answers 402 with the terms. Asked again for the same note,
   it pays the terms it already offered, so a retry never pays twice. A note
   already pinned costs nothing.
   """
@@ -399,9 +347,6 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  defp pay(%{body_params: %{"pay_with" => "credits"}} = conn, actor, intent),
-    do: Purchase.pay_with_credits(actor, intent.id, credit_actor(conn), %{})
-
   defp pay(conn, actor, intent),
     do: Purchase.execute(actor, intent.id, %{payment: payment(conn), payer: nil, context: %{}})
 
@@ -428,20 +373,6 @@ defmodule AshTemplateWeb.PairedAgentController do
   defp answer_pin({:payment_rejected, intent, reason}, conn),
     do: ask_payment(conn, intent, reason)
 
-  defp answer_pin({:credits_refused, intent, words}, conn) do
-    conn
-    |> put_status(402)
-    |> json(%{
-      error: %{
-        code: "credits_refused",
-        message: words,
-        hint:
-          "Nothing was spent. account_balances shows your person's Credits and the limits they set for you. You can pay in USDC instead."
-      },
-      payment_intent_id: intent.id
-    })
-  end
-
   defp answer_pin({:settled, intent, _receipt}, conn),
     do: refuse_intent(conn, "pin_settled", intent)
 
@@ -458,8 +389,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   defp ask_payment(conn, intent, reason) do
     price = USDC.format(intent.amount_atomic)
 
-    message =
-      reason || "Pinning this note costs #{price} USDC, or #{price} of your person's Credits."
+    message = reason || "Pinning this note costs #{price} USDC."
 
     terms = Purchase.terms(intent, message, url(~p"/api/v1/notes/#{intent.target_id}/pin"))
     {:ok, header} = X402.PaymentRequired.encode(terms)
@@ -470,17 +400,15 @@ defmodule AshTemplateWeb.PairedAgentController do
     |> json(%{
       error: %{code: "payment_required", message: message, hint: @pay_hint},
       payment_intent_id: intent.id,
-      price: %{usdc: price, credits: price},
+      price: %{usdc: price},
       payment_terms: terms
     })
   end
 
-  defp paid_header(conn, %{paid_with: :usdc, payment_response: response}) do
+  defp paid_header(conn, %{payment_response: response}) do
     {:ok, header} = X402.PaymentResponse.encode(response)
     put_resp_header(conn, "payment-response", header)
   end
-
-  defp paid_header(conn, _paid_with_credits), do: conn
 
   defp refuse_payment(conn, %Ash.Error.Forbidden{}), do: refuse(conn, "agent_not_paired")
   defp refuse_payment(conn, %Ash.Error.Invalid{} = error), do: refuse(conn, "invalid_pin", error)
@@ -511,17 +439,6 @@ defmodule AshTemplateWeb.PairedAgentController do
       {:error, %Ash.Error.Forbidden{}} -> refuse(conn, "agent_not_paired")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end
-  end
-
-  defp credit_actor(conn) do
-    actor = conn.assigns.actor
-
-    RegentCredits.Actor.agent(
-      actor.privy_user_id,
-      actor.wallet_address,
-      AshTemplate.site(),
-      actor.pairing_id
-    )
   end
 
   defp points_note([]), do: @points_off

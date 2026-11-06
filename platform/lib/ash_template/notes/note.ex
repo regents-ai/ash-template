@@ -15,7 +15,7 @@ defmodule AshTemplate.Notes.Note do
   (`AshTemplate.Notes.Decision`); `label_decision` is the latest one.
 
   A pinned note comes first among its writer's notes. An agent pins one by
-  paying 1 USDC or 1 of its person's Credits (`AshTemplate.Payments.NotePin`).
+  paying 1 USDC (`AshTemplate.Payments.NotePin`).
   Unpinning is free.
 
   An archived note goes after all the others and keeps everything else,

@@ -115,13 +115,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
       account_control={@account}
       shell_instance={0}
       unread={2}
-      credits={%{state: :ready, value: %{available: Decimal.new("10.00")}}}
       healthy={true}
       search={AshTemplateWeb.ShellLive.unsearched()}
     >
-      <:credits_panel>
-        <p style="padding: 24px">Buying Credits needs a signed-in account.</p>
-      </:credits_panel>
       <:pairing_panel>
         <Regent.Account.pairing id="preview-pairing" harnesses={AshTemplateWeb.PairingBox.choices()} />
       </:pairing_panel>
@@ -148,7 +144,7 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <p>
             The top bar, sections, lists, account menu and bottom bar around every signed-in page.
           </p>
-          <p>The account and Credits shown here are examples, not a signed-in session.</p>
+          <p>The account shown here is an example, not a signed-in session.</p>
           <a href="/showcase" target="_top">Back to showcase</a>
         </div>
       </:content>

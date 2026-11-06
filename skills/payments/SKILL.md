@@ -1,6 +1,6 @@
 ---
 name: payments
-description: Taking payments on Regent's Phoenix and Ash sites with the shared RegentPayments library — tips, paid actions and fees paid in USDC from a person's own wallet on Base through x402 or in Regent Credits, their USDC Balance, and paid tools for agents. Use when adding or changing anything a person or agent pays for, an offer, a pay button, the USDC Balance shown on a page, a paid HTTP endpoint or MCP tool, a paid-fix fee forwarded to REGENT staking, or the words shown for a payment's outcome.
+description: Taking payments on Regent's Phoenix and Ash sites with the shared RegentPayments library — tips, paid actions and fees paid in USDC from a person's or agent's own wallet on Base through x402, their USDC Balance, and paid tools for agents. Use when adding or changing anything a person or agent pays for, an offer, a pay button, the USDC Balance shown on a page, a paid HTTP endpoint or MCP tool, a paid-fix fee forwarded to REGENT staking, or the words shown for a payment's outcome.
 ---
 
 # Payments
@@ -18,30 +18,23 @@ a site fits around it.
 
 ## Rules
 
-1. **Two ways to pay: USDC from the person's wallet, or Regent Credits.** USDC goes
-   from the payer's own wallet straight to the wallet the offer names, settled by an
-   x402 facilitator; Regents keeps no USDC for anyone, with no top-up or withdrawal.
-   Regent Credits are the one balance Regents keeps (`regent_credits`), and they pay
-   anywhere the money ends in a Regents wallet: the offer's terms say
-   `credits: :accepted`, the site lists that wallet in `credits_pay_to`, and
-   `Purchase.pay_with_credits/4` spends the same amount in Credits, one Credit per
-   USDC. Terms that pay another person's wallet, or pass the money on to others
-   (tips, paid fixes whose fee goes to stakers), answer `credits: :refused` until
-   the founder decides how those receivers are paid. Funds committed to a product sit
-   in that product's own escrow under its stated rules (Patchbay Offers) and are shown
-   apart from wallet funds.
-2. **USDC Balance and Credits are two figures, never one.** USDC Balance is what the
-   person's signed-in Privy wallet holds in USDC on Base, read live with
-   `RegentPayments.Balance.usdc_balance_atomic/1`. Credits is the person's Regent
-   Credits, read from `regent_credits`. Call them "USDC Balance" and "Credits" on every
-   site, never "credit" or "account balance", and never add them together. The
-   template's `/showcase/funds` shows funds on other networks, commitments, card
-   purchases and cash-outs; the plan is `docs/wallet-funds-plan.md`.
+1. **One way to pay: USDC on Base from the payer's own wallet.** USDC goes from the
+   payer's wallet straight to the wallet the offer names, settled by an x402
+   facilitator. Regents keeps no balance for anyone: no top-up, no withdrawal and no
+   prepaid units (Credits were dropped, Sean, 6 Nov 2026; never build or propose them).
+   Funds committed to a product sit in that product's own escrow contract under its
+   stated rules (Patchbay Offers) and are shown apart from wallet funds.
+2. **USDC Balance is the wallet's own figure.** It is what the person's signed-in Privy
+   wallet holds in USDC on Base, read live with
+   `RegentPayments.Balance.usdc_balance_atomic/1`. Call it "USDC Balance" on every site,
+   never "credit" or "account balance". The template's `/showcase/funds` shows funds on
+   other networks, commitments, card purchases and cash-outs; the plan is
+   `docs/wallet-funds-plan.md`.
 3. **One offer per paid action.** A site writes a module implementing
    `RegentPayments.Offer` for each thing it sells (a tip, a paid fix, a run) and lists it
    in `config :regent_payments, offers: [...]`. The offer freezes the terms (`freeze/2`:
-   amount, the wallet paid, what it is for, the sentence the payer sees, and whether
-   Credits may pay it). It then carries
+   amount, the wallet paid, what it is for and the sentence the payer sees). It then
+   carries
    out what was bought (`carry_out/4`). The library owns everything between.
 4. **Terms are frozen, never taken from the request.** Amount and destination are read
    from the stored intent on every call. Nothing a page or agent sends changes them.
@@ -66,8 +59,7 @@ config :regent_payments,
   offers: [MySite.Payments.Tip],
   base_rpc_url: System.get_env("BASE_RPC_URL"),
   payment_chain: %{name: "Base", rpc_url: "https://mainnet.base.org"},
-  wallet_proof: [name: "MySite", version: "1", endpoint: MySiteWeb.Endpoint],
-  credits_pay_to: [System.get_env("PAYMENTS_WALLET_ADDRESS")]   # Regents wallets Credits may pay into
+  wallet_proof: [name: "MySite", version: "1", endpoint: MySiteWeb.Endpoint]
 
 config :regent_payments, RegentPayments.Facilitator,
   url: X402.Facilitator.Auth.CDP.facilitator_url(),
@@ -75,9 +67,8 @@ config :regent_payments, RegentPayments.Facilitator,
 ```
 
 - Start `RegentPayments.Supervisor` after the repository.
-- `regent_credits` uses the same repository, since the Credits charge and the settled
-  intent are written in one transaction. Pin it from git with `override: true`,
-  because `regent_payments` names it by a sibling path.
+- Pin `regent_chain` from git with `override: true`, because `regent_payments` names
+  it by a sibling path.
 - The CDP key goes in Fly secrets. `BASE_RPC_URL` may carry a provider key; the library
   never logs it, so don't log it either.
 - **No deployment migrates the tables.** Every site carries the same `bin/migrate-shared`,
@@ -137,8 +128,7 @@ API. A person's settled or applied intent is finished by the account whose walle
 Do not guess historical ownership or widen authorization to make recovery succeed.
 
 The template's note pin (`AshTemplate.Payments.NotePin`) is the reference offer: a
-paired agent pays 1 USDC from its own wallet over x402, or 1 of its person's Credits
-within the limits the person set. Product sites copy its wiring.
+paired agent pays 1 USDC from its own wallet over x402. Product sites copy its wiring.
 
 ## Fees handed on to REGENT staking
 

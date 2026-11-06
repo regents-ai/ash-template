@@ -191,10 +191,7 @@ production.
 | `PHX_HOST` | Yes in production | Public hostname the endpoint builds URLs from. The Claude connector's sign-in (its issuer) is `https://PHX_HOST` and its resource is `https://PHX_HOST/mcp`; each code and token records them as it is issued, so moving the site to a new address means its connected apps connect again. |
 | `SECRET_KEY_BASE` | Yes in production | Session signing secret; at least 64 bytes. |
 | `PORT` | No | HTTP port. Defaults to `4000`. |
-| `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the Credits admins. Only they can open the saved errors at `/admin/errors`; anyone else gets the not-found page. |
-| `STRIPE_SECRET_KEY` | For card payments | Stripe's secret key. Set, the Credits panel offers Card or Link beside USDC on Base; see [Card and Link payments](#card-and-link-payments). A test key (`sk_test_…`) offers it to the Credits admins only. Unset means USDC only, and `/api/stripe/notices` is not found. |
-| `STRIPE_WEBHOOK_SECRET` | With `STRIPE_SECRET_KEY` | The signing secret (`whsec_…`) of the Stripe endpoint that sends `/api/stripe/notices`. The boot stops without it once the secret key is set. |
-| `STRIPE_PUBLISHABLE_KEY` | With `STRIPE_SECRET_KEY` | Stripe's publishable key (`pk_test_…` or `pk_live_…`), which the page gives Stripe's payment form. The boot stops without it once the secret key is set. |
+| `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the site's admins (`config :ash_template, :admins`). Only they can open the saved errors at `/admin/errors` or remove an agent's picture; anyone else gets the not-found page. |
 | `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. There is no default; each role admits only its own database hosts. |
 | `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's pooler, `pgbouncer.dzx6qo6xqzvojpv5.flympg.net`. |
 | `DATABASE_DIRECT_URL` | Only when migrating | Direct PostgreSQL connection string used by the migration release command. |
@@ -217,37 +214,11 @@ uses one for the other's work.
   `ash-template-web`, and gives up on a statement after 15 seconds, a lock wait
   after 5 seconds and an idle open transaction after 15 seconds
   (`AshTemplate.DatabaseConfig`). The same login also holds one connection on the
-  direct address, `ash-template-listen`, on which Credits and agent changes from
+  direct address, `ash-template-listen`, on which agent changes from
   every site arrive (`AshTemplate.SharedChanges`): the pooler drops listening.
 - **The release login** (`DATABASE_DIRECT_URL`) is a user with the `schema_admin`
   role, used only while a release goes out: the release command runs the
   migrations with it and then exits. The running site never reads it.
-
-### Card and Link payments
-
-Credits can be bought by card or Link through Stripe as well as with USDC on Base
-(`RegentCredits.CardPurchase` in elixir-utils). The buyer pays the Credits plus the
-card fee shown before Continue; Stripe's own form takes the email, card or Link.
-The Credits are added once, from Stripe's record of the payment, whichever comes
-first: the panel when Stripe says the payment went through, or Stripe's signed
-notice. A refund takes them back; a dispute takes them back and pauses card
-purchases until the account's Credits are above zero again.
-
-To turn it on for a site:
-
-1. In Stripe, under **Settings → Payment methods**, turn on Cards and Link.
-2. Under **Developers → Webhooks**, add an endpoint at
-   `https://<site host>/api/stripe/notices` sending `checkout.session.completed`,
-   `checkout.session.async_payment_succeeded`, `charge.refunded` and
-   `charge.dispute.created`, and copy its signing secret.
-3. Set `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and `STRIPE_WEBHOOK_SECRET`
-   (on Fly with `fly secrets set --stage`, then release). Use the test keys first:
-   only the Credits admins see the choice, and a test card such as
-   `4242 4242 4242 4242` adds real Credits to their account.
-
-Locally, `stripe listen --forward-to localhost:4000/api/stripe/notices` prints a
-signing secret for `STRIPE_WEBHOOK_SECRET`; without it the panel still adds the
-Credits when Stripe says the payment went through.
 
 ## Public HTTP surface
 
@@ -268,7 +239,6 @@ is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
 | `/mcp` | POST | The hosted MCP server (`AshAi.Mcp.Router`, after `AshTemplateWeb.Plugs.McpAgent`): an agent signing each call reads a room with `rooms_messages` and posts with `rooms_post`; the Claude connector's Bearer token (`regent.identity.manage`) runs only its identity tools, which keep an identity for the connection, pair it, read the pairing and check in. A bad token, or none, gets 401 with the challenge that starts sign-in; a token or no signature while `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is off, and a token beside a signature, get 401 with none. A query string, a batch, a body that is not JSON and a page from another site are refused before any credential is read. 120 requests a minute from one address for agents' signed requests; requests with a Bearer token share a ceiling of 600 a minute per address, since Claude's connector calls from shared servers, then 120 a minute for each connected account. Other methods answer 405; not logged. |
 | `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`, `/oauth/register`, `/oauth/token`, `/oauth/revoke` | GET, POST | The connector's sign-in discovery, app registration, tokens and revocation (`RegentOAuth.Protocol`). Registration (30 a minute) and token and revocation requests (120 a minute) are limited by address and never logged. 404 while the connector is off. |
 | `/oauth/authorize`, `/oauth/connections`, `/oauth/connections/revoke` | GET, POST | The consent page under the signed-in browser session, and Connected apps, where a person sees and disconnects their apps (`RegentOAuth.Consent`). They refuse while the connector is off. |
-| `/api/stripe/notices` | POST | Stripe's signed notices about card and Link purchases of Credits; found only while `STRIPE_SECRET_KEY` is set. |
 
 ## Showcase
 
@@ -316,16 +286,15 @@ security policy; the router's pipelines choose one.
 | Profile | Pipelines | What it allows |
 | --- | --- | --- |
 | `reading` | `:public_documents` | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
-| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, inline style elements for Privy's window, and Stripe's and Link's scripts, frames and API for card payments (the hosts Stripe lists, some as `*.js.stripe.com` and `*.link.com`). |
+| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
 | `showcase` | `:framed_preview` | `sign_in` that may frame its own preview page, for `/showcase` and `/showcase/preview`. |
 
 A site that loads something else (an RPC, an image host, an embedded wallet)
 adds each exact origin to the one directive in the one profile that needs it:
 `@sign_in` for anything the wallet or sign-in pages use, `@baseline` only for
 what every page loads. Never add `https:`, `*`, a whole-domain wildcard or
-`'unsafe-eval'`; the only wildcards are the ones Privy and Stripe publish for
-their own hosts (`*.rpc.privy.systems`, `*.js.stripe.com`, `*.stripe.com` and
-`*.link.com`).
+`'unsafe-eval'`; the only wildcard is the one Privy publishes for its own
+hosts (`*.rpc.privy.systems`).
 After a change, load each affected page and the sign-in window
 and check the browser console for "Content Security Policy" errors.
 
@@ -359,7 +328,7 @@ buckets count observations at or below their bound
 lib/ash_template/       Ash domains: accounts, sign-in, legal documents
 lib/ash_template_web/   Endpoint, router, live pages, controllers, components
 lib/mix/tasks/          Local setup, contract sync and route-handoff checks
-test/                   The sign-in and Credits tests (see Checks)
+test/                   The sign-in, agent and Points tests (see Checks)
 contracts/              The OpenAPI contract
 config/                 Compile-time and runtime configuration
 assets/                 TypeScript and CSS, built with esbuild; the hashed
@@ -401,14 +370,7 @@ can do and the check that proves it. Among them:
 - `mix test` signs a person in and back in, because sign-in once failed for three
   days unnoticed, and walks a new person from an email sign-in without a wallet,
   through the wallet Privy gives them, to the same account at every sign-in.
-- It credits a Credits purchase with the site listening to Credits' signals,
-  because a listener that fails rolls the credit back.
 - It checks that a paired agent's tools accept only signed proof, never a cookie.
-- It races two agents on two sites for a person's last Credits, retries a lost
-  pin answer, and revokes an allowance mid-session: an agent never spends more
-  than its person has, never pays twice, and stops the moment its allowance
-  is off. These run on real separate connections, so their rows stay in the test
-  database.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this
@@ -458,7 +420,7 @@ hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything: `pending:`,
 `applied-without-file:`, and `shared-pending:` for each shared Identity, Agents,
-Credits, Points or Payments change the release carries that is not applied yet
+Points or Payments change the release carries that is not applied yet
 (a deployment is refused while one is listed), or `none`.
 `/app/bin/migrate-shared` applies those shared changes, and only those. Every
 site carries the same command; after the founder's go, the site whose release

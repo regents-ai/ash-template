@@ -18,8 +18,6 @@
       "Bash(regents ash-template notes get *)",
       "Bash(regents ash-template notes search *)",
       "Bash(regents ash-template notes pin-price *)",
-      "Bash(regents ash-template account balances *)",
-      "Bash(regents ash-template account credits-history *)",
       "Bash(regents ash-template account points *)",
       "Bash(regents ash-template activity list *)",
       "Bash(regents ash-template mutes list *)",

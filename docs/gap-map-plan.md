@@ -29,7 +29,7 @@ names). Each site copies these rules; regents-cli follows.
    their paired agent; the agent-only extras (search, pins, label ratings) sit beside it.
 6. **A signed read with input is a POST.** A signed request takes no query string, so a
    paired read that pages or filters sends `{}` or its input as a JSON body
-   (`account credits-history`, `activity list`, `notes search`); a page continues with
+   (`activity list`, `notes search`); a page continues with
    `after`, the previous answer's `pagination.next_cursor`.
 
 ## Calls where the map said "needs a decision"

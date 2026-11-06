@@ -1,6 +1,6 @@
 # About
 
-Ash Template is the starting point for a new Regent website. Sign-in, one account page, Credits, Points and paired agents already work together.
+Ash Template is the starting point for a new Regent website. Sign-in, one account page, Points and paired agents already work together.
 
 ## Overview
 
@@ -10,7 +10,7 @@ One sign-in works across every Regent site, and every account gets its own walle
 
 ### Account
 
-Profile, wallets, connected accounts, Credits and Points sit on one [account page]({{origin}}/account).
+Profile, wallets, connected accounts and Points sit on one [account page]({{origin}}/account).
 
 ### Agents
 

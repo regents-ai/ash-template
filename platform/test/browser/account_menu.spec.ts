@@ -119,9 +119,9 @@ test("Escape closes the account menu before an open section behind it", async ({
   await problems.expect()
 })
 
-// 6 Nov 2026: with Buy Credits open over an open section, Escape closed the section
+// 6 Nov 2026: with a window open over an open section, Escape closed the section
 // behind and left the window open. Escape is the window's, and the section stays.
-test("Escape closes Buy Credits before an open section behind it", async ({page}) => {
+test("Escape closes a window before an open section behind it", async ({page}) => {
   const problems = watch(page)
   await page.goto("/rooms/general")
   await ready(page)
@@ -132,10 +132,11 @@ test("Escape closes Buy Credits before an open section behind it", async ({page}
     details.innerHTML = "<summary>Section</summary><p>Inside</p>"
     content.prepend(details)
   })
-  await page.locator("#shell-credits-button").click()
-  await expect(page.locator("#shell-credits")).toBeVisible()
+  await page.locator("#shell-search-button").click()
+  const search = page.getByRole("dialog", {name: "Search"})
+  await expect(search).toBeVisible()
   await page.keyboard.press("Escape")
-  await expect(page.locator("#shell-credits")).toBeHidden()
+  await expect(search).toBeHidden()
   await expect(page.locator("#walk-open-section")).toHaveAttribute("open", "")
   await problems.expect()
 })
@@ -232,53 +233,18 @@ test("on a short phone screen, the account menu covers the bottom bar and reache
   }
 })
 
-// Narrower than 22.5rem the header has no room for the balance, so the account menu
-// shows it, in the header's words, and the row opens the same Buy Credits panel. The
-// sample account's 10.00 Credits is the balance that once pushed the header 15px past
-// a 320px screen.
-test("on the narrowest phones the balance is in the account menu and opens Buy Credits", async ({page, isMobile}) => {
-  test.skip(!isMobile, "only the narrowest phones move the balance")
+// A 320px phone once scrolled sideways: the header ran 15px past the screen. The
+// header and the open menu fit it, on the sample account and the walk's own person.
+test("on the narrowest phones the header and the account menu fit the screen", async ({page, isMobile}) => {
+  test.skip(!isMobile, "only phones are this narrow")
   const problems = watch(page)
   await page.setViewportSize({width: 320, height: 900})
-  await page.goto("/showcase/preview")
-  await ready(page)
-  await expect(page.locator("#shell-credits-button")).toBeHidden()
-  await openMenu(page)
-
-  const row = page.locator("#account-menu-credits")
-  await expect(row).toBeVisible()
-  await expect(row).toHaveText("10.00 Credits")
-  await expect(row).toHaveAccessibleName("10.00 Credits")
-  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
-
-  await row.click()
-  await expect(menu(page)).toBeHidden()
-  await expect(page.locator("#shell-credits")).toBeVisible()
-  await page.keyboard.press("Escape")
-  await expect(page.locator("#shell-credits")).toBeHidden()
-  await expect(page.locator("#account-chip")).toBeFocused()
-
-  // The walk's own person, on a page of the site, the same.
-  await page.goto("/rooms/general")
-  await ready(page)
-  await expect(page.locator("#shell-credits-button")).toBeHidden()
-  await openMenu(page)
-  await expect(page.locator("#account-menu-credits")).toBeVisible()
-  await problems.expect()
-})
-
-test("wider than the narrowest phones the balance stays in the header, not the menu", async ({page, isMobile}) => {
-  const problems = watch(page)
-  const width = isMobile ? 390 : 1280
-  await page.setViewportSize({width, height: 900})
-  await page.goto("/showcase/preview")
-  await ready(page)
-  await expect(page.locator("#shell-credits-button")).toBeVisible()
-  await openMenu(page)
-  await expect(page.locator("#account-menu-credits")).toBeHidden()
-  await page.keyboard.press("Escape")
-  await page.locator("#shell-credits-button").click()
-  await expect(page.locator("#shell-credits")).toBeVisible()
+  for (const path of ["/showcase/preview", "/rooms/general"]) {
+    await page.goto(path)
+    await ready(page)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+    await openMenu(page)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320)
+  }
   await problems.expect()
 })

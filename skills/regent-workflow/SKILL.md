@@ -162,7 +162,7 @@ write 'Citation'. Always use 1-2 words instead of a phrase for titles".
   one per line"). Name the thing with a noun: "Citation", "Votes", "Expectations",
   "About", "Work", "Fleet Keys", "Checkout", "Choices".
 - A proper name counts as one word ("Daily Treasury Slice", "Terms of Use", "Claude
-  Code", "Regents Club"), and so does a unit in brackets ("Daily limit (Credits)").
+  Code", "Regents Club"), and so does a unit in brackets ("Amount (USDC)").
 - The explanation a long title carried moves to the sentence under it or a tip. Body
   text, tips and empty-state sentences stay sentences; the W-word rule above still
   holds for them. Hidden accessible names (`aria-label`), code comments and @doc are
@@ -295,7 +295,7 @@ ash-template chief) and "the entire point of creating ash-template is so other a
 and codebases refer to it as the 'golden generic baseline'".
 
 - `repos/ash-template` (live at template.regents.sh) is the golden generic baseline.
-  Every shared thing on a site (sign-in, account, agents and pairing, Credits, Points,
+  Every shared thing on a site (sign-in, account, agents and pairing, Points,
   agent guides and start pages, signed-request error shapes, the copy for all of these)
   matches the template word for word and behaviour for behaviour.
 - regents.sh is one of the five sites, not the reference. Never write, ask or plan
@@ -317,7 +317,7 @@ Regents, Patchbay, Keyfleet, Autolaunch and Techtree are five similar Ash sites.
 change is shared when more than one site uses it: design-system components, primitives
 and tokens (`repos/design-system`, the `regent_ui` pin); the shared Elixir packages in
 `repos/elixir-utils`; and everything `repos/ash-template` wires up for every site:
-sign-in, account, agents and pairing, Credits, Points, agent guides, signed-request
+sign-in, account, agents and pairing, Points, agent guides, signed-request
 refusals and their words, layers, health, deploys and security. Pages only one site has
 stay in that site's monorepo.
 

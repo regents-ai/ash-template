@@ -22,15 +22,6 @@ const windows: {name: string; path: string; open: (page: Page, press: Press) => 
     window: page => page.getByRole("dialog", {name: "Search"}),
   },
   {
-    name: "Buy Credits",
-    path: "/app",
-    open: async (page, press) => {
-      await ready(page)
-      await press(page.locator("#shell-credits-button"))
-    },
-    window: page => page.getByRole("dialog", {name: "Buy Credits"}),
-  },
-  {
     name: "the agent tools list",
     path: "/",
     open: (page, press) => press(page.locator("#home-agent-tools-button")),

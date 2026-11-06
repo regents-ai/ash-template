@@ -46,8 +46,8 @@ defmodule AshTemplate.Application do
         chain_head_children(),
         room_activity_child(),
         points_board_child(),
-        # After PubSub: a Credits balance changed or a pairing made or ended on
-        # any Regent site reaches the pages showing it.
+        # After PubSub: a pairing made or ended on any Regent site reaches the
+        # pages showing it.
         AshTemplate.SharedChanges,
         {Oban, oban_config()},
         AshTemplateWeb.Telemetry.site_poller(),
@@ -67,9 +67,7 @@ defmodule AshTemplate.Application do
     :ok
   end
 
-  # AshOban adds a sweep for every trigger in the site's domains. Regents alone
-  # runs Regent Credits' purchase checks and Base deposit reads, for every site:
-  # they share one ledger, so a second site's sweep would only repeat its reads.
+  # AshOban adds a sweep for every trigger in the site's domains.
   defp oban_config do
     AshOban.config(
       Application.fetch_env!(:ash_template, :ash_domains),
