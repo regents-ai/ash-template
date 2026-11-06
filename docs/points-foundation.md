@@ -142,15 +142,30 @@ See the package README for the adapter contract, actor policy and migration inst
 
 ## Account Points page
 
-`/account/points` lists `RegentPoints.Rules.tracked/0`: only the catalog rules this
-site has an adapter for, so it never offers an action nothing records. Today that is
-Credits bought, "Account activated", the three linked social accounts, "First paired
-agent" and "First note written by your agent", plus the NFT bonus tiers. The
-daily allowances shown are those of the rules earning now (`RegentPoints.Summary`),
-so none show while earning is off. Each entry says who earned it (you or the agent's
-name) and whether it counted in full, reached an allowance, or is a correction. The
-agent tool `account_points` answers with the same entries and allowances. A site that adds an
-adapter shows its rule without changing the page.
+`/account/points` is drawn with `Regent.Points` from the design system, on figures
+`AshTemplateWeb.PointsEntries` formats. It shows, in order on a phone:
+
+- **Total**, large, on the site's band colour, with what the account earned today
+  and yesterday (UTC days), its rank, and one sentence saying Points are a record
+  of activity. It says nothing about value.
+- **To do**: `RegentPoints.Rules.tracked/0`, only the catalog rules this site has an
+  adapter for and that are approved, so it never offers an action nothing records.
+  One-time actions and daily ones are listed apart; the ones left come first with
+  their points and a link to where each is done, the ones done are ticked. A daily
+  action shows how much of today's count is used. Before earning opens it says
+  "Earning hasn’t opened yet." and shows no points.
+- **Leaderboard**: the ten highest totals (`RegentPoints.leaderboard/1`) by the name
+  and picture the site already shows the public, the reader's row marked. A reader
+  below the ten gets their own place on a row under the list. Accounts level on
+  points share a place. `AshTemplate.Points.Accounts.people/1` supplies the names.
+- **Bonus**: the three NFT tiers with the one held marked, and each period's bonus.
+- **Activity**: each entry with who earned it (you or the agent's name), when, and
+  whether it was cut by a daily limit or is a correction.
+
+The agent tool `account_points` answers with the same figures: `points`,
+`earned_today`, `earned_yesterday`, `rank`, `to_do`, `daily_limits`, `leaderboard`,
+`entries` and `period_bonuses`. A site that adds an adapter shows its rule without
+changing the page.
 
 ## Local development and launch
 

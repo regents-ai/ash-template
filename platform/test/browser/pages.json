@@ -28,7 +28,7 @@
     {"route": "/design", "purpose": "Find the design pages.", "check": "#design-heading", "signed_in": true},
     {"route": "/account", "purpose": "See your account, your profile and your Credits.", "check": "#account-identity", "signed_in": true},
     {"route": "/account/agents", "purpose": "See your agents and pair a new one.", "check": "#account-agents", "signed_in": true},
-    {"route": "/account/points", "purpose": "See your Points and how to earn them.", "check": "#points-earn", "signed_in": true},
+    {"route": "/account/points", "purpose": "See your Points, the actions left and the leaderboard.", "check": "#points-todo", "signed_in": true},
     {"route": "/account/credits", "purpose": "See your Credits history.", "check": "#credits-history", "signed_in": true},
     {"route": "/account/wallets", "purpose": "See and copy the wallets your sign-in verified.", "check": "#account-embedded-wallet-copy", "signed_in": true},
     {"route": "/oauth/connections", "purpose": "See and disconnect the apps connected to your account.", "check": "main h1", "signed_in": true, "spec": "oauth.spec.ts"},

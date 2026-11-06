@@ -71,6 +71,7 @@ defmodule AshTemplateWeb.ShellLive do
        credits_read: %Read{},
        credits_history: %Read{},
        points_bonus: %Read{},
+       points_board: %Read{},
        points_earning: [],
        verified_connections_notice: nil,
        connection_outcome: nil,
@@ -208,7 +209,7 @@ defmodule AshTemplateWeb.ShellLive do
         %{topic: "points:" <> _},
         %{assigns: %{route_spec: %{route_id: :points}}} = socket
       ),
-      do: {:noreply, read_points(socket)}
+      do: {:noreply, socket |> read_points() |> read_points_board()}
 
   def handle_info(%{topic: "points:" <> _}, socket), do: {:noreply, socket}
 
@@ -432,6 +433,7 @@ defmodule AshTemplateWeb.ShellLive do
           signed_out_reason={@signed_out_reason}
           account={current_account(@access_context)}
           points={@points}
+          board={@points_board}
           bonus={@points_bonus}
           earning={@points_earning}
         />
@@ -826,10 +828,12 @@ defmodule AshTemplateWeb.ShellLive do
     socket
     |> assign(:points_earning, RegentPoints.Rules.active())
     |> read_points()
+    |> read_points_board()
     |> read_points_bonus()
   end
 
-  defp load_points(socket, _), do: socket |> Read.clear(:points) |> Read.clear(:points_bonus)
+  defp load_points(socket, _),
+    do: socket |> Read.clear(:points) |> Read.clear(:points_board) |> Read.clear(:points_bonus)
 
   defp read_points(socket) do
     case human_actor(socket) do
@@ -840,6 +844,20 @@ defmodule AshTemplateWeb.ShellLive do
 
       nil ->
         Read.clear(socket, :points)
+    end
+  end
+
+  # The highest totals and this account's place. Each signed-in reader has their
+  # own answer, read again when their own points change.
+  defp read_points_board(socket) do
+    case human_actor(socket) do
+      %Human{} = actor ->
+        Read.now(socket, :points_board, actor.human_account_id, fn ->
+          RegentPoints.leaderboard(actor: actor)
+        end)
+
+      nil ->
+        Read.clear(socket, :points_board)
     end
   end
 

@@ -1,19 +1,19 @@
 defmodule AshTemplateWeb.PointsEntries do
   @moduledoc """
   How the Points page and the agent's Points answer describe one account's
-  Points summary (`RegentPoints.summary/1`), so both say the same thing about
-  each entry and allowance.
+  Points (`RegentPoints.summary/1` and `RegentPoints.leaderboard/1`), so both
+  say the same thing about each action, entry and place.
   """
 
-  alias RegentPoints.Amount
+  alias RegentPoints.{Amount, Rules}
 
-  @doc "What became of an entry: counted, cut to nothing by an allowance, or a correction."
+  @doc "What became of an entry: counted, cut to nothing by a daily limit, or a correction."
   def status(%{reversal_of_entry_id: id}) when not is_nil(id), do: :correction
   def status(%{points_micro_delta: 0}), do: :allowance_reached
   def status(_entry), do: :counted
 
   def status_label(:counted), do: "Counted"
-  def status_label(:allowance_reached), do: "Allowance reached"
+  def status_label(:allowance_reached), do: "Limit reached"
   def status_label(:correction), do: "Correction"
 
   @doc "Who earned an entry, by the name the person gave their agent."
@@ -22,24 +22,95 @@ defmodule AshTemplateWeb.PointsEntries do
 
   def agent_name(_entry, _names), do: nil
 
-  def allowance_name("activity:account"), do: "You and your agents"
-  def allowance_name("credits"), do: "Credits purchases"
+  @doc """
+  The actions this site lists, in two groups, with what the account has done of
+  each: `[%{title, limit, items}]`. `open?` is false until earning opens; an
+  action then carries no points and nothing is done or left.
+  """
+  def todo(summary, open?) do
+    rules = Rules.tracked()
+    room = Map.new(summary.allowances, &{&1.scope, &1})
+
+    [
+      %{
+        title: "Once",
+        limit: nil,
+        items: for(%{"category" => "milestone"} = rule <- rules, do: once(rule, summary, open?))
+      },
+      %{
+        title: "Daily",
+        limit: limit(room["activity:account"]),
+        items:
+          for(
+            %{"category" => category} = rule when category in ["credits", "activity"] <- rules,
+            do: daily(rule, summary, room, open?)
+          )
+      }
+    ]
+  end
+
+  @doc "How many listed actions can still earn: today for a daily one."
+  def left(groups), do: groups |> Enum.flat_map(& &1.items) |> Enum.count(& &1.left)
+
+  @doc """
+  The leaderboard for display: `%{rows, you, rank}`. `you` is the reader's row
+  when they sit below the listed rows; `rank` is their place wherever they sit.
+  """
+  def board(%{top: top, you: you}) do
+    listed? = Enum.any?(top, & &1.you?)
+
+    %{
+      rows:
+        Enum.map(top, fn row ->
+          %{
+            rank: row.rank,
+            name: row.name,
+            squares: row.squares,
+            picture: row.picture,
+            points: Amount.format(row.points_micro),
+            you: row.you?
+          }
+        end),
+      you: if(you && !listed?, do: %{rank: you.rank, points: Amount.format(you.points_micro)}),
+      rank: you && you.rank
+    }
+  end
 
   @doc "The agent's Points answer: the same figures the Points page shows."
-  def answer(summary) do
+  def answer(summary, leaderboard, open?) do
+    board = board(leaderboard)
+
     %{
       points: Amount.format(summary.balance_micro),
       earned_today: Amount.format(summary.earned_today_micro),
+      earned_yesterday: Amount.format(summary.earned_yesterday_micro),
+      rank: board.rank,
       activity_being_verified: summary.pending,
-      daily_allowances:
+      to_do:
+        for group <- todo(summary, open?), item <- group.items do
+          %{
+            label: item.label,
+            repeats: String.downcase(group.title),
+            points: item.points,
+            done: item.done,
+            left: item.left,
+            today: item[:count]
+          }
+        end,
+      daily_limits:
         Enum.map(
           summary.allowances,
-          &%{name: allowance_name(&1.scope), remaining: Amount.format(&1.remaining)}
+          &%{
+            name: limit_name(&1.scope),
+            limit: Amount.format(&1.limit),
+            remaining: Amount.format(&1.remaining)
+          }
         ),
+      leaderboard: Enum.map(board.rows, &Map.take(&1, [:rank, :name, :points, :you])),
       entries:
         Enum.map(summary.entries, fn entry ->
           %{
-            label: RegentPoints.Rules.label(entry.rule_id),
+            label: Rules.label(entry.rule_id),
             points: Amount.format(entry.points_micro_delta),
             status: status(entry),
             allowance_reduction: Amount.format(entry.cap_reduction_micro),
@@ -61,4 +132,84 @@ defmodule AshTemplateWeb.PointsEntries do
       more: summary.more?
     }
   end
+
+  defp limit_name("activity:account"), do: "Daily actions, you and your agents"
+  defp limit_name("credits"), do: "Credits bought"
+
+  defp once(%{"id" => id, "points" => points}, summary, open?) do
+    done = open? and Map.fetch!(summary.done, id) >= 1
+
+    %{
+      id: id,
+      label: Rules.label(id),
+      points: open? && to_string(points),
+      done: done,
+      left: open? and not done
+    }
+  end
+
+  # Credits earn by the amount bought, so the day's count is points, not purchases.
+  defp daily(%{"id" => id, "category" => "credits"} = rule, _summary, room, open?) do
+    item = %{
+      id: id,
+      label: Rules.label(id),
+      points: open? && rate(rule),
+      done: false,
+      left: false
+    }
+
+    case room["credits"] do
+      %{limit: limit, remaining: remaining} ->
+        count = %{done: whole(limit - remaining), of: whole(limit)}
+
+        Map.merge(item, %{
+          note: "#{count.done} of #{count.of} today",
+          count: count,
+          done: remaining == 0,
+          left: remaining > 0
+        })
+
+      nil ->
+        item
+    end
+  end
+
+  defp daily(%{"id" => id, "points" => points, "count" => of}, summary, room, open?)
+       when is_integer(of) do
+    item = %{
+      id: id,
+      label: Rules.label(id),
+      points: open? && to_string(points),
+      done: false,
+      left: false
+    }
+
+    case room["activity:account"] do
+      %{remaining: remaining} ->
+        done = Map.fetch!(summary.done, id)
+
+        item
+        |> Map.merge(%{
+          note: "#{done} of #{of} today",
+          done: done >= of,
+          left: done < of and remaining > 0
+        })
+        |> then(&if of > 1, do: Map.put(&1, :count, %{done: done, of: of}), else: &1)
+
+      nil ->
+        item
+    end
+  end
+
+  # The one limit every daily action shares, whoever acted.
+  defp limit(nil), do: nil
+
+  defp limit(%{limit: limit, remaining: remaining}) do
+    used = whole(limit - remaining)
+    %{label: "Limit", used: used, of: whole(limit), value: "#{used} of #{whole(limit)} today"}
+  end
+
+  defp rate(%{"micro_points_per_atomic_usdc" => rate}), do: "#{whole(rate * 1_000_000)} per USDC"
+
+  defp whole(micro), do: div(micro, Rules.unit())
 end

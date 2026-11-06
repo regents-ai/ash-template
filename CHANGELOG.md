@@ -6597,3 +6597,27 @@ within the hour on the same versions.
   "Earning hasn’t opened yet." above the NFT bonus until rules are approved.
 - `docs/points-foundation.md` gives the 250 and 240 totals, versions and the start awards.
 - No migrations.
+
+## 2026-11-06 — The Points page, redrawn
+
+Sean, 6 November 2026: "too much empty space, no color, no emphasis on their points
+total, their points earned today so far, their points earned yesterday, what actions
+they have left to do, what points are for, the leaderboard".
+
+- `/account/points` is drawn with the design system's new `Regent.Points`: the total
+  large on the band colour with today, yesterday and rank; the actions left to do
+  first, each with its points and a link to where it is done; the leaderboard with the
+  reader's row marked; the NFT bonus tiers; the activity. One column on a phone, two
+  from 60rem.
+- The leaderboard is `RegentPoints.leaderboard/1`: the ten highest totals by public
+  name, read during the render through `Read.now` and reread on the account's Points
+  notice. `AshTemplate.Points.Accounts.people/1` supplies each name and picture from
+  `PublicIdentity`.
+- `GET /api/v1/account/points` (`account_points`, `account points`) answers the same
+  figures: `earned_yesterday`, `rank`, `to_do`, `daily_limits` and `leaderboard` are
+  new; `daily_allowances` is gone. `/docs` lists the change. The contract moves to 10.0.0.
+- The old Points table styles in `assets/css/pages/account.css` are gone.
+- New test: `platform/test/ash_template_web/points_page_test.exs`. The browser walk
+  checks `#points-todo`.
+- No migrations.
+

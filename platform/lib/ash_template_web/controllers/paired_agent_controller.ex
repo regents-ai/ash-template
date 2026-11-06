@@ -143,10 +143,14 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   # Points as decimal text, the same figures the Points page shows.
   def points(conn, _params) do
-    case RegentPoints.summary(actor: conn.assigns.actor) do
-      {:ok, summary} ->
-        json(conn, with_note(PointsEntries.answer(summary), points_note(Rules.active())))
+    actor = conn.assigns.actor
 
+    with {:ok, summary} <- RegentPoints.summary(actor: actor),
+         {:ok, leaderboard} <- RegentPoints.leaderboard(actor: actor) do
+      earning = Rules.active()
+      answer = PointsEntries.answer(summary, leaderboard, earning != [])
+      json(conn, with_note(answer, points_note(earning)))
+    else
       {:error, error} ->
         conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
     end

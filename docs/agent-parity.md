@@ -59,7 +59,7 @@ identity tools behind its switch.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Read balances and allowance | `/account/credits` | `account_balances` | — | — | `account balances` | no | G5 |
 | Read Credits history | `/account/credits` | `account_credits_history` | — | — | `account credits-history` | no | G5 |
-| Read Points | `/account/points` | `account_points` | — | — | `account points` | no | G5 |
+| Read Points and the leaderboard | `/account/points` | `account_points` | — | — | `account points` | no | G5 |
 | Buy Credits with USDC (owner's wallet signs) | Credits panel | — | — | — | — | money, wallet | G7 |
 | Buy Credits by card | Credits panel (Stripe) | — | — | — | — | money | G7 (Stripe Credits lane) |
 | Give or refund Credits (admins) | Credits admin | — | — | — | — | money | G8 |
