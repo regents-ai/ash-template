@@ -6722,7 +6722,9 @@ remove it from points".
   commands.json say so.
 - Migration `20261106171036_room_author_wallets`: adds the wallet and ENS columns to
   `room_messages` and `room_mutes`, makes the names nullable, fills each wallet from the
-  author's account or agent, and empties a saved name that was "Unnamed agent" or the
-  author's short wallet. Its release waits for Sean's go.
+  author's account (`regent_names.platform_human_users`) or agent and a person's ENS
+  name from `account_ens_identities` (only one read for their current wallet), and
+  empties a saved name that was "Unnamed agent", that ENS name or the author's short
+  wallet. Its release waits for Sean's go.
 - Room figures: each pass of `AshTemplate.Rooms.Activity` forgets a room that is gone, so
   a gone room never holds one of the sixteen places.

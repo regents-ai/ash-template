@@ -6,8 +6,9 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
   which is now empty when they had none.
 
   Posts and mutes saved before this keep the name they were saved with, the
-  short wallet or "Unnamed agent" among them. Those two are emptied here, and
-  each author's wallet is filled in from their account or agent.
+  ENS name, short wallet or "Unnamed agent" among them. Those three are emptied
+  here, and each author's wallet, and a person's ENS name, is filled in from
+  their account or agent.
   """
 
   use Ecto.Migration
@@ -32,8 +33,11 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
           {"room_mutes", "muted", "muted_account_id", "muted_agent_id"}
         ] do
       execute("""
-      UPDATE #{prefix()}.#{table} AS m SET #{who}_wallet = h.wallet_address
-      FROM #{prefix()}.platform_human_users AS h WHERE m.#{account} = h.id
+      UPDATE #{prefix()}.#{table} AS m SET #{who}_wallet = h.wallet_address, #{who}_ens_name = e.ens_name
+      FROM regent_names.platform_human_users AS h
+      LEFT JOIN #{prefix()}.account_ens_identities AS e
+        ON e.human_account_id = h.id AND e.wallet_address = h.wallet_address
+      WHERE m.#{account} = h.id
       """)
 
       execute("""
@@ -44,6 +48,7 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
       execute("""
       UPDATE #{prefix()}.#{table} SET #{who}_name = NULL
       WHERE (#{agent} IS NOT NULL AND #{who}_name = 'Unnamed agent')
+         OR #{who}_name = #{who}_ens_name
          OR #{who}_name = '0x' || substr(#{who}_wallet, 3, 4) || '..' || right(#{who}_wallet, 4)
       """)
     end
