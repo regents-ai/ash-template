@@ -6496,3 +6496,23 @@ within the hour on the same versions.
 - Not proven live: the saver has not met a real failed save, and attaching it writes no line. The start line reads
   `:ok =`, so a failed attach would have stopped the boot; reading the handlers on the live machine needs Sean's go, so
   they were read on this commit in test mode instead, all 12 of ErrorTracker's events running through the saver.
+
+## 2026-11-06 — v177: every icon from Lucide, and regents-cli 1.10.24
+
+- Every icon on the template's pages comes from `Regent.Icons`, the Lucide set in design-system `30747539`. That covers
+  the shell's rail and header, search, Credits, agent tools, the code card and the labs. The hand-drawn copies and the
+  private icon component are gone. Logos, the crown, the cube, the identicon and the motion page's animated tick stay as
+  artwork. The bell takes the colour of the icons beside it.
+- `/api/v1/health`, `/api/v1/docs` and `/api/v1/about` leave the launch gate through their own pipeline, like the pages
+  they mirror; the gate's test has a line for it.
+- regents-cli moves from `8e8f2af` (1.10.23) to `fd325437` (1.10.24), which reached PyPI on 5 Nov 03:29Z. The move covers
+  the Makefile pin, the agent guide's install line, source commit and wheel SHA256 `6310687234c5b0b5b9304973232e6ef3b0d08853f84ec9e4c82304fef979dc01`
+  (it matches PyPI), llms.md, capabilities `cli.release` and the CLI docs. ash-template's commands are the same.
+- v177 is `9b640619`, image `sha256:ab9c8a4c6cd0b14c93da6e9eac1dff3d8581ed2330618a419586cae2e47ee712`, created 03:58:09Z.
+  Rollback is v176 `d46015d4`. Full check on it, exit 0: 153 Elixir (11 properties), 444 browser walks with 5
+  skipped, 26 script tests, CLI, required fixes and newest SIWA. WebKit not run on the Mac. The first full check, on
+  `77069719`, stopped at the newest-SIWA gate because 1.10.24 was out; every earlier gate in that run came back clean.
+- Read live: capabilities names `9b640619`. Health answers 200. `/`, `/app`, `/account` and `/design` answer 200,
+  and `/agents.md` names `regents-cli==1.10.24`. `/app` draws its rail and header icons as `rg-icon`.
+- Not proven live: Sean's zoomed look at the icons (3–6x), which comes before any other site takes them. No migration,
+  no sign-in change, no change to what Credits spend.
