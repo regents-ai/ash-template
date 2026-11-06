@@ -6552,6 +6552,18 @@ within the hour on the same versions.
 - Not proven live: a signed-in press on Pair New Agent, which needs a person signed in; Sean's look-over comes next.
   No migration, no sign-in change, no change to what Credits spend.
 
+## 2026-11-06 — Techtree before Keyfleet
+
+- Sean, 6 Nov, on signing off the icons: switch the positions of Techtree and Keyfleet.
+  `Shell.regents_products/0` now lists Patchbay, Autolaunch, Techtree, Keyfleet and
+  $REGENT Staking, so the products menu and the Credits panel's Spending window both
+  show Techtree third. The Credits walk reads the new order.
+
+- v179 is `4a702028`, created 12:11:09Z. Rollback is v178 `c06f89d2`. Full check on it, exit 0: 153 Elixir
+  (11 properties), 446 browser walks with 5 skipped, 26 script tests, credo clean. WebKit not run on the Mac.
+- Read live: capabilities names `4a702028`, health answers 200, and `/app`'s products menu links Patchbay,
+  Autolaunch, Techtree, Keyfleet, then $REGENT Staking. No migration, no sign-in change.
+
 ## 2026-11-04 — Points: new account, linked socials, first paired agent
 
 - The Points work of 2 Nov (`f942d3b4` on `tpl/points-adapters-1101`) replayed on main. That
