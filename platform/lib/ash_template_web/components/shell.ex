@@ -623,6 +623,33 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
+  attr :id, :string, required: true, doc: "the address's id, when it shows one"
+
+  attr :person, :map,
+    required: true,
+    doc: "`%{name, wallet, ens_name}`, as `PublicIdentity.listed_name/1` gives `name`"
+
+  attr :class, :string, default: nil
+
+  @doc """
+  Another person, wherever a page names them: the name they chose, else their
+  wallet under its ENS name when it has one, with its copy icon
+  (`Regent.Primitives.address`).
+  """
+  def person_name(assigns) do
+    ~H"""
+    <bdi :if={@person.name} class={@class}>{@person.name}</bdi>
+    <Regent.Primitives.address
+      :if={!@person.name}
+      id={@id}
+      class={@class}
+      address={@person.wallet}
+      label={@person.ens_name}
+      variant="compact"
+    />
+    """
+  end
+
   attr :id, :string, required: true
   attr :squares, :string, required: true, doc: "`AshTemplate.PublicIdentity.squares/1`"
   attr :picture, :string, required: true, doc: "`AshTemplate.PublicIdentity.picture/1`"

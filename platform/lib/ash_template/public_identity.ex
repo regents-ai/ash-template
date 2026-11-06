@@ -34,6 +34,22 @@ defmodule AshTemplate.PublicIdentity do
     end
   end
 
+  @doc """
+  How a page names an account to other people, `%{name, wallet, ens_name}`:
+  `listed_name/1`, and the wallet and its ENS name that a page draws in its place
+  when `name` is nil (`AshTemplateWeb.Components.Shell.person_name/1`).
+  """
+  def person(account),
+    do: %{name: listed_name(account), wallet: wallet(account), ens_name: ens_name(account)}
+
+  @doc """
+  A person's name in plain words, for a dialog, a field's label or a notice's
+  title, which cannot hold an address: the name they chose, else the ENS name,
+  else the short wallet.
+  """
+  def words(%{name: name, wallet: wallet, ens_name: ens_name}),
+    do: name || ens_name || short_wallet(wallet)
+
   @doc "The account's wallet address, when it has one."
   def wallet(account) do
     case Map.get(account, :wallet_address) do

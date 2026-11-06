@@ -81,7 +81,7 @@ defmodule AshTemplate.Polls.Poll do
   calculations do
     calculate :open, :boolean, expr(is_nil(ended_at) and closes_at > now()), public?: true
     calculate :totals, {:array, :map}, Totals, public?: true
-    # The starter's public name and picture: `%{name, squares, picture}`.
+    # Who started it: `%{name, wallet, ens_name, squares, picture}` (Poll.Starter).
     calculate :starter, :map, Starter, public?: true
     # Whether the reader started it.
     calculate :mine, :boolean, expr(started_by_id == ^actor(:human_account_id)), public?: true

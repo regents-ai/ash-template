@@ -34,6 +34,7 @@ defmodule AshTemplateWeb.RoomsLive do
 
   alias AshTemplate.Actors.Human
   alias AshTemplate.{Dms, Rooms}
+  alias AshTemplate.PublicIdentity
   alias AshTemplate.Rooms.{Like, Message, Mute, Room}
   alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
@@ -344,11 +345,15 @@ defmodule AshTemplateWeb.RoomsLive do
                   data-tone={:erlang.phash2(author(message), 3)}
                   aria-hidden="true"
                 >
-                  {initials(message.author_name)}
+                  {initials(words(message))}
                 </span>
                 <div class="rooms-message__main">
                   <p class="rooms-message__meta">
-                    <bdi class="rooms-message__author">{message.author_name}</bdi>
+                    <Shell.person_name
+                      id={"#{dom_id}-author"}
+                      class="rooms-message__author"
+                      person={Message.author(message)}
+                    />
                     <span :if={message.agent_id} class="rooms-message__agent">Agent</span>
                     <span :if={message.backed_agents} class="rooms-message__human">
                       <span class="rooms-message__agent">Human-backed</span>
@@ -450,7 +455,9 @@ defmodule AshTemplateWeb.RoomsLive do
         <section class="account-panel" aria-labelledby="room-people-title">
           <h2 id="room-people-title">Here now</h2>
           <ul :if={here(@people, @muted) != []} class="rooms-people">
-            <li :for={person <- here(@people, @muted)}><bdi>{person.name}</bdi></li>
+            <li :for={person <- here(@people, @muted)}>
+              <Shell.person_name id={"room-person-#{person.id}"} person={person} />
+            </li>
           </ul>
           <p :if={here(@people, @muted) == []} class="rg-muted">
             Nobody signed in has this room open.
@@ -464,7 +471,7 @@ defmodule AshTemplateWeb.RoomsLive do
           </p>
           <ul :if={@mutes != []} class="rooms-mutes">
             <li :for={mute <- @mutes}>
-              <bdi>{mute.muted_name}</bdi>
+              <Shell.person_name id={"room-muted-#{mute.id}"} person={Mute.muted(mute)} />
               <Primitives.button
                 type="button"
                 variant="quiet"
@@ -688,7 +695,7 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("message_author", value: %{id: @message.id}, target: @myself)}
         >
-          Message <bdi>{@message.author_name}</bdi>
+          Message <bdi>{words(@message)}</bdi>
         </button>
         <button
           :if={!@own?}
@@ -697,9 +704,9 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertarget={@menu}
           popovertargetaction="hide"
           phx-click={JS.push("mute", value: %{id: @message.id}, target: @myself)}
-          data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
+          data-confirm={"Mute #{words(@message)}? You won’t see their messages in any room until you unmute them."}
         >
-          Mute <bdi>{@message.author_name}</bdi>
+          Mute <bdi>{words(@message)}</bdi>
         </button>
         <button :if={!@own?} type="button" class="rooms-menu__item" popovertarget={@reasons}>
           Report
@@ -949,11 +956,15 @@ defmodule AshTemplateWeb.RoomsLive do
     end
   end
 
-  defp via_agent(%{via_agent_name: nil, author_name: person}),
-    do: "Written by an agent #{person} paired with their account."
+  defp via_agent(%{via_agent_name: nil} = message),
+    do: "Written by an agent #{words(message)} paired with their account."
 
-  defp via_agent(%{via_agent_name: agent, author_name: person}),
-    do: "Written by #{agent}, an agent #{person} paired with their account."
+  defp via_agent(%{via_agent_name: agent} = message),
+    do: "Written by #{agent}, an agent #{words(message)} paired with their account."
+
+  # The author in plain words, where a button, a dialog or a tip cannot hold an
+  # address.
+  defp words(message), do: message |> Message.author() |> PublicIdentity.words()
 
   defp muted_author(%Mute{muted_agent_id: nil, muted_account_id: id}), do: "person-#{id}"
   defp muted_author(%Mute{muted_agent_id: id}), do: "agent-#{id}"

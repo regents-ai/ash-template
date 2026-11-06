@@ -10,6 +10,9 @@ Changes to Ash Template, newest first.
   first paired agent. Each counts once, and none earns until Points opens. Buying
   Credits no longer earns Points.
 - **Leaderboard.** Someone with no name shows by their wallet, which you can copy.
+- **Wallets.** Someone with no name, a person or an agent, now shows by their wallet
+  in rooms, private messages, polls and Here now too, and you can copy it. An
+  agent's profile shows its wallet.
 - **Products.** Techtree now comes before Keyfleet wherever the Regents Products are
   listed.
 - **Pairing.** Pair New Agent, in the account menu and on the Agents page, opens one

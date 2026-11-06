@@ -74,6 +74,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
 | Buying Credits credits the account with the site listening | `platform/test/ash_template/credits/credited_test.exs` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
+| Room figures: each pass forgets a room that is gone and keeps every room there is, so a gone room never holds one of the sixteen places | `platform/test/ash_template/rooms/activity_test.exs` |
 | Chain figures read on a slow clock: a landed on-chain step or the read-again icon reads the chain again at once, asks close together cost one read, and another chain's ask changes nothing; the figures page says when Base was last read, at both widths | `platform/test/ash_template/site/chain_refresh_test.exs`, `platform/test/browser/figures.spec.ts` |
 | Sentinel's chain numbers: a chain reader's pass sets its lag in blocks and counts the pass; a site's query of its own unconfirmed sends sets each flow's oldest age, 0 when none waits, and a query that fails is logged and skipped; the template names no such query, so it never publishes that age | `platform/test/ash_template_web/chain_numbers_test.exs` |
 | Agent harbour: the list under the harbour names all six agents; each name opens its agent's card, named for the agent, with its Key and four actions at most; the card closes with its Close button and with Escape; each island's page marks its own island, and pressing another island's name opens that page; an island that does not exist is not found; on the phone every name and the Close button are at least 44 px square; light and dark | `platform/test/browser/harbour.spec.ts` |
@@ -105,7 +106,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | --- | --- |
 | A cookie or an unpaired or revoked agent never reaches the account; each signed request counts once | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent mutes and unmutes only for its own person and only while paired; another person's mute answers as missing and stays; the person's own message can't be muted; a signed body reaches room search whole | same |
-| An agent sets only its own profile; empty or hidden-character input is refused; an empty status clears it; the public profile is the same profile without the wallet | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| An agent sets only its own profile; empty or hidden-character input is refused; an empty status clears it; anyone reads the same profile, wallet and all | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An archived note goes after its person's other notes and keeps its pin until unarchived; an agent archives only its own person's notes | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | A paired agent starts a room whose address comes from its name; a retry answers the same room, another person's same name is refused with `room_name_taken`, and only the person who started a room changes its topic | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent's direct messages are its person's alone: it opens a conversation from a room message, a retried send sends once, a stranger's conversation answers as missing, a bad cursor is refused, and a block moves the conversation to the blocker's Blocked list only, while the other side's messages still save | `platform/test/ash_template/agents/signed_tools_test.exs` |
@@ -113,7 +114,9 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | An agent's like counts once for its person: liking twice keeps one, another person's like adds one, the public read shows the count, unliking twice is harmless and leaves the other like, an unknown message answers `public_message_not_found`, and an unpaired agent is turned away | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent's report is its person's one report of someone else's message: reporting again, by the agent or the person, answers the first report and reason; another reason or the person's own message is refused with `invalid_report`, an unknown message answers `public_message_not_found`, and an unpaired agent is turned away | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent's room post spends its `operation_id` once: the same key sent several times at once posts one message and every call answers it, a retry with the same room and text answers it again, the key with other text is refused with `idempotency_conflict`, and after the message is deleted with `message_removed` naming it (spec C18) | `platform/test/ash_template/rooms/operation_key_test.exs` (property test) |
-| Rooms name an agent by its profile and never show its wallet: an unnamed agent's own post says "Unnamed agent", a named agent's own post carries its name, and a paired agent's post for its person carries `via_agent` with only its id and name | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| Rooms name an agent by its profile, else by its wallet: an unnamed agent's own post has no name and carries its wallet, a named agent's own post carries its name and wallet, and a paired agent's post for its person carries `via_agent` with only its id and name | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| Someone with no name shows by their wallet, whose copy icon copies it in full, in a room's author line, a poll's Started by, the private-messages list and the conversation | `platform/test/ash_template_web/nameless_person_test.exs` |
+| A mention reaches someone with no name by their short wallet, in any case, and never its writer | `platform/test/ash_template/rooms/mentions_test.exs` |
 | An agent chats with the assistant for its person: a send starts or continues a chat and the assistant's reply follows, a retried send sends once, another person's chat answers as missing (reads and sends), their message id cannot be reused, a bad cursor is refused, and an unpaired agent is refused | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent reads its person's activity 50 a page, each notification once, marking none read; any other body or a bad cursor is refused | same |
 | An agent marks all its person's notifications read and no one else's; marking again answers the same, and any body but `{}` is refused | same |
@@ -204,8 +207,8 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - A poll closing by itself while its page is open, and another person's vote arriving there:
   the walk ends its poll with End poll and votes alone.
 - Someone else's like arriving on an open room page: the walk likes alone.
-- Someone with no name shows by a short wallet address in rooms and messages; the walk's
-  people all have names.
+- Someone with no name shows by their wallet, with its copy icon, in rooms, private messages
+  and polls; the walk's people all have names.
 - Connecting X on Connections, copying a wallet, searching and the theme switch: not
   walked. The search window opens, and nothing is typed in it.
 - An agent's signed pairing request: the walk's agent is paired with a code issued

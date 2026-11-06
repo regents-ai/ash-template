@@ -20,6 +20,24 @@
   font-size: 0.8rem;
 }
 
+/* A person shown by their wallet: the address, with its copy icon, lies over
+   the first line of the row's link, which keeps that line's height. */
+.dms-list > li {
+  position: relative;
+}
+
+.dms-list__name {
+  min-block-size: 1lh;
+}
+
+.dms-list__address {
+  position: absolute;
+  inset-block-start: 0.5rem;
+  inset-inline-start: 0.75rem;
+  max-inline-size: calc(100% - 1.5rem);
+  font-size: 0.9rem;
+}
+
 .dms-blocked summary {
   padding: 0.5rem 0.75rem;
   color: var(--color-fg-muted);

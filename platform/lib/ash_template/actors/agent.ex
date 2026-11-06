@@ -6,6 +6,10 @@ defmodule AshTemplate.Actors.Agent do
   through the hosted MCP server with the token its person approved: what
   `RegentOAuth.verify/3` answered for that token. The same app may then also run
   its identity tools (`AshTemplate.Agents.Connection`).
+
+  `name` is the agent's profile name, nil until it gives itself one. `person` is
+  how others see the person it is paired with (`AshTemplate.PublicIdentity.person/1`),
+  whom what it posts here is from; nil while it is not paired.
   """
   @enforce_keys [:agent_id, :wallet_address, :name]
   defstruct [
@@ -13,6 +17,7 @@ defmodule AshTemplate.Actors.Agent do
     :agent_id,
     :wallet_address,
     :name,
+    :person,
     :human_account_id,
     :privy_user_id,
     :pairing_id,
@@ -34,9 +39,7 @@ defmodule AshTemplate.Actors.Agent do
       agent_id: agent.id,
       acting_agent_id: agent.id,
       wallet_address: agent.wallet_address,
-      # What its own room post is signed with: its profile name, never its wallet
-      # (Sean, 21 Oct 2026, 11. a).
-      name: agent.name || "Unnamed agent",
+      name: agent.name,
       pairing: pairing
     }
   end
@@ -48,7 +51,7 @@ defmodule AshTemplate.Actors.Agent do
         privy_user_id: pairing.privy_user_id,
         pairing_id: pairing.id,
         beneficiary_profile_id: profile_id,
-        name: account.display_name || RegentFormat.short_address(account.wallet_address),
+        person: AshTemplate.PublicIdentity.person(account),
         pairing: :active
     }
   end

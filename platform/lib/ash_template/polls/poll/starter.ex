@@ -1,8 +1,9 @@
 defmodule AshTemplate.Polls.Poll.Starter do
   @moduledoc """
-  Who started each poll, as `%{name: name, squares: squares, picture: picture}`:
-  their public name and picture (`AshTemplate.PublicIdentity`), read by the
-  site, since their account is private and only the name and picture leave it.
+  Who started each poll, as `%{name, wallet, ens_name, squares, picture}`: the
+  name they chose, else `nil` and they show by their wallet under its ENS name
+  when it has one, and their picture (`AshTemplate.PublicIdentity`). Read by the
+  site, since their account is private and only these leave it.
   """
 
   use Ash.Resource.Calculation
@@ -23,11 +24,12 @@ defmodule AshTemplate.Polls.Poll.Starter do
     Enum.map(polls, fn poll ->
       account = Map.get(accounts, poll.started_by_id, %{})
 
-      %{
-        name: PublicIdentity.label(account),
+      account
+      |> PublicIdentity.person()
+      |> Map.merge(%{
         squares: PublicIdentity.squares(account),
         picture: PublicIdentity.picture(account)
-      }
+      })
     end)
   end
 

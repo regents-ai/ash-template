@@ -18,6 +18,7 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Credits.CheckPurchase
   alias AshTemplate.Notes.Note
   alias AshTemplate.Points.Board
+  alias AshTemplate.PublicIdentity
   alias AshTemplate.Rooms.{Message, Mute, Room}
 
   alias AshTemplateWeb.{
@@ -824,7 +825,8 @@ defmodule AshTemplateWeb.ShellLive do
   defp message_item(message, query),
     do: %{
       kind: :message,
-      label: "#{message.author_name} in #{message.in_room.name}",
+      label:
+        "#{message |> Message.author() |> PublicIdentity.words()} in #{message.in_room.name}",
       detail: excerpt(message.body, query),
       path: "/rooms/#{message.room}",
       live?: true

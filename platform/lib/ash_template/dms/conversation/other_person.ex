@@ -1,9 +1,10 @@
 defmodule AshTemplate.Dms.Conversation.OtherPerson do
   @moduledoc """
   The other side of each conversation from the reader, as
-  `%{name: name, squares: squares, picture: picture}`: their public name and
-  picture (`AshTemplate.PublicIdentity`), read by the site, since their account
-  is private and only the name and picture leave it.
+  `%{name, wallet, ens_name, squares, picture}`: the name they chose, else `nil`
+  and they show by their wallet under its ENS name when it has one, and their
+  picture (`AshTemplate.PublicIdentity`). Read by the site, since their account
+  is private and only these leave it.
   """
 
   use Ash.Resource.Calculation
@@ -26,11 +27,12 @@ defmodule AshTemplate.Dms.Conversation.OtherPerson do
     Enum.map(others, fn id ->
       account = Map.get(accounts, id, %{})
 
-      %{
-        name: PublicIdentity.label(account),
+      account
+      |> PublicIdentity.person()
+      |> Map.merge(%{
         squares: PublicIdentity.squares(account),
         picture: PublicIdentity.picture(account)
-      }
+      })
     end)
   end
 

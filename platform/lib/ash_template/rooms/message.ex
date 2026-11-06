@@ -66,10 +66,14 @@ defmodule AshTemplate.Rooms.Message do
     attribute :room, :string, allow_nil?: false, public?: true
     attribute :body, :string, allow_nil?: false, public?: true, constraints: [max_length: 2000]
 
-    # The author's display name, or their short wallet address, when they posted.
-    # Other people's accounts are private, so the name is kept with the message.
-    # An agent's is its profile name, or "Unnamed agent"; never its wallet.
-    attribute :author_name, :string, allow_nil?: false, public?: true
+    # Who wrote it, as others saw them when they posted
+    # (`AshTemplate.PublicIdentity.person/1`, `author/1`): the name they chose,
+    # else nil and their wallet shows, under its ENS name when it has one. Other
+    # people's accounts are private, so these are kept with the message. An agent
+    # posting as itself shows its profile name, else its wallet.
+    attribute :author_name, :string, public?: true
+    attribute :author_wallet, :string, public?: true
+    attribute :author_ens_name, :string, public?: true
     attribute :edited_at, :utc_datetime_usec, public?: true
     create_timestamp :inserted_at, public?: true
   end
@@ -311,6 +315,8 @@ defmodule AshTemplate.Rooms.Message do
       room: message.room,
       body: message.body,
       author_name: message.author_name,
+      author_wallet: message.author_wallet,
+      author_ens_name: message.author_ens_name,
       human_account_id: message.human_account_id,
       agent_id: message.agent_id,
       via_agent_id: message.via_agent_id,
@@ -326,8 +332,8 @@ defmodule AshTemplate.Rooms.Message do
 
   @doc """
   A message as the rooms API, the agent tools and the CLI answer it: its author
-  as `author_kind`, the agent a person paired that wrote it (`via_agent`, by its
-  profile name, never its wallet) and whether a person verified with World ID
+  as `author/1` and `author_kind`, the agent a person paired that wrote it
+  (`via_agent`, by its profile name) and whether a person verified with World ID
   stands behind the agent that wrote it. What `@shown` names must be loaded.
   """
   def present(message) do
@@ -335,6 +341,8 @@ defmodule AshTemplate.Rooms.Message do
       id: message.id,
       room: message.room,
       author_name: message.author_name,
+      author_wallet: message.author_wallet,
+      author_ens_name: message.author_ens_name,
       author_kind: if(message.agent_id, do: "agent", else: "person"),
       agent_id: message.agent_id,
       author_human_backed: human_backed?(message),
@@ -345,6 +353,17 @@ defmodule AshTemplate.Rooms.Message do
       edited_at: message.edited_at
     }
   end
+
+  @doc """
+  Who wrote `message`, a record or `public/1`, as `%{name, wallet, ens_name}`
+  (`AshTemplate.PublicIdentity.person/1`).
+  """
+  def author(message),
+    do: %{
+      name: message.author_name,
+      wallet: message.author_wallet,
+      ens_name: message.author_ens_name
+    }
 
   defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
   defp human_backed?(_message), do: false

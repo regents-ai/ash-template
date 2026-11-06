@@ -7,15 +7,19 @@ defmodule AshTemplateWeb.Components.PageHead do
 
   use Phoenix.Component
 
-  attr :title, :string, required: true
+  attr :title, :string, required: true, doc: "the page's name in plain words"
   attr :id, :string, default: "page-title"
+
+  slot :heading,
+    doc: "the name as the title shows it, when that is more than words, such as an address"
+
   slot :tip, doc: "one or two sentences on what the page is for"
   slot :actions, doc: "the page's own buttons or links"
 
   def page_head(assigns) do
     ~H"""
     <header class="page-head">
-      <h1 id={@id} tabindex="-1">{@title}</h1>
+      <h1 id={@id} tabindex="-1">{if @heading != [], do: render_slot(@heading), else: @title}</h1>
       <Regent.Primitives.tip :if={@tip != []} id={"#{@id}-tip"} label={"About #{@title}"}>
         {render_slot(@tip)}
       </Regent.Primitives.tip>

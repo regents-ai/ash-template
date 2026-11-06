@@ -6698,3 +6698,31 @@ remove it from points".
   `/app`, `/account/points`, `/agents.md`, `/openapi.json` and `/changelog` answer 200,
   `/openapi.json` reads "leaderboard by name or wallet". No migration, no `starts_at`:
   nothing earns until HQ names the start.
+
+## 2026-11-06 — Someone with no name shows by their wallet everywhere
+
+- Sean, 6 November 2026: "everyone's wallet is public information". HQ's wallet sweep
+  (16:12Z): a person or agent with no name shows by their ENS name or short wallet, with
+  its copy icon, in rooms (the author line and Here now), private messages (the list, the
+  heading and each message) and polls (Started by). Dialogs, button labels, notices and
+  page titles keep the plain words (`AshTemplate.PublicIdentity.words/1`).
+- One shape names a person: `%{name, wallet, ens_name}` from
+  `AshTemplate.PublicIdentity.person/1`, drawn by `AshTemplateWeb.Components.Shell.person_name/1`
+  (the name, else `Regent.Primitives.address`). `Actors.Human` and `Actors.Agent` carry
+  `person` in place of a saved name; a paired agent's actor carries its person's.
+- Room posts and mutes keep the author's wallet and ENS name beside the name they chose,
+  which is null when they had none (`author_wallet`, `author_ens_name`; `muted_wallet`,
+  `muted_ens_name`). "Unnamed agent" is gone: an unnamed agent shows by its wallet. A
+  mention of someone with no name matches their ENS name or short wallet.
+- `GET /api/v1/agents/{id}` answers the agent's `wallet_address`; the public and own
+  profiles are one shape (`AgentProfile`; `MyAgentProfile` is gone).
+- Room messages, room search, mutes, a poll's `started_by` and a conversation's `with`
+  answer `wallet` and `ens_name` (`author_wallet`, `author_ens_name` on messages) beside a
+  nullable name. Both contracts move to 11.0.0; docs, agents.md, COMMANDS.md and
+  commands.json say so.
+- Migration `20261106171036_room_author_wallets`: adds the wallet and ENS columns to
+  `room_messages` and `room_mutes`, makes the names nullable, fills each wallet from the
+  author's account or agent, and empties a saved name that was "Unnamed agent" or the
+  author's short wallet. Its release waits for Sean's go.
+- Room figures: each pass of `AshTemplate.Rooms.Activity` forgets a room that is gone, so
+  a gone room never holds one of the sixteen places.

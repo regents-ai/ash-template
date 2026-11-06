@@ -149,10 +149,7 @@ defmodule AshTemplateWeb.DmsController do
   defp conversation(%Conversation{} = conversation) do
     %{
       id: conversation.id,
-      with: %{
-        name: conversation.other_person.name,
-        picture: conversation.other_person.picture
-      },
+      with: Map.take(conversation.other_person, [:name, :wallet, :ens_name, :picture]),
       blocked: conversation.blocked,
       last_message: conversation.last_body,
       last_message_at: conversation.last_message_at

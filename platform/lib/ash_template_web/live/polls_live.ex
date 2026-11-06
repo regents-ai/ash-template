@@ -19,6 +19,7 @@ defmodule AshTemplateWeb.PollsLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Polls
   alias AshTemplate.Polls.Poll
+  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
@@ -232,7 +233,7 @@ defmodule AshTemplateWeb.PollsLive do
         data-open={to_string(@poll.value.open)}
       >
         <p class="polls-poll__meta rg-muted">
-          Started by <bdi>{@poll.value.starter.name}</bdi>
+          Started by <Shell.person_name id="poll-starter" person={@poll.value.starter} />
           <span :if={@poll.value.via_agent_id}>via agent</span>
           · {time_state(@poll.value, @now)} · {votes_label(@poll.value.votes_cast)}
         </p>

@@ -22,7 +22,9 @@ defmodule AshTemplate.Rooms.Mute.MuteAuthor do
         Ash.Changeset.force_change_attributes(changeset,
           muted_account_id: message.human_account_id,
           muted_agent_id: message.agent_id,
-          muted_name: message.author_name
+          muted_name: message.author_name,
+          muted_wallet: message.author_wallet,
+          muted_ens_name: message.author_ens_name
         )
 
       _gone ->
