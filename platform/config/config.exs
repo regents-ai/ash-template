@@ -296,7 +296,6 @@ config :regent_points,
   adapters: %{
     "account.activated" => AshTemplate.Points.AccountActivated,
     "agent.activated" => AshTemplate.Points.PairedAgent,
-    "credits.purchase_settled" => AshTemplate.Points.CreditsPurchase,
     "social.farcaster" => AshTemplate.Points.LinkedSocial,
     "social.github" => AshTemplate.Points.LinkedSocial,
     "social.x" => AshTemplate.Points.LinkedSocial,

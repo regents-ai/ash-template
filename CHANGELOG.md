@@ -6659,3 +6659,32 @@ they have left to do, what points are for, the leaderboard".
   the two people level at first place, and the "Sam" test writes over the profile the
   sign-in already made. `signed_tools_test.exs` reads the shared board before the
   agent's Points request, since tests run no producer.
+
+## 2026-11-06 — Points earn nothing from Credits
+
+Sean, 6 November 2026: "I just decided we need to drop the credits system entirely .
+remove it from points".
+
+- `credits.purchase_settled` is gone from Points: `AshTemplate.Points.CreditsPurchase`
+  and its adapter line, and `AshTemplate.Points.Award`'s three Credits listeners
+  (`:purchase_credited`, `:purchase_attributed`, `:card_purchase_credited`) and their
+  `:credits_purchase` and `:card_purchase` actions. The Points page and the agent's
+  Points answer lose the Credits row, its per-USDC rate and its daily limit; the one
+  daily limit left is the one every repeat action shares. Nothing ever earned under
+  the rule.
+- elixir-utils moves to `faa538d4` (no Credits rule, category, limit or rate in
+  `RegentPoints.Rules`; ledger entries no longer use `purchased_usdc_atomic`, whose
+  column leaves the table in a later shared change once every site runs this version;
+  `people/1` and the board's rows carry `wallet` and `ens_name`) and design-system to
+  `871c3fe6` (the showcase's Points examples have no Credits rows; the board draws a
+  person with no name by their wallet through `Regent.Primitives.address`).
+- Sean, 6 November 2026: "everyone's wallet is public information". A person with no
+  display name shows on the Points board by their ENS name or short wallet, with its
+  copy icon. `AshTemplate.PublicIdentity` gains `listed_name/1` and `wallet/1`; the
+  agent's Points answer gives each leaderboard row `wallet` and `ens_name`, and `name`
+  is null for a person shown by their wallet (docs, COMMANDS.md and both contracts).
+- `docs/points-foundation.md` and the `ash-signals` skill no longer describe a Credits
+  listener; the skill's example listener is the pairing one.
+- Removed test: `platform/test/ash_template/points/card_purchase_test.exs`.
+- Credits itself, its pages, header balance, paid pin and card purchase are unchanged.
+- No migrations.

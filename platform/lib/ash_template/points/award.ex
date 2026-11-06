@@ -7,13 +7,9 @@ defmodule AshTemplate.Points.Award do
     * A note an agent wrote for its person (`template.first_agent_note`, once
       per person, on whichever site copies the template), from
       `AshTemplate.Notes.Signals`.
-    * A Credits purchase credited to an account, or a waiting one an account
-      now holds, in USDC or by card or Link (`credits.purchase_settled`), from
-      `RegentCredits.Signals`. Credits is one Regents ledger, so every site
-      names it "regents" and a purchase earns once.
     * A new Regent account (`account.activated`), from
       `AshTemplate.Accounts.Signals`. The account is one Regents account on
-      every site, so it is named "regents" too.
+      every site, so every site names it "regents" and it earns once.
     * A social account linked to an account (`social.x`, `social.github`,
       `social.farcaster`), from `AshTemplate.Accounts.Signals`, keyed by the
       provider and its subject so one social account earns once.
@@ -39,12 +35,6 @@ defmodule AshTemplate.Points.Award do
 
     from AshTemplate.Notes.Signals do
       on :note_created, :agent_note
-    end
-
-    from RegentCredits.Signals do
-      on :purchase_credited, :purchase_credited, action: :credits_purchase
-      on :purchase_attributed, :purchase_attributed, action: :credits_purchase
-      on :card_purchase_credited, :card_purchase_credited, action: :card_purchase
     end
   end
 
@@ -102,32 +92,6 @@ defmodule AshTemplate.Points.Award do
             source_kind: "note",
             source_event_key: signal.note_id
           })
-      end
-    end
-
-    action :credits_purchase do
-      argument :signal, :struct, allow_nil?: false
-
-      run fn %{arguments: %{signal: signal}}, _context ->
-        record(%{
-          rule_id: "credits.purchase_settled",
-          source_app: "regents",
-          source_kind: "credits_purchase",
-          source_event_key: signal.purchase_id
-        })
-      end
-    end
-
-    action :card_purchase do
-      argument :signal, :struct, allow_nil?: false
-
-      run fn %{arguments: %{signal: signal}}, _context ->
-        record(%{
-          rule_id: "credits.purchase_settled",
-          source_app: "regents",
-          source_kind: "card_purchase",
-          source_event_key: signal.purchase_id
-        })
       end
     end
   end

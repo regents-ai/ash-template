@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.PointsPageTest do
   # What a signed-in person gets from Points on the first render, with no wait:
   # their own figures, the actions still open with where to do them, and their own
-  # row on the leaderboard beside other people's public names. Awards are earned the
+  # row on the leaderboard beside other people's names or wallets. Awards are earned the
   # way the site earns them: an account is made, and the queued checks are run. The
   # board every reader shares is then read once, as its producer reads it on notice.
   use ExUnit.Case, async: false
@@ -124,19 +124,24 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert faces == Enum.uniq(faces)
   end
 
-  # Another person's row shows the name the site shows the public and their total:
-  # never their wallet in full or anything else about the account.
-  test "the leaderboard shows other people by public name only", %{conn: conn, other: other} do
-    page = conn |> get("/account/points") |> html_response(200) |> LazyHTML.from_document()
-    row = text(page, ~s(#points-board li[data-you="false"]))
+  # Every wallet is public: another person with no name shows by their wallet, whose
+  # copy icon copies it in full. Nothing else about the account leaves it.
+  test "a person with no name shows by their wallet, with its copy icon", %{conn: conn, other: other} do
+    html = conn |> get("/account/points") |> html_response(200)
+    page = LazyHTML.from_document(html)
 
-    assert row =~ AshTemplate.PublicIdentity.label(Ash.load!(other, [:display_name, :ens_name], actor: %System{}))
-    refute row =~ @other
-    refute row =~ other.privy_user_id
+    copies =
+      page
+      |> LazyHTML.query(~s(#points-board li[data-you="false"] [id^="points-board-wallet-"][id$="-copy"]))
+      |> LazyHTML.attribute("data-copy-text")
+
+    assert @other in copies
+    assert text(page, "#points-board") =~ Regent.Primitives.short_address(@other)
+    refute html =~ other.privy_user_id
   end
 
   # A person's paired agent reads the same figures the page shows, and its copy of
-  # the leaderboard carries a place, a public name and a total for each row.
+  # the leaderboard carries a place, a name or wallet and a total for each row.
   test "a paired agent is answered with the page's figures", %{conn: conn, person: person} do
     page = conn |> get("/account/points") |> html_response(200) |> LazyHTML.from_document()
     answer = agent_answer(person)
@@ -151,8 +156,11 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert length(answer["leaderboard"]) == page |> LazyHTML.query("#points-board li") |> Enum.count()
 
     for row <- answer["leaderboard"] do
-      assert row |> Map.keys() |> Enum.sort() == ~w(name points rank you)
+      assert row |> Map.keys() |> Enum.sort() == ~w(ens_name name points rank wallet you)
     end
+
+    assert %{"name" => nil, "ens_name" => nil, "you" => false} =
+             Enum.find(answer["leaderboard"], &(&1["wallet"] == @other))
   end
 
   # While the board is held for signed-in readers, a signed-out visitor gets none of it.
@@ -170,7 +178,7 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert Enum.count(LazyHTML.query(page, "#points-signed-out")) == 1
     assert Enum.empty?(LazyHTML.query(page, "#points-total"))
     assert Enum.empty?(LazyHTML.query(page, "#points-board"))
-    for row <- top, do: refute(html =~ row.name)
+    for row <- top, shown <- [row.name, row.wallet], shown, do: refute(html =~ shown)
   end
 
   # Where the page would show the board as not read, the agent gets no half answer.

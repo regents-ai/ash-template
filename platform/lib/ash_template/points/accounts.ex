@@ -24,7 +24,7 @@ defmodule AshTemplate.Points.Accounts do
     end
   end
 
-  # An account is private; only the name and picture it shows other people leave it.
+  # What the board shows of each account: its name or wallet, and its pictures.
   @impl true
   def people([]), do: {:ok, %{}}
 
@@ -39,7 +39,9 @@ defmodule AshTemplate.Points.Accounts do
        Map.new(accounts, fn account ->
          {account.id,
           %{
-            name: PublicIdentity.label(account),
+            name: PublicIdentity.listed_name(account),
+            wallet: PublicIdentity.wallet(account),
+            ens_name: PublicIdentity.ens_name(account),
             squares: PublicIdentity.squares(account),
             picture: PublicIdentity.picture(account)
           }}

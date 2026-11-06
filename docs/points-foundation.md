@@ -2,16 +2,14 @@
 
 The reference implementation uses `regent_points` from elixir-utils/points.
 The package owns the ledger, rules, NFT reads, jobs and migrations. The template
-supplies configuration, verified account callbacks and the Account Points page. Points and Credits remain separate.
+supplies configuration, verified account callbacks and the Account Points page.
 
 ## Approved basis and caps
 
-1 point per USDC spent on purchased Credits, capped at 50 points per UTC day.
-Promotional Credits, gifts and later spending do not earn this purchase award.
 Every repeat (daily) action shares one allowance of 100 points per UTC day, whoever
 acted: the person or any of their paired agents. Each action's own count (for
 example, once a day) is also shared by the person and their agents. The most an
-account earns in a day before the bonus is therefore 150 points. One-time actions
+account earns in a day before the bonus is therefore 100 points. One-time actions
 sit outside every daily cap.
 
 Authenticated connected-agent actions follow the same rules through supported
@@ -114,10 +112,9 @@ back together; an insert failure rolls back the action.
 
 The configured adapter verifies committed facts in the background. Invalid evidence
 and conflicting source identities receive a private, durable rejection audit.
-Events save the rule's Credits rate and daily caps; delayed awards use that snapshot.
-The template configures five adapters:
+Events save the rule's points and daily caps; delayed awards use that snapshot.
+The template configures four adapters:
 
-- Credits purchases (`AshTemplate.Points.CreditsPurchase`).
 - A new account (`AshTemplate.Points.AccountActivated`, rule `account.activated`, source
   `regents`/`account`, recorded by `HumanAccount` `:register_verified` only when the
   sign-in inserted the account).

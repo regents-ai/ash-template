@@ -42,10 +42,7 @@ defmodule AshTemplateWeb.PointsEntries do
         title: "Daily",
         limit: limit(room["activity:account"]),
         items:
-          for(
-            %{"category" => category} = rule when category in ["credits", "activity"] <- rules,
-            do: daily(rule, summary, room, open?)
-          )
+          for(%{"category" => "activity"} = rule <- rules, do: daily(rule, summary, room, open?))
       }
     ]
   end
@@ -58,8 +55,9 @@ defmodule AshTemplateWeb.PointsEntries do
   account id and `total` their own total from their summary, or `nil` while it is
   not read. `you` is the reader's row when they sit below the listed rows; `rank`
   is their place wherever they sit. The rows' account ids and the list of every
-  total stay here: neither reaches a page or an agent. A row's `line` is its
-  position in the list: names and places repeat, lines do not.
+  total stay here: neither reaches a page or an agent. A row's `name` is `nil` when
+  the person shows by their `wallet`, under its `ens_name` when it has one. A row's
+  `line` is its position in the list: names and places repeat, lines do not.
   """
   def board(%{top: top, totals: totals}, reader, total) do
     rank = Leaderboard.place(totals, total)
@@ -74,6 +72,8 @@ defmodule AshTemplateWeb.PointsEntries do
             line: line,
             rank: row.rank,
             name: row.name,
+            wallet: row.wallet,
+            ens_name: row.ens_name,
             squares: row.squares,
             picture: row.picture,
             points: Amount.format(row.points_micro),
@@ -115,7 +115,8 @@ defmodule AshTemplateWeb.PointsEntries do
             remaining: Amount.format(&1.remaining)
           }
         ),
-      leaderboard: Enum.map(board.rows, &Map.take(&1, [:rank, :name, :points, :you])),
+      leaderboard:
+        Enum.map(board.rows, &Map.take(&1, [:rank, :name, :wallet, :ens_name, :points, :you])),
       entries:
         Enum.map(summary.entries, fn entry ->
           %{
@@ -143,7 +144,6 @@ defmodule AshTemplateWeb.PointsEntries do
   end
 
   defp limit_name("activity:account"), do: "Daily actions, you and your agents"
-  defp limit_name("credits"), do: "Credits bought"
 
   defp once(%{"id" => id, "points" => points}, summary, open?) do
     done = open? and Map.fetch!(summary.done, id) >= 1
@@ -155,32 +155,6 @@ defmodule AshTemplateWeb.PointsEntries do
       done: done,
       left: open? and not done
     }
-  end
-
-  # Credits earn by the amount bought, so the day's count is points, not purchases.
-  defp daily(%{"id" => id, "category" => "credits"} = rule, _summary, room, open?) do
-    item = %{
-      id: id,
-      label: Rules.label(id),
-      points: open? && rate(rule),
-      done: false,
-      left: false
-    }
-
-    case room["credits"] do
-      %{limit: limit, remaining: remaining} ->
-        count = %{done: whole(limit - remaining), of: whole(limit)}
-
-        Map.merge(item, %{
-          note: "#{count.done} of #{count.of} today",
-          count: count,
-          done: remaining == 0,
-          left: remaining > 0
-        })
-
-      nil ->
-        item
-    end
   end
 
   defp daily(%{"id" => id, "points" => points, "count" => of}, summary, room, open?)
@@ -217,8 +191,6 @@ defmodule AshTemplateWeb.PointsEntries do
     used = whole(limit - remaining)
     %{label: "Limit", used: used, of: whole(limit), value: "#{used} of #{whole(limit)} today"}
   end
-
-  defp rate(%{"micro_points_per_atomic_usdc" => rate}), do: "#{whole(rate * 1_000_000)} per USDC"
 
   defp whole(micro), do: div(micro, Rules.unit())
 end

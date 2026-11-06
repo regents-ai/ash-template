@@ -1,6 +1,6 @@
 ---
 name: ash-signals
-description: Adopting Ash signals on a Regent Phoenix and Ash site the way ash-template does, so one resource announces what happened and other resources react inside the same transaction. Use when moving a site to Ash 3.36 and AshOban 0.10, replacing Regent Credits' on_credited setting, wiring Points, mention notifications or other follow-up work to something a person did, or adding a signal or a listener.
+description: Adopting Ash signals on a Regent Phoenix and Ash site the way ash-template does, so one resource announces what happened and other resources react inside the same transaction. Use when moving a site to Ash 3.36 and AshOban 0.10, wiring Points, mention notifications or other follow-up work to something a person did, or adding a signal or a listener.
 ---
 
 # Ash signals
@@ -24,7 +24,6 @@ all five sites at once (regent-workflow, "Shared changes").
 | `AshTemplate.Accounts.Signals` | `:account_registered` (`account_id`) | `Accounts.HumanAccount` `:register_verified`, only when the sign-in inserted the account (a dynamic emit that reads Ash's `upsert_skipped`) | `Points.Award` `:account_registered` |
 | `AshTemplate.Accounts.Signals` | `:social_linked` (`provider`, `subject`) | `Accounts.LinkedIdentity` `:upsert_verified`, which a sign-in reaches only for a subject new to the account | `Points.Award` `:social_linked` |
 | `RegentAgents.Signals` (elixir-utils `agents`) | `:agent_paired` (`paired_agent_id`, `privy_user_id`) | `RegentAgents.PairedAgent` `:record` | `Points.Award` `:agent_paired` |
-| `RegentCredits.Signals` (elixir-utils `credits`) | `:purchase_credited`, `:purchase_attributed` (`purchase_id`, `privy_user_id`) | `RegentCredits.Purchase`, when a purchase is credited or a waiting one finds its account | `Points.Award` `:credits_purchase` |
 
 Every listener uses the default inline delivery. Its work commits with the action that
 emitted the signal, and a listener that fails rolls that action back. The template has
@@ -34,7 +33,7 @@ no job-delivered listener yet.
 
 1. **Versions.** Set `{:ash, "~> 3.36"}` and `{:ash_oban, "~> 0.10.0"}`; Oban stays on 2.24.
    Pin elixir-utils to the commit the template pins, at or after `9db13eb`. That is
-   where the Ash libraries move to 3.36 and Credits starts sending signals. Never pin
+   where the Ash libraries move to 3.36 and the shared libraries start sending signals. Never pin
    ahead of the template on your own: a library commit that adds a shared table waits
    for that table to exist in the shared database. After moving the pin, force-compile
    the shared libraries in both dev and test.
@@ -43,11 +42,9 @@ no job-delivered listener yet.
    `reloadable_compilers: [:ash_signals, :phoenix_live_view, :elixir, :app]`. With the
    template's `usage_rules` setting in `mix.exs`, `mix usage_rules.sync` then links Ash's
    own signals rules from `AGENTS.md`.
-3. **Credits.** Delete the site's `on_credited` module, its `config :regent_credits,
-   on_credited:` line and anything that names them. The setting no longer exists in the
-   library. In the site's own Points domain, add a copy of `AshTemplate.Points.Award`
-   (below), and list that domain in the site's Ash domains. Every site that lists
-   `RegentCredits` may credit any purchase, so every site needs this listener.
+3. **Points.** In the site's own Points domain, add a copy of `AshTemplate.Points.Award`
+   (below), and list that domain in the site's Ash domains. Every site may pair an agent
+   or register an account, so every site needs this listener.
 4. **Site events.** Look for any change module that writes another resource's rows
    (a mention notifier, a "points for this" change, a follow-up record). Move each one to
    the template's shape:
@@ -66,8 +63,7 @@ no job-delivered listener yet.
      self-mention gives none;
    - a refused post leaves no notification;
    - a note save asks for a label;
-   - a credited purchase offers Points once. While the Points rule is off, nothing is
-     queued.
+   - a pairing offers Points once. While the Points rule is off, nothing is queued.
 
 ## A listener, from the template
 
@@ -80,22 +76,21 @@ defmodule AshTemplate.Points.Award do
       on :note_created, :agent_note
     end
 
-    from RegentCredits.Signals do
-      on :purchase_credited, :purchase_credited, action: :credits_purchase
-      on :purchase_attributed, :purchase_attributed, action: :credits_purchase
+    from RegentAgents.Signals do
+      on :agent_paired, :agent_paired
     end
   end
 
   actions do
-    action :credits_purchase do
-      argument :signal, :struct, allow_nil?: false
+    action :agent_paired do
+      argument :signal, RegentAgents.Signals.AgentPaired, allow_nil?: false
 
       run fn %{arguments: %{signal: signal}}, _context ->
         record(%{
-          rule_id: "credits.purchase_settled",
-          source_app: "regents",
-          source_kind: "credits_purchase",
-          source_event_key: signal.purchase_id
+          rule_id: "agent.activated",
+          source_app: AshTemplate.site(),
+          source_kind: "pairing",
+          source_event_key: signal.paired_agent_id
         })
       end
     end
@@ -137,10 +132,10 @@ with the same name as one of the record's attributes is filled in without being 
   only when the emitter and Oban use the same Repo and the signal is emitted
   `:after_action`.
 - `signal_id` is not a business key. An effect that must happen once still keys on the
-  record: Points' `source_event_key` is the note or purchase id.
+  record: Points' `source_event_key` is the note or pairing id.
 - Before renaming or removing a signal, one of its fields or a job-delivered listener,
   drain its queued jobs or give the listener an `upgrader`.
-- A shared library emits its own signals (`RegentCredits.Signals`), and each site
+- A shared library emits its own signals (`RegentAgents.Signals`), and each site
   listens with a resource of its own. No library ships a listener that runs on every site.
 - Pages still hear about changes through `Ash.Notifier.PubSub`; a signal does not
   replace it. A person's on-chain action is never queued, deferred or deduplicated
