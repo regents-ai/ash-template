@@ -6608,7 +6608,7 @@ they have left to do, what points are for, the leaderboard".
   large on the band colour with today, yesterday and rank; the actions left to do
   first, each with its points and a link to where it is done; the leaderboard with the
   reader's row marked; the NFT bonus tiers; the activity. One column on a phone, two
-  from 60rem.
+  where the page has 52rem or more for it.
 - The leaderboard is `RegentPoints.leaderboard/1`: the ten highest totals by public
   name, read during the render through `Read.now` and reread on the account's Points
   notice. `AshTemplate.Points.Accounts.people/1` supplies each name and picture from
