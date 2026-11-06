@@ -9,11 +9,17 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
   ENS name, short wallet or "Unnamed agent" among them. Those three are emptied
   here, and each author's wallet, and a person's ENS name, is filled in from
   their account or agent.
+
+  It runs in one transaction that holds both tables' locks until it ends, so
+  room posts and mutes wait for it; it gives up after waiting five seconds for
+  those locks rather than queueing every room read behind it.
   """
 
   use Ecto.Migration
 
   def up do
+    execute("SET LOCAL lock_timeout = '5s'")
+
     alter table(:room_messages) do
       add(:author_wallet, :text)
       add(:author_ens_name, :text)
@@ -32,8 +38,15 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
           {"room_messages", "author", "human_account_id", "agent_id"},
           {"room_mutes", "muted", "muted_account_id", "muted_agent_id"}
         ] do
+      # One pass for people and one for agents, so each row is written once.
       execute("""
-      UPDATE #{prefix()}.#{table} AS m SET #{who}_wallet = h.wallet_address, #{who}_ens_name = e.ens_name
+      UPDATE #{prefix()}.#{table} AS m
+      SET #{who}_wallet = h.wallet_address,
+          #{who}_ens_name = e.ens_name,
+          #{who}_name = CASE
+            WHEN m.#{who}_name = e.ens_name OR m.#{who}_name = #{short("h.wallet_address")} THEN NULL
+            ELSE m.#{who}_name
+          END
       FROM regent_names.platform_human_users AS h
       LEFT JOIN #{prefix()}.account_ens_identities AS e
         ON e.human_account_id = h.id AND e.wallet_address = h.wallet_address
@@ -41,24 +54,25 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
       """)
 
       execute("""
-      UPDATE #{prefix()}.#{table} AS m SET #{who}_wallet = a.wallet_address
-      FROM #{prefix()}.agents AS a WHERE m.#{agent} = a.id
-      """)
-
-      execute("""
-      UPDATE #{prefix()}.#{table} SET #{who}_name = NULL
-      WHERE (#{agent} IS NOT NULL AND #{who}_name = 'Unnamed agent')
-         OR #{who}_name = #{who}_ens_name
-         OR #{who}_name = '0x' || substr(#{who}_wallet, 3, 4) || '..' || right(#{who}_wallet, 4)
+      UPDATE #{prefix()}.#{table} AS m
+      SET #{who}_wallet = a.wallet_address,
+          #{who}_name = CASE
+            WHEN m.#{who}_name = 'Unnamed agent' OR m.#{who}_name = #{short("a.wallet_address")} THEN NULL
+            ELSE m.#{who}_name
+          END
+      FROM #{prefix()}.agents AS a
+      WHERE m.#{agent} = a.id
       """)
     end
   end
 
   def down do
+    execute("SET LOCAL lock_timeout = '5s'")
+
     for {table, who} <- [{"room_messages", "author"}, {"room_mutes", "muted"}] do
       execute("""
       UPDATE #{prefix()}.#{table}
-      SET #{who}_name = coalesce(#{who}_ens_name, '0x' || substr(#{who}_wallet, 3, 4) || '..' || right(#{who}_wallet, 4), 'Account')
+      SET #{who}_name = coalesce(#{who}_ens_name, #{short("#{who}_wallet")}, 'Account')
       WHERE #{who}_name IS NULL
       """)
     end
@@ -75,4 +89,7 @@ defmodule AshTemplate.Repo.Migrations.RoomAuthorWallets do
       remove(:author_wallet)
     end
   end
+
+  # The short wallet rooms saved as a name: 0x, its first four and last four characters.
+  defp short(wallet), do: "'0x' || substr(#{wallet}, 3, 4) || '..' || right(#{wallet}, 4)"
 end

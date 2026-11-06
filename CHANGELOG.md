@@ -6725,6 +6725,8 @@ remove it from points".
   author's account (`regent_names.platform_human_users`) or agent and a person's ENS
   name from `account_ens_identities` (only one read for their current wallet), and
   empties a saved name that was "Unnamed agent", that ENS name or the author's short
-  wallet. Its release waits for Sean's go.
+  wallet, in one pass for people and one for agents. It runs in one transaction with
+  `SET LOCAL lock_timeout = '5s'`, holding both tables' locks until it ends (about 2.1 s
+  for 200,000 posts on the Mac). Its release waits for Sean's go.
 - Room figures: each pass of `AshTemplate.Rooms.Activity` forgets a room that is gone, so
   a gone room never holds one of the sixteen places.
