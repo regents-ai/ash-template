@@ -6740,3 +6740,17 @@ column dropped, no production data touched.
   `spending_answers_test.exs` and `credits.spec.ts`. The account menu's balance walks
   become one walk that the header and open menu fit a 320px screen.
 - The `regent_credits` schema and every table and column stay; nothing is migrated.
+
+- After the first full check, `signed_tools_test.exs` still asked the removed balances
+  route in its unpaired-refusal loop (404 where it expected 403); `252eb583` asks
+  `GET /api/v1/account/points` instead.
+- v181 is `252eb583`, created 23:24:53Z on Sean's CREDITS-OUT sign-off (HQ relay 23:18Z).
+  Rollback is v180 `18973d86`. Full check on `252eb583`, exit 0: 148 Elixir (9
+  properties), 430 browser walks with 5 skipped, 26 script tests, credo clean, route
+  handoff current. elixir-utils main `f8801d79` and design-system main `d3845c6d` moved
+  with it (fast-forward). WebKit not run on the Mac.
+- Read live: capabilities names `252eb583`; `/healthz`, `/`, `/app`, `/account`,
+  `/account/points`, `/docs`, `/changelog` and `/agents.md` answer 200;
+  `/account/credits` is not found; `/openapi.json` reads 11.0.0 with no Credits or
+  balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
+  history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
