@@ -6517,6 +6517,41 @@ within the hour on the same versions.
 - Not proven live: Sean's zoomed look at the icons (3–6x), which comes before any other site takes them. No migration,
   no sign-in change, no change to what Credits spend.
 
+## 2026-11-06 — v178: Pair New Agent opens one window
+
+- design-system `768719f3` (branch `ds/pair-window-1106`): `Regent.Account.pairing` is the
+  pairing window's insides in one layout, the menu takes `pair_window`, and
+  `agents_layout` is gone (Sean, 5 Nov, "1a").
+- The shell holds the pairing window (`#shell-pairing`, `AshTemplateWeb.PairingBox` as
+  `shell-pairing-box`) on every signed-in page. The account menu's Pair New Agent and
+  the Agents page's open it (`data-pair-open`, `shell_panels.ts`); the Agents page no
+  longer holds a pairing box. `/pair` shows the same box in the page.
+- The agent guides' Pair New Agent links lead to `/pair`.
+- The shell's two windows share one close button rule (`.shell-dialog-close`).
+- The window opens on the list of agents while none is chosen, with the keyboard on the
+  dropdown. The first full check failed 10 browser walks: the press on Pair New Agent,
+  outside the shut window, closed the list waiting in it (`pill_select.mjs` now closes a
+  pill only on presses in its own layer), and a chosen agent's picture made the dropdown
+  2px taller (its pill has no block padding now).
+  The rerun of the failing walks then found Escape no longer closed the account menu: the
+  list waiting open in the shut window took every Escape. Escape now goes only to a
+  dropdown a person can see.
+- The shell's Escape rule (`app.ts`) closed the last open section anywhere in the shell,
+  so with Buy Credits open over an open section, Escape closed the section behind and
+  left the window open; on the narrowest phones it closed the unseen agent list instead.
+  It now looks only inside the top open window, or else the shell, at sections a person
+  can see. A walk beside the account menu's Escape walk holds it.
+
+- v178 is `c06f89d2`, image `sha256:d14ec67b589d7b004a11f275b9da38f2c4ce1096d2f747af9101542f235b243e`, created 04:48:44Z.
+  Rollback is v177 `9b640619`. design-system main moved from `30747539` to `768719f3` before it. Full check on it,
+  exit 0: 153 Elixir (11 properties), 446 browser walks with 5 skipped, 26 script tests, CLI, required fixes and
+  newest SIWA. WebKit not run on the Mac.
+- Read live: capabilities names `c06f89d2`. Health answers 200. `/`, `/app`, `/account`, `/pair` and
+  `/showcase/preview` answer 200; `/showcase/preview` draws the pairing window's insides (`preview-pairing`), and the
+  live script carries both Escape rules (the top open window, and what a person can see).
+- Not proven live: a signed-in press on Pair New Agent, which needs a person signed in; Sean's look-over comes next.
+  No migration, no sign-in change, no change to what Credits spend.
+
 ## 2026-11-04 — Points: new account, linked socials, first paired agent
 
 - The Points work of 2 Nov (`f942d3b4` on `tpl/points-adapters-1101`) replayed on main. That
