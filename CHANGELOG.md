@@ -6519,7 +6519,7 @@ within the hour on the same versions.
 
 ## 2026-11-06 — Pair New Agent opens one window
 
-- design-system `47b5b31f` (branch `ds/pair-window-1106`): `Regent.Account.pairing` is the
+- design-system `ae6a62ab` (branch `ds/pair-window-1106`): `Regent.Account.pairing` is the
   pairing window's insides in one layout, the menu takes `pair_window`, and
   `agents_layout` is gone (Sean, 5 Nov, "1a").
 - The shell holds the pairing window (`#shell-pairing`, `AshTemplateWeb.PairingBox` as
@@ -6528,4 +6528,9 @@ within the hour on the same versions.
   longer holds a pairing box. `/pair` shows the same box in the page.
 - The agent guides' Pair New Agent links lead to `/pair`.
 - The shell's two windows share one close button rule (`.shell-dialog-close`).
+- The window opens on the list of agents while none is chosen, with the keyboard on the
+  dropdown. The first full check failed 10 browser walks: the press on Pair New Agent,
+  outside the shut window, closed the list waiting in it (`pill_select.mjs` now closes a
+  pill only on presses in its own layer), and a chosen agent's picture made the dropdown
+  2px taller (its pill has no block padding now).
 

@@ -106,9 +106,16 @@ export function installShellPanels(shell: HTMLElement) {
 
   const closeCredits = () => credits()?.close()
 
+  // The window opens on the list of agents while none is chosen, with the keyboard
+  // on the dropdown.
   const openPairing = () => {
     const dialog = pairing()
-    if (dialog && !dialog.open) dialog.showModal()
+    if (!dialog || dialog.open) return
+    dialog.showModal()
+    const pick = dialog.querySelector<HTMLDetailsElement>("details.rg-pill-select")
+    if (!pick) return
+    if (!pick.querySelector("input:checked")) pick.open = true
+    pick.querySelector<HTMLElement>(":scope > summary")?.focus()
   }
 
   const closePairing = () => pairing()?.close()
