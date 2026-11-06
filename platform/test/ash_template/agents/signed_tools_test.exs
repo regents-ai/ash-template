@@ -215,7 +215,7 @@ defmodule AshTemplate.SignedToolsTest do
           {:get, "/api/v1/notes", nil},
           {:post, "/api/v1/notes",
            Jason.encode!(%{title: "Refused", operation_id: Ecto.UUID.generate()})},
-          {:get, "/api/v1/account/balances", nil}
+          {:get, "/api/v1/account/points", nil}
         ] do
       refused = request(method, path, body)
       assert refused.status == 403
