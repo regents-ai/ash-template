@@ -59,7 +59,9 @@ defmodule AshTemplateWeb.NamelessPersonTest do
   } do
     conversation = Dms.open_conversation!(post.id, actor: Human.for_account(reader))
 
-    assert @nameless in copies(conn, "/dms")
+    # The list of conversations goes to the sidebar through a portal, a <template>
+    # the HTML parser keeps apart, so its copy icon is read from the page's text.
+    assert conn |> get("/dms") |> html_response(200) =~ ~s(data-copy-text="#{@nameless}")
     assert @nameless in copies(conn, "/dms/#{conversation.id}")
   end
 
