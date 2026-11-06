@@ -45,6 +45,7 @@ defmodule AshTemplate.Application do
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
         chain_head_children(),
         room_activity_child(),
+        points_board_child(),
         # After PubSub: a Credits balance changed or a pairing made or ended on
         # any Regent site reaches the pages showing it.
         AshTemplate.SharedChanges,
@@ -87,10 +88,14 @@ defmodule AshTemplate.Application do
     if serving?(), do: AshTemplate.ChainHead.children(), else: []
   end
 
-  # Rooms are counted only where pages are served, so a task or a test never
-  # reads the database before it asks to.
+  # Rooms are counted, and the Points board read, only where pages are served,
+  # so a task or a test never reads the database before it asks to.
   defp room_activity_child do
     if serving?(), do: AshTemplate.Rooms.Activity
+  end
+
+  defp points_board_child do
+    if serving?(), do: AshTemplate.Points.Board
   end
 
   defp serving?, do: Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint)

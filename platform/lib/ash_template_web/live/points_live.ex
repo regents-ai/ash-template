@@ -16,7 +16,7 @@ defmodule AshTemplateWeb.PointsLive do
 
   attr :board, AshTemplateWeb.Read,
     required: true,
-    doc: "the highest totals and the reader's place"
+    doc: "the board every signed-in reader shares (AshTemplate.Points.Board)"
 
   attr :bonus, AshTemplateWeb.Read,
     required: true,
@@ -28,7 +28,14 @@ defmodule AshTemplateWeb.PointsLive do
     open? = assigns.earning != []
     summary = assigns.points.value
     groups = if summary, do: PointsEntries.todo(summary, open?), else: []
-    board = assigns.board.value && PointsEntries.board(assigns.board.value)
+
+    board =
+      assigns.board.value &&
+        PointsEntries.board(
+          assigns.board.value,
+          assigns.account.id,
+          summary && summary.balance_micro
+        )
 
     assigns =
       assign(assigns,
@@ -94,7 +101,7 @@ defmodule AshTemplateWeb.PointsLive do
           >
             <:face :let={row}>
               <.account_picture
-                id={"points-board-face-#{row.rank}-#{:erlang.phash2(row.name)}"}
+                id={"points-board-face-#{row.line}"}
                 squares={row.squares}
                 picture={row.picture}
                 size={28}

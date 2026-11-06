@@ -262,6 +262,9 @@ defmodule AshTemplate.SignedToolsTest do
     assert %{"id" => <<_::binary-size(36)>>, "wallet_address" => @wallet} = note["changed_by_agent"]
     assert request(:get, "/api/v1/notes/" <> id).status == 200
     assert request(:get, "/api/v1/account/balances").status == 200
+    # The board every reader shares is read by its producer, which tests do not run.
+    on_exit(fn -> AshTemplate.SharedReading.delete(AshTemplate.Points.Board.key()) end)
+    assert :ok = AshTemplate.Points.Board.read()
     assert request(:get, "/api/v1/account/points").status == 200
     assert request(:post, "/api/v1/account/credits/history", "{}").status == 200
     retried = request(:post, "/api/v1/notes", body)

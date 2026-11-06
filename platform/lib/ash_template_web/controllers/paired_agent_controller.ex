@@ -12,10 +12,11 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   use AshTemplateWeb, :controller
 
-  alias AshTemplate.{Activity, Notes, Rooms}
+  alias AshTemplate.{Activity, Notes, Rooms, SharedReading}
   alias AshTemplate.Actors.Agent
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Payments.NotePin
+  alias AshTemplate.Points.Board
   alias AshTemplate.Rooms.Mute
   alias AshTemplateWeb.{FormErrors, NotesJSON, PointsEntries}
   alias AshTemplateWeb.Plugs.AgentWallet
@@ -141,18 +142,19 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   defp cursor_error?(_error), do: false
 
-  # Points as decimal text, the same figures the Points page shows.
+  # Points as decimal text, the same figures the Points page shows. While the
+  # page would show the board as not read, the whole answer is unavailable.
   def points(conn, _params) do
     actor = conn.assigns.actor
 
     with {:ok, summary} <- RegentPoints.summary(actor: actor),
-         {:ok, leaderboard} <- RegentPoints.leaderboard(actor: actor) do
+         {:ok, %{reading: %{} = board}} <- SharedReading.fetch(Board.key()) do
       earning = Rules.active()
-      answer = PointsEntries.answer(summary, leaderboard, earning != [])
+      answer = PointsEntries.answer(summary, board, actor.human_account_id, earning != [])
       json(conn, with_note(answer, points_note(earning)))
     else
-      {:error, error} ->
-        conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+      {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
+      _board_not_read -> refuse(conn, "unavailable")
     end
   end
 

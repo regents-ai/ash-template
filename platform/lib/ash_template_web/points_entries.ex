@@ -1,11 +1,12 @@
 defmodule AshTemplateWeb.PointsEntries do
   @moduledoc """
   How the Points page and the agent's Points answer describe one account's
-  Points (`RegentPoints.summary/1` and `RegentPoints.leaderboard/1`), so both
-  say the same thing about each action, entry and place.
+  Points (`RegentPoints.summary/1` and the board every reader shares,
+  `AshTemplate.Points.Board`), so both say the same thing about each action,
+  entry and place.
   """
 
-  alias RegentPoints.{Amount, Rules}
+  alias RegentPoints.{Amount, Leaderboard, Rules}
 
   @doc "What became of an entry: counted, cut to nothing by a daily limit, or a correction."
   def status(%{reversal_of_entry_id: id}) when not is_nil(id), do: :correction
@@ -53,32 +54,40 @@ defmodule AshTemplateWeb.PointsEntries do
   def left(groups), do: groups |> Enum.flat_map(& &1.items) |> Enum.count(& &1.left)
 
   @doc """
-  The leaderboard for display: `%{rows, you, rank}`. `you` is the reader's row
-  when they sit below the listed rows; `rank` is their place wherever they sit.
+  The shared board for one reader: `%{rows, you, rank}`. `reader` is the reader's
+  account id and `total` their own total from their summary, or `nil` while it is
+  not read. `you` is the reader's row when they sit below the listed rows; `rank`
+  is their place wherever they sit. The rows' account ids and the list of every
+  total stay here: neither reaches a page or an agent. A row's `line` is its
+  position in the list: names and places repeat, lines do not.
   """
-  def board(%{top: top, you: you}) do
-    listed? = Enum.any?(top, & &1.you?)
+  def board(%{top: top, totals: totals}, reader, total) do
+    rank = Leaderboard.place(totals, total)
+    listed? = Enum.any?(top, &(&1.account_id == reader))
 
     %{
       rows:
-        Enum.map(top, fn row ->
+        top
+        |> Enum.with_index(1)
+        |> Enum.map(fn {row, line} ->
           %{
+            line: line,
             rank: row.rank,
             name: row.name,
             squares: row.squares,
             picture: row.picture,
             points: Amount.format(row.points_micro),
-            you: row.you?
+            you: row.account_id == reader
           }
         end),
-      you: if(you && !listed?, do: %{rank: you.rank, points: Amount.format(you.points_micro)}),
-      rank: you && you.rank
+      you: if(rank && !listed?, do: %{rank: rank, points: Amount.format(total)}),
+      rank: rank
     }
   end
 
   @doc "The agent's Points answer: the same figures the Points page shows."
-  def answer(summary, leaderboard, open?) do
-    board = board(leaderboard)
+  def answer(summary, board, reader, open?) do
+    board = board(board, reader, summary.balance_micro)
 
     %{
       points: Amount.format(summary.balance_micro),

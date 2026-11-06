@@ -11,12 +11,13 @@ defmodule AshTemplateWeb.ShellLive do
 
   import AshTemplateWeb.Components.Shell
 
-  alias AshTemplate.{Accounts, Activity, Chat, Dms, Notes, Polls, Rooms}
+  alias AshTemplate.{Accounts, Activity, Chat, Dms, Notes, Polls, Rooms, SharedReading}
   alias AshTemplate.Accounts.LinkedIdentity.Providers
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.Human
   alias AshTemplate.Credits.CheckPurchase
   alias AshTemplate.Notes.Note
+  alias AshTemplate.Points.Board
   alias AshTemplate.Rooms.{Message, Mute, Room}
 
   alias AshTemplateWeb.{
@@ -65,6 +66,7 @@ defmodule AshTemplateWeb.ShellLive do
        dm: nil,
        poll_id: nil,
        hearing_polls?: false,
+       hearing_board?: false,
        pair_start: nil,
        verified_connections: %Read{},
        points: %Read{},
@@ -99,6 +101,7 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(page_meta(room, page_path(action, uri)))
      |> assign(:route_spec, route_spec)
      |> assign(:pair_start, PairLive.start(params))
+     |> hear_board(route_spec)
      |> load_points(route_spec)
      |> load_credits_history(route_spec)
      |> load_verified_connections(route_spec)
@@ -209,9 +212,18 @@ defmodule AshTemplateWeb.ShellLive do
         %{topic: "points:" <> _},
         %{assigns: %{route_spec: %{route_id: :points}}} = socket
       ),
-      do: {:noreply, socket |> read_points() |> read_points_board()}
+      do: {:noreply, read_points(socket)}
 
   def handle_info(%{topic: "points:" <> _}, socket), do: {:noreply, socket}
+
+  # The board every signed-in reader shares was read again.
+  def handle_info(
+        {:shared_reading, {:points_board, _program}},
+        %{assigns: %{route_spec: %{route_id: :points}}} = socket
+      ),
+      do: {:noreply, read_points_board(socket)}
+
+  def handle_info({:shared_reading, {:points_board, _program}}, socket), do: {:noreply, socket}
 
   # The balance changed on this or any Regent site: a purchase, a gift, a spend.
   # The header, the Buy Credits panel, the Account page and the Credits history
@@ -533,6 +545,23 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp poll_in(_action, _params), do: nil
 
+  # The page hears the shared Points board while the Points page is open, and
+  # not elsewhere.
+  defp hear_board(socket, %{route_id: route}) do
+    hearing? = socket.assigns.hearing_board?
+    wanted? = route == :points
+
+    if connected?(socket) and hearing? != wanted? do
+      if wanted?,
+        do: SharedReading.subscribe(Board.key()),
+        else: SharedReading.unsubscribe(Board.key())
+
+      assign(socket, :hearing_board?, wanted?)
+    else
+      socket
+    end
+  end
+
   # The page hears every poll while the polls page is open, and none elsewhere.
   defp hear_polls(socket, %{route_id: route}) do
     hearing? = socket.assigns.hearing_polls?
@@ -847,19 +876,26 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  # The highest totals and this account's place. Each signed-in reader has their
-  # own answer, read again when their own points change.
+  # The board every signed-in reader shares (AshTemplate.Points.Board). The
+  # reader's own row and place are found from it, and their own total, as the
+  # page renders.
   defp read_points_board(socket) do
     case human_actor(socket) do
-      %Human{} = actor ->
-        Read.now(socket, :points_board, actor.human_account_id, fn ->
-          RegentPoints.leaderboard(actor: actor)
-        end)
-
-      nil ->
-        Read.clear(socket, :points_board)
+      %Human{} -> assign(socket, :points_board, board_read(SharedReading.fetch(Board.key())))
+      nil -> Read.clear(socket, :points_board)
     end
   end
+
+  # Loading until the board is first read, an error when that first read failed,
+  # and behind while the last read failed.
+  defp board_read(:error), do: %Read{state: :loading}
+  defp board_read({:ok, %{reading: nil}}), do: %Read{state: :error, error: :not_read}
+
+  defp board_read({:ok, %{reading: board, at: at, degraded?: true}}),
+    do: %Read{state: :stale, value: board, read_at: at, error: :not_read}
+
+  defp board_read({:ok, %{reading: board, at: at}}),
+    do: %Read{state: :ready, value: board, read_at: at}
 
   defp read_points_bonus(%{assigns: %{points_earning: []}} = socket),
     do: Read.clear(socket, :points_bonus)

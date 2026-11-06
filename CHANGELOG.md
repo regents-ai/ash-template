@@ -6621,15 +6621,41 @@ they have left to do, what points are for, the leaderboard".
   first, each with its points and a link to where it is done; the leaderboard with the
   reader's row marked; the NFT bonus tiers; the activity. One column on a phone, two
   where the page has 52rem or more for it.
-- The leaderboard is `RegentPoints.leaderboard/1`: the ten highest totals by public
-  name, read during the render through `Read.now` and reread on the account's Points
-  notice. `AshTemplate.Points.Accounts.people/1` supplies each name and picture from
-  `PublicIdentity`.
+- The leaderboard is one shared reading for every signed-in reader,
+  `AshTemplate.Points.Board` (kind `points_board` in `AshTemplate.SharedReading`):
+  `RegentPoints.leaderboard/1` read under the system actor at most once a second after
+  any Points change on this site (`points:board`) and each minute from a new heal
+  line. It holds the ten highest rows and every positive total; a reader's place comes
+  from those totals and their own summary, and neither the ids nor the totals leave
+  the server. `AshTemplate.Points.Accounts.people/1` supplies each name and picture
+  from `PublicIdentity`. A SharedReading kind now states its `audience`, who may see
+  it and why; no page or answer hands out a reading by its kind. The board's limit
+  is 131,072 bytes, for 10,000 accounts with points (`docs/points-foundation.md`).
+- Every reading offered to `SharedReading.put/2` reports its size against its kind's
+  limit (`[:ash_template, :shared_reading, :size]`), exported as
+  `health.shared_reading.size.percent` by kind, so a board nearing its limit shows
+  before it is refused.
+- elixir-utils moves to `2d355e5e`: the leaderboard action is system-only and answers
+  the rows with account ids and `totals`; `RegentPoints.Leaderboard.place/2`; the
+  `points:board` notice.
 - `GET /api/v1/account/points` (`account_points`, `account points`) answers the same
   figures: `earned_yesterday`, `rank`, `to_do`, `daily_limits` and `leaderboard` are
-  new; `daily_allowances` is gone. `/docs` lists the change. The contract moves to 10.0.0.
+  new; `daily_allowances` is gone. While the board has never been read, the whole
+  answer is "unavailable", as when Points cannot be read. `/docs` lists the change.
+  The contract moves to 10.0.0.
 - The old Points table styles in `assets/css/pages/account.css` are gone.
 - New test: `platform/test/ash_template_web/points_page_test.exs`. The browser walk
   checks `#points-todo`.
 - No migrations.
 
+- Review fixes. Each leaderboard row's picture is named by its line in the list, not by
+  its place and name: people level on points with the same name had shared one page id.
+  New test in `points_page_test.exs` gives two such people the name "Sam". The
+  design-system pin moves to `13b2fb07`: the pairing window's copy and new-code icons are
+  44px presses on a touch screen.
+  `first_agent_note_test.exs` read the agent's answer with the old one-argument call,
+  which no longer exists; it passes an empty board. That test's awards commit on
+  purpose, so `points_page_test.exs` no longer counts every row on the board: it checks
+  the two people level at first place, and the "Sam" test writes over the profile the
+  sign-in already made. `signed_tools_test.exs` reads the shared board before the
+  agent's Points request, since tests run no producer.

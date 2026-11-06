@@ -154,10 +154,35 @@ See the package README for the adapter contract, actor policy and migration inst
   their points and a link to where each is done, the ones done are ticked. A daily
   action shows how much of today's count is used. Before earning opens it says
   "Earning hasn’t opened yet." and shows no points.
-- **Leaderboard**: the ten highest totals (`RegentPoints.leaderboard/1`) by the name
-  and picture the site already shows the public, the reader's row marked. A reader
-  below the ten gets their own place on a row under the list. Accounts level on
-  points share a place. `AshTemplate.Points.Accounts.people/1` supplies the names.
+- **Leaderboard**: the ten highest totals by the name and picture the site already
+  shows the public, the reader's row marked. A reader below the ten gets their own
+  place on a row under the list. Accounts level on points share a place: one more
+  than the number of totals strictly above. Inside a tie the lower account id comes
+  first, the same on every read. `AshTemplate.Points.Accounts.people/1` supplies the
+  names.
+
+  The board is one shared reading, the same for every signed-in reader
+  (`AshTemplate.Points.Board`, kind `points_board` in `AshTemplate.SharedReading`).
+  It reads `RegentPoints.leaderboard/1` under the system actor at most once a second
+  after any award, correction or period bonus on this site (`points:board`), and
+  each minute from the heal line, which also catches awards made on the other
+  sites. It holds the ten rows with their account ids and every positive total,
+  highest first. A reader's place is `RegentPoints.Leaderboard.place/2` over those
+  totals and their own total from their summary. The ids and the list of totals stay
+  on the server: a page or an agent gets the rows without ids, a mark on its own row
+  and its own place. While the board has never been read the page shows it as
+  loading or not read, and the agent's whole Points answer is "unavailable".
+
+  Size: the kind accepts 131,072 bytes. Ten rows take at most about 36 KB (a name, a
+  2.3 KB square pattern and a picture address of up to 1 KB each) and each account
+  with points 8 bytes, so 10,000 accounts with points take about 116 KB: it holds
+  the board for 10,000 accounts with points. Each board read reports its size as a
+  percent of the limit (`health.shared_reading.size.percent`, kind `points_board`),
+  so its growth shows long before the limit; about 88 means 10,000 accounts. A larger
+  board is refused and marked degraded; the last one stays shown as behind, and the
+  agent's answer keeps giving it. The next step past 10,000 is a stored total on each account with an index, so a
+  reader's place is one indexed count. That is a new column in the shared Points
+  schema, a migration, and needs Sean's go.
 - **Bonus**: the three NFT tiers with the one held marked, and each period's bonus.
 - **Activity**: each entry with who earned it (you or the agent's name), when, and
   whether it was cut by a daily limit or is a correction.

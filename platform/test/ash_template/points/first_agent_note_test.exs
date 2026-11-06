@@ -16,6 +16,8 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
   alias RegentPoints.{Entry, Event, IntakeWorker, Store, Worker}
 
   @rule "template.first_agent_note"
+  # The agent's entries do not depend on the board every reader shares.
+  @no_board %{top: [], totals: []}
 
   setup do
     Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
@@ -70,7 +72,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
       {:ok, summary} = RegentPoints.summary(actor: hd(actors))
 
       assert [%{by: "agent", agent: name, status: :counted}] =
-               AshTemplateWeb.PointsEntries.answer(summary).entries
+               AshTemplateWeb.PointsEntries.answer(summary, @no_board, account_id, true).entries
 
       assert name in names
     end

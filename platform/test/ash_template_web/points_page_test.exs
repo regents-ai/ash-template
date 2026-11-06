@@ -2,15 +2,17 @@ defmodule AshTemplateWeb.PointsPageTest do
   # What a signed-in person gets from Points on the first render, with no wait:
   # their own figures, the actions still open with where to do them, and their own
   # row on the leaderboard beside other people's public names. Awards are earned the
-  # way the site earns them: an account is made, and the queued checks are run.
+  # way the site earns them: an account is made, and the queued checks are run. The
+  # board every reader shares is then read once, as its producer reads it on notice.
   use ExUnit.Case, async: false
 
   import Phoenix.ConnTest
   import Plug.Conn, only: [put_req_header: 3]
 
-  alias AshTemplate.Accounts
+  alias AshTemplate.{Accounts, SharedReading}
   alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
   alias AshTemplate.Actors.System
+  alias AshTemplate.Points.Board
 
   @endpoint AshTemplateWeb.Endpoint
   @wallet "0x" <> String.duplicate("b", 40)
@@ -24,6 +26,7 @@ defmodule AshTemplateWeb.PointsPageTest do
 
     on_exit(fn ->
       Enum.each(previous, fn {key, value} -> Application.put_env(:regent_points, key, value) end)
+      SharedReading.delete(Board.key())
       Ecto.Adapters.SQL.Sandbox.stop_owner(owner)
     end)
 
@@ -45,6 +48,7 @@ defmodule AshTemplateWeb.PointsPageTest do
     # second ahead; Points' check waits for it.
     Process.sleep(1_000)
     assert %{failure: 0} = Oban.drain_queue(queue: :points, with_recursion: true)
+    assert :ok = Board.read()
 
     {:bootstrap, claim} = SessionAuthority.renew(nil)
     {:ok, :bind, claim} = SessionAuthority.sign_in(claim, account.id)
@@ -70,9 +74,54 @@ defmodule AshTemplateWeb.PointsPageTest do
              ["/account/connections"]
 
     # Two accounts level on points share first place; only the reader's row is marked.
-    assert page |> LazyHTML.query("#points-board li") |> Enum.count() == 2
+    # Other tests' awards commit on purpose and sit below them.
+    ranks = page |> LazyHTML.query("#points-board li .rg-points-board__rank") |> Enum.map(&LazyHTML.text/1)
+    assert Enum.take(ranks, 2) == ["1", "1"]
+    assert Enum.count(ranks, &(&1 == "1")) == 2
     assert page |> LazyHTML.query(~s(#points-board li[data-you="true"])) |> Enum.count() == 1
     refute text(page, "#points-page") =~ "Loading"
+  end
+
+  # Names are not unique, and everyone who has only the first award is level on points:
+  # two people named alike at one place still get a picture each.
+  test "two people with one name, level on points, each keep their own picture", %{
+    conn: conn,
+    other: other,
+    person: person
+  } do
+    now = DateTime.utc_now()
+
+    AshTemplate.Repo.insert_all(
+      "profiles",
+      for did <- [person.privy_user_id, other.privy_user_id] do
+        %{
+          id: Ecto.UUID.bingenerate(),
+          app_id: "test-app",
+          privy_user_id: did,
+          display_name: "Sam",
+          wallet_addresses: [],
+          proof_issued_at: 0,
+          inserted_at: now,
+          updated_at: now
+        }
+      end,
+      prefix: "regent_identity",
+      on_conflict: {:replace, [:display_name, :updated_at]},
+      conflict_target: [:app_id, :privy_user_id]
+    )
+
+    assert :ok = Board.read()
+    page = conn |> get("/account/points") |> html_response(200) |> LazyHTML.from_document()
+
+    faces =
+      for row <- LazyHTML.query(page, "#points-board li"),
+          LazyHTML.text(row) =~ "Sam",
+          id <- row |> LazyHTML.query("[id]") |> LazyHTML.attribute("id"),
+          do: id
+
+    assert text(page, "#points-board") |> String.split("Sam") |> length() == 3
+    assert length(faces) == 2
+    assert faces == Enum.uniq(faces)
   end
 
   # Another person's row shows the name the site shows the public and their total:
@@ -106,22 +155,37 @@ defmodule AshTemplateWeb.PointsPageTest do
     end
   end
 
-  test "a signed-out visitor is asked to sign in and sees no figures" do
-    page =
+  # While the board is held for signed-in readers, a signed-out visitor gets none of it.
+  test "a signed-out visitor is asked to sign in and gets nothing from the board" do
+    assert {:ok, %{reading: %{top: [_ | _] = top}}} = SharedReading.fetch(Board.key())
+
+    html =
       build_conn()
       |> put_req_header("accept", "text/html")
       |> get("/account/points")
       |> html_response(200)
-      |> LazyHTML.from_document()
+
+    page = LazyHTML.from_document(html)
 
     assert Enum.count(LazyHTML.query(page, "#points-signed-out")) == 1
     assert Enum.empty?(LazyHTML.query(page, "#points-total"))
     assert Enum.empty?(LazyHTML.query(page, "#points-board"))
+    for row <- top, do: refute(html =~ row.name)
   end
+
+  # Where the page would show the board as not read, the agent gets no half answer.
+  test "while the board is not read, the agent's whole answer is unavailable", %{person: person} do
+    SharedReading.delete(Board.key())
+
+    assert %{"error" => %{"code" => "unavailable"}} =
+             person |> agent_points() |> json_response(503)
+  end
+
+  defp agent_answer(person), do: person |> agent_points() |> json_response(200)
 
   # Pairs an agent with the person and asks for Points as that agent; the sign-in
   # service's check of the agent's signature is answered here.
-  defp agent_answer(person) do
+  defp agent_points(person) do
     previous = Application.fetch_env(:regent_agents, :req_options)
     Application.put_env(:regent_agents, :req_options, plug: {Req.Test, RegentAgents.Broker})
 
@@ -151,7 +215,6 @@ defmodule AshTemplateWeb.PointsPageTest do
     build_conn()
     |> put_req_header("x-siwa-signature", "fixture-proof")
     |> get("/api/v1/account/points")
-    |> json_response(200)
   end
 
   defp text(page, selector), do: page |> LazyHTML.query(selector) |> LazyHTML.text() |> String.trim()

@@ -25,9 +25,10 @@ defmodule AshTemplateWeb.Telemetry do
   default poller, every 10 seconds (`config/config.exs`).
   Each question asked of Jev (`RegentJev`, `[:regent_jev, :decide]`) is counted
   by outcome, with its tokens, what OpenRouter charged and how long it took.
-  The figures every visitor sees alike (`AshTemplate.SharedReading`) report, for
+  The figures every reader they admit sees alike (`AshTemplate.SharedReading`) report, for
   each kind, how many keys are held, how many have never been read, how long ago
-  the oldest was read, each reading that could not be taken and each one refused.
+  the oldest was read, the size of each reading offered as a percent of its kind's
+  limit, each reading that could not be taken and each one refused.
 
   The reporter, Peep, keeps a fixed set of counters for each series and holds
   no observation between scrapes. It adds each observation to a running total
@@ -299,6 +300,14 @@ defmodule AshTemplateWeb.Telemetry do
         measurement: :late,
         tags: [:kind],
         description: "Keys of the kind last read longer ago than the kind's producer should allow"
+      ),
+      last_value("health.shared_reading.size.percent",
+        event_name: [:ash_template, :shared_reading, :size],
+        measurement: &div(&1.bytes * 100, &1.limit),
+        tags: [:kind],
+        description:
+          "Size of the last reading each kind was offered, as a percent of the kind's limit; " <>
+            "past 100 it is refused and the last one held stays"
       ),
       last_value("health.shared_reading.never_read.keys",
         event_name: [:ash_template, :shared_reading, :kind],

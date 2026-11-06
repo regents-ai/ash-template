@@ -20,6 +20,12 @@ for every visitor. If a policy, a filter on the actor or a field policy could
 change the answer for anyone, it is the first kind. When unsure, it is the first
 kind.
 
+One more figure may be shared: one that is the same for every signed-in reader,
+such as the Points board. It is a `SharedReading` kind whose `audience` names those
+readers, and every page or answer that shows it admits only them. What differs by
+reader (their own row, their own place) is worked out from the shared reading and
+their own read, on the server; the reading itself never reaches a page.
+
 ## A public row: publish its public fields
 
 ```elixir
@@ -144,12 +150,14 @@ What it holds, and what it refuses:
 - **A key is `{kind, id}`**, built only by site code: `kind` from the module's
   fixed list and `id` a value the site already holds in its own rows or settings.
   Never a key, or any part of one, taken from a request.
-- **A kind is a reviewed entry.** It states why a signed-out visitor may see the
-  reading, the most keys it may hold and the largest reading it accepts. For a
-  kind built from rows, that reason names the resource and the read a signed-out
-  visitor is allowed. A
-  reading over the size, a key past the count and a reading that is not small
-  plain data are refused and counted; the reading held before stays.
+- **A kind is a reviewed entry.** It states who may see the reading and why
+  (`audience`), the most keys it may hold and the largest reading it accepts. For
+  a kind every visitor sees, built from rows, that reason names the resource and
+  the read a signed-out visitor is allowed. For a kind only signed-in readers see,
+  it names them and the pages and answers that admit them. Nothing hands out a
+  reading by its kind: each page fetches the keys it shows. A reading over the
+  size, a key past the count and a reading that is not small plain data are
+  refused and counted; the reading held before stays.
 - **A reading is small plain data**: numbers, strings, atoms, dates, `Decimal`s,
   and maps, lists or tuples of them. Never an Ash record and never a field that
   belongs to one viewer.
