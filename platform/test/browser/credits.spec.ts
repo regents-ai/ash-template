@@ -10,8 +10,8 @@ const nothingYet = "Nothing to spend on yet."
 const sites = [
   ["Patchbay", "Bid for Agent Offer slots.", "https://patchbay.help"],
   ["Autolaunch", nothingYet, "https://autolaunch.sh"],
-  ["Keyfleet", nothingYet, "https://keyfleet.ai"],
   ["Techtree", nothingYet, "https://techtree.sh"],
+  ["Keyfleet", nothingYet, "https://keyfleet.ai"],
   ["$REGENT Staking", nothingYet, "https://regents.sh/stake"],
 ]
 

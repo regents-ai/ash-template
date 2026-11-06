@@ -6551,3 +6551,10 @@ within the hour on the same versions.
   live script carries both Escape rules (the top open window, and what a person can see).
 - Not proven live: a signed-in press on Pair New Agent, which needs a person signed in; Sean's look-over comes next.
   No migration, no sign-in change, no change to what Credits spend.
+
+## 2026-11-06 — Techtree before Keyfleet
+
+- Sean, 6 Nov, on signing off the icons: switch the positions of Techtree and Keyfleet.
+  `Shell.regents_products/0` now lists Patchbay, Autolaunch, Techtree, Keyfleet and
+  $REGENT Staking, so the products menu and the Credits panel's Spending window both
+  show Techtree third. The Credits walk reads the new order.

@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 6 November 2026
 
+- **Products.** Techtree now comes before Keyfleet wherever the Regents Products are
+  listed.
 - **Pairing.** Pair New Agent, in the account menu and on the Agents page, opens one
   window over the page you are on: choose your agent from the list, copy its message,
   paste it, and a tick shows once it has paired.

@@ -53,8 +53,8 @@ defmodule AshTemplateWeb.Components.Shell do
       tone: "autolaunch",
       credits: @nothing_yet
     },
-    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet", credits: @nothing_yet},
     %{name: "Techtree", url: "https://techtree.sh", tone: "techtree", credits: @nothing_yet},
+    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet", credits: @nothing_yet},
     %{
       name: "$REGENT Staking",
       url: "https://regents.sh/stake",
