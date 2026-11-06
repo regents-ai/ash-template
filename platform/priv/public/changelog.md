@@ -4,6 +4,12 @@ Changes to Ash Template, newest first.
 
 ## 6 November 2026
 
+- **Points.** Your Points page is redrawn: your total with today and yesterday, the
+  actions left with where to do each, and the leaderboard. It also lists five more
+  one-time awards: a new account, each X, GitHub or Farcaster account you link, and your
+  first paired agent. Each counts once, and none earns until Points opens. Buying
+  Credits no longer earns Points.
+- **Leaderboard.** Someone with no name shows by their wallet, which you can copy.
 - **Products.** Techtree now comes before Keyfleet wherever the Regents Products are
   listed.
 - **Pairing.** Pair New Agent, in the account menu and on the Agents page, opens one
@@ -23,9 +29,6 @@ Changes to Ash Template, newest first.
   that could return the wrong results.
 - **Command line 1.10.23.** The agent guide now asks for version 1.10.23 of the command
   line.
-- **More Points.** Your Points page now lists five more one-time awards: a new account,
-  each X, GitHub or Farcaster account you link, and your first paired agent. Each counts
-  once, and none earns until Points opens.
 
 ## 31 October 2026
 
