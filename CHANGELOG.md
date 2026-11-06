@@ -6702,7 +6702,7 @@ remove it from points".
 ## 2026-11-06 — Pairing message in three lines
 
 - Sean, 6 November 2026 (13 a): the pairing message is three lines, and the agent's skill
-  holds the rest. elixir-utils moves to `adc2c655` (eu/pairing-message-1106:
+  holds the rest. elixir-utils moves to `941d9e41` (eu/pairing-message-1106:
   `RegentAgents.PairingMessage.text/4` names the account and site, the code, and the
   agent's own skill, `PairingMessage.skill_url/2`; an agent outside
   `Harness.featured/0`, Cursor among them, gets `/agents/other/skill.md`). The `setup:`
@@ -6713,4 +6713,7 @@ remove it from points".
   person for a new one." and, for all but Grok Bot (whose `/workspace` line stays), its
   own key folder, `SIWA_AGENT_HOME=~/.siwa-agent/<slug>` (`YOUR-RUNTIME` for any agent).
   The lines for Codex, Grok Bot, Hermes and Muse that left the message were already there.
+- ChatGPT and Claude's message, and the hosted connector's `account_url`, name the
+  Agents page as `/account/agents`: the `#account-pairing` section they pointed at left
+  when pairing moved into the Pair New Agent window.
 - No migrations.
