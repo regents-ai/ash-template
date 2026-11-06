@@ -6688,3 +6688,13 @@ remove it from points".
 - Removed test: `platform/test/ash_template/points/card_purchase_test.exs`.
 - Credits itself, its pages, header balance, paid pin and card purchase are unchanged.
 - No migrations.
+
+- v180 is `18973d86` (the Points page with its shared board, no Credits rule and wallets
+  on the leaderboard, plus main's Notion skill line), created 16:24:22Z. Rollback is v179
+  `4a702028`. Full check on `5068e389`, exit 0: 162 Elixir (11 properties), 446 browser
+  walks with 5 skipped, 26 script tests, credo clean; the merge added only a skill line
+  and the public changelog. WebKit not run on the Mac.
+- Read live: capabilities names `18973d86`, health answers 200 on one machine, `/`,
+  `/app`, `/account/points`, `/agents.md`, `/openapi.json` and `/changelog` answer 200,
+  `/openapi.json` reads "leaderboard by name or wallet". No migration, no `starts_at`:
+  nothing earns until HQ names the start.
