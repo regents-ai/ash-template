@@ -6698,3 +6698,19 @@ remove it from points".
   `/app`, `/account/points`, `/agents.md`, `/openapi.json` and `/changelog` answer 200,
   `/openapi.json` reads "leaderboard by name or wallet". No migration, no `starts_at`:
   nothing earns until HQ names the start.
+
+## 2026-11-06 — Pairing message in three lines
+
+- Sean, 6 November 2026 (13 a): the pairing message is three lines, and the agent's skill
+  holds the rest. elixir-utils moves to `adc2c655` (eu/pairing-message-1106:
+  `RegentAgents.PairingMessage.text/4` names the account and site, the code, and the
+  agent's own skill, `PairingMessage.skill_url/2`; an agent outside
+  `Harness.featured/0`, Cursor among them, gets `/agents/other/skill.md`). The `setup:`
+  option is gone; the template never used it.
+- `AshTemplateWeb.AgentGuides.skill/1` adds each agent's Set up section under
+  "## Pair with a person's account", the heading the message names. Each of the ten
+  agents' Set up gains "The code works once, for ten minutes. If it fails, ask your
+  person for a new one." and, for all but Grok Bot (whose `/workspace` line stays), its
+  own key folder, `SIWA_AGENT_HOME=~/.siwa-agent/<slug>` (`YOUR-RUNTIME` for any agent).
+  The lines for Codex, Grok Bot, Hermes and Muse that left the message were already there.
+- No migrations.

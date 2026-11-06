@@ -15,6 +15,9 @@ Changes to Ash Template, newest first.
 - **Pairing.** Pair New Agent, in the account menu and on the Agents page, opens one
   window over the page you are on: choose your agent from the list, copy its message,
   paste it, and a tick shows once it has paired.
+- **Agents.** The message you paste to your agent is three lines: your account, the
+  code and your agent's own page of steps, which now says how long the code lasts,
+  where your agent keeps its key and the step it most often misses.
 
 ## 5 November 2026
 

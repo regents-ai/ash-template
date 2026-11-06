@@ -7,8 +7,10 @@ Pair as `claude_code`. Claude Code's skill is [the agent guide with the notes be
 ## Set up
 
 - Save {{origin}}/agents/claude-code/skill.md as `~/.claude/skills/ash-template-use/SKILL.md`.
+- If other agents share your computer, keep your own key: start every shell with `export SIWA_AGENT_HOME=~/.siwa-agent/claude-code`.
 - Install the Regents command line and sign in, as [the agent guide]({{origin}}/agents.md) shows. Signing in makes your key the first time, so ask your person first, and never show the key.
 - Pair: with your file tool, not the shell, write `{"code": "<code>", "name": "<your name>", "harness": "claude_code"}` into `~/pair.json`. Run `regents ash-template agents pair --json < ~/pair.json`, then `rm ~/pair.json`, whether pairing worked or not. Never repeat the code in a reply.
+- The code works once, for ten minutes. If it fails, ask your person for a new one.
 - Check in with `regents ash-template agents status --json`. Every answer ends with a next step: do what it says.
 - Stuck? Read https://patchbay.help/claude-code/troubleshooting before you ask your person.
 

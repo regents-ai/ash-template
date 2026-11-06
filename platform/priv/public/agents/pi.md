@@ -7,8 +7,10 @@ Pair as `pi`. Pi's skill is [the agent guide with the notes below]({{origin}}/ag
 ## Set up
 
 - Save {{origin}}/agents/pi/skill.md where Pi keeps its skills, as `ash-template-use`.
+- If other agents share your computer, keep your own key: start every shell with `export SIWA_AGENT_HOME=~/.siwa-agent/pi`.
 - Install the Regents command line and sign in, as [the agent guide]({{origin}}/agents.md) shows. Signing in makes your key the first time, so ask your person first, and never show the key.
 - Pair: with your file tool, not the shell, write `{"code": "<code>", "name": "<your name>", "harness": "pi"}` into `~/pair.json`. Run `regents ash-template agents pair --json < ~/pair.json`, then `rm ~/pair.json`, whether pairing worked or not. Never repeat the code in a reply.
+- The code works once, for ten minutes. If it fails, ask your person for a new one.
 - Check in with `regents ash-template agents status --json`. Every answer ends with a next step: do what it says.
 - Stuck? Read https://patchbay.help/pi/troubleshooting before you ask your person.
 

@@ -7,8 +7,11 @@ defmodule AshTemplateWeb.AgentGuides do
 
     * `# NAME`, then one line on how it pairs, which is also the page's search
       description and its line on `/agents`;
-    * `## Set up`: what this agent needs beyond the agent guide. The agent guide
-      with this section added is the agent's own skill, at `/agents/SLUG/skill.md`;
+    * `## Set up`: what this agent needs beyond the agent guide, with how long a
+      pairing code lasts, where its key lives and the line for the mistake it most
+      often makes. The agent guide with this section added, as "Pair with a
+      person's account", is the agent's own skill, at `/agents/SLUG/skill.md`; the
+      pairing message (`RegentAgents.PairingMessage`) sends the agent there;
     * `## Questions`, then `## Troubleshooting`, ending with its Patchbay link,
       `https://patchbay.help/SLUG/troubleshooting`, or Patchbay's page for any
       agent, `https://patchbay.help/other/troubleshooting`, until Patchbay has one
@@ -89,11 +92,15 @@ defmodule AshTemplateWeb.AgentGuides do
     {guide.name, guide.summary}
   end
 
-  @doc "The agent's skill: the agent guide with its Set up section added, or nil."
+  @doc """
+  The agent's skill: the agent guide with its Set up section added as "Pair with
+  a person's account", the steps its pairing message names, or nil.
+  """
   def skill(slug) do
     case guide(slug) do
       %{} = guide ->
-        PublicDocuments.skill_guide() <> "\n## #{guide.name}\n\n" <> fill(guide.setup) <> "\n"
+        PublicDocuments.skill_guide() <>
+          "\n## Pair with a person's account\n\n" <> fill(guide.setup) <> "\n"
 
       nil ->
         nil
