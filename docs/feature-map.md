@@ -95,6 +95,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | A saved note's webhook the address never answers fails as a server fault, so the job that runs out of attempts shows on the error page | `platform/test/ash_template/notes/webhook_failure_test.exs` |
 | A person's agents' notes earn the first-note Points once, in one entry, written at once or one after another; the Points answer names the agent that earned it | `platform/test/ash_template/points/first_agent_note_test.exs` (property test) |
 | A new account, each social account linked and a person's paired agents each earn their one-time Points once, in one entry; a sign-in that rolls back offers nothing, and signing in again with the same account or social account offers nothing more and still refreshes the link | `platform/test/ash_template/points/sign_in_milestones_test.exs` |
+| An account, its linked social account and its paired agent from before the Points start earn their one-time Points at the start, once, through this site's own checks, and a later run offers nothing more | `platform/test/ash_template/points/start_awards_test.exs` |
 
 ## Agents
 

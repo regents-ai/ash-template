@@ -6523,3 +6523,22 @@ within the hour on the same versions.
   `Points.Accounts.agent_names/2` names wallets from `RegentAgents.pairing_histories/1`.
   The template's own SQL against `regent_agents.pairing_history` is gone.
 - No migrations.
+
+## 2026-11-06 — Points: what people had before the start
+
+- Library pin moves to elixir-utils `7fde8cce` (from `4e527975`): `RegentPoints.StartAwards`,
+  versioned rules, `Rules.tracked/0` lists only approved rules with a checker, and the
+  catalog loses `patchbay.first_report`, `patchbay.first_reply` and
+  `autolaunch.first_launch` (250 in the catalog, 240 at launch), with
+  `RegentAgents.pairings_held_from_before/1`. The same range carries `siwa_keyring` 0.3.0,
+  which the template does not use.
+- `AccountActivated`, `LinkedSocial` and `PairedAgent` gain `existing/2`: the accounts made
+  before the start, the links to the rule's provider made before it, and each person's
+  earliest pairing from before it still paired. New system-only reads:
+  `HumanAccount` `:created_before` and `:by_privy_dids`, `LinkedIdentity` `:linked_before`.
+- `{"@hourly", RegentPoints.StartAwards}` joins the Oban cron list. With `starts_at` still
+  `nil` the job stops at once, so nothing earns yet.
+- With `approved_rules` still `[]`, `/account/points` names no ways to earn: it says
+  "Earning hasn’t opened yet." above the NFT bonus until rules are approved.
+- `docs/points-foundation.md` gives the 250 and 240 totals, versions and the start awards.
+- No migrations.

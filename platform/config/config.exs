@@ -102,6 +102,8 @@ config :ash_template, Oban,
       {"17 4 * * *", AshTemplate.ErrorPruner},
       # This release's public pages, sent to IndexNow once per release.
       {"@hourly", AshTemplate.IndexNow},
+      # From the Points start, the one-time points for what accounts already had.
+      {"@hourly", RegentPoints.StartAwards},
       # One line for each kind of shared reading a producer rereads on notice.
       {"* * * * *", AshTemplate.SharedReading.Heal, args: %{kind: "room_activity"}}
     ]

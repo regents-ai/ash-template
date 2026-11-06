@@ -60,23 +60,32 @@ the cap; the entry reads "Allowance reached".
 Each milestone earns once per account, across every site, wallet, key and agent.
 Once one has earned, a later qualifying action records nothing more, and two
 qualifying actions at the same moment still earn it once. The catalog totals
-**290 points**:
+**250 points**, and **240** can be earned at launch: the first agent note stays in
+the catalog but is not approved at launch (Sean, POINTS-CATALOG b, 6 November):
 
 | Group | Milestones | Total |
 | --- | --- | ---: |
 | Account | Activated 25; X, GitHub and Farcaster linked 10 each | 55 |
-| Agents | First paired agent 25; first note written by your agent 10 (`template.first_agent_note`) | 35 |
-| Patchbay | First report 10; first reply 10 | 20 |
-| Autolaunch | First launch 20; first graduation 50; first auction settled 10; token staked 40 | 120 |
+| Agents | First paired agent 25; first note written by your agent 10 (`template.first_agent_note`, not at launch) | 35 |
+| Autolaunch | First graduation 50; first auction settled 10; token staked 40 | 100 |
 | Keyfleet | First membership 10; key revealed 5; agent authorized 10; message 5; vote 10; Twigpine and ActiveGraph used 10 each | 60 |
 
 Availability of a catalog row does not assert that its verifier or source hook
 exists. Milestones do not reset by program, season, site, wallet, agent, rule
 version or ordinary disconnection. Provider and registration subject claims
 additionally prevent moving the same proof between accounts to earn again.
-Already-completed verified setup qualifies once at its actual verification time
-after launch, without reconnecting. This does not authorize historical activity
-backfill.
+
+A rule keeps its id when it changes: each catalog entry carries its version, a new
+id is only for a new action, and the ledger keeps the version each entry was earned
+under. To stop a rule, take it off `approved_rules`.
+
+What an account already had at the start earns at the start time, at most 80
+points, without the person doing anything (Sean, POINTS-EXISTING a, 6 November):
+the account, its linked X, GitHub and Farcaster accounts still linked, and its
+first paired agent still paired. `RegentPoints.StartAwards` runs hourly on every
+site, asks each checker's `existing/2` and records through the normal path, so an
+account earns each once whichever site records it. No other rule earns for what
+happened before the start.
 
 ## NFT bonus
 
