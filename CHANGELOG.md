@@ -6754,3 +6754,47 @@ column dropped, no production data touched.
   `/account/credits` is not found; `/openapi.json` reads 11.0.0 with no Credits or
   balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
   history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
+
+## 2026-11-08 — Written words hold no hidden characters; smaller bodies; a note when a page is offline
+
+Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
+`x-content-type-options: nosniff` on every answer (v170), so that part is left out.
+
+- A room or direct message, a note's title and body, and a message to the assistant
+  now refuse hidden characters, such as the mark that turns a file's name the other
+  way round, a zero-width space or a control character. The refusal says "Use letters,
+  numbers and marks you can see." under the box, or in the API's refusal. Line breaks,
+  tabs, emoji and joined emoji are kept. The rule is elixir-utils `RegentFormat.Text`,
+  already in the pinned `f8801d79`: each line follows the name rule, `RegentFormat.Name`,
+  and a note's title follows the name rule itself. It is an Ash validation only, with no
+  database change. Words saved before stay as they are, an edit that leaves a note's
+  title or body as it was doesn't check it, and an edit that keeps a hidden character is
+  refused under its box, never with a failure.
+- A body over 256 KB is refused with 413 before it is read; the limit was 1 MB. Bodies
+  an agent signs, on the API and `/mcp`, already stop at 64 KB. No page takes a file.
+- A page's connection refuses a message over 256 KB; the limit was 10 MB. The longest
+  note the boxes take is about 91 KB once sent.
+- Pages connect by websocket only. The fallback to long polling, which a page switched
+  to when its websocket took over 2.5 seconds, read up to 8 MB a request, past both
+  limits above. A slow websocket now keeps trying until it connects. On a network that
+  blocks websockets, the pages show as served and their links work. Signing in and out
+  still work, because neither uses the live connection: Sign in and Sign out are the
+  account script's own presses (`auth_lazy.ts`), and the sign-in bridge sends one
+  request to `/auth/privy/session` and reloads the page (`privy_bridge.tsx`). Choosing
+  an agent to pair and Send need the live connection.
+- While a page has no live connection (it could not connect, or the connection
+  dropped half a second ago or more), the pairing box and the Send box of a room, a
+  direct message and the assistant chat say "Not connected. Trying again…" in the
+  design system's notice, and their buttons are disabled: the agents and the new-code
+  button in the pairing box, Send (and Cancel) in the others, and Enter, which sends.
+  The box can still be typed in. Once the connection is back, the notice goes and the
+  buttons return. LiveView's own `phx-disconnected` and `phx-connected` do it
+  (`AshTemplateWeb.LiveConnection`), on what the server never disables itself. Other
+  live forms (notes, polls, a room's topic, new rooms and the search box) don't show it
+  yet. The pairing window opens from the page's script once the page is connected, so
+  on a network that blocks websockets Pair New Agent's own page, `/pair`, shows the box
+  and its notice. `blocked_websocket.spec.ts` checks it there and in a room with
+  websockets refused, and with a connection dropped and restored.
+- The walk's tall-message check now sends a short message first, then checks that the
+  tall one lands inside the room.
+- WebKit is not run on the Mac.

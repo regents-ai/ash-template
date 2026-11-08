@@ -198,12 +198,16 @@ defmodule AshTemplateWeb.ChatLive do
               aria-describedby={"chat-message-hint #{field.described_by}"}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:text].value)}</textarea>
           </Primitives.field>
-          <div class="chat-composer__actions">
+          <AshTemplateWeb.LiveConnection.offline
+            id="chat-message-offline"
+            controls="#chat-message-actions"
+          />
+          <fieldset id="chat-message-actions" class="chat-composer__actions">
             <p id="chat-message-hint" class="chat-composer__hint rg-muted">
               Enter sends. Shift+Enter starts a new line.
             </p>
             <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
-          </div>
+          </fieldset>
         </.form>
       </section>
     </article>
