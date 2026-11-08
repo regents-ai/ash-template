@@ -2,10 +2,10 @@
 
    The button is the whole press: a normal button's height, 44px on touch
    screens. Inside it sits the still face the server draws, a plain track and a
-   knob with the Lucide moon or sun, and the canvas where the GPU draws the
-   glass knob, its pixel icon and its light once a first frame has landed. The
-   canvas never takes a press, reaches only above and below the button, never
-   past its sides, so it never lies over a neighbour.
+   knob with the moon or the sun in tiny square blocks, and the canvas where the
+   GPU draws the glass knob, the same blocks and its light once a first frame
+   has landed. The canvas never takes a press, reaches only above and below the
+   button, never past its sides, so it never lies over a neighbour.
 
    The knob's place is --theme-switch-p: 0 at night on the left, 1 by day on the
    right. Before the script runs it follows the theme showing; after, the script
@@ -97,11 +97,13 @@
   transform: translate(calc(var(--theme-switch-p) * var(--theme-switch-travel)), -50%);
 }
 
+/* The blocks fill as much of the knob as they do behind the glass. */
 .theme-switch__moon,
 .theme-switch__sun {
   grid-area: 1 / 1;
-  width: 1.05rem;
-  height: 1.05rem;
+  width: calc(var(--theme-switch-lens) * 0.65);
+  height: calc(var(--theme-switch-lens) * 0.65);
+  fill: currentColor;
 }
 
 /* The moon until the knob is halfway across, the sun from there. */

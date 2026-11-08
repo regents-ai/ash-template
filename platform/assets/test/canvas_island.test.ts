@@ -27,6 +27,8 @@ beforeEach(() => {
     observe() {}
     disconnect() { disconnected += 1 }
   })
+  // A canvas stub may carry the size its layout gives it; one without is not laid out.
+  vi.stubGlobal("getComputedStyle", (element: {laidOut?: object}) => element.laidOut ?? {width: "auto", height: "auto"})
   vi.stubGlobal("IntersectionObserver", class {
     constructor(private seen: (entries: {isIntersecting: boolean}[]) => void) {}
     observe() { this.seen([{isIntersecting: true}]) }
@@ -38,16 +40,18 @@ afterEach(() => vi.unstubAllGlobals())
 
 // An island on screen in a showing tab, its first frame handed out at once. It
 // answers how often what steered the picture was let go, and the root's flag.
-async function runIsland(load: () => Promise<IslandRenderer>) {
+async function runIsland(
+  load: (canvas: HTMLCanvasElement, size: readonly [number, number]) => Promise<IslandRenderer>,
+  screen: {canvas?: object; devicePixelRatio?: number; maxDevicePixelRatio?: number} = {},
+) {
   let released = 0
-  const root = {dataset: {} as Record<string, string>, querySelector: () => ({
-    getBoundingClientRect: () => ({width: 300, height: 200}),
-  })} as unknown as HTMLElement
+  const canvas = screen.canvas ?? {getBoundingClientRect: () => ({width: 300, height: 200})}
+  const root = {dataset: {} as Record<string, string>, querySelector: () => canvas} as unknown as HTMLElement
 
   createCanvasIsland(root, {
     requestFrame: callback => { queueMicrotask(() => callback(0)); return 1 },
     cancelFrame() {},
-    devicePixelRatio: () => 1,
+    devicePixelRatio: () => screen.devicePixelRatio ?? 1,
     motionQuery: () => ({matches: false, addEventListener() {}, removeEventListener() {}}),
     supportsWebGpu: () => true,
     loadRenderer: load,
@@ -57,6 +61,7 @@ async function runIsland(load: () => Promise<IslandRenderer>) {
     browserLoad: load,
     motionSensitive: false,
     continuous: false,
+    maxDevicePixelRatio: screen.maxDevicePixelRatio,
     interact: () => () => void (released += 1),
   }).mount()
 
@@ -77,4 +82,25 @@ it("keeps hold of them while the picture draws", async () => {
   expect(ready).toBe("true")
   expect(released).toBe(0)
   expect(visibilityListeners).toBe(1)
+})
+
+// Invariant: the backing store follows the canvas's own laid-out size, not what
+// a transform on an ancestor makes of it (a menu scaling in as it opens), so the
+// picture is not drawn a shade small and stretched. An island may ask for more
+// of a sharp screen than the default ceiling.
+it("sizes its backing store from the canvas's layout, under a transform", async () => {
+  let size: readonly number[] = []
+  const canvas = {laidOut: {width: "300px", height: "200px"}, getBoundingClientRect: () => ({width: 294, height: 196})}
+  await runIsland(async (_, given) => ((size = given), drawing), {
+    canvas,
+    devicePixelRatio: 3,
+    maxDevicePixelRatio: 3,
+  })
+  expect(size).toEqual([900, 600])
+})
+
+it("keeps to the default ceiling when an island does not ask for more", async () => {
+  let size: readonly number[] = []
+  await runIsland(async (_, given) => ((size = given), drawing), {devicePixelRatio: 3})
+  expect(size).toEqual([450, 300])
 })

@@ -4,10 +4,11 @@ Changes to Ash Template, newest first.
 
 ## 8 November 2026
 
-- **Theme switch.** The light and dark switch now sits in the top bar, beside your
-  account. Press it, or slide its glass knob: the moon on the left is the dark theme
-  and the sun on the right the light one, and the theme changes when you let go. On the
-  narrowest phones it sits in the bottom bar.
+- **Theme switch.** The light and dark switch is now in your account menu, which opens
+  from your account at the top right; signed out, it sits in the bottom bar. Press it,
+  or slide its glass knob: the moon on the left is the dark theme and the sun on the
+  right the light one, each made of tiny blocks that tumble from one to the other, and
+  the theme changes when you let go.
 
 ## 6 November 2026
 

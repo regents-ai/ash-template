@@ -11,9 +11,12 @@
  * The knob's position is one number, p: 0 at night (dark) on the left, 1 by day
  * (light) on the right. The still face the server drew reads it from
  * `--theme-switch-p`; the GPU picture (theme_switch/renderer.ts, inside the
- * shared canvas island) reads it with the pixel swarm the knob scrubs. Every
+ * shared canvas island) reads it with the swarm of blocks the knob scrubs. Every
  * move of the knob is Anime.js: an Animatable carries it when it settles, and
  * the swarm is a paused timeline seeked to it (theme_switch/morph.ts).
+ *
+ * The blocks are the server's: the still face draws the moon and the sun as
+ * SVG squares, and the swarm is read from them, so both pictures have one source.
  *
  * Every switch on the page follows the theme on screen, whoever changed it, and
  * moves to match.
@@ -24,13 +27,15 @@ import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
 import {chooseTheme, showingTheme, watchTheme} from "../theme"
 import {draggedPosition, isDrag, settleSide, sideOf, themeOf, type Side} from "../theme_switch/knob"
 import {createMorph, PIXEL_STRIDE, type Morph} from "../theme_switch/morph"
-import {PAIRS} from "../theme_switch/pixels"
+import {pairByAngle, pixelsOf, type Cell, type Pair} from "../theme_switch/pixels"
 import type {Rgb, SwitchPicture, ThemeSwitchRenderer} from "../theme_switch/renderer"
 import {byPointer, lastInputByPointer, still} from "./motion/shared"
 
 export type ThemeSwitchController = Pick<CanvasIslandController, "mount" | "pause" | "resume" | "destroy">
 
 type Geometry = Pick<SwitchPicture, "width" | "height" | "track" | "lens">
+
+type Pictures = {grid: number; pairs: readonly Pair[]}
 
 type Press = {id: number; x: number; start: number; type: string; dragging: boolean; travel: number}
 
@@ -60,12 +65,37 @@ function colourReader() {
   }
 }
 
+/** One of the still face's pictures: its grid's side and its blocks. */
+function readPicture(svg: SVGSVGElement | null): {grid: number; cells: Cell[]} | undefined {
+  const grid = Number(svg?.getAttribute("viewBox")?.trim().split(/[\s,]+/)[2])
+  if (!svg || !(grid > 0)) return undefined
+  const cells = [...svg.querySelectorAll("rect")].map(rect => ({
+    col: Number(rect.getAttribute("x")),
+    row: Number(rect.getAttribute("y")),
+  }))
+  return {grid, cells}
+}
+
+/**
+ * The moon and the sun as the server drew them in the still face, every block
+ * of the moon paired with one of the sun. Nothing when they cannot be paired,
+ * and the still face is then the whole switch.
+ */
+function readPictures(root: HTMLElement): Pictures | undefined {
+  const moon = readPicture(root.querySelector<SVGSVGElement>("svg.theme-switch__moon"))
+  const sun = readPicture(root.querySelector<SVGSVGElement>("svg.theme-switch__sun"))
+  if (!moon || !sun || moon.grid !== sun.grid || moon.cells.length === 0) return undefined
+  if (moon.cells.length !== sun.cells.length) return undefined
+  return {grid: moon.grid, pairs: pairByAngle(pixelsOf(moon.cells, moon.grid), pixelsOf(sun.cells, sun.grid))}
+}
+
 export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   const button = root.querySelector<HTMLButtonElement>("[role='switch']")!
   const trackBox = root.querySelector<HTMLElement>("[data-theme-switch-track]")!
   const knobBox = root.querySelector<HTMLElement>("[data-theme-switch-knob]")!
   const canvas = root.querySelector<HTMLCanvasElement>("[data-theme-switch-canvas]")!
   const readColour = colourReader()
+  const pictures = readPictures(root)
 
   // What Anime.js moves: the knob, between 0 and 1.
   const knob = {p: sideOf(showingTheme()) as number}
@@ -74,7 +104,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   let motion: AnimatableObject | undefined
   let geometry: Geometry = {width: 1, height: 1, track: {x: 0, y: 0, width: 1, height: 1}, lens: 1}
   let colours: SwitchPicture["colours"] = {page: [0, 0, 0], ink: [1, 1, 1], night: NIGHT, day: DAY}
-  const pixels = new Float32Array(PAIRS.length * PIXEL_STRIDE)
+  const pixels = new Float32Array((pictures?.pairs.length ?? 0) * PIXEL_STRIDE)
   let draw = () => {}
   let press: Press | undefined
   let swallowClick = false
@@ -83,10 +113,19 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   const measure = () => {
     const box = canvas.getBoundingClientRect()
     const track = trackBox.getBoundingClientRect()
+    // A menu dropping open scales what it holds for a moment; the picture keeps
+    // to the layout's own sizes, which its computed width gives unscaled.
+    const laidOut = parseFloat(getComputedStyle(canvas).width)
+    const k = laidOut > 0 && box.width > 0 ? box.width / laidOut : 1
     geometry = {
-      width: box.width || 1,
-      height: box.height || 1,
-      track: {x: track.left - box.left, y: track.top - box.top, width: track.width, height: track.height},
+      width: box.width / k || 1,
+      height: box.height / k || 1,
+      track: {
+        x: (track.left - box.left) / k,
+        y: (track.top - box.top) / k,
+        width: track.width / k,
+        height: track.height / k,
+      },
       lens: knobBox.offsetWidth,
     }
   }
@@ -111,7 +150,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   const picture = (): SwitchPicture => {
     morph?.seek(knob.p)
     morph?.write(pixels)
-    return {p: knob.p, ...geometry, pixels, count: PAIRS.length, colours}
+    return {p: knob.p, ...geometry, grid: pictures?.grid ?? 1, pixels, count: pictures?.pairs.length ?? 0, colours}
   }
 
   // Shows the knob where it is now: the still face's knob and, when the GPU
@@ -122,7 +161,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   }
 
   const scope = createScope({root}).add(() => {
-    morph = createMorph()
+    if (pictures) morph = createMorph(pictures.pairs)
     motion = createAnimatable(knob, {p: 0, onUpdate: render})
   })
 
@@ -218,12 +257,17 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
     commit(side === 1 ? 0 : 1, byPointer(event))
   }
 
-  const island = createCanvasIsland<ThemeSwitchRenderer>(root, {}, {
+  // Without both pictures there is nothing to draw behind the glass, and the
+  // still face is the switch.
+  const island = pictures && createCanvasIsland<ThemeSwitchRenderer>(root, {}, {
     canvasSelector: "[data-theme-switch-canvas]",
     readyFlag: "themeSwitchReady",
     motionSensitive: true,
     // Drawn only when the knob or the theme moves; nothing moves between.
     continuous: false,
+    // A canvas this small costs nothing at the screen's full sharpness, and the
+    // blocks only read as blocks there.
+    maxDevicePixelRatio: 3,
     browserLoad: async (surface, size, lost) => {
       const {createThemeSwitchRenderer} = await import("../theme_switch/renderer")
       return createThemeSwitchRenderer(surface, size, lost)
@@ -246,8 +290,8 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   // still face too, as forced colours do; the stylesheet shows it, and the island rests.
   const forced = window.matchMedia("(forced-colors: active)")
   const syncMotion = () => {
-    if (!connected || still(root) || forced.matches) island.pause()
-    else island.resume()
+    if (!connected || still(root) || forced.matches) island?.pause()
+    else island?.resume()
     render()
   }
   const calm = new MutationObserver(syncMotion)
@@ -272,12 +316,12 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
       calm.observe(document.documentElement, {subtree: true, attributes: true, attributeFilter: ["data-motion"]})
       forced.addEventListener("change", syncMotion, listen)
       resized.observe(button)
-      island.mount()
+      island?.mount()
       syncMotion()
     },
     pause() {
       connected = false
-      island.pause()
+      island?.pause()
     },
     resume() {
       connected = true
@@ -288,7 +332,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
       follow()
       calm.disconnect()
       resized.disconnect()
-      island.destroy()
+      island?.destroy()
       scope.revert()
     },
   }

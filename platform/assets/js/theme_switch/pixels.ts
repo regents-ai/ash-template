@@ -1,41 +1,15 @@
 /**
  * The theme switch's two pictures, the moon for night and the sun for day, as
- * one 9 by 9 matrix of pixels each, drawn after the Lucide moon and sun the
- * still switch shows. The GPU draws them behind the glass knob, and every moon
- * pixel flies to the sun pixel it is paired with.
- *
- * This file is the one source of both pictures. Each has 29 pixels, so every
- * pixel of one has exactly one partner in the other.
+ * blocks on a square grid. The server holds both and draws them in the still
+ * face (`Shell.theme_toggle/1`); the browser reads the blocks back from there,
+ * so there is one source of both pictures. Every block of the moon flies to the
+ * block of the sun it is paired with, so the two must have as many blocks.
  */
 
-export const GRID = 9
+/** A block of a picture: its column and row on the grid, from the top left. */
+export type Cell = {readonly col: number; readonly row: number}
 
-// Row by row from the top; "#" is a lit pixel.
-export const MOON = [
-  "...##....",
-  "..##.....",
-  ".##......",
-  ".##......",
-  "###......",
-  "###.....#",
-  ".###...##",
-  "..######.",
-  "...###...",
-] as const
-
-export const SUN = [
-  "....#....",
-  ".#.....#.",
-  "...###...",
-  "..#####..",
-  "#.#####.#",
-  "..#####..",
-  "...###...",
-  ".#.....#.",
-  "....#....",
-] as const
-
-/** A lit pixel, in cells from the matrix's centre: x to the right, y down. */
+/** A block as a point, in cells from the grid's centre: x to the right, y down. */
 export type Pixel = {
   readonly x: number
   readonly y: number
@@ -44,7 +18,7 @@ export type Pixel = {
   readonly radius: number
 }
 
-/** A moon pixel and the sun pixel it becomes. */
+/** A block of the moon and the block of the sun it becomes. */
 export type Pair = {readonly moon: Pixel; readonly sun: Pixel}
 
 const TURN = Math.PI * 2
@@ -58,19 +32,14 @@ export const turnBetween = (from: number, to: number): number => {
   return turn > Math.PI ? turn - TURN : turn
 }
 
-/** The lit pixels of a picture, in reading order. */
-export function readPixels(rows: readonly string[]): Pixel[] {
-  const centre = (rows.length - 1) / 2
-  const pixels: Pixel[] = []
-  rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      if (row[x] !== "#") continue
-      const dx = x - centre
-      const dy = y - centre
-      pixels.push({x: dx, y: dy, angle: wrapAngle(Math.atan2(dy, dx)), radius: Math.hypot(dx, dy)})
-    }
+/** A picture's blocks as pixels round the grid's centre, in the order given. */
+export function pixelsOf(cells: readonly Cell[], grid: number): Pixel[] {
+  const centre = (grid - 1) / 2
+  return cells.map(({col, row}) => {
+    const dx = col - centre
+    const dy = row - centre
+    return {x: dx, y: dy, angle: wrapAngle(Math.atan2(dy, dx)), radius: Math.hypot(dx, dy)}
   })
-  return pixels
 }
 
 const byAngle = (a: Pixel, b: Pixel) => a.angle - b.angle || a.radius - b.radius
@@ -101,5 +70,35 @@ export function pairByAngle(from: readonly Pixel[], to: readonly Pixel[]): Pair[
   return moons.map((moon, i) => ({moon, sun: suns[(i + start) % count]}))
 }
 
-/** The moon and the sun, paired once for every switch on the page. */
-export const PAIRS: readonly Pair[] = pairByAngle(readPixels(MOON), readPixels(SUN))
+/**
+ * How much of the glass's side the blocks' grid spans, behind the glass and in
+ * the still face alike. The pictures keep the grid's outer ring clear, so what
+ * is drawn sits in the glass's flat middle and the bevel never smears it.
+ */
+export const ICON_FILL = 0.65
+
+/** Where the blocks sit, in canvas pixels: the grid's centre, one cell, and a block's half side in cells. */
+export type IconGrid = {readonly x: number; readonly y: number; readonly cell: number; readonly half: number}
+
+/**
+ * The block grid for a lens `side` canvas pixels across, centred on `centre`.
+ * A cell is a whole number of canvas pixels and a block a pixel or so short of
+ * it, so a hairline shows between neighbours. At rest the block edges fall on
+ * whole pixels, so they draw crisp; `rest` runs from 0 in flight to 1 at rest
+ * and carries the grid smoothly from the lens's own centre to that place.
+ */
+export function iconGrid(centre: readonly [number, number], side: number, grid: number, rest: number): IconGrid {
+  const cell = Math.max(1, Math.round((ICON_FILL * side) / grid))
+  const gap = cell >= 3 ? Math.max(1, Math.round(cell * 0.1)) : 0
+  const block = cell - gap
+  // On an even grid the centre falls between blocks, half a cell from each.
+  const shift = grid % 2 === 1 ? 0 : cell / 2
+  const crisp = (at: number) => Math.round(at + shift - block / 2) - shift + block / 2
+  const settle = Math.min(1, Math.max(0, rest))
+  return {
+    x: centre[0] + (crisp(centre[0]) - centre[0]) * settle,
+    y: centre[1] + (crisp(centre[1]) - centre[1]) * settle,
+    cell,
+    half: block / (2 * cell),
+  }
+}

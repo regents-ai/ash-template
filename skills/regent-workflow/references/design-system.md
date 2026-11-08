@@ -41,15 +41,21 @@ current founder request overrides older rollout notes. Re-read the working tree:
   server passes it no theme.
 - The theme switch is the template's `Shell.theme_toggle/1` (Sean, 8 Nov 2026), not
   `Regent.ThemeToggle`: a `role="switch"` button named "Light theme", night (dark) on
-  the left and day (light) on the right, in the app shell's top bar beside the account
-  control (the bottom bar on phones narrower than 360px) and in the public footer. A
-  press, Enter or Space turns it; the knob can be dragged and settles on the nearer
-  side, and the theme changes once, on release. Over the server's still face (a plain
-  track and knob with the Lucide moon or sun) a vgpu island draws the glass knob:
-  bevel refraction with a little colour fringing and frost, a light strip that circles
-  the glass from below at night to above by day and spills onto the page, and a pixel
-  moon that swarms into a pixel sun as the knob moves. Its motion is Anime.js: the
-  knob's settle and one paused timeline for the swarm, seeked by the knob. The strip's
+  the left and day (light) on the right. Signed in it is a row of the account menu
+  (`Regent.Account.menu`'s `theme` slot, words at the start, switch at the end);
+  signed out, with no account menu, it is in the app shell's bottom bar; the public
+  footer has its own. Never put it in the top bar. A press, Enter or Space turns it;
+  the knob can be dragged and settles on the nearer side, and the theme changes once,
+  on release. The moon and the sun are pictures of tiny square blocks held once, in
+  `Shell`'s `@theme_moon` and `@theme_sun` (equal block counts, square, outer ring
+  clear); the server's still face draws them as SVG squares and the browser reads the
+  blocks from there, so a new picture is an edit to those two lists alone. Over the
+  still face a vgpu island draws the glass knob: bevel refraction with a little colour
+  fringing and frost, a light strip that circles the glass from below at night to
+  above by day and spills onto the page, and the blocks behind the glass, crisp on
+  whole pixels at rest, tumbling from moon to sun as the knob moves and catching the
+  strip's light on the edge that faces it. Its motion is Anime.js: the knob's settle
+  and one paused timeline for the swarm, seeked by the knob. The strip's
   colours are `--rg-theme-laser-light`/`--rg-theme-laser-dark` (else Tangerine and
   Powder Blue), set a fixed distance from the page (`theme_switch/light.ts`) so the
   light reads as boldly on either theme. Less motion, forced colours and no WebGPU

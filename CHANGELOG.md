@@ -6800,3 +6800,38 @@ animejs, and usable in the phoenix ash template header".
   skips `[role='switch']`, whose knob moves itself), and the `.theme-control` styles go.
 - New tests: `theme_switch_pixels.test.ts`, `theme_switch_morph.test.ts`,
   `theme_switch_knob.test.ts`, `theme_switch_light.test.ts` and `theme.test.ts`.
+
+## 2026-11-08 — The theme switch moves into the account menu, drawn in tiny blocks
+
+- Placement (Sean, 8 Nov 2026): the switch leaves the top bar. Signed in, it has a row
+  of the account menu to itself, between Pair New Agent and Manage Account, through
+  `Regent.Account.menu`'s new `theme` slot (design-system commit `7896065`), with the
+  words "Light theme" at the start and the switch at the end, larger than elsewhere
+  (a 2.5rem lens, a 3rem press). Signed out, with no account menu, it sits in the
+  bottom bar at every width. The header's compact track, the 22.4375rem swap and the
+  header switch rules are gone. The public footer and the showcase pages keep theirs.
+  This corrects the placement given in the entry above.
+- The moon and the sun are pictures of tiny square blocks, 49 each on a 13×13 grid
+  whose outer ring stays clear (a block there would sit under the glass's bevel and
+  smear), every moon block paired with one sun block by angle. The two pictures live
+  in one place, `Shell`'s `@theme_moon` and `@theme_sun`, checked when it compiles for
+  equal counts, square rows and a clear ring. The still face draws them as SVG
+  squares with a hairline between them, replacing the Lucide moon and sun, and the
+  hook reads the blocks from those squares; the browser code keeps no pictures of its
+  own (`theme_switch/pixels.ts` takes cells from the page).
+- Behind the glass every block is a crisp square at rest: a whole number of canvas
+  pixels a side, a pixel short of its cell, its edges on whole pixels. In flight each
+  tumbles a whole number of quarter turns on a springier spring of its own, in the same
+  scrubbed Anime.js timeline, shrinks a little and lands square on the grid after a
+  wobble, and the edge that faces the light strip catches its light. The canvas draws
+  at up to three device pixels per CSS pixel (`maxDevicePixelRatio`, a new canvas
+  island option), so the blocks stay sharp on phones.
+- Frame cost: the renderer works out each block's turn and size once a frame and
+  sends the blocks sorted top to bottom, so a pixel looks only at the blocks in its
+  own band; the glass's flat middle is clear and read once. In SwiftShader a frame of
+  the 2rem switch at the same backing store as before takes about 16 ms against 21 ms
+  for the old icon, and about 30 ms at a 2× screen's full resolution.
+- The canvas island and the switch measure by layout size, so a menu scaling in as it
+  opens no longer draws the picture a shade small.
+- New test: `theme_switch_shader.test.ts`; the pixel, morph and canvas island tests
+  cover the block grid, the tumble and the measuring.
