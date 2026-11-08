@@ -6754,3 +6754,28 @@ column dropped, no production data touched.
   `/account/credits` is not found; `/openapi.json` reads 11.0.0 with no Credits or
   balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
   history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
+
+## 2026-11-08 — A fault on our side no longer signs you out
+
+- `POST /auth/privy/session` used to revoke the browser's lineage, drop its cookie,
+  disconnect its sockets and answer 401 for every failure, including the site's own.
+  A signed-in page sends that request after each social link, so one failed account
+  write signed the person out in every tab, against the rule that a rejected sync is
+  not a logout.
+- A failure of the site's own account write (`{:account_evidence, :account_rejected}`)
+  or of its Privy settings (`{:configuration, _}`) now answers 503 with the new refusal
+  code `sign_in_unavailable` ("Sign-in couldn't finish on our side." / "Try again in a
+  moment."). The cookie, lineage and open tabs are left as they were. The log line,
+  the `ash_template.privy.session_refused` count and the bounded `session_exchange`
+  report are unchanged.
+- Every other refusal (a missing or bad token pair, failed access or identity
+  verification, a pair-binding mismatch, a sign-in with no linked wallet) still
+  revokes and answers 401.
+- The browser already treats a 503 as "no session written": it throws a plain error,
+  keeps the page signed in, and the link outcome shows its own failure. No browser
+  code changed.
+- The API contract (both copies) lists the 503 as `PrivySessionUnavailable`; the
+  Privy reconciliation reference says which failures keep the session.
+- New test `privy_session_refusal_test.exs`: a bound, current lineage stays bound and
+  current after a real failed account write (503, no `set-cookie`, no disconnect),
+  and a proof signed by the wrong key still revokes it (401, disconnect, signed out).

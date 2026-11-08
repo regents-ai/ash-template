@@ -70,6 +70,12 @@ promised.
   local session, write the database, or reload merely because hooks rendered.
 - Linked wallets are profile evidence; connected wallets are transaction
   providers. Neither is final onchain ownership truth.
+- The sign-in exchange (`POST /auth/privy/session`) revokes the lineage, drops the
+  cookie and disconnects the lineage's sockets only when the proof itself fails
+  (401 `unauthorized`). A fault on the site's own side, a failed account write
+  (`{:account_evidence, :account_rejected}`) or missing Privy settings
+  (`{:configuration, _}`), answers 503 `sign_in_unavailable` and changes nothing:
+  the browser counts it as no session written and stays signed in.
 
 ## Explicit logout
 

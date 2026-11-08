@@ -482,6 +482,7 @@ paths:
         "403": {$ref: "#/components/responses/CsrfForbidden"}
         "401": {$ref: "#/components/responses/PrivySessionUnauthorized"}
         "409": {$ref: "#/components/responses/SessionChanged"}
+        "503": {$ref: "#/components/responses/PrivySessionUnavailable"}
     delete:
       operationId: deletePrivyBrowserSession
       security: [{csrfToken: []}]
@@ -4090,6 +4091,14 @@ components:
           examples:
             unauthorized:
               value: {error: {code: unauthorized, message: "This sign-in couldn't be confirmed.", hint: "Sign in again."}}
+    PrivySessionUnavailable:
+      description: The site could not finish the sign-in on its own side; the browser's existing session is left as it was, so try again
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/RecoveryError"}
+          examples:
+            unavailable:
+              value: {error: {code: sign_in_unavailable, message: "Sign-in couldn't finish on our side.", hint: "Try again in a moment."}}
     SessionChanged:
       description: This browser's session changed in another tab or ended; reload the page
       content:

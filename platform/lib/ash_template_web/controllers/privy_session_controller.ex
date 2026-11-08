@@ -25,7 +25,9 @@ defmodule AshTemplateWeb.PrivySessionController do
       {409, "This browser's sign-in has ended.", "Reload the page, then sign in again."},
     "account_switch_required" =>
       {409, "This browser was signed in to another account.",
-       "Reload the page, then sign in again."}
+       "Reload the page, then sign in again."},
+    "sign_in_unavailable" =>
+      {503, "Sign-in couldn't finish on our side.", "Try again in a moment."}
   }
 
   @doc """
@@ -193,10 +195,8 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   # Stage and reason are fixed atoms from the classification contract, so they
   # are safe as metric tags and in the message itself (the development formatter
-  # drops metadata); they are never inspected or answered differently. The
-  # provider attempt is over before any authority work starts, so no external
-  # call sits inside the transaction: a bearer this browser cannot prove revokes
-  # the lineage it was offered for instead of leaving it bound and current.
+  # drops metadata). The provider attempt is over before any authority work
+  # starts, so no external call sits inside the transaction.
   defp refuse(conn, stage, reason) do
     Logger.info("Privy session refused stage=#{stage} reason=#{reason}")
 
@@ -207,8 +207,20 @@ defmodule AshTemplateWeb.PrivySessionController do
 
     report_bounded_sign_in_failure(conn, "session_exchange")
 
-    disconnect_after(conn, SessionAuthority.revoke(claim(conn)), &refuse(&1, "unauthorized"))
+    answer_refusal(conn, stage, reason)
   end
+
+  # A fault on the site's side (its account write or its Privy settings) says
+  # nothing about the person: their cookie, lineage and open tabs stay as they
+  # were, and they can try again. A bearer this browser cannot prove revokes the
+  # lineage it was offered for instead of leaving it bound and current.
+  defp answer_refusal(conn, :account_evidence, :account_rejected),
+    do: refuse(conn, "sign_in_unavailable")
+
+  defp answer_refusal(conn, :configuration, _reason), do: refuse(conn, "sign_in_unavailable")
+
+  defp answer_refusal(conn, _stage, _reason),
+    do: disconnect_after(conn, SessionAuthority.revoke(claim(conn)), &refuse(&1, "unauthorized"))
 
   # The answer is sent before the lineage's sockets are told to disconnect, so
   # the browser reads it rather than a dropped connection.

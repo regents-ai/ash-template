@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 8 November 2026
+
+- **Sign-in.** When the site can't finish saving your sign-in on its own side, for
+  example just after you link an X or GitHub account, you now stay signed in, in every
+  tab, and can try again in a moment. Before, a fault of ours signed you out.
+
 ## 6 November 2026
 
 - **Credits.** Credits are gone. Buy Credits and the balance leave the account menu and
