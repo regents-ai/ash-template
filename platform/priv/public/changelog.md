@@ -2,6 +2,12 @@
 
 Changes to Ash Template, newest first.
 
+## 8 November 2026
+
+- **Connected apps.** Each app you connect, such as Claude, now pairs on its own, with its
+  own code from Pair New Agent. An app you connected before today asks you to pair it
+  again.
+
 ## 6 November 2026
 
 - **Credits.** Credits are gone. Buy Credits and the balance leave the account menu and

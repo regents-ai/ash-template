@@ -124,6 +124,6 @@ identity tools behind its switch.
   identity not paired, keeps the identity tools alone. The per-account budget is
   `/mcp`'s 120 a minute, spent before the identity is read; while the service
   can't give the identity's wallet, the call is refused (`identity_unavailable`,
-  503) and the next call asks again. Every app a person
-  connects works as the same paired agent, and the consent page says so. Protected (sign-in): waits for Sean's go. Owner: template
+  503) and the next call asks again. Each app a person connects has its own
+  identity and pairs only with its own code, and the consent page says so. Protected (sign-in): waits for Sean's go. Owner: template
   chief.
