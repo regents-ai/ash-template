@@ -6886,7 +6886,7 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   `account_openings_limited` and `Retry-After` (`:account_open_address`, 5 a day).
 - Privy's server API needs the app secret (`PRIVY_APP_SECRET`, `config/runtime.exs`); it
   must be set on the site before release. The OpenAPI documents move to 11.1.0.
-  elixir-utils moves to `f369a21c` (branch `eu/opened-accounts-1108`: main `8ce19478`, which
+  elixir-utils moves to `cbb73741` (branch `eu/opened-accounts-1108`: main `8ce19478`, which
   holds the G1 library change, with the shared opening record, the sign-in's
   `agent_wallet` and Points' check for agent-opened accounts). Its migration `20261108170000` (add-only: creates
   `regent_agents.opened_accounts` with `privy_user_id` text primary key, `wallet` text,
@@ -6938,7 +6938,8 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   your agent (10). The check lives in the shared Points library, so every site that pins this
   elixir-utils has it with no code of its own: `RegentPoints.IntakeWorker` turns each such
   offer down as `agent_opened_account` (`RegentPoints.Rules.closed_to_agent_opened?/1`),
-  when it happens and at the Points start alike. The site's own Points checks are unchanged.
+  and the Points start (`RegentPoints.StartAwards`) leaves such accounts out of those
+  rules' lists. The site's own Points checks are unchanged.
   Activity awards are unchanged. The opening, or a website sign-in to a Privy user an opening
   made, writes the account and its row in one transaction, before Points checks anything.
 - Why: agent openings are capped at 5 a day per network (one IPv4 address or IPv6 /64),

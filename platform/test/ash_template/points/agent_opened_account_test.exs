@@ -74,17 +74,16 @@ defmodule AshTemplate.Points.AgentOpenedAccountTest do
     Application.put_env(:regent_points, :approved_rules, @rules)
     assert :ok = StartAwards.perform(%Oban.Job{})
 
+    # The start lists the person's account and leaves the agent's own out.
+    offered = for rule <- @rules, job <- offers(rule), do: job.args["source_event_key"]
+    assert to_string(person.account.id) in offered
+    refute to_string(opened.account.id) in offered
+    refute agent.pairing_id in offered
+
     for rule <- @rules, do: rule |> offers() |> run(IntakeWorker)
 
     assert earned(opened.account.id) == []
     assert earned(person.account.id) == ["account.activated", "agent.activated"]
-
-    # Before the start each offer was turned down as not yet approved; at the start
-    # the agent's own account is turned down for what it is.
-    refused = turned_down([to_string(opened.account.id), agent.pairing_id])
-    assert {"account.activated", "agent_opened_account"} in refused
-    assert {"agent.activated", "agent_opened_account"} in refused
-    refute {"account.activated", "agent_opened_account"} in turned_down([to_string(person.account.id)])
   end
 
   # The agent opens its account as the site's signed request does
