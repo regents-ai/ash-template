@@ -6795,6 +6795,11 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   on a network that blocks websockets Pair New Agent's own page, `/pair`, shows the box
   and its notice. `blocked_websocket.spec.ts` checks it there and in a room with
   websockets refused, and with a connection dropped and restored.
+  After the connection comes back, the pairing box starts with no agent chosen: the
+  page sends its forms back before the buttons return, and a disabled choice isn't sent.
+- A poll's Choices box takes at most 1,009 characters, ten choices of 100 and the lines
+  between them, like every other box that sends what is typed to the page's connection;
+  a paste far past 256 KB would otherwise be refused, and sent again on every reconnect.
 - The walk's tall-message check now sends a short message first, then checks that the
   tall one lands inside the room.
 - WebKit is not run on the Mac.

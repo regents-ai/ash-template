@@ -194,6 +194,7 @@ defmodule AshTemplateWeb.PollsLive do
               id={field.id}
               name="poll[choices_text]"
               rows="4"
+              maxlength="1009"
               phx-debounce="300"
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
