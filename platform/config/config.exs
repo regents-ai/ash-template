@@ -53,8 +53,8 @@ config :ash_template, AshTemplate.Agents.ActivityReading,
   gc_interval: :timer.minutes(10),
   max_size: 10_000
 
-# Each account's hosted identity wallet, which never changes once the sign-in
-# service has given it. One that leaves with a collected generation is asked for again.
+# The hosted identity wallet of each account and connected app, which never changes
+# once the sign-in service has given it. One that leaves with a collected generation is asked for again.
 config :ash_template, AshTemplate.Agents.HostedAddress,
   gc_interval: :timer.hours(12),
   max_size: 100_000
@@ -300,7 +300,7 @@ config :ash_template, AshTemplate.OAuth,
       "work here as the agent you paired, with the same rights as any agent you pair"
   },
   consent_note:
-    "This connection works here only as the agent you pair it with, with that agent's rights. Every app you connect here works as that same agent. It cannot make payments or change your wallets."
+    "This connection works here only as the agent you pair it with, with that agent's rights. Each app you connect here pairs on its own, with its own code from Pair New Agent. It cannot make payments or change your wallets."
 
 # The connector's identity tools (RegentMCPAgents): which site's signers they use
 # at the sign-in service, and the words a refused tool call ends with.

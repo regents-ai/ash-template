@@ -6755,6 +6755,36 @@ column dropped, no production data touched.
   balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
   history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
 
+## 2026-11-08 — One identity per connected app
+
+- Pins elixir-utils `d89c69df`: the hosted identity key now comes from the site's
+  audience, the account and the app's OAuth client (label `regent-connected-app-v2`).
+  A second app the person allows, even with the agent permission, gets its own
+  unpaired identity and pairs only with a code the person gives it; before this it
+  inherited the first app's pairing. A principal without a client is refused.
+- `AshTemplate.Agents.HostedAddress` keeps each wallet by `{subject, client_id}`;
+  `AshTemplateWeb.Plugs.McpAgent.as_paired_agent` is otherwise unchanged.
+- The consent note and `/agents/claude` say each app pairs on its own, with its own
+  code from Pair New Agent.
+- Apps connected before this release keep their tokens but get a fresh, unpaired
+  identity: their person pairs them again. Their old agents stay on the Agents page
+  until the person unpairs them.
+- Tests: the connector test gives each identity its own wallet; a refreshed token keeps
+  its app's identity and agent while a second app starts unpaired; a second app with
+  the agent permission, on an account already paired through another app, gets its
+  identity tools only; the other-account test keeps a signer that answers with the
+  first account's wallet.
+- v182 is `e0b6ca83`, released through `scripts/deploy.sh template-regents-sh` on Sean's
+  "1. b" (30 Oct 15:44:12Z, one identity per app). Rollback is v181 `252eb583`. Full
+  check on the same tree, exit 0: 149 Elixir (9 properties), 430 browser walks with 5
+  skipped, 26 script tests, required fixes against main `5a1ca3e4`. elixir-utils main
+  `d89c69df` (mcp_agents check 24 passed). Independent adversarial review found nothing
+  exploitable. WebKit not run on the Mac.
+- Read live from headless Chromium: capabilities names `e0b6ca83`; `/healthz` 200;
+  unsigned `POST /mcp` answers 401 `connection_required` with the `WWW-Authenticate`
+  challenge naming both permissions; `GET /mcp` answers 405 with `Allow: POST`;
+  `/agents/claude` carries the new pairing bullet and `/changelog` the 8 November entry.
+
 ## 2026-11-08 — Written words hold no hidden characters; smaller bodies; a note when a page is offline
 
 Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
