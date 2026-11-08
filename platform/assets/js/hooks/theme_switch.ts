@@ -66,9 +66,8 @@ function colourReader() {
 }
 
 /** One of the still face's pictures: its grid's side and its blocks. */
-function readPicture(svg: SVGSVGElement | null): {grid: number; cells: Cell[]} | undefined {
-  const grid = Number(svg?.getAttribute("viewBox")?.trim().split(/[\s,]+/)[2])
-  if (!svg || !(grid > 0)) return undefined
+function readPicture(svg: SVGSVGElement): {grid: number; cells: Cell[]} {
+  const grid = Number(svg.getAttribute("viewBox")!.trim().split(/[\s,]+/)[2])
   const cells = [...svg.querySelectorAll("rect")].map(rect => ({
     col: Number(rect.getAttribute("x")),
     row: Number(rect.getAttribute("y")),
@@ -78,14 +77,12 @@ function readPicture(svg: SVGSVGElement | null): {grid: number; cells: Cell[]} |
 
 /**
  * The moon and the sun as the server drew them in the still face, every block
- * of the moon paired with one of the sun. Nothing when they cannot be paired,
- * and the still face is then the whole switch.
+ * of the moon paired with one of the sun. The server holds both on one grid with
+ * as many blocks (`Shell`, checked when it compiles).
  */
-function readPictures(root: HTMLElement): Pictures | undefined {
-  const moon = readPicture(root.querySelector<SVGSVGElement>("svg.theme-switch__moon"))
-  const sun = readPicture(root.querySelector<SVGSVGElement>("svg.theme-switch__sun"))
-  if (!moon || !sun || moon.grid !== sun.grid || moon.cells.length === 0) return undefined
-  if (moon.cells.length !== sun.cells.length) return undefined
+function readPictures(root: HTMLElement): Pictures {
+  const moon = readPicture(root.querySelector<SVGSVGElement>("svg.theme-switch__moon")!)
+  const sun = readPicture(root.querySelector<SVGSVGElement>("svg.theme-switch__sun")!)
   return {grid: moon.grid, pairs: pairByAngle(pixelsOf(moon.cells, moon.grid), pixelsOf(sun.cells, sun.grid))}
 }
 
@@ -104,7 +101,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   let motion: AnimatableObject | undefined
   let geometry: Geometry = {width: 1, height: 1, track: {x: 0, y: 0, width: 1, height: 1}, lens: 1}
   let colours: SwitchPicture["colours"] = {page: [0, 0, 0], ink: [1, 1, 1], night: NIGHT, day: DAY}
-  const pixels = new Float32Array((pictures?.pairs.length ?? 0) * PIXEL_STRIDE)
+  const pixels = new Float32Array(pictures.pairs.length * PIXEL_STRIDE)
   let draw = () => {}
   let press: Press | undefined
   let swallowClick = false
@@ -150,7 +147,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   const picture = (): SwitchPicture => {
     morph?.seek(knob.p)
     morph?.write(pixels)
-    return {p: knob.p, ...geometry, grid: pictures?.grid ?? 1, pixels, count: pictures?.pairs.length ?? 0, colours}
+    return {p: knob.p, ...geometry, grid: pictures.grid, pixels, count: pictures.pairs.length, colours}
   }
 
   // Shows the knob where it is now: the still face's knob and, when the GPU
@@ -161,7 +158,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   }
 
   const scope = createScope({root}).add(() => {
-    if (pictures) morph = createMorph(pictures.pairs)
+    morph = createMorph(pictures.pairs)
     motion = createAnimatable(knob, {p: 0, onUpdate: render})
   })
 
@@ -257,9 +254,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
     commit(side === 1 ? 0 : 1, byPointer(event))
   }
 
-  // Without both pictures there is nothing to draw behind the glass, and the
-  // still face is the switch.
-  const island = pictures && createCanvasIsland<ThemeSwitchRenderer>(root, {}, {
+  const island = createCanvasIsland<ThemeSwitchRenderer>(root, {}, {
     canvasSelector: "[data-theme-switch-canvas]",
     readyFlag: "themeSwitchReady",
     motionSensitive: true,
@@ -290,8 +285,8 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
   // still face too, as forced colours do; the stylesheet shows it, and the island rests.
   const forced = window.matchMedia("(forced-colors: active)")
   const syncMotion = () => {
-    if (!connected || still(root) || forced.matches) island?.pause()
-    else island?.resume()
+    if (!connected || still(root) || forced.matches) island.pause()
+    else island.resume()
     render()
   }
   const calm = new MutationObserver(syncMotion)
@@ -316,12 +311,12 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
       calm.observe(document.documentElement, {subtree: true, attributes: true, attributeFilter: ["data-motion"]})
       forced.addEventListener("change", syncMotion, listen)
       resized.observe(button)
-      island?.mount()
+      island.mount()
       syncMotion()
     },
     pause() {
       connected = false
-      island?.pause()
+      island.pause()
     },
     resume() {
       connected = true
@@ -332,7 +327,7 @@ export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
       follow()
       calm.disconnect()
       resized.disconnect()
-      island?.destroy()
+      island.destroy()
       scope.revert()
     },
   }

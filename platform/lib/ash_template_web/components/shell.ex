@@ -603,7 +603,11 @@ defmodule AshTemplateWeb.Components.Shell do
     "............."
   ]
 
-  if String.count(Enum.join(@theme_moon), "#") != String.count(Enum.join(@theme_sun), "#") do
+  block_count = fn rows ->
+    rows |> Enum.join() |> String.graphemes() |> Enum.count(&(&1 == "#"))
+  end
+
+  if block_count.(@theme_moon) != block_count.(@theme_sun) do
     raise ArgumentError, "the theme switch's moon and sun need as many blocks"
   end
 
