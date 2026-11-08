@@ -6755,11 +6755,12 @@ column dropped, no production data touched.
   balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
   history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
 
-## 2026-11-08 — The glass theme switch
+## 2026-11-08 — The glass theme switch, in the account menu
 
 Sean, 8 November 2026: "A light/dark toggle with a glass knob, using vgpu.sh … I want it
-to replace the current light/dark click-toggle", and "it must be all in vgpu.sh, and
-animejs, and usable in the phoenix ash template header".
+to replace the current light/dark click-toggle", "it must be all in vgpu.sh, and
+animejs", then "put in the account sidepanel that shows when clicking the account" and
+"so the sun / moon are made of tiny blocks".
 
 - `Shell.theme_toggle/1` is a new switch: a `<button role="switch">` named "Light
   theme", `aria-checked` on for light, night on the left and day on the right. A press,
@@ -6767,71 +6768,43 @@ animejs, and usable in the phoenix ash template header".
   pointer captured (`touch-action: pan-y`) and settles on the nearer side when let go,
   and the theme changes once, on release. Its press is 2.5rem tall, 2.75rem on touch
   screens. Every switch on a page follows a theme change made anywhere.
-- The server draws a still face (track, knob, Lucide moon or sun, placed from
-  `data-theme` by CSS). Over it the `ThemeSwitch` hook runs a canvas island
+- Placement: signed in, the switch has its own row in the account menu, between Pair
+  New Agent and Manage Account, through `Regent.Account.menu`'s new `theme` slot
+  (design-system `7896065`, now pinned), "Light theme" at the start and a larger switch
+  (2.5rem lens, 3rem press) at the end. Signed out, with no account menu, it sits in the
+  bottom bar. The public footer and the showcase pages keep theirs; the Site buttons
+  lab uses the new one.
+- The server draws a still face: a track and a knob holding the moon or the sun in tiny
+  square blocks (SVG squares with a hairline between them). The two pictures, 49 blocks
+  each on a 13×13 grid with a clear outer ring, live once in `Shell` (`@theme_moon`,
+  `@theme_sun`, checked when it compiles); the browser reads the blocks from the still
+  face. Over it the `ThemeSwitch` hook runs a canvas island
   (`assets/js/hooks/theme_switch.ts`; `motionSensitive`, `continuous: false`, the
-  renderer imported on demand): one vgpu fullscreen shader
-  (`assets/js/theme_switch/shader.ts`, `renderer.ts`) draws the rounded-square glass
-  lens with bevel refraction along its edge normal, per-channel fringing and frost, a
-  light strip that circles the glass from below at night to above by day, scattering
-  into the glass, washing the track and spilling onto the page, and the pixel icon
-  behind the glass. Less motion (the device's or the page's `data-motion="reduced"`),
-  forced colours and no WebGPU keep the still face.
-- The icon is a 9×9 pixel moon and sun from one source (`theme_switch/pixels.ts`), 29
-  pixels each, every moon pixel paired with one sun pixel by angle. One paused Anime.js
-  timeline (`theme_switch/morph.ts`) flies each pixel on its own spring with one swirl
-  round the centre, leaving in turn clockwise from the bottom; the knob seeks it by how
-  far the swarm has come, so halfway along the track the swarm is halfway there. The
-  knob itself is an Anime.js Animatable that settles on a spring within the island's
-  24 frames.
+  renderer imported on demand): one vgpu shader (`assets/js/theme_switch/shader.ts`,
+  `renderer.ts`) draws the rounded-square glass lens with bevel refraction along its
+  edge normal, per-channel fringing and frost; a light strip that circles the glass
+  from below at night to above by day, scattering into the glass, washing the track and
+  spilling onto the page; and the blocks behind the glass. Less motion (the device's or
+  the page's `data-motion="reduced"`), forced colours and no WebGPU keep the still face.
+- The swarm: every moon block is paired with one sun block by angle. One paused
+  Anime.js timeline (`theme_switch/morph.ts`) flies each block on its own spring with
+  one swirl round the centre and a tumble of whole quarter turns, leaving in turn
+  clockwise from the bottom; the knob seeks it by how far the swarm has come, so
+  halfway along the track the swarm holds halfway. At rest each block is a crisp square
+  on whole canvas pixels, and the edge facing the light strip catches its light. The
+  knob is an Anime.js Animatable that settles on a spring within the island's 24 frames.
 - One model of light for both themes (`theme_switch/light.ts`): the strip's colours,
   `--rg-theme-laser-light`/`--rg-theme-laser-dark` or else Tangerine and Powder Blue,
   are set 0.55 from the page in OKLab with colourfulness counted double, lighter on the
   dark page and deeper on the light one, hue kept.
-- Placement: the shell's switch moves from the bottom bar to the top bar, between the
-  Regents Products button and the account control. On phones 380px wide or less its
-  track is shorter (a 48px press); below 360px the top bar has no room left, so a
-  second switch in the bottom bar takes over. The public footer and the showcase pages
-  keep theirs; the Site buttons lab uses the new one.
+- The canvas island (`assets/js/canvas_island.ts`) measures a canvas by its layout
+  size, so a menu scaling in as it opens no longer draws a picture a shade small, and
+  takes `maxDevicePixelRatio`; the switch uses 3 so the blocks stay sharp on phones.
 - `Regent.ThemeToggle` is no longer used: the old document-level click handler in
   `app.ts` is gone (theme reading and choosing live in `assets/js/theme.ts`; the page
   still restates its theme on live navigation, back and forward), it leaves the
   showcase catalogue, the `.rg-theme-toggle` motion exclusions go (the press squish
   skips `[role='switch']`, whose knob moves itself), and the `.theme-control` styles go.
-- New tests: `theme_switch_pixels.test.ts`, `theme_switch_morph.test.ts`,
-  `theme_switch_knob.test.ts`, `theme_switch_light.test.ts` and `theme.test.ts`.
-
-## 2026-11-08 — The theme switch moves into the account menu, drawn in tiny blocks
-
-- Placement (Sean, 8 Nov 2026): the switch leaves the top bar. Signed in, it has a row
-  of the account menu to itself, between Pair New Agent and Manage Account, through
-  `Regent.Account.menu`'s new `theme` slot (design-system commit `7896065`), with the
-  words "Light theme" at the start and the switch at the end, larger than elsewhere
-  (a 2.5rem lens, a 3rem press). Signed out, with no account menu, it sits in the
-  bottom bar at every width. The header's compact track, the 22.4375rem swap and the
-  header switch rules are gone. The public footer and the showcase pages keep theirs.
-  This corrects the placement given in the entry above.
-- The moon and the sun are pictures of tiny square blocks, 49 each on a 13×13 grid
-  whose outer ring stays clear (a block there would sit under the glass's bevel and
-  smear), every moon block paired with one sun block by angle. The two pictures live
-  in one place, `Shell`'s `@theme_moon` and `@theme_sun`, checked when it compiles for
-  equal counts, square rows and a clear ring. The still face draws them as SVG
-  squares with a hairline between them, replacing the Lucide moon and sun, and the
-  hook reads the blocks from those squares; the browser code keeps no pictures of its
-  own (`theme_switch/pixels.ts` takes cells from the page).
-- Behind the glass every block is a crisp square at rest: a whole number of canvas
-  pixels a side, a pixel short of its cell, its edges on whole pixels. In flight each
-  tumbles a whole number of quarter turns on a springier spring of its own, in the same
-  scrubbed Anime.js timeline, shrinks a little and lands square on the grid after a
-  wobble, and the edge that faces the light strip catches its light. The canvas draws
-  at up to three device pixels per CSS pixel (`maxDevicePixelRatio`, a new canvas
-  island option), so the blocks stay sharp on phones.
-- Frame cost: the renderer works out each block's turn and size once a frame and
-  sends the blocks sorted top to bottom, so a pixel looks only at the blocks in its
-  own band; the glass's flat middle is clear and read once. In SwiftShader a frame of
-  the 2rem switch at the same backing store as before takes about 16 ms against 21 ms
-  for the old icon, and about 30 ms at a 2× screen's full resolution.
-- The canvas island and the switch measure by layout size, so a menu scaling in as it
-  opens no longer draws the picture a shade small.
-- New test: `theme_switch_shader.test.ts`; the pixel, morph and canvas island tests
-  cover the block grid, the tumble and the measuring.
+- New tests: `theme_switch_pixels`, `theme_switch_morph`, `theme_switch_knob`,
+  `theme_switch_light`, `theme_switch_shader` and `theme`, and canvas island tests for
+  the pixel-ratio ceiling and the layout measure.
