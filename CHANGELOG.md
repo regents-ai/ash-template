@@ -6754,3 +6754,42 @@ column dropped, no production data touched.
   `/account/credits` is not found; `/openapi.json` reads 11.0.0 with no Credits or
   balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
   history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
+
+## 2026-11-08 — Agents open their own accounts (agent parity G1)
+
+- Sean's 29 Oct answer 2 a, rebuilt on main of 8 November: an agent opens its own account
+  with signed `POST /api/v1/agent/account` and the body `{}` (`openAgentAccount`), the
+  browser tool `account_open` and the command `account open` (next regents-cli release).
+  `AshTemplate.Accounts.AgentAccount.open/1` asks Privy for the wallet's user
+  (`RegentPrivy.Users.by_wallet`): a user an agent opening made, here or on another
+  Regent site, is taken; none is made with `RegentPrivy.Users.create_with_wallet`, which
+  marks it with Privy's server-only custom metadata `regent_agent`, the agent's wallet;
+  any other user is a person's, even one who signs in with nothing but that wallet, and
+  is refused with `wallet_in_use`. The account is then registered as a sign-in is
+  (`VerifiedSession.register/3`, shared with `establish`). Opening again answers the same
+  account without asking Privy.
+- An agent owns only the account it opened: the opening is recorded in
+  `AshTemplate.Accounts.AgentOwnedAccount` (migration
+  `20261108150000_agent_owned_accounts`, add-only, `lock_timeout` 5 s), and
+  `AgentAccount.owned/1` reads that row while the account still signs in with the agent's
+  wallet. `AgentWallet.actor_for/2` checks ownership before any pairing: the actor is then
+  `AshTemplate.Actors.Human.owner/2`, the account's own person with the agent's id.
+  `AgentWallet.recheck_before_send/3` reads the wallet again before the answer leaves, for
+  an owner as for a paired agent; an account it no longer signs in to answers
+  `agent_not_paired`. The hosted MCP server passes the identity's wallet to it.
+- The owner writes as the account's person: notes need no `operation_id` and name no
+  agent, and room posts (`rooms_post`, `AshTemplate.Rooms.Message.AgentPost`) are allowed
+  for the owner (`AshTemplate.Accounts.AgentAccount.Owner`) with no agent named. Pins stay
+  paid in USDC by an agent acting for its person: an owner's `notes_pin` is refused with
+  `owner_cannot_pin` (403) and charges nothing. Nothing of Credits is carried over.
+- `agents whoami` says `owner`, with the account; pairing such an agent is refused with
+  `agent_owns_account` (elixir-utils agents). A paired agent is refused with
+  `agent_paired`, any body but `{}` with `invalid_account_request`, Privy's refusal with
+  `account_not_opened`, and a sixth opening a day from one network with
+  `account_openings_limited` and `Retry-After` (`:account_open_address`, 5 a day).
+- Privy's server API needs the app secret (`PRIVY_APP_SECRET`, `config/runtime.exs`); it
+  must be set on the site before release. The OpenAPI documents move to 11.1.0.
+  elixir-utils moves to `a4a6568f` (main `f8801d79` with the G1 library change).
+- The compile-connected limit in `platform/mix.exs` moves from 44 to 46: the Accounts domain
+  reads `AgentOwnedAccount` at compile time, and room posts' policy reads
+  `AgentAccount.Owner`.

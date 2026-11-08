@@ -968,4 +968,196 @@ defmodule AshTemplate.SignedToolsTest do
   end
 
   defp error_code(conn), do: Jason.decode!(conn.resp_body)["error"]["code"]
+
+  # Sean, 29 Oct 2026 (2. a): an agent may own its account. Its signing wallet is
+  # the account's Privy sign-in wallet, and its signed requests act as the owner.
+  test "an agent opens its own account, acts as its owner, and opening again answers the same account" do
+    privy_answers([
+      {"/v1/users/wallet/address", 404, %{"error" => "User not found"}},
+      {"/v1/users", 200, agent_user("did:privy:agent-owner")}
+    ])
+
+    assert error_code(request(:post, "/api/v1/notes", Jason.encode!(%{title: "Before"}))) ==
+             "agent_not_paired"
+
+    assert error_code(request(:post, "/api/v1/agent/account", Jason.encode!(%{name: "Ada"}))) ==
+             "invalid_account_request"
+
+    refute_received {:privy, _path, _body}
+
+    opened = request(:post, "/api/v1/agent/account", "{}")
+    assert opened.status == 200, opened.resp_body
+    assert %{"wallet_address" => @wallet, "wallet_addresses" => [@wallet]} =
+             Jason.decode!(opened.resp_body)["account"]
+
+    assert_received {:privy, "/v1/users/wallet/address", %{"address" => @wallet}}
+
+    assert_received {:privy, "/v1/users",
+                     %{
+                       "linked_accounts" => [%{"type" => "wallet", "address" => @wallet}],
+                       "custom_metadata" => %{"regent_agent" => @wallet}
+                     }}
+
+    assert_status("owner")
+
+    # The owner writes as the person signed in on the site would: no operation id
+    # and no agent named beside the note or the room post. A pin is paid by an
+    # agent acting for its person, so the owner's is refused and charges nothing.
+    created = request(:post, "/api/v1/notes", Jason.encode!(%{title: "Mine"}))
+    assert created.status == 201, created.resp_body
+    note = Jason.decode!(created.resp_body)["note"]
+    assert note["changed_by_agent"] == nil
+
+    pin = request(:post, "/api/v1/notes/#{note["id"]}/pin", "{}")
+    assert {pin.status, error_code(pin)} == {403, "owner_cannot_pin"}
+
+    posted =
+      request(:post, "/api/v1/rooms/general/messages",
+        Jason.encode!(%{body: "Hello from my own account", operation_id: Ecto.UUID.generate()})
+      )
+
+    assert posted.status == 201, posted.resp_body
+
+    assert %{"author_kind" => "person", "agent_id" => nil, "via_agent" => nil} =
+             Jason.decode!(posted.resp_body)["message"]
+
+    assert request(:post, "/api/v1/activity/read", "{}").status == 200
+    assert request(:get, "/api/v1/agents/me").status == 200
+
+    again = request(:post, "/api/v1/agent/account", "{}")
+    assert again.resp_body == opened.resp_body
+    refute_received {:privy, _path, _body}
+
+    # An agent that owns its account never pairs with a person.
+    person = %RegentAgents.Person{privy_user_id: "did:privy:someone-else"}
+    code = RegentAgents.issue_pairing_code!(actor: person)
+    pair = Jason.encode!(%{code: code.code, name: "Fixture", harness: "codex"})
+    assert error_code(request(:post, "/api/agents/v1/pair", pair)) == "agent_owns_account"
+  end
+
+  test "a person's Privy account is never taken, even one with nothing but the wallet, and a paired agent opens nothing" do
+    privy_answers([
+      {"/v1/users/wallet/address", 200, privy_user("did:privy:a-person", [wallet_login(@wallet)])}
+    ])
+
+    assert error_code(request(:post, "/api/v1/agent/account", "{}")) ==
+             "wallet_in_use"
+
+    refute_received {:privy, "/v1/users", _body}
+    assert_status("not_paired")
+
+    person = %RegentAgents.Person{privy_user_id: "did:privy:pairing-person"}
+    code = RegentAgents.issue_pairing_code!(actor: person)
+    RegentAgents.pair_agent!(code.code, "Fixture", :codex, actor: %RegentAgents.Agent{wallet: @wallet})
+    flush_privy()
+
+    assert error_code(request(:post, "/api/v1/agent/account", "{}")) ==
+             "agent_paired"
+
+    refute_received {:privy, _path, _body}
+  end
+
+  test "an opening that stopped after Privy made the user finishes on the next try" do
+    privy_answers([
+      {"/v1/users/wallet/address", 200, agent_user("did:privy:half-open")}
+    ])
+
+    opened = request(:post, "/api/v1/agent/account", "{}")
+    assert opened.status == 200, opened.resp_body
+    refute_received {:privy, "/v1/users", _body}
+
+    assert {:ok, %{privy_user_id: "did:privy:half-open"}} =
+             AshTemplate.Accounts.AgentAccount.owned(@wallet)
+  end
+
+  test "an owner whose wallet no longer signs in to the account acts for no one" do
+    privy_answers([
+      {"/v1/users/wallet/address", 200, agent_user("did:privy:moved-owner")}
+    ])
+
+    assert request(:post, "/api/v1/agent/account", "{}").status == 200
+    assert_status("owner")
+
+    {:ok, account} = AshTemplate.Accounts.AgentAccount.owned(@wallet)
+
+    AshTemplate.Accounts.refresh_verified!(account, @other, [@other],
+      actor: %AshTemplate.Actors.System{}
+    )
+
+    assert_status("not_paired")
+    assert error_code(request(:post, "/api/v1/notes", Jason.encode!(%{title: "Gone"}))) ==
+             "agent_not_paired"
+  end
+
+  # Only an opening makes an owner: a person's account is never its sign-in
+  # wallet's, and removing a pairing stops that wallet's agent.
+  test "a signed request from a person's sign-in wallet never acts as their account's owner" do
+    {:ok, _account, []} =
+      VerifiedSession.establish(%RegentPrivy.Session{
+        app_id: "test-app",
+        session_id: "s-real-person",
+        privy_user_id: "did:privy:real-person",
+        wallet_address: @wallet,
+        wallet_addresses: [@wallet, @other],
+        linked_socials: [],
+        issued_at: System.system_time(:second),
+        expires_at: System.system_time(:second) + 3600
+      })
+
+    assert_status("not_paired")
+    assert request(:get, "/api/v1/notes").status == 403
+
+    person = %RegentAgents.Person{privy_user_id: "did:privy:real-person"}
+    code = RegentAgents.issue_pairing_code!(actor: person)
+
+    paired =
+      RegentAgents.pair_agent!(code.code, "Fixture", :codex, actor: %RegentAgents.Agent{wallet: @wallet})
+
+    assert request(:post, "/api/v1/notes", Jason.encode!(%{title: "Paired", operation_id: Ecto.UUID.generate()})).status == 201
+    assert :ok = RegentAgents.unpair_agent(paired, actor: person)
+    assert request(:post, "/api/v1/notes", Jason.encode!(%{title: "Unpaired", operation_id: Ecto.UUID.generate()})).status == 403
+  end
+
+  test "one address opens at most five accounts a day" do
+    privy_answers([
+      {"/v1/users/wallet/address", 200,
+       privy_user("did:privy:busy-person", [
+         wallet_login(@wallet),
+         %{"type" => "email", "address" => "busy@example.com"}
+       ])}
+    ])
+
+    for _attempt <- 1..5 do
+      assert error_code(request(:post, "/api/v1/agent/account", "{}")) ==
+               "wallet_in_use"
+    end
+
+    limited = request(:post, "/api/v1/agent/account", "{}")
+    assert error_code(limited) == "account_openings_limited"
+    assert [_seconds] = get_resp_header(limited, "retry-after")
+  end
+
+  # Privy answers each path it is asked, and the test hears what was sent.
+  defp privy_answers(answers) do
+    Req.Test.stub(RegentPrivy.Users, fn conn ->
+      {:ok, body, conn} = read_body(conn)
+      send(self(), {:privy, conn.request_path, Jason.decode!(body)})
+      {_path, status, answer} = List.keyfind(answers, conn.request_path, 0)
+      conn |> put_status(status) |> Req.Test.json(answer)
+    end)
+  end
+
+  defp flush_privy do
+    receive do
+      {:privy, _path, _body} -> flush_privy()
+    after
+      0 -> :ok
+    end
+  end
+
+  defp privy_user(id, linked), do: %{"id" => id, "linked_accounts" => linked}
+
+  defp agent_user(id),
+    do: Map.put(privy_user(id, [wallet_login(@wallet)]), "custom_metadata", %{"regent_agent" => @wallet})
+  defp wallet_login(address), do: %{"type" => "wallet", "address" => address, "chain_type" => "ethereum"}
 end

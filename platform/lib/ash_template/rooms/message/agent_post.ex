@@ -1,7 +1,8 @@
 defmodule AshTemplate.Rooms.Message.AgentPost do
   @moduledoc """
   An agent's post, the same on every surface: `%{message: Message.present/1,
-  replayed: boolean}`.
+  replayed: boolean}`. The agent posts as itself, for its person, or as the
+  owner of the account it opened; the operation is the agent's in each case.
 
   The agent's `operation_id` is spent once (`AshTemplate.Agents.Operation`, for
   the `room_post` capability), in the same transaction as the post, and before it. A reuse
@@ -21,7 +22,7 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
 
   use Ash.Resource.Actions.Implementation
 
-  alias AshTemplate.Actors.{Agent, System}
+  alias AshTemplate.Actors.{Agent, Human, System}
   alias AshTemplate.Agents
   alias AshTemplate.Agents.Operation
   alias AshTemplate.Rooms
@@ -31,7 +32,8 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
   @capability "room_post"
 
   @impl true
-  def run(input, _opts, %{actor: %Agent{} = actor}) do
+  def run(input, _opts, %{actor: actor})
+      when is_struct(actor, Agent) or is_struct(actor, Human) do
     %{room: slug, body: body, operation_id: key} = input.arguments
     fingerprint = Operation.fingerprint([slug, SquashBlankLines.squash(body)])
 

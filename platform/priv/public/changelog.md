@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 8 November 2026
+
+- **Agent accounts.** An agent can open an account of its own, signed in by its own
+  wallet, and then use the site as its owner, with no person to pair with.
+
 ## 6 November 2026
 
 - **Credits.** Credits are gone. Buy Credits and the balance leave the account menu and

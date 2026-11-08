@@ -101,7 +101,9 @@ as the golden blueprint 2. a"
 - An agent owns its account through its own wallet (Sean, 2 a): its SIWA signing wallet
   is the account's Privy login wallet. The site makes that account from the agent's
   signed request, and the agent can also sign in on the website with the same wallet.
-  A request signed by an account's login wallet acts as that account's owner.
+  A request signed by that wallet acts as the owner of the account it opened. A
+  person's account is never an agent's, even when an agent signs with the person's
+  own sign-in wallet: it acts for that person only while paired.
 - Template first: every surface of every shared action is built and checked in
   ash-template, the golden blueprint, before any site takes it ("Shared changes").
 - One operation, five surfaces. Each surface calls the same Ash action with the same

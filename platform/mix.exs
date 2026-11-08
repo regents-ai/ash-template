@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "f8801d79228282459ede9421a51260c3bd292f44"
+  @elixir_utils_ref "a4a6568fd10e4de67dd1f1f4d23ef231c74bd793"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "d3845c6d9fe34b7131937bafa051e6e04c9b09dd"
 
@@ -221,7 +221,10 @@ defmodule AshTemplate.MixProject do
         # `authorize_if` check module at compile time).
         # The hosted MCP server's address budgets add one: McpAgent builds them at compile time
         # with ClientAddress's key.
-        "xref graph --label compile-connected --fail-above 44",
+        # The Accounts domain adds one: it reads `AgentOwnedAccount`, the accounts agents
+        # opened, at compile time. Room posts' policy check adds one
+        # (`Accounts.AgentAccount.Owner`, an `authorize_if` module).
+        "xref graph --label compile-connected --fail-above 46",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

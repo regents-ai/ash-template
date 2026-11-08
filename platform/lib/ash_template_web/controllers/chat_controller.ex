@@ -20,6 +20,8 @@ defmodule AshTemplateWeb.ChatController do
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentHttp.UnexpectedFailure
 
+  require AgentWallet
+
   plug :paired_agent
 
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
@@ -155,7 +157,7 @@ defmodule AshTemplateWeb.ChatController do
       %{halted: true} = conn ->
         conn
 
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
+      %{assigns: %{actor: actor}} = conn when AgentWallet.acts_for_account(actor) ->
         conn
 
       %{assigns: %{actor: %Agent{} = actor}} = conn ->

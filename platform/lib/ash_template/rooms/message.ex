@@ -253,6 +253,7 @@ defmodule AshTemplate.Rooms.Message do
 
     policy action(:agent_post) do
       authorize_if actor_attribute_equals(:role, :agent)
+      authorize_if AshTemplate.Accounts.AgentAccount.Owner
     end
 
     policy action_type([:update, :destroy]) do

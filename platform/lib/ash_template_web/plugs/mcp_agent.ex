@@ -222,7 +222,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
       conn
       |> Ash.PlugHelpers.set_actor(agent)
-      |> AgentWallet.recheck_before_send(agent)
+      |> AgentWallet.recheck_before_send(agent, address)
     else
       false ->
         conn

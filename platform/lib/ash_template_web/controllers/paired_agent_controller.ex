@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.PairedAgentController do
   use AshTemplateWeb, :controller
 
   alias AshTemplate.{Activity, Notes, Rooms, SharedReading}
-  alias AshTemplate.Actors.Agent
+  alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes.{Decision, Note}
   alias AshTemplate.Payments.NotePin
   alias AshTemplate.Points.Board
@@ -23,6 +23,8 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias RegentHttp.UnexpectedFailure
   alias RegentPayments.{Purchase, USDC}
   alias RegentPoints.Rules
+
+  require AgentWallet
 
   plug :paired_agent
 
@@ -58,6 +60,9 @@ defmodule AshTemplateWeb.PairedAgentController do
     "invalid_search" =>
       {422, "The search could not be run.", "Send text of 2 to 100 characters."},
     "invalid_pin" => {422, "The note could not be pinned.", "details says why."},
+    "owner_cannot_pin" =>
+      {403, "An agent that owns its account can't pin notes.",
+       "Pins are paid in USDC by an agent acting for its person. Nothing was charged."},
     "person_needs_sign_in" =>
       {403, "Your person needs to sign in on this site again before you can pay for them.",
        "Ask your person to sign in on this site once, then ask again."},
@@ -295,6 +300,9 @@ defmodule AshTemplateWeb.PairedAgentController do
     end)
   end
 
+  defp pay_for_pin(%{assigns: %{actor: %Human{}}} = conn, _note),
+    do: refuse(conn, "owner_cannot_pin")
+
   defp pay_for_pin(%{assigns: %{actor: %Agent{beneficiary_profile_id: nil}}} = conn, _note),
     do: refuse(conn, "person_needs_sign_in")
 
@@ -454,7 +462,7 @@ defmodule AshTemplateWeb.PairedAgentController do
       %{halted: true} = conn ->
         conn
 
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
+      %{assigns: %{actor: actor}} = conn when AgentWallet.acts_for_account(actor) ->
         conn
 
       %{assigns: %{actor: %Agent{} = actor}} = conn ->

@@ -776,6 +776,30 @@
       "lifecycle": "immediate"
     },
     {
+      "operation": "openAgentAccount",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/account",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
       "operation": "searchNotes",
       "effect": "read",
       "authority": "paired_agent",
