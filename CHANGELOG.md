@@ -6774,6 +6774,16 @@ column dropped, no production data touched.
   the agent permission, on an account already paired through another app, gets its
   identity tools only; the other-account test keeps a signer that answers with the
   first account's wallet.
+- v182 is `e0b6ca83`, released through `scripts/deploy.sh template-regents-sh` on Sean's
+  "1. b" (30 Oct 15:44:12Z, one identity per app). Rollback is v181 `252eb583`. Full
+  check on the same tree, exit 0: 149 Elixir (9 properties), 430 browser walks with 5
+  skipped, 26 script tests, required fixes against main `5a1ca3e4`. elixir-utils main
+  `d89c69df` (mcp_agents check 24 passed). Independent adversarial review found nothing
+  exploitable. WebKit not run on the Mac.
+- Read live from headless Chromium: capabilities names `e0b6ca83`; `/healthz` 200;
+  unsigned `POST /mcp` answers 401 `connection_required` with the `WWW-Authenticate`
+  challenge naming both permissions; `GET /mcp` answers 405 with `Allow: POST`;
+  `/agents/claude` carries the new pairing bullet and `/changelog` the 8 November entry.
 
 ## 2026-11-08 — Agents open their own accounts (agent parity G1)
 
