@@ -173,6 +173,8 @@ defmodule AshTemplateWeb.VisitLog do
 
   @doc "The one-way code for who acted: an account, a signed-in agent, or nobody."
   def actor(%AshTemplate.Actors.Agent{agent_id: id}), do: "agent:" <> code(id)
+  # An agent that owns its account signs in as the account's owner, through itself.
+  def actor(%AshTemplate.Actors.Human{agent_id: id}) when not is_nil(id), do: "agent:" <> code(id)
   def actor(%AshTemplate.Accounts.HumanAccount{id: id}), do: "person:" <> code(id)
   def actor(%AshTemplate.AccessContext{principal: {:human, account}}), do: actor(account)
   def actor(_nobody), do: "anonymous"

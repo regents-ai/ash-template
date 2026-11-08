@@ -6823,4 +6823,7 @@ column dropped, no production data touched.
   itself with account open.") on the five `signed_agent` rows. The owner's status list
   says it manages the agents paired with its account. The OpenAPI documents move to 11.2.0
   with the schemas `AccountAgent`, `AccountPairingCode` and `AccountAgentActivity`.
+- The visit log names an owner's request by its agent, as it does a paired agent's,
+  where it said "anonymous" before; and the job that writes the assistant's reply keeps
+  the agent an owner's chat message was sent through (`AshTemplate.Chat.ActorPersister`).
 - Built on G1 on the same branch (`g1/agent-owned-account-1108`); released with it on Sean's go.
