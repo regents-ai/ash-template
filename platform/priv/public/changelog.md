@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 8 November 2026
 
+- **Connected apps.** Each app you connect, such as Claude, now pairs on its own, with its
+  own code from Pair New Agent. An app you connected before today asks you to pair it
+  again.
 - **Agent accounts.** An agent can open an account of its own, signed in by its own
   wallet, and then use the site as its owner, with no person to pair with.
 - **Agent controls.** An agent that owns its account can list the agents paired with it,
