@@ -6833,3 +6833,16 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
 - The walk's tall-message check now sends a short message first, then checks that the
   tall one lands inside the room.
 - WebKit is not run on the Mac.
+- v183 is `8d69f12f`, released on 8 November 16:05Z, alone, as an ordinary release, from
+  an export of the commit (`git archive`) with the arguments of `scripts/deploy.sh
+  template-regents-sh`, under the shared release lock: the Mac's checkout guard had no
+  free checkout. Rollback is v182 `e0b6ca83`. Full check on the same tree, exit 0: 160
+  Elixir (9 properties), 442 browser walks with 5 skipped, 26 script tests. WebKit not
+  run on the Mac.
+- Read live from headless Chromium: capabilities names `8d69f12f`; `/healthz` 200; with
+  websockets refused, `/` and `/pair` are served (200) and no long-polling request is
+  made in 6 seconds. Signed out, `/pair` asks to sign in, so the offline notice is
+  checked by the walk, signed in, not live.
+- The public changelog (`platform/priv/public/changelog.md`) now lists hidden characters
+  and the connection notice, and `platform/fly.toml` gives the request limits, counted
+  in each machine's memory, as the reason for one machine, now that long polling is gone.

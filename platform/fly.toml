@@ -25,7 +25,8 @@ kill_timeout = "60s"
   internal_port = 4000
   force_https = true
 
-# Keep one web instance until cross-instance long-poll resumption is fixed.
+# Keep one web instance: request limits are counted in each machine's memory
+# (AshTemplate.Accounts.RequestRateLimiter), so each machine added multiplies them.
 # Machine count is managed by `fly scale count 1`; deploy with `--ha=false`.
 # BEAM release + migrations OOM at Fly's 256MB default.
 [[vm]]

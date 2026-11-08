@@ -7,6 +7,10 @@ Changes to Ash Template, newest first.
 - **Connected apps.** Each app you connect, such as Claude, now pairs on its own, with its
   own code from Pair New Agent. An app you connected before today asks you to pair it
   again.
+- **Hidden characters.** Messages, notes and the chat with the assistant now turn away
+  characters you can't see, such as a zero-width space. Line breaks and emoji stay.
+- **Connection.** While a page has lost its connection, the pairing box and the Send box
+  say "Not connected. Trying again…" and wait until it is back.
 
 ## 6 November 2026
 
