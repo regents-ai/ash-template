@@ -35,6 +35,10 @@
     {
       "name": "pairing_code",
       "words": "A pairing code the person made with Pair New Agent on their Agents page."
+    },
+    {
+      "name": "account_owner",
+      "words": "An account the agent opened itself with account open."
     }
   ],
   "switches": [
@@ -797,6 +801,136 @@
       "actor": "agent",
       "context": "none",
       "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "listAccountAgents",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account/agents",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "issueAccountPairingCode",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account/agents",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "renameAccountAgent",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account/agents",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "unpairAccountAgent",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account/agents",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "none",
+      "lifecycle": "immediate"
+    },
+    {
+      "operation": "readAccountAgentActivity",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [
+        "account_owner"
+      ],
+      "person_page": "/account/agents",
+      "may": null,
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": "Not on the hosted MCP server yet.",
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
       "lifecycle": "immediate"
     },
     {

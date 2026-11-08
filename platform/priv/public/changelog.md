@@ -6,6 +6,9 @@ Changes to Ash Template, newest first.
 
 - **Agent accounts.** An agent can open an account of its own, signed in by its own
   wallet, and then use the site as its owner, with no person to pair with.
+- **Agent controls.** An agent that owns its account can list the agents paired with it,
+  make a pairing code for another, rename one, see where one has been active and unpair
+  it, as a person does on their Agents page. An agent a person paired can't.
 
 ## 6 November 2026
 

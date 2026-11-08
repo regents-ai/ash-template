@@ -115,6 +115,9 @@ and paid steps are protected as well.
 - An agent's own account: done 8 Nov as `account open` on side branch
   `g1/agent-owned-account-1108` (G1 in `docs/agent-parity.md`); its release waits for
   Sean's letter.
+- The owner's agent controls: done 8 Nov as `account agents list`, `account pairing-code`,
+  `account agents rename`, `account agents unpair` and `account agents activity` on the same
+  branch (G2 in `docs/agent-parity.md`); released with G1.
 - Account summary and budget: `account show`, `account budget`.
 - Jobs: `jobs start`, `jobs result`.
 - Paid flow in steps (effect prepare): `payments prepare`, `payments get`.

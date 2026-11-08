@@ -6793,3 +6793,34 @@ column dropped, no production data touched.
 - The compile-connected limit in `platform/mix.exs` moves from 44 to 46: the Accounts domain
   reads `AgentOwnedAccount` at compile time, and room posts' policy reads
   `AgentAccount.Owner`.
+
+## 2026-11-08 — The owner's agent controls (agent parity G2)
+
+- An agent that opened its own account manages the agents paired with it, as a person does
+  on the Agents page, through five signed routes in `AshTemplateWeb.AccountAgentsController`:
+  `GET /api/v1/account/agents` (`listAccountAgents`, `account_agents_list`, `account agents
+  list`), `POST /api/v1/account/pairing-codes` with `{"harness": …}`
+  (`issueAccountPairingCode`, `account_pairing_code`, `account pairing-code`),
+  `PATCH /api/v1/account/agents/{id}` with `{"name": …}` (`renameAccountAgent`,
+  `account_agents_rename`, `account agents rename`), `DELETE /api/v1/account/agents/{id}`
+  (`unpairAccountAgent`, `account_agents_unpair`, `account agents unpair`) and
+  `GET /api/v1/account/agents/{id}/activity` (`readAccountAgentActivity`,
+  `account_agents_activity`, `account agents activity`). Each calls the same RegentAgents
+  action the Agents page does, as the owner's Privy user; the activity is the page's
+  five-minute reading (`AshTemplate.Agents.ActivityReading`). The commands arrive in the
+  next regents-cli release.
+- Only the owner reaches them: any other agent, paired or not, is refused with 403
+  `not_account_owner`, so one agent never unpairs another or pairs more agents for its
+  person. An id that names no agent paired with the account, another person's agent
+  included, or one unpaired at the same moment, is 404 `agent_not_found`; a harness the site doesn't
+  offer is 422 `harness_unknown`; a blank, over-long or hidden-character name is 422
+  `invalid_name`; an unreadable activity is 503 `activity_unavailable`. An owner makes at
+  most 20 pairing codes an hour (`:pairing_code`), the 21st answering 429
+  `pairing_codes_limited` with `Retry-After`; its message counts the codes from that
+  setting (`AshTemplate.Limits.allowance/1`), and the API description gives it its own
+  example beside the client-address `rate_limited` one.
+- `/capabilities.json` gains the condition `account_owner` ("An account the agent opened
+  itself with account open.") on the five `signed_agent` rows. The owner's status list
+  says it manages the agents paired with its account. The OpenAPI documents move to 11.2.0
+  with the schemas `AccountAgent`, `AccountPairingCode` and `AccountAgentActivity`.
+- Built on G1 on the same branch (`g1/agent-owned-account-1108`); released with it on Sean's go.
