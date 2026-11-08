@@ -19,6 +19,8 @@ defmodule AshTemplate.Dms.Message do
   alias AshTemplate.Dms.Message.SendInConversation
   alias AshTemplate.Limits.LimitWrites
 
+  @shown_text "Use letters, numbers and marks you can see."
+
   postgres do
     table "dm_messages"
     repo(AshTemplate.Repo)
@@ -85,6 +87,7 @@ defmodule AshTemplate.Dms.Message do
 
     create :send do
       accept [:body]
+      validate match(:body, RegentFormat.Text.pattern()), message: @shown_text
       argument :conversation_id, :uuid, allow_nil?: false
       argument :operation_id, :uuid
 

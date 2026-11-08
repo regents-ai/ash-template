@@ -292,12 +292,16 @@ defmodule AshTemplateWeb.DmsLive do
               aria-describedby={"dms-message-hint #{field.described_by}"}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
           </Primitives.field>
-          <div class="rooms-composer__actions">
+          <AshTemplateWeb.LiveConnection.offline
+            id="dms-message-offline"
+            controls="#dms-message-actions"
+          />
+          <fieldset id="dms-message-actions" class="rooms-composer__actions">
             <p id="dms-message-hint" class="rooms-composer__hint rg-muted">
               Enter sends. Shift+Enter starts a new line.
             </p>
             <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
-          </div>
+          </fieldset>
         </.form>
       </section>
     </article>

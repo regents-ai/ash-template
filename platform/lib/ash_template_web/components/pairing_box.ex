@@ -77,6 +77,10 @@ defmodule AshTemplateWeb.PairingBox do
         phx-target={@myself}
         {pairing(@chosen, @codes[@chosen], @start)}
       />
+      <AshTemplateWeb.LiveConnection.offline
+        id={"#{@id}-offline"}
+        controls={"##{@id} .rg-account__choices, ##{@id}-new"}
+      />
       <AccountSite.paired
         :if={match?({:paired, _agent, _part}, @codes[@chosen])}
         id={"#{@id}-site"}

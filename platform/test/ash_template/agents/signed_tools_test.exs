@@ -1072,6 +1072,17 @@ defmodule AshTemplate.SignedToolsTest do
              AshTemplate.Accounts.AgentAccount.owned(@wallet)
   end
 
+  # Privy links a wallet to one user at a time, but an account the wallet opened
+  # before keeps its row; the wallet owns the newest it opened.
+  test "a wallet that opened two accounts owns the newest" do
+    for did <- ["did:privy:first-opening", "did:privy:second-opening"] do
+      {:ok, _account} = VerifiedSession.register(did, @wallet, [@wallet], @wallet)
+    end
+
+    assert {:ok, %{privy_user_id: "did:privy:second-opening"}} =
+             AshTemplate.Accounts.AgentAccount.owned(@wallet)
+  end
+
   test "an owner whose wallet no longer signs in to the account acts for no one" do
     privy_answers([
       {"/v1/users/wallet/address", 200, agent_user("did:privy:moved-owner")}

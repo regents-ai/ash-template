@@ -28,6 +28,12 @@ defmodule AshTemplate.Accounts.HumanAccount do
     has_one :ens_identity, AshTemplate.Accounts.EnsIdentity do
       destination_attribute :human_account_id
     end
+
+    # Shared by every Regent site (elixir-utils agents).
+    has_many :agent_openings, RegentAgents.OpenedAccount do
+      source_attribute :privy_user_id
+      destination_attribute :privy_user_id
+    end
   end
 
   calculations do
@@ -89,6 +95,24 @@ defmodule AshTemplate.Accounts.HumanAccount do
       filter expr(privy_user_id in ^arg(:privy_dids))
     end
 
+    # The account an agent opened for itself that its wallet signs in to; if the
+    # wallet opened more than one, the newest.
+    read :opened_by_wallet do
+      get? true
+      argument :wallet, :string, allow_nil?: false
+
+      filter expr(
+               wallet_address == ^arg(:wallet) and
+                 exists(agent_openings, wallet == ^arg(:wallet))
+             )
+
+      prepare build(
+                sort: [id: :desc],
+                limit: 1,
+                load: [:display_name, :ens_name, :ens_avatar_url]
+              )
+    end
+
     read :read_self do
       get? true
       argument :id, :integer, allow_nil?: false
@@ -145,7 +169,8 @@ defmodule AshTemplate.Accounts.HumanAccount do
              :refresh_verified,
              :points_account,
              :created_before,
-             :by_privy_dids
+             :by_privy_dids,
+             :opened_by_wallet
            ]) do
       authorize_if actor_attribute_equals(:role, :system)
     end

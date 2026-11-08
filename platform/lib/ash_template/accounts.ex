@@ -1,5 +1,5 @@
 defmodule AshTemplate.Accounts do
-  @moduledoc "Human accounts, their verified sessions, linked social identities, ENS names and the accounts agents opened."
+  @moduledoc "Human accounts, their verified sessions, linked social identities and ENS names."
 
   use Ash.Domain
 
@@ -9,6 +9,12 @@ defmodule AshTemplate.Accounts do
       define :get_by_privy_did, action: :by_privy_did, args: [:privy_did], not_found_error?: false
       define :accounts_created_before, action: :created_before, args: [:at]
       define :accounts_by_privy_dids, action: :by_privy_dids, args: [:privy_dids]
+
+      define :agent_opened_account,
+        action: :opened_by_wallet,
+        args: [:wallet],
+        not_found_error?: false
+
       define :get_human_account, action: :read_self, args: [:id]
 
       define :register_verified,
@@ -21,15 +27,6 @@ defmodule AshTemplate.Accounts do
     end
 
     resource AshTemplate.Accounts.SessionAuthority
-
-    resource AshTemplate.Accounts.AgentOwnedAccount do
-      define :get_agent_owned_account,
-        action: :by_wallet,
-        args: [:wallet],
-        not_found_error?: false
-
-      define :record_agent_owned_account, action: :record
-    end
 
     resource AshTemplate.Accounts.EnsIdentity do
       define :request_ens_lookup,

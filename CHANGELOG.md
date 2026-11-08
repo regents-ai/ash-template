@@ -6785,6 +6785,68 @@ column dropped, no production data touched.
   challenge naming both permissions; `GET /mcp` answers 405 with `Allow: POST`;
   `/agents/claude` carries the new pairing bullet and `/changelog` the 8 November entry.
 
+## 2026-11-08 — Written words hold no hidden characters; smaller bodies; a note when a page is offline
+
+Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
+`x-content-type-options: nosniff` on every answer (v170), so that part is left out.
+
+- A room or direct message, a note's title and body, and a message to the assistant
+  now refuse hidden characters, such as the mark that turns a file's name the other
+  way round, a zero-width space or a control character. The refusal says "Use letters,
+  numbers and marks you can see." under the box, or in the API's refusal. Line breaks,
+  tabs, emoji and joined emoji are kept. The rule is elixir-utils `RegentFormat.Text`,
+  already in the pinned `f8801d79`: each line follows the name rule, `RegentFormat.Name`,
+  and a note's title follows the name rule itself. It is an Ash validation only, with no
+  database change. Words saved before stay as they are, an edit that leaves a note's
+  title or body as it was doesn't check it, and an edit that keeps a hidden character is
+  refused under its box, never with a failure.
+- A body over 256 KB is refused with 413 before it is read; the limit was 1 MB. Bodies
+  an agent signs, on the API and `/mcp`, already stop at 64 KB. No page takes a file.
+- A page's connection refuses a message over 256 KB; the limit was 10 MB. The longest
+  note the boxes take is about 91 KB once sent.
+- Pages connect by websocket only. The fallback to long polling, which a page switched
+  to when its websocket took over 2.5 seconds, read up to 8 MB a request, past both
+  limits above. A slow websocket now keeps trying until it connects. On a network that
+  blocks websockets, the pages show as served and their links work. Signing in and out
+  still work, because neither uses the live connection: Sign in and Sign out are the
+  account script's own presses (`auth_lazy.ts`), and the sign-in bridge sends one
+  request to `/auth/privy/session` and reloads the page (`privy_bridge.tsx`). Choosing
+  an agent to pair and Send need the live connection.
+- While a page has no live connection (it could not connect, or the connection
+  dropped half a second ago or more), the pairing box and the Send box of a room, a
+  direct message and the assistant chat say "Not connected. Trying again…" in the
+  design system's notice, and their buttons are disabled: the agents and the new-code
+  button in the pairing box, Send (and Cancel) in the others, and Enter, which sends.
+  The box can still be typed in. Once the connection is back, the notice goes and the
+  buttons return. LiveView's own `phx-disconnected` and `phx-connected` do it
+  (`AshTemplateWeb.LiveConnection`), on what the server never disables itself. Other
+  live forms (notes, polls, a room's topic, new rooms and the search box) don't show it
+  yet. The pairing window opens from the page's script once the page is connected, so
+  on a network that blocks websockets Pair New Agent's own page, `/pair`, shows the box
+  and its notice. `blocked_websocket.spec.ts` checks it there and in a room with
+  websockets refused, and with a connection dropped and restored.
+  After the connection comes back, the pairing box starts with no agent chosen: the
+  page sends its forms back before the buttons return, and a disabled choice isn't sent.
+- A poll's Choices box takes at most 1,009 characters, ten choices of 100 and the lines
+  between them, like every other box that sends what is typed to the page's connection;
+  a paste far past 256 KB would otherwise be refused, and sent again on every reconnect.
+- The walk's tall-message check now sends a short message first, then checks that the
+  tall one lands inside the room.
+- WebKit is not run on the Mac.
+- v183 is `8d69f12f`, released on 8 November 16:05Z, alone, as an ordinary release, from
+  an export of the commit (`git archive`) with the arguments of `scripts/deploy.sh
+  template-regents-sh`, under the shared release lock: the Mac's checkout guard had no
+  free checkout. Rollback is v182 `e0b6ca83`. Full check on the same tree, exit 0: 160
+  Elixir (9 properties), 442 browser walks with 5 skipped, 26 script tests. WebKit not
+  run on the Mac.
+- Read live from headless Chromium: capabilities names `8d69f12f`; `/healthz` 200; with
+  websockets refused, `/` and `/pair` are served (200) and no long-polling request is
+  made in 6 seconds. Signed out, `/pair` asks to sign in, so the offline notice is
+  checked by the walk, signed in, not live.
+- The public changelog (`platform/priv/public/changelog.md`) now lists hidden characters
+  and the connection notice, and `platform/fly.toml` gives the request limits, counted
+  in each machine's memory, as the reason for one machine, now that long polling is gone.
+
 ## 2026-11-08 — Agents open their own accounts (agent parity G1)
 
 - Sean's 29 Oct answer 2 a, rebuilt on main of 8 November: an agent opens its own account
@@ -6796,13 +6858,18 @@ column dropped, no production data touched.
   marks it with Privy's server-only custom metadata `regent_agent`, the agent's wallet;
   any other user is a person's, even one who signs in with nothing but that wallet, and
   is refused with `wallet_in_use`. The account is then registered as a sign-in is
-  (`VerifiedSession.register/3`, shared with `establish`). Opening again answers the same
+  (`VerifiedSession.register/4`, shared with `establish`). Opening again answers the same
   account without asking Privy.
-- An agent owns only the account it opened: the opening is recorded in
-  `AshTemplate.Accounts.AgentOwnedAccount` (migration
-  `20261108150000_agent_owned_accounts`, add-only, `lock_timeout` 5 s), and
-  `AgentAccount.owned/1` reads that row while the account still signs in with the agent's
-  wallet. `AgentWallet.actor_for/2` checks ownership before any pairing: the actor is then
+- An agent owns only the account it opened: the opening is recorded in the shared
+  `RegentAgents.OpenedAccount` (elixir-utils agents, table `regent_agents.opened_accounts`,
+  one row per Privy user, never removed), in the same transaction as the account. A
+  website sign-in to a Privy user an agent's opening made records it the same way: Privy's
+  identity token names that agent (`RegentPrivy.Session`'s `agent_wallet`, read from the
+  `regent_agent` metadata), so an opening that stopped after Privy made the user is still
+  marked. `AgentAccount.owned/1` reads the account the wallet signs in to with such a row
+  (`HumanAccount` action `opened_by_wallet`, the newest when the wallet opened more than
+  one), so an agent that opened its account on another Regent site is its owner here too.
+  The site keeps no table of its own for it. `AgentWallet.actor_for/2` checks ownership before any pairing: the actor is then
   `AshTemplate.Actors.Human.owner/2`, the account's own person with the agent's id.
   `AgentWallet.recheck_before_send/3` reads the wallet again before the answer leaves, for
   an owner as for a paired agent; an account it no longer signs in to answers
@@ -6819,10 +6886,15 @@ column dropped, no production data touched.
   `account_openings_limited` and `Retry-After` (`:account_open_address`, 5 a day).
 - Privy's server API needs the app secret (`PRIVY_APP_SECRET`, `config/runtime.exs`); it
   must be set on the site before release. The OpenAPI documents move to 11.1.0.
-  elixir-utils moves to `a4a6568f` (main `f8801d79` with the G1 library change).
-- The compile-connected limit in `platform/mix.exs` moves from 44 to 46: the Accounts domain
-  reads `AgentOwnedAccount` at compile time, and room posts' policy reads
-  `AgentAccount.Owner`.
+  elixir-utils moves to `f369a21c` (branch `eu/opened-accounts-1108`: main `8ce19478`, which
+  holds the G1 library change, with the shared opening record, the sign-in's
+  `agent_wallet` and Points' check for agent-opened accounts). Its migration `20261108170000` (add-only: creates
+  `regent_agents.opened_accounts` with `privy_user_id` text primary key, `wallet` text,
+  `opened_at`; no other index; `lock_timeout` 5 s) needs Sean's
+  named go and `/app/bin/migrate-shared` from the new image before the deployment, which
+  refuses until it is applied: without the table every signed agent request fails. The branch joins elixir-utils main once it is.
+- The compile-connected limit in `platform/mix.exs` moves from 44 to 45: room posts' policy
+  reads `AgentAccount.Owner`.
 
 ## 2026-11-08 — The owner's agent controls (agent parity G2)
 
@@ -6857,3 +6929,19 @@ column dropped, no production data touched.
   where it said "anonymous" before; and the job that writes the assistant's reply keeps
   the agent an owner's chat message was sent through (`AshTemplate.Chat.ActorPersister`).
 - Built on G1 on the same branch (`g1/agent-owned-account-1108`); released with it on Sean's go.
+
+## 2026-11-08 — No one-time Points for an account an agent opened
+
+- An account an agent opened for itself, here or on another Regent site (a row in the shared
+  `RegentAgents.OpenedAccount`), earns none of the one-time awards a script could collect by
+  opening accounts: Account activated (25), First paired agent (25) and First note written by
+  your agent (10). The check lives in the shared Points library, so every site that pins this
+  elixir-utils has it with no code of its own: `RegentPoints.IntakeWorker` turns each such
+  offer down as `agent_opened_account` (`RegentPoints.Rules.closed_to_agent_opened?/1`),
+  when it happens and at the Points start alike. The site's own Points checks are unchanged.
+  Activity awards are unchanged. The opening, or a website sign-in to a Privy user an opening
+  made, writes the account and its row in one transaction, before Points checks anything.
+- Why: agent openings are capped at 5 a day per network (one IPv4 address or IPv6 /64),
+  counted in the one machine's memory, so a script could otherwise collect about 60
+  Points for each throwaway account.
+- Built on the G1 branch so G1 never goes live without it.

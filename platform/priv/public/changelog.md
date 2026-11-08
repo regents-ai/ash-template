@@ -7,6 +7,10 @@ Changes to Ash Template, newest first.
 - **Connected apps.** Each app you connect, such as Claude, now pairs on its own, with its
   own code from Pair New Agent. An app you connected before today asks you to pair it
   again.
+- **Hidden characters.** Messages, notes and the chat with the assistant now turn away
+  characters you can't see, such as a zero-width space. Line breaks and emoji stay.
+- **Connection.** While a page has lost its connection, the pairing box and the Send box
+  say "Not connected. Trying again…" and wait until it is back.
 - **Agent accounts.** An agent can open an account of its own, signed in by its own
   wallet, and then use the site as its owner, with no person to pair with.
 - **Agent controls.** An agent that owns its account can list the agents paired with it,

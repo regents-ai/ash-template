@@ -41,9 +41,12 @@ defmodule AshTemplateWeb.Endpoint do
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [
       connect_info: [:peer_data, :uri, session: @session_options],
-      fullsweep_after: 0
-    ],
-    longpoll: [connect_info: [:peer_data, :uri, session: @session_options]]
+      fullsweep_after: 0,
+      # The largest message a page sends is a note being written: a title and
+      # body of 10,120 characters as the browser counts them, up to 9 bytes each
+      # once form-encoded, about 91 KB. No page takes a file.
+      max_frame_size: 262_144
+    ]
 
   plug AshTemplateWeb.Plugs.CanonicalHost
   plug AshTemplateWeb.Plugs.ContractHeaders
@@ -102,13 +105,14 @@ defmodule AshTemplateWeb.Endpoint do
   # address that names nothing.
   plug AshTemplateWeb.Plugs.NoTrailingSlash
 
-  # The largest body the site takes is a sign-in request of a few kilobytes;
-  # anything past a megabyte is refused before it is read.
+  # A body an agent signs stops at 64 KB (AshTemplateWeb.SignedBodyReader). The
+  # rest, a connected app's registration or token, a sign-in, a visit report, are
+  # a few KB; anything past 256 KB is refused before it is read.
   plug AshTemplateWeb.Plugs.Parsers,
     body_reader: {AshTemplateWeb.SignedBodyReader, :read_body, []},
     parsers: [Plug.Parsers.URLENCODED, Plug.Parsers.JSON],
     pass: ["*/*"],
-    length: 1_000_000,
+    length: 262_144,
     json_decoder: Phoenix.json_library()
 
   plug Plug.Head

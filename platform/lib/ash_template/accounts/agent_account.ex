@@ -7,35 +7,27 @@ defmodule AshTemplate.Accounts.AgentAccount do
 
   The agent opens it with `open/1`. The site asks Privy for the user the wallet
   signs in to, makes one for the agent when there is none, then registers the
-  account as a sign-in on the site does and records the opening
-  (`AshTemplate.Accounts.AgentOwnedAccount`) in one transaction. Only a Privy user
+  account as a sign-in on the site does and records the opening in one transaction,
+  in `RegentAgents.OpenedAccount`, which every Regent site reads. Only a Privy user
   an agent opening made, here or on another Regent site, is taken
   (`RegentPrivy.Users`, `agent: true`); any other is a person's, even one who signs
   in with nothing but the same wallet.
   """
 
   alias AshTemplate.Accounts
-  alias AshTemplate.Accounts.{AgentOwnedAccount, HumanAccount, VerifiedSession}
+  alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.System
   alias AshTemplate.Agents.PairedAccount
 
   @actor %System{}
 
   @doc """
-  The account `wallet` opened, while the wallet still signs in to it and its
-  wallet evidence is current, or nil.
+  The account `wallet` opened, on this site or another, while the wallet still
+  signs in to it and its wallet evidence is current, or nil.
   """
   def owned(wallet) do
-    wallet = String.downcase(wallet)
-
-    with {:ok, opened} <- Accounts.get_agent_owned_account(wallet, actor: @actor) do
-      case opened do
-        %{human_account: %{wallet_address: ^wallet} = account} ->
-          {:ok, if(VerifiedSession.current?(account), do: account)}
-
-        _none_or_moved ->
-          {:ok, nil}
-      end
+    with {:ok, account} <- Accounts.agent_opened_account(String.downcase(wallet), actor: @actor) do
+      {:ok, if(account && VerifiedSession.current?(account), do: account)}
     end
   end
 
@@ -55,21 +47,8 @@ defmodule AshTemplate.Accounts.AgentAccount do
     wallet = String.downcase(wallet)
 
     with {:ok, nil} <- owned(wallet),
-         {:ok, did} <- privy_user(wallet),
-         {:ok, {:ok, account}} <-
-           Ash.transact([HumanAccount, AgentOwnedAccount], fn -> register(did, wallet) end) do
-      {:ok, account}
-    end
-  end
-
-  defp register(did, wallet) do
-    with {:ok, account} <- VerifiedSession.register(did, wallet, [wallet]),
-         {:ok, _opened} <-
-           Accounts.record_agent_owned_account(
-             %{wallet_address: wallet, human_account_id: account.id},
-             actor: @actor
-           ) do
-      {:ok, account}
+         {:ok, did} <- privy_user(wallet) do
+      VerifiedSession.register(did, wallet, [wallet], wallet)
     end
   end
 

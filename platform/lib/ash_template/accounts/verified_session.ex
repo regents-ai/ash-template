@@ -2,7 +2,7 @@ defmodule AshTemplate.Accounts.VerifiedSession do
   @moduledoc "Exchanges verified Privy evidence for the canonical human account."
 
   alias AshTemplate.Accounts
-  alias AshTemplate.Accounts.EnsIdentity
+  alias AshTemplate.Accounts.{EnsIdentity, HumanAccount}
   alias AshTemplate.Actors.System
 
   @actor %System{}
@@ -20,7 +20,7 @@ defmodule AshTemplate.Accounts.VerifiedSession do
     # inside it.
     case verified do
       %{wallet_address: primary, wallet_addresses: [_ | _] = addresses} when is_binary(primary) ->
-        with {:ok, account} <- register(did, primary, addresses),
+        with {:ok, account} <- register(did, primary, addresses, verified.agent_wallet),
              {:ok, _profile} <- RegentIdentity.ensure(verified),
              {:ok, conflicts} <- reconcile(account.id, verified.linked_socials) do
           {:ok, account, conflicts}
@@ -36,8 +36,31 @@ defmodule AshTemplate.Accounts.VerifiedSession do
   and every wallet it links, and asks Ethereum for its wallet's ENS name again.
   A sign-in on the site and an agent opening its own account
   (`AshTemplate.Accounts.AgentAccount`) both register here.
+
+  `agent_wallet` names the agent whose opening made the Privy user, on this site
+  or another (Privy's `regent_agent` metadata), or is nil. The opening is then
+  recorded in `RegentAgents.OpenedAccount` in the same transaction, so an account
+  an agent opened is marked whichever way it first reaches the site.
   """
-  def register(did, primary, addresses) do
+  def register(did, primary, addresses, nil), do: register(did, primary, addresses)
+
+  def register(did, primary, addresses, agent_wallet) do
+    with {:ok, {:ok, account}} <-
+           Ash.transact([HumanAccount, RegentAgents.OpenedAccount], fn ->
+             register_opened(did, primary, addresses, agent_wallet)
+           end) do
+      {:ok, account}
+    end
+  end
+
+  defp register_opened(did, primary, addresses, agent_wallet) do
+    with {:ok, account} <- register(did, primary, addresses),
+         {:ok, _opened} <- RegentAgents.record_opened_account(agent_wallet, did, actor: @actor) do
+      {:ok, account}
+    end
+  end
+
+  defp register(did, primary, addresses) do
     with {:ok, account} <- Accounts.register_verified(did, primary, addresses, actor: @actor),
          {:ok, account} <- Accounts.refresh_verified(account, primary, addresses, actor: @actor),
          :ok <- request_ens_lookup(account) do
