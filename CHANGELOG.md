@@ -6754,3 +6754,49 @@ column dropped, no production data touched.
   `/account/credits` is not found; `/openapi.json` reads 11.0.0 with no Credits or
   balances routes. Headless Chromium at 1280 and 320: no Credits words outside the
   history entries of `/docs` and `/changelog`, no side scrolling, no page errors.
+
+## 2026-11-08 — The glass theme switch
+
+Sean, 8 November 2026: "A light/dark toggle with a glass knob, using vgpu.sh … I want it
+to replace the current light/dark click-toggle", and "it must be all in vgpu.sh, and
+animejs, and usable in the phoenix ash template header".
+
+- `Shell.theme_toggle/1` is a new switch: a `<button role="switch">` named "Light
+  theme", `aria-checked` on for light, night on the left and day on the right. A press,
+  Enter or Space turns it (keys at once, presses animated); the knob drags with the
+  pointer captured (`touch-action: pan-y`) and settles on the nearer side when let go,
+  and the theme changes once, on release. Its press is 2.5rem tall, 2.75rem on touch
+  screens. Every switch on a page follows a theme change made anywhere.
+- The server draws a still face (track, knob, Lucide moon or sun, placed from
+  `data-theme` by CSS). Over it the `ThemeSwitch` hook runs a canvas island
+  (`assets/js/hooks/theme_switch.ts`; `motionSensitive`, `continuous: false`, the
+  renderer imported on demand): one vgpu fullscreen shader
+  (`assets/js/theme_switch/shader.ts`, `renderer.ts`) draws the rounded-square glass
+  lens with bevel refraction along its edge normal, per-channel fringing and frost, a
+  light strip that circles the glass from below at night to above by day, scattering
+  into the glass, washing the track and spilling onto the page, and the pixel icon
+  behind the glass. Less motion (the device's or the page's `data-motion="reduced"`),
+  forced colours and no WebGPU keep the still face.
+- The icon is a 9×9 pixel moon and sun from one source (`theme_switch/pixels.ts`), 29
+  pixels each, every moon pixel paired with one sun pixel by angle. One paused Anime.js
+  timeline (`theme_switch/morph.ts`) flies each pixel on its own spring with one swirl
+  round the centre, leaving in turn clockwise from the bottom; the knob seeks it by how
+  far the swarm has come, so halfway along the track the swarm is halfway there. The
+  knob itself is an Anime.js Animatable that settles on a spring within the island's
+  24 frames.
+- One model of light for both themes (`theme_switch/light.ts`): the strip's colours,
+  `--rg-theme-laser-light`/`--rg-theme-laser-dark` or else Tangerine and Powder Blue,
+  are set 0.55 from the page in OKLab with colourfulness counted double, lighter on the
+  dark page and deeper on the light one, hue kept.
+- Placement: the shell's switch moves from the bottom bar to the top bar, between the
+  Regents Products button and the account control. On phones 380px wide or less its
+  track is shorter (a 48px press); below 360px the top bar has no room left, so a
+  second switch in the bottom bar takes over. The public footer and the showcase pages
+  keep theirs; the Site buttons lab uses the new one.
+- `Regent.ThemeToggle` is no longer used: the old document-level click handler in
+  `app.ts` is gone (theme reading and choosing live in `assets/js/theme.ts`; the page
+  still restates its theme on live navigation, back and forward), it leaves the
+  showcase catalogue, the `.rg-theme-toggle` motion exclusions go (the press squish
+  skips `[role='switch']`, whose knob moves itself), and the `.theme-control` styles go.
+- New tests: `theme_switch_pixels.test.ts`, `theme_switch_morph.test.ts`,
+  `theme_switch_knob.test.ts`, `theme_switch_light.test.ts` and `theme.test.ts`.

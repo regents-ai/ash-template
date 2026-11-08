@@ -275,12 +275,8 @@
   text-align: center;
 }
 
-.account-control,
-.theme-control {
-  position: relative;
-}
-
 .account-control {
+  position: relative;
   display: flex;
   align-items: center;
 }
@@ -310,10 +306,16 @@
   align-self: center;
 }
 
-/* The shared prism control draws its own box and hover; the bar only centres it. */
-.theme-control {
-  display: flex;
-  align-items: center;
+/* The theme switch sits straight in the top bar, beside the account control,
+   and centres itself as the groups beside it do. Its light spills only above
+   and below its own press, never over the buttons either side. */
+#shell-header > .theme-switch {
+  align-self: center;
+}
+
+/* The bottom bar's own switch is for the narrowest phones only (below). */
+#shell-footer > .shell-footer-theme {
+  display: none;
 }
 
 .account-avatar {
@@ -849,9 +851,8 @@
   height: 0.95rem;
 }
 
-/* The footer holds the 2.75rem theme press and tool count without growing past
-   them. */
-#shell-footer :is(.theme-control, .agent-tools-button) {
+/* The footer holds the 2.75rem tool count without growing past it. */
+#shell-footer .agent-tools-button {
   margin-block: -0.25rem;
 }
 
@@ -1318,11 +1319,8 @@
     display: none;
   }
 
-  #shell-footer .theme-control {
-    margin-inline-start: auto;
-  }
-
-  /* Status, tool count and theme share one row. */
+  /* Status, tool count and, on the narrowest phones, the theme switch share one
+     row. */
   #shell-footer {
     column-gap: 0.5rem;
   }
@@ -1341,8 +1339,30 @@
     max-width: 2.75rem;
   }
 
+  /* A shorter track keeps the theme switch's press 44px square or more. */
+  #shell-header > .theme-switch {
+    --theme-switch-lens: 1.75rem;
+    --theme-switch-travel: 1rem;
+    --theme-switch-gutter: 0.125rem;
+  }
+
   #shell-footer {
     padding-inline: 0.5rem;
+  }
+}
+
+/* Below 360px wide every top bar press is already as small as a finger allows,
+   so the theme switch moves to the bottom bar, beside the tool count. A 360px
+   phone still has it in the top bar. */
+@media (max-width: 22.4375rem) {
+  #shell-header > .theme-switch {
+    display: none;
+  }
+
+  #shell-footer > .shell-footer-theme {
+    display: inline-flex;
+    margin-block: -0.25rem;
+    margin-inline-start: auto;
   }
 }
 

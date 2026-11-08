@@ -2,6 +2,13 @@
 
 Changes to Ash Template, newest first.
 
+## 8 November 2026
+
+- **Theme switch.** The light and dark switch now sits in the top bar, beside your
+  account. Press it, or slide its glass knob: the moon on the left is the dark theme
+  and the sun on the right the light one, and the theme changes when you let go. On the
+  narrowest phones it sits in the bottom bar.
+
 ## 6 November 2026
 
 - **Credits.** Credits are gone. Buy Credits and the balance leave the account menu and

@@ -3,7 +3,9 @@ defmodule AshTemplateWeb.Components.Shell do
   The app shell: the top bar, the rail of sections, the open section's sidebar
   and tabs, the page and the bottom bar, plus the search dialog, the list of tools
   agents see, the Regents Products menu, the account control and its menu, and the
-  theme switch.
+  theme switch, which sits in the top bar beside the account control. On the
+  narrowest phones the top bar has no room left for it, so it shows in the bottom
+  bar instead.
 
   Whether the sidebar shows is the browser's (`assets/js/shell_panels.ts` and the
   `ash_template_sidebar` cookie, read into `<html data-sidebar>`), so the server
@@ -141,6 +143,8 @@ defmodule AshTemplateWeb.Components.Shell do
         </div>
 
         <.apps_menu />
+
+        <.theme_toggle id="theme-control" />
 
         <.account_control account_control={@account_control} />
 
@@ -282,7 +286,7 @@ defmodule AshTemplateWeb.Components.Shell do
         <div class="shell-footer__brand rl-header-links">
           <RegentLinks.header_links id="shell-token-menu" />
         </div>
-        <.theme_toggle id="theme-control" />
+        <.theme_toggle id="shell-footer-theme-control" class="shell-footer-theme" />
       </footer>
 
       <Regent.Structure.dialog
@@ -558,16 +562,53 @@ defmodule AshTemplateWeb.Components.Shell do
   end
 
   attr :id, :string, required: true
+  attr :class, :any, default: nil
 
   @doc """
-  The colour theme switch. The browser owns the press: it writes the theme
-  cookie the server reads on the next render, so the control is left out of
-  LiveView's patching.
+  The light and dark theme switch: a button with the role of a switch, on for
+  the light theme, with a knob that slides from night on the left to day on the
+  right. A press, Enter or Space turns it, and the knob can be dragged; it
+  settles on the nearer side when let go.
+
+  The server draws a still face: a plain track and knob with the moon or the
+  sun, placed for the theme showing. Once the browser has drawn a first frame
+  of the glass knob, with its pixel icon and its light, on the canvas inside
+  (`assets/js/hooks/theme_switch.ts`, `assets/js/theme_switch/`), that picture
+  takes over. Without WebGPU, with Less motion on or in forced colours the
+  still face stays, and it is a whole working switch on its own.
+
+  The browser owns the press: it writes the theme cookie the server reads on
+  the next render, so the switch is left out of LiveView's patching, and the
+  attributes the browser writes on it are kept.
   """
   def theme_toggle(assigns) do
     ~H"""
-    <div id={@id} class="theme-control" phx-update="ignore">
-      <Regent.ThemeToggle.button id={"#{@id}-button"} data-theme-toggle />
+    <div
+      id={@id}
+      class={["theme-switch", @class]}
+      phx-hook="ThemeSwitch"
+      phx-update="ignore"
+      phx-mounted={JS.ignore_attributes(["data-theme-switch-ready", "style"])}
+      data-theme-switch
+    >
+      <button
+        id={"#{@id}-button"}
+        class="theme-switch__button"
+        type="button"
+        role="switch"
+        aria-checked="false"
+        aria-label="Light theme"
+      >
+        <span class="theme-switch__still" aria-hidden="true">
+          <span class="theme-switch__track" data-theme-switch-track>
+            <span class="theme-switch__knob" data-theme-switch-knob>
+              <Regent.Icons.icon name="moon" class="theme-switch__moon" />
+              <Regent.Icons.icon name="sun" class="theme-switch__sun" />
+            </span>
+          </span>
+        </span>
+        <canvas class="theme-switch__canvas" data-theme-switch-canvas></canvas>
+      </button>
     </div>
     """
   end

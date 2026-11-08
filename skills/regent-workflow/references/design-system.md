@@ -37,8 +37,23 @@ current founder request overrides older rollout notes. Re-read the working tree:
   tokens then follow the device, dark unless it asks for light (founder, 2026-09-28).
   A choice travels in the `regent_theme` cookie and always wins. A product's own
   theme CSS covers the no-choice case too. The template's theme plug, root layout and
-  `app.ts` theme block are the reference; the theme switch names itself, so the
+  `assets/js/theme.ts` are the reference; the theme switch names itself, so the
   server passes it no theme.
+- The theme switch is the template's `Shell.theme_toggle/1` (Sean, 8 Nov 2026), not
+  `Regent.ThemeToggle`: a `role="switch"` button named "Light theme", night (dark) on
+  the left and day (light) on the right, in the app shell's top bar beside the account
+  control (the bottom bar on phones narrower than 360px) and in the public footer. A
+  press, Enter or Space turns it; the knob can be dragged and settles on the nearer
+  side, and the theme changes once, on release. Over the server's still face (a plain
+  track and knob with the Lucide moon or sun) a vgpu island draws the glass knob:
+  bevel refraction with a little colour fringing and frost, a light strip that circles
+  the glass from below at night to above by day and spills onto the page, and a pixel
+  moon that swarms into a pixel sun as the knob moves. Its motion is Anime.js: the
+  knob's settle and one paused timeline for the swarm, seeked by the knob. The strip's
+  colours are `--rg-theme-laser-light`/`--rg-theme-laser-dark` (else Tangerine and
+  Powder Blue), set a fixed distance from the page (`theme_switch/light.ts`) so the
+  light reads as boldly on either theme. Less motion, forced colours and no WebGPU
+  keep the still face, which is a whole working switch.
 - Canonical identities: Tangerine `#FF5B19`, Powder Blue `#AECACD`, Platinum
   `#E5E3D2`, Charcoal `#161616`. Typography/background/semantic roles still come from
   the tokens, not scattered literals. Do not replace real project images or site

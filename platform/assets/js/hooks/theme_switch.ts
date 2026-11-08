@@ -1,0 +1,325 @@
+/**
+ * The light and dark theme switch (`AshTemplateWeb.Components.Shell.theme_toggle/1`).
+ *
+ * The switch is a real button with the role of a switch: on is the light theme.
+ * Everything it does lives here and works with or without WebGPU and whatever
+ * the motion setting: a press, Enter or Space turns it; dragging the knob
+ * sideways moves it under the finger and, on release, it settles on the nearer
+ * side. The theme changes once, when the switch is turned or released, never
+ * part-way through a drag.
+ *
+ * The knob's position is one number, p: 0 at night (dark) on the left, 1 by day
+ * (light) on the right. The still face the server drew reads it from
+ * `--theme-switch-p`; the GPU picture (theme_switch/renderer.ts, inside the
+ * shared canvas island) reads it with the pixel swarm the knob scrubs. Every
+ * move of the knob is Anime.js: an Animatable carries it when it settles, and
+ * the swarm is a paused timeline seeked to it (theme_switch/morph.ts).
+ *
+ * Every switch on the page follows the theme on screen, whoever changed it, and
+ * moves to match.
+ */
+import {createAnimatable, createScope, spring, type AnimatableObject} from "animejs"
+
+import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
+import {chooseTheme, showingTheme, watchTheme} from "../theme"
+import {draggedPosition, isDrag, settleSide, sideOf, themeOf, type Side} from "../theme_switch/knob"
+import {createMorph, PIXEL_STRIDE, type Morph} from "../theme_switch/morph"
+import {PAIRS} from "../theme_switch/pixels"
+import type {Rgb, SwitchPicture, ThemeSwitchRenderer} from "../theme_switch/renderer"
+import {byPointer, lastInputByPointer, still} from "./motion/shared"
+
+export type ThemeSwitchController = Pick<CanvasIslandController, "mount" | "pause" | "resume" | "destroy">
+
+type Geometry = Pick<SwitchPicture, "width" | "height" | "track" | "lens">
+
+type Press = {id: number; x: number; start: number; type: string; dragging: boolean; travel: number}
+
+// How the knob settles after a release or a press: on a spring, played out
+// within the 24 frames the canvas island gives an easing (400ms at 60 frames a second).
+const SETTLE_MS = 400
+const settling = spring({bounce: 0.2, duration: 300}).ease
+
+const NIGHT: Rgb = [0.682, 0.792, 0.804]
+const DAY: Rgb = [1, 0.357, 0.098]
+
+/** Any colour the page can state, as red, green and blue from 0 to 1, with its opacity. */
+function colourReader() {
+  const canvas = document.createElement("canvas")
+  canvas.width = 1
+  canvas.height = 1
+  const context = canvas.getContext("2d", {willReadFrequently: true})
+  return (css: string): {rgb: Rgb; opaque: boolean} | undefined => {
+    if (!context || !css) return undefined
+    context.clearRect(0, 0, 1, 1)
+    context.fillStyle = "rgba(0, 0, 0, 0)"
+    context.fillStyle = css
+    context.fillRect(0, 0, 1, 1)
+    const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data
+    if (a === 0) return undefined
+    return {rgb: [r / 255, g / 255, b / 255], opaque: a === 255}
+  }
+}
+
+export function createThemeSwitch(root: HTMLElement): ThemeSwitchController {
+  const button = root.querySelector<HTMLButtonElement>("[role='switch']")!
+  const trackBox = root.querySelector<HTMLElement>("[data-theme-switch-track]")!
+  const knobBox = root.querySelector<HTMLElement>("[data-theme-switch-knob]")!
+  const canvas = root.querySelector<HTMLCanvasElement>("[data-theme-switch-canvas]")!
+  const readColour = colourReader()
+
+  // What Anime.js moves: the knob, between 0 and 1.
+  const knob = {p: sideOf(showingTheme()) as number}
+  let side: Side = sideOf(showingTheme())
+  let morph: Morph | undefined
+  let motion: AnimatableObject | undefined
+  let geometry: Geometry = {width: 1, height: 1, track: {x: 0, y: 0, width: 1, height: 1}, lens: 1}
+  let colours: SwitchPicture["colours"] = {page: [0, 0, 0], ink: [1, 1, 1], night: NIGHT, day: DAY}
+  const pixels = new Float32Array(PAIRS.length * PIXEL_STRIDE)
+  let draw = () => {}
+  let press: Press | undefined
+  let swallowClick = false
+  let connected = true
+
+  const measure = () => {
+    const box = canvas.getBoundingClientRect()
+    const track = trackBox.getBoundingClientRect()
+    geometry = {
+      width: box.width || 1,
+      height: box.height || 1,
+      track: {x: track.left - box.left, y: track.top - box.top, width: track.width, height: track.height},
+      lens: knobBox.offsetWidth,
+    }
+  }
+
+  // The page under the switch is the first ancestor with a solid background.
+  const readColours = () => {
+    let page: Rgb | undefined
+    for (let el: Element | null = root; el && !page; el = el.parentElement) {
+      const found = readColour(getComputedStyle(el).backgroundColor)
+      if (found?.opaque) page = found.rgb
+    }
+    const style = getComputedStyle(root)
+    const token = (name: string, fallback: string) => style.getPropertyValue(name).trim() || style.getPropertyValue(fallback).trim()
+    colours = {
+      page: page ?? readColour(style.getPropertyValue("--color-bg").trim())?.rgb ?? [0, 0, 0],
+      ink: readColour(getComputedStyle(button).color)?.rgb ?? [1, 1, 1],
+      night: readColour(token("--rg-theme-laser-dark", "--palette-powder-blue"))?.rgb ?? NIGHT,
+      day: readColour(token("--rg-theme-laser-light", "--palette-tangerine-tango"))?.rgb ?? DAY,
+    }
+  }
+
+  const picture = (): SwitchPicture => {
+    morph?.seek(knob.p)
+    morph?.write(pixels)
+    return {p: knob.p, ...geometry, pixels, count: PAIRS.length, colours}
+  }
+
+  // Shows the knob where it is now: the still face's knob and, when the GPU
+  // draws, the picture.
+  const render = () => {
+    root.style.setProperty("--theme-switch-p", (Math.round(knob.p * 10000) / 10000).toString())
+    draw()
+  }
+
+  const scope = createScope({root}).add(() => {
+    morph = createMorph()
+    motion = createAnimatable(knob, {p: 0, onUpdate: render})
+  })
+
+  const moveTo = (target: Side, animated: boolean) => {
+    if (animated && !still(root)) {
+      motion?.p(target, SETTLE_MS, settling)
+    } else {
+      motion?.p(target, 0, "linear")
+      knob.p = target
+      render()
+    }
+  }
+
+  const announce = () => button.setAttribute("aria-checked", String(side === 1))
+
+  /** Turns the switch to `next`, and the page with it. */
+  const commit = (next: Side, animated: boolean) => {
+    side = next
+    announce()
+    moveTo(next, animated)
+    if (showingTheme() !== themeOf(next)) chooseTheme(themeOf(next))
+  }
+
+  const follow = watchTheme(theme => {
+    readColours()
+    const next = sideOf(theme)
+    if (next === side) {
+      render()
+      return
+    }
+    side = next
+    announce()
+    if (!press?.dragging) moveTo(next, lastInputByPointer())
+  })
+
+  const onPointerDown = (event: PointerEvent) => {
+    if (!event.isPrimary || event.button !== 0) return
+    measure()
+    swallowClick = false
+    press = {
+      id: event.pointerId,
+      x: event.clientX,
+      start: knob.p,
+      type: event.pointerType,
+      dragging: false,
+      travel: geometry.track.width - geometry.lens,
+    }
+    try {
+      button.setPointerCapture(event.pointerId)
+    } catch {
+      // A pointer that is already gone cannot be captured; its up event still ends the press.
+    }
+  }
+
+  const onPointerMove = (event: PointerEvent) => {
+    if (!press || event.pointerId !== press.id) return
+    const dx = event.clientX - press.x
+    if (!press.dragging) {
+      if (!isDrag(dx, press.type)) return
+      press.dragging = true
+    }
+    motion?.p(draggedPosition(press.start, dx, press.travel), 0, "linear")
+    knob.p = draggedPosition(press.start, dx, press.travel)
+    render()
+  }
+
+  const onPointerUp = (event: PointerEvent) => {
+    if (!press || event.pointerId !== press.id) return
+    const dragged = press.dragging
+    press = undefined
+    if (!dragged) return // The click that follows turns the switch.
+    swallowClick = true
+    commit(settleSide(knob.p), true)
+  }
+
+  // The browser took the press for a scroll: the knob goes back to its side.
+  const onPointerCancel = (event: PointerEvent) => {
+    if (!press || event.pointerId !== press.id) return
+    const dragged = press.dragging
+    press = undefined
+    if (dragged) moveTo(side, true)
+  }
+
+  // A press turns the switch; so do Enter and Space, at once rather than
+  // animated, as every keyboard-driven control here does.
+  const onClick = (event: MouseEvent) => {
+    if (swallowClick && byPointer(event)) {
+      swallowClick = false
+      event.preventDefault()
+      return
+    }
+    swallowClick = false
+    commit(side === 1 ? 0 : 1, byPointer(event))
+  }
+
+  const island = createCanvasIsland<ThemeSwitchRenderer>(root, {}, {
+    canvasSelector: "[data-theme-switch-canvas]",
+    readyFlag: "themeSwitchReady",
+    motionSensitive: true,
+    // Drawn only when the knob or the theme moves; nothing moves between.
+    continuous: false,
+    browserLoad: async (surface, size, lost) => {
+      const {createThemeSwitchRenderer} = await import("../theme_switch/renderer")
+      return createThemeSwitchRenderer(surface, size, lost)
+    },
+    interact: ({renderer, nudge, onReady}) => {
+      draw = () => {
+        const current = renderer()
+        if (!current) return
+        current.show(picture())
+        nudge()
+      }
+      onReady(() => renderer()?.show(picture()))
+      return () => {
+        draw = () => {}
+      }
+    },
+  })
+
+  // A page's own Less motion switch (`data-motion="reduced"` round it) keeps the
+  // still face too, as forced colours do; the stylesheet shows it, and the island rests.
+  const forced = window.matchMedia("(forced-colors: active)")
+  const syncMotion = () => {
+    if (!connected || still(root) || forced.matches) island.pause()
+    else island.resume()
+    render()
+  }
+  const calm = new MutationObserver(syncMotion)
+  const resized = new ResizeObserver(() => {
+    measure()
+    render()
+  })
+  const events = new AbortController()
+
+  return {
+    mount() {
+      measure()
+      readColours()
+      announce()
+      render()
+      const listen = {signal: events.signal}
+      button.addEventListener("pointerdown", onPointerDown, listen)
+      button.addEventListener("pointermove", onPointerMove, listen)
+      button.addEventListener("pointerup", onPointerUp, listen)
+      button.addEventListener("pointercancel", onPointerCancel, listen)
+      button.addEventListener("click", onClick, listen)
+      calm.observe(document.documentElement, {subtree: true, attributes: true, attributeFilter: ["data-motion"]})
+      forced.addEventListener("change", syncMotion, listen)
+      resized.observe(button)
+      island.mount()
+      syncMotion()
+    },
+    pause() {
+      connected = false
+      island.pause()
+    },
+    resume() {
+      connected = true
+      syncMotion()
+    },
+    destroy() {
+      events.abort()
+      follow()
+      calm.disconnect()
+      resized.disconnect()
+      island.destroy()
+      scope.revert()
+    },
+  }
+}
+
+type ThemeSwitchHook = {el: HTMLElement; controller?: ThemeSwitchController}
+
+export const ThemeSwitch = {
+  mounted(this: ThemeSwitchHook) {
+    this.controller = createThemeSwitch(this.el)
+    this.controller.mount()
+  },
+  disconnected(this: ThemeSwitchHook) {
+    this.controller?.pause()
+  },
+  reconnected(this: ThemeSwitchHook) {
+    this.controller?.resume()
+  },
+  destroyed(this: ThemeSwitchHook) {
+    this.controller?.destroy()
+    this.controller = undefined
+  },
+}
+
+/**
+ * A switch the server draws outside every live view, as in the public pages'
+ * footer, is never handed to a hook; it is mounted here once and lasts as long
+ * as the page does.
+ */
+export function mountStaticThemeSwitches(doc: Document): void {
+  for (const root of doc.querySelectorAll<HTMLElement>("[data-theme-switch]")) {
+    if (!root.closest("[data-phx-session]")) createThemeSwitch(root).mount()
+  }
+}
