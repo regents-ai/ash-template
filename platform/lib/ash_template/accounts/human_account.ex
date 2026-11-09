@@ -109,7 +109,23 @@ defmodule AshTemplate.Accounts.HumanAccount do
         dynamic?: true,
         description: "Only when the sign-in inserted the account."
 
-      change AshTemplate.Accounts.HumanAccount.AnnounceRegistration
+      # A sign-in to an account that already exists skips the upsert, and Ash marks
+      # the account it returns with `upsert_skipped`.
+      change after_action(fn
+               _changeset, %{__metadata__: %{upsert_skipped: true}} = account, _context ->
+                 {:ok, account}
+
+               changeset, account, _context ->
+                 with :ok <-
+                        Ash.Signals.emit(
+                          changeset,
+                          AshTemplate.Accounts.Signals,
+                          :account_registered,
+                          %{account_id: account.id}
+                        ),
+                      do: {:ok, account}
+             end)
+
       change load([:display_name])
     end
 

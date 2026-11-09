@@ -19,18 +19,12 @@ defmodule AshTemplate.Actors.Human do
   def for_account(account) do
     %__MODULE__{
       human_account_id: account.id,
-      name: name(account),
-      wallet_addresses: wallets(account)
+      name: account.display_name || RegentFormat.short_address(account.wallet_address),
+      wallet_addresses:
+        [account.wallet_address | List.wrap(account.wallet_addresses)]
+        |> Enum.filter(&is_binary/1)
+        |> Enum.map(&String.downcase/1)
+        |> Enum.uniq()
     }
-  end
-
-  defp name(account),
-    do: account.display_name || RegentFormat.short_address(account.wallet_address)
-
-  defp wallets(account) do
-    [account.wallet_address | List.wrap(account.wallet_addresses)]
-    |> Enum.filter(&is_binary/1)
-    |> Enum.map(&String.downcase/1)
-    |> Enum.uniq()
   end
 end

@@ -49,27 +49,20 @@ defmodule AshTemplate.Accounts.VerifiedSession do
   is still current.
   """
   def account(%RegentPrivy.Session{privy_user_id: did}) do
-    case Accounts.get_by_privy_did(did, actor: @actor) do
-      {:ok, nil} ->
-        {:error, :account_required}
-
-      {:ok, account} ->
-        if current?(account), do: {:ok, account}, else: {:error, :account_required}
-
-      {:error, _error} = failure ->
-        failure
+    with {:ok, account} <- Accounts.get_by_privy_did(did, actor: @actor) do
+      if current?(account), do: {:ok, account}, else: {:error, :account_required}
     end
   end
 
   @doc "Whether the account's stored wallet evidence still names a signed-in wallet."
   def current?(%{wallet_address: primary, wallet_addresses: addresses})
       when is_binary(primary) and is_list(addresses),
-      do: addresses != [] and primary in addresses
+      do: primary in addresses
 
   def current?(_account), do: false
 
   defp request_ens_lookup(account) do
-    if EnsIdentity.looking_up?() do
+    if EnsIdentity.rpc_url() do
       with {:ok, _identity} <-
              Accounts.request_ens_lookup(account.id, account.wallet_address, actor: @actor),
            do: :ok

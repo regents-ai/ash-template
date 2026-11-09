@@ -126,9 +126,6 @@ defmodule AshTemplate.Accounts.EnsIdentity do
   @doc "The topic a finished lookup for `human_account_id` is published on."
   def topic(human_account_id), do: "ens_identity:#{human_account_id}"
 
-  @doc "Whether the server can read Ethereum mainnet."
-  def looking_up?, do: not is_nil(rpc_url())
-
-  @doc "The Ethereum mainnet endpoint lookups read from."
+  @doc "The Ethereum mainnet endpoint lookups read from, or nil while the server has none."
   def rpc_url, do: Application.get_env(:ash_template, :ethereum_read_rpc_url)
 end
