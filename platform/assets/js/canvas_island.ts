@@ -72,6 +72,11 @@ type IslandKind<Renderer extends IslandRenderer> = {
   readonly motionSensitive: boolean
   /** A picture that keeps moving by itself never runs out of frames to settle in. */
   readonly continuous: boolean
+  /**
+   * The sharpest the picture is drawn, in device pixels per CSS pixel. A small
+   * picture may go past the usual ceiling; the pixel budget still holds.
+   */
+  readonly maxDevicePixelRatio?: number
   /** Listeners the island keeps for as long as it is watching. */
   interact?(island: IslandInteraction<Renderer>): () => void
 }
@@ -102,8 +107,9 @@ export function drawingBufferSize(
   width: number,
   height: number,
   devicePixelRatio: number,
+  maxDevicePixelRatio: number = MAX_DEVICE_PIXEL_RATIO,
 ): readonly [number, number] {
-  const ratio = Math.min(MAX_DEVICE_PIXEL_RATIO, Math.max(1, devicePixelRatio))
+  const ratio = Math.min(maxDevicePixelRatio, Math.max(1, devicePixelRatio))
   const requested = width * height * ratio * ratio
   const fit =
     requested > MAX_DRAWING_BUFFER_PIXELS ? Math.sqrt(MAX_DRAWING_BUFFER_PIXELS / requested) : 1
@@ -111,6 +117,21 @@ export function drawingBufferSize(
     Math.max(1, Math.floor(width * ratio * fit)),
     Math.max(1, Math.floor(height * ratio * fit)),
   ]
+}
+
+/**
+ * The canvas's own laid-out size in CSS pixels. A transform on the way to it,
+ * such as a menu scaling in as it opens, leaves this alone, where its box on
+ * screen would read a shade small for a moment. A canvas that is not laid out
+ * at all has no such size, and its box (empty) stands in.
+ */
+function layoutSize(element: HTMLCanvasElement): readonly [number, number] {
+  const style = getComputedStyle(element)
+  const width = parseFloat(style.width)
+  const height = parseFloat(style.height)
+  if (width > 0 && height > 0) return [width, height]
+  const box = element.getBoundingClientRect()
+  return [box.width, box.height]
 }
 
 const browserRequestFrame: RequestFrame = callback => window.requestAnimationFrame(callback)
@@ -168,8 +189,8 @@ export const createCanvasIsland = <Renderer extends IslandRenderer>(
   const motionPermits = () => !kind.motionSensitive || !motion.matches
 
   const measure = (): readonly [number, number] => {
-    const {width, height} = canvas().getBoundingClientRect()
-    return drawingBufferSize(width, height, devicePixelRatio())
+    const [width, height] = layoutSize(canvas())
+    return drawingBufferSize(width, height, devicePixelRatio(), kind.maxDevicePixelRatio)
   }
 
   const stopFrame = () => {

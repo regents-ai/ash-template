@@ -6887,3 +6887,57 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   removed `RequestLabel` module.
 - In numbers: 247 files to 228, 30,354 lines to 29,895, 253 modules to 234, 685 public
   functions to 650.
+
+## 2026-11-09 — The glass theme switch, in the account menu
+
+Sean, 8 November 2026: "A light/dark toggle with a glass knob, using vgpu.sh … I want it
+to replace the current light/dark click-toggle", "it must be all in vgpu.sh, and
+animejs", then "put in the account sidepanel that shows when clicking the account" and
+"so the sun / moon are made of tiny blocks".
+
+- `Shell.theme_toggle/1` is a new switch: a `<button role="switch">` named "Light
+  theme", `aria-checked` on for light, night on the left and day on the right. A press,
+  Enter or Space turns it (keys at once, presses animated); the knob drags with the
+  pointer captured (`touch-action: pan-y`) and settles on the nearer side when let go,
+  and the theme changes once, on release. Its press is 2.5rem tall, 2.75rem on touch
+  screens. Every switch on a page follows a theme change made anywhere.
+- Placement: signed in, the switch has its own row in the account menu, between Pair
+  New Agent and Manage Account, through `Regent.Account.menu`'s new `theme` slot
+  (design-system `7896065`, now pinned), "Light theme" at the start and a larger switch
+  (2.5rem lens, 3rem press) at the end. Signed out, with no account menu, it sits in the
+  bottom bar. The public footer and the showcase pages keep theirs; the Site buttons
+  lab uses the new one.
+- The server draws a still face: a track and a knob holding the moon or the sun in tiny
+  square blocks (SVG squares with a hairline between them). The two pictures, 49 blocks
+  each on a 13×13 grid with a clear outer ring, live once in `Shell` (`@theme_moon`,
+  `@theme_sun`, checked when it compiles); the browser reads the blocks from the still
+  face. Over it the `ThemeSwitch` hook runs a canvas island
+  (`assets/js/hooks/theme_switch.ts`; `motionSensitive`, `continuous: false`, the
+  renderer imported on demand): one vgpu shader (`assets/js/theme_switch/shader.ts`,
+  `renderer.ts`) draws the rounded-square glass lens with bevel refraction along its
+  edge normal, per-channel fringing and frost; a light strip that circles the glass
+  from below at night to above by day, scattering into the glass, washing the track and
+  spilling onto the page; and the blocks behind the glass. Less motion (the device's or
+  the page's `data-motion="reduced"`), forced colours and no WebGPU keep the still face.
+- The swarm: every moon block is paired with one sun block by angle. One paused
+  Anime.js timeline (`theme_switch/morph.ts`) flies each block on its own spring with
+  one swirl round the centre and a tumble of whole quarter turns, leaving in turn
+  clockwise from the bottom; the knob seeks it by how far the swarm has come, so
+  halfway along the track the swarm holds halfway. At rest each block is a crisp square
+  on whole canvas pixels, and the edge facing the light strip catches its light. The
+  knob is an Anime.js Animatable that settles on a spring within the island's 24 frames.
+- One model of light for both themes (`theme_switch/light.ts`): the strip's colours,
+  `--rg-theme-laser-light`/`--rg-theme-laser-dark` or else Tangerine and Powder Blue,
+  are set 0.55 from the page in OKLab with colourfulness counted double, lighter on the
+  dark page and deeper on the light one, hue kept.
+- The canvas island (`assets/js/canvas_island.ts`) measures a canvas by its layout
+  size, so a menu scaling in as it opens no longer draws a picture a shade small, and
+  takes `maxDevicePixelRatio`; the switch uses 3 so the blocks stay sharp on phones.
+- `Regent.ThemeToggle` is no longer used: the old document-level click handler in
+  `app.ts` is gone (theme reading and choosing live in `assets/js/theme.ts`; the page
+  still restates its theme on live navigation, back and forward), it leaves the
+  showcase catalogue, the `.rg-theme-toggle` motion exclusions go (the press squish
+  skips `[role='switch']`, whose knob moves itself), and the `.theme-control` styles go.
+- New tests: `theme_switch_pixels`, `theme_switch_morph`, `theme_switch_knob`,
+  `theme_switch_light`, `theme_switch_shader` and `theme`, and canvas island tests for
+  the pixel-ratio ceiling and the layout measure.

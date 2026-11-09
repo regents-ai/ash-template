@@ -275,12 +275,8 @@
   text-align: center;
 }
 
-.account-control,
-.theme-control {
-  position: relative;
-}
-
 .account-control {
+  position: relative;
   display: flex;
   align-items: center;
 }
@@ -310,10 +306,19 @@
   align-self: center;
 }
 
-/* The shared prism control draws its own box and hover; the bar only centres it. */
-.theme-control {
-  display: flex;
-  align-items: center;
+/* The theme switch has a row of the account menu to itself, its words at the
+   start, so it can be larger than elsewhere and its blocks read. Its light
+   spills only above and below its own press, inside the row. */
+#account-menu .shell-theme-label {
+  font-size: 0.875rem;
+}
+
+#account-menu .theme-switch {
+  --theme-switch-lens: 2.5rem;
+  --theme-switch-track: 1.5rem;
+  --theme-switch-travel: 1.75rem;
+  --theme-switch-press: 3rem;
+  --theme-switch-gutter: 0.25rem;
 }
 
 .account-avatar {
@@ -849,9 +854,9 @@
   height: 0.95rem;
 }
 
-/* The footer holds the 2.75rem theme press and tool count without growing past
-   them. */
-#shell-footer :is(.theme-control, .agent-tools-button) {
+/* The footer holds the 2.75rem tool count, and signed out the theme switch,
+   without growing past them. */
+#shell-footer :is(.shell-footer-theme, .agent-tools-button) {
   margin-block: -0.25rem;
 }
 
@@ -1318,11 +1323,11 @@
     display: none;
   }
 
-  #shell-footer .theme-control {
+  #shell-footer .shell-footer-theme {
     margin-inline-start: auto;
   }
 
-  /* Status, tool count and theme share one row. */
+  /* Status, tool count and, signed out, the theme switch share one row. */
   #shell-footer {
     column-gap: 0.5rem;
   }
