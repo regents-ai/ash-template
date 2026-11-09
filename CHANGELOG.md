@@ -6887,3 +6887,28 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   removed `RequestLabel` module.
 - In numbers: 247 files to 228, 30,354 lines to 29,895, 253 modules to 234, 685 public
   functions to 650.
+
+## 2026-11-09 — v184: ash_ai 1.5.1 and simpler platform code
+
+- v184 is `a7dabd82`, released on 9 November 19:07:31Z, alone, as an ordinary release,
+  through `scripts/deploy.sh template-regents-sh` from a clean checkout, under the shared
+  release lock. It carries the two 9 November entries above (`0d548320` to `3bb42f23`:
+  ash_ai 1.5.1 for EEF-CVE-2026-119613, the platform code simplified with the same
+  behaviour, and the room author filter test), `d3bd2013`'s public changelog lines and
+  `platform/fly.toml` note, and the public changelog's 9 November line (`a7dabd82`). No
+  migration: the release step logged "Migrations already up". Still one machine, at the
+  same size. Rollback is v183 `8d69f12f`.
+- Full check on the same tree, exit 0: `mix precommit` (hex.audit clean, Credo clean, 26
+  script tests, 442 browser walks with 5 skipped), then 161 Elixir (9 properties), then
+  the required-fixes check. WebKit not run on the Mac.
+- Read live from headless Chromium: capabilities names `a7dabd82`; `/healthz` 200; `/`,
+  `/llms.txt`, `/agents.md`, `/openapi.json`, `/docs`, `/privacy`, `/terms` and
+  `/changelog` answer 200 at 1280 and 390 wide, with no page errors and no sideways
+  scroll. Read before and after the release, `/llms.txt`, `/agents.md` and
+  `/openapi.json` are the same bytes; `/`, `/docs`, `/privacy` and `/terms` are the same
+  apart from the values that change on every request (the form token, the visit id and,
+  on `/`, the live session); `/changelog` adds only the 9 November line and the two
+  8 November lines from `d3bd2013`.
+- Fly logs from the release start: no errors, crashes or refusals. One health check
+  failed at 19:07:50Z while the new version started and passed at 19:07:57Z. All 43 page
+  requests after that were answered, Sentinel's minute reads among them.
