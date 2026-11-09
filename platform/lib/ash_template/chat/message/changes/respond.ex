@@ -58,8 +58,8 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
 
   # Historical tool call replay can break provider request validation for prior call IDs.
   # Keep replay text-only; current turn tool usage is handled by AshAi.ToolLoop.
-  defp prompt_message(%{source: :agent, text: text}), do: Context.assistant(text || "")
-  defp prompt_message(%{source: :user, text: text}), do: Context.user(text || "")
+  defp prompt_message(%{source: :agent, text: text}), do: Context.assistant(text)
+  defp prompt_message(%{source: :user, text: text}), do: Context.user(text)
 
   # Each piece of the reply is saved the moment it arrives, which publishes it to
   # every page that has the conversation open: that is how the reply streams.
@@ -118,8 +118,8 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
 
   @doc """
   Ends the reply `reply_id` to `message` with a line saying it failed, so every
-  open page stops waiting for it. `AshTemplate.Chat.Message.Changes.FailResponse`
-  calls it when the reply's job has failed for good.
+  open page stops waiting for it. The message's `:fail_response` action calls it
+  when the reply's job has failed for good.
   """
   def save_failed(message, reply_id),
     do: save(message, reply_id, %{complete: true, text: error_text(:failed)})

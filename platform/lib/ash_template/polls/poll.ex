@@ -132,16 +132,7 @@ defmodule AshTemplate.Polls.Poll do
       argument :minutes, :integer, allow_nil?: false, constraints: [min: 1, max: 60]
       argument :operation_id, :uuid
 
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
+      change AshTemplate.Agents.RequireOperationId
 
       validate match(:question, RegentFormat.Name.pattern()), message: @shown_text
 

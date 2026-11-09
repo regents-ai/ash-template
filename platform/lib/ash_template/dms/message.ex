@@ -91,16 +91,7 @@ defmodule AshTemplate.Dms.Message do
       argument :conversation_id, :uuid, allow_nil?: false
       argument :operation_id, :uuid
 
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
+      change AshTemplate.Agents.RequireOperationId
 
       change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change SendInConversation

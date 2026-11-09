@@ -98,21 +98,29 @@ defmodule AshTemplate.Chat.Message do
         public? false
       end
 
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
+      change AshTemplate.Agents.RequireOperationId
 
       change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
 
       change {AshTemplate.Limits.LimitWrites, allowance: :chat_message, field: :text}
-      change AshTemplate.Chat.Message.Changes.CreateConversationIfNotProvided
+
+      # A send that names no conversation starts one, as its sender.
+      change fn changeset, context ->
+        if changeset.arguments[:conversation_id] do
+          Ash.Changeset.force_change_attribute(
+            changeset,
+            :conversation_id,
+            changeset.arguments.conversation_id
+          )
+        else
+          Ash.Changeset.before_action(changeset, fn changeset ->
+            conversation = AshTemplate.Chat.create_conversation!(Ash.Context.to_opts(context))
+
+            Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation.id)
+          end)
+        end
+      end
+
       change run_oban_trigger(:respond)
     end
 
@@ -123,12 +131,22 @@ defmodule AshTemplate.Chat.Message do
       change AshTemplate.Chat.Message.Changes.Respond
     end
 
-    # Called by the `:respond` trigger once its job has failed for good.
+    # Called by the `:respond` trigger once its job has failed for good. The part
+    # of the reply already written, or a new reply, becomes a line saying so;
+    # without it the page would show "The assistant is writing…" forever. The
+    # reply is read and written as the assistant, as `Respond` writes it: the
+    # job's actor may be an agent unpaired since it sent the message.
     update :fail_response do
       accept []
       argument :error, :term
       require_atomic? false
-      change AshTemplate.Chat.Message.Changes.FailResponse
+
+      change after_action(fn _changeset, message, _context ->
+               %{response: response} = Ash.load!(message, :response, actor: %AshAi{})
+               reply_id = if response, do: response.id, else: Ash.UUIDv7.generate()
+               AshTemplate.Chat.Message.Changes.Respond.save_failed(message, reply_id)
+               {:ok, message}
+             end)
     end
 
     create :upsert_response do

@@ -3,8 +3,8 @@ defmodule AshTemplate.Notes.Decision do
   One question Jev was asked about one save of a note: which label fits it.
 
   Saving a note creates a pending decision in the same transaction, on the
-  notes' `:note_saved` signal (`RequestLabel`), and an AshOban trigger then asks Jev
-  outside any transaction (`AskJev`). The row records what Jev chose, the model
+  notes' `:note_saved` signal (`:request_label`), and an AshOban trigger then asks
+  Jev outside any transaction (`AskJev`). The row records what Jev chose, the model
   that answered, the tokens and what OpenRouter charged. A request that does
   not get through retries with backoff, then records its failure. The writer
   can say once whether the label fits.
@@ -22,13 +22,7 @@ defmodule AshTemplate.Notes.Decision do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
 
-  alias AshTemplate.Notes.Decision.{
-    AskJev,
-    RateOnce,
-    RecordFailure,
-    RequestLabel,
-    UnderDailyBudget
-  }
+  alias AshTemplate.Notes.Decision.{AskJev, RateOnce, RecordFailure, UnderDailyBudget}
 
   alias AshTemplate.Notes.Labels
 
@@ -93,9 +87,25 @@ defmodule AshTemplate.Notes.Decision do
   actions do
     defaults [:read]
 
+    # Asks for a label on the saved note, in the save's transaction, so a save
+    # that rolls back asks nothing. It asks as the person or agent who saved.
+    # When the site has used today's questions the note still saves, with no
+    # label.
     action :request_label do
       argument :signal, AshTemplate.Notes.Signals.NoteSaved, allow_nil?: false
-      run fn input, context -> RequestLabel.ask(input.arguments.signal, context) end
+
+      run fn %{arguments: %{signal: %{note_id: note_id}}}, context ->
+        :ok = UnderDailyBudget.lock()
+
+        __MODULE__
+        |> Ash.Changeset.for_create(:ask, %{note_id: note_id}, Ash.Context.to_opts(context))
+        |> Ash.create()
+        |> case do
+          {:ok, _decision} -> :ok
+          {:error, %Ash.Error.Forbidden{}} -> :ok
+          {:error, error} -> {:error, error}
+        end
+      end
     end
 
     create :ask do

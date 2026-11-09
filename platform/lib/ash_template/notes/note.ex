@@ -32,13 +32,8 @@ defmodule AshTemplate.Notes.Note do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
 
-  alias AshTemplate.Notes.Note.{
-    AskingJev,
-    DeliverWebhook,
-    Pin,
-    RecordWebhook,
-    WebhookAddressSet
-  }
+  alias AshTemplate.Notes.Note.{AskingJev, RecordWebhook, WebhookAddressSet}
+  alias AshTemplate.Notes.Webhook
 
   @shown_text "Use letters, numbers and marks you can see."
 
@@ -128,16 +123,7 @@ defmodule AshTemplate.Notes.Note do
       validate match(:title, RegentFormat.Name.pattern()), message: @shown_text
       validate match(:body, RegentFormat.Text.pattern()), message: @shown_text
 
-      change fn changeset, %{actor: actor} ->
-        if Map.get(actor || %{}, :role) == :agent and
-             is_nil(Ash.Changeset.get_argument(changeset, :operation_id)),
-           do:
-             Ash.Changeset.add_error(changeset,
-               field: :operation_id,
-               message: "is required for agent creates"
-             ),
-           else: changeset
-      end
+      change AshTemplate.Agents.RequireOperationId
 
       change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change {AshTemplate.Limits.LimitWrites, allowance: :note, field: :body}
@@ -177,11 +163,20 @@ defmodule AshTemplate.Notes.Note do
       emit AshTemplate.Notes.Signals, :note_saved, fields: [note_id: :id], where: [AskingJev]
     end
 
-    # Run by `AshTemplate.Payments.NotePin` once an agent's pin is paid for.
+    # Run by `AshTemplate.Payments.NotePin` once an agent's pin is paid for. The
+    # note is read again under a row lock first, so a note already pinned stays
+    # as it is.
     update :pin do
       require_atomic? false
       change get_and_lock_for_update()
-      change Pin
+
+      change before_action(fn
+               %{data: %{pinned_at: nil}} = changeset, _context ->
+                 Ash.Changeset.force_change_attribute(changeset, :pinned_at, DateTime.utc_now())
+
+               changeset, _context ->
+                 changeset
+             end)
     end
 
     update :unpin do
@@ -205,7 +200,7 @@ defmodule AshTemplate.Notes.Note do
     update :send_webhook do
       transaction? false
       require_atomic? false
-      change DeliverWebhook
+      change Webhook
       change {RecordWebhook, state: :sent}
     end
 

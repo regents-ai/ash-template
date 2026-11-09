@@ -19,7 +19,7 @@ all five sites at once (regent-workflow, "Shared changes").
 | Signal module | Signal and fields | Emitted by | Heard by |
 | --- | --- | --- | --- |
 | `AshTemplate.Rooms.Signals` | `:message_posted` (`message_id`) | `Rooms.Message` `:post` | `Activity.Notification` `:notify_mentions`, which runs `NotifyMentions` |
-| `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, which runs `RequestLabel` |
+| `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, which asks for a label |
 | `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note` |
 | `AshTemplate.Accounts.Signals` | `:account_registered` (`account_id`) | `Accounts.HumanAccount` `:register_verified`, only when the sign-in inserted the account (a dynamic emit that reads Ash's `upsert_skipped`) | `Points.Award` `:account_registered` |
 | `AshTemplate.Accounts.Signals` | `:social_linked` (`provider`, `subject`) | `Accounts.LinkedIdentity` `:upsert_verified`, which a sign-in reaches only for a subject new to the account | `Points.Award` `:social_linked` |
@@ -56,8 +56,8 @@ no job-delivered listener yet.
 5. **Policies.** Give each listener action its own policy, with a comment saying it is
    reached only through the signal, after the emitting action was allowed. Writes that
    are the site's own bookkeeping use the system actor. A listener that acts for the
-   person passes the emitting context on, the way `RequestLabel` calls
-   `Ash.Context.to_opts(context)`, so the person's own limits and policies still apply.
+   person passes the emitting context on, the way `Notes.Decision` `:request_label`
+   calls `Ash.Context.to_opts(context)`, so the person's own limits and policies still apply.
 6. **Check.** Run the site's full gate. Then walk the flows in the local site:
    - a room post that mentions someone gives that person one notification, and a
      self-mention gives none;
