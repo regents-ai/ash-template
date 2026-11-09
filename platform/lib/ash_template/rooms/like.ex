@@ -16,7 +16,7 @@ defmodule AshTemplate.Rooms.Like do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshTemplate.Accounts.HumanAccount
-  alias AshTemplate.Rooms.Like.InMessagesRoom
+  alias AshTemplate.Rooms
   alias AshTemplate.Rooms.Message
 
   postgres do
@@ -64,7 +64,22 @@ defmodule AshTemplate.Rooms.Like do
       upsert_identity :one_per_liker
       upsert_fields []
       change set_attribute(:liker_id, actor(:human_account_id))
-      change InMessagesRoom
+
+      # Filed under the room of the message named, while that message is still here.
+      change fn changeset, context ->
+        message_id = Ash.Changeset.get_attribute(changeset, :message_id)
+
+        case Rooms.get_message(message_id, Ash.Context.to_opts(context)) do
+          {:ok, %Message{room: room}} ->
+            Ash.Changeset.force_change_attribute(changeset, :room, room)
+
+          _gone ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "That message is no longer here."
+            )
+        end
+      end
     end
   end
 

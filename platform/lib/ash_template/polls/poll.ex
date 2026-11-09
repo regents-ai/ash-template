@@ -18,8 +18,11 @@ defmodule AshTemplate.Polls.Poll do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
+  require Ash.Query
+
   alias AshTemplate.Limits.LimitWrites
-  alias AshTemplate.Polls.Poll.{DistinctChoices, EndPoll, Starter, Totals}
+  alias AshTemplate.Polls
+  alias AshTemplate.Polls.Poll.{Starter, Totals}
 
   @shown [:open, :votes_cast, :totals, :starter, :mine, :my_choice]
   @shown_text "Use letters, numbers and marks you can see."
@@ -141,7 +144,23 @@ defmodule AshTemplate.Polls.Poll do
       end
 
       validate match(:question, RegentFormat.Name.pattern()), message: @shown_text
-      validate DistinctChoices
+
+      # Each choice is text you can see, and no two are the same, so a vote names
+      # exactly one.
+      validate fn changeset, _context ->
+        choices = Ash.Changeset.get_attribute(changeset, :choices) || []
+
+        cond do
+          not Enum.all?(choices, &Regex.match?(RegentFormat.Name.pattern(), &1)) ->
+            {:error, field: :choices, message: @shown_text}
+
+          length(Enum.uniq(choices)) != length(choices) ->
+            {:error, field: :choices, message: "Give each choice different words."}
+
+          true ->
+            :ok
+        end
+      end
 
       change set_attribute(:id, arg(:operation_id)), where: [present(:operation_id)]
       change set_attribute(:started_by_id, actor(:human_account_id))
@@ -171,7 +190,28 @@ defmodule AshTemplate.Polls.Poll do
     update :end do
       accept []
       require_atomic? false
-      change EndPoll
+
+      # Only a poll still open ends. It is read again under a lock first: it may
+      # have closed or been ended since, and a vote being counted at that moment
+      # finishes before it ends (`AshTemplate.Polls.Vote.CastVote`). Ending it
+      # was authorized; this only reads it again.
+      change before_action(fn %{data: poll} = changeset, _context ->
+               current =
+                 __MODULE__
+                 |> Ash.Query.filter(id == ^poll.id)
+                 |> Ash.Query.lock(:for_update)
+                 |> Ash.read_one!(authorize?: false)
+
+               if Polls.open?(current) do
+                 Ash.Changeset.force_change_attribute(changeset, :ended_at, DateTime.utc_now())
+               else
+                 Ash.Changeset.add_error(changeset,
+                   field: :ended_at,
+                   message: "This poll has closed."
+                 )
+               end
+             end)
+
       change load(@shown)
     end
   end

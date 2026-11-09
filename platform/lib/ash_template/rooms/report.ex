@@ -15,8 +15,8 @@ defmodule AshTemplate.Rooms.Report do
 
   alias AshTemplate.Accounts.HumanAccount
   alias AshTemplate.Limits.LimitWrites
+  alias AshTemplate.Rooms
   alias AshTemplate.Rooms.Message
-  alias AshTemplate.Rooms.Report.SomeoneElses
 
   @reasons [:spam, :abuse, :steers_agents, :other]
 
@@ -63,7 +63,29 @@ defmodule AshTemplate.Rooms.Report do
       upsert_identity :one_per_reporter
       upsert_fields []
       change set_attribute(:reporter_id, actor(:human_account_id))
-      change SomeoneElses
+
+      # Only while the message is still here, and only when someone else wrote it.
+      change fn changeset, context ->
+        reporter = Ash.Changeset.get_attribute(changeset, :reporter_id)
+        message_id = Ash.Changeset.get_attribute(changeset, :message_id)
+
+        case Rooms.get_message(message_id, Ash.Context.to_opts(context)) do
+          {:ok, %Message{human_account_id: ^reporter}} ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "You can't report your own message."
+            )
+
+          {:ok, %Message{}} ->
+            changeset
+
+          _gone ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "That message is no longer here."
+            )
+        end
+      end
 
       change {LimitWrites,
               allowance: :report,
@@ -87,9 +109,6 @@ defmodule AshTemplate.Rooms.Report do
       authorize_if expr(reporter_id == ^actor(:human_account_id))
     end
   end
-
-  @doc "Why a person may report a message."
-  def reasons, do: @reasons
 
   @doc "A report as its reporter's agent reads it."
   def public(%__MODULE__{} = report) do

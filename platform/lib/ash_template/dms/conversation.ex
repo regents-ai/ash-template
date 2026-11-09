@@ -1,7 +1,7 @@
 defmodule AshTemplate.Dms.Conversation do
   @moduledoc """
   The one conversation between two people, opened from a room message the
-  other person wrote (`OpenWithAuthor`). Its two people are kept lowest first
+  other person wrote (`:open`). Its two people are kept lowest first
   (`person_a`, `person_b`), so a pair has exactly one, and opening it again
   answers the same row.
 
@@ -18,7 +18,8 @@ defmodule AshTemplate.Dms.Conversation do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshTemplate.Accounts.HumanAccount
-  alias AshTemplate.Dms.Conversation.{BlockSide, OpenWithAuthor, OtherPerson}
+  alias AshTemplate.Dms.Conversation.{BlockSide, OtherPerson}
+  alias AshTemplate.Rooms
 
   # A person's messages list their most recent conversations, as many as a page shows.
   @inbox_page 100
@@ -119,7 +120,42 @@ defmodule AshTemplate.Dms.Conversation do
       upsert? true
       upsert_identity :unique_pair
       upsert_fields []
-      change OpenWithAuthor
+
+      # Between the actor's person and the person who wrote the room message
+      # named. A message an agent wrote as itself has no person to write to, and
+      # nobody writes to themselves.
+      change fn changeset, %{actor: actor} = context ->
+        me = Map.get(actor || %{}, :human_account_id)
+        message_id = Ash.Changeset.get_argument(changeset, :message_id)
+
+        case Rooms.get_message(message_id, Ash.Context.to_opts(context)) do
+          {:ok, %Rooms.Message{human_account_id: nil}} ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "An agent with no person wrote this, so there’s nobody to message."
+            )
+
+          {:ok, %Rooms.Message{human_account_id: ^me}} ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "That’s your own message."
+            )
+
+          {:ok, %Rooms.Message{human_account_id: author}} ->
+            Ash.Changeset.force_change_attributes(changeset,
+              person_a: Kernel.min(me, author),
+              person_b: Kernel.max(me, author),
+              opened_by_id: me
+            )
+
+          _gone ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "That message is no longer here."
+            )
+        end
+      end
+
       change load([:other_person, :blocked, :last_body])
     end
 

@@ -15,7 +15,8 @@ defmodule AshTemplate.Rooms.Mute do
     notifiers: [Ash.Notifier.PubSub]
 
   alias AshTemplate.Accounts.HumanAccount
-  alias AshTemplate.Rooms.Mute.MuteAuthor
+  alias AshTemplate.Rooms
+  alias AshTemplate.Rooms.Message
 
   postgres do
     table "room_mutes"
@@ -71,7 +72,33 @@ defmodule AshTemplate.Rooms.Mute do
       upsert_identity :one_per_pair
       upsert_fields [:muted_name]
       change set_attribute(:muter_account_id, actor(:human_account_id))
-      change MuteAuthor
+
+      # The author of the message named, a person or an agent, never the muter themselves.
+      change fn changeset, context ->
+        muter = Ash.Changeset.get_attribute(changeset, :muter_account_id)
+        message_id = Ash.Changeset.get_argument(changeset, :message_id)
+
+        case Rooms.get_message(message_id, Ash.Context.to_opts(context)) do
+          {:ok, %Message{human_account_id: ^muter}} ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "You can't mute yourself."
+            )
+
+          {:ok, %Message{} = message} ->
+            Ash.Changeset.force_change_attributes(changeset,
+              muted_account_id: message.human_account_id,
+              muted_agent_id: message.agent_id,
+              muted_name: message.author_name
+            )
+
+          _gone ->
+            Ash.Changeset.add_error(changeset,
+              field: :message_id,
+              message: "That message is no longer here."
+            )
+        end
+      end
     end
   end
 
