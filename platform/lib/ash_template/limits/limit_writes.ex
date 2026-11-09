@@ -11,6 +11,7 @@ defmodule AshTemplate.Limits.LimitWrites do
 
   use Ash.Resource.Change
 
+  alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Limits
 
   @quickly "You're going quickly. Wait a moment and try again."
@@ -36,9 +37,14 @@ defmodule AshTemplate.Limits.LimitWrites do
   end
 
   defp admitted?(changeset, opts, actor) do
-    Limits.spend(opts[:allowance], Limits.writer(actor)) == :ok and
+    Limits.spend(opts[:allowance], writer(actor)) == :ok and
       address_admitted?(changeset, opts[:address_allowance])
   end
+
+  # Who an actor's writing counts against: the person, or the agent.
+  defp writer(%Human{human_account_id: id}), do: {:human, id}
+  defp writer(%Agent{pairing: :active, human_account_id: id}), do: {:human, id}
+  defp writer(%Agent{agent_id: id}), do: {:agent, id}
 
   defp address_admitted?(_changeset, nil), do: true
 

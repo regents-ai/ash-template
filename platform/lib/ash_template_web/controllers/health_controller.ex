@@ -5,9 +5,11 @@ defmodule AshTemplateWeb.HealthController do
   """
   use AshTemplateWeb, :controller
 
+  alias AshTemplate.Health
+
   def show(conn, _params) do
     {status, body} =
-      if database_ready?(), do: {:ok, "ok"}, else: {:service_unavailable, "unavailable"}
+      if Health.database_ready?(), do: {:ok, "ok"}, else: {:service_unavailable, "unavailable"}
 
     conn
     |> put_resp_header("cache-control", "no-store")
@@ -18,7 +20,7 @@ defmodule AshTemplateWeb.HealthController do
   def status(conn, _params) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
-    if database_ready?() do
+    if Health.database_ready?() do
       json(conn, %{status: "ok"})
     else
       conn
@@ -32,6 +34,4 @@ defmodule AshTemplateWeb.HealthController do
       })
     end
   end
-
-  defp database_ready?, do: AshTemplate.Health.database_ready?()
 end

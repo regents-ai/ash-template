@@ -16,8 +16,13 @@ defmodule AshTemplate.Points.AccountActivated do
 
   def verify(%{"source_event_key" => id}) do
     case Accounts.points_account(String.to_integer(id), actor: %System{}) do
-      {:ok, account} -> created(account)
-      {:error, reason} -> {:retry, reason}
+      {:ok, account} ->
+        if DateTime.after?(account.created_at, DateTime.utc_now()),
+          do: {:retry, :account_created_ahead_of_clock},
+          else: {:ok, facts(account)}
+
+      {:error, reason} ->
+        {:retry, reason}
     end
   end
 
@@ -26,12 +31,6 @@ defmodule AshTemplate.Points.AccountActivated do
       {account.id,
        %{source_app: "regents", source_kind: "account", source_event_key: to_string(account.id)}}
     end
-  end
-
-  defp created(account) do
-    if DateTime.after?(account.created_at, DateTime.utc_now()),
-      do: {:retry, :account_created_ahead_of_clock},
-      else: {:ok, facts(account)}
   end
 
   defp facts(account) do

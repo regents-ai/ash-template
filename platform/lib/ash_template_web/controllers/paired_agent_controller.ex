@@ -29,9 +29,6 @@ defmodule AshTemplateWeb.PairedAgentController do
   plug :paired_agent
 
   @errors %{
-    "authentication_required" =>
-      {401, "A signed request from a paired agent is required.",
-       "Prepare the request, sign its exact bytes with your SIWA signer, then send the request and proof."},
     "note_not_found" =>
       {404, "There is no note of yours with that id.",
        "List your person's notes and use an id from there."},
@@ -105,7 +102,7 @@ defmodule AshTemplateWeb.PairedAgentController do
          {:ok, %{reading: %{} = board}} <- SharedReading.fetch(Board.key()) do
       earning = Rules.active()
       answer = PointsEntries.answer(summary, board, actor.human_account_id, earning != [])
-      json(conn, with_note(answer, points_note(earning)))
+      json(conn, if(earning == [], do: Map.put(answer, :note, @points_off), else: answer))
     else
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
       _board_not_read -> refuse(conn, "unavailable")
@@ -311,7 +308,9 @@ defmodule AshTemplateWeb.PairedAgentController do
 
     with :ok <- payments_set_up(),
          {:ok, {:terms, intent}} <- pin_terms(actor, note.id) do
-      conn |> pay(actor, intent) |> answer_pin(conn)
+      actor
+      |> Purchase.execute(intent.id, %{payment: payment(conn), payer: nil, context: %{}})
+      |> answer_pin(conn)
     else
       {:ok, {:pinned, note}} -> json(conn, %{note: NotesJSON.note(note)})
       :not_set_up -> refuse(conn, "pins_not_set_up")
@@ -355,9 +354,6 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  defp pay(conn, actor, intent),
-    do: Purchase.execute(actor, intent.id, %{payment: payment(conn), payer: nil, context: %{}})
-
   # The x402 payment travels in the signed body, so the agent's proof covers it.
   defp payment(%{body_params: %{"payment" => payment}}) when is_binary(payment) and payment != "",
     do: payment
@@ -366,8 +362,10 @@ defmodule AshTemplateWeb.PairedAgentController do
 
   defp answer_pin({:applied, intent, receipt}, conn) do
     for_note(conn, intent.target_id, fn note ->
+      {:ok, header} = X402.PaymentResponse.encode(receipt.payment_response)
+
       conn
-      |> paid_header(receipt)
+      |> put_resp_header("payment-response", header)
       |> json(%{
         note: NotesJSON.note(note),
         payment_intent_id: intent.id,
@@ -413,11 +411,6 @@ defmodule AshTemplateWeb.PairedAgentController do
     })
   end
 
-  defp paid_header(conn, %{payment_response: response}) do
-    {:ok, header} = X402.PaymentResponse.encode(response)
-    put_resp_header(conn, "payment-response", header)
-  end
-
   defp refuse_payment(conn, %Ash.Error.Forbidden{}), do: refuse(conn, "agent_not_paired")
   defp refuse_payment(conn, %Ash.Error.Invalid{} = error), do: refuse(conn, "invalid_pin", error)
 
@@ -449,27 +442,13 @@ defmodule AshTemplateWeb.PairedAgentController do
     end
   end
 
-  defp points_note([]), do: @points_off
-  defp points_note(_earning), do: nil
-
-  defp with_note(answer, nil), do: answer
-  defp with_note(answer, note), do: Map.put(answer, :note, note)
-
   defp paired_agent(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
     case AgentWallet.call(conn, []) do
-      %{halted: true} = conn ->
-        conn
-
-      %{assigns: %{actor: actor}} = conn when AgentWallet.acts_for_account(actor) ->
-        conn
-
-      %{assigns: %{actor: %Agent{} = actor}} = conn ->
-        conn |> refuse(AgentWallet.not_person_code(actor)) |> halt()
-
-      conn ->
-        conn |> refuse("authentication_required") |> halt()
+      %{halted: true} = conn -> conn
+      %{assigns: %{actor: actor}} = conn when AgentWallet.acts_for_account(actor) -> conn
+      conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
     end
   end
 

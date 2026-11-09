@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.Showcase.Utilities do
   @moduledoc false
 
-  def privy(scenario) when scenario in [:valid, :expired, :audience] do
+  def privy(scenario) do
     now = 1_750_000_000
     key = JOSE.JWK.generate_key({:ec, "P-256"})
     {_, public_pem} = key |> JOSE.JWK.to_public() |> JOSE.JWK.to_pem()

@@ -168,8 +168,9 @@ defmodule AshTemplateWeb.Live.Session do
     socket
     |> attach_hook(:session_authority_event, :handle_event, fn _event, _params, socket ->
       case component_account(socket) do
+        :signed_out -> {:cont, socket}
         :lapsed -> {:halt, %{}, socket}
-        account -> {:cont, take(socket, take_account, account)}
+        account -> {:cont, take_account.(socket, account)}
       end
     end)
     |> attach_hook(:session_authority_async, :handle_async, fn
@@ -200,9 +201,6 @@ defmodule AshTemplateWeb.Live.Session do
         account
     end
   end
-
-  defp take(socket, _take_account, :signed_out), do: socket
-  defp take(socket, take_account, account), do: take_account.(socket, account)
 
   defp account_changed(socket, lease) do
     {_cont_or_halt, socket} = recheck(socket, lease, & &1)

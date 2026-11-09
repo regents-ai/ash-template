@@ -25,21 +25,15 @@ defmodule AshTemplate.Actors.Human do
     %__MODULE__{
       human_account_id: account.id,
       privy_user_id: account.privy_user_id,
-      name: name(account),
-      wallet_addresses: wallets(account)
+      name: account.display_name || RegentFormat.short_address(account.wallet_address),
+      wallet_addresses:
+        [account.wallet_address | List.wrap(account.wallet_addresses)]
+        |> Enum.filter(&is_binary/1)
+        |> Enum.map(&String.downcase/1)
+        |> Enum.uniq()
     }
   end
 
   @doc "The owner of `account`, acting through `agent`, the agent its sign-in wallet is."
   def owner(account, agent), do: %{for_account(account) | agent_id: agent.id}
-
-  defp name(account),
-    do: account.display_name || RegentFormat.short_address(account.wallet_address)
-
-  defp wallets(account) do
-    [account.wallet_address | List.wrap(account.wallet_addresses)]
-    |> Enum.filter(&is_binary/1)
-    |> Enum.map(&String.downcase/1)
-    |> Enum.uniq()
-  end
 end

@@ -333,13 +333,7 @@ defmodule AshTemplateWeb.RoomsController do
 
   # Only an agent acting as its person changes messages, and only theirs; any
   # other message reads as absent, exactly like an id that names none.
-  defp with_message(
-         %{assigns: %{actor: actor}} = conn,
-         slug,
-         id,
-         respond
-       )
-       when AgentWallet.acts_for_account(actor) do
+  defp with_message(%{assigns: %{actor: actor}} = conn, slug, id, respond) do
     with {:ok, room} <- room(slug),
          {:ok, %Message{room: room_slug, human_account_id: author} = message}
          when room_slug == room.slug and author == actor.human_account_id <-
@@ -356,9 +350,6 @@ defmodule AshTemplateWeb.RoomsController do
         refuse(conn, "message_not_found")
     end
   end
-
-  defp with_message(conn, _slug, _id, _respond),
-    do: refuse(conn, AgentWallet.not_person_code(conn.assigns.actor))
 
   # `details` says why invalid input was refused; `id` names the message a
   # refused operation_id posted.

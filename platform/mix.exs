@@ -223,7 +223,7 @@ defmodule AshTemplate.MixProject do
         # with ClientAddress's key.
         # Room posts' policy check adds one (`Accounts.AgentAccount.Owner`, an
         # `authorize_if` module).
-        "xref graph --label compile-connected --fail-above 45",
+        "xref graph --label compile-connected --fail-above 44",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

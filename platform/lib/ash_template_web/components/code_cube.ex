@@ -35,13 +35,11 @@ defmodule AshTemplateWeb.Components.CodeCube do
   ]
 
   @doc """
-  The six faces, each a map with `:face` (the cube face), `:site` (sent with a
-  click as `site`), `:name`, the site's address as people know it, and `:link`,
-  the page its card opens, without `https://`.
+  The face for a site key, or nil for a key no face has. A face is a map with
+  `:face` (the cube face), `:site` (sent with a click as `site`), `:name`, the
+  site's address as people know it, and `:link`, the page its card opens,
+  without `https://`.
   """
-  def faces, do: @faces
-
-  @doc "The face for a site key, or nil for a key no face has."
   def face(site), do: Enum.find(@faces, &(&1.site == site))
 
   attr :id, :string, required: true
@@ -84,7 +82,7 @@ defmodule AshTemplateWeb.Components.CodeCube do
   end
 
   attr :id, :string, required: true
-  attr :face, :map, required: true, doc: "The face whose card this is, from `faces/0`."
+  attr :face, :map, required: true, doc: "The face whose card this is, from `face/1`."
 
   attr :state, :atom,
     required: true,

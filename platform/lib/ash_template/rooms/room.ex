@@ -18,8 +18,6 @@ defmodule AshTemplate.Rooms.Room do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub]
 
-  alias AshTemplate.Rooms.Room.SlugFromName
-
   @shown_text "Use letters, numbers and marks you can see."
   @name_taken "A room with this name is already here."
 
@@ -74,7 +72,27 @@ defmodule AshTemplate.Rooms.Room do
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       validate match(:name, RegentFormat.Name.pattern()), message: @shown_text
       validate match(:topic, RegentFormat.Name.pattern()), message: @shown_text
-      change SlugFromName
+
+      # A name with no letter from A to Z and no digit has no slug, and is refused.
+      change fn changeset, _context ->
+        case Ash.Changeset.get_attribute(changeset, :name) do
+          nil ->
+            changeset
+
+          name ->
+            case slug(name) do
+              "" ->
+                Ash.Changeset.add_error(changeset,
+                  field: :name,
+                  message: "Use at least one letter from A to Z or a number."
+                )
+
+              slug ->
+                Ash.Changeset.force_change_attribute(changeset, :slug, slug)
+            end
+        end
+      end
+
       change set_attribute(:created_by_id, actor(:human_account_id))
 
       change {AshTemplate.Limits.LimitWrites,
@@ -135,7 +153,7 @@ defmodule AshTemplate.Rooms.Room do
       iex> AshTemplate.Rooms.Room.slug("  Café Pictures!! ")
       "cafe-pictures"
   """
-  def slug(name) when is_binary(name) do
+  def slug(name) do
     name
     |> String.normalize(:nfkd)
     |> String.replace(~r/\p{Mn}/u, "")

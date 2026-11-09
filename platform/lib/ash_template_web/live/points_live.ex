@@ -152,21 +152,21 @@ defmodule AshTemplateWeb.PointsLive do
 
   defp row(entry, agent_names) do
     status = PointsEntries.status(entry)
+    %{points_micro_delta: delta, cap_reduction_micro: cut} = entry
 
     %{
       id: entry.id,
       label: Rules.label(entry.rule_id),
       by: PointsEntries.agent_name(entry, agent_names) || "You",
       at: Calendar.strftime(entry.earned_at, "%-d %b, %H:%M UTC"),
-      points: signed(entry.points_micro_delta),
+      points: signed(delta),
       status: if(status != :counted, do: PointsEntries.status_label(status)),
-      note: if(entry.cap_reduction_micro > 0, do: cut(entry))
+      note:
+        if cut > 0 do
+          "#{Amount.format(delta + cut)} before limits, #{Amount.format(delta)} awarded. " <>
+            "The rest was over the daily limit."
+        end
     }
-  end
-
-  defp cut(entry) do
-    "#{Amount.format(entry.points_micro_delta + entry.cap_reduction_micro)} before limits, " <>
-      "#{Amount.format(entry.points_micro_delta)} awarded. The rest was over the daily limit."
   end
 
   defp signed(micro) when micro < 0, do: "−" <> Amount.format(-micro)

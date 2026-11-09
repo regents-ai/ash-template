@@ -24,7 +24,19 @@ defmodule AshTemplate.Release do
 
   def migrate do
     with_release_repo(fn repo ->
-      require_signed_access_schema!(repo)
+      # Read-only release prerequisites; shared migrations require separate
+      # founder authority (`migrate_shared/0`). The shared code this release
+      # carries reads tables and columns from every migration its pinned library
+      # ships, so each must already be in that schema's own ledger. Every missing
+      # version is named at once.
+      unapplied = unapplied_shared_migrations(repo)
+
+      if unapplied != [] do
+        raise "These separately approved shared migrations must be applied before deployment: " <>
+                Enum.join(unapplied, ", ")
+      end
+
+      RegentAgents.Migrator.require_pairing_history!(repo)
       repo.migrate!(migrations_path())
     end)
   end
@@ -55,26 +67,6 @@ defmodule AshTemplate.Release do
     end
   end
 
-  @doc "Read-only release prerequisite; shared migrations require separate founder authority."
-  def require_signed_access_schema!(repo) do
-    :ok = require_shared_migrations!(repo)
-    RegentAgents.Migrator.require_pairing_history!(repo)
-  end
-
-  # The shared code this release carries reads tables and columns from every
-  # migration its pinned library ships, so each must already be in that schema's
-  # own ledger. Every missing version is named at once.
-  defp require_shared_migrations!(repo) do
-    case unapplied_shared_migrations(repo) do
-      [] ->
-        :ok
-
-      unapplied ->
-        raise "These separately approved shared migrations must be applied before deployment: " <>
-                Enum.join(unapplied, ", ")
-    end
-  end
-
   defp unapplied_shared_migrations(repo) do
     for {app, schema, _migrator} <- carried_shared(),
         {:down, version, _name} <-
@@ -102,7 +94,19 @@ defmodule AshTemplate.Release do
       do: raise("bootstrap-staging requires ASH_TEMPLATE_DEPLOYMENT_ROLE to be exactly staging")
 
     with_release_repo(fn repo ->
-      refuse_existing_state!(repo)
+      prefix = repo.default_prefix()
+      source = migration_source(repo)
+
+      if table_exists?(repo, prefix, source) do
+        raise "#{prefix}.#{source} already exists: destroy and recreate the staging database"
+      end
+
+      %{rows: [[schema?]]} = Ecto.Adapters.SQL.query!(repo, @schema_exists, [@platform_schema])
+
+      if schema? do
+        raise "#{@platform_schema} schema already exists: destroy and recreate the staging database"
+      end
+
       # The fixture is the only definition of these tables' shape in the repository.
       AshTemplate.LocalDatabaseFixture.create_shared_tables!()
       apply_shared(repo)
@@ -150,20 +154,17 @@ defmodule AshTemplate.Release do
         migration_lock: false
       )
 
-    carried = carried_versions(path)
+    # Ecto names an applied version with no file after a placeholder marker. The
+    # set of versions the release actually carries answers the same question
+    # without depending on that marker's text.
+    carried =
+      for file <- Path.wildcard(Path.join(path, "*.exs")),
+          {version, "_" <> _name} <- [file |> Path.basename() |> Integer.parse()],
+          into: MapSet.new(),
+          do: version
 
     {for({:down, version, _name} <- migrations, do: version),
      for({:up, version, _name} <- migrations, version not in carried, do: version)}
-  end
-
-  # Ecto names an applied version with no file after a placeholder marker. The
-  # set of versions the release actually carries answers the same question
-  # without depending on that marker's text.
-  defp carried_versions(path) do
-    for file <- Path.wildcard(Path.join(path, "*.exs")),
-        {version, "_" <> _name} <- [file |> Path.basename() |> Integer.parse()],
-        into: MapSet.new(),
-        do: version
   end
 
   defp apply_shared(repo), do: Enum.each(carried_shared(), fn {_, _, m} -> m.up(repo) end)
@@ -174,26 +175,8 @@ defmodule AshTemplate.Release do
     for {app, _schema, _migrator} = shared <- @shared, app in carried, do: shared
   end
 
-  defp refuse_existing_state!(repo) do
-    prefix = repo.default_prefix()
-    source = migration_source(repo)
-
-    if table_exists?(repo, prefix, source) do
-      raise "#{prefix}.#{source} already exists: destroy and recreate the staging database"
-    end
-
-    if schema_exists?(repo, @platform_schema) do
-      raise "#{@platform_schema} schema already exists: destroy and recreate the staging database"
-    end
-  end
-
   defp table_exists?(repo, prefix, table) do
     %{rows: [[exists?]]} = Ecto.Adapters.SQL.query!(repo, @table_exists, [prefix, table])
-    exists?
-  end
-
-  defp schema_exists?(repo, schema) do
-    %{rows: [[exists?]]} = Ecto.Adapters.SQL.query!(repo, @schema_exists, [schema])
     exists?
   end
 

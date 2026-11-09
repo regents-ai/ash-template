@@ -576,7 +576,7 @@ defmodule AshTemplateWeb.Components.Shell do
   attr :route_spec, :map, required: true
 
   defp target_link(assigns) do
-    assigns = assign(assigns, :live?, RouteCatalog.live?(assigns.target))
+    assigns = assign(assigns, :live?, RouteCatalog.live_path?(assigns.target.path))
 
     ~H"""
     <.link

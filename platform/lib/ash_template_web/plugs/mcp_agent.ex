@@ -191,7 +191,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   defp connected_app(conn, token) do
     with true <- AshTemplate.OAuth.enabled?(),
          ["Bearer " <> bearer] <- token,
-         {:ok, principal} <- RegentOAuth.verify(bearer, RegentOAuth.resource(), scope()) do
+         {:ok, principal} <-
+           RegentOAuth.verify(bearer, RegentOAuth.resource(), RegentMCPAgents.identity_scope()) do
       conn
       |> Ash.PlugHelpers.set_actor(%ConnectedApp{principal: principal})
       |> spend(@connected_address)
@@ -253,8 +254,6 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     )
     |> refusal("connection_required")
   end
-
-  defp scope, do: RegentMCPAgents.identity_scope()
 
   # Refused before any token was checked. A request with one spends its address's
   # 120 here, as one without did in the endpoint.

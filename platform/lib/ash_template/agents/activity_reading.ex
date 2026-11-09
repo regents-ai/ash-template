@@ -28,16 +28,15 @@ defmodule AshTemplate.Agents.ActivityReading do
     key = {agent.wallet, agent.paired_at}
 
     case get!(key) do
-      nil -> read_and_keep(key, agent)
-      reading -> reading
-    end
-  end
+      nil ->
+        reading = Activity.recent(agent)
+        put!(key, reading, ttl: kept(reading))
+        measure(reading)
+        reading
 
-  defp read_and_keep(key, agent) do
-    reading = Activity.recent(agent)
-    put!(key, reading, ttl: kept(reading))
-    measure(reading)
-    reading
+      reading ->
+        reading
+    end
   end
 
   defp kept({:ok, _reading}), do: @kept

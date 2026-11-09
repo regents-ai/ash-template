@@ -52,21 +52,20 @@ defmodule AshTemplateWeb.SampleCrew do
   def place!(id), do: Map.get(@places_by_id, id) || raise(NotFoundError)
 
   @doc "The agents as they stand at `now`, each with a few earlier actions."
-  def crew(now), do: Enum.with_index(@crew, &with_history(&1, &2, now))
+  def crew(now) do
+    # A sample agent's earlier actions: its last one a little while ago, and one
+    # at each other place before that.
+    Enum.with_index(@crew, fn agent, index ->
+      earlier = List.delete(@place_ids, agent.place)
+      last = DateTime.add(now, -(40 + index * 70))
 
-  # A sample agent's earlier actions: its last one a little while ago, and one
-  # at each other place before that.
-  defp with_history(agent, index, now) do
-    earlier = List.delete(@place_ids, agent.place)
-    last = DateTime.add(now, -(40 + index * 70))
+      actions =
+        Enum.with_index([agent.place | earlier], fn place, step ->
+          %{place: place, at: DateTime.add(last, -step * 260)}
+        end)
 
-    actions =
-      [agent.place | earlier]
-      |> Enum.with_index(fn place, step ->
-        %{place: place, at: DateTime.add(last, -step * 260)}
-      end)
-
-    Map.put(agent, :actions, actions)
+      Map.put(agent, :actions, actions)
+    end)
   end
 
   @doc "One agent, chosen at random, does something at a different place at `now`."

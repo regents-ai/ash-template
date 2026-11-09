@@ -103,8 +103,18 @@ defmodule AshTemplateWeb.PrivySessionController do
            Keyword.fetch!(budget, :limit),
            window
          ) do
-      {:ok, _budget} -> renew(conn, nil)
-      {:error, :rate_limited, _budget} -> rate_limited(conn, source, window)
+      {:ok, _budget} ->
+        renew(conn, nil)
+
+      {:error, :rate_limited, _budget} ->
+        :telemetry.execute([:ash_template, :session_bootstrap, :rate_limited], %{count: 1}, %{
+          source: source
+        })
+
+        conn
+        |> put_resp_header("retry-after", to_string(window))
+        |> put_resp_header("cache-control", "no-store")
+        |> refuse("rate_limited")
     end
   end
 
@@ -119,17 +129,6 @@ defmodule AshTemplateWeb.PrivySessionController do
     end
   end
 
-  defp rate_limited(conn, source, window) do
-    :telemetry.execute([:ash_template, :session_bootstrap, :rate_limited], %{count: 1}, %{
-      source: source
-    })
-
-    conn
-    |> put_resp_header("retry-after", to_string(window))
-    |> put_resp_header("cache-control", "no-store")
-    |> refuse("rate_limited")
-  end
-
   defp diagnostic_accepted(conn),
     do: conn |> put_resp_header("cache-control", "no-store") |> send_resp(:no_content, "")
 
@@ -137,19 +136,16 @@ defmodule AshTemplateWeb.PrivySessionController do
     {key, _source} = ClientAddress.key(conn)
     bucket = if reason == "flow_closed", do: :retryable, else: :actionable
 
-    case RequestRateLimiter.admit(
-           {:privy_browser_failure, bucket, key},
-           @browser_failure_limit,
-           @browser_failure_window_seconds
-         ) do
-      {:ok, _budget} -> report_sign_in_failure(reason)
-      {:error, :rate_limited, _budget} -> :ok
-    end
-  end
+    with {:ok, _budget} <-
+           RequestRateLimiter.admit(
+             {:privy_browser_failure, bucket, key},
+             @browser_failure_limit,
+             @browser_failure_window_seconds
+           ) do
+      Logger.warning("Privy browser reported sign-in failure reason=#{reason}")
 
-  defp report_sign_in_failure(reason) do
-    Logger.warning("Privy browser reported sign-in failure reason=#{reason}")
-    :telemetry.execute([:ash_template, :privy, :browser_failure], %{count: 1}, %{reason: reason})
+      :telemetry.execute([:ash_template, :privy, :browser_failure], %{count: 1}, %{reason: reason})
+    end
   end
 
   # Privy is verified before the row lock, so only the transition itself is
@@ -184,12 +180,10 @@ defmodule AshTemplateWeb.PrivySessionController do
   defp establish(verified) do
     case VerifiedSession.establish(verified) do
       {:ok, _account, _conflicts} = established -> established
-      {:error, :missing_linked_wallet} -> account_evidence(:missing_linked_wallet)
-      _rejected -> account_evidence(:account_rejected)
+      {:error, :missing_linked_wallet} -> {:error, {:account_evidence, :missing_linked_wallet}}
+      _rejected -> {:error, {:account_evidence, :account_rejected}}
     end
   end
-
-  defp account_evidence(reason), do: {:error, {:account_evidence, reason}}
 
   # Stage and reason are fixed atoms from the classification contract, so they
   # are safe as metric tags and in the message itself (the development formatter

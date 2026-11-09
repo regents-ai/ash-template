@@ -53,12 +53,23 @@ defmodule AshTemplateWeb.NotesController do
   def create(conn, _params) do
     actor = conn.assigns.actor
 
-    with {:ok, nil} <- Notes.earlier_note(conn.body_params["operation_id"], actor: actor),
+    with {:ok, nil} <- earlier_note(conn.body_params["operation_id"], actor),
          {:ok, note} <- Notes.create_note(conn.body_params, actor: actor) do
       conn |> put_status(:created) |> json(%{note: NotesJSON.note(note)})
     else
       {:ok, %Note{} = earlier} -> json(conn, %{note: NotesJSON.note(earlier)})
       {:error, error} -> refuse_change(conn, error)
+    end
+  end
+
+  # The operation_id is the note's id. A missing or malformed one finds no earlier
+  # note; the create refuses a malformed one.
+  defp earlier_note(nil, _actor), do: {:ok, nil}
+
+  defp earlier_note(operation_id, actor) do
+    case Notes.get_my_note(operation_id, actor: actor) do
+      {:error, %Ash.Error.Invalid{}} -> {:ok, nil}
+      result -> result
     end
   end
 

@@ -130,15 +130,13 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   @spec actor_for(String.t(), map() | nil) :: {:ok, Agent.t() | Human.t()} | {:error, term()}
   def actor_for(address, book \\ nil) do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}) do
-      agent |> with_backing(book) |> actor()
-    end
-  end
+      agent = with_backing(agent, book)
 
-  defp actor(agent) do
-    case AgentAccount.owned(agent.wallet_address) do
-      {:ok, %{} = account} -> {:ok, Human.owner(account, agent)}
-      {:ok, nil} -> delegated(agent)
-      {:error, error} -> {:error, error}
+      case AgentAccount.owned(agent.wallet_address) do
+        {:ok, %{} = account} -> {:ok, Human.owner(account, agent)}
+        {:ok, nil} -> delegated(agent)
+        {:error, error} -> {:error, error}
+      end
     end
   end
 
@@ -152,17 +150,18 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   defp paired(agent, pairing) do
     case Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
-      {:ok, %{} = account} -> with_profile(agent, account, pairing)
-      {:ok, nil} -> {:ok, Agent.for_agent(agent, :person_not_here)}
-      {:error, error} -> {:error, error}
+      {:ok, %{} = account} ->
+        app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
+
+        with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
+             do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
+
+      {:ok, nil} ->
+        {:ok, Agent.for_agent(agent, :person_not_here)}
+
+      {:error, error} ->
+        {:error, error}
     end
-  end
-
-  defp with_profile(agent, account, pairing) do
-    app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
-
-    with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
-         do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
   end
 
   @doc """
@@ -246,23 +245,22 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   # same thing.
   defp with_backing(agent, %{"humanId" => human_id, "agentCount" => count}) do
     case Agents.record_backing(agent, human_id, count, actor: %System{}) do
-      {:ok, agent} -> agent
-      {:error, error} -> backing_not_saved(agent, error)
+      {:ok, agent} ->
+        agent
+
+      # Logged by the agent's id and the kind of failure alone: the wallet address
+      # beside a World ID person would tie the two together in the log, and the
+      # failure's words can hold the person's number.
+      {:error, error} ->
+        Logger.warning(
+          "Saving the World ID person of agent #{agent.id} failed: #{inspect(failure_kinds(error))}"
+        )
+
+        agent
     end
   end
 
   defp with_backing(agent, nil), do: agent
-
-  # Logged by the agent's id and the kind of failure alone: the wallet address
-  # beside a World ID person would tie the two together in the log, and the
-  # failure's words can hold the person's number.
-  defp backing_not_saved(agent, error) do
-    Logger.warning(
-      "Saving the World ID person of agent #{agent.id} failed: #{inspect(failure_kinds(error))}"
-    )
-
-    agent
-  end
 
   defp failure_kinds(%{errors: [_ | _] = errors}), do: Enum.map(errors, & &1.__struct__)
   defp failure_kinds(error), do: [error.__struct__]

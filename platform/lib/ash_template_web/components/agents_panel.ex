@@ -223,10 +223,10 @@ defmodule AshTemplateWeb.AgentsPanel do
     """
   end
 
-  @doc "Each agent as the shared list shows it, newest first as the account reads them."
-  def rows(:unavailable, _now), do: :unavailable
+  # Each agent as the shared list shows it, newest first as the account reads them.
+  defp rows(:unavailable, _now), do: :unavailable
 
-  def rows(agents, now) do
+  defp rows(agents, now) do
     Enum.map(agents, fn agent ->
       %{
         id: agent.id,
@@ -333,22 +333,18 @@ defmodule AshTemplateWeb.AgentsPanel do
     with {:ok, id} <- Ecto.UUID.cast(id),
          {:ok, %PairedAgent{} = agent} <-
            RegentAgents.get_my_agent(id, actor: socket.assigns.person) do
-      case socket.assigns.detail do
-        %{agent: %{id: ^id}} = shown ->
-          socket |> assign(detail: %{shown | agent: agent}) |> read_detail(agent)
+      detail =
+        case socket.assigns.detail do
+          %{agent: %{id: ^id}} = shown -> %{shown | agent: agent}
+          _other -> %{agent: agent, activity: :loading, listing: nil}
+        end
 
-        _other ->
-          socket
-          |> assign(detail: %{agent: agent, activity: :loading, listing: nil})
-          |> read_detail(agent)
-      end
+      socket
+      |> assign(detail: detail)
+      |> start_async({:agent_activity, agent.id}, fn -> ActivityReading.read(agent) end)
     else
       _missing -> assign(socket, detail: nil)
     end
-  end
-
-  defp read_detail(socket, agent) do
-    start_async(socket, {:agent_activity, agent.id}, fn -> ActivityReading.read(agent) end)
   end
 
   # When the day's first and last request came, or the one time when they share

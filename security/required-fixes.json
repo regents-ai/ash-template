@@ -27,6 +27,13 @@
   ],
   "fixes": [
     {
+      "id": "EEF-CVE-2026-119613",
+      "summary": "ash_ai before 1.5.1 sent the text of a tool error that ToToolError does not describe to the agent word for word, disclosing internal details; 1.5.1 sends an error id instead.",
+      "kind": "hex",
+      "package": "ash_ai",
+      "requirement": ">= 1.5.1"
+    },
+    {
       "id": "EEF-CVE-2026-118391",
       "summary": "Ecto before 3.14.3 kept a query cache entry, and with ecto_sql a prepared statement on each connection, for every distinct interpolated JSON path key and splice list length, so request data reaching either could exhaust memory in the application and the database.",
       "kind": "hex",

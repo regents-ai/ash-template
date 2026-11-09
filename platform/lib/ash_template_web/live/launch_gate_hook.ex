@@ -18,12 +18,10 @@ defmodule AshTemplateWeb.Live.LaunchGateHook do
       {:cont,
        socket
        |> attach_hook(:launch_gate, :handle_params, fn _params, _uri, socket -> gate(socket) end)
-       |> attach_hook(:launch_gate_events, :handle_event, &gate_event/3)}
+       |> attach_hook(:launch_gate_events, :handle_event, fn _event, _params, socket ->
+         if LaunchGate.app_surfaces_enabled?(), do: {:cont, socket}, else: {:halt, %{}, socket}
+       end)}
     end
-  end
-
-  defp gate_event(_event, _params, socket) do
-    if LaunchGate.app_surfaces_enabled?(), do: {:cont, socket}, else: {:halt, %{}, socket}
   end
 
   defp gate(socket) do

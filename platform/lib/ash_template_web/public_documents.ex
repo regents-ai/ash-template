@@ -277,13 +277,8 @@ defmodule AshTemplateWeb.PublicDocuments do
   The site's own graph, then the nodes the page holds (a page's `page_data` assign,
   built with `Regent.StructuredData`).
   """
-  def structured_data(page_nodes), do: Regent.StructuredData.graph(site_graph(), page_nodes)
-
-  @doc "The `@id` of the site's Organization node, a blog post's publisher."
-  def organization_id, do: url("/#organization")
-
-  defp site_graph do
-    %{
+  def structured_data(page_nodes) do
+    site = %{
       "@context" => "https://schema.org",
       "@graph" => [
         %{
@@ -313,7 +308,12 @@ defmodule AshTemplateWeb.PublicDocuments do
         }
       ]
     }
+
+    Regent.StructuredData.graph(site, page_nodes)
   end
+
+  @doc "The `@id` of the site's Organization node, a blog post's publisher."
+  def organization_id, do: url("/#organization")
 
   def recovery_links do
     [

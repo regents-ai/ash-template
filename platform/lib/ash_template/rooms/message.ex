@@ -32,7 +32,6 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.Message.{
     AgentPost,
     AuthorPicture,
-    ByAuthorKind,
     LeaveOutMuted,
     RoomMessages,
     SetAuthor,
@@ -133,13 +132,19 @@ defmodule AshTemplate.Rooms.Message do
       require_atomic? false
     end
 
-    # Newest first, a page at a time, of everyone or one kind of author.
+    # Newest first, a page at a time, of everyone or one kind of author: people's
+    # messages, with those a paired agent wrote for its person, or those agents
+    # posted as themselves.
     read :in_room do
       argument :room, :string, allow_nil?: false
       argument :author_kind, :atom, constraints: [one_of: [:person, :agent]]
       filter expr(room == ^arg(:room))
 
-      prepare ByAuthorKind
+      prepare build(filter: expr(is_nil(agent_id))), where: argument_equals(:author_kind, :person)
+
+      prepare build(filter: expr(not is_nil(agent_id))),
+        where: argument_equals(:author_kind, :agent)
+
       prepare LeaveOutMuted
       prepare build(sort: [inserted_at: :desc, id: :desc], load: [:liked_by_me | @shown])
       pagination keyset?: true, default_limit: 50

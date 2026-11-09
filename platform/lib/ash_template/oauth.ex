@@ -32,9 +32,8 @@ defmodule AshTemplate.OAuth do
   end
 
   def active_subject?(subject) do
-    case AshTemplate.Accounts.get_by_privy_did(subject, actor: %AshTemplate.Actors.System{}) do
-      {:ok, account} -> AshTemplate.Accounts.VerifiedSession.current?(account)
-      {:error, error} -> raise error
-    end
+    subject
+    |> AshTemplate.Accounts.get_by_privy_did!(actor: %AshTemplate.Actors.System{})
+    |> AshTemplate.Accounts.VerifiedSession.current?()
   end
 end

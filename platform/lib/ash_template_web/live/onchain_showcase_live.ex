@@ -65,21 +65,19 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
     do: lab_reply(chain, method, from, params)
 
   defp lab_reply(chain, method, from, params) do
-    if is_binary(from) and String.downcase(from) in @addresses,
-      do: rpc(chain, method, params),
-      else: %{error: %{code: 4100, message: "Not a lab wallet."}}
-  end
+    if is_binary(from) and String.downcase(from) in @addresses do
+      case ChainClient.rpc(chain, method, params) do
+        {:ok, result} ->
+          %{result: result}
 
-  defp rpc(chain, method, params) do
-    case ChainClient.rpc(chain, method, params) do
-      {:ok, result} ->
-        %{result: result}
+        {:error, {:rpc, error}} ->
+          %{error: error}
 
-      {:error, {:rpc, error}} ->
-        %{error: error}
-
-      {:error, _unreachable} ->
-        %{error: %{code: -32_603, message: "The lab chain is not running."}}
+        {:error, _unreachable} ->
+          %{error: %{code: -32_603, message: "The lab chain is not running."}}
+      end
+    else
+      %{error: %{code: 4100, message: "Not a lab wallet."}}
     end
   end
 

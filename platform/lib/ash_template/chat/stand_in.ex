@@ -55,9 +55,7 @@ defmodule AshTemplate.Chat.StandIn do
   end
 
   defp user_messages(context) do
-    for %Message{role: :user} = message <- context.messages, do: text(message)
+    for %Message{role: :user, content: parts} <- context.messages,
+        do: parts |> Enum.map_join(" ", &(&1.text || "")) |> String.trim()
   end
-
-  defp text(%Message{content: parts}),
-    do: parts |> Enum.map_join(" ", &(&1.text || "")) |> String.trim()
 end

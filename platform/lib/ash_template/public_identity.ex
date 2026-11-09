@@ -9,6 +9,11 @@ defmodule AshTemplate.PublicIdentity do
   public, and so is the ENS name that points to it.
   """
 
+  require Ash.Query
+
+  alias AshTemplate.Accounts.HumanAccount
+  alias AshTemplate.Actors.System
+
   @wallet ~r/\A0x[0-9a-fA-F]{40}\z/
 
   @name_fields (case Application.compile_env!(:ash_template, :name_first) do
@@ -52,11 +57,32 @@ defmodule AshTemplate.PublicIdentity do
 
   def squares(account), do: account |> wallet() |> identicon()
 
-  def short_wallet(wallet) when is_binary(wallet) do
+  @doc """
+  The public name and picture of each account in `ids`, in order, as
+  `%{name: name, squares: squares, picture: picture}`. The site reads the
+  accounts, since they are private and only the name and picture leave them.
+  """
+  def of_accounts([]), do: []
+
+  def of_accounts(ids) do
+    accounts =
+      HumanAccount
+      |> Ash.Query.filter(id in ^Enum.uniq(ids))
+      |> Ash.Query.load([:display_name, :ens_name, :ens_avatar_url])
+      |> Ash.read!(actor: %System{})
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(ids, fn id ->
+      account = Map.get(accounts, id, %{})
+      %{name: label(account), squares: squares(account), picture: picture(account)}
+    end)
+  end
+
+  defp short_wallet(wallet) when is_binary(wallet) do
     if Regex.match?(@wallet, wallet), do: RegentFormat.short_address(wallet), else: "Account"
   end
 
-  def short_wallet(_wallet), do: "Account"
+  defp short_wallet(_wallet), do: "Account"
 
   defp present(value) when is_binary(value) do
     case String.trim(value) do

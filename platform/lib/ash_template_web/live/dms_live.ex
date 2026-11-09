@@ -52,9 +52,14 @@ defmodule AshTemplateWeb.DmsLive do
   def update(%{change: {"send", %{conversation_id: id, message_id: message_id}}}, socket) do
     socket = load_conversations(socket)
 
-    if open?(socket, id),
-      do: {:ok, add_message(socket, message_id)},
-      else: {:ok, socket}
+    # Read as the reader, so a message they may not read never shows.
+    with %{id: ^id} <- socket.assigns.conversation,
+         {:ok, %Message{} = message} <-
+           Dms.get_dm(message_id, actor: socket.assigns.actor, load: [:mine]) do
+      {:ok, stream_insert(socket, :messages, message, at: -1)}
+    else
+      _closed_or_gone -> {:ok, socket}
+    end
   end
 
   def update(%{change: {_block, _payload}}, socket), do: {:ok, load_conversations(socket)}
@@ -83,8 +88,13 @@ defmodule AshTemplateWeb.DmsLive do
 
   def handle_event("send", %{"message" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
-      {:ok, _message} -> {:noreply, socket |> assign(:notice, nil) |> new_form()}
-      {:error, form} -> {:noreply, assign(socket, form: form, notice: gone(form))}
+      {:ok, _message} ->
+        {:noreply, socket |> assign(:notice, nil) |> new_form()}
+
+      # A conversation that is gone has no field to show it under.
+      {:error, form} ->
+        notice = Keyword.get(AshPhoenix.Form.errors(form), :conversation_id)
+        {:noreply, assign(socket, form: form, notice: notice)}
     end
   end
 
@@ -390,14 +400,6 @@ defmodule AshTemplateWeb.DmsLive do
 
   defp show_older(socket), do: socket
 
-  # Read as the reader, so a message they may not read never shows.
-  defp add_message(%{assigns: %{actor: actor}} = socket, id) do
-    case Dms.get_dm(id, actor: actor, load: [:mine]) do
-      {:ok, %Message{} = message} -> stream_insert(socket, :messages, message, at: -1)
-      _gone -> socket
-    end
-  end
-
   defp new_form(%{assigns: %{actor: actor, conversation: conversation}} = socket) do
     form =
       Message
@@ -412,11 +414,6 @@ defmodule AshTemplateWeb.DmsLive do
 
     assign(socket, :form, form)
   end
-
-  # A conversation that is gone has no field to show it under.
-  defp gone(form), do: Keyword.get(AshPhoenix.Form.errors(form), :conversation_id)
-
-  defp open?(socket, id), do: conversation_id(socket.assigns.conversation) == id
 
   defp picture_of(%{mine: true}, me, _conversation),
     do: %{

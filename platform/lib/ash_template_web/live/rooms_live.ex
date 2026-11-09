@@ -88,14 +88,20 @@ defmodule AshTemplateWeb.RoomsLive do
   def update(%{mutes_changed: true}, socket), do: {:ok, load(socket)}
 
   def update(%{room_change: {_event, changed}}, socket) do
-    room = socket.assigns.room
+    %{room: room, rooms: rooms} = socket.assigns
 
-    socket =
-      if changed.slug == room.slug,
-        do: socket |> assign(:room, %{room | topic: changed.topic}) |> topic_form(),
-        else: socket
+    # A room started elsewhere joins the end of the list; a changed topic keeps
+    # its place.
+    rooms =
+      if Enum.any?(rooms, &(&1.slug == changed.slug)),
+        do: Enum.map(rooms, &if(&1.slug == changed.slug, do: changed, else: &1)),
+        else: rooms ++ [changed]
 
-    {:ok, assign(socket, :rooms, listed(socket.assigns.rooms, changed))}
+    socket = assign(socket, :rooms, rooms)
+
+    if changed.slug == room.slug,
+      do: {:ok, socket |> assign(:room, %{room | topic: changed.topic}) |> topic_form()},
+      else: {:ok, socket}
   end
 
   # The shell renders this with every update of its own, so the room is read
@@ -127,7 +133,12 @@ defmodule AshTemplateWeb.RoomsLive do
   def handle_event("edit", %{"id" => id}, socket) do
     case Rooms.get_message(id, actor: socket.assigns.actor) do
       {:ok, %Message{} = message} ->
-        {:noreply, socket |> edit_form(message) |> push_event("conversation:edit", %{})}
+        form = Rooms.form_to_edit_message(message, actor: socket.assigns.actor, as: "message")
+
+        {:noreply,
+         socket
+         |> assign(form: to_form(form), editing: message.id, notice: nil, reported?: false)
+         |> push_event("conversation:edit", %{})}
 
       failure ->
         {:noreply, notice(socket, failure, @gone, "That message couldn’t be loaded. Try again.")}
@@ -765,14 +776,6 @@ defmodule AshTemplateWeb.RoomsLive do
   defp slug(nil), do: nil
   defp slug(room), do: room.slug
 
-  # A room started elsewhere joins the end of the list; a changed topic keeps
-  # its place.
-  defp listed(rooms, changed) do
-    if Enum.any?(rooms, &(&1.slug == changed.slug)),
-      do: Enum.map(rooms, &if(&1.slug == changed.slug, do: changed, else: &1)),
-      else: rooms ++ [changed]
-  end
-
   # A failed read keeps the messages already on the page, so only a read that
   # landed replaces them.
   defp show_messages(%{assigns: %{messages: %Read{state: :ready, value: value}}} = socket) do
@@ -851,21 +854,19 @@ defmodule AshTemplateWeb.RoomsLive do
         socket
 
       event == "post" or after_latest?(socket, message) ->
-        append(socket, message)
+        latest =
+          if after_latest?(socket, message),
+            do: message.inserted_at,
+            else: socket.assigns.latest
+
+        socket
+        |> stream_insert(:messages, message, at: -1)
+        |> assign(:latest, latest)
+        |> shown(message)
 
       event == "edit" ->
         socket |> stream_insert(:messages, message, update_only: true) |> shown(message)
     end
-  end
-
-  defp append(socket, message) do
-    latest =
-      if after_latest?(socket, message), do: message.inserted_at, else: socket.assigns.latest
-
-    socket
-    |> stream_insert(:messages, message, at: -1)
-    |> assign(:latest, latest)
-    |> shown(message)
   end
 
   defp stale?(%{assigns: %{shown: shown}}, %{id: id, edited_at: edited_at}) do
@@ -991,9 +992,4 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   defp topic_form(socket), do: assign(socket, :topic_form, nil)
-
-  defp edit_form(socket, message) do
-    form = Rooms.form_to_edit_message(message, actor: socket.assigns.actor, as: "message")
-    assign(socket, form: to_form(form), editing: message.id, notice: nil, reported?: false)
-  end
 end

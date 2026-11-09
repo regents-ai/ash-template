@@ -136,11 +136,23 @@ defmodule AshTemplate.SharedReading do
   @spec put(key(), term()) :: :ok | {:error, :too_large | :not_plain | :too_many_keys}
   def put(key, reading) do
     {kind, _id} = checked(key)
+    bytes = :erlang.external_size(reading)
+    limit = @kinds[kind].bytes
+
+    # Every offered reading's size is reported against its kind's limit, so one
+    # that grows shows nearing the limit well before it is refused.
+    :telemetry.execute(
+      [:ash_template, :shared_reading, :size],
+      %{bytes: bytes, limit: limit},
+      %{kind: kind}
+    )
 
     # Checked here, in the producer, so a reading that cannot be checked fails
     # its producer and never the table's owner.
-    with :ok <- fits(kind, reading) do
-      GenServer.call(__MODULE__, {:put, key, reading})
+    cond do
+      bytes > limit -> {:error, :too_large}
+      not plain?(reading) -> {:error, :not_plain}
+      true -> GenServer.call(__MODULE__, {:put, key, reading})
     end
     |> counted(kind)
   end
@@ -302,25 +314,6 @@ defmodule AshTemplate.SharedReading do
     })
 
     refused
-  end
-
-  # Every offered reading's size is reported against its kind's limit, so one
-  # that grows shows nearing the limit well before it is refused.
-  defp fits(kind, reading) do
-    bytes = :erlang.external_size(reading)
-    limit = @kinds[kind].bytes
-
-    :telemetry.execute(
-      [:ash_template, :shared_reading, :size],
-      %{bytes: bytes, limit: limit},
-      %{kind: kind}
-    )
-
-    cond do
-      bytes > limit -> {:error, :too_large}
-      not plain?(reading) -> {:error, :not_plain}
-      true -> :ok
-    end
   end
 
   defp room(_key, %{}), do: :ok

@@ -6847,6 +6847,47 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   and the connection notice, and `platform/fly.toml` gives the request limits, counted
   in each machine's memory, as the reason for one machine, now that long polling is gone.
 
+## 2026-11-09 — ash_ai 1.5.1: tool errors no longer reach agents word for word
+
+- `ash_ai` moves from 1.5.0 to 1.5.1, which fixes EEF-CVE-2026-119613 (CVE-2026-119613):
+  before it, a tool error that `AshAi.ToToolError` does not describe was sent to the
+  agent and the model with its full text, which can carry internal details. 1.5.1
+  sends "unexpected error occurred (error id: …)" instead and logs the error with
+  that id. Only the `ash_ai` line of `platform/mix.lock` changes.
+- `security/required-fixes.json` lists the fix (`ash_ai >= 1.5.1`), so each site's
+  own gate refuses a lock still on 1.5.0.
+- `mix precommit` had stopped at `mix hex.audit` since the advisory was published; it
+  passes again.
+
+## 2026-11-09 — Simpler platform code, same behaviour
+
+- The Elixir code under `platform/lib` was simplified with no change in behaviour:
+  every page, document, API answer, error, agent tool, command, log line, telemetry
+  event and job is the same. Each step was checked with the full test run, a byte
+  comparison of every page, document and API answer against main, and, for event
+  handlers the comparison does not reach, a throwaway LiveView test run against main
+  and against the change.
+- Thin modules are folded into their only user: 21 modules are gone, among them the
+  one-action Ash changes, validations and preparations (now written inline in their
+  action), `AshTemplateWeb.SignedBodyReader` (now `AshTemplateWeb.Endpoint.read_body/2`),
+  `AshTemplateWeb.RouteCatalog.RouteTarget` (plain maps), and the crown, public header
+  and site buttons lab components (now inside their only pages). Two take their place:
+  `AshTemplate.Agents.RequireOperationId`, the one check the four agent creates share,
+  and `AshTemplate.SavedErrors`, which replaces `AshTemplate.ErrorFilter` and
+  `AshTemplate.ErrorIgnorer` for ErrorTracker.
+- Functions only their own module calls are private, unused ones are gone, and one-use
+  helpers are written where they are used. A paired-agent check that could never be
+  reached, and its error entry, are gone.
+- `AshTemplate.DatabaseConfig` no longer rescues around a URL decode that cannot raise.
+  The rescues that remain are narrow, around database and outside-library calls whose
+  failure must show as a notice rather than end the process.
+- The site buttons page no longer reads its site list from another module at compile
+  time, so the compile-time link limit in `platform/mix.exs` is 43 (was 44).
+- `skills/ash-signals/SKILL.md` names `Notes.Decision` `:request_label` in place of the
+  removed `RequestLabel` module.
+- In numbers: 247 files to 228, 30,354 lines to 29,895, 253 modules to 234, 685 public
+  functions to 650.
+
 ## 2026-11-08 — Agents open their own accounts (agent parity G1)
 
 - Sean's 29 Oct answer 2 a, rebuilt on main of 8 November: an agent opens its own account
@@ -6893,7 +6934,7 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
   `opened_at`; no other index; `lock_timeout` 5 s) needs Sean's
   named go and `/app/bin/migrate-shared` from the new image before the deployment, which
   refuses until it is applied: without the table every signed agent request fails. The branch joins elixir-utils main once it is.
-- The compile-connected limit in `platform/mix.exs` moves from 44 to 45: room posts' policy
+- The compile-connected limit in `platform/mix.exs` moves from 43 to 44: room posts' policy
   reads `AgentAccount.Owner`.
 
 ## 2026-11-08 — The owner's agent controls (agent parity G2)

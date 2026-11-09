@@ -120,35 +120,34 @@ defmodule AshTemplateWeb.AnimationsLive do
     {:noreply, assign(socket, flair_name: name, flair_valid: flair_validity(name))}
   end
 
+  # A name sent while still empty counts as invalid.
   def handle_event("flair_submit", %{"demo" => %{"name" => name}}, socket) do
-    valid = flair_validity(name)
+    socket = assign(socket, :flair_name, name)
 
-    socket =
-      assign(socket,
-        flair_name: name,
-        flair_valid: if(valid == "valid", do: valid, else: "invalid")
-      )
+    case flair_validity(name) do
+      "valid" ->
+        {:noreply, socket |> assign(:flair_valid, "valid") |> update(:flair_receipt, &(&1 + 1))}
 
-    {:noreply, if(valid == "valid", do: update(socket, :flair_receipt, &(&1 + 1)), else: socket)}
+      _empty_or_invalid ->
+        {:noreply, assign(socket, :flair_valid, "invalid")}
+    end
   end
 
   def handle_event("flair_state", %{"state" => state}, socket)
       when state in ~w(ready working confirmed attention),
       do: {:noreply, assign(socket, flair_state: state)}
 
-  def handle_event("flair_chat", %{"chat" => %{"message" => message}}, socket) do
-    submitted = message
-    message = message |> String.trim() |> String.slice(0, 280)
+  # The page keeps the trimmed line; the island is sent what was typed.
+  def handle_event("flair_chat", %{"chat" => %{"message" => submitted}}, socket) do
+    case submitted |> String.trim() |> String.slice(0, 280) do
+      "" ->
+        {:noreply, socket}
 
-    if message == "" do
-      {:noreply, socket}
-    else
-      messages = Enum.take(socket.assigns.flair_messages ++ [message], -3)
-
-      {:noreply,
-       socket
-       |> assign(flair_messages: messages)
-       |> push_event("flair:sent", %{id: "feedback-lab", message: submitted})}
+      message ->
+        {:noreply,
+         socket
+         |> update(:flair_messages, &Enum.take(&1 ++ [message], -3))
+         |> push_event("flair:sent", %{id: "feedback-lab", message: submitted})}
     end
   end
 
@@ -241,14 +240,6 @@ defmodule AshTemplateWeb.AnimationsLive do
   end
 
   defp entry(id, name), do: %{id: id, name: name, leaving?: false}
-
-  defp commas(number) do
-    number
-    |> Integer.to_string()
-    |> String.reverse()
-    |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
-    |> String.reverse()
-  end
 
   @impl true
   def render(assigns) do
@@ -405,7 +396,7 @@ defmodule AshTemplateWeb.AnimationsLive do
                 phx-hook="LabCount"
                 data-variant={@variants["count"]}
               >
-                <span data-count>{commas(@count)}</span>
+                <span data-count>{@count |> Integer.to_string() |> RegentFormat.add_delimiters()}</span>
                 <span class="motion-lab__count-label">visits this week</span>
               </p>
               <div class="motion-lab__row motion-lab__row--tight">

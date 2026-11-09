@@ -25,16 +25,12 @@ defmodule AshTemplate.Chat.Conversation.Changes.GenerateName do
       | changeset.data |> opening_messages(context) |> Enum.map(&prompt_message/1)
     ]
 
-    case ReqLLM.stream_text(%{provider: :stand_in, id: "title"}, prompt) do
-      {:ok, response} ->
-        Ash.Changeset.force_change_attribute(
-          changeset,
-          :title,
-          ReqLLM.StreamResponse.text(response)
-        )
-
-      {:error, error} ->
-        {:error, error}
+    with {:ok, response} <- ReqLLM.stream_text(%{provider: :stand_in, id: "title"}, prompt) do
+      Ash.Changeset.force_change_attribute(
+        changeset,
+        :title,
+        ReqLLM.StreamResponse.text(response)
+      )
     end
   end
 

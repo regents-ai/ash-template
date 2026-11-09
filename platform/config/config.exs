@@ -258,16 +258,15 @@ config :logger, :default_formatter,
   metadata: [:request_id, :visit, :actor, :surface, :event]
 
 # Failed requests, pages and jobs are saved in the site's own schema and shown
-# to the site's admins at /admin/errors. Only server faults are saved
-# (AshTemplate.ErrorIgnorer), only where each one happened is kept
-# (AshTemplate.ErrorFilter), and AshTemplate.ErrorPruner clears each one a week
-# after it was last seen.
+# to the site's admins at /admin/errors. Only server faults are saved, with only
+# where each one happened (AshTemplate.SavedErrors), and AshTemplate.ErrorPruner
+# clears each one a week after it was last seen.
 config :error_tracker,
   repo: AshTemplate.Repo,
   otp_app: :ash_template,
   prefix: "ash_template_app",
-  ignorer: AshTemplate.ErrorIgnorer,
-  filter: AshTemplate.ErrorFilter
+  ignorer: AshTemplate.SavedErrors,
+  filter: AshTemplate.SavedErrors
 
 config :phoenix, :json_library, Jason
 

@@ -142,7 +142,7 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.ErrorsAdmin
   end
 
-  def enforce_session_authority(conn, _opts),
+  defp enforce_session_authority(conn, _opts),
     do: AshTemplateWeb.PrivySessionController.enforce_authority(conn)
 
   # The showcase setting guards every page below (AshTemplateWeb.Showcase).

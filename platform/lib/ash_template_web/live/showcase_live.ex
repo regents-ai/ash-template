@@ -1036,7 +1036,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
     case List.keyfind(@fixture_wallets, key, 0) do
       {^key, wallet} ->
         {:noreply,
-         Read.start(socket, :balance, key, fn -> read_fixture_wallet(wallet, fail?) end)}
+         Read.start(socket, :balance, key, fn ->
+           Process.sleep(wallet.delay)
+           if fail?, do: {:error, :unreachable}, else: {:ok, wallet.holdings}
+         end)}
 
       nil ->
         {:noreply, socket}
@@ -1101,11 +1104,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
 
   def handle_async({Read, _name, _generation} = name, result, socket),
     do: {:noreply, Read.settle(socket, name, result)}
-
-  defp read_fixture_wallet(wallet, fail?) do
-    Process.sleep(wallet.delay)
-    if fail?, do: {:error, :unreachable}, else: {:ok, wallet.holdings}
-  end
 
   defp read_tone(:ready), do: "success"
   defp read_tone(:empty), do: "neutral"

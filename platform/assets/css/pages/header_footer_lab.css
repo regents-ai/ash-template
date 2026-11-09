@@ -1,4 +1,4 @@
-/* The header every public page shares (AshTemplateWeb.Components.SiteHeader), and
+/* The header every public page shares (site_header/1 in AshTemplateWeb.HeaderFooterLive), and
    the motion lab page that shows it with the footer at /animations/header-footer.
    Like the shell's own styles it sits outside the product layer, beside the
    product tiles it resizes. */

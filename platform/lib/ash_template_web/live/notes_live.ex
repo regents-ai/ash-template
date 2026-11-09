@@ -64,8 +64,12 @@ defmodule AshTemplateWeb.NotesLive do
 
   def handle_event("edit", %{"id" => id}, socket) do
     case Notes.get_my_note(id, actor: socket.assigns.actor) do
-      {:ok, %Note{} = note} -> {:noreply, edit_form(socket, note)}
-      failure -> {:noreply, assign(socket, :notice, notice(failure, "loaded"))}
+      {:ok, %Note{} = note} ->
+        form = Notes.form_to_update_note(note, actor: socket.assigns.actor, as: "note")
+        {:noreply, assign(socket, form: to_form(form), editing: note.id, notice: nil)}
+
+      failure ->
+        {:noreply, assign(socket, :notice, notice(failure, "loaded"))}
     end
   end
 
@@ -406,10 +410,5 @@ defmodule AshTemplateWeb.NotesLive do
   defp new_form(socket) do
     form = Notes.form_to_create_note(actor: socket.assigns.actor, as: "note")
     assign(socket, form: to_form(form), editing: nil, notice: nil)
-  end
-
-  defp edit_form(socket, note) do
-    form = Notes.form_to_update_note(note, actor: socket.assigns.actor, as: "note")
-    assign(socket, form: to_form(form), editing: note.id, notice: nil)
   end
 end
