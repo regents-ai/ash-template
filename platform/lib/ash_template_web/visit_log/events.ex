@@ -28,17 +28,14 @@ defmodule AshTemplateWeb.VisitLog.Events do
   @domain_apps [:ash_template, :regent_identity, :regent_agents, :regent_points]
 
   @doc "Attaches every handler; called once at start."
-  def attach,
-    do: :telemetry.attach_many("ash-template-visit-log", events(), &__MODULE__.handle/4, nil)
-
-  defp events do
+  def attach do
     ash =
       for app <- @domain_apps,
           domain <- Application.fetch_env!(app, :ash_domains),
           kind <- [:create, :update, :destroy, :action],
           do: [:ash, Ash.Domain.Info.short_name(domain), kind, :stop]
 
-    [
+    events = [
       [:phoenix, :endpoint, :stop],
       [:phoenix, :live_view, :handle_event, :stop],
       [:phoenix, :live_view, :handle_event, :exception],
@@ -48,7 +45,9 @@ defmodule AshTemplateWeb.VisitLog.Events do
       [:oban, :job, :stop],
       [:oban, :job, :exception],
       [:finch, :request, :stop]
-    ] ++ ash
+    ]
+
+    :telemetry.attach_many("ash-template-visit-log", events ++ ash, &__MODULE__.handle/4, nil)
   end
 
   @doc false
@@ -76,8 +75,9 @@ defmodule AshTemplateWeb.VisitLog.Events do
     end
   end
 
+  # A page's account can change while it is open, so each line reads it afresh.
   def handle([:phoenix, :live_view, :handle_event, ending], measurements, metadata, _config) do
-    remember(metadata.socket)
+    Logger.metadata(actor: VisitLog.actor(metadata.socket.assigns[:access_context]))
     pressed(metadata.socket.view, ending, measurements, metadata)
   end
 
@@ -145,10 +145,6 @@ defmodule AshTemplateWeb.VisitLog.Events do
   defp quiet?(%Plug.Conn{path_info: ["healthz"]}), do: true
   defp quiet?(%Plug.Conn{path_info: ["visit-log"]}), do: true
   defp quiet?(_conn), do: false
-
-  # A page's account can change while it is open, so each line reads it afresh.
-  defp remember(socket),
-    do: Logger.metadata(actor: VisitLog.actor(socket.assigns[:access_context]))
 
   defp answer(%Plug.Conn{status: status}) when status in 200..399, do: "ok"
 

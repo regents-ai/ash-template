@@ -294,9 +294,8 @@ defmodule AshTemplateWeb.Capabilities do
     }
   end
 
-  @doc "Every operation, in the source's order, with its gate and what an agent does with it."
-  @spec operations() :: [map()]
-  def operations do
+  # Every operation, in the source's order, with its gate and what an agent does with it.
+  defp operations do
     Enum.map(@operations, fn row ->
       gate = gate(row.switch)
 

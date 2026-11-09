@@ -44,7 +44,7 @@ defmodule AshTemplateWeb.ErrorsAdmin do
 
     case admin(session) do
       nil ->
-        {:halt, redirect(socket, to: "/")}
+        leave(socket)
 
       {lineage, account} ->
         recheck = fn socket -> recheck(socket, lineage, account.id) end

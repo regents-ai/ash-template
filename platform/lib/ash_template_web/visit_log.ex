@@ -41,8 +41,9 @@ defmodule AshTemplateWeb.VisitLog do
     from: a name from `sources/0` (from `utm_source`, else the referring site),
     `site` for this site, `other_site` for any other, or `direct`. The referring
     address itself is never written.
-  - `step`: one of `steps/0`, the shared journey from first look to a paired
-    agent, with the agent's harness where there is one.
+  - `step`: one step of the shared journey from first look to a paired agent
+    (`sign_in_opened`, `signed_in`, `pairing_code_shown`, `agent_paired`), with
+    the agent's harness where there is one.
 
   A browser that sends Global Privacy Control (`Sec-GPC: 1`) starts no visit: it
   gets no `_visit` cookie, none of its requests or pages carries a `visit`, and it
@@ -124,15 +125,13 @@ defmodule AshTemplateWeb.VisitLog do
   @doc "The default handler's filter that leaves visit lines to `handler/2`."
   def default_filter, do: {&:logger_filters.domain/2, {:stop, :sub, @domain}}
 
-  @doc "The named steps of the shared journey."
-  def steps, do: @steps
-
   @doc "The names an arrival can give for where it came from, besides `site`, `other_site` and `direct`."
   def sources, do: @sources |> Map.values() |> Enum.uniq()
 
   @doc """
-  Writes one `step` line: one of `steps/0`, with the agent's harness where there
-  is one. Nothing is written for a browser that sends Global Privacy Control.
+  Writes one `step` line: one step of the shared journey, with the agent's
+  harness where there is one. Nothing is written for a browser that sends Global
+  Privacy Control.
   """
   def step(name, harness \\ nil) when name in @steps do
     unless Process.get(@gpc), do: record("step", name, harness)
@@ -225,7 +224,8 @@ defmodule AshTemplateWeb.VisitLog do
   @impl Plug
   def call(conn, _opts) do
     conn = fetch_cookies(conn)
-    gpc = gpc?(conn)
+    # Global Privacy Control: no visit, cookie, `arrival` or `step` line for this browser.
+    gpc = get_req_header(conn, "sec-gpc") == ["1"]
     {surface, client} = surface(conn)
     {conn, visit} = if gpc, do: {forget(conn), nil}, else: visit(conn, surface)
     # Only a browser sends Global Privacy Control, so its API calls are its page's own.
@@ -290,9 +290,6 @@ defmodule AshTemplateWeb.VisitLog do
 
     {conn, visit}
   end
-
-  @doc "Whether the browser sent Global Privacy Control: no visit, cookie, `arrival` or `step` line for it."
-  def gpc?(conn), do: get_req_header(conn, "sec-gpc") == ["1"]
 
   # A browser that now asks not to be tracked loses the visit it was given before.
   defp forget(%Plug.Conn{cookies: %{@cookie => _visit}} = conn),

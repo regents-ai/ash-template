@@ -15,6 +15,9 @@ defmodule AshTemplateWeb.Endpoint do
     "referrer-policy" => "no-referrer"
   }
 
+  # The largest signed body is a note: 10,000 characters of text, as JSON.
+  @signed_body_limit 65_536
+
   # Chrome's WebMCP origin trial, issued to https://template.regents.sh and valid
   # until 30 Mar 2027. The token is public; Chrome ignores it on any other host.
   @webmcp_origin_trial "Anjl5/zD6iF9O/lRuJbhbnuaTCH/1+x83KMsVLt4KEl5eI5kKV0yqXI+xOxti+nzSe7uQ0UUj1Ot3fi/WVyczwEAAABTeyJvcmlnaW4iOiJodHRwczovL3RlbXBsYXRlLnJlZ2VudHMuc2g6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTgwNjM2NDgwMH0="
@@ -105,11 +108,11 @@ defmodule AshTemplateWeb.Endpoint do
   # address that names nothing.
   plug AshTemplateWeb.Plugs.NoTrailingSlash
 
-  # A body an agent signs stops at 64 KB (AshTemplateWeb.SignedBodyReader). The
-  # rest, a connected app's registration or token, a sign-in, a visit report, are
-  # a few KB; anything past 256 KB is refused before it is read.
+  # A body an agent signs stops at 64 KB (`read_body/2`). The rest, a connected
+  # app's registration or token, a sign-in, a visit report, are a few KB; anything
+  # past 256 KB is refused before it is read.
   plug AshTemplateWeb.Plugs.Parsers,
-    body_reader: {AshTemplateWeb.SignedBodyReader, :read_body, []},
+    body_reader: {__MODULE__, :read_body, []},
     parsers: [Plug.Parsers.URLENCODED, Plug.Parsers.JSON],
     pass: ["*/*"],
     length: 262_144,
@@ -156,4 +159,17 @@ defmodule AshTemplateWeb.Endpoint do
     options = Application.fetch_env!(:ash_template, :session_options)
     Plug.Session.call(conn, Plug.Session.init(options))
   end
+
+  # Keeps the exact bytes of every body the API and the hosted MCP server take, so
+  # the sign-in service can check them against the request's signature
+  # (AshTemplateWeb.Plugs.AgentWallet, RegentAgents.HTTP): any of them may come
+  # from an agent. The pages' own form bodies are read as before.
+  def read_body(%Plug.Conn{method: method, path_info: ["api" | _rest]} = conn, opts)
+      when method in ["POST", "PATCH"],
+      do: Siwa.AgentAuthPlug.read_body(conn, opts, @signed_body_limit)
+
+  def read_body(%Plug.Conn{method: "POST", path_info: ["mcp"]} = conn, opts),
+    do: Siwa.AgentAuthPlug.read_body(conn, opts, @signed_body_limit)
+
+  def read_body(conn, opts), do: RegentIdentity.BodyReader.read_body(conn, opts)
 end

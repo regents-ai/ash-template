@@ -71,34 +71,38 @@ defmodule AshTemplateWeb.Telemetry do
   def wallet_failed(_flow, _reason), do: :ok
 
   @doc "The poller for the measurements the site takes itself, started after Oban."
-  def site_poller,
-    do:
-      {:telemetry_poller,
-       measurements:
-         [
-           {AshTemplate.SharedReading, :measure, []},
-           {__MODULE__, :oldest_unfinished_jobs, []}
-         ] ++ unconfirmed_sends_step(),
-       period: 10_000,
-       name: :ash_template_site_poller}
+  def site_poller do
+    # Only a site that sends from its own wallet names its query. Without one the
+    # age is never published, so Sentinel never reads a steady 0 that only means
+    # nothing was asked.
+    unconfirmed_sends =
+      case Application.get_env(:ash_template, __MODULE__)[:unconfirmed_sends] do
+        nil -> []
+        query -> [{__MODULE__, :oldest_unconfirmed_sends, [query]}]
+      end
 
-  # Only a site that sends from its own wallet names its query. Without one the
-  # age is never published, so Sentinel never reads a steady 0 that only means
-  # nothing was asked.
-  defp unconfirmed_sends_step do
-    case Application.get_env(:ash_template, __MODULE__)[:unconfirmed_sends] do
-      nil -> []
-      query -> [{__MODULE__, :oldest_unconfirmed_sends, [query]}]
-    end
+    {:telemetry_poller,
+     measurements:
+       [
+         {AshTemplate.SharedReading, :measure, []},
+         {__MODULE__, :oldest_unfinished_jobs, []}
+       ] ++ unconfirmed_sends,
+     period: 10_000,
+     name: :ash_template_site_poller}
   end
 
   # The poller drops for good a measurement that raises or exits, and the row
   # would then keep its last number. So whatever stops this tick (a database
   # that cannot answer, a queue too busy to say whether it runs, Oban or the
   # repo restarting) is logged and skipped; the next tick measures again.
+  # Only running queues are measured: a paused queue holds its jobs on purpose,
+  # and its age would only grow. Where no queue runs (tests), nothing is read.
   @doc false
   def oldest_unfinished_jobs do
-    measure_oldest_unfinished_jobs()
+    case for %{queue: queue, paused: false} <- Oban.check_all_queues(), do: queue do
+      [] -> :ok
+      running -> report_oldest(running)
+    end
   rescue
     error -> not_measured("background job age", Exception.message(error))
   catch
@@ -132,15 +136,6 @@ defmodule AshTemplateWeb.Telemetry do
   end
 
   defp not_measured(what, why), do: Logger.warning("#{what} not measured: #{why}")
-
-  # Only running queues are measured: a paused queue holds its jobs on purpose,
-  # and its age would only grow. Where no queue runs (tests), nothing is read.
-  defp measure_oldest_unfinished_jobs do
-    case for %{queue: queue, paused: false} <- Oban.check_all_queues(), do: queue do
-      [] -> :ok
-      running -> report_oldest(running)
-    end
-  end
 
   defp report_oldest(running) do
     %{prefix: prefix} = Oban.config()

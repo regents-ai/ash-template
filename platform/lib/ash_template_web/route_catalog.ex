@@ -1,8 +1,6 @@
 defmodule AshTemplateWeb.RouteCatalog do
   @moduledoc "The route specs the shell renders, and the design handoff built from them."
 
-  alias __MODULE__.RouteTarget
-
   # The site's own first room, which the migration that made the rooms table wrote.
   @first_room "/rooms/general"
 
@@ -24,10 +22,10 @@ defmodule AshTemplateWeb.RouteCatalog do
       id: :home,
       title: "Shortcuts",
       targets: [
-        %RouteTarget{route_id: :notes, label: "Write a note", path: "/notes"},
-        %RouteTarget{route_id: :chat, label: "Start a chat", path: "/chat"},
-        %RouteTarget{route_id: :room, label: "General room", path: @first_room},
-        %RouteTarget{
+        %{route_id: :notes, label: "Write a note", path: "/notes"},
+        %{route_id: :chat, label: "Start a chat", path: "/chat"},
+        %{route_id: :room, label: "General room", path: @first_room},
+        %{
           route_id: :connections,
           label: "Connect an account",
           path: "/account/connections"
@@ -46,52 +44,52 @@ defmodule AshTemplateWeb.RouteCatalog do
       id: :design,
       title: "Design",
       targets: [
-        %RouteTarget{route_id: :showcase, label: "Components", path: "/showcase"},
-        %RouteTarget{route_id: :motion_lab, label: "Motion lab", path: "/animations"},
-        %RouteTarget{route_id: :world_cube, label: "World cube", path: "/animations/cube"},
-        %RouteTarget{route_id: :twin_cube, label: "Twin cubes", path: "/animations/twin-cube"},
-        %RouteTarget{route_id: :foil_cards, label: "Foil cards", path: "/animations/foil"},
-        %RouteTarget{route_id: :site_buttons, label: "Site buttons", path: "/animations/buttons"},
-        %RouteTarget{route_id: :crown, label: "Crown", path: "/animations/crown"},
-        %RouteTarget{
+        %{route_id: :showcase, label: "Components", path: "/showcase"},
+        %{route_id: :motion_lab, label: "Motion lab", path: "/animations"},
+        %{route_id: :world_cube, label: "World cube", path: "/animations/cube"},
+        %{route_id: :twin_cube, label: "Twin cubes", path: "/animations/twin-cube"},
+        %{route_id: :foil_cards, label: "Foil cards", path: "/animations/foil"},
+        %{route_id: :site_buttons, label: "Site buttons", path: "/animations/buttons"},
+        %{route_id: :crown, label: "Crown", path: "/animations/crown"},
+        %{
           route_id: :keyfleet_home,
           label: "Keyfleet home",
           path: "/animations/keyfleet"
         },
-        %RouteTarget{
+        %{
           route_id: :header_footer,
           label: "Navigation",
           path: "/animations/header-footer"
         },
-        %RouteTarget{route_id: :harbour, label: "Agent harbour", path: "/animations/harbour"},
-        %RouteTarget{route_id: :wonders, label: "Ten wonders", path: "/animations/wonders"},
-        %RouteTarget{route_id: :swarm_city, label: "Swarm city", path: "/animations/swarm-city"}
+        %{route_id: :harbour, label: "Agent harbour", path: "/animations/harbour"},
+        %{route_id: :wonders, label: "Ten wonders", path: "/animations/wonders"},
+        %{route_id: :swarm_city, label: "Swarm city", path: "/animations/swarm-city"}
       ]
     },
     settings: %{
       id: :settings,
       title: "Help",
       targets: [
-        %RouteTarget{route_id: :agents, label: "Connect agent", path: "/agents"},
-        %RouteTarget{route_id: :docs, label: "Documentation", path: "/docs"},
-        %RouteTarget{route_id: :about, label: "About", path: "/about"},
-        %RouteTarget{route_id: :privacy, label: "Privacy", path: "/privacy"},
-        %RouteTarget{route_id: :terms, label: "Terms", path: "/terms"}
+        %{route_id: :agents, label: "Connect agent", path: "/agents"},
+        %{route_id: :docs, label: "Documentation", path: "/docs"},
+        %{route_id: :about, label: "About", path: "/about"},
+        %{route_id: :privacy, label: "Privacy", path: "/privacy"},
+        %{route_id: :terms, label: "Terms", path: "/terms"}
       ]
     }
   }
 
   @tabs %{
     home: [
-      %RouteTarget{route_id: :app, label: "Overview", path: "/app"},
-      %RouteTarget{route_id: :activity, label: "Activity", path: "/app/activity"}
+      %{route_id: :app, label: "Overview", path: "/app"},
+      %{route_id: :activity, label: "Activity", path: "/app/activity"}
     ],
     settings: [
-      %RouteTarget{route_id: :account, label: "Account", path: "/account"},
-      %RouteTarget{route_id: :account_agents, label: "Agents", path: "/account/agents"},
-      %RouteTarget{route_id: :points, label: "Points", path: "/account/points"},
-      %RouteTarget{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
-      %RouteTarget{route_id: :connections, label: "Connections", path: "/account/connections"}
+      %{route_id: :account, label: "Account", path: "/account"},
+      %{route_id: :account_agents, label: "Agents", path: "/account/agents"},
+      %{route_id: :points, label: "Points", path: "/account/points"},
+      %{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
+      %{route_id: :connections, label: "Connections", path: "/account/connections"}
     ]
   }
 
@@ -232,9 +230,6 @@ defmodule AshTemplateWeb.RouteCatalog do
     Enum.any?(@live_destinations, &same_shape?(&1, segments))
   end
 
-  @doc "Whether a sidebar or tab target opens inside the app."
-  def live?(%RouteTarget{path: path}), do: live_path?(path)
-
   @doc """
   The spec of a live action; a room's or conversation's destination is the one
   its `params` name.
@@ -299,9 +294,9 @@ defmodule AshTemplateWeb.RouteCatalog do
 
   defp parameter_schema(_action), do: %{}
 
-  defp handoff_target(%RouteTarget{} = target) do
+  defp handoff_target(target) do
     %{
-      type: if(live?(target), do: "route", else: "document"),
+      type: if(live_path?(target.path), do: "route", else: "document"),
       route_id: target.route_id,
       label: target.label,
       destination: target.path

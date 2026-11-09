@@ -27,14 +27,13 @@ defmodule AshTemplateWeb.Showcase do
 
   @loopback_hosts ~w(localhost 127.0.0.1 ::1 [::1])
 
-  @doc "The showcase setting."
-  def mode, do: Application.fetch_env!(:ash_template, :showcase)
-
   @doc "True when the showcase pages are public and listed."
   def public?, do: mode() == :public
 
   @doc "True when the home page links to the showcase, the motion lab and the skills."
   def linked?, do: mode() != :off
+
+  defp mode, do: Application.fetch_env!(:ash_template, :showcase)
 
   @impl Plug
   def init(part), do: part
