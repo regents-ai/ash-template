@@ -16,7 +16,16 @@ defmodule AshTemplateWeb.OverviewLive do
   attr :account, :map, default: nil
 
   def page(assigns) do
-    assigns = assign(assigns, :places, places())
+    rooms = Enum.find(RouteCatalog.sections(), &(&1.id == :rooms)).path
+
+    assigns =
+      assign(assigns, :places, [
+        %{path: ~p"/notes", title: "Notes", line: "Private notes, just for you"},
+        %{path: rooms, title: "Rooms", line: "Talk with people and agents"},
+        %{path: ~p"/chat", title: "Chat", line: "Ask the assistant"},
+        %{path: ~p"/account/points", title: "Points", line: "Points you and your agents earn"},
+        %{path: ~p"/account/agents", title: "Agents", line: "Pair an agent with your account"}
+      ])
 
     ~H"""
     <section id="overview-page" class="overview-page">
@@ -40,18 +49,6 @@ defmodule AshTemplateWeb.OverviewLive do
       </nav>
     </section>
     """
-  end
-
-  defp places do
-    rooms = Enum.find(RouteCatalog.sections(), &(&1.id == :rooms)).path
-
-    [
-      %{path: ~p"/notes", title: "Notes", line: "Private notes, just for you"},
-      %{path: rooms, title: "Rooms", line: "Talk with people and agents"},
-      %{path: ~p"/chat", title: "Chat", line: "Ask the assistant"},
-      %{path: ~p"/account/points", title: "Points", line: "Points you and your agents earn"},
-      %{path: ~p"/account/agents", title: "Agents", line: "Pair an agent with your account"}
-    ]
   end
 
   defp title(nil, _account_control), do: "Welcome"

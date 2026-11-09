@@ -60,7 +60,6 @@ defmodule AshTemplateWeb.ShellLive do
        room: nil,
        people: [],
        conversation: nil,
-       chat_topics: MapSet.new(),
        dm: nil,
        poll_id: nil,
        hearing_polls?: false,
@@ -72,7 +71,6 @@ defmodule AshTemplateWeb.ShellLive do
        points_board: %Read{},
        points_earning: [],
        verified_connections_notice: nil,
-       connection_outcome: nil,
        notifications: %Read{},
        mark_read_failed?: false,
        healthy: AshTemplate.Health.database_ready?(),
@@ -132,11 +130,9 @@ defmodule AshTemplateWeb.ShellLive do
 
   # The outcome is judged against the connections read after the provider came back.
   def handle_event("refresh_verified_connections", params, socket) do
-    {:noreply,
-     socket
-     |> assign(connection_outcome: params, verified_connections_notice: nil)
-     |> read_verified_connections()
-     |> report_connection_outcome()}
+    socket = read_verified_connections(socket)
+    notice = connection_outcome(params, socket.assigns.verified_connections)
+    {:noreply, assign(socket, verified_connections_notice: notice)}
   end
 
   # The Account page saved the person's name in the shared profile. Every event
@@ -552,30 +548,16 @@ defmodule AshTemplateWeb.ShellLive do
        ),
        do: assign(socket, :conversation, conversation)
 
-  defp open_conversation(socket, conversation),
-    do: socket |> assign(:conversation, conversation) |> sync_chat_topics()
-
-  # The page hears the conversation on screen.
-  defp sync_chat_topics(socket) do
-    wanted =
-      case socket.assigns.conversation do
-        %{id: id} -> MapSet.new(["chat:messages:#{id}"])
-        nil -> MapSet.new()
-      end
-
+  defp open_conversation(socket, conversation) do
     if connected?(socket) do
-      held = socket.assigns.chat_topics
+      with %{id: id} <- socket.assigns.conversation,
+           do: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, "chat:messages:#{id}")
 
-      for topic <- MapSet.difference(held, wanted),
-          do: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, topic)
-
-      for topic <- MapSet.difference(wanted, held),
-          do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, topic)
-
-      assign(socket, :chat_topics, wanted)
-    else
-      socket
+      with %{id: id} <- conversation,
+           do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{id}")
     end
+
+    assign(socket, :conversation, conversation)
   end
 
   defp on_room?(%{assigns: %{room: %{slug: slug}}}, room), do: slug == room
@@ -679,8 +661,16 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp found_rooms(query) when byte_size(query) >= 2 do
     case Rooms.search_rooms(query) do
-      {:ok, [_ | _] = rooms} -> [{"Rooms", Enum.map(rooms, &room_item/1)}]
-      _none -> []
+      {:ok, [_ | _] = rooms} ->
+        items =
+          for room <- rooms do
+            %{kind: :page, label: "#{room.name} room", path: "/rooms/#{room.slug}", live?: true}
+          end
+
+        [{"Rooms", items}]
+
+      _none ->
+        []
     end
   end
 
@@ -689,7 +679,18 @@ defmodule AshTemplateWeb.ShellLive do
   defp found_notes(query, %Human{} = actor) when byte_size(query) >= 2 do
     case Notes.search_my_notes(query, actor: actor) do
       {:ok, [_ | _] = notes} ->
-        [{"Notes", Enum.map(notes, &note_item(&1, query))}]
+        items =
+          for note <- notes do
+            %{
+              kind: :note,
+              label: note.title,
+              detail: excerpt(note.body, query),
+              path: "/notes",
+              live?: true
+            }
+          end
+
+        [{"Notes", items}]
 
       _none ->
         []
@@ -701,7 +702,18 @@ defmodule AshTemplateWeb.ShellLive do
   defp found_messages(query, actor) when byte_size(query) >= 2 do
     case Rooms.search_messages(query, actor: actor) do
       {:ok, [_ | _] = messages} ->
-        [{"Room messages", Enum.map(messages, &message_item(&1, query))}]
+        items =
+          for message <- messages do
+            %{
+              kind: :message,
+              label: "#{message.author_name} in #{message.in_room.name}",
+              detail: excerpt(message.body, query),
+              path: "/rooms/#{message.room}",
+              live?: true
+            }
+          end
+
+        [{"Room messages", items}]
 
       _none ->
         []
@@ -709,27 +721,6 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   defp found_messages(_query, _actor), do: []
-
-  defp note_item(note, query),
-    do: %{
-      kind: :note,
-      label: note.title,
-      detail: excerpt(note.body, query),
-      path: "/notes",
-      live?: true
-    }
-
-  defp room_item(room),
-    do: %{kind: :page, label: "#{room.name} room", path: "/rooms/#{room.slug}", live?: true}
-
-  defp message_item(message, query),
-    do: %{
-      kind: :message,
-      label: "#{message.author_name} in #{message.in_room.name}",
-      detail: excerpt(message.body, query),
-      path: "/rooms/#{message.room}",
-      live?: true
-    }
 
   @excerpt_length 90
 
@@ -826,7 +817,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp load_verified_connections(socket, _route_spec) do
     socket
     |> Read.clear(:verified_connections)
-    |> assign(verified_connections_notice: nil, connection_outcome: nil)
+    |> assign(verified_connections_notice: nil)
   end
 
   # The account's own record is the only thing a connection is read from, so
@@ -865,13 +856,6 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp connection_started(%{action: :unlink, provider: provider}),
     do: "Disconnecting #{Providers.label(provider)}…"
-
-  defp report_connection_outcome(%{assigns: %{connection_outcome: nil}} = socket), do: socket
-
-  defp report_connection_outcome(%{assigns: assigns} = socket) do
-    notice = connection_outcome(assigns.connection_outcome, assigns.verified_connections)
-    assign(socket, verified_connections_notice: notice, connection_outcome: nil)
-  end
 
   defp connection_outcome(%{"error" => "already-connected"}, _read),
     do: %{tone: :error, message: "That account is already connected to another account here."}
