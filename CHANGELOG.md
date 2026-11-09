@@ -6846,3 +6846,15 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
 - The public changelog (`platform/priv/public/changelog.md`) now lists hidden characters
   and the connection notice, and `platform/fly.toml` gives the request limits, counted
   in each machine's memory, as the reason for one machine, now that long polling is gone.
+
+## 2026-11-09 — ash_ai 1.5.1: tool errors no longer reach agents word for word
+
+- `ash_ai` moves from 1.5.0 to 1.5.1, which fixes EEF-CVE-2026-119613 (CVE-2026-119613):
+  before it, a tool error that `AshAi.ToToolError` does not describe was sent to the
+  agent and the model with its full text, which can carry internal details. 1.5.1
+  sends "unexpected error occurred (error id: …)" instead and logs the error with
+  that id. Only the `ash_ai` line of `platform/mix.lock` changes.
+- `security/required-fixes.json` lists the fix (`ash_ai >= 1.5.1`), so each site's
+  own gate refuses a lock still on 1.5.0.
+- `mix precommit` had stopped at `mix hex.audit` since the advisory was published; it
+  passes again.
