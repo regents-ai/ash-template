@@ -166,7 +166,7 @@ defmodule AshTemplateWeb.FeedbackLab do
           <div
             id="flair-gradient-island"
             class="flair-gradient-island"
-            phx-mounted={Phoenix.LiveView.JS.ignore_attributes("data-gradient-ready")}
+            phx-mounted={JS.ignore_attributes("data-gradient-ready")}
             data-state={@state}
             phx-hook="LabGradient"
             phx-update="ignore"
