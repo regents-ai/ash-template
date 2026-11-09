@@ -75,10 +75,18 @@ defmodule AshTemplate.ChainHead do
     end
   end
 
-  defp read(state) do
-    case newest(state.chain_id) do
-      {:ok, block} -> SharedReading.put(key(state.chain_id), block)
-      :error -> SharedReading.degraded(key(state.chain_id))
+  # These connect options give the reads a connection pool of their own, so
+  # they never wait behind another caller. A failed request is counted by the
+  # client under the reader's own name, apart from the wallet's.
+  defp read(%{chain_id: chain_id} = state) do
+    timeouts = [connect_options: [timeout: @wait_ms], receive_timeout: @wait_ms]
+
+    with {:ok, "0x" <> hex} <-
+           ChainClient.rpc(%{chain_id: chain_id}, "eth_blockNumber", [], "chain_head", timeouts),
+         {block, ""} <- Integer.parse(hex, 16) do
+      SharedReading.put(key(chain_id), block)
+    else
+      _no_block -> SharedReading.degraded(key(chain_id))
     end
 
     schedule(%{state | read_at: now()}, state.every_ms)
@@ -93,19 +101,4 @@ defmodule AshTemplate.ChainHead do
   defp now, do: System.monotonic_time(:millisecond)
 
   defp topic(chain_id), do: "chain_head:#{chain_id}"
-
-  # These connect options give the reads a connection pool of their own, so
-  # they never wait behind another caller. A failed request is counted by the
-  # client under the reader's own name, apart from the wallet's.
-  defp newest(chain_id) do
-    timeouts = [connect_options: [timeout: @wait_ms], receive_timeout: @wait_ms]
-
-    with {:ok, "0x" <> hex} <-
-           ChainClient.rpc(%{chain_id: chain_id}, "eth_blockNumber", [], "chain_head", timeouts),
-         {block, ""} <- Integer.parse(hex, 16) do
-      {:ok, block}
-    else
-      _no_block -> :error
-    end
-  end
 end

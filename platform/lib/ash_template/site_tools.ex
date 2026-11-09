@@ -65,13 +65,11 @@ defmodule AshTemplate.SiteTools do
 
   @doc "The site's tools, from the last day's copy or read from the site now."
   @spec tools(String.t()) :: {:ok, [tool()]} | {:error, :unknown_site | :unreachable}
-  def tools(site) do
-    if Map.has_key?(@sites, site) do
-      with :miss <- kept(site), do: GenServer.call(__MODULE__, {:read, site}, @wait_ms)
-    else
-      {:error, :unknown_site}
-    end
+  def tools(site) when is_map_key(@sites, site) do
+    with :miss <- kept(site), do: GenServer.call(__MODULE__, {:read, site}, @wait_ms)
   end
+
+  def tools(_site), do: {:error, :unknown_site}
 
   defp kept(site) do
     now = System.monotonic_time(:millisecond)
@@ -92,7 +90,9 @@ defmodule AshTemplate.SiteTools do
          ) do
       {:ok, %Req.Response{status: 200, body: %{"tools" => tools}}} when is_list(tools) ->
         {:ok,
-         for(tool when is_map(tool) <- tools, shown?(tool, config.scopes), do: present(tool))}
+         for tool when is_map(tool) <- tools, shown?(tool, config.scopes) do
+           %{name: tool["name"], title: tool["title"], description: tool["description"]}
+         end}
 
       _failure ->
         {:error, :unreachable}
@@ -136,10 +136,6 @@ defmodule AshTemplate.SiteTools do
 
   defp shown?(_tool, :every), do: true
   defp shown?(tool, :home), do: tool["scope"] in ["site", "/"]
-
-  defp present(tool) do
-    %{name: tool["name"], title: tool["title"], description: tool["description"]}
-  end
 
   @impl true
   def init(nil) do

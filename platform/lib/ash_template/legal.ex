@@ -22,16 +22,11 @@ defmodule AshTemplate.Legal do
 
   def markdown(id) when is_map_key(@sources, id), do: @sources[id].markdown
 
-  def document(id) when is_map_key(@sources, id) do
-    %{title: title, markdown: markdown} = @sources[id]
-    %{id: id, title: title, html: to_safe_html(markdown)}
-  end
-
   # The HTML is MDEx-sanitized from the committed legal markdown.
   # sobelow_skip ["XSS.Raw"]
-  defp to_safe_html(markdown) do
-    markdown
-    |> AshTemplate.Markdown.to_html!(sanitize: @sanitize)
-    |> Phoenix.HTML.raw()
+  def document(id) when is_map_key(@sources, id) do
+    %{title: title, markdown: markdown} = @sources[id]
+    html = markdown |> AshTemplate.Markdown.to_html!(sanitize: @sanitize) |> Phoenix.HTML.raw()
+    %{id: id, title: title, html: html}
   end
 end

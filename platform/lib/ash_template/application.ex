@@ -22,6 +22,8 @@ defmodule AshTemplate.Application do
     :ok = Logger.add_handlers(:ash_template)
     :ok = :logger.add_handler_filter(:default, :visits, AshTemplateWeb.VisitLog.default_filter())
 
+    serving? = Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint)
+
     children =
       [
         AshTemplateWeb.Telemetry,
@@ -43,17 +45,26 @@ defmodule AshTemplate.Application do
         AshTemplate.Agents.HostedAddress,
         # Each agent's reading for an open account menu, unlinked from the page.
         {Task.Supervisor, name: AshTemplate.Agents.Reads},
-        chain_head_children(),
-        room_activity_child(),
-        points_board_child(),
+        # The chain is read, rooms counted and the Points board read only where
+        # pages are served, so a task or a test never calls a node or reads the
+        # database before it asks to.
+        if(serving?, do: AshTemplate.ChainHead.children()),
+        if(serving?, do: AshTemplate.Rooms.Activity),
+        if(serving?, do: AshTemplate.Points.Board),
         # After PubSub: a pairing made or ended on any Regent site reaches the
         # pages showing it.
         AshTemplate.SharedChanges,
-        {Oban, oban_config()},
+        # AshOban adds a sweep for every trigger in the site's domains.
+        {Oban,
+         AshOban.config(
+           Application.fetch_env!(:ash_template, :ash_domains),
+           Application.fetch_env!(:ash_template, Oban)
+         )},
         AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Live.OpenPages,
         AshTemplateWeb.Endpoint,
-        metrics_child()
+        # Metrics are served beside the site, never by a process that only runs a task.
+        if(serving?, do: AshTemplateWeb.Metrics)
       ]
       |> List.flatten()
       |> Enum.reject(&is_nil/1)
@@ -66,35 +77,4 @@ defmodule AshTemplate.Application do
     AshTemplateWeb.Endpoint.config_change(changed, removed)
     :ok
   end
-
-  # AshOban adds a sweep for every trigger in the site's domains.
-  defp oban_config do
-    AshOban.config(
-      Application.fetch_env!(:ash_template, :ash_domains),
-      Application.fetch_env!(:ash_template, Oban)
-    )
-  end
-
-  # Metrics are served beside the site, never by a process that only runs a task.
-  defp metrics_child do
-    if serving?(), do: AshTemplateWeb.Metrics
-  end
-
-  # The chain is read only where pages are served, so a task or a test never
-  # calls a node.
-  defp chain_head_children do
-    if serving?(), do: AshTemplate.ChainHead.children(), else: []
-  end
-
-  # Rooms are counted, and the Points board read, only where pages are served,
-  # so a task or a test never reads the database before it asks to.
-  defp room_activity_child do
-    if serving?(), do: AshTemplate.Rooms.Activity
-  end
-
-  defp points_board_child do
-    if serving?(), do: AshTemplate.Points.Board
-  end
-
-  defp serving?, do: Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint)
 end

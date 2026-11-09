@@ -277,17 +277,11 @@ defmodule AshTemplate.DatabaseConfig do
   defp production_identity?(value), do: names_any?(value, @production_identities)
 
   defp names_any?(value, terms) when is_binary(value) do
-    decoded = value |> decode() |> String.downcase()
+    decoded = value |> URI.decode() |> String.downcase()
     Enum.any?(terms, &String.contains?(decoded, &1))
   end
 
   defp names_any?(_value, _terms), do: false
-
-  defp decode(value) do
-    URI.decode(value)
-  rescue
-    _error -> value
-  end
 
   defp present?(value), do: is_binary(value) and String.trim(value) != ""
 end
