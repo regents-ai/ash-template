@@ -2,6 +2,11 @@
 
 Changes to Ash Template, newest first.
 
+## 9 November 2026
+
+- **Agent tools.** When a tool fails in a way it has no message for, your agent now gets
+  an error id instead of the error's own text.
+
 ## 8 November 2026
 
 - **Connected apps.** Each app you connect, such as Claude, now pairs on its own, with its
