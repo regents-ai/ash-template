@@ -62,7 +62,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
         shown: Enum.filter(assigns.all_replies, &shown?(&1, assigns.filter)),
         solution: Enum.find(assigns.all_replies, & &1.solution),
         like_total:
-          Enum.sum(Enum.map([assigns.opening | assigns.all_replies], &likes(&1, assigns.liked)))
+          Enum.sum_by([assigns.opening | assigns.all_replies], &likes(&1, assigns.liked))
       )
 
     ~H"""
@@ -218,7 +218,7 @@ defmodule AshTemplateWeb.DiscussionShowcaseLive do
       text: post.(opening).text,
       author: %{name: opening.author},
       at: opening.at,
-      likes: Enum.sum(Enum.map([opening | replies], &likes(&1, liked))),
+      likes: Enum.sum_by([opening | replies], &likes(&1, liked)),
       views: @thread_views,
       reply_count: length(replies),
       replies: Enum.map(replies, post),

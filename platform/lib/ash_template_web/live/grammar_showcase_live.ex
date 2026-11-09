@@ -11,7 +11,6 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.Components.Shell
-  alias Phoenix.LiveView.JS
   alias Regent.Primitives, as: P
   alias Regent.Structure, as: S
 
@@ -109,8 +108,8 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
 
   @impl true
   def handle_params(_params, _uri, socket) do
-    {:noreply,
-     assign(socket, AshTemplateWeb.PublicDocuments.page(path(socket.assigns.live_action)))}
+    {_label, path} = Keyword.fetch!(@views, socket.assigns.live_action)
+    {:noreply, assign(socket, AshTemplateWeb.PublicDocuments.page(path))}
   end
 
   @impl true
@@ -119,8 +118,6 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
 
   def handle_event("window_closed", _params, socket),
     do: {:noreply, assign(socket, window_open?: false)}
-
-  defp path(view), do: @views |> Keyword.fetch!(view) |> elem(1)
 
   # Corners of the layer's outline on its plane, cut where it is cut, then seen
   # from above at an angle and lifted by its height. Its name sits beside its

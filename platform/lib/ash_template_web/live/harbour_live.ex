@@ -20,7 +20,6 @@ defmodule AshTemplateWeb.HarbourLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.{PublicDocuments, SampleCrew}
-  alias Phoenix.LiveView.JS
 
   @impl true
   def mount(_params, _session, socket) do

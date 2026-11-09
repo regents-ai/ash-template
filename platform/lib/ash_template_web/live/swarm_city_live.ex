@@ -26,7 +26,6 @@ defmodule AshTemplateWeb.SwarmCityLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplateWeb.{NotFoundError, PublicDocuments, SampleCrew}
-  alias Phoenix.LiveView.JS
 
   # A themed look paints the city one way while the page is light and another while it is dark.
   @looks [

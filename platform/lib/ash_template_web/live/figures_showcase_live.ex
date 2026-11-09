@@ -62,17 +62,18 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
 
   # Only what a row draws is kept: the room's name and its two figures.
   defp assign_rooms(socket) do
-    assign(socket, rooms: Enum.map(socket.assigns.names, &room/1))
-  end
+    rooms =
+      for {slug, name} <- socket.assigns.names do
+        case SharedReading.fetch(Activity.key(slug)) do
+          {:ok, %{reading: %{messages: messages, latest_at: latest_at}, degraded?: behind?}} ->
+            %{slug: slug, name: name, messages: messages, latest_at: latest_at, behind?: behind?}
 
-  defp room({slug, name}) do
-    case SharedReading.fetch(Activity.key(slug)) do
-      {:ok, %{reading: %{messages: messages, latest_at: latest_at}, degraded?: behind?}} ->
-        %{slug: slug, name: name, messages: messages, latest_at: latest_at, behind?: behind?}
+          _no_count_yet ->
+            %{slug: slug, name: name, messages: nil, latest_at: nil, behind?: true}
+        end
+      end
 
-      _no_count_yet ->
-        %{slug: slug, name: name, messages: nil, latest_at: nil, behind?: true}
-    end
+    assign(socket, rooms: rooms)
   end
 
   defp messages(1), do: "1 message"
