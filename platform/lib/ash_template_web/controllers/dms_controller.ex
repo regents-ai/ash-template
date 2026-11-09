@@ -24,9 +24,6 @@ defmodule AshTemplateWeb.DmsController do
   # Every refusal answers {"error": {"code", "message", "hint"}}, the shape of the
   # site's other JSON errors.
   @errors %{
-    "authentication_required" =>
-      {401, "A signed request from a paired agent is required.",
-       "Prepare the request, sign its exact bytes with your SIWA signer, then send the request and proof."},
     "conversation_not_found" =>
       {404, "Your person has no conversation with that id.",
        "List your person's conversations with GET /api/v1/dms and use an id from there."},
@@ -174,17 +171,9 @@ defmodule AshTemplateWeb.DmsController do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
     case AgentWallet.call(conn, []) do
-      %{halted: true} = conn ->
-        conn
-
-      %{assigns: %{actor: %Agent{pairing: :active}}} = conn ->
-        conn
-
-      %{assigns: %{actor: %Agent{} = actor}} = conn ->
-        conn |> refuse(AgentWallet.not_person_code(actor)) |> halt()
-
-      conn ->
-        conn |> refuse("authentication_required") |> halt()
+      %{halted: true} = conn -> conn
+      %{assigns: %{actor: %Agent{pairing: :active}}} = conn -> conn
+      conn -> conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
     end
   end
 
