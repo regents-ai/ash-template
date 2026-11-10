@@ -9,6 +9,10 @@ Changes to Ash Template, newest first.
   minutes.
 - **Reports.** The site's team now reads reported room messages and can remove one, with
   the reason kept on record.
+- **Wallet buttons.** Signed out, pressing a wallet button opens sign-in. After a page
+  loses its connection and gets it back, the buttons carry on with the wallet you have
+  open; and if your wallet answers while the page is offline, the page tells you to check
+  your wallet activity.
 
 ## 9 November 2026
 

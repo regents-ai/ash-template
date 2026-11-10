@@ -121,13 +121,10 @@ defmodule AshTemplateWeb.OnchainSteps do
   @doc """
   What to say when a press sent nothing, or may have sent something, in words
   for the person who pressed, as parts for `note/1`. `linked` and `active` are
-  the account's wallets (`nil` signed out) and Privy's active wallet, as for
-  `signer/2`.
+  the signed-in account's wallets and Privy's active wallet, as for `signer/2`.
+  `reason` is one `RegentChain.Presses.failed/1` let through. Signed out there
+  is nothing to say: a press opens Privy's sign-in (`data-account-target`).
   """
-  def failure_note(reason, nil, _active, _chain_name)
-      when reason in ~w(step_unknown wallet_unavailable),
-      do: ["Sign in to send this. Nothing was sent."]
-
   def failure_note(reason, [], _active, _chain_name)
       when reason in ~w(step_unknown wallet_unavailable),
       do: ["#{@no_wallet} Nothing was sent."]
@@ -167,6 +164,9 @@ defmodule AshTemplateWeb.OnchainSteps do
 
   def failure_note("send_unconfirmed", _linked, _active, _chain_name),
     do: ["Your wallet may have sent this. Check your wallet activity."]
+
+  def failure_note("sign_unconfirmed", _linked, _active, _chain_name),
+    do: ["Your wallet may have signed this. Check your wallet before pressing again."]
 
   attr :id, :string, required: true
 

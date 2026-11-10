@@ -18,7 +18,7 @@ defmodule AshTemplateWeb.OnchainExample do
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.OnchainSteps
   alias Regent.Primitives, as: P
-  alias RegentChain.{Call, Review}
+  alias RegentChain.{Call, Presses, Review}
 
   # The identity precompile accepts any input; the bn254 addition precompile
   # refuses these points, so the transaction reverts. Neither holds value.
@@ -76,12 +76,20 @@ defmodule AshTemplateWeb.OnchainExample do
     end
   end
 
-  def handle_event("step_failed", %{"reason" => reason}, socket) when is_binary(reason) do
+  # Only a reason the shared list knows gets words, and only for a signed-in
+  # account: signed out, a press opens sign-in and reports nothing.
+  def handle_event("step_failed", params, socket) do
     %{linked: linked, active: active, chain: chain} = socket.assigns
-    AshTemplateWeb.Telemetry.wallet_failed(:onchain_example, reason)
 
-    {:noreply,
-     assign(socket, press_note: OnchainSteps.failure_note(reason, linked, active, chain.name))}
+    with {:ok, _step, reason} <- Presses.failed(params),
+         true <- is_list(linked) do
+      AshTemplateWeb.Telemetry.wallet_failed(:onchain_example, reason)
+
+      {:noreply,
+       assign(socket, press_note: OnchainSteps.failure_note(reason, linked, active, chain.name))}
+    else
+      _nothing_to_say -> {:noreply, socket}
+    end
   end
 
   def handle_event("check_again", %{"hash" => hash}, socket),
@@ -215,11 +223,24 @@ defmodule AshTemplateWeb.OnchainExample do
       </p>
 
       <div class="onchain-example-actions">
-        <P.button data-onchain-step="record"><span data-press-label>Record</span></P.button>
-        <P.button variant="secondary" data-onchain-step="fail">
+        <%!-- Signed out, each button is a sign-in control: its press opens Privy's sign-in. --%>
+        <P.button data-onchain-step="record" data-account-target={sign_in(@linked)}>
+          <span data-press-label>Record</span>
+        </P.button>
+        <P.button
+          variant="secondary"
+          data-onchain-step="fail"
+          data-account-target={sign_in(@linked)}
+        >
           <span data-press-label>Fail on purpose</span>
         </P.button>
-        <P.button variant="secondary" data-onchain-step="sign"><span data-press-label>Sign</span></P.button>
+        <P.button
+          variant="secondary"
+          data-onchain-step="sign"
+          data-account-target={sign_in(@linked)}
+        >
+          <span data-press-label>Sign</span>
+        </P.button>
       </div>
 
       <%!-- Room for three lines is kept, so a note never moves what follows. --%>
@@ -229,6 +250,9 @@ defmodule AshTemplateWeb.OnchainExample do
         </p>
         <p class="onchain-example-note" role="status" data-onchain-lost hidden>
           This page lost its connection, so nothing was sent. Press again once it's back.
+        </p>
+        <p class="onchain-example-note" role="status" data-onchain-unreported hidden>
+          Your wallet answered, but this page had lost its connection. Check your wallet activity.
         </p>
       </div>
 
@@ -267,6 +291,9 @@ defmodule AshTemplateWeb.OnchainExample do
     </section>
     """
   end
+
+  defp sign_in(nil), do: "sign-in"
+  defp sign_in(_linked), do: nil
 
   # What the buttons send, read from the review itself, so a press sends what the page shows.
   defp review_line(%{steps: []}), do: "Enter a whole number from 1 to 1,000,000 to record."

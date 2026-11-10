@@ -3,7 +3,7 @@
 // and a wallet on another account sends nothing.
 import {expect, it} from "vitest"
 
-import {NothingSent, sendStep, type TransactionStep} from "../js/wallet_actions/send_step"
+import {failure, NothingSent, sendStep, type TransactionStep} from "../js/wallet_actions/send_step"
 
 const chain = {chain_id: 8453, name: "Base", rpc_url: "https://mainnet.base.org"}
 const step: TransactionStep = {
@@ -46,4 +46,20 @@ it("sends nothing when the wallet answers for another account", async () => {
 
   await expect(sendStep(chain, signer, step, () => selected, () => undefined)).rejects.toBeInstanceOf(NothingSent)
   expect(sent).toEqual([])
+})
+
+// Invariant: a press that ends without an answer is named for what the wallet may
+// have done. Before the wallet was asked, nothing was sent; after, an unexplained
+// end may have sent the transaction or, for a signature step, made the signature,
+// and the two are never confused, since the page tells the person which to check.
+it("names an unexplained end by the kind of step the wallet was asked for", () => {
+  const dropped = new Error("the wallet stopped answering")
+
+  expect(failure(true, dropped, false)).toBe("send_unconfirmed")
+  expect(failure(true, dropped, true)).toBe("sign_unconfirmed")
+  for (const signature of [false, true]) {
+    expect(failure(true, {code: 4001}, signature)).toBe("wallet_declined")
+    expect(failure(false, dropped, signature)).toBe("wallet_unavailable")
+    expect(failure(false, new NothingSent("network_mismatch"), signature)).toBe("network_mismatch")
+  }
 })

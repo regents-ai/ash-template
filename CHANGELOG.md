@@ -6952,3 +6952,29 @@ sits on its own branches.
   sent transaction's hash and the Privy page's active wallet are drawn with the shared
   address component; unused showcase styles are removed; the showcase's database note
   says what the code does.
+
+## 2026-11-10 — Wallet buttons: reconnect, lost answers, signed-out press (branch, not on main)
+
+Decision 1 of the audit (Sean, "a for all 8", 10 November). Wallets are protected, so
+this sits on `tpl/audit-wallet-1110` until Sean has tried it; the sites take it only
+after his sign-off on the template's version.
+
+- **After a reconnect the buttons use the open wallet again.** A page that rejoins gets
+  a fresh component on the server, which had forgotten the active wallet while the hook
+  kept its old review: a press could send a real transaction the page then could not
+  follow. `OnchainSteps` now has `reconnected()`: it lets the old review go and tells the
+  server the active wallet again. The Privy showcase's hook does the same.
+- **A wallet answer the page cannot pass on is said, not dropped.** `step_sent`,
+  `step_signed` and `step_failed` were pushed with the result ignored. When the push does
+  not arrive, the component's own line says the wallet answered and to check wallet
+  activity (or, when nothing was sent, the existing "lost its connection" line), and the
+  visit log gets `press.unsent`. Nothing is stored or sent again.
+- **Signed out, a wallet button is a sign-in control** (`data-account-target="sign-in"`),
+  so a press opens Privy's sign-in, as the wallet rule says. The "Sign in to send this"
+  note is gone.
+- **Every failure reason has words, and an unknown one says nothing.** `step_failed` is
+  checked with `RegentChain.Presses.failed/1`; a reason outside the shared list used to
+  raise and take the page down. A failed signature is now `sign_unconfirmed` ("Your
+  wallet may have signed this"), no longer the words for a sent transaction.
+- Not proven: a real wallet on a real reconnect. The walk has no wallet; Sean's check on
+  a preview is the proof.
