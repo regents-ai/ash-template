@@ -2,10 +2,11 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
   @moduledoc """
   Local workshop for wallet buttons on a lab chain on this machine.
   `AshTemplateWeb.OnchainExample` runs here as on a product page; a lab account
-  (linking wallets A and B, or signed out) and the `OnchainLab` stand-in wallet
-  app, whose wallets are the lab chain's first three accounts, replace the real ones.
+  (linking wallets A and B) and the `OnchainLab` stand-in wallet app, whose
+  wallets are the lab chain's first three accounts, replace the real ones.
   The example acts for the lab account, not for whoever is signed in, so it
-  gets no session lease.
+  gets no session lease. The lab has no signed-out state: signed out, a wallet
+  button is a real sign-in control, which `/showcase/wallet` shows.
   """
   use AshTemplateWeb, :live_view
 
@@ -38,17 +39,13 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
        chain: Application.fetch_env!(:ash_template, :lab_chain),
        wallets: @wallets,
        linked: @linked,
-       switches: @switches,
-       signed_in: true
+       switches: @switches
      ), layout: false}
   end
 
-  @impl true
-  def handle_event("sign_in", _params, socket), do: {:noreply, assign(socket, signed_in: true)}
-  def handle_event("sign_out", _params, socket), do: {:noreply, assign(socket, signed_in: false)}
-
   # The stand-in wallet's requests that need the lab chain. Only its own
   # accounts send, and only there.
+  @impl true
   def handle_event(
         "lab_rpc",
         %{"chain_id" => chain_id, "method" => method, "params" => params},
@@ -106,13 +103,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
       <div class="onchain-workshop-grid">
         <section class="rg-panel rg-panel--surface" aria-labelledby="lab-account-heading">
           <h2 id="lab-account-heading">Account</h2>
-          <p id="lab-account-state">
-            {if @signed_in,
-              do: "Signed in. The account links wallets A and B.",
-              else: "Signed out."}
-          </p>
-          <P.button :if={!@signed_in} phx-click="sign_in">Sign in</P.button>
-          <P.button :if={@signed_in} variant="secondary" phx-click="sign_out">Sign out</P.button>
+          <p id="lab-account-state">Signed in. The account links wallets A and B.</p>
         </section>
 
         <section
@@ -153,7 +144,7 @@ defmodule AshTemplateWeb.OnchainShowcaseLive do
             id="onchain-example"
             lease={nil}
             client_key={@client_key}
-            account={if @signed_in, do: %{wallet_address: hd(@linked), wallet_addresses: @linked}}
+            account={%{wallet_address: hd(@linked), wallet_addresses: @linked}}
             chain={@chain}
           />
         </section>

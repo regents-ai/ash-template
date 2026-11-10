@@ -39,6 +39,9 @@ type OnchainStepsHook = Hook & {
   review?: Review
   clicked?: (event: Event) => void
   walletChanged?: () => void
+  // How many presses this component has taken, and the line it is showing.
+  pressed: number
+  shown: Line
 }
 
 // How many of a button's presses the wallet still has. The mark comes off when
@@ -56,12 +59,23 @@ export const OnchainSteps: Hook = {
     // then on. When the page has no connection it cannot, so the page says so
     // itself and reports it; nothing is kept or sent again. The wallet the server
     // should act for is told again when the connection is back (`reconnected`).
+    this.pressed = 0
+    this.shown = null
+    // A push can take half a minute to give up, so a line about one press is
+    // shown only while no newer press has started: said late, "nothing was sent"
+    // beside a newer press that went through would have a person send twice.
+    const say = (line: Line, during: number) => {
+      if (during !== this.pressed) return
+      this.shown = line
+      note(this.el, line)
+    }
     const push: Push = (event, payload) => {
+      const during = this.pressed
       const unheard = () => {
         if (event === "onchain_active_wallet") return
         const {step, reason} = payload as {step?: string; reason?: string}
         const answered = event !== "step_failed" || reason === "send_unconfirmed" || reason === "sign_unconfirmed"
-        note(this.el, answered ? "unreported" : "lost")
+        say(answered ? "unreported" : "lost", during)
         report({name: "press.unsent", where: step ?? event, outcome: "lost"})
       }
       void this.pushEventTo(this.el, event, payload).then(([result]) => {
@@ -90,11 +104,12 @@ export const OnchainSteps: Hook = {
       const release = mark(button)
       const form = formInputs(this.el)
       const asks = Object.keys(form).length > 0 && (!this.review || !sameInputs(this.review.inputs, form))
-      note(this.el, null)
+      const during = (this.pressed += 1)
+      say(null, during)
       // The server never heard the press, so it cannot say why; the page does, and
       // reports it.
       const unheard = () => {
-        note(this.el, "lost")
+        say("lost", during)
         report({name: "press.unsent", where: name, outcome: "lost"})
       }
 
@@ -127,8 +142,13 @@ export const OnchainSteps: Hook = {
   // knows the active wallet or the review this hook holds. The review is let go
   // and the wallet told again, so the next press is sent from a review the
   // server remembers.
+  //
+  // The rejoin redraws the component, which hides its lines again; the one this
+  // hook was showing is put back, so "your wallet answered" outlives the very
+  // reconnect it is about. The next press clears it.
   reconnected(this: OnchainStepsHook) {
     this.review = undefined
+    note(this.el, this.shown)
     this.walletChanged?.()
   },
 
@@ -204,7 +224,9 @@ function sameInputs(review: Record<string, string>, form: Record<string, string>
 // `data-onchain-lost` when the press never reached the server, and
 // `data-onchain-unreported` when the wallet answered and the answer could not
 // be passed on. `null` hides both; the next render from the server does too.
-function note(root: HTMLElement, shown: "lost" | "unreported" | null): void {
+type Line = "lost" | "unreported" | null
+
+function note(root: HTMLElement, shown: Line): void {
   for (const name of ["lost", "unreported"] as const) {
     const line = root.querySelector<HTMLElement>(`[data-onchain-${name}]`)
     if (line) line.hidden = name !== shown

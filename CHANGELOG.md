@@ -6978,3 +6978,28 @@ after his sign-off on the template's version.
   wallet may have signed this"), no longer the words for a sent transaction.
 - Not proven: a real wallet on a real reconnect. The walk has no wallet; Sean's check on
   a preview is the proof.
+
+## 2026-11-10 — Wallet buttons: fixes from the adversarial review (branch, not on main)
+
+A separate reviewer read `tpl/audit-wallet-1110` to break it and found no reason it must
+not ship; its findings are fixed here.
+
+- **The local wallet lab has no pretend "Signed out" state any more.** With the buttons
+  now real sign-in controls when signed out, the lab's own Sign out made a press start
+  the real sign-in, which could log a developer out of Privy. `/showcase/wallet` shows
+  the signed-out press.
+- **A line about one press never shows after a newer press has started.** A push can
+  take half a minute to give up, so "nothing was sent" could appear beside a newer press
+  that went through. It is still reported.
+- **The line the hook is showing is put back after the rejoin's redraw**, so "your
+  wallet answered" outlives the reconnect it is about, until the next press.
+- **A failed sign-in never switches a wallet button off**; only the chain's own state
+  may.
+- The example's form has an id, so the page sends its number again after a rejoin; the
+  visit log knows `sign_unconfirmed`; the signed-out check now proves the press was
+  taken as a sign-in request.
+- Left as the reviewer advised: on a component with no form fields, one press just after
+  a reconnect sends nothing until the new review arrives, as at first load.
+- Owed in a skill another lane is editing:
+  `skills/onchain-buttons/references/hook-pattern.md` has no row for `sign_unconfirmed`
+  or the new line.

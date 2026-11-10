@@ -198,7 +198,15 @@ defmodule AshTemplateWeb.OnchainExample do
   def render(assigns) do
     ~H"""
     <section id={@id} class="onchain-example" phx-hook="OnchainSteps">
-      <form class="onchain-example-form" phx-change="change" phx-submit="change" phx-target={@myself}>
+      <%!-- The id lets the page send the form again after a rejoin, so the server's
+           number is the one on screen. --%>
+      <form
+        id={"#{@id}-form"}
+        class="onchain-example-form"
+        phx-change="change"
+        phx-submit="change"
+        phx-target={@myself}
+      >
         <label for={"#{@id}-amount"}>Number</label>
         <input
           id={"#{@id}-amount"}

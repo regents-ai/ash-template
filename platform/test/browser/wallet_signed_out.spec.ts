@@ -20,6 +20,8 @@ test("signed out, pressing a wallet button asks for sign-in and shows no wallet 
   const record = example.locator("[data-onchain-step='record']")
   await (hasTouch ? record.tap() : record.click())
 
+  // The sign-in listener took the press: it marks the control busy, then done.
+  await expect(record).toHaveAttribute("aria-busy", "false")
   // The press is not held as a wallet press, and no line about wallets appears.
   await expect(record).not.toHaveAttribute("data-awaiting-wallet", "true")
   await expect(example.locator("#onchain-example-press-note")).toHaveCount(0)

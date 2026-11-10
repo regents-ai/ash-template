@@ -579,9 +579,11 @@ function positionAccountStatus(documentRoot: Document, status: HTMLElement): voi
   status.style.translate = `${shift}px 0`
 }
 
+// A wallet button that doubles as a sign-in control while signed out stays
+// pressable: a wallet button is switched off only by the chain's own state.
 function disableSignInControls(documentRoot: Document): void {
   documentRoot
-    .querySelectorAll<HTMLElement>("[data-account-target='sign-in']")
+    .querySelectorAll<HTMLElement>("[data-account-target='sign-in']:not([data-onchain-step])")
     .forEach(control => {
       control.setAttribute("aria-disabled", "true")
       if ("disabled" in control) {
