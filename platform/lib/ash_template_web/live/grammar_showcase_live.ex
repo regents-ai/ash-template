@@ -180,7 +180,12 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             >
               {label}
             </.link>
-            <span class="grammar-tabs__ink" data-ink aria-hidden="true"></span>
+            <span
+              class="grammar-tabs__ink"
+              data-ink
+              aria-hidden="true"
+              phx-mounted={JS.ignore_attributes(["style"])}
+            ></span>
           </nav>
         </div>
 

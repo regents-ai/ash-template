@@ -130,7 +130,19 @@ defmodule AshTemplateWeb.NotesLive do
          :ok <- Notes.destroy_note(note, actor: actor) do
       {:noreply, assign(socket, :notice, nil)}
     else
-      failure -> {:noreply, assign(socket, :notice, notice(failure, "deleted"))}
+      {:error, %Ash.Error.Invalid{errors: errors}} = failure ->
+        if Enum.any?(errors, &is_struct(&1, Note.PinBeingPaid.Refused)),
+          do:
+            {:noreply,
+             assign(
+               socket,
+               :notice,
+               "A pin for this note is being paid for. Try again in a few minutes."
+             )},
+          else: {:noreply, assign(socket, :notice, notice(failure, "deleted"))}
+
+      failure ->
+        {:noreply, assign(socket, :notice, notice(failure, "deleted"))}
     end
   end
 

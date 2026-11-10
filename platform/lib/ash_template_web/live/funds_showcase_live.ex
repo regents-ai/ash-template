@@ -18,11 +18,11 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
   def mount(_params, _session, socket) do
     # What a card purchase can show, in order; only the last means it arrived.
     card_steps = [
-      {"info", "Submitted", "Your card payment went to Stripe."},
-      {"info", "Confirmed", "Stripe accepted it and is sending the USDC."},
+      {"info", "Submitted", "Your card payment went through Privy's card window."},
+      {"info", "Confirmed", "The card seller accepted it and is sending the USDC."},
       {"success", "Completed", "50.00 USDC arrived in your wallet."},
       {"neutral", "Not finished",
-       "You closed the window. The purchase shows here only once Stripe says it's complete."}
+       "You closed the window. The purchase shows here only once the card seller says it's complete."}
     ]
 
     cash_out_steps = [
@@ -211,9 +211,9 @@ defmodule AshTemplateWeb.FundsShowcaseLive do
             </p>
           </div>
           <p>
-            Stripe sells the USDC and handles the card, your identity check and any dispute. It's
-            offered in the US, except New York and Hawaii. You finish the purchase yourself: an agent
-            can't buy for you.
+            The purchase runs in Privy's card window. The card seller there sells the USDC and
+            handles the card, your identity check and any dispute. It's offered in the US, except New
+            York and Hawaii. You finish the purchase yourself: an agent can't buy for you.
           </p>
           <ul class="payments-answers">
             <li :for={{tone, word, text} <- @card_steps}>

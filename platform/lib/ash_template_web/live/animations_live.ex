@@ -104,14 +104,8 @@ defmodule AshTemplateWeb.AnimationsLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    tab = if params["lab"] in ~w(feedback palettes), do: params["lab"], else: "library"
-
-    {:noreply,
-     assign(socket,
-       lab_tab: tab,
-       palette: AshTemplateWeb.PatchbayPaletteLab.palette(params["palette"]),
-       palette_view: AshTemplateWeb.PatchbayPaletteLab.view(params["view"])
-     )}
+    tab = if params["lab"] == "feedback", do: "feedback", else: "library"
+    {:noreply, assign(socket, lab_tab: tab)}
   end
 
   # These are transient lab examples: no Ash action, account, or external write.
@@ -248,7 +242,7 @@ defmodule AshTemplateWeb.AnimationsLive do
       <header class="motion-lab__head">
         <p class="motion-lab__kicker"><a href={~p"/"}>Ash Template</a> / Motion lab</p>
         <h1>Motion lab</h1>
-        <p :if={@lab_tab != "palettes"} class="motion-lab__lede">
+        <p class="motion-lab__lede">
           Little movements, side by side. The version marked standard is the one the real pages
           use; the others stay here to compare. Press things and switch between them.
         </p>
@@ -264,7 +258,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/wonders"}>Ten wonders</.link>
           / <.link navigate={~p"/animations/swarm-city"}>Swarm city</.link>
         </nav>
-        <div :if={@lab_tab != "palettes"} class="motion-lab__row">
+        <div class="motion-lab__row">
           <P.button
             :if={@lab_tab == "library"}
             variant="secondary"
@@ -278,14 +272,8 @@ defmodule AshTemplateWeb.AnimationsLive do
 
       <nav class="flair-tabs" aria-label="Motion lab sections">
         <.link patch={~p"/animations"} aria-current={@lab_tab == "library" && "page"}>Motion library</.link>
-        <.link patch={~p"/animations?lab=feedback"} aria-current={@lab_tab == "feedback" && "page"}>Feedback &amp; gradients</.link>
-        <.link patch={~p"/animations?lab=palettes"} aria-current={@lab_tab == "palettes" && "page"}>Patchbay palettes</.link>
+        <.link patch={~p"/animations?lab=feedback"} aria-current={@lab_tab == "feedback" && "page"}>Feedback</.link>
       </nav>
-      <AshTemplateWeb.PatchbayPaletteLab.content
-        :if={@lab_tab == "palettes"}
-        palette={@palette}
-        view={@palette_view}
-      />
       <AshTemplateWeb.FeedbackLab.content
         :if={@lab_tab == "feedback"}
         name={@flair_name}

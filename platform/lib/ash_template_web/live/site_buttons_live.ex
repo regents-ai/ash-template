@@ -159,7 +159,6 @@ defmodule AshTemplateWeb.SiteButtonsLive do
             Less motion
           </P.button>
           <Regent.ThemeToggle.button id="sb-theme" data-theme-toggle />
-          <span class="sb-tag">Candidate · not a site default</span>
         </div>
       </header>
       <.content states={@states} />

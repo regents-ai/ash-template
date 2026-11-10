@@ -70,6 +70,8 @@ build=(
   platform/rel/overlays/bin/migrate
   platform/rel/overlays/bin/pending-migrations
   platform/rel/overlays/bin/bootstrap-staging
+  platform/rel/overlays/bin/room-reports
+  platform/rel/overlays/bin/remove-room-message
   platform/.tool-versions
   platform/.formatter.exs
   platform/.credo.exs

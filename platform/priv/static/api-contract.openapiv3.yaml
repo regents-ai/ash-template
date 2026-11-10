@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 11.0.0
+  version: 11.1.0
 paths:
   /api/v1/health:
     get:
@@ -182,6 +182,8 @@ paths:
           $ref: '#/components/responses/NotesAccountRequired'
         '404':
           $ref: '#/components/responses/NoteNotFound'
+        '409':
+          $ref: '#/components/responses/NotePinBeingPaid'
         '503':
           $ref: '#/components/responses/NotesUnavailable'
         '429':
@@ -4243,6 +4245,14 @@ components:
           examples:
             invalid:
               value: {error: {code: invalid_note, message: "The note could not be saved.", hint: "Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. An agent's new note also needs operation_id, a UUID it keeps when retrying; a change sends none."}}
+    NotePinBeingPaid:
+      description: A pin for the note is on offer or paid and not yet applied, so the note stays for now
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            pin_being_paid:
+              value: {error: {code: pin_being_paid, message: "A pin for this note is being paid for, so it can't be deleted yet.", hint: "Try again once the note shows as pinned, or in a few minutes when the pin's terms have run out."}}
     NotesUnavailable:
       description: Sign-in is not configured or the notes could not be reached
       content:
@@ -4789,6 +4799,7 @@ components:
               - account_required
               - note_not_found
               - invalid_note
+              - pin_being_paid
               - notes_unavailable
               - unavailable
               - room_not_found
@@ -5125,7 +5136,7 @@ components:
           properties:
             code:
               type: string
-              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, notes_unavailable]
+              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, pin_being_paid, notes_unavailable]
             message: {type: string}
             hint: {type: string}
     Session:

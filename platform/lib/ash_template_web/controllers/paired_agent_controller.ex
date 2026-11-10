@@ -306,7 +306,7 @@ defmodule AshTemplateWeb.PairedAgentController do
     else
       {:ok, {:pinned, note}} -> json(conn, %{note: NotesJSON.note(note)})
       :not_set_up -> refuse(conn, "pins_not_set_up")
-      {:error, :note_gone} -> refuse(conn, "note_not_found")
+      {:ok, :note_gone} -> refuse(conn, "note_not_found")
       {:error, error} -> refuse_payment(conn, error)
     end
   end
@@ -326,8 +326,10 @@ defmodule AshTemplateWeb.PairedAgentController do
         {:ok, %Note{}} ->
           terms(actor, note_id)
 
+        # Not an error tuple: `Ash.transact` would wrap one, and the caller could
+        # no longer tell a note that is gone from a fault.
         {:ok, nil} ->
-          {:error, :note_gone}
+          :note_gone
 
         {:error, error} ->
           {:error, error}

@@ -1,7 +1,8 @@
 defmodule AshTemplate.Rooms do
   @moduledoc """
   The chat rooms: rooms people start, messages anyone can read, the likes people
-  give them, the people each reader has muted, and the messages people report.
+  give them, the people each reader has muted, the messages people report, and
+  the ones the site's operator removed (`AshTemplate.Rooms.Moderation`).
   Reading a room and an agent's post are also hosted agent tools (`tools`).
   """
 
@@ -32,6 +33,7 @@ defmodule AshTemplate.Rooms do
       define :post_message, action: :post
       define :edit_message, action: :edit
       define :delete_message, action: :destroy
+      define :remove_message, action: :remove, args: [:reason]
     end
 
     resource AshTemplate.Rooms.Mute do
@@ -49,6 +51,11 @@ defmodule AshTemplate.Rooms do
 
     resource AshTemplate.Rooms.Report do
       define :report_message, action: :send, args: [:message_id, :reason]
+      define :list_reports, action: :reported
+    end
+
+    resource AshTemplate.Rooms.Removal do
+      define :record_removal, action: :record
     end
   end
 

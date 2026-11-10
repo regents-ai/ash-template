@@ -7,7 +7,6 @@
 .flair-intro { display: grid; gap: 1rem; max-width: 45rem; }
 .flair-intro h2 { font-size: clamp(1.8rem, 4vw, 2.75rem); line-height: 1.12; text-wrap: balance; }
 .flair-intro > p:not(.motion-lab__kicker) { max-width: 40rem; color: var(--color-fg-muted); }
-.flair-tag { justify-self: start; border: 1px solid var(--color-border); padding: .3rem .5rem; color: var(--color-fg-muted); font: .6875rem/1.4 var(--font-family-ui); }
 .flair-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--color-border); }
 .flair-study { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; padding: 1.5rem; background: var(--color-surface); }
 .flair-study:first-child { border-inline-end: 1px solid var(--color-border); }

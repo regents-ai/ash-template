@@ -140,6 +140,68 @@ defmodule AshTemplate.Release do
     if shared != [], do: IO.puts("shared-pending: #{Enum.join(shared, ", ")}")
   end
 
+  @doc """
+  Prints every reported room message still in a room, most reported first: its
+  id, room, how many reports and why, who wrote it and its first line, or
+  `none`. Run as `/app/bin/room-reports`. It changes nothing.
+  """
+  def room_reports do
+    {:ok, reported} = with_site_data(&AshTemplate.Rooms.Moderation.reported/0)
+
+    case reported do
+      [] -> IO.puts("none")
+      reported -> Enum.each(reported, &IO.puts(report_line(&1)))
+    end
+  end
+
+  defp report_line(%{message: message, reports: reports, reasons: reasons}) do
+    why = Enum.map_join(reasons, ", ", fn {reason, count} -> "#{reason} #{count}" end)
+    first_line = message.body |> String.split("\n", parts: 2) |> hd() |> String.slice(0, 120)
+
+    "#{message.id}  #{message.room}  #{reports} #{if reports == 1, do: "report", else: "reports"} (#{why})  " <>
+      "by #{message.author_name}, #{Calendar.strftime(message.inserted_at, "%Y-%m-%d %H:%M UTC")}\n  #{first_line}"
+  end
+
+  @doc """
+  Removes the room message `message_id` for `reason`, keeping a record of the
+  removal, and prints what it did. Run as
+  `/app/bin/remove-room-message <message id> <reason>`. A message that is not
+  there changes nothing. A page that has the room open drops the message the
+  next time it loads: this command runs beside the site, not inside it.
+  """
+  def remove_room_message(message_id, reason) do
+    case with_site_data(fn -> AshTemplate.Rooms.Moderation.remove(message_id, reason) end) do
+      {:ok, message} ->
+        IO.puts("Removed #{message.id} from #{message.room}. The reason is on record.")
+
+      {:error, :not_found} ->
+        IO.puts("No room message has that id. Nothing changed.")
+
+      {:error, error} ->
+        raise "The message was not removed: #{Exception.message(error)}"
+    end
+  end
+
+  # An operator's command reads and changes rows through the site's own actions,
+  # which publish what they change, so the publisher runs for as long as `fun`
+  # does. Nothing else of the site starts.
+  defp with_site_data(fun) do
+    with_release_repo(fn _repo ->
+      {:ok, _started} = Application.ensure_all_started(:phoenix_pubsub)
+
+      {:ok, publisher} =
+        Supervisor.start_link([{Phoenix.PubSub, name: AshTemplate.PubSub}],
+          strategy: :one_for_one
+        )
+
+      try do
+        fun.()
+      after
+        Supervisor.stop(publisher)
+      end
+    end)
+  end
+
   defp disagreements(repo) do
     path = migrations_path()
     prefix = repo.default_prefix()

@@ -4,16 +4,18 @@ Plan, 5 October 2026, ash-template chief. It records Sean's decisions of 5 Oct (
 
 Background survey: `/Users/sean/Documents/regent/docs/handoffs/regent-credits-balances-2026-10-05.md`.
 
+## Since the plan was written
+
+- **Credits are gone (Sean, 6 Nov 2026).** Every amount is USDC (or USDG) in the person's own wallet; no site keeps a balance for anyone.
+- **Cards go through Privy's card window first, then Coinbase Onramp** (Sean, 6 Nov 2026, in the Patchbay offers design; kept for `/showcase/funds` on 10 Nov 2026). The page names Privy's card window and "the card seller", never a seller by name. The provider facts below are what the docs said on 5 Oct about the seller behind that window.
+
 ## Decisions of 5 Oct
 
 | Question | Decision |
 |---|---|
-| What are Credits? | User-owned wallet funds. There is no Regent-kept redeemable balance and no Stripe Checkout top-up ledger. Product commitments, such as Offers bids, are held under disclosed, product-specific rules. |
 | Privy wallets | Optional, user-owned embedded wallets alongside external wallets: one shared wallet experience across sites, not one per site. No existing ownership is moved silently. Creating a wallet grants Regent no spending authority. |
 | Robinhood Chain | USDG is kept as USDG, and Base and Ethereum USDC stay USDC. They are never added up into one spendable number. Conversion happens only with a quote and confirmed arrival. Bridged "USDC" tokens are not accepted by name. |
 | Providers | First check the Privy-managed Stripe path already in use. Look into Bridge eligibility, fees and onboarding now. Defer Privy Enterprise balance webhooks. Account creation, terms and paid plans stay with Sean. |
-| 1 Credit = $1 | A pricing convention, not a promise of exactly $1 at a bank. Fees and the amount received are always shown. |
-| The word "Credits" | Not used (Sean, 5 Oct, answer 4 b). Pages say USDC. |
 | Offers commitments | Sean approved the Offers-only escrow contract on Base (HQ 98 a): revenue to REGENT staking `0xb027Dc261636E30Cbc0fE25b2F8e1ed273354AB5`, gas paid by Patchbay. |
 
 ## The model: three things, never mixed
@@ -35,7 +37,7 @@ Worked example: someone has 200 USDC on Base and commits 60 to an Offers bid.
 
 | Piece | Home |
 |---|---|
-| Token and route registry, balance snapshots, payment readiness, provider-operation records | `RegentPayments` in `repos/regents/payments`, pinned by `@regents_ref` (Regents owns shared production code) |
+| Token and route registry, balance snapshots, payment readiness, provider-operation records | `RegentPayments` in elixir-utils (`ash_components/payments`), pinned by `@elixir_utils_ref` in `platform/mix.exs` |
 | Product commitment contracts | The product's own repository (Offers escrow: Patchbay; proposal in `docs/handoffs/offers-commitment-escrow-proposal-2026-10-05.md`) |
 | The panel, the dialogs, the words, the showcase and the payments skill | ash-template; each site copies the pattern and pins the library |
 
@@ -73,7 +75,7 @@ The registry replaces today's hard-coded Base in `RegentPayments.USDC`, as a har
 ## Provider facts (checked in the docs, 5 Oct)
 
 **Card purchase through Privy.**
-- Stripe (USD, EUR) and MoonPay are on by default, but the app still switches card purchases on in the Privy dashboard and installs `@stripe/crypto`. React-auth 3.33.1 or later is needed; the template has 3.34.0.
+- Stripe (USD, EUR) and MoonPay are on by default, but the app still switches card purchases on in the Privy dashboard and installs `@stripe/crypto`. React-auth 3.33.1 or later is needed.
 - Stripe works in the US (excluding New York) and the EU, by card, Apple Pay, Google Pay, or bank debit in the US.
 - It delivers USDC on Base, Ethereum, Arbitrum, Polygon and Solana.
 - The result is one of `submitted`, `confirmed`, `address_shown` or `completed`; only `completed` means the money arrived.
@@ -139,7 +141,7 @@ Replace "Regent never holds your money" everywhere with:
 
 > Regents does not keep a balance for you. Your available funds stay in your own wallet. Funds you commit to a product follow that product's stated rules.
 
-Amounts are written in USDC (or USDG), with the network beside them. The "Credits" label is not used (Sean, 5 Oct).
+Amounts are written in USDC (or USDG), with the network beside them.
 
 ## The showcase (ash-template, sample figures, every money button off)
 
@@ -151,7 +153,7 @@ A new `/showcase/funds` page beside `/showcase/payments`, built from real compon
    - **Committed**: 60.00 in two Patchbay Offers bids, each with its rule line.
    - **Pending transfers**: a card purchase of 50.00, processing.
 2. **Ready to pay.** A 30.00 Offers bid on Base shows as covered. A 180.00 bid shows short on Base, offers "Move 25 USDC from Ethereum" with a quote (fee, expected arrival, expiry), and stays not ready until the funds arrive.
-3. **Add funds.** Card through Privy (Stripe or MoonPay). Stripe is offered first in the US outside New York and Hawaii; other countries follow the test purchase above. The dialog says a person must complete the purchase themselves. The dialog names the destination wallet and network, the fees and the amount expected. It moves through Submitted → Confirmed → Completed, and closing the dialog is never shown as a completed payment.
+3. **Add funds.** Card through Privy's card window, offered first in the US outside New York and Hawaii; other countries follow the test purchase above. The dialog says a person must complete the purchase themselves. The dialog names the destination wallet and network, the fees and the amount expected. It moves through Submitted → Confirmed → Completed, and closing the dialog is never shown as a completed payment.
 4. **Send to another wallet.** Separate from cashing out.
 5. **Cash out to a bank.** Identity check (Bridge), bank account, amount, fee, expected arrival, then pending. It includes the failure state where the crypto left but the bank transfer failed: "We're checking this with the provider", with no resend button.
 6. **Wallet choice.** The connected external wallet, plus "Create a payments wallet".

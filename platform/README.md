@@ -422,6 +422,16 @@ image disagree about, without applying anything: `pending:`,
 `applied-without-file:`, and `shared-pending:` for each shared Identity, Agents,
 Points or Payments change the release carries that is not applied yet
 (a deployment is refused while one is listed), or `none`.
+
+Two more commands are for the site's operator, whoever may run commands on the
+deployment. `/app/bin/room-reports` prints every reported room message still in
+a room, most reported first, with its id, its reasons and its first line, or
+`none`; it changes nothing. `/app/bin/remove-room-message <message id> "<reason>"`
+removes one message with its likes and reports and keeps a record of the
+removal (the ids and the reason, never the message's words). Both run the
+site's own actions as its operator (`AshTemplate.Rooms.Moderation`); no page
+and no agent tool reaches them. A page that has the room open drops a removed
+message the next time it loads.
 `/app/bin/migrate-shared` applies those shared changes, and only those. Every
 site carries the same command; after the founder's go, the site whose release
 first carries a shared change runs it from the new image before deploying.

@@ -4,8 +4,10 @@ defmodule AshTemplate.Rooms.Report do
   (`AshTemplate.Rooms.Message`) to the site's team, with why: spam, abuse, text
   that tries to steer agents, or something else. An agent they paired reports for
   them. A person reports a message once; reporting it again answers their first
-  report. Nobody else sees a report, and the message stays as it is. A report goes
-  with its message when the message is deleted.
+  report. Besides the reporter, only the site's operator reads a report
+  (`:reported`, `AshTemplate.Rooms.Moderation`), and may remove the message; until
+  then the message stays as it is. A report goes with its message when the
+  message is deleted or removed.
   """
 
   use Ash.Resource,
@@ -56,6 +58,13 @@ defmodule AshTemplate.Rooms.Report do
   actions do
     defaults [:read]
 
+    # Every report whose message is still in a room, newest first, for the site's
+    # operator. A removed message takes its reports with it, so this is what is
+    # still waiting to be looked at.
+    read :reported do
+      prepare build(sort: [inserted_at: :desc], load: [:message])
+    end
+
     # Reporting a message again keeps the first report and its reason.
     create :send do
       accept [:message_id, :reason]
@@ -100,6 +109,15 @@ defmodule AshTemplate.Rooms.Report do
   end
 
   policies do
+    # Only the site's operator reads everyone's reports, from a release command.
+    bypass action(:reported) do
+      authorize_if actor_attribute_equals(:role, :system)
+    end
+
+    policy action(:reported) do
+      forbid_if always()
+    end
+
     policy always() do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}

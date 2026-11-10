@@ -37,6 +37,10 @@ for adding one operator action when a product needs it. Staff lists stay per sit
 
 Keyfleet's are the model (keyfleet@985dc31 `platform/lib/keyfleet/release.ex`,
 `platform/rel/overlays/bin/clear-fleet-stop`).
+The template's own are `AshTemplate.Release.room_reports/0` and
+`remove_room_message/2` (`platform/rel/overlays/bin/room-reports` and
+`remove-room-message`): an operator reads reported room messages and removes one, through
+actions only the system actor may run (`AshTemplate.Rooms.Moderation`).
 
 - Each command is one `Release.<command>/n` function run through
   `with_release_repo/1`, which loads the app and starts only the database connection.

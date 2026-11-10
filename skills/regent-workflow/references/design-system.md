@@ -99,8 +99,8 @@ current founder request overrides older rollout notes. Re-read the working tree:
   guaranteed revenue, or universal distributions. Distinguish desired copy from copy
   already integrated into the homepage.
 - The USDC in a person's signed-in Privy wallet is their **USDC Balance** on every site
-  (founder, 2026-09-28). It arrives when they send USDC to their address or buy it
-  through MoonPay, and payments are signed from it. Regent holds no balance for anyone:
+  (founder, 2026-09-28). It arrives when they send USDC to their address or buy it by
+  card in Privy's card window, and payments are signed from it. Regent holds no balance for anyone:
   never call it credit, a prepaid balance or an account balance, and never offer refunds
   or withdrawals of it.
 

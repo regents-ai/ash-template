@@ -388,7 +388,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   Signed; needs a pairing.
 - **Example:** `regents ash-template notes delete <id>`
 - **Answer:** 200 `{"deleted": true, "id": "…"}`.
-- **Refusals:** as for `notes get`.
+- **Refusals:** as for `notes get`; 409 `pin_being_paid` while a pin for the note is on offer or
+  paid and not yet applied: try again once it shows as pinned, or in a few minutes.
 
 ## notes search
 
@@ -705,6 +706,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   poll someone else started, and 422 `poll_closed` for one that has already closed.
 
 ## Changes
+
+- 2026-11-10: `notes delete` answers 409 `pin_being_paid` while a pin for the note is on offer or
+  paid and not yet applied, so a pin is never paid for a note that is gone. The OpenAPI
+  documents move to 11.1.0.
 
 - 2026-11-06: Credits are gone. `account balances` and `account credits-history` are
   removed; `notes pin` takes 1 USDC from your own wallet only, so `{"pay_with": "credits"}`

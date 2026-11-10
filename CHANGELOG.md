@@ -6912,3 +6912,43 @@ Brought from `t5/shown-text-1030` (`127691c3`) onto main. Main already says
 - Fly logs from the release start: no errors, crashes or refusals. One health check
   failed at 19:07:50Z while the new version started and passed at 19:07:57Z. All 43 page
   requests after that were answered, Sentinel's minute reads among them.
+
+## 2026-11-10 — Audit: the ordinary part of Sean's eight answers, and six showcase fixes
+
+Sean asked for a whole-project audit on 10 November and answered its eight decisions
+"a for all 8" (about 03:40Z). The findings are in
+`/Users/sean/Documents/regent/handoffs/ash-template-audit-2026-11-10/findings.md`. This
+entry is the work that needs no further letter; the wallet, sign-in and migration work
+sits on its own branches.
+
+- **A note cannot be deleted while its pin is being paid for** (decision 5).
+  `AshTemplate.Notes.Note.PinBeingPaid` runs inside the delete, after the note's row is
+  locked, and refuses while a pin for the note is on offer or paid and not yet applied.
+  Pin terms are chosen under the same lock, so of a delete and a pin asked for at once
+  one always sees the other. The API answers 409 `pin_being_paid`; the notes page says
+  so in its own line. The OpenAPI documents move to 11.1.0. CLI notice: `notes delete`,
+  old refusals as for `notes get`, new also 409 `pin_being_paid`.
+- **A pin asked for a note that was just deleted answers 404 `note_not_found`**, not
+  503: the missing-note answer inside the terms transaction was an error tuple, which
+  the transaction wrapped, so its clause never matched.
+- **The site's operator reads reports and removes a room message** (decision 3):
+  `AshTemplate.Rooms.Moderation`, with `Report` `:reported` and `Message` `:remove`,
+  both open to the system actor alone, run as `/app/bin/room-reports` and
+  `/app/bin/remove-room-message <message id> "<reason>"`. Each removal writes one row in
+  `room_message_removals` in the same transaction: the ids and the reason, never the
+  words. Migration `20261110035033_add_room_message_removals` only adds that table. Not
+  yet run from a built image: `make release` has not been run on this commit.
+- **The funds showcase names Privy's card window** and "the card seller" in place of a
+  seller's name, and `docs/wallet-funds-plan.md` no longer talks about Credits
+  (decision 6).
+- **The Patchbay palette study is gone** from `/animations` (component, styles and
+  pictures), and the "Candidate · not a site default" labels are off Site buttons and
+  Feedback (decision 7).
+- **Four lines in `.claude/settings.json`** (decision 8): `chat list` and `chat read`
+  are allowed without a prompt; `chat send` and `activity mark-read` ask first.
+- **Six showcase fixes from the audit:** typing in the frame preview's search box no
+  longer crashes it; the grammar page's tab underline keeps its place after a redraw;
+  leaving Swarm city with a district lit no longer throws and leaks the GPU device; a
+  sent transaction's hash and the Privy page's active wallet are drawn with the shared
+  address component; unused showcase styles are removed; the showcase's database note
+  says what the code does.

@@ -33,6 +33,9 @@ defmodule AshTemplateWeb.NotesController do
     "invalid_note" =>
       {422, "The note could not be saved.",
        "details says why. Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. Agent creates also require operation_id, a UUID retained when retrying with fresh proof; omit it for updates."},
+    "pin_being_paid" =>
+      {409, "A pin for this note is being paid for, so it can't be deleted yet.",
+       "Try again once the note shows as pinned, or in a few minutes when the pin's terms have run out."},
     "notes_unavailable" =>
       {503, "Your notes could not be reached right now.", "Try again in a moment."}
   }
@@ -84,10 +87,19 @@ defmodule AshTemplateWeb.NotesController do
     with_note(conn, id, fn conn, note ->
       case Notes.destroy_note(note, actor: conn.assigns.actor) do
         :ok -> json(conn, %{deleted: true, id: note.id})
-        {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
+        {:error, error} -> refuse_delete(conn, error)
       end
     end)
   end
+
+  defp refuse_delete(conn, %Ash.Error.Invalid{errors: errors} = error) do
+    if Enum.any?(errors, &is_struct(&1, Note.PinBeingPaid.Refused)),
+      do: refuse(conn, "pin_being_paid"),
+      else: conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
+  end
+
+  defp refuse_delete(conn, error),
+    do: conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
 
   defp authenticate(conn, _opts) do
     conn = put_resp_header(conn, "cache-control", "no-store")

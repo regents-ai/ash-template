@@ -1,5 +1,5 @@
 defmodule AshTemplateWeb.FeedbackLab do
-  @moduledoc "Local motion studies. Candidate treatments, never shared defaults."
+  @moduledoc "The motion lab's feedback studies: touch, confirm, compose and material, side by side."
   use AshTemplateWeb, :html
   alias Regent.Primitives, as: P
 
@@ -25,7 +25,6 @@ defmodule AshTemplateWeb.FeedbackLab do
         <p>
           Touch, confirm, compose. Six studies in useful detail. These are local demos; nothing is saved or sent outside this page.
         </p>
-        <span class="flair-tag">Candidate · not a site default</span>
       </header>
 
       <div class="flair-grid">

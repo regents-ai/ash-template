@@ -92,7 +92,8 @@ defmodule AshTemplateWeb.PrivyShowcaseLive do
             </div>
             <div>
               <dt>Active wallet</dt><dd id="privy-selected-wallet">
-                {@wallet || "No wallet selected"}
+                <P.address :if={@wallet} id="privy-selected-wallet-address" address={@wallet} />
+                <span :if={!@wallet}>No wallet selected</span>
               </dd>
             </div>
           </dl>

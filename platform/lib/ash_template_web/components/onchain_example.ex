@@ -246,7 +246,13 @@ defmodule AshTemplateWeb.OnchainExample do
         >
           <strong>{title(entry)}</strong>
           <span>{shown.words}</span>
-          <code>{RegentFormat.short_hash(entry.hash)}</code>
+          <P.address
+            id={"#{@id}-sent-#{entry.hash}"}
+            address={entry.hash}
+            kind="tx"
+            chain="test"
+            variant="compact"
+          />
           <P.button
             :if={shown.state == :stalled}
             variant="quiet"

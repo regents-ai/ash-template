@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+message="${1:?usage: remove-room-message <message id> <reason>}"
+reason="${2:?usage: remove-room-message <message id> <reason>}"
+
+ASH_TEMPLATE_RELEASE_COMMAND=migrate ASH_TEMPLATE_REMOVE_MESSAGE="$message" ASH_TEMPLATE_REMOVE_REASON="$reason" exec "$(dirname "$0")/ash_template" eval 'AshTemplate.Release.remove_room_message(System.fetch_env!("ASH_TEMPLATE_REMOVE_MESSAGE"), System.fetch_env!("ASH_TEMPLATE_REMOVE_REASON"))'

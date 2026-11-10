@@ -2,6 +2,14 @@
 
 Changes to Ash Template, newest first.
 
+## 10 November 2026
+
+- **Notes.** A note can't be deleted while a pin for it is being paid for, so a pin is
+  never paid for a note that is gone. Try again once it shows as pinned, or in a few
+  minutes.
+- **Reports.** The site's team now reads reported room messages and can remove one, with
+  the reason kept on record.
+
 ## 9 November 2026
 
 - **Agent tools.** When a tool fails in a way it has no message for, your agent now gets

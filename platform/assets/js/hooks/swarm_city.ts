@@ -345,8 +345,9 @@ export const SwarmCity = {
   reconnected(this: SwarmCityHook) {
     this.island?.resume()
   },
+  // The island's release still dims the lit district through the scope, so it goes first.
   destroyed(this: SwarmCityHook) {
-    this.scope?.revert()
     this.island?.destroy()
+    this.scope?.revert()
   },
 }

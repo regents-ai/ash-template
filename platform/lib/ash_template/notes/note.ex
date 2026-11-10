@@ -16,7 +16,8 @@ defmodule AshTemplate.Notes.Note do
 
   A pinned note comes first among its writer's notes. An agent pins one by
   paying 1 USDC (`AshTemplate.Payments.NotePin`).
-  Unpinning is free.
+  Unpinning is free. A note cannot be deleted while a pin for it is being paid
+  for (`PinBeingPaid`).
 
   An archived note goes after all the others and keeps everything else,
   its pin included; archiving and unarchiving are free.
@@ -32,7 +33,7 @@ defmodule AshTemplate.Notes.Note do
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
 
-  alias AshTemplate.Notes.Note.{AskingJev, RecordWebhook, WebhookAddressSet}
+  alias AshTemplate.Notes.Note.{AskingJev, PinBeingPaid, RecordWebhook, WebhookAddressSet}
   alias AshTemplate.Notes.Webhook
 
   @shown_text "Use letters, numbers and marks you can see."
@@ -87,10 +88,14 @@ defmodule AshTemplate.Notes.Note do
   actions do
     defaults [:read]
 
+    # A note with a pin on offer or paid and not yet applied stays until the pin
+    # lands or its terms run out, so a pin is never paid for a note that is gone.
     destroy :destroy do
       primary? true
       require_atomic? false
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change get_and_lock_for_update()
+      change PinBeingPaid
     end
 
     read :mine do

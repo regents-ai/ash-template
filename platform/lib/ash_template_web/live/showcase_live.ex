@@ -873,9 +873,9 @@ defmodule AshTemplateWeb.ShowcaseLive do
         <.card :if={@local?}>
           <h3>Postgres <small>Read only</small></h3>
           <P.button variant="secondary" phx-click="database">Check the database</P.button>
-          <.disclosure id="database-notes" summary="Diagnostic boundary">
+          <.disclosure id="database-notes" summary="Limits">
             <p>
-              Runs SELECT current_database(), 1 only against this worktree's prepared loopback test database. Other database configurations are refused. No arbitrary query, fixture writes, schema changes or resets.
+              Reads the name of the local development database and nothing else. Any other database is refused, and nothing is written.
             </p>
           </.disclosure>
         </.card>
@@ -1004,6 +1004,10 @@ defmodule AshTemplateWeb.ShowcaseLive do
     </P.disclosure>
     """
   end
+
+  # The frame preview draws the real shell around sample content; its search box
+  # has nothing to search.
+  def handle_event("search", _params, socket), do: {:noreply, socket}
 
   def handle_event("create_sample", %{"sample" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do

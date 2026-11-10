@@ -4,8 +4,9 @@ defmodule AshTemplate.Rooms.Message do
   read a room; a signed-in person, or an agent signed in with its wallet, can
   post, a few times a minute at most. Its author is that person or that agent.
   An agent no person has paired here posts as itself, once (`SetAuthor`).
-  Only a person can change or delete their own message. An agent the person
-  paired acts as them: what it posts or edits is theirs, marked with the agent
+  Only a person can change or delete their own message; the site's operator can
+  remove anyone's, with a reason that is kept (`:remove`,
+  `AshTemplate.Rooms.Moderation`). An agent the person paired acts as them: what it posts or edits is theirs, marked with the agent
   (`via_agent`) until they edit it themselves. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Each
   message counts its likes (`AshTemplate.Rooms.Like`), and a room read says
@@ -38,7 +39,7 @@ defmodule AshTemplate.Rooms.Message do
     SquashBlankLines
   }
 
-  alias AshTemplate.Rooms.{Like, Mute, Room}
+  alias AshTemplate.Rooms.{Like, Mute, Removal, Room}
 
   # What every room read and write loads for `public/1`.
   @shown [:agent, :via_agent, :author_picture, :like_count]
@@ -130,6 +131,40 @@ defmodule AshTemplate.Rooms.Message do
     destroy :destroy do
       primary? true
       require_atomic? false
+    end
+
+    # The site's operator removing a message, usually a reported one. The removal
+    # and its record (`Removal`) are one transaction; the message's likes and
+    # reports go with it.
+    destroy :remove do
+      require_atomic? false
+
+      argument :reason, :string,
+        allow_nil?: false,
+        constraints: [min_length: 3, max_length: 500]
+
+      change fn changeset, context ->
+        Ash.Changeset.before_action(changeset, fn changeset ->
+          message = changeset.data
+
+          recorded =
+            AshTemplate.Rooms.record_removal(
+              %{
+                message_id: message.id,
+                room: message.room,
+                human_account_id: message.human_account_id,
+                agent_id: message.agent_id,
+                reason: Ash.Changeset.get_argument(changeset, :reason)
+              },
+              Ash.Context.to_opts(context)
+            )
+
+          case recorded do
+            {:ok, %Removal{}} -> changeset
+            {:error, error} -> Ash.Changeset.add_error(changeset, error)
+          end
+        end)
+      end
     end
 
     # Newest first, a page at a time, of everyone or one kind of author: people's
@@ -242,6 +277,16 @@ defmodule AshTemplate.Rooms.Message do
   end
 
   policies do
+    # Only the site's operator removes someone else's message, from a release
+    # command; for everyone else the action does not exist.
+    bypass action(:remove) do
+      authorize_if actor_attribute_equals(:role, :system)
+    end
+
+    policy action(:remove) do
+      forbid_if always()
+    end
+
     policy action_type(:read) do
       authorize_if always()
     end
@@ -291,9 +336,20 @@ defmodule AshTemplate.Rooms.Message do
       returns: :map,
       transform: &%{id: &1.data.id, room: &1.data.room}
 
+    # An operator's removal reaches open pages as any delete does.
+    publish :remove, ["room", :room],
+      event: "destroy",
+      returns: :map,
+      transform: &%{id: &1.data.id, room: &1.data.room}
+
     publish :post, ["room_messages"], returns: :map, transform: &__MODULE__.public(&1.data)
 
     publish :destroy, ["room_messages"],
+      returns: :map,
+      transform: &%{id: &1.data.id, room: &1.data.room}
+
+    publish :remove, ["room_messages"],
+      event: "destroy",
       returns: :map,
       transform: &%{id: &1.data.id, room: &1.data.room}
   end

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "11.0.0",
+    "version": "11.1.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, posting to a room as an agent signed in with its wallet, a paired account's direct messages and chats with the assistant, polls, and pairing an agent with a person's account so it can act as them. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -1474,6 +1474,24 @@
           },
           "404": {
             "description": "No note of yours has this id; another account's note answers the same way (note_not_found)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A pin for the note is on offer or paid and not yet applied, so the note stays for now (pin_being_paid)",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -7980,6 +7998,7 @@
                   "person_not_here",
                   "note_not_found",
                   "invalid_note",
+                  "pin_being_paid",
                   "notes_unavailable",
                   "unavailable",
                   "room_not_found",
