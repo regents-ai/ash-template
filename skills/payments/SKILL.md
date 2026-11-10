@@ -34,8 +34,7 @@ a site fits around it.
    `RegentPayments.Offer` for each thing it sells (a tip, a paid fix, a run) and lists it
    in `config :regent_payments, offers: [...]`. The offer freezes the terms (`freeze/2`:
    amount, the wallet paid, what it is for and the sentence the payer sees). It then
-   carries
-   out what was bought (`carry_out/4`). The library owns everything between.
+   carries out what was bought (`carry_out/4`). The library owns everything between.
 4. **Terms are frozen, never taken from the request.** Amount and destination are read
    from the stored intent on every call. Nothing a page or agent sends changes them.
 5. **What a payment buys is saved once.** `carry_out/4` runs inside the transaction that
@@ -75,7 +74,8 @@ config :regent_payments, RegentPayments.Facilitator,
   which runs `RegentPayments.Migrator.up/1` with the other shared migrators; after the
   founder's go, the site whose release first carries a change runs it. Each site's
   release check refuses to deploy while a payments change is missing. Every site reads
-  and writes the one `regent_payments` schema, seeing only the rows its own `site` wrote. The rows are the record of money that moved:
+  and writes the one `regent_payments` schema, seeing only the rows its own `site`
+  wrote. The rows are the record of money that moved:
   `payment_intents` and `payment_receipts` are on the production protected-table lock
   (founder, 2026-09-29), so a migration or reset that deletes from, empties or drops them
   fails, and only Sean lifts it. Tests use the Ecto sandbox or a fresh local database.
@@ -141,8 +141,8 @@ the forward again.
 
 ## Checks
 
-- The library's own suite covers the payment path; a site tests its offers' `freeze/2`
-  and `carry_out/4` only where the founder agreed tests.
+- The library's own suite covers the payment path; a site tests its own offers'
+  `freeze/2` and `carry_out/4`.
 - A person pays a small real amount from a Privy wallet and from a browser-extension
   wallet before release. Say so in the report rather than claiming it.
 - `make check-required-fixes` passes with `regent_payments` pinned to a git commit.

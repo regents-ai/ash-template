@@ -1,69 +1,57 @@
 ---
 name: ash-frontend
-description: Build or refine AshPhoenix forms and LiveView interfaces.
+description: AshPhoenix forms and LiveView pages on Regent's sites - form validation and submission, nested forms, page reads through the template's Read, figures shared by every open page, loading, empty, stale and error states, and Regent's UI conventions (icons, dialogs, addresses, CTAs, the product shell). Use when building or changing a LiveView, form, component or page read, reviewing a page's states or accessibility, or debugging a form that loses input or a page that shows stale data.
 ---
 
-# Ash Frontend
+# Ash frontend
 
-Keep domain behavior in the action and presentation in the component or LiveView.
-Action-bound AshPhoenix forms are a supported boundary; do not add an Ecto changeset
-pipeline around them. Verify generated helper signatures against the installed version.
+Load `ash-stack` first. Domain behaviour stays in the action; presentation in the
+component or LiveView. Action-bound AshPhoenix forms are the boundary: no Ecto
+changeset pipeline around them, and generated helper signatures are checked against
+the installed version.
 
-- [Forms and LiveView](references/forms-and-liveview.md): validation/submission,
-  nested forms, omitted inputs, async results and reconnect behavior.
+## References
+
+- [Forms and LiveView](references/forms-and-liveview.md): validation and submission,
+  nested forms, omitted inputs, async results, reconnect.
 - [Async state](references/async-state.md): reads owned by an account, wallet or
   route; late answers dropped; loading, ready, empty, stale and error kept apart.
   Every page read goes through the template's `Read`; never stop one with
   `cancel_async`, which takes the read's database connection down with it.
-- [Public figures](references/public-figures.md): a figure every visitor sees
-  alike is read once and shared by every open page, through the row's own
-  publication or `AshTemplate.SharedReading`; quiet pages; memory for each open
-  page.
-- [UI review](references/ui-review.md): accessibility, responsive states and hooks.
+- [Public figures](references/public-figures.md): a figure every visitor sees alike is
+  read once and shared by every open page, through the row's own publication or
+  `AshTemplate.SharedReading`; quiet pages; memory for each open page.
+- [UI review](references/ui-review.md): accessibility, responsive states, hooks.
 
-## Regent UI conventions (founder, 2026-10-19)
+## Regent UI conventions (Sean, 19 Oct)
 
-Every Regent site follows these. The design-system `STYLE.md` sections named here hold
-the detail.
+`STYLE.md` in design-system holds the detail for each.
 
 - **Icons** come from Lucide through `Regent.Icons.icon`, at the library's one line
-  weight (founder, 2026-11-05; `STYLE.md`, Icons). Never draw an icon by hand in a site;
-  logos and artwork are not icons. Look at any new icon zoomed in 3-6x beside its
-  neighbours for weight, height, baseline and colour: width checks do not catch this.
-- **Contract addresses and transaction hashes** always show the short form, then a copy
-  icon and a diagonal arrow (up and to the right) that opens the address or transaction
-  on Basescan in a new tab, the three tight together. They come from one shared
-  component, never drawn by hand (STYLE.md, "Addresses and transaction hashes").
-- **No default square dialogs.** Every modal or window uses the shared cut-corner shell:
-  two cut corners with their accents and two decorated square corners, the primary
-  button's treatment at panel size (STYLE.md, "Dialogs").
-- **On-chain buttons:** signed out, the first press opens Privy's sign-in. Approve and
-  the button it unlocks (Buy, Stake) are the same size. Once the approval's transaction
-  succeeds, Approve turns grey with a green border and stays pressable. See
-  [onchain-buttons](../onchain-buttons/SKILL.md).
-- **Primary CTAs** use the site's primary colour and the shared CTA motion. The corner
+  weight (5 Nov). Never draw an icon by hand in a site; logos and artwork are not
+  icons. Look at a new icon zoomed 3-6x beside its neighbours for weight, height,
+  baseline and colour: width checks do not catch this.
+- **Contract addresses and transaction hashes** show the short form, then a copy icon
+  and a diagonal arrow (up and to the right) that opens Basescan in a new tab, the three
+  tight together, from the one shared component ("Addresses and transaction hashes").
+- **Dialogs** use the shared cut-corner shell: two cut corners with their accents and
+  two decorated square corners, the primary button's treatment at panel size. Never a
+  default square dialog ("Dialogs").
+- **Primary CTAs** use the site's primary colour and the shared CTA motion. Corner
   marks and accents appear on hover and keyboard focus; hover never takes them away.
   Two buttons side by side in a header never look the same: one primary, one secondary
-  (STYLE.md, "Shape and spacing").
-- **No W-word openings** (founder, 2026-10-28): a heading, label, tip, link, button,
-  empty state, page title or description, or bold lead never opens with who, what,
-  where, why or when; it reads as AI writing. Use a plain noun phrase: "Fleet Tools",
-  not "What a fleet can use"; "Permissions", not "Who may do what". W-words mid-sentence
-  are fine; code comments and @doc are exempt. See regent-workflow.
-- **Titles are one or two words** (founder, 2026-10-28): every heading, eyebrow, tab,
-  column header, `<dt>`, field label and step title names the thing with a noun, never a
-  phrase; a phrase-shaped title reads as AI writing. "Citation", not "Work that cites
-  it"; "Votes", not "How each Key voted"; "Choices", not "Choices, one per line". A
-  proper name counts as one word. The explanation moves to the sentence under it. See
-  regent-workflow and its [short titles](../regent-workflow/references/short-titles.md)
-  list.
-
-Every page with the account menu is a `ShellLive` action in `live_session :product_shell`;
-a page never draws the shell itself, or signed in its account menu has no agents.
-
-Reuse Regent UI primitives while retaining each product's theme, navigation and
-layout. Components own no authentication, database or wallet admission decisions.
-A second on-chain button press must still reach the wallet while the first is pending.
-
-Keep the returned error form after failed submission. LiveView tests do not execute
-browser hooks; use a browser when the changed behavior depends on JavaScript or layout.
+  ("Shape and spacing").
+- **On-chain buttons**: signed out, the first press opens Privy's sign-in. Approve and
+  the button it unlocks are the same size; once the approval succeeds, Approve turns
+  grey with a green border and stays pressable. A second press reaches the wallet
+  while the first is pending ([onchain-buttons](../onchain-buttons/SKILL.md)).
+- **Words**: no W-word openings, and titles of one or two words (regent-workflow,
+  "Words on screen").
+- **The product shell.** Every page with the account menu is a `ShellLive` action in
+  `live_session :product_shell`. A page never draws the shell itself, or its account
+  menu has no agents when signed in.
+- Reuse Regent UI primitives and keep each product's theme, navigation and layout.
+  Components own no authentication, database or wallet admission decisions.
+- Keep the returned error form after a failed submission.
+- LiveView tests do not run hooks: use a browser when behaviour depends on JavaScript
+  or layout.

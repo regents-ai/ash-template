@@ -51,7 +51,7 @@ Buttons that send transactions are `onchain-buttons`. Keyfleet's reader
 10. **Say when the record is behind.** Show a "catching up" notice while the head was read
     more than 420 seconds ago (one five-minute turn and two retries a minute apart) or the
     record is more than ten minutes behind it (on Base 3,000 blocks; rule 13).
-11. **All four sites share one production database.** A new table or column needs the
+11. **Every site shares one production database.** A new table or column needs the
     founder's approval before it reaches production.
 12. **Read the chain on a slow clock** (founder, 23 Oct 2026: "every 5 minutes, with
     caching ... But any onchain user action must refresh the cache"). A node is paid for

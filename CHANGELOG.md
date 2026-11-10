@@ -6952,3 +6952,27 @@ sits on its own branches.
   sent transaction's hash and the Privy page's active wallet are drawn with the shared
   address component; unused showcase styles are removed; the showcase's database note
   says what the code does.
+
+## 2026-11-10 — Shared skills rewritten shorter
+
+- **Twenty-two skill files are shorter and say each rule once.** The workflow skill
+  (`skills/regent-workflow/SKILL.md`) went from 693 lines to 420; the Ash skills
+  (`ash-stack`, `ash-backend`, `ash-data`, `ash-frontend`, `ash-security`, `ash-testing`,
+  `ash-webmcp`), `chain-events`, `checkpoint`, `onchain-buttons`, `payments`,
+  `rollout-guidance-check` and `vgpu-island` lost repeated explanation. No rule Sean set
+  was dropped; two independent reads compared every rule in the old text with the new.
+- **The release and live-check procedure has its own page**,
+  `skills/regent-workflow/references/release.md`. The workflow skill keeps the rules and
+  points there for the steps.
+- **Two unused pages are gone:** `skills/ash-stack/references/project-profile.md` and
+  `skills/ash-stack/references/shared-contract.md`. Their rules that still apply are in
+  `skills/ash-stack/SKILL.md`.
+- **Rules brought in line with later founder rules:** branches are never deleted
+  (2 Nov); a refusing worktree guard or deploy safety check means stop and report
+  (8 Nov); commands on production machines, package publishing and public posts are
+  listed as protected; an account's wallet that is not the connected one is ignored
+  (21 Oct); tests are added without asking (18 Oct); `vgpu-island` and `animejs` load for
+  every piece of design work (28 Oct).
+- **Left as they were:** `elixir-stack`, `animejs`, `ash-signals`, `discussions`,
+  `regent-notion`, the three `patchbay-*` skills and every product skill a site serves.
+- No script under `skills/` changed. Skills only: nothing to deploy.

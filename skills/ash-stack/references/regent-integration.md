@@ -1,79 +1,58 @@
 # Regent integration
 
-## Authority and acceptance
-
-Start with `regent-workflow`. The founder's
-request defines scope, acceptance and the mode (Pairing or Claude only). This pack
-supplies engineering guidance, not another approval or tracking process.
-Reuse the assignment's acceptance criteria and review evidence.
+`regent-workflow` sets scope, authority and acceptance. This file adds only what the
+Ash skills need to know about Regent's shape.
 
 ## Product boundaries
 
-Regents.sh, Techtree, Patchbay, Autolaunch and Keyfleet remain separate Phoenix/Ash apps with
-separate deployments. They share one physical PostgreSQL database: each product owns
-its schema and migration ledger through its own Repo, and the Regents-owned
-`identity/` package owns the shared identity schema (see
-`agent-docs/product-boundaries.md` in the Regent workspace). Reuse `design-system/regent_ui` for
-presentation primitives and `elixir-utils` for demonstrated shared infrastructure.
-Product layouts, navigation and themes may differ. Components own no product
-workflow, authorization, wallet state or database access. Keep named actions and
-persistence in each product. Extract only code with actual equivalent consumers.
+Regents, Techtree, Patchbay, Autolaunch and Keyfleet are separate Phoenix/Ash apps with
+separate deployments on **one physical PostgreSQL database**. Each product owns its
+schema and migration ledger through its own Repo; the Regents-owned `identity/` package
+owns the shared identity schema (`agent-docs/product-boundaries.md` in the workspace).
+
+- Presentation primitives come from `design-system/regent_ui`; shared infrastructure
+  from `elixir-utils`. Extract only code with real, equivalent consumers.
+- Components own no product workflow, authorization, wallet state or database access.
+  Named actions and persistence stay in each product.
 
 ## Wallet actions
 
-All five sites use the wallet identity and transaction-state rules in
-`regent-workflow`: Privy's active wallet acts when the server finds it among the
-signed-in account's linked wallets, and the page shows its data. Any other wallet is
-ignored: it shows no data of its own, sends nothing, and no note asks the person to
-switch. Match record and chain as well as signer.
+The rules are regent-workflow's "Wallets and transactions"; the button pattern is
+`onchain-buttons`. What they mean for engineering patterns:
 
-Never preserve pending transactions in browser storage or database recovery
-machinery. Do not restore/replay pending transactions on reload or build a recovery
-inbox. Show transient interaction feedback and update website state from verified
-receipts, canonical events and current chain reads. Confirmed event indexing and
-saved creator drafts are not pending-transaction preservation. Existing historical
-rows are not authorization for destructive cleanup.
-
-Every distinct press of an on-chain button reaches the wallet, including a second
-press while an approval or transaction is pending. Generic outbox, idempotency,
-locking, retry and duplicate-operation guidance never authorizes admission state
-for user-signed transactions. Do not block, ignore, defer, queue, serialize or
-deduplicate a second press. A reverted or duplicate transaction is an accepted
-outcome. A literal double-fire of one browser click is not a second press.
-
-One exception (founder decision, 2026-09-28): when the chain's own current state
-makes a transaction certain to fail, such as "144/144 Keys sold", the button stays
-visible but disabled, and the reason is shown beside it. The button comes back as
-soon as that state changes. A pending transaction, or one that might revert, is never
-a reason to disable. Report current wallet feedback and verified chain outcomes
-without persisting a recovery queue.
-For Privy/session work, read [Privy reconciliation](privy-reconciliation.md). Its
-login/logout coordination must never become wallet-transaction serialization.
+- Generic outbox, idempotency, locking, retry and duplicate-operation guidance never
+  authorises admission state for a user-signed transaction. Nothing blocks, defers,
+  queues, serialises or deduplicates a second press. A literal double-fire of one
+  browser click is not a second press.
+- No recovery inbox, no restore or replay of pending transactions. State refreshes
+  from verified receipts, canonical events and chain reads.
+- Match the record and the chain as well as the signer.
+- Privy login and logout coordination ([Privy reconciliation](privy-reconciliation.md))
+  must never become wallet-transaction serialisation.
 
 ## Claims and retirement
 
-Historical regent.eth claims must survive in Fly Postgres through Ash before their
-sole source or dependencies retire. Preserve all source columns, including fields
-unmapped by an old resource; compare actual row identities and values, not an old
-approximate count. Preserve related credit/allowance evidence until accounted for.
-Accounts and Formation may retire after retained features are decoupled. This is
-preservation and existing-claim display, not authority for new claims or payments.
-Do not read `.env`, `.env.local` or `.envrc`, or access production without the
-required exact authority. Keep raw user data out of reports and evaluation fixtures.
+Historical regent.eth claims must survive in Fly Postgres through Ash before their sole
+source or its dependencies retire. Preserve every source column, including fields an
+old resource never mapped; compare actual row identities and values, never an old
+approximate count. Keep related credit and allowance evidence until it is accounted
+for. Accounts and Formation may retire once the retained features are decoupled. This is
+preservation and display of existing claims, not authority for new claims or payments.
+Keep raw user data out of reports and evaluation fixtures.
 
-## Verification and cleanup
+## Verification
 
-Use the worktree's isolated database, port and pinned dependency context. Never
-share destructive test fixtures with another checkout. Verification commands must
-not format files or alter dependency locks. A useful domain code interface is not
-wrapper waste. Remove a wrapper only after checking callbacks, external callers,
-error semantics, actor propagation and meaningful computation it provides.
-Before removing a test, identify its protected behavior and whether another test
-observes the same failure. Replace incidental source-text/copy locks when needed;
-retain ABI, policy, data-integrity and user-visible contract checks.
-
-Use real SQL for relationship reproductions; ETS can hide SQL behavior. Reproduce
-a minimal failing/passing pair before adding forms or unrelated relationships.
-Only one action per type is primary. For many-to-many changes, confirm the locked
-`manage_relationship` input shape and join attributes rather than copying an old
-example's field names. Version-matched dependency usage rules supply exact APIs.
+- Use the checkout's own database, port and pinned dependencies. Never share
+  destructive fixtures with another checkout. A verification command must not format
+  files or change a lockfile.
+- A domain code interface is not wrapper waste. Remove a wrapper only after checking
+  its callbacks, external callers, error semantics, actor propagation and any
+  computation it does.
+- Before removing a test, name the behaviour it protects and whether another test sees
+  the same failure. Replace source-text and copy locks; keep ABI, policy,
+  data-integrity and user-visible contract checks.
+- Reproduce relationship problems on real SQL (ETS hides SQL behaviour), as a minimal
+  failing and passing pair before adding forms or other relationships.
+- Only one action per type is primary. For many-to-many changes, confirm the locked
+  version's `manage_relationship` input shape and join attributes; never copy an old
+  example's field names.
