@@ -6952,3 +6952,25 @@ sits on its own branches.
   sent transaction's hash and the Privy page's active wallet are drawn with the shared
   address component; unused showcase styles are removed; the showcase's database note
   says what the code does.
+
+## 2026-11-10 — Database changes from the audit (branch, not on main)
+
+Decision 4 of the audit (Sean, "a for all 8", 10 November): each change is written and
+shown to Sean with its exact effect, and runs on production only on his letter for the
+release that carries it. All three are on `tpl/audit-migrations-1110`, one commit each.
+
+- **Label questions outlive their note** (`20261110041012_note_decisions_outlive_notes`):
+  the `note_decisions.note_id` foreign key becomes ON DELETE SET NULL and `note_id` may
+  be null. No row changes. Deleting notes can no longer reset the daily limit on paid
+  label questions or lose what each cost. It cannot be rolled back once a note with
+  questions has been deleted.
+- **Agents' `last_seen_at` loses the database's own default**
+  (`20261110041045_agent_last_seen_no_default`). No row changes; the column stays
+  required. The default covered a two-release overlap that ended on 13 October.
+- **Old sign-in session rows are deleted once a day** (no migration; it deletes rows):
+  `AshTemplate.Accounts.SessionPruner`, at 04:43 UTC, removes every
+  `session_authorities` row untouched for a day longer than the cookie lives (31 days).
+  The first run deletes every such row made since the table began.
+- Not written, and why: dropping `linked_identities.metadata` needs two releases (stop
+  writing it, then drop it); the room-message search index needs the `pg_trgm` extension
+  on the shared database; one reply per chat message waits for the chat reply fix.

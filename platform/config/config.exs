@@ -81,6 +81,8 @@ config :ash_template, Oban,
   cron: [
     crontab: [
       {"17 4 * * *", AshTemplate.ErrorPruner},
+      # Sign-in session rows no browser can still hold.
+      {"43 4 * * *", AshTemplate.Accounts.SessionPruner},
       # This release's public pages, sent to IndexNow once per release.
       {"@hourly", AshTemplate.IndexNow},
       # From the Points start, the one-time points for what accounts already had.

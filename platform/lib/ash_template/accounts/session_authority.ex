@@ -12,12 +12,21 @@ defmodule AshTemplate.Accounts.SessionAuthority do
   never beyond. Every transition inserts the row when
   absent, locks it `FOR UPDATE` and applies at most one change in one
   transaction, so the absent-row and present-row races serialize identically.
+
+  A row no browser can still hold is deleted once a day (`prune/0`, run by
+  `AshTemplate.Accounts.SessionPruner`): one untouched for a day longer than the
+  cookie lives. By then an unbound row's cookie has run out, a bound one's
+  sign-in has lapsed, and a revoked one was revoked at least that long ago. A
+  copy of such a cookie kept past its time finds no row and is refused, or, for
+  a never-signed-in one, starts again signed out.
   """
 
   use Ash.Resource,
     domain: AshTemplate.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
+
+  require Ash.Query
 
   alias AshTemplate.Accounts
   alias AshTemplate.Accounts.VerifiedSession
@@ -110,11 +119,37 @@ defmodule AshTemplate.Accounts.SessionAuthority do
       validate absent(:revoked_at)
       change set_attribute(:revoked_at, &DateTime.utc_now/0)
     end
+
+    # Only `prune/0` uses it, on rows no browser can still hold.
+    destroy :prune
   end
 
   policies do
     policy always() do
       authorize_if actor_attribute_equals(:role, :system)
+    end
+  end
+
+  @doc """
+  Deletes every row untouched for a day longer than the cookie lives, and
+  answers how many went.
+  """
+  @spec prune() :: {:ok, non_neg_integer()} | {:error, term()}
+  def prune do
+    cutoff = DateTime.add(DateTime.utc_now(), -(@sign_in_lifetime_seconds + 86_400), :second)
+
+    __MODULE__
+    |> Ash.Query.filter(updated_at < ^cutoff)
+    |> Ash.bulk_destroy(:prune, %{},
+      actor: @actor,
+      strategy: :atomic,
+      return_errors?: true,
+      return_records?: true,
+      notify?: false
+    )
+    |> case do
+      %Ash.BulkResult{status: :success, records: records} -> {:ok, length(records)}
+      %Ash.BulkResult{errors: errors} -> {:error, errors}
     end
   end
 
