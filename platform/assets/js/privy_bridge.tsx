@@ -678,9 +678,12 @@ export function createPrivyLoginCallbacks({
 }: PrivyLoginCallbackOptions): PrivyEvents["login"] {
   return {
     onComplete: ({loginAccount, user, wasAlreadyAuthenticated}) => {
-      if (!isCurrent() || !acceptsSubject(user?.id)) return
+      // The window is closed whoever this completion is for, so the guard is
+      // released first: a completion this page then ignores must not leave Sign in
+      // doing nothing until a reload.
       const opened = loginOpen.current
       loginOpen.current = false
+      if (!isCurrent() || !acceptsSubject(user?.id)) return
       // A Privy session the browser already held is never the visitor's own
       // sign-in: a page's sign-in logs Privy out first, and a real redirect
       // return arrives signed out. So after a Disconnect it stays signed out.
@@ -703,10 +706,9 @@ export function createPrivyLoginCallbacks({
       })
     },
     onError: error => {
-      if (!isCurrent()) return
       const opened = loginOpen.current
       loginOpen.current = false
-      if (!opened) return
+      if (!isCurrent() || !opened) return
       const diagnostic = privyLoginFailureDiagnostic(error)
       reportFailure(diagnostic)
       // A person who closes the sign-in window chose to; nothing is said.

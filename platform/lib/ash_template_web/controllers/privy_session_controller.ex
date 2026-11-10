@@ -25,7 +25,8 @@ defmodule AshTemplateWeb.PrivySessionController do
       {409, "This browser's sign-in has ended.", "Reload the page, then sign in again."},
     "account_switch_required" =>
       {409, "This browser was signed in to another account.",
-       "Reload the page, then sign in again."}
+       "Reload the page, then sign in again."},
+    "sign_in_unavailable" => {503, "Sign-in isn't available right now.", "Try again in a moment."}
   }
 
   @doc """
@@ -60,7 +61,17 @@ defmodule AshTemplateWeb.PrivySessionController do
          {:ok, account, identity_conflicts} <- establish(verified) do
       bind(conn, account, verified, identity_conflicts)
     else
-      {:error, {stage, reason}} -> refuse(conn, stage, reason)
+      # The site's own settings are at fault, not this browser's proof: nothing was
+      # judged, so the sign-in the browser holds stays as it is. Revoking it here
+      # would sign out every person whose page refreshes while a setting is wrong.
+      {:error, {:configuration, _reason} = fault} ->
+        conn
+        |> put_resp_header("cache-control", "no-store")
+        |> RegentHttp.UnexpectedFailure.log(fault)
+        |> refuse("sign_in_unavailable")
+
+      {:error, {stage, reason}} ->
+        refuse(conn, stage, reason)
     end
   end
 

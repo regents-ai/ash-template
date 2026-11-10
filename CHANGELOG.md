@@ -6952,3 +6952,23 @@ sits on its own branches.
   sent transaction's hash and the Privy page's active wallet are drawn with the shared
   address component; unused showcase styles are removed; the showcase's database note
   says what the code does.
+
+## 2026-11-10 — Sign-in: three plain faults (branch, not on main)
+
+Decision 2 of the audit (Sean, "a for all 8", 10 November). Sign-in is protected, so
+this sits on `tpl/audit-signin-1110` for an adversarial review and Sean's own real
+sign-in on a preview before any release.
+
+- **A sign-out that fails no longer blocks sign-in for the rest of the page's life.**
+  The session coordinator set "signing out" and never cleared it when the sign-out did
+  not happen, so linking an account or refreshing the sign-in was refused until a
+  reload. A failed sign-out now leaves the page as it was.
+- **The sign-in window's guard is released whenever the window closes**, also when the
+  page ignores how it ended (answered for another moment of the page, or for someone
+  else). Before, Sign in could do nothing until a reload.
+- **A wrong or missing Privy setting answers 503 `sign_in_unavailable` and judges
+  nothing.** Before, the sign-in step treated it as a failed proof, revoked the
+  browser's sign-in and answered 401, so a release with a bad setting signed out every
+  person whose page refreshed.
+- Still to do on this branch, from the findings file: F14, A1, then F6, F7, F8, F9, F10,
+  F12, F26, C2, C13, A6, A20.

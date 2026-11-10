@@ -100,6 +100,34 @@ defmodule AshTemplateWeb.SignInWalletsTest do
     refute section(html, "Regents embedded wallet") =~ @own
   end
 
+  # A wrong or missing Privy setting is the site's fault, not the browser's: the
+  # sign-in step answers "try again" and judges nothing, so a release with a bad
+  # setting never signs out the people whose pages refresh their sign-in.
+  test "a sign-in step the site cannot check answers try again and leaves the browser signed in",
+       %{key: key} do
+    signed_in = sign_in(key, "did:privy:settings", [wallet(@own, 5_000, "metamask")])
+    assert %{"authenticated" => true} = signed_in |> get("/auth/session") |> json_response(200)
+
+    privy = Application.fetch_env!(:ash_template, :privy)
+    Application.put_env(:ash_template, :privy, Keyword.put(privy, :verification_key, nil))
+
+    csrf = signed_in |> get("/auth/csrf")
+    proof = proof(key, "did:privy:settings", [wallet(@own, 5_000, "metamask")])
+
+    refreshed =
+      csrf
+      |> recycle()
+      |> put_req_header("x-csrf-token", Jason.decode!(csrf.resp_body)["csrf_token"])
+      |> put_req_header("authorization", "Bearer " <> proof.access)
+      |> put_req_header("privy-id-token", proof.identity)
+      |> post("/auth/privy/session")
+
+    assert %{"error" => %{"code" => "sign_in_unavailable"}} = json_response(refreshed, 503)
+
+    assert %{"authenticated" => true} =
+             refreshed |> recycle() |> get("/auth/session") |> json_response(200)
+  end
+
   # The browser's steps: a fresh session, then Privy's two tokens on the sign-in
   # step, then the page with the cookie that step left.
   defp sign_in(key, did, linked_accounts) do
