@@ -6976,3 +6976,44 @@ sits on its own branches.
 - **Left as they were:** `elixir-stack`, `animejs`, `ash-signals`, `discussions`,
   `regent-notion`, the three `patchbay-*` skills and every product skill a site serves.
 - No script under `skills/` changed. Skills only: nothing to deploy.
+
+## 2026-11-10 — Datascape in the motion lab
+
+- `/animations/datascape`: an endless dark plane drawn live, in the style of a glitching
+  data wall. Three layers of depth hold panels (blocks of coloured squares, scrolling
+  text, colour bars, cloudy gradients, level meters, torn bands, grids, small marked
+  boxes), short labels, specks, and tubes that run in right-angled legs with rounded
+  turns. Moving the pointer towards an edge of the picture flies that way, faster the
+  nearer the edge, and a finger held on the picture does the same; near the middle the
+  camera rests, and with no pointer it drifts slowly. At speed the picture leans into
+  the turn and pulls back. Panels open as they come into reach, a little ahead of the
+  way the camera is going: large ones with a bounce, a white flash and a few sparks,
+  then put together what they show; tubes draw themselves from one end. The panel under
+  the pointer grows and runs faster; a pressed one flashes, throws sparks and puts
+  itself together again.
+- The world comes only from each cell's place (`platform/assets/js/datascape/world.ts`),
+  so a place always holds the same things however often a visitor leaves and returns.
+  The field (`field.ts`) keeps the camera, the cells in reach and what the pointer rests
+  on; top speed follows the picture's size, so a phone flies slower than a desktop.
+- The picture is a vgpu canvas island (`platform/assets/js/hooks/datascape.ts`, drawing
+  in `platform/assets/js/datascape/`). Each frame draws the ground, then each layer's
+  tubes and panels as instanced quads, then the sparks, into a texture; what is bright
+  is kept at a quarter of the size and blurred twice, and a last pass lays that glow
+  back and adds the look of an old screen: colours pulled apart, a band slipping
+  sideways now and then, scan lines, grain and dark corners. The words are drawn once
+  on a canvas in the site's code face and kept as a texture. Anime.js opens each panel,
+  draws each tube and grows the panel under the pointer; it only changes numbers the
+  renderer reads.
+- A visitor who asked for less motion, or whose browser cannot draw it, keeps the still
+  picture `platform/priv/static/images/animations/datascape.webp`.
+- The page joins the motion lab's links, the Design page's list, the showcase list in
+  `public_documents.ex`, the walk's page list and the route handoff.
+- Public changelog: Datascape in the Motion Lab.
+- Checked in headless Chromium with WebGPU on the Mac's GPU: the picture draws at 1440
+  and 1728 wide; the pointer at the right edge and at a corner flies that way with new
+  panels and tubes arriving; resting on a panel grows it and shows the hand cursor,
+  pressing it flashes it, and leaving clears the cursor; 60 frames a second flying flat
+  out at 1728 wide; a held finger flies it at 390 wide; no sideways overflow at 1440,
+  390 and 320; reduced motion keeps the still picture; a browser that gets no graphics
+  device shows the still picture; no console errors. WebKit was not run.
+- Not deployed.

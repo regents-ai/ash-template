@@ -73,6 +73,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | An agent's window renames the agent: a name with a hidden character is refused beside the field and the agent keeps its name; a name with an emoji joined by a zero-width joiner saves and shows in the window and the list, at both widths; the field and Save are at least 44 px tall on the phone once the window has risen into place | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs |
 | Only the person renames their agent; a blank name, one over 80 characters or one with a hidden character is refused | elixir-utils `ash_components/agents/test/pairing_test.exs` |
 | A moving picture whose graphics card never starts shows the still picture and stops listening to the page | `platform/assets/test/canvas_island.test.ts` |
+| Datascape: a place always holds the same panels, labels, specks and tube; a tube's pieces join end to end; the camera rests near the middle, goes the way the pointer is and never passes the top speed for its picture's size; flying brings cells in and lets them go, and the ones in view are always there; the panel under the pointer is found once it has opened and whoever watches is told | `platform/assets/test/datascape.test.ts` |
 | Live figures: a bad reading never replaces a good one, a failed first read shows, pages hear only their own figure | `platform/test/ash_template/site/shared_reading_test.exs` |
 | Chain figures read on a slow clock: a landed on-chain step or the read-again icon reads the chain again at once, asks close together cost one read, and another chain's ask changes nothing; the figures page says when Base was last read, at both widths | `platform/test/ash_template/site/chain_refresh_test.exs`, `platform/test/browser/figures.spec.ts` |
 | Sentinel's chain numbers: a chain reader's pass sets its lag in blocks and counts the pass; a site's query of its own unconfirmed sends sets each flow's oldest age, 0 when none waits, and a query that fails is logged and skipped; the template names no such query, so it never publishes that age | `platform/test/ash_template_web/chain_numbers_test.exs` |
@@ -228,3 +229,6 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - The agent harbour's drawing and ripples: the walk turns WebGPU on for the harbour's
   sea and presses ships and islands on it, but nothing checks what the sea looks like
   or that a ripple spreads.
+- The datascape's drawing, flying and panels opening: the walk's browser draws no GPU
+  picture, so it opens the page and sees only the still picture. Checked by hand in
+  headless Chromium with the Mac's GPU at 1440, 1728, 390 and 320 wide (10 Nov).

@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 10 November 2026
 
+- **Motion lab.** A new page, Datascape: an endless dark plane of glowing panels, tubes
+  and specks. Move the pointer towards an edge to fly that way, or hold a finger there.
 - **Notes.** A note can't be deleted while a pin for it is being paid for, so a pin is
   never paid for a note that is gone. Try again once it shows as pinned, or in a few
   minutes.
