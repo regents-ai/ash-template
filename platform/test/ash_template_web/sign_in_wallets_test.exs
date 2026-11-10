@@ -109,23 +109,26 @@ defmodule AshTemplateWeb.SignInWalletsTest do
     assert %{"authenticated" => true} = signed_in |> get("/auth/session") |> json_response(200)
 
     privy = Application.fetch_env!(:ash_template, :privy)
-    Application.put_env(:ash_template, :privy, Keyword.put(privy, :verification_key, nil))
-
-    csrf = signed_in |> get("/auth/csrf")
     proof = proof(key, "did:privy:settings", [wallet(@own, 5_000, "metamask")])
 
-    refreshed =
-      csrf
-      |> recycle()
-      |> put_req_header("x-csrf-token", Jason.decode!(csrf.resp_body)["csrf_token"])
-      |> put_req_header("authorization", "Bearer " <> proof.access)
-      |> put_req_header("privy-id-token", proof.identity)
-      |> post("/auth/privy/session")
+    # A key that is missing, and one that is there but cannot be read.
+    for wrong <- [nil, "-----BEGIN PUBLIC KEY-----\nnot a key\n-----END PUBLIC KEY-----"] do
+      Application.put_env(:ash_template, :privy, Keyword.put(privy, :verification_key, wrong))
+      csrf = signed_in |> get("/auth/csrf")
 
-    assert %{"error" => %{"code" => "sign_in_unavailable"}} = json_response(refreshed, 503)
+      refreshed =
+        csrf
+        |> recycle()
+        |> put_req_header("x-csrf-token", Jason.decode!(csrf.resp_body)["csrf_token"])
+        |> put_req_header("authorization", "Bearer " <> proof.access)
+        |> put_req_header("privy-id-token", proof.identity)
+        |> post("/auth/privy/session")
 
-    assert %{"authenticated" => true} =
-             refreshed |> recycle() |> get("/auth/session") |> json_response(200)
+      assert %{"error" => %{"code" => "sign_in_unavailable"}} = json_response(refreshed, 503)
+
+      assert %{"authenticated" => true} =
+               refreshed |> recycle() |> get("/auth/session") |> json_response(200)
+    end
   end
 
   # The browser's steps: a fresh session, then Privy's two tokens on the sign-in

@@ -6972,3 +6972,12 @@ sign-in on a preview before any release.
   person whose page refreshed.
 - Still to do on this branch, from the findings file: F14, A1, then F6, F7, F8, F9, F10,
   F12, F26, C2, C13, A6, A20.
+
+## 2026-11-10 — Sign-in: fix from the adversarial review (branch, not on main)
+
+A separate reviewer read `tpl/audit-signin-1110` to break it and found no reason it must
+not ship. One finding, fixed here: the "wrong setting" answer had lost its own log line
+and count, and a verification key that is present but unreadable still signed people
+out. Both cases now answer 503 `sign_in_unavailable`, leave the session alone, log
+`Privy sign-in unavailable stage=… reason=…` as an error and count in
+`ash_template.privy.session_refused.total` with their stage and reason.
