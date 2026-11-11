@@ -7213,7 +7213,8 @@ sits on its own branches.
   template was cut from Regents on 21 September, with no reason given, so its jobs alone
   could take every connection; development against the shared database had none set, so
   Ecto's 10. With 5 everywhere, the database queues' 3 leave 2 for pages in development
-  as in production.
+  as in production. The browser walk's server (`platform/playwright.config.ts`) no
+  longer sets `POOL_SIZE=3`, which nothing ever read; it runs on the same 5.
 - Checked: `mix format` (no change), a compile with warnings as errors, and the tests
   for the changed files (16 of 16). `make pins` and `make drift` ran for every site.
 - The schema-prefix test, run once with ash_postgres pointed at Hex 2.15.2, failed where
