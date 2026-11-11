@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.OAuthController do
   @moduledoc "Boruta protocol routes and consent under the verified browser session and CSRF."
   use AshTemplateWeb, :controller
 
-  plug :rate_limit when action in [:register, :token, :revoke]
+  plug :rate_limit when action in [:register, :token, :revoke, :authorize, :approve]
 
   for action <- [:resource_metadata, :server_metadata, :register, :token, :revoke] do
     def unquote(action)(conn, _params), do: RegentOAuth.Protocol.call(conn, unquote(action))

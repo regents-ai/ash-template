@@ -7025,3 +7025,26 @@ sits on its own branches.
   automatic"). A protected action or a product decision inside one keeps its letter.
   Changed in `skills/regent-workflow/SKILL.md` ("Shared changes" step 2 and the protected
   list) and `skills/ash-signals/SKILL.md`. Skills only: nothing to deploy.
+
+## 2026-11-11 — Connected apps: Claude's published identity
+
+- Sean, 29 Oct, of Claude's connector settings: "can we do the CIMD setting instead of
+  the 'register automatically'?", then "1. yes, do this asap", and on 11 Nov "1. a 2. a"
+  for the CIMD version of the connector. Claude may now name itself by its published
+  identity, `https://claude.ai/oauth/mcp-oauth-client-metadata`, instead of registering
+  a new app on every connection. Discovery says so
+  (`client_id_metadata_document_supported`); registration keeps working for other apps,
+  and an address and a registered id are never taken for each other.
+- Rebuilt on today's main from `claude/cimd-1029` (`e90c7b5e`, 178 commits behind). Every
+  elixir-utils package moves to `562a853f` (`agent-access/cimd-1111`): the seven
+  published-identity commits on `d89c69df`, the pin before. Only oauth, http and
+  mcp_events differ from `d89c69df`; mcp_events callbacks now use `RegentHttp.Public`, the
+  one checked outbound request.
+- Migration `20261111060000_oauth_client_documents` adds one empty table
+  (`RegentOAuth.Migration.V3`) and changes nothing existing.
+- Consent (`/oauth/authorize`, GET and POST) is limited to 120 requests a minute by
+  address, like token and revocation: a signed-in person's consent may read a connecting
+  app's published identity.
+- New check: `claude_connector_test.exs` connects Claude by its published identity
+  through this site's endpoint, consent, token exchange, `/mcp` and refresh.
+- Protected (sign-in and a migration): ships on Sean's go naming the final commit.
