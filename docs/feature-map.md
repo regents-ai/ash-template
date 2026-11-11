@@ -40,9 +40,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Closing the site leaves the agent pages open | `platform/test/ash_template/site/launch_gate_test.exs` |
 | A missing required value gets the site's own error, not a database failure, on a database built from every migration, the libraries' included | `platform/test/ash_template/required_value_test.exs` |
 | Every write lands in the site's own schema of the shared database, never in a same-named table in `public`: create, update, destroy, upsert, bulk upsert and `Ash.update_many` | `platform/test/ash_template/schema_prefix_test.exs` |
-| A caller that already holds a public document or agent file gets 304 and no body, whether it sends the document's tag, the weak `W/` form, the tag inside a list, or `*`; a tag it does not hold gets the document | `platform/test/ash_template_web/static_cache_test.exs` |
-| The API contract (`/api-contract.openapiv3.yaml`) carries `x-regents-contract-major` and `x-regents-contract-digest`, both true to its own body, which the product CLI reads before it changes anything, and the endpoint's static headers, since it is never a page | `platform/test/ash_template_web/static_cache_test.exs` |
-| IndexNow hears of each release's pages once, however often the hourly job runs; the same list queued again while it waits is that one job, and a list queued after its sending began is sent again | `platform/test/ash_template/index_now_test.exs` |
+| IndexNow hears of each release's pages once, however often the hourly job runs | `platform/test/ash_template/index_now_test.exs` |
 | Each address that takes a body reads it up to its limit and refuses one byte more with 413: 64 KB for what an agent signs (the API and `/mcp`), 256 KB for the rest (a connected app's registration and token, sign-in, visit reports) | `platform/test/ash_template_web/body_limit_test.exs` |
 
 ## People
@@ -198,6 +196,17 @@ the agent's own row on the site: when the agent was last seen, added the first t
 
 ## Gaps
 
+- A caller that already holds a public document or agent file gets 304 and no body,
+  whether it sends the document's tag, the weak `W/` form, the tag inside a list, or
+  `*`; a tag it does not hold gets the document. No check yet: add after an hour live.
+- The API contract (`/api-contract.openapiv3.yaml`) carries `x-regents-contract-major`
+  and `x-regents-contract-digest`, both true to its own body, which the product CLI
+  reads before it changes anything, and the endpoint's static headers. The walk opens
+  it with its type (`platform/test/browser/pages.json`); nothing checks its headers.
+  No check yet: add after an hour live.
+- IndexNow's `submit/1`: the same list queued again while it waits is that one job,
+  and a list queued after its sending began is sent again. No check yet: add after an
+  hour live.
 - Saving a name in a real browser, and the page's Privy bridge itself: the walk
   answers for Privy with a stand-in, so it proves the refusal; the server check
   proves the save and `public_name.test.ts` the save path.

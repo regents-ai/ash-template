@@ -7108,7 +7108,7 @@ sits on its own branches.
   the next.
 - `AshTemplate.IndexNow.submit/1` keeps one copy of the same list waiting
   (`keys: [:urls]`, waiting states only); a list queued after its sending began is
-  sent again. `platform/test/ash_template/index_now_test.exs` holds both halves.
+  sent again. Its check comes after an hour live (`docs/feature-map.md`, Gaps).
 - `skills/elixir-stack/references/oban.md` gains "One job per thing, and effects safe
   to repeat": which keys, why `period: :infinity`, which states for which kind of job,
   how Oban 2.24 merges a worker's `unique:` with one given to `new/2`, and that a job
@@ -7140,9 +7140,9 @@ sits on its own branches.
   `Plug.Static` is deleted, the file leaves the static paths, and the
   `application/yaml` MIME entry it needed is gone. The browser walk opens the
   contract with the other documents (`platform/test/browser/pages.json`).
-- `platform/test/ash_template_web/static_cache_test.exs` checks the 304 forms and the
-  contract's headers against its own body. `platform/README.md` says how public
-  documents are sent.
+- `platform/README.md` says how public documents are sent. The checks for the 304
+  answers and the contract's headers come after an hour live (`docs/feature-map.md`,
+  Gaps).
 
 ## 2026-11-11 — `make pins`: every site's shared-library pins in one table
 
@@ -7197,13 +7197,14 @@ sits on its own branches.
   library copy is read through its own `--git-dir`, so a damaged copy never reaches
   the checkout around it, and the copies fetch pull requests' heads, so a pin on a pull
   request's commit is counted instead of called "not on GitHub".
-- `static_cache_test.exs` checks the contract against `Endpoint.static_headers/0`. The
-  send_cached comment says a public document changes with a release or with the
+- The send_cached comment says a public document changes with a release or with the
   server settings read at boot. `oban.md` says `oldest_unfinished` counts running jobs
   too. `skills/ash-data/references/migrations-and-concurrency.md` says a concurrent index
   build waits for older transactions anywhere in the database, the other sites' included.
-- `docs/feature-map.md` gains rows for the 304 answers, the contract's headers and
-  IndexNow's uniqueness; `skills/ash-webmcp/references/regents.md` names the template's
-  contract route in place of Regents' plug.
+- The new checks for the 304 answers, the contract's headers and IndexNow's
+  uniqueness are held until the change has worked live for an hour:
+  `static_cache_test.exs` and `index_now_test.exs` are as on main, and
+  `docs/feature-map.md` lists the three as Gaps. `skills/ash-webmcp/references/regents.md`
+  names the template's contract route in place of Regents' plug.
 - Written without a compile or test run (the Mac was low on power); `make pins` ran
   for every site, and the full check on the branch's head comes next.
