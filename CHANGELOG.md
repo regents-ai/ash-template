@@ -7042,3 +7042,20 @@ sits on its own branches.
   (`regent_identity`, `regent_agents`, `regent_points`, `regent_payments`) through
   `/app/bin/migrate-shared` after Sean's go, Regents its `regent_names` table.
 - `skills/ash-data/SKILL.md` and `platform/README.md` point to it. Docs only.
+
+## 2026-11-11 — One class of background work per queue
+
+- Each Oban queue now holds one class of work, so a slow or failing service holds up
+  only the jobs that wait on it. Asking Jev to label a decision is a model call, so its
+  trigger (`AshTemplate.Notes.Decision`, `:ask_jev`) moves from `outside_calls`, which
+  it shared with the notes webhook and IndexNow, to a new `labels` queue (limit 3).
+  The queue list and its comment in `platform/config/config.exs` name each class:
+  `default` and `points` the database, `ens` and `points_chain` chain reads,
+  `chat_responses`, `conversations` and `labels` model calls, `outside_calls` every
+  other outside website.
+- `skills/elixir-stack/references/oban.md` gains "Queues": the four classes and the
+  template's queues for each, when a kind gets its own queue, how to choose a limit
+  by what the job waits on, when to raise or lower it, and that moving a job to
+  another queue needs no migration. `skills/elixir-stack/SKILL.md` says it in one
+  line.
+- A label job already waiting in `outside_calls` when this ships still runs there.
