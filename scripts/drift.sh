@@ -129,7 +129,7 @@ source scripts/github.sh
 
 # Compares the template's files named after the heading with the current site's copies.
 compare() {
-  local heading="$1" path site_path why theirs ours diff_file added removed
+  local heading="$1" path site_path why theirs ours diff_file added removed status
   local same=0 differ=0 missing=0 unused=0
   shift
   echo "  $heading"
@@ -140,11 +140,14 @@ compare() {
       unused=$((unused + 1))
       continue
     fi
-    if ! theirs="$(site_file "$repo" "$rev" "$site_path")"; then
+    # A file the site lacks (404) is missing; any other failure stops the run.
+    theirs="$(site_file "$repo" "$rev" "$site_path")" || {
+      status=$?
+      [[ "$status" == 44 ]] || exit "$status"
       printf '    missing  %s\n' "$site_path"
       missing=$((missing + 1))
       continue
-    fi
+    }
     ours="$(perl -pe "s/ash_template/$app/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g" "$path" | compared "$path")"
     theirs="$(compared "$path" <<<"$theirs")"
     diff_file="$out/$site/$(tr / _ <<<"$site_path").diff"
@@ -194,7 +197,11 @@ compare_live_homepages() {
 for site in "${@:-${sites[@]}}"; do
   repo="regents-ai/$site"
   rev="$(main_commit "$repo")"
-  mix_exs="$(site_file "$repo" "$rev" platform/mix.exs)"
+  mix_exs="$(site_file "$repo" "$rev" platform/mix.exs)" || {
+    status=$?
+    [[ "$status" != 44 ]] || echo "$repo has no platform/mix.exs at ${rev:0:7}" >&2
+    exit "$status"
+  }
   app="$(sed -nE 's/^[[:space:]]*app: :([a-z0-9_]+),.*/\1/p' <<<"$mix_exs" | head -1)"
   module="$(sed -nE 's/^defmodule ([A-Za-z0-9]+)\.MixProject do$/\1/p' <<<"$mix_exs")"
   camel="$(printf '%s' "${module:0:1}" | tr '[:upper:]' '[:lower:]')${module:1}"
