@@ -4,13 +4,6 @@ defmodule AshTemplate.DatabaseConfig do
   @cluster_id "dzx6qo6xqzvojpv5"
   @cluster_name "regents-platform-prod"
   @production_database_host "direct.dzx6qo6xqzvojpv5.flympg.net"
-  @production_pooler_host "pgbouncer.dzx6qo6xqzvojpv5.flympg.net"
-  # The pooler presents a certificate from the cluster's own authority
-  # (postgres-operator-ca, valid to July 2036), issued to the cluster's internal
-  # name rather than the public one, so pooler connections trust that authority
-  # alone and accept only that name.
-  @pooler_authority "priv/certs/regents-platform-prod-pooler-ca.pem"
-  @pooler_certificate_name ~c"pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc"
   # Superseded identities refused in production configuration: the legacy
   # platform application and the retired rehearsal cluster.
   @production_identities ["platform-phx", "regents-pg-test", "nvwq9ozp9ye03kl1"]
@@ -22,7 +15,6 @@ defmodule AshTemplate.DatabaseConfig do
   @staging_refusals [
     @cluster_id,
     @production_database_host,
-    @production_pooler_host,
     "regents-sh-web" | @production_identities
   ]
   @deployment_role_error ~s(ASH_TEMPLATE_DEPLOYMENT_ROLE must be set to "production" or "staging")
@@ -73,15 +65,13 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   @doc """
-  The connection the site's listeners share (`AshTemplate.SharedChanges`): the
-  serving login on the database's direct address, since the pooler hands out
-  connections per transaction and drops `LISTEN`.
+  The one connection the site's listeners share (`AshTemplate.SharedChanges`): the
+  serving login and address, outside the pool.
   """
   def notifications_config!(environment, getenv \\ &System.get_env/1) do
     environment
     |> runtime_config!(getenv)
-    |> Keyword.drop([:pool, :pool_size, :prepare, :max_lifetime, :parameters])
-    |> direct_address()
+    |> Keyword.drop([:pool, :pool_size, :max_lifetime, :parameters])
     |> connection_keys()
     |> Keyword.merge(auto_reconnect: true, parameters: [application_name: "ash-template-listen"])
   end
@@ -101,23 +91,24 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   # The serving connection shares one database with every other site, so it holds
-  # five connections, names itself in pg_stat_activity and keeps connection details
-  # out of its errors. Each connection is replaced after nine to ten minutes, spread
-  # so the pool never reconnects at once: when Fly's proxy in front of the database
-  # restarts, it closes any connection still open ten minutes later, and Fly's guide
-  # for Ecto recycles on this schedule to stay ahead of it. The pooler closes a
-  # connection idle for a minute; the pool's idle pings keep every connection busier
-  # than that. The pooler refuses every startup setting but the name, so the limits
-  # that stop a statement, a lock wait or an idle open transaction before it stalls
-  # anyone else live on the serving login itself (ash-data, "Connections to the shared
-  # production database"). Release commands connect with their own login and none of
-  # these limits.
+  # five connections, names itself in pg_stat_activity, keeps connection details out
+  # of its errors, and gives up on a statement, a lock wait or an idle open
+  # transaction before it can stall anyone else. Each connection is replaced after
+  # nine to ten minutes, spread so the pool never reconnects at once: when Fly's
+  # proxy in front of the database restarts, it closes any connection still open ten
+  # minutes later, and Fly's guide for Ecto recycles on this schedule to stay ahead
+  # of it. Release commands connect with their own login and none of these limits.
   defp serving(options) do
     Keyword.merge(options,
       pool_size: 5,
       max_lifetime: 540_000..600_000,
       show_sensitive_data_on_connection_error: false,
-      parameters: [application_name: "ash-template-web"]
+      parameters: [
+        application_name: "ash-template-web",
+        statement_timeout: "15000",
+        lock_timeout: "5000",
+        idle_in_transaction_session_timeout: "15000"
+      ]
     )
   end
 
@@ -132,19 +123,14 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   # The hosts a venue admits (any, for a developer's remote target) and the terms
-  # its URL may not name anywhere. Production serves through the pooler and runs
-  # its release commands on the direct address.
-  defp venue(:production, "DATABASE_POOLED_URL"),
-    do: {[@production_pooler_host], @production_identities}
-
-  defp venue(:production, "DATABASE_DIRECT_URL"),
-    do: {[@production_database_host], @production_identities}
-
-  defp venue(:staging, _variable), do: {@staging_hosts, @staging_refusals}
-  defp venue(:remote, _variable), do: {nil, @production_identities}
+  # its URL may not name anywhere. Production serves and runs its release commands
+  # on the database's direct address.
+  defp venue(:production), do: {[@production_database_host], @production_identities}
+  defp venue(:staging), do: {@staging_hosts, @staging_refusals}
+  defp venue(:remote), do: {nil, @production_identities}
 
   defp database_url!(getenv, variable, venue) do
-    {admitted_hosts, refused_terms} = venue(venue, variable)
+    {admitted_hosts, refused_terms} = venue(venue)
 
     with value when is_binary(value) and value != "" <- getenv.(variable),
          {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
@@ -180,8 +166,8 @@ defmodule AshTemplate.DatabaseConfig do
   # Every host an allowlist admits is fixed by its hostname alone, so none may carry
   # a port other than PostgreSQL's or any query option: Ecto turns every URL query key
   # into an atom and merges parsed URL options after the explicit Repo configuration,
-  # so even encoded or future aliases could otherwise weaken TLS, replace the endpoint,
-  # or restore named prepares after this module's checks.
+  # so even encoded or future aliases could otherwise weaken TLS or replace the
+  # endpoint after this module's checks.
   defp fixed_endpoint?(%URI{host: host, port: port, query: query}) do
     not (fly_mpg_host?(host) or String.downcase(host) in @staging_hosts) or
       (port in [nil, 5432] and query in [nil, ""])
@@ -192,18 +178,6 @@ defmodule AshTemplate.DatabaseConfig do
   defp connection_options(url, host) do
     options = [url: url, port: URI.parse(url).port || 5432, socket_options: [:inet6]]
     if fly_mpg_host?(host), do: fly_mpg_options(host) ++ options, else: options
-  end
-
-  defp fly_mpg_options(@production_pooler_host = host) do
-    [
-      prepare: :unnamed,
-      ssl: [
-        verify: :verify_peer,
-        cacertfile: Application.app_dir(:ash_template, @pooler_authority),
-        server_name_indication: String.to_charlist(host),
-        customize_hostname_check: [match_fun: &pooler_certificate_name?/2]
-      ]
-    ]
   end
 
   # The direct address presents a public certificate for its own name.
@@ -217,24 +191,6 @@ defmodule AshTemplate.DatabaseConfig do
         customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
       ]
     ]
-  end
-
-  defp pooler_certificate_name?(_reference, {:dNSName, name}),
-    do: name == @pooler_certificate_name
-
-  defp pooler_certificate_name?(_reference, _presented), do: false
-
-  # A Fly Managed Postgres cluster answers on `pgbouncer.<cluster>` through its
-  # pooler and on `direct.<cluster>` without it, for the same logins.
-  defp direct_address(options) do
-    case options[:url] && URI.parse(options[:url]) do
-      %URI{host: "pgbouncer." <> cluster} = uri ->
-        host = "direct." <> cluster
-        Keyword.merge(options, connection_options(URI.to_string(%{uri | host: host}), host))
-
-      _not_pooled ->
-        options
-    end
   end
 
   defp fly_mpg_host?(host) do

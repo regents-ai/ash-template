@@ -16,8 +16,9 @@ Load `ash-stack` first. State the persistence invariant the change must keep, th
   Do not switch off atomic requirements to get past an error.
 - **A race test needs independent transactions**, not two processes sharing one
   sandbox connection.
-- **One production database for every site.** A site serves on the direct address with
-  a pool of 5 and releases take turns; only the template serves through the pooler
+- **One production database for every site.** Every site and the template serve on
+  the direct address with a pool of 5, never through the pooler, and releases take
+  turns
   ([connections](references/migrations-and-concurrency.md#connections-to-the-shared-production-database)).
 - **Imports keep the whole source record**, unmapped columns included. An identical
   reimport is harmless; a conflicting identity or value needs

@@ -1,11 +1,11 @@
 defmodule AshTemplate.SharedChanges do
   @moduledoc """
   Changes made on any Regent site reach this site's open pages: a pairing made or
-  ended (`RegentAgents.Listener`) arrives as a database notice. It listens on a
-  connection of the site's own, `AshTemplate.Notifications`, on the database's
-  direct address (`AshTemplate.DatabaseConfig.notifications_config!/2`), since the
-  pooler the repository serves through drops `LISTEN`. The connection starts
-  first, so a new connection brings a new listener.
+  ended (`RegentAgents.Listener`) arrives as a database notice. It listens on one
+  connection of the site's own outside the repository's pool,
+  `AshTemplate.Notifications` (`AshTemplate.DatabaseConfig.notifications_config!/2`),
+  since a connection in the pool goes back to it after each query. The connection
+  starts first, so a new connection brings a new listener.
   """
 
   use Supervisor

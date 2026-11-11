@@ -7054,3 +7054,21 @@ sits on its own branches.
 - Fly logs from the release start: no errors, crashes or refusals. One health check
   failed at 05:07:42Z while the new version started and passed at 05:07:49Z. All 32
   page and request lines after that were answered.
+
+## 2026-11-11 — The site serves on the database's direct address
+
+- The running site connects to the shared database's direct address,
+  `direct.dzx6qo6xqzvojpv5.flympg.net`, as every site does, and no longer through its
+  pooler (Sean, 4a). The pooler keeps at least five real connections open for each login
+  on every one of its processes that holds one of the login's clients, so the site's
+  seven clients held 10 real connections on 30 October and 15 on 11 November; on the
+  direct address they hold seven, plus the one listening connection.
+- Production admits only the direct address for `DATABASE_POOLED_URL`; the secret keeps
+  its name. The serving connection sends the limits the sites send as startup settings:
+  `statement_timeout` 15000, `lock_timeout` 5000 and
+  `idle_in_transaction_session_timeout` 15000, and no longer turns off named prepared
+  statements. The listening connection uses the same login and address.
+- Removed the pooler's certificate (`platform/priv/certs/regents-platform-prod-pooler-ca.pem`)
+  and the code that checked it.
+- README and the ash-data skill: nobody serves through the pooler, and why.
+- Not deployed.
