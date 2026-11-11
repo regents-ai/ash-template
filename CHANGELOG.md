@@ -7209,9 +7209,16 @@ sits on its own branches.
 - `make drift` (`scripts/drift.sh`) counts a file as missing only when GitHub answers
   404; any other failure stops the run, and a site with no `platform/mix.exs` says so.
 - Serving, development and tests each hold 5 connections, one setting in
-  `AshTemplate.DatabaseConfig` (`@pool_size`): local development had 2 since the template was cut from Regents on
-  21 September, with no reason given, so its jobs alone could take every connection;
-  development against the shared database had none set, so Ecto's 10. With 5
-  everywhere, the database queues' 3 leave 2 for pages in development as in production.
-- Written without a compile or test run (the Mac was low on power); `make pins` and `make
-  drift` ran for every site, and the full check on the branch's head comes next.
+  `AshTemplate.DatabaseConfig` (`@pool_size`): local development had 2 since the
+  template was cut from Regents on 21 September, with no reason given, so its jobs alone
+  could take every connection; development against the shared database had none set, so
+  Ecto's 10. With 5 everywhere, the database queues' 3 leave 2 for pages in development
+  as in production.
+- Checked: `mix format` (no change), a compile with warnings as errors, and the tests
+  for the changed files (16 of 16). `make pins` and `make drift` ran for every site.
+- The schema-prefix test, run once with ash_postgres pointed at Hex 2.15.2, failed where
+  it should: "an upsert, of one record or many, lands only in the site's schema" (the
+  site's table stayed empty: the upsert went to `public`) and "updating many records at
+  once changes only the site's rows" (the site's rows kept their old amounts). The
+  create, read, update and destroy test held. The pin went back to 55db7d4, with
+  `platform/mix.exs` and `platform/mix.lock` unchanged.
