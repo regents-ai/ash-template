@@ -87,7 +87,7 @@ done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -
 
 # The reports that compare Regent's sites with the template, with their file lists;
 # a new product has no use for them, so they are removed below.
-reports=(scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh)
+reports=(scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh scripts/harvest.sh)
 
 # Contents: every tracked text file except this script, the reports (all removed
 # below) and the changelog's history, task names first, then the longest spelling

@@ -7251,3 +7251,13 @@ sits on its own branches.
   drift sources, so the next report reads the same lists.
 - `scripts/init.sh` keeps one list of the reports it leaves unrenamed and removes from a
   new product, `scripts/shared-files.sh` among them.
+- New `scripts/harvest.sh <ledger> <repos> [site ...]` lists, for each site, every
+  commit on its main since the commit the harvest ledger (control's
+  `automation/harvest.md`, its "Last read" table) last read, oldest first, as JSON.
+  Each commit gives its date, subject and files, each file named as the template names
+  it (renamed back the way `scripts/init.sh` renames the template's files for the site,
+  and a shared file a site keeps at its own path by the template's path), with the
+  file list it is in, and `shared: true` when it touches a shared file. The sites are
+  clones in one folder, so a cloud run passes its own; each clone's main is fetched
+  first. A ledger with no full commit for a site, or a clone without that commit,
+  stops the run.

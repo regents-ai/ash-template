@@ -65,7 +65,9 @@ a library is not pinned to an inspectable commit of its repository or lacks a fi
 ash_postgres, SIWA and regents-cli), read from each site's main branch on GitHub, and
 how far each is behind the template's pin and the library's main. `make drift` runs it
 after comparing the sites' shared files. Both print one JSON document, which the daily
-jobs read; each script's opening comment describes its fields.
+jobs read; each script's opening comment describes its fields. `scripts/harvest.sh`
+lists the commits each site added to its main since the harvest ledger last read it,
+for the inbound job.
 <!-- /template-only -->
 
 Agent pairing also uses the shared [SIWA client](https://siwa.regents.sh/skill.md).
