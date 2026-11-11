@@ -223,8 +223,21 @@ uses one for the other's work.
 ## Public HTTP surface
 
 `contracts/api-contract.openapiv3.yaml` is the source of truth for the API and
-is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
-`x-regents-contract-digest` headers. The table is a map, not the contract.
+is served at `/api-contract.openapiv3.yaml` (`PublicPagesController.api_contract/2`)
+with `x-regents-contract-major` and `x-regents-contract-digest` headers. The table is
+a map, not the contract.
+
+Every public document and agent file (the contract, `/openapi.json`, `/llms.txt`,
+`/agents.md`, each skill's `skill.md`, `/capabilities.json`, the sitemap and robots,
+the agent skill files, `/.well-known/security.txt`, the API catalog,
+`/indexnow-key.txt`, and `/api/v1/about` and `/api/v1/docs`) is sent by one helper,
+`send_cached/4` in `AshTemplateWeb.PublicPagesController`: a strong ETag, the sha256
+of the body, `cache-control: public, max-age=300`, the endpoint's static headers (no
+scripts, no framing, nosniff), and 304 with no body when `If-None-Match` names that
+ETag. A page or answer that shows the signed-in person is never sent this way. The
+Markdown of a public page (`Accept: text/markdown`) comes from `RegentAgentAccess.Plug`
+and the OAuth discovery documents from `RegentOAuth.Protocol`, which set no
+cache.
 
 | Route | Method | Purpose |
 | --- | --- | --- |

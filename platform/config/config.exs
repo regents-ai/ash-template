@@ -18,8 +18,6 @@ config :ash_template, :admins, []
 # (CVE-2026-82752).
 config :ash, default_string_length_count: :codepoints
 
-config :mime, :types, %{"application/yaml" => ["yaml"]}
-
 # The name this site goes by in the shared Regent libraries. A site copied
 # from the template changes it here and nowhere else.
 site = "template"

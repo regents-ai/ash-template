@@ -7087,3 +7087,21 @@ sits on its own branches.
   configuration: with AshOban's wrapper, Oban starts `Oban.Cron`, `Oban.Pruner`
   (7 days) and `Oban.Lifeline` (10 minutes) under the database leader. No
   configuration changes. Docs only.
+
+## 2026-11-11 — Public documents answer 304, and the contract is a route
+
+- `send_cached/4` in `AshTemplateWeb.PublicPagesController`, which sends every public
+  document and agent file, now answers 304 with no body when `If-None-Match` names the
+  body's ETag (one tag, a list, a weak `W/` tag or `*`), and sends the endpoint's
+  static headers (`AshTemplateWeb.Endpoint.static_headers/0`: no scripts, no framing,
+  nosniff, no referrer), since none of them is a page. `/api/v1/about` and
+  `/api/v1/docs` go through it too, so they gain the ETag and cache.
+- `/api-contract.openapiv3.yaml` is a route (`api_contract/2`) that sends the contract
+  with `x-regents-contract-major` and `x-regents-contract-digest`, both read from the
+  file at compile time. The `ContractHeaders` plug that added them in front of
+  `Plug.Static` is deleted, the file leaves the static paths, and the
+  `application/yaml` MIME entry it needed is gone. The browser walk opens the
+  contract with the other documents (`platform/test/browser/pages.json`).
+- `platform/test/ash_template_web/static_cache_test.exs` checks the 304 forms and the
+  contract's headers against its own body. `platform/README.md` says how public
+  documents are sent.
