@@ -102,9 +102,9 @@ It keeps at least 5 real connections open for each login on every one of its pro
 that holds one of that login's clients (Min Pool Size, fixed in Fly's dashboard), so a
 pooled site costs 5 for every pooler process its clients reach, not its pool size. The
 template served through it until November 2026: 10 real connections for its 7 clients
-on 30 October (two processes), then 15 on 11 November (three), where the same pool on
-the direct address costs 7 (`control/rollouts/2026-10-29-db-pooler.md` in the
-workspace). This holds until the founder changes the database plan.
+on 30 October (two processes), then 15 on 11 November (three), where the same seven
+clients on the direct address cost 7 (`control/rollouts/2026-10-29-db-pooler.md` in
+the workspace). This holds until the founder changes the database plan.
 
 - **Serving: the direct address.** The serving connection uses
   `direct.dzx6qo6xqzvojpv5.flympg.net` (`DATABASE_POOLED_URL`, a name every site keeps)
@@ -117,8 +117,11 @@ workspace). This holds until the founder changes the database plan.
   restarts it closes any connection still open ten minutes later, and Fly's guide for
   Ecto recycles on this schedule to stay ahead of it
   (docs.fly.io/mpg/client-configuration); the range spreads the reconnects so they
-  never land at once. Pages, Oban and the health check
-  (`AshTemplate.Health.database_ready?/0`) share this one pool.
+  never land at once. Everything a site runs shares this one pool: pages, Oban, the
+  health check (`AshTemplate.Health.database_ready?/0`) and the shared libraries,
+  which take the site's repository from its configuration and start none of their
+  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). The
+  template holds six connections at rest: five serving and one listening.
 - **Listening: one connection per machine.** The template opens one
   `Postgrex.Notifications` connection with the serving login, outside the pool
   (`AshTemplate.DatabaseConfig.notifications_config!/2`), and `RegentAgents.Listener`

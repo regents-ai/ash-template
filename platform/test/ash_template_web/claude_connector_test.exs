@@ -525,8 +525,8 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   end
 
   # Switches the connector on for one test as config/runtime.exs does with
-  # ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true, and starts its sign-in store in
-  # this test's transaction; everything is put back after.
+  # ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true; its sign-in keeps its rows through
+  # the site's repository, in this test's transaction. Everything is put back after.
   defp connector_on(_context) do
     origin = "http://127.0.0.1:4002"
 
@@ -551,25 +551,11 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
 
     put_env(:regent_agents, :hosted_pairing, [:claude])
     put_env(:regent_mcp_agents, :req_options, plug: {Req.Test, RegentMCPAgents.HostedSigner})
-    for key <- [RegentOAuth.Repo, :site, :prefix], do: keep_env(:regent_oauth, key)
+    keep_env(:regent_oauth, :site)
     keep_env(:boruta, Boruta.Oauth)
 
     :ok = RegentOAuth.configure(AshTemplate.OAuth)
     :ok = RegentMCPAgents.configure!()
-
-    Application.put_env(
-      :regent_oauth,
-      RegentOAuth.Repo,
-      Keyword.put(
-        Application.fetch_env!(:regent_oauth, RegentOAuth.Repo),
-        :pool,
-        Ecto.Adapters.SQL.Sandbox
-      )
-    )
-
-    start_supervised!(RegentOAuth.Repo)
-    oauth = Ecto.Adapters.SQL.Sandbox.start_owner!(RegentOAuth.Repo, shared: true)
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(oauth) end)
 
     test = self()
 
@@ -761,28 +747,34 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     for [_, policy] <- Regex.scan(~r/"([^"]+)"/, header), do: policy
   end
 
-  # How many calls the sign-in store took while `fun` ran. It sends nothing to
-  # telemetry, so this process's calls into it are traced, to a process of their
-  # own: a process is never its own tracer.
+  # How many queries this process sent to the sign-in's tables while `fun` ran,
+  # from the site repository's own query events.
   defp oauth_calls(fun) do
     test = self()
-    tracer = spawn_link(fn -> count_calls(test, 0) end)
-    :erlang.trace_pattern({RegentOAuth.Repo, :_, :_}, true, [])
-    :erlang.trace(test, true, [:call, {:tracer, tracer}])
-    fun.()
-    :erlang.trace(test, false, [:call])
-    :erlang.trace_pattern({RegentOAuth.Repo, :_, :_}, false, [])
-    delivered = :erlang.trace_delivered(test)
-    assert_receive {:trace_delivered, ^test, ^delivered}
-    send(tracer, :done)
-    assert_receive {:calls, calls}
-    calls
+    handler = {__MODULE__, test}
+    :ok = :telemetry.attach(handler, [:ash_template, :repo, :query], &__MODULE__.oauth_query/4, test)
+
+    try do
+      fun.()
+    after
+      :telemetry.detach(handler)
+    end
+
+    count_oauth_queries(0)
   end
 
-  defp count_calls(test, calls) do
+  @doc false
+  def oauth_query(_event, _measurements, %{source: "oauth_" <> _table}, test)
+      when test == self(),
+      do: send(test, :oauth_query)
+
+  def oauth_query(_event, _measurements, _metadata, _test), do: :ok
+
+  defp count_oauth_queries(count) do
     receive do
-      {:trace, ^test, :call, {RegentOAuth.Repo, _name, _args}} -> count_calls(test, calls + 1)
-      :done -> send(test, {:calls, calls})
+      :oauth_query -> count_oauth_queries(count + 1)
+    after
+      0 -> count
     end
   end
 

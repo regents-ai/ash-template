@@ -7061,8 +7061,12 @@ sits on its own branches.
   `direct.dzx6qo6xqzvojpv5.flympg.net`, as every site does, and no longer through its
   pooler (Sean, 4a). The pooler keeps at least five real connections open for each login
   on every one of its processes that holds one of the login's clients, so the site's
-  seven clients held 10 real connections on 30 October and 15 on 11 November; on the
-  direct address they hold seven, plus the one listening connection.
+  seven clients held 10 real connections on 30 October and 15 on 11 November.
+- The Claude connector's sign-in keeps its rows through the site's own repository and
+  pool, and the site no longer starts a second repository with two connections for it
+  (Sean, 6a; elixir-utils `eu/oauth-host-repo-pin-1111` 2e6f6c6, the library commit the
+  site pinned before, d89c69df, with that one change). A machine holds six connections:
+  five `ash-template-web` and one `ash-template-listen`.
 - Production admits only the direct address for `DATABASE_POOLED_URL`; the secret keeps
   its name. The serving connection sends the limits the sites send as startup settings:
   `statement_timeout` 15000, `lock_timeout` 5000 and
@@ -7070,5 +7074,8 @@ sits on its own branches.
   statements. The listening connection uses the same login and address.
 - Removed the pooler's certificate (`platform/priv/certs/regents-platform-prod-pooler-ca.pem`)
   and the code that checked it.
-- README and the ash-data skill: nobody serves through the pooler, and why.
+- The connector test counts the sign-in's queries from the site repository's own
+  query events.
+- README and the ash-data skill: nobody serves through the pooler, and why; the
+  connector's sign-in shares the pool.
 - Not deployed.

@@ -209,7 +209,8 @@ uses one for the other's work.
   is a Fly Managed Postgres user with the `writer` role: it reads and changes
   records, but cannot create, change or drop tables. It connects on the
   database's direct address, as every site does, and holds five connections,
-  shared by pages and jobs. They show up as `ash-template-web`, and give up on a
+  shared by pages, jobs and the Claude connector's sign-in. They show up as
+  `ash-template-web`, and give up on a
   statement after 15 seconds, a lock wait after 5 seconds and an idle open
   transaction after 15 seconds
   (`AshTemplate.DatabaseConfig`). The same login holds one more connection,
