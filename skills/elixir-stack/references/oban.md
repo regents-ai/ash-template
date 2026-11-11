@@ -173,6 +173,28 @@ Inside an Ash action, queue it from `after_action`, which runs inside the action
 transaction. For a job on the same record, use the AshOban change:
 `change run_oban_trigger(:send_receipt)`.
 
+Oban's Basic engine holds a unique job's lock until the transaction that queued it
+ends, and a second save queuing the same job meanwhile is told it is a duplicate, so
+if the first rolls back, neither is queued. Inside a transaction, a unique job's keys
+name only what that transaction alone holds: the record it creates or has locked
+(`order_id` above). A unique job whose keys other saves share, such as
+`AshTemplate.IndexNow.submit/1`'s list of addresses, is queued once the change has
+committed, from `after_transaction` on an action that no outer transaction wraps:
+
+```elixir
+change after_transaction(fn
+  _changeset, {:ok, page}, _context ->
+    Oban.insert!(AshTemplate.IndexNow.submit([MyApp.page_url(page)]))
+    {:ok, page}
+
+  _changeset, error, _context ->
+    error
+end)
+```
+
+A save that stops between its commit and that insert queues nothing, so keep this
+for work that may be missed, such as telling search engines a page changed.
+
 ## AshOban trigger: work on every record that matches
 
 A trigger runs an action on each record matching `where`, one job per record at a

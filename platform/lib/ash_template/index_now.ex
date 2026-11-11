@@ -10,7 +10,10 @@ defmodule AshTemplate.IndexNow do
 
   Each release's pages are sent once: an hourly job queues one submission of the
   sitemap, unique to the running release. A site that adds or changes a
-  public page queues `submit/1` with its address in the same transaction.
+  public page queues `submit/1` with its address once that change has
+  committed: other saves can queue the same list, and inside a transaction that
+  rolls back, a unique job can leave none queued
+  (skills/elixir-stack/references/oban.md, "Queue a job with the change").
   """
   use Oban.Worker, queue: :outside_calls, max_attempts: 5
 

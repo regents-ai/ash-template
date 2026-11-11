@@ -84,7 +84,8 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 - Queue the job in the same transaction as the change it follows: inside
   `Ash.transact`, an action's `after_action`, an `Ecto.Multi` or the AshOban
   `run_oban_trigger` change. A rolled-back change then queues nothing, and a
-  committed change always has its job.
+  committed change always has its job. A unique job whose keys other saves share is
+  queued after the commit instead (references/oban.md, "Queue a job with the change").
 - Never make an HTTP or chain call inside a database transaction. A job reads, calls
   out, then writes.
 - A job can run twice: after a retry, or when Lifeline rescues it from a node that
