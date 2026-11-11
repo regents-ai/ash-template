@@ -7076,3 +7076,14 @@ sits on its own branches.
   how Oban 2.24 merges a worker's `unique:` with one given to `new/2`, and that a job
   can still run twice, so each effect carries a stable key. `skills/elixir-stack/SKILL.md`
   says it in one line.
+
+## 2026-11-11 — Oban's pruning and rescue baseline written down
+
+- `skills/elixir-stack/references/oban.md` now says that the top-level `pruner:`,
+  `lifeline:` and `cron:` keys are what start Oban's maintenance, and sets the
+  baseline: an explicit `max_age` (a bare pruner keeps jobs 60 seconds),
+  `rescue_after` above the slowest single run, `cron:` even when empty, and never
+  `plugins: false`, which turns all three off. Checked in the template's own
+  configuration: with AshOban's wrapper, Oban starts `Oban.Cron`, `Oban.Pruner`
+  (7 days) and `Oban.Lifeline` (10 minutes) under the database leader. No
+  configuration changes. Docs only.
