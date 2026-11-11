@@ -7161,3 +7161,49 @@ sits on its own branches.
 - First run, 11 Nov: elixir-utils pins range from in step with the template to 13
   commits behind it (Keyfleet, Autolaunch); every site is on ash_postgres `55db7d4`;
   Regents checks commands with regents-cli v1.10.23, the rest with v1.10.24.
+
+## 2026-11-11 — The schema-prefix probe lives with the test helpers
+
+- The resource the schema-prefix test writes through (`AshTemplate.SchemaPrefixProbe`,
+  in its own `AshTemplate.SchemaPrefixProbes` domain) moves from inside
+  `platform/test/ash_template/schema_prefix_test.exs` to
+  `platform/test/support/schema_prefix_probe.ex`. A resource defined inside a test file
+  is compiled after the protocols are consolidated, and the test run warned about it.
+- `platform/mix.exs` compiles `test/support` with `lib` in the test environment
+  (`elixirc_paths(:test)`), so test-only resources are built before consolidation.
+  Test-only; nothing to release.
+
+## 2026-11-11 — Review fixes to the queues, pins and public documents
+
+- One range for the ash_postgres schema bug, read from ash_postgres's own history:
+  2.10.0 through 2.15.2 sent `Ash.update_many` and upserts to `public` (the hand-built
+  MERGE arrives in 2.10.0, and the hand-built upsert, with no setting to turn it off, in
+  2.13.1). The schema-prefix test, `platform/README.md`, the test's entry above and
+  `security/required-fixes.json` all say so.
+- `default` and `points`, the database queues, are now 1 and 2 (they were 5 each, so
+  together they could take all 5 of the serving pool's connections from page requests);
+  together they leave 2 for pages. `skills/elixir-stack/references/oban.md` says the
+  database queues together stay below the pool, with room left for requests.
+- The hourly IndexNow job runs in `default`, since it only queues the sitemap's sending,
+  which stays in `outside_calls`.
+- `oban.md` says that Oban's Basic engine holds a unique job's lock until the
+  transaction that queued it ends, so a second save queuing the same job meanwhile
+  queues nothing, and neither is queued if the first rolls back. A unique job whose keys
+  other saves share, such as `AshTemplate.IndexNow.submit/1`, is queued after the commit,
+  from `after_transaction`; `skills/elixir-stack/SKILL.md` and IndexNow's own docs say
+  the same.
+- `make pins` (`scripts/pins.sh`): a site's Makefile read lets only a 404 through, any
+  other failure stops the run, and a site with no `platform/mix.lock` says so. Each
+  library copy is read through its own `--git-dir`, so a damaged copy never reaches
+  the checkout around it, and the copies fetch pull requests' heads, so a pin on a pull
+  request's commit is counted instead of called "not on GitHub".
+- `static_cache_test.exs` checks the contract against `Endpoint.static_headers/0`. The
+  send_cached comment says a public document changes with a release or with the
+  server settings read at boot. `oban.md` says `oldest_unfinished` counts running jobs
+  too. `skills/ash-data/references/migrations-and-concurrency.md` says a concurrent index
+  build waits for older transactions anywhere in the database, the other sites' included.
+- `docs/feature-map.md` gains rows for the 304 answers, the contract's headers and
+  IndexNow's uniqueness; `skills/ash-webmcp/references/regents.md` names the template's
+  contract route in place of Regents' plug.
+- Written without a compile or test run (the Mac was low on power); `make pins` ran
+  for every site, and the full check on the branch's head comes next.

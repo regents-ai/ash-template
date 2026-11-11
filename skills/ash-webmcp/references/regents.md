@@ -33,7 +33,7 @@ Relative to `repos/regents` on main:
 | Safe missing-page responses | `platform/lib/regents_web/controllers/error_html.ex`, `error_md.ex`, `error_json.ex` |
 | Actual route/pipeline ownership | `platform/lib/regents_web/router.ex` |
 | Shared metadata consumer | `platform/lib/regents_web/components/layouts/root.html.heex` |
-| Frozen YAML contract headers | `platform/lib/regents_web/plugs/contract_headers.ex` |
+| Frozen YAML contract headers | Sent by the route that serves the contract, as the template's `api_contract/2` in `AshTemplateWeb.PublicPagesController` does; never a plug in front of the static files |
 | The CLI's pinned copies of each site's contracts, with their sha256 | `scripts/sync_platforms.py` and `platforms.lock.json` in `regents-cli` |
 
 The shared head is `repos/design-system/regent_ui/lib/regent/agent_metadata.ex`, on
