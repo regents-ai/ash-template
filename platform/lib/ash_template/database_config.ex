@@ -27,6 +27,10 @@ defmodule AshTemplate.DatabaseConfig do
   ]
   @deployment_role_error ~s(ASH_TEMPLATE_DEPLOYMENT_ROLE must be set to "production" or "staging")
   @remote_target_error "remote database access requires cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
+  # Serving, development and tests each hold 5 connections: the database queues
+  # (`default` and `points`, config/config.exs) take 3 at most, which leaves 2 for
+  # pages in development as in production.
+  @pool_size 5
 
   def runtime_config!(environment, getenv \\ &System.get_env/1)
 
@@ -49,11 +53,13 @@ defmodule AshTemplate.DatabaseConfig do
           hostname: "127.0.0.1",
           port: 5432,
           database: "ash_template#{partition}_dev",
-          pool_size: 2
+          pool_size: @pool_size
         ]
 
       :remote ->
-        database_url!(getenv, "DATABASE_POOLED_URL", :remote)
+        getenv
+        |> database_url!("DATABASE_POOLED_URL", :remote)
+        |> Keyword.put(:pool_size, @pool_size)
     end
   end
 
@@ -68,7 +74,7 @@ defmodule AshTemplate.DatabaseConfig do
       port: 5432,
       database: "ash_template#{partition}_test",
       pool: Ecto.Adapters.SQL.Sandbox,
-      pool_size: 5
+      pool_size: @pool_size
     ]
   end
 
@@ -114,7 +120,7 @@ defmodule AshTemplate.DatabaseConfig do
   # these limits.
   defp serving(options) do
     Keyword.merge(options,
-      pool_size: 5,
+      pool_size: @pool_size,
       max_lifetime: 540_000..600_000,
       show_sensitive_data_on_connection_error: false,
       parameters: [application_name: "ash-template-web"]

@@ -7206,5 +7206,12 @@ sits on its own branches.
   `static_cache_test.exs` and `index_now_test.exs` are as on main, and
   `docs/feature-map.md` lists the three as Gaps. `skills/ash-webmcp/references/regents.md`
   names the template's contract route in place of Regents' plug.
-- Written without a compile or test run (the Mac was low on power); `make pins` ran
-  for every site, and the full check on the branch's head comes next.
+- `make drift` (`scripts/drift.sh`) counts a file as missing only when GitHub answers
+  404; any other failure stops the run, and a site with no `platform/mix.exs` says so.
+- Serving, development and tests each hold 5 connections, one setting in
+  `AshTemplate.DatabaseConfig` (`@pool_size`): local development had 2 since the template was cut from Regents on
+  21 September, with no reason given, so its jobs alone could take every connection;
+  development against the shared database had none set, so Ecto's 10. With 5
+  everywhere, the database queues' 3 leave 2 for pages in development as in production.
+- Written without a compile or test run (the Mac was low on power); `make pins` and `make
+  drift` ran for every site, and the full check on the branch's head comes next.
