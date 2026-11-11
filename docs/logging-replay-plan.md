@@ -100,10 +100,11 @@ refused or failed create writes no line, and reports each emit as
 `[:ash, :signal, :emitted]` telemetry whether or not anything listens. Nothing listens
 to `:note_committed`: `VisitLog.Events` hears that telemetry in the action's own
 process, after the commit, so the line carries that request's or page's visit and
-surface (a note an agent writes through `/mcp` says `mcp`). `VisitLog.value/2` answers
-`:ok` whatever happens, a misnamed value included, so the handler that writes every
-visit line is never detached. A note is never created inside another transaction, so a
-committed create is one that stays.
+surface (a note an agent writes through `/mcp` says `mcp`). Like `VisitLog.step/2`,
+`VisitLog.value/2` takes only a name in its list and rescues nothing, so a mistake there
+raises and is seen: `:telemetry` logs it and detaches `VisitLog.Events`, the one handler
+for every visit line, as it would for a mistake in any of its events. A note is never
+created inside another transaction, so a committed create is one that stays.
 
 A value step names the account the value belongs to, so a person whose agent does the
 work still activates. A browser that sends Global Privacy Control writes no step at
@@ -141,14 +142,17 @@ stored:
 
 ## Cohort report
 
-`mix visit_log.cohorts PATH` (or lines on standard input) reads exported visit lines and
-prints a plain text table (`AshTemplateWeb.VisitLog.Cohorts`). It reads the site's own
-JSON lines, Fly's JSON log lines whose `message` is the site's line, and the event rows
-of Sentinel's day export (`/api/ops/logs/:app/day`); one JSON object a line, never the
-database, and it stores nothing. Its window is only what the export holds, and it says
-so at the top of every report. No export holds 30 days yet: `fly logs` is a short
-buffer and Sentinel's day export covers one day, so D1 needs two days of lines and D7
-eight. The 30-day export in "Sentinel's part" is what the report is built for.
+`mix visit_log.cohorts PATH` (or rows on standard input) reads Sentinel's day export
+(`/api/ops/logs/:app/day`) and prints a plain text table
+(`AshTemplateWeb.VisitLog.Cohorts`). It reads the export's event rows, one JSON object a
+line, leaves out its warning and error lines, never reads the database, and stores
+nothing. Sentinel is the only place that keeps the lines past a few hours: the site
+only writes them to its output, `fly logs` holds hours, and Sentinel keeps them 30
+days. An export call returns the last 24 hours, so D1 needs two exports saved a day
+apart and D7 eight, joined into one input; a row in two overlapping exports counts
+once. The report's window is only what its input holds, and it says so at the top of
+every report. The 30-day export in "Sentinel's part" gives the same rows and needs no
+joining.
 
 | Column | Meaning |
 | --- | --- |
@@ -161,11 +165,8 @@ eight. The 30-day export in "Sentinel's part" is what the report is built for.
 | Median value | The median number of value steps of an activated account |
 
 An account that signed in before the export began, and signs in again inside it, counts
-in the week of that later sign-in. Lines from before `signed_in` meant a new sign-in
-only also wrote it for a refresh of the account a browser already had, so an export
-that reaches back before this change can count such a refresh as a sign-in; the report
-says so. Times are kept to the millisecond. The report also counts the sign-ins no
-later line of their visit names, and leaves them out.
+in the week of that later sign-in. Times are kept to the millisecond. The report also
+counts the sign-ins no later line of their visit names, and leaves them out.
 
 ## Where the lines come from
 
@@ -205,9 +206,8 @@ All standard tools; nothing is queued or stored by the site.
 - A page that shows one visit's events in order, joined with that visit's
   warning and error lines. This is the replay.
 - A read-only export of the last 24 hours for one app, which the daily review reads.
-- Needed for the cohort report (`mix visit_log.cohorts`): the same export over the
-  whole 30 days kept. Until it exists the report reads only what the day export or
-  `fly logs` holds.
+- Wanted for the cohort report (`mix visit_log.cohorts`): the same export over the
+  whole 30 days kept. Until it exists the report reads day exports joined.
 - Sentinel's code and releases belong to the Sentinel chief; each Sentinel
   release needs Sean's letter in that lane.
 

@@ -1,15 +1,16 @@
 defmodule AshTemplateWeb.VisitLog.Cohorts do
   @moduledoc """
-  Weekly sign-in cohorts, read from exported visit lines (`mix visit_log.cohorts`):
-  for each week and source, the accounts that first signed in, how many reached
-  the site's value action, how many came back a day and a week later, and the
-  median number of value steps of an account that did. It only reads the lines it
-  is given, one JSON object each, and keeps nothing.
+  Weekly sign-in cohorts, read from Sentinel's day export of the site's visit
+  lines (`mix visit_log.cohorts`): for each week and source, the accounts that
+  first signed in, how many reached the site's value action, how many came back a
+  day and a week later, and the median number of value steps of an account that
+  did. It only reads the rows it is given, one JSON object each, and keeps nothing.
 
-  A line may be the site's own (`time`, and `metadata` holding `visit`, `actor`
-  and `event`), a Fly log line whose `message` is the site's line, or an event row
-  of Sentinel's day export (`kind` `event`, `at`, and the event's fields at the
-  top level). Anything else is skipped.
+  Each row is one of the export's (`GET /api/ops/logs/:app/day`): an event row
+  (`kind` `event`, `at`, and the event's fields at the top level), or a warning
+  or error line (`kind` `line`), which carries no step and is left out. An export
+  holds one day, so D7 needs eight of them joined; a row in two overlapping
+  exports counts once.
 
   - **Cohort:** an account's first `signed_in` step in the export, by its week
     (from Monday, UTC). The step's own actor is the browser's from before the
@@ -17,8 +18,7 @@ defmodule AshTemplateWeb.VisitLog.Cohorts do
     same visit strictly after it, preferring a code the visit had not shown
     before the sign-in, then the earliest code by name, so ties always fall the
     same way (docs/logging-replay-plan.md, "First touch"). A sign-in no later
-    line names is counted apart. Lines from before `signed_in` meant a new
-    sign-in only may also count a refresh of the same account.
+    line names is counted apart.
   - **Source:** the `arrival` of the visit the account first signed in on, or
     `unknown` when that visit has none.
   - **Activated:** at least one value step (`AshTemplateWeb.VisitLog.values/0`)
@@ -41,7 +41,7 @@ defmodule AshTemplateWeb.VisitLog.Cohorts do
   # A day in milliseconds.
   @day 24 * 60 * 60 * 1000
   @empty %{
-    lines: 0,
+    events: 0,
     first: nil,
     last: nil,
     arrivals: %{},
@@ -51,61 +51,34 @@ defmodule AshTemplateWeb.VisitLog.Cohorts do
     values: %{}
   }
 
-  @doc "The report on `lines`, an enumerable of exported lines, as plain text."
-  def report(lines), do: lines |> Enum.reduce(@empty, &take/2) |> render()
-
-  @doc """
-  One exported line as `{:ok, line}`, `line` holding its `at` (Unix time in
-  milliseconds), `visit`, `actor`, `name`, `where` and `outcome`, or `:skip`.
-  """
-  def parse(text) when is_binary(text) do
-    case Jason.decode(text) do
-      {:ok, %{} = object} -> line(object)
-      _not_an_object -> :skip
-    end
+  @doc "The report on `rows`, an enumerable of the day export's JSON lines, as plain text."
+  def report(rows) do
+    rows
+    |> Stream.map(&Jason.decode!/1)
+    |> Stream.uniq()
+    |> Enum.reduce(@empty, &take/2)
+    |> render()
   end
 
-  # The site's own line, in LoggerJSON's basic shape.
-  defp line(%{"time" => time, "metadata" => %{"event" => %{} = event} = fields}),
-    do: line(time, fields, event)
+  defp take(%{"kind" => "event", "at" => time} = row, state) do
+    {:ok, at, _offset} = DateTime.from_iso8601(time)
 
-  # A row of Sentinel's day export (`/api/ops/logs/:app/day`).
-  defp line(%{"kind" => "event", "at" => time} = row), do: line(time, row, row)
-  # A Fly log line (`fly logs --json`), whose message is the site's own line.
-  defp line(%{"message" => "{" <> _ = inner}), do: parse(inner)
-  defp line(_other), do: :skip
-
-  defp line(time, fields, event) do
-    with true <- is_binary(time),
-         {:ok, at, _offset} <- DateTime.from_iso8601(time) do
-      {:ok,
-       %{
-         at: DateTime.to_unix(at, :millisecond),
-         visit: text(fields["visit"]),
-         actor: text(fields["actor"]),
-         name: text(event["name"]),
-         where: text(event["where"]),
-         outcome: text(event["outcome"])
-       }}
-    else
-      _no_time -> :skip
-    end
+    add(state, %{
+      at: DateTime.to_unix(at, :millisecond),
+      visit: row["visit"],
+      actor: row["actor"],
+      name: row["name"],
+      where: row["where"],
+      outcome: row["outcome"]
+    })
   end
 
-  defp text(value) when is_binary(value), do: value
-  defp text(_other), do: nil
-
-  defp take(text, state) do
-    case parse(text) do
-      {:ok, line} -> add(state, line)
-      :skip -> state
-    end
-  end
+  defp take(%{"kind" => "line"}, state), do: state
 
   defp add(state, %{at: at} = line) do
     %{
       state
-      | lines: state.lines + 1,
+      | events: state.events + 1,
         first: min(state.first || at, at),
         last: max(state.last || at, at)
     }
@@ -152,7 +125,7 @@ defmodule AshTemplateWeb.VisitLog.Cohorts do
 
   defp value(state, _line), do: state
 
-  defp render(%{lines: 0}), do: "No visit lines were read."
+  defp render(%{events: 0}), do: "No visit events were read."
 
   defp render(state) do
     {named, unnamed} = state |> sign_ins() |> Enum.split_with(&match?({_code, _first}, &1))
@@ -274,18 +247,16 @@ defmodule AshTemplateWeb.VisitLog.Cohorts do
 
   defp heading(state, unnamed) do
     """
-    Visit-log cohorts, #{stamp(state.first)} to #{stamp(state.last)}, from #{state.lines} lines.
+    Visit-log cohorts, #{stamp(state.first)} to #{stamp(state.last)}, from #{state.events} events.
 
-    The window is only what this export holds. Fly's log buffer holds hours and
-    Sentinel's day export one day; a 30-day export is still to be built. A week's
-    accounts are those whose first sign-in in this export fell in it, so an account
-    that signed in before the export began counts in the week it signed in again.
-    Lines from before signed_in meant a new sign-in only may also count a refresh
-    of the same account. A source is the arrival of the visit the account first
-    signed in on. Activated means at least one value step, by the person or their
-    agent: #{Enum.join(VisitLog.values(), ", ")}.
+    The window is only what these exports hold: Sentinel's day export holds one
+    day, so D1 needs two joined and D7 eight. A week's accounts are those whose
+    first sign-in in the exports fell in it, so an account that signed in before
+    they began counts in the week it signed in again. A source is the arrival of
+    the visit the account first signed in on. Activated means at least one value
+    step, by the person or their agent: #{Enum.join(VisitLog.values(), ", ")}.
     D1 and D7 are returned/covered: a line 24 to 48 hours, or 7 to 8 days, after
-    the first sign-in, out of the accounts whose window the export runs past; only
+    the first sign-in, out of the accounts whose window the exports run past; only
     lines with a visit count, and never a value step the account's agent did.
     Sign-ins left out because no later line of their visit names an account: #{unnamed}.\
     """

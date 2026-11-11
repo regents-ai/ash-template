@@ -159,27 +159,15 @@ defmodule AshTemplateWeb.VisitLog do
   the account `actor` acts for. The line names that account as a `person:` code,
   whether the person or their agent acted, and its outcome says which: `person`
   or `agent`. Its visit and surface are the request's or page's own. Nothing is
-  written for a browser that sends Global Privacy Control.
-
-  It runs in the action's own process once its transaction has committed, from
-  the handler that writes every visit line (`AshTemplateWeb.VisitLog.Events`),
-  so it answers `:ok` whatever happens, a name outside `values/0` included: a
-  handler that raises is detached, and would write no line again.
+  written for a browser that sends Global Privacy Control. It runs in the
+  action's own process once its transaction has committed, from
+  `AshTemplateWeb.VisitLog.Events`.
   """
-  def value(name, actor) do
-    cond do
-      name not in @values -> Logger.warning("#{inspect(name)} is not a value step")
-      Process.get(@gpc) -> :ok
-      true -> write(event("step", name, by(actor), nil), actor: account(actor))
-    end
+  def value(name, actor) when name in @values do
+    unless Process.get(@gpc),
+      do: write(event("step", name, by(actor), nil), actor: account(actor))
 
     :ok
-  rescue
-    error ->
-      Logger.warning("A value step was not written: #{inspect(error.__struct__)}")
-      :ok
-  catch
-    _kind, _reason -> :ok
   end
 
   defp by(%AshTemplate.Actors.Agent{}), do: "agent"

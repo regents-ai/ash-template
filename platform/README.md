@@ -253,20 +253,20 @@ A site maps its own value action's signal to its name in that list. Calls to `/a
 to `/mcp` (surface `mcp`) are `tool.call` lines, forwarded ones included.
 
 Weekly sign-in cohorts by source, activation (a first value step), D1 and D7 return and
-the median value steps of an activated account come from exported lines alone, never
-the database:
+the median value steps of an activated account come from Sentinel's day export of the
+visit lines alone (`GET /api/ops/logs/:app/day`), never the database:
 
 ```sh
-mix visit_log.cohorts visit-lines.jsonl
-fly logs --app template-regents-sh --json --no-tail | mix visit_log.cohorts
+mix visit_log.cohorts day-export.ndjson
+cat day-exports/*.ndjson | mix visit_log.cohorts
 ```
 
-It reads the site's own JSON lines, Fly's JSON log lines and Sentinel's day export,
-one JSON object a line. Its window is only what the export holds: `fly logs` is a short
-buffer and Sentinel's day export covers one day, so a 30-day export is still to be
-built (`docs/logging-replay-plan.md`, "Sentinel's part"). A sign-in is tied to its
-source by the visit id alone (`docs/logging-replay-plan.md`, "First touch" and "Cohort
-report").
+It reads the export's rows, one JSON object a line. Sentinel keeps the visit lines 30
+days, but an export holds the last 24 hours, so D1 needs two exports saved a day apart
+and D7 eight, joined into one input; a row in two overlapping exports counts once. A
+30-day export would need no joining (`docs/logging-replay-plan.md`, "Sentinel's part").
+A sign-in is tied to its source by the visit id alone (`docs/logging-replay-plan.md`,
+"First touch" and "Cohort report").
 
 ## Showcase
 
