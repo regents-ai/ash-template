@@ -7017,3 +7017,40 @@ sits on its own branches.
   390 and 320; reduced motion keeps the still picture; a browser that gets no graphics
   device shows the still picture; no console errors. WebKit was not run.
 - Not deployed.
+
+## 2026-11-11 — Shared changes no longer wait for a sign-off
+
+- **An ordinary shared change goes to every site once the template's check is clean**
+  and is reported to Sean after (his answer of 11 Nov, following 5 Nov "deploys are
+  automatic"). A protected action or a product decision inside one keeps its letter.
+  Changed in `skills/regent-workflow/SKILL.md` ("Shared changes" step 2 and the protected
+  list) and `skills/ash-signals/SKILL.md`. Skills only: nothing to deploy.
+
+## 2026-11-11 — v185: Datascape, the audit's ordinary part and the shorter skills
+
+- v185 is `4853c6d3`, released on 11 November (started 05:02:58Z, live 05:07:49Z) on
+  Sean's "1. a" in the Datascape thread, alone, as an ordinary release, through
+  `scripts/deploy.sh template-regents-sh` from a clean checkout, under the shared release
+  lock. It carries `79e274e7` (the audit's ordinary part), `d76f38f5` (the shorter
+  skills) and `4853c6d3` (Datascape). `14026da8` (skills text) landed on main during the
+  check and is not in it; it needs no release. Still one machine, at the same size.
+  Rollback is v184 `a7dabd82`.
+- **One migration ran**, from `79e274e7`: `20261110035033 AddRoomMessageRemovals` creates
+  the new, empty table `ash_template_app.room_message_removals` and changes no existing
+  table. The slot claim and the decision put to Sean said "no migration"; that was
+  wrong, and the Datascape thread had not read the migrations folder before saying it.
+  After a rollback to v184 the table stays, unused.
+- Full check on `4853c6d3`, clean tree, exit 0: `mix precommit` (hex.audit clean, Credo
+  clean, 31 script tests, 445 browser walks with 5 skipped), then 176 Elixir (9
+  properties), then the required-fixes check. WebKit not run on the Mac.
+- Read live from headless Chromium, before and after: capabilities names `4853c6d3`
+  (before, `a7dabd82`); `/healthz` 200; `/`, `/animations`, `/changelog`, `/docs` and
+  `/showcase` answer 200 at 1280 and 390 wide with no page errors and no sideways
+  scroll. `/animations/datascape` was 404 before and is 200 after at both widths, with
+  the picture drawn (ready flag "true") on the Mac's GPU, flying when the pointer goes
+  to the right edge, and no console errors; the Motion Lab links to it and
+  `/sitemap.xml` lists it. `/llms.txt`, `/agents.md` and `/healthz` are the same bytes
+  as before; `/openapi.json`, `/capabilities.json` and `/sitemap.xml` changed.
+- Fly logs from the release start: no errors, crashes or refusals. One health check
+  failed at 05:07:42Z while the new version started and passed at 05:07:49Z. All 32
+  page and request lines after that were answered.

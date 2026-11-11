@@ -43,7 +43,6 @@ ship, check the live site, report with the rollback.
 - wallets, staking and claims; moving money, a Safe transaction included;
 - a contract change or deployment;
 - publishing a package to npm or PyPI;
-- a shared change going out to the sites ("Shared changes");
 - anything public under his name (below).
 
 Protected work is still prepared: investigate, build it within scope, record its
@@ -174,10 +173,12 @@ signed-request refusals, layers, health, deploys, security). Four steps, in orde
 1. **Built in ash-template.** The library change first, then the template wires it in,
    runs `make check` and ships it on template.regents.sh. A site never builds or ships a
    shared change first; it asks the template chief.
-2. **Signed off by Sean.** The template chief opens a rollout file in
-   `/Users/sean/Documents/regent/control/rollouts/` and puts the sign-off to Sean as a
-   numbered decision with the template link and what to check there. No site takes the
-   change before his letter.
+2. **Recorded, then out.** Once the template's check is clean and the change is live
+   on template.regents.sh, the template chief opens a rollout file in
+   `/Users/sean/Documents/regent/control/rollouts/` and reports the change to Sean with
+   the template link and what to check there. An ordinary shared change waits for no
+   letter (Sean, 5 Nov: "deploys are automatic"; confirmed 11 Nov). A protected action
+   or a product decision inside it still waits for his letter.
 3. **All five sites at once.** The template chief hands the rollout file to every site
    chief in one round. Each site builds its version in its own look, names and pages,
    keeps the template's behaviour and words, and ships on its own checks. None waits for
