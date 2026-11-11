@@ -56,16 +56,16 @@ live-check:
 	scripts/live-check.sh
 # Lists where each site's copies of the template's shared files differ from these,
 # reading every site's main branch on GitHub, then each site's shared-library pins,
-# then measures this checkout the way the agent-readiness scorer does. Needs
-# `gh auth login`.
+# each as JSON, then measures this checkout the way the agent-readiness scorer does.
+# Needs `gh auth login` and jq.
 drift:
 	scripts/drift.sh
 	$(MAKE) pins
 	$(MAKE) readiness
 # Every site's shared-library pins (elixir-utils, design-system, ash_postgres, siwa
 # and the regents-cli its Makefile checks with), each with how far it is behind the
-# template's pin and the library's main, printed and written to
-# platform/_build/drift/pins.md. Needs `gh auth login` and git.
+# template's pin and the library's main, printed as JSON. Needs `gh auth login`, git
+# and jq.
 pins:
 	scripts/pins.sh
 # Starts the local server on a free port, checks what the agent-readiness scorer

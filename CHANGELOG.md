@@ -7230,3 +7230,24 @@ sits on its own branches.
   within 5 seconds (`platform/test/browser/agents.spec.ts`). Run alone it failed once
   more while the Mac was busy, then passed at both widths with the development pool at
   2 and again at 5, so the wait is the busy Mac's, not the pool's.
+
+## 2026-11-11 — The daily jobs' facts: JSON reports and `scripts/harvest.sh`
+
+- `make drift` (`scripts/drift.sh`) and `make pins` (`scripts/pins.sh`) print one JSON
+  document each, in place of their prose and table, so the daily Harvest and Spread
+  jobs read facts rather than sentences. Each script's opening comment lists the
+  fields. drift gives each file's list (shared, build or homepage), its path at the
+  template and at the site, its status (same, differs, missing or not_used), the lines
+  added and removed and the file that holds the difference. pins gives each pin's
+  commit, release tag, Hex version, SIWA version and apps, and its distance from the
+  template's pin and from the library's main as counts of commits and days, null where
+  a commit is not on GitHub. pins no longer writes `platform/_build/drift/pins.md`.
+- drift writes each run's differences to a folder of the run's own,
+  `platform/_build/drift/<UTC time>-<4 characters>/<site>/`, and no longer removes
+  earlier runs' files. A live homepage that cannot be read now stops the run, as any
+  other failed read does, where it was compared as an empty page before.
+- The shared, build and homepage file lists, the not-used and moved files, and the
+  site's names read from its `platform/mix.exs` move to `scripts/shared-files.sh`, which
+  drift sources, so the next report reads the same lists.
+- `scripts/init.sh` keeps one list of the reports it leaves unrenamed and removes from a
+  new product, `scripts/shared-files.sh` among them.

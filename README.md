@@ -64,7 +64,8 @@ a library is not pinned to an inspectable commit of its repository or lacks a fi
 `make pins` lists every site's shared-library pins (elixir-utils, design-system,
 ash_postgres, SIWA and regents-cli), read from each site's main branch on GitHub, and
 how far each is behind the template's pin and the library's main. `make drift` runs it
-after comparing the sites' shared files.
+after comparing the sites' shared files. Both print one JSON document, which the daily
+jobs read; each script's opening comment describes its fields.
 <!-- /template-only -->
 
 Agent pairing also uses the shared [SIWA client](https://siwa.regents.sh/skill.md).
