@@ -7030,3 +7030,15 @@ sits on its own branches.
   see it fail. `platform/mix.exs` names the test beside the ash_postgres pin
   (`55db7d44`, #910), so the pin moves only after it runs clean. Test-only; nothing to
   release.
+
+## 2026-11-11 — Adding an index to a busy table
+
+- `skills/ash-data/references/migrations-and-concurrency.md` gains "An index on a busy
+  table", in place of a paragraph that only said to look things up: measure the read
+  with `EXPLAIN (ANALYZE, BUFFERS)` first, declare the index with `concurrently: true` in
+  `custom_indexes` (the unread-notifications index is the example), keep the migration
+  `mix ash.codegen` writes for it as it is, and clear an invalid index left by a failed
+  build. Only a schema's owner indexes it: a site its own schema, a shared library
+  (`regent_identity`, `regent_agents`, `regent_points`, `regent_payments`) through
+  `/app/bin/migrate-shared` after Sean's go, Regents its `regent_names` table.
+- `skills/ash-data/SKILL.md` and `platform/README.md` point to it. Docs only.
