@@ -28,6 +28,8 @@ defmodule AshTemplate.MixProject do
   # The browser walk's server runs in development, with its guard against the
   # outside world (`AshTemplate.WalkOffline`).
   defp elixirc_paths(:dev), do: ["lib", "test/browser/support/server"]
+  # Resources only tests use, compiled before the protocols are consolidated.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   def application do

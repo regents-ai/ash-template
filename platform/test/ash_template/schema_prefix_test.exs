@@ -1,55 +1,3 @@
-# A resource that names no schema, the way the site's own resources do, so every
-# write takes its schema from the Repo (`AshTemplate.Repo.default_options/1`).
-defmodule AshTemplate.SchemaPrefixTest.Probe do
-  @moduledoc false
-  use Ash.Resource,
-    domain: AshTemplate.SchemaPrefixTest.Probes,
-    data_layer: AshPostgres.DataLayer
-
-  postgres do
-    table "schema_prefix_probes"
-    repo(AshTemplate.Repo)
-  end
-
-  attributes do
-    uuid_primary_key :id
-    attribute :name, :string, allow_nil?: false
-    attribute :amount, :integer, allow_nil?: false
-  end
-
-  identities do
-    identity :unique_name, [:name]
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    create :create do
-      accept [:name, :amount]
-    end
-
-    create :upsert do
-      accept [:name, :amount]
-      upsert? true
-      upsert_identity :unique_name
-      upsert_fields [:amount]
-    end
-
-    update :update do
-      accept [:amount]
-    end
-  end
-end
-
-defmodule AshTemplate.SchemaPrefixTest.Probes do
-  @moduledoc false
-  use Ash.Domain, validate_config_inclusion?: false
-
-  resources do
-    resource AshTemplate.SchemaPrefixTest.Probe
-  end
-end
-
 defmodule AshTemplate.SchemaPrefixTest do
   # Regression: every Hex release of ash_postgres through 2.15.2 built `Ash.update_many`
   # (and upserts, unless MERGE was turned off) with only the resource's own schema as
@@ -62,7 +10,7 @@ defmodule AshTemplate.SchemaPrefixTest do
   use ExUnit.Case, async: true
 
   alias AshTemplate.Repo
-  alias AshTemplate.SchemaPrefixTest.Probe
+  alias AshTemplate.SchemaPrefixProbe
 
   @site Repo.default_prefix()
   @table "schema_prefix_probes"
@@ -93,7 +41,7 @@ defmodule AshTemplate.SchemaPrefixTest do
 
     probe = probe |> Ash.Changeset.for_update(:update, %{amount: 2}) |> Ash.update!()
     assert rows(@site) == [["kept", 2]]
-    assert [%{amount: 2}] = Ash.read!(Probe)
+    assert [%{amount: 2}] = Ash.read!(SchemaPrefixProbe)
 
     Ash.destroy!(probe)
     assert rows(@site) == []
@@ -113,7 +61,7 @@ defmodule AshTemplate.SchemaPrefixTest do
     assert %Ash.BulkResult{status: :success} =
              Ash.bulk_create(
                [%{name: "taken", amount: 3}, %{name: "new", amount: 1}],
-               Probe,
+               SchemaPrefixProbe,
                :upsert,
                return_errors?: true
              )
@@ -124,7 +72,7 @@ defmodule AshTemplate.SchemaPrefixTest do
 
   test "updating many records at once changes only the site's rows" do
     # PostgreSQL 17 (`AshTemplate.Repo.min_pg_version/0`) makes this one MERGE.
-    assert Ash.DataLayer.data_layer_can?(Probe, :update_many)
+    assert Ash.DataLayer.data_layer_can?(SchemaPrefixProbe, :update_many)
 
     first = create("first", 1)
     second = create("second", 1)
@@ -135,7 +83,7 @@ defmodule AshTemplate.SchemaPrefixTest do
     assert %Ash.BulkResult{status: :success, records: records} =
              Ash.update_many(
                [{first, %{amount: 5}}, {second, %{amount: 6}}],
-               Probe,
+               SchemaPrefixProbe,
                :update,
                return_errors?: true,
                return_records?: true
@@ -147,10 +95,16 @@ defmodule AshTemplate.SchemaPrefixTest do
   end
 
   defp create(name, amount),
-    do: Probe |> Ash.Changeset.for_create(:create, %{name: name, amount: amount}) |> Ash.create!()
+    do:
+      SchemaPrefixProbe
+      |> Ash.Changeset.for_create(:create, %{name: name, amount: amount})
+      |> Ash.create!()
 
   defp upsert(name, amount),
-    do: Probe |> Ash.Changeset.for_create(:upsert, %{name: name, amount: amount}) |> Ash.create!()
+    do:
+      SchemaPrefixProbe
+      |> Ash.Changeset.for_create(:upsert, %{name: name, amount: amount})
+      |> Ash.create!()
 
   defp decoy(name, id) do
     Ecto.Adapters.SQL.query!(
