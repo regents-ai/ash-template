@@ -103,10 +103,12 @@ defmodule AshTemplateWeb.PublicPagesController do
   defp show_document(conn, document),
     do: render(conn, :show, [document: document] ++ PublicDocuments.page(conn.request_path))
 
-  # Every public document and agent file is sent here. Each changes only with a
-  # release and is the same for everyone who asks, so it carries a sha256 ETag of
-  # its body and a five-minute public cache, and a caller that already holds this
-  # body gets 304 with no body. Like a static file, it is never a page: it carries
+  # Every public document and agent file is sent here. Each changes with a release
+  # or with the server settings it reads at boot (llms.txt and agents.md name the
+  # showcase and the Claude connector only while those are switched on), and is the
+  # same for everyone who asks, so it carries a sha256 ETag of its body and a
+  # five-minute public cache, and a caller that already holds this body gets 304
+  # with no body. Like a static file, it is never a page: it carries
   # the endpoint's static headers. Nothing that varies by the signed-in person is
   # sent this way. Every type and body comes from this site's own tables, never
   # from the request.

@@ -43,8 +43,9 @@ defmodule AshTemplateWeb.StaticCacheTest do
     assert get_resp_header(response, "x-regents-contract-digest") ==
              ["sha256:" <> Base.encode16(:crypto.hash(:sha256, body), case: :lower)]
 
-    assert get_resp_header(response, "content-security-policy") ==
-             ["default-src 'none'; frame-ancestors 'none'"]
+    for {name, value} <- AshTemplateWeb.Endpoint.static_headers() do
+      assert get_resp_header(response, name) == [value]
+    end
   end
 
   defp request(path, headers \\ []) do

@@ -77,9 +77,11 @@ its writes. Build the index concurrently:
    `SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid`, remove it with
    `DROP INDEX CONCURRENTLY`, fix the cause and release again.
 
-A concurrent build lets reads and writes carry on, but waits for every transaction
-already open on the table and reads the table twice, so the release command takes
-longer on a large table.
+A concurrent build lets reads and writes carry on, but reads the table twice and waits
+for older transactions: first those open on the table, then every transaction anywhere
+in the database with an older snapshot, whatever table it uses. On the shared database
+that includes the other sites' transactions, so another site's long transaction holds
+up this release command, and a large table makes it longer still.
 
 Only the owner of a schema adds an index to it. A site's own schema (`ash_template_app`,
 `regents_app`, `autolaunch_app`, ...) belongs to that site's migrations. The shared

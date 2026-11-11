@@ -94,8 +94,10 @@ only the jobs that wait on it, never a person's other work:
   daily cap such as Jev's `daily_questions`, and how long one call takes. Start a
   call to an outside website at 1 to 3; a model queue whose answers a person waits
   for (`chat_responses`) can go higher, within the model's rate limit.
-- Raise a limit when `[:ash_template, :jobs, :oldest_unfinished]` shows that queue's
-  jobs waiting, and lower it when the other service answers 429.
+- Raise a limit when `[:ash_template, :jobs, :oldest_unfinished]` stays high for that
+  queue: it is the age of the oldest job not yet finished, running ones included, so
+  read it with the queue's run times before deciding its jobs are waiting. Lower it
+  when the other service answers 429.
 - Moving a job to another queue needs no migration: a job already queued stays in
   its old queue and runs there while that queue is still configured, so keep the old
   queue in the list until it is empty.
