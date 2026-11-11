@@ -7187,3 +7187,13 @@ sits on its own branches.
   any address no page is filed under. Taken from regents.sh 20334061 (Sentinel notice 5).
 - `ODD_ADDRESS` in `trailing_slash_test.exs` (`/%70rivacy`, `/%61pp`, `/%61bout`) fails
   with the KeyError on the old code and passes on the fix.
+
+## 2026-11-11 — The newest SIWA library: a signed request ends within the tolerance
+
+- Every elixir-utils package moves from `d89c69df` to `dd2d3c6e`, which is `d89c69df` plus
+  one SIWA library change (on elixir-utils main through e4494c0): a signed request whose
+  `expires` less `created` is above the signature tolerance (300 seconds) is refused as
+  `request_lifetime_too_long` (401 `http_signature_invalid`), and its single-use entry is
+  kept until it expires. The regents CLI signs requests that last 120 seconds, so nothing
+  an agent sends today changes.
+- `make check-siwa-latest` asked for it (Sean, 28 Oct: every site on the newest SIWA).
