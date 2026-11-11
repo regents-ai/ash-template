@@ -70,9 +70,11 @@ config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
   notifier: Oban.Notifiers.PG,
+  # A database job holds a connection while it runs, so `default` and `points`
+  # together take 3 of the serving pool's 5 and leave 2 for page requests.
   queues: [
-    default: 5,
-    points: 5,
+    default: 1,
+    points: 2,
     points_chain: 2,
     ens: 3,
     chat_responses: [limit: 10],

@@ -85,9 +85,10 @@ only the jobs that wait on it, never a person's other work:
   rest of its class: every sign-in looks up one ENS name, so `ens` is apart from the
   other chain reads. Otherwise kinds share their class's queue.
 - Choose the limit by what the job waits on. A database job holds a connection for
-  most of its run, so a database queue's limit stays at or under the Repo's pool
-  (5 on the shared database; ash-data, "Connections"); queues that are rarely busy at
-  once, such as `default` and `points`, may each take the pool's size. An
+  most of its run, so the database queues' limits together stay below the Repo's pool
+  (5 on the shared database; ash-data, "Connections"), with room left for page
+  requests and Oban's own reads: the template's `default` 1 and `points` 2 take 3 of
+  the 5, and a full `default` and `points` still leave 2 for pages. An
   outside-call job holds a connection only to read before and write after the call,
   so its limit is what the other service and the budget allow: its rate limit, a
   daily cap such as Jev's `daily_questions`, and how long one call takes. Start a
