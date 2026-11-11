@@ -1,8 +1,8 @@
 defmodule AshTemplateWeb.HomeLive do
   @moduledoc """
   The homepage, which tracks regents.sh's: the datascape filling the window, one
-  glass panel over it that holds the header, the name and its line, the actions,
-  the product tabs and the document links, and the copyright at the window's foot,
+  glass panel over it that holds the header, the name and its line, the actions
+  and, at its foot, the product tabs, and the copyright at the window's foot,
   in regents.sh's words. When regents.sh's homepage changes, this page changes with
   it (`scripts/drift.sh` compares the two). Only the name and the header's own
   links are this site's.
@@ -37,10 +37,6 @@ defmodule AshTemplateWeb.HomeLive do
     ## Products
 
     #{products}
-
-    ---
-
-    [Buy $REGENT](#{AshTemplateWeb.Layouts.buy_regent()}) · [About](#{PublicDocuments.url("/about")}) · [Developer docs](#{PublicDocuments.url("/docs")}) · [Agent guide](#{PublicDocuments.url("/agents.md")}) · [The whole site in brief](#{PublicDocuments.url("/llms.txt")})
 
     © 2026 Regents Labs
     """
@@ -111,15 +107,9 @@ defmodule AshTemplateWeb.HomeLive do
           <p class="rl-hero-agents">
             <.link navigate={~p"/agents"}>Connect your agent from the command line</.link>
           </p>
-
-          <.product_tabs />
         </main>
 
-        <footer class="regent-footer">
-          <nav class="regent-footer__links" aria-label="About Ash Template">
-            <AshTemplateWeb.Layouts.document_links />
-          </nav>
-        </footer>
+        <.products />
       </section>
 
       <AgentTools.dialog id="home-agent-tools" />
@@ -150,25 +140,29 @@ defmodule AshTemplateWeb.HomeLive do
     """
   end
 
-  defp product_tabs(assigns) do
+  # The panel's foot: the product sites and the staking page, under their small title.
+  defp products(assigns) do
     ~H"""
-    <nav class="rl-product-tabs" aria-label="Products">
-      <a
-        :for={{label, id, href, new_tab?} <- nav_links()}
-        id={"home-nav-#{id}"}
-        href={href}
-        target={new_tab? && "_blank"}
-        rel={new_tab? && "noopener noreferrer"}
-        class="rg-button rl-product-tab"
-        phx-hook="HolographicCard"
-        data-holo-crown="false"
-        data-holo-shine="0.65"
-      >
-        <Regent.HolographicCard.foil id={"home-nav-#{id}-foil"} class="rl-product-tab__foil" />
-        <span class="rg-button__label">
-          {label}<span :if={new_tab?} class="visually-hidden">, opens in a new tab</span>
-        </span>
-      </a>
+    <nav class="home__foot" aria-labelledby="home-products-title">
+      <h2 id="home-products-title" class="rl-overline">Products</h2>
+      <div class="rl-product-tabs">
+        <a
+          :for={{label, id, href, new_tab?} <- nav_links()}
+          id={"home-nav-#{id}"}
+          href={href}
+          target={new_tab? && "_blank"}
+          rel={new_tab? && "noopener noreferrer"}
+          class="rg-button rl-product-tab"
+          phx-hook="HolographicCard"
+          data-holo-crown="false"
+          data-holo-shine="0.65"
+        >
+          <Regent.HolographicCard.foil id={"home-nav-#{id}-foil"} class="rl-product-tab__foil" />
+          <span class="rg-button__label">
+            {label}<span :if={new_tab?} class="visually-hidden">, opens in a new tab</span>
+          </span>
+        </a>
+      </div>
     </nav>
     """
   end

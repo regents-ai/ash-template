@@ -31,10 +31,14 @@ defmodule AshTemplateWeb.Layouts do
 
   @doc """
   The footer of every public page, the same on every Regent site: the social
-  links, the document links, the two legal documents and the copyright. Below a
-  public page it sits at the foot of the screen however short the page is.
+  links, Buy $REGENT, the site's documents and its two plain-text guides for
+  agents, which open in the browser's popover from "Agent guide", the two legal
+  documents and the copyright. Below a public page it sits at the foot of the
+  screen however short the page is.
   """
   def product_links(assigns) do
+    assigns = assign(assigns, :buy_regent, @buy_regent)
+
     ~H"""
     <footer class="regent-footer">
       <div class="regent-footer__social">
@@ -42,7 +46,19 @@ defmodule AshTemplateWeb.Layouts do
         <AshTemplateWeb.Components.Shell.theme_toggle id="footer-theme-control" />
       </div>
       <nav class="regent-footer__links" aria-label="About Ash Template">
-        <.document_links />
+        <a href={@buy_regent} target="_blank" rel="noopener noreferrer">Buy $REGENT</a>
+        <a href={~p"/about"}>About</a>
+        <a href={~p"/docs"}>Developer docs</a>
+        <span class="rg-tip">
+          <button type="button" class="regent-footer__guide" popovertarget="footer-agent-guide">
+            Agent guide
+          </button>
+          <div id="footer-agent-guide" class="rg-tip-body regent-footer__guide-body" popover>
+            <p>Give your agent one of these.</p>
+            <a href={~p"/agents.md"}>Setup steps</a>
+            <a href={~p"/llms.txt"}>Site summary</a>
+          </div>
+        </span>
         <span class="regent-footer__legal">
           <a href={~p"/privacy"}>Privacy policy</a>
           <a href={~p"/terms"}>Terms of use</a>
@@ -50,31 +66,6 @@ defmodule AshTemplateWeb.Layouts do
       </nav>
       <p>© 2026 Regents Labs</p>
     </footer>
-    """
-  end
-
-  @doc """
-  Buy $REGENT, the site's documents and its two plain-text guides for agents,
-  which open in the browser's popover from "Agent guide". The footer and the home
-  page's panel both list them.
-  """
-  def document_links(assigns) do
-    assigns = assign(assigns, :buy_regent, @buy_regent)
-
-    ~H"""
-    <a href={@buy_regent} target="_blank" rel="noopener noreferrer">Buy $REGENT</a>
-    <a href={~p"/about"}>About</a>
-    <a href={~p"/docs"}>Developer docs</a>
-    <span class="rg-tip">
-      <button type="button" class="regent-footer__guide" popovertarget="footer-agent-guide">
-        Agent guide
-      </button>
-      <div id="footer-agent-guide" class="rg-tip-body regent-footer__guide-body" popover>
-        <p>Give your agent one of these.</p>
-        <a href={~p"/agents.md"}>Setup steps</a>
-        <a href={~p"/llms.txt"}>Site summary</a>
-      </div>
-    </span>
     """
   end
 end

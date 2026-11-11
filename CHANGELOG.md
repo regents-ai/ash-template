@@ -7120,3 +7120,16 @@ sits on its own branches.
   `platform/THIRD_PARTY_NOTICES.md`, `docs/feature-map.md`, `docs/standardization-plan.md`,
   `skills/vgpu-island/SKILL.md` (the datascape joins the reference islands) and
   `skills/regent-workflow/references/design-system.md`.
+
+## 2026-11-11 — Home: the products move to the panel's foot (Sean, 11 Nov)
+
+- As on regents.sh: the four document links (Buy $REGENT, About, Developer docs, Agent
+  guide) leave the home panel. Its foot now holds the product tabs under a small title,
+  "Products"; the name, its line, Enter App, WebMCP Tools and the command-line link stay
+  above the hairline. Every other public page's footer keeps the document links, Privacy
+  policy and Terms of use.
+- `AshTemplateWeb.Layouts.document_links` is folded back into
+  `AshTemplateWeb.Layouts.product_links`, its one remaining caller. The agent copy of the
+  home ends with the products and the copyright.
+- Check: `platform/test/ash_template_web/home_live_test.exs`,
+  `platform/test/browser/homepage.spec.ts`.

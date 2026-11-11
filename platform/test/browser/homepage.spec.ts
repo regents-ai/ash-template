@@ -31,7 +31,7 @@ const products = [
   {name: "Keyfleet", site: "https://keyfleet.ai"},
 ]
 
-test("the homepage is server-readable: name, line, actions, products and footer", async ({browser}) => {
+test("the homepage is server-readable: name, line, actions and products", async ({browser}) => {
   const context = await browser.newContext({javaScriptEnabled: false})
   const page = await context.newPage()
   await page.goto("/")
@@ -58,7 +58,7 @@ test("the homepage is server-readable: name, line, actions, products and footer"
   await expect(tabs.nth(4)).toHaveText("Protocol")
   await expect(tabs.nth(4)).toHaveAttribute("href", "https://regents.sh/stake")
 
-  await expect(glass.getByRole("navigation", {name: "About Ash Template"})).toBeVisible()
+  await expect(glass.getByRole("heading", {level: 2, name: "Products"})).toBeVisible()
   // The copyright stands outside the panel, at the window's bottom right.
   await expect(page.locator("#public-home > .home__copyright")).toHaveText("© 2026 Regents Labs")
   // Without scripts the picture is the server's still one, behind the panel.
@@ -125,7 +125,7 @@ for (const viewport of [
     }
 
     const parts = await Promise.all(
-      [".rl-header", "#home-title", ".rl-hero-actions", ".rl-product-tabs", ".regent-footer"].map(selector =>
+      [".rl-header", "#home-title", ".rl-hero-actions", "#home-products-title", ".rl-product-tabs"].map(selector =>
         boxOf(page, selector),
       ),
     )
@@ -134,7 +134,7 @@ for (const viewport of [
       expect(box.right, `part ${index} inside the panel`).toBeLessThanOrEqual(glass.right)
       if (index > 0) expect(box.top, `part ${index} in order`).toBeGreaterThanOrEqual(parts[index - 1]!.top)
     }
-    for (const selector of [".rl-product-tab", ".regent-footer__links > a, .regent-footer__guide", ".rl-header-links > *"]) {
+    for (const selector of [".rl-product-tab", ".rl-header-links > *"]) {
       const boxes = await page.locator(selector).evaluateAll(elements =>
         elements.map(element => element.getBoundingClientRect().toJSON() as DOMRect),
       )
@@ -153,7 +153,7 @@ for (const viewport of [
     expect(copyright.bottom, "the copyright inside the window").toBeLessThanOrEqual(viewport.height)
     expect(copyright.right, "the copyright inside the window").toBeLessThanOrEqual(viewport.width)
     if (!fits) {
-      const foot = await boxOf(page, ".regent-footer")
+      const foot = await boxOf(page, ".home__foot")
       expect(foot.bottom, "the panel's foot ends above the copyright").toBeLessThanOrEqual(copyright.top)
     }
     const still = await boxOf(page, ".home__still")

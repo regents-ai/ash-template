@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.HomeLiveTest do
   test "the product tabs open their sites; Protocol opens staking; Enter App opens the app", %{
     html: html
   } do
-    assert attribute(html, ~s(nav[aria-label="Products"] a), "href") ==
+    assert attribute(html, "#home-glass nav.home__foot a", "href") ==
              ~w(https://autolaunch.sh https://techtree.sh https://patchbay.help https://keyfleet.ai https://regents.sh/stake)
 
     assert attribute(html, "#home-content a.rl-hero-cta", "href") == ["/app"]
@@ -30,21 +30,23 @@ defmodule AshTemplateWeb.HomeLiveTest do
     order =
       ["Ash Template", @line, "Enter App", "WebMCP Tools"] ++
         ["Connect your agent from the command line"] ++
-        ~w(Autolaunch Techtree Patchbay Keyfleet Protocol) ++
-        ["Buy $REGENT", "About", "Developer docs", "Agent guide"]
+        ["Products"] ++ ~w(Autolaunch Techtree Patchbay Keyfleet Protocol)
 
     assert in_order?(text(html, "#home-glass"), order)
     assert in_order?(HomeLive.agent_markdown(), order ++ ["© 2026 Regents Labs"])
 
     assert Regex.scan(~r/^## (.+)$/m, HomeLive.agent_markdown(), capture: :all_but_first) ==
-             [[attribute(html, "#home-content nav", "aria-label") |> hd()]]
+             [[text(html, "#home-glass .home__foot h2")]]
   end
 
-  test "the panel's foot lists the documents, and the copyright stands outside it", %{
+  test "the panel's foot is the products alone, and the copyright stands outside it", %{
     html: html
   } do
-    assert attribute(html, "#home-glass .regent-footer a", "href") ==
-             [AshTemplateWeb.Layouts.buy_regent(), "/about", "/docs", "/agents.md", "/llms.txt"]
+    assert attribute(html, "#home-glass .home__foot", "aria-labelledby") == ["home-products-title"]
+    assert text(html, "#home-products-title") == "Products"
+
+    assert attribute(html, "#home-glass .home__foot a", "id") ==
+             Enum.map(~w(autolaunch techtree patchbay keyfleet protocol), &"home-nav-#{&1}")
 
     assert text(html, "#public-home > .home__copyright") == "© 2026 Regents Labs"
   end
