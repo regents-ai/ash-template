@@ -7223,3 +7223,10 @@ sits on its own branches.
   once changes only the site's rows" (the site's rows kept their old amounts). The
   create, read, update and destroy test held. The pin went back to 55db7d4, with
   `platform/mix.exs` and `platform/mix.lock` unchanged.
+- Full check on `b0a397ad`, clean tree, exit 0: `mix precommit` (hex.audit clean, Credo
+  clean, 31 script tests, 448 browser walks with 5 skipped), then 179 Elixir (9
+  properties), then the required-fixes check. The first full check, on `81b638c7`,
+  stopped in the walk: on the phone, Walk Agent's window did not say it had come to rest
+  within 5 seconds (`platform/test/browser/agents.spec.ts`). Run alone it failed once
+  more while the Mac was busy, then passed at both widths with the development pool at
+  2 and again at 5, so the wait is the busy Mac's, not the pool's.
