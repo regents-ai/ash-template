@@ -67,7 +67,13 @@ how far each is behind the template's pin and the library's main. `make drift` r
 after comparing the sites' shared files. Both print one JSON document, which the daily
 jobs read; each script's opening comment describes its fields. `scripts/harvest.sh`
 lists the commits each site added to its main since the harvest ledger last read it,
-for the inbound job.
+for the inbound job. `make check-scripts` tests all three on fixture repositories.
+
+The two daily jobs are cloud agents that follow [automation/harvest.md](automation/harvest.md)
+(inbound: site work every site should have, as pull requests on this repository) and
+[automation/spread.md](automation/spread.md) (outbound: one pull request per site that
+brings it up to the template). They open pull requests only, and record each run in
+the harvest ledger, control's `automation/harvest.md`.
 <!-- /template-only -->
 
 Agent pairing also uses the shared [SIWA client](https://siwa.regents.sh/skill.md).

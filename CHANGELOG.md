@@ -7261,3 +7261,31 @@ sits on its own branches.
   clones in one folder, so a cloud run passes its own; each clone's main is fetched
   first. A ledger with no full commit for a site, or a clone without that commit,
   stops the run.
+
+## 2026-11-11 — The daily jobs' instructions, and tests for the reports
+
+- New `automation/harvest.md` and `automation/spread.md`: the instructions the two
+  daily cloud jobs follow from this repository's main branch. Harvest (10:00 UTC) reads
+  each site's new commits with `scripts/harvest.sh`, judges each candidate as move-up,
+  site-only or drift, and opens at most three pull requests a day on ash-template,
+  branch `harvest/<site>-<topic>-<date>`. Spread (11:00 UTC) reads `scripts/drift.sh`,
+  `scripts/pins.sh`, the required fixes and the rollout files, and opens at most one
+  pull request per site a day, branch `spread/<date>`. Before Sean signs off, Spread
+  carries tooling only (check, release and deploy scripts, security fixes, library
+  bug-fix pins, toolchain versions and shared skills); anything a visitor sees waits
+  for his sign-off, recorded in a rollout file in `control/rollouts/`. Each pull request
+  gets a fresh reviewer, names the `make check` still needed, and goes up as a draft
+  waiting for Sean when it touches a protected area. Pull requests open seven days are
+  closed with a note, and no branch is deleted. Both jobs record their runs in the
+  ledger, control's `automation/harvest.md`, whose Mode table starts both on a dry run
+  that writes only what each would open.
+- New `scripts/tests/test_reports.py` runs harvest.sh, drift.sh and pins.sh against git
+  repositories it builds in a temporary folder, with stand-ins for `gh` and `curl`:
+  renamed and moved files, Mix tasks, merges, the shared flag, the ledger's rows, each
+  file status, the live homepages, a failed read, and each pin's counts, days, tag, pull
+  request, Hex version and absence from GitHub. `make check-scripts` runs it with `uv`,
+  and `make check` runs it first.
+- The Makefile's drift, pins and check-scripts targets are fenced as the template's own.
+  `scripts/init.sh` drops them, so a new product has no targets for the scripts it
+  removed, and `scripts/drift.sh` compares the rest of the Makefile with each site's.
+  init.sh also removes the tests and the two job files with the reports.

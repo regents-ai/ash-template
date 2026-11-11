@@ -16,9 +16,10 @@
 # renames the files and directories that carry the app name, drops the Markdown
 # passages fenced by <!-- template-only --> and <!-- /template-only --> and the
 # Makefile passages fenced by "# template-only" and "# /template-only" that
-# belong to the template itself, removes the template's reports, and records the
-# rename at the end of CHANGELOG.md, whose earlier entries stay as written. Run it
-# once, from a clean checkout, before the first commit of the new product.
+# belong to the template itself, removes the template's reports and daily-job
+# instructions, and records the rename at the end of CHANGELOG.md, whose earlier
+# entries stay as written. Run it once, from a clean checkout, before the first
+# commit of the new product.
 set -euo pipefail
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
@@ -86,11 +87,12 @@ while IFS= read -r dir; do
   git mv "$dir" "$(dirname "$dir")/$(renamed "$(basename "$dir")")"
 done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -not -path './.git/*' -not -path '*/_build/*' -not -path '*/deps/*' -not -path '*/node_modules/*' | deepest_first)
 
-# The reports that compare Regent's sites with the template, with their file lists
-# and tests; a new product has no use for them, so they are removed below.
+# The reports that compare Regent's sites with the template, their file lists and
+# tests, and the instructions of the daily jobs that read them; a new product has no
+# use for them, so they are removed below.
 reports=(
   scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh scripts/harvest.sh
-  scripts/tests/test_reports.py
+  scripts/tests/test_reports.py automation/harvest.md automation/spread.md
 )
 
 # Contents: every tracked text file except this script, the reports (all removed
@@ -122,8 +124,8 @@ cat >> CHANGELOG.md <<EOF
 ## $(date -u +%F) — Renamed to $display
 
 - Renamed the Ash Template placeholder to $display (\`$snake\`, \`$module\`,
-  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself
-  and the template's reports on Regent's sites.
+  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself,
+  the template's reports on Regent's sites and its daily jobs' instructions.
 EOF
 
 git rm -q -- scripts/init.sh "${reports[@]}"
