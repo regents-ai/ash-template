@@ -39,6 +39,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | An address with a slash at the end, other than the homepage, is not found: the not-found page for a page, the API's not-found answer for an API address | `platform/test/ash_template_web/trailing_slash_test.exs` |
 | Closing the site leaves the agent pages open | `platform/test/ash_template/site/launch_gate_test.exs` |
 | A missing required value gets the site's own error, not a database failure, on a database built from every migration, the libraries' included | `platform/test/ash_template/required_value_test.exs` |
+| Every write lands in the site's own schema of the shared database, never in a same-named table in `public`: create, update, destroy, upsert, bulk upsert and `Ash.update_many` | `platform/test/ash_template/schema_prefix_test.exs` |
 | Each address that takes a body reads it up to its limit and refuses one byte more with 413: 64 KB for what an agent signs (the API and `/mcp`), 256 KB for the rest (a connected app's registration and token, sign-in, visit reports) | `platform/test/ash_template_web/body_limit_test.exs` |
 
 ## People

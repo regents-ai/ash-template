@@ -371,6 +371,10 @@ can do and the check that proves it. Among them:
   days unnoticed, and walks a new person from an email sign-in without a wallet,
   through the wallet Privy gives them, to the same account at every sign-in.
 - It checks that a paired agent's tools accept only signed proof, never a cookie.
+- It writes through a resource that names no schema while `public` holds a table of
+  the same name, and checks that a create, update, destroy, upsert, bulk upsert and
+  `Ash.update_many` change only the site's schema, because ash_postgres releases after
+  2.13.0 sent upserts to `public`. Run it before moving the ash_postgres pin.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this

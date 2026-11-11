@@ -57,6 +57,7 @@ defmodule AshTemplate.MixProject do
       # ash_postgres main with #910 until a Hex release carries it: upserts use the
       # repo's prefix, which picks each site's schema on the shared database. It
       # stands in for the Hex release that ash_money and ash_double_entry ask for.
+      # Before moving this pin, run test/ash_template/schema_prefix_test.exs.
       {:ash_postgres,
        git: "https://github.com/ash-project/ash_postgres.git",
        ref: "55db7d449aad351d200c5f300fca2a83e0a8734c",
