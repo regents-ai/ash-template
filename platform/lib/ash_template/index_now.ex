@@ -23,9 +23,18 @@ defmodule AshTemplate.IndexNow do
   @spec key() :: String.t() | nil
   def key, do: Application.get_env(:ash_template, :indexnow_key)
 
-  @doc "A job that sends `urls`, this site's own addresses (at most 10,000)."
+  # A list waits in these states; once its sending has started, it is no longer
+  # the same job as a list queued after a later change.
+  @waiting [:available, :scheduled, :retryable]
+
+  @doc """
+  A job that sends `urls`, this site's own addresses (at most 10,000). The same
+  list queued again while one is still waiting to be sent is that one job.
+  """
   @spec submit([String.t()]) :: Oban.Job.changeset()
-  def submit(urls), do: new(%{"urls" => urls})
+  def submit(urls) do
+    new(%{"urls" => urls}, unique: [keys: [:urls], period: :infinity, states: @waiting])
+  end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"urls" => urls}}), do: deliver(key(), urls)

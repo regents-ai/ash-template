@@ -2,7 +2,9 @@ defmodule AshTemplate.IndexNowTest do
   # Invariants for telling search engines about public pages:
   # - each release's sitemap is queued once, however often the hourly job runs;
   # - the list carries this site's host, key and key file, and only this site's pages;
-  # - an answer that would fail again stops for good; a busy one waits.
+  # - an answer that would fail again stops for good; a busy one waits;
+  # - a list queued again while the same list waits is that one job, but a list
+  #   queued after its sending began is sent again.
   use ExUnit.Case, async: false
   use Oban.Testing, repo: AshTemplate.Repo, prefix: "ash_template_app"
   import Phoenix.ConnTest
@@ -38,6 +40,20 @@ defmodule AshTemplate.IndexNowTest do
     assert :ok = perform_job(IndexNow, %{})
     assert [] = all_enqueued(worker: IndexNow)
     assert {:cancel, _no_key} = perform_job(IndexNow, %{"urls" => [PublicDocuments.url("/")]})
+  end
+
+  test "the same list waits once, and is queued again once its sending began" do
+    urls = [PublicDocuments.url("/docs")]
+
+    first = Oban.insert!(IndexNow.submit(urls))
+    assert %Oban.Job{conflict?: true, id: id} = Oban.insert!(IndexNow.submit(urls))
+    assert id == first.id
+    refute Oban.insert!(IndexNow.submit([PublicDocuments.url("/")])).conflict?
+
+    first |> Ecto.Changeset.change(state: "executing") |> AshTemplate.Repo.update!()
+
+    refute Oban.insert!(IndexNow.submit(urls)).conflict?
+    assert length(all_enqueued(worker: IndexNow, args: %{"urls" => urls})) == 1
   end
 
   test "the list names this site, its key and the file that proves it" do

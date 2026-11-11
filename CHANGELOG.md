@@ -7059,3 +7059,20 @@ sits on its own branches.
   another queue needs no migration. `skills/elixir-stack/SKILL.md` says it in one
   line.
 - A label job already waiting in `outside_calls` when this ships still runs there.
+
+## 2026-11-11 — Every repeatable template job names its uniqueness
+
+- `AshTemplate.ErrorPruner` runs or waits once at a time (`fields: [:worker]`,
+  `states: :incomplete`), so a slow prune never meets a second one.
+- `AshTemplate.SharedReading.Heal` keeps one reread of each kind waiting at a time
+  (`keys: [:kind]`, waiting states only), so a busy queue never piles up a minute's
+  worth each minute, and a reread left running on a stopped machine never holds up
+  the next.
+- `AshTemplate.IndexNow.submit/1` keeps one copy of the same list waiting
+  (`keys: [:urls]`, waiting states only); a list queued after its sending began is
+  sent again. `platform/test/ash_template/index_now_test.exs` holds both halves.
+- `skills/elixir-stack/references/oban.md` gains "One job per thing, and effects safe
+  to repeat": which keys, why `period: :infinity`, which states for which kind of job,
+  how Oban 2.24 merges a worker's `unique:` with one given to `new/2`, and that a job
+  can still run twice, so each effect carries a stable key. `skills/elixir-stack/SKILL.md`
+  says it in one line.
