@@ -7017,3 +7017,11 @@ sits on its own branches.
   390 and 320; reduced motion keeps the still picture; a browser that gets no graphics
   device shows the still picture; no console errors. WebKit was not run.
 - Not deployed.
+
+## 2026-11-11 — Shared changes no longer wait for a sign-off
+
+- **An ordinary shared change goes to every site once the template's check is clean**
+  and is reported to Sean after (his answer of 11 Nov, following 5 Nov "deploys are
+  automatic"). A protected action or a product decision inside one keeps its letter.
+  Changed in `skills/regent-workflow/SKILL.md` ("Shared changes" step 2 and the protected
+  list) and `skills/ash-signals/SKILL.md`. Skills only: nothing to deploy.
