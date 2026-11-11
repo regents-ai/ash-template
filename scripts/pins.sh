@@ -9,8 +9,10 @@
 #
 # Reads each site's platform/mix.lock and Makefile from its main branch on GitHub, at
 # one commit, and this checkout's for the template. Commits are counted in a copy of
-# each library's history (commits and trees, no file contents), kept in
-# platform/_build/drift/libraries and fetched again on every run. "Behind" is the
+# each library's history (its branches, tags and pull requests; commits and trees, no
+# file contents), kept in platform/_build/drift/libraries and fetched again on every
+# run. Each copy is read only through its own --git-dir, so a damaged copy stops the
+# run and never reaches the checkout around it. "Behind" is the
 # number of commits on the other side that the pin lacks, and the days from the pin's
 # own commit to the newest of them; for SIWA only the commits that changed its folder
 # count. The table is printed and written to platform/_build/drift/pins.md. Needs
@@ -33,16 +35,15 @@ history() {
   printf '%s/libraries/%s\n' "$out" "$(basename "$1")"
 }
 
-# Brings the local copy of each library's branches and tags up to date.
+# Brings the local copy of each library's branches, tags and pull requests up to
+# date, so a pin on a pull request's commit is found.
 fetch_history() {
   local url dir
   for url in "$@"; do
     dir="$(history "$url")"
-    if [[ -d "$dir" ]]; then
-      git -C "$dir" fetch -q --prune origin '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
-    else
-      git clone -q --bare --filter=blob:none "$url" "$dir"
-    fi
+    [[ -d "$dir" ]] || git clone -q --bare --filter=blob:none "$url" "$dir"
+    git --git-dir="$dir" fetch -q --prune origin \
+      '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' '+refs/pull/*/head:refs/pull/*/head'
   done
 }
 
@@ -82,16 +83,16 @@ behind() {
   local -a only=()
   dir="$(history "$1")"
   [[ -z "${5:-}" ]] || only=(-- "$5")
-  if ! git -C "$dir" cat-file -e "$ref^{commit}" 2>/dev/null; then
+  if ! git --git-dir="$dir" cat-file -e "$ref^{commit}" 2>/dev/null; then
     echo "not on GitHub"
     return
   fi
-  if ! git -C "$dir" cat-file -e "$target^{commit}" 2>/dev/null; then
+  if ! git --git-dir="$dir" cat-file -e "$target^{commit}" 2>/dev/null; then
     echo "${target:0:7} not on GitHub"
     return
   fi
-  lacking="$(git -C "$dir" rev-list --count "$ref..$target" ${only[@]+"${only[@]}"})"
-  ahead="$(git -C "$dir" rev-list --count "$target..$ref" ${only[@]+"${only[@]}"})"
+  lacking="$(git --git-dir="$dir" rev-list --count "$ref..$target" ${only[@]+"${only[@]}"})"
+  ahead="$(git --git-dir="$dir" rev-list --count "$target..$ref" ${only[@]+"${only[@]}"})"
   if [[ "$lacking" == 0 && "$ahead" == 0 ]]; then
     echo "same"
     return
@@ -100,8 +101,8 @@ behind() {
     echo "$ahead $extra"
     return
   fi
-  newest="$(git -C "$dir" log -1 --format=%ct "$ref..$target" ${only[@]+"${only[@]}"})"
-  since="$(git -C "$dir" log -1 --format=%ct "$ref")"
+  newest="$(git --git-dir="$dir" log -1 --format=%ct "$ref..$target" ${only[@]+"${only[@]}"})"
+  since="$(git --git-dir="$dir" log -1 --format=%ct "$ref")"
   text="$lacking commit$([[ "$lacking" == 1 ]] || echo s), $(days $(((newest > since ? newest - since : 0) / 86400)))"
   [[ "$ahead" == 0 ]] || text="$text; $ahead $extra"
   echo "$text"
@@ -110,13 +111,13 @@ behind() {
 # A pin as the table shows it: the short commit, and its release when one is tagged there.
 shown() {
   local tag
-  tag="$(git -C "$(history "$1")" tag --points-at "$2" 2>/dev/null | head -1)"
+  tag="$(git --git-dir="$(history "$1")" tag --points-at "$2" 2>/dev/null | head -1)"
   printf '`%s`%s\n' "${2:0:7}" "${tag:+ ($tag)}"
 }
 
 # The SIWA library's version at a commit of elixir-utils.
 siwa_version() {
-  git -C "$(history "$elixir_utils")" show "$1:$siwa_path/mix.exs" 2>/dev/null |
+  git --git-dir="$(history "$elixir_utils")" show "$1:$siwa_path/mix.exs" 2>/dev/null |
     sed -nE 's/^.*(@version|version:) "([^"]+)".*$/\2/p' | head -1
 }
 
@@ -183,7 +184,7 @@ vs_template() {
 }
 
 main_of() {
-  git -C "$(history "$1")" rev-parse refs/heads/main
+  git --git-dir="$(history "$1")" rev-parse refs/heads/main
 }
 
 mkdir -p "$out/libraries"
@@ -212,8 +213,17 @@ site_rows "$(cat platform/mix.lock)" "$(cat Makefile)" "template (this checkout)
 for current in "${@:-${sites[@]}}"; do
   repo="regents-ai/$current"
   rev="$(main_commit "$repo")"
-  lock="$(site_file "$repo" "$rev" platform/mix.lock)"
-  makefile="$(site_file "$repo" "$rev" Makefile)" || makefile=""
+  lock="$(site_file "$repo" "$rev" platform/mix.lock)" || {
+    status=$?
+    [[ "$status" != 44 ]] || echo "$repo has no platform/mix.lock at ${rev:0:7}" >&2
+    exit "$status"
+  }
+  # A site with no Makefile has no regents-cli row; any other failure stops the run.
+  makefile="$(site_file "$repo" "$rev" Makefile)" || {
+    status=$?
+    [[ "$status" == 44 ]] || exit "$status"
+    makefile=""
+  }
   site_rows "$lock" "$makefile" "$current \`${rev:0:7}\`"
 done
 
