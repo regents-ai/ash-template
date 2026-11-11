@@ -21,6 +21,7 @@ all five sites at once (regent-workflow, "Shared changes").
 | `AshTemplate.Rooms.Signals` | `:message_posted` (`message_id`) | `Rooms.Message` `:post` | `Activity.Notification` `:notify_mentions`, which runs `NotifyMentions` |
 | `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, which asks for a label |
 | `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note` |
+| `AshTemplate.Notes.Signals` | `:note_committed` (`note_id`), `phase :after_transaction` | `Notes.Note` `:create`, `emit ..., phase: :after_transaction`, only once the create has committed | No listener. The visit log writes the value step from Ash's `[:ash, :signal, :emitted]` telemetry (`AshTemplateWeb.VisitLog.Events`) |
 | `AshTemplate.Accounts.Signals` | `:account_registered` (`account_id`) | `Accounts.HumanAccount` `:register_verified`, only when the sign-in inserted the account (a dynamic emit that reads Ash's `upsert_skipped`) | `Points.Award` `:account_registered` |
 | `AshTemplate.Accounts.Signals` | `:social_linked` (`provider`, `subject`) | `Accounts.LinkedIdentity` `:upsert_verified`, which a sign-in reaches only for a subject new to the account | `Points.Award` `:social_linked` |
 | `RegentAgents.Signals` (elixir-utils `agents`) | `:agent_paired` (`paired_agent_id`, `privy_user_id`) | `RegentAgents.PairedAgent` `:record` | `Points.Award` `:agent_paired` |
@@ -28,6 +29,14 @@ all five sites at once (regent-workflow, "Shared changes").
 Every listener uses the default inline delivery. Its work commits with the action that
 emitted the signal, and a listener that fails rolls that action back. The template has
 no job-delivered listener yet.
+
+A log line about something that must have happened, such as the site's value step,
+comes from a signal in the `:after_transaction` phase, declared on the signal and on its
+`emit`. Ash emits it only once the action answered `{:ok, record}`, after the commit, and
+reports each emit as `[:ash, :signal, :emitted]` telemetry whether or not anything
+listens. A telemetry handler writes the line; no resource listens just to log. Each site
+emits one such signal for its value action and maps it to its name in
+`AshTemplateWeb.VisitLog.values/0`.
 
 ## Adopt it in a site, in this order
 

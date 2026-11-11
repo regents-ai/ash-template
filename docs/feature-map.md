@@ -194,6 +194,25 @@ the agent's own row on the site: when the agent was last seen, added the first t
 
 ## Gaps
 
+- The product-event vocabulary (`docs/logging-replay-plan.md`, "Product events"):
+  a note created on the page, through the API or through `/mcp` writing one
+  `note_created` step for the note's account, by the person or their agent; a
+  refused, failed or rolled-back create writing none; a misnamed value never raising
+  into the save or stopping the visit lines; `step/2` refusing value names; and a
+  Global Privacy Control browser writing none. `/mcp` and forwarded `/api/agents/v1`
+  calls written as `tool.call` lines with the caller as actor. No check yet: these
+  checks are added once the change has worked live.
+- The cohort report (`mix visit_log.cohorts`): weekly cohorts, sources, activation,
+  D1 and D7 over a fixed set of lines (a return only from lines with a visit, never
+  the agent's value steps), the same account for a sign-in whatever order its lines
+  arrive in, the three line shapes it reads, and a sign-in no later line names left
+  out. No check yet, as above.
+- `mix db.top_queries` and `/app/bin/top-queries`: the stop when
+  `pg_stat_statements` is missing, and a statement on another schema whose name
+  starts or ends with the site's left out. No check yet, as above.
+- First touch through sign-in: a sign-in exchange that binds writes one `signed_in`
+  step and a refresh writes none, and the reloaded page's next line in the same visit
+  names the account. No check yet, as above.
 - Saving a name in a real browser, and the page's Privy bridge itself: the walk
   answers for Privy with a stand-in, so it proves the refusal; the server check
   proves the save and `public_name.test.ts` the save path.
