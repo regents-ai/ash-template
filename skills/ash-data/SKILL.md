@@ -20,6 +20,9 @@ Load `ash-stack` first. State the persistence invariant the change must keep, th
   the direct address with a pool of 5, never through the pooler, and releases take
   turns
   ([connections](references/migrations-and-concurrency.md#connections-to-the-shared-production-database)).
+  The template's `template-runtime` login still stores the 15 s, 5 s and 15 s limits
+  set on it on 27 October 2026, the same values its startup settings send; leave
+  them, since resetting them is a production database change.
 - **Imports keep the whole source record**, unmapped columns included. An identical
   reimport is harmless; a conflicting identity or value needs
   reconciliation. A historical row count does not prove completeness. Rehearse on

@@ -107,7 +107,8 @@ clients on the direct address cost 7 (`control/rollouts/2026-10-29-db-pooler.md`
 the workspace). This holds until the founder changes the database plan.
 
 - **Serving: the direct address.** The serving connection uses
-  `direct.dzx6qo6xqzvojpv5.flympg.net` (`DATABASE_POOLED_URL`, a name every site keeps)
+  `direct.dzx6qo6xqzvojpv5.flympg.net` (from `DATABASE_POOLED_URL` in the template,
+  Keyfleet, Patchbay, Proximal, Regents and Techtree; Autolaunch reads `DATABASE_URL`)
   with a pool of 5 (never leave `pool_size` unset: Ecto's default is 10), names itself
   with `application_name`, and sends the three limits that keep one site from stalling
   the others as startup settings: `statement_timeout` 15000, `lock_timeout` 5000 and

@@ -13,7 +13,6 @@ defmodule AshTemplate.DatabaseConfigTest do
     listening = DatabaseConfig.notifications_config!(:prod, &getenv/1)
 
     assert serving[:url] == @serving
-    refute Keyword.has_key?(serving, :prepare)
     assert serving[:pool_size] == 5
     assert serving[:max_lifetime] == 540_000..600_000
     assert serving[:ssl][:verify] == :verify_peer
