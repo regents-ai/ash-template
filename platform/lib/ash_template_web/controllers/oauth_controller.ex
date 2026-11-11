@@ -15,7 +15,9 @@ defmodule AshTemplateWeb.OAuthController do
   defp rate_limit(conn, _opts) do
     {address, _source} = AshTemplateWeb.ClientAddress.key(conn)
     action = action_name(conn)
-    limit = if action == :register, do: 30, else: 120
+    # Opening consent may record a new app from its published identity, as
+    # registering does, so the two share the lower limit.
+    limit = if action in [:register, :authorize], do: 30, else: 120
 
     case AshTemplate.Accounts.RequestRateLimiter.admit({:oauth, action, address}, limit, 60) do
       {:ok, _} ->

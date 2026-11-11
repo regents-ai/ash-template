@@ -7036,15 +7036,19 @@ sits on its own branches.
   (`client_id_metadata_document_supported`); registration keeps working for other apps,
   and an address and a registered id are never taken for each other.
 - Rebuilt on today's main from `claude/cimd-1029` (`e90c7b5e`, 178 commits behind). Every
-  elixir-utils package moves to `562a853f` (`agent-access/cimd-1111`): the seven
-  published-identity commits on `d89c69df`, the pin before. Only oauth, http and
+  elixir-utils package moves to `c2891b0d` (`agent-access/cimd-1111`): the seven
+  published-identity commits on `d89c69df`, the pin before, and the review fix. Only oauth, http and
   mcp_events differ from `d89c69df`; mcp_events callbacks now use `RegentHttp.Public`, the
   one checked outbound request.
 - Migration `20261111060000_oauth_client_documents` adds one empty table
   (`RegentOAuth.Migration.V3`) and changes nothing existing.
-- Consent (`/oauth/authorize`, GET and POST) is limited to 120 requests a minute by
-  address, like token and revocation: a signed-in person's consent may read a connecting
-  app's published identity.
+- Opening consent (`GET /oauth/authorize`) is limited to 30 requests a minute by
+  address, as registering is: a signed-in person's consent may read a connecting app's
+  published identity and record the app. Allowing or cancelling (`POST`) has 120, like
+  token and revocation.
+- A read again of a recorded identity takes only its name and callbacks; the app keeps
+  the scopes it holds (the adversarial review found the read again replaced them with
+  this machine's list).
 - New check: `claude_connector_test.exs` connects Claude by its published identity
   through this site's endpoint, consent, token exchange, `/mcp` and refresh.
 - Protected (sign-in and a migration): ships on Sean's go naming the final commit.

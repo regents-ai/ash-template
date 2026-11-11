@@ -224,6 +224,21 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       refute_received {:read, @claude}
     end
 
+    test "one address may open consent 30 times a minute, as it may register; the 31st waits" do
+      open = fn ->
+        conn(:get, "/oauth/authorize?" <> authorize_query(@claude))
+        |> Map.put(:remote_ip, {198, 51, 100, 31})
+        |> put_req_header("accept", "text/html")
+        |> @endpoint.call([])
+      end
+
+      for _ <- 1..30, do: refute(open.().status == 429)
+
+      waited = open.()
+      assert waited.status == 429
+      assert get_resp_header(waited, "retry-after") == ["60"]
+    end
+
     test "a first request with no token is asked to connect, so the app starts its sign-in" do
       for body <- [rpc("initialize", %{"protocolVersion" => "2025-06-18"}), rpc("tools/list")] do
         refused = post_mcp(body, nil)
