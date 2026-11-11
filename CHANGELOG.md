@@ -7064,9 +7064,10 @@ sits on its own branches.
   seven clients held 10 real connections on 30 October and 15 on 11 November.
 - The Claude connector's sign-in keeps its rows through the site's own repository and
   pool, and the site no longer starts a second repository with two connections for it
-  (Sean, 6a; elixir-utils `eu/oauth-host-repo-pin-1111` 2e6f6c6, the library commit the
-  site pinned before, d89c69df, with that one change). A machine holds six connections:
-  five `ash-template-web` and one `ash-template-listen`.
+  (Sean, 6a; elixir-utils ff5051e, on library main 7db3f7f: the library commit the site
+  pinned before, d89c69df, with that change). The provider refuses a repository that puts
+  no schema on its queries, and its own queries are not logged. A machine holds six
+  connections: five `ash-template-web` and one `ash-template-listen`.
 - Production admits only the direct address for `DATABASE_POOLED_URL`; the secret keeps
   its name. The serving connection sends the limits the sites send as startup settings:
   `statement_timeout` 15000, `lock_timeout` 5000 and
@@ -7077,5 +7078,6 @@ sits on its own branches.
 - The connector test counts the sign-in's queries from the site repository's own
   query events.
 - README and the ash-data skill: nobody serves through the pooler, and why; the
-  connector's sign-in shares the pool.
+  connector's sign-in shares the pool; the variable each site reads for its serving
+  login; the `template-runtime` login keeps the limits stored on it on 27 October.
 - Not deployed.
