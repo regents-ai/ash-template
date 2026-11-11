@@ -7165,3 +7165,16 @@ sits on its own branches.
   under a second, so the leading third of the picture stayed empty.
 - Check: `platform/assets/test/datascape.test.ts` ("opens each panel as the picture comes
   to show it, never before").
+
+## 2026-11-11 — Released v187: the datascape's panels open on sight
+
+- Live: v187 at 23:11Z on template.regents.sh; /capabilities.json build.commit 4b72983d.
+  Rollback: v186 (c2a879e5). No migrations.
+- Carries "Datascape: panels open as they come into sight" (Sean, 11 Nov: "the new items
+  load in too quickly (they are already loaded when seen)") and the browser walk's wide
+  posting allowance for its one person, which ends a check that failed at busy moments.
+- Full check on 4b72983d: exit 0 in 2 min 10 s (455 browser checks, 180 server tests).
+- Live read in headless Chromium with WebGPU, signed out: 37 checks held at 1440, 390 and
+  320; a filmed flight at full speed shows a full picture with the panels at its leading
+  edge still assembling; home, /app, /about, /docs, /agents and /animations/datascape
+  200; no error lines in the app log.
