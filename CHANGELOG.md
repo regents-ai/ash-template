@@ -7054,3 +7054,15 @@ sits on its own branches.
 - Fly logs from the release start: no errors, crashes or refusals. One health check
   failed at 05:07:42Z while the new version started and passed at 05:07:49Z. All 32
   page and request lines after that were answered.
+
+## 2026-11-11 — Work runs as an agent tree
+
+- **Every session is the root of a cost-efficient agent tree** (Sean, 11 Nov). The root
+  runs on Fable 5.2 at medium effort, plans, delegates, integrates and verifies. The
+  explorer (`Explore`, Haiku 5.5) finds files, the worker (Opus 5.5, medium) edits code,
+  the tester (Haiku 5.5) runs tests, and `unstick` (Fable 5.2, high) is used only when
+  the root is stuck. Only useful work is delegated, never every role.
+- Changed in `skills/regent-workflow/SKILL.md`: the new "Agent tree" section replaces
+  the "Delegating" paragraph and "Delegation is optional"; "How a task runs" steps 4
+  and 5 name the worker and tester. The four agents are defined on the Mac in
+  `/Users/sean/.claude/agents/`. Skills only: nothing to deploy.

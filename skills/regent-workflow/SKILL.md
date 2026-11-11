@@ -1,6 +1,6 @@
 ---
 name: regent-workflow
-description: How work runs in the Regent workspace - who decides what, the standing founder rules every site follows, and how a change is proved, released and cleaned up. Load first for any task on Regents, Patchbay, Keyfleet, Autolaunch, Techtree, ash-template, elixir-utils, design-system, regents-cli or siwa-server, including reviews, releases, shared changes, design work, on-screen wording and reports or decisions for Sean.
+description: How work runs in the Regent workspace - who decides what, the agent tree that splits work across Fable, Opus and Haiku, the standing founder rules every site follows, and how a change is proved, released and cleaned up. Load first for any task on Regents, Patchbay, Keyfleet, Autolaunch, Techtree, ash-template, elixir-utils, design-system, regents-cli or siwa-server, including reviews, releases, shared changes, design work, on-screen wording and reports or decisions for Sean.
 ---
 
 # Regent workflow
@@ -21,9 +21,9 @@ it.
 
 Two modes; the request says which. **Pairing:** Astra in the Hermes app and a Claude
 thread share one lane, per `docs/agent-pairing-template.md` in the workspace root.
-**Claude only:** one thread owns its lane and reviews its own work. In both, the
-implementing agent owns the working result. Delegation is optional, and the work never
-waits for a peer, votes, locks or channels.
+**Claude only:** one thread owns its lane and reviews its own work. In both, the thread
+owns the working result and runs as the root of the [agent tree](#agent-tree);
+the work never waits for a peer, votes, locks or channels.
 
 ## Act on your recommendation
 
@@ -97,14 +97,15 @@ grant authority it does not hold.
    request; keep the list and tick it. A short task needs no separate plan. Run
    elixir-stack's design check before writing code: name the standard tool for each
    moving part and build only what none covers.
-4. Build the bounded change yourself, on main, in the assigned checkout. No feature
+4. Build the bounded change on main, in the assigned checkout: the worker builds it from
+   your brief unless it is a few lines ([agent tree](#agent-tree)). No feature
    branches (15 Oct): main goes to production after its checks. A side branch is only a
    handoff: a cloud thread's, which the Mac session tests, pushes to main and deploys
    (16 Oct), or protected work held for Sean's go. Nothing ships from a branch.
 5. Review your own change: the design check first (code that rebuilds Oban, Ecto,
    Phoenix, OTP or Ash is reported as a replacement, not repaired in place), then
-   acceptance, then `make check` on the integrated result and a real or representative
-   user flow. Compiling proves no interaction.
+   acceptance, then `make check` on the integrated result (the tester runs it) and a
+   real or representative user flow. Compiling proves no interaction.
 6. Push checked work to GitHub main (16 Oct), in every site repository, ash-template,
    elixir-utils and design-system: no finished commit sits on a local head (a protected
    change still waits for Sean's named go). The commit message says what changed and
@@ -122,15 +123,6 @@ grant authority it does not hold.
    on, decisions that block nothing, or a milestone report: status goes in the same
    message as the next tool call.
 
-**Delegating.** Give a subagent the objective, the absolute repository or worktree path,
-the files it owns, its acceptance checks, an advisory time budget, its authority limits
-and its duty to clean up. Tell writers they share a workspace and must preserve others'
-edits. At most two coding subagents at once; work on one surface runs in turn. Keep the
-session reference, and verify the result and the cleanup before integrating. One
-coordinator integrates per repository. Check the account's remaining capacity before
-several long reviews, keeping enough for integration and verification, and do not create
-another recurring monitor by default.
-
 **Chiefs keep moving** (Sean, 28 Oct). Every chief, on the Mac and in Claude Projects,
 ends each turn with the next ordinary step started or done; fixes and writes the skills
 it finds wrong, missing or vague (shared skills in `ash-template/skills`, product skills
@@ -141,6 +133,45 @@ version, commit, log or page; and looks for what was skipped or stalled, then fi
 restarts it. A report is not proof. When Sentinel reports a crash, the site's chief
 fixes it and releases without a letter (5 Nov); a fix that needs a protected action
 still waits for Sean.
+
+## Agent tree
+
+Sean, 11 Nov: a cost-efficient tree, "Split useful work. Don't spawn every role." Every
+session, chiefs and lane threads included, runs as its root. Fable is the scarce
+allowance: spend it on judgment, never on reading files or running tests.
+
+| Role | Agent | Model | Does |
+| --- | --- | --- | --- |
+| Root | the session | Fable 5.2, medium | plans, delegates, integrates and verifies |
+| Explorer | `Explore` | Haiku 5.5 | finds files, symbols and call sites |
+| Worker | `worker` | Opus 5.5, medium | edits code to a brief |
+| Tester | `tester` | Haiku 5.5 | runs tests and checks, reports failures |
+| Stuck | `unstick` | Fable 5.2, high | only when the root is stuck |
+
+- Delegate only what saves work. A lookup whose target you know, or an edit of a few
+  lines, you do yourself. A search across several files goes to the explorer, a larger
+  code change to the worker, a long or noisy test or check run to the tester.
+- Results come back to the root, which integrates and verifies them: it reads the
+  worker's diff, checks the decisive result itself, and never ships on a report alone.
+- `unstick` only after two failed attempts at the same problem, evidence that
+  contradicts itself, or a design question the root cannot settle. It returns a
+  diagnosis and a brief; the worker makes the change.
+- Never pass a model on a spawn. Never use a fork, `Plan` or `general-purpose` for work a
+  role covers: a fork and `Plan` run on the root's Fable. Any other subagent without a
+  model of its own runs on Opus 5.5.
+- A brief gives the objective, the absolute repository or worktree path, the files the
+  agent owns, its acceptance checks, an advisory time budget, its authority limits and
+  its duty to clean up. Tell writers they share a workspace and must keep others' edits.
+  At most two workers at once; work on one surface runs in turn. Keep each agent's
+  reference, and verify the result and the cleanup before integrating. One root
+  integrates per repository. Check the account's remaining capacity before several long
+  reviews, keeping enough for integration and verification, and do not create a
+  recurring monitor by default.
+- The four agents are defined in `/Users/sean/.claude/agents/`; the root's model and
+  effort and the Opus default for other subagents are in `/Users/sean/.claude/settings.json`.
+  A session without those files, such as a cloud thread, is the one exception to the
+  model rule: it spawns `general-purpose` with model `haiku` for explorer and tester work
+  and `opus` for worker work.
 
 ## Rules for every site
 
