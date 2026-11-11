@@ -86,8 +86,10 @@ config :ash_template, Oban,
   cron: [
     crontab: [
       {"17 4 * * *", AshTemplate.ErrorPruner},
-      # This release's public pages, sent to IndexNow once per release.
-      {"@hourly", AshTemplate.IndexNow},
+      # This release's public pages, sent to IndexNow once per release. The hourly
+      # job only queues the sending, which runs in `outside_calls`, so it is
+      # database work.
+      {"@hourly", AshTemplate.IndexNow, queue: :default},
       # From the Points start, the one-time points for what accounts already had.
       {"@hourly", RegentPoints.StartAwards},
       # One line for each kind of shared reading a producer rereads on notice.
