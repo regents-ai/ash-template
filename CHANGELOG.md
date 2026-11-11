@@ -7178,3 +7178,12 @@ sits on its own branches.
   320; a filmed flight at full speed shows a full picture with the panels at its leading
   edge still assembling; home, /app, /about, /docs, /agents and /animations/datascape
   200; no error lines in the app log.
+
+## 2026-11-11 — An address spelled another way is the not-found page
+
+- The router reads a percent-escaped address as the page it spells (`/%70rivacy` as
+  `/privacy`), and `PublicDocuments.page/1` then looked the title up under the address as
+  sent and crashed with a KeyError (a 500). It now answers the ordinary not-found page for
+  any address no page is filed under. Taken from regents.sh 20334061 (Sentinel notice 5).
+- `ODD_ADDRESS` in `trailing_slash_test.exs` (`/%70rivacy`, `/%61pp`, `/%61bout`) fails
+  with the KeyError on the old code and passes on the fix.

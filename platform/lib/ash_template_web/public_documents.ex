@@ -186,9 +186,13 @@ defmodule AshTemplateWeb.PublicDocuments do
   end
 
   @doc "The `page_title` and `page_description` assigns the root layout reads from every page."
+  # A page is filed under the address it is served at. Any other address, such as
+  # one the router reads as a page's but spelled differently, is a missing page.
   def page(key) do
     {title, description} =
-      if key in AgentGuides.paths(), do: AgentGuides.page(key), else: Map.fetch!(@pages, key)
+      if key in AgentGuides.paths(),
+        do: AgentGuides.page(key),
+        else: Map.get(@pages, key) || raise(AshTemplateWeb.NotFoundError)
 
     [page_title: title, page_description: description]
   end
