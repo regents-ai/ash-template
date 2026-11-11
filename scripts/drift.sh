@@ -17,8 +17,9 @@
 #
 # The template's homepage tracks regents.sh's, so for regents two more checks
 # run: the homepage files the template copies from regents.sh, and the two live
-# homepages' tabs and cube (each tab and link, and every word in the cube's six
-# worlds), as visitors see them. Needs `gh auth login` and curl.
+# homepages' tabs, glass panel and copyright (each tab and its link, every link in
+# the panel, then the copyright), as visitors see them. Needs `gh auth login` and
+# curl.
 set -euo pipefail
 
 sites=(keyfleet regents autolaunch patchbay techtree)
@@ -78,14 +79,18 @@ build=(
   platform/.sobelow-conf
 )
 
-# The files of the homepage the template copies from regents.sh, compared with
-# regents.sh's alone.
+# The files of the homepage the template shares with regents.sh, compared with
+# regents.sh's alone. The still picture is compared by its git blob id.
 homepage=(
-  platform/lib/ash_template_web/components/world_cube.ex
-  platform/assets/js/hooks/world_cube.ts
-  platform/assets/js/hooks/cube_label.ts
   platform/assets/css/pages/home.css
-  platform/assets/css/components/world_cube.css
+  platform/assets/js/datascape/atlas.ts
+  platform/assets/js/datascape/field.ts
+  platform/assets/js/datascape/renderer.ts
+  platform/assets/js/datascape/shaders.ts
+  platform/assets/js/datascape/world.ts
+  platform/assets/js/hooks/datascape.ts
+  platform/assets/test/datascape.test.ts
+  platform/priv/static/images/animations/datascape.webp
 )
 
 # Shared files a site has no use for yet, with why. Such a file is listed as "not used"
@@ -141,6 +146,20 @@ site_file() {
   fi
 }
 
+# Prints the git blob id of a file in a site's repository at a commit, so a picture is
+# compared without its bytes passing through the shell; exits 44 when it is absent.
+site_blob() {
+  local repo="$1" rev="$2" path="$3" body
+  if body="$(gh api "repos/$repo/contents/$path?ref=$rev" --jq .sha 2>&1)"; then
+    printf '%s\n' "$body"
+  elif [[ "$body" == *"HTTP 404"* ]]; then
+    return 44
+  else
+    echo "$repo $path: $body" >&2
+    exit 1
+  fi
+}
+
 # Compares the template's files named after the heading with the current site's copies.
 compare() {
   local heading="$1" path site_path why theirs ours diff_file added removed
@@ -152,6 +171,19 @@ compare() {
     if why="$(not_used "$site" "$path")"; then
       printf '    not used %s  (%s)\n' "$site_path" "$why"
       unused=$((unused + 1))
+      continue
+    fi
+    if [[ "$path" == *.webp ]]; then
+      if ! theirs="$(site_blob "$repo" "$rev" "$site_path")"; then
+        printf '    missing  %s\n' "$site_path"
+        missing=$((missing + 1))
+      elif [[ "$theirs" == "$(git hash-object "$path")" ]]; then
+        printf '    same     %s\n' "$site_path"
+        same=$((same + 1))
+      else
+        printf '    differs  %s  (picture)\n' "$site_path"
+        differ=$((differ + 1))
+      fi
       continue
     fi
     if ! theirs="$(site_file "$repo" "$rev" "$site_path")"; then
@@ -176,32 +208,40 @@ compare() {
   printf '    %s same, %s differ, %s missing, %s not used\n' "$same" "$differ" "$missing" "$unused"
 }
 
-# A live homepage's tabs and cube as visitors see them: each piece of text and
-# each link on its own line, the page's markup dropped and a link within the
-# site written with the site's address.
+# A live homepage's tabs, glass panel and copyright as visitors see them: each
+# tab's words and link, then every other link in the panel, then the copyright that
+# stands outside the panel, each on its own line, the page's markup dropped and a
+# link within the site written with the site's address.
 home_words() {
   curl -fsS --max-time 20 "$1/" | ORIGIN="$1" perl -0777 -ne '
-    my $nav = m{<nav class="rl-product-tabs".*?</nav>}s ? $& : "";
-    my $cube = m{<[^<>]*id="home-worlds".*?</section>}s ? $& : "";
-    $_ = "$nav$cube";
+    my $glass = m{<section[^>]*id="home-glass".*?</section>}s ? $& : "";
+    my $copyright = m{<p class="home__copyright">.*?</p>}s ? $& : "";
+    my $nav = $glass =~ s{<nav[^>]*class="rl-product-tabs".*?</nav>}{}s ? $& : "";
+    my @links = $glass =~ m{<a [^>]*?href="([^"]+)"}g;
+    $_ = $nav . join("", map { "<a href=\"$_\">" } @links) . $copyright;
+    s{<!--.*?-->}{}gs;
     s{<a [^>]*?href="([^"]+)"[^>]*>}{my $href = $1; "\nlink " . ($href =~ m{^/} ? "$ENV{ORIGIN}$href" : $href) . "\n"}ge;
     s{<[^>]+>}{\n}g;
     print map { s/^\s+|\s+$//gr . "\n" } grep { /\S/ } split /\n/;
   '
 }
 
-# Compares the two live homepages' tabs and cube.
+# Compares the two live homepages' tabs, glass panel and copyright.
 compare_live_homepages() {
-  local diff_file="$out/regents/live-homepage.diff" added removed
-  echo "  Live homepages (regents.sh and template.regents.sh: tabs and cube)"
+  local diff_file="$out/regents/live-homepage.diff" added removed ours theirs
+  echo "  Live homepages (regents.sh and template.regents.sh: tabs, panel and copyright)"
+  ours="$(home_words https://template.regents.sh)"
+  theirs="$(home_words https://regents.sh)"
+  [[ -n "$ours" ]] || echo "    missing  the glass panel on template.regents.sh"
+  [[ -n "$theirs" ]] || echo "    missing  the glass panel on regents.sh"
   if diff -u --label "template.regents.sh" --label "regents.sh" \
-    <(home_words https://template.regents.sh) <(home_words https://regents.sh) >"$diff_file"; then
+    <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs") >"$diff_file"; then
     rm "$diff_file"
-    echo "    same     tabs, links and every word in the cube"
+    echo "    same     tabs, every link in the panel and the copyright"
   else
     added="$(tail -n +3 "$diff_file" | grep -c '^+' || true)"
     removed="$(tail -n +3 "$diff_file" | grep -c '^-' || true)"
-    printf '    differs  tabs or cube  (+%s -%s)\n' "$added" "$removed"
+    printf '    differs  tabs, panel or copyright  (+%s -%s)\n' "$added" "$removed"
   fi
 }
 

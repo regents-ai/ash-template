@@ -114,5 +114,7 @@ exists. Without WebGPU the island never mounts and the server's picture remains.
 ## Reference islands in ash-template
 
 `hooks/crown.ts` + `crown/`, `hooks/world_cube.ts` + `world_cube/renderer.ts`,
+`hooks/datascape.ts` + `datascape/renderer.ts` (the homepage, with its glass panel, and
+the lab page `/animations/datascape`),
 `hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer
 is vendored from `regent_ui`), and the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`.

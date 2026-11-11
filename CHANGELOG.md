@@ -7066,3 +7066,57 @@ sits on its own branches.
   the "Delegating" paragraph and "Delegation is optional"; "How a task runs" steps 4
   and 5 name the worker and tester. The four agents are defined on the Mac in
   `/Users/sean/.claude/agents/`. Skills only: nothing to deploy.
+
+## 2026-11-11 — Home becomes the datascape (branch `wt/datascape-1110`)
+
+- Home: as on regents.sh (its commit `fd118df1`), the datascape fills the window and the
+  page opens on the picture alone. Pressing a panel in the picture brings up one glass
+  panel in the middle that holds the whole page: the header, "Ash Template" with its line,
+  Enter App, WebMCP Tools and the command-line link, the product tabs (named "Products" for
+  assistive technology) and the foot. The world cube, the "Human Browsing" label and the
+  Mission, Products, Staking and How it works sheets leave the home.
+- The glass panel grows in from a third of its size. Two seconds after the last press,
+  steering the picture again (the pointer anywhere past the panel's edges plus 28 px)
+  shrinks it away to a third of its size and nothing; it stays away until the next press. A
+  press on empty picture does nothing. Focus moving into the panel brings it up at once and
+  keeps it up while focus stays inside, so a keyboard reaches every control. The stylesheet
+  alone shows the panel whenever there is no moving picture: with reduced motion, without
+  WebGPU and without scripts. The away panel stays focusable and readable by assistive
+  technology. Until the page's script answers, the panel waits in the away pose; if it has
+  not answered four seconds after the page loads, the stylesheet brings the panel in by
+  itself (Sean, 11 Nov, "1. a"), and the hook then starts from the open panel.
+- Header: the App button is gone. Enter App is the larger primary button with a Tangerine,
+  Powder Blue and Platinum ring that follows its cut corners and shifts on hover and focus;
+  WebMCP Tools is the design system's quieter secondary button at the same height.
+- Foot: Buy $REGENT, About, Developer docs and the Agent guide. Privacy policy, Terms of use
+  and the social links stay in every other page's footer. "© 2026 Regents Labs" stands on
+  its own at the window's bottom right on every width, outside the panel.
+  `AshTemplateWeb.Layouts.document_links` holds the four document links that the panel's
+  foot and every other page's footer share; `AshTemplateWeb.Layouts.product_links` loses its
+  `theme_toggle` option, which only the home turned off.
+- Shared with regents.sh byte for byte: `platform/assets/js/datascape/field.ts` (the calm
+  zone, `calm`, `calmAround` and `REST`, and the `steer` message),
+  `platform/assets/js/hooks/datascape.ts` (the optional glass panel, `[data-datascape-glass]`,
+  `data-datascape-glass-state` of `away` or `open`, and the two-second `GRACE` timed with
+  Anime.js), `platform/assets/test/datascape.test.ts` and `platform/assets/css/pages/home.css`.
+  The lab page `/animations/datascape`, which has no panel, is unchanged.
+- Hooks: `Datascape` is registered on every page in `platform/assets/js/app.ts` and leaves
+  `platform/assets/js/lab_pages.ts`; `WorldCube`, now used only by the cube lab pages, moves
+  into `lab_pages.ts`; the `CubeLabel` hook (`platform/assets/js/hooks/cube_label.ts`) is
+  deleted.
+- The header mark is `platform/priv/static/images/brand/mark-flat-dark-clear.svg`, the dark
+  mark without its own ground, which would show as a square on the glass.
+- Removed from `AshTemplateWeb.HomeLive`: the hero, the four sheets, the card drawings, the
+  tagline and the products' drawing, action and title fields. `worlds/0` and the products'
+  rooms stay: the cube lab pages and the header and footer lab read them.
+- The agent copy of the page reads in the page's order: name, line, the three actions,
+  Products, the four document links, then the copyright.
+- `scripts/drift.sh regents` now compares the files the two homes share (the home stylesheet,
+  the datascape files, its hook, its unit tests and the still picture, by its git blob id)
+  and, live, the two homes' tabs, every link in the panel and the copyright, saying when a
+  home has no panel yet.
+- Tests: `platform/test/ash_template_web/home_live_test.exs` and
+  `platform/test/browser/homepage.spec.ts` rewritten for the page. Docs: `AGENTS.md`,
+  `platform/THIRD_PARTY_NOTICES.md`, `docs/feature-map.md`, `docs/standardization-plan.md`,
+  `skills/vgpu-island/SKILL.md` (the datascape joins the reference islands) and
+  `skills/regent-workflow/references/design-system.md`.

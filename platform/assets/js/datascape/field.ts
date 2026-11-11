@@ -17,8 +17,10 @@ const PACE = 1.4
 const LEAD = 0.45
 /** How long the camera takes to answer the pointer, in seconds. */
 const LAG = 0.55
-/** The share of the picture round its middle where the pointer steers nothing. */
-const REST = 0.1
+/** The share of the picture round its middle where the pointer steers nothing, unless the field is told otherwise. */
+export const REST = 0.1
+/** The most of the picture a calm zone may take, so there is always room left to steer. */
+const MOST_CALM = 0.9
 /** How sharply speed rises towards an edge. */
 const CURVE = 1.6
 /** How far the picture leans into a turn, in radians, at full speed. */
@@ -88,6 +90,8 @@ export type Watcher = {
   leave(cell: Cell): void
   /** The panel now under the pointer, or null once it is over none. */
   rest(panel: Panel | null): void
+  /** Told only when it changes: true while the pointer is outside the calm zone and steering, false once it is back inside or away. */
+  steer(steering: boolean): void
 }
 
 export type Field = {
@@ -98,6 +102,8 @@ export type Field = {
   time: number
   /** Where the pointer is, measured from the picture's middle in CSS pixels, or null when it is away. */
   pointer: readonly [number, number] | null
+  /** Where the pointer steers nothing, round the picture's middle: shares of half its width and of half its height. */
+  calm: readonly [number, number]
   /** Moves the field on by this many seconds, for a picture this many CSS pixels wide and tall. */
   advance(elapsed: number, width: number, height: number): void
   /** The panel drawn under a point, measured from the picture's middle in CSS pixels. */
@@ -109,11 +115,22 @@ export type Field = {
 /** The fastest the camera flies over a picture this many CSS pixels wide and tall. */
 export const topSpeed = (width: number, height: number) => Math.min(SPEED, PACE * Math.max(width, height))
 
-/** How fast the camera should go for a pointer this far from the middle on one axis, from -1 to 1. */
-export const steerSpeed = (offset: number, top: number) => {
-  const reach = Math.max(0, (Math.abs(offset) - REST) / (1 - REST))
+/**
+ * How fast the camera should go for a pointer this far from the middle on one axis, from -1 to 1,
+ * when this share of that half of the picture is calm: nothing inside it, top speed at the edge.
+ */
+export const steerSpeed = (offset: number, top: number, calm = REST) => {
+  const rest = Math.min(MOST_CALM, Math.max(0, calm))
+  const reach = Math.max(0, (Math.abs(offset) - rest) / (1 - rest))
   return Math.sign(offset) * Math.min(1, reach) ** CURVE * top
 }
+
+/** The calm zone round a box this many CSS pixels wide and tall, centred in a picture this size, reaching this far past its edges. */
+export const calmAround = (
+  box: readonly [number, number],
+  margin: number,
+  picture: readonly [number, number],
+): [number, number] => [(box[0] / 2 + margin) / (picture[0] / 2), (box[1] / 2 + margin) / (picture[1] / 2)]
 
 /** A panel that answers the pointer: dust and labels are too small to. */
 const answers = (panel: Panel) => panel.kind !== KIND.dust && panel.kind !== KIND.label
@@ -123,6 +140,7 @@ export function createField(watcher: Watcher): Field {
   const cells = new Map<string, Cell>()
   const sparks: Spark[] = []
   let resting: Panel | null = null
+  let steering = false
   // A run of numbers for the sparks only; what the world holds never depends on it.
   let scatter = 0x9e3779b9
   const chance = () => {
@@ -184,13 +202,21 @@ export function createField(watcher: Watcher): Field {
     sparks,
     time: 0,
     pointer: null,
+    calm: [REST, REST],
     advance(elapsed, width, height) {
       const dt = Math.min(MAX_STEP, elapsed)
       field.time += dt
       const top = topSpeed(width, height)
-      const [aimX, aimY] = field.pointer
-        ? [steerSpeed(field.pointer[0] / (width / 2), top), steerSpeed(field.pointer[1] / (height / 2), top)]
-        : DRIFT
+      const steered: readonly [number, number] | null = field.pointer && [
+        steerSpeed(field.pointer[0] / (width / 2), top, field.calm[0]),
+        steerSpeed(field.pointer[1] / (height / 2), top, field.calm[1]),
+      ]
+      const now = steered !== null && (steered[0] !== 0 || steered[1] !== 0)
+      if (now !== steering) {
+        steering = now
+        watcher.steer(now)
+      }
+      const [aimX, aimY] = steered ?? DRIFT
       const answer = 1 - Math.exp((-dt * 3) / LAG)
       camera.vx += (aimX - camera.vx) * answer
       camera.vy += (aimY - camera.vy) * answer

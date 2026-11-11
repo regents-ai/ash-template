@@ -27,9 +27,8 @@ import {
 } from "./shell_state"
 import {arriveAt, installShellPanels} from "./shell_panels"
 import {AccountPicture} from "./hooks/account_picture"
+import {Datascape} from "./hooks/datascape"
 import {HolographicCard} from "./hooks/holographic_card"
-import {CubeLabel} from "./hooks/cube_label"
-import {WorldCube} from "./hooks/world_cube"
 import {InfoDialog} from "./hooks/info_dialog"
 import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
@@ -354,7 +353,7 @@ const hooks = {
   ...labPageHooks,
   ...colocatedHooks,
   AccountPicture,
-  CubeLabel,
+  Datascape,
   HolographicCard,
   InfoDialog,
   MotionCascade,
@@ -370,7 +369,6 @@ const hooks = {
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
   VerifiedConnections,
-  WorldCube,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")
 

@@ -3,8 +3,9 @@
 // the middle and never outruns its top speed, and the cells kept are the cells
 // in reach.
 import {describe, expect, it} from "vitest"
-import {SPEED, createField, steerSpeed, topSpeed, type Cell} from "../js/datascape/field"
+import {REST, SPEED, calmAround, createField, steerSpeed, topSpeed, type Cell} from "../js/datascape/field"
 import {CELL, LAYERS, cellContents, random, type TubePiece} from "../js/datascape/world"
+import {LEAVING} from "../js/hooks/datascape"
 
 /** A few hundred cells scattered far and wide, the same ones every run. */
 const cells = (() => {
@@ -72,6 +73,109 @@ describe("steering", () => {
       expect(steerSpeed(1, top)).toBe(top)
     }
   })
+
+  it("steers nothing inside a calm zone, and reaches top speed at the edge outside it", () => {
+    const top = topSpeed(1440, 900)
+    for (const calm of [0, 0.1, 0.35, 0.53, 0.8, 0.9]) {
+      let last = 0
+      for (let offset = 0; offset <= 1; offset += 0.01) {
+        const speed = steerSpeed(offset, top, calm)
+        if (offset <= calm) expect(speed, `${calm} at ${offset}`).toBe(0)
+        expect(speed).toBeGreaterThanOrEqual(last)
+        last = speed
+      }
+      expect(steerSpeed(1, top, calm)).toBe(top)
+      expect(steerSpeed(-1, top, calm)).toBe(-top)
+    }
+  })
+
+  it("keeps the default calm zone when none is given", () => {
+    const top = topSpeed(1280, 720)
+    for (let offset = -1; offset <= 1; offset += 0.05) {
+      expect(steerSpeed(offset, top)).toBe(steerSpeed(offset, top, 0.1))
+    }
+  })
+
+  it("always leaves room to steer, however large the calm zone", () => {
+    const top = topSpeed(390, 844)
+    for (const calm of [0.95, 1, 1.4, 12]) {
+      expect(steerSpeed(0.99, top, calm)).toBeGreaterThan(0)
+      expect(steerSpeed(1, top, calm)).toBe(top)
+    }
+  })
+
+  it("measures a calm zone round a box centred in the picture", () => {
+    expect(calmAround([704, 600], 28, [1440, 900])).toEqual([380 / 720, 328 / 450])
+    expect(calmAround([0, 0], 0, [1440, 900])).toEqual([0, 0])
+  })
+})
+
+describe("telling whoever watches about steering", () => {
+  const [width, height] = [1440, 900]
+  const steered = (calm?: [number, number]) => {
+    const told: boolean[] = []
+    const field = createField({arrive: () => {}, leave: () => {}, rest: () => {}, steer: steering => void told.push(steering)})
+    if (calm) field.calm = calm
+    const at = (pointer: [number, number] | null) => {
+      field.pointer = pointer
+      field.advance(1 / 60, width, height)
+      field.advance(1 / 60, width, height)
+    }
+    return {field, told, at}
+  }
+
+  it("says nothing while the pointer stays inside the calm zone on either axis, or is away", () => {
+    const {told, at} = steered([0.5, 0.7])
+    at(null)
+    at([0, 0])
+    at([0.49 * width / 2, 0])
+    at([0, -0.69 * height / 2])
+    at([0.49 * width / 2, 0.69 * height / 2])
+    expect(told).toEqual([])
+  })
+
+  it("is told once on leaving the zone, once on coming back, and never again for the same answer", () => {
+    const {told, at} = steered([0.5, 0.7])
+    at([0.6 * width / 2, 0])
+    at([0.9 * width / 2, 0])
+    at([0, 0.8 * height / 2])
+    expect(told).toEqual([true])
+    at([0.2 * width / 2, 0])
+    at([0, 0])
+    expect(told).toEqual([true, false])
+  })
+
+  it("is told once when the pointer goes away while steering", () => {
+    const {told, at} = steered()
+    at([width / 2 - 6, 0])
+    at(null)
+    at(null)
+    expect(told).toEqual([true, false])
+  })
+
+  it("steers nothing within LEAVING of an open glass panel's edges, and everywhere past the field's own zone once it is away", () => {
+    const box: [number, number] = [704, 600]
+    const told: boolean[] = []
+    const field = createField({arrive: () => {}, leave: () => {}, rest: () => {}, steer: steering => void told.push(steering)})
+    const at = (x: number) => {
+      field.pointer = [x, 0]
+      for (let step = 0; step < 3; step++) field.advance(1 / 60, width, height)
+    }
+
+    // As the hook does while the panel is open.
+    field.calm = calmAround(box, LEAVING, [width, height])
+    at(box[0] / 2 + LEAVING - 1)
+    expect(told).toEqual([])
+    at(box[0] / 2 + LEAVING + 1)
+    expect(told).toEqual([true])
+
+    // And once it is away: the panel's place steers like the rest of the picture.
+    field.calm = [REST, REST]
+    at(0)
+    expect(told).toEqual([true, false])
+    at(box[0] / 2 - 1)
+    expect(told).toEqual([true, false, true])
+  })
 })
 
 describe("the field", () => {
@@ -86,6 +190,7 @@ describe("the field", () => {
         expect(here.delete(cell.key)).toBe(true)
       },
       rest: () => {},
+      steer: () => {},
     })
     return {field, here}
   }
@@ -117,7 +222,12 @@ describe("the field", () => {
 
   it("finds the panel under the pointer once it has opened, and tells whoever watches", () => {
     const rested: (string | null)[] = []
-    const field = createField({arrive: () => {}, leave: () => {}, rest: panel => void rested.push(panel && `${panel.x}:${panel.y}`)})
+    const field = createField({
+      arrive: () => {},
+      leave: () => {},
+      rest: panel => void rested.push(panel && `${panel.x}:${panel.y}`),
+      steer: () => {},
+    })
     field.advance(0, 1280, 720)
     const near = LAYERS.length - 1
     const panel = [...field.cells.values()].filter(cell => cell.layer === near).flatMap(cell => cell.panels).find(each => each.w > 20)!

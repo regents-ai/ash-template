@@ -2,6 +2,14 @@
 
 Changes to Ash Template, newest first.
 
+## 11 November 2026
+
+- **Home.** The homepage is now the Datascape, a field of moving panels you fly over by
+  pointing towards an edge. Press any panel to bring up the menu in the middle, with
+  Enter App, WebMCP Tools, the products and the about links. A couple of seconds later,
+  flying again shrinks it away until your next press. Privacy policy and Terms of use are
+  in the footer of the other pages, and the copyright sits at the bottom right.
+
 ## 10 November 2026
 
 - **Motion lab.** A new page, Datascape: an endless dark plane of glowing panels, tubes

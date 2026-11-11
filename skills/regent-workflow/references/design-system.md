@@ -80,17 +80,19 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Preserve each homepage's purpose
 
-- **Regents `/`:** dark-only. Preserve the actual VGPU 13-cube crown and lasers,
-  weighted middle-right. Title/subtitle/compact CTA sit above a compact lower-left
-  row ordered **Autolaunch / Techtree / Patchbay**, with orange / blue / platinum
-  opaque faces and readable dark ink. Preserve the saved theme for other routes.
+- **Regents `/` and the template's `/`:** dark-only. The VGPU datascape fills the window
+  and the page opens on the picture alone. Pressing a panel in the picture brings up one
+  glass panel holding the header, the name and its line, the actions, the product tabs and
+  the document links; two seconds after the last press, steering the picture shrinks it
+  away until the next press. The copyright stands at the window's bottom right. Preserve
+  the saved theme for other routes.
 - **Techtree `/`:** preserve its actual VGPU 13-cube crown/lasers and existing light/dark
   material mapping. Keep the same content-first hero composition and its functional
   setup/release content. Do not replace the shader with an oversized static diagram.
 - **Autolaunch `/`:** auction and token market listings remain primary content.
 - **Patchbay `/`:** WebMCP site directory and message-board content remain primary.
-- Generic page-background retirement is not permission to delete the two crown heroes.
-  Bound artwork independently of text; reuse existing island visibility, resize,
+- Generic page-background retirement is not permission to delete the Techtree crown hero
+  or the homepage datascape. Bound artwork independently of text; reuse existing island visibility, resize,
   reduced-motion, device-loss and disposal behavior. Verify a completed real GPU frame,
   not merely the existence of a canvas or a WebGPU adapter.
 - For Regents token-economics copy, reuse the actual `/stake` wording: eligible USDC
