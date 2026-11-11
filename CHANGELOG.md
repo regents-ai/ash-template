@@ -7173,7 +7173,7 @@ sits on its own branches.
 - Carries "Datascape: panels open as they come into sight" (Sean, 11 Nov: "the new items
   load in too quickly (they are already loaded when seen)") and the browser walk's wide
   posting allowance for its one person, which ends a check that failed at busy moments.
-- Full check on 4b72983d: exit 0 in 2 min 10 s (455 browser checks, 180 server tests).
+- Full check on 4b72983d: exit 0 (455 browser checks in 1.9 minutes, 180 server tests).
 - Live read in headless Chromium with WebGPU, signed out: 37 checks held at 1440, 390 and
   320; a filmed flight at full speed shows a full picture with the panels at its leading
   edge still assembling; home, /app, /about, /docs, /agents and /animations/datascape
