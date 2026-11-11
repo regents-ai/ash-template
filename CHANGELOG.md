@@ -7035,11 +7035,11 @@ sits on its own branches.
   a new app on every connection. Discovery says so
   (`client_id_metadata_document_supported`); registration keeps working for other apps,
   and an address and a registered id are never taken for each other.
-- Rebuilt on today's main from `claude/cimd-1029` (`e90c7b5e`, 178 commits behind). Every
-  elixir-utils package moves to `c2891b0d` (`agent-access/cimd-1111`): the seven
-  published-identity commits on `d89c69df`, the pin before, and the review fix. Only oauth, http and
-  mcp_events differ from `d89c69df`; mcp_events callbacks now use `RegentHttp.Public`, the
-  one checked outbound request.
+- Rebuilt on today's main from `claude/cimd-1029` (`e90c7b5e`, 178 commits behind).
+  Every elixir-utils package moves to `c2891b0d` (`agent-access/cimd-1111`): the seven
+  published-identity commits and the review fix on `d89c69df`, the pin before. Only
+  oauth, http and mcp_events differ from `d89c69df`; mcp_events callbacks now use
+  `RegentHttp.Public`, the one checked outbound request.
 - Migration `20261111060000_oauth_client_documents` adds one empty table
   (`RegentOAuth.Migration.V3`) and changes nothing existing.
 - Opening consent (`GET /oauth/authorize`) is limited to 30 requests a minute by
