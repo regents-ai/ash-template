@@ -7062,8 +7062,9 @@ sits on its own branches.
   through a resource that names no schema, as the site's resources do. A create, read,
   update and destroy, a single upsert, a bulk upsert and `Ash.update_many` (one MERGE on
   PostgreSQL 17) change only the site's rows, and the rows planted in `public` stay as
-  they were. It checks the failure in ash_postgres 2.13.1 through 2.15.2, which sent
-  upserts and `update_many` to `public`; it has not been run against those releases to
+  they were. It checks the failure in ash_postgres 2.10.0 through 2.15.2, which sent
+  `Ash.update_many` and upserts to `public` (upserts through MERGE from 2.10.0 unless it
+  was turned off, and always from 2.13.1); it has not been run against those releases to
   see it fail. `platform/mix.exs` names the test beside the ash_postgres pin
   (`55db7d44`, #910), so the pin moves only after it runs clean. Test-only; nothing to
   release.

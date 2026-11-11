@@ -386,8 +386,9 @@ can do and the check that proves it. Among them:
 - It checks that a paired agent's tools accept only signed proof, never a cookie.
 - It writes through a resource that names no schema while `public` holds a table of
   the same name, and checks that a create, update, destroy, upsert, bulk upsert and
-  `Ash.update_many` change only the site's schema, because ash_postgres releases after
-  2.13.0 sent upserts to `public`. Run it before moving the ash_postgres pin.
+  `Ash.update_many` change only the site's schema, because ash_postgres 2.10.0 through
+  2.15.2 sent `Ash.update_many` and upserts to `public`. Run it before moving the
+  ash_postgres pin.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this
