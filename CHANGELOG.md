@@ -7133,3 +7133,23 @@ sits on its own branches.
   home ends with the products and the copyright.
 - Check: `platform/test/ash_template_web/home_live_test.exs`,
   `platform/test/browser/homepage.spec.ts`.
+
+## 2026-11-11 — Released v186: the home is the datascape, as on regents.sh
+
+- Live: v186 at 22:38Z on template.regents.sh; /capabilities.json build.commit c2a879e5.
+  Rollback: v185 (4853c6d3). No migrations.
+- Carries the home as on regents.sh (Sean, 11 Nov): the datascape fills the window with
+  one glass menu over it. The page opens on the picture alone and a press on a panel
+  brings the menu in; two seconds after the last press, steering the picture shrinks it
+  away. The menu's foot is the title "Products" over the product links; the copyright
+  stands at the window's bottom right; Privacy policy and Terms of use are in other
+  pages' footers.
+- Full check on c2a879e5: exit 0 (180 server, 39 script, 455 browser tests with 5 skipped,
+  required fixes, command list, SIWA latest).
+- Live read in headless Chromium with WebGPU, signed out: 37 checks held at 1440, 390 and
+  320; home, /app, /about, /docs, /agents and /animations/datascape 200; no error lines
+  in the app log after the release.
+- `scripts/drift.sh` reads the home's products from the panel's foot. Against regents.sh
+  the shared home files are the same; the live homes differ only in each site's own links
+  and in the product order (the template lists Autolaunch first, regents.sh Patchbay).
+- Not run: WebKit and Firefox; real phones; signed-in pages walked live.

@@ -216,7 +216,7 @@ home_words() {
   curl -fsS --max-time 20 "$1/" | ORIGIN="$1" perl -0777 -ne '
     my $glass = m{<section[^>]*id="home-glass".*?</section>}s ? $& : "";
     my $copyright = m{<p class="home__copyright">.*?</p>}s ? $& : "";
-    my $nav = $glass =~ s{<nav[^>]*class="rl-product-tabs".*?</nav>}{}s ? $& : "";
+    my $nav = $glass =~ s{<nav[^>]*class="home__foot".*?</nav>}{}s ? $& : "";
     my @links = $glass =~ m{<a [^>]*?href="([^"]+)"}g;
     $_ = $nav . join("", map { "<a href=\"$_\">" } @links) . $copyright;
     s{<!--.*?-->}{}gs;
