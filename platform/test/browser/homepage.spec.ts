@@ -174,6 +174,8 @@ test("the picture behind the panel never blocks the action", async ({page}) => {
     for (const reducedMotion of ["no-preference", "reduce"] as const) {
       await page.emulateMedia({reducedMotion})
       await expect(page.locator("#home-title")).toBeVisible()
+      // The panel is up once the page knows this browser draws no picture.
+      await expect(page.locator("#home-glass")).toHaveCSS("opacity", "1")
       const action = page.locator(".rl-hero-actions a").first()
       await action.scrollIntoViewIfNeeded()
       // The panel, not the picture, is what a press at the action lands on.
