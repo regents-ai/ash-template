@@ -13,7 +13,8 @@
 # differing lines can be wrapping alone. A file a site has no use for yet is "not
 # used", with why; a file a site keeps at its own path is read there. Of
 # platform/mix.exs only the aliases are compared, since each site's dependencies are
-# its own.
+# its own, and the Makefile is compared without the template's own passages, which
+# scripts/init.sh drops.
 #
 # The template's homepage tracks regents.sh's, so for regents two more checks run:
 # the homepage files the template copies from regents.sh, and the two live
@@ -42,10 +43,12 @@ source scripts/shared-files.sh
 mkdir -p platform/_build/drift
 run="$(mktemp -d "platform/_build/drift/$(date -u +%Y%m%dT%H%M%SZ)-XXXX")"
 
-# The part of a file that is compared: the aliases of platform/mix.exs, all of any other.
+# The part of a file that is compared: the aliases of platform/mix.exs, the Makefile
+# as scripts/init.sh leaves it, all of any other.
 compared() {
   case "$1" in
     platform/mix.exs) sed -n '/^  defp aliases do$/,/^  end$/p' ;;
+    Makefile) perl -0777 -pe 's/^# template-only\n.*?^# \/template-only\n//gms' ;;
     *) cat ;;
   esac
 }
