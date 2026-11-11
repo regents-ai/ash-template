@@ -7105,3 +7105,21 @@ sits on its own branches.
 - `platform/test/ash_template_web/static_cache_test.exs` checks the 304 forms and the
   contract's headers against its own body. `platform/README.md` says how public
   documents are sent.
+
+## 2026-11-11 — `make pins`: every site's shared-library pins in one table
+
+- `scripts/pins.sh` (`make pins`, and `make drift` after its file comparison) reads
+  each site's `platform/mix.lock` and `Makefile` from its main branch on GitHub, and
+  this checkout's for the template, and prints one row per pin: every elixir-utils
+  commit a site locks, its design-system and ash_postgres commits, the SIWA library
+  it builds and the regents-cli its Makefile checks commands with. Each row says how
+  many commits the pin is behind the template's pin and the library's main, and how
+  many days. Commits are counted in a copy of each library's history (commits and
+  trees only) in `platform/_build/drift/libraries`; the table is also written to
+  `platform/_build/drift/pins.md`.
+- `scripts/github.sh` holds the site list and the two GitHub reads `scripts/drift.sh`
+  and `scripts/pins.sh` share. `scripts/init.sh` removes both, as it removes the drift
+  report, for a new product.
+- First run, 11 Nov: elixir-utils pins range from in step with the template to 13
+  commits behind it (Keyfleet, Autolaunch); every site is on ash_postgres `55db7d4`;
+  Regents checks commands with regents-cli v1.10.23, the rest with v1.10.24.
