@@ -1,0 +1,75 @@
+@layer regents-product {
+/* The particles lab (`/animations/particles`, `AshTemplateWeb.ParticlesLabLive`):
+   one stage with the particle field and its real controls, the bar below it,
+   and the grid of shapes. The stage is padded by exactly the field's spill, so
+   the canvas reaches the stage's edges and never past the column.
+
+   The field keeps one height on every screen, so its grains lie as fine on a
+   wide one as on a phone, and the bar below never moves as the shape changes;
+   a wide screen gives it more room round it to fly in. */
+.motion-lab--particles {
+  width: 100%;
+  align-content: start;
+}
+
+.particle-lab {
+  --particle-lab-spill: clamp(var(--space-4), 10vw, calc(2 * var(--space-8)));
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.particle-lab__stage {
+  padding: var(--particle-lab-spill);
+}
+
+.particle-lab .particle-field {
+  --particle-spill: var(--particle-lab-spill);
+  block-size: 18rem;
+}
+
+.particle-lab__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.particle-lab__amount {
+  display: flex;
+  flex: 1 1 14rem;
+  align-items: center;
+  gap: var(--space-2);
+  max-inline-size: 24rem;
+  min-block-size: 2.75rem;
+  color: var(--color-fg-muted);
+}
+
+.particle-lab__amount input {
+  flex: 1;
+  min-inline-size: 0;
+  margin: 0;
+  accent-color: var(--color-fg);
+}
+
+.particle-lab__shapes {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.particle-lab__shapes h2 {
+  font-size: var(--type-title-size);
+}
+
+.particle-lab__group {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.particle-lab__group h3 {
+  color: var(--color-fg-muted);
+  font: 0.72rem/1 var(--font-family-ui);
+  letter-spacing: var(--tracking-microlabel);
+  text-transform: uppercase;
+}
+}

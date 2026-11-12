@@ -9195,6 +9195,113 @@ Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
   Platinum part of Enter App's ring meets the Platinum button at one corner in dark.
   Passed to the design chief.
 
+## 2026-11-12 — Particles lab (branch, not on main)
+
+Sean asked for the 80,000-grain reference film remade with vgpu, able to take 20 or
+more shapes useful across the products, the Regents crown included.
+
+- New: the particle field (`AshTemplateWeb.Components.ParticleField`, the
+  `ParticleField` hook), one element with `data-particle-shape` and
+  `data-particle-value`. 80,000 grains are moved and drawn on the GPU with vgpu; a
+  new shape flies every grain through a swirling flow, left end first, and can be
+  caught mid-flight; a new value moves only the knob or the lit part.
+- 28 shapes: switch, ring, slider, bar, checkbox, radio, spinner and steps; any
+  Lucide icon by name (17 shown); the Regents crown, Techtree and Autolaunch marks.
+  Each control shape sits over its real control. Lit grains take the site's own
+  light (Tangerine by day, Powder Blue at night, Techtree green, Patchbay cobalt);
+  a dark page adds a soft halo inside the canvas. Less motion, forced colours or no
+  WebGPU leave the flat control.
+- New page `/animations/particles`: a stage looping switch, ring, slider and back,
+  with Pause; the shapes grid; live controls. Any other `?shape=` plays the loop.
+- Measured in headless Chrome on this Mac at 1280 and 390 wide: 60 frames a second
+  held, the GPU busy about 2 to 4 ms a frame whatever the screen size, one frame
+  missed at each shape change (about 130 ms held with the processor slowed four
+  times). A mid-range phone may run below 60 frames a second and pause briefly at
+  each shape change.
+
+## 2026-11-12 — Particles lab, second pass (branch, not on main)
+
+The design chief's review: the change between shapes should tear loose as in the
+reference film, lit parts should read as lit at night, the big switch should be fine
+sand, and a shape change should not miss a frame.
+
+- The flight: the old shape lets go from its left end over about half a second, so
+  one end streams away while the rest still stands; the stream bends as one body and
+  twists like a ribbon as the new shape swings round to face the page; the new
+  shape's outline forms first and its middle fills after; one grain in 25 blows loose
+  as dust, rises a little and lands last. The body of the change takes about 1.3
+  seconds and the dust has settled by about 2 (the film: 1.2 to 1.4, and 1.7).
+  Grains keep their colour and light in flight; lit grains turn only as they land. A
+  change mid-flight still starts from wherever the grains are.
+- Lit grains take the same colour by day and at night: Tangerine on Regents sites,
+  Techtree's own green where its beam is set, and Patchbay's accent. On a dark page
+  the grains are about twice as bright and the glow round lit parts is much
+  stronger, spread only from lit grains and still drawn only inside the canvas.
+- The lab's stage holds each shape at one size on every screen (8rem tall), so at
+  1280 wide the switch is 256 by 128 pixels and its 80,000 grains read as fine sand,
+  as on a phone.
+- A new shape is laid out a few milliseconds a frame between the frames the picture
+  draws, and the last six shapes are kept for when they come back. Measured in
+  headless Chrome on this Mac at 1280 and 390 wide, also with the processor slowed
+  four times: no frame missed through a shape change, the longest piece of script in
+  a frame under 10 ms; the first time a shape is asked for, the grains let go after
+  85 to 115 ms (up to a third of a second slowed), and a frame or so after that.
+
+## 2026-11-12 — Particles lab, third pass (branch, not on main)
+
+The design chief's review of the second pass: the glow had stripes, the ring was
+too small next to the switch, and the branch was behind main.
+
+- The glow round lit grains on a dark page falls off smoothly. It was blurred twice
+  with nine samples spread several pixels apart, so on a 2x screen it showed as
+  bands about 6 pixels apart; it is now one true Gaussian over every pixel it
+  reaches, in two passes instead of four, and reaches the same distance round every
+  shape in one box. Measured above the lit switch at 2x: the brightness going
+  outward rose again 17 times before and once after. The GPU's time a frame is
+  unchanged, about 3 ms.
+- The field's box is the same height for every shape and each shape stands its own
+  share of it (`--particle-fill` beside `--particle-aspect`): the switch, slider,
+  bar and steps 0.44, a ring, checkbox, radio, spinner, icon or mark all of it. In
+  the lab the box is 18rem tall, so at 1280 the switch stays 253 by 127 and the
+  ring, the icons and the crown stand 288 high, about 2.3 times the switch as in the
+  film; on a phone the ring is as wide as the box allows, about twice the switch.
+  Nothing below the stage moves when the shape changes; 320 and 390 wide still fit
+  without scrolling sideways.
+- Main merged in (v220), main's design-system pin kept.
+
+## 2026-11-12 — Released v221: the particles lab page
+
+- `6f4e85fa` (`wt/tpl-particles-1112`, the design chief's) is v221 on template.regents.sh,
+  switched at about 20:20Z with `scripts/deploy.sh`. One new lab page,
+  `/animations/particles`. No migration; no existing page touched.
+- Rollback: v220 (`37abed0c`), image only.
+- Full check exit 0 by the chief on the branch head: 137 script tests, 602 browser walks
+  with 5 skipped, 217 Elixir.
+- Live read, signed out, headless Chromium (WebKit and real phones not run):
+  `/animations/particles`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+
+## 2026-11-12 — Released v222: gradients blend in oklch
+
+- `eb4959c3` (merge of `tpl/oklch-gradients-1112`, `2b544efa`) is v222 on
+  template.regents.sh, switched at about 21:17Z with `scripts/deploy.sh`. Sean's rule of
+  12 Nov ("use 'in oklch' for gradients"): design-system pin `5fbe2d40`, all 48 template
+  gradients converted in seven stylesheets (wonders 35, feedback_lab 5, code_cube 2,
+  world_cube 2, home 2, keyfleet_hero 1, site_buttons_lab 1); 31 clear stops written as
+  the same colour at zero opacity. Style check 48 breaks to none. No migration.
+- Rollback: v221 (`6f4e85fa`), image only.
+- Full check exit 0 by the chief on the merge: 137 script tests, 602 browser walks with
+  5 skipped, 217 Elixir (10 properties).
+- Before and after pictures by the worker, 13 views, light and dark, 390 and 1280:
+  within 6/255 everywhere except two places, both inherent to the rule (Tangerine to
+  Powder Blue takes the short way round the wheel, through gold and green): the home
+  page's Enter App ring and the Fractal still on `/animations/wonders`. Sean's
+  decision 33 is open; the design chief recommends a Platinum middle stop.
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/animations/wonders`,
+  `/animations/particles` and `/rooms/general` answer 200 at 1280, 390 and 320 with no
+  page errors and no sideways scroll.
+- Known, not changed here: the Feedback lab button's sheen has never drawn; the shared
+  button's own rule paints over it.
 ## 2026-11-12 — Three button flaws on the template's own pages (branch, not on main)
 
 On `wt/tpl-button-flaws-1112`, for the design chief; found by the template chief on v220.

@@ -33,7 +33,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/glow" => "A soft light that follows a status",
     "/animations/ink" => "Ink lines and a ruled horizon",
     "/animations/grain" => "Harbour water in fine grain",
-    "/animations/cards" => "A moving picture on every card"
+    "/animations/cards" => "A moving picture on every card",
+    "/animations/particles" => "Grains that take any shape"
   }
 
   def page(assigns) do

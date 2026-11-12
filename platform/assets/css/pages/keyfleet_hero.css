@@ -138,8 +138,8 @@
       url("/images/lab/keyfleet/hex.svg") 0 0 / var(--kf-cell) calc(var(--kf-cell) * 1.7320508) repeat,
       radial-gradient(
         ellipse calc(var(--kf-fade-width) * 100%) calc(var(--kf-fade-height) * 100%)
-          at calc(var(--kf-fade-x) * 100%) calc(var(--kf-fade-y) * 100%),
-        #000 calc(var(--kf-fade-from) * 100%), transparent calc(var(--kf-fade-to) * 100%)
+          at calc(var(--kf-fade-x) * 100%) calc(var(--kf-fade-y) * 100%) in oklch,
+        #000 calc(var(--kf-fade-from) * 100%), #00000000 calc(var(--kf-fade-to) * 100%)
       );
     mask-composite: intersect;
     transition: opacity 240ms ease;
