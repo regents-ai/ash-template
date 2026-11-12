@@ -184,7 +184,6 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
               class="grammar-tabs__ink"
               data-ink
               aria-hidden="true"
-              phx-mounted={JS.ignore_attributes(["style"])}
             ></span>
           </nav>
         </div>

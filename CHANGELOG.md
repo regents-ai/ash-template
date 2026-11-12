@@ -7568,3 +7568,11 @@ sits on its own branches.
   Every press still reaches the wallet. Ported from regents.sh `5ec5b366`.
 - Not walked: the browser walk attaches no chain, so wallet buttons stay a listed gap
   in `docs/feature-map.md`.
+
+## 2026-11-12 — Tab fills keep their place through page updates
+
+- The tabs island now tells LiveView itself that its underline's position is its own,
+  as its comment already promised, so a fill that arrives in a page update no longer
+  jumps back under the first tab on the next one. The motion lab and the Grammar
+  pages drop their per-page `phx-mounted` markers, which LiveView 1.2.13 skips for an
+  element that arrives in a page update. Ported from regents.sh `f417ca09`.
