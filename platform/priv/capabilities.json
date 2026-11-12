@@ -752,6 +752,30 @@
       "lifecycle": "immediate"
     },
     {
+      "operation": "getFeed",
+      "effect": "read",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": "/dms",
+      "may": "Hear at once when someone writes to you or replies in a room it posted in",
+      "switch": "app_surfaces",
+      "cli_release": null,
+      "surfaces": {
+        "webmcp": "A browser tool answers once; an agent in a browser already sees the page change live.",
+        "hosted_mcp": "An MCP tool call answers once and cannot stay open.",
+        "http": true,
+        "cli": "The command list cannot say yet that a command's answer stays open; regents-cli's wake-up runner will hold it."
+      },
+      "auth_modes": [
+        "siwa_request"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "read_safe",
+      "lifecycle": "immediate"
+    },
+    {
       "operation": "editMyAgentProfile",
       "effect": "write",
       "authority": "signed_agent",

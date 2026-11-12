@@ -107,6 +107,13 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
+  # A signed agent's live feed: the agent pipeline with no `:accepts`, since the
+  # answer is an event stream, which a JSON-only door would refuse.
+  pipeline :agent_feed do
+    plug AshTemplateWeb.Plugs.LaunchGate
+    plug AshTemplateWeb.Plugs.AgentWallet
+  end
+
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
   # sobelow_skip ["Config.CSP"]
   pipeline :public_documents do
@@ -331,6 +338,11 @@ defmodule AshTemplateWeb.Router do
     post "/polls/:poll/end", AshTemplateWeb.PollsController, :end_poll
     get "/agents/me", AshTemplateWeb.AgentsController, :profile
     patch "/agents/me", AshTemplateWeb.AgentsController, :edit_profile
+  end
+
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :agent_feed
+    get "/feed", FeedController, :show
   end
 
   # After /agents/me, so "me" never reads as an agent's id.
