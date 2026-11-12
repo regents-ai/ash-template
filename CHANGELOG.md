@@ -7861,6 +7861,23 @@ sits on its own branches.
   walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
   and phone width.
 - The form's ids now follow the dialog's (`<dialog id>-person-form`).
+
+## 2026-11-12 — Released v198: Agent Message
+
+- `9dc7dd1c` is v198 on template.regents.sh, switched at about 06:05Z with
+  `scripts/deploy.sh`. One migration ran in the release command,
+  `20261112045919_add_left_messages` (a new empty table). Rollback: v197 (`9160498f`);
+  the table stays and v197 never reads it.
+- Full check on `9dc7dd1c`, exit 0: 41 script tests, 465 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9dc7dd1c`; `/`, `/agents`, `/docs`, `/about` and `/app` answer 200 at 1280 and
+  390 with no page errors and no sideways scroll; on `/agents` the Agent Message button
+  opens its window with the three texts and no form; `/admin/messages` answers the
+  not-found page. Not proven live: a signed-in person's form and an admin reading the
+  inbox (no person's sign-in is used in live reads), and a signed agent's
+  `messages leave`.
+
 ## 2026-11-12 — Live figures roll (November bonus, step 2)
 
 - Every figure the template's own pages change while someone watches is drawn with
@@ -8023,3 +8040,27 @@ sits on its own branches.
   and shows a refused name as the field's own error, tied to the input, rather than an
   alert. `platform/test/browser/agents.spec.ts` checks the tip and the input's
   description.
+## 2026-11-12 — Released v199: rolling figures, gestures and the menu lab page
+
+- `ec983824` (the merge of the design chief's `wt/tpl-bonus-1112`, `9b2bdb05`) is v199
+  on template.regents.sh, switched at about 06:25Z with `scripts/deploy.sh`. No
+  migrations. Rollback: v198 (`9dc7dd1c`).
+- Full check on `ec983824`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `ec983824`; `/`, `/animations`, `/animations/menu`, `/animations/frosted-glass`,
+  `/agents`, `/app`, `/polls` and `/notes` answer 200 at 1280 and 390 with no page or
+  console errors and no sideways scroll. The gestures themselves were not driven live.
+
+## 2026-11-12 — Released v200: the health answer says whether migrations are applied
+
+- `2409d2d5` is v200 on template.regents.sh, switched at about 06:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v199 (`ec983824`).
+- `GET /api/v1/health` gains `migrations_applied`; pending migrations leave the answer at
+  200. `/healthz` is unchanged. Contract 11.3.0.
+- Full check on `2409d2d5`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  207 Elixir (9 properties). A first run failed two desktop settle-waits at load 60.
+- Live read, signed out: `/capabilities.json` names `2409d2d5`; `/api/v1/health` answers
+  `{"status":"ok","migrations_applied":true}`; `/healthz` 200; `/`, `/agents`, `/docs`
+  and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
+  errors (WebKit not run). The `false` answer is proven by test only.
