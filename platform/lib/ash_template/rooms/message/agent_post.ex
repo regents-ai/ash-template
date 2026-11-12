@@ -8,7 +8,9 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
   with the same room and text answers the message it posted (`replayed: true`)
   and posts nothing; a reuse with any other room or text is refused as
   `idempotency_conflict`; a reuse after that message was deleted is refused as
-  `message_removed`, naming it. Of two calls with one key at once, the second
+  `message_removed`, naming it. A post past the allowance is refused as
+  `too_many_requests` with the seconds left of it, and leaves the key unspent.
+  Of two calls with one key at once, the second
   waits on the first's row, finds it spent, and answers as a reuse. The
   message's id is made here, so the row can name it before the post is written.
 
@@ -82,10 +84,22 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
       end)
 
     case result do
-      {:ok, message} -> {:ok, %{message: Message.present(message), replayed: false}}
-      {:error, error} -> answer_spent(error, actor, key, slug, fingerprint)
+      {:ok, message} ->
+        {:ok, %{message: Message.present(message), replayed: false}}
+
+      {:error, error} ->
+        case retry_after(error) do
+          nil -> answer_spent(error, actor, key, slug, fingerprint)
+          seconds -> {:error, Refused.exception(code: "too_many_requests", retry_after: seconds)}
+        end
     end
   end
+
+  # The seconds left of the allowance the post was refused by (`LimitWrites`).
+  defp retry_after(%Ash.Error.Invalid{errors: errors}),
+    do: Enum.find_value(errors, & &1.vars[:retry_after])
+
+  defp retry_after(_error), do: nil
 
   # The key was spent by a call that committed while this one waited.
   defp answer_spent(error, actor, key, slug, fingerprint) do

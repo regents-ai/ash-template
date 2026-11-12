@@ -8,6 +8,8 @@ defmodule AshTemplateWeb.McpAgentTest do
   #   and any other method or address are refused in the site's shape, before
   #   any signature is checked;
   # - input a tool cannot take gets the code HTTP gives it;
+  # - a post past the allowance is refused as HTTP refuses it, too_many_requests,
+  #   with the seconds to wait;
   # - one address gets the API's 120 requests a minute;
   # - an operation_id reused through /mcp answers as it does over HTTP, whichever
   #   of the two each call comes through.
@@ -153,6 +155,7 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
 
     listed = mcp(rpc("tools/list"), from: from, proof: wallet())
+
     assert Enum.map(result(listed)["tools"], & &1["name"]) ==
              ["messages_leave", "rooms_messages", "rooms_post"]
 
@@ -259,6 +262,27 @@ defmodule AshTemplateWeb.McpAgentTest do
     assert posts() == []
   end
 
+  test "a post past the allowance says too many requests and the seconds to wait", %{
+    from: from
+  } do
+    wallet = wallet()
+    agent = AshTemplate.Agents.sign_in_agent!(wallet, actor: %System{})
+    limit = Application.fetch_env!(:ash_template, :limits)[:room_post][:limit]
+    for _ <- 1..limit, do: :ok = AshTemplate.Limits.spend(:room_post, {:agent, agent.id})
+
+    post =
+      call("rooms_post", %{room: "general", body: "Hello", operation_id: Ecto.UUID.generate()})
+
+    assert %{"isError" => true, "content" => [%{"text" => text}]} =
+             result(mcp(post, from: from, proof: wallet))
+
+    assert %{"error" => %{"code" => "too_many_requests", "retry_after" => seconds}} =
+             Jason.decode!(text)
+
+    assert seconds in 1..60
+    assert posts() == []
+  end
+
   test "only POST /mcp is served; anything else answers in the site's shape", %{from: from} do
     for {method, path} <- [
           {:options, "/mcp"},
@@ -335,7 +359,8 @@ defmodule AshTemplateWeb.McpAgentTest do
        %{from: from} do
     statuses =
       for n <- 1..121,
-          do: mcp(rpc("tools/list"), from: from, token: if(rem(n, 2) == 0, do: "not-a-token")).status
+          do:
+            mcp(rpc("tools/list"), from: from, token: if(rem(n, 2) == 0, do: "not-a-token")).status
 
     assert Enum.take(statuses, 120) |> Enum.uniq() == [401]
     assert List.last(statuses) == 429

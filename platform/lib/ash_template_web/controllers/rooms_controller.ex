@@ -220,18 +220,18 @@ defmodule AshTemplateWeb.RoomsController do
 
   # Past the allowance of posts, the refusal says how many seconds are left of it.
   defp refuse_post(conn, %Ash.Error.Invalid{errors: errors} = error) do
-    case {Enum.find(errors, &is_struct(&1, Refused)), retry_after(errors)} do
-      {%Refused{code: "message_removed", id: id}, _wait} ->
+    case Enum.find(errors, &is_struct(&1, Refused)) do
+      %Refused{code: "message_removed", id: id} ->
         refuse(conn, "message_removed", id: id)
 
-      {%Refused{code: code}, _wait} ->
+      %Refused{code: "too_many_requests", retry_after: seconds} ->
+        too_many_requests(conn, seconds)
+
+      %Refused{code: code} ->
         refuse(conn, code)
 
-      {nil, nil} ->
+      nil ->
         refuse(conn, "invalid_message", error)
-
-      {nil, seconds} ->
-        too_many_requests(conn, seconds)
     end
   end
 
