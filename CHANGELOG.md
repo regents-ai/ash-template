@@ -8747,6 +8747,180 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
 
+## 2026-11-12 — The main button stands out in the light theme
+
+- Design-system pin `f957bf1c41f3ba1393cfc333e3ba4710da69ed11` (was `c4244b38`), Sean's
+  7a of 12 Nov. In the light theme the main button is Charcoal with Platinum words
+  (16.4:1 against the page; it was white, 1.1:1), through two new colour settings,
+  `--color-button` and `--color-fg-on-button`. The confirm window's main button follows.
+  Dark themes are unchanged. No template code changes.
+
+## 2026-11-12 — The window flick check holds on a busy machine (branch, not on main)
+
+- `motion.spec.ts`'s drag helper now stamps each pointer event with the moment it stands
+  for, sent through Chromium's own input (`Input.dispatchMouseEvent` with `timestamp`).
+  The gesture kit measures a throw from its events' own `timeStamp`
+  (`assets/js/hooks/motion/gestures.ts`), and the helper used to space real pointer events
+  by the wall clock, so a stalled Mac stretched the 120 ms flick into a slow pull and the
+  window stayed open: v213's first two full checks failed that way at load 66 to 85.
+- The paths, distances and durations are the same, and the events still go out at the
+  pace they stand for; only a late delivery no longer changes the speed the page
+  measures. No product code changed.
+- Evidence: with the old helper, a half-second stall before the flick's last move left
+  the window open; with the new one the page saw its events exactly 15 ms apart and
+  closed it. Under 16 extra busy processes (load 92 to 98), the flick check passed 30 of
+  30 at 1280 and 390 (`--repeat-each 15`), and the other two drag checks (a pulled window
+  with less motion, a note thrown sideways) 20 of 20.
+
+## 2026-11-12 — regents-cli 1.10.25 and the `feed` command (branch `tpl/cli-1.10.25-1112`, not on main)
+
+- regents-cli moves from `fd325437` (1.10.24) to `8b3240b6` (1.10.25), which reached PyPI
+  on 12 Nov 15:03Z. The Makefile pin, the install lines, the agent guide (release, source
+  commit `8b3240b6402551aa29ef960418fd1d2ea4bf41c7` and wheel SHA256
+  `082329e29532ecc23fc474d6f8e2d32cf0dd900c3b3b72d6d1325dba505b312e`, which matches
+  PyPI), `capabilities.json`'s `cli.release`, `cli/README.md` and `cli/COMMANDS.md` move
+  together.
+- 1.10.25 pins this site's command list at `f5096fff`, the same list main has, so it
+  carries `messages leave`, `activity mark-read`, `chat list`, `chat read`, `chat send`
+  and the USDC-only `notes pin`: their `capabilities.json` rows move from `cli_pending`
+  to `cli_release` 1.10.25, and the "(next release)" marks go from `cli/COMMANDS.md` and
+  `docs/agent-parity.md`.
+- `cli/commands.json` gains `feed` (`getFeed`, `GET /api/v1/feed`, `signed_agent`,
+  `read`, `"stream": true`, no `webmcp`). The field and its rule (a signed GET with no
+  body, stdin fields, pagination or webmcp, whose operation answers only
+  `text/event-stream` on success) come from 1.10.25's `commands.v1.json` and
+  `regents_cli.check_commands`. The OpenAPI documents already answer that way, so they
+  are unchanged. 1.10.25 does not list `feed` for this site; the next regents-cli release
+  carries it once its ash-template pin moves to this commit. `getFeed`'s row is
+  `cli_pending` with its CLI surface on, and `docs/agent-parity.md` G12 and the feature
+  map say so.
+- `cli/COMMANDS.md` describes `feed` as a command, with `--wake` as 1.10.25's
+  `regents_cli/feed.py` runs it: an event wakes the agent when its `read` routes to a
+  described `read` command, not itself a feed, whose arguments all sit in the path, each
+  value a UUID or a room name. A direct message's `POST /api/v1/dms/<uuid>/history` and
+  a room post's `GET /api/v1/rooms/<room>/messages/<uuid>` both do. The agent guide's
+  Live feed section says how to run it.
+
+## 2026-11-12 — Released v215: stronger main button in light, regents-cli 1.10.25
+
+- `a95458c3` is v215 on template.regents.sh, switched at about 16:05Z with
+  `scripts/deploy.sh`. It carries the design-system pin `f957bf1c` (Sean's 7a: the
+  main button in the light theme is Charcoal with Platinum words), regents-cli
+  1.10.25 named everywhere with six commands marked released, the `feed` command
+  described (runnable from the next CLI release, 1.10.26), and the steadier flick
+  check. No migration.
+- Rollback: v214 (`f5096fff`), image only.
+- Full check on `a95458c3`, exit 0: 113 TypeScript, 570 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/`, `/showcase`,
+  `/showcase/wallet`, `/notes`, `/rooms/general`, `/animations` and `/account` answer
+  200 at 1280, 390 and 320 with no errors and no sideways scroll; the main button on
+  `/showcase/wallet` is dark with light words in the light theme and was pressed in
+  light and dark with no page error; `/agents.md` names 1.10.25 and commit `8b3240b6`.
+  Not proven live: signed-in pages.
+
+## 2026-11-12 — Value cards in the template: `/animations/cards` (branch, not on main)
+
+`tpl/value-cards-1112` brings the row of six value cards on regents.sh's `/app` into the
+template as one piece every site takes, and a Motion lab page that shows it.
+
+- The piece: `AshTemplateWeb.Components.ValueCards.value_cards/1` (cards as data: `:id`
+  names the panel and its still, `:name`, `:headline`, `:line`, `:tint`, `:action`, and
+  one of `:href` for another site, opened in a new tab, `:navigate` or `:patch`), the
+  `ValueCard` hook (`assets/js/hooks/value_card.ts`), `assets/js/value_cards/`
+  (`renderer.ts`, `panel.ts`, `shared_device.ts`, `stills.mjs`) and
+  `assets/css/components/value_cards.css`. Copied from regents' main with no change to
+  look, motion or behaviour, and still without `container-type` or `@container` (the
+  phone crash). Each site's own parts: `value_cards/index.ts`, `value_cards/panels/` and
+  the stills in `priv/static/images/value-cards/`; the module's "Your own cards" section
+  says how to add panels and draw stills (`npm run stills:value-cards`, on a machine
+  with a GPU).
+- The classes are now `value-cards__*` (regents uses `value-card*`): the Value lab's own
+  unscoped `.value-card` rules would otherwise style the new cards. The CSS variables
+  keep their names.
+- The page: `/animations/cards` (`AshTemplateWeb.CardsLabLive`, "Cards"), in the Motion
+  lab list, the Design page's sidebar, the route list (`cards_lab`), the sitemap and the
+  browser walk's page list. Six cards about the template (Rooms, Notes, Polls, Agents,
+  Points, Chat) on the template's own six panels from `91d68a70`, with stills redrawn.
+- The Value lab (`/animations/value`, `value_lab_live.ex`) is left as it is: it is a
+  different experiment (figure cards on one canvas behind the grid, lit round the
+  pointer), not the source of this piece. The piece began as template commits `91d68a70` and `d379d721`,
+  reverted for the phone crash, and was finished in regents.
+- Checks: `test/browser/value_cards.spec.ts` (new) passed on desktop at 1280 and phone at
+  390 and 320, 6 of 6: every panel draws and outlasts pointer sweeps under a 64 MB heap,
+  three columns on a desktop and one on a phone, no sideways scroll; with less motion no
+  panel draws and the stills stay; without WebGPU every card says it will not draw and
+  the stills stay. `pages.spec.ts` for `/animations/cards` passed at 1280, 390 and 320.
+  TypeScript check clean; script tests 126 of 126; `mix format --check-formatted`,
+  `mix compile --warnings-as-errors --force` and `mix ash_template.route_handoff --check`
+  pass; the router's pages match the walk's list. Light and dark at 1280, 390 and 320
+  compared by hand with live regents.sh/app in headless Chromium: same card, type,
+  spacing and columns.
+- Not run: the full `make check` (the release lead's was running), the Elixir test suite,
+  and WebKit.
+
+## 2026-11-12 — Released v216: the value cards page
+
+- `01568275` (`tpl/value-cards-1112` merged onto main) is v216 on template.regents.sh,
+  switched at about 16:27Z with `scripts/deploy.sh`. It adds the value cards as one
+  shared piece and the page `/animations/cards` (Sean, 12 Nov: sites take their cards
+  from the template). No migration.
+- Rollback: v215 (`a95458c3`), image only.
+- Full check on `01568275`, exit 0: 126 TypeScript, 579 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit and a real phone not run):
+  `/animations/cards` answers 200 at 1280, 390 and 320 in light and dark with six cards,
+  six stills, no errors and no sideways scroll; all six panels draw at 1280 and the two
+  in view draw on the phone widths; `/`, `/animations`, `/design`, `/rooms/general` and
+  `/notes` clean at the three widths.
+
+## 2026-11-12 — The world cube's glass is an approved exception; the style check runs in `make check`
+
+- Sean's 4 b of 12 Nov: the world cube lab page (`/animations/cube`) keeps its glass and
+  its glass panes' shadow as the second approved exception to the flat style, after the
+  home page's glass panel. Nothing on any page changes.
+- Design-system pin `c6cbadd72a17995d8a2c96c58ca2e9d023c48368` (was `f957bf1c`). It
+  changes only the style check, its test, `STYLE.md` and the changelog: the flat rule
+  now skips a `box-shadow:` line carrying `style-check: allow shadow — <who and when>`,
+  and both markers need a word after the dash.
+- `platform/assets/css/components/world_cube.css` marks its four lines, each on the
+  property's own line: the three `backdrop-filter` lines (a world's row, the leave
+  button and the smoked glass pane) carry `/* style-check: allow glass — Sean 12 Nov
+  2026 */`, and the pane's `box-shadow:` line carries `/* style-check: allow shadow —
+  Sean 12 Nov 2026 */`. Before them the style check printed those four breaks and no
+  others; it now prints none.
+- `make check-style` runs the design system's style check, the copy
+  `mix regent_ui.assets` makes at `platform/assets/vendor/regent_ui/style-check.sh`,
+  from `platform/`, and `make check` runs it first: a new unmarked break fails the full
+  check by file, line and rule. It needs ripgrep; `README.md`, `AGENTS.md`,
+  `platform/README.md` and `regent-workflow` name it among the check's steps.
+- Main gained one break while this was built: the value cards' name dot drew its faint
+  3px ring as a `box-shadow` (`platform/assets/css/components/value_cards.css`, from
+  `315ee7d6`). It is now an `outline` of the same width and colour, the house form for a
+  ring (STYLE.md: a ring is a real border or outline, so forced colours still draws it).
+  `/animations/cards` at 1280 and 390, light and dark, with less motion: only the six
+  dots' edge pixels differ, by at most 15 of 255. In forced colours the ring now shows
+  where the dot showed nothing before.
+
+## 2026-11-12 — Released v217: the cube's approved exception, the style check in the full check
+
+- `f2695d5c` (`tpl/cube-exception-1112`) is v217 on template.regents.sh, switched at
+  about 16:37Z with `scripts/deploy.sh`. Sean's 4 b: the world cube keeps its glass as
+  the second approved exception, marked on its three glass lines and one shadow line;
+  `make check-style` (design-system pin `c6cbadd7`) is now the first step of
+  `make check`; the value cards' name dot draws its ring as an outline. No migration.
+- Rollback: v216 (`01568275`), image only.
+- Full check, exit 0, by the worker on `d75764b8`: 126 TypeScript, 579 browser walks
+  with 5 skipped, 210 Elixir (9 properties). `f2695d5c` differs from it only by
+  changelog lines, so the check was not run a third time.
+- Live read in headless Chromium, signed out (WebKit not run): `/`, `/animations/cube`,
+  `/animations/cards`, `/animations` and `/showcase/wallet` answer 200 at 1280, 390 and
+  320 with no errors and no sideways scroll; the cards page shows six cards in light
+  and dark at the three widths. The cube's in-room glass pane needs a GPU and was not
+  seen; the built stylesheet for it is byte-identical to v216's.
+- Known: at this pin the style check passes silently on a machine without ripgrep.
+  Fixed in design-system `0ae2bffc`; the template takes it in its next release.
+
 ## 2026-11-12 — Someone with no name shows by their wallet, rebuilt on main (branch, not on main)
 
 **This branch's migration rewrites existing rows** in `room_messages`, `room_mutes` and

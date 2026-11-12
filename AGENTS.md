@@ -85,12 +85,13 @@ After renaming, a new site must still replace, by hand:
   Add an entry the day such a fix is published and push it to `main`; every
   site's `make check-required-fixes` reads `main` and fails until the site takes
   it. A new shared library must be listed before any site can use it.
-- `make check` runs every gate: the platform's `mix precommit` (which ends with the
+- `make check` runs every gate: the design system's style check (`make check-style`),
+  the platform's `mix precommit` (which ends with the
   TypeScript typecheck, the script tests and the browser walk) and `mix test`, the
   required-fixes check, then the command description check against the
   site's OpenAPI documents (regents-cli's checker at the commit the `Makefile` pins).
-  `make check-platform`, `check-required-fixes`, `check-cli` and `check-contracts`
-  run one component.
+  `make check-style`, `check-platform`, `check-required-fixes`, `check-cli` and
+  `check-contracts` run one component.
 - `make release` is the one release path: it refuses uncommitted changes, runs
   `make check`, builds HEAD's `platform/` into an image and starts it against a
   throwaway database (`scripts/release.sh`). It never deploys.
