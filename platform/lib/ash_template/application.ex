@@ -59,10 +59,10 @@ defmodule AshTemplate.Application do
            Application.fetch_env!(:ash_template, :ash_domains),
            Application.fetch_env!(:ash_template, Oban)
          )},
-        AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Live.OpenPages,
         # Counts this machine's open agent feeds.
         AshTemplateWeb.FeedController,
+        AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Endpoint,
         # Metrics are served beside the site, never by a process that only runs a task.
         if(serving?, do: AshTemplateWeb.Metrics)

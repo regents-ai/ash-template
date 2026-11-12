@@ -30,11 +30,29 @@ defmodule AshTemplateWeb.Telemetry do
   the oldest was read, the size of each reading offered as a percent of its kind's
   limit, each reading that could not be taken and each one refused.
 
+  The figures that tell one limit from another sit side by side. Each Repo query
+  reports both halves, the wait for a connection (`queue_time`) and the query
+  itself (`query_time`), tagged by the table it read, and each checkout the pool
+  refused is counted; without both halves a pool that is too small cannot be told
+  from queries that hold connections too long. Scheduler use is measured over
+  one second, every ten seconds, by a poller of its own, beside the run queues. The
+  message queue and memory of each process on a hot path, and the count of open
+  live pages and open agent feeds, come from the site's poller. LiveView mount,
+  handle_params and handle_event times are tagged by view or component module,
+  router dispatch by route pattern, and socket connects by result. Each call to
+  another service is timed by `service`, a name the site gives each host in its
+  own settings (`services/0`); every other host is `other`. The sign-in reads
+  (`AshTemplate.Accounts`) are timed and counted from Ash's own read events, by
+  resource and action. Every tag is a value the site chooses, never one a client
+  sends: each tag value is a series held for the life of the machine.
+
   The reporter, Peep, keeps a fixed set of counters for each series and holds
   no observation between scrapes. It adds each observation to a running total
   as a whole number, so times are measured in whole microseconds and Jev's
   charges in billionths of a dollar, and every total stays exact.
   """
+
+  use Supervisor
 
   import Ecto.Query, only: [from: 2]
   import Telemetry.Metrics
@@ -49,8 +67,40 @@ defmodule AshTemplateWeb.Telemetry do
 
   @reporter :ash_template_prometheus
 
-  def child_spec(_arg) do
-    Peep.child_spec(metrics: metrics(), name: @reporter)
+  # Times from a millisecond to five seconds, in microseconds.
+  @request_buckets [1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000] ++
+                     [1_000_000, 2_500_000, 5_000_000]
+
+  # The named processes every page view, room message or shared reading passes
+  # through: the shared figures, the one listener for other sites' changes, the
+  # tools read from other Regent sites, the room presence shard and the visit
+  # log's own handler.
+  @hot_processes [
+    AshTemplate.SharedReading,
+    AshTemplate.Notifications,
+    AshTemplate.SiteTools,
+    AshTemplateWeb.Presence_shard0,
+    :logger_std_h_visits
+  ]
+
+  # The unnamed ones, found by their child id under the application's supervisor.
+  @hot_children [AshTemplate.Rooms.Activity, AshTemplate.Points.Board]
+
+  def start_link(arg), do: Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
+
+  @impl true
+  def init(_arg) do
+    children = [
+      {Peep, metrics: metrics(), name: @reporter},
+      # Reading scheduler use takes a second, so it has a poller of its own and
+      # never holds up the others.
+      {:telemetry_poller,
+       measurements: [{__MODULE__, :scheduler_use, []}],
+       period: 10_000,
+       name: :ash_template_scheduler_poller}
+    ]
+
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   @doc "Every measurement as Prometheus text, as the metrics listener answers it."
@@ -70,7 +120,10 @@ defmodule AshTemplateWeb.Telemetry do
 
   def wallet_failed(_flow, _reason), do: :ok
 
-  @doc "The poller for the measurements the site takes itself, started after Oban."
+  @doc """
+  The poller for the measurements the site takes itself, started after Oban and
+  the registries of open pages and feeds it counts.
+  """
   def site_poller do
     # Only a site that sends from its own wallet names its query. Without one the
     # age is never published, so Sentinel never reads a steady 0 that only means
@@ -85,8 +138,10 @@ defmodule AshTemplateWeb.Telemetry do
      measurements:
        [
          {AshTemplate.SharedReading, :measure, []},
-         {__MODULE__, :oldest_unfinished_jobs, []}
-       ] ++ unconfirmed_sends,
+         {__MODULE__, :oldest_unfinished_jobs, []},
+         {__MODULE__, :open, []},
+         {__MODULE__, :hot_children, []}
+       ] ++ hot_processes() ++ unconfirmed_sends,
      period: 10_000,
      name: :ash_template_site_poller}
   end
@@ -137,6 +192,62 @@ defmodule AshTemplateWeb.Telemetry do
 
   defp not_measured(what, why), do: Logger.warning("#{what} not measured: #{why}")
 
+  @doc false
+  def scheduler_use do
+    [{:total, use, _percent} | _each_scheduler] = :scheduler.utilization(1)
+    :telemetry.execute([:ash_template, :vm, :scheduler_use], %{percent: round(use * 100)})
+  end
+
+  @doc false
+  def open do
+    :telemetry.execute([:ash_template, :open], %{
+      pages: Registry.count(AshTemplateWeb.Live.OpenPages),
+      feeds: Registry.count(AshTemplateWeb.OpenFeeds)
+    })
+  end
+
+  # A process that has just stopped answers nil and is skipped this tick.
+  @doc false
+  def hot_children do
+    for {id, pid, _type, _modules} <- Supervisor.which_children(AshTemplate.Supervisor),
+        id in @hot_children,
+        info = is_pid(pid) && Process.info(pid, [:message_queue_len, :memory]) do
+      :telemetry.execute([:ash_template, :process], Map.new(info), %{name: id})
+    end
+
+    :ok
+  end
+
+  defp hot_processes do
+    for name <- @hot_processes do
+      {:process_info,
+       name: name, event: [:ash_template, :process], keys: [:message_queue_len, :memory]}
+    end
+  end
+
+  # A statement no table is named for (a transaction's begin and commit, the
+  # health check, Oban's notices) is `none`.
+  defp table(%{source: source}), do: %{source: source || "none"}
+
+  # The services the site calls, by host, from its own settings. Any other host,
+  # such as the address of an OAuth client's document or an ENS picture, which a
+  # visitor names, is `other`.
+  defp services do
+    [
+      chain:
+        Map.values(Application.fetch_env!(:ash_template, :chain_nodes)) ++
+          List.wrap(Application.get_env(:ash_template, :ethereum_read_rpc_url)),
+      sign_in: [Application.fetch_env!(:regent_agents, :siwa)[:url]],
+      model: ["https://openrouter.ai" | List.wrap(Application.get_env(:regent_jev, :endpoint))],
+      payments: [Application.fetch_env!(:regent_payments, RegentPayments.Facilitator)[:url]],
+      webhook: List.wrap(Application.get_env(:ash_template, :notes_webhook_url))
+    ]
+    |> Enum.flat_map(fn {service, urls} ->
+      for url <- urls, do: {URI.parse(url).host, Atom.to_string(service)}
+    end)
+    |> Map.new()
+  end
+
   defp report_oldest(running) do
     %{prefix: prefix} = Oban.config()
 
@@ -166,6 +277,8 @@ defmodule AshTemplateWeb.Telemetry do
   end
 
   defp metrics do
+    services = services()
+
     [
       counter("ash_template.privy.browser_failure.total", tags: [:reason]),
       counter("ash_template.privy.session_refused.total", tags: [:stage, :reason]),
@@ -176,13 +289,124 @@ defmodule AshTemplateWeb.Telemetry do
         event_name: [:ash_template, :repo, :query],
         measurement: :queue_time,
         unit: {:native, :microsecond},
+        tags: [:source],
+        tag_values: &table/1,
         description: "Microseconds a query waited for a database connection",
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      distribution("ash_template.db_query.microseconds",
+        event_name: [:ash_template, :repo, :query],
+        measurement: :query_time,
+        unit: {:native, :microsecond},
+        tags: [:source],
+        tag_values: &table/1,
+        description: "Microseconds a query held its connection in the database",
         reporter_options: [
           peep_bucket_calculator: Buckets,
-          buckets:
-            [1_000, 5_000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000] ++
-              [1_000_000, 2_500_000, 5_000_000]
+          buckets: [100, 500 | @request_buckets]
         ]
+      ),
+      counter("health.db_checkout_refused.total",
+        event_name: [:ash_template, :repo, :query],
+        keep: &match?({:error, %DBConnection.ConnectionError{reason: :queue_timeout}}, &1.result),
+        description: "Queries the pool gave no connection in time"
+      ),
+      distribution("ash_template.live_view.mount.microseconds",
+        event_name: [:phoenix, :live_view, :mount, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:view],
+        tag_values: &%{view: inspect(&1.socket.view)},
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      distribution("ash_template.live_view.handle_params.microseconds",
+        event_name: [:phoenix, :live_view, :handle_params, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:view],
+        tag_values: &%{view: inspect(&1.socket.view)},
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      distribution("ash_template.live_view.handle_event.microseconds",
+        event_name: [:phoenix, :live_view, :handle_event, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:view],
+        tag_values: &%{view: inspect(&1.socket.view)},
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      distribution("ash_template.live_component.handle_event.microseconds",
+        event_name: [:phoenix, :live_component, :handle_event, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:component],
+        tag_values: &%{component: inspect(&1.component)},
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      distribution("ash_template.router_dispatch.microseconds",
+        event_name: [:phoenix, :router_dispatch, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:route],
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      counter("ash_template.socket_connected.total",
+        event_name: [:phoenix, :socket_connected],
+        tags: [:result],
+        description: "Live socket connects, by whether the socket accepted them"
+      ),
+      distribution("ash_template.outside_call.microseconds",
+        event_name: [:finch, :request, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:service, :outcome],
+        tag_values:
+          &%{
+            service: Map.get(services, &1.request.host, "other"),
+            outcome: elem(&1.result, 0)
+          },
+        description: "Microseconds each call to another service took",
+        reporter_options: [
+          peep_bucket_calculator: Buckets,
+          buckets: @request_buckets ++ [10_000_000, 30_000_000]
+        ]
+      ),
+      distribution("ash_template.accounts.read.microseconds",
+        event_name: [:ash, :accounts, :read, :stop],
+        measurement: :duration,
+        unit: {:native, :microsecond},
+        tags: [:resource, :action],
+        tag_values: &%{resource: &1.resource_short_name, action: &1.action},
+        description: "Sign-in and account reads, including each check of a signed-in page",
+        reporter_options: [peep_bucket_calculator: Buckets, buckets: @request_buckets]
+      ),
+      last_value("vm.scheduler_use.percent",
+        event_name: [:ash_template, :vm, :scheduler_use],
+        measurement: :percent,
+        description: "Percent of the schedulers' time spent working, over one second"
+      ),
+      last_value("ash_template.process.message_queue.length",
+        event_name: [:ash_template, :process],
+        measurement: :message_queue_len,
+        tags: [:name],
+        tag_values: &%{name: inspect(&1.name)},
+        description: "Messages waiting in each process on a hot path"
+      ),
+      last_value("ash_template.process.memory.bytes",
+        event_name: [:ash_template, :process],
+        measurement: :memory,
+        tags: [:name],
+        tag_values: &%{name: inspect(&1.name)}
+      ),
+      last_value("ash_template.open.pages",
+        event_name: [:ash_template, :open],
+        measurement: :pages,
+        description: "Live pages open on this machine"
+      ),
+      last_value("ash_template.open.feeds",
+        event_name: [:ash_template, :open],
+        measurement: :feeds,
+        description: "Agent feeds open on this machine"
       ),
       counter("health.chain_request_failures.total",
         event_name: [:ash_template, :chain, :failure],
