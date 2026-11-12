@@ -9612,3 +9612,17 @@ no migration.
   cannot rise over the status line as in Sean's film.
 - Checks: `platform/assets/test/cells_meter.test.ts` (columns, rounding, the moving
   picture) and the walk `platform/test/browser/cells.spec.ts`.
+
+## 2026-11-12 — Released v227: the Cells moving picture
+
+- `1f84891a` (the design chief's `wt/tpl-cells-1112`, level with main before release, so
+  main fast-forwarded) is v227 on template.regents.sh, switched at about 22:43Z with
+  `scripts/deploy.sh`. One new lab page, `/animations/cells`, listed on `/animations`
+  and `/design`. No migration, no sign-in change.
+- Rollback: v226 (`15ce5b94`), image only.
+- Full check exit 0 by the chief on the exact commit: 150 script tests, 651 browser
+  walks with 5 skipped, 239 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/animations/cells`,
+  `/animations`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll; `/animations` links the new page. The picture itself
+  is the design chief's to read.
