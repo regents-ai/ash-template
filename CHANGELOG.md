@@ -8264,3 +8264,21 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   so each press turned it and turned it back. `mountStaticThemeSwitches` is removed.
 - The browser walk pressed only the account menu's switch. It now also presses the
   bottom bar's, signed out, on a plain page (`/agents`) and on a shell page (`/polls`).
+
+## 2026-11-12 — Released v205: the light and dark theme switch, fixed
+
+- `abe3fc40` is v205 on template.regents.sh, switched at about 08:20Z with
+  `scripts/deploy.sh`. It carries the design chief's theme switch (`cedc0ba4`, merged as
+  `ef03aeaa`), the fix that mounts the signed-out switch once, and the Harvest and Spread
+  tooling (`d784471f`, nothing under `platform/`). No migrations. Rollback: v202's build
+  (`9331cd03`).
+- History: `ef03aeaa` went live as v203 at about 08:07Z and was rolled back at about
+  08:12Z (Fly's v204, v202's build) because the signed-out switch did not turn.
+- Full check on `abe3fc40`, exit 0: 13 script tests, 108 TypeScript, 501 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `abe3fc40`; the bottom bar's switch on `/agents` turns with each press and each Space,
+  from a light-set and a dark-set device, and the choice holds over a reload at 1280 and
+  390; `/`, `/agents`, `/app`, `/polls`, `/notes` and `/account` answer 200 at both
+  widths with no page or console errors and no sideways scroll. The account menu's
+  switch (signed in) and dragging the knob were not driven live.
