@@ -61,6 +61,11 @@ defmodule AshTemplate.Accounts.SessionAuthority do
     references do
       reference(:human_account, on_delete: :restrict)
     end
+
+    # The daily prune finds rows by when they were last touched.
+    custom_indexes do
+      index([:updated_at], concurrently: true)
+    end
   end
 
   attributes do
@@ -131,10 +136,10 @@ defmodule AshTemplate.Accounts.SessionAuthority do
   end
 
   @doc """
-  Deletes every row untouched for a day longer than the cookie lives, and
-  answers how many went.
+  Deletes every row untouched for a day longer than the cookie lives, in one
+  statement that returns nothing.
   """
-  @spec prune() :: {:ok, non_neg_integer()} | {:error, term()}
+  @spec prune() :: :ok | {:error, term()}
   def prune do
     cutoff = DateTime.add(DateTime.utc_now(), -(@sign_in_lifetime_seconds + 86_400), :second)
 
@@ -144,11 +149,11 @@ defmodule AshTemplate.Accounts.SessionAuthority do
       actor: @actor,
       strategy: :atomic,
       return_errors?: true,
-      return_records?: true,
+      return_records?: false,
       notify?: false
     )
     |> case do
-      %Ash.BulkResult{status: :success, records: records} -> {:ok, length(records)}
+      %Ash.BulkResult{status: :success} -> :ok
       %Ash.BulkResult{errors: errors} -> {:error, errors}
     end
   end
