@@ -7735,3 +7735,18 @@ sits on its own branches.
   anything else was merged; it had landed without the walk being run. Both commits are
   reverted here so main can release. The work is whole in those two commits; it comes
   back when the page opens at all three widths.
+
+## 2026-11-12 — Released v195: the forms audit and design-system 33d5aa96
+
+- `4d972bbc` is v195 on template.regents.sh, switched at about 05:00Z with
+  `scripts/deploy.sh`: the merge of `tpl/forms-audit-1112`, the design-system pin
+  `33d5aa96` and the value cards revert. No migrations. Rollback: v194 (`ce5503d3`).
+- Full check on `4d972bbc`, exit 0: 41 script tests, 458 browser walks with 5 skipped,
+  186 Elixir (9 properties). The run before it, with the value cards still in, failed
+  that page at 390 and 320 wide every time.
+- Live read in headless Chromium (WebKit not run): `/capabilities.json` names
+  `4d972bbc`; `/`, `/about`, `/docs`, `/agents`, `/animations` and `/notes` answer 200 at
+  1280 and 390, light and dark, with no page errors and no sideways scroll;
+  `/animations/value-cards` answers 404. Fly logs: no errors after the switch.
+- Still open: in the light theme the primary button rests on the pale raised colour
+  (`#DAD8C7`) with dark words, so it reads quieter than an outlined button.
