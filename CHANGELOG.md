@@ -7558,3 +7558,13 @@ sits on its own branches.
   keeps main's line on the database (the direct address, a pool of 5, never the
   pooler) and says at most two releases switch over at once, as the release checklist
   does since 12 Nov, in place of "releases take turns".
+
+## 2026-11-12 — The wallet mark stays through page updates
+
+- A wallet button marked "waiting on the wallet" lost that mark whenever the page
+  updated while the wallet still had the press (a new amount, a wallet change, a new
+  review). The OnchainSteps island now tells LiveView the mark is its own before
+  setting it, so a page update leaves it on the button until the wallet answers.
+  Every press still reaches the wallet. Ported from regents.sh `5ec5b366`.
+- Not walked: the browser walk attaches no chain, so wallet buttons stay a listed gap
+  in `docs/feature-map.md`.
