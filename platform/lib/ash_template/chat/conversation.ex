@@ -62,9 +62,9 @@ defmodule AshTemplate.Chat.Conversation do
     table "chat_conversations"
     repo(AshTemplate.Repo)
 
+    # A page of a person's chats reads only that page's rows; every read of a
+    # person's chats uses this index.
     custom_indexes do
-      index([:human_account_id])
-      # A page of a person's chats reads only that page's rows.
       index([:human_account_id, :inserted_at], concurrently: true)
     end
   end
