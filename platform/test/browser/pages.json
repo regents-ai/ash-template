@@ -62,6 +62,7 @@
     {"route": "/animations/frosted-glass", "purpose": "Step back from a tree through frosted glass.", "check": "role=img[name=\"Frosted glass\"]"},
     {"route": "/animations/menu", "purpose": "Open a menu from each side.", "check": "#menu-lab-sort"},
     {"route": "/animations/parts", "purpose": "Use each shared part and see its states.", "check": "#parts-chart"},
+    {"route": "/animations/value", "purpose": "See a figure lit where you point.", "check": "#value-credits"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

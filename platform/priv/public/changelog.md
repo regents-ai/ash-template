@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Motion lab.** A new page, Value: cards with one figure each whose surface lights
+  where you point or touch, with a card loading, empty and failed.
 - **Theme.** The light and dark switch is now in your account menu: slide it, press it
   or use Space or Enter. A small moon and sun made of tiny blocks show which theme is
   on. Signed out, it sits in the bar at the bottom of the page.

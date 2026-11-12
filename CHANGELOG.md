@@ -8163,3 +8163,32 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
   The pairing window opens only for a signed-in person, so it was not opened live; the
   browser walks open it locally at every width.
+
+## 2026-11-12 — Value lab: the pointer-lit value card back, without the crash
+
+- Why the first version (`91d68a70`, taken off in `4d972bbc`) crashed: reproduced headless
+  at 390 and 320 wide, the renderer died while the page was still loading, at about 1.2 GB,
+  with scripts off, with its pictures blocked and with no GPU at all, and never at 1280.
+  Taking out one rule alone stopped it: `@container (max-width: 13rem)` hiding the card's
+  "01 / 44" place by the card's own width. In the one-column phone grid Chromium measured
+  the card at more than one width, flipping that part in and out, and the layout never
+  settled. The GPU panels and the shared device were not the cause.
+- A lab page only, `/animations/value` (`AshTemplateWeb.ValueLabLive`, titled Value), built
+  to spec 4.5 and REGENTS_MAP: three cards with one figure each (`Regent.Primitives.figure`,
+  real text), then the same card loading, empty and failed (`Regent.Primitives.waiting`).
+  No container queries on the page.
+- One vgpu island for the whole grid (`hooks/value_light.ts`, `value_light/renderer.ts`,
+  WGSL through `canvas_island.ts`): it paints every card's surface and 1px edge, so the row
+  is one surface and a neighbour catches the light too. The fill warms towards the site's
+  own light (the theme beam's colour, `--value-light`) and the edge firms towards the ink.
+  Pointer speed makes it brighter and reach further, settling back as it slows; a touch
+  breathes it once. Every move is Anime.js (an Animatable, one breath animation), and each
+  update asks the island for one frame, so nothing draws while the light rests. Less
+  motion, off screen, no WebGPU and forced colours leave the cards' own flat surface and edge.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/value_card.spec.ts`: at 320 and 390 with the GPU on, the picture
+  draws, two pointer sweeps over every card leave the page alive, drawn, under a 64 MB
+  script heap and with no sideways scroll; with less motion the picture never draws and
+  the cards keep their surface.
