@@ -8064,3 +8064,17 @@ sits on its own branches.
   `{"status":"ok","migrations_applied":true}`; `/healthz` 200; `/`, `/agents`, `/docs`
   and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
   errors (WebKit not run). The `false` answer is proven by test only.
+
+## 2026-11-12 — Released v201: design-system 2e839171, the confirm window and the Parts lab
+
+- `1c18b763` (the design chief's `wt/tpl-bonus-1112`) is v201 on template.regents.sh,
+  switched at about 07:25Z with `scripts/deploy.sh`. No migrations. Rollback: v200
+  (`2409d2d5`).
+- Full check on `1c18b763`, exit 0: 57 script tests, 487 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `1c18b763`; `/`, `/animations/parts`, `/animations/frosted-glass`,
+  `/showcase/discussion`, `/agents`, `/polls`, `/notes`, `/app` and `/account` answer 200
+  at 1280 and 390 with no page or console errors and no sideways scroll; the home page
+  carries the confirm window. The confirm window was not pressed live (its controls
+  need a signed-in person).
