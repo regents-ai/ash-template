@@ -9178,3 +9178,19 @@ Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
 - Full check exit 0 in 322 s: style check clean, 13 script tests, credo clean, 126
   TypeScript, 579 browser walks with 5 skipped, 217 Elixir (10 properties), required
   fixes (main's registry), the command list and the newest-CLI check.
+
+## 2026-11-12 — Released v220: the main button in the dark theme
+
+- `37abed0c` (`tpl/dark-button-1112`) is v220 on template.regents.sh, switched at about
+  18:20Z with `scripts/deploy.sh`. Sean's 151 a: design-system pin `b57f8d91`. No migration.
+- Rollback: v219 (`6212c19f`), image only.
+- Full check exit 0 by the worker on the branch head: 126 TypeScript, 579 browser walks
+  with 5 skipped, 217 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): on `/showcase/wallet` the
+  main button is Platinum with Charcoal words in dark and unchanged in light; pressed in
+  both with no page error. `/`, `/showcase/wallet` and `/rooms/general` answer 200 at
+  1280, 390 and 320 with no errors and no sideways scroll.
+- Known, not changed here: the buttons lab's per-site columns all show the Regents
+  button; its frozen "Keyboard focus" example is a plain rectangle; on the home page the
+  Platinum part of Enter App's ring meets the Platinum button at one corner in dark.
+  Passed to the design chief.
