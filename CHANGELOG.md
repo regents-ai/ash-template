@@ -9626,3 +9626,25 @@ no migration.
   `/animations`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with no page
   errors and no sideways scroll; `/animations` links the new page. The picture itself
   is the design chief's to read.
+
+## 2026-11-12 — regents-cli 1.10.26 (branch `tpl/cli-1-10-26-1112`, not on main)
+
+- regents-cli moves from `8b3240b6` (1.10.25) to `2e4a571c` (1.10.26), which reached PyPI
+  on 12 Nov 23:27Z, so the newest-SIWA gate refused main. The Makefile pin, the install
+  lines in `llms.md`, `agents.md` and `cli/COMMANDS.md`, the agent guide (release, source
+  commit `2e4a571c2d09d5d5a3503aaae551c84f6a152a3b` and wheel SHA256
+  `bc71dd5d8ddbba9eac00c5af453e19367623fdca217132e0b19f9907fd048253`, which the downloaded
+  wheel matches), `capabilities.json`'s `cli.release` and `cli/README.md` move together.
+- 1.10.26 pins this site at `1f84891a`: its `commands.json`, `openapi.json` and
+  `api-contract.openapiv3.yaml` are byte for byte main's. So it carries `feed` (with
+  `--wake`) and the paged `notes list` (`POST /api/v1/notes/list`, `--after`), which every
+  earlier release calls at the removed `GET /api/v1/notes`. `getFeed` moves from
+  `cli_pending` to `cli_release` 1.10.26 and `listMyNotes` from 1.10.16 to 1.10.26; the
+  "(next release)" marks leave `cli/COMMANDS.md` and `docs/agent-parity.md`, G12 is closed
+  on the CLI, and the feature map's G12 row keeps only hosted MCP and WebMCP.
+- The agent guide no longer says the next release brings `activity mark-read`, the `chat`
+  commands (both in 1.10.25) or `regents browser --site` (in 1.10.23), nor that `feed`
+  waits for one.
+- 1.10.26's own entry point, given this list, shows `feed` with `--wake` and without
+  `--phase`, `notes list` with `--after`, `activity mark-read`, `chat send` and
+  `regents browser --site`.
