@@ -9626,3 +9626,30 @@ no migration.
   `/animations`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with no page
   errors and no sideways scroll; `/animations` links the new page. The picture itself
   is the design chief's to read.
+
+## 2026-11-12 — A page reads the sign-in once per answer (branch, not on main)
+
+Branch `tpl/signin-repeats-1112`, for the ash-template chief, after the database load
+review found one page load checking the same sign-in twice at the same instant. It
+touches sign-in, so it waits for Sean's named go. No migration; no change to what a
+check decides, to cookies, session rows, lifetimes, the launch gate, Privy or the shared
+libraries.
+
+- The first render takes the account its own request's plug has just read
+  (`PrivySessionController.enforce_authority/1`) from the conn, through `assign_new`,
+  instead of reading the session row and account again.
+- The `handle_params` LiveView calls straight after the connected mount, for the address
+  the page opened on, takes the mount's read instead of reading again. Every later
+  navigation, every press, and every message or result once the sign-in's lifetime has
+  run out still reads the session again, as before, in the same order.
+- Queries counted for a signed-in visit to `/rooms/general`: the first answer 12 to 9
+  (sign-in checks 2 to 1), the connected page 12 to 9 (2 to 1), a navigation 4 and a
+  press 3, unchanged (1 check each). A reader who never signed in but holds a session
+  row: 5 to 4 on the first answer. Every page sent, signed in, signed out, never signed
+  in and revoked, is the same as before, first answer and connected.
+- The rule is in `skills/ash-security/references/component-session-check.md`.
+- Checks: `platform/test/ash_template_web/session_checks_test.exs` (a connected shell
+  page: each answer reads once, a sign-in revoked before connecting, or after, is
+  refused as the page connects, at the next navigation and at the next press, which
+  changes nothing). It fails on the old code (two reads), and with the navigation or
+  the press check removed.
