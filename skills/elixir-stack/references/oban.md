@@ -96,10 +96,9 @@ only the jobs that wait on it, never a person's other work:
   (`chat_responses`) can go higher, within the model's rate limit.
 - An outside-call job holds a connection only to read before and write after the
   call. A streamed answer is sent to pages with `Phoenix.PubSub` as it arrives and
-  written to the database once at the start and once at the end
-  (`Chat.Message.Changes.Respond`), with at most one checkpoint every few seconds
-  between. Never one write per chunk: each write is a commit, and every site shares one
-  write-ahead log.
+  written to the database once at the start and once at the end, by each attempt to
+  the answer the first attempt started (`Chat.Message.Changes.Respond`). Never one
+  write per chunk: each write is a commit, and every site shares one write-ahead log.
 - Raise a limit when `[:ash_template, :jobs, :oldest_unfinished]` stays high for that
   queue: it is the age of the oldest job not yet finished, running ones included, so
   read it with the queue's run times before deciding its jobs are waiting. Lower it
