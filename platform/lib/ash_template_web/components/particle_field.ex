@@ -24,12 +24,11 @@ defmodule AshTemplateWeb.Components.ParticleField do
 
   alias Phoenix.LiveView.JS
 
-  @marks_path Path.expand("../../../priv/particle_marks", __DIR__)
-  @mark_files Path.wildcard(Path.join(@marks_path, "*.svg"))
-
-  for file <- @mark_files do
-    @external_resource file
-  end
+  @mark_files :ash_template
+              |> Application.app_dir("priv/particle_marks")
+              |> Path.join("*.svg")
+              |> Path.wildcard()
+  for file <- @mark_files, do: @external_resource(file)
 
   @marks Map.new(@mark_files, fn file ->
            [_svg, view_box, shapes] =
