@@ -8879,3 +8879,10 @@ template as one piece every site takes, and a Motion lab page that shows it.
   from `platform/`, and `make check` runs it first: a new unmarked break fails the full
   check by file, line and rule. It needs ripgrep; `README.md`, `AGENTS.md`,
   `platform/README.md` and `regent-workflow` name it among the check's steps.
+- Main gained one break while this was built: the value cards' name dot drew its faint
+  3px ring as a `box-shadow` (`platform/assets/css/components/value_cards.css`, from
+  `315ee7d6`). It is now an `outline` of the same width and colour, the house form for a
+  ring (STYLE.md: a ring is a real border or outline, so forced colours still draws it).
+  `/animations/cards` at 1280 and 390, light and dark, with less motion: only the six
+  dots' edge pixels differ, by at most 15 of 255. In forced colours the ring now shows
+  where the dot showed nothing before.
