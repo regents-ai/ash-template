@@ -7358,3 +7358,17 @@ sits on its own branches.
 - New check: `claude_connector_test.exs` connects Claude by its published identity
   through this site's endpoint, consent, token exchange, `/mcp` and refresh.
 - Protected (sign-in and a migration): Sean's 12 Nov "2. a" is the go.
+
+## 2026-11-12 — Released v192: Claude may connect by its published identity
+
+- Live: v192 at 01:26Z on template.regents.sh; /capabilities.json build.commit cc4a83d3.
+  Rollback: v191 (e09a8678); the new `oauth_client_documents` table stays, and v191 never
+  reads it. Sean's go: 12 Nov 00:07:57Z "2. a".
+- Migration `20261111060000_oauth_client_documents` ran in the release command (one new
+  empty table). elixir-utils pin `240e9385`.
+- Live read: discovery says `client_id_metadata_document_supported: true`; consent signed
+  out with Claude's address shows the sign-in page; a token request with Claude's address
+  and an unknown code is refused; pages 200 at 1280 and 390 with no page errors.
+- Not proven: a read of Claude's document from Fly's network (the browser walk and the
+  tests cannot reach claude.ai). The first real Claude connection proves it; if consent
+  shows "Unavailable", roll back to v191.
