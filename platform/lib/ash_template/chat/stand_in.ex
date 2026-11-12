@@ -50,8 +50,9 @@ defmodule AshTemplate.Chat.StandIn do
 
   defp answer("reply", messages) do
     "I'm a stand-in for the assistant, so I don't read what you write, but this is " <>
-      "how a reply arrives: a few words at a time, saved as they come and shown on " <>
-      "every page that has this conversation open. You wrote: “#{List.last(messages)}”"
+      "how a reply arrives: a few words at a time on every page that has this " <>
+      "conversation open, or whole on one opened partway through. You wrote: " <>
+      "“#{List.last(messages)}”"
   end
 
   defp user_messages(context) do

@@ -3,8 +3,9 @@ defmodule AshTemplateWeb.ChatController do
   Chat with the assistant for a paired agent, as its person has it on /chat:
   their chats, a chat's messages newest first 50 at a time, and sending a
   message, which starts a chat when it names none (`AshTemplate.Chat`). The
-  assistant's reply is written a few words at a time after the send answers;
-  reading the chat again shows it, `complete` once it is finished.
+  assistant's reply is written after the send answers: reading the chat again
+  shows it empty with `complete` false while it is being written, then whole
+  with `complete` true.
 
   Every request needs per-request SIWA proof from an actively paired agent.
   Browser cookies grant no authority. A signed request takes no query string,
@@ -40,9 +41,9 @@ defmodule AshTemplateWeb.ChatController do
 
   # Newest first, the latest 100.
   def index(conn, _params) do
-    case Chat.my_conversations(actor: conn.assigns.actor, query: [limit: 100]) do
-      {:ok, conversations} ->
-        json(conn, %{conversations: Enum.map(conversations, &conversation/1)})
+    case Chat.my_conversations(actor: conn.assigns.actor, page: [limit: 100]) do
+      {:ok, page} ->
+        json(conn, %{conversations: Enum.map(page.results, &conversation/1)})
 
       {:error, %Ash.Error.Forbidden{}} ->
         refuse(conn, "agent_not_paired")

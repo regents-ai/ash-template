@@ -1,8 +1,9 @@
 defmodule AshTemplate.Chat.Message do
   @moduledoc """
   One message in a chat conversation, as `mix ash_ai.gen.chat` generates it: a
-  person's message, or the assistant's reply, which a job writes a few words at
-  a time and publishes to the conversation's open pages as it goes.
+  person's message, or the assistant's reply, which a job saves when it starts
+  and when it ends, and broadcasts to the conversation's open pages a few words
+  at a time in between (`Changes.Respond`).
 
   A paired agent writes for its person with an `operation_id`, which becomes the
   message's id, so a retry answers the message it already sent (`:earlier_send`).
@@ -61,7 +62,7 @@ defmodule AshTemplate.Chat.Message do
     defaults [:read, :destroy]
 
     read :for_conversation do
-      pagination keyset?: true, required?: false
+      pagination keyset?: true, default_limit: 50, max_page_size: 100
       argument :conversation_id, :uuid, allow_nil?: false
 
       prepare build(default_sort: [inserted_at: :desc])
@@ -131,8 +132,8 @@ defmodule AshTemplate.Chat.Message do
       change AshTemplate.Chat.Message.Changes.Respond
     end
 
-    # Called by the `:respond` trigger once its job has failed for good. The part
-    # of the reply already written, or a new reply, becomes a line saying so;
+    # Called by the `:respond` trigger once its job has failed for good. The reply
+    # already started, or a new reply, becomes a line saying so;
     # without it the page would show "The assistant is writing…" forever. The
     # reply is read and written as the assistant, as `Respond` writes it: the
     # job's actor may be an agent unpaired since it sent the message.
@@ -149,76 +150,25 @@ defmodule AshTemplate.Chat.Message do
              end)
     end
 
+    # The assistant's reply, whole each time: unfinished and empty when it starts,
+    # then complete when it ends or when its job fails (`Respond`). The pieces in
+    # between are broadcast, never saved: a commit for each would wait on the
+    # write-ahead log every site shares.
     create :upsert_response do
       upsert? true
-      accept [:id, :response_to_id, :conversation_id]
-      argument :complete, :boolean, default: false
-      argument :text, :string, allow_nil?: false, constraints: [trim?: false, allow_empty?: true]
-      argument :tool_calls, {:array, :map}
-      argument :tool_results, {:array, :map}
 
-      # if updating
-      #   if complete, set the text to the provided text
-      #   if streaming still, add the text to the provided text
-      change atomic_update(
-               :text,
-               {:atomic,
-                expr(
-                  if ^arg(:complete) do
-                    ^arg(:text)
-                  else
-                    text <> ^arg(:text)
-                  end
-                )}
-             )
+      accept [
+        :id,
+        :response_to_id,
+        :conversation_id,
+        :text,
+        :complete,
+        :tool_calls,
+        :tool_results
+      ]
 
-      change atomic_update(
-               :tool_calls,
-               {:atomic,
-                expr(
-                  if is_nil(^arg(:tool_calls)) do
-                    tool_calls
-                  else
-                    fragment(
-                      "? || ?",
-                      tool_calls,
-                      type(
-                        ^arg(:tool_calls),
-                        {:array, :map}
-                      )
-                    )
-                  end
-                )}
-             )
-
-      change atomic_update(
-               :tool_results,
-               {:atomic,
-                expr(
-                  if is_nil(^arg(:tool_results)) do
-                    tool_results
-                  else
-                    fragment(
-                      "? || ?",
-                      tool_results,
-                      type(
-                        ^arg(:tool_results),
-                        {:array, :map}
-                      )
-                    )
-                  end
-                )}
-             )
-
-      # if creating, set the text attribute to the provided text
-      change set_attribute(:text, arg(:text))
-      change set_attribute(:complete, arg(:complete))
       change set_attribute(:source, :agent)
-      change set_attribute(:tool_results, arg(:tool_results))
-      change set_attribute(:tool_calls, arg(:tool_calls))
-
-      # on update, only set complete to its new value
-      upsert_fields [:complete]
+      upsert_fields [:text, :complete, :tool_calls, :tool_results]
     end
   end
 
@@ -297,7 +247,7 @@ defmodule AshTemplate.Chat.Message do
   oban do
     triggers do
       trigger :respond do
-        actor_persister AshTemplate.Chat.ActorPersister
+        actor_persister AshTemplate.Actors.Persister
         action :respond
         worker_read_action :job_read
         on_error :fail_response
