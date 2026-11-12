@@ -9194,3 +9194,41 @@ Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
   button; its frozen "Keyboard focus" example is a plain rectangle; on the home page the
   Platinum part of Enter App's ring meets the Platinum button at one corner in dark.
   Passed to the design chief.
+
+## 2026-11-12 — Polls count on the poll; lists come a page at a time (branch, not on main)
+
+Branch `tpl/stampede-polls-1112`, the polls lane of the 12 November database-load work.
+Not released.
+
+- `13a1ef9e` Polls count each vote on the poll. `AshTemplate.Polls.Poll` keeps `votes_cast`
+  and `tally` on its own row, added to by `:count_vote` inside the vote's transaction,
+  which also checks the poll is still open (`Poll.StillOpen`), so a vote racing a close
+  or an end is counted before it or refused whole. Each choice's count is handed out
+  only once the poll has closed. A vote is told on the poll's own topic
+  (`AshTemplate.Polls.topic/1`) as a count alone; the site-wide topic hears only a start
+  or an end. The polls page reads its list and the shown poll once, applies notices
+  without reading and keeps one timer for the next close. Migration
+  `20261112191329_count_poll_votes_on_the_poll`: two new columns with defaults, then
+  each poll with votes is filled from the votes it has; votes untouched. Rehearsed on a
+  local copy (5 votes → 5 and {Tea 3, Coffee 2}; 1 → 1; none → 0 and {}), rolled back
+  and run again with the same result.
+- `01699b58` Lists come a page at a time and pages keep only what they show. A new direct
+  message rereads only its own conversation. Notes show 50 at a time (Older notes).
+  The notes API moves from `GET /api/v1/notes` to `POST /api/v1/notes/list` (`{}` or
+  `{"after": …}`, answer gains `pagination`, 422 `invalid_cursor`), since a signed
+  request takes no query string; the OpenAPI documents move to 13.0.0, and
+  `cli/COMMANDS.md`, `cli/commands.json`, the tool manifest, docs, llms and the agent
+  guides say so. Notifications are always read a page at a time; Mark all read marks
+  them in one statement and sends one notice (`mark_all_read`). Direct messages, notes
+  and the admins' messages keep only what they show and the next page's start.
+- `025c3efc` Skills: one-row rereads and topics per subject (`ash-frontend`
+  public-figures), one notice a press (`ash-backend`), never optional keyset paging and
+  the tally kept on the row (`ash-backend` decision guide), a page's own clock reads
+  only what first exists then (`elixir-stack`).
+- Full check exit 0 in 257 s: style check clean, 13 script tests, credo clean,
+  126 TypeScript, 581 browser walks with 5 skipped, 219 Elixir
+  (10 properties), required fixes, the command list and the newest-CLI check.
+- Left: regents-cli 1.10.25's `notes list` calls the removed GET until the next CLI
+  release; each open polls page reads a closed poll's totals once at its close; other
+  polls' vote counts in the sidebar move only at a start or an end; the dm index was
+  not added (the rooms lane did not ask).
