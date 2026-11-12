@@ -9645,3 +9645,7 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   `platform/test/ash_template/rooms/mentions_test.exs` and
   `platform/test/ash_template_web/room_delete_test.exs` (an open room page that hears the
   delete reads nothing).
+- The developer documentation's page at `/docs` is headed Docs, as its menu link already
+  said, and its tab reads "Docs · Ash Template". Its Markdown, served at the same address,
+  keeps its own title, and every other reading page keeps its document's title. Check:
+  `platform/test/browser/reading.spec.ts`.
