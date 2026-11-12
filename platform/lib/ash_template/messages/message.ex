@@ -43,9 +43,12 @@ defmodule AshTemplate.Messages.Message do
     attribute :body, :string, allow_nil?: false, public?: true, constraints: [max_length: 2000]
     # Where the sender wants an answer, in their own words.
     attribute :reply_to, :string, public?: true, constraints: [max_length: 200]
-    # The sender's name when they left it: the person's display name or short
-    # wallet, or the agent's profile name.
-    attribute :sender_name, :string, allow_nil?: false, public?: true
+    # Who left it, as others saw them when they left it (`sender/1`): the name
+    # they chose, else nil and their wallet shows, under its ENS name when it has
+    # one. An agent is its profile name and its own wallet.
+    attribute :sender_name, :string, public?: true
+    attribute :sender_wallet, :string, public?: true
+    attribute :sender_ens_name, :string, public?: true
     create_timestamp :inserted_at, public?: true
   end
 
@@ -127,4 +130,15 @@ defmodule AshTemplate.Messages.Message do
   @doc "What the sender is told once a message is left: its id, topic and time."
   def receipt(message),
     do: %{id: message.id, topic: message.topic, inserted_at: message.inserted_at}
+
+  @doc """
+  Who left `message`, as `%{name, wallet, ens_name}`
+  (`AshTemplate.PublicIdentity.person/1`).
+  """
+  def sender(message),
+    do: %{
+      name: message.sender_name,
+      wallet: message.sender_wallet,
+      ens_name: message.sender_ens_name
+    }
 end

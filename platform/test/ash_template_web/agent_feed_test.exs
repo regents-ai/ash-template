@@ -18,6 +18,9 @@ defmodule AshTemplateWeb.AgentFeedTest do
     "proof-other-agent" => "0x6666666666666666666666666666666666666666"
   }
 
+  # The first of `people/1`'s accounts, who chose no name, so an event names them by it.
+  @other "0x" <> String.duplicate("7", 40)
+
   setup do
     :ets.delete_all_objects(AshTemplate.Accounts.RequestRateLimiter)
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
@@ -92,7 +95,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
              "id" => sent.id,
              "at" => DateTime.to_iso8601(sent.inserted_at),
              "conversation_id" => conversation.id,
-             "author" => %{"kind" => "person", "name" => other_name(person, conversation)},
+             "author" => %{"kind" => "person", "name" => nil, "wallet" => @other, "ens_name" => nil},
              "read" => "POST /api/v1/dms/#{conversation.id}/history"
            }
 
@@ -132,7 +135,7 @@ defmodule AshTemplateWeb.AgentFeedTest do
              "id" => reply.id,
              "at" => DateTime.to_iso8601(reply.inserted_at),
              "room" => "general",
-             "author" => %{"kind" => "person", "name" => reply.author_name},
+             "author" => %{"kind" => "person", "name" => nil, "wallet" => @other, "ens_name" => nil},
              "read" => "GET /api/v1/rooms/general/messages/#{reply.id}"
            }
 
@@ -318,10 +321,6 @@ defmodule AshTemplateWeb.AgentFeedTest do
   defp conversation(a, b) do
     said = post!(b, "Write to me")
     Dms.open_conversation!(said.id, actor: a)
-  end
-
-  defp other_name(person, conversation) do
-    Dms.get_conversation!(conversation.id, actor: person, load: [:other_person]).other_person.name
   end
 
   defp post!(actor, body) do

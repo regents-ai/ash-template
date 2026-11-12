@@ -10,6 +10,8 @@ defmodule AshTemplateWeb.AdminMessagesLive do
   use AshTemplateWeb, :live_view
 
   alias AshTemplate.Messages
+  alias AshTemplate.Messages.Message
+  alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -59,10 +61,14 @@ defmodule AshTemplateWeb.AdminMessagesLive do
               <div>
                 <dt>From</dt>
                 <dd>
-                  <bdi>{message.sender_name}</bdi>
+                  <Shell.person_name
+                    id={"message-#{message.id}-sender"}
+                    person={Message.sender(message)}
+                  />
                   <span :if={message.agent}>
                     · Agent
                     <Primitives.address
+                      :if={message.sender_name}
                       id={"message-#{message.id}-agent"}
                       address={message.agent.wallet_address}
                     />

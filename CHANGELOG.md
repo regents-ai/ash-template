@@ -8746,3 +8746,58 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
 - Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
+
+## 2026-11-12 — Someone with no name shows by their wallet, rebuilt on main (branch, not on main)
+
+**This branch's migration rewrites existing rows** in `room_messages`, `room_mutes` and
+`left_messages`; it deletes none. Its release waits for Sean's go.
+
+- Sean, 6 November 2026: "everyone's wallet is public information"; decision 12a of
+  12 November: rebuild the wallet sweep (`tpl/wallets-1106`, `b030d6e5`) on main for him
+  to try. `tpl/wallets-1112` re-applies it as one change on main at `9326c58b` instead of
+  merging it: its migration sorted before main's newest, and its contract version,
+  11.0.0, is the one main gave to Credits going.
+- A person or agent with no name shows by their ENS name or short wallet, with its copy
+  icon, in rooms (the author line and Here now), private messages (the list, the heading
+  and each message), polls (Started by) and the admins' Agent Message list (From).
+  Dialogs, button labels, notices and page titles keep the plain words
+  (`AshTemplate.PublicIdentity.words/1`). "Unnamed agent" is gone. A mention of someone
+  with no name matches their ENS name or short wallet.
+- One shape names a person: `%{name, wallet, ens_name}` from
+  `AshTemplate.PublicIdentity.person/1`, drawn by
+  `AshTemplateWeb.Components.Shell.person_name/1` (the name, else
+  `Regent.Primitives.address`). `Actors.Human` and `Actors.Agent` carry `person` in place
+  of a saved name; a paired agent's actor carries its person's.
+  `PublicIdentity.of_accounts/1` answers it with the pictures.
+- Room posts, mutes and messages left for the site's team keep the wallet and ENS name of
+  who wrote them beside the name they chose, which is null when they had none
+  (`author_wallet`, `author_ens_name`; `muted_wallet`, `muted_ens_name`; `sender_wallet`,
+  `sender_ens_name`, read together as `Message.sender/1`). A message a paired agent left
+  is the agent's, with its wallet.
+- Main already did three of the sweep's parts, so its copies are dropped: the one account
+  lookup for conversations and polls (`of_accounts/1`), the mute and search code written
+  inline (`Mute.MuteAuthor` and the search page's item helpers), and author pictures from
+  the author's account in place of the sweep's coloured initials.
+- The API: room messages, room search, mutes, a poll's `started_by`, a conversation's
+  `with` and each live-feed event's `author` answer `wallet` and `ens_name` beside a
+  nullable name; `GET /api/v1/agents/{id}` answers the agent's `wallet_address`, and the
+  public and own profiles are one shape (`AgentProfile`). Both contracts move to 12.0.0;
+  `capabilities.json` stays at revision 2, since no operation is added or removed. The
+  docs, agents.md, COMMANDS.md and commands.json say so.
+- Migration `20261112151609_show_nameless_by_wallet` (the sweep's
+  `20261106171036_room_author_wallets`, renamed and widened to `left_messages`): adds the
+  wallet and ENS columns to the three tables and makes their names nullable. It then fills
+  each wallet from the account (`regent_names.platform_human_users`) or the agent, and a
+  person's ENS name from `account_ens_identities` (only one read for their current
+  wallet), and empties a saved name that was "Unnamed agent", that ENS name or the short
+  wallet, in one pass for people and one for agents. It runs in one transaction with
+  `SET LOCAL lock_timeout = '5s'`, holding the three tables' locks until it ends. Its
+  down gives each empty name back the ENS name, else the short wallet, and drops the
+  columns: an unnamed agent comes back as its short wallet, not "Unnamed agent".
+- Room figures: each pass of `AshTemplate.Rooms.Activity` forgets a room that is gone, so
+  a gone room never holds one of the sixteen places.
+- Full check on the Mac: 13 script tests, credo clean, 113 TypeScript, 570 browser walks
+  with 5 skipped, 215 Elixir (9 properties), required fixes and the command list pass.
+  Its last step, the newest-CLI check, fails only because regents-cli 1.10.25 came out
+  today; `tpl/cli-1.10.25-1112` moves the template to it. `mix ash.codegen --check`
+  is clean. WebKit not run.

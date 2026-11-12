@@ -67,6 +67,14 @@ defmodule AshTemplateWeb.MessagesPagesTest do
     ids = page |> LazyHTML.query("#admin-messages > li") |> LazyHTML.attribute("id")
     assert Enum.take(ids, 2) == ["message-#{newer.id}", "message-#{older.id}"]
     assert LazyHTML.text(page) =~ "Second"
+
+    # A sender who chose no name shows by their wallet, whose copy icon copies it in full.
+    copied =
+      page
+      |> LazyHTML.query("#message-#{newer.id} [data-copy-text]")
+      |> LazyHTML.attribute("data-copy-text")
+
+    assert copied == [account.wallet_address]
   end
 
   defp leave(account, topic, body),

@@ -13,8 +13,9 @@ defmodule AshTemplate.Rooms.Activity do
 
   A notice is sent at most once and can be lost, so each minute
   `AshTemplate.SharedReading.Heal` asks for every room to be counted again, the
-  rooms read afresh so a room started since is among them. That
-  pass also keeps each key's age under the kind's `within`, so a quiet room
+  rooms read afresh so a room started since is among them and a room that is
+  gone is forgotten, its key deleted so it never holds one of the kind's places.
+  That pass also keeps each key's age under the kind's `within`, so a quiet room
   never reads as a stopped producer.
 
   The count is every message in the room, as a signed-out visitor could count
@@ -46,7 +47,12 @@ defmodule AshTemplate.Rooms.Activity do
   def init(nil) do
     SharedReading.subscribe_heal(@kind)
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Message.every_room_topic())
-    Enum.each(slugs(), &count/1)
+
+    case slugs() do
+      {:ok, rooms} -> Enum.each(rooms, &count/1)
+      :error -> :ok
+    end
+
     {:ok, MapSet.new()}
   end
 
@@ -58,8 +64,16 @@ defmodule AshTemplate.Rooms.Activity do
   # figure needs a clause above.
   def handle_info(%{event: _unknown}, due), do: {:noreply, due}
 
-  def handle_info({:shared_reading_heal, @kind}, due),
-    do: {:noreply, Enum.reduce(slugs(), due, &due(&2, &1))}
+  def handle_info({:shared_reading_heal, @kind}, due) do
+    case slugs() do
+      {:ok, rooms} ->
+        Enum.each(SharedReading.ids(@kind) -- rooms, &SharedReading.delete(key(&1)))
+        {:noreply, Enum.reduce(rooms, due, &due(&2, &1))}
+
+      :error ->
+        {:noreply, due}
+    end
+  end
 
   def handle_info(:count, due) do
     Enum.each(due, &count/1)
@@ -72,15 +86,15 @@ defmodule AshTemplate.Rooms.Activity do
     MapSet.put(due, room)
   end
 
-  # Every room's slug; none while the database is not answering, when no
-  # count could be taken either.
+  # Every room's slug, or `:error` while the database is not answering: then no
+  # room is counted, and no room's key is forgotten for want of a read.
   defp slugs do
     case Rooms.list_rooms() do
-      {:ok, rooms} -> Enum.map(rooms, & &1.slug)
-      {:error, _not_read} -> []
+      {:ok, rooms} -> {:ok, Enum.map(rooms, & &1.slug)}
+      {:error, _not_read} -> :error
     end
   rescue
-    _error in [DBConnection.ConnectionError, Postgrex.Error] -> []
+    _error in [DBConnection.ConnectionError, Postgrex.Error] -> :error
   end
 
   defp count(room) do

@@ -1,10 +1,9 @@
 defmodule AshTemplateWeb.AgentsController do
   @moduledoc """
-  Agent profiles: the name and status line an agent gives itself. Anyone may read
-  an agent's profile by its id, the `agent_id` or `via_agent.id` of a room
-  message; it never shows the agent's wallet (Sean, 21 Oct 2026). An agent with
-  per-request SIWA proof reads and changes its own, paired or not, and sees its
-  own wallet there.
+  Agent profiles: the name and status line an agent gives itself, beside its
+  wallet. Anyone may read an agent's profile by its id, the `agent_id` or
+  `via_agent.id` of a room message; every wallet is public (Sean, 6 Nov 2026). An
+  agent with per-request SIWA proof reads and changes its own, paired or not.
   """
 
   use AshTemplateWeb, :controller
@@ -26,7 +25,7 @@ defmodule AshTemplateWeb.AgentsController do
 
   def show(conn, %{"id" => id}) do
     case Agents.get_agent(id) do
-      {:ok, agent} -> json(conn, %{agent: public(agent)})
+      {:ok, agent} -> json(conn, %{agent: present(agent)})
       {:error, %Ash.Error.Invalid{}} -> refuse(conn, "agent_not_found")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("agents_unavailable")
     end
@@ -34,7 +33,7 @@ defmodule AshTemplateWeb.AgentsController do
 
   def profile(conn, _params) do
     case Agents.get_agent(conn.assigns.actor.agent_id) do
-      {:ok, agent} -> json(conn, %{agent: own(agent)})
+      {:ok, agent} -> json(conn, %{agent: present(agent)})
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("agents_unavailable")
     end
   end
@@ -45,7 +44,7 @@ defmodule AshTemplateWeb.AgentsController do
     with input when map_size(input) > 0 <- Map.take(conn.body_params, ["name", "status"]),
          {:ok, agent} <- Agents.get_agent(actor.agent_id),
          {:ok, agent} <- Agents.edit_agent_profile(agent, input, actor: actor) do
-      json(conn, %{agent: own(agent)})
+      json(conn, %{agent: present(agent)})
     else
       %{} -> refuse(conn, "invalid_profile")
       {:error, %Ash.Error.Invalid{} = error} -> refuse(conn, "invalid_profile", error)
@@ -53,18 +52,17 @@ defmodule AshTemplateWeb.AgentsController do
     end
   end
 
-  defp public(agent) do
+  defp present(agent) do
     %{
       id: agent.id,
       name: agent.name,
       status: agent.status,
       status_set_at: agent.status_set_at,
       human_backed: is_binary(agent.world_id_human_id),
-      joined_at: agent.inserted_at
+      joined_at: agent.inserted_at,
+      wallet_address: agent.wallet_address
     }
   end
-
-  defp own(agent), do: Map.put(public(agent), :wallet_address, agent.wallet_address)
 
   defp refuse(conn, code, error \\ nil) do
     {status, message, hint} = Map.fetch!(@errors, code)

@@ -1,8 +1,9 @@
 defmodule AshTemplate.Polls.Poll.Starter do
   @moduledoc """
-  Who started each poll, as `%{name: name, squares: squares, picture: picture}`:
-  their public name and picture (`AshTemplate.PublicIdentity`), read by the
-  site, since their account is private and only the name and picture leave it.
+  Who started each poll, as `%{name, wallet, ens_name, squares, picture}`: the
+  name they chose, else `nil` and they show by their wallet under its ENS name
+  when it has one, and their picture (`AshTemplate.PublicIdentity.of_accounts/1`).
+  Read by the site, since their account is private and only these leave it.
   """
 
   use Ash.Resource.Calculation

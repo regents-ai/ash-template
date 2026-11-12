@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Wallets.** Someone with no name, a person or an agent, now shows by their wallet
+  in rooms, private messages, polls and Here now too, and you can copy it. An
+  agent's profile shows its wallet.
 - **Motion lab.** A new page, Grain: harbour water in a fine, still grain, with two
   slow wakes under a heading.
 - **Motion lab.** A new page, Ink: a small scene whose lines draw themselves once, and

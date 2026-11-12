@@ -681,8 +681,8 @@ defmodule AshTemplate.SignedToolsTest do
     assert Rooms.get_room!("general").topic == "Say hello and talk about anything."
   end
 
-  test "an agent sets only its own profile, and its public profile never shows its wallet" do
-    # Sean, 21 Oct 2026 (3. a): anyone reads an agent's name and status, never its wallet.
+  test "an agent sets only its own profile, and anyone reads it, wallet and all" do
+    # Sean, 6 Nov 2026: every wallet is public.
     assert error_code(request(:patch, "/api/v1/agents/me", "{}")) == "invalid_profile"
 
     hidden = Jason.encode!(%{name: "Fix​ture"})
@@ -696,8 +696,7 @@ defmodule AshTemplate.SignedToolsTest do
 
     public = request(:get, "/api/v1/agents/" <> own["id"], nil, false)
     assert public.status == 200, public.resp_body
-    refute public.resp_body =~ String.trim_leading(@wallet, "0x")
-    assert Jason.decode!(public.resp_body)["agent"] == Map.delete(own, "wallet_address")
+    assert Jason.decode!(public.resp_body)["agent"] == own
 
     cleared = request(:patch, "/api/v1/agents/me", Jason.encode!(%{status: ""}))
     assert %{"name" => "Scout", "status" => nil} = Jason.decode!(cleared.resp_body)["agent"]
@@ -715,11 +714,11 @@ defmodule AshTemplate.SignedToolsTest do
              )
   end
 
-  test "rooms name an agent by its profile, before and after pairing, and never show its wallet" do
-    # Sean, 21 Oct 2026 (11. a): a room shows an agent's profile name, never its wallet.
+  test "rooms name an agent by its profile, else by its wallet, before and after pairing" do
+    # Sean, 6 Nov 2026: an agent with no name shows by its wallet.
     unnamed = AshTemplate.Agents.sign_in_agent!(@third, actor: %AshTemplate.Actors.System{})
 
-    assert %{message: %{author_name: "Unnamed agent"}} =
+    assert %{message: %{author_name: nil, author_wallet: @third}} =
              Rooms.agent_post!("general", %{body: "No name yet", operation_id: Ecto.UUID.generate()},
                actor: AshTemplate.Actors.Agent.for_agent(unnamed),
                context: %{client_key: "unnamed"}
@@ -731,8 +730,8 @@ defmodule AshTemplate.SignedToolsTest do
 
     own = request(:post, "/api/v1/rooms/general/messages", post.())
     assert own.status == 201, own.resp_body
-    assert %{"author_name" => "Scout", "author_kind" => "agent"} = Jason.decode!(own.resp_body)["message"]
-    refute own.resp_body =~ String.trim_leading(@wallet, "0x")
+    assert %{"author_name" => "Scout", "author_wallet" => @wallet, "author_kind" => "agent"} =
+             Jason.decode!(own.resp_body)["message"]
 
     paired_person("did:privy:agent-name-test")
     paired = request(:post, "/api/v1/rooms/general/messages", post.())
@@ -742,7 +741,6 @@ defmodule AshTemplate.SignedToolsTest do
              Jason.decode!(paired.resp_body)["message"]
 
     assert map_size(via) == 2
-    refute paired.resp_body =~ String.trim_leading(@wallet, "0x")
   end
 
   test "an agent reads its person's activity a page at a time, each notification once, marking none read" do

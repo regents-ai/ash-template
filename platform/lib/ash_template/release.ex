@@ -170,7 +170,8 @@ defmodule AshTemplate.Release do
     first_line = message.body |> String.split("\n", parts: 2) |> hd() |> String.slice(0, 120)
 
     "#{message.id}  #{message.room}  #{reports} #{if reports == 1, do: "report", else: "reports"} (#{why})  " <>
-      "by #{message.author_name}, #{Calendar.strftime(message.inserted_at, "%Y-%m-%d %H:%M UTC")}\n  #{first_line}"
+      "by #{message |> AshTemplate.Rooms.Message.author() |> AshTemplate.PublicIdentity.words()}, " <>
+      "#{Calendar.strftime(message.inserted_at, "%Y-%m-%d %H:%M UTC")}\n  #{first_line}"
   end
 
   @doc """

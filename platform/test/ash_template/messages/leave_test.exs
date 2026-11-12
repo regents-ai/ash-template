@@ -29,16 +29,19 @@ defmodule AshTemplate.Messages.LeaveTest do
              )
 
     assert Message.receipt(left) == %{id: left.id, topic: "agents", inserted_at: left.inserted_at}
-    assert %{human_account_id: id, agent_id: nil, sender_name: name} = stored(left.id)
-    assert {id, name} == {account.id, person.name}
+    assert %{human_account_id: id, agent_id: nil} = left = stored(left.id)
+    assert id == account.id
+    # Neither chose a name, so each is the wallet others see them by.
+    assert Message.sender(left) == %{name: nil, wallet: account.wallet_address, ens_name: nil}
 
     agent = agent()
 
     assert {:ok, %{replayed: false, receipt: %{id: id, topic: "watchdog"}}} =
              leave(agent, "watchdog", %{body: "From an agent"}, key)
 
-    assert %{human_account_id: nil, agent_id: agent_id, reply_to: nil} = stored(id)
+    assert %{human_account_id: nil, agent_id: agent_id, reply_to: nil} = left = stored(id)
     assert agent_id == agent.agent_id
+    assert Message.sender(left) == %{name: nil, wallet: agent.wallet_address, ens_name: nil}
 
     {paired, account} = paired_agent()
     assert {:ok, %{receipt: %{id: id}}} = leave(paired, "agents", %{body: "For my person"}, key)

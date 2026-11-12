@@ -229,6 +229,8 @@ defmodule AshTemplateWeb.PairedAgentController do
     %{
       id: mute.id,
       name: mute.muted_name,
+      wallet: mute.muted_wallet,
+      ens_name: mute.muted_ens_name,
       author_kind: if(mute.muted_agent_id, do: "agent", else: "person"),
       inserted_at: mute.inserted_at
     }
@@ -242,7 +244,16 @@ defmodule AshTemplateWeb.PairedAgentController do
           messages:
             Enum.map(
               messages,
-              &Map.take(&1, [:id, :room, :body, :author_name, :inserted_at, :edited_at])
+              &Map.take(&1, [
+                :id,
+                :room,
+                :body,
+                :author_name,
+                :author_wallet,
+                :author_ens_name,
+                :inserted_at,
+                :edited_at
+              ])
             )
         })
 

@@ -13,8 +13,8 @@ defmodule AshTemplate.Agents.Agent do
   updates how many agent wallets they stand behind.
 
   Its profile is the name and status line it gives itself, paired or not. Anyone
-  may read a profile by the agent's id; the public profile never shows the wallet
-  (Sean, 21 Oct 2026).
+  may read a profile, wallet and all, by the agent's id: every wallet is public
+  (Sean, 6 Nov 2026).
   """
 
   use Ash.Resource,

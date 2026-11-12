@@ -12,6 +12,7 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
 
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.System
+  alias AshTemplate.PublicIdentity
   alias AshTemplate.Rooms.{Message, Mute}
 
   @excerpt 140
@@ -43,14 +44,22 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
   end
 
   # Everyone else who has posted in the room under a name the message mentions,
-  # less anyone who muted its author. These reads are the post's own
-  # bookkeeping, so no reader's policies apply.
+  # less anyone who muted its author. The name is the one others saw them post
+  # under, in the plain words of `AshTemplate.PublicIdentity.words/1`. These reads
+  # are the post's own bookkeeping, so no reader's policies apply.
   defp mentioned(message) do
     named =
       Message
       |> Ash.Query.filter(
         room == ^message.room and not is_nil(human_account_id) and
-          fragment("strpos(lower(?), '@' || lower(?)) > 0", ^message.body, author_name)
+          fragment(
+            "strpos(lower(?), '@' || lower(coalesce(?, ?, '0x' || substr(?, 3, 4) || '..' || right(?, 4)))) > 0",
+            ^message.body,
+            author_name,
+            author_ens_name,
+            author_wallet,
+            author_wallet
+          )
       )
       |> Ash.Query.select([:human_account_id])
       |> Ash.read!(authorize?: false)
@@ -85,7 +94,8 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
   defp notification(message, human_account_id) do
     %{
       human_account_id: human_account_id,
-      title: "#{message.author_name} mentioned you in #{message.in_room.name}",
+      title:
+        "#{message |> Message.author() |> PublicIdentity.words()} mentioned you in #{message.in_room.name}",
       body: excerpt(message.body),
       path: "/rooms/#{message.room}"
     }
