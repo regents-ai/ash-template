@@ -9268,3 +9268,15 @@ too small next to the switch, and the branch was behind main.
   Nothing below the stage moves when the shape changes; 320 and 390 wide still fit
   without scrolling sideways.
 - Main merged in (v220), main's design-system pin kept.
+
+## 2026-11-12 — Released v221: the particles lab page
+
+- `6f4e85fa` (`wt/tpl-particles-1112`, the design chief's) is v221 on template.regents.sh,
+  switched at about 20:20Z with `scripts/deploy.sh`. One new lab page,
+  `/animations/particles`. No migration; no existing page touched.
+- Rollback: v220 (`37abed0c`), image only.
+- Full check exit 0 by the chief on the branch head: 137 script tests, 602 browser walks
+  with 5 skipped, 217 Elixir.
+- Live read, signed out, headless Chromium (WebKit and real phones not run):
+  `/animations/particles`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
