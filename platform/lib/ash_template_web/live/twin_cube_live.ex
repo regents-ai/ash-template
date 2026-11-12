@@ -72,12 +72,13 @@ defmodule AshTemplateWeb.TwinCubeLive do
         aria-label="Two ways into the sites"
         phx-hook="TwinCube"
       >
+        <WorldCube.cube id="twin-world" label="The six worlds" worlds={@worlds} />
+        <CodeCube.cube id="twin-code" label="The tools each site offers agents" click="open_card" />
+        <%!-- The names come last, so they stand over both cubes. --%>
         <div id="twin-cube-labels" class="twin-cube__labels" phx-update="ignore" aria-hidden="true">
           <p class="twin-cube__label" data-twin-label>Human Browsing</p>
           <p class="twin-cube__label" data-twin-label>Agentic WebMCP</p>
         </div>
-        <WorldCube.cube id="twin-world" label="The six worlds" worlds={@worlds} />
-        <CodeCube.cube id="twin-code" label="The tools each site offers agents" click="open_card" />
       </section>
       <CodeCube.card
         :if={@open}

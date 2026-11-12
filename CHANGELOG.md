@@ -8282,3 +8282,24 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   390; `/`, `/agents`, `/app`, `/polls`, `/notes` and `/account` answer 200 at both
   widths with no page or console errors and no sideways scroll. The account menu's
   switch (signed in) and dragging the knob were not driven live.
+
+## 2026-11-12 — The design-system's style check: 29 breaks down to 8
+
+- `sh assets/vendor/regent_ui/style-check.sh` (design-system `dfd18f87`) found 29 breaks;
+  21 are fixed here, and the page looks the same: the shell's current-place bar and
+  current-tab line are borders, not inset shadows, with the room given back so no word
+  or icon moves; the pairing window's close button is square; the home page's outlined
+  buttons take their hover wash as a fill, not a shadow; the home glass carries STYLE.md's
+  one approved glass mark; the crown, the button lab and the twin cubes stack by page
+  order (the twin's names now come after both cubes); the world cube, the code cube's
+  faces, the Keyfleet field, the feedback lab's button and the home tabs' foil keep their
+  numbers nested inside their own isolated root; the account squares' drawing is marked
+  as hidden artwork, as Techtree's is.
+- 8 remain, each for the design-system's check, so it is not yet in `make check`: the
+  world cube's three glass panes and cards (`backdrop-filter`) and its panes' shadow (the
+  founder's chosen look, with no allowance in the check); the button lab's 2px word blur
+  (a motion, not glass); and three lines of `assets/test/parts_motion.test.ts`, whose
+  `left:` key is a test's expected value, not an animated property.
+- Checked by screenshots before and after at 1280 and 390 (pixel-identical apart from the
+  rail's 2px border corner and live artwork timing) and by forcing the twin cube's drawn
+  state: its room card, code cube and names stand on top.
