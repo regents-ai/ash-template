@@ -4,8 +4,9 @@
    and the grid of shapes. The stage is padded by exactly the field's spill, so
    the canvas reaches the stage's edges and never past the column.
 
-   The field keeps one size on every screen, so its grains lie as fine on a wide
-   one as on a phone; a wide screen gives it more room round it to fly in. */
+   The field keeps one height on every screen, so its grains lie as fine on a
+   wide one as on a phone, and the bar below never moves as the shape changes;
+   a wide screen gives it more room round it to fly in. */
 .motion-lab--particles {
   width: 100%;
   align-content: start;
@@ -24,7 +25,7 @@
 
 .particle-lab .particle-field {
   --particle-spill: var(--particle-lab-spill);
-  block-size: 8rem;
+  block-size: 18rem;
 }
 
 .particle-lab__bar {

@@ -36,6 +36,8 @@ export type FieldScene = {
   height: number
   /** CSS pixels per shape unit. */
   scale: number
+  /** The box's CSS height, the same whatever the shape. */
+  box: number
   /** Half the shape's width in CSS pixels: what the release sweeps across when the next shape comes. */
   half: number
   value: number
@@ -98,11 +100,12 @@ const DARK_GLOW = 0.9
 const LIGHT_INK = 1.1
 /** How far the viewer is from the page, in units, as the forming shape swings in depth. */
 const VIEWER = 7
-/** On a dark page: how far the glow round lit grains reaches, as a share of a unit, and how strong it is. */
-const HALO = 0.12
+/**
+ * On a dark page: how far the glow round lit grains spreads, as a share of the box's height, so it is
+ * the same round every shape in one box; and how strong it is.
+ */
+const HALO = 0.055
 const HALO_STRENGTH = 1.2
-/** How wide the blur's nine taps spread it, in taps, over its two rounds. */
-const BLUR_REACH = 2.4
 
 const homeWgsl = /* wgsl */ `
 // Where the grain lives in units: at value 0 (xy) and 1 (zw).
@@ -359,7 +362,7 @@ struct Down {
 
 export const blurWgsl = /* wgsl */ `
 struct Blur {
-  // How far apart the taps are along the way the blur runs (xy), in texture coordinates.
+  // One texel along the way the blur runs (xy), in texture coordinates; how far it spreads (sigma, in texels); unused.
   step: vec4f,
 }
 
@@ -367,14 +370,21 @@ struct Blur {
 @group(0) @binding(1) var samp: sampler;
 @group(0) @binding(2) var<uniform> blur: Blur;
 
+// A true Gaussian over every texel it reaches, so the glow falls off smoothly at any spread: the
+// texels are read in pairs, each pair with one filtered sample placed between them by their weights.
 @fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
-  let weights = array<f32, 5>(0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-  var sum = textureSampleLevel(source, samp, uv, 0.0) * weights[0];
-  for (var k = 1; k < 5; k++) {
-    let offset = blur.step.xy * f32(k);
-    sum += (textureSampleLevel(source, samp, uv + offset, 0.0) + textureSampleLevel(source, samp, uv - offset, 0.0)) * weights[k];
+  let sigma = blur.step.z;
+  let reach = i32(ceil(3.0 * sigma));
+  var sum = textureSampleLevel(source, samp, uv, 0.0);
+  var total = 1.0;
+  for (var k = 1; k <= reach; k += 2) {
+    let a = exp(-f32(k * k) / (2.0 * sigma * sigma));
+    let b = exp(-f32((k + 1) * (k + 1)) / (2.0 * sigma * sigma));
+    let offset = blur.step.xy * (f32(k) + b / (a + b));
+    sum += (textureSampleLevel(source, samp, uv + offset, 0.0) + textureSampleLevel(source, samp, uv - offset, 0.0)) * (a + b);
+    total += 2.0 * (a + b);
   }
-  return sum;
+  return sum / total;
 }
 `
 
@@ -462,11 +472,11 @@ export async function createParticleFieldRenderer(
     })
     const blurAcross = effect(gpu, prepareShader(blurWgsl, "particle_blur.wgsl"), {
       label: "particle-field.blur-across",
-      set: {source: haloA, samp: linear, blur: {step: [haloA.texelSize[0], 0, 0, 0]}},
+      set: {source: haloA, samp: linear, blur: {step: [haloA.texelSize[0], 0, 1, 0]}},
     })
     const blurDown = effect(gpu, prepareShader(blurWgsl, "particle_blur.wgsl"), {
       label: "particle-field.blur-down",
-      set: {source: haloB, samp: linear, blur: {step: [0, haloB.texelSize[1], 0, 0]}},
+      set: {source: haloB, samp: linear, blur: {step: [0, haloB.texelSize[1], 1, 0]}},
     })
     const composite = effect(gpu, prepareShader(compositeWgsl, "particle_composite.wgsl"), {
       label: "particle-field.composite",
@@ -497,7 +507,7 @@ export async function createParticleFieldRenderer(
     let sweep = 1
     let lastHalf = 1
     let last: number | undefined
-    let shown: {value: number; scale: number; width: number; height: number; light: boolean} | undefined
+    let shown: {value: number; scale: number; box: number; width: number; height: number; light: boolean} | undefined
 
     const bind = () => {
       down.set({source: scene, down: {texel: [...scene.texelSize, 0, 0]}})
@@ -541,11 +551,12 @@ export async function createParticleFieldRenderer(
           !shown ||
           shown.value !== current.value ||
           shown.scale !== current.scale ||
+          shown.box !== current.box ||
           shown.width !== current.width ||
           shown.height !== current.height ||
           shown.light !== current.light
         if (changed) quietUntil = Math.max(quietUntil, clock + VALUE_SETTLES)
-        shown = {value: current.value, scale: current.scale, width: current.width, height: current.height, light: current.light}
+        shown = {value: current.value, scale: current.scale, box: current.box, width: current.width, height: current.height, light: current.light}
         if (current.turns) turn = (turn + (dt * 2 * Math.PI) / TURN_SECONDS) % (2 * Math.PI)
         const moving = clock < quietUntil || current.turns || pending !== undefined
         // Resting: the next frame that comes starts its clock afresh instead of counting the rest.
@@ -592,10 +603,10 @@ export async function createParticleFieldRenderer(
             far: rgba(view.colours.far),
           },
         })
-        // The glow reaches the same share of a unit whatever the size: taps spaced in quarter-size texels.
-        const spacing = Math.max(1, (HALO * view.scale * ratio) / 4 / BLUR_REACH)
-        blurAcross.set({blur: {step: [haloA.texelSize[0] * spacing, 0, 0, 0]}})
-        blurDown.set({blur: {step: [0, haloB.texelSize[1] * spacing, 0, 0]}})
+        // The glow's spread in quarter-size texels.
+        const spread = Math.max(0.5, (HALO * view.box * ratio) / 4)
+        blurAcross.set({blur: {step: [haloA.texelSize[0], 0, spread, 0]}})
+        blurDown.set({blur: {step: [0, haloB.texelSize[1], spread, 0]}})
         composite.set({page: {look: [view.light ? 1 : 0, view.light ? 0 : HALO_STRENGTH, 0, 0], lit: rgba(view.colours.lit)}})
         fresh = false
         frame(gpu, f => {
@@ -603,11 +614,8 @@ export async function createParticleFieldRenderer(
           f.pass({target: scene, clear: [0, 0, 0, 0]}, pass => pass.draw(paint, {instances: GRAINS}))
           if (!view.light) {
             f.pass({target: haloA, clear: [0, 0, 0, 0]}, down)
-            // Two rounds, so the glow is smooth however far apart the taps are.
-            for (let round = 0; round < 2; round++) {
-              f.pass({target: haloB, clear: [0, 0, 0, 0]}, blurAcross)
-              f.pass({target: haloA, clear: [0, 0, 0, 0]}, blurDown)
-            }
+            f.pass({target: haloB, clear: [0, 0, 0, 0]}, blurAcross)
+            f.pass({target: haloA, clear: [0, 0, 0, 0]}, blurDown)
           }
           f.pass({target: stage, clear: [0, 0, 0, 0]}, composite)
         })

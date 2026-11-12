@@ -2,12 +2,15 @@
 /* The particle field (`AshTemplateWeb.Components.ParticleField`,
    hooks/particle_field.ts): grains drawn over a real control, an icon or a mark.
 
-   The field's box is the page's to size. The shape fills it as far as its own
-   proportions allow (`--particle-aspect` wide for each unit tall, set below for
-   each shape) and sits in its middle; the real control or the drawing under it
-   takes exactly the shape's place, so a press lands where the grains are. The
-   canvas reaches `--particle-spill` past the box on every side, for the flight
-   and, on a dark page, the soft light round what is lit.
+   The field's box is the page's to size, and the same for every shape, so
+   nothing round it moves when the shape changes. Each shape stands its own share
+   of the box's height (`--particle-fill`: a row control such as the switch or
+   the slider under half, a round or square shape all of it), as far as its own
+   proportions allow (`--particle-aspect` wide for each unit tall), both set
+   below for each shape, and sits in the box's middle; the real control or the
+   drawing under it takes exactly the shape's place, so a press lands where the
+   grains are. The canvas reaches `--particle-spill` past the box on every side,
+   for the flight and, on a dark page, the soft light round what is lit.
 
    Until the grains have drawn, and wherever they never do, the control is its
    flat, square still face. Once they have, the still face gives its colours to
@@ -16,8 +19,9 @@
    sets one (Techtree's green), and Patchbay's accent. */
 .particle-field {
   --particle-aspect: 1;
+  --particle-fill: 1;
   /* CSS pixels per unit of the shape, read inside the box. */
-  --particle-unit: min(100cqi / var(--particle-aspect), 100cqb);
+  --particle-unit: min(100cqi / var(--particle-aspect), 100cqb * var(--particle-fill));
   --particle-spill: var(--space-5);
   --particle-muted: var(--color-fg-muted);
   --particle-lit: var(--rg-theme-laser-light, var(--palette-tangerine-tango));
@@ -35,6 +39,16 @@
 
 :root[data-brand="patchbay"] .particle-field {
   --particle-lit: var(--color-accent);
+}
+
+/* The row controls stand under half the box, so a ring, an icon or a mark in
+   the same box is about 2.3 times as tall as the switch, as in the reference
+   film. */
+.particle-field[data-particle-shape="switch"],
+.particle-field[data-particle-shape="slider"],
+.particle-field[data-particle-shape="bar"],
+.particle-field[data-particle-shape^="steps:"] {
+  --particle-fill: 0.44;
 }
 
 .particle-field[data-particle-shape="switch"] {

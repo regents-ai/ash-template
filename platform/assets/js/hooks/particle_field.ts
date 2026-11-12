@@ -9,9 +9,10 @@
  * every grain to a new home; changing the value moves the knob or the lit part.
  * Whoever changes them, the server or a script, the field follows.
  *
- * The shape fills the root's box, drawn `--particle-aspect` wide for each unit
- * tall (particle_field.css says it for each shape), and the canvas reaches past
- * the box on every side for the flight and the halo. An icon or a mark is the
+ * The shape stands `--particle-fill` of the root box's height, as far as its
+ * width allows, drawn `--particle-aspect` wide for each unit tall
+ * (particle_field.css says both for each shape), and the canvas reaches past the
+ * box on every side for the flight and the halo. An icon or a mark is the
  * server's own drawing inside the root, which the grains are laid on.
  *
  * A value set by a press moves across on the design system's on-screen curve;
@@ -81,10 +82,12 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
   const shown = {value: valueNow()}
   let name = root.dataset.particleShape!
   let target = shown.value
-  // The shape the grains are on or flying to, the name and box it was laid out for, and its homes in flying order.
+  // The shape the grains are on or flying to, the name and box it was laid out for, the share of the
+  // box's height it stands, and its homes in flying order.
   let shape: Shape | undefined
   let shapeName: string | undefined
   let aspect = 1
+  let fill = 1
   let homes: Float32Array<ArrayBuffer> | undefined
   const layouts = new Map<string, Shape>()
   let building: Slicing | undefined
@@ -127,7 +130,9 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
   const change = () => {
     building?.stop()
     const named = name
-    const wide = Number(getComputedStyle(root).getPropertyValue("--particle-aspect"))
+    const style = getComputedStyle(root)
+    const wide = Number(style.getPropertyValue("--particle-aspect"))
+    const share = Number(style.getPropertyValue("--particle-fill"))
     function* ready() {
       const made = yield* layout(named, wide)
       return {made, ordered: yield* inFlightOrder(made.homes, target)}
@@ -137,6 +142,7 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
       shape = made
       shapeName = named
       aspect = wide
+      fill = share
       homes = ordered
       jumpTo(target)
       renderer()?.place(ordered)
@@ -151,11 +157,12 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
 
   const scene = (): FieldScene => {
     colours ??= readColours()
-    const scale = Math.min(box.width / aspect, box.height)
+    const scale = Math.min(box.width / aspect, box.height * fill)
     return {
       width: view.width,
       height: view.height,
       scale,
+      box: box.height,
       half: (aspect * scale) / 2,
       value: shown.value,
       area: shape!.area,
