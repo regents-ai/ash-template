@@ -7,7 +7,9 @@ defmodule AshTemplateWeb.MessagesApiTest do
   #   and 409 idempotency_conflict for other text;
   # - an unsigned request leaves nothing;
   # - input the action cannot take is 422 invalid_message with details, through
-  #   either door.
+  #   either door;
+  # - past the agent's allowance, 429 too_many_requests with the seconds to wait,
+  #   through either door, and nothing is left.
   # The sign-in service is stubbed: it vouches for the wallet a request names when
   # the request carries the fixture proof. Each test calls from its own address.
   use ExUnit.Case, async: false
@@ -113,6 +115,29 @@ defmodule AshTemplateWeb.MessagesApiTest do
     refused = http(from, agent, "agents", too_long |> Map.delete(:topic))
     assert refused.status == 422
     assert %{"code" => "invalid_message", "details" => [%{"field" => "body"}]} = json(refused)["error"]
+  end
+
+  test "past its allowance an agent is told the seconds to wait, and leaves nothing",
+       %{from: from, agent: agent} do
+    left = http(from, agent, "agents", %{body: "First", operation_id: Ecto.UUID.generate()})
+    assert left.status == 201
+    agent_id = Ash.get!(Message, json(left)["receipt"]["id"], authorize?: false).agent_id
+    limit = Application.fetch_env!(:ash_template, :limits)[:message][:limit]
+    for _ <- 2..limit, do: :ok = AshTemplate.Limits.spend(:message, {:agent, agent_id})
+    count = length(Ash.read!(Message, authorize?: false))
+
+    refused = http(from, agent, "agents", %{body: "Too soon", operation_id: Ecto.UUID.generate()})
+    assert refused.status == 429
+    assert json(refused)["error"]["code"] == "too_many_requests"
+    assert [seconds] = get_resp_header(refused, "retry-after")
+    assert String.to_integer(seconds) in 1..3600
+
+    too_soon = %{topic: "agents", body: "Too soon", operation_id: Ecto.UUID.generate()}
+    assert %{"isError" => true, "content" => [%{"text" => text}]} = mcp(from, agent, too_soon)
+    assert %{"code" => "too_many_requests", "retry_after" => seconds} = Jason.decode!(text)["error"]
+    assert seconds in 1..3600
+
+    assert length(Ash.read!(Message, authorize?: false)) == count
   end
 
   test "an unsigned or forged request leaves nothing", %{from: from, agent: agent} do

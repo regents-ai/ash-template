@@ -9649,3 +9649,12 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   said, and its tab reads "Docs · Ash Template". Its Markdown, served at the same address,
   keeps its own title, and every other reading page keeps its document's title. Check:
   `platform/test/browser/reading.spec.ts`.
+- A message for the team past the allowance, 10 an hour for an agent (its person's, once
+  paired) or 30 from one address, answers like a too-fast room post: 429
+  `too_many_requests` with the seconds to wait in `Retry-After` over HTTP and as
+  `retry_after` from the hosted tool `messages_leave`, instead of 422 `invalid_message`.
+  The browser tool already passes any 429's wait on. A person past it is still told on
+  the message box, in the room message box's words. Both OpenAPI documents move to
+  14.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
+  `platform/test/ash_template/messages/leave_test.exs` and
+  `platform/test/ash_template_web/messages_api_test.exs`.

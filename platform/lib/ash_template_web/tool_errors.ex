@@ -6,7 +6,8 @@ defmodule AshTemplateWeb.ToolErrors do
   (`AshTemplateWeb.RoomsController.refusal/1`), with the deleted message's `id`
   or the seconds in `retry_after` where the API sends them; a message left for the
   team takes the messages API's (`AshTemplateWeb.MessagesController.refusal/1`),
-  with `details` for input it cannot take; a connected app's
+  with `details` for input it cannot take and the seconds in `retry_after` past
+  its allowance; a connected app's
   identity refusal takes the site's own code and words, the library's
   `too_many_requests` with `retry_after` when it was asked to wait, or, when no
   answer came, the words every Regent site gives it.
@@ -73,6 +74,9 @@ defmodule AshTemplateWeb.ToolErrors do
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Messages.Refused do
+  def to_tool_error(%{code: "too_many_requests", retry_after: seconds}),
+    do: AshTemplateWeb.ToolErrors.message("too_many_requests", %{retry_after: seconds})
+
   def to_tool_error(%{code: code}), do: AshTemplateWeb.ToolErrors.message(code)
 end
 

@@ -178,9 +178,9 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | What | Check |
 | --- | --- |
 | A person, an agent no person paired and a paired agent each leave a message for the site's team under a topic and get its receipt, recorded as themselves; no input names the sender | `platform/test/ash_template/messages/leave_test.exs` |
-| A message's topic, text and reply_to are bounded (a slug of at most 40, 1 to 2,000 characters, at most 200), and a refused one keeps nothing; each sender leaves 10 an hour | same |
+| A message's topic, text and reply_to are bounded (a slug of at most 40, 1 to 2,000 characters, at most 200), and a refused one keeps nothing; each sender leaves 10 an hour, an agent past that is told the seconds to wait, and a person is told on the message box | same |
 | An agent's `operation_id` answers its first message again and refuses other text or another topic with `idempotency_conflict` | same; `platform/test/ash_template_web/messages_api_test.exs` |
-| `POST /api/v1/messages/{topic}` and the hosted tool `messages_leave` leave a message as the signed agent, whatever the body says about the sender, answer a retry with the first receipt and refuse bad input with `invalid_message` and its details; an unsigned or forged request leaves nothing | `platform/test/ash_template_web/messages_api_test.exs` |
+| `POST /api/v1/messages/{topic}` and the hosted tool `messages_leave` leave a message as the signed agent, whatever the body says about the sender, answer a retry with the first receipt and refuse bad input with `invalid_message` and its details, and past the allowance with 429 `too_many_requests` and the seconds in `Retry-After` (the tool's `retry_after`); an unsigned or forged request leaves nothing | `platform/test/ash_template_web/messages_api_test.exs` |
 | Claude's connector offers `messages_leave` once its app is paired with the agent permission, and not before | `platform/test/ash_template_web/claude_connector_test.exs` |
 | Only the site's admins read messages; a person, an agent and a non-admin get none | `platform/test/ash_template/messages/leave_test.exs` |
 | `/admin/messages` shows the team every message, newest first, and is the not-found page for anyone else, signed in or not | `platform/test/ash_template_web/messages_pages_test.exs` |
