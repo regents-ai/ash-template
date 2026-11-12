@@ -206,3 +206,54 @@ test("a note thrown sideways is dismissed", async ({page}) => {
   await drag(page, note.locator("span"), {dx: -25, ms: 120})
   await expect(page.locator(`#${id}:not([hidden])`)).toHaveCount(0)
 })
+
+// Records, each frame until it stops, the smallest scale `panel` is drawn at.
+async function smallestScale(page: Page, panel: string) {
+  await page.evaluate(panel => {
+    const w = window as unknown as {smallest: number}
+    w.smallest = 1
+    let frames = 0
+    const frame = () => {
+      const el = document.querySelector(panel)
+      if (el && getComputedStyle(el).display !== "none")
+        w.smallest = Math.min(w.smallest, new DOMMatrix(getComputedStyle(el).transform).a)
+      if (++frames < 40) requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  }, panel)
+  return async () => {
+    await page.waitForTimeout(700)
+    return page.evaluate(() => (window as unknown as {smallest: number}).smallest)
+  }
+}
+
+// The menu lab (November bonus, step 7): a menu opened by pointer grows from the
+// corner of its button and rests where it opened; opened by keyboard it is simply
+// there, Escape hands focus back to its button, and a press outside closes it.
+test("a menu grows from its button by pointer, and is simply there by keyboard", async ({page}) => {
+  await page.goto("/animations/menu")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const more = page.locator("#menu-lab-more")
+  const panel = more.locator("[data-panel='menu']")
+
+  const grew = await smallestScale(page, "#menu-lab-more [data-panel='menu']")
+  await more.locator("summary").click()
+  await expect(more).toHaveAttribute("data-settled")
+  expect(await grew()).toBeLessThan(0.98)
+  await expect(panel).not.toHaveAttribute("style", /./)
+  const box = (await panel.boundingBox())!
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width)
+  await page.locator("h1").click()
+  await expect(more).not.toHaveAttribute("open")
+
+  const sort = page.locator("#menu-lab-sort")
+  await sort.locator("summary").focus()
+  const still = await smallestScale(page, "#menu-lab-sort [data-panel='menu']")
+  await page.keyboard.press("Enter")
+  await expect(sort).toHaveAttribute("data-settled")
+  expect(await still()).toBe(1)
+  await page.keyboard.press("Tab")
+  await page.keyboard.press("Escape")
+  await expect(sort).not.toHaveAttribute("open")
+  await expect(sort.locator("summary")).toBeFocused()
+})

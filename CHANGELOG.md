@@ -7916,3 +7916,22 @@ sits on its own branches.
 - Tests: `platform/assets/test/gestures.test.ts` (speed, resistance, throw or pull) and
   `platform/test/browser/motion.spec.ts` (a short pull goes back, a flick closes, Escape
   closes, less motion, a note thrown away).
+
+## 2026-11-12 — Menu lab (November bonus, step 7)
+
+- A lab page only, `/animations/menu` (`AshTemplateWeb.MenuLabLive`, titled Menu): a
+  Sort button at the left and a More button at the right, each the shared details
+  dropdown (`rg-pill-select`) with its list marked `data-panel="menu"`. Opened by
+  pointer, the kit's standard menu motion grows the list from its own button's corner
+  (`transform-origin` top left or top right in `assets/css/pages/menu_lab.css`); opened
+  by keyboard, or with less motion, it is simply there. Escape closes it and hands focus
+  back to its button, and a press outside closes it, both from design-system's
+  `pill_select.mjs`; choosing an item closes it with `JS.remove_attribute`.
+- The list sits on the Tip layer (`--rg-layer-tip`, `--rg-layer-tip-shadow`), so opening
+  it moves nothing on the page, and stays inside the screen at 320 wide. The account
+  menu and every real menu are unchanged.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/motion.spec.ts`: grows by pointer, still by keyboard, Escape
+  hands focus back, a press outside closes.
