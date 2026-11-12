@@ -9119,3 +9119,8 @@ release waits for Sean's go.
 - Forecast re-check on local throwaway databases migrated through `20261112120100`, then
   again through `20261112130000`: `rows.sql` and `sweep-rows.sql` read-only on the seeded
   rows, then the two real migrations; every row ended as the two files forecast.
+- Full check on `9ff7845e`, exit 0: style check clean, 13 script tests, credo clean, 126
+  TypeScript, 579 browser walks with 5 skipped, 217 Elixir (10 properties), required
+  fixes, the command list and the newest-CLI check. On `f11d89e8` one walk (the Agent
+  Message window's offline note on `/agents`, desktop) timed out once and passed on the
+  rerun. WebKit not run.
