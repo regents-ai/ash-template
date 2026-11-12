@@ -9302,6 +9302,65 @@ too small next to the switch, and the branch was behind main.
   page errors and no sideways scroll.
 - Known, not changed here: the Feedback lab button's sheen has never drawn; the shared
   button's own rule paints over it.
+## 2026-11-12 — Three button flaws on the template's own pages (branch, not on main)
+
+On `wt/tpl-button-flaws-1112`, for the design chief; found by the template chief on v220.
+Design-system pin unchanged (`b57f8d91`); no migration.
+
+- Home page, Enter App's ring: its middle colour was Platinum, the same as the dark main
+  button, so it melted into the button at the right-hand corner. In dark the ring's
+  middle now takes the theme's button mark colour (`--color-button-mark`, Tangerine);
+  in light it stays Platinum against the Charcoal button. No new colour.
+- Buttons lab `/animations/buttons`, per-site columns: the hand-copied colours are gone.
+  Each column carries its site's brand (`data-brand`) and the page's script puts that
+  brand's whole theme from the design system's `tokens.json` on it, in the theme the page
+  shows, as the showcase does; anything a brand's theme leaves unset is cleared there.
+  Techtree's Copy is now its real button, the secondary one in the design system's
+  secondary panel (`rg-support-panel`), as on techtree.sh's home. The light behind each
+  button is the brand's accent. Measured from computed colours, light then dark: Regents
+  18.10 and 14.26:1, Autolaunch 2.82 and 5.83:1 (Tangerine is its brand fill; STYLE.md
+  lets it stand under 3:1 on its light page), Techtree's Copy edge 6.99 and 6.67:1,
+  Patchbay 7.07 and 7.75:1.
+- Buttons lab, "Keyboard focus" example: it was a drawn rectangle. The page now repeats
+  every stylesheet rule a button's keyboard focus answers to for the frozen example, so
+  it wears the shared button's own ring and marks and cannot drift from them.
+- New walk checks: `platform/test/browser/site_buttons.spec.ts` (four different brand
+  buttons and their contrast, and the frozen focus equal to a real keyboard focus, light
+  and dark) and one in `homepage.spec.ts` (Enter App's ring never takes the button's own
+  colour, at rest and on hover). Each fails on the old code.
+
+## 2026-11-12 — The buttons lab's frozen hover is the real one (branch, not on main)
+
+Second commit on `wt/tpl-button-flaws-1112`, for the design chief. Design-system pin
+unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first commit set it.
+
+- Buttons lab `/animations/buttons`, "Hover" examples: they drew a full outline of their
+  own, which in dark was not the shared button's hover (its corner marks in the theme's
+  mark colour), and on Autolaunch's Tangerine button vanished into the fill. The drawn
+  outline and its held arrow nudge are gone. The page's one mirroring step now repeats
+  every rule a button's hover answers to for the frozen hover, as it already did for
+  keyboard focus, so both examples are the shared button's own paint. A list's selectors
+  that name no state are no longer repeated with it. The arrow's nudge is a short motion
+  that ends where it started, so a held hover shows the arrow at rest, as a real one does.
+- The lab names Patchbay's address as patchbay.help (it said patchbay.sh).
+- Walk check: in `platform/test/browser/site_buttons.spec.ts`, the frozen hover equals a
+  button really hovered by a mouse, light and dark; on the phone, where nothing hovers,
+  the frozen hover still differs from the frozen rest for every main button. It fails on
+  the old code.
+
+## 2026-11-12 — Released v223: three button flaws fixed
+
+- `7f1d8749` (`wt/tpl-button-flaws-1112`, the design chief's) is v223 on
+  template.regents.sh, switched at about 21:29Z with `scripts/deploy.sh`. No migration.
+- Rollback: v222 (`eb4959c3`), image only.
+- Full check exit 0 by the design chief on this exact commit: 137 script tests, 616
+  browser walks with 5 skipped, 217 Elixir.
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/animations/buttons`
+  and `/rooms/general` answer 200 at 1280, 390 and 320 with no page errors and no
+  sideways scroll. In dark the Enter App ring shows all round the button; in light the
+  buttons lab's frozen Hover and Keyboard focus examples wear the real marks.
+- Still open: Sean's decision 33 (the ring's gold and green stretch between Tangerine
+  and Powder Blue stays as the oklch rule gives it).
 
 ## 2026-11-12 — Database load review, combined (branch, not on main)
 
