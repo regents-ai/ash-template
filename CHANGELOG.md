@@ -8819,6 +8819,46 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   light and dark with no page error; `/agents.md` names 1.10.25 and commit `8b3240b6`.
   Not proven live: signed-in pages.
 
+## 2026-11-12 — Value cards in the template: `/animations/cards` (branch, not on main)
+
+`tpl/value-cards-1112` brings the row of six value cards on regents.sh's `/app` into the
+template as one piece every site takes, and a Motion lab page that shows it.
+
+- The piece: `AshTemplateWeb.Components.ValueCards.value_cards/1` (cards as data: `:id`
+  names the panel and its still, `:name`, `:headline`, `:line`, `:tint`, `:action`, and
+  one of `:href` for another site, opened in a new tab, `:navigate` or `:patch`), the
+  `ValueCard` hook (`assets/js/hooks/value_card.ts`), `assets/js/value_cards/`
+  (`renderer.ts`, `panel.ts`, `shared_device.ts`, `stills.mjs`) and
+  `assets/css/components/value_cards.css`. Copied from regents' main with no change to
+  look, motion or behaviour, and still without `container-type` or `@container` (the
+  phone crash). Each site's own parts: `value_cards/index.ts`, `value_cards/panels/` and
+  the stills in `priv/static/images/value-cards/`; the module's "Your own cards" section
+  says how to add panels and draw stills (`npm run stills:value-cards`, on a machine
+  with a GPU).
+- The classes are now `value-cards__*` (regents uses `value-card*`): the Value lab's own
+  unscoped `.value-card` rules would otherwise style the new cards. The CSS variables
+  keep their names.
+- The page: `/animations/cards` (`AshTemplateWeb.CardsLabLive`, "Cards"), in the Motion
+  lab list, the Design page's sidebar, the route list (`cards_lab`), the sitemap and the
+  browser walk's page list. Six cards about the template (Rooms, Notes, Polls, Agents,
+  Points, Chat) on the template's own six panels from `91d68a70`, with stills redrawn.
+- The Value lab (`/animations/value`, `value_lab_live.ex`) is left as it is: it is a
+  different experiment (figure cards on one canvas behind the grid, lit round the
+  pointer), not the source of this piece. The piece began as template commits `91d68a70` and `d379d721`,
+  reverted for the phone crash, and was finished in regents.
+- Checks: `test/browser/value_cards.spec.ts` (new) passed on desktop at 1280 and phone at
+  390 and 320, 6 of 6: every panel draws and outlasts pointer sweeps under a 64 MB heap,
+  three columns on a desktop and one on a phone, no sideways scroll; with less motion no
+  panel draws and the stills stay; without WebGPU every card says it will not draw and
+  the stills stay. `pages.spec.ts` for `/animations/cards` passed at 1280, 390 and 320.
+  TypeScript check clean; script tests 126 of 126; `mix format --check-formatted`,
+  `mix compile --warnings-as-errors --force` and `mix ash_template.route_handoff --check`
+  pass; the router's pages match the walk's list. Light and dark at 1280, 390 and 320
+  compared by hand with live regents.sh/app in headless Chromium: same card, type,
+  spacing and columns.
+- Not run: the full `make check` (the release lead's was running), the Elixir test suite,
+  and WebKit.
+
 ## 2026-11-12 — The world cube's glass is an approved exception; the style check runs in `make check`
 
 - Sean's 4 b of 12 Nov: the world cube lab page (`/animations/cube`) keeps its glass and

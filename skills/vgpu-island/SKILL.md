@@ -90,6 +90,10 @@ clamp or `frameLoop` inside an island renderer.
    - The first `set()` of a uniform struct supplies every member with exact component counts.
    - A `Surface` is only ever a render destination, never a binding.
    - If construction throws after `init()`, call `gpu.dispose()` and rethrow.
+   - A page of many small islands (the value cards) opens one device for all of them
+     through `value_cards/shared_device.ts`: each renderer joins it, hears of its loss
+     through the callback it joined with, and on `dispose` gives back its own effect and
+     surface and leaves the device. The last to leave disposes the device.
 
 ## What the island already guarantees
 
@@ -118,6 +122,8 @@ exists. Without WebGPU the island never mounts and the server's picture remains.
 the lab page `/animations/datascape`),
 `hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer
 is vendored from `regent_ui`), the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`,
-and the theme switch `hooks/theme_switch.ts` + `theme_switch/renderer.ts`: a small island
+the value cards `hooks/value_card.ts` + `value_cards/` (`/animations/cards`, the row
+every site takes; `AshTemplateWeb.Components.ValueCards` says how a site adds its own
+panels and draws their stills), and the theme switch `hooks/theme_switch.ts` + `theme_switch/renderer.ts`: a small island
 that draws on demand, asks for `maxDevicePixelRatio: 3` so its blocks stay sharp, and
 keeps every glassy effect inside its canvas over a flat, square still face.
