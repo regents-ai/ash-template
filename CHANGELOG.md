@@ -8999,3 +8999,31 @@ more shapes useful across the products, the Regents crown included.
   missed at each shape change (about 130 ms held with the processor slowed four
   times). A mid-range phone may run below 60 frames a second and pause briefly at
   each shape change.
+
+## 2026-11-12 — Particles lab, second pass (branch, not on main)
+
+The design chief's review: the change between shapes should tear loose as in the
+reference film, lit parts should read as lit at night, the big switch should be fine
+sand, and a shape change should not miss a frame.
+
+- The flight: the old shape lets go from its left end over about half a second, so
+  one end streams away while the rest still stands; the stream bends as one body and
+  twists like a ribbon as the new shape swings round to face the page; the new
+  shape's outline forms first and its middle fills after; one grain in 25 blows loose
+  as dust, rises a little and lands last. The body of the change takes about 1.3
+  seconds and the dust has settled by about 2 (the film: 1.2 to 1.4, and 1.7).
+  Grains keep their colour and light in flight; lit grains turn only as they land. A
+  change mid-flight still starts from wherever the grains are.
+- Lit grains take the same colour by day and at night: Tangerine on Regents sites,
+  Techtree's own green where its beam is set, and Patchbay's accent. On a dark page
+  the grains are about twice as bright and the glow round lit parts is much
+  stronger, spread only from lit grains and still drawn only inside the canvas.
+- The lab's stage holds each shape at one size on every screen (8rem tall), so at
+  1280 wide the switch is 256 by 128 pixels and its 80,000 grains read as fine sand,
+  as on a phone.
+- A new shape is laid out a few milliseconds a frame between the frames the picture
+  draws, and the last six shapes are kept for when they come back. Measured in
+  headless Chrome on this Mac at 1280 and 390 wide, also with the processor slowed
+  four times: no frame missed through a shape change, the longest piece of script in
+  a frame under 10 ms; the first time a shape is asked for, the grains let go after
+  85 to 115 ms (up to a third of a second slowed), and a frame or so after that.
