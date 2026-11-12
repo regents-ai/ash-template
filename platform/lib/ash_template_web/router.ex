@@ -492,6 +492,7 @@ defmodule AshTemplateWeb.Router do
       live "/animations/ask", AskLabLive, :index
       live "/animations/glow", GlowLabLive, :index
       live "/animations/ink", InkLabLive, :index
+      live "/animations/grain", GrainLabLive, :index
     end
   end
 end

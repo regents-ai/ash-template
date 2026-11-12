@@ -31,7 +31,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/value" => "A figure lit where you point",
     "/animations/ask" => "An answer drawn from blocks",
     "/animations/glow" => "A soft light that follows a status",
-    "/animations/ink" => "Ink lines and a ruled horizon"
+    "/animations/ink" => "Ink lines and a ruled horizon",
+    "/animations/grain" => "Harbour water in fine grain"
   }
 
   def page(assigns) do

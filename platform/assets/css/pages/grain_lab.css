@@ -1,0 +1,76 @@
+@layer regents-product {
+/* The grain lab (`/animations/grain`, `AshTemplateWeb.GrainLabLive`): a banner of
+   harbour water on one GPU picture (the `GrainWater` hook) under a heading. The
+   picture paints the page's own ground and ink, so until it has drawn, and
+   wherever it never does, the banner is the plain ground with its words. */
+.motion-lab--grain {
+  width: 100%;
+  align-content: start;
+}
+
+.grain-lab {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-block: var(--rg-rule-width) solid var(--hairline);
+}
+
+.grain-lab__stage,
+.grain-lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.grain-lab__stage {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+.grain-lab[data-grain-ready="true"] .grain-lab__stage {
+  opacity: 1;
+}
+
+/* The words sit in the calm water at the top, above the picture. */
+.grain-lab__words {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-3) 0;
+}
+
+.motion-lab .grain-lab__title {
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+}
+
+.grain-lab__line {
+  color: var(--color-fg-muted);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+@media (min-width: 48rem) {
+  .grain-lab {
+    aspect-ratio: 3 / 1;
+  }
+
+  .grain-lab__words {
+    padding-inline: var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain-lab__stage {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .grain-lab__stage {
+    display: none;
+  }
+}
+}

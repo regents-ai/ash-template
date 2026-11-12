@@ -66,6 +66,7 @@
     {"route": "/animations/ask", "purpose": "Ask and see the answer drawn from blocks.", "check": "#ask-form"},
     {"route": "/animations/glow", "purpose": "See a status row lit in its colour.", "check": "#glow-rows"},
     {"route": "/animations/ink", "purpose": "See ink lines draw and a ruled horizon.", "check": "#ink-picture"},
+    {"route": "/animations/grain", "purpose": "See harbour water in fine grain.", "check": "#grain-banner"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

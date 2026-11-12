@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   # read at runtime (AshTemplateWeb.AgentGuides).
   @documents ~w(/ /docs /about /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /animations/datascape /animations/frosted-glass /animations/menu /animations/parts /animations/value /animations/ask /animations/glow /animations/ink /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /animations/datascape /animations/frosted-glass /animations/menu /animations/parts /animations/value /animations/ask /animations/glow /animations/ink /animations/grain /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -114,6 +114,9 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations/ink" =>
       {"Ink",
        "Hairlines in the page's own ink: a small scene whose strokes draw themselves once, and a ruled ground that widens from flat to deep under a heading."},
+    "/animations/grain" =>
+      {"Grain",
+       "A banner of harbour water seen from above, with a fine still grain and two slow wakes under a heading."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

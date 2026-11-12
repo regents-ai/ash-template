@@ -8462,3 +8462,28 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   views, pointer moves and a theme change leave the page alive, drawn, under a 64 MB
   script heap and with no sideways scroll; the chosen view stays in the link over a
   reload; with less motion the picture never draws.
+
+## 2026-11-12 — Grain lab: harbour water in fine grain
+
+- A lab page only, `/animations/grain` (`AshTemplateWeb.GrainLabLive`, titled Grain),
+  built to spec 8.3 and REGENTS_MAP: a banner of harbour water seen from above under a
+  heading. A new picture for the lab: the Keyfleet sea and the template's harbour artwork
+  are untouched, and no code was taken from the spec's source, so no licence notice is
+  owed. No real page changes.
+- How it looks: a slow swell and two boats crossing each way make a height field; a low
+  light finds the slopes facing it, and a grain fixed to the device pixels decides which
+  specks of those slopes catch it, at most half of them, so they never clump. Foam lies in
+  a thin line along each wake's arms, so the V reads in the grain. The grain never moves,
+  only the water under it, and the water under the heading stays calm.
+- One vgpu island (`hooks/grain_water.ts`, `grain_water/renderer.ts`, WGSL through
+  `canvas_island.ts`, capped at 2 device pixels per CSS pixel), drawn every frame only
+  while on screen in a visible tab; its clock steps at most 50 ms a frame, so a pause never
+  jumps. Colours are `--color-bg` and `--color-fg`, read at start and on every theme
+  change. With less motion, in forced colours or without WebGPU the water never draws and
+  the heading stands on the plain ground.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/grain.spec.ts`: at 320 and 390 with the GPU on, the water runs,
+  pointer moves and a theme change leave the page alive, drawn, under a 64 MB script heap
+  and with no sideways scroll; with less motion the water never draws.
