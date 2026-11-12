@@ -111,7 +111,7 @@ defmodule AshTemplateWeb.SampleCrew do
       data-open
       data-close-event="close_agent"
     >
-      <header class="harbour-card__head">
+      <header class="harbour-card__head" data-sheet-handle>
         <span class="harbour-card__sail" style={"--sail: #{@agent.color}"}></span>
         <div>
           <h2 id="harbour-agent-title">{@agent.name}</h2>
@@ -125,10 +125,16 @@ defmodule AshTemplateWeb.SampleCrew do
           </button>
         </form>
       </header>
-      <ol class="harbour-card__actions" aria-label="Recent actions">
+      <ol
+        id="harbour-agent-actions"
+        class="harbour-card__actions"
+        aria-label="Recent actions"
+        phx-hook="MotionCount"
+        data-variant={AshTemplateWeb.Motion.standard("count")}
+      >
         <li :for={action <- @agent.actions}>
           <span>{doing(action.place)}</span>
-          <time datetime={DateTime.to_iso8601(action.at)}>{ago(action.at, @now)}</time>
+          <time datetime={DateTime.to_iso8601(action.at)}><.ago at={action.at} now={@now} /></time>
         </li>
       </ol>
     </Regent.Structure.dialog>
@@ -140,11 +146,23 @@ defmodule AshTemplateWeb.SampleCrew do
     "#{action} at the #{name}"
   end
 
-  defp ago(at, now) do
-    case DateTime.diff(now, at) do
-      seconds when seconds < 10 -> "Just now"
-      seconds when seconds < 60 -> "#{seconds} s ago"
-      seconds -> "#{div(seconds, 60)} min ago"
+  attr :at, DateTime, required: true
+  attr :now, DateTime, required: true
+
+  # The time sits at the row's end, so a figure that grows only reaches into the
+  # space before it.
+  defp ago(assigns) do
+    case DateTime.diff(assigns.now, assigns.at) do
+      seconds when seconds < 10 ->
+        ~H"Just now"
+
+      seconds when seconds < 60 ->
+        assigns = assign(assigns, :figure, Integer.to_string(seconds))
+        ~H"<Regent.Primitives.figure value={@figure} /> s ago"
+
+      seconds ->
+        assigns = assign(assigns, :figure, Integer.to_string(div(seconds, 60)))
+        ~H"<Regent.Primitives.figure value={@figure} /> min ago"
     end
   end
 end

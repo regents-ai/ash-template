@@ -7877,3 +7877,78 @@ sits on its own branches.
   not-found page. Not proven live: a signed-in person's form and an admin reading the
   inbox (no person's sign-in is used in live reads), and a signed agent's
   `messages leave`.
+
+## 2026-11-12 — Live figures roll (November bonus, step 2)
+
+- Every figure the template's own pages change while someone watches is drawn with
+  design-system's `Regent.Primitives.figure` (`rg-figure`, equal-width digits,
+  `data-count`) inside a part marked `phx-hook="MotionCount"` with the standard `count`
+  version, so the motion kit rolls only the digits that changed, and reduced motion
+  leaves them still: a poll's votes and minutes left (the poll's line and the polls
+  list), each room's message count and the newest block on `/showcase/figures`, the
+  wallet's balance in the on-chain example, the times on a harbour agent's card, and the
+  motion lab's counter. A figure falling to words ("No reading yet", "Just now",
+  "reading balance") is swapped, not rolled.
+- Room left for the widest value only where a figure stands in a column or on its own
+  line: the room counts (five characters, ending on one edge) and the lab's counter
+  (six). A figure inside a sentence keeps none, since a gap mid-sentence reads as a fault;
+  only its own word after it shifts when it gains a digit.
+- The wonders' reading line, which their own script rewrites as they play, takes
+  `rg-figure` for its digits and does not roll.
+- Deleted the per-page `tabular-nums` rules these replace (`polls.css`, `wonders.css`,
+  `animations.css`) and the `messages/1`, `votes_label/1`, `list_state/1` and string
+  `time_state/2`, `ago/2` and `balance/1` helpers the figure components replace.
+- Not moved: Points and the discussion's likes are drawn by design-system's own
+  components, which carry `rg-figure` but not `data-count`; they roll once design-system
+  adds it. The Keyfleet hero's price tag never changes and keeps its own rule.
+- `platform/test/browser/motion.spec.ts`: the lab's counter rolls across a change of
+  width with nothing beside or below it moving, and stays still with reduced motion.
+
+## 2026-11-12 — Gestures (November bonus, step 6)
+
+- `platform/assets/js/hooks/motion/gestures.ts`, mounted with the rest of the kit in
+  `motion.ts`: a window (`dialog`) pulled down by its `data-sheet-handle`, the phone menu
+  (`data-panel="drawer"`) swiped back to its edge, and a note (`data-toast`) swiped
+  either way. `GESTURE` holds the animation guide's §2 values in px and ms: a throw of
+  0.11 px/ms dismisses whatever the distance; speed counts only after 100ms down; a
+  window or menu goes at a quarter of its size, a note at 30px; the landing point is the
+  speed carried on for 200ms; edge friction 0.85 (0.5 for pans); a thrown thing leaves on
+  a spring (bounce 0.2, 500ms) seeded with its speed; anything not thrown goes back in
+  300ms on `cubic-bezier(0.32, 0.72, 0, 1)`, and a finger can catch it on the way.
+- While the finger is down the thing follows it 1:1 by `transform` on itself, the menu's
+  shade fades with it and a note fades as it goes. A drag stops text selection and the
+  click that ends it; a plain press, on-chain buttons included, is never held.
+- Every gesture does only what a plain control already does: a window closes as Escape
+  closes it (`requestClose()`), the menu and a note as their own `data-dismiss` control
+  when pressed. Keyboard and agents use those and nothing animates. With less motion a
+  release goes straight back or closes.
+- Built with a pointer tracker of its own and Anime's `spring` and `animate`, not Anime's
+  `createDraggable`: Draggable picks where a release lands itself (its own speed
+  measure, projection and durations), so the guide's px/ms throw, 200ms landing and
+  300ms return could not be set.
+- Markup: `data-sheet-handle` on the heads of the agent tools window, the code cube's
+  window, a harbour agent's card, the pairing window and the grammar window; `data-dismiss`
+  on the phone menu's close button, the grammar panel's Close and the lab notes' Dismiss.
+  `motion.css` leaves the drag axis to the page (`touch-action`).
+- Tests: `platform/assets/test/gestures.test.ts` (speed, resistance, throw or pull) and
+  `platform/test/browser/motion.spec.ts` (a short pull goes back, a flick closes, Escape
+  closes, less motion, a note thrown away).
+
+## 2026-11-12 — Menu lab (November bonus, step 7)
+
+- A lab page only, `/animations/menu` (`AshTemplateWeb.MenuLabLive`, titled Menu): a
+  Sort button at the left and a More button at the right, each the shared details
+  dropdown (`rg-pill-select`) with its list marked `data-panel="menu"`. Opened by
+  pointer, the kit's standard menu motion grows the list from its own button's corner
+  (`transform-origin` top left or top right in `assets/css/pages/menu_lab.css`); opened
+  by keyboard, or with less motion, it is simply there. Escape closes it and hands focus
+  back to its button, and a press outside closes it, both from design-system's
+  `pill_select.mjs`; choosing an item closes it with `JS.remove_attribute`.
+- The list sits on the Tip layer (`--rg-layer-tip`, `--rg-layer-tip-shadow`), so opening
+  it moves nothing on the page, and stays inside the screen at 320 wide. The account
+  menu and every real menu are unchanged.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/motion.spec.ts`: grows by pointer, still by keyboard, Escape
+  hands focus back, a press outside closes.

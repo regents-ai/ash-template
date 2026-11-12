@@ -1,3 +1,4 @@
+import {type Locator, type Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {signedIn} from "./support/person"
 
@@ -71,4 +72,188 @@ test("a refusal shakes the page's own alert, never one inside content settling i
   const moved = () => page.evaluate(() => [...(window as unknown as {moved: Set<string>}).moved])
   await expect.poll(moved).toContain("own-alert")
   expect(await moved()).not.toContain("settling-alert")
+})
+
+// November bonus, step 2: a live figure rolls only the digits that changed, and
+// nothing beside or below it moves while it does; with less motion asked for it
+// simply changes. The lab's counter is a figure the server changes on a press.
+async function watchFigure(page: Page) {
+  await page.evaluate(() => {
+    const label = document.querySelector("#lab-count .motion-lab__count-label")!
+    const below = document.querySelector("#lab-count + .motion-lab__row")!
+    const at = (el: Element) => [el.getBoundingClientRect().left, el.getBoundingClientRect().top]
+    const start = [at(label), at(below)]
+    const seen = {moved: 0, rolled: false}
+    Object.assign(window, {seen})
+    const frame = () => {
+      ;[label, below].forEach((el, i) => {
+        const [left, top] = at(el)
+        seen.moved = Math.max(seen.moved, Math.abs(left - start[i][0]), Math.abs(top - start[i][1]))
+      })
+      if (document.querySelector("#lab-count [data-char]")) seen.rolled = true
+      requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  })
+  return () => page.evaluate(() => (window as unknown as {seen: {moved: number; rolled: boolean}}).seen)
+}
+
+test("a live figure rolls its changed digits and nothing beside or below it moves", async ({page}) => {
+  await page.goto("/animations")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const figure = page.locator("#lab-count .rg-figure")
+  await figure.scrollIntoViewIfNeeded()
+  const seen = await watchFigure(page)
+
+  // From four digits to five and back, so the figure's width is tested too.
+  for (const label of ["+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "−12"]) {
+    const before = await figure.textContent()
+    await page.getByRole("button", {name: label, exact: true}).click()
+    await expect(figure).not.toHaveText(before!)
+  }
+  await expect.poll(async () => (await seen()).rolled).toBe(true)
+  await expect(page.locator("#lab-count [data-char]")).toHaveCount(0)
+  expect((await seen()).moved).toBe(0)
+})
+
+test("with less motion asked for, a live figure changes without rolling", async ({page}) => {
+  await page.emulateMedia({reducedMotion: "reduce"})
+  await page.goto("/animations")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const figure = page.locator("#lab-count .rg-figure")
+  await figure.scrollIntoViewIfNeeded()
+  const seen = await watchFigure(page)
+
+  const before = await figure.textContent()
+  await page.getByRole("button", {name: "+37", exact: true}).click()
+  await expect(figure).not.toHaveText(before!)
+  expect(await seen()).toEqual({moved: 0, rolled: false})
+})
+
+// A finger drag from the middle of `from`, `dy` down and `dx` across over `ms`.
+async function drag(page: Page, from: Locator, {dx = 0, dy = 0, ms}: {dx?: number; dy?: number; ms: number}) {
+  const box = (await from.boundingBox())!
+  const x = box.x + Math.min(box.width / 2, 60)
+  const y = box.y + box.height / 2
+  const steps = Math.max(8, Math.round(ms / 20))
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  const start = Date.now()
+  for (let i = 1; i <= steps; i++) {
+    await page.mouse.move(x + (dx * i) / steps, y + (dy * i) / steps)
+    const wait = start + (ms * i) / steps - Date.now()
+    if (wait > 0) await page.waitForTimeout(wait)
+  }
+  await page.mouse.up()
+}
+
+const shiftY = (el: Locator) =>
+  el.evaluate(node => new DOMMatrix(getComputedStyle(node).transform).m42)
+
+async function openAgentTools(page: Page) {
+  await page.goto("/polls")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await page.locator("#shell-footer").getByRole("button", {name: /Agents see/}).click()
+  const sheet = page.locator("#shell-agent-tools")
+  await expect(sheet).toHaveAttribute("data-settled")
+  return sheet
+}
+
+// Gestures (November bonus, step 6): a window pulled down by its handle goes back
+// from a short slow pull (40px at about 0.03 px/ms, under both the 0.11 px/ms throw
+// and a quarter of its height) and closes on a quick 40px flick (about 0.3 px/ms).
+// Escape closes it with no drag at all.
+test("a window pulled by its handle goes back from a short pull and closes on a flick", async ({page}) => {
+  let sheet = await openAgentTools(page)
+  const handle = sheet.locator("[data-sheet-handle] h2")
+
+  await drag(page, handle, {dy: 40, ms: 1200})
+  await expect.poll(() => shiftY(sheet)).toBe(0)
+  await expect(sheet).toHaveJSProperty("open", true)
+  await expect(sheet).not.toHaveAttribute("style", /transform/)
+
+  await drag(page, handle, {dy: 40, ms: 120})
+  await expect(sheet).toHaveJSProperty("open", false)
+
+  sheet = await openAgentTools(page)
+  await page.keyboard.press("Escape")
+  await expect(sheet).toHaveJSProperty("open", false)
+})
+
+test("with less motion asked for, a pulled window goes straight back, or closes", async ({page}) => {
+  await page.emulateMedia({reducedMotion: "reduce"})
+  const sheet = await openAgentTools(page)
+  const handle = sheet.locator("[data-sheet-handle] h2")
+
+  await drag(page, handle, {dy: 30, ms: 1200})
+  await expect(sheet).not.toHaveAttribute("style", /transform/)
+  await expect.poll(() => shiftY(sheet), {intervals: [50], timeout: 200}).toBe(0)
+
+  const height = (await sheet.boundingBox())!.height
+  await drag(page, handle, {dy: height * 0.4, ms: 1200})
+  await expect(sheet).toHaveJSProperty("open", false)
+})
+
+// A note swiped sideways past 30px, or thrown, is dismissed as its own control does.
+test("a note thrown sideways is dismissed", async ({page}) => {
+  await page.goto("/animations")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await page.locator("#lab-toasts").scrollIntoViewIfNeeded()
+  await page.getByRole("button", {name: "Send a note", exact: true}).click()
+  const note = page.locator("#lab-toasts [data-toast]:not([hidden])").last()
+  const id = await note.getAttribute("id")
+  await expect(note).not.toHaveAttribute("style", /./)
+  await drag(page, note.locator("span"), {dx: -25, ms: 120})
+  await expect(page.locator(`#${id}:not([hidden])`)).toHaveCount(0)
+})
+
+// Records, each frame until it stops, the smallest scale `panel` is drawn at.
+async function smallestScale(page: Page, panel: string) {
+  await page.evaluate(panel => {
+    const w = window as unknown as {smallest: number}
+    w.smallest = 1
+    let frames = 0
+    const frame = () => {
+      const el = document.querySelector(panel)
+      if (el && getComputedStyle(el).display !== "none")
+        w.smallest = Math.min(w.smallest, new DOMMatrix(getComputedStyle(el).transform).a)
+      if (++frames < 40) requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  }, panel)
+  return async () => {
+    await page.waitForTimeout(700)
+    return page.evaluate(() => (window as unknown as {smallest: number}).smallest)
+  }
+}
+
+// The menu lab (November bonus, step 7): a menu opened by pointer grows from the
+// corner of its button and rests where it opened; opened by keyboard it is simply
+// there, Escape hands focus back to its button, and a press outside closes it.
+test("a menu grows from its button by pointer, and is simply there by keyboard", async ({page}) => {
+  await page.goto("/animations/menu")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const more = page.locator("#menu-lab-more")
+  const panel = more.locator("[data-panel='menu']")
+
+  const grew = await smallestScale(page, "#menu-lab-more [data-panel='menu']")
+  await more.locator("summary").click()
+  await expect(more).toHaveAttribute("data-settled")
+  expect(await grew()).toBeLessThan(0.98)
+  await expect(panel).not.toHaveAttribute("style", /./)
+  const box = (await panel.boundingBox())!
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width)
+  await page.locator("h1").click()
+  await expect(more).not.toHaveAttribute("open")
+
+  const sort = page.locator("#menu-lab-sort")
+  await sort.locator("summary").focus()
+  const still = await smallestScale(page, "#menu-lab-sort [data-panel='menu']")
+  await page.keyboard.press("Enter")
+  await expect(sort).toHaveAttribute("data-settled")
+  expect(await still()).toBe(1)
+  await page.keyboard.press("Tab")
+  await page.keyboard.press("Escape")
+  await expect(sort).not.toHaveAttribute("open")
+  await expect(sort.locator("summary")).toBeFocused()
 })

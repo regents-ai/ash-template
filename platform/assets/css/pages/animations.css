@@ -443,9 +443,8 @@
   gap: var(--space-1);
 }
 
-.motion-lab__count [data-count] {
+.motion-lab__count .rg-figure {
   font: 3rem/1.1 var(--font-family-title);
-  font-variant-numeric: tabular-nums;
 }
 
 .motion-lab__count-label {

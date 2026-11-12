@@ -486,6 +486,7 @@ defmodule AshTemplateWeb.Router do
       live "/animations/swarm-city/:place", SwarmCityLive, :place
       live "/animations/datascape", DatascapeLive, :index
       live "/animations/frosted-glass", FrostedGlassLive, :index
+      live "/animations/menu", MenuLabLive, :index
     end
   end
 end

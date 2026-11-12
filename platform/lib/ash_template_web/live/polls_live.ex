@@ -21,6 +21,7 @@ defmodule AshTemplateWeb.PollsLive do
   alias AshTemplate.Polls.Poll
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
+  alias AshTemplateWeb.Motion
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -134,7 +135,13 @@ defmodule AshTemplateWeb.PollsLive do
           <.link patch={~p"/polls"} class="polls-new" aria-current={is_nil(@poll_id) && "page"}>
             Start a poll
           </.link>
-          <ul id="polls-list" class="shell-sidebar__list polls-list" data-state={@polls.state}>
+          <ul
+            id="polls-list"
+            class="shell-sidebar__list polls-list"
+            data-state={@polls.state}
+            phx-hook="MotionCount"
+            data-variant={Motion.standard("count")}
+          >
             <li :if={@polls.value == []} class="shell-sidebar__empty">No polls yet.</li>
             <li :for={poll <- sorted(@polls.value)} id={"polls-list-#{poll.id}"}>
               <.link
@@ -143,7 +150,9 @@ defmodule AshTemplateWeb.PollsLive do
                 aria-current={@poll_id == poll.id && "page"}
               >
                 <span class="polls-list__question">{poll.question}</span>
-                <span class="polls-list__state rg-muted">{list_state(poll)}</span>
+                <span class="polls-list__state rg-muted">
+                  {if poll.open, do: "Open", else: "Closed"} · <.votes count={poll.votes_cast} />
+                </span>
               </.link>
             </li>
           </ul>
@@ -241,10 +250,15 @@ defmodule AshTemplateWeb.PollsLive do
         aria-labelledby="page-title"
         data-open={to_string(@poll.value.open)}
       >
-        <p class="polls-poll__meta rg-muted">
+        <p
+          id="poll-meta"
+          class="polls-poll__meta rg-muted"
+          phx-hook="MotionCount"
+          data-variant={Motion.standard("count")}
+        >
           Started by <bdi>{@poll.value.starter.name}</bdi>
           <span :if={@poll.value.via_agent_id}>via agent</span>
-          · {time_state(@poll.value, @now)} · {votes_label(@poll.value.votes_cast)}
+          · <.time_state poll={@poll.value} now={@now} /> · <.votes count={@poll.value.votes_cast} />
         </p>
 
         <.form
@@ -293,7 +307,7 @@ defmodule AshTemplateWeb.PollsLive do
             style={"--share: #{share(votes, @poll.value.votes_cast)}%"}
           >
             <span class="polls-count__choice">{choice}</span>
-            <span class="polls-count__votes">{votes_label(votes)}</span>
+            <span class="polls-count__votes"><.votes count={votes} /></span>
           </li>
         </ol>
 
@@ -332,20 +346,39 @@ defmodule AshTemplateWeb.PollsLive do
   defp sorted(nil), do: []
   defp sorted(polls), do: Enum.sort_by(polls, &(!&1.open))
 
-  defp list_state(%{open: true, votes_cast: votes}), do: "Open · #{votes_label(votes)}"
-  defp list_state(%{votes_cast: votes}), do: "Closed · #{votes_label(votes)}"
+  # Figures inside a sentence keep no spare room: a gap mid-sentence reads as a
+  # fault, and only the figure's own word after it shifts when it gains a digit.
+  attr :count, :integer, required: true
 
-  defp votes_label(1), do: "1 vote"
-  defp votes_label(votes), do: "#{votes} votes"
+  defp votes(assigns) do
+    ~H"""
+    <Primitives.figure value={Integer.to_string(@count)} /> {if @count == 1,
+      do: "vote",
+      else: "votes"}
+    """
+  end
 
-  defp time_state(%{open: false, ended_at: nil}, _now), do: "Closed"
-  defp time_state(%{open: false}, _now), do: "Ended early"
+  attr :poll, Poll, required: true
+  attr :now, DateTime, required: true
 
-  defp time_state(poll, now) do
-    case div(DateTime.diff(poll.closes_at, now, :second) + 59, 60) do
-      minutes when minutes <= 1 -> "Closes within a minute"
-      minutes -> "Closes in #{minutes} minutes"
-    end
+  defp time_state(%{poll: %{open: false, ended_at: nil}} = assigns), do: ~H"Closed"
+  defp time_state(%{poll: %{open: false}} = assigns), do: ~H"Ended early"
+
+  defp time_state(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :minutes,
+        div(DateTime.diff(assigns.poll.closes_at, assigns.now, :second) + 59, 60)
+      )
+
+    ~H"""
+    <%= if @minutes <= 1 do %>
+      Closes within a minute
+    <% else %>
+      Closes in <Primitives.figure value={Integer.to_string(@minutes)} /> minutes
+    <% end %>
+    """
   end
 
   defp share(_votes, 0), do: 0
