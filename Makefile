@@ -1,12 +1,24 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check drift pins readiness
+.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
 help:
 	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check to check template.regents.sh the way a paired agent does: the CLI, then WebMCP and every public page in headless Chromium."
+# template-only
 	@echo "Run make drift to list where each site's copies of the shared, build and deploy files differ from the template's, then run make pins and make readiness."
 	@echo "Run make pins to list each site's shared-library pins and how far each is behind the template's and the library's main."
+	@echo "Run make check-scripts to test the reports the daily jobs read: scripts/drift.sh, scripts/pins.sh and scripts/harvest.sh."
+# /template-only
 	@echo "Run make readiness to start the local server and check what the agent-readiness scorer looks for."
+# template-only
+# The passages fenced like this one are the template's own: scripts/init.sh drops
+# them, and scripts/drift.sh compares the rest of this file with each site's.
+.PHONY: check-scripts drift pins
+check: check-scripts
+# The reports' tests, on fixture repositories (scripts/tests/test_reports.py).
+check-scripts:
+	uv run --no-project python -m unittest discover -s scripts/tests -p 'test_reports.py'
+# /template-only
 check: check-platform check-required-fixes check-cli check-siwa-latest check-contracts
 # mix precommit ends with the TypeScript typecheck, the script tests and the
 # browser walk.
@@ -54,20 +66,22 @@ release:
 # the agent's own row on the site: when the agent was last seen.
 live-check:
 	scripts/live-check.sh
+# template-only
 # Lists where each site's copies of the template's shared files differ from these,
 # reading every site's main branch on GitHub, then each site's shared-library pins,
-# then measures this checkout the way the agent-readiness scorer does. Needs
-# `gh auth login`.
+# each as JSON, then measures this checkout the way the agent-readiness scorer does.
+# Needs `gh auth login` and jq.
 drift:
 	scripts/drift.sh
 	$(MAKE) pins
 	$(MAKE) readiness
 # Every site's shared-library pins (elixir-utils, design-system, ash_postgres, siwa
 # and the regents-cli its Makefile checks with), each with how far it is behind the
-# template's pin and the library's main, printed and written to
-# platform/_build/drift/pins.md. Needs `gh auth login` and git.
+# template's pin and the library's main, printed as JSON. Needs `gh auth login`, git
+# and jq.
 pins:
 	scripts/pins.sh
+# /template-only
 # Starts the local server on a free port, checks what the agent-readiness scorer
 # looks for against it, and stops it. Needs the local development database.
 readiness:

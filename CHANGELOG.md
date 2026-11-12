@@ -7831,3 +7831,62 @@ sits on its own branches.
   OpenAPI document lists `/api/v1/feed`. Fly logs: no errors after the switch. Not
   proven live: a signed agent holding the feed open through Fly's proxy; regents-cli's
   `feed` command proves it when it ships.
+
+## 2026-11-11 — The daily jobs' facts: JSON reports and `scripts/harvest.sh`
+
+- `make drift` (`scripts/drift.sh`) and `make pins` (`scripts/pins.sh`) print one JSON
+  document each, in place of their prose and table, so the daily Harvest and Spread
+  jobs read facts rather than sentences. Each script's opening comment lists the
+  fields. drift gives each file's list (shared, build or homepage), its path at the
+  template and at the site, its status (same, differs, missing or not_used), the lines
+  added and removed and the file that holds the difference. pins gives each pin's
+  commit, release tag, Hex version, SIWA version and apps, and its distance from the
+  template's pin and from the library's main as counts of commits and days, null where
+  a commit is not on GitHub. pins no longer writes `platform/_build/drift/pins.md`.
+- drift writes each run's differences to a folder of the run's own,
+  `platform/_build/drift/<UTC time>-<4 characters>/<site>/`, and no longer removes
+  earlier runs' files. A live homepage that cannot be read now stops the run, as any
+  other failed read does, where it was compared as an empty page before.
+- The shared, build and homepage file lists, the not-used and moved files, and the
+  site's names read from its `platform/mix.exs` move to `scripts/shared-files.sh`, which
+  drift sources, so the next report reads the same lists.
+- `scripts/init.sh` keeps one list of the reports it leaves unrenamed and removes from a
+  new product, `scripts/shared-files.sh` among them.
+- New `scripts/harvest.sh <ledger> <repos> [site ...]` lists, for each site, every
+  commit on its main since the commit the harvest ledger (control's
+  `automation/harvest.md`, its "Last read" table) last read, oldest first, as JSON.
+  Each commit gives its date, subject and files, each file named as the template names
+  it (renamed back the way `scripts/init.sh` renames the template's files for the site,
+  and a shared file a site keeps at its own path by the template's path), with the
+  file list it is in, and `shared: true` when it touches a shared file. The sites are
+  clones in one folder, so a cloud run passes its own; each clone's main is fetched
+  first. A ledger with no full commit for a site, or a clone without that commit,
+  stops the run.
+
+## 2026-11-11 — The daily jobs' instructions, and tests for the reports
+
+- New `automation/harvest.md` and `automation/spread.md`: the instructions the two
+  daily cloud jobs follow from this repository's main branch. Harvest (10:00 UTC) reads
+  each site's new commits with `scripts/harvest.sh`, judges each candidate as move-up,
+  site-only or drift, and opens at most three pull requests a day on ash-template,
+  branch `harvest/<site>-<topic>-<date>`. Spread (11:00 UTC) reads `scripts/drift.sh`,
+  `scripts/pins.sh`, the required fixes and the rollout files, and opens at most one
+  pull request per site a day, branch `spread/<date>`. Before Sean signs off, Spread
+  carries tooling only (check, release and deploy scripts, security fixes, library
+  bug-fix pins, toolchain versions and shared skills); anything a visitor sees waits
+  for his sign-off, recorded in a rollout file in `control/rollouts/`. Each pull request
+  gets a fresh reviewer, names the `make check` still needed, and goes up as a draft
+  waiting for Sean when it touches a protected area. Pull requests open seven days are
+  closed with a note, and no branch is deleted. Both jobs record their runs in the
+  ledger, control's `automation/harvest.md`, whose Mode table starts both on a dry run
+  that writes only what each would open.
+- New `scripts/tests/test_reports.py` runs harvest.sh, drift.sh and pins.sh against git
+  repositories it builds in a temporary folder, with stand-ins for `gh` and `curl`:
+  renamed and moved files, Mix tasks, merges, the shared flag, the ledger's rows, each
+  file status, the live homepages, a failed read, and each pin's counts, days, tag, pull
+  request, Hex version and absence from GitHub. `make check-scripts` runs it with `uv`,
+  and `make check` runs it first.
+- The Makefile's drift, pins and check-scripts targets are fenced as the template's own.
+  `scripts/init.sh` drops them, so a new product has no targets for the scripts it
+  removed, and `scripts/drift.sh` compares the rest of the Makefile with each site's.
+  init.sh also removes the tests and the two job files with the reports.
