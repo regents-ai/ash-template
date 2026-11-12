@@ -4,6 +4,7 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Fewer labels.** Error pages and the account card drop their small labels.
 - **Figures.** Vote counts, a poll's minutes left, room message counts, balances and
   other figures that change while you watch now roll just the digits that changed, and
   the words around them stay still.

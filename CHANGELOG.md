@@ -7935,3 +7935,18 @@ sits on its own branches.
   `platform/test/browser/pages.json`.
 - `platform/test/browser/motion.spec.ts`: grows by pointer, still by keyboard, Escape
   hands focus back, a press outside closes.
+
+## 2026-11-12 — Design-system 2e839171: confirm window, charts, activity, fewer labels
+
+- `platform/mix.exs` and `mix.lock` pin `regent_ui` to design-system `2e839171`
+  (was `33d5aa96`). It brings the segmented control and link tabs, the breadcrumb, the
+  waiting box, `Regent.Agents.activity` and `fleet`, `Regent.Charts.line`, the shared
+  confirm window, the package's own style check and the account menu's theme row.
+- The shared parts no longer take taglines or small labels (founder, 2 Nov), so the
+  callers drop them: the error page's `context="Ash Template"` and the showcase
+  typography figure's `<:caption>`. No other caller passed `eyebrow`, `site`,
+  `caption` or `context` on a utility page.
+- `mix regent_ui.assets` now also copies `style-check.sh`. Run over the template's own
+  CSS, scripts and templates it reports 26 breaks (14 stacking, 6 glass, 4 flat,
+  1 shape, 1 icon). They are left for their own change and the check is not part of
+  `make check` yet.
