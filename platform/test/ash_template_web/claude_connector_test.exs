@@ -24,6 +24,37 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
     "x-timestamp" => "1",
     "x-agent-chain-id" => "8453"
   }
+  # Claude's published identity, as claude.ai serves it.
+  @claude "https://claude.ai/oauth/mcp-oauth-client-metadata"
+  @claude_callback "https://claude.ai/api/mcp/auth_callback"
+  @verifier String.duplicate("v", 43)
+
+  defmodule ClaudeDocument do
+    @moduledoc false
+    @claude "https://claude.ai/oauth/mcp-oauth-client-metadata"
+
+    # Claude's document, served without a network; each read is sent to the test.
+    def request(:get, @claude = url, _opts) do
+      send(Application.fetch_env!(:ash_template, __MODULE__), {:read, url})
+
+      {:ok,
+       %{
+         status: 200,
+         headers: [{"content-type", "application/json"}],
+         body:
+           Jason.encode!(%{
+             "client_id" => @claude,
+             "client_name" => "Claude",
+             "client_uri" => "https://claude.ai",
+             "redirect_uris" => ["https://claude.ai/api/mcp/auth_callback"],
+             "grant_types" => ["authorization_code", "refresh_token"],
+             "response_types" => ["code"],
+             "token_endpoint_auth_method" => "none"
+           })
+       }}
+    end
+  end
+
   # Every request the hosted signer may be asked to sign for this site.
   @agent_scopes "regent.identity.manage " <> AshTemplate.OAuth.agent_scope()
   @signable [
@@ -127,6 +158,85 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       assert payload["body_digest"] == Siwa.content_digest_for_body(signed["body"])
 
       assert [%{harness: :claude, wallet: ^wallet, name: "Claude"}] = agents(subject)
+    end
+
+    test "Claude connects by its published identity: consent here, its code, a working token and a refresh" do
+      put_env(:regent_http, :public_client, __MODULE__.ClaudeDocument)
+      put_env(:ash_template, __MODULE__.ClaudeDocument, self())
+      subject = "did:privy:connector-published"
+      browser = sign_in!(subject)
+
+      metadata = @endpoint.call(conn(:get, "/.well-known/oauth-authorization-server"), [])
+      assert json(metadata)["client_id_metadata_document_supported"] == true
+
+      page =
+        conn(:get, "/oauth/authorize?" <> authorize_query(@claude))
+        |> init_test_session(browser)
+        |> put_req_header("accept", "text/html")
+        |> @endpoint.call([])
+
+      assert page.status == 200
+      assert page.resp_body =~ "Connect Claude"
+      assert_received {:read, @claude}
+
+      pending = get_session(page, :regent_oauth_request)
+      csrf = Plug.CSRFProtection.get_csrf_token()
+
+      approved =
+        conn(:post, "/oauth/authorize", %{
+          "approval_key" => pending["nonce"],
+          "decision" => "allow",
+          "_csrf_token" => csrf
+        })
+        |> init_test_session(
+          Map.merge(browser, %{
+            "regent_oauth_request" => pending,
+            "_csrf_token" => Plug.CSRFProtection.dump_state()
+          })
+        )
+        |> put_req_header("accept", "text/html")
+        |> @endpoint.call([])
+
+      assert approved.status == 303
+      [location] = get_resp_header(approved, "location")
+      assert String.starts_with?(location, @claude_callback <> "?")
+      code = URI.decode_query(URI.parse(location).query)["code"]
+
+      exchanged =
+        conn(:post, "/oauth/token", %{
+          "grant_type" => "authorization_code",
+          "client_id" => @claude,
+          "code" => code,
+          "code_verifier" => @verifier,
+          "redirect_uri" => @claude_callback,
+          "resource" => RegentOAuth.resource()
+        })
+        |> put_req_header("accept", "application/json")
+        |> @endpoint.call([])
+
+      assert exchanged.status == 200, exchanged.resp_body
+      %{"access_token" => access, "refresh_token" => refresh_token} = json(exchanged)
+
+      assert "register_identity" in tool_names(access)
+      assert {200, %{"access_token" => _}} = refresh(@claude, refresh_token)
+
+      # Only consent reads the address; the token endpoint uses the record.
+      refute_received {:read, @claude}
+    end
+
+    test "one address may open consent 30 times a minute, as it may register; the 31st waits" do
+      open = fn ->
+        conn(:get, "/oauth/authorize?" <> authorize_query(@claude))
+        |> Map.put(:remote_ip, {198, 51, 100, 31})
+        |> put_req_header("accept", "text/html")
+        |> @endpoint.call([])
+      end
+
+      for _ <- 1..30, do: refute(open.().status == 429)
+
+      waited = open.()
+      assert waited.status == 429
+      assert get_resp_header(waited, "retry-after") == ["60"]
     end
 
     test "a first request with no token is asked to connect, so the app starts its sign-in" do
@@ -636,6 +746,19 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       )
 
     %{client_id: client.id, access: token.value, refresh: token.refresh_token}
+  end
+
+  defp authorize_query(client_id) do
+    URI.encode_query(%{
+      "client_id" => client_id,
+      "redirect_uri" => @claude_callback,
+      "response_type" => "code",
+      "scope" => RegentOAuth.scope(),
+      "state" => "state",
+      "resource" => RegentOAuth.resource(),
+      "code_challenge" => :crypto.hash(:sha256, @verifier) |> Base.url_encode64(padding: false),
+      "code_challenge_method" => "S256"
+    })
   end
 
   defp refresh(client_id, refresh_token) do

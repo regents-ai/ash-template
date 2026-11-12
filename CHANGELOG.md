@@ -7316,3 +7316,35 @@ sits on its own branches.
 - The new `scripts/deploy.sh`'s first run: the build took no shared lock, the switch
   found image `e09a867` already built and took place 1. Live read at 1280 and 390:
   pages 200, odd addresses 404, no page errors, sign-in metadata 200.
+
+## 2026-11-12 — Connected apps: Claude's published identity
+
+- Sean, 29 Oct, of Claude's connector settings: "can we do the CIMD setting instead of
+  the 'register automatically'?", then "1. yes, do this asap", on 11 Nov "1. a 2. a" for
+  the CIMD version, and on 12 Nov 00:07Z "2. a": release it after a fresh independent
+  review and a full check. Claude may now name itself by its published identity,
+  `https://claude.ai/oauth/mcp-oauth-client-metadata`, instead of registering a new app
+  on every connection. Discovery says so (`client_id_metadata_document_supported`);
+  registration keeps working for other apps, and an address and a registered id are
+  never taken for each other.
+- Rebuilt on main from `claude/cimd-1029` through `agent-access/cimd-1111`. Every
+  elixir-utils package moves to `44c44202` (`eu/cimd-on-pin-1112`): the published-identity
+  commits merged onto `a12f71b6`, the pin before, so `RegentOAuth.ClientDocuments` uses
+  the site's repository (`RegentOAuth.repo()`, `log: false`) like the rest of the
+  provider. Only oauth, http and mcp_events change; mcp_events callbacks now use
+  `RegentHttp.Public`, the one checked outbound request. `44c44202` has no G1 code.
+- Migration `20261111060000_oauth_client_documents` adds one empty table
+  (`RegentOAuth.Migration.V3`) and changes nothing existing.
+- Opening consent (`GET /oauth/authorize`) is limited to 30 requests a minute by
+  address, as registering is: a signed-in person's consent may read a connecting app's
+  published identity and record the app. Allowing or cancelling (`POST`) has 120, like
+  token and revocation.
+- A read again of a recorded identity takes only its name and callbacks; the app keeps
+  the scopes it holds (the adversarial review found the read again replaced them with
+  this machine's list). The library review of 12 Nov added proofs for a failed read, a
+  read again and refused ids, and says the site repository's query events carry
+  parameters and rows, so the site's handlers read measurements only (the template's
+  read only `queue_time`).
+- New check: `claude_connector_test.exs` connects Claude by its published identity
+  through this site's endpoint, consent, token exchange, `/mcp` and refresh.
+- Protected (sign-in and a migration): Sean's 12 Nov "2. a" is the go.

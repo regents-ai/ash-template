@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "a12f71b6f7a630e5e7f8bab4348a0cdf7a980756"
+  @elixir_utils_ref "44c44202e6b6da46fb31c09c0869f6c2d60326fb"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "d3845c6d9fe34b7131937bafa051e6e04c9b09dd"
 
@@ -98,7 +98,7 @@ defmodule AshTemplate.MixProject do
        override: true},
       {:regent_jev, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "jev"},
       # The site's unexpected-failure lines (RegentHttp.UnexpectedFailure) and its crash
-      # saving (RegentHttp.ErrorSaving). regent_jev names regent_http by a sibling path;
+      # saving (RegentHttp.ErrorSaving). regent_jev and regent_oauth name regent_http by a sibling path;
       # this pin replaces it.
       {:regent_http, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
