@@ -7718,3 +7718,12 @@ sits on its own branches.
   `AshTemplate.Markdown.parse!/2`); code wraps below 1024px; the grammar showcase's
   layers table stacks the same way.
 - Accessibility: the homepage's header and copyright now sit in page landmarks.
+
+## 2026-11-12 — design-system pin moves to 33d5aa96
+
+- The template pins design-system `33d5aa96` (main): the field states and account
+  spacing the forms audit needs, plus the style check script, `rg-figure` and
+  `Regent.Primitives.figure`, and the nested-cut corner and focus-ring tokens. The
+  primary button's focus ring is now cut to follow the button, on every page.
+- The style check (`sh assets/vendor/regent_ui/style-check.sh` from `platform/`) reports
+  27 breaks in the template today, so it is not part of `make check` yet.
