@@ -97,10 +97,47 @@ paste-ready texts (CLI, hosted MCP, WebMCP) come from `cli/commands.json` and th
 manifest, so they cannot name a command that is not there; `texts/1` gives the same
 text to a document. Every surface runs `AshTemplate.Messages`' `agent_leave` (the
 command `messages leave <topic>`, `POST /api/v1/messages/{topic}`, the tool
-`messages_leave`), and a signed-in person leaves one from the dialog's form. Messages
-are private: only the site's admins read them, at `/admin/messages`. The dialog needs
-the page's `conn`, so today it sits on controller-rendered pages; `/agents` uses the
-topic `agents`.
+`messages_leave`), and a signed-in person leaves one from the dialog's form
+(`AgentMessage.Form`). Messages are private: only the site's admins read them, at
+`/admin/messages`.
+
+The button names the dialog it opens; give each pair its own ids. The dialog is a
+modal, so it can sit anywhere on the page.
+
+- **Plain page** (a controller template, such as `/agents`): pass the request. The
+  form runs in a live view of its own that reads the sign-in.
+
+  ```heex
+  <AgentMessage.button id="agents-message-button" dialog="agents-message" />
+  <AgentMessage.dialog id="agents-message" topic="agents" conn={@conn} />
+  ```
+
+  Render the dialog outside the page's article markup (as `PublicPagesHTML` does),
+  so the document's list and code styles stay off it.
+
+- **Live page** (a LiveView mounted with `{AshTemplateWeb.Live.Session, :load_human}`,
+  such as the `/app` home in the shell): pass the page's signed-in account, its
+  `session_lease` and its `client_key`. The form runs in the page itself and re-reads
+  the sign-in on every press.
+
+  ```heex
+  <AgentMessage.button id="app-message-button" dialog="app-message" />
+  <AgentMessage.dialog
+    id="app-message"
+    topic="app"
+    account={@account}
+    lease={@session_lease}
+    client_key={@client_key}
+  />
+  ```
+
+  `@account` is the person's account or nil (the shell takes it from
+  `@access_context`). A function component that draws the page, as `OverviewLive.page`
+  does, takes the three as attributes from its LiveView.
+
+A signed-out visitor sees the texts and no form, in both places. The form's ids follow
+the dialog's (`<id>-person-form`, `<id>-person-receipt`), for a page's own browser
+check (`test/browser/agent_message.spec.ts` walks both placements).
 
 ## 5. The shared head
 

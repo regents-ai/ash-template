@@ -7752,3 +7752,16 @@ sits on its own branches.
 - Only the site's admins read messages, at `/admin/messages`, newest first. A new
   table, `left_messages`, is added by one migration
   (`20261112045919_add_left_messages.exs`) that only creates it.
+
+## 2026-11-12 — Agent Message on live pages
+
+- The Agent Message button and dialog now work inside a live page too, with the same
+  two pieces and one placement: a plain page passes its request, a live page passes the
+  signed-in account, its session lease and its client key
+  (`skills/ash-webmcp/SKILL.md` shows both). The person's form is one shared component
+  in both places (`AshTemplateWeb.Components.AgentMessage.Form`), so a live page such as
+  Techtree's Watchdog page gets the same texts, form and receipt.
+- The `/app` home in the shell now has the button, with the topic `app`. The browser
+  walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
+  and phone width.
+- The form's ids now follow the dialog's (`<dialog id>-person-form`).

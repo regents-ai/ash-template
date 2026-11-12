@@ -141,7 +141,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Claude's connector offers `messages_leave` once its app is paired with the agent permission, and not before | `platform/test/ash_template_web/claude_connector_test.exs` |
 | Only the site's admins read messages; a person, an agent and a non-admin get none | `platform/test/ash_template/messages/leave_test.exs` |
 | `/admin/messages` shows the team every message, newest first, and is the not-found page for anyone else, signed in or not | `platform/test/ash_template_web/messages_pages_test.exs` |
-| `/agents` has the Agent Message button; its dialog's three texts are the CLI, MCP and WebMCP ways to leave a message under `agents`, each copied exactly as shown and fitting the screen at both widths; Escape closes it; the form shows only to a signed-in person, refuses an empty message when the field is left, and leaves one with its receipt | `platform/test/ash_template_web/messages_pages_test.exs`; `platform/test/browser/agent_message.spec.ts` |
+| `/agents` (a plain page, topic `agents`) and the `/app` home in the live shell (topic `app`) each have the Agent Message button; its dialog's three texts are the CLI, MCP and WebMCP ways to leave a message under the page's topic, each copied exactly as shown and fitting the screen at both widths; Escape closes it; the form shows only to a signed-in person, refuses an empty message when the field is left, and leaves one with its receipt | `platform/test/ash_template_web/messages_pages_test.exs`; `platform/test/browser/agent_message.spec.ts` |
 
 ## Claude connector
 
