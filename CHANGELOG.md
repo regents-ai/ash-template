@@ -9612,3 +9612,33 @@ no migration.
   cannot rise over the status line as in Sean's film.
 - Checks: `platform/assets/test/cells_meter.test.ts` (columns, rounding, the moving
   picture) and the walk `platform/test/browser/cells.spec.ts`.
+
+## 2026-11-12 — Cells sparks rise above the bar (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, from `wt/tpl-cells-1112`, for the design chief. No
+migration.
+
+- Design-system pin `5fbe2d40` to `a6d5af43` (`platform/mix.exs`, `platform/mix.lock`;
+  nothing else in the lock moves). With it the Cells meter's drawing surface reaches
+  `--rg-cells-headroom` (48px, one bar high) above the bar, over the note line; the
+  still meter is unchanged.
+- The moving meter draws its cells that far down, on the still cells' own pixels, and
+  leaves the room above the bar empty: at rest and while counting no pixel above the
+  bar changes (measured at 390 and 1280, light and dark).
+- A holder's lost cells now rise as sparks out of the bar and over the note line, as in
+  Sean's film, and each goes out before it has risen nineteen twentieths of the room,
+  so none reaches its top; each lasts about half a second and all are gone within a
+  second of the press. This replaces the
+  "Sparks stay inside the bar" line of the Cells lab entry.
+- The first frame still matches the still meter: no pixel differs in light at 390 and
+  1280; in dark the dim empty cells differ by one colour level, the same pixels and
+  count as before this change.
+- Frame times on a 2x screen at 390 and 1280: no missed frames at full speed; with the
+  processor slowed four times, about one run in four misses a single frame about a
+  tenth of a second after a Remove press, as often as before this change. Timed on the
+  GPU round the meter's own two drawing passes, a frame takes 0.03 to 0.06 ms
+  (0.19 ms at most).
+- Checks: `platform/assets/test/cells_meter.test.ts` (sparks rise into the room and go
+  out before its top, for rooms of 24, 48 and 96 px) and the walk
+  `platform/test/browser/cells.spec.ts` (a removed holder's sparks show above the bar,
+  and a second later the room is as it was).

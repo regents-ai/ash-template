@@ -1,6 +1,8 @@
 /**
  * The Cells meter's moving picture (`Regent.Cells.meter/1` from the design system),
- * drawn on the meter's own canvas behind its runs. Put on the meter's root, it reads
+ * drawn on the meter's own canvas behind its runs. The canvas is the bar and, above
+ * it, `--rg-cells-headroom` of room that only the sparks rise into; the hook reads
+ * that room once and draws the cells that far down. Put on the meter's root, it reads
  * everything from the page the meter draws: each part's key, start, share and
  * colour, whether the total is being counted, the measures of the cells and the
  * theme's colours. When the page changes them the picture moves from what it shows
@@ -18,10 +20,11 @@ import {watchTheme} from "../theme"
 import {colourReader, type Rgb} from "../token_colour"
 import {still} from "./motion/shared"
 
-type Page = Omit<MeterScene, "width" | "lit">
+type Page = Omit<MeterScene, "width" | "headroom" | "lit">
 
 export function createCellsMeter(root: HTMLElement) {
   const canvas = root.querySelector<HTMLCanvasElement>("[data-cells-canvas]")!
+  const headroom = parseFloat(getComputedStyle(root).getPropertyValue("--rg-cells-headroom"))
   const readColour = colourReader()
   let page: Page | undefined
   let width = canvas.getBoundingClientRect().width
@@ -57,7 +60,7 @@ export function createCellsMeter(root: HTMLElement) {
 
   const scene = (): MeterScene => {
     page ??= readPage()
-    return {...page, width, lit}
+    return {...page, width, headroom, lit}
   }
 
   const changed = () => {
