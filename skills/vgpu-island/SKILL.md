@@ -117,4 +117,7 @@ exists. Without WebGPU the island never mounts and the server's picture remains.
 `hooks/datascape.ts` + `datascape/renderer.ts` (the homepage, with its glass panel, and
 the lab page `/animations/datascape`),
 `hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer
-is vendored from `regent_ui`), and the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`.
+is vendored from `regent_ui`), the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`,
+and the theme switch `hooks/theme_switch.ts` + `theme_switch/renderer.ts`: a small island
+that draws on demand, asks for `maxDevicePixelRatio: 3` so its blocks stay sharp, and
+keeps every glassy effect inside its canvas over a flat, square still face.

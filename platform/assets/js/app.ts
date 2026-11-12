@@ -39,6 +39,7 @@ import {OnchainSteps} from "./hooks/onchain_steps"
 import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
 import {ProductsMenu} from "./hooks/products_menu"
+import {ThemeSwitch, mountStaticThemeSwitches} from "./hooks/theme_switch"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
@@ -46,6 +47,7 @@ import {installAgentMessage} from "./agent_message"
 import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
 import {installVisitLog} from "./visit_log"
+import {syncTheme} from "./theme"
 
 // First, so an error anywhere below is reported too.
 installVisitLog()
@@ -60,57 +62,8 @@ type ShellHook = Hook & {
 
 let cachedShellState: ShellState | undefined
 
-// The colour theme. Until the visitor chooses, the page carries no theme and the
-// shared colours follow the device, dark unless it asks for light. A press
-// chooses the opposite of the theme showing and writes it to the cookie the
-// server reads, so the next page is drawn in it. The switch names the theme
-// showing by itself, so nothing here rewrites its words.
-const themeCookie = "regent_theme"
-const themeMaxAge = 60 * 60 * 24 * 365
-type Theme = "light" | "dark"
-const themeColors: Record<Theme, string> = {dark: "#161616", light: "#e5e3d2"}
-
-function chosenTheme(): Theme | undefined {
-  const prefix = `${themeCookie}=`
-  const value = document.cookie
-    .split("; ")
-    .find(cookie => cookie.startsWith(prefix))
-    ?.slice(prefix.length)
-
-  return value === "light" || value === "dark" ? value : undefined
-}
-
-function showingTheme(): Theme {
-  const theme = document.documentElement.dataset.theme
-  if (theme === "light" || theme === "dark") return theme
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"
-}
-
-// The homepage art is dark-only; this is not a change to visitor preference.
-const homeThemeLocked = () => window.location.pathname === "/"
-
-// Live navigation keeps the document, so each page restates its theme: dark on
-// the homepage, the visitor's choice elsewhere, or none so the device decides.
-function syncTheme() {
-  const root = document.documentElement
-  const theme = homeThemeLocked() ? "dark" : chosenTheme()
-  root.dataset.homeThemeLocked = String(homeThemeLocked())
-  if (theme) root.dataset.theme = theme
-  else delete root.dataset.theme
-  document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", theme ?? "dark light")
-  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(meta => {
-    meta.content = themeColors[theme ?? (meta.media.includes("light") ? "light" : "dark")]
-  })
-}
-
-document.addEventListener("click", event => {
-  if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return
-  const theme: Theme = showingTheme() === "dark" ? "light" : "dark"
-  const secure = window.location.protocol === "https:" ? "; Secure" : ""
-  document.cookie = `${themeCookie}=${theme}; Path=/; Max-Age=${themeMaxAge}; SameSite=Lax${secure}`
-  syncTheme()
-})
-
+// Live navigation keeps the document, so each page restates its theme
+// (theme.ts); every theme switch follows what it shows.
 window.addEventListener("phx:page-loading-stop", syncTheme)
 window.addEventListener("popstate", syncTheme)
 window.addEventListener("pageshow", syncTheme)
@@ -375,6 +328,7 @@ const hooks = {
   PublicName,
   Conversation,
   ShellBehavior: composeHooks(shellBehavior, ShellViews),
+  ThemeSwitch,
   VerifiedConnections,
 }
 if (!browserCsrfToken()) throw new Error("Missing CSRF token")
@@ -401,4 +355,5 @@ installCopyButtons()
 installAgentMessage()
 installAgentTools()
 mountMotion(document)
+mountStaticThemeSwitches(document)
 window.liveSocket = liveSocket

@@ -67,7 +67,8 @@ After renaming, a new site must still replace, by hand:
   figure drawn with `Regent.Primitives.figure` inside a part marked
   `phx-hook="MotionCount"`; the shared segmented control and tabs with
   `phx-hook="MotionTravel"`, the breadcrumb with `MotionCrumbs`, an agent's
-  activity with `MotionActivity` and the line chart with `MotionChart`;
+  activity with `MotionActivity`, the line chart with `MotionChart` and the light and
+  dark switch (`Shell.theme_toggle/1`) with `ThemeSwitch`;
   `data-sheet-handle` on the part a window is pulled down by, `data-dismiss` on
   the close control of a `data-panel="drawer"` or a `data-toast` a finger may
   swipe away, `hooks/motion/gestures.ts`), never with their own motion code.

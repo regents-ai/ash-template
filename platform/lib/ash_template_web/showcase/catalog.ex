@@ -5,7 +5,6 @@ defmodule AshTemplateWeb.Showcase.Catalog do
     {Regent.Primitives, [:button, :field, :status, :notice, :empty_state, :disclosure]},
     {Regent.Structure,
      [:frame, :row, :section_bar, :panel, :technical_figure, :capability_card, :ratio_card]},
-    {Regent.ThemeToggle, [:button]},
     {AshTemplateWeb.Components.Shell, [:shell, :account_control, :theme_toggle]},
     {AshTemplateWeb.Components.VerifiedConnections, [:verified_connections]},
     {AshTemplateWeb.Layouts, [:app, :root]}
