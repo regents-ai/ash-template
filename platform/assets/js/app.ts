@@ -46,6 +46,7 @@ import {mountMotion} from "./motion"
 import {installAgentMessage} from "./agent_message"
 import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
+import {reconnectAfterMs, rejoinAfterMs} from "./reconnect"
 import {installVisitLog} from "./visit_log"
 import {syncTheme} from "./theme"
 
@@ -337,6 +338,8 @@ if (!browserCsrfToken()) throw new Error("Missing CSRF token")
 // connection and reconnection reads the token the browser holds now.
 const liveSocket = new LiveSocket("/live", Socket, {
   params: () => ({_csrf_token: browserCsrfToken()}),
+  reconnectAfterMs,
+  rejoinAfterMs,
   hooks,
   dom: {
     // Every dialog is opened by the page's own script and the server never renders

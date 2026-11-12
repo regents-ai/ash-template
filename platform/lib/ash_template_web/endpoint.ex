@@ -57,7 +57,17 @@ defmodule AshTemplateWeb.Endpoint do
   # fullsweep_after: 0 has each page's connection give back what it used to send
   # the page: 1.67 MB down to 0.09 MB a page where it was measured
   # (ash-frontend, references/public-figures.md).
+  #
+  # As the machine stops, the drainer closes open pages 125 at a time, one batch
+  # a second, so they reconnect to the other machines spread out (with the
+  # browser's own jitter, assets/js/reconnect.ts) instead of all mounting at once
+  # against the same small pool. The machine holds at most 2,500 connections
+  # (fly.toml), so that is at most 21 batches over 20 seconds, within the 25 the
+  # drainer is allowed. The server then waits up to 15 seconds for what is still
+  # open, such as an agent's feed, and Oban up to 15 for running jobs: 55
+  # seconds, inside fly.toml's 60-second kill timeout.
   socket "/live", Phoenix.LiveView.Socket,
+    drainer: [batch_size: 125, batch_interval: 1_000, shutdown: 25_000],
     websocket: [
       connect_info: [:peer_data, :uri, session: @session_options],
       fullsweep_after: 0,
