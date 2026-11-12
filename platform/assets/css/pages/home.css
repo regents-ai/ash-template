@@ -181,7 +181,7 @@
     transform: scale(var(--rg-press-scale, 1));
     transition: opacity 140ms ease;
     /* Keep the material strongest at the edge and quiet underneath the label. */
-    mask-image: linear-gradient(#000, rgb(0 0 0 / .3) 35% 65%, #000);
+    mask-image: linear-gradient(in oklch, #000, rgb(0 0 0 / .3) 35% 65%, #000);
   }
 }
 .rg-button.rl-product-tab::after { content: none; }
@@ -195,7 +195,7 @@
 .rg-button.rl-hero-cta::after {
   --rl-cta-cut: calc(var(--rg-cut-control) + .586 * var(--rl-cta-ring));
   content: ""; position: absolute; inset: calc(-1px - var(--rl-cta-ring)); pointer-events: none;
-  background: linear-gradient(110deg,
+  background: linear-gradient(110deg in oklch,
       var(--palette-tangerine-tango), var(--palette-powder-blue) 25%, var(--palette-platinum) 50%,
       var(--palette-powder-blue) 75%, var(--palette-tangerine-tango)) 0 50% / 200% 100%;
   /* The outer cut shape, then the fill's own, so only the ring between them paints. */
