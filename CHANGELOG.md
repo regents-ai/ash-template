@@ -9194,3 +9194,40 @@ Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
   button; its frozen "Keyboard focus" example is a plain rectangle; on the home page the
   Platinum part of Enter App's ring meets the Platinum button at one corner in dark.
   Passed to the design chief.
+
+## 2026-11-12 — Chat replies and label questions off the shared log (branch, not on main)
+
+Branch `tpl/stampede-chat-1112`, the chat lane of the database load review
+(`/tmp/stampede-1112/build-chat.md`). Not released.
+
+- **Chat replies.** A reply was saved once per piece, each save a commit on the database
+  every site shares, and each sent the whole text so far. Now the job saves it twice
+  through `:upsert_response` (empty and unfinished when it starts, whole when it ends) and
+  broadcasts each piece with `Phoenix.PubSub` as `"piece"` on the conversation's topic.
+  The shell hands pieces to the chat page, whose `.ChatReply` hook appends them. A page
+  opened partway through shows "The assistant is writing…" until the whole reply
+  arrives; reconnecting is the same. The append path of `:upsert_response` is deleted.
+  The job holds a connection only before and after the model call.
+- **History.** The model reads the newest 50 messages, one page of the chat; replies
+  that never finished are left out.
+- **Paging.** `:my_conversations` and `:for_conversation` are keyset paged, 50 a page, 100
+  at most. The chat page keeps what it shows plus a cursor, never the records, with Older
+  chats and Older messages buttons. Migration
+  `20261112192041_chat_conversations_by_person_and_time` adds one index,
+  `chat_conversations (human_account_id, inserted_at)`, built concurrently; it changes no
+  rows. The old one-column index stays (migrations here only add).
+- **Label questions.** `:note_saved` reaches `Notes.Decision` `:request_label` as a job in
+  the `default` queue (`AshOban.Signals`, `unique: false`), queued in the save's
+  transaction. The job takes the daily-question lock in its own short transaction, so a
+  save no longer waits on every other save. A note deleted first cancels the job. A save's
+  own answer usually shows the label from before it; the docs say so.
+- `AshTemplate.Chat.ActorPersister` is now `AshTemplate.Actors.Persister`, used by both.
+- Skill rules: chat pieces (elixir-stack), job-delivered listeners (ash-backend
+  integrations), streamed answers (Oban recipes, Queues), and the signals skill's table.
+- Tests: `test/ash_template/notes/label_request_test.exs` (the race test fails 3 of 3
+  with the job's transaction off), `test/ash_template/chat/reply_test.exs`,
+  `test/browser/chat.spec.ts`. Older chats and Older messages were driven once on a
+  local walk database with 53 chats and 51 messages.
+- Full check on the Mac, exit 0: style check clean, 13 script tests, credo clean, 126
+  TypeScript, 581 browser walks with 5 skipped, 221 Elixir (10 properties), required
+  fixes (main's registry), the command list and the newest-CLI check. WebKit not run.

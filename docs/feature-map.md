@@ -126,6 +126,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | An archived note goes after its person's other notes and keeps its pin until unarchived; an agent archives only its own person's notes | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | A note cannot be deleted while a pin for it is on offer or paid and not yet applied, whatever state the payment is in; applied, expired, failed or run-out terms let the delete through, and one note's pin never holds another note | `platform/test/ash_template/notes/pin_being_paid_test.exs` |
 | Deleting a note keeps its label question, what it cost and its place in the day's budget, so deleting notes never buys more paid questions | `platform/test/ash_template/notes/decision_outlives_note_test.exs` |
+| A note's save only queues its label question, which a job asks as the person who saved once the save has committed; a note deleted first gets none, and label requests run at once never ask more than the day's number of questions | `platform/test/ash_template/notes/label_request_test.exs` |
 | Sign-in session rows are deleted only once no browser can still hold them (untouched for a day longer than the cookie lives), whether never signed in, signed in or revoked; anything touched since stays | `platform/test/ash_template/accounts/session_pruner_test.exs` |
 | A paired agent starts a room whose address comes from its name; a retry answers the same room, another person's same name is refused with `room_name_taken`, and only the person who started a room changes its topic | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An agent's direct messages are its person's alone: it opens a conversation from a room message, a retried send sends once, a stranger's conversation answers as missing, a bad cursor is refused, and a block moves the conversation to the blocker's Blocked list only, while the other side's messages still save | `platform/test/ash_template/agents/signed_tools_test.exs` |
@@ -142,6 +143,8 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | A mention reaches someone with no name by their short wallet, in any case, and never its writer | `platform/test/ash_template/rooms/mentions_test.exs` |
 | A short wallet saved as a person's name goes, whichever wallet it was shortened from and in any letters, on a room post, a mute and a message left for the team (a paired agent's too), and the row shows by its wallet; a chosen name, an agent's own name and a row with no wallet keep theirs | `platform/test/ash_template/short_wallet_names_test.exs` (property test) |
 | An agent chats with the assistant for its person: a send starts or continues a chat and the assistant's reply follows, a retried send sends once, another person's chat answers as missing (reads and sends), their message id cannot be reused, a bad cursor is refused, and an unpaired agent is refused | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| The assistant's reply is saved twice, empty when it starts and whole when it ends; in between its pieces are only broadcast, and together they are the whole reply | `platform/test/ash_template/chat/reply_test.exs` |
+| A reply streams onto the open chat page a few words at a time; a page opened partway through shows the assistant writing, never part of the reply, until the whole reply arrives on both | `platform/test/browser/chat.spec.ts` |
 | An agent reads its person's activity 50 a page, each notification once, marking none read; any other body or a bad cursor is refused | same |
 | An agent marks all its person's notifications read and no one else's; marking again answers the same, and any body but `{}` is refused | same |
 | Every operation has one address under `/api/v1/` (the agent sign-in under `/api/agents/v1/`), one browser tool named after its command, and the same name, address and inputs in the tool list, the command list, `/capabilities.json` and both OpenAPI documents; a read-only tool that changes something, a tool and command that disagree, a surface left out with no reason, a hosted tool with no AshAi tool or other input than its browser tool, a public operation that needs proof, or an operation-key retry with no `operation_id` field stops the build | `platform/lib/ash_template_web/capabilities.ex` (when it compiles); `make check-cli` |
@@ -267,8 +270,10 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - Saving a name in a real browser, and the page's Privy bridge itself: the walk
   answers for Privy with a stand-in, so it proves the refusal; the server check
   proves the save and `public_name.test.ts` the save path.
-- Writing, pinning and deleting a note; posting in a room; sending a chat message:
-  the walk opens these pages but does not use them.
+- Writing, pinning and deleting a note; posting in a room: the walk opens these pages
+  but does not use them.
+- Older chats and Older messages on the chat page: the walk's person has fewer than a
+  page of either.
 - Block and Unblock on the messages page, and a message arriving from the other person
   while the page is open: the walk sends one message and does not press either.
 - A poll closing by itself while its page is open, and another person's vote arriving there:

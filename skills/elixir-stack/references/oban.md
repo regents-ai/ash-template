@@ -89,11 +89,17 @@ only the jobs that wait on it, never a person's other work:
   (5 on the shared database; ash-data, "Connections"), with room left for page
   requests and Oban's own reads: the template's `default` 1 and `points` 2 take 3 of
   the 5, and a full `default` and `points` still leave 2 for pages. An
-  outside-call job holds a connection only to read before and write after the call,
-  so its limit is what the other service and the budget allow: its rate limit, a
-  daily cap such as Jev's `daily_questions`, and how long one call takes. Start a
-  call to an outside website at 1 to 3; a model queue whose answers a person waits
-  for (`chat_responses`) can go higher, within the model's rate limit.
+  outside-call job holds no connection during the call (next point), so its limit is
+  what the other service and the budget allow: its rate limit, a daily cap such as
+  Jev's `daily_questions`, and how long one call takes. Start a call to an outside
+  website at 1 to 3; a model queue whose answers a person waits for
+  (`chat_responses`) can go higher, within the model's rate limit.
+- An outside-call job holds a connection only to read before and write after the
+  call. A streamed answer is sent to pages with `Phoenix.PubSub` as it arrives and
+  written to the database once at the start and once at the end
+  (`Chat.Message.Changes.Respond`), with at most one checkpoint every few seconds
+  between. Never one write per chunk: each write is a commit, and every site shares one
+  write-ahead log.
 - Raise a limit when `[:ash_template, :jobs, :oldest_unfinished]` stays high for that
   queue: it is the age of the oldest job not yet finished, running ones included, so
   read it with the queue's run times before deciding its jobs are waiting. Lower it

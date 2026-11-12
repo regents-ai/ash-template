@@ -118,3 +118,10 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 [OTP, Phoenix and Ecto essentials](references/otp-phoenix-ecto.md) covers
 supervision, PubSub, transactions and locks, Req, telemetry, and the mistakes that
 make these slow or unsafe.
+
+Broadcast text that arrives in pieces, such as a model's streamed answer, piece by
+piece with `Phoenix.PubSub`, since pieces are not records and Ash publishes only on
+create, update and destroy. Save it through its Ash action when it starts and once
+more when it is whole, never once per piece: every commit waits for the write-ahead
+log to be flushed, on a database every site shares
+([Oban recipes](references/oban.md#queues)).

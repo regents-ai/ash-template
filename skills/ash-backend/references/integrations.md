@@ -35,6 +35,13 @@ listens. Choose by what the reaction needs:
 | Tell open pages something changed, at most once, after commit | A notifier: `Ash.Notifier.PubSub` |
 | Every subscriber gets every event, in order, never skipping a failed one | The event-log recipe in [Oban recipes](../../elixir-stack/references/oban.md#ordered-delivery-to-subscribers-webhooks-event-feeds); a signal is not an ordered feed |
 
+Deliver a listener as a job, with `delivery: {AshOban.Signals, queue: ...}`, when it
+scans rows whose number grows with the site, takes a site-wide lock
+(`pg_advisory_xact_lock` on a constant) or waits on anything slow: an inline listener
+holds the emitter's connection and row locks until the emitter commits. AshOban
+inserts that job in the emitter's transaction, so a rollback still does nothing
+(`Notes.Decision` `:request_label`).
+
 Adopting signals in a site, the template's signals and listeners, and the rules for
 writing one are in [ash-signals](../../ash-signals/SKILL.md).
 

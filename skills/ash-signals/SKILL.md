@@ -19,16 +19,19 @@ clean, goes to all five sites at once (regent-workflow, "Shared changes").
 | Signal module | Signal and fields | Emitted by | Heard by |
 | --- | --- | --- | --- |
 | `AshTemplate.Rooms.Signals` | `:message_posted` (`message_id`) | `Rooms.Message` `:post` | `Activity.Notification` `:notify_mentions`, which runs `NotifyMentions` |
-| `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, which asks for a label |
+| `AshTemplate.Notes.Signals` | `:note_saved` (`note_id`) | `Notes.Note` `:create` and `:update`, while the server can ask Jev | `Notes.Decision` `:request_label`, a job in the `default` queue that asks for a label once the save has committed |
 | `AshTemplate.Notes.Signals` | `:note_created` (`note_id`, `changed_by_agent_id`) | `Notes.Note` `:create` | `Points.Award` `:agent_note` |
 | `AshTemplate.Notes.Signals` | `:note_committed` (`note_id`), `phase :after_transaction` | `Notes.Note` `:create`, `emit ..., phase: :after_transaction`, only once the create has committed | No listener. The visit log writes the value step from Ash's `[:ash, :signal, :emitted]` telemetry (`AshTemplateWeb.VisitLog.Events`) |
 | `AshTemplate.Accounts.Signals` | `:account_registered` (`account_id`) | `Accounts.HumanAccount` `:register_verified`, only when the sign-in inserted the account (a dynamic emit that reads Ash's `upsert_skipped`) | `Points.Award` `:account_registered` |
 | `AshTemplate.Accounts.Signals` | `:social_linked` (`provider`, `subject`) | `Accounts.LinkedIdentity` `:upsert_verified`, which a sign-in reaches only for a subject new to the account | `Points.Award` `:social_linked` |
 | `RegentAgents.Signals` (elixir-utils `agents`) | `:agent_paired` (`paired_agent_id`, `privy_user_id`) | `RegentAgents.PairedAgent` `:record` | `Points.Award` `:agent_paired` |
 
-Every listener uses the default inline delivery. Its work commits with the action that
-emitted the signal, and a listener that fails rolls that action back. The template has
-no job-delivered listener yet.
+Every listener but one uses the default inline delivery. Its work commits with the
+action that emitted the signal, and a listener that fails rolls that action back.
+`Notes.Decision` `:request_label` is delivered as a job, because it takes the site-wide
+lock on the day's questions: AshOban queues the job in the save's transaction, so a
+save that rolls back asks nothing, and the job takes the lock in its own short
+transaction once the save has committed.
 
 A log line about something that must have happened, such as the site's value step,
 comes from a signal in the `:after_transaction` phase, declared on the signal and on its
@@ -136,10 +139,12 @@ with the same name as one of the record's attributes is filled in without being 
   `notify?: true`, and Ash sends the notices once the outer transaction commits. Do not
   return notifications from the listener.
 - A job delivery (`on ..., delivery: {AshOban.Signals, queue: ...}`) stores the actor,
-  so a site needs an actor persister first: a module implementing `AshOban.PersistActor`,
-  set with `config :ash_oban, :actor_persister`. Job delivery commits with the action
-  only when the emitter and Oban use the same Repo and the signal is emitted
-  `:after_action`.
+  so a site needs an actor persister first: a module implementing `AshOban.PersistActor`
+  (`AshTemplate.Actors.Persister`), named on the delivery with `actor_persister:`.
+  Pass `unique: false`: every emit carries a new `signal_id`, so the default
+  uniqueness check on it finds nothing and costs every emit two queries. Job delivery
+  commits with the action only when the emitter and Oban use the same Repo and the
+  signal is emitted `:after_action`.
 - `signal_id` is not a business key. An effect that must happen once still keys on the
   record: Points' `source_event_key` is the note or pairing id.
 - Before renaming or removing a signal, one of its fields or a job-delivered listener,
