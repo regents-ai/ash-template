@@ -9159,8 +9159,9 @@ on the branch only; releasing it is the founder's decision.
   `eu/privy-on-pin-1112`), which is the old pin plus only the shared sign-in pieces
   (no `RegentPrivy.Users`, no `req`, no G1). It is not on elixir-utils main. Only the
   15 elixir-utils lines of `mix.lock` change.
-- `AshTemplateWeb.PrivyProof` is deleted. The sign-in step (`PrivySessionController`)
-  and the notes routes read the token pair with `RegentPrivy.Proof.pair/1`.
+- The template's own token pair reader, `lib/ash_template_web/privy_proof.ex`, is
+  deleted. The sign-in step (`PrivySessionController`) and the notes routes read the
+  pair with `RegentPrivy.Proof.pair/1`.
 - Security policies: `sign_in` and `showcase` add the list every Regent site shares,
   `RegentPrivy.ContentSecurityPolicy.sign_in/0`, in place of the template's own
   `@sign_in`. All four served policies (reading, sign_in, showcase, errors) are
