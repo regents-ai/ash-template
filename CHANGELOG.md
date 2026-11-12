@@ -7964,3 +7964,16 @@ sits on its own branches.
   names `ec983824`; `/`, `/animations`, `/animations/menu`, `/animations/frosted-glass`,
   `/agents`, `/app`, `/polls` and `/notes` answer 200 at 1280 and 390 with no page or
   console errors and no sideways scroll. The gestures themselves were not driven live.
+
+## 2026-11-12 — Released v200: the health answer says whether migrations are applied
+
+- `2409d2d5` is v200 on template.regents.sh, switched at about 06:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v199 (`ec983824`).
+- `GET /api/v1/health` gains `migrations_applied`; pending migrations leave the answer at
+  200. `/healthz` is unchanged. Contract 11.3.0.
+- Full check on `2409d2d5`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  207 Elixir (9 properties). A first run failed two desktop settle-waits at load 60.
+- Live read, signed out: `/capabilities.json` names `2409d2d5`; `/api/v1/health` answers
+  `{"status":"ok","migrations_applied":true}`; `/healthz` 200; `/`, `/agents`, `/docs`
+  and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
+  errors (WebKit not run). The `false` answer is proven by test only.
