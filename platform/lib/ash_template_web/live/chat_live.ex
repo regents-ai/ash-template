@@ -194,6 +194,7 @@ defmodule AshTemplateWeb.ChatLive do
               name={@form[:text].name}
               rows="2"
               maxlength="4000"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={"chat-message-hint #{field.described_by}"}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:text].value)}</textarea>
@@ -203,7 +204,7 @@ defmodule AshTemplateWeb.ChatLive do
             controls="#chat-message-actions"
           />
           <fieldset id="chat-message-actions" class="chat-composer__actions">
-            <p id="chat-message-hint" class="chat-composer__hint rg-muted">
+            <p id="chat-message-hint" class="visually-hidden">
               Enter sends. Shift+Enter starts a new line.
             </p>
             <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>

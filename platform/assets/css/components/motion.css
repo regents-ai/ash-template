@@ -5,3 +5,28 @@
 /* What a wallet button squishes when pressed, so the button itself keeps its size
    and a quick second press near its edge still lands on it. A transform needs a box. */
 [data-press-label] { display: inline-block; }
+
+/* A finger drags these along one axis (hooks/motion/gestures.ts), so the browser
+   leaves that axis to the page: a window's handle takes every direction, the phone
+   menu and a note still scroll up and down. */
+[data-sheet-handle] { touch-action: none; }
+[data-panel="drawer"], [data-toast] { touch-action: pan-y; }
+
+/* A press dragged across a segmented control carries its indicator
+   (hooks/motion/travel.ts), so a finger moving sideways stays with it. */
+.rg-segmented[data-travel] { touch-action: pan-y; }
+
+/* A new step's line grows down from the mark above (MotionActivity), and a
+   breadcrumb's menus and card grow from the button that opened them. */
+[data-activity] .rg-activity__rail { transform-origin: top; }
+.rg-crumbs [popover] { transform-origin: top left; }
+.rg-crumbs [popover]:dir(rtl) { transform-origin: top right; }
+
+/* While something is dragged, the pointer moves it rather than selecting text. */
+:root[data-dragging] { user-select: none; }
+
+/* A dropdown's list leaving (`unlist` in the motion kit): its closed <details>
+   still draws it until it has faded out, and a press on it lands on what is under
+   it. Opened again, it takes presses at once. */
+details:not([open]):has(> [data-panel="list"][data-leaving])::details-content { content-visibility: visible; }
+details:not([open]) > [data-panel="list"][data-leaving] { pointer-events: none; }

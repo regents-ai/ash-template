@@ -141,6 +141,17 @@ defmodule AshTemplate.Release do
   end
 
   @doc """
+  Prints the `count` statements on this site's schema that took the most
+  database time (`AshTemplate.TopQueries`), `count` being a whole number from 1
+  to 100 as text. Run as `/app/bin/top-queries [count]`. It only reads, and
+  never creates `pg_stat_statements`.
+  """
+  def top_queries(count) do
+    limit = AshTemplate.TopQueries.limit!(count)
+    IO.puts(with_serving_repo(&AshTemplate.TopQueries.report(&1, limit)))
+  end
+
+  @doc """
   Prints every reported room message still in a room, most reported first: its
   id, room, how many reports and why, who wrote it and its first line, or
   `none`. Run as `/app/bin/room-reports`. It changes nothing.
@@ -249,6 +260,22 @@ defmodule AshTemplate.Release do
   defp with_release_repo(fun) do
     :ok = Application.ensure_loaded(@app)
     Application.put_env(@app, AshTemplate.Repo, AshTemplate.DatabaseConfig.release_config!())
+    {:ok, result, _started} = Ecto.Migrator.with_repo(AshTemplate.Repo, fun)
+    result
+  end
+
+  # A read-only report connects as the running site does, on the serving login with
+  # its statement, lock and idle limits, so a slow report gives up before it holds
+  # up the shared database, and sees the site's own statements. One connection.
+  defp with_serving_repo(fun) do
+    :ok = Application.ensure_loaded(@app)
+
+    Application.put_env(
+      @app,
+      AshTemplate.Repo,
+      Keyword.put(AshTemplate.DatabaseConfig.runtime_config!(:prod), :pool_size, 1)
+    )
+
     {:ok, result, _started} = Ecto.Migrator.with_repo(AshTemplate.Repo, fun)
     result
   end

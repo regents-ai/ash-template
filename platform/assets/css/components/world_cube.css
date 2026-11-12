@@ -24,12 +24,20 @@
   overflow: hidden;
   background: var(--world-cube-night);
   color: var(--world-cube-ink);
+
+  /* The cube's own order, inside its own stacking root: the stage behind the list
+     until the cube is drawn, then over it; once drawn, a room's panes and the cards
+     over the stage, and a card a keyboard has focused over the room's own. */
+  & .world-cube__stage { z-index: -1; }
+  &[data-world-ready="true"] .world-cube__stage { z-index: 0; }
+  &[data-world-ready="true"] .world-cube__world { z-index: 1; }
+  &[data-world-ready="true"] .world-cube__world:has(:focus-visible) { z-index: 2; }
+  & .world-cube__room { z-index: 1; }
 }
 
 .world-cube__stage {
   position: absolute;
   inset: 0;
-  z-index: -1;
   opacity: 0;
   transition: opacity 500ms ease-out;
 }
@@ -175,7 +183,6 @@
 
 /* Drawn: the stage shows, and the list keeps its place but not its cards. */
 .world-cube[data-world-ready="true"] .world-cube__stage {
-  z-index: 0;
   opacity: 1;
 }
 
@@ -189,7 +196,6 @@
 .world-cube[data-world-ready="true"] .world-cube__world {
   position: absolute;
   inset: auto var(--space-3) var(--space-3);
-  z-index: 1;
   opacity: 0;
   translate: 0 0.75rem;
 }
@@ -220,7 +226,6 @@
 
 /* A card a keyboard has focused shows over the room's own. */
 .world-cube[data-world-ready="true"] .world-cube__world:has(:focus-visible) {
-  z-index: 2;
   opacity: 1;
   translate: 0 0;
   pointer-events: auto;
@@ -244,7 +249,6 @@
 .world-cube__room {
   position: absolute;
   inset: 0;
-  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);

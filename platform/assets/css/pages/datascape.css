@@ -1,0 +1,46 @@
+@layer regents-product {
+/* The datascape at /animations/datascape. The picture is the page: it runs
+   from gutter to gutter and down to the foot of the window under the page's
+   heading, so there are edges to fly towards. Its ground is the scene's own,
+   in either theme. */
+.datascape-lab {
+  width: 100%;
+  max-width: none;
+}
+
+.datascape {
+  position: relative;
+  height: clamp(22rem, 100svh - 16rem, 64rem);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #020307;
+}
+
+.datascape__stage,
+.datascape canvas,
+.datascape__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* A finger held on the picture steers it, so it does not scroll the page from there. */
+.datascape canvas {
+  display: block;
+  visibility: hidden;
+  touch-action: none;
+}
+
+.datascape__still {
+  object-fit: cover;
+}
+
+.datascape[data-datascape-ready="true"] canvas {
+  visibility: visible;
+}
+
+.datascape[data-datascape-ready="true"] .datascape__still {
+  display: none;
+}
+}

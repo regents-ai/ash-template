@@ -29,8 +29,8 @@ for adding one operator action when a product needs it. Staff lists stay per sit
   role for a staff page.
 - The plug in front of a staff page only decides who sees it. It is never the only
   place authority lives.
-- Never `authorize?: false`, for staff or for commands (see
-  [shared contract](../../ash-stack/references/shared-contract.md)). Patchbay's
+- Never `authorize?: false`, for staff or for commands (ash-stack, "Never loosen to
+  pass"). Patchbay's
   moderation and Techtree's catalog commands still skip policies; do not copy them.
 
 ## Release commands

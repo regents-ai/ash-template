@@ -2,9 +2,9 @@
 
 Real phrase-shaped titles found on 28 Oct 2026 in Keyfleet (`regents-ai/keyfleet` at
 `9ec0de9`) and the template (`regents-ai/ash-template` at `2362ad8`), each with its
-one- or two-word replacement. The rule is "Titles are one or two words" in
-[regent-workflow](../SKILL.md). Each is a defect until its page changes; add new finds
-at the end of the matching table.
+one- or two-word replacement. The rule is in [regent-workflow](../SKILL.md), "Words on
+screen". Each is a defect until its page changes; add new finds at the end of the
+matching table.
 
 ## Keyfleet pages
 

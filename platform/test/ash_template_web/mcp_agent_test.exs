@@ -153,7 +153,8 @@ defmodule AshTemplateWeb.McpAgentTest do
     end
 
     listed = mcp(rpc("tools/list"), from: from, proof: wallet())
-    assert Enum.map(result(listed)["tools"], & &1["name"]) == ["rooms_messages", "rooms_post"]
+    assert Enum.map(result(listed)["tools"], & &1["name"]) ==
+             ["messages_leave", "rooms_messages", "rooms_post"]
 
     read = mcp(call("rooms_messages", %{room: "general"}), from: from, proof: wallet())
     assert %{"isError" => false, "structuredContent" => %{"messages" => _}} = result(read)

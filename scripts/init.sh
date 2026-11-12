@@ -14,10 +14,12 @@
 #   Ash Template  -> Night Owl    (public copy; the display name, the module name by default)
 #   ASH TEMPLATE  -> NIGHT OWL    (capitalised legal copy; the display name in capitals)
 # renames the files and directories that carry the app name, drops the Markdown
-# passages fenced by <!-- template-only --> and <!-- /template-only --> that
-# describe the template itself, and records the rename at the end of
-# CHANGELOG.md, whose earlier entries stay as written. Run it once, from a clean
-# checkout, before the first commit of the new product.
+# passages fenced by <!-- template-only --> and <!-- /template-only --> and the
+# Makefile passages fenced by "# template-only" and "# /template-only" that
+# belong to the template itself, removes the template's reports and daily-job
+# instructions, and records the rename at the end of CHANGELOG.md, whose earlier
+# entries stay as written. Run it once, from a clean checkout, before the first
+# commit of the new product.
 set -euo pipefail
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
@@ -85,23 +87,37 @@ while IFS= read -r dir; do
   git mv "$dir" "$(dirname "$dir")/$(renamed "$(basename "$dir")")"
 done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -not -path './.git/*' -not -path '*/_build/*' -not -path '*/deps/*' -not -path '*/node_modules/*' | deepest_first)
 
-# Contents: every tracked text file except this script, the drift report (both
-# removed below) and the changelog's history, task names first, then the longest
-# spelling first.
+# The reports that compare Regent's sites with the template, their file lists and
+# tests, and the instructions of the daily jobs that read them; a new product has no
+# use for them, so they are removed below.
+reports=(
+  scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh scripts/harvest.sh
+  scripts/stale-prs.sh scripts/tests/test_reports.py automation/harvest.md automation/spread.md
+)
+
+# Contents: every tracked text file except this script, the reports (all removed
+# below) and the changelog's history, task names first, then the longest spelling
+# first. In the Makefile, ash-template names the template's repository, whose
+# required fixes every product checks against, so it stays.
 git ls-files -z | while IFS= read -r -d '' path; do
-  [[ -f "$path" && "$path" != scripts/init.sh && "$path" != scripts/drift.sh && "$path" != CHANGELOG.md ]] || continue
+  [[ -f "$path" && "$path" != scripts/init.sh && "$path" != CHANGELOG.md ]] || continue
+  [[ " ${reports[*]} " != *" $path "* ]] || continue
   grep -Iq . "$path" || continue
+  kebab_rule="s/ash-template/$kebab/g;"
+  [[ "$path" != Makefile ]] || kebab_rule=""
   if grep -q 'ash_template\|AshTemplate\|ashTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template\|ASH TEMPLATE' "$path"; then
-    perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g; s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g" "$path"
+    perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; $kebab_rule s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g" "$path"
   fi
 done
 
-# Passages that describe the template itself, fenced in Markdown comments.
+# Passages that belong to the template itself, fenced in Markdown comments and in
+# Makefile comments.
 git ls-files -z -- '*.md' ':!CHANGELOG.md' | while IFS= read -r -d '' path; do
   grep -q '<!-- template-only -->' "$path" || continue
   perl -0777 -pi -e 's/<!-- template-only -->\n.*?<!-- \/template-only -->\n\n?//gs' "$path"
 done
-if git grep -q -e 'template-only' -- ':!scripts/init.sh'; then
+perl -0777 -pi -e 's/^# template-only\n.*?^# \/template-only\n//gms' Makefile
+if git grep -q -e 'template-only' -- ':!scripts/init.sh' "${reports[@]/#/:!}"; then
   echo "a template-only fence is still open; every passage needs both markers on their own lines" >&2
   exit 70
 fi
@@ -111,12 +127,11 @@ cat >> CHANGELOG.md <<EOF
 ## $(date -u +%F) — Renamed to $display
 
 - Renamed the Ash Template placeholder to $display (\`$snake\`, \`$module\`,
-  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself and
-  the template's drift report.
+  \`$kebab\`, \`${upper}_\`) with \`scripts/init.sh\`, which removed itself,
+  the template's reports on Regent's sites and its daily jobs' instructions.
 EOF
 
-# The drift report compares Regent's sites with the template; a new product has no use for it.
-git rm -q -- scripts/init.sh scripts/drift.sh
+git rm -q -- scripts/init.sh "${reports[@]}"
 cat <<EOF
 Renamed Ash Template to $display ($snake / $module).
 Review with: git status

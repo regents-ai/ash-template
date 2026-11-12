@@ -1,23 +1,23 @@
 @layer regents-product {
-/* Utility pages use open sections, readable headings and quiet separators. */
+/* Utility pages use open sections and readable headings; room, not rules,
+   keeps the sections apart. */
 
 .account-page {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--space-6);
   min-width: 0;
   max-width: 64rem;
 }
 
-.account-page h1 { font-size: clamp(1.5rem, 3vw, 1.75rem); line-height: 1.25; }
-
 .account-panel {
+  display: grid;
+  gap: var(--space-2);
   min-width: 0;
+  padding: 0;
   border: 0;
-  border-block-start: 1px solid var(--color-border);
   background: transparent;
 }
 
-.account-page h1,
 .account-page h2 {
   margin: 0;
   font-family: var(--font-family-ui);
@@ -27,54 +27,43 @@
   margin: 0;
 }
 
-.account-kicker,
 .account-details dt {
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   font-family: var(--font-family-ui);
-  font-size: .875rem;
-  letter-spacing: normal;
-  text-transform: none;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
-
-/* Panels */
 
 /* Panels side by side when there is room, such as a note's form and the notes list. */
 .account-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  gap: 1.5rem 2.5rem;
+  gap: var(--space-6) var(--space-5);
   align-items: start;
-}
-
-.account-panel {
-  display: grid;
-  gap: 1rem;
-  padding: 1.5rem 0;
 }
 
 /* The same size as the shared sections beside them (Agents). */
 .account-panel h2 {
-  font-size: 1.125rem;
-  line-height: 1.35;
+  font-size: var(--type-headline-size);
+  line-height: var(--type-headline-line);
 }
 
-/* Details */
+/* Details: rules go between rows only. */
 
 .account-details dl {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-2);
   margin: 0;
 }
 
-/* Rules go between rows only; the section's own rule is above its heading. */
 .account-details dl > div {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--space-1);
 }
 
 .account-details dl > div + div {
-  padding-block-start: 0.75rem;
-  border-block-start: 1px solid var(--color-border);
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--ash-raised);
 }
 
 .account-details dd {
@@ -86,7 +75,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-1);
 }
 
 .account-wallet code {
@@ -96,7 +85,7 @@
 
 .account-wallet-list {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -106,7 +95,7 @@
 
 .verified-connections__list {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -116,28 +105,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--ash-raised);
 }
 
 .verified-connections__list li > div {
   display: grid;
-  gap: 0.25rem;
+  gap: 0;
 }
 
-/* Only the text cell is muted; the row's button keeps the shared button's ink. */
+/* Only the text cell is quiet; the row's button keeps the shared button's ink. */
 .verified-connections__list li > div span {
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
 }
 
 .verified-connections__notice {
-  padding-inline-start: 0.75rem;
-  border-inline-start: 3px solid var(--ash-accent);
+  padding-inline-start: var(--space-1);
+  border-inline-start: 2px solid var(--ash-ink);
 }
 
 .verified-connections__notice--error {
-  border-inline-start-color: var(--ash-accent-warm);
+  border-inline-start-color: var(--ash-signal);
 }
 
 @media (max-width: 30rem) {
@@ -149,18 +138,47 @@
 
 }
 
+/* The shared account pieces (`.rg-utility`, `.rg-account`) set their own type
+   outside any layer; the page's own title and section type win. */
+.account-page.rg-utility {
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+/* The shared look tightens its title's letters; this title keeps the face's own. */
+.account-page.rg-utility .page-head h1 {
+  margin: 0;
+  font-family: var(--font-family-title);
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+  letter-spacing: normal;
+}
+
+@media (min-width: 48rem) {
+  .account-page.rg-utility .page-head h1 {
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+  }
+}
+
+.account-page.rg-utility .account-panel h2 {
+  line-height: var(--type-headline-line);
+}
+
 /* Pairing: the window every Pair New Agent opens, and the pairing link's page
    (/pair), whose box keeps the window's width and whose start page wraps rather
-   than running off a narrow screen. Unlayered, like the shared pairing box. */
+   than running off a narrow screen. Unlayered, like the shared pairing box. The
+   heading keeps clear of the window's close button. */
 .shell-pairing-dialog {
   --rg-dialog-size: 30rem;
 }
 
 .shell-pairing-dialog h2 {
-  margin: 0 0 var(--space-3);
-  padding-inline-end: 3rem;
+  margin: 0 0 var(--space-2);
+  padding-inline-end: var(--space-6);
   font-family: var(--font-family-ui);
   font-size: var(--type-headline-size);
+  line-height: var(--type-headline-line);
 }
 
 .pair-page .rg-account__pair {
@@ -172,11 +190,12 @@
 }
 
 /* With no live connection the pairing box's agents and its new-code button are
-   disabled (AshTemplateWeb.LiveConnection), and look it. Unlayered, like the
-   shared pairing box it adjusts. */
+   disabled (AshTemplateWeb.LiveConnection), and look it: quiet words on a
+   raised fill. Unlayered, like the shared pairing box it adjusts. */
 .rg-account__choices:disabled .rg-account__choice,
 .rg-account__renew:disabled {
-  opacity: 0.45;
+  background: var(--ash-raised);
+  color: var(--ash-quiet);
   cursor: default;
   pointer-events: none;
 }

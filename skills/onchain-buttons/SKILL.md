@@ -5,10 +5,12 @@ description: Buttons that make a person's wallet act on Regent's Phoenix LiveVie
 
 # On-chain buttons
 
-**Load `ash-stack` and `ash-frontend` first.** The wallet rules in
-[regent-integration](../ash-stack/references/regent-integration.md#wallet-actions) apply
-and are not repeated here. For chain events recorded in the database, use `chain-events`;
-for a USDC payment's button, `payments`.
+**Load `ash-stack` and `ash-frontend` first.** The wallet rules in regent-workflow's
+"Wallets and transactions" apply and are not repeated here; their effect on engineering
+patterns is in
+[regent-integration](../ash-stack/references/regent-integration.md#wallet-actions). For
+chain events recorded in the database, use `chain-events`; for a USDC payment's button,
+`payments`.
 
 ## Rules
 

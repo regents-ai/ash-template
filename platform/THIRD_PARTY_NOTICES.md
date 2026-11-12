@@ -4,17 +4,27 @@ Third-party material redistributed inside this repository, and the terms it arri
 
 ## vgpu — account holographic card
 
-The foil on the account page's identity card and the homepage's feature cards is the shared `Regent.HolographicCard`
+The foil on the account page's identity card and the homepage's product tabs is the shared `Regent.HolographicCard`
 from the Regent design system, whose `holographic_card.mjs` adapts the "Holographic
 Card" example published with Vercel's `vgpu` project. This repository ships no copy of
 that material: `mix regent_ui.assets` stages the module from the pinned design-system
 revision at build time, and the attribution and licence text live in the design system's
 `THIRD_PARTY_NOTICES.md`. The renderer runs on the `vgpu` 0.6.0 this repository pins, with `@vgpu/wgsl` 0.6.0 preparing its shader.
 
+## vgpu — homepage datascape
+
+The datascape behind the homepage, also on the lab page `/animations/datascape`, under
+`assets/js/datascape/` with its `Datascape` hook, is this repository's own scene and
+shaders; no third-party source was adapted for it. It draws through Vercel's `vgpu`,
+which is bundled into the script the site serves, with `@vgpu/wgsl` preparing its
+shaders in the browser when the datascape first draws. Nothing is downloaded at runtime.
+The packages, their versions and the licence are those listed under the crown renderer
+below.
+
 ## vgpu — world cube
 
 The turning cube under `assets/js/world_cube/`, with its `WorldCube` hook and component,
-is this repository's own scene and shader; no third-party source was adapted for it. It
+shown on the lab pages `/animations/cube` and `/animations/twin-cube`, is this repository's own scene and shader; no third-party source was adapted for it. It
 draws through Vercel's `vgpu`, which is bundled into the script the site serves, with
 `@vgpu/wgsl` preparing its one shader in the browser when the cube first draws. Nothing is
 downloaded at runtime. The packages, their versions and the licence are those listed under

@@ -95,7 +95,7 @@
 }
 
 .site-header :is(a, summary):focus-visible {
-  outline: 2px solid var(--ash-accent);
+  outline: 2px solid var(--ash-ink);
   outline-offset: -2px;
 }
 
@@ -131,7 +131,7 @@
   margin: 0;
   padding: 0.375rem;
   list-style: none;
-  border: 1px solid var(--ash-line-strong);
+  border: 1px solid var(--ash-quiet);
   background: var(--color-surface);
   box-shadow: var(--rg-layer-tip-shadow);
 }
@@ -215,7 +215,7 @@
 .hf-lab__choice {
   display: inline-flex;
   justify-self: start;
-  border: 1px solid var(--ash-line-strong);
+  border: 1px solid var(--ash-quiet);
 }
 
 .hf-lab__choice a {

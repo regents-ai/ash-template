@@ -38,6 +38,9 @@ if walk? do
   # request limits by that header, as it does behind Fly, so one run of many checks
   # never spends a single visitor's budget.
   config :ash_template, :behind_fly_proxy, true
+  # Every signed-in check is the same one person, who so posts to rooms far more often
+  # than any real person does; their allowance is wide enough that no check is slowed.
+  config :ash_template, :limits, room_post: [limit: 1_000, window_seconds: 60]
 end
 
 # Several sites run side by side locally, each on the port named by PORT.

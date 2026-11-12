@@ -158,7 +158,7 @@ defmodule AshTemplateWeb.SiteButtonsLive do
           <P.button variant="secondary" phx-click="reduced" aria-pressed={to_string(@reduced?)}>
             Less motion
           </P.button>
-          <Regent.ThemeToggle.button id="sb-theme" data-theme-toggle />
+          <AshTemplateWeb.Components.Shell.theme_toggle id="sb-theme" />
         </div>
       </header>
       <.content states={@states} />

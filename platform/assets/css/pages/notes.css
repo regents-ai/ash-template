@@ -2,9 +2,11 @@
 /* Notes stand on the Account page's panels and type; only the form and the
    list are their own. */
 
+/* Each field ends in its own error line, so the fields sit a small step apart
+   and the buttons a step further. */
 .notes-form {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-1);
 }
 
 .notes-form input,
@@ -21,7 +23,19 @@
 .notes-item__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-1);
+}
+
+.notes-form__actions {
+  min-inline-size: 0;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A note's buttons are quiet; their words line up with the note's title. */
+.notes-item__actions {
+  margin-inline-start: calc(-1 * var(--space-2));
 }
 
 .notes-list {
@@ -34,15 +48,16 @@
 
 .notes-item {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-1);
   min-width: 0;
-  padding-block: 1rem;
-  border-block-start: 1px solid var(--color-border);
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--ash-raised);
 }
 
 .notes-item h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
   overflow-wrap: anywhere;
 }
 
@@ -57,7 +72,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-1);
   margin: 0;
 }
 
@@ -76,8 +91,9 @@
 }
 }
 
+/* Only failures land here. */
 .notes-notice {
   min-block-size: 1lh;
   margin: 0;
-  color: var(--color-warning);
+  color: var(--ash-signal);
 }

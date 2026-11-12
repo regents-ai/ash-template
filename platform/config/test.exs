@@ -23,6 +23,9 @@ config :ash_template, :payments_wallet_address, "0x00000000000000000000000000000
 # Jobs are only recorded, never run, while a test holds its transaction.
 config :ash_template, Oban, testing: :manual
 
+# A feed's keep-alive comes quickly enough for a test to wait for it.
+config :ash_template, AshTemplateWeb.FeedController, max_open: 1000, keep_alive_ms: 300
+
 # IndexNow is answered by the test itself (AshTemplate.IndexNow).
 config :ash_template, :indexnow_req, plug: {Req.Test, AshTemplate.IndexNow}
 

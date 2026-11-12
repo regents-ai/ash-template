@@ -37,8 +37,30 @@ current founder request overrides older rollout notes. Re-read the working tree:
   tokens then follow the device, dark unless it asks for light (founder, 2026-09-28).
   A choice travels in the `regent_theme` cookie and always wins. A product's own
   theme CSS covers the no-choice case too. The template's theme plug, root layout and
-  `app.ts` theme block are the reference; the theme switch names itself, so the
+  `assets/js/theme.ts` are the reference; the theme switch names itself, so the
   server passes it no theme.
+- The theme switch is the template's `Shell.theme_toggle/1` (Sean, 8 Nov 2026), not
+  `Regent.ThemeToggle`: a `role="switch"` button named "Light theme", night (dark) on
+  the left and day (light) on the right. Signed in it is a row of the account menu
+  (`Regent.Account.menu`'s `theme` slot, words at the start, switch at the end); signed
+  out, with no account menu, it is in the app shell's bottom bar; the public footer has
+  its own. Never put it in the top bar. A press, Enter or Space turns it; the knob can
+  be dragged and settles on the nearer side, and the theme changes once, on release. The
+  moon and the sun are pictures of tiny square blocks held once, in `Shell`'s
+  `@theme_moon` and `@theme_sun` (equal block counts, square, outer ring clear); the
+  server's still face draws them as SVG squares and the browser reads the blocks from
+  there, so a new picture is an edit to those two lists alone. The still face is flat
+  and square, with no shadow, glow or rounded corner, and is a whole working switch.
+  Over it a vgpu island draws the square glass knob: bevel refraction with a little
+  colour fringing and frost, a light strip that circles the glass from below at night to
+  above by day and spills a little past the button inside its own canvas, and the blocks
+  behind the glass, crisp on whole pixels at rest, tumbling from moon to sun as the knob
+  moves and catching the strip's light on the edge that faces it. Its motion is
+  Anime.js: the knob's settle and one paused timeline for the swarm, seeked by the knob.
+  The strip's colours are `--rg-theme-laser-light`/`--rg-theme-laser-dark` (Tangerine
+  and Powder Blue unless the brand sets them, as Techtree does), set a fixed distance
+  from the page (`theme_switch/light.ts`) so the light reads as boldly on either theme.
+  Less motion, forced colours and no WebGPU keep the still face.
 - Canonical identities: Tangerine `#FF5B19`, Powder Blue `#AECACD`, Platinum
   `#E5E3D2`, Charcoal `#161616`. Typography/background/semantic roles still come from
   the tokens, not scattered literals. Do not replace real project images or site
@@ -80,17 +102,19 @@ current founder request overrides older rollout notes. Re-read the working tree:
 
 ## Preserve each homepage's purpose
 
-- **Regents `/`:** dark-only. Preserve the actual VGPU 13-cube crown and lasers,
-  weighted middle-right. Title/subtitle/compact CTA sit above a compact lower-left
-  row ordered **Autolaunch / Techtree / Patchbay**, with orange / blue / platinum
-  opaque faces and readable dark ink. Preserve the saved theme for other routes.
+- **Regents `/` and the template's `/`:** dark-only. The VGPU datascape fills the window
+  and the page opens on the picture alone. Pressing a panel in the picture brings up one
+  glass panel holding the header, the name and its line, the actions, the product tabs and
+  the document links; two seconds after the last press, steering the picture shrinks it
+  away until the next press. The copyright stands at the window's bottom right. Preserve
+  the saved theme for other routes.
 - **Techtree `/`:** preserve its actual VGPU 13-cube crown/lasers and existing light/dark
   material mapping. Keep the same content-first hero composition and its functional
   setup/release content. Do not replace the shader with an oversized static diagram.
 - **Autolaunch `/`:** auction and token market listings remain primary content.
 - **Patchbay `/`:** WebMCP site directory and message-board content remain primary.
-- Generic page-background retirement is not permission to delete the two crown heroes.
-  Bound artwork independently of text; reuse existing island visibility, resize,
+- Generic page-background retirement is not permission to delete the Techtree crown hero
+  or the homepage datascape. Bound artwork independently of text; reuse existing island visibility, resize,
   reduced-motion, device-loss and disposal behavior. Verify a completed real GPU frame,
   not merely the existence of a canvas or a WebGPU adapter.
 - For Regents token-economics copy, reuse the actual `/stake` wording: eligible USDC

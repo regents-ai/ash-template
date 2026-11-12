@@ -5,9 +5,13 @@ defmodule AshTemplateWeb.VisitLog.Events do
   `AshTemplateWeb.VisitLog.on_mount/4`:
 
   - `request`: a page or file answered over HTTP, by route and outcome.
-  - `tool.call`: an `/api` call, named by the tool or command the caller gave in
-    `x-regent-client`, else by its route; the outcome is `ok` or the error code
-    the answer carried; `client` names the program that called.
+  - `tool.call`: an `/api` call or a hosted MCP call at `/mcp`, named by the tool
+    or command the caller gave in `x-regent-client`, else by its route; the
+    outcome is `ok` or the error code the answer carried; `client` names the
+    program that called. The answer is read as it is sent, while a plug the
+    router forwards to (`RegentAgents.HTTP`, `RegentIdentity.HTTP`, AshAi's MCP
+    router) holds the request with only the rest of its path, so the call is
+    told by its whole path (`AshTemplateWeb.VisitLog.call?/1`).
   - `press`: an event a page or one of its components handled, as `View:event`.
     A wallet step reports what the wallet answered: `sent`, `signed` or why
     nothing was sent.
@@ -15,11 +19,27 @@ defmodule AshTemplateWeb.VisitLog.Events do
     `resource.action`, with its time.
   - `job`: a background job's run, by worker and how it ended.
   - `outgoing`: a call to another site, by method and host, and its status.
-  - `step` `signed_in`: the browser's sign-in exchange succeeded.
+  - `step` `signed_in`: the browser's sign-in exchange bound it to an account
+    (the answer says `x-ash-session-changed: true`; a refresh of the account it
+    already has is not one). The line is written as the answer is sent, before
+    the request knows the account, so its actor is the browser's from before;
+    the page reloads at once, signed in, and that next line of the same visit
+    names the account. The visit id alone, with no cookie beyond `_visit`, ties
+    the account to the visit's `arrival` (docs/logging-replay-plan.md, "First
+    touch").
+  - `step` `note_created`: the template's value action
+    (`AshTemplateWeb.VisitLog.value/2`), from Ash's telemetry for the
+    `AshTemplate.Notes.Signals` `:note_committed` signal. Ash emits that signal
+    only after a create has committed, and only when it answered
+    `{:ok, record}`; an action's own `:stop` event comes whether it succeeded or
+    failed. A site maps its own value action's `:after_transaction` signal to its
+    name in `values/0` here.
 
   Actions and outgoing calls are written only inside a request, page or job, so
   the chain reader's own polling writes nothing.
   """
+
+  import Plug.Conn, only: [get_resp_header: 2]
 
   alias AshTemplateWeb.VisitLog
 
@@ -44,7 +64,8 @@ defmodule AshTemplateWeb.VisitLog.Events do
       [:oban, :job, :start],
       [:oban, :job, :stop],
       [:oban, :job, :exception],
-      [:finch, :request, :stop]
+      [:finch, :request, :stop],
+      [:ash, :signal, :emitted]
     ]
 
     :telemetry.attach_many("ash-template-visit-log", events ++ ash, &__MODULE__.handle/4, nil)
@@ -53,24 +74,19 @@ defmodule AshTemplateWeb.VisitLog.Events do
   @doc false
   def handle([:phoenix, :endpoint, :stop], %{duration: duration}, %{conn: conn}, _config) do
     unless quiet?(conn) do
-      Logger.metadata(
-        actor: VisitLog.actor(conn.assigns[:actor] || conn.assigns[:current_human_account])
-      )
-
+      Logger.metadata(actor: VisitLog.actor(requester(conn)))
       route = VisitLog.route(AshTemplateWeb.Router, conn.method, conn.request_path, conn.host)
 
-      case conn.path_info do
-        ["api" | _] ->
-          VisitLog.record(
-            "tool.call",
-            VisitLog.client(conn) || route,
-            answer(conn),
-            ms(duration),
-            VisitLog.caller(conn)
-          )
-
-        _page ->
-          requested(conn, route, ms(duration))
+      if VisitLog.call?(conn) do
+        VisitLog.record(
+          "tool.call",
+          VisitLog.client(conn) || route,
+          answer(conn),
+          ms(duration),
+          VisitLog.caller(conn)
+        )
+      else
+        requested(conn, route, ms(duration))
       end
     end
   end
@@ -109,6 +125,16 @@ defmodule AshTemplateWeb.VisitLog.Events do
     end
   end
 
+  def handle(
+        [:ash, :signal, :emitted],
+        _measurements,
+        %{signal_module: AshTemplate.Notes.Signals, name: :note_committed, actor: actor},
+        _config
+      ),
+      do: VisitLog.value("note_created", actor)
+
+  def handle([:ash, :signal, :emitted], _measurements, _metadata, _config), do: :ok
+
   def handle([:ash, _domain, _kind, :stop], %{duration: duration}, metadata, _config) do
     if Logger.metadata()[:surface] do
       VisitLog.record(
@@ -136,10 +162,17 @@ defmodule AshTemplateWeb.VisitLog.Events do
     if signed_in?(conn, route), do: VisitLog.step("signed_in")
   end
 
-  defp signed_in?(%Plug.Conn{method: "POST", status: status}, "/auth/privy/session"),
-    do: status in 200..299
+  # Only a bind: an exchange that refreshes the account the browser already has is
+  # not a new sign-in.
+  defp signed_in?(%Plug.Conn{method: "POST", status: status} = conn, "/auth/privy/session"),
+    do: status in 200..299 and get_resp_header(conn, "x-ash-session-changed") == ["true"]
 
   defp signed_in?(_conn, _route), do: false
+
+  # Who asked: the API's own actor, the hosted MCP server's (kept for Ash on the
+  # connection), else the browser session's account.
+  defp requester(%Plug.Conn{assigns: assigns} = conn),
+    do: assigns[:actor] || Ash.PlugHelpers.get_actor(conn) || assigns[:current_human_account]
 
   # The health check and the browser's own reports would only describe themselves.
   defp quiet?(%Plug.Conn{path_info: ["healthz"]}), do: true

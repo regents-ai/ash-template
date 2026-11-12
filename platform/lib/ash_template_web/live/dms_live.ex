@@ -193,6 +193,7 @@ defmodule AshTemplateWeb.DmsLive do
             phx-click="block"
             phx-target={@myself}
             data-confirm={"Block #{@conversation.other_person.name}? Their messages still arrive, under Blocked, and they aren’t told."}
+            data-confirm-action="Block"
           >
             Block
           </Primitives.button>
@@ -298,6 +299,7 @@ defmodule AshTemplateWeb.DmsLive do
               name={@form[:body].name}
               rows="2"
               maxlength="2000"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={"dms-message-hint #{field.described_by}"}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
@@ -307,7 +309,7 @@ defmodule AshTemplateWeb.DmsLive do
             controls="#dms-message-actions"
           />
           <fieldset id="dms-message-actions" class="rooms-composer__actions">
-            <p id="dms-message-hint" class="rooms-composer__hint rg-muted">
+            <p id="dms-message-hint" class="visually-hidden">
               Enter sends. Shift+Enter starts a new line.
             </p>
             <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>

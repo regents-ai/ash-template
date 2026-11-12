@@ -2,7 +2,7 @@ defmodule AshTemplateWeb.OAuthController do
   @moduledoc "Boruta protocol routes and consent under the verified browser session and CSRF."
   use AshTemplateWeb, :controller
 
-  plug :rate_limit when action in [:register, :token, :revoke]
+  plug :rate_limit when action in [:register, :token, :revoke, :authorize, :approve]
 
   for action <- [:resource_metadata, :server_metadata, :register, :token, :revoke] do
     def unquote(action)(conn, _params), do: RegentOAuth.Protocol.call(conn, unquote(action))
@@ -15,7 +15,9 @@ defmodule AshTemplateWeb.OAuthController do
   defp rate_limit(conn, _opts) do
     {address, _source} = AshTemplateWeb.ClientAddress.key(conn)
     action = action_name(conn)
-    limit = if action == :register, do: 30, else: 120
+    # Opening consent may record a new app from its published identity, as
+    # registering does, so the two share the lower limit.
+    limit = if action in [:register, :authorize], do: 30, else: 120
 
     case AshTemplate.Accounts.RequestRateLimiter.admit({:oauth, action, address}, limit, 60) do
       {:ok, _} ->

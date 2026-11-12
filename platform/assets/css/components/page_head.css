@@ -3,22 +3,31 @@
    face, a tip beside it for the explanation, and the page's actions at the end.
    No kicker, no paragraph and no frame: the content starts right under it. */
 
+/* The page's sections stand a step further apart (--space-6) than the title
+   stands from the first of them (--space-5). */
 .page-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1) 0.75rem;
+  gap: var(--space-1) var(--space-2);
   min-width: 0;
+  margin-block-end: calc(-1 * var(--space-1));
 }
 
 .page-head h1 {
   margin: 0;
   font-family: var(--font-family-title);
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-size: var(--type-title-size);
   font-weight: 400;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: var(--type-title-line);
   overflow-wrap: anywhere;
+}
+
+@media (min-width: 48rem) {
+  .page-head h1 {
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+  }
 }
 
 .page-head h1:focus {
@@ -39,9 +48,9 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--rg-panel-padding);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  padding: var(--space-4);
+  border: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
 }
 
 .page-signed-out p {

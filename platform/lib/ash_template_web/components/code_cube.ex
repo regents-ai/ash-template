@@ -111,7 +111,7 @@ defmodule AshTemplateWeb.Components.CodeCube do
       data-open
       data-close-event={@close}
     >
-      <header class="code-card__head">
+      <header class="code-card__head" data-sheet-handle>
         <h2 id={"#{@id}-title"}>{title(@face, @state, @tools)}</h2>
         <a
           href={"https://#{@face.link}"}

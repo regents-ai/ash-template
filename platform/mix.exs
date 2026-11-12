@@ -4,9 +4,9 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "d89c69df697f81d2a56a43124eada843d1682303"
+  @elixir_utils_ref "240e93856f11ae2f7be0b427ef8eb8a468afb4f2"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "d3845c6d9fe34b7131937bafa051e6e04c9b09dd"
+  @design_system_ref "c4244b38d1311fd9d9046898fce4ea73b7129cd0"
 
   def project do
     [
@@ -28,6 +28,8 @@ defmodule AshTemplate.MixProject do
   # The browser walk's server runs in development, with its guard against the
   # outside world (`AshTemplate.WalkOffline`).
   defp elixirc_paths(:dev), do: ["lib", "test/browser/support/server"]
+  # Resources only tests use, compiled before the protocols are consolidated.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_env), do: ["lib"]
 
   def application do
@@ -57,6 +59,7 @@ defmodule AshTemplate.MixProject do
       # ash_postgres main with #910 until a Hex release carries it: upserts use the
       # repo's prefix, which picks each site's schema on the shared database. It
       # stands in for the Hex release that ash_money and ash_double_entry ask for.
+      # Before moving this pin, run test/ash_template/schema_prefix_test.exs.
       {:ash_postgres,
        git: "https://github.com/ash-project/ash_postgres.git",
        ref: "55db7d449aad351d200c5f300fca2a83e0a8734c",
@@ -98,7 +101,7 @@ defmodule AshTemplate.MixProject do
        override: true},
       {:regent_jev, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "jev"},
       # The site's unexpected-failure lines (RegentHttp.UnexpectedFailure) and its crash
-      # saving (RegentHttp.ErrorSaving). regent_jev names regent_http by a sibling path;
+      # saving (RegentHttp.ErrorSaving). regent_jev and regent_oauth name regent_http by a sibling path;
       # this pin replaces it.
       {:regent_http, git: @elixir_utils, ref: @elixir_utils_ref, sparse: "http", override: true},
       {:simple_sat, "~> 0.1"},
@@ -221,7 +224,7 @@ defmodule AshTemplate.MixProject do
         # `authorize_if` check module at compile time).
         # The hosted MCP server's address budgets add one: McpAgent builds them at compile time
         # with ClientAddress's key.
-        "xref graph --label compile-connected --fail-above 44",
+        "xref graph --label compile-connected --fail-above 46",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

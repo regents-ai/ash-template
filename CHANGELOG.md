@@ -6953,6 +6953,1539 @@ sits on its own branches.
   address component; unused showcase styles are removed; the showcase's database note
   says what the code does.
 
+## 2026-11-10 — Shared skills rewritten shorter
+
+- **Twenty-two skill files are shorter and say each rule once.** The workflow skill
+  (`skills/regent-workflow/SKILL.md`) went from 693 lines to 420; the Ash skills
+  (`ash-stack`, `ash-backend`, `ash-data`, `ash-frontend`, `ash-security`, `ash-testing`,
+  `ash-webmcp`), `chain-events`, `checkpoint`, `onchain-buttons`, `payments`,
+  `rollout-guidance-check` and `vgpu-island` lost repeated explanation. No rule Sean set
+  was dropped; two independent reads compared every rule in the old text with the new.
+- **The release and live-check procedure has its own page**,
+  `skills/regent-workflow/references/release.md`. The workflow skill keeps the rules and
+  points there for the steps.
+- **Two unused pages are gone:** `skills/ash-stack/references/project-profile.md` and
+  `skills/ash-stack/references/shared-contract.md`. Their rules that still apply are in
+  `skills/ash-stack/SKILL.md`.
+- **Rules brought in line with later founder rules:** branches are never deleted
+  (2 Nov); a refusing worktree guard or deploy safety check means stop and report
+  (8 Nov); commands on production machines, package publishing and public posts are
+  listed as protected; an account's wallet that is not the connected one is ignored
+  (21 Oct); tests are added without asking (18 Oct); `vgpu-island` and `animejs` load for
+  every piece of design work (28 Oct).
+- **Left as they were:** `elixir-stack`, `animejs`, `ash-signals`, `discussions`,
+  `regent-notion`, the three `patchbay-*` skills and every product skill a site serves.
+- No script under `skills/` changed. Skills only: nothing to deploy.
+
+## 2026-11-10 — Datascape in the motion lab
+
+- `/animations/datascape`: an endless dark plane drawn live, in the style of a glitching
+  data wall. Three layers of depth hold panels (blocks of coloured squares, scrolling
+  text, colour bars, cloudy gradients, level meters, torn bands, grids, small marked
+  boxes), short labels, specks, and tubes that run in right-angled legs with rounded
+  turns. Moving the pointer towards an edge of the picture flies that way, faster the
+  nearer the edge, and a finger held on the picture does the same; near the middle the
+  camera rests, and with no pointer it drifts slowly. At speed the picture leans into
+  the turn and pulls back. Panels open as they come into reach, a little ahead of the
+  way the camera is going: large ones with a bounce, a white flash and a few sparks,
+  then put together what they show; tubes draw themselves from one end. The panel under
+  the pointer grows and runs faster; a pressed one flashes, throws sparks and puts
+  itself together again.
+- The world comes only from each cell's place (`platform/assets/js/datascape/world.ts`),
+  so a place always holds the same things however often a visitor leaves and returns.
+  The field (`field.ts`) keeps the camera, the cells in reach and what the pointer rests
+  on; top speed follows the picture's size, so a phone flies slower than a desktop.
+- The picture is a vgpu canvas island (`platform/assets/js/hooks/datascape.ts`, drawing
+  in `platform/assets/js/datascape/`). Each frame draws the ground, then each layer's
+  tubes and panels as instanced quads, then the sparks, into a texture; what is bright
+  is kept at a quarter of the size and blurred twice, and a last pass lays that glow
+  back and adds the look of an old screen: colours pulled apart, a band slipping
+  sideways now and then, scan lines, grain and dark corners. The words are drawn once
+  on a canvas in the site's code face and kept as a texture. Anime.js opens each panel,
+  draws each tube and grows the panel under the pointer; it only changes numbers the
+  renderer reads.
+- A visitor who asked for less motion, or whose browser cannot draw it, keeps the still
+  picture `platform/priv/static/images/animations/datascape.webp`.
+- The page joins the motion lab's links, the Design page's list, the showcase list in
+  `public_documents.ex`, the walk's page list and the route handoff.
+- Public changelog: Datascape in the Motion Lab.
+- Checked in headless Chromium with WebGPU on the Mac's GPU: the picture draws at 1440
+  and 1728 wide; the pointer at the right edge and at a corner flies that way with new
+  panels and tubes arriving; resting on a panel grows it and shows the hand cursor,
+  pressing it flashes it, and leaving clears the cursor; 60 frames a second flying flat
+  out at 1728 wide; a held finger flies it at 390 wide; no sideways overflow at 1440,
+  390 and 320; reduced motion keeps the still picture; a browser that gets no graphics
+  device shows the still picture; no console errors. WebKit was not run.
+- Not deployed.
+
+## 2026-11-11 — Shared changes no longer wait for a sign-off
+
+- **An ordinary shared change goes to every site once the template's check is clean**
+  and is reported to Sean after (his answer of 11 Nov, following 5 Nov "deploys are
+  automatic"). A protected action or a product decision inside one keeps its letter.
+  Changed in `skills/regent-workflow/SKILL.md` ("Shared changes" step 2 and the protected
+  list) and `skills/ash-signals/SKILL.md`. Skills only: nothing to deploy.
+
+## 2026-11-11 — v185: Datascape, the audit's ordinary part and the shorter skills
+
+- v185 is `4853c6d3`, released on 11 November (started 05:02:58Z, live 05:07:49Z) on
+  Sean's "1. a" in the Datascape thread, alone, as an ordinary release, through
+  `scripts/deploy.sh template-regents-sh` from a clean checkout, under the shared release
+  lock. It carries `79e274e7` (the audit's ordinary part), `d76f38f5` (the shorter
+  skills) and `4853c6d3` (Datascape). `14026da8` (skills text) landed on main during the
+  check and is not in it; it needs no release. Still one machine, at the same size.
+  Rollback is v184 `a7dabd82`.
+- **One migration ran**, from `79e274e7`: `20261110035033 AddRoomMessageRemovals` creates
+  the new, empty table `ash_template_app.room_message_removals` and changes no existing
+  table. The slot claim and the decision put to Sean said "no migration"; that was
+  wrong, and the Datascape thread had not read the migrations folder before saying it.
+  After a rollback to v184 the table stays, unused.
+- Full check on `4853c6d3`, clean tree, exit 0: `mix precommit` (hex.audit clean, Credo
+  clean, 31 script tests, 445 browser walks with 5 skipped), then 176 Elixir (9
+  properties), then the required-fixes check. WebKit not run on the Mac.
+- Read live from headless Chromium, before and after: capabilities names `4853c6d3`
+  (before, `a7dabd82`); `/healthz` 200; `/`, `/animations`, `/changelog`, `/docs` and
+  `/showcase` answer 200 at 1280 and 390 wide with no page errors and no sideways
+  scroll. `/animations/datascape` was 404 before and is 200 after at both widths, with
+  the picture drawn (ready flag "true") on the Mac's GPU, flying when the pointer goes
+  to the right edge, and no console errors; the Motion Lab links to it and
+  `/sitemap.xml` lists it. `/llms.txt`, `/agents.md` and `/healthz` are the same bytes
+  as before; `/openapi.json`, `/capabilities.json` and `/sitemap.xml` changed.
+- Fly logs from the release start: no errors, crashes or refusals. One health check
+  failed at 05:07:42Z while the new version started and passed at 05:07:49Z. All 32
+  page and request lines after that were answered.
+
+## 2026-11-11 — Work runs as an agent tree
+
+- **Every session is the root of a cost-efficient agent tree** (Sean, 11 Nov). The root
+  runs on Fable 5.2 at medium effort, plans, delegates, integrates and verifies. The
+  explorer (`Explore`, Haiku 5.5) finds files, the worker (Opus 5.5, medium) edits code,
+  the tester (Haiku 5.5) runs tests, and `unstick` (Fable 5.2, high) is used only when
+  the root is stuck. Only useful work is delegated, never every role.
+- Changed in `skills/regent-workflow/SKILL.md`: the new "Agent tree" section replaces
+  the "Delegating" paragraph and "Delegation is optional"; "How a task runs" steps 4
+  and 5 name the worker and tester. The four agents are defined on the Mac in
+  `/Users/sean/.claude/agents/`. Skills only: nothing to deploy.
+
+## 2026-11-11 — Home becomes the datascape (branch `wt/datascape-1110`)
+
+- Home: as on regents.sh (its commit `fd118df1`), the datascape fills the window and the
+  page opens on the picture alone. Pressing a panel in the picture brings up one glass
+  panel in the middle that holds the whole page: the header, "Ash Template" with its line,
+  Enter App, WebMCP Tools and the command-line link, the product tabs (named "Products" for
+  assistive technology) and the foot. The world cube, the "Human Browsing" label and the
+  Mission, Products, Staking and How it works sheets leave the home.
+- The glass panel grows in from a third of its size. Two seconds after the last press,
+  steering the picture again (the pointer anywhere past the panel's edges plus 28 px)
+  shrinks it away to a third of its size and nothing; it stays away until the next press. A
+  press on empty picture does nothing. Focus moving into the panel brings it up at once and
+  keeps it up while focus stays inside, so a keyboard reaches every control. The stylesheet
+  alone shows the panel whenever there is no moving picture: with reduced motion, without
+  WebGPU and without scripts. The away panel stays focusable and readable by assistive
+  technology. Until the page's script answers, the panel waits in the away pose; if it has
+  not answered four seconds after the page loads, the stylesheet brings the panel in by
+  itself (Sean, 11 Nov, "1. a"), and the hook then starts from the open panel.
+- Header: the App button is gone. Enter App is the larger primary button with a Tangerine,
+  Powder Blue and Platinum ring that follows its cut corners and shifts on hover and focus;
+  WebMCP Tools is the design system's quieter secondary button at the same height.
+- Foot: Buy $REGENT, About, Developer docs and the Agent guide. Privacy policy, Terms of use
+  and the social links stay in every other page's footer. "© 2026 Regents Labs" stands on
+  its own at the window's bottom right on every width, outside the panel.
+  `AshTemplateWeb.Layouts.document_links` holds the four document links that the panel's
+  foot and every other page's footer share; `AshTemplateWeb.Layouts.product_links` loses its
+  `theme_toggle` option, which only the home turned off.
+- Shared with regents.sh byte for byte: `platform/assets/js/datascape/field.ts` (the calm
+  zone, `calm`, `calmAround` and `REST`, and the `steer` message),
+  `platform/assets/js/hooks/datascape.ts` (the optional glass panel, `[data-datascape-glass]`,
+  `data-datascape-glass-state` of `away` or `open`, and the two-second `GRACE` timed with
+  Anime.js), `platform/assets/test/datascape.test.ts` and `platform/assets/css/pages/home.css`.
+  The lab page `/animations/datascape`, which has no panel, is unchanged.
+- Hooks: `Datascape` is registered on every page in `platform/assets/js/app.ts` and leaves
+  `platform/assets/js/lab_pages.ts`; `WorldCube`, now used only by the cube lab pages, moves
+  into `lab_pages.ts`; the `CubeLabel` hook (`platform/assets/js/hooks/cube_label.ts`) is
+  deleted.
+- The header mark is `platform/priv/static/images/brand/mark-flat-dark-clear.svg`, the dark
+  mark without its own ground, which would show as a square on the glass.
+- Removed from `AshTemplateWeb.HomeLive`: the hero, the four sheets, the card drawings, the
+  tagline and the products' drawing, action and title fields. `worlds/0` and the products'
+  rooms stay: the cube lab pages and the header and footer lab read them.
+- The agent copy of the page reads in the page's order: name, line, the three actions,
+  Products, the four document links, then the copyright.
+- `scripts/drift.sh regents` now compares the files the two homes share (the home stylesheet,
+  the datascape files, its hook, its unit tests and the still picture, by its git blob id)
+  and, live, the two homes' tabs, every link in the panel and the copyright, saying when a
+  home has no panel yet.
+- Tests: `platform/test/ash_template_web/home_live_test.exs` and
+  `platform/test/browser/homepage.spec.ts` rewritten for the page. Docs: `AGENTS.md`,
+  `platform/THIRD_PARTY_NOTICES.md`, `docs/feature-map.md`, `docs/standardization-plan.md`,
+  `skills/vgpu-island/SKILL.md` (the datascape joins the reference islands) and
+  `skills/regent-workflow/references/design-system.md`.
+
+## 2026-11-11 — Home: the products move to the panel's foot (Sean, 11 Nov)
+
+- As on regents.sh: the four document links (Buy $REGENT, About, Developer docs, Agent
+  guide) leave the home panel. Its foot now holds the product tabs under a small title,
+  "Products"; the name, its line, Enter App, WebMCP Tools and the command-line link stay
+  above the hairline. Every other public page's footer keeps the document links, Privacy
+  policy and Terms of use.
+- `AshTemplateWeb.Layouts.document_links` is folded back into
+  `AshTemplateWeb.Layouts.product_links`, its one remaining caller. The agent copy of the
+  home ends with the products and the copyright.
+- Check: `platform/test/ash_template_web/home_live_test.exs`,
+  `platform/test/browser/homepage.spec.ts`.
+
+## 2026-11-11 — Released v186: the home is the datascape, as on regents.sh
+
+- Live: v186 at 22:38Z on template.regents.sh; /capabilities.json build.commit c2a879e5.
+  Rollback: v185 (4853c6d3). No migrations.
+- Carries the home as on regents.sh (Sean, 11 Nov): the datascape fills the window with
+  one glass menu over it. The page opens on the picture alone and a press on a panel
+  brings the menu in; two seconds after the last press, steering the picture shrinks it
+  away. The menu's foot is the title "Products" over the product links; the copyright
+  stands at the window's bottom right; Privacy policy and Terms of use are in other
+  pages' footers.
+- Full check on c2a879e5: exit 0 (180 server, 39 script, 455 browser tests with 5 skipped,
+  required fixes, command list, SIWA latest).
+- Live read in headless Chromium with WebGPU, signed out: 37 checks held at 1440, 390 and
+  320; home, /app, /about, /docs, /agents and /animations/datascape 200; no error lines
+  in the app log after the release.
+- `scripts/drift.sh` reads the home's products from the panel's foot. Against regents.sh
+  the shared home files are the same; the live homes differ only in each site's own links
+  and in the product order (the template lists Autolaunch first, regents.sh Patchbay).
+- Not run: WebKit and Firefox; real phones; signed-in pages walked live.
+
+## 2026-11-11 — Datascape: panels open as they come into sight (Sean, 11 Nov)
+
+- Sean: flying, new panels "are already loaded when seen". The field brought each cell in
+  ahead of the camera and its panels began opening at once, out of sight. Now the field
+  tells whoever watches when each panel, and each tube's cell, comes into the picture
+  (`Watcher.open`, `Watcher.draw`, in place of `arrive`), and the hook opens it then, so
+  it is seen opening at any speed. The first picture still fills outward from its middle.
+- A flat one-second wait was tried first: at full speed the camera crosses the window in
+  under a second, so the leading third of the picture stayed empty.
+- Check: `platform/assets/test/datascape.test.ts` ("opens each panel as the picture comes
+  to show it, never before").
+
+## 2026-11-11 — Released v187: the datascape's panels open on sight
+
+- Live: v187 at 23:11Z on template.regents.sh; /capabilities.json build.commit 4b72983d.
+  Rollback: v186 (c2a879e5). No migrations.
+- Carries "Datascape: panels open as they come into sight" (Sean, 11 Nov: "the new items
+  load in too quickly (they are already loaded when seen)") and the browser walk's wide
+  posting allowance for its one person, which ends a check that failed at busy moments.
+- Full check on 4b72983d: exit 0 (455 browser checks in 1.9 minutes, 180 server tests).
+- Live read in headless Chromium with WebGPU, signed out: 37 checks held at 1440, 390 and
+  320; a filmed flight at full speed shows a full picture with the panels at its leading
+  edge still assembling; home, /app, /about, /docs, /agents and /animations/datascape
+  200; no error lines in the app log.
+
+## 2026-11-11 — An address spelled another way is the not-found page
+
+- The router reads a percent-escaped address as the page it spells (`/%70rivacy` as
+  `/privacy`), and `PublicDocuments.page/1` then looked the title up under the address as
+  sent and crashed with a KeyError (a 500). It now answers the ordinary not-found page for
+  any address no page is filed under. Taken from regents.sh 20334061 (Sentinel notice 5).
+- `ODD_ADDRESS` in `trailing_slash_test.exs` (`/%70rivacy`, `/%61pp`, `/%61bout`) fails
+  with the KeyError on the old code and passes on the fix.
+
+## 2026-11-11 — The newest SIWA library: a signed request ends within the tolerance
+
+- Every elixir-utils package moves from `d89c69df` to `dd2d3c6e`, which is `d89c69df` plus
+  one SIWA library change (on elixir-utils main through e4494c0): a signed request whose
+  `expires` less `created` is above the signature tolerance (300 seconds) is refused as
+  `request_lifetime_too_long` (401 `http_signature_invalid`), and its single-use entry is
+  kept until it expires. The regents CLI signs requests that last 120 seconds, so nothing
+  an agent sends today changes.
+- `make check-siwa-latest` asked for it (Sean, 28 Oct: every site on the newest SIWA).
+
+## 2026-11-12 — Released v188: odd addresses are not found, and the newest SIWA library
+
+- Live: v188 at 00:08Z on template.regents.sh; /capabilities.json build.commit 10f7a3fe.
+  Rollback: v187 (4b72983d). No migrations.
+- Carries "An address spelled another way is the not-found page" and the elixir-utils pin
+  dd2d3c6e (the newest SIWA change).
+- Full check on 10f7a3fe: exit 0 (181 server tests, 455 browser checks with 5 skipped, 40
+  script tests, required fixes, command list, SIWA latest). WebKit not run on the Mac.
+- Live read in headless Chromium at 1280 and 390: home, /app, /about, /docs, /agents,
+  /privacy, /terms and /healthz 200; /%70rivacy and /%61pp 404 (500 before); no page
+  errors. App log from the release start: one health check failed while the new version
+  started, then passed; no error lines.
+
+## 2026-11-11 — The site serves on the database's direct address
+
+- The running site connects to the shared database's direct address,
+  `direct.dzx6qo6xqzvojpv5.flympg.net`, as every site but Proximal does, and no longer
+  through its pooler (Sean, 4a). The pooler keeps at least five real connections open for each login
+  on every one of its processes that holds one of the login's clients, so the site's
+  seven clients held 10 real connections on 30 October and 15 on 11 November.
+- The Claude connector's sign-in keeps its rows through the site's own repository and
+  pool, and the site no longer starts a second repository with two connections for it
+  (Sean, 6a). Every elixir-utils package moves to a12f71b6 (on library main through
+  e2f8332b): the SIWA pin dd2d3c6e with that change (ff5051e), and nothing else. The
+  provider refuses a repository that puts no schema on its queries, and its own queries
+  are not logged; the OAuth library's own queries (Boruta's) are logged like the site's at
+  the debug level, which production does not print. A machine holds six
+  connections: five `ash-template-web` and one `ash-template-listen`.
+- Production admits only the direct address for `DATABASE_POOLED_URL`; the secret keeps
+  its name. The serving connection sends the limits the sites send as startup settings:
+  `statement_timeout` 15000, `lock_timeout` 5000 and
+  `idle_in_transaction_session_timeout` 15000, and no longer turns off named prepared
+  statements. The listening connection uses the same login and address.
+- Removed the pooler's certificate (`platform/priv/certs/regents-platform-prod-pooler-ca.pem`)
+  and the code that checked it.
+- The connector test counts the sign-in's queries from the site repository's own
+  query events.
+- README and the ash-data skill: nobody serves through the pooler, and why; the
+  connector's sign-in shares the pool; the variable each site reads for its serving
+  login; the `template-runtime` login keeps the limits stored on it on 27 October.
+- Review fixes (12 Nov): the docs no longer say every site is off the pooler (Proximal is
+  still on it), and `database_config_test.exs` shows production refusing any other host,
+  port, query option or a trailing dot, for both the serving and the release login.
+- Releasing it needs the secret changed with it: `DATABASE_POOLED_URL` keeps its login
+  and moves to the direct host, staged so it takes effect with the new image. A plain
+  deploy, or a plain secret change, stops the site at boot (each version admits only its
+  own host). Rollback is the previous image and the old secret, together.
+
+## 2026-11-12 — Released v189: the site serves on the database's direct address
+
+- Live: v189 at 00:23Z on template.regents.sh; /capabilities.json build.commit 43e7d7d3.
+  Rollback: v188 (10f7a3fe) with DATABASE_POOLED_URL's host set back to the pooler, staged
+  through the same never-shown pipe. No migrations.
+- Carries "The site serves on the database's direct address" and the elixir-utils pin
+  a12f71b6 (the sign-in library on the site's own pool, with the newest SIWA change).
+- Secret: Sean's go (12 Nov 00:07Z, "1. a") covered one read of DATABASE_POOLED_URL on the
+  live machine. Only its host moved, from pgbouncer. to direct.; the login, password and
+  database name are unchanged. The value was staged with `fly secrets import --stage` on
+  stdin and never printed, then landed with the image.
+- Full check on 43e7d7d3: exit 0 (181 server tests, 455 browser checks with 5 skipped, 40
+  script tests, required fixes, command list, SIWA latest). WebKit not run on the Mac.
+- Live read in headless Chromium at 1280 and 390: home, /app, /about, /docs, /agents,
+  /privacy, /terms and /healthz 200 (the health page reads the database); /%70rivacy and
+  /%61pp 404; no page errors. A token request for an unknown app answered invalid_grant,
+  so the sign-in service's locked read ran on the site's pool. App log from the release
+  start: one health check failed while the new version started, then passed; no error
+  lines.
+
+## 2026-11-12 — A picture inside a panel that grows in is drawn sharp
+
+- The canvas island (platform/assets/js/canvas_island.ts) sized its drawing buffer from
+  getBoundingClientRect, which includes any transform round it. An island that started
+  inside a panel still scaling in (regents.sh's home glass starts at scale .3) drew at
+  the shrunken size and stayed blurred once the panel had grown, because a transform never
+  reaches a ResizeObserver. It now measures the canvas's laid-out box (clientWidth and
+  clientHeight), the same size the ResizeObserver reports.
+- New test in platform/assets/test/canvas_island.test.ts: a canvas laid out at 300 by 200
+  inside a panel shown at 30% draws at 300 by 200. It fails on the old measure.
+- Found and built by the regents.sh product tiles lane (11 Nov), which needs it for the
+  home page's product tiles; shared, so it ships here first.
+
+## 2026-11-12 — Released v190: a picture inside a panel that grows in is drawn sharp
+
+- Live: v190 at 00:46Z on template.regents.sh; /capabilities.json build.commit f70cfa1b.
+  Rollback: v189 (43e7d7d3). No migrations, no pin change.
+- Carries "A picture inside a panel that grows in is drawn sharp" (regents.sh's patch) on
+  top of 2cb068f8 (skills: sites never wait on each other).
+- Full check on f70cfa1b: exit 0 (181 server tests, 455 browser checks with 5 skipped, 41
+  script tests, required fixes, command list, SIWA latest). WebKit not run on the Mac.
+- Live read in headless Chromium at 1280 and 390: home, /app, /about, /docs, /agents,
+  /privacy, /terms and /healthz 200; odd addresses 404; no page errors. On the home page
+  at 1280 by 900 and device pixel ratio 2, every island's drawing buffer is its laid-out
+  size times the capped ratio (the datascape 1460 by 1026 under the pixel budget, each
+  card 177 by 75 for 118 by 50). App log from the release start: no error lines.
+
+## 2026-11-12 — Deploys never wait on another site's
+
+- Sean, 12 Nov: "I do not want to wait, I want it parallelized". `scripts/deploy.sh`
+  ran its whole build and release under `/tmp/regent-shared-db-release.lock`, the one
+  lock every site's deploy took, so each release waited for any other site's. It now
+  holds `/tmp/regent-release-<app>.lock` for its whole run (two deploys of one app take
+  turns; template-regents-sh and proximal each have their own), builds with
+  `--build-only --push` and no shared lock, then switches the app to
+  `registry.fly.io/<app>:<short commit>` under whichever of the two database places,
+  `/tmp/regent-shared-db-release.lock` or `-2.lock`, is free. The live-image check now
+  runs under the app's lock, so two deploys of one app can never cross. The shape is
+  regents.sh's (main 710bbc18), with the template's own refusals kept.
+- Run it as it is, never inside `lockf`: it takes its own locks.
+- README "Deploy" says the same. Proximal's script has the same shape and moves with
+  its next release, as each site's does (control coordination/ash-template.md, 00:37Z).
+
+## 2026-11-12 — Released v191: deploys never wait on another site's
+
+- Live: v191 at 00:55Z on template.regents.sh; /capabilities.json build.commit e09a8678.
+  Rollback: v190 (f70cfa1b). No migrations, no pin change, no app code.
+- The new `scripts/deploy.sh`'s first run: the build took no shared lock, the switch
+  found image `e09a867` already built and took place 1. Live read at 1280 and 390:
+  pages 200, odd addresses 404, no page errors, sign-in metadata 200.
+
+## 2026-11-12 — Connected apps: Claude's published identity
+
+- Sean, 29 Oct, of Claude's connector settings: "can we do the CIMD setting instead of
+  the 'register automatically'?", then "1. yes, do this asap", on 11 Nov "1. a 2. a" for
+  the CIMD version, and on 12 Nov 00:07Z "2. a": release it after a fresh independent
+  review and a full check. Claude may now name itself by its published identity,
+  `https://claude.ai/oauth/mcp-oauth-client-metadata`, instead of registering a new app
+  on every connection. Discovery says so (`client_id_metadata_document_supported`);
+  registration keeps working for other apps, and an address and a registered id are
+  never taken for each other.
+- Rebuilt on main from `claude/cimd-1029` through `agent-access/cimd-1111`. Every
+  elixir-utils package moves to `240e9385` (`eu/cimd-on-pin-1112`, on elixir-utils main
+  through `e389dd6e`): the published-identity commits merged onto `a12f71b6`, the pin
+  before, so `RegentOAuth.ClientDocuments` uses the site's repository
+  (`RegentOAuth.repo()`, `log: false`) like the rest of the provider. Only oauth, http
+  and mcp_events change; mcp_events callbacks now use `RegentHttp.Public`, the one
+  checked outbound request. `240e9385` has no G1 code.
+- Migration `20261111060000_oauth_client_documents` adds one empty table
+  (`RegentOAuth.Migration.V3`) and changes nothing existing.
+- Opening consent (`GET /oauth/authorize`) is limited to 30 requests a minute by
+  address, as registering is: a signed-in person's consent may read a connecting app's
+  published identity and record the app. Allowing or cancelling (`POST`) has 120, like
+  token and revocation.
+- A read again of a recorded identity takes only its name and callbacks; the app keeps
+  the scopes it holds (the adversarial review found the read again replaced them with
+  this machine's list). The library review of 12 Nov added proofs for a failed read, a
+  read again and refused ids, and says the site repository's query events carry
+  parameters and rows, so the site's handlers read measurements only (the template's
+  read only `queue_time`).
+- The fresh review of 12 Nov found one should-fix, now fixed in the library (`240e9385`):
+  every person's Claude connection is one client row, and token exchange, refresh and
+  disconnect locked that row, so all of the site's Claude sign-ins took turns and a
+  request with Claude's address and an unknown code, from anyone, joined the queue.
+  They now lock one person's connection to one app, and an unknown code takes no lock.
+  Also fixed: an address that does not answer just now shows an "Unavailable" page with
+  a 503 (before, raw JSON at consent and "no longer works" at Allow), and the read names
+  this site in its user-agent. One person's Claude accounts on one site are one
+  connected app, as a published identity means.
+- New check: `claude_connector_test.exs` connects Claude by its published identity
+  through this site's endpoint, consent, token exchange, `/mcp` and refresh.
+- Protected (sign-in and a migration): Sean's 12 Nov "2. a" is the go.
+
+## 2026-11-12 — Released v192: Claude may connect by its published identity
+
+- Live: v192 at 01:26Z on template.regents.sh; /capabilities.json build.commit cc4a83d3.
+  Rollback: v191 (e09a8678); the new `oauth_client_documents` table stays, and v191 never
+  reads it. Sean's go: 12 Nov 00:07:57Z "2. a".
+- Migration `20261111060000_oauth_client_documents` ran in the release command (one new
+  empty table). elixir-utils pin `240e9385`.
+- Live read: discovery says `client_id_metadata_document_supported: true`; consent signed
+  out with Claude's address shows the sign-in page; a token request with Claude's address
+  and an unknown code is refused; pages 200 at 1280 and 390 with no page errors.
+- Not proven: a read of Claude's document from Fly's network (the browser walk and the
+  tests cannot reach claude.ai). The first real Claude connection proves it; if consent
+  shows "Unavailable", roll back to v191.
+
+## 2026-11-11 — A test holds every write to the site's own schema
+
+- `platform/test/ash_template/schema_prefix_test.exs` makes a table of the same name in
+  `ash_template_app` and in `public`, inside the test's own transaction, and writes
+  through a resource that names no schema, as the site's resources do. A create, read,
+  update and destroy, a single upsert, a bulk upsert and `Ash.update_many` (one MERGE on
+  PostgreSQL 17) change only the site's rows, and the rows planted in `public` stay as
+  they were. It checks the failure in ash_postgres 2.10.0 through 2.15.2, which sent
+  `Ash.update_many` and upserts to `public` (upserts through MERGE from 2.10.0 unless it
+  was turned off, and always from 2.13.1); it has not been run against those releases to
+  see it fail. `platform/mix.exs` names the test beside the ash_postgres pin
+  (`55db7d44`, #910), so the pin moves only after it runs clean. Test-only; nothing to
+  release.
+
+## 2026-11-11 — Adding an index to a busy table
+
+- `skills/ash-data/references/migrations-and-concurrency.md` gains "An index on a busy
+  table", in place of a paragraph that only said to look things up: measure the read
+  with `EXPLAIN (ANALYZE, BUFFERS)` first, declare the index with `concurrently: true` in
+  `custom_indexes` (the unread-notifications index is the example), keep the migration
+  `mix ash.codegen` writes for it as it is, and clear an invalid index left by a failed
+  build. Only a schema's owner indexes it: a site its own schema, a shared library
+  (`regent_identity`, `regent_agents`, `regent_points`, `regent_payments`) through
+  `/app/bin/migrate-shared` after Sean's go, Regents its `regent_names` table.
+- `skills/ash-data/SKILL.md` and `platform/README.md` point to it. Docs only.
+
+## 2026-11-11 — One class of background work per queue
+
+- Each Oban queue now holds one class of work, so a slow or failing service holds up
+  only the jobs that wait on it. Asking Jev to label a decision is a model call, so its
+  trigger (`AshTemplate.Notes.Decision`, `:ask_jev`) moves from `outside_calls`, which
+  it shared with the notes webhook and IndexNow, to a new `labels` queue (limit 3).
+  The queue list and its comment in `platform/config/config.exs` name each class:
+  `default` and `points` the database, `ens` and `points_chain` chain reads,
+  `chat_responses`, `conversations` and `labels` model calls, `outside_calls` every
+  other outside website.
+- `skills/elixir-stack/references/oban.md` gains "Queues": the four classes and the
+  template's queues for each, when a kind gets its own queue, how to choose a limit
+  by what the job waits on, when to raise or lower it, and that moving a job to
+  another queue needs no migration. `skills/elixir-stack/SKILL.md` says it in one
+  line.
+- A label job already waiting in `outside_calls` when this ships still runs there.
+
+## 2026-11-11 — Every repeatable template job names its uniqueness
+
+- `AshTemplate.ErrorPruner` runs or waits once at a time (`fields: [:worker]`,
+  `states: :incomplete`), so a slow prune never meets a second one.
+- `AshTemplate.SharedReading.Heal` keeps one reread of each kind waiting at a time
+  (`keys: [:kind]`, waiting states only), so a busy queue never piles up a minute's
+  worth each minute, and a reread left running on a stopped machine never holds up
+  the next.
+- `AshTemplate.IndexNow.submit/1` keeps one copy of the same list waiting
+  (`keys: [:urls]`, waiting states only); a list queued after its sending began is
+  sent again. Its check comes after an hour live (`docs/feature-map.md`, Gaps).
+- `skills/elixir-stack/references/oban.md` gains "One job per thing, and effects safe
+  to repeat": which keys, why `period: :infinity`, which states for which kind of job,
+  how Oban 2.24 merges a worker's `unique:` with one given to `new/2`, and that a job
+  can still run twice, so each effect carries a stable key. `skills/elixir-stack/SKILL.md`
+  says it in one line.
+
+## 2026-11-11 — Oban's pruning and rescue baseline written down
+
+- `skills/elixir-stack/references/oban.md` now says that the top-level `pruner:`,
+  `lifeline:` and `cron:` keys are what start Oban's maintenance, and sets the
+  baseline: an explicit `max_age` (a bare pruner keeps jobs 60 seconds),
+  `rescue_after` above the slowest single run, `cron:` even when empty, and never
+  `plugins: false`, which turns all three off. Checked in the template's own
+  configuration: with AshOban's wrapper, Oban starts `Oban.Cron`, `Oban.Pruner`
+  (7 days) and `Oban.Lifeline` (10 minutes) under the database leader. No
+  configuration changes. Docs only.
+
+## 2026-11-11 — Public documents answer 304, and the contract is a route
+
+- `send_cached/4` in `AshTemplateWeb.PublicPagesController`, which sends every public
+  document and agent file, now answers 304 with no body when `If-None-Match` names the
+  body's ETag (one tag, a list, a weak `W/` tag or `*`), and sends the endpoint's
+  static headers (`AshTemplateWeb.Endpoint.static_headers/0`: no scripts, no framing,
+  nosniff, no referrer), since none of them is a page. `/api/v1/about` and
+  `/api/v1/docs` go through it too, so they gain the ETag and cache.
+- `/api-contract.openapiv3.yaml` is a route (`api_contract/2`) that sends the contract
+  with `x-regents-contract-major` and `x-regents-contract-digest`, both read from the
+  file at compile time. The `ContractHeaders` plug that added them in front of
+  `Plug.Static` is deleted, the file leaves the static paths, and the
+  `application/yaml` MIME entry it needed is gone. The browser walk opens the
+  contract with the other documents (`platform/test/browser/pages.json`).
+- `platform/README.md` says how public documents are sent. The checks for the 304
+  answers and the contract's headers come after an hour live (`docs/feature-map.md`,
+  Gaps).
+
+## 2026-11-11 — `make pins`: every site's shared-library pins in one table
+
+- `scripts/pins.sh` (`make pins`, and `make drift` after its file comparison) reads
+  each site's `platform/mix.lock` and `Makefile` from its main branch on GitHub, and
+  this checkout's for the template, and prints one row per pin: every elixir-utils
+  commit a site locks, its design-system and ash_postgres commits, the SIWA library
+  it builds and the regents-cli its Makefile checks commands with. Each row says how
+  many commits the pin is behind the template's pin and the library's main, and how
+  many days. Commits are counted in a copy of each library's history (commits and
+  trees only) in `platform/_build/drift/libraries`; the table is also written to
+  `platform/_build/drift/pins.md`.
+- `scripts/github.sh` holds the site list and the two GitHub reads `scripts/drift.sh`
+  and `scripts/pins.sh` share. `scripts/init.sh` removes both, as it removes the drift
+  report, for a new product.
+- First run, 11 Nov: elixir-utils pins range from in step with the template to 13
+  commits behind it (Keyfleet, Autolaunch); every site is on ash_postgres `55db7d4`;
+  Regents checks commands with regents-cli v1.10.23, the rest with v1.10.24.
+
+## 2026-11-11 — The schema-prefix probe lives with the test helpers
+
+- The resource the schema-prefix test writes through (`AshTemplate.SchemaPrefixProbe`,
+  in its own `AshTemplate.SchemaPrefixProbes` domain) moves from inside
+  `platform/test/ash_template/schema_prefix_test.exs` to
+  `platform/test/support/schema_prefix_probe.ex`. A resource defined inside a test file
+  is compiled after the protocols are consolidated, and the test run warned about it.
+- `platform/mix.exs` compiles `test/support` with `lib` in the test environment
+  (`elixirc_paths(:test)`), so test-only resources are built before consolidation.
+  Test-only; nothing to release.
+
+## 2026-11-11 — Review fixes to the queues, pins and public documents
+
+- One range for the ash_postgres schema bug, read from ash_postgres's own history:
+  2.10.0 through 2.15.2 sent `Ash.update_many` and upserts to `public` (the hand-built
+  MERGE arrives in 2.10.0, and the hand-built upsert, with no setting to turn it off, in
+  2.13.1). The schema-prefix test, `platform/README.md`, the test's entry above and
+  `security/required-fixes.json` all say so.
+- `default` and `points`, the database queues, are now 1 and 2 (they were 5 each, so
+  together they could take all 5 of the serving pool's connections from page requests);
+  together they leave 2 for pages. `skills/elixir-stack/references/oban.md` says the
+  database queues together stay below the pool, with room left for requests.
+- The hourly IndexNow job runs in `default`, since it only queues the sitemap's sending,
+  which stays in `outside_calls`.
+- `oban.md` says that Oban's Basic engine holds a unique job's lock until the
+  transaction that queued it ends, so a second save queuing the same job meanwhile
+  queues nothing, and neither is queued if the first rolls back. A unique job whose keys
+  other saves share, such as `AshTemplate.IndexNow.submit/1`, is queued after the commit,
+  from `after_transaction`; `skills/elixir-stack/SKILL.md` and IndexNow's own docs say
+  the same.
+- `make pins` (`scripts/pins.sh`): a site's Makefile read lets only a 404 through, any
+  other failure stops the run, and a site with no `platform/mix.lock` says so. Each
+  library copy is read through its own `--git-dir`, so a damaged copy never reaches
+  the checkout around it, and the copies fetch pull requests' heads, so a pin on a pull
+  request's commit is counted instead of called "not on GitHub".
+- The send_cached comment says a public document changes with a release or with the
+  server settings read at boot. `oban.md` says `oldest_unfinished` counts running jobs
+  too. `skills/ash-data/references/migrations-and-concurrency.md` says a concurrent index
+  build waits for older transactions anywhere in the database, the other sites' included.
+- The new checks for the 304 answers, the contract's headers and IndexNow's
+  uniqueness are held until the change has worked live for an hour:
+  `static_cache_test.exs` and `index_now_test.exs` are as on main, and
+  `docs/feature-map.md` lists the three as Gaps. `skills/ash-webmcp/references/regents.md`
+  names the template's contract route in place of Regents' plug.
+- `make drift` (`scripts/drift.sh`) counts a file as missing only when GitHub answers
+  404; any other failure stops the run, and a site with no `platform/mix.exs` says so.
+- Serving, development and tests each hold 5 connections, one setting in
+  `AshTemplate.DatabaseConfig` (`@pool_size`): local development had 2 since the
+  template was cut from Regents on 21 September, with no reason given, so its jobs alone
+  could take every connection; development against the shared database had none set, so
+  Ecto's 10. With 5 everywhere, the database queues' 3 leave 2 for pages in development
+  as in production. The browser walk's server (`platform/playwright.config.ts`) no
+  longer sets `POOL_SIZE=3`, which nothing ever read; it runs on the same 5.
+- Checked: `mix format` (no change), a compile with warnings as errors, and the tests
+  for the changed files (16 of 16). `make pins` and `make drift` ran for every site.
+- The schema-prefix test, run once with ash_postgres pointed at Hex 2.15.2, failed where
+  it should: "an upsert, of one record or many, lands only in the site's schema" (the
+  site's table stayed empty: the upsert went to `public`) and "updating many records at
+  once changes only the site's rows" (the site's rows kept their old amounts). The
+  create, read, update and destroy test held. The pin went back to 55db7d4, with
+  `platform/mix.exs` and `platform/mix.lock` unchanged.
+- Full check on `b0a397ad`, clean tree, exit 0: `mix precommit` (hex.audit clean, Credo
+  clean, 31 script tests, 448 browser walks with 5 skipped), then 179 Elixir (9
+  properties), then the required-fixes check. The first full check, on `81b638c7`,
+  stopped in the walk: on the phone, Walk Agent's window did not say it had come to rest
+  within 5 seconds (`platform/test/browser/agents.spec.ts`). Run alone it failed once
+  more while the Mac was busy, then passed at both widths with the development pool at
+  2 and again at 5, so the wait is the busy Mac's, not the pool's.
+
+## 2026-11-12 — The ops quick wins land on main
+
+- `tpl/quick-wins-ops-1111` (the entries above from "A test holds every write to the
+  site's own schema" on) is merged onto main after v192. Where it met main's own
+  changes: `make drift` reads a picture's blob id as main does, and a picture, like
+  any other file, counts as missing only when GitHub answers 404; the ash-data skill
+  keeps main's line on the database (the direct address, a pool of 5, never the
+  pooler) and says at most two releases switch over at once, as the release checklist
+  does since 12 Nov, in place of "releases take turns".
+
+## 2026-11-12 — Released v193: the ops quick wins
+
+- `04c0d28e` (the merge of `tpl/quick-wins-ops-1111`) is v193 on template.regents.sh,
+  switched at 01:52Z with `scripts/deploy.sh`. No migrations. Rollback: v192
+  (`cc4a83d3`).
+- Full check on `04c0d28e` with a clean tree, exit 0: 41 script tests, 458 browser walks
+  with 5 skipped, 186 Elixir (9 properties), then the required-fixes check.
+- Live read: `/capabilities.json` names `04c0d28e`; `/api-contract.openapiv3.yaml`,
+  `/llms.txt`, `/openapi.json`, `/agents.md` and `/api/v1/about` answer 304 to their
+  own ETag, plain or weak, and 200 to another; the contract carries major 11 and its
+  digest, `application/yaml` and the static headers; the pages answer 200 at 1280 and
+  390 with no page errors, and the spelled-out addresses 404. Fly logs: one health
+  check failed at 01:52:47Z while the new machine started and passed at 01:52:53Z; no
+  errors from the site after that.
+
+## 2026-11-11 — Product events, the cohort report and top queries in the visit log
+
+- The visit log's `step` names are now the product-event vocabulary every site shares:
+  the journey's four (`sign_in_opened`, `signed_in`, `pairing_code_shown`,
+  `agent_paired`) and one value name for each site (`AshTemplateWeb.VisitLog.values/0`:
+  `note_created`, `contribution_made`, `fix_succeeded`, `eval_completed`,
+  `launch_confirmed`). They live only in the visit lines (Sean's 3a): no table, no
+  cookie beyond `_visit`, nothing stored. `docs/logging-replay-plan.md`, "Product
+  events", lists who writes each one.
+- The template's value step, `note_created`, comes from a new `:note_committed` signal
+  (`AshTemplate.Notes.Signals`) that `Notes.Note` `:create` emits in the
+  `:after_transaction` phase, so Ash emits it only for a create that committed and
+  answered `{:ok, record}`. Nothing listens to it: `AshTemplateWeb.VisitLog.Events`
+  writes the line from Ash's `[:ash, :signal, :emitted]` telemetry in the action's own
+  process, so it carries that request's or page's visit and surface. The line names the
+  note's account, whether the person or their agent acted, and says which in its
+  outcome. Like `VisitLog.step/2`, `VisitLog.value/2` takes only a name in `values/0`
+  and rescues nothing. `skills/ash-signals/SKILL.md` lists the signal and how each site
+  maps its own value action.
+- `signed_in` is written only when the sign-in exchange binds the browser to an account
+  (`x-ash-session-changed: true`); a refresh of the account it already has writes none.
+  The account is the next line of the same visit, joined by the visit id alone
+  (`docs/logging-replay-plan.md`, "First touch").
+- Calls to the hosted MCP server at `/mcp` have their own surface, `mcp`, and every
+  `/api` and `/mcp` call, forwarded ones included (`RegentAgents.HTTP` under
+  `/api/agents/v1`), is a `tool.call` line by its whole path (`VisitLog.call?/1`), with
+  the MCP caller as its actor.
+- `mix visit_log.cohorts [PATH]` prints weekly sign-in cohorts by source, activation (a
+  first value step), D1 and D7 return and the median value steps of an activated
+  account, from Sentinel's day export alone (`GET /api/ops/logs/:app/day`), from a file
+  or standard input (`AshTemplateWeb.VisitLog.Cohorts`). Sentinel is the only place
+  that keeps the visit lines past a few hours (30 days), but an export holds the last
+  24 hours, so D7 needs eight exports saved a day apart and joined; a row in two
+  overlapping exports counts once. A 30-day export would need no joining
+  (`docs/logging-replay-plan.md`, "Cohort report" and "Sentinel's part").
+- `mix db.top_queries [count]`, and `/app/bin/top-queries [count]` on a deployment,
+  print the statements on the site's own schema that took the most database time, from
+  `pg_stat_statements`, 20 unless a count from 1 to 100 is given
+  (`AshTemplate.TopQueries`, `AshTemplate.Release.top_queries/1`). It only reads: it
+  stops when the extension is missing and never creates it, and on a deployment it
+  connects on the serving login with one connection. `AshTemplate.TextTable` writes
+  both reports' tables.
+- `platform/README.md` ("Visit lines" and the release commands) describes both reports.
+  The checks for the value step, the cohort report, the top-queries report and the
+  sign-in step are added once the change has worked live; `docs/feature-map.md` lists
+  them as Gaps.
+- Ported from `claude/quick-wins-measure-log-1029` (`73c7dd54`), not from
+  `claude/quick-wins-measure-1029`, which stored measurements in a table.
+- Checked after main `8ae64187` was merged in and after the review's fixes: `mix
+  format`, a compile with warnings as errors, and the tests for the changed files'
+  areas, 76 of 76 (6 properties): the visit log and visit lines, notes, the agent-note
+  Points award, the hosted MCP server and the Claude connector, sign-in, the body limit
+  and the feature map. The cohort report was run by hand on made-up day-export rows:
+  two accounts from two sources, a value step by an agent, a warning line, a sign-in no
+  later line names, the same rows twice from overlapping exports (the same report), an
+  empty input, and a line in another shape (it stops with the error). The full check
+  comes next.
+
+## 2026-11-12 — The visit-log quick wins land on main
+
+- `tpl/quick-wins-log-1111` (the entry above, "Product events, the cohort report and
+  top queries in the visit log") is merged onto main after v193. Only the changelog and
+  the feature map's Gaps met main's own changes; both keep every entry, and the Gaps
+  list now holds the ops quick wins' three checks and the visit log's four.
+
+## 2026-11-12 — The wallet mark stays through page updates
+
+- A wallet button marked "waiting on the wallet" lost that mark whenever the page
+  updated while the wallet still had the press (a new amount, a wallet change, a new
+  review). The OnchainSteps island now tells LiveView the mark is its own before
+  setting it, so a page update leaves it on the button until the wallet answers.
+  Every press still reaches the wallet. Ported from regents.sh `5ec5b366`.
+- Not walked: the browser walk attaches no chain, so wallet buttons stay a listed gap
+  in `docs/feature-map.md`.
+
+## 2026-11-12 — Tab fills keep their place through page updates
+
+- The tabs island now tells LiveView itself that its underline's position is its own,
+  as its comment already promised, so a fill that arrives in a page update no longer
+  jumps back under the first tab on the next one. The motion lab and the Grammar
+  pages drop their per-page `phx-mounted` markers, which LiveView 1.2.13 skips for an
+  element that arrives in a page update. Ported from regents.sh `f417ca09`.
+
+## 2026-11-12 — Released v194: the visit-log quick wins and three site fixes
+
+- `ce5503d3` (main `a80b2db0`, the merge of `tpl/quick-wins-log-1111` and the merge of
+  `tpl/site-fixes-1111`) is v194 on template.regents.sh, switched at 02:25Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v193 (`04c0d28e`).
+- Full check on `ce5503d3`, exit 0: 41 script tests, 458 browser walks with 5 skipped,
+  186 Elixir (9 properties). One run before it on the same commit failed one browser
+  walk (phone width, signed in, `/polls`: the live connection was not ready within 5 s
+  while the Mac's load was 58); the rerun passed.
+- Live read in headless Chromium (WebKit not run): `/capabilities.json` names
+  `ce5503d3`; `/`, `/about`, `/docs`, `/agents` and `/animations` answer 200 at 1280 and
+  390 with no page errors and no sideways scroll; the motion lab's tab fill carries its
+  own position. Fly logs: no errors after the switch.
+
+## 2026-11-12 — Value cards in the motion lab
+
+- `/animations/value-cards`: forty-four value cards, one for each thing Autolaunch, Techtree,
+  Patchbay, Keyfleet, Cloak, $REGENT and WebMCP do. Each card is dark in both themes, with a
+  square panel of small coloured glyphs drawn by vgpu in the shared canvas island, its own
+  three-colour gradient mixed in OKLab, and a pattern that follows a mouse.
+- `AshTemplateWeb.Components.ValueCards` is the row a site uses: each card is a map of its
+  panel's name, its words, the colour its name takes and where it goes. A card with no
+  destination is not a link.
+- Each panel is one file in `platform/assets/js/value_cards/panels/` (colours, grid, still
+  moment and shader body); `panel.ts` holds the shader code they share. Every panel on a page
+  draws on one GPU device.
+- `npm run stills:value-cards` draws each panel's still frame into
+  `platform/priv/static/images/value-cards/`. The still is the picture until the panel has
+  drawn, and stays for a visitor without WebGPU or who asked for less motion.
+- `skills/vgpu-island/references/value-cards.md` says how a site takes a card.
+
+## 2026-11-12 — Forms and routes: one scale, five colours, forms checked on leaving a field
+
+- Every page draws from the design system's spacing scale (0 to 64px in 8px steps) and
+  type scale (40/48, 24/32, 18/26, 16/24, 14/20, 13/18, one weight), and from five
+  colours in `platform/assets/css/tokens/root.css`: ground, raised, ink, quiet and
+  signal, each at 4.5:1 or more for text where it meets another. No gradients on the
+  forms and app pages; the homepage's ringed Start button, the two cube pictures and
+  the showcase labs keep their own art. The second accent, the products' tones, the
+  derived panel and line colours and the colour mixes are gone (`--ash-accent`,
+  `--ash-accent-warm`, `--ash-line-strong`, `--ash-panel-strong`), and a chosen sidebar
+  row has one mark.
+- Forms: one column, labels above the field, each field checked when the visitor leaves
+  it (`phx-debounce="blur"`), never while typing. Error words say what to do
+  (`AshTemplateWeb.FormErrors`: "Fill this in.", "Add at least 2.", "Use 120 characters
+  or fewer."; chat's empty message: "Write a message."), and each field's error line
+  keeps its room, so nothing below it moves. The room, direct-message and chat boxes say
+  why a message cannot be sent beside Send; a vote with no choice says "Choose one, then
+  vote." under the choices and clears once one is picked. Field order and every request
+  are unchanged.
+- Field states (focus, disabled, loading, error) come from design-system `a2431378`
+  (branch `ds/field-states-1112`), which also gives the account card the page's
+  spacing and drops the profile form's "The name people see for you." line (its tip
+  moves beside the Profile heading), so every site's Account page moves with that pin.
+- Phones and tablets: every press is at least 44px on touch screens, and the desktop
+  keeps its sizes (its small links pass WCAG 2.5.8 by their spacing). The account tabs
+  wrap instead of scrolling sideways. The docs tables stand as cards under 768px, keeping
+  their table roles and naming each cell's column (`PublicDocuments.html/1`, with
+  `AshTemplate.Markdown.parse!/2`); code wraps below 1024px; the grammar showcase's
+  layers table stacks the same way.
+- Accessibility: the homepage's header and copyright now sit in page landmarks.
+
+## 2026-11-12 — design-system pin moves to 33d5aa96
+
+- The template pins design-system `33d5aa96` (main): the field states and account
+  spacing the forms audit needs, plus the style check script, `rg-figure` and
+  `Regent.Primitives.figure`, and the nested-cut corner and focus-ring tokens. The
+  primary button's focus ring is now cut to follow the button, on every page.
+- The style check (`sh assets/vendor/regent_ui/style-check.sh` from `platform/`) reports
+  27 breaks in the template today, so it is not part of `make check` yet.
+
+## 2026-11-12 — Value cards taken back off main until they pass the browser walk
+
+- `/animations/value-cards` (`91d68a70`, `d379d721`, the two entries above) crashed the
+  browser every time at phone width (390 and 320) in the browser walk, on main before
+  anything else was merged; it had landed without the walk being run. Both commits are
+  reverted here so main can release. The work is whole in those two commits; it comes
+  back when the page opens at all three widths.
+
+## 2026-11-12 — Released v195: the forms audit and design-system 33d5aa96
+
+- `4d972bbc` is v195 on template.regents.sh, switched at about 05:00Z with
+  `scripts/deploy.sh`: the merge of `tpl/forms-audit-1112`, the design-system pin
+  `33d5aa96` and the value cards revert. No migrations. Rollback: v194 (`ce5503d3`).
+- Full check on `4d972bbc`, exit 0: 41 script tests, 458 browser walks with 5 skipped,
+  186 Elixir (9 properties). The run before it, with the value cards still in, failed
+  that page at 390 and 320 wide every time.
+- Live read in headless Chromium (WebKit not run): `/capabilities.json` names
+  `4d972bbc`; `/`, `/about`, `/docs`, `/agents`, `/animations` and `/notes` answer 200 at
+  1280 and 390, light and dark, with no page errors and no sideways scroll;
+  `/animations/value-cards` answers 404. Fly logs: no errors after the switch.
+- Still open: in the light theme the primary button rests on the pale raised colour
+  (`#DAD8C7`) with dark words, so it reads quieter than an outlined button.
+
+## 2026-11-12 — Frosted glass in the motion lab
+
+- `/animations/frosted-glass`: a large tree seen through a leaning pane of frosted glass
+  with a lamp in front of it, ported from the frosted-glass study (its v6 is the first
+  look). The section is three windows tall and the picture stays in the window: at the
+  top the visitor is among the tree's boughs, halfway down the whole tree stands in view,
+  and at the bottom it stands in a forest. The forest is rows of the same tree, drawn by
+  the same bough and trunk code, each sized, mirrored and nudged so no two match, hazier
+  the farther they stand; on a narrow window the eye stands farther back and the rows
+  closer, so the phone sees trees and not sky.
+- Six looks, chosen by `?look=` and set in `platform/assets/js/frosted_glass/looks.ts`:
+  Lifelike (pebbled glass in a wire mesh), Reeded (vertical ribs, each a small lens),
+  Blocks (glass blocks in thin joints), Mist (fogged glass that wipes clear under the
+  pointer or a finger and fogs back in about nine seconds), Night (the bark glowing cyan
+  in the dark) and Ember (the same in amber). None is lit brighter than v6.
+- The glass is a vgpu canvas island (`platform/assets/js/hooks/frosted_glass.ts`, drawing
+  in `platform/assets/js/frosted_glass/`): the plant is drawn to a target, blurred twice,
+  and the glass pass lays the surface over it; Mist keeps its fog in two targets passed
+  back and forth, each frame letting it creep back and wiping the pointer's stroke. Anime.js
+  moves the lamp, the gaze and the wander, and eases the scroll into the journey. The
+  island stops drawing when nothing moves and pauses off screen. With less motion the
+  lamp and wander hold still and the scroll alone changes the picture; a browser that
+  cannot draw it shows `priv/static/images/animations/frosted-glass/<look>.webp`.
+- The page joins the motion lab index, the design map, the route catalog (handoff
+  regenerated), the showcase list in `public_documents.ex` and the browser walk's pages.
+- Public changelog: the frosted glass in the Motion Lab.
+- Checked headless in Chromium with WebGPU: all six looks reach ready at 1280, 390 and 320
+  with no sideways scroll; scrolling changes the picture; a tab change repaints without
+  starting again; Mist clears under a pointer and under a finger at 390 and fogs back
+  within ten seconds; with less motion the picture holds still and the scroll still moves
+  it; without WebGPU the still shows; no console errors. WebKit not run on the Mac.
+
+## 2026-11-12 — Released v196: the Frosted Glass lab page
+
+- `70128c89` is v196 on template.regents.sh, switched at about 05:25Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v195 (`4d972bbc`).
+- Full check on `70128c89`, exit 0: 41 script tests, 461 browser walks with 5 skipped,
+  186 Elixir (9 properties).
+- Live read in headless Chromium (WebKit not run): `/capabilities.json` names
+  `70128c89`; `/animations/frosted-glass`, `/animations` and `/` answer 200 at 1280 and
+  390 with no page or console errors and no sideways scroll. Fly logs: no errors after
+  the switch. The six looks themselves are the design chief's to read live.
+
+## 2026-11-12 — Agent live feed
+
+- A signed agent can keep one connection open, `GET /api/v1/feed`, and hear the moment
+  someone writes to its person in a direct message or posts in a room it has posted in.
+  Each event says what happened, who wrote it and where to read it, never the words; the
+  agent reads them through the ordinary routes and their rules. It hears only what it could
+  already read there: nothing from its own posts, its person's own messages, a conversation
+  they blocked or one they are not in.
+- The feed listens to the same live updates the pages do, so nothing is polled and nothing
+  new is stored. A reconnect with the last event's id gets up to 100 it missed, or is told to
+  list again. A keep-alive line every 25 seconds holds it open through Fly's proxy. One feed
+  per agent: a newer one closes the older. A machine holds at most 1000.
+- The OpenAPI documents move to 11.2.0. The browser tools and hosted MCP do not carry the
+  feed, since a tool call answers once. Its command waits for regents-cli's command list to
+  say that an answer stays open (`docs/agent-parity.md` G12).
+- Sites add their own kinds of event, such as Keyfleet's mentions, in `AshTemplate.Feed`
+  (`skills/ash-webmcp/references/live-feed.md`).
+
+## 2026-11-12 — The feed's cap and stated connection limits
+
+- A machine holds at most 200 open agent feeds (it was 1,000), and `platform/fly.toml`
+  now states how many connections a machine takes (2,000 soft, 2,500 hard) instead of
+  leaving it to Fly's default, so feeds that stay open can never keep visitors out.
+
+## 2026-11-12 — Released v197: the agent live feed and stated connection limits
+
+- `9160498f` is v197 on template.regents.sh, switched at about 05:50Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v196 (`70128c89`); the connection
+  limits in `platform/fly.toml` go back with it.
+- Full check on `9160498f`, exit 0: 41 script tests, 461 browser walks with 5 skipped,
+  193 Elixir (9 properties).
+- Live read: `/capabilities.json` names `9160498f`; Fly shows the machine's limits as
+  2,000 soft and 2,500 hard connections; `/`, `/agents`, `/docs` and `/app` answer 200;
+  `GET /api/v1/feed` with no signature answers 401 `http_headers_missing`; the served
+  OpenAPI document lists `/api/v1/feed`. Fly logs: no errors after the switch. Not
+  proven live: a signed agent holding the feed open through Fly's proxy; regents-cli's
+  `feed` command proves it when it ships.
+
+## 2026-11-12 — Agent Message: agents leave the team a private message
+
+- An "Agent Message" button on `/agents` opens a dialog with three paste-ready texts,
+  CLI, MCP and WebMCP, each with its copy button, that let a visitor's agent leave a
+  private message for the site's team under the topic `agents`. A signed-in person can
+  leave one from the same dialog and sees its receipt. Any page can place the button
+  with its own topic (`AshTemplateWeb.Components.AgentMessage`); Techtree's Watchdog
+  page is the first planned.
+- Agents leave one with `messages leave <topic>` (in the next regents-cli release),
+  `POST /api/v1/messages/{topic}` or the tool `messages_leave`, on the hosted MCP server
+  and in the browser. A retry with the same `operation_id` answers the first receipt.
+  Each sender leaves 10 an hour. The OpenAPI documents move to 11.2.0, and every page
+  now lists 56 WebMCP tools.
+- Only the site's admins read messages, at `/admin/messages`, newest first. A new
+  table, `left_messages`, is added by one migration
+  (`20261112045919_add_left_messages.exs`) that only creates it.
+
+## 2026-11-12 — Agent Message on live pages
+
+- The Agent Message button and dialog now work inside a live page too, with the same
+  two pieces and one placement: a plain page passes its request, a live page passes the
+  signed-in account, its session lease and its client key
+  (`skills/ash-webmcp/SKILL.md` shows both). The person's form is one shared component
+  in both places (`AshTemplateWeb.Components.AgentMessage.Form`), so a live page such as
+  Techtree's Watchdog page gets the same texts, form and receipt.
+- The `/app` home in the shell now has the button, with the topic `app`. The browser
+  walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
+  and phone width.
+- The form's ids now follow the dialog's (`<dialog id>-person-form`).
+
+## 2026-11-12 — Released v198: Agent Message
+
+- `9dc7dd1c` is v198 on template.regents.sh, switched at about 06:05Z with
+  `scripts/deploy.sh`. One migration ran in the release command,
+  `20261112045919_add_left_messages` (a new empty table). Rollback: v197 (`9160498f`);
+  the table stays and v197 never reads it.
+- Full check on `9dc7dd1c`, exit 0: 41 script tests, 465 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9dc7dd1c`; `/`, `/agents`, `/docs`, `/about` and `/app` answer 200 at 1280 and
+  390 with no page errors and no sideways scroll; on `/agents` the Agent Message button
+  opens its window with the three texts and no form; `/admin/messages` answers the
+  not-found page. Not proven live: a signed-in person's form and an admin reading the
+  inbox (no person's sign-in is used in live reads), and a signed agent's
+  `messages leave`.
+
+## 2026-11-12 — Live figures roll (November bonus, step 2)
+
+- Every figure the template's own pages change while someone watches is drawn with
+  design-system's `Regent.Primitives.figure` (`rg-figure`, equal-width digits,
+  `data-count`) inside a part marked `phx-hook="MotionCount"` with the standard `count`
+  version, so the motion kit rolls only the digits that changed, and reduced motion
+  leaves them still: a poll's votes and minutes left (the poll's line and the polls
+  list), each room's message count and the newest block on `/showcase/figures`, the
+  wallet's balance in the on-chain example, the times on a harbour agent's card, and the
+  motion lab's counter. A figure falling to words ("No reading yet", "Just now",
+  "reading balance") is swapped, not rolled.
+- Room left for the widest value only where a figure stands in a column or on its own
+  line: the room counts (five characters, ending on one edge) and the lab's counter
+  (six). A figure inside a sentence keeps none, since a gap mid-sentence reads as a fault;
+  only its own word after it shifts when it gains a digit.
+- The wonders' reading line, which their own script rewrites as they play, takes
+  `rg-figure` for its digits and does not roll.
+- Deleted the per-page `tabular-nums` rules these replace (`polls.css`, `wonders.css`,
+  `animations.css`) and the `messages/1`, `votes_label/1`, `list_state/1` and string
+  `time_state/2`, `ago/2` and `balance/1` helpers the figure components replace.
+- Not moved: Points and the discussion's likes are drawn by design-system's own
+  components, which carry `rg-figure` but not `data-count`; they roll once design-system
+  adds it. The Keyfleet hero's price tag never changes and keeps its own rule.
+- `platform/test/browser/motion.spec.ts`: the lab's counter rolls across a change of
+  width with nothing beside or below it moving, and stays still with reduced motion.
+
+## 2026-11-12 — Gestures (November bonus, step 6)
+
+- `platform/assets/js/hooks/motion/gestures.ts`, mounted with the rest of the kit in
+  `motion.ts`: a window (`dialog`) pulled down by its `data-sheet-handle`, the phone menu
+  (`data-panel="drawer"`) swiped back to its edge, and a note (`data-toast`) swiped
+  either way. `GESTURE` holds the animation guide's §2 values in px and ms: a throw of
+  0.11 px/ms dismisses whatever the distance; speed counts only after 100ms down; a
+  window or menu goes at a quarter of its size, a note at 30px; the landing point is the
+  speed carried on for 200ms; edge friction 0.85 (0.5 for pans); a thrown thing leaves on
+  a spring (bounce 0.2, 500ms) seeded with its speed; anything not thrown goes back in
+  300ms on `cubic-bezier(0.32, 0.72, 0, 1)`, and a finger can catch it on the way.
+- While the finger is down the thing follows it 1:1 by `transform` on itself, the menu's
+  shade fades with it and a note fades as it goes. A drag stops text selection and the
+  click that ends it; a plain press, on-chain buttons included, is never held.
+- Every gesture does only what a plain control already does: a window closes as Escape
+  closes it (`requestClose()`), the menu and a note as their own `data-dismiss` control
+  when pressed. Keyboard and agents use those and nothing animates. With less motion a
+  release goes straight back or closes.
+- Built with a pointer tracker of its own and Anime's `spring` and `animate`, not Anime's
+  `createDraggable`: Draggable picks where a release lands itself (its own speed
+  measure, projection and durations), so the guide's px/ms throw, 200ms landing and
+  300ms return could not be set.
+- Markup: `data-sheet-handle` on the heads of the agent tools window, the code cube's
+  window, a harbour agent's card, the pairing window and the grammar window; `data-dismiss`
+  on the phone menu's close button, the grammar panel's Close and the lab notes' Dismiss.
+  `motion.css` leaves the drag axis to the page (`touch-action`).
+- Tests: `platform/assets/test/gestures.test.ts` (speed, resistance, throw or pull) and
+  `platform/test/browser/motion.spec.ts` (a short pull goes back, a flick closes, Escape
+  closes, less motion, a note thrown away).
+
+## 2026-11-12 — Menu lab (November bonus, step 7)
+
+- A lab page only, `/animations/menu` (`AshTemplateWeb.MenuLabLive`, titled Menu): a
+  Sort button at the left and a More button at the right, each the shared details
+  dropdown (`rg-pill-select`) with its list marked `data-panel="menu"`. Opened by
+  pointer, the kit's standard menu motion grows the list from its own button's corner
+  (`transform-origin` top left or top right in `assets/css/pages/menu_lab.css`); opened
+  by keyboard, or with less motion, it is simply there. Escape closes it and hands focus
+  back to its button, and a press outside closes it, both from design-system's
+  `pill_select.mjs`; choosing an item closes it with `JS.remove_attribute`.
+- The list sits on the Tip layer (`--rg-layer-tip`, `--rg-layer-tip-shadow`), so opening
+  it moves nothing on the page, and stays inside the screen at 320 wide. The account
+  menu and every real menu are unchanged.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/motion.spec.ts`: grows by pointer, still by keyboard, Escape
+  hands focus back, a press outside closes.
+
+## 2026-11-12 — Design-system 2e839171: confirm window, charts, activity, fewer labels
+
+- `platform/mix.exs` and `mix.lock` pin `regent_ui` to design-system `2e839171`
+  (was `33d5aa96`). It brings the segmented control and link tabs, the breadcrumb, the
+  waiting box, `Regent.Agents.activity` and `fleet`, `Regent.Charts.line`, the shared
+  confirm window, the package's own style check and the account menu's theme row.
+- The shared parts no longer take taglines or small labels (founder, 2 Nov), so the
+  callers drop them: the error page's `context="Ash Template"` and the showcase
+  typography figure's `<:caption>`. No other caller passed `eyebrow`, `site`,
+  `caption` or `context` on a utility page.
+- `mix regent_ui.assets` now also copies `style-check.sh`. Run over the template's own
+  CSS, scripts and templates it reports 26 breaks (14 stacking, 6 glass, 4 flat,
+  1 shape, 1 icon). They are left for their own change and the check is not part of
+  `make check` yet.
+
+## 2026-11-12 — The confirm window asks before an action that can't be undone
+
+- The root layout renders `<Regent.Structure.confirm />` once and `app.ts` imports the
+  design system's `confirm.mjs` before the LiveSocket connects, so every `data-confirm`
+  press asks in the shared cut-corner window instead of the browser's own grey box.
+- Every `data-confirm` now carries a `data-confirm-action`, the words on the button that
+  goes ahead: Unpair (the agent list and an agent's window), Delete (a note, a room
+  message), Mute, Block and End (a poll). Seven in all.
+- Hard cutover: `import "phoenix_html"` and its type stub are gone; they served only
+  `data-confirm` (nothing in `lib/` uses `data-method` or `data-to`).
+- `test/browser/polls.spec.ts` presses End in the window instead of accepting the
+  browser's box.
+- Checked headless in Chromium at 390 and 1280 wide, light and dark, on Notes: the
+  window opens from a press and from Enter or Space (`data-opened-by` pointer or key),
+  Cancel and Escape close it with focus back on Delete, Delete removes that note once
+  and leaves the others, and it still works after a live navigation away and back and
+  after the LiveSocket reconnects. The browser's own box never showed.
+
+## 2026-11-12 — Motion kit for the shared parts, and the Parts lab
+
+- New kit hooks in `platform/assets/js/hooks/motion/`, each reading only the marks in
+  design-system's `CONSUMERS.md`, joined through `phx-hook` on the shared component:
+  - `travel.ts`, `MotionTravel`: the segmented control's indicator springs with its
+    leading edge first (`spring({bounce: 0.15, duration: 300})`, the trailing edge half
+    a fast step later), follows a press dragged across the cells and chooses the cell it
+    is let go over, then removes its values and `data-travel="kit"`. Link tabs slide
+    their bar from the tab before (`--rg-travel-x`, `--rg-travel-scale`, 280ms) after a
+    patch or a live navigation, and scroll the new tab into view inside the row.
+  - `crumbs.ts`, `MotionCrumbs`: after a level is pressed, the new page showing rises
+    half a space step over 280ms and the levels that left fade where they stood
+    (140ms, `--ease-in`), through a patch or a live navigation. Its menus and card grow
+    from their buttons through the kit's menu motion (`motion.ts`).
+  - `moments.ts`, `MotionActivity`: a step that arrives fades in and its line grows down
+    from the mark above. The component renders no layout ids, so this is its own small
+    hook rather than `MotionList`.
+  - `chart.ts`, `MotionChart`: the rule, figure and time follow the pointer, or Left,
+    Right, Home and End on the plot, and the latest figure comes back when the pointer
+    leaves or focus goes. A new period morphs the line (`svg.morphTo`, 280ms) when the
+    point count holds and fades it in otherwise.
+  - `shared.ts` gains `EASE_IN` (the `--ease-in` token).
+- Nothing moves for a key press or with less motion; nothing runs on a timer. The chart
+  and the breadcrumb decide from the press inside them, because the browser's own
+  pointer-move after a redraw makes "last input was the pointer" unreliable there.
+- New lab page `/animations/parts` (`AshTemplateWeb.PartsLabLive`, titled Parts): tabs,
+  a breadcrumb, a price chart with its period, an agent's activity with Next step, and
+  the chart's and activity's loading, failed and empty states. Listed in the lab index,
+  the design page, the public documents, the route catalog and handoff, the README and
+  `pages.json`. No real page changes.
+- Tests: `platform/assets/test/parts_motion.test.ts` and a `motion.spec.ts` check.
+  `skills/animejs/references/liveview-islands.md` and `AGENTS.md` name the hooks.
+
+## 2026-11-12 — Frosted glass looks keep to one row
+
+- `/animations/frosted-glass`: the six looks no longer wrap (at 390 wide Ember sat
+  alone on a second row). The row never wraps; at 30rem and under the gap is
+  `--space-1`, which fits all six from about 380 wide, and narrower the row scrolls
+  sideways on its own while the page does not. Inside that row a focused look draws
+  its ring inset so the row does not cut it off. Only
+  `platform/assets/css/pages/frosted_glass.css` changes.
+- `platform/test/browser/layout.spec.ts` checks the six share one row with no sideways
+  page scroll, on desktop and phone.
+
+## 2026-11-12 — Two more callers the design-system 2e839171 pin broke
+
+- The discussion's reply filters are now the shared tabs, a row that scrolls
+  sideways on its own. The public page's grid sized its one column from that row's
+  full width, so `/showcase/discussion` was 18px wider than a 320 screen. The column
+  is now `minmax(0, 1fr)` (`platform/assets/css/app.css`), the screen's width.
+- The agent window's name field drops its visible hint for the "About this name" tip
+  and shows a refused name as the field's own error, tied to the input, rather than an
+  alert. `platform/test/browser/agents.spec.ts` checks the tip and the input's
+  description.
+## 2026-11-12 — Released v199: rolling figures, gestures and the menu lab page
+
+- `ec983824` (the merge of the design chief's `wt/tpl-bonus-1112`, `9b2bdb05`) is v199
+  on template.regents.sh, switched at about 06:25Z with `scripts/deploy.sh`. No
+  migrations. Rollback: v198 (`9dc7dd1c`).
+- Full check on `ec983824`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `ec983824`; `/`, `/animations`, `/animations/menu`, `/animations/frosted-glass`,
+  `/agents`, `/app`, `/polls` and `/notes` answer 200 at 1280 and 390 with no page or
+  console errors and no sideways scroll. The gestures themselves were not driven live.
+
+## 2026-11-12 — Released v200: the health answer says whether migrations are applied
+
+- `2409d2d5` is v200 on template.regents.sh, switched at about 06:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v199 (`ec983824`).
+- `GET /api/v1/health` gains `migrations_applied`; pending migrations leave the answer at
+  200. `/healthz` is unchanged. Contract 11.3.0.
+- Full check on `2409d2d5`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  207 Elixir (9 properties). A first run failed two desktop settle-waits at load 60.
+- Live read, signed out: `/capabilities.json` names `2409d2d5`; `/api/v1/health` answers
+  `{"status":"ok","migrations_applied":true}`; `/healthz` 200; `/`, `/agents`, `/docs`
+  and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
+  errors (WebKit not run). The `false` answer is proven by test only.
+
+## 2026-11-12 — Design-system 3de1e43: Points and like counts are shared figures
+
+- `platform/mix.exs` and `platform/mix.lock` pin design-system `3de1e43` (was
+  `2e839171`). `Regent.Points` (the total, each board row and your own row) and the
+  heart's like count in `Regent.Discussion` are now `Regent.Primitives.figure`: they
+  carry `data-count` and equal-width digits. The template's Points page does not mark
+  them with `MotionCount`, so nothing new moves; the digits only line up.
+- `mix regent_ui.assets` copied no changed files. Nothing in the template needed a fix.
+
+## 2026-11-12 — The light and dark switch lives in the account menu
+
+Sean, 8 Nov 2026: a light and dark switch in the account menu, drawn with vgpu, with a
+sun and moon made of tiny blocks, moved with Anime.js. Built on
+`glass-theme-switch-1109` (`f1b2623d`) and brought onto main here.
+
+- `Shell.theme_toggle/1` is a `role="switch"` button named "Light theme", on for
+  light, night on the left and day on the right. A press, Space or Enter turns it; the
+  knob can be dragged and settles on the nearer side. Signed in it is the row of
+  `Regent.Account.menu`'s `theme` slot; signed out it sits in the bottom bar, at its
+  smallest on a phone so the bar keeps one row at 390. The public footer, the showcase
+  pages and the buttons lab keep theirs.
+- The server draws a flat, square still face: a track and a knob holding the moon or
+  the sun as SVG blocks (`@theme_moon` and `@theme_sun` in `Shell`, checked when it
+  compiles). It is a whole working switch with no script past the hook and no canvas.
+  Over it the `ThemeSwitch` hook runs a vgpu canvas island
+  (`assets/js/hooks/theme_switch.ts`, `assets/js/theme_switch/`) that draws a square
+  glass knob, the blocks behind it and a light strip, all inside its own canvas,
+  `aria-hidden`, drawn only when the knob or theme moves, paused off screen, and kept
+  off under reduced motion, Less motion and forced colours. One Anime.js Animatable
+  settles the knob on a spring; one paused timeline flies the blocks, seeked by it.
+- Every value is a design-system token: sizes on `--space-*`, square on `--radius`,
+  the ring on `--rg-ring-*` and `--color-focus`, edges and fills on `--color-*`, and
+  the beam on `--rg-theme-laser-light`/`-dark` (Tangerine and Powder Blue unless the
+  brand sets them). The old branch's rounded track and knob, its drawn drop shadow
+  under the glass, its raw sizes and its hard-coded beam colours in the script are
+  gone.
+- One way to keep the theme: `assets/js/theme.ts` holds what `app.ts` held (the
+  `regent_theme` cookie, the device's setting until a choice, the dark-only home page)
+  and adds `chooseTheme` and `watchTheme`, so every switch follows a change made
+  anywhere. The old click handler on `[data-theme-toggle]` and every use of
+  `Regent.ThemeToggle` in the template are removed; the design-system component stays
+  for the other sites until each takes this switch.
+- `canvas_island.ts` takes an optional `maxDevicePixelRatio`, so a small island can
+  draw past the 1.5 ceiling within the same pixel budget.
+- The motion kit's press squish skips `[role=switch]` instead of the old prism's class.
+- Checks: `platform/test/browser/theme_switch.spec.ts` (press, Space and Enter, the
+  menu keeps its size, a reload and a live page change keep the choice, opening the
+  menu moves nothing, no sideways scroll at 320 on the phone run); unit tests for the
+  theme module, the knob, the blocks' pairing and flight, the light model and the
+  shader's block layout. Style check: 29 breaks before and after.
+
+## 2026-11-12 — Theme switch: block count Credo accepts
+
+- `Shell`'s compile-time check that the moon and the sun have as many blocks counts
+  them with `:binary.matches/2`; Credo's strict run in `make check` refused counting
+  graphemes. No change to what anyone sees.
+## 2026-11-12 — Released v201: design-system 2e839171, the confirm window and the Parts lab
+
+- `1c18b763` (the design chief's `wt/tpl-bonus-1112`) is v201 on template.regents.sh,
+  switched at about 07:25Z with `scripts/deploy.sh`. No migrations. Rollback: v200
+  (`2409d2d5`).
+- Full check on `1c18b763`, exit 0: 57 script tests, 487 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `1c18b763`; `/`, `/animations/parts`, `/animations/frosted-glass`,
+  `/showcase/discussion`, `/agents`, `/polls`, `/notes`, `/app` and `/account` answer 200
+  at 1280 and 390 with no page or console errors and no sideways scroll; the home page
+  carries the confirm window. The confirm window was not pressed live (its controls
+  need a signed-in person).
+
+## 2026-11-12 — Pair New Agent: a low picture band, and the agent list moves
+
+- Pins design-system `63afac93` (branch `ds/pairing-window-1112`, on top of main
+  `0b47de3`): the chosen agent's picture sits in a band a quarter as tall as it is wide,
+  at 48px, so the band is 104px tall at 1280 wide (was 234) and 81.5px at
+  390 (was 183); the window is about 130px and 100px shorter (Sean, 11 Nov: "the image
+  area can be much smaller"). Choosing still moves nothing under it.
+- The agent list (`data-panel="list"`) moves by the motion kit: `list` fades it in and
+  lifts it 4px, its agents following 5 ms apart, in about 160 ms; `unlist` lets it fade
+  and drop 4px in 100 ms while a press on it lands on what is under it. A key press or
+  reduced motion opens and closes it at once. `play()`'s reset is now `rest()` in
+  `hooks/motion/shared.ts`, so a still opening stops a list that is leaving.
+- `pairing.spec.ts` and `pair_link.spec.ts` check the band at both widths, that nothing
+  under it moves, a press half way through each move (the page's clock held), and the
+  instant list with reduced motion. The animejs skill names the list.
+
+## 2026-11-12 — Released v202: the Pair New Agent window
+
+- `9331cd03` (the merge of `tpl/pairing-window-1112` onto v201, design-system pin
+  `dfd18f87`) is v202 on template.regents.sh, switched at about 07:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v201 (`1c18b763`).
+- Full check on `9331cd03`, exit 0: 57 script tests, 495 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9331cd03`; `/`, `/agents`, `/agents/hermes`, `/account`, `/app` and `/polls`
+  answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
+  The pairing window opens only for a signed-in person, so it was not opened live; the
+  browser walks open it locally at every width.
+
+## 2026-11-12 — Value lab: the pointer-lit value card back, without the crash
+
+- Why the first version (`91d68a70`, taken off in `4d972bbc`) crashed: reproduced headless
+  at 390 and 320 wide, the renderer died while the page was still loading, at about 1.2 GB,
+  with scripts off, with its pictures blocked and with no GPU at all, and never at 1280.
+  Taking out one rule alone stopped it: `@container (max-width: 13rem)` hiding the card's
+  "01 / 44" place by the card's own width. In the one-column phone grid Chromium measured
+  the card at more than one width, flipping that part in and out, and the layout never
+  settled. The GPU panels and the shared device were not the cause.
+- A lab page only, `/animations/value` (`AshTemplateWeb.ValueLabLive`, titled Value), built
+  to spec 4.5 and REGENTS_MAP: three cards with one figure each (`Regent.Primitives.figure`,
+  real text), then the same card loading, empty and failed (`Regent.Primitives.waiting`).
+  No container queries on the page.
+- One vgpu island for the whole grid (`hooks/value_light.ts`, `value_light/renderer.ts`,
+  WGSL through `canvas_island.ts`): it paints every card's surface and 1px edge, so the row
+  is one surface and a neighbour catches the light too. The fill warms towards the site's
+  own light (the theme beam's colour, `--value-light`) and the edge firms towards the ink.
+  Pointer speed makes it brighter and reach further, settling back as it slows; a touch
+  breathes it once. Every move is Anime.js (an Animatable, one breath animation), and each
+  update asks the island for one frame, so nothing draws while the light rests. Less
+  motion, off screen, no WebGPU and forced colours leave the cards' own flat surface and edge.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/value_card.spec.ts`: at 320 and 390 with the GPU on, the picture
+  draws, two pointer sweeps over every card leave the page alive, drawn, under a 64 MB
+  script heap and with no sideways scroll; with less motion the picture never draws and
+  the cards keep their surface.
+
+## 2026-11-12 — Ask lab: one field, an answer drawn from a few blocks
+
+- A lab page only, `/animations/ask` (`AshTemplateWeb.AskLabLive`, titled Ask): one search
+  field, and under it the answer, built only from a closed list of five blocks: a figure
+  (`Regent.Primitives.figure`), a list, a chart (`Regent.Charts.line`), an agent's activity
+  (`Regent.Agents.activity`) and a confirm step whose button is disabled with "Sample only".
+- `AshTemplateWeb.AskLab` turns a question into a plan (a title and one to three blocks) by a
+  plain keyword match over sample data, with its first number as an amount or a limit: no
+  model, no network, no new dependency, nothing stored. `AskLab.check/1` holds every plan to
+  the block list before the page draws any of it; a plan that fails shows the failed state.
+  Staking more than the sample balance shows the amount without a confirm step.
+- The question lives in the address as `?q=`, so a shared link draws the same answer; the
+  form is a plain GET that LiveView patches. An unknown question shows "No match" and three
+  example questions as links. A States section shows loading, empty and failed. Nothing runs
+  on a timer. "/" puts the cursor in the field (`hooks/ask_bar.ts`); the key hint shows only
+  with a fine pointer.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/ask_bar.spec.ts`: a `?q=` link draws the same answer after a reload,
+  an unknown question shows three examples that each answer, asking and following an example
+  work from the keyboard alone, and no answer scrolls sideways at 320.
+
+## 2026-11-12 — Value and Ask labs: Points for Credits, and no staking sample
+
+- Why: Credits left the product on 6 Nov 2026 and are not shown again, and an on-chain
+  button is never drawn blocked, yet the Ask page's staking sample drew a disabled "Stake"
+  button marked "Sample only".
+- `/animations/value`: the first card and the three state cards are Points ("This week"),
+  id `value-points`.
+- `/animations/ask` (`AshTemplateWeb.AskLab`): "points" answers with a Points figure and a
+  "Points earned" chart. Staking is gone, with its sample balance; "regent" now only
+  answers the read-only price. In its place "archive" or "notes" answers with a Notes figure
+  and an Archive confirm step (sample only), its days taken from the question's first
+  number (30 when there is none). Examples: "Points this week", "Offers under 50 USDC",
+  "Archive old notes"; the field's hint reads "Points, offers, notes".
+- The public documents' line for Ask, `platform/test/browser/pages.json`,
+  `ask_bar.spec.ts` and `value_card.spec.ts` follow.
+## 2026-11-11 — The daily jobs' facts: JSON reports and `scripts/harvest.sh`
+
+- `make drift` (`scripts/drift.sh`) and `make pins` (`scripts/pins.sh`) print one JSON
+  document each, in place of their prose and table, so the daily Harvest and Spread
+  jobs read facts rather than sentences. Each script's opening comment lists the
+  fields. drift gives each file's list (shared, build or homepage), its path at the
+  template and at the site, its status (same, differs, missing or not_used), the lines
+  added and removed and the file that holds the difference. pins gives each pin's
+  commit, release tag, Hex version, SIWA version and apps, and its distance from the
+  template's pin and from the library's main as counts of commits and days, null where
+  a commit is not on GitHub. pins no longer writes `platform/_build/drift/pins.md`.
+- drift writes each run's differences to a folder of the run's own,
+  `platform/_build/drift/<UTC time>-<4 characters>/<site>/`, and no longer removes
+  earlier runs' files. A live homepage that cannot be read now stops the run, as any
+  other failed read does, where it was compared as an empty page before.
+- The shared, build and homepage file lists, the not-used and moved files, and the
+  site's names read from its `platform/mix.exs` move to `scripts/shared-files.sh`, which
+  drift sources, so the next report reads the same lists.
+- `scripts/init.sh` keeps one list of the reports it leaves unrenamed and removes from a
+  new product, `scripts/shared-files.sh` among them.
+- New `scripts/harvest.sh <ledger> <repos> [site ...]` lists, for each site, every
+  commit on its main since the commit the harvest ledger (control's
+  `automation/harvest.md`, its "Last read" table) last read, oldest first, as JSON.
+  Each commit gives its date, subject and files, each file named as the template names
+  it (renamed back the way `scripts/init.sh` renames the template's files for the site,
+  and a shared file a site keeps at its own path by the template's path), with the
+  file list it is in, and `shared: true` when it touches a shared file. The sites are
+  clones in one folder, so a cloud run passes its own; each clone's main is fetched
+  first. A ledger with no full commit for a site, or a clone without that commit,
+  stops the run.
+
+## 2026-11-11 — The daily jobs' instructions, and tests for the reports
+
+- New `automation/harvest.md` and `automation/spread.md`: the instructions the two
+  daily cloud jobs follow from this repository's main branch. Harvest (10:00 UTC) reads
+  each site's new commits with `scripts/harvest.sh`, judges each candidate as move-up,
+  site-only or drift, and opens at most three pull requests a day on ash-template,
+  branch `harvest/<site>-<topic>-<date>`. Spread (11:00 UTC) reads `scripts/drift.sh`,
+  `scripts/pins.sh`, the required fixes and the rollout files, and opens at most one
+  pull request per site a day, branch `spread/<date>`. Before Sean signs off, Spread
+  carries tooling only (check, release and deploy scripts, security fixes, library
+  bug-fix pins, toolchain versions and shared skills); anything a visitor sees waits
+  for his sign-off, recorded in a rollout file in `control/rollouts/`. Each pull request
+  gets a fresh reviewer, names the `make check` still needed, and goes up as a draft
+  waiting for Sean when it touches a protected area. Pull requests open seven days are
+  closed with a note, and no branch is deleted. Both jobs record their runs in the
+  ledger, control's `automation/harvest.md`, whose Mode table starts both on a dry run
+  that writes only what each would open.
+- New `scripts/tests/test_reports.py` runs harvest.sh, drift.sh and pins.sh against git
+  repositories it builds in a temporary folder, with stand-ins for `gh` and `curl`:
+  renamed and moved files, Mix tasks, merges, the shared flag, the ledger's rows, each
+  file status, the live homepages, a failed read, and each pin's counts, days, tag, pull
+  request, Hex version and absence from GitHub. `make check-scripts` runs it with `uv`,
+  and `make check` runs it first.
+- The Makefile's drift, pins and check-scripts targets are fenced as the template's own.
+  `scripts/init.sh` drops them, so a new product has no targets for the scripts it
+  removed, and `scripts/drift.sh` compares the rest of the Makefile with each site's.
+  init.sh also removes the tests and the two job files with the reports.
+
+## 2026-11-12 — The daily jobs, brought up to date and fixed
+
+- `tpl/automation-1111` is merged onto current main as `tpl/automation-1112`. Where it
+  met main's changes, `make drift` keeps main's homepage files and compares the still
+  picture by its blob id, and the live homepages compare the glass panel's tabs and
+  links and the copyright, as main does, now in the JSON report. The panel is read
+  from the `home-glass` element to the end of its tabs whatever tags a site uses: the
+  template's homepage writes a `div` and a `footer` where regents.sh writes a
+  `section` and a `p`, so drift (main's included) could not find the panel on
+  template.regents.sh. A page with no panel is reported `missing`, with why.
+- Spread's instructions follow Sean's rule of 11 Nov 04:57Z: an ordinary tooling
+  change goes as a normal pull request, the site's chief merges it once the checks are
+  clean, and Sean hears of it after. Only a pull request that touches a protected
+  area or holds a product decision goes up as a draft titled "Waits for Sean: ".
+  Spread carries tooling only, so the path through a rollout file is gone from it.
+- The seven-day close never closes a draft waiting for Sean's letter. New
+  `scripts/stale-prs.sh <repo> <branch prefix>` lists the pull requests to close and
+  the drafts waiting for Sean; both jobs close from its list and name the waiting
+  drafts, with their days open, in the daily summary.
+- A new product's Makefile keeps `TEMPLATE := repos/regents-ai/ash-template`:
+  `scripts/init.sh` and drift's comparison leave `ash-template` in the Makefile as it
+  is, since there it names the template's repository. Before, a new product's
+  required-fixes check read its own repository, and drift reported the two lines as
+  different at every site.
+- `automation/harvest.md` says what is not built (the regents-cli version each site
+  serves; whether siwa-server lists the site) and what no cloud run has proven yet.
+- `make check-scripts` writes no Python cache, and `__pycache__/` is ignored.
+- Dry runs on the Mac: drift and pins exit 0 for all five sites; `stale-prs.sh` finds
+  nothing to close and no waiting drafts on the six repositories; `harvest.sh`, on
+  fresh clones in `/tmp` and control's ledger, exits 0 (keyfleet 76 commits, regents
+  29, autolaunch 147, patchbay 49, techtree 44).
+
+## 2026-11-12 — The signed-out theme switch turns once a press
+
+- v203 was rolled back to v202's build within minutes (Fly's v204): on the live site
+  the bottom bar's theme switch did not turn. A press saved the theme already showing.
+- Cause: the switch outside a live view was started twice, once by LiveView, which
+  mounts hooks on a plain page's body itself, and once by `mountStaticThemeSwitches`,
+  so each press turned it and turned it back. `mountStaticThemeSwitches` is removed.
+- The browser walk pressed only the account menu's switch. It now also presses the
+  bottom bar's, signed out, on a plain page (`/agents`) and on a shell page (`/polls`).
+
+## 2026-11-12 — Released v205: the light and dark theme switch, fixed
+
+- `abe3fc40` is v205 on template.regents.sh, switched at about 08:20Z with
+  `scripts/deploy.sh`. It carries the design chief's theme switch (`cedc0ba4`, merged as
+  `ef03aeaa`), the fix that mounts the signed-out switch once, and the Harvest and Spread
+  tooling (`d784471f`, nothing under `platform/`). No migrations. Rollback: v202's build
+  (`9331cd03`).
+- History: `ef03aeaa` went live as v203 at about 08:07Z and was rolled back at about
+  08:12Z (Fly's v204, v202's build) because the signed-out switch did not turn.
+- Full check on `abe3fc40`, exit 0: 13 script tests, 108 TypeScript, 501 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `abe3fc40`; the bottom bar's switch on `/agents` turns with each press and each Space,
+  from a light-set and a dark-set device, and the choice holds over a reload at 1280 and
+  390; `/`, `/agents`, `/app`, `/polls`, `/notes` and `/account` answer 200 at both
+  widths with no page or console errors and no sideways scroll. The account menu's
+  switch (signed in) and dragging the knob were not driven live.
+
+## 2026-11-12 — The design-system's style check: 29 breaks down to 8
+
+- `sh assets/vendor/regent_ui/style-check.sh` (design-system `dfd18f87`) found 29 breaks;
+  21 are fixed here, and the page looks the same: the shell's current-place bar and
+  current-tab line are borders, not inset shadows, with the room given back so no word
+  or icon moves; the pairing window's close button is square; the home page's outlined
+  buttons take their hover wash as a fill, not a shadow; the home glass carries STYLE.md's
+  one approved glass mark; the crown, the button lab and the twin cubes stack by page
+  order (the twin's names now come after both cubes); the world cube, the code cube's
+  faces, the Keyfleet field, the feedback lab's button and the home tabs' foil keep their
+  numbers nested inside their own isolated root; the account squares' drawing is marked
+  as hidden artwork, as Techtree's is.
+- 8 remain, each for the design-system's check, so it is not yet in `make check`: the
+  world cube's three glass panes and cards (`backdrop-filter`) and its panes' shadow (the
+  founder's chosen look, with no allowance in the check); the button lab's 2px word blur
+  (a motion, not glass); and three lines of `assets/test/parts_motion.test.ts`, whose
+  `left:` key is a test's expected value, not an animated property.
+- Checked by screenshots before and after at 1280 and 390 (pixel-identical apart from the
+  rail's 2px border corner and live artwork timing) and by forcing the twin cube's drawn
+  state: its room card, code cube and names stand on top.
+
+## 2026-11-12 — Released v206: style check from 29 breaks to 8
+
+- `fc4f8a6d` (`tpl/style-check-1112`) is v206 on template.regents.sh, switched at about
+  08:50Z with `scripts/deploy.sh`. No migrations. Rollback: v205 (`abe3fc40`).
+- Full check on `fc4f8a6d`, exit 0 (the worker's second run; the first failed one phone
+  window-drag walk, which passed 9 of 9 alone): 108 TypeScript, 501 browser walks with 5
+  skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `fc4f8a6d`; `/`, `/polls`, `/animations` and `/account` answer 200 at 1280 and 390 with
+  no page or console errors and no sideways scroll; by screenshot the home's glass panel
+  and the rail's signal bar look as before; the theme switch still turns with each press.
+- The check is not part of `make check` yet: the last 8 lines need the design-system's
+  check changed (glass and shadow inside an isolated artwork root; the blur rule; test
+  files in the motion rule).
+
+## 2026-11-12 — Style check: four breaks left, all the world cube's panes
+
+- The button lab's words change by a fade and a 3px rise; the 2px blur is gone, since
+  STYLE.md allows no blur (`platform/assets/css/pages/site_buttons_lab.css`).
+- Design-system pin `c4244b38`: the style check's motion rule no longer reads test files.
+- The style check now prints four breaks, all in
+  `platform/assets/css/components/world_cube.css` (three glass panes and their shadow).
+  Whether the cube is redrawn flat or named as a second approved one-off is Sean's
+  decision, so the check is not part of `make check` yet.
+
+## 2026-11-12 — Released v207: the lab's word swap without blur, design-system c4244b38
+
+- `c3b2ddf7` is v207 on template.regents.sh, switched at about 09:00Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v206 (`fc4f8a6d`).
+- Full check on `c3b2ddf7`, exit 0: 13 script tests, 108 TypeScript, 501 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `c3b2ddf7`; `/`, `/animations`, `/animations/buttons`, `/agents` and `/polls` answer 200
+  at 1280 and 390 with no page or console errors and no sideways scroll. The lab's word
+  swap itself was not watched live.
+
+## 2026-11-12 — Released v208: the Value and Ask lab pages
+
+- `e5afe7c2` (the design chief's `wt/tpl-bonus-1112`) is v208 on template.regents.sh,
+  switched at about 09:15Z with `scripts/deploy.sh`. No migrations. Rollback: v207
+  (`c3b2ddf7`).
+- Full check on `e5afe7c2`, exit 0: 13 script tests, 108 TypeScript, 521 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `e5afe7c2`; `/animations/value`, `/animations/ask`, `/animations/ask?q=Points this week`,
+  `/animations` and `/` answer 200 at 1280, 390 and 320 with no page or console errors,
+  no sideways scroll and no crash (the earlier value page crashed at 390 and 320). The
+  pointer was not swept over the cards live.
+
+## 2026-11-12 — The other live forms say when they are not connected
+
+- A new note and editing a note, a new poll, a poll's Vote and End, a room's topic, a
+  new room and the Agent Message form now show the same "Not connected. Trying again…"
+  note as Send, from half a second after the live connection drops (or when the page
+  could not connect) until it is back, and their buttons are disabled meanwhile; the
+  boxes can still be typed in. Each uses `AshTemplateWeb.LiveConnection.offline` beside a
+  fieldset around the form's own buttons (`note-form-offline`, `poll-start-offline`,
+  `poll-offline` for Vote and End together, `room-topic-offline`, `room-start-offline`,
+  `<dialog>-person-offline`), with no new words or script.
+- Left as they are: the header search (it only reads, and its one button, Close, works
+  without a connection); a note's own row buttons, a message's menu, Unmute, Mark all as
+  read, an agent's See Actions, Unpair and rename, and Connect on verified connections
+  (single buttons in a list, not a form); the public name on `/account` (saved from the
+  browser, not over the live connection); the admin inbox (nothing to send); and the
+  showcase and lab pages. None of these forms has a wallet or payment button.
+- `blocked_websocket.spec.ts` checks each at 390 and 1280: with websockets refused, a new
+  note, poll, room and Agent Message show the note with their button disabled; after a
+  drop, a note's Save changes and Cancel, a poll's Vote and End and a room's Save topic
+  are disabled, and once back the edit, the vote and the topic go through. The walk's
+  setup starts one poll per width for the person, so the check leaves the person's daily
+  polls to `polls.spec.ts`.
+- A window opened before its page has joined its live connection stays open once the page
+  joins. The Agent Message window on `/app`, pressed while the page was still loading,
+  used to close again at the join: `JS.ignore_attributes(["open"])` in `phx-mounted`
+  only covers patches after the join, so the join's first patch took `open` away (the
+  trace of the failing walk shows the window open at 9427 ms with the page still
+  loading, and closed once it had joined). The page's LiveSocket now keeps `open` on an
+  open dialog through every patch (`dom.onBeforeElUpdated` in `assets/js/app.ts`), and
+  `"open"` leaves the search, pairing, agent tools and Agent Message windows'
+  `ignore_attributes`. Main's code fails the same way when the join is held until after
+  the press; `agent_message.spec.ts` now checks that at both widths.
+
+## 2026-11-12 — Released v209: the other forms say Not connected, and a window opened early stays open
+
+- `98ead9be` (`tpl/offline-forms-1112`) is v209 on template.regents.sh, switched at about
+  09:53Z with `scripts/deploy.sh`. No migrations. Rollback: v208 (`e5afe7c2`).
+- Full check on `98ead9be`, exit 0: 108 TypeScript, 537 browser walks with 5 skipped,
+  207 Elixir (9 properties). An earlier candidate (`833a6547`) failed the Agent Message
+  walk on `/app` twice and was not released; the cause was a window closing at the page's
+  join, fixed at the root here.
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `98ead9be`; `/`, `/agents`, `/polls`, `/notes`, `/app`, `/account` and `/animations`
+  answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
+  Pressed on live with the page's join held back: Agent Message on `/app` opens before
+  the join and is still open, with its three texts, after it, at both widths.
+- Not shown live: the "Not connected" note itself. Every form that carries it is for a
+  signed-in person, and live reads never use a person's sign-in; the walks cover it.
+
+## 2026-11-12 — The Ask lab page no longer crashes on a question that is not text
+
+- Sentinel's after-read of v208 found `/animations/ask?q[]=a` (and `q[a]=b`) answering
+  500: `AskLabLive.handle_params/3` passed a list or a map to `String.trim/1`. A `q` that
+  is not a binary is now no question, and the page shows the empty bar.
+  `ask_bar.spec.ts` checks both shapes at both widths.
+
+## 2026-11-12 — Released v210: the Ask lab page fix
+
+- `683ddeeb` is v210 on template.regents.sh, switched at about 10:10Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v209 (`98ead9be`).
+- Full check on `683ddeeb`, exit 0: 108 TypeScript, 539 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read, signed out: `/capabilities.json` names `683ddeeb`; `/animations/ask` with
+  `q[]=a`, `q[a]=b`, a text question and no question each answer 200 (the first two
+  answered 500 on v208 and v209).
+
 ## 2026-11-10 — Wallet buttons: reconnect, lost answers, signed-out press (branch, not on main)
 
 Decision 1 of the audit (Sean, "a for all 8", 10 November). Wallets are protected, so

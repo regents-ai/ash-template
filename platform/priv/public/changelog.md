@@ -2,8 +2,54 @@
 
 Changes to Ash Template, newest first.
 
+## 12 November 2026
+
+- **Connection.** Notes, polls, a room's topic, new rooms and the Agent Message form now
+  also say "Not connected. Trying again…" while a page has lost its connection, and
+  wait until it is back.
+- **Windows.** A window you open while a page is still loading, such as Agent Message,
+  stays open once the page has finished.
+- **Motion lab.** A new page, Value: cards with one figure each whose surface lights
+  where you point or touch, with a card loading, empty and failed.
+- **Motion lab.** A new page, Ask: type about points, offers, notes or agents and the
+  answer appears as a figure, a list, a chart or a step to confirm. The link keeps your
+  question, so you can share it.
+- **Theme.** The light and dark switch is now in your account menu: slide it, press it
+  or use Space or Enter. A small moon and sun made of tiny blocks show which theme is
+  on. Signed out, it sits in the bar at the bottom of the page.
+- **Points.** Points totals, the board and like counts now use the same even-width
+  digits as every other figure, so the columns line up.
+- **Looks.** On a phone the frosted glass's six looks stay on one row; on the
+  narrowest screens the row slides sideways.
+- **Ask first.** Deleting a note or a message, unpairing an agent, muting, blocking and
+  ending a poll now ask in the site's own window, with Cancel ready first.
+- **Fewer labels.** Error pages and the account card drop their small labels.
+- **Figures.** Vote counts, a poll's minutes left, room message counts, balances and
+  other figures that change while you watch now roll just the digits that changed, and
+  the words around them stay still.
+- **Gestures.** On a phone or with a pointer, pull a window down by its title to close
+  it, swipe the menu back to its edge, or swipe a note away. A quick flick is enough; a
+  short pull springs back. Escape and the close buttons still work as before.
+- **Motion lab.** A new page, Menu: a menu at each side of the page that grows from its
+  own button.
+- **Motion lab.** A new page, Frosted Glass: a large tree seen through frosted glass with
+  a lamp in front. Scroll down to step back from its branches to the whole tree, and on
+  into a forest. Six looks: Lifelike, Reeded, Blocks, Mist, Night and Ember. On Mist,
+  wipe the glass with the pointer or a finger; it fogs over again.
+
+## 11 November 2026
+
+- **Home.** The homepage is now the Datascape, a field of moving panels you fly over by
+  pointing towards an edge; panels open as they come into view. Press any panel to bring up the menu in the middle, with
+  Enter App, WebMCP Tools and the products. A couple of seconds later, flying again
+  shrinks it away until your next press. About, the developer docs, the agent guide,
+  Privacy policy and Terms of use are in the footer of the other pages, and the copyright
+  sits at the bottom right.
+
 ## 10 November 2026
 
+- **Motion lab.** A new page, Datascape: an endless dark plane of glowing panels, tubes
+  and specks. Move the pointer towards an edge to fly that way, or hold a finger there.
 - **Notes.** A note can't be deleted while a pin for it is being paid for, so a pin is
   never paid for a note that is gone. Try again once it shows as pinned, or in a few
   minutes.
