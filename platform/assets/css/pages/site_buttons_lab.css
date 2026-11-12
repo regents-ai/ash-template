@@ -137,12 +137,18 @@
 /* ---- With motion: the light, a steady outline while waiting, and words that swap in place. ---- */
 /* Keyboard focus answers at once: the ring and the outline are simply there. */
 #site-buttons .sb-motion .sb-button:focus-visible::before { transition: none; }
-/* Done draws the outline in the words' own colour. */
+/* Done draws the outline in the words' own colour, and in dark in the theme's mark
+   colour, chosen as the shared button chooses its dark marks. */
 #site-buttons .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
   --rg-button-edge-ink: var(--rg-p-on-accent); --rg-button-cut-ink: var(--rg-p-on-accent);
 }
-#site-buttons .sb-site:is([data-site="regents"], [data-site="keyfleet"]) .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
-  --rg-button-edge-ink: var(--rg-p-text); --rg-button-cut-ink: var(--rg-p-text);
+:root:is([data-theme="dark"], :not([data-theme])) #site-buttons .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
+  --rg-button-edge-ink: var(--color-button-mark); --rg-button-cut-ink: var(--color-button-mark);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) #site-buttons .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
+    --rg-button-edge-ink: var(--rg-p-on-accent); --rg-button-cut-ink: var(--rg-p-on-accent);
+  }
 }
 /* Words change by a short fade and a small rise, in place. Keyboard presses swap them at once. */
 @media (prefers-reduced-motion: no-preference) {
