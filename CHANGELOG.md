@@ -7950,3 +7950,21 @@ sits on its own branches.
   CSS, scripts and templates it reports 26 breaks (14 stacking, 6 glass, 4 flat,
   1 shape, 1 icon). They are left for their own change and the check is not part of
   `make check` yet.
+
+## 2026-11-12 — The confirm window asks before an action that can't be undone
+
+- The root layout renders `<Regent.Structure.confirm />` once and `app.ts` imports the
+  design system's `confirm.mjs` before the LiveSocket connects, so every `data-confirm`
+  press asks in the shared cut-corner window instead of the browser's own grey box.
+- Every `data-confirm` now carries a `data-confirm-action`, the words on the button that
+  goes ahead: Unpair (the agent list and an agent's window), Delete (a note, a room
+  message), Mute, Block and End (a poll). Seven in all.
+- Hard cutover: `import "phoenix_html"` and its type stub are gone; they served only
+  `data-confirm` (nothing in `lib/` uses `data-method` or `data-to`).
+- `test/browser/polls.spec.ts` presses End in the window instead of accepting the
+  browser's box.
+- Checked headless in Chromium at 390 and 1280 wide, light and dark, on Notes: the
+  window opens from a press and from Enter or Space (`data-opened-by` pointer or key),
+  Cancel and Escape close it with focus back on Delete, Delete removes that note once
+  and leaves the others, and it still works after a live navigation away and back and
+  after the LiveSocket reconnects. The browser's own box never showed.

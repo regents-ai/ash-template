@@ -687,6 +687,7 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("delete", value: %{id: @message.id}, target: @myself)}
           data-confirm="Delete this message?"
+          data-confirm-action="Delete"
         >
           Delete
         </button>
@@ -708,6 +709,7 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("mute", value: %{id: @message.id}, target: @myself)}
           data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
+          data-confirm-action="Mute"
         >
           Mute <bdi>{@message.author_name}</bdi>
         </button>

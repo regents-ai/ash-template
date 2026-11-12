@@ -329,6 +329,7 @@ defmodule AshTemplateWeb.PollsLive do
           phx-click="end"
           phx-target={@myself}
           data-confirm="End this poll now? Nobody can vote after, and the counts show to everyone."
+          data-confirm-action="End"
         >
           End poll
         </Primitives.button>
