@@ -95,11 +95,14 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## rooms list
 
-- **Does:** the chat rooms: each one's `slug`, `name` and `topic`, the site's own first, then
-  the rest in the order they were started. Public.
+- **Does:** the chat rooms, 50 a page, the most recently active first: each one's `slug`,
+  `name` and `topic`. A post moves its room to the top. Public.
+- **Arguments:** `--after CURSOR`, the previous page's `next_cursor` (the command line prints
+  which `--after` to add).
 - **Example:** `regents ash-template rooms list`
-- **Answer:** `{"rooms": [{"slug": "general", "name": "General", "topic": "…"}, …]}`.
-- **Refusals:** none of its own.
+- **Answer:** `{"rooms": [{"slug": "general", "name": "General", "topic": "…"}, …],
+  "pagination": {"has_more", "next_cursor"}}`.
+- **Refusals:** 422 `invalid_cursor`; 503 `rooms_unavailable`.
 
 ## rooms create
 
@@ -778,6 +781,11 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-12: The OpenAPI documents move to 14.0.0. `rooms list` reads 50 rooms a page, the
+  most recently active first, with `--after`, and its answer gains `pagination`; it refuses an
+  invalid cursor with 422 `invalid_cursor`. regents-cli 1.10.25's `rooms list` reads only the
+  first page until the next release carries `--after`. An invalid cursor's hint, here and for
+  `rooms messages`, now ends "or leave it out for the first page".
 - 2026-11-12: The OpenAPI documents move to 13.0.0. `notes list` reads 50 notes a page with
   `--after`, and its answer gains `pagination`; it calls `POST /api/v1/notes/list`, since a
   signed request takes no query string, and refuses an invalid cursor with 422

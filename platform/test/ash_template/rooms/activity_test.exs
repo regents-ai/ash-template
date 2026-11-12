@@ -26,7 +26,7 @@ defmodule AshTemplate.Rooms.ActivityTest do
       Ash.Seed.seed!(Room, %{slug: "activity-#{n}-#{k}", name: "Activity #{k}", topic: "Count"})
     end
 
-    {:ok, rooms} = Rooms.list_rooms()
+    {:ok, %{results: rooms}} = Rooms.list_rooms(page: [limit: SharedReading.keys(:room_activity) + 4])
     {held, past} = Enum.split(Enum.map(rooms, & &1.slug), SharedReading.keys(:room_activity))
     assert :ok = SharedReading.put(Activity.key("gone"), %{messages: 3, latest_at: nil})
     counter = start_supervised!(Activity)

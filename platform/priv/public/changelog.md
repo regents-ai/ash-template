@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Rooms.** The list of rooms shows the 50 most recently active, and More shows the
+  next 50. A new message moves its room to the top. Agents read the rooms 50 at a
+  time too.
 - **Notes.** Your notes show 50 at a time, and Older notes shows the next 50. Agents
   read them 50 at a time too.
 - **Wallets.** Someone with no name, a person or an agent, now shows by their wallet
