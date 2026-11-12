@@ -30,18 +30,20 @@ defmodule AshTemplateWeb.Components.ParticleField do
               |> Path.wildcard()
   for file <- @mark_files, do: @external_resource(file)
 
+  # Each mark is drawn in square blocks: its view box and each block's attributes,
+  # so the page draws it as ordinary elements.
   @marks Map.new(@mark_files, fn file ->
-           [_svg, view_box, shapes] =
-             Regex.run(~r{<svg[^>]*viewBox="([^"]+)"[^>]*>(.*)</svg>}s, File.read!(file))
+           source = File.read!(file)
+           [_svg, view_box] = Regex.run(~r{<svg[^>]*viewBox="([^"]+)"}, source)
+
+           blocks =
+             for [_rect, attributes] <- Regex.scan(~r{<rect\s([^>]*?)\s*/>}, source) do
+               for [_attribute, name, value] <- Regex.scan(~r{([\w-]+)="([^"]*)"}, attributes),
+                   do: {name, value}
+             end
 
            name = Path.basename(file, ".svg")
-
-           {name,
-            %{
-              label: String.capitalize(name),
-              view_box: view_box,
-              shapes: String.replace(shapes, ~r/\s*\n\s*/, "")
-            }}
+           {name, %{label: String.capitalize(name), view_box: view_box, blocks: blocks}}
          end)
 
   attr :id, :string, required: true
@@ -95,8 +97,14 @@ defmodule AshTemplateWeb.Components.ParticleField do
 
     ~H"""
     <div class="particle-field__picture" role="img" aria-label={@mark.label}>
-      <svg viewBox={@mark.view_box} data-particle-source={@shape} aria-hidden="true" focusable="false">
-        {Phoenix.HTML.raw(@mark.shapes)}
+      <svg
+        viewBox={@mark.view_box}
+        fill="currentColor"
+        data-particle-source={@shape}
+        aria-hidden="true"
+        focusable="false"
+      >
+        <rect :for={block <- @mark.blocks} {block} />
       </svg>
     </div>
     """
