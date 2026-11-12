@@ -92,7 +92,7 @@ entry() {
 
 # Compares the template's files in the named list with the current site's copies.
 compare() {
-  local list="$1" path site_path why theirs ours text status added removed kept
+  local list="$1" path site_path why theirs ours text status added removed kept kebab_rule
   shift
   for path in "$@"; do
     site_path="$(moved "$site" "$path")" || site_path="${path//ash_template/$app}"
@@ -121,7 +121,11 @@ compare() {
       entry "$list" "$path" "$site_path" missing
       continue
     }
-    ours="$(perl -pe "s/ash_template/$app/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g" "$path" | compared "$path")"
+    # As in scripts/init.sh, the Makefile's ash-template names the template's
+    # repository and stays.
+    kebab_rule="s/ash-template/$kebab/g"
+    [[ "$path" != Makefile ]] || kebab_rule=""
+    ours="$(perl -pe "s/ash_template/$app/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; $kebab_rule" "$path" | compared "$path")"
     theirs="$(compared "$path" <<<"$theirs")"
     status=0
     text="$(diff -u --label "template/$path" --label "$site/$site_path" <(printf '%s\n' "$ours") <(printf '%s\n' "$theirs"))" || status=$?

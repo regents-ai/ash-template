@@ -1,4 +1,5 @@
-"""Run the template's reports (harvest, drift and pins) on fixture repositories.
+"""Run the template's reports (harvest, drift and pins) and its rename (init) on
+fixture repositories.
 
 Each test builds git repositories in a fresh temporary folder: a template checkout
 holding copies of the scripts, site clones with their own origins, and library
@@ -78,6 +79,9 @@ url="${*: -1}"
 host="${url#https://}"
 cat "$FAKE_CURL/${host%/}.html"
 """
+
+
+MAKEFILE_TEMPLATE = "TEMPLATE := repos/regents-ai/ash-template"
 
 
 def mix_exs(app, module, deps="[]"):
@@ -312,13 +316,17 @@ class Drift(Fixture):
         files["platform/mix.exs"] = mix_exs("ash_template", "AshTemplate")
         # A picture is never renamed: the site holds the same bytes.
         files[self.PICTURE] = "picture\n"
-        # The template's own targets, which scripts/init.sh drops from a site's Makefile.
-        files["Makefile"] += "# template-only\ncheck-scripts:\n\ttrue\n# /template-only\n"
+        # The template's repository, which every site's Makefile names as it is, and the
+        # template's own targets, which scripts/init.sh drops from a site's Makefile.
+        files["Makefile"] += (MAKEFILE_TEMPLATE + "\n"
+                              "# template-only\ncheck-scripts:\n\ttrue\n# /template-only\n")
         self.root = self.template(files)
 
     def site_copy(self, app, module, path):
         """The site's copy of a template file, renamed the way scripts/init.sh renames it."""
         site_path = path.replace("ash_template", app)
+        if path == "Makefile":
+            return site_path, f"Makefile\n{module} {app} ash-template\n{MAKEFILE_TEMPLATE}\n"
         return site_path, f"{site_path}\n{module} {app} {app.replace('_', '-')}\n"
 
     def serve_site(self, site, module, commit, change=None, absent=(), elsewhere=None):
@@ -439,6 +447,46 @@ class Drift(Fixture):
         self.assertNotEqual(done.returncode, 0)
         self.assertIn("HTTP 502", done.stderr)
         self.assertEqual(done.stdout, "")
+
+
+class Init(Fixture):
+    def test_the_makefile_keeps_reading_the_template_repository(self):
+        root = self.repo(self.base / "ash-template")
+        (root / "scripts").mkdir()
+        shutil.copy2(SCRIPTS / "init.sh", root / "scripts" / "init.sh")
+        reports = ["scripts/drift.sh", "scripts/pins.sh", "scripts/github.sh", "scripts/shared-files.sh",
+                   "scripts/harvest.sh", "scripts/tests/test_reports.py", "automation/harvest.md",
+                   "automation/spread.md"]
+        self.commit(root, "template", {
+            **{path: "report\n" for path in reports},
+            "Makefile": (
+                "# Every site checks ash-template's current main branch.\n"
+                f"{MAKEFILE_TEMPLATE}\n"
+                "check-required-fixes:\n"
+                "\telixir check.exs \"ash-template $$rev\"\n"
+                "handoff:\n"
+                "\tcd platform && mix ash_template.route_handoff\n"
+                "# template-only\ncheck-scripts:\n\ttrue\n# /template-only\n"
+            ),
+            "platform/lib/mix/tasks/ash_template.route_handoff.ex": "defmodule Mix.Tasks.AshTemplate.RouteHandoff do\nend\n",
+            "platform/fly.staging.toml": "app = \"ash-template-staging\"\n",
+            "CHANGELOG.md": "# Changelog\n",
+        })
+
+        done = self.run_script(root, "init.sh", "night_owl", "NightOwl", "Night Owl")
+
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual((root / "Makefile").read_text(), (
+            "# Every site checks ash-template's current main branch.\n"
+            f"{MAKEFILE_TEMPLATE}\n"
+            "check-required-fixes:\n"
+            "\telixir check.exs \"ash-template $$rev\"\n"
+            "handoff:\n"
+            "\tcd platform && mix night_owl.route_handoff\n"
+        ))
+        self.assertEqual((root / "platform/fly.staging.toml").read_text(), "app = \"night-owl-staging\"\n")
+        self.assertTrue((root / "platform/lib/mix/tasks/night_owl.route_handoff.ex").is_file())
+        self.assertFalse(any((root / path).exists() for path in reports))
 
 
 class Pins(Fixture):

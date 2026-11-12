@@ -97,13 +97,16 @@ reports=(
 
 # Contents: every tracked text file except this script, the reports (all removed
 # below) and the changelog's history, task names first, then the longest spelling
-# first.
+# first. In the Makefile, ash-template names the template's repository, whose
+# required fixes every product checks against, so it stays.
 git ls-files -z | while IFS= read -r -d '' path; do
   [[ -f "$path" && "$path" != scripts/init.sh && "$path" != CHANGELOG.md ]] || continue
   [[ " ${reports[*]} " != *" $path "* ]] || continue
   grep -Iq . "$path" || continue
+  kebab_rule="s/ash-template/$kebab/g;"
+  [[ "$path" != Makefile ]] || kebab_rule=""
   if grep -q 'ash_template\|AshTemplate\|ashTemplate\|ASH_TEMPLATE\|ash-template\|Ash Template\|ASH TEMPLATE' "$path"; then
-    perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g; s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g" "$path"
+    perl -pi -e "s/ash_template\.($tasks)\b/$task_prefix.\$1/g; s/ash_template/$snake/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; $kebab_rule s/Ash Template/$display/g; s/ASH TEMPLATE/$display_upper/g" "$path"
   fi
 done
 
