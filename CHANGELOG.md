@@ -8858,3 +8858,18 @@ template as one piece every site takes, and a Motion lab page that shows it.
   spacing and columns.
 - Not run: the full `make check` (the release lead's was running), the Elixir test suite,
   and WebKit.
+
+## 2026-11-12 — Released v216: the value cards page
+
+- `01568275` (`tpl/value-cards-1112` merged onto main) is v216 on template.regents.sh,
+  switched at about 16:50Z with `scripts/deploy.sh`. It adds the value cards as one
+  shared piece and the page `/animations/cards` (Sean, 12 Nov: sites take their cards
+  from the template). No migration.
+- Rollback: v215 (`a95458c3`), image only.
+- Full check on `01568275`, exit 0: 126 TypeScript, 579 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit and a real phone not run):
+  `/animations/cards` answers 200 at 1280, 390 and 320 in light and dark with six cards,
+  six stills, no errors and no sideways scroll; all six panels draw at 1280 and the two
+  in view draw on the phone widths; `/`, `/animations`, `/design`, `/rooms/general` and
+  `/notes` clean at the three widths.
