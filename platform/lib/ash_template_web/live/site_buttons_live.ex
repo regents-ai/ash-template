@@ -14,6 +14,9 @@ defmodule AshTemplateWeb.SiteButtonsLive do
   @sites [
     %{
       id: "regents",
+      brand: "platform",
+      variant: "primary",
+      arrow: true,
       number: "01",
       domain: "regents.sh",
       label: "Stake REGENT",
@@ -28,6 +31,9 @@ defmodule AshTemplateWeb.SiteButtonsLive do
     },
     %{
       id: "autolaunch",
+      brand: "autolaunch",
+      variant: "primary",
+      arrow: true,
       number: "02",
       domain: "autolaunch.sh",
       label: "Create the launch",
@@ -39,6 +45,9 @@ defmodule AshTemplateWeb.SiteButtonsLive do
     },
     %{
       id: "techtree",
+      brand: "techtree",
+      variant: "secondary",
+      arrow: false,
       number: "03",
       domain: "techtree.sh",
       label: "Copy",
@@ -50,6 +59,9 @@ defmodule AshTemplateWeb.SiteButtonsLive do
     },
     %{
       id: "patchbay",
+      brand: "patchbay",
+      variant: "primary",
+      arrow: true,
       number: "04",
       domain: "patchbay.sh",
       label: "Publish post",
@@ -61,6 +73,9 @@ defmodule AshTemplateWeb.SiteButtonsLive do
     },
     %{
       id: "keyfleet",
+      brand: "platform",
+      variant: "primary",
+      arrow: true,
       number: "05",
       domain: "keyfleet.ai",
       label: "Sign in",
@@ -177,13 +192,15 @@ defmodule AshTemplateWeb.SiteButtonsLive do
       class="sb"
       aria-label="Site buttons"
       phx-hook="LabSiteButtons"
-      phx-mounted={JS.ignore_attributes("data-input")}
+      phx-mounted={JS.ignore_attributes(["data-input", "data-brands-ready"])}
     >
       <article
         :for={site <- @sites}
         id={"sb-#{site.id}"}
         class="sb-site"
         data-site={site.id}
+        data-brand={site.brand}
+        phx-mounted={JS.ignore_attributes("style")}
         aria-labelledby={"sb-#{site.id}-title"}
       >
         <header class="sb-site-head">
@@ -308,15 +325,16 @@ defmodule AshTemplateWeb.SiteButtonsLive do
   slot :inner_block, required: true
 
   # The few things around the button on its own page, so it sits on its own ground.
+  # Techtree's Copy sits in the design system's secondary panel, as on its home.
   defp context(%{site: %{id: "techtree"}} = assigns) do
     ~H"""
-    <div class="sb-context sb-context--panel">
+    <Regent.Structure.panel class="sb-context sb-context--panel rg-support-panel">
       <div class="sb-panel-head">
         <span class="sb-panel-label">Paste into your agent's chat</span>
         {render_slot(@inner_block)}
       </div>
       <p>{@site.context}</p>
-    </div>
+    </Regent.Structure.panel>
     """
   end
 
@@ -368,6 +386,8 @@ defmodule AshTemplateWeb.SiteButtonsLive do
 
     ~H"""
     <P.button
+      variant={@site.variant}
+      arrow={@site.arrow}
       class="sb-button"
       data-state={@state}
       phx-mounted={JS.ignore_attributes("style")}

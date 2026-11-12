@@ -2,18 +2,89 @@
 import {createCanvasIsland, type CanvasIslandController} from "./canvas_island"
 import {still} from "./hooks/motion/shared"
 import type {LightAim, LightRenderer, Rgb} from "./site_buttons_light"
+import {selectors} from "../vendor/regent_ui/tokens.json"
 
 type ButtonsHook = {el: HTMLElement; release?: () => void}
 
-/** The site's motion kit plays every press and hover. This only notes whether the last input was
- *  a pointer or a key, which the stylesheet reads to swap a key press's words at once. */
+const tokens = selectors as Record<string, Record<string, string>>
+const BRANDS = ["platform", "autolaunch", "techtree", "patchbay"]
+const MODES = ["light", "dark"]
+// The shared defaults, without the sizes the page sets for the screen's width. Some name
+// another token (the main button is the accent unless a theme says otherwise), so each
+// column works them out again from its own theme.
+const SHARED: Record<string, string> = Object.fromEntries(
+  Object.entries(tokens[":root"]).filter(([key]) => !key.startsWith("--rg-")),
+)
+// Every property a brand or a brand's theme sets, besides the shared ones. One a site's
+// theme leaves unset is cleared on its column, so the page's own never shows through.
+const KEYS = new Set([...Object.keys(SHARED), ...BRANDS.flatMap(brand => [
+  `:root[data-brand="${brand}"]`, ...MODES.map(mode => `:root[data-brand="${brand}"][data-theme="${mode}"]`),
+].flatMap(selector => Object.keys(tokens[selector])))])
+
+/** Each column takes its site's whole theme from the design system's tokens, as the page
+ *  would with that site's brand on it, in the theme the page is showing. */
+const applyBrands = (root: HTMLElement) => {
+  const page = document.documentElement
+  const mode = page.dataset.theme ?? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+  root.querySelectorAll<HTMLElement>("[data-brand]").forEach(column => {
+    const brand = column.dataset.brand!
+    const theme: Record<string, string> = {
+      ...SHARED, ...tokens[`:root[data-brand="${brand}"]`], ...tokens[`:root[data-brand="${brand}"][data-theme="${mode}"]`],
+    }
+    for (const key of KEYS) column.style.setProperty(key, theme[key] ?? "initial")
+  })
+}
+
+/** The page's frozen specimens wear the shared button's own rules: every stylesheet rule a
+ *  button's keyboard focus answers to is repeated for `[data-show="focus"]`, so the frozen
+ *  "Keyboard focus" is the real ring and marks and cannot drift from them. */
+const mirrorFocus = (): CSSStyleSheet => {
+  const mirrored: string[] = []
+  const walk = (rules: CSSRuleList, wrap: (css: string) => string) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSStyleRule) {
+        const selector = rule.selectorText
+        if (selector.includes("button") && selector.includes(":focus-visible")) {
+          mirrored.push(wrap(`${selector.replaceAll(":focus-visible", '[data-show="focus"]')} { ${rule.style.cssText} }`))
+        }
+      } else if (rule instanceof CSSMediaRule) {
+        walk(rule.cssRules, css => wrap(`@media ${rule.conditionText} { ${css} }`))
+      } else if (rule instanceof CSSLayerBlockRule) {
+        walk(rule.cssRules, css => wrap(`@layer ${rule.name} { ${css} }`))
+      } else if (rule instanceof CSSSupportsRule) {
+        walk(rule.cssRules, css => wrap(`@supports ${rule.conditionText} { ${css} }`))
+      }
+    }
+  }
+  for (const sheet of Array.from(document.styleSheets)) walk(sheet.cssRules, css => css)
+  const sheet = new CSSStyleSheet()
+  sheet.replaceSync(mirrored.join("\n"))
+  return sheet
+}
+
+/** The site's motion kit plays every press and hover. This notes whether the last input was a
+ *  pointer or a key, which the stylesheet reads to swap a key press's words at once, dresses each
+ *  column in its own site's theme, and gives the focus specimens the real focus rules. */
 export const LabSiteButtons = {
   mounted(this: ButtonsHook) {
     const root = this.el
     const events = new AbortController()
     root.addEventListener("pointerdown", () => { root.dataset.input = "pointer" }, {signal: events.signal})
     root.addEventListener("keydown", () => { root.dataset.input = "key" }, {signal: events.signal})
-    this.release = () => events.abort()
+    const brands = () => applyBrands(root)
+    const theme = new MutationObserver(brands)
+    theme.observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]})
+    const scheme = matchMedia("(prefers-color-scheme: light)")
+    scheme.addEventListener("change", brands, {signal: events.signal})
+    brands()
+    const focus = mirrorFocus()
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, focus]
+    root.dataset.brandsReady = "true"
+    this.release = () => {
+      events.abort()
+      theme.disconnect()
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(sheet => sheet !== focus)
+    }
   },
   destroyed(this: ButtonsHook) { this.release?.() },
 }

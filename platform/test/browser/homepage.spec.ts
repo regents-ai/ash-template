@@ -192,6 +192,25 @@ test("the picture behind the panel never blocks the action", async ({page}) => {
   }
 })
 
+// The ring round Enter App never paints the button's own fill, at rest or on hover, so
+// no part of it melts into the button (the home is dark, where the button is Platinum).
+test("the ring round Enter App never takes the button's own colour", async ({page}) => {
+  await page.goto("/")
+  await waitForHomepage(page)
+  const cta = page.locator(".rl-hero-cta")
+  const colours = () =>
+    cta.evaluate(element => ({
+      fill: getComputedStyle(element, "::before").backgroundColor,
+      ring: getComputedStyle(element, "::after").backgroundImage,
+    }))
+  for (const state of ["rest", "hover"]) {
+    if (state === "hover") await cta.hover()
+    const {fill, ring} = await colours()
+    expect(ring, state).toContain("linear-gradient")
+    expect(ring, state).not.toContain(fill)
+  }
+})
+
 // Under the buttons, one line sends a person whose agent works from the command line
 // to the steps for connecting it.
 test("the panel points agents to the command line", async ({page}) => {

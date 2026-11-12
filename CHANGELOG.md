@@ -9194,3 +9194,30 @@ Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
   button; its frozen "Keyboard focus" example is a plain rectangle; on the home page the
   Platinum part of Enter App's ring meets the Platinum button at one corner in dark.
   Passed to the design chief.
+
+## 2026-11-12 — Three button flaws on the template's own pages (branch, not on main)
+
+On `wt/tpl-button-flaws-1112`, for the design chief; found by the template chief on v220.
+Design-system pin unchanged (`b57f8d91`); no migration.
+
+- Home page, Enter App's ring: its middle colour was Platinum, the same as the dark main
+  button, so it melted into the button at the right-hand corner. In dark the ring's
+  middle now takes the theme's button mark colour (`--color-button-mark`, Tangerine);
+  in light it stays Platinum against the Charcoal button. No new colour.
+- Buttons lab `/animations/buttons`, per-site columns: the hand-copied colours are gone.
+  Each column carries its site's brand (`data-brand`) and the page's script puts that
+  brand's whole theme from the design system's `tokens.json` on it, in the theme the page
+  shows, as the showcase does; anything a brand's theme leaves unset is cleared there.
+  Techtree's Copy is now its real button, the secondary one in the design system's
+  secondary panel (`rg-support-panel`), as on techtree.sh's home. The light behind each
+  button is the brand's accent. Measured from computed colours, light then dark: Regents
+  18.10 and 14.26:1, Autolaunch 2.82 and 5.83:1 (Tangerine is its brand fill; STYLE.md
+  lets it stand under 3:1 on its light page), Techtree's Copy edge 6.99 and 6.67:1,
+  Patchbay 7.07 and 7.75:1.
+- Buttons lab, "Keyboard focus" example: it was a drawn rectangle. The page now repeats
+  every stylesheet rule a button's keyboard focus answers to for the frozen example, so
+  it wears the shared button's own ring and marks and cannot drift from them.
+- New walk checks: `platform/test/browser/site_buttons.spec.ts` (four different brand
+  buttons and their contrast, and the frozen focus equal to a real keyboard focus, light
+  and dark) and one in `homepage.spec.ts` (Enter App's ring never takes the button's own
+  colour, at rest and on hover). Each fails on the old code.
