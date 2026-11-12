@@ -8166,3 +8166,35 @@ sits on its own branches.
   `scripts/init.sh` drops them, so a new product has no targets for the scripts it
   removed, and `scripts/drift.sh` compares the rest of the Makefile with each site's.
   init.sh also removes the tests and the two job files with the reports.
+
+## 2026-11-12 — The daily jobs, brought up to date and fixed
+
+- `tpl/automation-1111` is merged onto current main as `tpl/automation-1112`. Where it
+  met main's changes, `make drift` keeps main's homepage files and compares the still
+  picture by its blob id, and the live homepages compare the glass panel's tabs and
+  links and the copyright, as main does, now in the JSON report. The panel is read
+  from the `home-glass` element to the end of its tabs whatever tags a site uses: the
+  template's homepage writes a `div` and a `footer` where regents.sh writes a
+  `section` and a `p`, so drift (main's included) could not find the panel on
+  template.regents.sh. A page with no panel is reported `missing`, with why.
+- Spread's instructions follow Sean's rule of 11 Nov 04:57Z: an ordinary tooling
+  change goes as a normal pull request, the site's chief merges it once the checks are
+  clean, and Sean hears of it after. Only a pull request that touches a protected
+  area or holds a product decision goes up as a draft titled "Waits for Sean: ".
+  Spread carries tooling only, so the path through a rollout file is gone from it.
+- The seven-day close never closes a draft waiting for Sean's letter. New
+  `scripts/stale-prs.sh <repo> <branch prefix>` lists the pull requests to close and
+  the drafts waiting for Sean; both jobs close from its list and name the waiting
+  drafts, with their days open, in the daily summary.
+- A new product's Makefile keeps `TEMPLATE := repos/regents-ai/ash-template`:
+  `scripts/init.sh` and drift's comparison leave `ash-template` in the Makefile as it
+  is, since there it names the template's repository. Before, a new product's
+  required-fixes check read its own repository, and drift reported the two lines as
+  different at every site.
+- `automation/harvest.md` says what is not built (the regents-cli version each site
+  serves; whether siwa-server lists the site) and what no cloud run has proven yet.
+- `make check-scripts` writes no Python cache, and `__pycache__/` is ignored.
+- Dry runs on the Mac: drift and pins exit 0 for all five sites; `stale-prs.sh` finds
+  nothing to close and no waiting drafts on the six repositories; `harvest.sh`, on
+  fresh clones in `/tmp` and control's ledger, exits 0 (keyfleet 76 commits, regents
+  29, autolaunch 147, patchbay 49, techtree 44).
