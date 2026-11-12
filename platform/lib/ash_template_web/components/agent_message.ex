@@ -11,7 +11,8 @@ defmodule AshTemplateWeb.Components.AgentMessage do
   how.
 
   Below the texts, a signed-in person leaves a message themselves
-  (`AshTemplateWeb.AgentMessageLive`); a signed-out visitor sees only the texts.
+  (`AshTemplateWeb.Components.AgentMessage.Form`), on a plain page and on a live
+  page alike; a signed-out visitor sees only the texts.
   """
 
   use Phoenix.Component
@@ -121,19 +122,26 @@ defmodule AshTemplateWeb.Components.AgentMessage do
 
   attr :id, :string, required: true
   attr :topic, :string, required: true, doc: "The topic its messages are left under."
-  attr :conn, Plug.Conn, required: true, doc: "The page's request, for the person's form."
+
+  attr :conn, Plug.Conn,
+    default: nil,
+    doc: "On a plain page: the page's request, from which the form reads the sign-in."
+
+  attr :account, :map, default: nil, doc: "On a live page: the signed-in account, or nil."
+  attr :lease, :map, default: nil, doc: "On a live page: its `session_lease`."
+  attr :client_key, :string, default: nil, doc: "On a live page: its `client_key`."
 
   @doc """
   The dialog: the three texts, each with its copy button, and for a signed-in
-  person the form that leaves a message. Closed with its X, Escape or a press
-  beside it (`assets/js/agent_message.ts`).
+  person the form that leaves a message (`AgentMessage.Form`). Closed with its X,
+  Escape or a press beside it (`assets/js/agent_message.ts`).
+
+  A plain page passes its `conn`, and the form runs in a live view of its own
+  (`AshTemplateWeb.AgentMessageLive`); a live page passes its signed-in
+  `account`, `session_lease` as `lease` and `client_key`, and the form runs in it.
   """
   def dialog(assigns) do
-    assigns =
-      assign(assigns,
-        texts: texts(assigns.topic),
-        session: Map.put(Session.render_context(assigns.conn), "topic", assigns.topic)
-      )
+    assigns = assign(assigns, texts: texts(assigns.topic), form: "#{assigns.id}-person")
 
     ~H"""
     <Regent.Structure.dialog
@@ -168,10 +176,22 @@ defmodule AshTemplateWeb.Components.AgentMessage do
             <pre><code id={"#{@id}-text-#{text.id}"}>{text.text}</code></pre>
           </li>
         </ol>
-        {Phoenix.Component.live_render(@conn, AshTemplateWeb.AgentMessageLive,
-          id: "#{@id}-form",
-          session: @session
-        )}
+        <%= if @conn do %>
+          {Phoenix.Component.live_render(@conn, AshTemplateWeb.AgentMessageLive,
+            id: "#{@id}-live",
+            session:
+              @conn |> Session.render_context() |> Map.merge(%{"id" => @form, "topic" => @topic})
+          )}
+        <% else %>
+          <.live_component
+            module={AshTemplateWeb.Components.AgentMessage.Form}
+            id={@form}
+            topic={@topic}
+            account={@account}
+            lease={@lease}
+            client_key={@client_key}
+          />
+        <% end %>
       </div>
     </Regent.Structure.dialog>
     """

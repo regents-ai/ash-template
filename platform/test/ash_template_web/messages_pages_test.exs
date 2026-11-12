@@ -1,6 +1,6 @@
 defmodule AshTemplateWeb.MessagesPagesTest do
   # The pages around a message left for the site's team:
-  # - /agents carries the Agent Message dialog for its topic, with a paste-ready
+  # - /agents and the /app home carry the Agent Message dialog for their topic, with a paste-ready
   #   text for each way an agent connects, and the form only for a signed-in person
   #   (test/browser/agent_message.spec.ts leaves one through it);
   # - /admin/messages shows the team every message, newest first, and is the
@@ -23,27 +23,34 @@ defmodule AshTemplateWeb.MessagesPagesTest do
     :ok
   end
 
-  test "/agents offers the Agent Message texts to everyone, and the form only to a signed-in person" do
-    signed_out = page(build_conn(), "/agents")
+  # A plain page (/agents) and a live page (the /app home in the shell) place it
+  # the same way, each under its own topic.
+  for {path, topic, dialog} <- [{"/agents", "agents", "agents-message"}, {"/app", "app", "app-message"}] do
+    test "#{path} offers the Agent Message texts to everyone, and the form only to a signed-in person" do
+      signed_out = page(build_conn(), unquote(path))
 
-    texts =
-      signed_out |> LazyHTML.query("#agents-message .agent-message__text pre code") |> Enum.map(&LazyHTML.text/1)
+      texts =
+        signed_out
+        |> LazyHTML.query("##{unquote(dialog)} .agent-message__text pre code")
+        |> Enum.map(&LazyHTML.text/1)
 
-    assert texts == Enum.map(AgentMessage.texts("agents"), & &1.text)
-    assert [cli, mcp, webmcp] = texts
-    assert cli =~ "messages leave agents"
-    assert mcp =~ "messages_leave" and webmcp =~ "messages_leave"
+      assert texts == Enum.map(AgentMessage.texts(unquote(topic)), & &1.text)
+      assert [cli, mcp, webmcp] = texts
+      assert cli =~ "messages leave #{unquote(topic)}"
+      assert mcp =~ "messages_leave" and webmcp =~ "messages_leave"
 
-    copied =
-      signed_out
-      |> LazyHTML.query("#agents-message [data-copy-target]")
-      |> LazyHTML.attribute("data-copy-target")
+      copied =
+        signed_out
+        |> LazyHTML.query("##{unquote(dialog)} [data-copy-target]")
+        |> LazyHTML.attribute("data-copy-target")
 
-    assert length(copied) == 3
-    assert Enum.empty?(LazyHTML.query(signed_out, "#agent-message-form"))
+      assert length(copied) == 3
+      form = "##{unquote(dialog)}-person-form"
+      assert Enum.empty?(LazyHTML.query(signed_out, form))
 
-    {conn, _account} = signed_in()
-    assert Enum.count(LazyHTML.query(page(conn, "/agents"), "#agent-message-form")) == 1
+      {conn, _account} = signed_in()
+      assert Enum.count(LazyHTML.query(page(conn, unquote(path)), form)) == 1
+    end
   end
 
   test "/admin/messages shows the team every message, and is not found for anyone else" do
