@@ -7245,3 +7245,23 @@ sits on its own branches.
   and moves to the direct host, staged so it takes effect with the new image. A plain
   deploy, or a plain secret change, stops the site at boot (each version admits only its
   own host). Rollback is the previous image and the old secret, together.
+
+## 2026-11-12 — Released v189: the site serves on the database's direct address
+
+- Live: v189 at 00:23Z on template.regents.sh; /capabilities.json build.commit 43e7d7d3.
+  Rollback: v188 (10f7a3fe) with DATABASE_POOLED_URL's host set back to the pooler, staged
+  through the same never-shown pipe. No migrations.
+- Carries "The site serves on the database's direct address" and the elixir-utils pin
+  a12f71b6 (the sign-in library on the site's own pool, with the newest SIWA change).
+- Secret: Sean's go (12 Nov 00:07Z, "1. a") covered one read of DATABASE_POOLED_URL on the
+  live machine. Only its host moved, from pgbouncer. to direct.; the login, password and
+  database name are unchanged. The value was staged with `fly secrets import --stage` on
+  stdin and never printed, then landed with the image.
+- Full check on 43e7d7d3: exit 0 (181 server tests, 455 browser checks with 5 skipped, 40
+  script tests, required fixes, command list, SIWA latest). WebKit not run on the Mac.
+- Live read in headless Chromium at 1280 and 390: home, /app, /about, /docs, /agents,
+  /privacy, /terms and /healthz 200 (the health page reads the database); /%70rivacy and
+  /%61pp 404; no page errors. A token request for an unknown app answered invalid_grant,
+  so the sign-in service's locked read ran on the site's pool. App log from the release
+  start: one health check failed while the new version started, then passed; no error
+  lines.
