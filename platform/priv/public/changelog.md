@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Figures.** Vote counts, a poll's minutes left, room message counts, balances and
+  other figures that change while you watch now roll just the digits that changed, and
+  the words around them stay still.
 - **Motion lab.** A new page, Frosted Glass: a large tree seen through frosted glass with
   a lamp in front. Scroll down to step back from its branches to the whole tree, and on
   into a forest. Six looks: Lifelike, Reeded, Blocks, Mist, Night and Ember. On Mist,

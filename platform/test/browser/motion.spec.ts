@@ -1,3 +1,4 @@
+import {type Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {signedIn} from "./support/person"
 
@@ -71,4 +72,60 @@ test("a refusal shakes the page's own alert, never one inside content settling i
   const moved = () => page.evaluate(() => [...(window as unknown as {moved: Set<string>}).moved])
   await expect.poll(moved).toContain("own-alert")
   expect(await moved()).not.toContain("settling-alert")
+})
+
+// November bonus, step 2: a live figure rolls only the digits that changed, and
+// nothing beside or below it moves while it does; with less motion asked for it
+// simply changes. The lab's counter is a figure the server changes on a press.
+async function watchFigure(page: Page) {
+  await page.evaluate(() => {
+    const label = document.querySelector("#lab-count .motion-lab__count-label")!
+    const below = document.querySelector("#lab-count + .motion-lab__row")!
+    const at = (el: Element) => [el.getBoundingClientRect().left, el.getBoundingClientRect().top]
+    const start = [at(label), at(below)]
+    const seen = {moved: 0, rolled: false}
+    Object.assign(window, {seen})
+    const frame = () => {
+      ;[label, below].forEach((el, i) => {
+        const [left, top] = at(el)
+        seen.moved = Math.max(seen.moved, Math.abs(left - start[i][0]), Math.abs(top - start[i][1]))
+      })
+      if (document.querySelector("#lab-count [data-char]")) seen.rolled = true
+      requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  })
+  return () => page.evaluate(() => (window as unknown as {seen: {moved: number; rolled: boolean}}).seen)
+}
+
+test("a live figure rolls its changed digits and nothing beside or below it moves", async ({page}) => {
+  await page.goto("/animations")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const figure = page.locator("#lab-count .rg-figure")
+  await figure.scrollIntoViewIfNeeded()
+  const seen = await watchFigure(page)
+
+  // From four digits to five and back, so the figure's width is tested too.
+  for (const label of ["+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "+1,000", "−12"]) {
+    const before = await figure.textContent()
+    await page.getByRole("button", {name: label, exact: true}).click()
+    await expect(figure).not.toHaveText(before!)
+  }
+  await expect.poll(async () => (await seen()).rolled).toBe(true)
+  await expect(page.locator("#lab-count [data-char]")).toHaveCount(0)
+  expect((await seen()).moved).toBe(0)
+})
+
+test("with less motion asked for, a live figure changes without rolling", async ({page}) => {
+  await page.emulateMedia({reducedMotion: "reduce"})
+  await page.goto("/animations")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const figure = page.locator("#lab-count .rg-figure")
+  await figure.scrollIntoViewIfNeeded()
+  const seen = await watchFigure(page)
+
+  const before = await figure.textContent()
+  await page.getByRole("button", {name: "+37", exact: true}).click()
+  await expect(figure).not.toHaveText(before!)
+  expect(await seen()).toEqual({moved: 0, rolled: false})
 })

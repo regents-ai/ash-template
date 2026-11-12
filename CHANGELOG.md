@@ -7861,3 +7861,28 @@ sits on its own branches.
   walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
   and phone width.
 - The form's ids now follow the dialog's (`<dialog id>-person-form`).
+## 2026-11-12 — Live figures roll (November bonus, step 2)
+
+- Every figure the template's own pages change while someone watches is drawn with
+  design-system's `Regent.Primitives.figure` (`rg-figure`, equal-width digits,
+  `data-count`) inside a part marked `phx-hook="MotionCount"` with the standard `count`
+  version, so the motion kit rolls only the digits that changed, and reduced motion
+  leaves them still: a poll's votes and minutes left (the poll's line and the polls
+  list), each room's message count and the newest block on `/showcase/figures`, the
+  wallet's balance in the on-chain example, the times on a harbour agent's card, and the
+  motion lab's counter. A figure falling to words ("No reading yet", "Just now",
+  "reading balance") is swapped, not rolled.
+- Room left for the widest value only where a figure stands in a column or on its own
+  line: the room counts (five characters, ending on one edge) and the lab's counter
+  (six). A figure inside a sentence keeps none, since a gap mid-sentence reads as a fault;
+  only its own word after it shifts when it gains a digit.
+- The wonders' reading line, which their own script rewrites as they play, takes
+  `rg-figure` for its digits and does not roll.
+- Deleted the per-page `tabular-nums` rules these replace (`polls.css`, `wonders.css`,
+  `animations.css`) and the `messages/1`, `votes_label/1`, `list_state/1` and string
+  `time_state/2`, `ago/2` and `balance/1` helpers the figure components replace.
+- Not moved: Points and the discussion's likes are drawn by design-system's own
+  components, which carry `rg-figure` but not `data-count`; they roll once design-system
+  adds it. The Keyfleet hero's price tag never changes and keeps its own rule.
+- `platform/test/browser/motion.spec.ts`: the lab's counter rolls across a change of
+  width with nothing beside or below it moving, and stays still with reduced motion.

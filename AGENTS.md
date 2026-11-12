@@ -63,8 +63,9 @@ After renaming, a new site must still replace, by hand:
 - Motion: every Regent site shares the kit in `platform/assets/js/hooks/motion/`
   and `platform/assets/js/motion.ts`, with the standard version of each part in
   `AshTemplateWeb.Motion`. Pages join in through markup (`data-press-label` on
-  wallet buttons, `data-panel`, `data-cascade`, `data-variant`), never with their
-  own motion code. `/animations` is the lab where every version that was tried
+  wallet buttons, `data-panel`, `data-cascade`, `data-variant`, and every live
+  figure drawn with `Regent.Primitives.figure` inside a part marked
+  `phx-hook="MotionCount"`), never with their own motion code. `/animations` is the lab where every version that was tried
   sits side by side; `skills/animejs/references/liveview-islands.md` explains it.
 - There is no `identity/` folder. The shared profile domain comes from the
   `regents/identity` package. It and the `design-system` and `elixir-utils`

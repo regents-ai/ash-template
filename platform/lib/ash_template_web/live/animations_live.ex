@@ -386,7 +386,10 @@ defmodule AshTemplateWeb.AnimationsLive do
                 phx-hook="LabCount"
                 data-variant={@variants["count"]}
               >
-                <span data-count>{@count |> Integer.to_string() |> RegentFormat.add_delimiters()}</span>
+                <P.figure
+                  value={@count |> Integer.to_string() |> RegentFormat.add_delimiters()}
+                  width={6}
+                />
                 <span class="motion-lab__count-label">visits this week</span>
               </p>
               <div class="motion-lab__row motion-lab__row--tight">
