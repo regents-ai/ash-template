@@ -7782,3 +7782,14 @@ sits on its own branches.
   starting again; Mist clears under a pointer and under a finger at 390 and fogs back
   within ten seconds; with less motion the picture holds still and the scroll still moves
   it; without WebGPU the still shows; no console errors. WebKit not run on the Mac.
+
+## 2026-11-12 — Released v196: the Frosted Glass lab page
+
+- `70128c89` is v196 on template.regents.sh, switched at about 05:25Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v195 (`4d972bbc`).
+- Full check on `70128c89`, exit 0: 41 script tests, 461 browser walks with 5 skipped,
+  186 Elixir (9 properties).
+- Live read in headless Chromium (WebKit not run): `/capabilities.json` names
+  `70128c89`; `/animations/frosted-glass`, `/animations` and `/` answer 200 at 1280 and
+  390 with no page or console errors and no sideways scroll. Fly logs: no errors after
+  the switch. The six looks themselves are the design chief's to read live.
