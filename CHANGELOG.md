@@ -8746,3 +8746,20 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
 - Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
+
+## 2026-11-12 — The window flick check holds on a busy machine (branch, not on main)
+
+- `motion.spec.ts`'s drag helper now stamps each pointer event with the moment it stands
+  for, sent through Chromium's own input (`Input.dispatchMouseEvent` with `timestamp`).
+  The gesture kit measures a throw from its events' own `timeStamp`
+  (`assets/js/hooks/motion/gestures.ts`), and the helper used to space real pointer events
+  by the wall clock, so a stalled Mac stretched the 120 ms flick into a slow pull and the
+  window stayed open: v213's first two full checks failed that way at load 66 to 85.
+- The paths, distances and durations are the same, and the events still go out at the
+  pace they stand for; only a late delivery no longer changes the speed the page
+  measures. No product code changed.
+- Evidence: with the old helper, a half-second stall before the flick's last move left
+  the window open; with the new one the page saw its events exactly 15 ms apart and
+  closed it. Under 16 extra busy processes (load 92 to 98), the flick check passed 30 of
+  30 at 1280 and 390 (`--repeat-each 15`), and the other two drag checks (a pulled window
+  with less motion, a note thrown sideways) 20 of 20.
