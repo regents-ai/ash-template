@@ -1,0 +1,163 @@
+@layer regents-product {
+/* The value card lab (`/animations/value`, `AshTemplateWeb.ValueLabLive`): cards
+   with one figure each, on one GPU picture behind the whole grid (the `ValueLight`
+   hook). Until that picture has drawn, and wherever it never does (less motion,
+   no WebGPU, off screen before it starts), each card is its flat surface with a
+   plain edge. Once it has drawn, the cards give their surface and edge to the
+   picture, which paints the same two colours and lights them round the pointer.
+   The words always sit above it as real text. No container queries here: a rule
+   that hid part of a card by the card's own width is what crashed the first
+   version of this page at phone width. */
+.motion-lab--value {
+  width: 100%;
+  align-content: start;
+}
+
+/* The light the picture warms the cards with: the site's own, as the theme
+   switch's beam, Powder Blue at night and Tangerine by day unless the brand sets it. */
+.value-lab {
+  --value-light: var(--rg-theme-laser-dark, var(--palette-powder-blue));
+  position: relative;
+  display: grid;
+  gap: var(--space-5);
+}
+
+:root[data-theme="light"] .value-lab {
+  --value-light: var(--rg-theme-laser-light, var(--palette-tangerine-tango));
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .value-lab {
+    --value-light: var(--rg-theme-laser-light, var(--palette-tangerine-tango));
+  }
+}
+
+.value-lab__stage,
+.value-lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.value-lab__stage {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.value-lab[data-value-ready="true"] .value-lab__stage {
+  opacity: 1;
+}
+
+.value-lab__row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.value-lab__title {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  font-weight: 400;
+  line-height: var(--type-label-line);
+}
+
+/* A card sits above the picture: positioned after it, it paints over it. */
+.value-card {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  padding: var(--space-3);
+  border: var(--rg-rule-width) solid var(--hairline-strong);
+  background: var(--color-surface);
+  transition:
+    background-color var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+.value-lab[data-value-ready="true"] .value-card {
+  border-color: transparent;
+  background: transparent;
+}
+
+.value-card__label {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  font-weight: 400;
+  line-height: var(--type-label-line);
+}
+
+.value-card__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-block-size: var(--type-display-line);
+  margin: 0;
+  color: var(--color-fg);
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+}
+
+.value-card__figure.rg-waiting {
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.value-card__unit,
+.value-card__line {
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.value-card__line {
+  margin: 0;
+}
+
+/* A line the card will show once its figure is read keeps its room until then. */
+.value-card__line--held {
+  visibility: hidden;
+}
+
+/* On a phone the figure and its unit stay on one line. */
+@media (max-width: 30rem) {
+  .value-card__figure {
+    min-block-size: var(--type-title-line);
+    font-size: var(--type-title-size);
+    line-height: var(--type-title-line);
+  }
+}
+
+@media (min-width: 48rem) {
+  .value-lab__row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .value-lab__title {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .value-lab__stage,
+  .value-card {
+    transition: none;
+  }
+}
+
+/* Forced colours: the picture steps aside and the system draws each card's edge. */
+@media (forced-colors: active) {
+  .value-lab__stage {
+    display: none;
+  }
+
+  .value-lab[data-value-ready="true"] .value-card {
+    border-color: CanvasText;
+  }
+}
+}

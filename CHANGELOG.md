@@ -8164,6 +8164,73 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   The pairing window opens only for a signed-in person, so it was not opened live; the
   browser walks open it locally at every width.
 
+## 2026-11-12 — Value lab: the pointer-lit value card back, without the crash
+
+- Why the first version (`91d68a70`, taken off in `4d972bbc`) crashed: reproduced headless
+  at 390 and 320 wide, the renderer died while the page was still loading, at about 1.2 GB,
+  with scripts off, with its pictures blocked and with no GPU at all, and never at 1280.
+  Taking out one rule alone stopped it: `@container (max-width: 13rem)` hiding the card's
+  "01 / 44" place by the card's own width. In the one-column phone grid Chromium measured
+  the card at more than one width, flipping that part in and out, and the layout never
+  settled. The GPU panels and the shared device were not the cause.
+- A lab page only, `/animations/value` (`AshTemplateWeb.ValueLabLive`, titled Value), built
+  to spec 4.5 and REGENTS_MAP: three cards with one figure each (`Regent.Primitives.figure`,
+  real text), then the same card loading, empty and failed (`Regent.Primitives.waiting`).
+  No container queries on the page.
+- One vgpu island for the whole grid (`hooks/value_light.ts`, `value_light/renderer.ts`,
+  WGSL through `canvas_island.ts`): it paints every card's surface and 1px edge, so the row
+  is one surface and a neighbour catches the light too. The fill warms towards the site's
+  own light (the theme beam's colour, `--value-light`) and the edge firms towards the ink.
+  Pointer speed makes it brighter and reach further, settling back as it slows; a touch
+  breathes it once. Every move is Anime.js (an Animatable, one breath animation), and each
+  update asks the island for one frame, so nothing draws while the light rests. Less
+  motion, off screen, no WebGPU and forced colours leave the cards' own flat surface and edge.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/value_card.spec.ts`: at 320 and 390 with the GPU on, the picture
+  draws, two pointer sweeps over every card leave the page alive, drawn, under a 64 MB
+  script heap and with no sideways scroll; with less motion the picture never draws and
+  the cards keep their surface.
+
+## 2026-11-12 — Ask lab: one field, an answer drawn from a few blocks
+
+- A lab page only, `/animations/ask` (`AshTemplateWeb.AskLabLive`, titled Ask): one search
+  field, and under it the answer, built only from a closed list of five blocks: a figure
+  (`Regent.Primitives.figure`), a list, a chart (`Regent.Charts.line`), an agent's activity
+  (`Regent.Agents.activity`) and a confirm step whose button is disabled with "Sample only".
+- `AshTemplateWeb.AskLab` turns a question into a plan (a title and one to three blocks) by a
+  plain keyword match over sample data, with its first number as an amount or a limit: no
+  model, no network, no new dependency, nothing stored. `AskLab.check/1` holds every plan to
+  the block list before the page draws any of it; a plan that fails shows the failed state.
+  Staking more than the sample balance shows the amount without a confirm step.
+- The question lives in the address as `?q=`, so a shared link draws the same answer; the
+  form is a plain GET that LiveView patches. An unknown question shows "No match" and three
+  example questions as links. A States section shows loading, empty and failed. Nothing runs
+  on a timer. "/" puts the cursor in the field (`hooks/ask_bar.ts`); the key hint shows only
+  with a fine pointer.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/ask_bar.spec.ts`: a `?q=` link draws the same answer after a reload,
+  an unknown question shows three examples that each answer, asking and following an example
+  work from the keyboard alone, and no answer scrolls sideways at 320.
+
+## 2026-11-12 — Value and Ask labs: Points for Credits, and no staking sample
+
+- Why: Credits left the product on 6 Nov 2026 and are not shown again, and an on-chain
+  button is never drawn blocked, yet the Ask page's staking sample drew a disabled "Stake"
+  button marked "Sample only".
+- `/animations/value`: the first card and the three state cards are Points ("This week"),
+  id `value-points`.
+- `/animations/ask` (`AshTemplateWeb.AskLab`): "points" answers with a Points figure and a
+  "Points earned" chart. Staking is gone, with its sample balance; "regent" now only
+  answers the read-only price. In its place "archive" or "notes" answers with a Notes figure
+  and an Archive confirm step (sample only), its days taken from the question's first
+  number (30 when there is none). Examples: "Points this week", "Offers under 50 USDC",
+  "Archive old notes"; the field's hint reads "Points, offers, notes".
+- The public documents' line for Ask, `platform/test/browser/pages.json`,
+  `ask_bar.spec.ts` and `value_card.spec.ts` follow.
 ## 2026-11-11 — The daily jobs' facts: JSON reports and `scripts/harvest.sh`
 
 - `make drift` (`scripts/drift.sh`) and `make pins` (`scripts/pins.sh`) print one JSON
@@ -8339,6 +8406,19 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   `c3b2ddf7`; `/`, `/animations`, `/animations/buttons`, `/agents` and `/polls` answer 200
   at 1280 and 390 with no page or console errors and no sideways scroll. The lab's word
   swap itself was not watched live.
+
+## 2026-11-12 — Released v208: the Value and Ask lab pages
+
+- `e5afe7c2` (the design chief's `wt/tpl-bonus-1112`) is v208 on template.regents.sh,
+  switched at about 09:15Z with `scripts/deploy.sh`. No migrations. Rollback: v207
+  (`c3b2ddf7`).
+- Full check on `e5afe7c2`, exit 0: 13 script tests, 108 TypeScript, 521 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `e5afe7c2`; `/animations/value`, `/animations/ask`, `/animations/ask?q=Points this week`,
+  `/animations` and `/` answer 200 at 1280, 390 and 320 with no page or console errors,
+  no sideways scroll and no crash (the earlier value page crashed at 390 and 320). The
+  pointer was not swept over the cards live.
 
 ## 2026-11-12 — The other live forms say when they are not connected
 

@@ -488,6 +488,8 @@ defmodule AshTemplateWeb.Router do
       live "/animations/frosted-glass", FrostedGlassLive, :index
       live "/animations/menu", MenuLabLive, :index
       live "/animations/parts", PartsLabLive, :index
+      live "/animations/value", ValueLabLive, :index
+      live "/animations/ask", AskLabLive, :index
     end
   end
 end
