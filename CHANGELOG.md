@@ -9418,8 +9418,8 @@ the chat and polls lanes' own.
   statement and sends one notice. Skills: topics per subject and one-row rereads
   (ash-frontend), one notice a press, never optional keyset paging and the tally kept
   on the row (ash-backend), a page's own clock (elixir-stack).
-- **Merging** (`20e53d4d`, `93914fd4`, `9ab23441`, main `e65eebc5`, polls `deb2ebf4`). Text
-  conflicts only: the security skill keeps both lanes' new rules; the ash-backend
+- **Merging** (`20e53d4d`, `93914fd4`, `9ab23441`, main `e65eebc5`, polls `deb2ebf4`,
+  main's v224 note `6cbf082f`). Text conflicts only: the security skill keeps both lanes' new rules; the ash-backend
   integrations reference makes the two listener rules one paragraph; the public-figures
   reference keeps the platform and polls rules; the docs and the command list carry one
   13.0.0 entry with the notes list and the 429s; this file keeps both sides and this one
@@ -9478,10 +9478,11 @@ the chat and polls lanes' own.
   again is one reply), `agents/signed_tools_test.exs` (posts and likes past the
   allowance; the notes list's pages), `mcp_agent_test.exs` (a post past the allowance),
   `polls/vote_notices_test.exs`, and the chat, likes, polls, notes and messages walks.
-- Full check on the Mac at `fe505f3b`, exit 0: 13 script tests, style check clean, credo
-  and Sobelow clean, compile-connected 47, codegen current, 141 TypeScript, 606 browser
-  walks with 5 skipped, 236 Elixir (10 properties), required fixes (main's registry), the
-  command list and the newest-CLI check. WebKit not run.
+- Full check on the Mac at `34f4fb07`, exit 0: 13 script tests, style check clean, credo
+  and Sobelow clean, compile-connected 47, codegen current, 141 TypeScript, 622 browser
+  walks with 5 skipped, 239 Elixir (10 properties), required fixes (main's registry at
+  `9535c6e5`), the command list and the newest-CLI check. WebKit not run. Main's v224
+  note, merged after it, changes only this file.
 
 ## 2026-11-12 — Released v224: the database load review (rooms, assistant chat, measurement)
 
