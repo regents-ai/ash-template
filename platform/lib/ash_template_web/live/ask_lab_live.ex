@@ -81,7 +81,7 @@ defmodule AshTemplateWeb.AskLabLive do
           type="search"
           name="q"
           value={@question}
-          placeholder="Credits, offers, staking"
+          placeholder="Points, offers, notes"
           autocomplete="off"
           enterkeyhint="go"
         />

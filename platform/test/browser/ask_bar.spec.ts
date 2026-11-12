@@ -26,7 +26,7 @@ test("a question it does not know shows three it does, each one answering", asyn
   await expect(examples).toHaveCount(3)
 
   await examples.first().click()
-  await expect(page).toHaveURL(/q=Credits/)
+  await expect(page).toHaveURL(/q=Points/)
   await expect(page.locator("#ask-plan [data-chart]")).toBeVisible()
 })
 
@@ -36,9 +36,10 @@ test("asking and following an example work from the keyboard alone", async ({pag
 
   await page.keyboard.press("/")
   await expect(page.locator("#ask-q")).toBeFocused()
-  await page.keyboard.type("stake 100")
+  await page.keyboard.type("archive notes older than 60 days")
   await page.keyboard.press("Enter")
-  await expect(page).toHaveURL(/q=stake\+100|q=stake%20100/)
+  await expect(page).toHaveURL(/q=archive(\+|%20)notes(\+|%20)older(\+|%20)than(\+|%20)60(\+|%20)days/)
+  await expect(page.locator("#ask-plan")).toContainText("Older than 60 days")
   await expect(page.locator("#ask-plan .ask-block--confirm")).toBeVisible()
 
   await page.locator("#ask-q").fill("banana")
@@ -47,7 +48,7 @@ test("asking and following an example work from the keyboard alone", async ({pag
   await page.keyboard.press("Tab")
   await expect(page.locator("#ask-none .ask-example").first()).toBeFocused()
   await page.keyboard.press("Enter")
-  await expect(page).toHaveURL(/q=Credits/)
+  await expect(page).toHaveURL(/q=Points/)
   await expect(page.locator("#ask-plan")).toBeVisible()
 })
 
@@ -55,7 +56,7 @@ test.describe("at 320 wide", () => {
   test.use({viewport: {width: 320, height: 700}})
 
   test("every answer fits the screen", async ({page}) => {
-    for (const q of ["Credits left", "Offers under 50 USDC", "Stake 100 REGENT", "pira", "banana"]) {
+    for (const q of ["Points this week", "Offers under 50 USDC", "Archive old notes", "pira", "banana"]) {
       await page.goto(`/animations/ask?q=${encodeURIComponent(q)}`)
       await page.locator("[data-phx-main].phx-connected").waitFor()
       const overflow = await page.evaluate(

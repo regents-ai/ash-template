@@ -12,7 +12,7 @@ defmodule AshTemplateWeb.AskLab do
 
   @blocks [:figure, :list, :chart, :activity, :confirm]
 
-  @examples ["Credits left", "Offers under 50 USDC", "Stake 100 REGENT"]
+  @examples ["Points this week", "Offers under 50 USDC", "Archive old notes"]
 
   @offers [
     %{name: "Weekly summary", price: 25},
@@ -22,8 +22,8 @@ defmodule AshTemplateWeb.AskLab do
     %{name: "Landing page", price: 120}
   ]
 
-  @balance 12_400
-  @staked 2_500
+  # How many days ago each sample note was last opened.
+  @note_ages [4, 12, 41, 52, 88]
 
   @kinds [:read, :think, :tool, :write, :waiting_for_you, :done, :failed]
 
@@ -46,14 +46,14 @@ defmodule AshTemplateWeb.AskLab do
     number = Enum.find_value(words, &number/1)
 
     cond do
-      "stake" in words ->
-        {:ok, stake(number, now)}
+      Enum.any?(words, &(&1 in ~w(archive note notes))) ->
+        {:ok, archive(number || 30)}
 
       Enum.any?(words, &(&1 in ~w(offer offers))) ->
         {:ok, offers(number)}
 
-      Enum.any?(words, &(&1 in ~w(credit credits))) ->
-        {:ok, credits(now)}
+      Enum.any?(words, &(&1 in ~w(point points))) ->
+        {:ok, points(now)}
 
       Enum.any?(words, &(&1 in ~w(agent agents activity doing working pira))) ->
         {:ok, agents(now)}
@@ -114,39 +114,22 @@ defmodule AshTemplateWeb.AskLab do
 
   # The plans, from the sample data.
 
-  defp stake(nil, now) do
-    %{
-      title: "Staked",
-      blocks: [
-        figure("Staked", grouped(@staked), "REGENT", "Of #{grouped(@balance)} held"),
-        chart("Staked (REGENT)", [1_800, 1_800, 2_100, 2_100, 2_300, 2_500, 2_500], now)
-      ]
-    }
-  end
+  defp archive(days) do
+    count = @note_ages |> Enum.count(&(&1 > days)) |> Integer.to_string()
 
-  defp stake(amount, _now) when amount > @balance do
     %{
-      title: "Stake",
+      title: "Archive",
       blocks: [
-        figure("Stake", grouped(amount), "REGENT", "More than the #{grouped(@balance)} held")
-      ]
-    }
-  end
-
-  defp stake(amount, _now) do
-    %{
-      title: "Stake",
-      blocks: [
-        figure("Stake", grouped(amount), "REGENT", "Of #{grouped(@balance)} held"),
+        figure("Notes", count, nil, "Older than #{grouped(days)} days"),
         %{
           block: :confirm,
           props: %{
-            label: "Stake",
+            label: "Archive",
             rows: [
-              %{name: "Amount", value: "#{grouped(amount)} REGENT"},
-              %{name: "Staked after", value: "#{grouped(@staked + amount)} REGENT"}
+              %{name: "Notes", value: count},
+              %{name: "Older than", value: "#{grouped(days)} days"}
             ],
-            action: "Stake"
+            action: "Archive"
           }
         }
       ]
@@ -173,12 +156,12 @@ defmodule AshTemplateWeb.AskLab do
     }
   end
 
-  defp credits(now) do
+  defp points(now) do
     %{
-      title: "Credits",
+      title: "Points",
       blocks: [
-        figure("Credits left", "1,240", nil, "Of 2,000"),
-        chart("Credits used", [120, 180, 90, 210, 160, 140, 60], now)
+        figure("Points", "1,240", nil, "This week"),
+        chart("Points earned", [120, 180, 90, 210, 160, 140, 60], now)
       ]
     }
   end

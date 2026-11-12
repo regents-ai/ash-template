@@ -6,7 +6,7 @@ Changes to Ash Template, newest first.
 
 - **Motion lab.** A new page, Value: cards with one figure each whose surface lights
   where you point or touch, with a card loading, empty and failed.
-- **Motion lab.** A new page, Ask: type about credits, offers, staking or agents and the
+- **Motion lab.** A new page, Ask: type about points, offers, notes or agents and the
   answer appears as a figure, a list, a chart or a step to confirm. The link keeps your
   question, so you can share it.
 - **Theme.** The light and dark switch is now in your account menu: slide it, press it

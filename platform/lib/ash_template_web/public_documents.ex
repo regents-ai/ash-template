@@ -107,7 +107,7 @@ defmodule AshTemplateWeb.PublicDocuments do
        "Three figures on cards whose surface lights where you point or touch, with a card loading, empty and failed."},
     "/animations/ask" =>
       {"Ask",
-       "One field: ask about credits, offers, staking or agents and the answer is drawn from a few blocks, with a link that keeps the question."},
+       "One field: ask about points, offers, notes or agents and the answer is drawn from a few blocks, with a link that keeps the question."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},

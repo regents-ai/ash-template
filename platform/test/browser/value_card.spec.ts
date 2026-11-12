@@ -57,7 +57,7 @@ test.describe("with less motion", () => {
     await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
     await sweep(page)
     await expect(page.locator("#value-cards")).not.toHaveAttribute("data-value-ready", "true")
-    const card = page.locator("#value-credits")
+    const card = page.locator("#value-points")
     expect(await card.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)")
   })
 })

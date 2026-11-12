@@ -8215,3 +8215,19 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - `platform/test/browser/ask_bar.spec.ts`: a `?q=` link draws the same answer after a reload,
   an unknown question shows three examples that each answer, asking and following an example
   work from the keyboard alone, and no answer scrolls sideways at 320.
+
+## 2026-11-12 — Value and Ask labs: Points for Credits, and no staking sample
+
+- Why: Credits left the product on 6 Nov 2026 and are not shown again, and an on-chain
+  button is never drawn blocked, yet the Ask page's staking sample drew a disabled "Stake"
+  button marked "Sample only".
+- `/animations/value`: the first card and the three state cards are Points ("This week"),
+  id `value-points`.
+- `/animations/ask` (`AshTemplateWeb.AskLab`): "points" answers with a Points figure and a
+  "Points earned" chart. Staking is gone, with its sample balance; "regent" now only
+  answers the read-only price. In its place "archive" or "notes" answers with a Notes figure
+  and an Archive confirm step (sample only), its days taken from the question's first
+  number (30 when there is none). Examples: "Points this week", "Offers under 50 USDC",
+  "Archive old notes"; the field's hint reads "Points, offers, notes".
+- The public documents' line for Ask, `platform/test/browser/pages.json`,
+  `ask_bar.spec.ts` and `value_card.spec.ts` follow.

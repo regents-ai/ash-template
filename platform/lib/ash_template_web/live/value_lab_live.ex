@@ -19,7 +19,7 @@ defmodule AshTemplateWeb.ValueLabLive do
   alias Regent.Primitives
 
   @cards [
-    %{id: "value-credits", label: "Credits", value: "1,240", unit: nil, line: "Of 2,000"},
+    %{id: "value-points", label: "Points", value: "1,240", unit: nil, line: "This week"},
     %{id: "value-balance", label: "Balance", value: "3,482.50", unit: "USDC", line: "2 wallets"},
     %{id: "value-earnings", label: "Earnings", value: "96.20", unit: "USDC", line: "This week"}
   ]
@@ -65,23 +65,23 @@ defmodule AshTemplateWeb.ValueLabLive do
         <section class="value-lab__row" aria-labelledby="value-states-title">
           <h2 id="value-states-title" class="value-lab__title">States</h2>
           <article id="value-loading" class="value-card" data-value-card>
-            <h3 class="value-card__label">Credits</h3>
+            <h3 class="value-card__label">Points</h3>
             <Primitives.waiting id="value-loading-figure" class="value-card__figure">
               <span></span>
             </Primitives.waiting>
-            <p class="value-card__line value-card__line--held">Of 2,000</p>
+            <p class="value-card__line value-card__line--held">This week</p>
           </article>
           <article id="value-empty" class="value-card" data-value-card>
-            <h3 class="value-card__label">Credits</h3>
+            <h3 class="value-card__label">Points</h3>
             <p class="value-card__figure"><Primitives.figure value="0" /></p>
             <p class="value-card__line">None yet</p>
           </article>
           <article id="value-failed" class="value-card" data-value-card>
-            <h3 class="value-card__label">Credits</h3>
+            <h3 class="value-card__label">Points</h3>
             <Primitives.waiting id="value-failed-figure" state={:error} class="value-card__figure">
               <span></span>
             </Primitives.waiting>
-            <p class="value-card__line value-card__line--held">Of 2,000</p>
+            <p class="value-card__line value-card__line--held">This week</p>
           </article>
         </section>
       </div>
