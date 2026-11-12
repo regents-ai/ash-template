@@ -6,7 +6,7 @@ defmodule AshTemplate.MixProject do
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
   @elixir_utils_ref "240e93856f11ae2f7be0b427ef8eb8a468afb4f2"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "c6cbadd72a17995d8a2c96c58ca2e9d023c48368"
+  @design_system_ref "0ae2bffc42662f9ed0a04f2cbe8109fa6d4f482a"
 
   def project do
     [

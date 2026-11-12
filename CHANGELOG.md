@@ -9015,3 +9015,25 @@ release waits for Sean's go.
   with 5 skipped, 217 Elixir (10 properties), required fixes and the command list pass;
   `mix ash.codegen --check` is clean. Its last step, the newest-CLI check, fails only
   because regents-cli 1.10.25 came out today. WebKit not run.
+
+## 2026-11-12 — The names release branch: main merged in, design-system pin `0ae2bffc` (branch, not on main)
+
+**This branch's two migrations rewrite existing rows**; they delete none. Sean's 17 a of
+12 Nov releases them.
+
+- `tpl/names-release-1112` is `tpl/names-1112` (`f9a02401`) with main (`4af45439`, v217)
+  merged in, no rebase. The release record and the public changelog keep every entry
+  from both sides by date. `cli/COMMANDS.md` and the agent guide's Live feed keep main's
+  `feed` command and its `--wake`, with the branch's author shape (`kind`, `name`,
+  `wallet`, `ens_name`; `name` null when they show by their wallet). The three OpenAPI
+  documents stay at 12.0.0; main changed none of them. Main's value cards name
+  features, never a person or an agent.
+- Design-system pin `0ae2bffc42662f9ed0a04f2cbe8109fa6d4f482a` (was `c6cbadd7`): the style
+  check stops with exit 2, naming what is missing, when ripgrep, awk or perl is not
+  installed. `make check-style` prints no breaks; a scratch unmarked glass line fails it
+  (exit 1 from the script); with ripgrep hidden the script exits 2.
+- Migrations: main added none after `20261112120100`, so `20261112151609` and
+  `20261112153800` still run after everything production has run.
+- Forecast re-check on a local throwaway database migrated through `20261112120100`:
+  `rows.sql` and `sweep-rows.sql` read-only on the seeded rows, then the two real
+  migrations; every row ended as the two files forecast.
