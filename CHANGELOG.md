@@ -7197,3 +7197,16 @@ sits on its own branches.
   kept until it expires. The regents CLI signs requests that last 120 seconds, so nothing
   an agent sends today changes.
 - `make check-siwa-latest` asked for it (Sean, 28 Oct: every site on the newest SIWA).
+
+## 2026-11-12 — Released v188: odd addresses are not found, and the newest SIWA library
+
+- Live: v188 at 00:08Z on template.regents.sh; /capabilities.json build.commit 10f7a3fe.
+  Rollback: v187 (4b72983d). No migrations.
+- Carries "An address spelled another way is the not-found page" and the elixir-utils pin
+  dd2d3c6e (the newest SIWA change).
+- Full check on 10f7a3fe: exit 0 (181 server tests, 455 browser checks with 5 skipped, 40
+  script tests, required fixes, command list, SIWA latest). WebKit not run on the Mac.
+- Live read in headless Chromium at 1280 and 390: home, /app, /about, /docs, /agents,
+  /privacy, /terms and /healthz 200; /%70rivacy and /%61pp 404 (500 before); no page
+  errors. App log from the release start: one health check failed while the new version
+  started, then passed; no error lines.
