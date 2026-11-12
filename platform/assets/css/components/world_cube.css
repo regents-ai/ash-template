@@ -286,7 +286,7 @@
   /* Smoked glass: a sheen over a dark tint, so the words read over the brightest room. */
   background:
     linear-gradient(
-      135deg,
+      135deg in oklch,
       color-mix(in srgb, var(--world-cube-ink) 17%, transparent),
       color-mix(in srgb, var(--world-cube-ink) 5%, transparent) 46%,
       color-mix(in srgb, var(--world-cube-ink) 10%, transparent)
@@ -334,10 +334,10 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(
-      115deg,
-      transparent 34%,
+      115deg in oklch,
+      oklch(from var(--world-cube-ink) l c h / 0) 34%,
       color-mix(in srgb, var(--world-cube-ink) 16%, transparent) 49%,
-      transparent 62%
+      oklch(from var(--world-cube-ink) l c h / 0) 62%
     )
     calc(50% + var(--world-look-x, 0) * 45%) 0 / 260% 100% no-repeat;
   pointer-events: none;

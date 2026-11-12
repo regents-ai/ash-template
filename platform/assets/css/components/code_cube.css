@@ -98,7 +98,7 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(180deg, var(--code-face-top), var(--code-face-foot));
+    background: linear-gradient(180deg in oklch, var(--code-face-top), var(--code-face-foot));
   }
 }
 
@@ -231,9 +231,9 @@
   padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid color-mix(in srgb, var(--code-card-accent) 30%, transparent);
   background: linear-gradient(
-    180deg,
+    180deg in oklch,
     color-mix(in srgb, var(--code-card-accent) 14%, transparent),
-    transparent
+    oklch(from var(--code-card-accent) l c h / 0)
   );
 }
 
