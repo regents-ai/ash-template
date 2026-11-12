@@ -40,6 +40,7 @@ defmodule AshTemplate.Rooms do
 
     resource AshTemplate.Rooms.Poster do
       define :record_poster, action: :record
+      define :forget_posters, action: :forget
     end
 
     resource AshTemplate.Rooms.Mute do

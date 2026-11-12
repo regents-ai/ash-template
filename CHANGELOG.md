@@ -9626,3 +9626,22 @@ no migration.
   `/animations`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with no page
   errors and no sideways scroll; `/animations` links the new page. The picture itself
   is the design chief's to read.
+
+## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
+
+On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for all").
+
+- A person whose last message in a room goes is mentioned by nobody there until they
+  post in it again. A message goes two ways, and both take the person off the room's
+  posters inside the same delete, in one statement that runs only when no message of
+  theirs is left in the room (`AshTemplate.Rooms.Message.ForgetPoster` on `:destroy`, the
+  person's or their paired agent's own delete, and `:remove`, the operator's): every name
+  they posted under there goes. Nothing is hidden or deleted softly; an edit or a mute
+  keeps the message. Migration `20261112233734_room_messages_author_index.exs` adds one
+  index on `room_messages` (room and author, people only), built concurrently, for that
+  check: on 50,000 messages in one room it reads 6 pages instead of 863. Existing rows
+  are untouched, so someone who deleted every message in a room before this change
+  stays listed there until they next post there and delete it. Checks:
+  `platform/test/ash_template/rooms/mentions_test.exs` and
+  `platform/test/ash_template_web/room_delete_test.exs` (an open room page that hears the
+  delete reads nothing).
