@@ -8746,3 +8746,11 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
 - Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
+
+## 2026-11-12 — The main button stands out in the light theme
+
+- Design-system pin `f957bf1c41f3ba1393cfc333e3ba4710da69ed11` (was `c4244b38`), Sean's
+  7a of 12 Nov. In the light theme the main button is Charcoal with Platinum words
+  (16.4:1 against the page; it was white, 1.1:1), through two new colour settings,
+  `--color-button` and `--color-fg-on-button`. The confirm window's main button follows.
+  Dark themes are unchanged. No template code changes.

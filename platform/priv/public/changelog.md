@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Buttons.** In the light theme the main button is now dark with light words, so the
+  main action on a page is easy to find.
 - **Motion lab.** A new page, Grain: harbour water in a fine, still grain, with two
   slow wakes under a heading.
 - **Motion lab.** A new page, Ink: a small scene whose lines draw themselves once, and
