@@ -1,5 +1,5 @@
-"""Run the template's reports (harvest, drift and pins) and its rename (init) on
-fixture repositories.
+"""Run the template's reports (harvest, drift, pins and stale pull requests) and its
+rename (init) on fixture repositories.
 
 Each test builds git repositories in a fresh temporary folder: a template checkout
 holding copies of the scripts, site clones with their own origins, and library
@@ -8,6 +8,7 @@ homepages a stand-in `curl`. The fixtures stay in the system's temporary folder,
 which the system clears; the tests delete nothing.
 """
 
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ import tempfile
 import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
-COPIED = ["drift.sh", "pins.sh", "harvest.sh", "github.sh", "shared-files.sh"]
+COPIED = ["drift.sh", "pins.sh", "harvest.sh", "github.sh", "shared-files.sh", "stale-prs.sh"]
 DAY = 86400
 START = 1_790_000_000
 
@@ -34,8 +35,12 @@ FAKE_GH = r"""#!/usr/bin/env bash
 # gh api [-H <header>] <endpoint> [--jq <filter>], served from $FAKE_GH:
 # <repo>/main holds main's commit, <repo>/<commit>/<path> a file, and
 # <repo>/<commit>/<path>.error a failure other than 404. With --jq .sha a file
-# answers its git blob id.
+# answers its git blob id. gh pr list --repo <repo> ... answers <repo>/pulls.json.
 set -euo pipefail
+if [[ "$1 $2" == "pr list" ]]; then
+  cat "$FAKE_GH/$4/pulls.json"
+  exit
+fi
 [[ "$1" == api ]] || exit 2
 shift
 endpoint=""
@@ -455,7 +460,7 @@ class Init(Fixture):
         (root / "scripts").mkdir()
         shutil.copy2(SCRIPTS / "init.sh", root / "scripts" / "init.sh")
         reports = ["scripts/drift.sh", "scripts/pins.sh", "scripts/github.sh", "scripts/shared-files.sh",
-                   "scripts/harvest.sh", "scripts/tests/test_reports.py", "automation/harvest.md",
+                   "scripts/harvest.sh", "scripts/stale-prs.sh", "scripts/tests/test_reports.py", "automation/harvest.md",
                    "automation/spread.md"]
         self.commit(root, "template", {
             **{path: "report\n" for path in reports},
@@ -487,6 +492,37 @@ class Init(Fixture):
         self.assertEqual((root / "platform/fly.staging.toml").read_text(), "app = \"night-owl-staging\"\n")
         self.assertTrue((root / "platform/lib/mix/tasks/night_owl.route_handoff.ex").is_file())
         self.assertFalse(any((root / path).exists() for path in reports))
+
+
+class StalePrs(Fixture):
+    def pull(self, number, days, branch="spread/2026-11-01", draft=False, title="Bring the template's checks"):
+        opened = datetime.now(timezone.utc) - timedelta(days=days, hours=1)
+        return {"number": number, "url": f"https://github.com/regents-ai/keyfleet/pull/{number}",
+                "title": title, "headRefName": branch, "isDraft": draft,
+                "createdAt": opened.strftime("%Y-%m-%dT%H:%M:%SZ")}
+
+    def test_a_draft_waiting_for_sean_is_listed_and_never_closed(self):
+        root = self.template({})
+        pulls = [
+            self.pull(1, 8),
+            self.pull(2, 3),
+            self.pull(3, 12, draft=True, title="Waits for Sean: wallet steps"),
+            self.pull(4, 2, draft=True, title="Waits for Sean: sign-in"),
+            self.pull(5, 9, draft=True, title="Draft without a letter to wait for"),
+            self.pull(6, 7, title="Waits for Sean: not a draft"),
+            self.pull(7, 20, branch="harvest/keyfleet-repo-2026-11-01"),
+        ]
+        folder = self.base / "github/regents-ai/keyfleet"
+        folder.mkdir(parents=True)
+        (folder / "pulls.json").write_text(json.dumps(pulls))
+
+        out = self.report(root, "stale-prs.sh", "regents-ai/keyfleet", "spread/")
+
+        self.assertEqual(out["repo"], "regents-ai/keyfleet")
+        self.assertEqual([(p["number"], p["days_open"]) for p in out["close"]], [(1, 8), (5, 9), (6, 7)])
+        self.assertEqual([(p["number"], p["days_open"]) for p in out["waiting"]], [(3, 12), (4, 2)])
+        self.assertEqual(out["waiting"][0], {"number": 3, "url": "https://github.com/regents-ai/keyfleet/pull/3",
+                                             "title": "Waits for Sean: wallet steps", "days_open": 12})
 
 
 class Pins(Fixture):

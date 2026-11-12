@@ -48,14 +48,16 @@ table.
 
 1. **Start from main.** In `<repos>/ash-template`: `git fetch -q origin` and
    `git switch -q --detach origin/main`.
-2. **Close what is stale.** List open harvest pull requests:
-   `gh pr list --repo regents-ai/ash-template --state open --json number,url,headRefName,createdAt --jq '.[] | select(.headRefName | startswith("harvest/"))'`.
-   Close each one opened seven or more days ago:
+2. **Close what is stale.** From `<repos>/ash-template`, run
+   `scripts/stale-prs.sh regents-ai/ash-template harvest/`. Close each pull request in
+   its `close` list:
    `gh pr close <number> --repo regents-ai/ash-template --comment "<note>"`, where the
    note says it was open seven days with no merge, that its branch stays, and that
    reopening it picks the work up again. Never pass `--delete-branch`. In the ledger
    row whose "Pull request" cell is its address, set that cell to
-   `closed after 7 days: <url>`.
+   `closed after 7 days: <url>`. Never close a pull request in its `waiting` list, at
+   any age: it is a draft waiting for Sean's letter. Name each one, with its days
+   open, in the summary (see "Records").
 3. **Read the facts.** Run, from `<repos>/ash-template`,
    `scripts/harvest.sh <repos>/control/automation/harvest.md <repos> > <out>/harvest.json`,
    with `<out>` a folder of your own outside the repositories. Its opening comment
@@ -114,12 +116,14 @@ table.
      own, and this line: "Still needed before merge: the ash-template chief's
      `make check` on the Mac (GitHub checks do not run on this repository yet)." End
      it with the attribution lines your session gives you.
-   - **Protected areas.** If the change touches sign-in, sessions or accounts,
-     secrets, wallets or on-chain steps, payments or money, staking or claims,
-     production data, any migration or resource snapshot, contracts, or the privacy
-     page's wording, open it with `--draft`, start its title with "Waits for Sean: ",
-     and say in the body which protected area it touches. When unsure, treat it as
-     protected.
+   - **Waits for Sean's letter.** If the change touches sign-in, sessions or
+     accounts, secrets, wallets or on-chain steps, payments or money, staking or
+     claims, production data, any migration or resource snapshot, contracts, or the
+     privacy page's wording, or if taking it is a product decision, open it with
+     `--draft`, start its title with "Waits for Sean: ", and say in the body which
+     protected area or decision it holds. When unsure, treat it as protected. Any
+     other pull request is an ordinary one: not a draft, and the ash-template chief
+     merges it once `make check` is clean.
 7. **Review each pull request** right after opening it (see "Reviewer"), then fix what
    the reviewer found in one round.
 8. **Record** the run (see "Records").
@@ -169,7 +173,10 @@ In **live** mode, after the pull requests:
    ### <date -u +%Y-%m-%dT%H:%MZ> · Harvest job (cloud) → ash-template chief · harvest <date>
    - Opened: <each pull request's address and title, or "none">
    - Judged: <n> commits on <sites>: <n> move-up, <n> site-only, <n> drift; waiting: <n>
-   - Needs: <drafts waiting for Sean, too-large move-ups, failures, or "none">
+   - Closed after 7 days: <each address, or "none">
+   - Waits for Sean: <every draft in the `waiting` list, each with its address and
+     days open, or "none">
+   - Needs: <too-large move-ups, failures, or "none">
    ```
 
 3. **Push**, in `<repos>/control`: commit only those two files in one commit, then
@@ -179,6 +186,22 @@ In **live** mode, after the pull requests:
 In **dry run** mode, commit and push only the dry-run file the same way.
 
 These pushes to control's main branch are the only pushes you make to any main branch.
+
+## Not built yet, and not proven
+
+Not built: neither job reads the regents-cli version each site serves, nor whether
+siwa-server lists the site. Neither appears in any report, so neither job can act on
+them.
+
+Not proven in a cloud run (each has only run on the Mac so far):
+
+- `gh` signed in, with an account that can open pull requests on the six repositories;
+- pushing `harvest/*` branches to ash-template, `spread/*` branches to the sites, and
+  commits to control's main branch;
+- all seven repositories cloned in one run, each with its full history;
+- jq and patch present.
+
+The first cloud run in dry-run mode is where each of these is first seen working.
 
 ## Never
 

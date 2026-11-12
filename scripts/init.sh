@@ -92,7 +92,7 @@ done < <(find . -type d \( -name '*ash_template*' -o -name '*ash-template*' \) -
 # use for them, so they are removed below.
 reports=(
   scripts/drift.sh scripts/pins.sh scripts/github.sh scripts/shared-files.sh scripts/harvest.sh
-  scripts/tests/test_reports.py automation/harvest.md automation/spread.md
+  scripts/stale-prs.sh scripts/tests/test_reports.py automation/harvest.md automation/spread.md
 )
 
 # Contents: every tracked text file except this script, the reports (all removed
