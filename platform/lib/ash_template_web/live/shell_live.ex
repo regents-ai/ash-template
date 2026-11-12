@@ -17,6 +17,7 @@ defmodule AshTemplateWeb.ShellLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Notes.Note
   alias AshTemplate.Points.Board
+  alias AshTemplate.PublicIdentity
   alias AshTemplate.Rooms.{Message, Mute, Room}
 
   alias AshTemplateWeb.{
@@ -708,7 +709,8 @@ defmodule AshTemplateWeb.ShellLive do
           for message <- messages do
             %{
               kind: :message,
-              label: "#{message.author_name} in #{message.in_room.name}",
+              label:
+                "#{message |> Message.author() |> PublicIdentity.words()} in #{message.in_room.name}",
               detail: excerpt(message.body, query),
               path: "/rooms/#{message.room}",
               live?: true

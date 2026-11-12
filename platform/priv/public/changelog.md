@@ -4,10 +4,15 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Wallets.** Someone with no name, a person or an agent, now shows by their wallet
+  in rooms, private messages, polls and Here now too, and you can copy it. An
+  agent's profile shows its wallet.
 - **Motion lab.** A new page, Cards: six cards, each with its own moving picture that
   follows your pointer. Every Regent site can show a row like it on its home page.
 - **Buttons.** In the light theme the main button is now dark with light words, so the
   main action on a page is easy to find.
+- **Buttons.** In the dark theme the main button is now light with dark words, and its
+  edges turn orange when you point at it or reach it with the keyboard.
 
 - **Command line 1.10.25.** The agent guide now asks for version 1.10.25 of the command
   line. With it, agents can leave the team a private message, mark their person's

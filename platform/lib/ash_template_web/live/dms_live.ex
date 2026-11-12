@@ -19,6 +19,7 @@ defmodule AshTemplateWeb.DmsLive do
   alias AshTemplate.Actors.Human
   alias AshTemplate.Dms
   alias AshTemplate.Dms.Message
+  alias AshTemplate.PublicIdentity
   alias AshTemplateWeb.Components.Shell
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
@@ -157,6 +158,9 @@ defmodule AshTemplateWeb.DmsLive do
         </div>
       </.portal>
       <.page_head title={title(@conversation)}>
+        <:heading :if={@conversation}>
+          <Shell.person_name id="dms-title-person" person={@conversation.other_person} />
+        </:heading>
         <:tip>
           Only the two of you can read these, and agents you each paired. Block someone to move
           them out of your messages.
@@ -183,7 +187,7 @@ defmodule AshTemplateWeb.DmsLive do
       >
         <div class="dms-head">
           <h2 id="dms-messages-title" class="visually-hidden">
-            Messages with {@conversation.other_person.name}
+            Messages with {PublicIdentity.words(@conversation.other_person)}
           </h2>
           <Primitives.button
             :if={!@conversation.blocked}
@@ -192,7 +196,7 @@ defmodule AshTemplateWeb.DmsLive do
             variant="secondary"
             phx-click="block"
             phx-target={@myself}
-            data-confirm={"Block #{@conversation.other_person.name}? Their messages still arrive, under Blocked, and they aren’t told."}
+            data-confirm={"Block #{PublicIdentity.words(@conversation.other_person)}? Their messages still arrive, under Blocked, and they aren’t told."}
             data-confirm-action="Block"
           >
             Block
@@ -200,7 +204,9 @@ defmodule AshTemplateWeb.DmsLive do
         </div>
 
         <Primitives.notice :if={@conversation.blocked} tone="warning">
-          You blocked <bdi>{@conversation.other_person.name}</bdi>. Their messages still arrive here.
+          You blocked
+          <Shell.person_name id="dms-blocked-person" person={@conversation.other_person} />.
+          Their messages still arrive here.
           <button
             id="dms-unblock"
             type="button"
@@ -260,9 +266,13 @@ defmodule AshTemplateWeb.DmsLive do
                 />
                 <div class="rooms-message__main">
                   <p class="rooms-message__meta">
-                    <bdi class="rooms-message__author">
-                      {if message.mine, do: "You", else: @conversation.other_person.name}
-                    </bdi>
+                    <bdi :if={message.mine} class="rooms-message__author">You</bdi>
+                    <Shell.person_name
+                      :if={!message.mine}
+                      id={"#{dom_id}-author"}
+                      class="rooms-message__author"
+                      person={@conversation.other_person}
+                    />
                     <span :if={message.via_agent_id} class="rooms-message__agent">Via agent</span>
                     <time datetime={DateTime.to_iso8601(message.inserted_at)}>
                       {RegentFormat.relative_time(message.inserted_at, DateTime.utc_now())}
@@ -291,7 +301,7 @@ defmodule AshTemplateWeb.DmsLive do
           <Primitives.field
             :let={field}
             id="dms-message-body"
-            label={"Message #{@conversation.other_person.name}"}
+            label={"Message #{PublicIdentity.words(@conversation.other_person)}"}
             errors={FormErrors.messages(@form[:body])}
           >
             <textarea
@@ -323,6 +333,9 @@ defmodule AshTemplateWeb.DmsLive do
   attr :conversation, :map, required: true
   attr :open, :map, required: true
 
+  # A person shown by their wallet keeps its copy icon, which a link cannot
+  # hold: the address lies over the link's first line, where the link keeps the
+  # same words for a screen reader.
   defp conversation_link(assigns) do
     ~H"""
     <.link
@@ -330,11 +343,24 @@ defmodule AshTemplateWeb.DmsLive do
       class="dms-list__item"
       aria-current={if conversation_id(@open) == @conversation.id, do: "page"}
     >
-      <bdi class="dms-list__name">{@conversation.other_person.name}</bdi>
+      <bdi :if={@conversation.other_person.name} class="dms-list__name">
+        {@conversation.other_person.name}
+      </bdi>
+      <span :if={!@conversation.other_person.name} class="dms-list__name">
+        <span class="visually-hidden">{PublicIdentity.words(@conversation.other_person)}</span>
+      </span>
       <span :if={@conversation.last_body} class="dms-list__last rg-muted">
         {@conversation.last_body}
       </span>
     </.link>
+    <Regent.Primitives.address
+      :if={!@conversation.other_person.name}
+      id={"dms-list-person-#{@conversation.id}"}
+      class="dms-list__address"
+      address={@conversation.other_person.wallet}
+      label={@conversation.other_person.ens_name}
+      variant="compact"
+    />
     """
   end
 
@@ -419,8 +445,8 @@ defmodule AshTemplateWeb.DmsLive do
 
   defp picture_of(%{mine: true}, me, _conversation),
     do: %{
-      squares: AshTemplate.PublicIdentity.squares(me),
-      picture: AshTemplate.PublicIdentity.picture(me)
+      squares: PublicIdentity.squares(me),
+      picture: PublicIdentity.picture(me)
     }
 
   defp picture_of(_message, _me, conversation), do: conversation.other_person
@@ -429,5 +455,5 @@ defmodule AshTemplateWeb.DmsLive do
   defp conversation_id(conversation), do: conversation.id
 
   defp title(nil), do: "Messages"
-  defp title(conversation), do: conversation.other_person.name
+  defp title(conversation), do: PublicIdentity.words(conversation.other_person)
 end

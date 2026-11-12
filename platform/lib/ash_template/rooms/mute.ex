@@ -33,8 +33,11 @@ defmodule AshTemplate.Rooms.Mute do
   attributes do
     uuid_primary_key :id
 
-    # The muted author's name when they were last muted, for the muter's list.
-    attribute :muted_name, :string, allow_nil?: false, public?: true
+    # How others saw the muted author when they were last muted, for the muter's
+    # list (`muted/1`).
+    attribute :muted_name, :string, public?: true
+    attribute :muted_wallet, :string, public?: true
+    attribute :muted_ens_name, :string, public?: true
     create_timestamp :inserted_at, public?: true
   end
 
@@ -70,7 +73,7 @@ defmodule AshTemplate.Rooms.Mute do
       argument :message_id, :uuid, allow_nil?: false
       upsert? true
       upsert_identity :one_per_pair
-      upsert_fields [:muted_name]
+      upsert_fields [:muted_name, :muted_wallet, :muted_ens_name]
       change set_attribute(:muter_account_id, actor(:human_account_id))
 
       # The author of the message named, a person or an agent, never the muter themselves.
@@ -89,7 +92,9 @@ defmodule AshTemplate.Rooms.Mute do
             Ash.Changeset.force_change_attributes(changeset,
               muted_account_id: message.human_account_id,
               muted_agent_id: message.agent_id,
-              muted_name: message.author_name
+              muted_name: message.author_name,
+              muted_wallet: message.author_wallet,
+              muted_ens_name: message.author_ens_name
             )
 
           _gone ->
@@ -133,4 +138,11 @@ defmodule AshTemplate.Rooms.Mute do
 
   @doc "The topic every mute and unmute by `human_account_id` is published on."
   def topic(human_account_id), do: "mutes:#{human_account_id}"
+
+  @doc """
+  The muted author, as `%{name, wallet, ens_name}`
+  (`AshTemplate.PublicIdentity.person/1`).
+  """
+  def muted(mute),
+    do: %{name: mute.muted_name, wallet: mute.muted_wallet, ens_name: mute.muted_ens_name}
 end

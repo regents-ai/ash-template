@@ -159,7 +159,10 @@ defmodule AshTemplate.Feed do
       id: message.id,
       at: message.inserted_at,
       conversation_id: conversation,
-      author: %{kind: "person", name: message.conversation.other_person.name},
+      author:
+        message.conversation.other_person
+        |> Map.take([:name, :wallet, :ens_name])
+        |> Map.put(:kind, "person"),
       read: "POST /api/v1/dms/#{conversation}/history"
     }
   end
@@ -170,7 +173,10 @@ defmodule AshTemplate.Feed do
       id: post.id,
       at: post.inserted_at,
       room: post.room,
-      author: %{kind: if(post.agent_id, do: "agent", else: "person"), name: post.author_name},
+      author:
+        post
+        |> RoomMessage.author()
+        |> Map.put(:kind, if(post.agent_id, do: "agent", else: "person")),
       read: "GET /api/v1/rooms/#{post.room}/messages/#{post.id}"
     }
   end

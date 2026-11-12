@@ -23,7 +23,8 @@ check: check-style check-platform check-required-fixes check-cli check-siwa-late
 # The design system's style check (STYLE.md): every break of a style rule in the
 # site's own CSS, scripts and templates, by file and line. An exception Sean approved
 # carries its marker on the line. mix regent_ui.assets copies the script from the
-# pinned design system. Needs ripgrep.
+# pinned design system. Needs ripgrep, awk and perl; without one it stops with exit 2
+# and names it, never passing.
 check-style:
 	cd platform && mix regent_ui.assets && bash assets/vendor/regent_ui/style-check.sh
 # mix precommit ends with the TypeScript typecheck, the script tests and the

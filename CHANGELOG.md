@@ -8976,6 +8976,225 @@ hand beforehand. This replaces the unlock step in the entry above;
   without the lock or Credits, change nothing. A new test database migrates through
   it unchanged.
 
+## 2026-11-12 — Released v218: the Credits schema is gone from the shared database
+
+- `41e054b1` (main `4af45439` plus `tpl/credits-drop-1112` at `9a67a83f`) is v218 on
+  template.regents.sh, released with `scripts/deploy.sh`; the release step ran migration
+  `20261112130000_remove_credits_schema` at about 17:28Z. Sean's order of 12 Nov and his
+  letters 15 a and 18 a. No page or code change.
+- Before, read at 17:24:03Z in one read-only snapshot: 13 tables, 268 rows (accounts 175,
+  wallets 56, balances 10, purchases 5, transfers 5, agent_permissions 1,
+  deposit_cursors 1, schema_migrations 15, five empty); lock list 62 tables, 9 deletable,
+  10 Credits. The 268 rows are saved outside any repository in
+  `/Users/sean/Documents/regent/artifacts/prod-protected-tables/credits-copy-2026-11-12-final`.
+- After, read at 17:29:59Z: no `regent_credits` schema, tables or functions; no
+  `keep_regent_credits__*` guard views; `revoke_credit_grant` is off
+  `regent_agents.paired_agents`, whose 22 rows and two other triggers are untouched; lock
+  list 52 tables, 8 deletable, 0 Credits, every listed table exists.
+- Confirmed live without Credits beforehand: template, design-system, Techtree, Sentinel,
+  siwa-server, regents.sh v299, Patchbay v370, Keyfleet, Autolaunch v271.
+- Rollback: the site goes back to the v217 image (`f2695d5c`). The removal itself cannot
+  be undone; `down` raises. regents.sh cannot roll back to v298 or earlier, Patchbay not
+  to v369 or earlier.
+- Check: the branch's full check was green on `9a67a83f`, which already held v217; main
+  since added only a changelog record, so it was not run again. Rehearsed on Postgres
+  16.15 and 17.7 with the lock on.
+- Left: Patchbay's own `patchbay_app.credits_help_posts` and `credits_help_answers`
+  (its chief's), and the elixir-utils `credits/` package, deleted next.
+
+## 2026-11-12 — Someone with no name shows by their wallet, rebuilt on main (branch, not on main)
+
+**This branch's migration rewrites existing rows** in `room_messages`, `room_mutes` and
+`left_messages`; it deletes none. Its release waits for Sean's go.
+
+- Sean, 6 November 2026: "everyone's wallet is public information"; decision 12a of
+  12 November: rebuild the wallet sweep (`tpl/wallets-1106`, `b030d6e5`) on main for him
+  to try. `tpl/wallets-1112` re-applies it as one change on main at `9326c58b` instead of
+  merging it: its migration sorted before main's newest, and its contract version,
+  11.0.0, is the one main gave to Credits going.
+- A person or agent with no name shows by their ENS name or short wallet, with its copy
+  icon, in rooms (the author line and Here now), private messages (the list, the heading
+  and each message), polls (Started by) and the admins' Agent Message list (From).
+  Dialogs, button labels, notices and page titles keep the plain words
+  (`AshTemplate.PublicIdentity.words/1`). "Unnamed agent" is gone. A mention of someone
+  with no name matches their ENS name or short wallet.
+- One shape names a person: `%{name, wallet, ens_name}` from
+  `AshTemplate.PublicIdentity.person/1`, drawn by
+  `AshTemplateWeb.Components.Shell.person_name/1` (the name, else
+  `Regent.Primitives.address`). `Actors.Human` and `Actors.Agent` carry `person` in place
+  of a saved name; a paired agent's actor carries its person's.
+  `PublicIdentity.of_accounts/1` answers it with the pictures.
+- Room posts, mutes and messages left for the site's team keep the wallet and ENS name of
+  who wrote them beside the name they chose, which is null when they had none
+  (`author_wallet`, `author_ens_name`; `muted_wallet`, `muted_ens_name`; `sender_wallet`,
+  `sender_ens_name`, read together as `Message.sender/1`). A message a paired agent left
+  is the agent's, with its wallet.
+- Main already did three of the sweep's parts, so its copies are dropped: the one account
+  lookup for conversations and polls (`of_accounts/1`), the mute and search code written
+  inline (`Mute.MuteAuthor` and the search page's item helpers), and author pictures from
+  the author's account in place of the sweep's coloured initials.
+- The API: room messages, room search, mutes, a poll's `started_by`, a conversation's
+  `with` and each live-feed event's `author` answer `wallet` and `ens_name` beside a
+  nullable name; `GET /api/v1/agents/{id}` answers the agent's `wallet_address`, and the
+  public and own profiles are one shape (`AgentProfile`). Both contracts move to 12.0.0;
+  `capabilities.json` stays at revision 2, since no operation is added or removed. The
+  docs, agents.md, COMMANDS.md and commands.json say so.
+- Migration `20261112151609_show_nameless_by_wallet` (the sweep's
+  `20261106171036_room_author_wallets`, renamed and widened to `left_messages`): adds the
+  wallet and ENS columns to the three tables and makes their names nullable. It then fills
+  each wallet from the account (`regent_names.platform_human_users`) or the agent, and a
+  person's ENS name from `account_ens_identities` (only one read for their current
+  wallet), and empties a saved name that was "Unnamed agent", that ENS name or the short
+  wallet, in one pass for people and one for agents. It runs in one transaction with
+  `SET LOCAL lock_timeout = '5s'`, holding the three tables' locks until it ends. Its
+  down gives each empty name back the ENS name, else the short wallet, and drops the
+  columns: an unnamed agent comes back as its short wallet, not "Unnamed agent".
+- Room figures: each pass of `AshTemplate.Rooms.Activity` forgets a room that is gone, so
+  a gone room never holds one of the sixteen places.
+- Full check on the Mac: 13 script tests, credo clean, 113 TypeScript, 570 browser walks
+  with 5 skipped, 215 Elixir (9 properties), required fixes and the command list pass.
+  Its last step, the newest-CLI check, fails only because regents-cli 1.10.25 came out
+  today; `tpl/cli-1.10.25-1112` moves the template to it. `mix ash.codegen --check`
+  is clean. WebKit not run.
+
+## 2026-11-12 — Every short wallet saved as a person's name goes (branch, not on main)
+
+**This branch's migration rewrites existing rows** in `room_messages`, `room_mutes` and
+`left_messages`; it deletes none. It sits on `tpl/wallets-1112` and ships with it; its
+release waits for Sean's go.
+
+- Decision 11a of 12 November: rebuild Lane A's "names keep their wallet"
+  (`tickets/ui-1029`, `3d1fd390`, never landed) and show Sean the rows before anything
+  is rewritten. `tpl/wallets-1112` already does the rest of Lane A. The one part still
+  missing: Lane A emptied a saved short wallet by its shape, whichever wallet it came
+  from, while `20261112151609_show_nameless_by_wallet` empties it only when it is the
+  short form of the account's wallet today, in the same letters. An account moves wallet
+  at sign-in (`AshTemplate.Accounts.HumanAccount`'s `refresh_verified`), so a person who has since moved kept the
+  old wallet's short form as plain words, with no copy icon.
+- Migration `20261112153800_clear_short_wallet_names` empties every name shaped like a
+  short wallet (`0x`, four, `..`, four, in any letters) that came from a person's account:
+  a room post or mute with no agent, and a message left for the team by a person or by an
+  agent paired with one (`human_account_id` set), whose saved name was its person's. The
+  row then shows by the wallet saved beside it, with its copy icon. An agent's own name
+  stays, and so does a row with no wallet to show instead. It runs after
+  `20261112151609` in the same transaction pattern (`SET LOCAL lock_timeout = '5s'`). Its
+  down changes nothing: the emptied name was the short form of a wallet the row no longer
+  records, and `20261112151609`'s down gives every empty name its ENS name or short wallet
+  back.
+- The public changelog's Wallets line of 12 November already says what a visitor sees.
+- `platform/test/ash_template/short_wallet_names_test.exs` builds the rows, saves old
+  names into them and runs the migration's statements: every case above, and a property
+  over 25 random wallets in mixed letters. Both fail with the migration's statements
+  taken out.
+- Two read-only SQL files for Sean, handed to the release lead and not kept in the
+  repository, to be run on production only with his go: `rows.sql` (which names this migration empties, how many and why, up to 20 a table
+  beside the wallet shown instead) and `sweep-rows.sql` (the same for `20261112151609`,
+  by case). Each ran inside `BEGIN; SET TRANSACTION READ ONLY; … ROLLBACK;` on the local
+  test database, on seeded rows covering every case, and its forecast matched what the
+  two migrations' statements then did to the same rows.
+- Full check on the Mac: 13 script tests, credo clean, 113 TypeScript, 570 browser walks
+  with 5 skipped, 217 Elixir (10 properties), required fixes and the command list pass;
+  `mix ash.codegen --check` is clean. Its last step, the newest-CLI check, fails only
+  because regents-cli 1.10.25 came out today. WebKit not run.
+
+## 2026-11-12 — The names release branch: main merged in, design-system pin `0ae2bffc` (branch, not on main)
+
+**This branch's two migrations rewrite existing rows**; they delete none. Sean's 17 a of
+12 Nov releases them.
+
+- `tpl/names-release-1112` is `tpl/names-1112` (`f9a02401`) with main merged in twice,
+  no rebase: `4af45439` (v217), then `a09f7821` (v218, which adds only the Credits
+  removal migration and its record). The release record and the public changelog keep every entry
+  from both sides by date. `cli/COMMANDS.md` and the agent guide's Live feed keep main's
+  `feed` command and its `--wake`, with the branch's author shape (`kind`, `name`,
+  `wallet`, `ens_name`; `name` null when they show by their wallet). The three OpenAPI
+  documents stay at 12.0.0; main changed none of them. Main's value cards name
+  features, never a person or an agent.
+- Design-system pin `0ae2bffc42662f9ed0a04f2cbe8109fa6d4f482a` (was `c6cbadd7`): the style
+  check stops with exit 2, naming what is missing, when ripgrep, awk or perl is not
+  installed. `make check-style` prints no breaks; a scratch unmarked glass line fails it
+  (exit 1 from the script); with ripgrep hidden the script exits 2.
+- Migrations: main's newest is `20261112130000_remove_credits_schema` (v218), so
+  `20261112151609` and `20261112153800` still run after everything production has run.
+- Forecast re-check on local throwaway databases migrated through `20261112120100`, then
+  again through `20261112130000`: `rows.sql` and `sweep-rows.sql` read-only on the seeded
+  rows, then the two real migrations; every row ended as the two files forecast.
+- Full check on `9ff7845e`, exit 0: style check clean, 13 script tests, credo clean, 126
+  TypeScript, 579 browser walks with 5 skipped, 217 Elixir (10 properties), required
+  fixes, the command list and the newest-CLI check. On `f11d89e8` one walk (the Agent
+  Message window's offline note on `/agents`, desktop) timed out once and passed on the
+  rerun. WebKit not run.
+
+## 2026-11-12 — Released v219: someone with no name shows by wallet
+
+- `6212c19f` (`tpl/names-release-1112`) is v219 on template.regents.sh, switched at about
+  17:50Z with `scripts/deploy.sh`. Sean's 17 a. Migrations
+  `20261112151609_show_nameless_by_wallet` and `20261112153800_clear_short_wallet_names`
+  ran in the release step; health says migrations applied.
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/rooms/general`,
+  `/polls`, `/changelog` and `/animations/cards` answer 200 at 1280, 390 and 320 with no
+  errors and no sideways scroll. In `/rooms/general` Sean's posts of 4 Oct read
+  seanwbren.eth with a copy control holding the full wallet; the agent post of 5 Oct
+  reads `0xbfa2..bfea` with its copy control; neither `0x0cb2..3c37` nor "Unnamed agent"
+  appears. `/openapi.json` says 12.0.0. Signed-in pages (`/dms`, `/admin/messages`) were
+  not read.
+- The six changed rows and their old names are kept in
+  `/Users/sean/Documents/regent/handoffs/names-2026-11-12/forecast.txt`.
+- Rollback: fix forward first. The v218 image (`41e054b1`) has not been tried against
+  rows with an empty name; going back means the first migration's undo step (it fills
+  the names back in), then the v218 image.
+- Full check exit 0 on `9ff7845e` by the worker: 126 TypeScript, 579 browser walks with 5
+  skipped, 217 Elixir (10 properties); the head differs only by a changelog line.
+- Design-system pin `0ae2bffc`: the style check stops with exit 2 when ripgrep, awk or
+  perl is missing.
+
+## 2026-11-12 — Platinum main button in dark; Credits leftovers removed
+
+Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
+
+- `2edcb597` Design-system pin `b57f8d919b7774fd3d09d303a580200e0692df06` (was
+  `0ae2bffc`), Sean's 151 a: in the Regents colour set, dark only, the main button is a
+  Platinum `#E5E3D2` plate with Charcoal words, and its hover and focus marks are
+  Tangerine through the new setting `--color-button-mark`. Rollout:
+  control `rollouts/2026-11-12-main-button-dark.md`.
+- `bf999815` The buttons lab (`/animations/buttons`) drew its Done outline in the
+  words' colour, Charcoal on the new plate in dark, and on Regents and Keyfleet in the
+  page's text colour, which did not show on the plate in either theme. In dark it now
+  takes `--color-button-mark` (Tangerine), chosen with the shared button's own dark
+  selectors; in light it is the words' colour on every site. Every other main-button
+  mark in the template already used the design system's settings.
+- Measured in headless Chromium on a local server (WebKit not run). `/showcase/wallet`
+  in dark: plate 15.23:1 against the page, words 14:1 on it, Tangerine marks 2.4:1 on
+  the plate and 6.34:1 against the page, focus ring 11.37:1. Light unchanged: plate
+  16.41:1, words 14:1. The lab's Regents column in dark: plate 14.26:1 against its
+  panel. No sideways scroll at 1280, 390 or 320.
+- `792c9c6d` Credits leftovers: `security/required-fixes.json` loses the
+  `regent_credits` library and the fixes `2026-10-26-ash-required-v7` and
+  `2026-10-07-credits-report-chain-first`; no site's main uses the package. The
+  required-fixes checker passes on the edited file. `docs/signed-agent-access-release.md`
+  loses the Credits migrations, spending grants and the grant setting. The setting name
+  `REGENT_CREDITS_ADMINS` stays.
+- The public changelog says the dark main button is now light with dark words.
+- Full check exit 0 in 322 s: style check clean, 13 script tests, credo clean, 126
+  TypeScript, 579 browser walks with 5 skipped, 217 Elixir (10 properties), required
+  fixes (main's registry), the command list and the newest-CLI check.
+
+## 2026-11-12 — Released v220: the main button in the dark theme
+
+- `37abed0c` (`tpl/dark-button-1112`) is v220 on template.regents.sh, switched at about
+  18:20Z with `scripts/deploy.sh`. Sean's 151 a: design-system pin `b57f8d91`. No migration.
+- Rollback: v219 (`6212c19f`), image only.
+- Full check exit 0 by the worker on the branch head: 126 TypeScript, 579 browser walks
+  with 5 skipped, 217 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): on `/showcase/wallet` the
+  main button is Platinum with Charcoal words in dark and unchanged in light; pressed in
+  both with no page error. `/`, `/showcase/wallet` and `/rooms/general` answer 200 at
+  1280, 390 and 320 with no errors and no sideways scroll.
+- Known, not changed here: the buttons lab's per-site columns all show the Regents
+  button; its frozen "Keyboard focus" example is a plain rectangle; on the home page the
+  Platinum part of Enter App's ring meets the Platinum button at one corner in dark.
+  Passed to the design chief.
+
 ## 2026-11-12 — Particles lab (branch, not on main)
 
 Sean asked for the 80,000-grain reference film remade with vgpu, able to take 20 or

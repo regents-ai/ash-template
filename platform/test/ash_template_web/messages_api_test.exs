@@ -85,7 +85,7 @@ defmodule AshTemplateWeb.MessagesApiTest do
     message = Ash.get!(Message, id, authorize?: false)
     assert {message.body, message.reply_to} == {"Hello team", "agent@example.com"}
     assert AshTemplate.Agents.get_agent!(message.agent_id, actor: %System{}).wallet_address == agent
-    assert message.sender_name == "Unnamed agent"
+    assert Message.sender(message) == %{name: nil, wallet: agent, ens_name: nil}
 
     again = http(from, agent, "agents", body)
     assert again.status == 200
