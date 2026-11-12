@@ -2,9 +2,10 @@ defmodule AshTemplate.Notes.Decision do
   @moduledoc """
   One question Jev was asked about one save of a note: which label fits it.
 
-  Saving a note creates a pending decision in the same transaction, on the
-  notes' `:note_saved` signal (`:request_label`), and an AshOban trigger then asks
-  Jev outside any transaction (`AskJev`). The row records what Jev chose, the model
+  Saving a note queues a job in the save's transaction, on the notes'
+  `:note_saved` signal (`:request_label`). Once the save has committed, the job
+  creates a pending decision in a short transaction of its own, and an AshOban
+  trigger then asks Jev outside any transaction (`AskJev`). The row records what Jev chose, the model
   that answered, the tokens and what OpenRouter charged. A request that does
   not get through retries with backoff, then records its failure. The writer
   can say once whether the label fits.
@@ -22,6 +23,8 @@ defmodule AshTemplate.Notes.Decision do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
     extensions: [AshOban]
+
+  require Ash.Query
 
   alias AshTemplate.Notes.Decision.{AskJev, RateOnce, RecordFailure, UnderDailyBudget}
 
@@ -83,30 +86,48 @@ defmodule AshTemplate.Notes.Decision do
 
   signals_in do
     from AshTemplate.Notes.Signals do
-      on :note_saved, :request_label
+      # A job, queued in the save's transaction, so a save that rolls back asks
+      # nothing, and the save never waits on the day's budget lock. Each save
+      # emits its own signal, so Oban's uniqueness check has nothing to find and
+      # would only add two queries to every save.
+      on :note_saved, :request_label,
+        delivery:
+          {AshOban.Signals,
+           queue: :default,
+           max_attempts: 3,
+           unique: false,
+           actor_persister: AshTemplate.Actors.Persister}
     end
   end
 
   actions do
     defaults [:read]
 
-    # Asks for a label on the saved note, in the save's transaction, so a save
-    # that rolls back asks nothing. It asks as the person or agent who saved.
-    # When the site has used today's questions the note still saves, with no
-    # label.
+    # Asks for a label on the saved note, as the person or agent who saved it,
+    # once the save has committed. The budget's lock, the day's counts and the
+    # new decision share this action's short transaction, so two requests never
+    # both take the last question. When the site has used today's questions the
+    # note keeps no label; a note deleted before its job runs gets no question.
     action :request_label do
+      transaction? true
       argument :signal, AshTemplate.Notes.Signals.NoteSaved, allow_nil?: false
 
       run fn %{arguments: %{signal: %{note_id: note_id}}}, context ->
-        :ok = UnderDailyBudget.lock()
+        note = Ash.Query.filter(AshTemplate.Notes.Note, id == ^note_id)
 
-        __MODULE__
-        |> Ash.Changeset.for_create(:ask, %{note_id: note_id}, Ash.Context.to_opts(context))
-        |> Ash.create()
-        |> case do
-          {:ok, _decision} -> :ok
-          {:error, %Ash.Error.Forbidden{}} -> :ok
-          {:error, error} -> {:error, error}
+        if Ash.exists?(note, authorize?: false) do
+          :ok = UnderDailyBudget.lock()
+
+          __MODULE__
+          |> Ash.Changeset.for_create(:ask, %{note_id: note_id}, Ash.Context.to_opts(context))
+          |> Ash.create()
+          |> case do
+            {:ok, _decision} -> :ok
+            {:error, %Ash.Error.Forbidden{}} -> :ok
+            {:error, error} -> {:error, error}
+          end
+        else
+          {:error, AshOban.Errors.CancelJob.exception(reason: :note_deleted)}
         end
       end
     end

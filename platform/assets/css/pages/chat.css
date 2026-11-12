@@ -88,6 +88,16 @@
   overflow-x: auto;
 }
 
+/* A reply being written arrives as plain text, its line breaks kept, until the
+   whole reply replaces it. */
+.chat-message__body[data-reply] {
+  white-space: pre-wrap;
+}
+
+.chat-older {
+  justify-self: center;
+}
+
 /* Below the desktop width code in an answer wraps rather than scrolling sideways. */
 @media (max-width: 63.99rem) {
   .chat-message__body pre {

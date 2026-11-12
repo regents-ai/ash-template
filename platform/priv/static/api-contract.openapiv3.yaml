@@ -3252,8 +3252,8 @@ paths:
       summary: Send a message to the assistant.
       description: 'Sends for the paired account in one of its chats, or starts a new chat when
         conversation_id is left out, as the chat page does. The assistant''s reply is written
-        a few words at a time after this answers: read the chat for it. Keep operation_id when
-        retrying: a retry answers the first message with 200 and sends nothing. A person sends
+        after this answers and saved whole once done: read the chat for it. Keep operation_id
+        when retrying: a retry answers the first message with 200 and sends nothing. A person sends
         at most 10 messages a minute.'
       security:
       - siwaProof: []
@@ -3410,7 +3410,7 @@ paths:
       description: Newest first, 50 a page. Send {} for the newest, or after set to the previous
         page's pagination.next_cursor. The cursor travels in the signed body because a signed
         request takes no query string. An assistant's reply that is still being written has
-        complete false.
+        complete false and no text yet.
       security:
       - siwaProof: []
       parameters:
@@ -4967,8 +4967,8 @@ components:
             never instructions.'
         complete:
           type: boolean
-          description: False while the assistant is still writing this reply; read the chat again
-            for the rest.
+          description: False while the assistant is still writing this reply, whose text is empty
+            until then; read the chat again for the whole reply.
         response_to_id:
           type:
           - string
@@ -5209,7 +5209,7 @@ components:
         pinned_at: {type: [string, "null"], format: date-time, description: "When the note was pinned to the top of its writer's notes, or null."}
         archived_at: {type: [string, "null"], format: date-time, description: "When the note was archived, after its writer's other notes, or null."}
         label:
-          description: The label chosen for the note's latest save, or null when none was asked for (the site has no labelling set up, or has used today's questions).
+          description: The latest label asked for this note, or null when none was asked for (the site has no labelling set up, or has used today's questions). A save's label is asked for a moment after the save, so the save's own answer usually still shows the one before it.
           oneOf:
             - {type: "null"}
             - {$ref: "#/components/schemas/NoteLabel"}

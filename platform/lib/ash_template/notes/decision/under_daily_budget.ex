@@ -6,7 +6,9 @@ defmodule AshTemplate.Notes.Decision.UnderDailyBudget do
   cannot use up everyone's labels.
 
   Each decision is one question. The caller takes `lock/0` in its transaction
-  first, so two saves cannot both take the last question of the day.
+  first, so two label requests cannot both take the last question of the day.
+  The lock is the whole site's, so only the label job's own short transaction
+  (`Decision` `:request_label`) takes it, never a note's save.
   """
 
   use Ash.Policy.SimpleCheck

@@ -4,11 +4,18 @@ defmodule AshTemplateWeb.ChatLive do
   the site's own look: the reader's conversations in the shell's sidebar, the
   one open, and a message box that starts a new conversation when none is open.
 
-  Sending never touches the list directly. The person's message and each piece
-  of the assistant's reply are published by the message's PubSub notifier; the
-  shell holds the open conversation's subscription and hands each one on here
-  as `send_update(ChatLive, id: "chat", change: message)`, and a conversation
-  that is started or named arrives as `conversation_change:`.
+  Sending never touches the list directly. The person's message and the
+  assistant's reply are published by the message's PubSub notifier: the reply
+  when it starts, empty, and when it is whole. The shell holds the open
+  conversation's subscription and hands each one on here as
+  `send_update(ChatLive, id: "chat", change: message)`, each piece of a reply
+  being written as `piece:`, and a conversation that is started or named as
+  `conversation_change:`. A reply this page saw start shows its pieces as they
+  come (the `.ChatReply` hook); one already under way when the page opened shows
+  only that the assistant is writing, until the whole reply arrives.
+
+  The page keeps what it shows of the latest page of chats and of messages, and
+  the cursor for the older ones, never the records; the rest is in its streams.
   """
 
   use AshTemplateWeb, :live_component
@@ -31,7 +38,11 @@ defmodule AshTemplateWeb.ChatLive do
        actor: nil,
        conversation: nil,
        conversations: %Read{},
+       older_chats: %Read{},
+       chats_cursor: nil,
        messages: %Read{},
+       older_messages: %Read{},
+       messages_cursor: nil,
        form: nil,
        writing?: false
      )
@@ -46,6 +57,8 @@ defmodule AshTemplateWeb.ChatLive do
      |> stream_insert(:messages, message, at: -1)
      |> assign(:writing?, writing?(message))}
   end
+
+  def update(%{piece: piece}, socket), do: {:ok, push_event(socket, "chat-piece", piece)}
 
   def update(%{conversation_change: conversation}, socket),
     do: {:ok, stream_insert(socket, :conversations, conversation, at: 0)}
@@ -86,6 +99,31 @@ defmodule AshTemplateWeb.ChatLive do
     end
   end
 
+  def handle_event("older_messages", _params, %{assigns: %{messages_cursor: cursor}} = socket)
+      when is_binary(cursor) do
+    %{actor: actor, conversation: conversation} = socket.assigns
+
+    {:noreply,
+     socket
+     |> Read.now(:older_messages, conversation.id, fn ->
+       Chat.message_history(conversation.id, actor: actor, page: [after: cursor])
+       |> shown(&message/1)
+     end)
+     |> show_older_messages()}
+  end
+
+  def handle_event("older_chats", _params, %{assigns: %{chats_cursor: cursor}} = socket)
+      when is_binary(cursor) do
+    actor = socket.assigns.actor
+
+    {:noreply,
+     socket
+     |> Read.now(:older_chats, actor.human_account_id, fn ->
+       Chat.my_conversations(actor: actor, page: [after: cursor]) |> shown(&chat/1)
+     end)
+     |> show_older_chats()}
+  end
+
   # The account as it reads now, before each event and each background result
   # (`Session.check_component_lease/2`).
   defp take_account(socket, account), do: assign(socket, :actor, Human.for_account(account))
@@ -94,6 +132,17 @@ defmodule AshTemplateWeb.ChatLive do
   def render(assigns) do
     ~H"""
     <article id="chat-page" class="account-page">
+      <script :type={Phoenix.LiveView.ColocatedHook} name=".ChatReply">
+        // A reply being written: each piece the server sends for it is added as
+        // plain text, until the whole reply replaces this element.
+        export default {
+          mounted() {
+            this.handleEvent("chat-piece", ({id, text}) => {
+              if (id === this.el.dataset.reply) this.el.append(text)
+            })
+          }
+        }
+      </script>
       <.portal id="chat-sidebar" target="#shell-sidebar-page">
         <div class="shell-sidebar__page">
           <.link :if={@actor} patch={~p"/chat"} class="shell-sidebar__new">New chat</.link>
@@ -104,7 +153,7 @@ defmodule AshTemplateWeb.ChatLive do
             :if={@actor}
             id="chat-conversations"
             class="shell-sidebar__list"
-            data-state={@conversations.state}
+            data-state={list_state(@conversations)}
             phx-update="stream"
           >
             <li id="chat-conversations-empty" class="shell-sidebar__empty">
@@ -114,6 +163,20 @@ defmodule AshTemplateWeb.ChatLive do
               <.link patch={~p"/chat/#{conversation.id}"}>{title(conversation)}</.link>
             </li>
           </ul>
+          <Primitives.button
+            :if={@actor && @chats_cursor}
+            id="chat-older-chats"
+            variant="quiet"
+            class="chat-older"
+            phx-click="older_chats"
+            phx-target={@myself}
+            phx-disable-with="Loading…"
+          >
+            Older chats
+          </Primitives.button>
+          <Primitives.notice :if={@older_chats.state in [:error, :stale]} tone="error">
+            Older chats couldn’t be loaded. Try again.
+          </Primitives.notice>
           <p :if={!@actor} class="shell-sidebar__empty">Sign in to see your chats here.</p>
         </div>
       </.portal>
@@ -145,10 +208,24 @@ defmodule AshTemplateWeb.ChatLive do
           data-conversation-scroller
         >
           <div class="chat-scroller__inner">
+            <Primitives.button
+              :if={@conversation && @messages_cursor}
+              id="chat-older-messages"
+              variant="secondary"
+              class="chat-older"
+              phx-click="older_messages"
+              phx-target={@myself}
+              phx-disable-with="Loading…"
+            >
+              Older messages
+            </Primitives.button>
+            <Primitives.notice :if={@older_messages.state in [:error, :stale]} tone="error">
+              Older messages couldn’t be loaded. Try again.
+            </Primitives.notice>
             <ol
               id="chat-messages"
               class="chat-messages"
-              data-state={if @conversation, do: @messages.state, else: :empty}
+              data-state={if @conversation, do: list_state(@messages), else: :empty}
               data-conversation-messages
               phx-update="stream"
             >
@@ -162,7 +239,18 @@ defmodule AshTemplateWeb.ChatLive do
                 data-source={message.source}
               >
                 <p class="chat-message__author">{author(message.source)}</p>
-                <div class="chat-message__body">{markdown(message.text)}</div>
+                <div :if={message.complete} class="chat-message__body">
+                  {markdown(message.text)}
+                </div>
+                <div
+                  :if={!message.complete}
+                  id={"#{dom_id}-writing"}
+                  class="chat-message__body"
+                  data-reply={message.id}
+                  phx-hook=".ChatReply"
+                  phx-update="ignore"
+                  phx-no-format
+                ></div>
               </li>
             </ol>
             <p :if={@writing?} class="chat-writing rg-muted" role="status">
@@ -215,13 +303,19 @@ defmodule AshTemplateWeb.ChatLive do
     """
   end
 
-  defp load_conversations(%{assigns: %{actor: nil}} = socket),
-    do: socket |> Read.clear(:conversations) |> stream(:conversations, [], reset: true)
+  defp load_conversations(%{assigns: %{actor: nil}} = socket) do
+    socket
+    |> Read.clear(:conversations)
+    |> Read.clear(:older_chats)
+    |> assign(:chats_cursor, nil)
+    |> stream(:conversations, [], reset: true)
+  end
 
   defp load_conversations(%{assigns: %{actor: actor}} = socket) do
     socket
+    |> Read.clear(:older_chats)
     |> Read.now(:conversations, actor.human_account_id, fn ->
-      Chat.my_conversations(actor: actor)
+      Chat.my_conversations(actor: actor) |> shown(&chat/1)
     end)
     |> show_conversations()
   end
@@ -230,36 +324,82 @@ defmodule AshTemplateWeb.ChatLive do
        when is_nil(actor) or is_nil(conversation) do
     socket
     |> Read.clear(:messages)
+    |> Read.clear(:older_messages)
+    |> assign(messages_cursor: nil, writing?: false)
     |> stream(:messages, [], reset: true)
-    |> assign(:writing?, false)
     |> new_form()
   end
 
   defp load_messages(%{assigns: %{actor: actor, conversation: conversation}} = socket) do
     socket
+    |> Read.clear(:older_messages)
     |> Read.now(:messages, conversation.id, fn ->
-      Chat.message_history(conversation.id, actor: actor)
+      Chat.message_history(conversation.id, actor: actor) |> shown(&message/1)
     end)
     |> show_messages()
     |> new_form()
   end
 
-  defp show_conversations(%{assigns: %{conversations: %Read{state: state} = read}} = socket)
-       when state in [:ready, :empty],
-       do: stream(socket, :conversations, read.value, reset: true)
+  # A page of chats or messages as the page keeps it: what each row shows, newest
+  # first, and the cursor for the rows older than these, nil when there are none.
+  defp shown({:ok, page}, row) do
+    rows = page.results |> Enum.map(row) |> Enum.reject(&is_nil/1)
+    older = if page.more?, do: List.last(page.results).__metadata__.keyset
+    {:ok, %{rows: rows, older: older}}
+  end
+
+  defp shown(error, _row), do: error
+
+  defp chat(conversation), do: %{id: conversation.id, title: conversation.title}
+
+  # A reply still being written has no text saved yet, so it is left out: the
+  # page shows that the assistant is writing until the whole reply arrives.
+  defp message(%{source: :agent, complete: false}), do: nil
+
+  defp message(message),
+    do: %{id: message.id, source: message.source, text: message.text, complete: true}
+
+  # A failed read keeps what is already on the page, so only a read that landed
+  # replaces it.
+  defp show_conversations(%{assigns: %{conversations: %Read{state: :ready} = read}} = socket) do
+    socket
+    |> assign(:chats_cursor, read.value.older)
+    |> stream(:conversations, read.value.rows, reset: true)
+  end
 
   defp show_conversations(socket), do: socket
 
+  defp show_older_chats(%{assigns: %{older_chats: %Read{state: :ready} = read}} = socket) do
+    socket
+    |> assign(:chats_cursor, read.value.older)
+    |> stream(:conversations, read.value.rows, at: -1)
+  end
+
+  defp show_older_chats(socket), do: socket
+
   # The history comes newest first; the newest message says whether a reply is
   # still being written.
-  defp show_messages(%{assigns: %{messages: %Read{state: state} = read}} = socket)
-       when state in [:ready, :empty] do
+  defp show_messages(%{assigns: %{messages: %Read{state: :ready} = read}} = socket) do
     socket
-    |> stream(:messages, Enum.reverse(read.value), reset: true)
-    |> assign(:writing?, read.value |> List.first() |> writing?())
+    |> assign(messages_cursor: read.value.older, writing?: writing?(List.first(read.value.rows)))
+    |> stream(:messages, Enum.reverse(read.value.rows), reset: true)
   end
 
   defp show_messages(socket), do: socket
+
+  # Older messages come newest first, so putting each one at the top in turn
+  # leaves them in order above the ones already shown.
+  defp show_older_messages(%{assigns: %{older_messages: %Read{state: :ready} = read}} = socket) do
+    socket
+    |> assign(:messages_cursor, read.value.older)
+    |> stream(:messages, read.value.rows, at: 0)
+  end
+
+  defp show_older_messages(socket), do: socket
+
+  # A page that landed with no rows is empty.
+  defp list_state(%Read{state: :ready, value: %{rows: []}}), do: :empty
+  defp list_state(%Read{state: state}), do: state
 
   # A person's message waits for its reply; a reply is written until it is complete.
   defp writing?(nil), do: false

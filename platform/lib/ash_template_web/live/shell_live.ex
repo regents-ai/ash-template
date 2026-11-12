@@ -250,8 +250,13 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
-  # Each piece of the assistant's reply, and the person's own message, reach only
-  # the conversation on screen.
+  # The person's own message, the assistant's reply as it starts and ends, and
+  # each piece of the reply in between reach only the conversation on screen.
+  def handle_info(%{topic: "chat:messages:" <> id, event: "piece", payload: piece}, socket) do
+    if on_conversation?(socket, id), do: send_update(ChatLive, id: "chat", piece: piece)
+    {:noreply, socket}
+  end
+
   def handle_info(%{topic: "chat:messages:" <> id, payload: message}, socket) do
     if on_conversation?(socket, id),
       do: send_update(ChatLive, id: "chat", change: message)

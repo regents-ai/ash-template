@@ -898,10 +898,10 @@ defmodule AshTemplate.SignedToolsTest do
 
     stolen = Jason.encode!(%{text: "Theirs", operation_id: theirs.id, conversation_id: chat})
     assert error_code(request(:post, "/api/v1/chat/messages", stolen)) == "invalid_message"
-    their_chat = AshTemplate.Chat.message_history!(theirs.conversation_id, actor: other)
+    their_chat = AshTemplate.Chat.message_history!(theirs.conversation_id, actor: other).results
     assert [%{text: "Mine alone"}] = Enum.filter(their_chat, &(&1.source == :user))
 
-    assert {:ok, [%{id: ^chat}]} =
+    assert {:ok, %{results: [%{id: ^chat}]}} =
              AshTemplate.Chat.my_conversations(actor: AshTemplate.Actors.Human.for_account(account))
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
@@ -929,7 +929,7 @@ defmodule AshTemplate.SignedToolsTest do
     human = AshTemplate.Actors.Human.for_account(account)
     sent = AshTemplate.Chat.get_earlier_message!(operation_id, actor: human)
     assert [reply, %{id: ^operation_id}] =
-             AshTemplate.Chat.message_history!(sent.conversation_id, actor: human)
+             AshTemplate.Chat.message_history!(sent.conversation_id, actor: human).results
 
     assert %{source: :agent, complete: true, response_to_id: ^operation_id} = reply
   end
