@@ -7817,3 +7817,17 @@ sits on its own branches.
 - A machine holds at most 200 open agent feeds (it was 1,000), and `platform/fly.toml`
   now states how many connections a machine takes (2,000 soft, 2,500 hard) instead of
   leaving it to Fly's default, so feeds that stay open can never keep visitors out.
+
+## 2026-11-12 — Released v197: the agent live feed and stated connection limits
+
+- `9160498f` is v197 on template.regents.sh, switched at about 05:50Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v196 (`70128c89`); the connection
+  limits in `platform/fly.toml` go back with it.
+- Full check on `9160498f`, exit 0: 41 script tests, 461 browser walks with 5 skipped,
+  193 Elixir (9 properties).
+- Live read: `/capabilities.json` names `9160498f`; Fly shows the machine's limits as
+  2,000 soft and 2,500 hard connections; `/`, `/agents`, `/docs` and `/app` answer 200;
+  `GET /api/v1/feed` with no signature answers 401 `http_headers_missing`; the served
+  OpenAPI document lists `/api/v1/feed`. Fly logs: no errors after the switch. Not
+  proven live: a signed agent holding the feed open through Fly's proxy; regents-cli's
+  `feed` command proves it when it ships.
