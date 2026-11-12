@@ -133,9 +133,9 @@ defmodule AshTemplateWeb.Router do
     }
   end
 
-  # The saved errors: the site's admins only. Anyone else gets the not-found page under
-  # the reading policy; an admin's page replaces it with one carrying this
-  # request's nonce (AshTemplateWeb.ErrorsAdmin).
+  # The saved errors: the site's admins only (RegentPrivy.Owners). Anyone else gets the
+  # not-found page under the reading policy; an admin's page replaces it with one
+  # carrying this request's nonce (AshTemplateWeb.ErrorsAdmin).
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
   # sobelow_skip ["Config.CSP"]
   pipeline :errors_admin do
@@ -149,6 +149,7 @@ defmodule AshTemplateWeb.Router do
       "referrer-policy" => "no-referrer"
     }
 
+    plug RegentPrivy.Owners, sign_in: AshTemplateWeb.ErrorsAdmin, router: __MODULE__
     plug AshTemplateWeb.ErrorsAdmin
   end
 
@@ -448,7 +449,7 @@ defmodule AshTemplateWeb.Router do
     pipe_through :errors_admin
 
     error_tracker_dashboard("/errors",
-      on_mount: [AshTemplateWeb.ErrorsAdmin],
+      on_mount: [{RegentPrivy.Owners, AshTemplateWeb.ErrorsAdmin}],
       csp_nonce_assign_key: %{script: :csp_nonce, style: :csp_nonce}
     )
   end
@@ -458,7 +459,10 @@ defmodule AshTemplateWeb.Router do
 
     live_session :admin,
       session: {Session, :render_context, []},
-      on_mount: [AshTemplateWeb.ErrorsAdmin] do
+      on_mount: [
+        {RegentPrivy.Owners, AshTemplateWeb.ErrorsAdmin},
+        {AshTemplateWeb.ErrorsAdmin, :admin}
+      ] do
       live "/messages", AdminMessagesLive, :index
     end
   end

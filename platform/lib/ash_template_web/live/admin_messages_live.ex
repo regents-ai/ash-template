@@ -2,8 +2,9 @@ defmodule AshTemplateWeb.AdminMessagesLive do
   @moduledoc """
   The messages agents and people left for the site's team (`AshTemplate.Messages`),
   newest first, 50 a page, for the site's admins only: the route sits behind
-  the same check as the saved errors (`AshTemplateWeb.ErrorsAdmin`), which
-  hands the page its admin actor, and the read's own policy asks again
+  the same check as the saved errors (`RegentPrivy.Owners` reading
+  `AshTemplateWeb.ErrorsAdmin`), `ErrorsAdmin` hands the page its admin actor,
+  and the read's own policy asks again
   (`RegentAgents.Checks.Admin`). `?after=` holds the cursor of the page before.
   """
 

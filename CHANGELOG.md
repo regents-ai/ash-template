@@ -9147,3 +9147,51 @@ release waits for Sean's go.
   skipped, 217 Elixir (10 properties); the head differs only by a changelog line.
 - Design-system pin `0ae2bffc`: the style check stops with exit 2 when ripgrep, awk or
   perl is missing.
+
+## 2026-11-12 — The template signs in through the shared Privy package (branch, not on main)
+
+Branch `tpl/privy-shared-1112`. The template stops carrying its own copies of the
+Privy sign-in pieces and uses elixir-utils' `regent_privy` instead, as a hard cutover:
+no alias modules, no second path. Sign-in is protected, so this is built and checked
+on the branch only; releasing it is the founder's decision.
+
+- Pin: `@elixir_utils_ref` moves from `240e938` to `0eee6be3` (elixir-utils branch
+  `eu/privy-on-pin-1112`), which is the old pin plus only the shared sign-in pieces
+  (no `RegentPrivy.Users`, no `req`, no G1). It is not on elixir-utils main. Only the
+  15 elixir-utils lines of `mix.lock` change.
+- `AshTemplateWeb.PrivyProof` is deleted. The sign-in step (`PrivySessionController`)
+  and the notes routes read the token pair with `RegentPrivy.Proof.pair/1`.
+- Security policies: `sign_in` and `showcase` add the list every Regent site shares,
+  `RegentPrivy.ContentSecurityPolicy.sign_in/0`, in place of the template's own
+  `@sign_in`. All four served policies (reading, sign_in, showcase, errors) are
+  byte-for-byte the same before and after, in the test and dev builds.
+- `/admin/errors` and `/admin/messages`: `AshTemplateWeb.ErrorsAdmin` is now the
+  template's `RegentPrivy.Owners` module. `owners/0` reads `:admins`, and `signed_in/1`
+  and `still_signed_in/1` read the session rows through `SessionAuthority`. The router's
+  `:errors_admin` pipeline and both pages' `on_mount` go through `RegentPrivy.Owners`;
+  `ErrorsAdmin` keeps the nonce policy plug and an `:admin` hook that hands the
+  messages page its admin actor. Anyone but an admin still gets the not-found page.
+  Stricter than before: an open page now re-checks the sign-in and the admin list on
+  messages and background results too (the team page reads through `start_async`),
+  not only on navigation and presses. New: a refused, signed-in non-admin's Privy id
+  is logged at info level (accepted by the template's chief).
+- Browser: `privy_bridge.tsx` imports `readPrivyPair`, `privyPairHeaders` and
+  `privyLoginFailure` from the shared file and deletes its own copies; nothing else in
+  it or in `auth_lazy.ts` changes. `mix regent_privy.assets` copies that file in
+  `assets.build`, `assets.deploy` and `precommit`, and `/assets/vendor/regent_privy/`
+  is ignored. The release image makes it with `mix assets.deploy`; it never takes the
+  local copy.
+- Tests: `test/ash_template_web/errors_admin_test.exs` (an admin gets in; signed out
+  and a non-admin find no page on both pages; a sign-in that ends while a page is open
+  is sent away on the next press) and `assets/test/privy_sign_in.test.ts` (the shared
+  reader hands over both tokens or nothing, and stops once stale; the bridge names
+  Privy's failures through the shared helper).
+- Check, on this change replayed onto main at v219 (`7dcf9aa5`): `make check` from the
+  repository root is green: the style check, 13 report script tests, 130 script tests
+  in 18 files, the browser walk (579 passed, 5 skipped for screen size, 584 in all),
+  220 server tests (210 tests, 10 properties), required fixes (every shared library,
+  `regent_privy` included, carries its fixes; the pin need not be on elixir-utils
+  main), `cli/commands.json` and siwa-latest.
+- Not proved: a real Privy sign-in. The bridge's own call into the shared reader is
+  proved by the typecheck, not by a run (the browser walk replaces the bridge).
+- Docs: `docs/feature-map.md`, `platform/README.md` and `platform/AGENTS.md`.

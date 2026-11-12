@@ -4,7 +4,7 @@ defmodule AshTemplate.MixProject do
   # Shared Regent libraries, each pinned to one published commit. To move a pin,
   # change its ref and run `mix deps.update <name>`.
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
-  @elixir_utils_ref "240e93856f11ae2f7be0b427ef8eb8a468afb4f2"
+  @elixir_utils_ref "0eee6be3b823fdc002711eeabfe28537996b5548"
   @design_system "https://github.com/regents-ai/design-system.git"
   @design_system_ref "0ae2bffc42662f9ed0a04f2cbe8109fa6d4f482a"
 
@@ -195,12 +195,14 @@ defmodule AshTemplate.MixProject do
         "compile",
         "regent_ui.assets",
         "regent_identity.assets",
+        "regent_privy.assets",
         "regent_agent_access.assets",
         "esbuild ash_template"
       ],
       "assets.deploy": [
         "regent_ui.assets",
         "regent_identity.assets",
+        "regent_privy.assets",
         "regent_agent_access.assets",
         "esbuild ash_template --minify",
         "phx.digest"
@@ -231,6 +233,7 @@ defmodule AshTemplate.MixProject do
         "ash_template.sync_api_contract --check",
         "regent_ui.assets",
         "regent_identity.assets",
+        "regent_privy.assets",
         "regent_agent_access.assets",
         "cmd npm run typecheck",
         "cmd npm test",
