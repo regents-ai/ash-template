@@ -116,9 +116,10 @@ test("A message menu stays usable while new messages arrive, and closes once its
   const menu = said.getByRole("group", {name: "Message options"})
   await expect(menu).toBeVisible()
 
-  // Three messages of ten lines each fill the room more than once at either width;
-  // with the fourth below, that keeps inside the friend's allowance of quick posts
-  // for both widths together.
+  // Messages of ten lines show their opening six, so on a desktop two of them leave
+  // the room just short of full and the second is made taller; three fill it at
+  // either width. With the fourth below, that keeps inside the friend's allowance of
+  // quick posts for both widths together.
   const friend = await browser.newContext({
     storageState: "test/browser/.auth/friend.json",
     baseURL,
@@ -142,6 +143,7 @@ test("A message menu stays usable while new messages arrive, and closes once its
     const first = await post(1)
     const second = await post(2)
     await expect(second).toBeAttached()
+    await grow(second, 80)
     await still(page)
     expect(await page.locator("[data-conversation-scroller]").evaluate(scroller => scroller.scrollHeight > scroller.clientHeight)).toBe(true)
     const full = await place(said)

@@ -349,12 +349,7 @@ defmodule AshTemplateWeb.RoomsLive do
                   picture={message.author_picture}
                   size={36}
                 />
-                <span
-                  :if={!message.author_squares}
-                  class="rooms-avatar"
-                  data-tone={:erlang.phash2(author(message), 3)}
-                  aria-hidden="true"
-                >
+                <span :if={!message.author_squares} class="rooms-avatar" aria-hidden="true">
                   {initials(message.author_name)}
                 </span>
                 <div class="rooms-message__main">
@@ -433,6 +428,7 @@ defmodule AshTemplateWeb.RoomsLive do
               name={@form[:body].name}
               rows="2"
               maxlength="2000"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={"room-message-hint #{field.described_by}"}
             >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
@@ -442,7 +438,7 @@ defmodule AshTemplateWeb.RoomsLive do
             controls="#room-message-actions"
           />
           <fieldset id="room-message-actions" class="rooms-composer__actions">
-            <p id="room-message-hint" class="rooms-composer__hint rg-muted">
+            <p id="room-message-hint" class="visually-hidden">
               Enter sends. Shift+Enter starts a new line.
             </p>
             <Primitives.button
@@ -472,12 +468,12 @@ defmodule AshTemplateWeb.RoomsLive do
           </p>
         </section>
 
-        <section class="account-panel" aria-labelledby="room-mutes-title">
+        <section :if={@mutes != []} class="account-panel" aria-labelledby="room-mutes-title">
           <h2 id="room-mutes-title">Muted</h2>
           <p class="rg-muted">
             You don’t see their messages in any room. They aren’t told.
           </p>
-          <ul :if={@mutes != []} class="rooms-mutes">
+          <ul class="rooms-mutes">
             <li :for={mute <- @mutes}>
               <bdi>{mute.muted_name}</bdi>
               <Primitives.button
@@ -498,8 +494,7 @@ defmodule AshTemplateWeb.RoomsLive do
           class="account-panel"
           aria-labelledby="room-topic-title"
         >
-          <h2 id="room-topic-title">Room topic</h2>
-          <p class="rg-muted">You started this room, so you choose what it’s about.</p>
+          <h2 id="room-topic-title">Topic</h2>
           <.form
             for={@topic_form}
             id="room-topic-form"
@@ -509,9 +504,15 @@ defmodule AshTemplateWeb.RoomsLive do
             phx-target={@myself}
           >
             <.topic_field form={@topic_form} id="room-topic" />
-            <Primitives.button type="submit" variant="secondary" phx-disable-with="Saving…">
-              Save topic
-            </Primitives.button>
+            <AshTemplateWeb.LiveConnection.offline
+              id="room-topic-offline"
+              controls="#room-topic-actions"
+            />
+            <fieldset id="room-topic-actions" class="rooms-start__actions">
+              <Primitives.button type="submit" variant="secondary" phx-disable-with="Saving…">
+                Save topic
+              </Primitives.button>
+            </fieldset>
           </.form>
         </section>
 
@@ -537,15 +538,21 @@ defmodule AshTemplateWeb.RoomsLive do
                 value={@room_form[:name].value}
                 maxlength="40"
                 autocomplete="off"
-                phx-debounce="300"
+                phx-debounce="blur"
                 aria-invalid={field.aria_invalid}
                 aria-describedby={field.described_by}
               />
             </Primitives.field>
             <.topic_field form={@room_form} id="room-start-topic" />
-            <Primitives.button type="submit" phx-disable-with="Starting…">
-              Start room
-            </Primitives.button>
+            <AshTemplateWeb.LiveConnection.offline
+              id="room-start-offline"
+              controls="#room-start-actions"
+            />
+            <fieldset id="room-start-actions" class="rooms-start__actions">
+              <Primitives.button type="submit" phx-disable-with="Starting…">
+                Start room
+              </Primitives.button>
+            </fieldset>
           </.form>
         </section>
       </div>
@@ -564,7 +571,7 @@ defmodule AshTemplateWeb.RoomsLive do
         name={@form[:topic].name}
         rows="2"
         maxlength="200"
-        phx-debounce="300"
+        phx-debounce="blur"
         aria-invalid={field.aria_invalid}
         aria-describedby={field.described_by}
       >{Phoenix.HTML.Form.normalize_value("textarea", @form[:topic].value)}</textarea>
@@ -692,6 +699,7 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("delete", value: %{id: @message.id}, target: @myself)}
           data-confirm="Delete this message?"
+          data-confirm-action="Delete"
         >
           Delete
         </button>
@@ -713,6 +721,7 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("mute", value: %{id: @message.id}, target: @myself)}
           data-confirm={"Mute #{@message.author_name}? You won’t see their messages in any room until you unmute them."}
+          data-confirm-action="Mute"
         >
           Mute <bdi>{@message.author_name}</bdi>
         </button>

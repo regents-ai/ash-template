@@ -8,8 +8,8 @@ product.
 
 After renaming, a new site must still replace, by hand:
 
-1. The homepage's name, the line under it and the cube's six worlds
-   (`worlds/0`) in `platform/lib/ash_template_web/live/home_live.ex`. On the
+1. The homepage's name, the line under it and its product tabs (`products/0`)
+   in `platform/lib/ash_template_web/live/home_live.ex`. On the
    template itself the homepage tracks regents.sh's, and `scripts/drift.sh`
    reports when the two differ. Also the share picture
    `platform/priv/static/images/og-image.png` (1200 x 630, the product's name
@@ -18,7 +18,8 @@ After renaming, a new site must still replace, by hand:
    name); keep its file name. The logo files in `platform/priv/static` (`favicon.svg`,
    `favicon.ico`, `favicon-32.png`, `favicon-192.png`, `apple-touch-icon.png`,
    `mark.png`, `images/brand/mark-flat-dark.svg`,
-   `images/brand/mark-flat-light.svg`) are the Regents crown. Keep them.
+   `images/brand/mark-flat-dark-clear.svg`, `images/brand/mark-flat-light.svg`)
+   are the Regents crown. Keep them.
 2. The legal operator named in `platform/priv/legal/terms.md` and
    `privacy.md`.
 3. The site's Patchbay page (`https://patchbay.help/<domain>`) in
@@ -62,9 +63,17 @@ After renaming, a new site must still replace, by hand:
 - Motion: every Regent site shares the kit in `platform/assets/js/hooks/motion/`
   and `platform/assets/js/motion.ts`, with the standard version of each part in
   `AshTemplateWeb.Motion`. Pages join in through markup (`data-press-label` on
-  wallet buttons, `data-panel`, `data-cascade`, `data-variant`), never with their
-  own motion code. `/animations` is the lab where every version that was tried
-  sits side by side; `skills/animejs/references/liveview-islands.md` explains it.
+  wallet buttons, `data-panel`, `data-cascade`, `data-variant`, and every live
+  figure drawn with `Regent.Primitives.figure` inside a part marked
+  `phx-hook="MotionCount"`; the shared segmented control and tabs with
+  `phx-hook="MotionTravel"`, the breadcrumb with `MotionCrumbs`, an agent's
+  activity with `MotionActivity`, the line chart with `MotionChart` and the light and
+  dark switch (`Shell.theme_toggle/1`) with `ThemeSwitch`;
+  `data-sheet-handle` on the part a window is pulled down by, `data-dismiss` on
+  the close control of a `data-panel="drawer"` or a `data-toast` a finger may
+  swipe away, `hooks/motion/gestures.ts`), never with their own motion code.
+  `/animations` is the lab where every version that was tried sits side by side;
+  `skills/animejs/references/liveview-islands.md` explains it.
 - There is no `identity/` folder. The shared profile domain comes from the
   `regents/identity` package. It and the `design-system` and `elixir-utils`
   libraries are git dependencies pinned to one commit each in `platform/mix.exs`.

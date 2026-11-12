@@ -1,0 +1,35 @@
+@layer regents-product {
+/* The parts lab (`/animations/parts`): each shared part the motion kit moves, in a
+   column on a phone and two columns from 48rem, the chart and the activity across
+   both. */
+.motion-lab--parts {
+  width: 100%;
+  align-content: start;
+}
+
+.parts-lab {
+  display: grid;
+  gap: var(--space-5);
+  padding-block: var(--space-4);
+}
+
+.parts-lab__part {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.parts-lab__part h2 {
+  margin: 0;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  font-weight: 400;
+  color: var(--color-fg-muted);
+}
+
+@media (min-width: 48rem) {
+  .parts-lab { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .parts-lab__part--wide { grid-column: 1 / -1; }
+}
+}

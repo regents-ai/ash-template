@@ -3,13 +3,13 @@
 .agent-tools-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.3em;
+  gap: var(--space-1);
   min-height: 2.75rem;
-  padding: 0 0.75rem;
-  border: 1px solid var(--color-border);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--ash-quiet);
   border-radius: 0;
   background: transparent;
-  color: var(--color-fg);
+  color: var(--ash-ink);
   font: inherit;
   white-space: nowrap;
   cursor: pointer;
@@ -17,22 +17,18 @@
 
 @media (hover: hover) {
   .agent-tools-button:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+    background: var(--ash-raised);
   }
 }
 
 @media (max-width: 47.99rem) {
-  .agent-tools-button {
-    padding-inline: 0.5rem;
-  }
-
   .agent-tools-button__lead {
     display: none;
   }
 }
 
-/* The list itself wears a face's card (`code_cube.css`). Its copy press holds
-   the place a face's guide link has, in the card's colours in either theme. */
+/* The list itself wears a face's card (`code_cube.css`), which keeps its own
+   ink and accent in either theme, so its copy press and note take the card's. */
 .code-card__copy {
   display: flex;
   flex-wrap: wrap;
@@ -45,23 +41,24 @@
    line always holds words, so nothing moves when they change. */
 .agent-tools__every-site {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--space-1);
   justify-items: start;
 }
 
 .agent-tools__note {
   margin: 0;
-  color: color-mix(in srgb, var(--code-card-ink) 78%, transparent);
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  color: var(--code-card-ink);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 .code-card__copy .rg-button {
-  --rg-local-fill: rgb(7 8 12 / 0.72);
+  --rg-local-fill: transparent;
   --rg-local-ink: var(--code-card-ink);
   min-height: 2.75rem;
-  padding: 0 0.75rem;
-  font-size: 0.8125rem;
+  padding: 0 var(--space-1);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 .code-card__copy .rg-button:is(:hover, :focus-visible) {

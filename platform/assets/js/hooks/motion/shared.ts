@@ -10,6 +10,8 @@ export const SLOW = 280
 
 export const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1)
 export const EASE_IN_OUT = cubicBezier(0.77, 0, 0.175, 1)
+// For things leaving.
+export const EASE_IN = cubicBezier(0.11, 0, 0.5, 0)
 
 // Words and digits that rise into view each sit inside a box that clips them,
 // `.split-clip` in components/motion.css. The box is named by a class because a
@@ -60,7 +62,7 @@ const playing = new WeakMap<Element, JSAnimation>()
 
 export function play(targets: Element | Element[], params: AnimationParams) {
   const els = [targets].flat()
-  for (const el of els) playing.get(el)?.revert()
+  rest(els)
   const animation = animate(els, {
     ...params,
     onComplete: done => {
@@ -70,4 +72,12 @@ export function play(targets: Element | Element[], params: AnimationParams) {
   })
   for (const el of els) playing.set(el, animation)
   return animation
+}
+
+// Puts elements back as they were before their last run began, and forgets it.
+export function rest(targets: Element | Element[]) {
+  for (const el of [targets].flat()) {
+    playing.get(el)?.revert()
+    playing.delete(el)
+  }
 }

@@ -77,12 +77,11 @@ clamp or `frameLoop` inside an island renderer.
    // dispose(): if (disposed) return; disposed = true; stage.dispose(); gpu.dispose()
    ```
 
-   - Prefer `compile(stage)` once the surface exists: it reads the surface's real format,
-     depth and sample count. `compile({colors: [stage.format]})` warms the same pipeline for
-     a plain surface, and `gpu.settled()` already captures the `queue.onSubmittedWorkDone()`
-     fence, so an explicit `await gpu.gpu.queue.onSubmittedWorkDone()` before it is
-     redundant. Both forms are valid in 0.6; the crown and both cubes still use the older one.
-
+   - Pre-warm with `compile(stage)` once the surface exists: it reads the surface's real
+     format, depth and sample count. `compile({colors: [stage.format]})` is the older form,
+     still valid in 0.6; the crown and both cubes use it.
+   - `gpu.settled()` already waits for submitted queue work, so an explicit
+     `await gpu.gpu.queue.onSubmittedWorkDone()` before it is redundant.
    - 0.6 rejects raw WGSL strings (`VGPU-SHADER-SOURCE-UNPREPARED`): pass a static `.wgsl`
      import from the build loader, or `prepareShader(source, name)` once, outside frames.
    - Use `gpu.lost`, not the old `gpu.gpu.lost`. Loss does not dispose anything; the island
@@ -115,5 +114,10 @@ exists. Without WebGPU the island never mounts and the server's picture remains.
 ## Reference islands in ash-template
 
 `hooks/crown.ts` + `crown/`, `hooks/world_cube.ts` + `world_cube/renderer.ts`,
-`hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer is vendored from `regent_ui`), and the lab's
-state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`.
+`hooks/datascape.ts` + `datascape/renderer.ts` (the homepage, with its glass panel, and
+the lab page `/animations/datascape`),
+`hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer
+is vendored from `regent_ui`), the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`,
+and the theme switch `hooks/theme_switch.ts` + `theme_switch/renderer.ts`: a small island
+that draws on demand, asks for `maxDevicePixelRatio: 3` so its blocks stay sharp, and
+keeps every glassy effect inside its canvas over a flat, square still face.

@@ -85,7 +85,8 @@ defmodule AshTemplateWeb.Router do
               instructions:
                 "Ash Template, where people keep notes, talk in rooms and pair the agents that work for them. " <>
                   "Every call is signed by an agent's own wallet, or carries the token of an app a person connected " <>
-                  "to their account here. An agent reads a room with rooms_messages and posts with rooms_post; " <>
+                  "to their account here. An agent reads a room with rooms_messages and posts with rooms_post, " <>
+                  "and leaves a private message for the site's team with messages_leave; " <>
                   "regents mcp signs each call for it. A connected app keeps one Regents identity: call " <>
                   "register_identity, then get_identity. If it is not paired, call pair_identity with the one-use " <>
                   "code your person gives you, your name and your harness, and call check_in so your person sees " <>
@@ -107,11 +108,20 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
+  # A signed agent's live feed: the agent pipeline with no `:accepts`, since the
+  # answer is an event stream, which a JSON-only door would refuse.
+  pipeline :agent_feed do
+    plug AshTemplateWeb.Plugs.LaunchGate
+    plug AshTemplateWeb.Plugs.AgentWallet
+  end
+
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
   # sobelow_skip ["Config.CSP"]
   pipeline :public_documents do
     plug :accepts, ["html"]
     plug :fetch_session
+    # Read only, for the Agent Message form a page may hold (`AgentMessage`).
+    plug :enforce_session_authority
     plug AshTemplateWeb.Plugs.Theme
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug :protect_from_forgery
@@ -140,6 +150,13 @@ defmodule AshTemplateWeb.Router do
     }
 
     plug AshTemplateWeb.ErrorsAdmin
+  end
+
+  # The team's own pages after the admin check above: the site's page frame.
+  pipeline :admin_page do
+    plug :fetch_live_flash
+    plug AshTemplateWeb.Plugs.Theme
+    plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
   end
 
   defp enforce_session_authority(conn, _opts),
@@ -246,6 +263,7 @@ defmodule AshTemplateWeb.Router do
   scope "/", AshTemplateWeb do
     get "/healthz", HealthController, :show
     get "/openapi.json", PublicPagesController, :openapi
+    get "/api-contract.openapiv3.yaml", PublicPagesController, :api_contract
     get "/sitemap.xml", PublicPagesController, :sitemap
     get "/robots.txt", PublicPagesController, :robots
     get "/llms.txt", PublicPagesController, :llms
@@ -325,11 +343,17 @@ defmodule AshTemplateWeb.Router do
     post "/rooms/:room/messages/:id/like", AshTemplateWeb.RoomsController, :like
     delete "/rooms/:room/messages/:id/like", AshTemplateWeb.RoomsController, :unlike
     post "/rooms/:room/messages/:id/report", AshTemplateWeb.RoomsController, :report
+    post "/messages/:topic", AshTemplateWeb.MessagesController, :leave
     post "/polls", AshTemplateWeb.PollsController, :create
     post "/polls/:poll/vote", AshTemplateWeb.PollsController, :vote
     post "/polls/:poll/end", AshTemplateWeb.PollsController, :end_poll
     get "/agents/me", AshTemplateWeb.AgentsController, :profile
     patch "/agents/me", AshTemplateWeb.AgentsController, :edit_profile
+  end
+
+  scope "/api/v1", AshTemplateWeb do
+    pipe_through :agent_feed
+    get "/feed", FeedController, :show
   end
 
   # After /agents/me, so "me" never reads as an agent's id.
@@ -429,6 +453,16 @@ defmodule AshTemplateWeb.Router do
     )
   end
 
+  scope "/admin", AshTemplateWeb do
+    pipe_through [:errors_admin, :admin_page]
+
+    live_session :admin,
+      session: {Session, :render_context, []},
+      on_mount: [AshTemplateWeb.ErrorsAdmin] do
+      live "/messages", AdminMessagesLive, :index
+    end
+  end
+
   # The motion lab: public once the site opens, unless the showcase is off.
   scope "/", AshTemplateWeb do
     pipe_through [:motion_lab, :browser]
@@ -450,6 +484,12 @@ defmodule AshTemplateWeb.Router do
       live "/animations/wonders", WondersLive, :index
       live "/animations/swarm-city", SwarmCityLive, :index
       live "/animations/swarm-city/:place", SwarmCityLive, :place
+      live "/animations/datascape", DatascapeLive, :index
+      live "/animations/frosted-glass", FrostedGlassLive, :index
+      live "/animations/menu", MenuLabLive, :index
+      live "/animations/parts", PartsLabLive, :index
+      live "/animations/value", ValueLabLive, :index
+      live "/animations/ask", AskLabLive, :index
     end
   end
 end

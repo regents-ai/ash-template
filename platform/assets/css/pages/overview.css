@@ -5,7 +5,7 @@
 
 .overview-page {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--space-6);
   min-width: 0;
   container-type: inline-size;
 }
@@ -38,44 +38,59 @@
 
 .overview-place {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--space-1);
   align-content: start;
   min-height: 7rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: inherit;
+  padding: var(--space-3);
+  border: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
   text-decoration: none;
 }
 
 .overview-place__title {
   font-family: var(--font-family-title);
-  font-size: 1.25rem;
-  line-height: 1.1;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
 }
 
 .overview-place__line {
-  color: var(--color-fg-muted);
-  font-size: 0.9rem;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 @media (hover: hover) {
   .overview-place:hover {
-    background: color-mix(in oklch, var(--color-fg) 5%, var(--color-surface));
+    background: var(--ash-raised);
   }
 }
 
 .overview-place:focus-visible {
-  outline: 2px solid var(--ash-accent-warm);
+  outline: 2px solid var(--ash-ink);
   outline-offset: 2px;
 }
 
 .overview-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  color: var(--color-fg-muted);
-  font-size: 0.9rem;
+  gap: var(--space-1) var(--space-2);
+  color: var(--ash-quiet);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .overview-links {
+    row-gap: 0;
+  }
+
+  .overview-links a {
+    display: inline-flex;
+    align-items: center;
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
+  }
 }
 
 }

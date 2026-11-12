@@ -5,6 +5,7 @@
 @import "../vendor/regent_ui/primitives.css";
 @import "./tokens/root.css";
 @import "./components/shell.css";
+@import "./components/theme_switch.css";
 @import "./components/page_head.css";
 @import "./components/onchain_steps.css";
 @import "./components/motion.css";
@@ -25,10 +26,17 @@
 @import "./pages/harbour.css";
 @import "./pages/wonders.css";
 @import "./pages/swarm_city.css";
+@import "./pages/frosted_glass.css";
+@import "./pages/menu_lab.css";
+@import "./pages/parts_lab.css";
+@import "./pages/value_lab.css";
+@import "./pages/ask_lab.css";
+@import "./pages/datascape.css";
 @import "./components/crown.css";
 @import "./components/world_cube.css";
 @import "./components/code_cube.css";
 @import "./components/agent_tools.css";
+@import "./components/agent_message.css";
 @import "./components/twin_cube.css";
 @import "./pages/feedback_lab.css";
 @import "./pages/site_buttons_lab.css";
@@ -55,10 +63,11 @@ body {
 /* The page paints under the notch and the home bar; its content stays clear of them. */
 body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  background: var(--color-bg);
-  color: var(--color-fg);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
   font-family: var(--font-family-ui);
-  line-height: 1.5;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
 }
 
 /* Controls take the font of what holds them; the design system's own base does the
@@ -74,6 +83,8 @@ textarea {
 
 code, pre, kbd, samp {
   font-family: var(--font-family-mono);
+  font-size: var(--type-code-size);
+  line-height: var(--type-code-line);
 }
 
 a {
@@ -97,15 +108,15 @@ h6 {
 @layer regents-base {
   button:not(.rg-button),
   input {
-    border: 1px solid currentColor;
+    border: 1px solid var(--ash-quiet);
     border-radius: 0;
-    background: var(--color-surface-elevated, Canvas);
-    color: var(--color-fg, CanvasText);
+    background: var(--ash-ground);
+    color: var(--ash-ink);
   }
 
   button:not(.rg-button) {
     min-height: 2.75rem;
-    padding: 0.5rem 0.75rem;
+    padding: var(--space-1) var(--space-2);
     cursor: pointer;
   }
 }
@@ -114,7 +125,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--ash-accent);
+  outline: 2px solid var(--ash-ink);
   outline-offset: 2px;
 }
 
@@ -142,34 +153,42 @@ input:focus-visible,
   }
 }
 
-/* The footer of the home page and every public page (`Layouts.product_links/1`). */
+/* The footer of every public page (`Layouts.product_links/1`). */
 .regent-footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--rg-panel-padding);
-  border-top: 1px solid var(--hairline);
-  font-size: 0.8125rem;
+  padding: var(--space-4);
+  border-top: 1px solid var(--ash-raised);
+  color: var(--ash-quiet);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 .regent-footer p { margin: 0; }
 .regent-footer__social { display: flex; align-items: center; gap: var(--space-2); }
 .regent-footer__social > a, .regent-footer__social > a svg { display: inline-flex; width: 1.5rem; height: 1.5rem; }
 .regent-footer__links { display: flex; flex-wrap: wrap; column-gap: var(--space-3); }
-.regent-footer__links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: inherit; }
+.regent-footer__links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--ash-ink); }
+/* On touch screens the X and GitHub icons and every link are 44px wide too. */
+@media (hover: none), (pointer: coarse) {
+  .regent-footer__social { gap: 0; }
+  .regent-footer__social > a { width: 2.75rem; height: 2.75rem; align-items: center; justify-content: center; }
+  .regent-footer__links a { min-width: 2.75rem; }
+}
 .regent-footer__links .regent-footer__guide {
   display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0; border: 0;
-  background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer;
+  background: none; color: var(--ash-ink); font: inherit; text-decoration: underline; cursor: pointer;
 }
 /* The two legal documents stay together, apart from the rest by a hairline where
    they share its line and on a line of their own on a phone. */
 .regent-footer__legal { display: flex; column-gap: var(--space-3); }
 @media (min-width: 48rem) {
-  .regent-footer__legal { padding-inline-start: var(--space-3); border-inline-start: 1px solid var(--hairline); }
+  .regent-footer__legal { padding-inline-start: var(--space-3); border-inline-start: 1px solid var(--ash-raised); }
 }
 @media (max-width: 47.99rem) { .regent-footer__legal { flex-basis: 100%; } }
-.regent-footer__guide-body p { margin: 0; color: var(--rg-p-muted); }
+.regent-footer__guide-body p { margin: 0; color: var(--ash-quiet); }
 .regent-footer__guide-body a { min-height: 2.75rem; }
 .regent-footer__guide-body:popover-open { display: grid; }
 
@@ -177,16 +196,16 @@ input:focus-visible,
    the screen however short the page is. The page grows to meet it, frame and all.
    A LiveView here keeps one root element in the screen-tall row (its empty flash
    list beside it is fine); a second root, such as a header beside main, would be
-   stretched, so wrap them in one element. */
+   stretched, so wrap them in one element. Its one column is the screen's width, so a
+   row that scrolls sideways on its own, such as the shared tabs, never widens it. */
 body:has(> .regent-footer) { display: flex; flex-direction: column; height: auto; min-height: 100dvh; }
 body:has(> .regent-footer) > :first-child { flex: 1 0 auto; }
-body:has(> .regent-footer) > [data-phx-main] { display: grid; grid-template-rows: 1fr; }
+body:has(> .regent-footer) > [data-phx-main] { display: grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr); }
 body > .regent-footer {
   margin-inline: auto;
   width: min(calc(100% - 2 * var(--rg-page-gutter)), var(--rg-frame-max));
-  border-inline: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
+  border-inline: 1px solid var(--ash-raised);
+  border-bottom: 1px solid var(--ash-raised);
 }
-.rg-panel.rg-support-panel { --color-fg: var(--support-panel-ink); --color-fg-muted: color-mix(in srgb, var(--support-panel-ink) 72%, var(--support-panel-surface)); --color-surface: var(--support-panel-surface); --color-border: color-mix(in srgb, var(--support-panel-ink) 22%, var(--support-panel-surface)); }
 @media (max-width: 74.99rem) { body > .regent-footer { --rg-page-gutter: var(--space-3); } }
 @media (max-width: 47.99rem) { body > .regent-footer { --rg-page-gutter: var(--space-2); } }

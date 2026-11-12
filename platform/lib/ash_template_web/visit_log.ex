@@ -18,10 +18,11 @@ defmodule AshTemplateWeb.VisitLog do
     a page have none.
   - `actor`: `person:` or `agent:` and a one-way code for the account or agent,
     or `anonymous`. The code cannot be turned back into the account.
-  - `surface`: `page`, `webmcp`, `cli`, `agent_http` or `job`. The page's tools
-    say `x-regent-client: webmcp/<tool>`; Regents CLI says
+  - `surface`: `page`, `webmcp`, `cli`, `agent_http`, `mcp` or `job`. The page's
+    tools say `x-regent-client: webmcp/<tool>`; Regents CLI says
     `regents-cli/<version> <command>`. An API call that names neither but
-    carries a visit is the page's own script, so it is `page`.
+    carries a visit is the page's own script, so it is `page`. A call to the
+    hosted MCP server at `/mcp` is `mcp`.
 
   A `tool.call` line also names its `client`: `webmcp`, `regents-cli/<version>`,
   another program's `<name>/<version>` as its `x-regent-client` gave them,
@@ -43,7 +44,13 @@ defmodule AshTemplateWeb.VisitLog do
     address itself is never written.
   - `step`: one step of the shared journey from first look to a paired agent
     (`sign_in_opened`, `signed_in`, `pairing_code_shown`, `agent_paired`), with
-    the agent's harness where there is one.
+    the agent's harness where there is one, or the site's value action, one of
+    `values/0` (`value/2`).
+
+  The step names are the product-event vocabulary, one fixed list on every site
+  whose names never change. Every step but `sign_in_opened` (a press only the
+  browser sees) is written by the server once the change it names has succeeded.
+  Each site writes one value name, the one its own value action maps to.
 
   A browser that sends Global Privacy Control (`Sec-GPC: 1`) starts no visit: it
   gets no `_visit` cookie, none of its requests or pages carries a `visit`, and it
@@ -81,6 +88,12 @@ defmodule AshTemplateWeb.VisitLog do
     flush_qlen: 4_000
   }
   @steps ~w(sign_in_opened signed_in pairing_code_shown agent_paired)
+  # The value action of each site, one name a site, so every site has the same list:
+  # the template's note, Keyfleet's contribution, Patchbay's fix, Techtree's eval and
+  # Autolaunch's launch.
+  @values ~w(note_created contribution_made fix_succeeded eval_completed launch_confirmed)
+  # A program's call to the site, by the first part of its whole path.
+  @calls ~w(api mcp)
   # Where a visit came from, by the referring site's address or `utm_source`.
   @sources %{
     "chatgpt.com" => "chatgpt",
@@ -125,27 +138,58 @@ defmodule AshTemplateWeb.VisitLog do
   @doc "The default handler's filter that leaves visit lines to `handler/2`."
   def default_filter, do: {&:logger_filters.domain/2, {:stop, :sub, @domain}}
 
+  @doc "The value steps: each site's value action, one name a site; each site writes only its own."
+  def values, do: @values
+
   @doc "The names an arrival can give for where it came from, besides `site`, `other_site` and `direct`."
   def sources, do: @sources |> Map.values() |> Enum.uniq()
 
   @doc """
   Writes one `step` line: one step of the shared journey, with the agent's
-  harness where there is one. Nothing is written for a browser that sends Global
-  Privacy Control.
+  harness where there is one; a value step is written by `value/2`. Nothing is
+  written for a browser that sends Global Privacy Control.
   """
   def step(name, harness \\ nil) when name in @steps do
     unless Process.get(@gpc), do: record("step", name, harness)
     :ok
   end
 
+  @doc """
+  Writes one value step (`values/0`): the site's value action has succeeded for
+  the account `actor` acts for. The line names that account as a `person:` code,
+  whether the person or their agent acted, and its outcome says which: `person`
+  or `agent`. Its visit and surface are the request's or page's own. Nothing is
+  written for a browser that sends Global Privacy Control. It runs in the
+  action's own process once its transaction has committed, from
+  `AshTemplateWeb.VisitLog.Events`.
+  """
+  def value(name, actor) when name in @values do
+    unless Process.get(@gpc),
+      do: write(event("step", name, by(actor), nil), actor: account(actor))
+
+    :ok
+  end
+
+  defp by(%AshTemplate.Actors.Agent{}), do: "agent"
+  defp by(_person), do: "person"
+
+  # The account an action was for: a person's own, or the one their agent works for.
+  defp account(%AshTemplate.Actors.Agent{human_account_id: id}) when not is_nil(id),
+    do: "person:" <> code(id)
+
+  defp account(actor), do: actor(actor)
+
   @doc "Writes one event line (`event/4`); its message is its name, where and outcome."
-  def record(name, where, outcome \\ nil, ms \\ nil, client \\ nil) do
-    event = event(name, where, outcome, ms, client)
+  def record(name, where, outcome \\ nil, ms \\ nil, client \\ nil),
+    do: write(event(name, where, outcome, ms, client), [])
+
+  # `metadata` sets a field for this line alone, such as the account a value step names.
+  defp write(event, metadata) do
     message = Enum.join([event.name, event.where | List.wrap(event[:outcome])], " ")
     # `domain` sends the line to its own handler and is never printed, so it is not one
     # of the formatter's metadata keys.
     # credo:disable-for-next-line Credo.Check.Warning.MissedMetadataKeyInLoggerConfig
-    Logger.info(fn -> {message, event: event} end, domain: [:visit])
+    Logger.info(fn -> {message, [event: event] ++ metadata} end, domain: [:visit])
   end
 
   @doc """
@@ -173,6 +217,7 @@ defmodule AshTemplateWeb.VisitLog do
   @doc "The one-way code for who acted: an account, a signed-in agent, or nobody."
   def actor(%AshTemplate.Actors.Agent{agent_id: id}), do: "agent:" <> code(id)
   def actor(%AshTemplate.Accounts.HumanAccount{id: id}), do: "person:" <> code(id)
+  def actor(%AshTemplate.Actors.Human{human_account_id: id}), do: "person:" <> code(id)
   def actor(%AshTemplate.AccessContext{principal: {:human, account}}), do: actor(account)
   def actor(_nobody), do: "anonymous"
 
@@ -240,16 +285,22 @@ defmodule AshTemplateWeb.VisitLog do
     |> put_private(:visit_log_caller, caller(conn, surface))
   end
 
-  # The program that made an API call, as its `x-regent-client` names it.
-  defp caller(%Plug.Conn{path_info: ["api" | _]} = conn, surface) do
-    case {surface, get_req_header(conn, "x-regent-client")} do
-      {"webmcp", _sent} -> "webmcp"
-      {_surface, []} -> "none"
-      {_surface, [sent | _]} -> program(sent)
+  # The program that made an API or MCP call, as its `x-regent-client` names it.
+  defp caller(conn, surface) do
+    case {call?(conn), surface, get_req_header(conn, "x-regent-client")} do
+      {false, _surface, _sent} -> nil
+      {true, "webmcp", _sent} -> "webmcp"
+      {true, _surface, []} -> "none"
+      {true, _surface, [sent | _]} -> program(sent)
     end
   end
 
-  defp caller(_conn, _surface), do: nil
+  @doc """
+  Whether a request is a program's call to the site, `/api` or the hosted MCP
+  server at `/mcp`, by its whole path: a plug the router forwards to, such as
+  `RegentAgents.HTTP` under `/api/agents/v1`, sees only the rest of it.
+  """
+  def call?(conn), do: match?([part | _] when part in @calls, conn.script_name ++ conn.path_info)
 
   defp program(sent) do
     case Regex.run(@program, sent) do
@@ -332,6 +383,8 @@ defmodule AshTemplateWeb.VisitLog do
   # Only a browser opening a page asks for HTML; health checks and API calls don't.
   defp page?(conn),
     do: conn |> get_req_header("accept") |> Enum.any?(&String.contains?(&1, "text/html"))
+
+  defp surface(%Plug.Conn{path_info: ["mcp" | _]}), do: {"mcp", nil}
 
   defp surface(%Plug.Conn{path_info: ["api" | _]} = conn) do
     client = conn |> get_req_header("x-regent-client") |> List.first("")

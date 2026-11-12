@@ -167,7 +167,7 @@ defmodule AshTemplateWeb.WondersLive do
         >
           {label}
         </P.button>
-        <p id={"wonder-#{@wonder.id}-line"} class="wonder__reading" data-wonder-line>
+        <p id={"wonder-#{@wonder.id}-line"} class="wonder__reading rg-figure" data-wonder-line>
           {@wonder.reading}
         </p>
       </div>

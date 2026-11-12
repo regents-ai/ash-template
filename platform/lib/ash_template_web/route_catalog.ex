@@ -63,7 +63,13 @@ defmodule AshTemplateWeb.RouteCatalog do
         },
         %{route_id: :harbour, label: "Agent harbour", path: "/animations/harbour"},
         %{route_id: :wonders, label: "Ten wonders", path: "/animations/wonders"},
-        %{route_id: :swarm_city, label: "Swarm city", path: "/animations/swarm-city"}
+        %{route_id: :swarm_city, label: "Swarm city", path: "/animations/swarm-city"},
+        %{route_id: :datascape, label: "Datascape", path: "/animations/datascape"},
+        %{route_id: :frosted_glass, label: "Frosted Glass", path: "/animations/frosted-glass"},
+        %{route_id: :menu_lab, label: "Menu", path: "/animations/menu"},
+        %{route_id: :parts_lab, label: "Parts", path: "/animations/parts"},
+        %{route_id: :value_lab, label: "Value", path: "/animations/value"},
+        %{route_id: :ask_lab, label: "Ask", path: "/animations/ask"}
       ]
     },
     settings: %{

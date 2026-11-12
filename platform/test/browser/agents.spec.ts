@@ -98,7 +98,7 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   const name = agentWindow.getByRole("textbox", {name: "Name"})
   const save = agentWindow.getByRole("button", {name: "Save", exact: true})
   await expect(name).toHaveValue(agent)
-  await expect(agentWindow.getByText("Only you see this name.")).toBeVisible()
+  await expect(agentWindow.getByRole("button", {name: "About this name"})).toBeVisible()
   await resting(agentWindow)
   if (hasTouch)
     for (const target of [name, save])
@@ -106,10 +106,10 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
 
   await name.fill("Ada\u202Egnp.exe")
   await press(save)
-  await expect(agentWindow.getByRole("alert")).toHaveText(
-    "That name can’t be used. Use 1 to 80 characters with no hidden characters.",
-  )
   await expect(name).toHaveAttribute("aria-invalid", "true")
+  await expect(name).toHaveAccessibleDescription(
+    /That name can’t be used\. Use 1 to 80 characters with no hidden characters\./,
+  )
   await expect(agentWindow).toBeVisible()
 
   await name.fill(renamed)
@@ -118,7 +118,7 @@ test("an agent's window renames it", async ({page, hasTouch}, testInfo) => {
   await expect(
     renamedWindow.getByText(`Saved. This agent is now called ${renamed} on every Regent site.`),
   ).toBeVisible()
-  await expect(renamedWindow.getByRole("alert")).toHaveCount(0)
+  await expect(renamedWindow.getByRole("textbox", {name: "Name"})).not.toHaveAttribute("aria-invalid", "true")
   await expect(page.getByRole("button", {name: `See ${renamed}’s actions`})).toBeAttached()
   await problems.expect()
 })

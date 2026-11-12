@@ -20,7 +20,7 @@ defmodule AshTemplateWeb.PublicDocuments do
   # read at runtime (AshTemplateWeb.AgentGuides).
   @documents ~w(/ /docs /about /changelog /privacy /terms)
   # Listed in the sitemap only when the showcase is public (AshTemplateWeb.Showcase).
-  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /skills)
+  @showcase_pages ~w(/showcase /showcase/privy /showcase/wallet /showcase/payments /showcase/funds /showcase/discussion /showcase/figures /showcase/grammar /showcase/grammar/verbs /showcase/grammar/layers /animations /animations/cube /animations/foil /animations/buttons /animations/twin-cube /animations/crown /animations/keyfleet /animations/header-footer /animations/harbour /animations/harbour/inn /animations/harbour/forge /animations/harbour/castle /animations/wonders /animations/swarm-city /animations/swarm-city/inn /animations/swarm-city/forge /animations/swarm-city/castle /animations/datascape /animations/frosted-glass /animations/menu /animations/parts /animations/value /animations/ask /skills)
   @site_name "Ash Template"
   # The lens agent-readiness readers take: `business` for a company site, `app` for a product.
   @site_type "business"
@@ -91,6 +91,23 @@ defmodule AshTemplateWeb.PublicDocuments do
     "/animations/swarm-city/castle" =>
       {"Swarm city castle",
        "The castle, where agents make proposals, and the agents circling its spire."},
+    "/animations/datascape" =>
+      {"Datascape",
+       "An endless dark plane of glowing panels, tubes and specks. Move the pointer towards an edge to fly that way."},
+    "/animations/frosted-glass" =>
+      {"Frosted Glass",
+       "A large tree seen through frosted glass, in six looks. Scroll down to step back from its branches to the whole tree, and on into a forest."},
+    "/animations/menu" =>
+      {"Menu", "Two menus, one at each side of the page, each growing from its own button."},
+    "/animations/parts" =>
+      {"Parts",
+       "Tabs, a breadcrumb, a price chart and an agent's activity, moving as you use them, with their loading, failed and empty looks."},
+    "/animations/value" =>
+      {"Value",
+       "Three figures on cards whose surface lights where you point or touch, with a card loading, empty and failed."},
+    "/animations/ask" =>
+      {"Ask",
+       "One field: ask about points, offers, notes or agents and the answer is drawn from a few blocks, with a link that keeps the question."},
     "/docs" =>
       {"Developer documentation",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
@@ -140,15 +157,27 @@ defmodule AshTemplateWeb.PublicDocuments do
   # each last changed.
   @released_at DateTime.utc_now() |> DateTime.truncate(:second)
   @sanitize [
-    tags: ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote table thead tbody tr th td),
+    tags:
+      ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote table thead tbody tr th td span),
     tag_attributes: %{"a" => ["href"]},
     generic_attributes: [],
     url_schemes: ~w(http https mailto),
     url_relative: :deny,
     link_rel: "noopener noreferrer",
-    # A code block or table too wide for the screen scrolls sideways, so a
-    # keyboard can focus it to scroll it.
-    set_tag_attribute_values: %{"pre" => %{"tabindex" => "0"}, "table" => %{"tabindex" => "0"}}
+    # On a wide screen a code block or table too wide for its column scrolls
+    # sideways, so a keyboard can focus it to scroll it. A table keeps its roles
+    # when a phone shows its rows as cards, and the only spans are the cells'
+    # column names (see `label_cells/1`), which a screen reader already has.
+    set_tag_attribute_values: %{
+      "pre" => %{"tabindex" => "0"},
+      "table" => %{"tabindex" => "0", "role" => "table"},
+      "thead" => %{"role" => "rowgroup"},
+      "tbody" => %{"role" => "rowgroup"},
+      "tr" => %{"role" => "row"},
+      "th" => %{"role" => "columnheader"},
+      "td" => %{"role" => "cell"},
+      "span" => %{"aria-hidden" => "true"}
+    }
   ]
 
   def url(path), do: AshTemplateWeb.Endpoint.url() <> path
@@ -178,14 +207,41 @@ defmodule AshTemplateWeb.PublicDocuments do
   # sobelow_skip ["XSS.Raw"]
   def html(markdown) do
     markdown
+    |> AshTemplate.Markdown.parse!(extension: [table: true])
+    |> MDEx.traverse_and_update(&label_cells/1)
     |> AshTemplate.Markdown.to_html!(extension: [table: true], sanitize: @sanitize)
     |> Phoenix.HTML.raw()
   end
 
+  # Under 768px each table row stands as a card (legal.css), so every cell starts
+  # with its column's name, shown only there.
+  defp label_cells(%MDEx.Table{nodes: [%MDEx.TableRow{nodes: heads} = head | rows]} = table) do
+    labels = Enum.map(heads, &cell_label/1)
+    %{table | nodes: [head | Enum.map(rows, &label_row(&1, labels))]}
+  end
+
+  defp label_cells(node), do: node
+
+  defp label_row(%MDEx.TableRow{nodes: cells} = row, labels) do
+    %{row | nodes: Enum.zip_with(cells, labels, &%{&1 | nodes: [&2 | &1.nodes]})}
+  end
+
+  defp cell_label(%MDEx.TableCell{nodes: nodes}) do
+    text = Enum.map_join(nodes, &Map.get(&1, :literal, ""))
+
+    %MDEx.Raw{
+      literal: "<span>#{Phoenix.HTML.html_escape(text) |> Phoenix.HTML.safe_to_string()}</span>"
+    }
+  end
+
   @doc "The `page_title` and `page_description` assigns the root layout reads from every page."
+  # A page is filed under the address it is served at. Any other address, such as
+  # one the router reads as a page's but spelled differently, is a missing page.
   def page(key) do
     {title, description} =
-      if key in AgentGuides.paths(), do: AgentGuides.page(key), else: Map.fetch!(@pages, key)
+      if key in AgentGuides.paths(),
+        do: AgentGuides.page(key),
+        else: Map.get(@pages, key) || raise(AshTemplateWeb.NotFoundError)
 
     [page_title: title, page_description: description]
   end
@@ -388,8 +444,9 @@ defmodule AshTemplateWeb.PublicDocuments do
 
   defp hosted_mcp(connector?) do
     "Ash Template's hosted MCP endpoint is {{origin}}/mcp. Every call there carries your " <>
-      "agent's signature, as for a signed request: `rooms_messages` reads a room and " <>
-      "`rooms_post` posts as your agent. Their inputs, answers and refusals are the same as " <>
+      "agent's signature, as for a signed request: `rooms_messages` reads a room, " <>
+      "`rooms_post` posts as your agent and `messages_leave` leaves a private message for " <>
+      "the site's team. Their inputs, answers and refusals are the same as " <>
       "the browser tools'. Reading without signing in is the browser tools and the API." <>
       connector(connector?)
   end

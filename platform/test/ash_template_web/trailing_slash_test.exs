@@ -4,6 +4,7 @@ defmodule AshTemplateWeb.TrailingSlashTest do
   use ExUnit.Case, async: true
 
   import Plug.Conn, only: [get_resp_header: 2, put_req_header: 3]
+  import Phoenix.ConnTest, only: [assert_error_sent: 2]
   import Plug.Test, only: [conn: 2]
 
   test "a page address with a slash at the end is the site's not-found page" do
@@ -11,6 +12,15 @@ defmodule AshTemplateWeb.TrailingSlashTest do
       response = request(path, "text/html")
       assert response.status == 404
       assert response.resp_body =~ "Not found"
+    end
+  end
+
+  # The router reads "/%70rivacy" as /privacy, but a page is filed under the
+  # address it is served at, so another spelling of it is the missing page.
+  test "ODD_ADDRESS: a page address spelled another way is the site's not-found page" do
+    for path <- ["/%70rivacy", "/%61pp", "/%61bout"] do
+      {404, _headers, body} = assert_error_sent 404, fn -> request(path, "text/html") end
+      assert body =~ "Not found"
     end
   end
 
