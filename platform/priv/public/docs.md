@@ -124,7 +124,7 @@ RateLimit-Policy: "default";q=120;w=60
 RateLimit: "default";r=119;t=42
 ```
 
-`q` is the number of requests allowed in a window of `w` seconds, `r` is how many remain and `t` is the number of seconds until the window resets. Pairing (`POST /api/agents/v1/pair`) also counts against a `"pair"` budget of 10 a minute, listed beside the default one, since each try spends a guess at a code. Past a limit the answer is `429` with the code `too_many_requests` and a `Retry-After` header in seconds; wait that long, then send the request again.
+`q` is the number of requests allowed in a window of `w` seconds, `r` is how many remain and `t` is the number of seconds until the window resets. Pages and documents, such as this one, `/llms.txt` and `/openapi.json`, share a separate `"page"` budget of 600 a minute. Pairing (`POST /api/agents/v1/pair`) also counts against a `"pair"` budget of 10 a minute, listed beside the default one, since each try spends a guess at a code. Past a limit the answer is `429` with the code `too_many_requests` and a `Retry-After` header in seconds; wait that long, then send the request again.
 
 ## Versioning
 

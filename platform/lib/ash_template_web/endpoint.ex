@@ -32,6 +32,19 @@ defmodule AshTemplateWeb.Endpoint do
                 admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
                 key: &AshTemplateWeb.ClientAddress.key/1
               )
+  # Page loads have a generous budget of their own: each renders the page and
+  # runs its reads, and one address loading pages faster than ten a second is not
+  # a person. Moving between pages uses the open live connection and costs
+  # nothing here, files are answered above it, and 600 a minute still lets about a
+  # hundred people behind one shared address (an office, a phone carrier) load a
+  # page every ten seconds each.
+  @page_rate_limit RegentAgentAccess.RateLimit.init(
+                     policy: "page",
+                     limit: 600,
+                     window: 60,
+                     admit: &AshTemplate.Accounts.RequestRateLimiter.admit/3,
+                     key: &AshTemplateWeb.ClientAddress.key/1
+                   )
   # Pairing also has its own small budget, since each try spends a guess at a code.
   @pair_rate_limit RegentAgentAccess.RateLimit.init(
                      policy: "pair",
@@ -95,8 +108,11 @@ defmodule AshTemplateWeb.Endpoint do
 
   # One budget per client address, shared by the health check, the browser's visit
   # reports and every /api path, answered or not; pairing counts against its own
-  # budget too, and the MCP address has its own. Every answer says what is left of
-  # each; past one, 429 with Retry-After.
+  # budget too, the MCP address has its own, and so does every other page or
+  # document loaded. Every answer says what is left of each; past one, 429 with
+  # Retry-After. The live socket's connect never reaches this plug, and behind
+  # Fly its peer is the proxy, so open pages are counted per address as they join
+  # (`AshTemplateWeb.Live.OpenPages`).
   plug :limit_rate
 
   # Before the parsers, so a body they reject on an /api path or the MCP address
@@ -153,6 +169,9 @@ defmodule AshTemplateWeb.Endpoint do
 
   defp limit_rate(%Plug.Conn{path_info: ["mcp" | _]} = conn, _opts),
     do: AshTemplateWeb.Plugs.McpAgent.limit_address(conn)
+
+  defp limit_rate(%Plug.Conn{method: method} = conn, _opts) when method in ["GET", "HEAD"],
+    do: RegentAgentAccess.RateLimit.call(conn, @page_rate_limit)
 
   defp limit_rate(conn, _opts), do: conn
 
