@@ -89,6 +89,12 @@
 .notes-list:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .notes-empty {
   display: none;
 }
+
+/* The next page of notes, under the last one. */
+.notes-older {
+  justify-self: start;
+  margin-block-start: var(--space-2);
+}
 }
 
 /* Only failures land here. */

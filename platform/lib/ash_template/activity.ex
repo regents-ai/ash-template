@@ -15,10 +15,18 @@ defmodule AshTemplate.Activity do
   def count_unread(opts),
     do: Notification |> Ash.Query.for_read(:unread, %{}, opts) |> Ash.count(opts)
 
-  @doc "Marks every notification the actor has not read as read."
+  @doc """
+  Marks every notification the actor has not read as read, in one statement, then
+  tells their open pages once on `Notification.topic/1` (event `"mark_all_read"`),
+  so each page recounts its bell once however many were marked.
+  """
   def mark_all_read(opts) do
-    Notification
-    |> Ash.Query.for_read(:unread, %{}, opts)
-    |> Ash.bulk_update(:mark_read, %{}, Keyword.merge(opts, notify?: true, return_errors?: true))
+    result =
+      Notification
+      |> Ash.Query.for_read(:unread, %{}, opts)
+      |> Ash.bulk_update(:mark_read, %{}, Keyword.put(opts, :return_errors?, true))
+
+    if result.status == :success, do: Notification.all_read(opts[:actor].human_account_id)
+    result
   end
 end

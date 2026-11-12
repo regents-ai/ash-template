@@ -212,7 +212,7 @@ defmodule AshTemplate.SignedToolsTest do
     refute_receive {:proof_checked, _}
 
     for {method, path, body} <- [
-          {:get, "/api/v1/notes", nil},
+          {:post, "/api/v1/notes/list", "{}"},
           {:post, "/api/v1/notes",
            Jason.encode!(%{title: "Refused", operation_id: Ecto.UUID.generate()})},
           {:get, "/api/v1/account/points", nil}
@@ -248,7 +248,7 @@ defmodule AshTemplate.SignedToolsTest do
 
     # A cookie with no signature is a person's request with no sign-in: refused
     # before any proof is checked.
-    assert request(:get, "/api/v1/notes", nil, false).status == 401
+    assert request(:post, "/api/v1/notes/list", "{}", false).status == 401
     refute_receive {:proof_checked, _}
     id = Ecto.UUID.generate()
     body = Jason.encode!(%{title: "Paired note", operation_id: id})
@@ -272,11 +272,7 @@ defmodule AshTemplate.SignedToolsTest do
     assert request(:post, "/api/v1/notes", Jason.encode!(%{title: "Missing operation"})).status ==
              422
 
-    assert length(
-             AshTemplate.Notes.list_my_notes!(
-               actor: AshTemplate.Actors.Human.for_account(account)
-             )
-           ) == 1
+    assert [%{"id" => ^id}] = Jason.decode!(request(:post, "/api/v1/notes/list", "{}").resp_body)["notes"]
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
 
@@ -602,7 +598,7 @@ defmodule AshTemplate.SignedToolsTest do
     older = AshTemplate.Notes.create_note!(%{title: "Older"}, actor: human)
     newer = AshTemplate.Notes.create_note!(%{title: "Newer"}, actor: human)
     AshTemplate.Notes.pin_note!(newer.id)
-    order = fn -> Enum.map(AshTemplate.Notes.list_my_notes!(actor: human), & &1.id) end
+    order = fn -> Enum.map(AshTemplate.Notes.list_my_notes!(actor: human).results, & &1.id) end
     assert order.() == [newer.id, older.id]
 
     archived = request(:post, "/api/v1/notes/#{newer.id}/archive", "{}")
@@ -625,6 +621,34 @@ defmodule AshTemplate.SignedToolsTest do
     theirs = AshTemplate.Notes.create_note!(%{title: "Theirs"}, actor: other_human)
     assert error_code(request(:post, "/api/v1/notes/#{theirs.id}/archive", "{}")) == "note_not_found"
     assert AshTemplate.Notes.get_my_note!(theirs.id, actor: other_human).archived_at == nil
+  end
+
+  test "an agent reads its person's notes a page at a time, each note once" do
+    {account, _person, _paired} = paired_person("did:privy:notes-page-test")
+
+    for n <- 1..51 do
+      Ash.Seed.seed!(AshTemplate.Notes.Note, %{title: "Note #{n}", human_account_id: account.id})
+    end
+
+    first = request(:post, "/api/v1/notes/list", "{}")
+    assert first.status == 200, first.resp_body
+
+    %{"notes" => newest, "pagination" => %{"has_more" => true, "next_cursor" => cursor}} =
+      Jason.decode!(first.resp_body)
+
+    second = request(:post, "/api/v1/notes/list", Jason.encode!(%{after: cursor}))
+    assert second.status == 200, second.resp_body
+
+    %{"notes" => older, "pagination" => %{"has_more" => false, "next_cursor" => nil}} =
+      Jason.decode!(second.resp_body)
+
+    assert {length(newest), length(older)} == {50, 1}
+    assert (newest ++ older) |> Enum.uniq_by(& &1["id"]) |> length() == 51
+
+    for body <- [%{after: "nope"}, %{after: cursor, limit: 5}, %{after: 5}, %{limit: 5}] do
+      assert error_code(request(:post, "/api/v1/notes/list", Jason.encode!(body))) ==
+               "invalid_cursor"
+    end
   end
 
   test "a paired agent starts a room and changes its topic; another person's same name and topic change are refused" do
@@ -822,7 +846,10 @@ defmodule AshTemplate.SignedToolsTest do
     end
 
     assert {unread.(account), unread.(other)} == {0, 1}
-    assert_receive %{event: "mark_read"}
+
+    # One notice a press, however many it marked, so each open page recounts once.
+    for _press <- 1..2, do: assert_receive(%{event: "mark_all_read"})
+    refute_receive %{topic: "notifications:" <> _}
   end
 
   test "an agent chats with the assistant for its person, a retry sends once, and no one else's chat is open to it" do

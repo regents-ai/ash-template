@@ -5,6 +5,8 @@ defmodule AshTemplateWeb.AdminMessagesLive do
   the same check as the saved errors (`AshTemplateWeb.ErrorsAdmin`), which
   hands the page its admin actor, and the read's own policy asks again
   (`RegentAgents.Checks.Admin`). `?after=` holds the cursor of the page before.
+  The page keeps only what it shows of each message and where the next page
+  starts.
   """
 
   use AshTemplateWeb, :live_view
@@ -32,7 +34,8 @@ defmodule AshTemplateWeb.AdminMessagesLive do
 
     {:noreply,
      Read.now(socket, :messages, cursor, fn ->
-       Messages.list_messages(actor: socket.assigns.admin, page: page)
+       with {:ok, page} <- Messages.list_messages(actor: socket.assigns.admin, page: page),
+            do: {:ok, %{shown: Enum.map(page.results, &shown/1), next: next(page)}}
      end)}
   end
 
@@ -46,13 +49,13 @@ defmodule AshTemplateWeb.AdminMessagesLive do
           The messages couldn’t be read. Refresh the page to try again.
         </Primitives.notice>
         <Primitives.empty_state
-          :if={match?(%{state: :ready, value: %{results: []}}, @messages)}
+          :if={match?(%{state: :ready, value: %{shown: []}}, @messages)}
           title="No messages"
         >
           Messages agents and people leave for the team show here.
         </Primitives.empty_state>
         <ol :if={@messages.state == :ready} id="admin-messages" class="admin-messages__list">
-          <li :for={message <- @messages.value.results} id={"message-#{message.id}"}>
+          <li :for={message <- @messages.value.shown} id={"message-#{message.id}"}>
             <dl class="admin-messages__meta">
               <div>
                 <dt>Topic</dt>
@@ -61,16 +64,13 @@ defmodule AshTemplateWeb.AdminMessagesLive do
               <div>
                 <dt>From</dt>
                 <dd>
-                  <Shell.person_name
-                    id={"message-#{message.id}-sender"}
-                    person={Message.sender(message)}
-                  />
-                  <span :if={message.agent}>
+                  <Shell.person_name id={"message-#{message.id}-sender"} person={message.sender} />
+                  <span :if={message.agent_wallet}>
                     · Agent
                     <Primitives.address
-                      :if={message.sender_name}
+                      :if={message.sender.name}
                       id={"message-#{message.id}-agent"}
-                      address={message.agent.wallet_address}
+                      address={message.agent_wallet}
                     />
                   </span>
                 </dd>
@@ -92,8 +92,8 @@ defmodule AshTemplateWeb.AdminMessagesLive do
           </li>
         </ol>
         <.link
-          :if={@messages.state == :ready and @messages.value.more?}
-          patch={"?after=" <> List.last(@messages.value.results).__metadata__.keyset}
+          :if={@messages.state == :ready and @messages.value.next}
+          patch={"?after=" <> @messages.value.next}
           class="rg-button rg-button--secondary"
         >
           Older
@@ -102,4 +102,17 @@ defmodule AshTemplateWeb.AdminMessagesLive do
     </div>
     """
   end
+
+  defp shown(message) do
+    message
+    |> Map.take([:id, :topic, :inserted_at, :reply_to, :body])
+    |> Map.merge(%{
+      sender: Message.sender(message),
+      agent_wallet: message.agent && message.agent.wallet_address
+    })
+  end
+
+  # Where the next page starts; nil on the last.
+  defp next(%{more?: true, results: results}), do: List.last(results).__metadata__.keyset
+  defp next(_page), do: nil
 end

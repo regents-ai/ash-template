@@ -4,8 +4,8 @@ defmodule AshTemplate.Activity.Notification do
   them in a room. It is written in the same transaction as the thing it reports,
   on that thing's signal (`NotifyMentions` on the rooms' `:message_posted`),
   only its person can read it or
-  mark it read, and each change is published on their own topic, so the bell on
-  every page they have open counts it at once.
+  mark it read, and each new one, and each Mark all read, is published once on
+  their own topic, so the bell on every page they have open counts it at once.
   """
 
   use Ash.Resource,
@@ -66,7 +66,7 @@ defmodule AshTemplate.Activity.Notification do
     # Newest first, a page at a time.
     read :mine do
       prepare build(sort: [inserted_at: :desc, id: :desc])
-      pagination keyset?: true, default_limit: 50, max_page_size: 50
+      pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
     read :unread do
@@ -77,6 +77,8 @@ defmodule AshTemplate.Activity.Notification do
       accept [:human_account_id, :title, :body, :path]
     end
 
+    # Run over every unread one at once (`AshTemplate.Activity.mark_all_read/1`),
+    # which tells their pages once.
     update :mark_read do
       change atomic_update(:read_at, expr(now()))
     end
@@ -98,8 +100,8 @@ defmodule AshTemplate.Activity.Notification do
     end
   end
 
-  # Delivered after the transaction commits, as %{event: "notify" | "mark_read",
-  # payload: notification}, to `topic/1` of the notification's person.
+  # Delivered after the transaction commits, as %{event: "notify", payload:
+  # notification}, to `topic/1` of the notification's person.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
@@ -108,9 +110,19 @@ defmodule AshTemplate.Activity.Notification do
     transform & &1.data
 
     publish :notify, [:human_account_id]
-    publish :mark_read, [:human_account_id]
   end
 
-  @doc "The topic every notification for `human_account_id`, and every read of one, is published on."
+  @doc "The topic every notification for `human_account_id`, and every Mark all read, is published on."
   def topic(human_account_id), do: "notifications:#{human_account_id}"
+
+  @doc "Tells `human_account_id`'s open pages, once, that all their notifications were read."
+  def all_read(human_account_id) do
+    topic = topic(human_account_id)
+
+    Phoenix.PubSub.broadcast(AshTemplate.PubSub, topic, %Phoenix.Socket.Broadcast{
+      topic: topic,
+      event: "mark_all_read",
+      payload: %{}
+    })
+  end
 end

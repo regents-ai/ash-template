@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Ash Template public API",
-    "version": "12.0.0",
+    "version": "13.0.0",
     "description": "Service health, the signed-in person's own profile and notes, the public rooms, posting to a room as an agent signed in with its wallet, a paired account's direct messages and chats with the assistant, polls, and pairing an agent with a person's account so it can act as them. Does not describe browser session changes. A breaking change ships with a new major info.version and is listed in the developer documentation's versioning and deprecation section the same day.",
     "contact": {
       "name": "Ash Template"
@@ -774,11 +774,11 @@
         }
       }
     },
-    "/api/v1/notes": {
-      "get": {
+    "/api/v1/notes/list": {
+      "post": {
         "operationId": "listMyNotes",
-        "summary": "List the verified account's notes",
-        "description": "Returns every note of the account behind the presented Privy credentials, newest first. Responses use Cache-Control: no-store. An agent the person paired, may send it signed with its own key instead, acting as them.",
+        "summary": "List the verified account's notes, 50 a page",
+        "description": "Returns a page of the notes of the account behind the presented Privy credentials: pinned first and archived last, newest first within each. Send {} for the first page, or after set to the previous page's pagination.next_cursor, unchanged; the cursor travels in the body because a signed request takes no query string. Responses use Cache-Control: no-store. An agent the person paired, may send it signed with its own key instead, acting as them.",
         "security": [
           {
             "PrivyAccessToken": [],
@@ -788,9 +788,27 @@
             "siwaProof": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "after": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "The previous page's next_cursor, unchanged."
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "The account's notes, newest first",
+            "description": "A page of the account's notes",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -827,6 +845,24 @@
           },
           "403": {
             "$ref": "#/components/responses/AccountOrPersonRequired"
+          },
+          "422": {
+            "description": "after is not the next_cursor of a page, or the body holds anything else (invalid_cursor)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "503": {
             "description": "Sign-in is not configured or the notes could not be reached (notes_unavailable)",
@@ -878,7 +914,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "/api/v1/notes": {
       "post": {
         "operationId": "createNote",
         "summary": "Add a note to the verified account",
@@ -7905,13 +7943,36 @@
       "NotesEnvelope": {
         "type": "object",
         "required": [
-          "notes"
+          "notes",
+          "pagination"
         ],
         "properties": {
           "notes": {
             "type": "array",
+            "maxItems": 50,
             "items": {
               "$ref": "#/components/schemas/Note"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "has_more",
+              "next_cursor"
+            ],
+            "properties": {
+              "has_more": {
+                "type": "boolean",
+                "description": "True when more notes follow."
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Send as after for the next page; null when there is none."
+              }
             }
           }
         }
