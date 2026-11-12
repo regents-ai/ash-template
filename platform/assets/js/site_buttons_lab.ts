@@ -37,13 +37,6 @@ const applyBrands = (root: HTMLElement) => {
 
 // Each state a frozen specimen holds still, and the mark the specimen wears instead.
 const STATES = [[":hover", '[data-show="hover"]'], [":focus-visible", '[data-show="focus"]']] as const
-// The specimens are pictures of a mouse and a keyboard, so a media query about the device's
-// pointer is answered as a mouse answers it, always true or always false. A hover rule kept
-// for mice then still shows on a phone and in a headless picture.
-const MOUSE = [
-  [/\((any-)?(hover: hover|pointer: fine)\)/g, "(width >= 0px)"],
-  [/\((any-)?(hover: none|pointer: (coarse|none))\)/g, "(width < 0px)"],
-] as const
 
 /** A selector list's own selectors: split at its commas, not those inside `:is(…)` or `[…]`. */
 const splitSelectors = (list: string) => {
@@ -72,8 +65,7 @@ const mirrorStates = (): CSSStyleSheet => {
           .map(selector => STATES.reduce((shown, [state, show]) => shown.replaceAll(state, show), selector))
         if (held.length > 0) mirrored.push(wrap(`${held.join(", ")} { ${rule.style.cssText} }`))
       } else if (rule instanceof CSSMediaRule) {
-        const media = MOUSE.reduce((query, [feature, answer]) => query.replace(feature, answer), rule.conditionText)
-        walk(rule.cssRules, css => wrap(`@media ${media} { ${css} }`))
+        walk(rule.cssRules, css => wrap(`@media ${rule.conditionText} { ${css} }`))
       } else if (rule instanceof CSSLayerBlockRule) {
         walk(rule.cssRules, css => wrap(`@layer ${rule.name} { ${css} }`))
       } else if (rule instanceof CSSSupportsRule) {

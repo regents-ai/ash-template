@@ -9235,10 +9235,6 @@ unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first comm
   keyboard focus, so both examples are the shared button's own paint. A list's selectors
   that name no state are no longer repeated with it. The arrow's nudge is a short motion
   that ends where it started, so a held hover shows the arrow at rest, as a real one does.
-- A rule kept for mice (`@media (hover: hover)`, `(pointer: fine)`, and their touch
-  opposites) is repeated with that question answered as a mouse answers it, so the frozen
-  hover shows the same on a phone and in a headless picture. No rule the lab's buttons
-  answer to sits in such a wrapper today.
 - The lab names Patchbay's address as patchbay.help (it said patchbay.sh).
 - Walk check: in `platform/test/browser/site_buttons.spec.ts`, the frozen hover equals a
   button really hovered by a mouse, light and dark; on the phone, where nothing hovers,
