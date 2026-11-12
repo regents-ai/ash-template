@@ -55,7 +55,7 @@ defmodule AshTemplateWeb.RoomsController do
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
     "invalid_message" =>
       {422, "The message could not be saved.",
-       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."},
+       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body."},
     "idempotency_conflict" =>
       {409, "This operation_id was already used for another message.",
        "Send a new UUID as operation_id for a new message. Keep an operation_id only to retry the same post in the same room."},
@@ -218,11 +218,20 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
+  # Past the allowance of posts, the refusal says how many seconds are left of it.
   defp refuse_post(conn, %Ash.Error.Invalid{errors: errors} = error) do
-    case Enum.find(errors, &is_struct(&1, Refused)) do
-      %Refused{code: "message_removed", id: id} -> refuse(conn, "message_removed", id: id)
-      %Refused{code: code} -> refuse(conn, code)
-      nil -> refuse(conn, "invalid_message", error)
+    case {Enum.find(errors, &is_struct(&1, Refused)), retry_after(errors)} do
+      {%Refused{code: "message_removed", id: id}, _wait} ->
+        refuse(conn, "message_removed", id: id)
+
+      {%Refused{code: code}, _wait} ->
+        refuse(conn, code)
+
+      {nil, nil} ->
+        refuse(conn, "invalid_message", error)
+
+      {nil, seconds} ->
+        too_many_requests(conn, seconds)
     end
   end
 
@@ -297,15 +306,19 @@ defmodule AshTemplateWeb.RoomsController do
   # Past the allowance, the refusal says how many seconds are left of it;
   # otherwise the message went while the like was made.
   defp refuse_like(conn, %Ash.Error.Invalid{errors: errors}) do
-    case Enum.find_value(errors, & &1.vars[:retry_after]) do
-      nil ->
-        refuse(conn, "public_message_not_found")
-
-      seconds ->
-        conn
-        |> put_resp_header("retry-after", Integer.to_string(seconds))
-        |> refuse("too_many_requests")
+    case retry_after(errors) do
+      nil -> refuse(conn, "public_message_not_found")
+      seconds -> too_many_requests(conn, seconds)
     end
+  end
+
+  # The seconds left of an allowance a write was refused by (`LimitWrites`).
+  defp retry_after(errors), do: Enum.find_value(errors, & &1.vars[:retry_after])
+
+  defp too_many_requests(conn, seconds) do
+    conn
+    |> put_resp_header("retry-after", Integer.to_string(seconds))
+    |> refuse("too_many_requests")
   end
 
   # Reporting a message again answers the first report, with its first reason.

@@ -551,6 +551,42 @@ defmodule AshTemplate.SignedToolsTest do
     assert {:ok, %{liked_by_me: false, like_count: 1}} = Rooms.get_room_message("general", message.id, actor: human)
   end
 
+  test "a post or a like past the person's allowance answers 429 with the seconds to wait" do
+    {account, _person, _paired} = paired_person("did:privy:allowance-test")
+    writer = {:human, account.id}
+
+    other =
+      AshTemplate.Accounts.register_verified!("did:privy:allowance-other", @other, [@other],
+        actor: %AshTemplate.Actors.System{}
+      )
+      |> AshTemplate.Actors.Human.for_account()
+
+    message =
+      Rooms.post_message!(%{room: "general", body: "Too quick?"},
+        actor: other,
+        context: %{client_key: "other"}
+      )
+
+    spend_all(:room_post, writer)
+    post = Jason.encode!(%{body: "Hello", operation_id: Ecto.UUID.generate()})
+    assert_waits(request(:post, "/api/v1/rooms/general/messages", post))
+
+    spend_all(:like, writer)
+    assert_waits(request(:post, "/api/v1/rooms/general/messages/#{message.id}/like", "{}"))
+  end
+
+  defp spend_all(allowance, writer) do
+    limit = Application.fetch_env!(:ash_template, :limits)[allowance][:limit]
+    for _ <- 1..limit, do: :ok = AshTemplate.Limits.spend(allowance, writer)
+  end
+
+  defp assert_waits(refused) do
+    assert refused.status == 429, refused.resp_body
+    assert error_code(refused) == "too_many_requests"
+    assert [seconds] = get_resp_header(refused, "retry-after")
+    assert String.to_integer(seconds) in 1..60
+  end
+
   test "an agent's report is its person's one report of someone else's message, never their own" do
     # Invariant: a person reports a message once, whoever presses (the first reason
     # stays), never their own, and only while the agent is paired.
@@ -920,7 +956,10 @@ defmodule AshTemplate.SignedToolsTest do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{chat}")
 
     assert :ok = RegentAgents.unpair_agent(paired, actor: person)
-    assert %{success: 0} = Oban.drain_queue(queue: :chat_responses)
+
+    # Both attempts run, the second as soon as the first has failed.
+    assert %{success: 0} =
+             Oban.drain_queue(queue: :chat_responses, with_scheduled: true, with_recursion: true)
 
     # No word of a reply was written: the one piece is the line saying it failed.
     assert_receive %Phoenix.Socket.Broadcast{payload: %{source: :agent, complete: true}}
