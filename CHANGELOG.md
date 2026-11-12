@@ -9366,8 +9366,10 @@ unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first comm
 
 Branch `tpl/stampede-all-1112`, from `origin/main` (`c9c83a90`): the database load
 review's four lanes merged with plain merge commits, main (v223) merged in before the
-fourth, and the chief's corrections (`/tmp/stampede-1112/build-integrate.md`). Not
-released. This entry replaces the chat and polls lanes' own.
+fourth, and the chief's corrections (`/tmp/stampede-1112/build-integrate.md`). v224
+released the first three lanes and the first corrections (`4d1a4d27`, next entry); the
+polls lane and the second round (from `e65eebc5`) are not released. This entry replaces
+the chat and polls lanes' own.
 
 - **Measurements and connections** (`tpl/stampede-platform-1112`, `91bb7ed7`). Measurements
   that tell the site's limits apart: the wait for a connection and query time by table,
@@ -9480,3 +9482,31 @@ released. This entry replaces the chat and polls lanes' own.
   and Sobelow clean, compile-connected 47, codegen current, 141 TypeScript, 606 browser
   walks with 5 skipped, 236 Elixir (10 properties), required fixes (main's registry), the
   command list and the newest-CLI check. WebKit not run.
+
+## 2026-11-12 — Released v224: the database load review (rooms, assistant chat, measurement)
+
+- `bb96c274` (merge of `tpl/stampede-all-1112`, `4d1a4d27`) is v224 on
+  template.regents.sh, switched at about 22:07Z with `scripts/deploy.sh`. Sean's request
+  of 12 Nov after the Stampede guides: fewer queries per action, no query on a receiver
+  of a broadcast, at most one commit per action, no read that grows with history.
+- Migrations, applied by the release (`/api/v1/health` answers `migrations_applied:
+  true`): like count and version on `room_messages` (default 0, filled from the likes
+  saved), new table `room_posters` (filled from the messages saved), concurrent indexes
+  for chats by person and time, room messages by agent, the session prune and the
+  saved-errors prune, and the covered one-column chat index dropped concurrently.
+  Nothing existing removed or rewritten.
+- Rollback: fix forward; the v223 image (`7f1d8749`) still runs on the new schema.
+- Full check exit 0 by the chief on the merge: 141 script tests, 620 browser walks with
+  5 skipped, 236 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/rooms/general`,
+  `/rooms/help`, `/polls` and `/animations/particles` answer 200 at 1280, 390 and 320
+  with no page errors and no sideways scroll; the General room connects and the agent's
+  message now shows its picture. No load was generated; the limits (429 with the wait)
+  are proven by tests, not on live.
+- Agent-visible: too-fast room posts (10 a minute per person, 30 per address) and likes
+  (120 per person, 300 per address) answer 429 with the seconds to wait; pages and
+  documents have a 600 a minute per address limit; a chat reply has no text until it is
+  complete; a saved note's label arrives just after the save. API documents 13.0.0.
+- Not in this release: polls and messages (`tpl/stampede-polls-1112`, being combined),
+  Sean's decision 32 (ships as a: a person stays mentionable after deleting their
+  messages).
