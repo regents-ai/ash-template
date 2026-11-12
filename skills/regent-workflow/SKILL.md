@@ -138,13 +138,14 @@ still waits for Sean.
 
 Sean, 11 Nov: a cost-efficient tree, "Split useful work. Don't spawn every role." Every
 session, chiefs and lane threads included, runs as its root. Fable is the scarce
-allowance: spend it on judgment, never on reading files or running tests.
+allowance: spend it on judgment, never on reading files or running tests. Sean, 12 Nov:
+"For implementing code, I want the chiefs to start up opus 5.5 extra high subagents."
 
 | Role | Agent | Model | Does |
 | --- | --- | --- | --- |
 | Root | the session | Fable 5.2, medium | plans, delegates, integrates and verifies |
 | Explorer | `Explore` | Haiku 5.5 | finds files, symbols and call sites |
-| Worker | `worker` | Opus 5.5, medium | edits code to a brief |
+| Worker | `worker` | Opus 5.5, extra high | edits code to a brief |
 | Tester | `tester` | Haiku 5.5 | runs tests and checks, reports failures |
 | Stuck | `unstick` | Fable 5.2, high | only when the root is stuck |
 
