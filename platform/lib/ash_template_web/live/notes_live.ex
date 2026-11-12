@@ -199,7 +199,7 @@ defmodule AshTemplateWeb.NotesLive do
                 value={@form[:title].value}
                 maxlength="120"
                 autocomplete="off"
-                phx-debounce="300"
+                phx-debounce="blur"
                 aria-invalid={field.aria_invalid}
                 aria-describedby={field.described_by}
               />
@@ -215,12 +215,16 @@ defmodule AshTemplateWeb.NotesLive do
                 name={@form[:body].name}
                 rows="6"
                 maxlength="10000"
-                phx-debounce="300"
+                phx-debounce="blur"
                 aria-invalid={field.aria_invalid}
                 aria-describedby={field.described_by}
               >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
             </Primitives.field>
-            <div class="notes-form__actions">
+            <AshTemplateWeb.LiveConnection.offline
+              id="note-form-offline"
+              controls="#note-form-actions"
+            />
+            <fieldset id="note-form-actions" class="notes-form__actions">
               <Primitives.button type="submit" phx-disable-with="Saving…">
                 {if @editing, do: "Save changes", else: "Add note"}
               </Primitives.button>
@@ -233,7 +237,7 @@ defmodule AshTemplateWeb.NotesLive do
               >
                 Cancel
               </Primitives.button>
-            </div>
+            </fieldset>
           </.form>
         </section>
 
@@ -245,9 +249,7 @@ defmodule AshTemplateWeb.NotesLive do
             Your notes couldn’t be loaded. Refresh the page to try again.
           </Primitives.notice>
           <ul id="notes-list" class="notes-list" data-state={@notes.state} phx-update="stream">
-            <li id="notes-empty" class="notes-empty rg-muted">
-              No notes yet. Write your first one with the form.
-            </li>
+            <li id="notes-empty" class="notes-empty rg-muted">No notes yet.</li>
             <li :for={{dom_id, note} <- @streams.notes} id={dom_id} class="notes-item">
               <Primitives.status :if={note.pinned_at} tone="info">Pinned</Primitives.status>
               <Primitives.status :if={note.archived_at}>Archived</Primitives.status>
@@ -297,6 +299,7 @@ defmodule AshTemplateWeb.NotesLive do
                   phx-value-id={note.id}
                   phx-target={@myself}
                   data-confirm="Delete this note?"
+                  data-confirm-action="Delete"
                 >
                   Delete
                 </Primitives.button>

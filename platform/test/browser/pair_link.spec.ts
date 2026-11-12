@@ -8,9 +8,12 @@ import {ready, signedIn, watch} from "./support/person"
 
 const message = (page: Page) => page.locator("#pair-pairing-box pre")
 
-// The page opens on the list of agents, as the pairing window does.
+// The page opens on the list of agents, as the pairing window does. A choice
+// closes the list, so the radio is looked for hidden too when its check is read.
 async function choose(page: Page, agent: string) {
-  const radio = page.locator("#pair-pairing-box").getByRole("radio", {name: agent, exact: true})
+  const radio = page
+    .locator("#pair-pairing-box")
+    .getByRole("radio", {name: agent, exact: true, includeHidden: true})
   await expect(page.locator("#pair-pairing-box details")).toHaveAttribute("open", "")
   await radio.locator("xpath=ancestor::label").click()
   await expect(radio).toBeChecked()
@@ -30,6 +33,24 @@ test.describe("signed in", () => {
     await expect(message(page)).toContainText(/Pairing code:\s*\S{12,}/)
     const text = (await message(page).innerText()).trimEnd()
     expect(text.endsWith(`\nOnce paired, start at ${await start.innerText()}`)).toBe(true)
+    await problems.expect()
+  })
+
+  // The pairing page holds the same box as the window: the picture in a low band,
+  // and nothing under it moves when an agent is chosen.
+  test("the picture sits in a low band, and choosing moves nothing under it", async ({page}) => {
+    const problems = watch(page)
+    await page.goto("/pair?to=%2Frooms%2Fgeneral")
+    await ready(page)
+    const stage = page.locator("#pair-pairing-box .rg-account__stage")
+    const steps = page.locator("#pair-pairing-box ol")
+    const before = await steps.evaluate(list => list.getBoundingClientRect().top)
+
+    await choose(page, "Dots")
+    await expect(message(page)).toContainText(/Pairing code/)
+    const band = await stage.evaluate(box => box.getBoundingClientRect())
+    expect(band.height).toBeLessThanOrEqual((band.width * 9) / 16 / 2)
+    expect(await steps.evaluate(list => list.getBoundingClientRect().top)).toBe(before)
     await problems.expect()
   })
 

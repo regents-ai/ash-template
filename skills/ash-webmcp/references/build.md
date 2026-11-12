@@ -178,8 +178,7 @@ The human profile UI may continue using its authenticated owner session.
 
 ## Checks
 
-1. Compile and typecheck. Tests only where the founder agreed them; a fake
-   `modelContext` proves the adapter, not the browser.
+1. Compile and typecheck. A fake `modelContext` proves the adapter, not the browser.
 2. The HTTP routes behind each tool: public reads, signed agent requests and
    unpaired/revoked/cookie-only refusals. A refused write returns a fixable error.
 3. Native discovery: Chrome with the flag (or the trial token on the real host) and

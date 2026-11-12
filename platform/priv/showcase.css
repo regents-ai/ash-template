@@ -24,6 +24,8 @@
 .payments-terms > div { display: grid; grid-template-columns: 8em minmax(0, 1fr); gap: 8px; }
 .payments-terms dt { color: var(--color-fg-muted); }
 .payments-terms dd { margin: 0; overflow-wrap: anywhere; }
+/* Room counts line up as a column of figures, ending on the same edge. */
+#figures-rooms .rg-figure { text-align: end; }
 .payments-page blockquote { margin: 0 0 16px; padding-left: 12px; border-left: 2px solid var(--color-border); }
 .payments-press { display: grid; justify-items: start; gap: 8px; margin-bottom: 16px; }
 .payments-answers { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -148,6 +150,11 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
   .sc-sidebar .sc-note { display: none; }
   .sc-main { border-left: 0; }
 }
+/* On touch screens the wordmark and the grammar tabs are 44px presses. */
+@media (hover: none), (pointer: coarse) {
+  .sc-wordmark { display: inline-flex; align-items: center; min-height: 44px; }
+  .grammar-tabs a { min-width: 44px; }
+}
 @media (max-width: 767px) {
   .sc-grid { grid-template-columns: 1fr; }
   .sc-sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -172,7 +179,7 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .grammar-tabs a { display: inline-flex; align-items: center; min-height: 44px; color: var(--color-fg-muted); font-size: 14px; }
 .grammar-tabs a[aria-current="page"] { color: var(--color-fg); }
 .sc .grammar-tabs a:hover { text-decoration: none; color: var(--color-fg); }
-.grammar-tabs__ink { position: absolute; bottom: -1px; left: 0; width: 100px; height: 2px; background: var(--ash-accent-warm); transform-origin: 0 50%; pointer-events: none; }
+.grammar-tabs__ink { position: absolute; bottom: -1px; left: 0; width: 100px; height: 2px; background: var(--ash-signal); transform-origin: 0 50%; pointer-events: none; }
 .grammar-lede { max-width: 40rem; margin: 0 0 24px; color: var(--color-fg-muted); font-size: 16px; line-height: 1.5; }
 .grammar-name { font: 11px var(--font-family-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--color-fg-muted); }
 .grammar-sample { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
@@ -216,3 +223,14 @@ body:has(.sc) { margin: 0; background: var(--color-bg); color: var(--color-fg); 
 .grammar-table tbody th { overflow-wrap: normal; white-space: nowrap; }
 @media (max-width: 1023px) { .grammar-layers { grid-template-columns: 1fr; } }
 @media (max-width: 767px) { .grammar { padding: 16px; } .grammar-table table { font-size: 12px; } .grammar-stack__label { font-size: 26px; } }
+/* Under 768px each row of the layers table stands as a card: the layer's name, then
+   each column's name beside its value. */
+@media (max-width: 767px) {
+  .grammar-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .grammar-table :is(table, tbody, tr, th, td) { display: block; }
+  .grammar-table tbody tr { display: grid; gap: 4px; padding-block: 12px; border-top: 1px solid var(--color-border); }
+  .grammar-table tbody :is(th, td) { padding: 0; border-top: 0; }
+  .grammar-table tbody th { font-size: 14px; }
+  .grammar-table td { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 8px; }
+  .grammar-table td::before { content: attr(data-label) / ""; color: var(--color-fg-muted); }
+}

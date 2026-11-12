@@ -1,0 +1,58 @@
+@layer regents-product {
+/* The menu lab (`/animations/menu`): a button at each side, each menu hanging from
+   the corner of its own button and growing from there (the kit's menu motion), on
+   the Tip layer, so opening one moves nothing on the page.
+
+   The page is as wide as the lab's column and its rows sit at the top, so the two
+   buttons stand at its two sides at their own height. */
+.motion-lab--menu {
+  width: 100%;
+  align-content: start;
+}
+
+.menu-lab {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+}
+
+.menu-lab__items {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  z-index: var(--rg-layer-tip);
+  display: grid;
+  min-inline-size: 12rem;
+  max-inline-size: calc(100vw - 2 * var(--rg-page-gutter));
+  padding: var(--space-1);
+  border: 1px solid var(--hairline-strong);
+  background: var(--color-surface-elevated, var(--color-surface));
+  box-shadow: var(--rg-layer-tip-shadow);
+}
+
+/* It grows from the corner it hangs from. */
+.menu-lab__items--start { inset-inline-start: 0; transform-origin: top left; }
+.menu-lab__items--end { inset-inline-end: 0; transform-origin: top right; }
+
+.menu-lab__items button {
+  min-block-size: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--color-fg);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.menu-lab__items button:hover,
+.menu-lab__items button:focus-visible {
+  background: var(--color-surface);
+}
+
+.menu-lab__items button:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--rg-ring-width));
+}
+}

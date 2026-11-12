@@ -13,9 +13,10 @@ defmodule AshTemplateWeb.Components.Shell do
   Signed in, the account's picture and name at the top right open the account menu
   (`Regent.Account.menu`), the same on every page: the person's picture, name and
   wallet, the agents paired with the account (the `agents` slot), Pair New Agent,
-  Manage Account and Sign out. Pair New Agent opens the pairing window (the
-  `pairing_panel` slot) over the page; the agents are on the Agents page, and
-  everything else about the account is on the Account page.
+  the theme switch, Manage Account and Sign out. Pair New Agent opens the pairing
+  window (the `pairing_panel` slot) over the page; the agents are on the Agents
+  page, and everything else about the account is on the Account page. Signed out,
+  with no account menu, the theme switch sits in the bottom bar instead.
   """
 
   use Phoenix.Component
@@ -35,13 +36,13 @@ defmodule AshTemplateWeb.Components.Shell do
     {"Terms", "/terms"}
   ]
 
-  # The Regents Products, each shown with the crown in its own pair of brand colours.
+  # The Regents Products, each shown with the crown and its name.
   @regents_apps [
-    %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
-    %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
-    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
-    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet"},
-    %{name: "$REGENT Staking", url: "https://regents.sh/stake", tone: "protocol"}
+    %{name: "Patchbay", url: "https://patchbay.help"},
+    %{name: "Autolaunch", url: "https://autolaunch.sh"},
+    %{name: "Techtree", url: "https://techtree.sh"},
+    %{name: "Keyfleet", url: "https://keyfleet.ai"},
+    %{name: "$REGENT Staking", url: "https://regents.sh/stake"}
   ]
 
   @doc "The Regents Products, in the order every menu of them lists them."
@@ -162,6 +163,10 @@ defmodule AshTemplateWeb.Components.Shell do
             />
           </:picture>
           <:agents>{render_slot(@agents)}</:agents>
+          <:theme>
+            <span class="shell-theme-label" aria-hidden="true">Light theme</span>
+            <.theme_toggle id="account-menu-theme" />
+          </:theme>
         </Regent.Account.menu>
       </header>
 
@@ -171,6 +176,7 @@ defmodule AshTemplateWeb.Components.Shell do
           type="button"
           class="shell-menu-close"
           data-shell-menu-close
+          data-dismiss
         >
           Close navigation
         </Regent.Primitives.button>
@@ -282,14 +288,18 @@ defmodule AshTemplateWeb.Components.Shell do
         <div class="shell-footer__brand rl-header-links">
           <RegentLinks.header_links id="shell-token-menu" />
         </div>
-        <.theme_toggle id="theme-control" />
+        <.theme_toggle
+          :if={@account_control.kind not in [:signed_in, :preview]}
+          id="shell-footer-theme-control"
+          class="shell-footer-theme"
+        />
       </footer>
 
       <Regent.Structure.dialog
         id="shell-search"
         class="shell-search"
         aria-label="Search"
-        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
+        phx-mounted={JS.ignore_attributes(["data-settled"])}
       >
         <form id="shell-search-form" role="search" phx-change="search" phx-submit="search">
           <Regent.Icons.icon name="search" class="shell-icon shell-search__glass" />
@@ -372,7 +382,7 @@ defmodule AshTemplateWeb.Components.Shell do
         id="shell-pairing"
         class="shell-pairing-dialog"
         aria-labelledby="shell-pairing-title"
-        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
+        phx-mounted={JS.ignore_attributes(["data-settled"])}
       >
         <Regent.Primitives.button
           variant="quiet"
@@ -383,7 +393,7 @@ defmodule AshTemplateWeb.Components.Shell do
         >
           <Regent.Icons.icon name="x" />
         </Regent.Primitives.button>
-        <h2 id="shell-pairing-title">Pair New Agent</h2>
+        <h2 id="shell-pairing-title" data-sheet-handle>Pair New Agent</h2>
         {render_slot(@pairing_panel)}
       </Regent.Structure.dialog>
 
@@ -557,19 +567,144 @@ defmodule AshTemplateWeb.Components.Shell do
     """
   end
 
+  # The theme switch's two pictures, row by row from the top: "#" is a block. Both
+  # have as many blocks, so every block of the moon flies to exactly one of the
+  # sun, and both keep their outer ring clear, where a block would sit under the
+  # glass's bevel and smear. The still face draws them, and the browser reads
+  # them from there.
+  @theme_moon [
+    ".............",
+    "....##.......",
+    "...##.....#..",
+    "..##.........",
+    ".###.........",
+    ".###.....#...",
+    ".###.........",
+    ".#####.......",
+    ".######......",
+    "..#########..",
+    "...#######...",
+    "....#####....",
+    "............."
+  ]
+
+  @theme_sun [
+    ".............",
+    ".#....#....#.",
+    "..#.......#..",
+    ".....###.....",
+    "....#####....",
+    "...#######...",
+    ".#.#######.#.",
+    "...#######...",
+    "....#####....",
+    ".....###.....",
+    "..#.......#..",
+    ".#....#....#.",
+    "............."
+  ]
+
+  block_count = fn rows ->
+    rows |> Enum.join() |> :binary.matches("#") |> length()
+  end
+
+  if block_count.(@theme_moon) != block_count.(@theme_sun) do
+    raise ArgumentError, "the theme switch's moon and sun need as many blocks"
+  end
+
+  for rows <- [@theme_moon, @theme_sun] do
+    if Enum.any?(rows, &(String.length(&1) != length(rows))) do
+      raise ArgumentError, "the theme switch's pictures are square"
+    end
+
+    ring = [hd(rows), List.last(rows) | Enum.map(rows, &(String.first(&1) <> String.last(&1)))]
+
+    if Enum.any?(ring, &String.contains?(&1, "#")) do
+      raise ArgumentError, "the theme switch's pictures keep their outer ring clear"
+    end
+  end
+
   attr :id, :string, required: true
+  attr :class, :any, default: nil
 
   @doc """
-  The colour theme switch. The browser owns the press: it writes the theme
-  cookie the server reads on the next render, so the control is left out of
-  LiveView's patching.
+  The light and dark theme switch: a button with the role of a switch, on for
+  the light theme, with a knob that slides from night on the left to day on the
+  right. A press, Enter or Space turns it, and the knob can be dragged; it
+  settles on the nearer side when let go.
+
+  The server draws a still face: a flat square track and knob with the moon or
+  the sun, each a picture of tiny square blocks, placed for the theme showing. Once
+  the browser has drawn a first frame of the glass knob, with the same blocks
+  behind it and its light, on the canvas inside (`assets/js/hooks/theme_switch.ts`,
+  `assets/js/theme_switch/`), that picture takes over. Without WebGPU, with Less
+  motion on or in forced colours the still face stays, and it is a whole working
+  switch on its own.
+
+  The browser owns the press: it writes the theme cookie the server reads on
+  the next render, so the switch is left out of LiveView's patching, and the
+  attributes the browser writes on it are kept.
   """
   def theme_toggle(assigns) do
+    assigns = assign(assigns, moon: @theme_moon, sun: @theme_sun)
+
     ~H"""
-    <div id={@id} class="theme-control" phx-update="ignore">
-      <Regent.ThemeToggle.button id={"#{@id}-button"} data-theme-toggle />
+    <div
+      id={@id}
+      class={["theme-switch", @class]}
+      phx-hook="ThemeSwitch"
+      phx-update="ignore"
+      phx-mounted={JS.ignore_attributes(["data-theme-switch-ready", "style"])}
+      data-theme-switch
+    >
+      <button
+        id={"#{@id}-button"}
+        class="theme-switch__button"
+        type="button"
+        role="switch"
+        aria-checked="false"
+        aria-label="Light theme"
+      >
+        <span class="theme-switch__still" aria-hidden="true">
+          <span class="theme-switch__track" data-theme-switch-track>
+            <span class="theme-switch__knob" data-theme-switch-knob>
+              <.theme_blocks rows={@moon} class="theme-switch__moon" />
+              <.theme_blocks rows={@sun} class="theme-switch__sun" />
+            </span>
+          </span>
+        </span>
+        <canvas class="theme-switch__canvas" data-theme-switch-canvas aria-hidden="true"></canvas>
+      </button>
     </div>
     """
+  end
+
+  attr :rows, :list, required: true
+  attr :class, :string, required: true
+
+  # One of the switch's pictures, a block for each "#", one unit square apiece
+  # with a hairline between neighbours.
+  defp theme_blocks(assigns) do
+    assigns = assign(assigns, size: length(assigns.rows), blocks: blocks(assigns.rows))
+
+    ~H"""
+    <svg
+      class={@class}
+      viewBox={"0 0 #{@size} #{@size}"}
+      shape-rendering="crispEdges"
+      aria-hidden="true"
+    >
+      <g transform="translate(0.06 0.06)">
+        <rect :for={{x, y} <- @blocks} x={x} y={y} width="0.88" height="0.88" />
+      </g>
+    </svg>
+    """
+  end
+
+  defp blocks(rows) do
+    for {row, y} <- Enum.with_index(rows),
+        {"#", x} <- Enum.with_index(String.graphemes(row)),
+        do: {x, y}
   end
 
   attr :target, :map, required: true
@@ -610,7 +745,7 @@ defmodule AshTemplateWeb.Components.Shell do
       <ul>
         <li :for={app <- @apps}>
           <a href={app.url} target="_blank" rel="noopener">
-            <span class="shell-apps__tile" data-tone={app.tone}><.crown /></span>
+            <span class="shell-apps__tile"><.crown /></span>
             <span>{app.name}</span>
           </a>
         </li>

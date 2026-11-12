@@ -1,7 +1,9 @@
 defmodule AshTemplateWeb.HealthController do
   @moduledoc """
   Whether the site and its own database answer: `/healthz` in plain text for the
-  host's health check, `/api/v1/health` in JSON for the command line.
+  host's health check, `/api/v1/health` in JSON for the command line. The JSON
+  also says whether this release's migrations are all applied; pending ones
+  leave the answer at 200, so the host does not restart a site that is serving.
   """
   use AshTemplateWeb, :controller
 
@@ -21,7 +23,7 @@ defmodule AshTemplateWeb.HealthController do
     conn = put_resp_header(conn, "cache-control", "no-store")
 
     if Health.database_ready?() do
-      json(conn, %{status: "ok"})
+      json(conn, %{status: "ok", migrations_applied: Health.migrations_applied?()})
     else
       conn
       |> put_status(:service_unavailable)

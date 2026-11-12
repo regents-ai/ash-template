@@ -322,6 +322,8 @@ defmodule AshTemplateWeb.ShellLive do
           :if={@route_spec.route_id == :app}
           account_control={@account_control}
           account={current_account(@access_context)}
+          lease={@session_lease}
+          client_key={@client_key}
         />
 
         <ActivityLive.page

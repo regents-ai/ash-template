@@ -17,7 +17,7 @@ defmodule AshTemplateWeb.ErrorHTML do
         <link rel="stylesheet" href="/assets/js/app.css" />
       </head>
       <body>
-        <Regent.Utility.page title={@title} context="Ash Template" id="error-page">
+        <Regent.Utility.page title={@title} id="error-page">
           <p>Use the homepage or one of the links below to continue.</p>
           <:actions>
             <a class="rg-button" href="/">Homepage</a>

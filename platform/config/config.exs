@@ -18,8 +18,6 @@ config :ash_template, :admins, []
 # (CVE-2026-82752).
 config :ash, default_string_length_count: :codepoints
 
-config :mime, :types, %{"application/yaml" => ["yaml"]}
-
 # The name this site goes by in the shared Regent libraries. A site copied
 # from the template changes it here and nowhere else.
 site = "template"
@@ -32,6 +30,7 @@ config :ash_template,
     AshTemplate.Accounts,
     AshTemplate.Agents,
     AshTemplate.Dms,
+    AshTemplate.Messages,
     AshTemplate.Polls,
     AshTemplate.Notes,
     AshTemplate.Points,
@@ -60,29 +59,39 @@ config :ash_template, AshTemplate.Agents.HostedAddress,
   max_size: 100_000
 
 # Background jobs live in the site's own schema, beside its tables. Queues hear
-# about new jobs through Erlang process groups. `outside_calls` keeps slow calls
-# to other websites from holding up the default queue, and `ens` keeps a
-# crowd signing in at once (one lookup each, seconds long for a name with a
-# picture) from holding up those. AshOban adds each trigger's sweep to `cron`.
+# about new jobs through Erlang process groups. Each queue holds one class of work
+# (skills/elixir-stack/references/oban.md, "Queues"), so a slow or failing service
+# holds up only the jobs that wait on it: `default` and `points` work on the
+# database alone; `ens` and `points_chain` read a chain; `chat_responses`,
+# `conversations` and `labels` ask a model; `outside_calls` makes every other call
+# to another website (the notes webhook, IndexNow). `ens` keeps a crowd signing in
+# at once (one lookup each, seconds long for a name with a picture) from holding up
+# the Points chain reads. AshOban adds each trigger's sweep to `cron`.
 config :ash_template, Oban,
   repo: AshTemplate.Repo,
   prefix: "ash_template_app",
   notifier: Oban.Notifiers.PG,
+  # A database job holds a connection while it runs, so `default` and `points`
+  # together take 3 of the pool's 5 (AshTemplate.DatabaseConfig) and leave 2 for
+  # page requests.
   queues: [
-    default: 5,
-    points: 5,
+    default: 1,
+    points: 2,
     points_chain: 2,
-    outside_calls: 3,
     ens: 3,
     chat_responses: [limit: 10],
-    conversations: [limit: 10]
+    conversations: [limit: 10],
+    labels: 3,
+    outside_calls: 3
   ],
   # Regents alone runs RegentPoints.TallyPeriods, the shared NFT bonus tally at each period end.
   cron: [
     crontab: [
       {"17 4 * * *", AshTemplate.ErrorPruner},
-      # This release's public pages, sent to IndexNow once per release.
-      {"@hourly", AshTemplate.IndexNow},
+      # This release's public pages, sent to IndexNow once per release. The hourly
+      # job only queues the sending, which runs in `outside_calls`, so it is
+      # database work.
+      {"@hourly", AshTemplate.IndexNow, queue: :default},
       # From the Points start, the one-time points for what accounts already had.
       {"@hourly", RegentPoints.StartAwards},
       # One line for each kind of shared reading a producer rereads on notice.
@@ -162,6 +171,8 @@ config :ash_template, :limits,
   chat_message: [limit: 10, window_seconds: 60],
   dm: [limit: 300, window_seconds: 3600],
   report: [limit: 10, window_seconds: 3600],
+  message: [limit: 10, window_seconds: 3600],
+  message_address: [limit: 30, window_seconds: 3600],
   search_address: [limit: 300, window_seconds: 60],
   wallet_read: [limit: 30, window_seconds: 60]
 
@@ -219,6 +230,11 @@ config :ash_template, :session_options,
   secure: false,
   http_only: true,
   max_age: 30 * 24 * 60 * 60
+
+# A signed agent's live feed (`GET /api/v1/feed`): how many one machine holds open
+# at once, and how often a quiet feed sends a keep-alive line. Fly's proxy closes a
+# connection that sends nothing for 60 seconds.
+config :ash_template, AshTemplateWeb.FeedController, max_open: 200, keep_alive_ms: 25_000
 
 config :ash_template, AshTemplateWeb.Endpoint,
   url: [host: "localhost"],

@@ -98,9 +98,9 @@ defmodule AshTemplateWeb.Components.AgentTools do
       aria-labelledby={"#{@id}-title"}
       data-agent-tools
       phx-update="ignore"
-      phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["open", "data-settled"])}
+      phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["data-settled"])}
     >
-      <header class="code-card__head">
+      <header class="code-card__head" data-sheet-handle>
         <h2 id={"#{@id}-title"}>{@label}</h2>
         <div class="code-card__copy">
           <Regent.Primitives.copy_button id={"#{@id}-copy"} text={@markdown}>

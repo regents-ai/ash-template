@@ -22,7 +22,6 @@
 
 .twin-cube__label {
   position: relative;
-  z-index: 2;
   grid-area: 1 / 1;
   align-self: start;
   justify-self: center;

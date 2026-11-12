@@ -25,6 +25,17 @@ kill_timeout = "60s"
   internal_port = 4000
   force_https = true
 
+  # Stated, not left to Fly's default (documented as 25 connections a machine).
+  # Sized for the founder's target of 1,000 to 2,000 visitors online at once, each
+  # holding one connection. An agent's live feed (GET /api/v1/feed) also stays
+  # open; the site caps those at 200 a machine
+  # (config :ash_template, AshTemplateWeb.FeedController), so feeds can never keep
+  # visitors out.
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 2000
+    hard_limit = 2500
+
 # Keep one web instance: request limits are counted in each machine's memory
 # (AshTemplate.Accounts.RequestRateLimiter), so each machine added multiplies them.
 # Machine count is managed by `fly scale count 1`; deploy with `--ha=false`.

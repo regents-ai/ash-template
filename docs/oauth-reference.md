@@ -12,6 +12,15 @@ account. Consent uses the browser pipeline's session authority and CSRF protecti
 No request header or account parameter can establish a person. Nothing here grants
 a paired-agent or wallet actor, and no new account store is introduced.
 
+An app names itself in one of two ways. Claude's "Use Claude's published
+identity" option uses its HTTPS address
+(`https://claude.ai/oauth/mcp-oauth-client-metadata`) as the `client_id`; server
+metadata says `client_id_metadata_document_supported: true`, and consent reads
+and checks that document, records it as an ordinary public client
+(`oauth_client_documents`, migration `20261111060000`) and reads it again once
+its cache lifetime passes (`RegentOAuth.ClientDocuments`). Other apps still
+register themselves at `/oauth/register`. Neither kind is ever taken for the other.
+
 API routes expose resource/server metadata (the resource's also at
 `/.well-known/oauth-protected-resource/mcp`, where RFC 9728 places it),
 `/oauth/register`, `/oauth/token` and `/oauth/revoke`. Browser routes are GET/POST
@@ -25,8 +34,8 @@ change to Account's existing social-connections page.
 `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true` turns on everything at once, read at
 boot by `config/runtime.exs`; anything else leaves all of it off:
 
-- the sign-in above (`AshTemplate.OAuth`, `RegentOAuth.enabled?/0`), with
-  `RegentOAuth.Repo` supervised;
+- the sign-in above (`AshTemplate.OAuth`, `RegentOAuth.enabled?/0`), whose rows go
+  through the site's `AshTemplate.Repo` and its pool of five;
 - the identity tools at `/mcp` and a Bearer token there (below);
 - Claude in the pairing box and the signed pair request
   (`config :regent_agents, hosted_pairing: [:claude]`; empty while off);
@@ -61,8 +70,8 @@ is calling (agent access spec 4.3). The connector's four tools,
 actions on `AshTemplate.Agents.Connection` that only a connected app may run
 (`AshTemplate.Actors.ConnectedApp`); they call `RegentMCPAgents` with the token's
 account, and take their titles, words and hints from `RegentMCPAgents.Tools`. The
-same server offers the room tools (`rooms_messages` and `rooms_post`) to an agent
-signing each call, which a connected app neither sees nor runs.
+same server offers the room tools (`rooms_messages` and `rooms_post`) and `messages_leave`
+to an agent signing each call, which a connected app neither sees nor runs.
 
 Before any credential is looked at, McpAgent refuses, in the site's
 `{"error": {"code", "message", "hint"}}` shape: a query string

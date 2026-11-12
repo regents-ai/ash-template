@@ -23,7 +23,13 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/header-footer" => "Every product under one menu",
     "/animations/harbour" => "Ships that sail to their last action",
     "/animations/wonders" => "Ten pictures that answer your hand",
-    "/animations/swarm-city" => "Agents flying over a city of thin lines"
+    "/animations/swarm-city" => "Agents flying over a city of thin lines",
+    "/animations/datascape" => "An endless plane you fly over",
+    "/animations/frosted-glass" => "A tree through frosted glass",
+    "/animations/menu" => "A menu that grows from its button",
+    "/animations/parts" => "Shared parts in motion",
+    "/animations/value" => "A figure lit where you point",
+    "/animations/ask" => "An answer drawn from blocks"
   }
 
   def page(assigns) do

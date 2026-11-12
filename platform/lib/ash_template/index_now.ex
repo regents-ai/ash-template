@@ -10,7 +10,10 @@ defmodule AshTemplate.IndexNow do
 
   Each release's pages are sent once: an hourly job queues one submission of the
   sitemap, unique to the running release. A site that adds or changes a
-  public page queues `submit/1` with its address in the same transaction.
+  public page queues `submit/1` with its address once that change has
+  committed: other saves can queue the same list, and inside a transaction that
+  rolls back, a unique job can leave none queued
+  (skills/elixir-stack/references/oban.md, "Queue a job with the change").
   """
   use Oban.Worker, queue: :outside_calls, max_attempts: 5
 
@@ -23,9 +26,18 @@ defmodule AshTemplate.IndexNow do
   @spec key() :: String.t() | nil
   def key, do: Application.get_env(:ash_template, :indexnow_key)
 
-  @doc "A job that sends `urls`, this site's own addresses (at most 10,000)."
+  # A list waits in these states; once its sending has started, it is no longer
+  # the same job as a list queued after a later change.
+  @waiting [:available, :scheduled, :retryable]
+
+  @doc """
+  A job that sends `urls`, this site's own addresses (at most 10,000). The same
+  list queued again while one is still waiting to be sent is that one job.
+  """
   @spec submit([String.t()]) :: Oban.Job.changeset()
-  def submit(urls), do: new(%{"urls" => urls})
+  def submit(urls) do
+    new(%{"urls" => urls}, unique: [keys: [:urls], period: :infinity, states: @waiting])
+  end
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"urls" => urls}}), do: deliver(key(), urls)

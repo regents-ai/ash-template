@@ -184,7 +184,6 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
               class="grammar-tabs__ink"
               data-ink
               aria-hidden="true"
-              phx-mounted={JS.ignore_attributes(["style"])}
             ></span>
           </nav>
         </div>
@@ -296,7 +295,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
               <div class="grammar-open">
                 <div class="grammar-open__stage">
                   <div id="grammar-panel" class="grammar-panel" data-panel="drawer" hidden>
-                    <button type="button" phx-click={toggle_panel()}>Close</button>
+                    <button type="button" phx-click={toggle_panel()} data-dismiss>Close</button>
                   </div>
                 </div>
                 <span class="grammar-open__actions">
@@ -355,7 +354,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             data-close-event="window_closed"
             aria-labelledby="grammar-window-title"
           >
-            <h2 id="grammar-window-title">A window</h2>
+            <h2 id="grammar-window-title" data-sheet-handle>A window</h2>
             <p>One at a time, in the middle, over a shade.</p>
             <form method="dialog"><P.button type="submit" arrow={false}>Done</P.button></form>
           </S.dialog>
@@ -396,34 +395,70 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             </svg>
 
             <div class="grammar-table">
-              <table id="grammar-layer-table">
-                <thead>
-                  <tr>
-                    <th>Layer</th><th>Edge</th><th>Fill</th><th>Arrives</th>
+              <table id="grammar-layer-table" role="table">
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th role="columnheader">Layer</th><th role="columnheader">Edge</th><th role="columnheader">
+                      Fill
+                    </th><th role="columnheader">Arrives</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <th>Ground</th><td>None</td><td>The page</td><td>Still</td>
+                <tbody role="rowgroup">
+                  <tr role="row">
+                    <th role="rowheader">Ground</th><td role="cell" data-label="Edge">None</td><td
+                      role="cell"
+                      data-label="Fill"
+                    >
+                      The page
+                    </td><td role="cell" data-label="Arrives">Still</td>
                   </tr>
-                  <tr>
-                    <th>Sheet</th><td>Light, four cut corners</td><td>Surface</td><td>Still</td>
+                  <tr role="row">
+                    <th role="rowheader">Sheet</th><td role="cell" data-label="Edge">
+                      Light, four cut corners
+                    </td><td role="cell" data-label="Fill">Surface</td><td
+                      role="cell"
+                      data-label="Arrives"
+                    >
+                      Still
+                    </td>
                   </tr>
-                  <tr>
-                    <th>Card</th><td>A rule between rows</td><td>Surface</td><td>Settles in</td>
+                  <tr role="row">
+                    <th role="rowheader">Card</th><td role="cell" data-label="Edge">
+                      A rule between rows
+                    </td><td role="cell" data-label="Fill">Surface</td><td
+                      role="cell"
+                      data-label="Arrives"
+                    >
+                      Settles in
+                    </td>
                   </tr>
-                  <tr>
-                    <th>Panel</th><td>Firm, on its open side</td><td>The page</td><td>
+                  <tr role="row">
+                    <th role="rowheader">Panel</th><td role="cell" data-label="Edge">
+                      Firm, on its open side
+                    </td><td role="cell" data-label="Fill">The page</td><td
+                      role="cell"
+                      data-label="Arrives"
+                    >
                       Slides from its edge
                     </td>
                   </tr>
-                  <tr>
-                    <th>Window</th><td>Firmer, two cut corners</td><td>Surface, over a shade</td><td>
+                  <tr role="row">
+                    <th role="rowheader">Window</th><td role="cell" data-label="Edge">
+                      Firmer, two cut corners
+                    </td><td role="cell" data-label="Fill">Surface, over a shade</td><td
+                      role="cell"
+                      data-label="Arrives"
+                    >
                       Rises
                     </td>
                   </tr>
-                  <tr>
-                    <th>Tip</th><td>Firm</td><td>Raised</td><td>Drops in</td>
+                  <tr role="row">
+                    <th role="rowheader">Tip</th><td role="cell" data-label="Edge">Firm</td><td
+                      role="cell"
+                      data-label="Fill"
+                    >
+                      Raised
+                    </td><td role="cell" data-label="Arrives">Drops in</td>
                   </tr>
                 </tbody>
               </table>

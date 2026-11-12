@@ -10,8 +10,9 @@
 /* Beside the button, so the list below never moves. */
 .activity-panel__failed {
   margin: 0 0 0 auto;
-  color: var(--color-error);
-  font-size: .875rem;
+  color: var(--ash-signal);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 .activity-list {
@@ -22,49 +23,46 @@
 }
 
 .activity-list li + li {
-  border-block-start: 1px solid var(--color-border);
+  border-block-start: 1px solid var(--ash-raised);
 }
 
 .activity-list a {
   display: grid;
-  gap: 0.2rem;
-  padding: 0.75rem 0.5rem;
+  gap: 0;
+  padding: var(--space-2) var(--space-1);
   color: inherit;
   text-decoration: none;
 }
 
 @media (hover: hover) {
   .activity-list a:hover {
-    background: color-mix(in oklch, var(--color-fg) 5%, transparent);
+    background: var(--ash-raised);
   }
-}
-
-.activity-list li[data-unread="true"] a {
-  box-shadow: inset 3px 0 var(--ash-accent-warm);
 }
 
 .activity-list__title {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-1);
 }
 
+/* An unread row's one mark. */
 .activity-list__new {
-  padding: 0 0.35rem;
-  background: var(--ash-accent-warm);
-  color: var(--color-bg);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  padding: 0 var(--space-1);
+  background: var(--ash-signal);
+  color: var(--ash-ground);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 .activity-list__body {
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   overflow-wrap: anywhere;
 }
 
 .activity-list time {
-  color: var(--color-fg-muted);
-  font-size: 0.8rem;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }

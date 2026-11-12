@@ -72,7 +72,7 @@ usage_rules: [
 The usage_rules docs section is written out in full; everything else is a link, so the
 file stays short. Phoenix's `ecto` and `elixir` rules are left out: Ash owns data
 access, and usage_rules already links its own Elixir rules. The tool does not write
-skills here. Keep the six `ash-*` names reserved for this authored pack; if generated
+skills here. Keep the `ash-*` names reserved for this authored pack; if generated
 skills are ever wanted, give them distinct names such as `ash-upstream-rules`.
 
 When adding it to a site: the dependency is `only: :dev` where `mix precommit` runs in

@@ -34,6 +34,7 @@ type Push = (event: string, payload: unknown) => void
 
 type OnchainStepsHook = Hook & {
   el: HTMLElement
+  js(): {ignoreAttributes(el: HTMLElement, attrs: string[]): void}
   handleEvent(event: string, callback: (payload: unknown) => void): void
   pushEventTo(target: HTMLElement, event: string, payload?: unknown): Promise<PromiseSettledResult<{reply: unknown}>[]>
   review?: Review
@@ -69,6 +70,9 @@ export const OnchainSteps: Hook = {
       const button = (event.target as Element | null)?.closest<HTMLElement>("[data-onchain-step]")
       const name = button?.dataset.onchainStep
       if (!button || !name || !this.el.contains(button)) return
+      // The mark is this island's own, so a page update while the wallet has the
+      // press leaves it on the button.
+      this.js().ignoreAttributes(button, ["data-awaiting-wallet"])
       const release = mark(button)
       const form = formInputs(this.el)
       const asks = Object.keys(form).length > 0 && (!this.review || !sameInputs(this.review.inputs, form))

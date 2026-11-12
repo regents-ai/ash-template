@@ -84,7 +84,7 @@ defmodule AshTemplate.Chat.Message do
       accept [:text]
 
       validate match(:text, ~r/\S/) do
-        message "Message cannot be empty"
+        message "Write a message."
       end
 
       validate match(:text, RegentFormat.Text.pattern()),

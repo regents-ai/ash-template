@@ -21,6 +21,7 @@ defmodule AshTemplateWeb.PollsLive do
   alias AshTemplate.Polls.Poll
   alias AshTemplateWeb.FormErrors
   alias AshTemplateWeb.Live.Session
+  alias AshTemplateWeb.Motion
   alias AshTemplateWeb.Read
   alias Regent.Primitives
 
@@ -41,6 +42,7 @@ defmodule AshTemplateWeb.PollsLive do
        poll: %Read{},
        form: nil,
        notice: nil,
+       vote_error: nil,
        clock: nil
      )}
   end
@@ -71,12 +73,13 @@ defmodule AshTemplateWeb.PollsLive do
         {:ok, socket}
 
       shown_actor == actor ->
-        {:ok, socket |> assign(shown: {actor, poll_id}, notice: nil) |> load_poll()}
+        {:ok,
+         socket |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil) |> load_poll()}
 
       true ->
         {:ok,
          socket
-         |> assign(shown: {actor, poll_id}, notice: nil)
+         |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil)
          |> load_polls()
          |> new_form()
          |> load_poll()}
@@ -97,13 +100,15 @@ defmodule AshTemplateWeb.PollsLive do
   def handle_event("vote", %{"choice" => choice}, %{assigns: %{actor: actor}} = socket)
       when actor != nil do
     case Polls.vote(socket.assigns.poll_id, %{choice: choice}, actor: actor) do
-      {:ok, _vote} -> {:noreply, socket |> assign(:notice, nil) |> load_poll()}
+      {:ok, _vote} -> {:noreply, socket |> assign(notice: nil, vote_error: nil) |> load_poll()}
       {:error, error} -> {:noreply, socket |> assign(:notice, refusal(error)) |> load_poll()}
     end
   end
 
   def handle_event("vote", _params, socket),
-    do: {:noreply, assign(socket, :notice, "Choose one, then vote.")}
+    do: {:noreply, assign(socket, :vote_error, "Choose one, then vote.")}
+
+  def handle_event("choose", _params, socket), do: {:noreply, assign(socket, :vote_error, nil)}
 
   def handle_event("end", _params, %{assigns: %{poll: %Read{value: %Poll{} = poll}}} = socket) do
     case Polls.end_poll(poll, actor: socket.assigns.actor) do
@@ -130,7 +135,13 @@ defmodule AshTemplateWeb.PollsLive do
           <.link patch={~p"/polls"} class="polls-new" aria-current={is_nil(@poll_id) && "page"}>
             Start a poll
           </.link>
-          <ul id="polls-list" class="shell-sidebar__list polls-list" data-state={@polls.state}>
+          <ul
+            id="polls-list"
+            class="shell-sidebar__list polls-list"
+            data-state={@polls.state}
+            phx-hook="MotionCount"
+            data-variant={Motion.standard("count")}
+          >
             <li :if={@polls.value == []} class="shell-sidebar__empty">No polls yet.</li>
             <li :for={poll <- sorted(@polls.value)} id={"polls-list-#{poll.id}"}>
               <.link
@@ -139,7 +150,9 @@ defmodule AshTemplateWeb.PollsLive do
                 aria-current={@poll_id == poll.id && "page"}
               >
                 <span class="polls-list__question">{poll.question}</span>
-                <span class="polls-list__state rg-muted">{list_state(poll)}</span>
+                <span class="polls-list__state rg-muted">
+                  {if poll.open, do: "Open", else: "Closed"} · <.votes count={poll.votes_cast} />
+                </span>
               </.link>
             </li>
           </ul>
@@ -179,7 +192,7 @@ defmodule AshTemplateWeb.PollsLive do
               value={@form[:question].value}
               maxlength="200"
               autocomplete="off"
-              phx-debounce="300"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
             />
@@ -195,7 +208,7 @@ defmodule AshTemplateWeb.PollsLive do
               name="poll[choices_text]"
               rows="4"
               maxlength="1009"
-              phx-debounce="300"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
             >{@form.params["choices_text"]}</textarea>
@@ -207,7 +220,12 @@ defmodule AshTemplateWeb.PollsLive do
             label="Open for"
             errors={FormErrors.messages(@form[:minutes])}
           >
-            <select id={field.id} name={@form[:minutes].name} aria-describedby={field.described_by}>
+            <select
+              id={field.id}
+              name={@form[:minutes].name}
+              phx-debounce="blur"
+              aria-describedby={field.described_by}
+            >
               <option
                 :for={minutes <- minutes()}
                 value={minutes}
@@ -217,7 +235,13 @@ defmodule AshTemplateWeb.PollsLive do
               </option>
             </select>
           </Primitives.field>
-          <Primitives.button type="submit" phx-disable-with="Starting…">Start poll</Primitives.button>
+          <AshTemplateWeb.LiveConnection.offline
+            id="poll-start-offline"
+            controls="#poll-start-actions"
+          />
+          <fieldset id="poll-start-actions" class="rooms-start__actions">
+            <Primitives.button type="submit" phx-disable-with="Starting…">Start poll</Primitives.button>
+          </fieldset>
         </.form>
       </section>
 
@@ -232,28 +256,45 @@ defmodule AshTemplateWeb.PollsLive do
         aria-labelledby="page-title"
         data-open={to_string(@poll.value.open)}
       >
-        <p class="polls-poll__meta rg-muted">
+        <p
+          id="poll-meta"
+          class="polls-poll__meta rg-muted"
+          phx-hook="MotionCount"
+          data-variant={Motion.standard("count")}
+        >
           Started by <bdi>{@poll.value.starter.name}</bdi>
           <span :if={@poll.value.via_agent_id}>via agent</span>
-          · {time_state(@poll.value, @now)} · {votes_label(@poll.value.votes_cast)}
+          · <.time_state poll={@poll.value} now={@now} /> · <.votes count={@poll.value.votes_cast} />
         </p>
+
+        <AshTemplateWeb.LiveConnection.offline
+          :if={@poll.value.open && @actor && (is_nil(@poll.value.my_choice) or @poll.value.mine)}
+          id="poll-offline"
+          controls="#poll-vote-actions, #poll-end-actions"
+        />
 
         <.form
           :if={@poll.value.open && @actor && is_nil(@poll.value.my_choice)}
           for={%{}}
           id="poll-vote-form"
           class="polls-vote"
+          phx-change="choose"
           phx-submit="vote"
           phx-target={@myself}
         >
-          <fieldset>
+          <fieldset class="rg-field" aria-describedby={@vote_error && "poll-vote-errors"}>
             <legend class="visually-hidden">Your vote</legend>
             <label :for={choice <- @poll.value.choices} class="polls-choice">
               <input type="radio" name="choice" value={choice} />
               <span>{choice}</span>
             </label>
+            <div id="poll-vote-errors" class="rg-field-errors" aria-live="polite">
+              <p :if={@vote_error}>{@vote_error}</p>
+            </div>
           </fieldset>
-          <Primitives.button type="submit" phx-disable-with="Voting…">Vote</Primitives.button>
+          <fieldset id="poll-vote-actions" class="polls-vote__actions">
+            <Primitives.button type="submit" phx-disable-with="Voting…">Vote</Primitives.button>
+          </fieldset>
         </.form>
 
         <ul
@@ -280,7 +321,7 @@ defmodule AshTemplateWeb.PollsLive do
             style={"--share: #{share(votes, @poll.value.votes_cast)}%"}
           >
             <span class="polls-count__choice">{choice}</span>
-            <span class="polls-count__votes">{votes_label(votes)}</span>
+            <span class="polls-count__votes"><.votes count={votes} /></span>
           </li>
         </ol>
 
@@ -294,17 +335,23 @@ defmodule AshTemplateWeb.PollsLive do
 
         <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
 
-        <Primitives.button
+        <fieldset
           :if={@poll.value.open && @poll.value.mine}
-          id="poll-end"
-          type="button"
-          variant="secondary"
-          phx-click="end"
-          phx-target={@myself}
-          data-confirm="End this poll now? Nobody can vote after, and the counts show to everyone."
+          id="poll-end-actions"
+          class="polls-poll__actions"
         >
-          End poll
-        </Primitives.button>
+          <Primitives.button
+            id="poll-end"
+            type="button"
+            variant="secondary"
+            phx-click="end"
+            phx-target={@myself}
+            data-confirm="End this poll now? Nobody can vote after, and the counts show to everyone."
+            data-confirm-action="End"
+          >
+            End poll
+          </Primitives.button>
+        </fieldset>
       </section>
     </article>
     """
@@ -319,20 +366,39 @@ defmodule AshTemplateWeb.PollsLive do
   defp sorted(nil), do: []
   defp sorted(polls), do: Enum.sort_by(polls, &(!&1.open))
 
-  defp list_state(%{open: true, votes_cast: votes}), do: "Open · #{votes_label(votes)}"
-  defp list_state(%{votes_cast: votes}), do: "Closed · #{votes_label(votes)}"
+  # Figures inside a sentence keep no spare room: a gap mid-sentence reads as a
+  # fault, and only the figure's own word after it shifts when it gains a digit.
+  attr :count, :integer, required: true
 
-  defp votes_label(1), do: "1 vote"
-  defp votes_label(votes), do: "#{votes} votes"
+  defp votes(assigns) do
+    ~H"""
+    <Primitives.figure value={Integer.to_string(@count)} /> {if @count == 1,
+      do: "vote",
+      else: "votes"}
+    """
+  end
 
-  defp time_state(%{open: false, ended_at: nil}, _now), do: "Closed"
-  defp time_state(%{open: false}, _now), do: "Ended early"
+  attr :poll, Poll, required: true
+  attr :now, DateTime, required: true
 
-  defp time_state(poll, now) do
-    case div(DateTime.diff(poll.closes_at, now, :second) + 59, 60) do
-      minutes when minutes <= 1 -> "Closes within a minute"
-      minutes -> "Closes in #{minutes} minutes"
-    end
+  defp time_state(%{poll: %{open: false, ended_at: nil}} = assigns), do: ~H"Closed"
+  defp time_state(%{poll: %{open: false}} = assigns), do: ~H"Ended early"
+
+  defp time_state(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :minutes,
+        div(DateTime.diff(assigns.poll.closes_at, assigns.now, :second) + 59, 60)
+      )
+
+    ~H"""
+    <%= if @minutes <= 1 do %>
+      Closes within a minute
+    <% else %>
+      Closes in <Primitives.figure value={Integer.to_string(@minutes)} /> minutes
+    <% end %>
+    """
   end
 
   defp share(_votes, 0), do: 0
