@@ -85,9 +85,8 @@
 #site-buttons .sb-site[data-site="techtree"] .sb-button { min-height: 2.75rem; font-size: .8125rem; line-height: 1.6; }
 #site-buttons .sb-site[data-site="patchbay"] .sb-button { font-size: 18px; }
 
-/* The frozen specimens: hover draws the full cut outline, as the shared button does.
-   Keyboard focus wears the shared button's own focus rules (site_buttons_lab.ts). */
-#site-buttons .sb-button:not(:disabled)[data-show="hover"]::before,
+/* The frozen hover and keyboard focus wear the shared button's own rules (site_buttons_lab.ts).
+   With motion, waiting and done draw the full cut outline. */
 #site-buttons .sb-motion .sb-button:not(:disabled):is([data-state="wait0"], [data-state="wait1"], [data-state="done"])::before {
   --rg-button-edge-ink: var(--rg-button-active-border);
   --rg-button-cut-ink: var(--rg-button-active-border);
@@ -97,7 +96,6 @@
     calc(100% - var(--rg-cut-control) + 1px) 1px, 1px calc(100% - var(--rg-cut-control) + 1px),
     calc(100% - var(--rg-cut-control) + 1px) 1px, 1px calc(100% - var(--rg-cut-control) + 1px);
 }
-#site-buttons .sb-button[data-show="hover"] { --rg-chevron-x: 4px; }
 #site-buttons .sb-button[data-show="press"] { --rg-press-scale: .97; }
 
 /* ---- Today: the shared button as every site gets it now. ---- */

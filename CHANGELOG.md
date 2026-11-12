@@ -9221,3 +9221,26 @@ Design-system pin unchanged (`b57f8d91`); no migration.
   buttons and their contrast, and the frozen focus equal to a real keyboard focus, light
   and dark) and one in `homepage.spec.ts` (Enter App's ring never takes the button's own
   colour, at rest and on hover). Each fails on the old code.
+
+## 2026-11-12 — The buttons lab's frozen hover is the real one (branch, not on main)
+
+Second commit on `wt/tpl-button-flaws-1112`, for the design chief. Design-system pin
+unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first commit set it.
+
+- Buttons lab `/animations/buttons`, "Hover" examples: they drew a full outline of their
+  own, which in dark was not the shared button's hover (its corner marks in the theme's
+  mark colour), and on Autolaunch's Tangerine button vanished into the fill. The drawn
+  outline and its held arrow nudge are gone. The page's one mirroring step now repeats
+  every rule a button's hover answers to for the frozen hover, as it already did for
+  keyboard focus, so both examples are the shared button's own paint. A list's selectors
+  that name no state are no longer repeated with it. The arrow's nudge is a short motion
+  that ends where it started, so a held hover shows the arrow at rest, as a real one does.
+- A rule kept for mice (`@media (hover: hover)`, `(pointer: fine)`, and their touch
+  opposites) is repeated with that question answered as a mouse answers it, so the frozen
+  hover shows the same on a phone and in a headless picture. No rule the lab's buttons
+  answer to sits in such a wrapper today.
+- The lab names Patchbay's address as patchbay.help (it said patchbay.sh).
+- Walk check: in `platform/test/browser/site_buttons.spec.ts`, the frozen hover equals a
+  button really hovered by a mouse, light and dark; on the phone, where nothing hovers,
+  the frozen hover still differs from the frozen rest for every main button. It fails on
+  the old code.

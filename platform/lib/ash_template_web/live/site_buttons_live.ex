@@ -63,7 +63,7 @@ defmodule AshTemplateWeb.SiteButtonsLive do
       variant: "primary",
       arrow: true,
       number: "04",
-      domain: "patchbay.sh",
+      domain: "patchbay.help",
       label: "Publish post",
       place: "Home · Your post, exactly as everyone will see it",
       context: "Anyone can read what you post here, under the name you chose.",

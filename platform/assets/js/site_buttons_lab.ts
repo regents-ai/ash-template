@@ -35,20 +35,45 @@ const applyBrands = (root: HTMLElement) => {
   })
 }
 
+// Each state a frozen specimen holds still, and the mark the specimen wears instead.
+const STATES = [[":hover", '[data-show="hover"]'], [":focus-visible", '[data-show="focus"]']] as const
+// The specimens are pictures of a mouse and a keyboard, so a media query about the device's
+// pointer is answered as a mouse answers it, always true or always false. A hover rule kept
+// for mice then still shows on a phone and in a headless picture.
+const MOUSE = [
+  [/\((any-)?(hover: hover|pointer: fine)\)/g, "(width >= 0px)"],
+  [/\((any-)?(hover: none|pointer: (coarse|none))\)/g, "(width < 0px)"],
+] as const
+
+/** A selector list's own selectors: split at its commas, not those inside `:is(…)` or `[…]`. */
+const splitSelectors = (list: string) => {
+  const parts = [""]
+  let depth = 0
+  for (const char of list) {
+    if (char === "," && depth === 0) { parts.push(""); continue }
+    if (char === "(" || char === "[") depth++
+    if (char === ")" || char === "]") depth--
+    parts[parts.length - 1] += char
+  }
+  return parts.map(part => part.trim())
+}
+
 /** The page's frozen specimens wear the shared button's own rules: every stylesheet rule a
- *  button's keyboard focus answers to is repeated for `[data-show="focus"]`, so the frozen
- *  "Keyboard focus" is the real ring and marks and cannot drift from them. */
-const mirrorFocus = (): CSSStyleSheet => {
+ *  button's hover or keyboard focus answers to is repeated for the specimen holding that
+ *  state, so the frozen "Hover" and "Keyboard focus" are the real marks and ring and cannot
+ *  drift from them. Only a list's selectors that name a state are repeated. */
+const mirrorStates = (): CSSStyleSheet => {
   const mirrored: string[] = []
   const walk = (rules: CSSRuleList, wrap: (css: string) => string) => {
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule) {
-        const selector = rule.selectorText
-        if (selector.includes("button") && selector.includes(":focus-visible")) {
-          mirrored.push(wrap(`${selector.replaceAll(":focus-visible", '[data-show="focus"]')} { ${rule.style.cssText} }`))
-        }
+        const held = splitSelectors(rule.selectorText)
+          .filter(selector => selector.includes("button") && STATES.some(([state]) => selector.includes(state)))
+          .map(selector => STATES.reduce((shown, [state, show]) => shown.replaceAll(state, show), selector))
+        if (held.length > 0) mirrored.push(wrap(`${held.join(", ")} { ${rule.style.cssText} }`))
       } else if (rule instanceof CSSMediaRule) {
-        walk(rule.cssRules, css => wrap(`@media ${rule.conditionText} { ${css} }`))
+        const media = MOUSE.reduce((query, [feature, answer]) => query.replace(feature, answer), rule.conditionText)
+        walk(rule.cssRules, css => wrap(`@media ${media} { ${css} }`))
       } else if (rule instanceof CSSLayerBlockRule) {
         walk(rule.cssRules, css => wrap(`@layer ${rule.name} { ${css} }`))
       } else if (rule instanceof CSSSupportsRule) {
@@ -64,7 +89,7 @@ const mirrorFocus = (): CSSStyleSheet => {
 
 /** The site's motion kit plays every press and hover. This notes whether the last input was a
  *  pointer or a key, which the stylesheet reads to swap a key press's words at once, dresses each
- *  column in its own site's theme, and gives the focus specimens the real focus rules. */
+ *  column in its own site's theme, and gives the hover and focus specimens the real rules. */
 export const LabSiteButtons = {
   mounted(this: ButtonsHook) {
     const root = this.el
@@ -77,13 +102,13 @@ export const LabSiteButtons = {
     const scheme = matchMedia("(prefers-color-scheme: light)")
     scheme.addEventListener("change", brands, {signal: events.signal})
     brands()
-    const focus = mirrorFocus()
-    document.adoptedStyleSheets = [...document.adoptedStyleSheets, focus]
+    const states = mirrorStates()
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, states]
     root.dataset.brandsReady = "true"
     this.release = () => {
       events.abort()
       theme.disconnect()
-      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(sheet => sheet !== focus)
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(sheet => sheet !== states)
     }
   },
   destroyed(this: ButtonsHook) { this.release?.() },

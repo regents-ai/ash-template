@@ -3,7 +3,7 @@ import {expect, test} from "./support/test"
 
 // The buttons lab, /animations/buttons: each site's column wears that site's own theme
 // from the design system, so its main button is the brand's own and stands out from its
-// panel, and the frozen "Keyboard focus" is the ring a key really brings.
+// panel, and the frozen "Hover" and "Keyboard focus" are what a mouse and a key really bring.
 const sites = ["regents", "autolaunch", "techtree", "patchbay"]
 
 async function open(page: Page, baseURL: string, theme: "light" | "dark") {
@@ -43,15 +43,18 @@ const contrast = (a: number[], b: number[]) => {
   return (x + 0.05) / (y + 0.05)
 }
 
-// What keyboard focus draws on a button: its outline, and the paint skin's ring (its
-// width, reach and cut) and marks. The skin's own fill and edge colour are left out: a
-// secondary button takes those from the panel it sits on.
-const focusPaint = (button: Locator) =>
+// What hover or keyboard focus draws on a button: its outline when it draws one, and the
+// paint skin's ring (its width, reach and cut) and marks. The skin's own fill and edge
+// colour, and an undrawn outline's colour, are left out: a secondary button takes those
+// from the panel it sits on.
+const statePaint = (button: Locator) =>
   button.evaluate(element => {
     const own = getComputedStyle(element)
     const skin = getComputedStyle(element, "::before")
     return {
-      outline: `${own.outlineStyle} ${own.outlineWidth} ${own.outlineColor} ${own.outlineOffset}`,
+      outline: own.outlineStyle === "none"
+        ? "none"
+        : `${own.outlineStyle} ${own.outlineWidth} ${own.outlineColor} ${own.outlineOffset}`,
       ring: skin.borderTopWidth,
       skin: [skin.inset, skin.clipPath, skin.backgroundSize, skin.backgroundImage].join(" | "),
     }
@@ -83,13 +86,35 @@ for (const theme of ["light", "dark"] as const) {
       // Both grow their marks in over 150 ms, the frozen one once the page has dressed it.
       const specimen = page.locator(`#sb-${site} .sb-today li[data-show="focus"] .sb-button`)
       const both = async () => {
-        const [real, frozen] = await Promise.all([focusPaint(button), focusPaint(specimen)])
+        const [real, frozen] = await Promise.all([statePaint(button), statePaint(specimen)])
         return {real, frozen, same: JSON.stringify(real) === JSON.stringify(frozen)}
       }
       await expect.poll(async () => (await both()).same, {message: site}).toBe(true)
       const {real} = await both()
       // The ring is drawn: an outline, or the cut ring, at least the shared 2px, on the skin.
       expect(real.outline.startsWith("solid") || parseFloat(real.ring) >= 2, site).toBe(true)
+    }
+  })
+
+  test(`the hover specimen is what a mouse really brings, in ${theme}`, async ({page, baseURL, hasTouch}) => {
+    await open(page, baseURL!, theme)
+    const specimen = (site: string, show: string) => page.locator(`#sb-${site} .sb-today li[data-show="${show}"] .sb-button`)
+    const same = async (a: Locator, b: Locator) =>
+      JSON.stringify(await statePaint(a)) === JSON.stringify(await statePaint(b))
+    if (hasTouch) {
+      // No mouse on a phone, yet the frozen hover still wears the marks a mouse brings.
+      // Techtree's Copy is a secondary button, which the shared button leaves as it is on hover.
+      for (const site of sites.filter(site => site !== "techtree")) {
+        await expect.poll(() => same(specimen(site, "hover"), specimen(site, "rest")), {message: site}).toBe(false)
+      }
+      return
+    }
+    for (const site of sites) {
+      const button = stageButton(page, site)
+      await button.hover()
+      expect(await button.evaluate(element => element.matches(":hover"))).toBe(true)
+      // Both grow their marks in over 150 ms, the frozen one once the page has dressed it.
+      await expect.poll(() => same(button, specimen(site, "hover")), {message: site}).toBe(true)
     }
   })
 }
