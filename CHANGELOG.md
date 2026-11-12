@@ -8468,3 +8468,10 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   the join and is still open, with its three texts, after it, at both widths.
 - Not shown live: the "Not connected" note itself. Every form that carries it is for a
   signed-in person, and live reads never use a person's sign-in; the walks cover it.
+
+## 2026-11-12 — The Ask lab page no longer crashes on a question that is not text
+
+- Sentinel's after-read of v208 found `/animations/ask?q[]=a` (and `q[a]=b`) answering
+  500: `AskLabLive.handle_params/3` passed a list or a map to `String.trim/1`. A `q` that
+  is not a binary is now no question, and the page shows the empty bar.
+  `ask_bar.spec.ts` checks both shapes at both widths.
