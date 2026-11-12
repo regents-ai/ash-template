@@ -7278,3 +7278,17 @@ sits on its own branches.
   inside a panel shown at 30% draws at 300 by 200. It fails on the old measure.
 - Found and built by the regents.sh product tiles lane (11 Nov), which needs it for the
   home page's product tiles; shared, so it ships here first.
+
+## 2026-11-12 — Released v190: a picture inside a panel that grows in is drawn sharp
+
+- Live: v190 at 00:52Z on template.regents.sh; /capabilities.json build.commit f70cfa1b.
+  Rollback: v189 (43e7d7d3). No migrations, no pin change.
+- Carries "A picture inside a panel that grows in is drawn sharp" (regents.sh's patch) on
+  top of 2cb068f8 (skills: sites never wait on each other).
+- Full check on f70cfa1b: exit 0 (181 server tests, 455 browser checks with 5 skipped, 41
+  script tests, required fixes, command list, SIWA latest). WebKit not run on the Mac.
+- Live read in headless Chromium at 1280 and 390: home, /app, /about, /docs, /agents,
+  /privacy, /terms and /healthz 200; odd addresses 404; no page errors. On the home page
+  at 1280 by 900 and device pixel ratio 2, every island's drawing buffer is its laid-out
+  size times the capped ratio (the datascape 1460 by 1026 under the pixel budget, each
+  card 177 by 75 for 118 by 50). App log from the release start: no error lines.
