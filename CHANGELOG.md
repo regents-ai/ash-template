@@ -8747,6 +8747,78 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
 
+## 2026-11-12 — The main button stands out in the light theme
+
+- Design-system pin `f957bf1c41f3ba1393cfc333e3ba4710da69ed11` (was `c4244b38`), Sean's
+  7a of 12 Nov. In the light theme the main button is Charcoal with Platinum words
+  (16.4:1 against the page; it was white, 1.1:1), through two new colour settings,
+  `--color-button` and `--color-fg-on-button`. The confirm window's main button follows.
+  Dark themes are unchanged. No template code changes.
+
+## 2026-11-12 — The window flick check holds on a busy machine (branch, not on main)
+
+- `motion.spec.ts`'s drag helper now stamps each pointer event with the moment it stands
+  for, sent through Chromium's own input (`Input.dispatchMouseEvent` with `timestamp`).
+  The gesture kit measures a throw from its events' own `timeStamp`
+  (`assets/js/hooks/motion/gestures.ts`), and the helper used to space real pointer events
+  by the wall clock, so a stalled Mac stretched the 120 ms flick into a slow pull and the
+  window stayed open: v213's first two full checks failed that way at load 66 to 85.
+- The paths, distances and durations are the same, and the events still go out at the
+  pace they stand for; only a late delivery no longer changes the speed the page
+  measures. No product code changed.
+- Evidence: with the old helper, a half-second stall before the flick's last move left
+  the window open; with the new one the page saw its events exactly 15 ms apart and
+  closed it. Under 16 extra busy processes (load 92 to 98), the flick check passed 30 of
+  30 at 1280 and 390 (`--repeat-each 15`), and the other two drag checks (a pulled window
+  with less motion, a note thrown sideways) 20 of 20.
+
+## 2026-11-12 — regents-cli 1.10.25 and the `feed` command (branch `tpl/cli-1.10.25-1112`, not on main)
+
+- regents-cli moves from `fd325437` (1.10.24) to `8b3240b6` (1.10.25), which reached PyPI
+  on 12 Nov 15:03Z. The Makefile pin, the install lines, the agent guide (release, source
+  commit `8b3240b6402551aa29ef960418fd1d2ea4bf41c7` and wheel SHA256
+  `082329e29532ecc23fc474d6f8e2d32cf0dd900c3b3b72d6d1325dba505b312e`, which matches
+  PyPI), `capabilities.json`'s `cli.release`, `cli/README.md` and `cli/COMMANDS.md` move
+  together.
+- 1.10.25 pins this site's command list at `f5096fff`, the same list main has, so it
+  carries `messages leave`, `activity mark-read`, `chat list`, `chat read`, `chat send`
+  and the USDC-only `notes pin`: their `capabilities.json` rows move from `cli_pending`
+  to `cli_release` 1.10.25, and the "(next release)" marks go from `cli/COMMANDS.md` and
+  `docs/agent-parity.md`.
+- `cli/commands.json` gains `feed` (`getFeed`, `GET /api/v1/feed`, `signed_agent`,
+  `read`, `"stream": true`, no `webmcp`). The field and its rule (a signed GET with no
+  body, stdin fields, pagination or webmcp, whose operation answers only
+  `text/event-stream` on success) come from 1.10.25's `commands.v1.json` and
+  `regents_cli.check_commands`. The OpenAPI documents already answer that way, so they
+  are unchanged. 1.10.25 does not list `feed` for this site; the next regents-cli release
+  carries it once its ash-template pin moves to this commit. `getFeed`'s row is
+  `cli_pending` with its CLI surface on, and `docs/agent-parity.md` G12 and the feature
+  map say so.
+- `cli/COMMANDS.md` describes `feed` as a command, with `--wake` as 1.10.25's
+  `regents_cli/feed.py` runs it: an event wakes the agent when its `read` routes to a
+  described `read` command, not itself a feed, whose arguments all sit in the path, each
+  value a UUID or a room name. A direct message's `POST /api/v1/dms/<uuid>/history` and
+  a room post's `GET /api/v1/rooms/<room>/messages/<uuid>` both do. The agent guide's
+  Live feed section says how to run it.
+
+## 2026-11-12 — Released v215: stronger main button in light, regents-cli 1.10.25
+
+- `a95458c3` is v215 on template.regents.sh, switched at about 16:05Z with
+  `scripts/deploy.sh`. It carries the design-system pin `f957bf1c` (Sean's 7a: the
+  main button in the light theme is Charcoal with Platinum words), regents-cli
+  1.10.25 named everywhere with six commands marked released, the `feed` command
+  described (runnable from the next CLI release, 1.10.26), and the steadier flick
+  check. No migration.
+- Rollback: v214 (`f5096fff`), image only.
+- Full check on `a95458c3`, exit 0: 113 TypeScript, 570 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/`, `/showcase`,
+  `/showcase/wallet`, `/notes`, `/rooms/general`, `/animations` and `/account` answer
+  200 at 1280, 390 and 320 with no errors and no sideways scroll; the main button on
+  `/showcase/wallet` is dark with light words in the light theme and was pressed in
+  light and dark with no page error; `/agents.md` names 1.10.25 and commit `8b3240b6`.
+  Not proven live: signed-in pages.
+
 ## 2026-11-12 — The Credits schema leaves the shared database (branch, not on main)
 
 Sean, 12 November: Credits are removed from every Regent site and the shared database

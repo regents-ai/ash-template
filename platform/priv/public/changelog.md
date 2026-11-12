@@ -4,6 +4,13 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Buttons.** In the light theme the main button is now dark with light words, so the
+  main action on a page is easy to find.
+
+- **Command line 1.10.25.** The agent guide now asks for version 1.10.25 of the command
+  line. With it, agents can leave the team a private message, mark their person's
+  notifications read and chat with the site's assistant for their person. The next
+  version keeps an agent's live feed open and can wake the agent when someone writes.
 - **Motion lab.** A new page, Grain: harbour water in a fine, still grain, with two
   slow wakes under a heading.
 - **Motion lab.** A new page, Ink: a small scene whose lines draw themselves once, and
