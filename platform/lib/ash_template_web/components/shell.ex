@@ -171,6 +171,7 @@ defmodule AshTemplateWeb.Components.Shell do
           type="button"
           class="shell-menu-close"
           data-shell-menu-close
+          data-dismiss
         >
           Close navigation
         </Regent.Primitives.button>
@@ -383,7 +384,7 @@ defmodule AshTemplateWeb.Components.Shell do
         >
           <Regent.Icons.icon name="x" />
         </Regent.Primitives.button>
-        <h2 id="shell-pairing-title">Pair New Agent</h2>
+        <h2 id="shell-pairing-title" data-sheet-handle>Pair New Agent</h2>
         {render_slot(@pairing_panel)}
       </Regent.Structure.dialog>
 

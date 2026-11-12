@@ -259,6 +259,8 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/swarm-city"}>Swarm city</.link>
           / <.link navigate={~p"/animations/datascape"}>Datascape</.link>
           / <.link navigate={~p"/animations/frosted-glass"}>Frosted Glass</.link>
+          / <.link navigate={~p"/animations/menu"}>Menu</.link>
+          / <.link navigate={~p"/animations/parts"}>Parts</.link>
         </nav>
         <div class="motion-lab__row">
           <P.button
@@ -340,6 +342,7 @@ defmodule AshTemplateWeb.AnimationsLive do
                         phx-click="dismiss"
                         phx-value-id={toast.id}
                         aria-label="Dismiss"
+                        data-dismiss
                       >
                         <Regent.Icons.icon name="x" />
                       </button>
@@ -386,7 +389,10 @@ defmodule AshTemplateWeb.AnimationsLive do
                 phx-hook="LabCount"
                 data-variant={@variants["count"]}
               >
-                <span data-count>{@count |> Integer.to_string() |> RegentFormat.add_delimiters()}</span>
+                <P.figure
+                  value={@count |> Integer.to_string() |> RegentFormat.add_delimiters()}
+                  width={6}
+                />
                 <span class="motion-lab__count-label">visits this week</span>
               </p>
               <div class="motion-lab__row motion-lab__row--tight">

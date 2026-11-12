@@ -1,6 +1,7 @@
 /**
  * The standard motion on every page: a squish when something is pressed, a
- * shake when the answer is no, panels that slide or pop open, and on pages the
+ * shake when the answer is no, panels that slide or pop open, windows, the phone
+ * menu and notes a finger can throw away, and on pages the
  * server draws once, the headline rising in word by word and the cards
  * settling into place the first time they scroll into view. The version of each is named in `AshTemplateWeb.Motion`
  * and every version that was tried is kept in the template's motion lab at
@@ -13,11 +14,12 @@
  * the wallet the moment it is pressed, and the motion plays alongside.
  */
 import {CTA, mountButtons} from "./hooks/motion/buttons"
+import {mountGestures} from "./hooks/motion/gestures"
 import {splitText} from "animejs"
 import {deny, nope, squish} from "./hooks/motion/press"
 import {CASCADE, GRIDS, HEADLINES, onFirstSight} from "./hooks/motion/reveals"
 import {CLIPPED_WORD, byPointer, fadeIn, lastInputByPointer, still, watchInput} from "./hooks/motion/shared"
-import {backdrop, drawer, menu, sheet} from "./hooks/motion/slides"
+import {backdrop, drawer, list, menu, settle, sheet, unlist} from "./hooks/motion/slides"
 
 // A menu's summary is its button; other summaries open disclosures in the
 // page's own flow and stay still. The theme switch turns its own cube, and the
@@ -32,6 +34,7 @@ const live = (el: Element) => el.closest("[data-phx-session]") !== null
 export function mountMotion(doc: Document) {
   watchInput(doc)
   mountButtons(doc)
+  mountGestures(doc)
   doc.addEventListener("click", press)
   doc.addEventListener("toggle", toggle, true)
 
@@ -86,7 +89,8 @@ export function press(event: MouseEvent) {
 }
 
 // A dialog rises as a sheet, whether it opens as a modal or as a popover over
-// another window, and a header menu pops open. A page that redraws
+// another window, a header menu or a breadcrumb's menu pops open and a dropdown's
+// list drops in, and leaves again when it closes. A page that redraws
 // an open one closes and reopens it within one moment, which reports it as
 // having been open all along, so it does not move again. Once it rests where it
 // opens, moved or not, it carries `data-settled`, so whatever measures it, such
@@ -94,20 +98,40 @@ export function press(event: MouseEvent) {
 function toggle(event: Event) {
   if (!(event instanceof ToggleEvent) || !(event.target instanceof HTMLElement)) return
   const {target} = event
-  if (event.newState === "closed") return target.removeAttribute("data-settled")
+  const moves = lastInputByPointer() && !still(target)
+  if (event.newState === "closed") {
+    target.removeAttribute("data-settled")
+    if (moves) close(target)
+    return
+  }
   if (event.oldState !== "closed") return
 
-  const moves = lastInputByPointer() && !still(target)
-  Promise.resolve(moves ? open(target) : undefined).then(() => {
+  Promise.resolve(moves ? open(target) : openStill(target)).then(() => {
     if (target.matches("[open], :popover-open")) target.dataset.settled = ""
   })
 }
 
 function open(target: HTMLElement) {
   if (target instanceof HTMLDialogElement) return sheet(target)
-  const panel = target instanceof HTMLDetailsElement && target.querySelector(":scope > [data-panel='menu']")
-  if (panel) return menu(panel)
+  // A breadcrumb's menus and card grow from the button that opened them.
+  if (target.matches(".rg-crumbs [popover]")) return menu(target)
+  const panel = detailsPanel(target)
+  if (panel?.dataset.panel === "menu") return menu(panel)
+  if (panel?.dataset.panel === "list") return list(panel)
 }
+
+function openStill(target: HTMLElement) {
+  const panel = detailsPanel(target)
+  if (panel?.dataset.panel === "list") settle(panel)
+}
+
+function close(target: HTMLElement) {
+  const panel = detailsPanel(target)
+  if (panel?.dataset.panel === "list") unlist(panel)
+}
+
+const detailsPanel = (target: HTMLElement) =>
+  target instanceof HTMLDetailsElement ? target.querySelector<HTMLElement>(":scope > [data-panel]") : null
 
 // The words are joined back into plain text once they have risen.
 function rise(headline: HTMLElement) {

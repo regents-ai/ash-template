@@ -122,7 +122,6 @@ label.polls-choice {
 
 .polls-count__votes {
   flex: none;
-  font-variant-numeric: tabular-nums;
 }
 
 .polls-poll__mine {

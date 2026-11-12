@@ -25,7 +25,9 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/wonders" => "Ten pictures that answer your hand",
     "/animations/swarm-city" => "Agents flying over a city of thin lines",
     "/animations/datascape" => "An endless plane you fly over",
-    "/animations/frosted-glass" => "A tree through frosted glass"
+    "/animations/frosted-glass" => "A tree through frosted glass",
+    "/animations/menu" => "A menu that grows from its button",
+    "/animations/parts" => "Shared parts in motion"
   }
 
   def page(assigns) do

@@ -7,6 +7,30 @@
   width: 100%;
 }
 
+/* The six looks keep to one row. On a phone they sit closer, which fits them
+   from about 380 wide; narrower still, the row scrolls sideways on its own and
+   the page never does. Inside the scrolling row a focused look draws its ring
+   inside itself, where the row cannot cut it off. */
+.motion-lab--glass .flair-tabs {
+  flex-wrap: nowrap;
+}
+
+.motion-lab--glass .flair-tabs a {
+  flex: none;
+}
+
+@media (max-width: 30rem) {
+  .motion-lab--glass .flair-tabs {
+    column-gap: var(--space-1);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .motion-lab--glass .flair-tabs a:focus-visible {
+    outline-offset: -2px;
+  }
+}
+
 .frosted-glass {
   position: relative;
   height: 300svh;

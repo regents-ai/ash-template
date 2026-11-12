@@ -295,7 +295,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
               <div class="grammar-open">
                 <div class="grammar-open__stage">
                   <div id="grammar-panel" class="grammar-panel" data-panel="drawer" hidden>
-                    <button type="button" phx-click={toggle_panel()}>Close</button>
+                    <button type="button" phx-click={toggle_panel()} data-dismiss>Close</button>
                   </div>
                 </div>
                 <span class="grammar-open__actions">
@@ -354,7 +354,7 @@ defmodule AshTemplateWeb.GrammarShowcaseLive do
             data-close-event="window_closed"
             aria-labelledby="grammar-window-title"
           >
-            <h2 id="grammar-window-title">A window</h2>
+            <h2 id="grammar-window-title" data-sheet-handle>A window</h2>
             <p>One at a time, in the middle, over a shade.</p>
             <form method="dialog"><P.button type="submit" arrow={false}>Done</P.button></form>
           </S.dialog>

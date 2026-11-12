@@ -34,3 +34,15 @@ test("on a phone, the open menu covers the bottom bar", async ({page, isMobile})
     await expect(page.locator(behind)).toHaveJSProperty("inert", false)
   }
 })
+
+// Found by the design chief on 12 Nov: on a phone the frosted glass's six looks
+// wrapped, leaving Ember alone on a second row. They keep to one row, and the page
+// never scrolls sideways.
+test("the frosted glass's looks keep to one row", async ({page}) => {
+  await page.goto("/animations/frosted-glass")
+  const looks = page.getByRole("navigation", {name: "Looks"}).getByRole("link")
+  await expect(looks).toHaveCount(6)
+  const tops = await looks.evaluateAll(links => links.map(link => Math.round(link.getBoundingClientRect().top)))
+  expect(new Set(tops).size).toBe(1)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()!.width)
+})

@@ -7832,6 +7832,282 @@ sits on its own branches.
   proven live: a signed agent holding the feed open through Fly's proxy; regents-cli's
   `feed` command proves it when it ships.
 
+## 2026-11-12 — Agent Message: agents leave the team a private message
+
+- An "Agent Message" button on `/agents` opens a dialog with three paste-ready texts,
+  CLI, MCP and WebMCP, each with its copy button, that let a visitor's agent leave a
+  private message for the site's team under the topic `agents`. A signed-in person can
+  leave one from the same dialog and sees its receipt. Any page can place the button
+  with its own topic (`AshTemplateWeb.Components.AgentMessage`); Techtree's Watchdog
+  page is the first planned.
+- Agents leave one with `messages leave <topic>` (in the next regents-cli release),
+  `POST /api/v1/messages/{topic}` or the tool `messages_leave`, on the hosted MCP server
+  and in the browser. A retry with the same `operation_id` answers the first receipt.
+  Each sender leaves 10 an hour. The OpenAPI documents move to 11.2.0, and every page
+  now lists 56 WebMCP tools.
+- Only the site's admins read messages, at `/admin/messages`, newest first. A new
+  table, `left_messages`, is added by one migration
+  (`20261112045919_add_left_messages.exs`) that only creates it.
+
+## 2026-11-12 — Agent Message on live pages
+
+- The Agent Message button and dialog now work inside a live page too, with the same
+  two pieces and one placement: a plain page passes its request, a live page passes the
+  signed-in account, its session lease and its client key
+  (`skills/ash-webmcp/SKILL.md` shows both). The person's form is one shared component
+  in both places (`AshTemplateWeb.Components.AgentMessage.Form`), so a live page such as
+  Techtree's Watchdog page gets the same texts, form and receipt.
+- The `/app` home in the shell now has the button, with the topic `app`. The browser
+  walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
+  and phone width.
+- The form's ids now follow the dialog's (`<dialog id>-person-form`).
+
+## 2026-11-12 — Released v198: Agent Message
+
+- `9dc7dd1c` is v198 on template.regents.sh, switched at about 06:05Z with
+  `scripts/deploy.sh`. One migration ran in the release command,
+  `20261112045919_add_left_messages` (a new empty table). Rollback: v197 (`9160498f`);
+  the table stays and v197 never reads it.
+- Full check on `9dc7dd1c`, exit 0: 41 script tests, 465 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9dc7dd1c`; `/`, `/agents`, `/docs`, `/about` and `/app` answer 200 at 1280 and
+  390 with no page errors and no sideways scroll; on `/agents` the Agent Message button
+  opens its window with the three texts and no form; `/admin/messages` answers the
+  not-found page. Not proven live: a signed-in person's form and an admin reading the
+  inbox (no person's sign-in is used in live reads), and a signed agent's
+  `messages leave`.
+
+## 2026-11-12 — Live figures roll (November bonus, step 2)
+
+- Every figure the template's own pages change while someone watches is drawn with
+  design-system's `Regent.Primitives.figure` (`rg-figure`, equal-width digits,
+  `data-count`) inside a part marked `phx-hook="MotionCount"` with the standard `count`
+  version, so the motion kit rolls only the digits that changed, and reduced motion
+  leaves them still: a poll's votes and minutes left (the poll's line and the polls
+  list), each room's message count and the newest block on `/showcase/figures`, the
+  wallet's balance in the on-chain example, the times on a harbour agent's card, and the
+  motion lab's counter. A figure falling to words ("No reading yet", "Just now",
+  "reading balance") is swapped, not rolled.
+- Room left for the widest value only where a figure stands in a column or on its own
+  line: the room counts (five characters, ending on one edge) and the lab's counter
+  (six). A figure inside a sentence keeps none, since a gap mid-sentence reads as a fault;
+  only its own word after it shifts when it gains a digit.
+- The wonders' reading line, which their own script rewrites as they play, takes
+  `rg-figure` for its digits and does not roll.
+- Deleted the per-page `tabular-nums` rules these replace (`polls.css`, `wonders.css`,
+  `animations.css`) and the `messages/1`, `votes_label/1`, `list_state/1` and string
+  `time_state/2`, `ago/2` and `balance/1` helpers the figure components replace.
+- Not moved: Points and the discussion's likes are drawn by design-system's own
+  components, which carry `rg-figure` but not `data-count`; they roll once design-system
+  adds it. The Keyfleet hero's price tag never changes and keeps its own rule.
+- `platform/test/browser/motion.spec.ts`: the lab's counter rolls across a change of
+  width with nothing beside or below it moving, and stays still with reduced motion.
+
+## 2026-11-12 — Gestures (November bonus, step 6)
+
+- `platform/assets/js/hooks/motion/gestures.ts`, mounted with the rest of the kit in
+  `motion.ts`: a window (`dialog`) pulled down by its `data-sheet-handle`, the phone menu
+  (`data-panel="drawer"`) swiped back to its edge, and a note (`data-toast`) swiped
+  either way. `GESTURE` holds the animation guide's §2 values in px and ms: a throw of
+  0.11 px/ms dismisses whatever the distance; speed counts only after 100ms down; a
+  window or menu goes at a quarter of its size, a note at 30px; the landing point is the
+  speed carried on for 200ms; edge friction 0.85 (0.5 for pans); a thrown thing leaves on
+  a spring (bounce 0.2, 500ms) seeded with its speed; anything not thrown goes back in
+  300ms on `cubic-bezier(0.32, 0.72, 0, 1)`, and a finger can catch it on the way.
+- While the finger is down the thing follows it 1:1 by `transform` on itself, the menu's
+  shade fades with it and a note fades as it goes. A drag stops text selection and the
+  click that ends it; a plain press, on-chain buttons included, is never held.
+- Every gesture does only what a plain control already does: a window closes as Escape
+  closes it (`requestClose()`), the menu and a note as their own `data-dismiss` control
+  when pressed. Keyboard and agents use those and nothing animates. With less motion a
+  release goes straight back or closes.
+- Built with a pointer tracker of its own and Anime's `spring` and `animate`, not Anime's
+  `createDraggable`: Draggable picks where a release lands itself (its own speed
+  measure, projection and durations), so the guide's px/ms throw, 200ms landing and
+  300ms return could not be set.
+- Markup: `data-sheet-handle` on the heads of the agent tools window, the code cube's
+  window, a harbour agent's card, the pairing window and the grammar window; `data-dismiss`
+  on the phone menu's close button, the grammar panel's Close and the lab notes' Dismiss.
+  `motion.css` leaves the drag axis to the page (`touch-action`).
+- Tests: `platform/assets/test/gestures.test.ts` (speed, resistance, throw or pull) and
+  `platform/test/browser/motion.spec.ts` (a short pull goes back, a flick closes, Escape
+  closes, less motion, a note thrown away).
+
+## 2026-11-12 — Menu lab (November bonus, step 7)
+
+- A lab page only, `/animations/menu` (`AshTemplateWeb.MenuLabLive`, titled Menu): a
+  Sort button at the left and a More button at the right, each the shared details
+  dropdown (`rg-pill-select`) with its list marked `data-panel="menu"`. Opened by
+  pointer, the kit's standard menu motion grows the list from its own button's corner
+  (`transform-origin` top left or top right in `assets/css/pages/menu_lab.css`); opened
+  by keyboard, or with less motion, it is simply there. Escape closes it and hands focus
+  back to its button, and a press outside closes it, both from design-system's
+  `pill_select.mjs`; choosing an item closes it with `JS.remove_attribute`.
+- The list sits on the Tip layer (`--rg-layer-tip`, `--rg-layer-tip-shadow`), so opening
+  it moves nothing on the page, and stays inside the screen at 320 wide. The account
+  menu and every real menu are unchanged.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/motion.spec.ts`: grows by pointer, still by keyboard, Escape
+  hands focus back, a press outside closes.
+
+## 2026-11-12 — Design-system 2e839171: confirm window, charts, activity, fewer labels
+
+- `platform/mix.exs` and `mix.lock` pin `regent_ui` to design-system `2e839171`
+  (was `33d5aa96`). It brings the segmented control and link tabs, the breadcrumb, the
+  waiting box, `Regent.Agents.activity` and `fleet`, `Regent.Charts.line`, the shared
+  confirm window, the package's own style check and the account menu's theme row.
+- The shared parts no longer take taglines or small labels (founder, 2 Nov), so the
+  callers drop them: the error page's `context="Ash Template"` and the showcase
+  typography figure's `<:caption>`. No other caller passed `eyebrow`, `site`,
+  `caption` or `context` on a utility page.
+- `mix regent_ui.assets` now also copies `style-check.sh`. Run over the template's own
+  CSS, scripts and templates it reports 26 breaks (14 stacking, 6 glass, 4 flat,
+  1 shape, 1 icon). They are left for their own change and the check is not part of
+  `make check` yet.
+
+## 2026-11-12 — The confirm window asks before an action that can't be undone
+
+- The root layout renders `<Regent.Structure.confirm />` once and `app.ts` imports the
+  design system's `confirm.mjs` before the LiveSocket connects, so every `data-confirm`
+  press asks in the shared cut-corner window instead of the browser's own grey box.
+- Every `data-confirm` now carries a `data-confirm-action`, the words on the button that
+  goes ahead: Unpair (the agent list and an agent's window), Delete (a note, a room
+  message), Mute, Block and End (a poll). Seven in all.
+- Hard cutover: `import "phoenix_html"` and its type stub are gone; they served only
+  `data-confirm` (nothing in `lib/` uses `data-method` or `data-to`).
+- `test/browser/polls.spec.ts` presses End in the window instead of accepting the
+  browser's box.
+- Checked headless in Chromium at 390 and 1280 wide, light and dark, on Notes: the
+  window opens from a press and from Enter or Space (`data-opened-by` pointer or key),
+  Cancel and Escape close it with focus back on Delete, Delete removes that note once
+  and leaves the others, and it still works after a live navigation away and back and
+  after the LiveSocket reconnects. The browser's own box never showed.
+
+## 2026-11-12 — Motion kit for the shared parts, and the Parts lab
+
+- New kit hooks in `platform/assets/js/hooks/motion/`, each reading only the marks in
+  design-system's `CONSUMERS.md`, joined through `phx-hook` on the shared component:
+  - `travel.ts`, `MotionTravel`: the segmented control's indicator springs with its
+    leading edge first (`spring({bounce: 0.15, duration: 300})`, the trailing edge half
+    a fast step later), follows a press dragged across the cells and chooses the cell it
+    is let go over, then removes its values and `data-travel="kit"`. Link tabs slide
+    their bar from the tab before (`--rg-travel-x`, `--rg-travel-scale`, 280ms) after a
+    patch or a live navigation, and scroll the new tab into view inside the row.
+  - `crumbs.ts`, `MotionCrumbs`: after a level is pressed, the new page showing rises
+    half a space step over 280ms and the levels that left fade where they stood
+    (140ms, `--ease-in`), through a patch or a live navigation. Its menus and card grow
+    from their buttons through the kit's menu motion (`motion.ts`).
+  - `moments.ts`, `MotionActivity`: a step that arrives fades in and its line grows down
+    from the mark above. The component renders no layout ids, so this is its own small
+    hook rather than `MotionList`.
+  - `chart.ts`, `MotionChart`: the rule, figure and time follow the pointer, or Left,
+    Right, Home and End on the plot, and the latest figure comes back when the pointer
+    leaves or focus goes. A new period morphs the line (`svg.morphTo`, 280ms) when the
+    point count holds and fades it in otherwise.
+  - `shared.ts` gains `EASE_IN` (the `--ease-in` token).
+- Nothing moves for a key press or with less motion; nothing runs on a timer. The chart
+  and the breadcrumb decide from the press inside them, because the browser's own
+  pointer-move after a redraw makes "last input was the pointer" unreliable there.
+- New lab page `/animations/parts` (`AshTemplateWeb.PartsLabLive`, titled Parts): tabs,
+  a breadcrumb, a price chart with its period, an agent's activity with Next step, and
+  the chart's and activity's loading, failed and empty states. Listed in the lab index,
+  the design page, the public documents, the route catalog and handoff, the README and
+  `pages.json`. No real page changes.
+- Tests: `platform/assets/test/parts_motion.test.ts` and a `motion.spec.ts` check.
+  `skills/animejs/references/liveview-islands.md` and `AGENTS.md` name the hooks.
+
+## 2026-11-12 — Frosted glass looks keep to one row
+
+- `/animations/frosted-glass`: the six looks no longer wrap (at 390 wide Ember sat
+  alone on a second row). The row never wraps; at 30rem and under the gap is
+  `--space-1`, which fits all six from about 380 wide, and narrower the row scrolls
+  sideways on its own while the page does not. Inside that row a focused look draws
+  its ring inset so the row does not cut it off. Only
+  `platform/assets/css/pages/frosted_glass.css` changes.
+- `platform/test/browser/layout.spec.ts` checks the six share one row with no sideways
+  page scroll, on desktop and phone.
+
+## 2026-11-12 — Two more callers the design-system 2e839171 pin broke
+
+- The discussion's reply filters are now the shared tabs, a row that scrolls
+  sideways on its own. The public page's grid sized its one column from that row's
+  full width, so `/showcase/discussion` was 18px wider than a 320 screen. The column
+  is now `minmax(0, 1fr)` (`platform/assets/css/app.css`), the screen's width.
+- The agent window's name field drops its visible hint for the "About this name" tip
+  and shows a refused name as the field's own error, tied to the input, rather than an
+  alert. `platform/test/browser/agents.spec.ts` checks the tip and the input's
+  description.
+## 2026-11-12 — Released v199: rolling figures, gestures and the menu lab page
+
+- `ec983824` (the merge of the design chief's `wt/tpl-bonus-1112`, `9b2bdb05`) is v199
+  on template.regents.sh, switched at about 06:25Z with `scripts/deploy.sh`. No
+  migrations. Rollback: v198 (`9dc7dd1c`).
+- Full check on `ec983824`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `ec983824`; `/`, `/animations`, `/animations/menu`, `/animations/frosted-glass`,
+  `/agents`, `/app`, `/polls` and `/notes` answer 200 at 1280 and 390 with no page or
+  console errors and no sideways scroll. The gestures themselves were not driven live.
+
+## 2026-11-12 — Released v200: the health answer says whether migrations are applied
+
+- `2409d2d5` is v200 on template.regents.sh, switched at about 06:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v199 (`ec983824`).
+- `GET /api/v1/health` gains `migrations_applied`; pending migrations leave the answer at
+  200. `/healthz` is unchanged. Contract 11.3.0.
+- Full check on `2409d2d5`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  207 Elixir (9 properties). A first run failed two desktop settle-waits at load 60.
+- Live read, signed out: `/capabilities.json` names `2409d2d5`; `/api/v1/health` answers
+  `{"status":"ok","migrations_applied":true}`; `/healthz` 200; `/`, `/agents`, `/docs`
+  and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
+  errors (WebKit not run). The `false` answer is proven by test only.
+
+## 2026-11-12 — Released v201: design-system 2e839171, the confirm window and the Parts lab
+
+- `1c18b763` (the design chief's `wt/tpl-bonus-1112`) is v201 on template.regents.sh,
+  switched at about 07:25Z with `scripts/deploy.sh`. No migrations. Rollback: v200
+  (`2409d2d5`).
+- Full check on `1c18b763`, exit 0: 57 script tests, 487 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `1c18b763`; `/`, `/animations/parts`, `/animations/frosted-glass`,
+  `/showcase/discussion`, `/agents`, `/polls`, `/notes`, `/app` and `/account` answer 200
+  at 1280 and 390 with no page or console errors and no sideways scroll; the home page
+  carries the confirm window. The confirm window was not pressed live (its controls
+  need a signed-in person).
+
+## 2026-11-12 — Pair New Agent: a low picture band, and the agent list moves
+
+- Pins design-system `63afac93` (branch `ds/pairing-window-1112`, on top of main
+  `0b47de3`): the chosen agent's picture sits in a band a quarter as tall as it is wide,
+  at 48px, so the band is 104px tall at 1280 wide (was 234) and 81.5px at
+  390 (was 183); the window is about 130px and 100px shorter (Sean, 11 Nov: "the image
+  area can be much smaller"). Choosing still moves nothing under it.
+- The agent list (`data-panel="list"`) moves by the motion kit: `list` fades it in and
+  lifts it 4px, its agents following 5 ms apart, in about 160 ms; `unlist` lets it fade
+  and drop 4px in 100 ms while a press on it lands on what is under it. A key press or
+  reduced motion opens and closes it at once. `play()`'s reset is now `rest()` in
+  `hooks/motion/shared.ts`, so a still opening stops a list that is leaving.
+- `pairing.spec.ts` and `pair_link.spec.ts` check the band at both widths, that nothing
+  under it moves, a press half way through each move (the page's clock held), and the
+  instant list with reduced motion. The animejs skill names the list.
+
+## 2026-11-12 — Released v202: the Pair New Agent window
+
+- `9331cd03` (the merge of `tpl/pairing-window-1112` onto v201, design-system pin
+  `dfd18f87`) is v202 on template.regents.sh, switched at about 07:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v201 (`1c18b763`).
+- Full check on `9331cd03`, exit 0: 57 script tests, 495 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9331cd03`; `/`, `/agents`, `/agents/hermes`, `/account`, `/app` and `/polls`
+  answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
+  The pairing window opens only for a signed-in person, so it was not opened live; the
+  browser walks open it locally at every width.
+
 ## 2026-11-11 — The daily jobs' facts: JSON reports and `scripts/harvest.sh`
 
 - `make drift` (`scripts/drift.sh`) and `make pins` (`scripts/pins.sh`) print one JSON

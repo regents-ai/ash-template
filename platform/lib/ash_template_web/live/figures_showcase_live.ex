@@ -15,6 +15,7 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   alias AshTemplate.{ChainHead, ChainRefresh, Rooms, SharedReading}
   alias AshTemplate.Rooms.Activity
   alias AshTemplateWeb.Components.Shell
+  alias AshTemplateWeb.Motion
   alias Regent.Primitives, as: P
 
   @key ChainHead.key(8453)
@@ -76,11 +77,6 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
     assign(socket, rooms: rooms)
   end
 
-  defp messages(1), do: "1 message"
-
-  defp messages(count),
-    do: "#{count |> Integer.to_string() |> RegentFormat.add_delimiters()} messages"
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -102,11 +98,17 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
         </p>
       </section>
 
-      <div class="onchain-workshop-grid">
+      <div
+        id="figures-grid"
+        class="onchain-workshop-grid"
+        phx-hook="MotionCount"
+        data-variant={Motion.standard("count")}
+      >
         <section class="rg-panel rg-panel--surface" aria-labelledby="figures-head-heading">
           <h2 id="figures-head-heading">Latest block</h2>
           <p id="figures-head" class="payments-figure">
-            <span id="figures-head-block">{@head.block || "No reading yet"}</span>
+            <P.figure :if={@head.block} id="figures-head-block" value={to_string(@head.block)} />
+            <span :if={!@head.block}>No reading yet</span>
             <P.status :if={!@head.behind?} tone="success">Live</P.status>
             <P.status :if={@head.behind?} tone="warning">Behind</P.status>
           </p>
@@ -124,7 +126,12 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
             <div :for={room <- @rooms} id={"figures-room-#{room.slug}"}>
               <dt>{room.name}</dt>
               <dd>
-                <span :if={room.messages}>{messages(room.messages)}</span>
+                <span :if={room.messages}>
+                  <P.figure
+                    value={room.messages |> Integer.to_string() |> RegentFormat.add_delimiters()}
+                    width={5}
+                  /> {if room.messages == 1, do: "message", else: "messages"}
+                </span>
                 <span :if={!room.messages}>No count yet</span>
                 <time :if={room.latest_at} datetime={DateTime.to_iso8601(room.latest_at)}>
                   · latest {Calendar.strftime(room.latest_at, "%-d %b, %H:%M UTC")}

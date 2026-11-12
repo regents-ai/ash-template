@@ -1,10 +1,9 @@
 import "../css/app.css"
+import "../vendor/regent_ui/confirm.mjs"
 import "../vendor/regent_ui/discussion.mjs"
 import "../vendor/regent_ui/pill_select.mjs"
 import "../vendor/regent_ui/tip.mjs"
 
-// Asks before any element carrying data-confirm acts, such as deleting a note.
-import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/ash_template"
@@ -30,9 +29,12 @@ import {AccountPicture} from "./hooks/account_picture"
 import {Datascape} from "./hooks/datascape"
 import {HolographicCard} from "./hooks/holographic_card"
 import {InfoDialog} from "./hooks/info_dialog"
-import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
+import {MotionChart} from "./hooks/motion/chart"
+import {MotionCrumbs} from "./hooks/motion/crumbs"
+import {MotionActivity, MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
+import {MotionTravel} from "./hooks/motion/travel"
 import {OnchainSteps} from "./hooks/onchain_steps"
 import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
@@ -40,6 +42,7 @@ import {ProductsMenu} from "./hooks/products_menu"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
+import {installAgentMessage} from "./agent_message"
 import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
 import {installVisitLog} from "./visit_log"
@@ -356,13 +359,17 @@ const hooks = {
   Datascape,
   HolographicCard,
   InfoDialog,
+  MotionActivity,
   MotionCascade,
+  MotionChart,
   MotionCount,
+  MotionCrumbs,
   MotionList,
   MotionPanels,
   ProductsMenu,
   MotionRefusal,
   MotionTabs,
+  MotionTravel,
   OnchainSteps,
   MenuAgents,
   PublicName,
@@ -391,6 +398,7 @@ liveSocket.connect()
 installAccountAuthLazyLoader()
 installCrossTabCsrf()
 installCopyButtons()
+installAgentMessage()
 installAgentTools()
 mountMotion(document)
 window.liveSocket = liveSocket

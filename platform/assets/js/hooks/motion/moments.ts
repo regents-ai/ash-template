@@ -15,7 +15,7 @@ import {
   type Scope,
   type TextSplitter,
 } from "animejs"
-import {BASE, CLIPPED_CHAR, SLOW, still} from "./shared"
+import {BASE, CLIPPED_CHAR, EASE_OUT, SLOW, play, still} from "./shared"
 import {deny} from "./press"
 import type {Hook} from "../../hook_composition"
 
@@ -154,6 +154,35 @@ export const countHook = (rolls: Record<string, Roll>): Hook => ({
 })
 
 export const MotionCount = countHook(ROLLS)
+
+type ActivityHook = {el: HTMLElement; seen?: Set<string>}
+
+// The rows of an agent's latest steps (`Regent.Agents.activity`), by step.
+const steps = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>("[data-activity] > li[data-step]")]
+
+/**
+ * An agent's activity (`Regent.Agents.activity`), through `phx-hook`. A step that
+ * arrives fades in and its line grows down from the mark above; a step that only
+ * changed state stays put, and the design system moves its mark and word.
+ */
+export const MotionActivity: Hook = {
+  mounted(this: ActivityHook) {
+    this.seen = new Set(steps(this.el).map(row => row.dataset.step ?? ""))
+  },
+
+  updated(this: ActivityHook) {
+    const rows = steps(this.el)
+    const seen = this.seen ?? new Set()
+    this.seen = new Set(rows.map(row => row.dataset.step ?? ""))
+    if (still(this.el)) return
+
+    const arrived = rows.filter(row => !seen.has(row.dataset.step ?? ""))
+    if (arrived.length === 0) return
+    play(arrived, {opacity: {from: 0}, duration: BASE, ease: EASE_OUT})
+    const lines = arrived.flatMap(row => [...row.querySelectorAll(":scope > .rg-activity__rail")])
+    play(lines, {scaleY: {from: 0}, duration: SLOW, ease: EASE_OUT})
+  },
+}
 
 type RefusalHook = {el: HTMLElement; scope?: Scope; said?: string}
 

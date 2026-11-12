@@ -307,7 +307,6 @@ defmodule AshTemplateWeb.ShowcaseLive do
           <h3>Typography</h3>
           <S.technical_figure class="rg-support-figure">
             <p class="sc-type-display">Aa / 0123</p>
-            <:caption>Geist Serif / regular 400</:caption>
           </S.technical_figure>
           <p>Geist Serif · titles, body copy and interface.</p>
           <P.address id="type-address" address="0x71C7656EC7ab88b098defB751B7401B5f6d8976F" />

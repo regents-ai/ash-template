@@ -10,10 +10,13 @@ defmodule AshTemplateWeb.OverviewLive do
 
   import AshTemplateWeb.Components.PageHead
 
+  alias AshTemplateWeb.Components.AgentMessage
   alias AshTemplateWeb.RouteCatalog
 
   attr :account_control, AshTemplate.AccessContext.AccountControl, required: true
   attr :account, :map, default: nil
+  attr :lease, :map, default: nil, doc: "The page's `session_lease`, for the Agent Message form."
+  attr :client_key, :string, required: true
 
   def page(assigns) do
     rooms = Enum.find(RouteCatalog.sections(), &(&1.id == :rooms)).path
@@ -47,6 +50,15 @@ defmodule AshTemplateWeb.OverviewLive do
         <a href="/agents.md">Agent guide</a>
         <a href="/openapi.json">API</a>
       </nav>
+
+      <AgentMessage.button id="app-message-button" dialog="app-message" />
+      <AgentMessage.dialog
+        id="app-message"
+        topic="app"
+        account={@account}
+        lease={@lease}
+        client_key={@client_key}
+      />
     </section>
     """
   end

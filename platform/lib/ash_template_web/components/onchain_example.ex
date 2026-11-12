@@ -207,10 +207,18 @@ defmodule AshTemplateWeb.OnchainExample do
       <p class="onchain-example-review" aria-live="polite" hidden={!@review}>
         {@review && review_line(@review)}
       </p>
-      <p :if={@names_sender} class="onchain-example-from" hidden={!@wallet}>
+      <p
+        :if={@names_sender}
+        id={"#{@id}-from"}
+        class="onchain-example-from"
+        hidden={!@wallet}
+        phx-hook="MotionCount"
+        data-variant={AshTemplateWeb.Motion.standard("count")}
+      >
         <%= if @wallet do %>
           {if @signer, do: "Sending from", else: "Wallet"}
-          <P.address id={"#{@id}-wallet"} address={@wallet} /> on {@chain.name} · {balance(@balance)}
+          <P.address id={"#{@id}-wallet"} address={@wallet} /> on {@chain.name} ·
+          <.balance wei={@balance} />
         <% end %>
       </p>
 
@@ -279,8 +287,14 @@ defmodule AshTemplateWeb.OnchainExample do
 
   defp title(_unknown), do: "Transaction"
 
-  defp balance(nil), do: "reading balance"
-  defp balance(:unread), do: "balance unavailable right now"
+  attr :wei, :any, required: true
 
-  defp balance(wei), do: "#{RegentFormat.token_amount(wei, 18)} ETH"
+  defp balance(%{wei: nil} = assigns), do: ~H"reading balance"
+  defp balance(%{wei: :unread} = assigns), do: ~H"balance unavailable right now"
+
+  defp balance(assigns) do
+    ~H"""
+    <P.figure value={RegentFormat.token_amount(@wei, 18)} /> ETH
+    """
+  end
 end
