@@ -7811,3 +7811,9 @@ sits on its own branches.
   say that an answer stays open (`docs/agent-parity.md` G12).
 - Sites add their own kinds of event, such as Keyfleet's mentions, in `AshTemplate.Feed`
   (`skills/ash-webmcp/references/live-feed.md`).
+
+## 2026-11-12 — The feed's cap and stated connection limits
+
+- A machine holds at most 200 open agent feeds (it was 1,000), and `platform/fly.toml`
+  now states how many connections a machine takes (2,000 soft, 2,500 hard) instead of
+  leaving it to Fly's default, so feeds that stay open can never keep visitors out.
