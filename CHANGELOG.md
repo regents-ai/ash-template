@@ -8192,3 +8192,26 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   draws, two pointer sweeps over every card leave the page alive, drawn, under a 64 MB
   script heap and with no sideways scroll; with less motion the picture never draws and
   the cards keep their surface.
+
+## 2026-11-12 — Ask lab: one field, an answer drawn from a few blocks
+
+- A lab page only, `/animations/ask` (`AshTemplateWeb.AskLabLive`, titled Ask): one search
+  field, and under it the answer, built only from a closed list of five blocks: a figure
+  (`Regent.Primitives.figure`), a list, a chart (`Regent.Charts.line`), an agent's activity
+  (`Regent.Agents.activity`) and a confirm step whose button is disabled with "Sample only".
+- `AshTemplateWeb.AskLab` turns a question into a plan (a title and one to three blocks) by a
+  plain keyword match over sample data, with its first number as an amount or a limit: no
+  model, no network, no new dependency, nothing stored. `AskLab.check/1` holds every plan to
+  the block list before the page draws any of it; a plan that fails shows the failed state.
+  Staking more than the sample balance shows the amount without a confirm step.
+- The question lives in the address as `?q=`, so a shared link draws the same answer; the
+  form is a plain GET that LiveView patches. An unknown question shows "No match" and three
+  example questions as links. A States section shows loading, empty and failed. Nothing runs
+  on a timer. "/" puts the cursor in the field (`hooks/ask_bar.ts`); the key hint shows only
+  with a fine pointer.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/ask_bar.spec.ts`: a `?q=` link draws the same answer after a reload,
+  an unknown question shows three examples that each answer, asking and following an example
+  work from the keyboard alone, and no answer scrolls sideways at 320.

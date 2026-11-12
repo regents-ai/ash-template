@@ -28,7 +28,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/frosted-glass" => "A tree through frosted glass",
     "/animations/menu" => "A menu that grows from its button",
     "/animations/parts" => "Shared parts in motion",
-    "/animations/value" => "A figure lit where you point"
+    "/animations/value" => "A figure lit where you point",
+    "/animations/ask" => "An answer drawn from blocks"
   }
 
   def page(assigns) do

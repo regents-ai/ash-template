@@ -1,0 +1,212 @@
+@layer regents-product {
+/* The ask bar lab (`/animations/ask`, `AshTemplateWeb.AskLabLive`): one field, and
+   under it the answer, drawn from a closed list of blocks. Every block is a flat
+   surface with a hairline edge, the same as the value cards. */
+.motion-lab--ask {
+  width: 100%;
+  align-content: start;
+}
+
+.ask-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-inline-size: 40rem;
+  padding-inline: var(--space-3);
+  border: var(--rg-rule-width) solid var(--hairline-strong);
+  background: var(--color-surface);
+  color: var(--color-fg-muted);
+}
+
+.ask-bar:focus-within {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: var(--rg-ring-offset);
+}
+
+/* The field takes the bar's room and no more: its own default width would push
+   the page sideways at phone width. */
+.ask-bar__input {
+  flex: 1;
+  inline-size: 0;
+  min-inline-size: 0;
+  padding-block: var(--space-2);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+.ask-bar__input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* The "/" shortcut only means something with a keyboard to press it on. */
+.ask-bar__key {
+  display: none;
+  padding-inline: var(--space-1);
+  border: var(--rg-rule-width) solid var(--hairline-strong);
+  font: inherit;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ask-bar__key {
+    display: inline-block;
+  }
+}
+
+.ask-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ask-example {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-3);
+  border: var(--rg-rule-width) solid var(--hairline-strong);
+  color: var(--color-fg);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  text-decoration: none;
+}
+
+.ask-example:hover {
+  border-color: var(--color-fg-muted);
+}
+
+.ask-example:focus-visible {
+  outline: var(--rg-ring-width) solid var(--color-focus);
+  outline-offset: var(--rg-ring-offset);
+}
+
+.ask-plan {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ask-plan__title,
+.ask-states__title {
+  margin: 0;
+  color: var(--color-fg);
+  font-size: var(--type-title-size);
+  font-weight: 400;
+  line-height: var(--type-title-line);
+}
+
+.ask-plan__blocks,
+.ask-states__grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ask-states {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ask-states__state {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.ask-block {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: var(--rg-rule-width) solid var(--hairline-strong);
+  background: var(--color-surface);
+}
+
+.ask-block__label {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  font-weight: 400;
+  line-height: var(--type-label-line);
+}
+
+.ask-block__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--color-fg);
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+}
+
+.ask-block__unit,
+.ask-block__line {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.ask-list,
+.ask-confirm {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ask-list__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  border-block-end: var(--rg-rule-width) solid var(--hairline-strong);
+  color: var(--color-fg);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.ask-list__row:last-child {
+  border-block-end: 0;
+}
+
+.ask-confirm dt,
+.ask-confirm dd {
+  margin: 0;
+}
+
+.ask-confirm__action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block-start: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .ask-plan__blocks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ask-states__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ask-block__figure {
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+  }
+}
+}
