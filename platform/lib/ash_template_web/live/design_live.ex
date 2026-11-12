@@ -29,7 +29,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/menu" => "A menu that grows from its button",
     "/animations/parts" => "Shared parts in motion",
     "/animations/value" => "A figure lit where you point",
-    "/animations/ask" => "An answer drawn from blocks"
+    "/animations/ask" => "An answer drawn from blocks",
+    "/animations/glow" => "A soft light that follows a status"
   }
 
   def page(assigns) do

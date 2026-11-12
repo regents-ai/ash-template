@@ -15,31 +15,14 @@ import {animate, createAnimatable, createScope, type AnimatableObject, type JSAn
 
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
 import {watchTheme} from "../theme"
-import type {Rgb, ValueLightRenderer, ValueScene} from "../value_light/renderer"
+import {colourReader, type Rgb} from "../token_colour"
+import type {ValueLightRenderer, ValueScene} from "../value_light/renderer"
 import {BASE, EASE_IN_OUT, EASE_OUT, FAST, SLOW} from "./motion/shared"
 
 type ValueLightHook = {el: HTMLElement; island?: CanvasIslandController; scope?: Scope; release?: () => void}
 
 /** A pointer moving this many CSS pixels a millisecond is as lively as the light gets. */
 const LIVELIEST = 1.5
-
-/** Any colour the page states, over the colour beneath it, as red, green and blue from 0 to 1. */
-function colourReader() {
-  const canvas = document.createElement("canvas")
-  canvas.width = 1
-  canvas.height = 1
-  const context = canvas.getContext("2d", {willReadFrequently: true})!
-  return (css: string, under?: Rgb): Rgb => {
-    context.clearRect(0, 0, 1, 1)
-    context.fillStyle = "rgba(0, 0, 0, 0)"
-    context.fillStyle = css
-    context.fillRect(0, 0, 1, 1)
-    const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data
-    const k = a! / 255
-    const base = under ?? [0, 0, 0]
-    return [r! / 255 * k + base[0] * (1 - k), g! / 255 * k + base[1] * (1 - k), b! / 255 * k + base[2] * (1 - k)]
-  }
-}
 
 export const ValueLight = {
   mounted(this: ValueLightHook) {

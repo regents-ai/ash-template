@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Motion lab.** A new page, Glow: three agents, running, waiting and done, and a
+  soft light in the chosen one's status colour that arrives, holds and fades.
 - **Motion lab.** A new page, Value: cards with one figure each whose surface lights
   where you point or touch, with a card loading, empty and failed.
 - **Motion lab.** A new page, Ask: type about points, offers, notes or agents and the

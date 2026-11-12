@@ -8406,3 +8406,32 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   `c3b2ddf7`; `/`, `/animations`, `/animations/buttons`, `/agents` and `/polls` answer 200
   at 1280 and 390 with no page or console errors and no sideways scroll. The lab's word
   swap itself was not watched live.
+
+## 2026-11-12 — Glow lab: a soft light that follows a status
+
+- A lab page only, `/animations/glow` (`AshTemplateWeb.GlowLabLive`, titled Glow), built to
+  spec 8.1 and 2.4 and REGENTS_MAP: three sample agents (Pira running, Odo waiting, Vela
+  done) with the shared status chip, and the shared segmented control choosing which row
+  is lit. No real page changes.
+- One vgpu island behind the rows (`hooks/glow_light.ts`, `glow_light/renderer.ts`, WGSL
+  through `canvas_island.ts`, capped at 2 device pixels per CSS pixel). The light takes the
+  row's status colour from the design-system tokens (`--color-info` for running, as no
+  running token exists, `--color-warning`, `--color-success`) and the page's `--color-bg`,
+  read at start and again on a theme change. Colours blend in OKLab; on a pale page the
+  light keeps the page's lightness and takes the status's hue, on a dark one it is the
+  status colour itself, so it only ever adds light.
+- Its life, all Anime.js (one timeline per choice): it slides to the row while its colour
+  turns from the last status to this one, holds while a pool of light drifts along the row,
+  then fades to an ember and rests, 4.2 s in all. Nothing loops, and the island draws only
+  while the timeline runs.
+- The spec's CSS fallback (shadows, rounded corners) is dropped: with less motion, off
+  screen, in forced colours or without WebGPU the rows are flat, and the chosen row's name
+  is the one in full ink (`aria-current`).
+- `token_colour.ts` now holds the one helper that reads a colour token for a shader; the
+  value lab's copy moved there.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/glow.spec.ts`: at 320 and 390 with the GPU on, each choice moves
+  the light, pointer moves and a theme change leave the page alive, drawn, under a 64 MB
+  script heap and with no sideways scroll; with less motion the picture never draws.

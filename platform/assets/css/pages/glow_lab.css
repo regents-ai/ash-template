@@ -1,0 +1,101 @@
+@layer regents-product {
+/* The glow lab (`/animations/glow`, `AshTemplateWeb.GlowLabLive`): three status
+   rows on one GPU picture (the `GlowLight` hook) that lights the chosen row in
+   its status colour. The picture paints the page's own ground everywhere else,
+   so it only ever adds light. Until it has drawn, and wherever it never does,
+   the rows are flat on the page, and the lit row's name is the one in full ink. */
+.motion-lab--glow {
+  width: 100%;
+  align-content: start;
+}
+
+.glow-lab {
+  position: relative;
+  max-inline-size: 40rem;
+}
+
+.glow-lab__stage,
+.glow-lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.glow-lab__stage {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.glow-lab[data-glow-ready="true"] .glow-lab__stage {
+  opacity: 1;
+}
+
+/* The rows sit above the picture: positioned after it, they paint over it. The
+   list's own room above and below is where the light spills past a row. */
+.glow-lab__rows {
+  position: relative;
+  display: grid;
+  margin: 0;
+  padding: var(--space-2) 0;
+  list-style: none;
+}
+
+.glow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: var(--space-8);
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--rg-rule-width) solid var(--hairline);
+}
+
+.glow-row:first-child {
+  border-block-start: var(--rg-rule-width) solid var(--hairline);
+}
+
+.glow-row__who {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.glow-row__name {
+  color: var(--color-fg-muted);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  transition: color var(--duration-base) var(--ease-out);
+}
+
+.glow-row[aria-current] .glow-row__name {
+  color: var(--color-fg);
+}
+
+.glow-row__task {
+  overflow: hidden;
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glow-row .rg-status {
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-lab__stage,
+  .glow-row__name {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .glow-lab__stage {
+    display: none;
+  }
+}
+}

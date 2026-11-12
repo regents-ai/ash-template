@@ -9,8 +9,7 @@ import {prepareShader} from "@vgpu/wgsl/prepare"
 import {effect, frame, init, surface} from "vgpu"
 
 import type {IslandRenderer} from "../canvas_island"
-
-export type Rgb = readonly [number, number, number]
+import type {Rgb} from "../token_colour"
 
 /** The most cards one picture holds. */
 export const CARD_SLOTS = 8

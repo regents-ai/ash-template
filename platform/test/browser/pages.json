@@ -64,6 +64,7 @@
     {"route": "/animations/parts", "purpose": "Use each shared part and see its states.", "check": "#parts-chart"},
     {"route": "/animations/value", "purpose": "See a figure lit where you point.", "check": "#value-points"},
     {"route": "/animations/ask", "purpose": "Ask and see the answer drawn from blocks.", "check": "#ask-form"},
+    {"route": "/animations/glow", "purpose": "See a status row lit in its colour.", "check": "#glow-rows"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],
