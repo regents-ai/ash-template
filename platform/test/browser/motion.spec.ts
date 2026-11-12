@@ -131,20 +131,34 @@ test("with less motion asked for, a live figure changes without rolling", async 
 })
 
 // A finger drag from the middle of `from`, `dy` down and `dx` across over `ms`.
+// Each pointer event carries the moment it stands for, and the page measures a
+// throw from its events' own times (motion/gestures.ts), so a busy machine that
+// delivers them late still throws at the speed asked for here.
 async function drag(page: Page, from: Locator, {dx = 0, dy = 0, ms}: {dx?: number; dy?: number; ms: number}) {
   const box = (await from.boundingBox())!
   const x = box.x + Math.min(box.width / 2, 60)
   const y = box.y + box.height / 2
   const steps = Math.max(8, Math.round(ms / 20))
-  await page.mouse.move(x, y)
-  await page.mouse.down()
+  const cdp = await page.context().newCDPSession(page)
   const start = Date.now()
+  const pointer = (type: "mousePressed" | "mouseMoved" | "mouseReleased", step: number, buttons: number) =>
+    cdp.send("Input.dispatchMouseEvent", {
+      type,
+      x: x + (dx * step) / steps,
+      y: y + (dy * step) / steps,
+      button: "left",
+      buttons,
+      clickCount: 1,
+      timestamp: (start + (ms * step) / steps) / 1000,
+    })
+  await pointer("mousePressed", 0, 1)
   for (let i = 1; i <= steps; i++) {
-    await page.mouse.move(x + (dx * i) / steps, y + (dy * i) / steps)
     const wait = start + (ms * i) / steps - Date.now()
     if (wait > 0) await page.waitForTimeout(wait)
+    await pointer("mouseMoved", i, 1)
   }
-  await page.mouse.up()
+  await pointer("mouseReleased", steps, 0)
+  await cdp.detach()
 }
 
 const shiftY = (el: Locator) =>
