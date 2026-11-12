@@ -7750,3 +7750,35 @@ sits on its own branches.
   `/animations/value-cards` answers 404. Fly logs: no errors after the switch.
 - Still open: in the light theme the primary button rests on the pale raised colour
   (`#DAD8C7`) with dark words, so it reads quieter than an outlined button.
+
+## 2026-11-12 — Frosted glass in the motion lab
+
+- `/animations/frosted-glass`: a large tree seen through a leaning pane of frosted glass
+  with a lamp in front of it, ported from the frosted-glass study (its v6 is the first
+  look). The section is three windows tall and the picture stays in the window: at the
+  top the visitor is among the tree's boughs, halfway down the whole tree stands in view,
+  and at the bottom it stands in a forest. The forest is rows of the same tree, drawn by
+  the same bough and trunk code, each sized, mirrored and nudged so no two match, hazier
+  the farther they stand; on a narrow window the eye stands farther back and the rows
+  closer, so the phone sees trees and not sky.
+- Six looks, chosen by `?look=` and set in `platform/assets/js/frosted_glass/looks.ts`:
+  Lifelike (pebbled glass in a wire mesh), Reeded (vertical ribs, each a small lens),
+  Blocks (glass blocks in thin joints), Mist (fogged glass that wipes clear under the
+  pointer or a finger and fogs back in about nine seconds), Night (the bark glowing cyan
+  in the dark) and Ember (the same in amber). None is lit brighter than v6.
+- The glass is a vgpu canvas island (`platform/assets/js/hooks/frosted_glass.ts`, drawing
+  in `platform/assets/js/frosted_glass/`): the plant is drawn to a target, blurred twice,
+  and the glass pass lays the surface over it; Mist keeps its fog in two targets passed
+  back and forth, each frame letting it creep back and wiping the pointer's stroke. Anime.js
+  moves the lamp, the gaze and the wander, and eases the scroll into the journey. The
+  island stops drawing when nothing moves and pauses off screen. With less motion the
+  lamp and wander hold still and the scroll alone changes the picture; a browser that
+  cannot draw it shows `priv/static/images/animations/frosted-glass/<look>.webp`.
+- The page joins the motion lab index, the design map, the route catalog (handoff
+  regenerated), the showcase list in `public_documents.ex` and the browser walk's pages.
+- Public changelog: the frosted glass in the Motion Lab.
+- Checked headless in Chromium with WebGPU: all six looks reach ready at 1280, 390 and 320
+  with no sideways scroll; scrolling changes the picture; a tab change repaints without
+  starting again; Mist clears under a pointer and under a finger at 390 and fogs back
+  within ten seconds; with less motion the picture holds still and the scroll still moves
+  it; without WebGPU the still shows; no console errors. WebKit not run on the Mac.

@@ -1,0 +1,51 @@
+@layer regents-product {
+/* The frosted glass at /animations/frosted-glass. The section is three windows
+   tall, and the picture stays in the window all the way down, so the scroll
+   carries the visitor from the tree's boughs out into the forest. The page's
+   column says its own width, as the picture holds no words to widen it. */
+.motion-lab--glass {
+  width: 100%;
+}
+
+.frosted-glass {
+  position: relative;
+  height: 300svh;
+}
+
+.frosted-glass__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #050a06;
+  /* A sideways stroke wipes the fogged glass; up and down still scrolls the page. */
+  touch-action: pan-y;
+}
+
+.frosted-glass__still,
+.frosted-glass__canvas,
+.frosted-glass canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.frosted-glass__still {
+  object-fit: cover;
+}
+
+.frosted-glass canvas {
+  display: block;
+  visibility: hidden;
+}
+
+.frosted-glass[data-glass-ready="true"] canvas {
+  visibility: visible;
+}
+
+.frosted-glass[data-glass-ready="true"] .frosted-glass__still {
+  display: none;
+}
+}

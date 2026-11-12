@@ -266,3 +266,8 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - The datascape's drawing, flying and panels opening: the walk's browser draws no GPU
   picture, so it opens the page and sees only the still picture. Checked by hand in
   headless Chromium with the Mac's GPU at 1440, 1728, 390 and 320 wide (10 Nov).
+- The frosted glass's drawing, its scroll from the boughs to the forest, and Mist wiping
+  clear under a pointer or finger and fogging back: the walk's browser draws no GPU
+  picture, so it opens the page and sees only the still picture. Checked by hand in
+  headless Chromium with the Mac's GPU, all six looks at 1280, 390 and 320 wide, with
+  less motion and without WebGPU (12 Nov).
