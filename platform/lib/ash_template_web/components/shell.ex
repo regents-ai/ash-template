@@ -35,13 +35,13 @@ defmodule AshTemplateWeb.Components.Shell do
     {"Terms", "/terms"}
   ]
 
-  # The Regents Products, each shown with the crown in its own pair of brand colours.
+  # The Regents Products, each shown with the crown and its name.
   @regents_apps [
-    %{name: "Patchbay", url: "https://patchbay.help", tone: "patchbay"},
-    %{name: "Autolaunch", url: "https://autolaunch.sh", tone: "autolaunch"},
-    %{name: "Techtree", url: "https://techtree.sh", tone: "techtree"},
-    %{name: "Keyfleet", url: "https://keyfleet.ai", tone: "keyfleet"},
-    %{name: "$REGENT Staking", url: "https://regents.sh/stake", tone: "protocol"}
+    %{name: "Patchbay", url: "https://patchbay.help"},
+    %{name: "Autolaunch", url: "https://autolaunch.sh"},
+    %{name: "Techtree", url: "https://techtree.sh"},
+    %{name: "Keyfleet", url: "https://keyfleet.ai"},
+    %{name: "$REGENT Staking", url: "https://regents.sh/stake"}
   ]
 
   @doc "The Regents Products, in the order every menu of them lists them."
@@ -610,7 +610,7 @@ defmodule AshTemplateWeb.Components.Shell do
       <ul>
         <li :for={app <- @apps}>
           <a href={app.url} target="_blank" rel="noopener">
-            <span class="shell-apps__tile" data-tone={app.tone}><.crown /></span>
+            <span class="shell-apps__tile"><.crown /></span>
             <span>{app.name}</span>
           </a>
         </li>

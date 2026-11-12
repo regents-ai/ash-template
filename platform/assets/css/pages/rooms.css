@@ -2,10 +2,16 @@
 /* Rooms stand on the Account page's panels and type; the conversation, its
    messages, the message box and the side lists are their own. */
 
-.rooms-conversation,
+.rooms-conversation {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The side's sections stand apart as the page's own do. */
 .rooms-side {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-6);
   min-width: 0;
 }
 
@@ -21,13 +27,13 @@
   block-size: clamp(20rem, 60dvh, 42rem);
   overflow-y: auto;
   overscroll-behavior: none;
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: 1px solid var(--ash-raised);
 }
 
 .rooms-scroller__inner {
   display: grid;
-  gap: 0.75rem;
-  padding-block: 0.5rem;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
 }
 
 .rooms-older {
@@ -45,18 +51,18 @@
   position: relative;
   display: grid;
   grid-template-columns: 2.25rem minmax(0, 1fr) auto;
-  gap: 0 0.75rem;
+  gap: 0 var(--space-1);
   align-items: start;
-  padding: 0.6rem 0.5rem 0.2rem;
+  padding: var(--space-1) var(--space-1) 0;
 }
 
 .rooms-message[data-continued] {
-  padding-block-start: 0.1rem;
+  padding-block-start: 0;
 }
 
 @media (hover: hover) {
   .rooms-message:hover {
-    background: color-mix(in oklch, var(--color-fg) 4%, transparent);
+    background: var(--ash-raised);
   }
 }
 
@@ -65,17 +71,9 @@
   place-items: center;
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  background: var(--palette-platinum);
-  color: var(--palette-charcoal);
-  font: 0.8rem/1 var(--font-family-ui);
-}
-
-.rooms-avatar[data-tone="0"] {
-  background: var(--palette-tangerine-tango);
-}
-
-.rooms-avatar[data-tone="1"] {
-  background: var(--palette-powder-blue);
+  background: var(--ash-raised);
+  color: var(--ash-ink);
+  font: var(--type-caption-size)/var(--type-caption-line) var(--font-family-ui);
 }
 
 /* A message that continues its author's last one keeps the picture's column
@@ -96,7 +94,7 @@
 
 .rooms-message__main {
   display: grid;
-  gap: 0.15rem;
+  gap: 0;
   min-width: 0;
 }
 
@@ -104,7 +102,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.25rem 0.6rem;
+  gap: 0 var(--space-1);
   margin: 0;
 }
 
@@ -113,24 +111,23 @@
 }
 
 .rooms-message__agent {
-  padding: 0 0.35rem;
-  border: 1px solid var(--color-border);
-  color: var(--color-fg-muted);
-  font: 0.7rem/1.4 var(--font-family-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--ash-raised);
+  color: var(--ash-quiet);
+  font: var(--type-caption-size)/var(--type-caption-line) var(--font-family-ui);
 }
 
 .rooms-message__human {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0;
 }
 
 .rooms-message__meta time,
 .rooms-message__edited {
-  color: var(--color-fg-muted);
-  font-size: 0.8rem;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 .rooms-message__edited {
@@ -140,7 +137,7 @@
 /* The heart sits under the words, its picture lined up with them. */
 .rooms-message__main .rg-discussion__like {
   justify-self: start;
-  margin-inline-start: -0.6rem;
+  margin-inline-start: calc(-1 * var(--space-1));
 }
 
 .rooms-body {
@@ -152,7 +149,7 @@
 .rooms-long {
   display: grid;
   justify-items: start;
-  gap: 0.15rem;
+  gap: 0;
 }
 
 .rooms-body[hidden] {
@@ -181,11 +178,11 @@
   inset: anchor(bottom) anchor(right) auto auto;
   position-try-fallbacks: flip-block;
   min-inline-size: 10rem;
-  margin: 0.25rem 0;
+  margin: var(--space-1) 0;
   padding: 0;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-fg);
+  border: 1px solid var(--ash-quiet);
+  background: var(--ash-raised);
+  color: var(--ash-ink);
   box-shadow: var(--rg-layer-tip-shadow);
 }
 
@@ -200,25 +197,51 @@
 
 .rooms-menu__label {
   margin: 0;
-  padding: 0.5rem 0.85rem 0.25rem;
-  color: var(--color-fg-muted);
-  font-size: 0.875rem;
+  padding: var(--space-1) var(--space-2) 0;
+  color: var(--ash-quiet);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 .rooms-signed-out {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1rem;
+  gap: var(--space-1) var(--space-2);
 }
 
 .rooms-signed-out p {
   margin: 0;
 }
 
+/* The message field's parts join the composer's grid, so its error line sits
+   beside the buttons: a message that cannot be sent says why and nothing moves. */
 .rooms-composer {
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "label label" "box box" "error actions";
+  gap: var(--space-1);
+}
+
+.rooms-composer label {
+  grid-area: label;
+}
+
+.rooms-composer textarea {
+  grid-area: box;
+}
+
+.rooms-composer .rg-field-errors {
+  grid-area: error;
+  align-self: center;
+}
+
+.rooms-composer__actions {
+  grid-area: actions;
+}
+
+.rooms-composer > .rg-notice {
+  grid-column: 1 / -1;
 }
 
 .rooms-composer textarea {
@@ -233,7 +256,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-1);
 }
 
 .rooms-composer__actions {
@@ -244,26 +267,21 @@
   border: 0;
 }
 
-.rooms-composer__hint {
-  margin: 0 auto 0 0;
-  font-size: 0.8rem;
-}
-
-@media (pointer: coarse) {
-  .rooms-composer__hint {
-    display: none;
-  }
-}
-
 .rooms-mutes li {
   justify-content: space-between;
 }
 
-/* Starting a room and changing its topic: fields above a button at the start. */
+/* Starting a room and changing its topic: fields above a button at the start.
+   Each field ends in its own error line, so the fields sit a small step apart
+   and the button a step further. */
 .rooms-start {
   display: grid;
   justify-items: start;
-  gap: 1rem;
+  gap: var(--space-1);
+}
+
+.rooms-start > .rg-button {
+  margin-block-start: var(--space-1);
 }
 
 .rooms-start .rg-field,
@@ -280,7 +298,7 @@
 .rooms-people,
 .rooms-mutes {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -291,7 +309,7 @@
    a read has landed. */
 .rooms-empty {
   display: none;
-  padding: 1rem 0.5rem;
+  padding: var(--space-2) var(--space-1);
 }
 
 .rooms-empty:only-child {
@@ -316,21 +334,24 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   font: inherit;
 }
 
 .rooms-menu .rooms-menu__button:hover,
 .rooms-menu:has(:popover-open) .rooms-menu__button {
-  color: var(--color-fg);
-  background: color-mix(in oklch, var(--color-fg) 8%, transparent);
+  color: var(--ash-ink);
+  background: var(--ash-raised);
 }
+
+/* The menu is a raised fill; its rows part with lines of the page's ground and
+   take that ground when pointed at. */
 
 .rooms-menu .rooms-menu__item {
   min-block-size: 2.75rem;
-  padding: 0.6rem 0.85rem;
+  padding: var(--space-1) var(--space-2);
   border: 0;
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: 1px solid var(--ash-ground);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -343,19 +364,39 @@
 
 @media (hover: hover) {
   .rooms-menu .rooms-menu__item:hover {
-    background: color-mix(in oklch, var(--color-fg) 8%, transparent);
+    background: var(--ash-ground);
   }
 }
 
+/* "Show more" reads as a link. */
 .rooms-long .rooms-more {
   min-block-size: 2rem;
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ash-accent-warm);
+  color: var(--ash-ink);
   font: inherit;
+  text-decoration: underline;
 }
 
 .rooms-long .rooms-more[hidden] {
   display: none;
+}
+
+/* On touch screens a message's menu button and "Show more" are 44px. */
+@media (hover: none), (pointer: coarse) {
+  .rooms-menu .rooms-menu__button {
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+  }
+
+  .rooms-long .rooms-more {
+    min-block-size: 2.75rem;
+  }
+}
+
+/* The shared field's own rule is outside any layer, so the composer opens it up
+   from outside the product layer too. */
+.rooms-composer > .rg-field {
+  display: contents;
 }

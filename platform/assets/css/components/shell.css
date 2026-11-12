@@ -1,5 +1,6 @@
 /* The app shell: one hairline grid of top bar, rail, sidebar, page and bottom
-   bar. Whether the sidebar shows is the visitor's, on <html data-sidebar>. */
+   bar. Whether the sidebar shows is the visitor's, on <html data-sidebar>.
+   Every colour is one of the five in tokens/root.css. */
 
 #app-shell {
   --shell-rail: 4.25rem;
@@ -22,10 +23,11 @@
   min-width: 0;
   height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: visible;
-  background: var(--color-bg);
-  color: var(--color-fg);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
   font-family: var(--font-family-ui);
-  line-height: 1.55;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
 }
 
 :root[data-sidebar="hidden"] #app-shell {
@@ -35,12 +37,12 @@
 /* Unseen until a keyboard reaches it. */
 .shell-skip {
   position: absolute;
-  inset-block-start: 0.5rem;
-  inset-inline-start: 0.5rem;
+  inset-block-start: var(--space-1);
+  inset-inline-start: var(--space-1);
   z-index: var(--rg-layer-skip);
-  padding: 0.5rem 0.75rem;
-  background: var(--color-bg);
-  color: var(--color-fg);
+  padding: var(--space-1) var(--space-2);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
 }
 
 .shell-skip:not(:focus) {
@@ -52,10 +54,12 @@
 }
 
 #app-shell :focus-visible {
-  outline: 2px solid var(--ash-accent);
+  outline: 2px solid var(--ash-ink);
   outline-offset: 2px;
 }
 
+/* The bars' presses fill their row edge to edge, and the drawer scrolls, so a
+   ring drawn outside them would be cut off: it sits just inside instead. */
 #shell-header :focus-visible,
 #shell-drawer :focus-visible,
 #shell-footer :focus-visible {
@@ -77,8 +81,8 @@
   align-items: stretch;
   min-width: 0;
   min-height: var(--shell-header);
-  border-block-end: 1px solid var(--color-border);
-  background: var(--color-bg);
+  border-block-end: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
 }
 
 #shell-header a {
@@ -93,12 +97,12 @@
 #app-shell .mobile-menu-button {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--space-1);
   min-height: 2.75rem;
   height: 100%;
-  padding: 0.45rem 0.85rem;
+  padding: var(--space-1) var(--space-2);
   border: 0;
-  border-inline-start: 1px solid var(--color-border);
+  border-inline-start: 1px solid var(--ash-raised);
   border-radius: 0;
   background: transparent;
   color: inherit;
@@ -109,7 +113,7 @@
 
 .shell-brand {
   margin-inline-start: -1px;
-  border-inline-end: 1px solid var(--color-border);
+  border-inline-end: 1px solid var(--ash-raised);
 }
 
 .shell-brand__name {
@@ -161,19 +165,17 @@
 #app-shell .shell-search-button {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-1);
   align-self: center;
   min-width: min(22rem, 32vw);
   min-height: 2.5rem;
   margin-inline-start: var(--space-2);
-  padding: 0.35rem 0.5rem 0.35rem 0.7rem;
-  border: 1px solid var(--color-border);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: 1px solid var(--ash-quiet);
   border-radius: 0;
-  background: color-mix(in oklch, var(--color-fg) 3%, transparent);
-  color: var(--color-fg-muted);
+  background: var(--ash-ground);
+  color: var(--ash-quiet);
   font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
 }
 
 .shell-search-button__label {
@@ -182,16 +184,17 @@
 }
 
 .shell-search-button__keys {
-  padding: 0.05rem 0.4rem;
-  border: 1px solid var(--color-border);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--ash-raised);
   font-family: var(--font-family-ui);
-  font-size: 0.72rem;
+  font-size: var(--type-code-size);
+  line-height: var(--type-code-line);
 }
 
 .shell-tools {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0;
   margin-inline-end: var(--space-1);
 }
 
@@ -205,7 +208,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   text-decoration: none;
   cursor: pointer;
 }
@@ -223,33 +226,31 @@
 
 @media (hover: hover) {
   #app-shell .shell-tool:hover,
-  #app-shell .shell-search-button:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
-    color: var(--color-fg);
-  }
-
+  #app-shell .shell-search-button:hover,
   .shell-brand:hover,
   #app-shell .mobile-menu-button:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+    background: var(--ash-raised);
+    color: var(--ash-ink);
   }
 }
 
 #app-shell:has(#shell-apps:popover-open) #shell-apps-button {
-  background: var(--ash-panel-strong);
-  color: var(--color-fg);
+  background: var(--ash-raised);
+  color: var(--ash-ink);
 }
 
 /* A name for every icon, shown on hover and on keyboard focus. */
 .shell-tool__tip {
   position: absolute;
-  inset-block-start: calc(100% + 0.35rem);
+  inset-block-start: calc(100% + var(--space-1));
   inset-inline-start: 50%;
   z-index: var(--rg-layer-tip);
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--ash-line-strong);
-  background: var(--color-surface);
-  color: var(--color-fg);
-  font-size: 0.75rem;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--ash-quiet);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
   box-shadow: var(--rg-layer-tip-shadow);
   white-space: nowrap;
   pointer-events: none;
@@ -262,16 +263,17 @@
   opacity: 1;
 }
 
+/* Unread count: the one filled mark in the bar. */
 .shell-tool__count {
   position: absolute;
-  inset-block-start: 0.3rem;
-  inset-inline-end: 0.2rem;
-  min-width: 1.1rem;
-  padding: 0 0.25rem;
-  background: var(--ash-accent-warm);
-  color: var(--color-bg);
-  font-size: 0.66rem;
-  line-height: 1.1rem;
+  inset-block-start: 0.2rem;
+  inset-inline-end: 0.1rem;
+  min-width: 1.125rem;
+  padding: 0;
+  background: var(--ash-signal);
+  color: var(--ash-ground);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
   text-align: center;
 }
 
@@ -294,7 +296,7 @@
 .account-chip .rg-button__label {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--space-1);
 }
 
 /* A long name ends in an ellipsis on one line; Account shows it in full. */
@@ -320,7 +322,7 @@
   width: 1.75rem;
   height: 1.75rem;
   flex: 0 0 auto;
-  border: 1px solid var(--ash-line-strong);
+  border: 1px solid var(--ash-quiet);
 }
 
 /* The squares drawn from the wallet are there at once. The ENS picture lies
@@ -348,47 +350,6 @@
   visibility: hidden;
 }
 
-.shell-brand__mark {
-  position: relative;
-  display: block;
-  width: 1.6rem;
-  height: 1.3rem;
-  flex: 0 0 auto;
-  overflow: hidden;
-}
-
-.shell-brand__mark img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Dark is the default; light shows once chosen, or before any choice on a
-   device that asks for light. */
-.shell-brand__mark-light {
-  display: none;
-}
-
-:root[data-theme="light"] .shell-brand__mark-light {
-  display: block;
-}
-
-:root[data-theme="light"] .shell-brand__mark-dark {
-  display: none;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .shell-brand__mark-light {
-    display: block;
-  }
-
-  :root:not([data-theme]) .shell-brand__mark-dark {
-    display: none;
-  }
-}
-
 .account-control > .rg-button {
   height: auto;
   margin: var(--space-1);
@@ -409,9 +370,6 @@
    it centres itself as the groups beside it do. */
 #app-shell #shell-apps-button {
   align-self: center;
-}
-
-#app-shell #shell-apps-button {
   anchor-name: --shell-apps-button;
 }
 
@@ -429,26 +387,27 @@
   inset: anchor(bottom) anchor(right) auto auto;
   width: min(21rem, calc(100% - 2rem));
   max-height: calc(100dvh - 5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  margin: 0.25rem 0 0;
-  padding: 1rem;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2);
   overflow: auto;
-  border: 1px solid var(--ash-line-strong);
-  background: var(--color-surface);
-  color: var(--color-fg);
+  border: 1px solid var(--ash-quiet);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
   box-shadow: var(--rg-layer-tip-shadow);
 }
 
 .shell-apps h2 {
-  margin: 0 0 0.75rem;
+  margin: 0 0 var(--space-2);
   font-family: var(--font-family-title);
-  font-size: 1.1rem;
+  font-size: var(--type-headline-size);
   font-weight: 400;
+  line-height: var(--type-headline-line);
 }
 
 .shell-apps ul {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.25rem;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -457,56 +416,34 @@
 .shell-apps a {
   display: grid;
   justify-items: center;
-  gap: 0.45rem;
-  padding: 0.75rem 0.25rem;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
   color: inherit;
-  font-size: 0.85rem;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
   text-align: center;
   text-decoration: none;
 }
 
 @media (hover: hover) {
   .shell-apps a:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
+    background: var(--ash-raised);
   }
 }
 
+/* Every app's crown is drawn the same way; its name tells them apart. */
 .shell-apps__tile {
   display: grid;
   place-items: center;
   width: 3.25rem;
   height: 3.25rem;
-  border: 1px solid var(--ash-line-strong);
+  border: 1px solid var(--ash-quiet);
+  background: var(--ash-ground);
+  color: var(--ash-ink);
 }
 
 .shell-apps__crown {
   width: 70%;
-}
-
-/* Each app's crown in its own pair of the four brand colours. */
-.shell-apps__tile[data-tone="patchbay"] {
-  background: var(--palette-platinum);
-  color: var(--palette-charcoal);
-}
-
-.shell-apps__tile[data-tone="autolaunch"] {
-  background: var(--palette-tangerine-tango);
-  color: var(--palette-charcoal);
-}
-
-.shell-apps__tile[data-tone="keyfleet"] {
-  background: var(--palette-charcoal);
-  color: var(--palette-powder-blue);
-}
-
-.shell-apps__tile[data-tone="techtree"] {
-  background: var(--palette-powder-blue);
-  color: var(--palette-charcoal);
-}
-
-.shell-apps__tile[data-tone="protocol"] {
-  background: var(--palette-charcoal);
-  color: var(--palette-tangerine-tango);
 }
 
 /* ---- Rail and sidebar ---- */
@@ -523,8 +460,9 @@
 
 /* The close button of the pairing window, square in its top right corner, and
    kept there while the window scrolls. Its margins give back the room it takes,
-   so what is under it keeps its place. It sits here, outside the product layer, so it wins over the shared
-   button's padding. The pad is the window frame's own. */
+   so what is under it keeps its place. It sits here, outside the product layer,
+   so it wins over the shared button's padding. The pad is the shared window
+   frame's own, so the button meets its corner exactly. */
 .shell-pairing-dialog {
   --shell-dialog-pad: clamp(var(--space-2), 4vw, var(--space-4));
 }
@@ -557,8 +495,8 @@
   flex-direction: column;
   justify-content: space-between;
   min-height: 0;
-  border-inline-end: 1px solid var(--color-border);
-  background: var(--color-bg);
+  border-inline-end: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
 }
 
 #shell-rail ul {
@@ -573,8 +511,8 @@
   display: grid;
   place-items: center;
   height: 3.5rem;
-  border-block-end: 1px solid var(--color-border);
-  color: var(--color-fg-muted);
+  border-block-end: 1px solid var(--ash-raised);
+  color: var(--ash-quiet);
   text-decoration: none;
 }
 
@@ -584,21 +522,23 @@
 
 .shell-rail__section .shell-tool__tip {
   inset-block-start: 50%;
-  inset-inline-start: calc(100% + 0.35rem);
+  inset-inline-start: calc(100% + var(--space-1));
   transform: translateY(-50%);
 }
 
 @media (hover: hover) {
   .shell-rail__section:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
-    color: var(--color-fg);
+    background: var(--ash-raised);
+    color: var(--ash-ink);
   }
 }
 
-.shell-rail__section[aria-current="page"] {
-  background: var(--ash-panel-strong);
-  box-shadow: inset 3px 0 var(--ash-accent);
-  color: var(--color-fg);
+/* The current place: a raised row with a signal bar on its start edge. */
+.shell-rail__section[aria-current="page"],
+#shell-sidebar [aria-current="page"] {
+  background: var(--ash-raised);
+  box-shadow: inset 2px 0 var(--ash-signal);
+  color: var(--ash-ink);
 }
 
 .shell-rail__you {
@@ -606,10 +546,11 @@
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  margin: 0.75rem auto;
+  margin: var(--space-2) auto;
   overflow: hidden;
-  border: 1px solid var(--ash-line-strong);
-  font-size: 0.75rem;
+  border: 1px solid var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
   text-decoration: none;
 }
 
@@ -626,30 +567,30 @@
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  border-inline-end: 1px solid var(--color-border);
-  background: var(--color-bg);
+  border-inline-end: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
 }
 
 :root[data-sidebar="hidden"] #shell-sidebar {
   display: none;
 }
 
+/* The group's name lines up with the rows' words below it. */
 .shell-sidebar__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: var(--shell-bar);
-  padding-inline-start: 0.85rem;
-  border-block-end: 1px solid var(--color-border);
+  padding-inline-start: var(--space-2);
+  border-block-end: 1px solid var(--ash-raised);
 }
 
 .shell-sidebar__head h2 {
   margin: 0;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   font-family: var(--font-family-ui);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 #shell-sidebar ul {
@@ -670,13 +611,12 @@
   align-items: center;
   width: 100%;
   min-height: 2.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-1);
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   font: inherit;
-  font-size: 0.9rem;
   text-align: start;
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -687,15 +627,9 @@
   #shell-sidebar li > a:hover,
   #shell-sidebar li > button:hover,
   .shell-sidebar__new:hover {
-    background: color-mix(in oklch, var(--color-fg) 6%, transparent);
-    color: var(--color-fg);
+    background: var(--ash-raised);
+    color: var(--ash-ink);
   }
-}
-
-#shell-sidebar [aria-current="page"] {
-  background: var(--ash-panel-strong);
-  box-shadow: inset 3px 0 var(--ash-accent);
-  color: var(--color-fg);
 }
 
 .shell-sidebar__page {
@@ -705,15 +639,16 @@
 .shell-sidebar__new {
   margin: var(--space-1) var(--space-1) 0;
   width: auto;
-  border: 1px solid var(--color-border);
-  color: var(--color-fg);
+  border: 1px solid var(--ash-quiet);
+  color: var(--ash-ink);
 }
 
 .shell-sidebar__empty {
   margin: 0;
-  padding: 0.5rem 0.75rem;
-  color: var(--color-fg-muted);
-  font-size: 0.85rem;
+  padding: var(--space-1);
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 .shell-sidebar__list > .shell-sidebar__empty {
@@ -732,15 +667,16 @@
 #app-shell .shell-sidebar-show {
   display: none;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1);
   margin: var(--space-1) 0 0 var(--space-1);
-  padding: 0.3rem 0.6rem;
-  border: 1px solid var(--color-border);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--ash-quiet);
   border-radius: 0;
   background: transparent;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
   cursor: pointer;
 }
 
@@ -759,13 +695,14 @@
   overscroll-behavior: contain;
 }
 
+/* The tabs wrap onto a second row on a narrow screen; the strip never scrolls
+   sideways. */
 .shell-tabs {
   display: flex;
-  gap: 1.5rem;
-  padding-inline: var(--rg-panel-padding);
-  overflow-x: auto;
-  border-block-end: 1px solid var(--color-border);
-  scrollbar-width: thin;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  padding-inline: var(--space-4);
+  border-block-end: 1px solid var(--ash-raised);
 }
 
 .shell-tabs a {
@@ -773,37 +710,45 @@
   flex: 0 0 auto;
   align-items: center;
   min-height: var(--shell-bar);
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   text-decoration: none;
 }
 
+/* The current tab: a signal line under it. Its focus ring sits inside the tab,
+   clear of the rows around it. */
 .shell-tabs a[aria-current="page"] {
-  color: var(--color-fg);
-  box-shadow: inset 0 -2px var(--palette-tangerine-tango);
+  color: var(--ash-ink);
+  box-shadow: inset 0 -2px var(--ash-signal);
+}
+
+#app-shell .shell-tabs a:focus-visible {
+  outline-offset: -2px;
 }
 
 #route-content {
   width: 100%;
   min-height: 100%;
   margin-inline: auto;
-  padding: var(--rg-panel-padding);
+  padding: var(--space-4);
 }
 
 /* ---- Bottom bar ---- */
 
+/* The 44px theme press and tool count set the bar's height; nothing pads it. */
 #shell-footer {
   z-index: var(--rg-layer-card);
   display: flex;
   grid-area: footer;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem 1.5rem;
+  gap: 0 var(--space-3);
   min-height: 2.25rem;
-  padding: 0.25rem 1rem;
-  border-block-start: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-fg-muted);
-  font-size: 0.75rem;
+  padding: 0 var(--space-2);
+  border-block-start: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
+  color: var(--ash-quiet);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 #shell-footer p {
@@ -813,31 +758,31 @@
 .shell-footer__status {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: var(--space-1);
 }
 
 .shell-footer__dot {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: var(--palette-powder-blue);
+  background: var(--ash-ink);
 }
 
 .shell-footer__status[data-healthy="false"] .shell-footer__dot {
-  background: var(--ash-accent-warm);
+  background: var(--ash-signal);
 }
 
 .shell-footer__links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1rem;
+  gap: 0 var(--space-2);
   margin-inline-start: auto;
 }
 
 #shell-footer .rl-header-links {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-1);
 }
 
 #shell-footer .rl-header-links a {
@@ -847,12 +792,6 @@
 #shell-footer .rl-header-links svg {
   width: 0.95rem;
   height: 0.95rem;
-}
-
-/* The footer holds the 2.75rem theme press and tool count without growing past
-   them. */
-#shell-footer :is(.theme-control, .agent-tools-button) {
-  margin-block: -0.25rem;
 }
 
 /* ---- Search ---- */
@@ -876,29 +815,29 @@
   place-items: center;
   min-width: 1.4rem;
   height: 1.4rem;
-  padding: 0 0.3rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-fg-muted);
+  padding: 0;
+  border: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
+  color: var(--ash-quiet);
   font-family: var(--font-family-ui);
-  font-size: 0.7rem;
-  line-height: 1;
+  font-size: var(--type-code-size);
+  line-height: var(--type-code-line);
 }
 
 #shell-search-form {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0 0.75rem 0 1.1rem;
-  border-block-end: 1px solid var(--color-border);
+  gap: var(--space-1);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-block-end: 1px solid var(--ash-raised);
 }
 
 .shell-search__glass {
   flex: none;
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
 }
 
 #shell-search-input {
@@ -908,22 +847,18 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-fg);
+  color: var(--ash-ink);
   font: inherit;
-  font-size: 1.1rem;
 }
 
-/* The field fills the top of the box, so its line marks focus instead of a frame. */
+/* The field fills the top of the box, whose edge would cut a ring drawn
+   outside it, so its ring sits just inside. */
 #app-shell #shell-search-input:focus-visible {
-  outline: none;
-}
-
-#shell-search-form:has(#shell-search-input:focus-visible) {
-  border-block-end-color: var(--ash-accent);
+  outline-offset: -2px;
 }
 
 #shell-search-input::placeholder {
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
 }
 
 #shell-search-input::-webkit-search-cancel-button {
@@ -938,9 +873,10 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-fg-muted);
+  color: var(--ash-quiet);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
   cursor: pointer;
 }
 
@@ -951,47 +887,42 @@
 #shell-search-results {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0.5rem;
+  padding: var(--space-1);
   overflow: auto;
   overscroll-behavior: contain;
 }
 
 #shell-search-results section + section {
-  margin-block-start: 0.5rem;
+  margin-block-start: var(--space-1);
 }
 
 #shell-search-results h3 {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-1);
   margin: 0;
-  padding: 0.6rem 0.6rem 0.35rem;
-  color: var(--color-fg-muted);
+  padding: var(--space-1) var(--space-1) 0;
+  color: var(--ash-quiet);
   font-family: var(--font-family-ui);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.shell-search__count {
-  letter-spacing: 0;
-  opacity: 0.7;
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
 }
 
 #shell-search-results [data-search-result] {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.6rem;
+  gap: var(--space-1);
+  padding: var(--space-1);
   border-inline-start: 2px solid transparent;
-  color: var(--color-fg);
+  color: var(--ash-ink);
   text-decoration: none;
-  scroll-margin-block: 2.5rem 0.5rem;
+  scroll-margin-block: var(--space-5) var(--space-1);
 }
 
+/* The chosen result: a raised row with a signal bar on its start edge. */
 #shell-search-results [data-search-result][aria-selected="true"] {
-  border-inline-start-color: var(--ash-accent-warm);
-  background: var(--ash-panel-strong);
+  border-inline-start-color: var(--ash-signal);
+  background: var(--ash-raised);
 }
 
 .shell-search__kind {
@@ -1000,9 +931,9 @@
   place-items: center;
   width: 2rem;
   height: 2rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  color: var(--color-fg-muted);
+  border: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
+  color: var(--ash-quiet);
 }
 
 .shell-search__kind .shell-icon {
@@ -1011,19 +942,19 @@
 }
 
 .shell-search__kind[data-kind="action"] {
-  color: var(--ash-accent-warm);
+  color: var(--ash-signal);
 }
 
 .shell-search__kind[data-kind="note"],
 .shell-search__kind[data-kind="message"] {
-  color: var(--ash-accent);
+  color: var(--ash-ink);
 }
 
 .shell-search__text {
   display: grid;
   flex: 1;
   min-width: 0;
-  gap: 0.1rem;
+  gap: 0;
 }
 
 .shell-search__label {
@@ -1035,15 +966,17 @@
 .shell-search__detail {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--color-fg-muted);
-  font-size: 0.85rem;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow-wrap: anywhere;
 }
 
+/* The words that matched sit on a raised fill. */
 #shell-search-results mark {
-  background: color-mix(in oklch, var(--palette-tangerine-tango) 22%, transparent);
+  background: var(--ash-raised);
   color: inherit;
 }
 
@@ -1058,16 +991,16 @@
 .shell-search__empty {
   display: grid;
   justify-items: center;
-  gap: 0.35rem;
-  padding: 2.5rem 1.5rem;
-  color: var(--color-fg-muted);
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-3);
+  color: var(--ash-quiet);
   text-align: center;
 }
 
 .shell-search__empty .shell-icon {
   width: 1.75rem;
   height: 1.75rem;
-  margin-block-end: 0.5rem;
+  margin-block-end: var(--space-1);
 }
 
 .shell-search__empty p {
@@ -1075,24 +1008,26 @@
 }
 
 .shell-search__empty strong {
-  color: var(--color-fg);
+  color: var(--ash-ink);
   overflow-wrap: anywhere;
 }
 
 .shell-search__footer {
   display: flex;
   flex: none;
-  gap: 1.25rem;
-  padding: 0.6rem 1.1rem;
-  border-block-start: 1px solid var(--color-border);
-  color: var(--color-fg-muted);
-  font-size: 0.78rem;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-block-start: 1px solid var(--ash-raised);
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
+/* A key and its word stay apart by a step, so the key's box never touches it. */
 .shell-search__footer span {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-1);
 }
 
 /* A phone has no keys to name, so the box takes the top of the screen and
@@ -1100,7 +1035,7 @@
 @media (max-width: 47.99rem) {
   .shell-search {
     max-block-size: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    margin-block-start: calc(0.5rem + env(safe-area-inset-top));
+    margin-block-start: calc(var(--space-1) + env(safe-area-inset-top));
   }
 
   .shell-search .shell-search__esc,
@@ -1115,7 +1050,7 @@
 
   #app-shell .shell-search__close {
     min-height: 2.75rem;
-    padding-inline: 0.5rem;
+    padding-inline: var(--space-1);
   }
 }
 
@@ -1157,7 +1092,7 @@
     flex: 0 0 auto;
     justify-content: center;
     min-width: 2.75rem;
-    padding-inline: 0.45rem;
+    padding-inline: var(--space-1);
   }
 
   #app-shell .mobile-menu-button {
@@ -1165,11 +1100,10 @@
     flex: 0 0 auto;
     justify-content: center;
     min-width: 2.75rem;
-    padding-inline: 0.5rem;
+    padding-inline: var(--space-1);
     font-family: var(--font-family-ui);
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line);
   }
 
   #app-shell .shell-search-button {
@@ -1198,7 +1132,7 @@
     flex-shrink: 1;
     min-width: 2.75rem;
     max-width: 6rem;
-    padding-inline: 0.5rem;
+    padding-inline: var(--space-1);
     overflow: hidden;
     white-space: nowrap;
   }
@@ -1225,9 +1159,10 @@
   }
 
   .account-control > .rg-button {
-    margin: 4px;
-    padding-inline: 0.75rem;
-    font-size: 0.75rem;
+    margin: var(--space-1) 0;
+    padding-inline: var(--space-1);
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line);
   }
 
   #shell-drawer {
@@ -1241,8 +1176,8 @@
       / var(--shell-rail) minmax(0, 1fr);
     width: min(22rem, calc(100% - 3rem));
     padding-block-end: env(safe-area-inset-bottom);
-    border-inline-end: 1px solid var(--ash-line-strong);
-    background: var(--color-bg);
+    border-inline-end: 1px solid var(--ash-quiet);
+    background: var(--ash-ground);
     box-shadow: var(--rg-layer-panel-shadow);
   }
 
@@ -1256,7 +1191,6 @@
     overscroll-behavior: contain;
   }
 
-
   #app-shell #shell-sidebar-button,
   #app-shell .shell-sidebar-show,
   :root[data-sidebar="hidden"] #app-shell .shell-sidebar-show {
@@ -1269,16 +1203,16 @@
     width: 100%;
     min-height: 2.75rem;
     border: 0;
-    border-block-end: 1px solid var(--color-border);
+    border-block-end: 1px solid var(--ash-raised);
     border-radius: 0;
     background: transparent;
-    color: var(--color-fg-muted);
+    color: var(--ash-quiet);
     font-family: var(--font-family-ui);
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line);
   }
 
+  /* The page stays in view beside the open menu; a press on it closes the menu. */
   .shell-menu-scrim {
     position: fixed;
     inset: var(--shell-header-end) 0 0;
@@ -1289,27 +1223,25 @@
     padding: 0;
     border: 0;
     border-radius: 0;
-    background: color-mix(in oklch, var(--color-bg) 72%, transparent);
+    background: transparent;
   }
 
   .shell-menu-scrim[hidden] {
     display: none;
   }
 
-  /* Four tabs fit a 320px phone without the strip scrolling. */
   .shell-tabs {
-    gap: 0.625rem;
-    padding-inline: 1rem;
-    font-size: 0.875rem;
+    gap: 0 var(--space-2);
+    padding-inline: var(--space-2);
   }
 
   #route-content {
-    padding: 1rem;
+    padding: var(--space-2);
   }
 
   /* On a phone the panel spans the screen, still straight under the button. */
   .shell-apps {
-    inset: anchor(bottom) 0.5rem auto;
+    inset: anchor(bottom) var(--space-1) auto;
     width: auto;
   }
 
@@ -1322,35 +1254,45 @@
     margin-inline-start: auto;
   }
 
-  /* Status, tool count and theme share one row. */
+  /* Status, tool count and theme share one row, at caption size. */
   #shell-footer {
-    column-gap: 0.5rem;
+    column-gap: var(--space-1);
+    padding-inline: var(--space-1);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
   }
 }
 
-/* The narrowest phones: a tighter Menu keeps the whole header, and the bottom
-   bar, on one row at 320px. */
+/* The narrowest phones: the account button is its picture alone, so the whole
+   header, and the bottom bar, stay on one row at 320px. */
 @media (max-width: 23.75rem) {
-  #app-shell .mobile-menu-button {
-    padding-inline: 0.35rem;
-    letter-spacing: 0.04em;
-  }
-
-  /* Narrower still, the account button is its picture alone. */
   #app-shell .account-chip {
     max-width: 2.75rem;
   }
 
   #shell-footer {
-    padding-inline: 0.5rem;
+    padding-inline: var(--space-1);
   }
 }
 
-/* On touch screens every press in the rail and the list is at least 44px. */
+/* On touch screens every press in the shell is at least 44px. */
 @media (hover: none), (pointer: coarse) {
   .shell-rail__you {
     width: 2.75rem;
     height: 2.75rem;
+  }
+
+  #app-shell .shell-search-button {
+    min-height: 2.75rem;
+  }
+
+  .shell-footer__links a,
+  #shell-footer .rl-header-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
   }
 
   #shell-sidebar li > a,

@@ -41,6 +41,7 @@ defmodule AshTemplateWeb.PollsLive do
        poll: %Read{},
        form: nil,
        notice: nil,
+       vote_error: nil,
        clock: nil
      )}
   end
@@ -71,12 +72,13 @@ defmodule AshTemplateWeb.PollsLive do
         {:ok, socket}
 
       shown_actor == actor ->
-        {:ok, socket |> assign(shown: {actor, poll_id}, notice: nil) |> load_poll()}
+        {:ok,
+         socket |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil) |> load_poll()}
 
       true ->
         {:ok,
          socket
-         |> assign(shown: {actor, poll_id}, notice: nil)
+         |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil)
          |> load_polls()
          |> new_form()
          |> load_poll()}
@@ -97,13 +99,15 @@ defmodule AshTemplateWeb.PollsLive do
   def handle_event("vote", %{"choice" => choice}, %{assigns: %{actor: actor}} = socket)
       when actor != nil do
     case Polls.vote(socket.assigns.poll_id, %{choice: choice}, actor: actor) do
-      {:ok, _vote} -> {:noreply, socket |> assign(:notice, nil) |> load_poll()}
+      {:ok, _vote} -> {:noreply, socket |> assign(notice: nil, vote_error: nil) |> load_poll()}
       {:error, error} -> {:noreply, socket |> assign(:notice, refusal(error)) |> load_poll()}
     end
   end
 
   def handle_event("vote", _params, socket),
-    do: {:noreply, assign(socket, :notice, "Choose one, then vote.")}
+    do: {:noreply, assign(socket, :vote_error, "Choose one, then vote.")}
+
+  def handle_event("choose", _params, socket), do: {:noreply, assign(socket, :vote_error, nil)}
 
   def handle_event("end", _params, %{assigns: %{poll: %Read{value: %Poll{} = poll}}} = socket) do
     case Polls.end_poll(poll, actor: socket.assigns.actor) do
@@ -179,7 +183,7 @@ defmodule AshTemplateWeb.PollsLive do
               value={@form[:question].value}
               maxlength="200"
               autocomplete="off"
-              phx-debounce="300"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
             />
@@ -195,7 +199,7 @@ defmodule AshTemplateWeb.PollsLive do
               name="poll[choices_text]"
               rows="4"
               maxlength="1009"
-              phx-debounce="300"
+              phx-debounce="blur"
               aria-invalid={field.aria_invalid}
               aria-describedby={field.described_by}
             >{@form.params["choices_text"]}</textarea>
@@ -207,7 +211,12 @@ defmodule AshTemplateWeb.PollsLive do
             label="Open for"
             errors={FormErrors.messages(@form[:minutes])}
           >
-            <select id={field.id} name={@form[:minutes].name} aria-describedby={field.described_by}>
+            <select
+              id={field.id}
+              name={@form[:minutes].name}
+              phx-debounce="blur"
+              aria-describedby={field.described_by}
+            >
               <option
                 :for={minutes <- minutes()}
                 value={minutes}
@@ -243,15 +252,19 @@ defmodule AshTemplateWeb.PollsLive do
           for={%{}}
           id="poll-vote-form"
           class="polls-vote"
+          phx-change="choose"
           phx-submit="vote"
           phx-target={@myself}
         >
-          <fieldset>
+          <fieldset class="rg-field" aria-describedby={@vote_error && "poll-vote-errors"}>
             <legend class="visually-hidden">Your vote</legend>
             <label :for={choice <- @poll.value.choices} class="polls-choice">
               <input type="radio" name="choice" value={choice} />
               <span>{choice}</span>
             </label>
+            <div id="poll-vote-errors" class="rg-field-errors" aria-live="polite">
+              <p :if={@vote_error}>{@vote_error}</p>
+            </div>
           </fieldset>
           <Primitives.button type="submit" phx-disable-with="Voting…">Vote</Primitives.button>
         </.form>

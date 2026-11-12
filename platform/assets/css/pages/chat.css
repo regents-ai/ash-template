@@ -4,7 +4,7 @@
 
 .chat-conversation {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -17,7 +17,7 @@
   block-size: clamp(20rem, 60dvh, 42rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: 1px solid var(--ash-raised);
 }
 
 /* A chat with no messages yet takes only the room its prompt needs. */
@@ -27,8 +27,8 @@
 
 .chat-scroller__inner {
   display: grid;
-  gap: 0.75rem;
-  padding-block: 0.5rem;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
 }
 
 .chat-writing {
@@ -37,7 +37,7 @@
 
 .chat-messages {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -45,12 +45,13 @@
 
 .chat-message {
   display: grid;
-  gap: 0.25rem;
+  gap: 0;
   justify-items: start;
   max-inline-size: min(100%, 42rem);
 }
 
-/* The person's own messages sit to the right, the assistant's to the left. */
+/* The person's own messages sit to the right on a raised fill, the
+   assistant's to the left in a frame. */
 .chat-message[data-source="user"] {
   justify-self: end;
   justify-items: end;
@@ -58,20 +59,21 @@
 
 .chat-message__author {
   margin: 0;
-  color: var(--color-fg-muted);
-  font-size: 0.8rem;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 .chat-message__body {
   min-width: 0;
-  padding: 0.6rem 0.85rem;
-  border: 1px solid var(--color-border);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--ash-raised);
   overflow-wrap: anywhere;
 }
 
 .chat-message[data-source="user"] .chat-message__body {
   border-color: transparent;
-  background: color-mix(in oklch, var(--palette-powder-blue) 22%, var(--color-surface));
+  background: var(--ash-raised);
 }
 
 .chat-message__body > :first-child {
@@ -86,9 +88,42 @@
   overflow-x: auto;
 }
 
+/* Below the desktop width code in an answer wraps rather than scrolling sideways. */
+@media (max-width: 63.99rem) {
+  .chat-message__body pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* The message field's parts join the composer's grid, so its error line sits
+   beside the button: a message that cannot be sent says why and nothing moves. */
 .chat-composer {
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "label label" "box box" "error actions";
+  gap: var(--space-1);
+}
+
+.chat-composer label {
+  grid-area: label;
+}
+
+.chat-composer textarea {
+  grid-area: box;
+}
+
+.chat-composer .rg-field-errors {
+  grid-area: error;
+  align-self: center;
+}
+
+.chat-composer__actions {
+  grid-area: actions;
+}
+
+.chat-composer > .rg-notice {
+  grid-column: 1 / -1;
 }
 
 .chat-composer textarea {
@@ -103,29 +138,18 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--space-1);
   min-inline-size: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.chat-composer__hint {
-  margin: 0 auto 0 0;
-  font-size: 0.8rem;
-}
-
-@media (pointer: coarse) {
-  .chat-composer__hint {
-    display: none;
-  }
-}
-
 /* The empty line shows only when it is the list's one child, and only once
    a read has landed. */
 .chat-empty {
   display: none;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-1);
 }
 
 .chat-empty:only-child {
@@ -135,4 +159,10 @@
 .chat-messages:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .chat-empty {
   display: none;
 }
+}
+
+/* The shared field's own rule is outside any layer, so the composer opens it up
+   from outside the product layer too. */
+.chat-composer > .rg-field {
+  display: contents;
 }

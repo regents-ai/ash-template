@@ -91,7 +91,7 @@ defmodule AshTemplateWeb.HeaderFooterLive do
     ~H"""
     <header id={@id} class="site-header">
       <a class="site-header__brand" href={~p"/"}>
-        <span class="shell-apps__tile" data-tone="protocol"><Shell.crown /></span>
+        <span class="shell-apps__tile"><Shell.crown /></span>
         <span class="site-header__name">Ash Template</span>
       </a>
       <nav class="site-header__nav" aria-label="Ash Template">
@@ -108,7 +108,7 @@ defmodule AshTemplateWeb.HeaderFooterLive do
             <ul class="site-products__list">
               <li :for={product <- @products}>
                 <a class="site-products__item" href={product.url} target="_blank" rel="noopener">
-                  <span class="shell-apps__tile" data-tone={product.tone}><Shell.crown /></span>
+                  <span class="shell-apps__tile"><Shell.crown /></span>
                   <span>{product.name}</span>
                 </a>
               </li>
