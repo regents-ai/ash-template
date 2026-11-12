@@ -8862,7 +8862,7 @@ template as one piece every site takes, and a Motion lab page that shows it.
 ## 2026-11-12 — Released v216: the value cards page
 
 - `01568275` (`tpl/value-cards-1112` merged onto main) is v216 on template.regents.sh,
-  switched at about 16:50Z with `scripts/deploy.sh`. It adds the value cards as one
+  switched at about 16:27Z with `scripts/deploy.sh`. It adds the value cards as one
   shared piece and the page `/animations/cards` (Sean, 12 Nov: sites take their cards
   from the template). No migration.
 - Rollback: v215 (`a95458c3`), image only.
