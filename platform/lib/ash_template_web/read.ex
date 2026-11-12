@@ -10,10 +10,15 @@ defmodule AshTemplateWeb.Read do
   read's name in `mount/3` and hand every result on with
   `def handle_async({Read, _, _} = name, result, socket)`. A read of the site's
   own database uses `now/4` instead, so the first render already shows it.
+
+  A read that fails on a connected page, in the LiveView or any of its
+  components, also sends `{Read, :failed}` to the page's process, which is how
+  the shell's bottom bar learns that something is not answering without a query
+  of its own. A LiveView that defines `handle_info/2` and uses `Read` handles it.
   """
 
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [start_async: 3]
+  import Phoenix.LiveView, only: [connected?: 1, start_async: 3]
 
   @type state :: :idle | :loading | :ready | :empty | :stale | :error
 
@@ -53,7 +58,7 @@ defmodule AshTemplateWeb.Read do
         failure in [Postgrex.Error, DBConnection.ConnectionError] -> {:exit, failure}
       end
 
-    assign(socket, name, landed(read, result))
+    land(socket, name, read, result)
   end
 
   @doc "Empties `name` when its owner leaves: navigation, sign-out or a wallet switch."
@@ -65,9 +70,18 @@ defmodule AshTemplateWeb.Read do
   @doc "Lands a `handle_async/3` result for the current generation; drops any other."
   def settle(socket, {__MODULE__, name, generation}, result) do
     case Map.fetch!(socket.assigns, name) do
-      %__MODULE__{generation: ^generation} = read -> assign(socket, name, landed(read, result))
+      %__MODULE__{generation: ^generation} = read -> land(socket, name, read, result)
       _moved_on -> socket
     end
+  end
+
+  defp land(socket, name, read, result) do
+    read = landed(read, result)
+
+    if read.state in [:stale, :error] and connected?(socket),
+      do: send(self(), {__MODULE__, :failed})
+
+    assign(socket, name, read)
   end
 
   defp landed(read, {:ok, {:ok, value}}),

@@ -18,6 +18,7 @@ defmodule AshTemplate.Application do
     :ok = RegentHttp.ErrorSaving.attach()
     :ok = AshTemplate.IdleDisconnects.attach()
     :ok = AshTemplateWeb.VisitLog.Events.attach()
+    :ok = AshTemplate.Health.attach()
     # Visit lines' own handler (config/runtime.exs), and the default handler leaves them to it.
     :ok = Logger.add_handlers(:ash_template)
     :ok = :logger.add_handler_filter(:default, :visits, AshTemplateWeb.VisitLog.default_filter())
