@@ -8921,6 +8921,87 @@ template as one piece every site takes, and a Motion lab page that shows it.
 - Known: at this pin the style check passes silently on a machine without ripgrep.
   Fixed in design-system `0ae2bffc`; the template takes it in its next release.
 
+## 2026-11-12 — The Credits schema leaves the shared database (branch, not on main)
+
+Sean, 12 November: Credits are removed from every Regent site and the shared database
+drops them. On `tpl/credits-drop-1112`; it runs on production only once every site has
+stopped reading the Credits tables, and only after the founder's lock comes off them.
+
+- `20261112130000_remove_credits_schema` removes the `regent_credits` schema: its 13
+  tables (the Credits ledger's own `schema_migrations` included), then the
+  `revoke_credit_grant` trigger the Credits package hung on
+  `regent_agents.paired_agents`, then its two functions (`refuse_change`,
+  `revoke_pairing_grant`), then the schema. Nothing cascades, so anything else still
+  depending on them fails the migration and the whole of it rolls back; it waits at
+  most 5 seconds for a lock. Every statement is `IF EXISTS`, so local and test
+  databases, which never had Credits, are unchanged. It cannot be rolled back.
+- Untouched: `regent_names.basenames_payment_credits` (not Credits), the
+  `public.money_with_currency` type and the Ash helper functions in `public` that
+  other sites use, and `regent_agents.paired_agents` itself and its rows.
+- Production order, outside this repository: copy the 13 tables to CSV
+  (`artifacts/prod-protected-tables/credits-copy.sql` in the workspace, read only),
+  take the ten Credits tables off the lock (`unprotect-credits.sql` beside it; every
+  other protected table keeps its lock), then release this migration.
+- Proved on a throwaway database built from the Credits package's own 15 migrations
+  with the lock applied by the production lock file: the migration is refused by the
+  ten guard views and changes nothing; the copy writes 13 files whose rows match its
+  counts; the unlock leaves the other protected tables locked; the migration then
+  removes everything above and nothing else. A new test database migrates through it
+  unchanged.
+
+## 2026-11-12 — The Credits lock comes off inside the removal migration (branch, not on main)
+
+Sean's 18 a, 12 November: the founder's lock comes off exactly the ten Credits tables
+inside `20261112130000_remove_credits_schema`, in its one transaction, instead of by
+hand beforehand. This replaces the unlock step in the entry above;
+`unprotect-credits.sql` was not used.
+
+- The migration now runs, in order: the ten tables' guard views (one
+  `DROP VIEW IF EXISTS`), their ten rows in `regent_guard.protected_tables` (by name,
+  and only where that list exists), the 13 tables (the lock's triggers on them go with
+  them), the `revoke_credit_grant` trigger, the two functions, the schema. Still
+  nothing cascades, one transaction, a 5 second lock wait, and it cannot be rolled
+  back. It checks nothing about other tables; every other protected table keeps its
+  lock.
+- Production order: copy the 13 tables to CSV (read only), then release this
+  migration.
+- Proved on PostgreSQL 16.15 (production's version) and 17.7, on a throwaway database
+  built from the Credits package's own 15 migrations with the production lock file
+  applied: with the lock on, the migration alone succeeds; the lock list loses exactly
+  ten rows and its deletable count exactly one; the other protected tables keep their
+  list rows, guard views and triggers (`paired_agents` loses only the Credits
+  trigger); a view on a Credits table planted in another schema stops it and leaves
+  everything, the lock included, exactly as before; it succeeds when run by a role
+  that is only a member of the owning role; a second run, and a run on a database
+  without the lock or Credits, change nothing. A new test database migrates through
+  it unchanged.
+
+## 2026-11-12 — Released v218: the Credits schema is gone from the shared database
+
+- `41e054b1` (main `4af45439` plus `tpl/credits-drop-1112` at `9a67a83f`) is v218 on
+  template.regents.sh, released with `scripts/deploy.sh`; the release step ran migration
+  `20261112130000_remove_credits_schema` at about 17:28Z. Sean's order of 12 Nov and his
+  letters 15 a and 18 a. No page or code change.
+- Before, read at 17:24:03Z in one read-only snapshot: 13 tables, 268 rows (accounts 175,
+  wallets 56, balances 10, purchases 5, transfers 5, agent_permissions 1,
+  deposit_cursors 1, schema_migrations 15, five empty); lock list 62 tables, 9 deletable,
+  10 Credits. The 268 rows are saved outside any repository in
+  `/Users/sean/Documents/regent/artifacts/prod-protected-tables/credits-copy-2026-11-12-final`.
+- After, read at 17:29:59Z: no `regent_credits` schema, tables or functions; no
+  `keep_regent_credits__*` guard views; `revoke_credit_grant` is off
+  `regent_agents.paired_agents`, whose 22 rows and two other triggers are untouched; lock
+  list 52 tables, 8 deletable, 0 Credits, every listed table exists.
+- Confirmed live without Credits beforehand: template, design-system, Techtree, Sentinel,
+  siwa-server, regents.sh v299, Patchbay v370, Keyfleet, Autolaunch v271.
+- Rollback: the site goes back to the v217 image (`f2695d5c`). The removal itself cannot
+  be undone; `down` raises. regents.sh cannot roll back to v298 or earlier, Patchbay not
+  to v369 or earlier.
+- Check: the branch's full check was green on `9a67a83f`, which already held v217; main
+  since added only a changelog record, so it was not run again. Rehearsed on Postgres
+  16.15 and 17.7 with the lock on.
+- Left: Patchbay's own `patchbay_app.credits_help_posts` and `credits_help_answers`
+  (its chief's), and the elixir-utils `credits/` package, deleted next.
+
 ## 2026-11-12 — Someone with no name shows by their wallet, rebuilt on main (branch, not on main)
 
 **This branch's migration rewrites existing rows** in `room_messages`, `room_mutes` and
@@ -9021,8 +9102,9 @@ release waits for Sean's go.
 **This branch's two migrations rewrite existing rows**; they delete none. Sean's 17 a of
 12 Nov releases them.
 
-- `tpl/names-release-1112` is `tpl/names-1112` (`f9a02401`) with main (`4af45439`, v217)
-  merged in, no rebase. The release record and the public changelog keep every entry
+- `tpl/names-release-1112` is `tpl/names-1112` (`f9a02401`) with main merged in twice,
+  no rebase: `4af45439` (v217), then `a09f7821` (v218, which adds only the Credits
+  removal migration and its record). The release record and the public changelog keep every entry
   from both sides by date. `cli/COMMANDS.md` and the agent guide's Live feed keep main's
   `feed` command and its `--wake`, with the branch's author shape (`kind`, `name`,
   `wallet`, `ens_name`; `name` null when they show by their wallet). The three OpenAPI
@@ -9032,8 +9114,8 @@ release waits for Sean's go.
   check stops with exit 2, naming what is missing, when ripgrep, awk or perl is not
   installed. `make check-style` prints no breaks; a scratch unmarked glass line fails it
   (exit 1 from the script); with ripgrep hidden the script exits 2.
-- Migrations: main added none after `20261112120100`, so `20261112151609` and
-  `20261112153800` still run after everything production has run.
-- Forecast re-check on a local throwaway database migrated through `20261112120100`:
-  `rows.sql` and `sweep-rows.sql` read-only on the seeded rows, then the two real
-  migrations; every row ended as the two files forecast.
+- Migrations: main's newest is `20261112130000_remove_credits_schema` (v218), so
+  `20261112151609` and `20261112153800` still run after everything production has run.
+- Forecast re-check on local throwaway databases migrated through `20261112120100`, then
+  again through `20261112130000`: `rows.sql` and `sweep-rows.sql` read-only on the seeded
+  rows, then the two real migrations; every row ended as the two files forecast.
