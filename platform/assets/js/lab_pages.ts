@@ -8,7 +8,8 @@ import {Harbour} from "./hooks/harbour"
 import {KeyfleetField, KeyfleetKeyCard, KeyfleetReplay} from "./hooks/keyfleet_hero"
 import {SwarmCity} from "./hooks/swarm_city"
 import {TwinCube} from "./hooks/twin_cube"
+import {ValueCard} from "./hooks/value_card"
 import {Wonder} from "./hooks/wonder"
 import {WorldCube} from "./hooks/world_cube"
 
-export const hooks = {Crown, CodeCube, Harbour, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, SwarmCity, TwinCube, Wonder, WorldCube}
+export const hooks = {Crown, CodeCube, Harbour, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, SwarmCity, TwinCube, ValueCard, Wonder, WorldCube}

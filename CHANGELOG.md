@@ -7670,3 +7670,20 @@ sits on its own branches.
   `ce5503d3`; `/`, `/about`, `/docs`, `/agents` and `/animations` answer 200 at 1280 and
   390 with no page errors and no sideways scroll; the motion lab's tab fill carries its
   own position. Fly logs: no errors after the switch.
+
+## 2026-11-12 — Value cards in the motion lab
+
+- `/animations/value-cards`: forty-four value cards, one for each thing Autolaunch, Techtree,
+  Patchbay, Keyfleet, Cloak, $REGENT and WebMCP do. Each card is dark in both themes, with a
+  square panel of small coloured glyphs drawn by vgpu in the shared canvas island, its own
+  three-colour gradient mixed in OKLab, and a pattern that follows a mouse.
+- `AshTemplateWeb.Components.ValueCards` is the row a site uses: each card is a map of its
+  panel's name, its words, the colour its name takes and where it goes. A card with no
+  destination is not a link.
+- Each panel is one file in `platform/assets/js/value_cards/panels/` (colours, grid, still
+  moment and shader body); `panel.ts` holds the shader code they share. Every panel on a page
+  draws on one GPU device.
+- `npm run stills:value-cards` draws each panel's still frame into
+  `platform/priv/static/images/value-cards/`. The still is the picture until the panel has
+  drawn, and stays for a visitor without WebGPU or who asked for less motion.
+- `skills/vgpu-island/references/value-cards.md` says how a site takes a card.

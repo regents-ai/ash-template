@@ -118,3 +118,8 @@ exists. Without WebGPU the island never mounts and the server's picture remains.
 the lab page `/animations/datascape`),
 `hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer
 is vendored from `regent_ui`), and the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`.
+
+Value cards (`hooks/value_card.ts` + `value_cards/`, the lab page `/animations/value-cards`)
+are the island to copy for a row of feature cards: many small panels on one device, each
+panel one file. [Value cards](references/value-cards.md) says how a site takes a card and
+how to write a new panel.
