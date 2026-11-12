@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Motion lab.** A new page, Cards: six cards, each with its own moving picture that
+  follows your pointer. Every Regent site can show a row like it on its home page.
 - **Motion lab.** A new page, Grain: harbour water in a fine, still grain, with two
   slow wakes under a heading.
 - **Motion lab.** A new page, Ink: a small scene whose lines draw themselves once, and
