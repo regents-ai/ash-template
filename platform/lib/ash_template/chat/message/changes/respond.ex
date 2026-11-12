@@ -10,7 +10,9 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
   it starts, which every open page hears, and whole when it ends. Each piece in
   between is only broadcast, as `"piece"` with `%{id: reply_id, text: piece}` on
   the conversation's topic: a page that heard the reply start shows the pieces,
-  and the whole reply replaces them.
+  and the whole reply replaces them. Every attempt at a message, and its failure
+  line, writes the reply already started for it, so a message has one reply
+  however many attempts run.
   """
 
   use Ash.Resource.Change
@@ -77,9 +79,19 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
   defp prompt_message(%{source: :user, text: text}), do: Context.user(text)
 
   defp start(message) do
-    reply_id = Ash.UUIDv7.generate()
+    reply_id = reply_id(message)
     save(message, reply_id, %{text: "", complete: false})
     reply_id
+  end
+
+  # The reply an earlier attempt started, or a new one. The assistant reads it,
+  # as it writes it: the job's actor may be an agent unpaired since it sent the
+  # message.
+  defp reply_id(message) do
+    case Ash.load!(message, :response, actor: %AshAi{}) do
+      %{response: nil} -> Ash.UUIDv7.generate()
+      %{response: reply} -> reply.id
+    end
   end
 
   defp collect({:content, content}, reply, _message, _reply_id) when content in [nil, ""],
@@ -141,12 +153,12 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
   end
 
   @doc """
-  Ends the reply `reply_id` to `message` with a line saying it failed, so every
-  open page stops waiting for it. The message's `:fail_response` action calls it
-  when the reply's job has failed for good.
+  Ends the reply to `message`, the one already started or a new one, with a line
+  saying it failed, so every open page stops waiting for it. The message's
+  `:fail_response` action calls it when the reply's job has failed for good.
   """
-  def save_failed(message, reply_id),
-    do: save(message, reply_id, %{complete: true, text: error_text(:failed)})
+  def save_failed(message),
+    do: save(message, reply_id(message), %{complete: true, text: error_text(:failed)})
 
   defp name_conversation(message, context) do
     conversation =

@@ -138,18 +138,14 @@ defmodule AshTemplate.Chat.Message do
 
     # Called by the `:respond` trigger once its job has failed for good. The reply
     # already started, or a new reply, becomes a line saying so;
-    # without it the page would show "The assistant is writing…" forever. The
-    # reply is read and written as the assistant, as `Respond` writes it: the
-    # job's actor may be an agent unpaired since it sent the message.
+    # without it the page would show "The assistant is writing…" forever.
     update :fail_response do
       accept []
       argument :error, :term
       require_atomic? false
 
       change after_action(fn _changeset, message, _context ->
-               %{response: response} = Ash.load!(message, :response, actor: %AshAi{})
-               reply_id = if response, do: response.id, else: Ash.UUIDv7.generate()
-               AshTemplate.Chat.Message.Changes.Respond.save_failed(message, reply_id)
+               AshTemplate.Chat.Message.Changes.Respond.save_failed(message)
                {:ok, message}
              end)
     end
@@ -211,9 +207,11 @@ defmodule AshTemplate.Chat.Message do
     end
   end
 
+  # A reply an attempt started but never finished still needs answering, so the
+  # next attempt, or the failure line, reaches the message (`:respond` below).
   calculations do
     calculate :needs_response, :boolean do
-      calculation expr(source == :user and not exists(response))
+      calculation expr(source == :user and not exists(response, complete))
     end
   end
 
@@ -260,6 +258,9 @@ defmodule AshTemplate.Chat.Message do
         log_errors? false
         log_final_error? false
         queue :chat_responses
+        # A second attempt, so a reply cut off by a machine stopping is finished
+        # by the next machine (Oban's lifeline) instead of left unfinished.
+        max_attempts 2
         lock_for_update? false
         scheduler_cron false
         worker_module_name AshTemplate.Chat.Message.Workers.Respond

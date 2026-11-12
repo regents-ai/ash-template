@@ -1,11 +1,14 @@
 defmodule AshTemplate.Chat.ReplyTest do
   # Invariant: the assistant's reply is saved twice, unfinished when it starts
   # and whole when it ends, however many pieces it streams in; the pieces in
-  # between are only broadcast, and together they are the whole reply.
+  # between are only broadcast, and together they are the whole reply. A message
+  # has one reply however many attempts write it.
   use ExUnit.Case, async: false
+  use Oban.Testing, repo: AshTemplate.Repo, prefix: "ash_template_app"
 
   alias AshTemplate.{Accounts, Chat}
   alias AshTemplate.Actors.{Human, System}
+  alias AshTemplate.Chat.Message.Workers.Respond
   alias Phoenix.Socket.Broadcast
 
   setup do
@@ -40,6 +43,31 @@ defmodule AshTemplate.Chat.ReplyTest do
 
     assert [%{id: ^id, complete: true, text: ^text}, %{id: _}] =
              Chat.message_history!(message.conversation_id, actor: actor).results
+  end
+
+  # The first attempt's killed stream logs its exit.
+  @tag :capture_log
+  test "attempts cut off mid-reply and run again leave one reply, complete",
+       %{actor: actor} do
+    {:ok, message} = Chat.create_message(%{text: "Where do the pines go?"}, actor: actor)
+    Phoenix.PubSub.subscribe(AshTemplate.PubSub, "chat:messages:#{message.conversation_id}")
+    [job] = all_enqueued(worker: Respond)
+
+    # The first attempt stops partway through, as when its machine stops.
+    first = spawn(fn -> perform_job(Respond, job.args) end)
+    assert_receive %Broadcast{event: "piece", payload: %{id: id}}, 5_000
+    Process.exit(first, :kill)
+    received()
+
+    assert %{success: 1} = Oban.drain_queue(queue: :chat_responses)
+    perform_job(Respond, job.args)
+
+    message_id = message.id
+
+    assert [%{id: ^id, complete: true, text: text}, %{id: ^message_id}] =
+             Chat.message_history!(message.conversation_id, actor: actor).results
+
+    assert text =~ "Where do the pines go?"
   end
 
   defp received do
