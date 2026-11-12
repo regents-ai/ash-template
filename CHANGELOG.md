@@ -8565,3 +8565,19 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - Live read, signed out: `/capabilities.json` names `683ddeeb`; `/animations/ask` with
   `q[]=a`, `q[a]=b`, a text question and no question each answer 200 (the first two
   answered 500 on v208 and v209).
+
+## 2026-11-12 — Released v211: the Glow, Ink and Grain lab pages
+
+- `014dc363` (the design chief's `wt/tpl-bonus-1112`) is v211 on template.regents.sh,
+  switched at about 10:28Z with `scripts/deploy.sh`. No migrations. Rollback: v210
+  (`683ddeeb`).
+- Full check on `014dc363`, exit 0: 108 TypeScript, 568 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `014dc363`; `/`, `/animations`, `/animations/glow`, `/animations/ink` (also with
+  `?view=hero` and `?view[]=a`), `/animations/grain` and `/animations/value` answer 200
+  at 1280, 390 and 320 with no page or console errors and no sideways scroll. Pressed on
+  live at 1280 and 390: each Glow choice marks its own row, and Ink's Hero tab opens
+  `?view=hero`. The GPU pictures themselves were not drawn in this read (the headless
+  browser ran without a GPU); the walks draw them, and the design chief reads them on a
+  real screen.
