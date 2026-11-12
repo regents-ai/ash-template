@@ -40,6 +40,9 @@ type OnchainStepsHook = Hook & {
   review?: Review
   clicked?: (event: Event) => void
   walletChanged?: () => void
+  // How many presses this component has taken, and the line it is showing.
+  pressed: number
+  shown: Line
 }
 
 // How many of a button's presses the wallet still has. The mark comes off when
@@ -53,7 +56,33 @@ const presses = new WeakMap<HTMLElement, number>()
  */
 export const OnchainSteps: Hook = {
   mounted(this: OnchainStepsHook) {
-    const push: Push = (event, payload) => void this.pushEventTo(this.el, event, payload)
+    // What the wallet answered must reach the server, which reads the step from
+    // then on. When the page has no connection it cannot, so the page says so
+    // itself and reports it; nothing is kept or sent again. The wallet the server
+    // should act for is told again when the connection is back (`reconnected`).
+    this.pressed = 0
+    this.shown = null
+    // A push can take half a minute to give up, so a line about one press is
+    // shown only while no newer press has started: said late, "nothing was sent"
+    // beside a newer press that went through would have a person send twice.
+    const say = (line: Line, during: number) => {
+      if (during !== this.pressed) return
+      this.shown = line
+      note(this.el, line)
+    }
+    const push: Push = (event, payload) => {
+      const during = this.pressed
+      const unheard = () => {
+        if (event === "onchain_active_wallet") return
+        const {step, reason} = payload as {step?: string; reason?: string}
+        const answered = event !== "step_failed" || reason === "send_unconfirmed" || reason === "sign_unconfirmed"
+        say(answered ? "unreported" : "lost", during)
+        report({name: "press.unsent", where: step ?? event, outcome: "lost"})
+      }
+      void this.pushEventTo(this.el, event, payload).then(([result]) => {
+        if (result?.status !== "fulfilled") unheard()
+      }, unheard)
+    }
 
     // Every hook on the page hears this event; keep only this component's review.
     // No review means no eligible wallet: a press then sends nothing.
@@ -70,17 +99,21 @@ export const OnchainSteps: Hook = {
       const button = (event.target as Element | null)?.closest<HTMLElement>("[data-onchain-step]")
       const name = button?.dataset.onchainStep
       if (!button || !name || !this.el.contains(button)) return
+      // Signed out, the server marks each button as a sign-in control: the press
+      // opens Privy's sign-in (auth_lazy.ts), and there is no wallet to reach.
+      if (button.dataset.accountTarget === "sign-in") return
       // The mark is this island's own, so a page update while the wallet has the
       // press leaves it on the button.
       this.js().ignoreAttributes(button, ["data-awaiting-wallet"])
       const release = mark(button)
       const form = formInputs(this.el)
       const asks = Object.keys(form).length > 0 && (!this.review || !sameInputs(this.review.inputs, form))
-      lost(this.el, false)
+      const during = (this.pressed += 1)
+      say(null, during)
       // The server never heard the press, so it cannot say why; the page does, and
       // reports it.
       const unheard = () => {
-        lost(this.el, true)
+        say("lost", during)
         report({name: "press.unsent", where: name, outcome: "lost"})
       }
 
@@ -107,6 +140,20 @@ export const OnchainSteps: Hook = {
 
     this.walletChanged()
     window.dispatchEvent(new CustomEvent("ash:wallet-sync"))
+  },
+
+  // A page that rejoins gets a fresh component on the server, which no longer
+  // knows the active wallet or the review this hook holds. The review is let go
+  // and the wallet told again, so the next press is sent from a review the
+  // server remembers.
+  //
+  // The rejoin redraws the component, which hides its lines again; the one this
+  // hook was showing is put back, so "your wallet answered" outlives the very
+  // reconnect it is about. The next press clears it.
+  reconnected(this: OnchainStepsHook) {
+    this.review = undefined
+    note(this.el, this.shown)
+    this.walletChanged?.()
   },
 
   destroyed(this: OnchainStepsHook) {
@@ -148,7 +195,7 @@ export async function press(review: Review | undefined, name: string, push: Push
     push("step_sent", {review_id: review.id, step: name, transaction_hash})
     return {transaction_hash}
   } catch (error) {
-    const reason = failure(sending, error)
+    const reason = failure(sending, error, step?.kind === "signature")
     push("step_failed", {step: name, reason})
     return {reason}
   }
@@ -177,11 +224,17 @@ function sameInputs(review: Record<string, string>, form: Record<string, string>
   return [...names].every(name => review[name] === form[name])
 }
 
-// The component's `data-onchain-lost` line, shown when a press could not reach
-// the server. The next render from the server hides it again.
-function lost(root: HTMLElement, shown: boolean): void {
-  const line = root.querySelector<HTMLElement>("[data-onchain-lost]")
-  if (line) line.hidden = !shown
+// The component's own two lines for a page without a connection:
+// `data-onchain-lost` when the press never reached the server, and
+// `data-onchain-unreported` when the wallet answered and the answer could not
+// be passed on. `null` hides both; the next render from the server does too.
+type Line = "lost" | "unreported" | null
+
+function note(root: HTMLElement, shown: Line): void {
+  for (const name of ["lost", "unreported"] as const) {
+    const line = root.querySelector<HTMLElement>(`[data-onchain-${name}]`)
+    if (line) line.hidden = name !== shown
+  }
 }
 
 // Marked with a data attribute and CSS only: the button keeps taking presses.

@@ -44,7 +44,7 @@ defmodule AshTemplateWeb.VisitLog.Events do
   alias AshTemplateWeb.VisitLog
 
   # The reasons the wallet hook reports (`Failure` in send_step.ts).
-  @wallet_failures ~w(step_unknown wallet_unavailable network_mismatch wallet_declined insufficient_funds send_unconfirmed)
+  @wallet_failures ~w(step_unknown wallet_unavailable network_mismatch wallet_declined insufficient_funds send_unconfirmed sign_unconfirmed)
   @domain_apps [:ash_template, :regent_identity, :regent_agents, :regent_points]
 
   @doc "Attaches every handler; called once at start."
