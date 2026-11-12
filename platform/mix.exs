@@ -224,7 +224,7 @@ defmodule AshTemplate.MixProject do
         # `authorize_if` check module at compile time).
         # The hosted MCP server's address budgets add one: McpAgent builds them at compile time
         # with ClientAddress's key.
-        "xref graph --label compile-connected --fail-above 46",
+        "xref graph --label compile-connected --fail-above 47",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

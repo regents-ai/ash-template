@@ -35,6 +35,11 @@ listens. Choose by what the reaction needs:
 | Tell open pages something changed, at most once, after commit | A notifier: `Ash.Notifier.PubSub` |
 | Every subscriber gets every event, in order, never skipping a failed one | The event-log recipe in [Oban recipes](../../elixir-stack/references/oban.md#ordered-delivery-to-subscribers-webhooks-event-feeds); a signal is not an ordered feed |
 
+An inline listener holds the emitter's connection and row locks until that
+transaction commits, so it may only do work whose size is fixed: reads of one row
+or one bounded page through an index. A slow or growing scan there holds one of the
+pool's 5 connections for its whole length.
+
 Adopting signals in a site, the template's signals and listeners, and the rules for
 writing one are in [ash-signals](../../ash-signals/SKILL.md).
 

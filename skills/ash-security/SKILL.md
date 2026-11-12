@@ -16,6 +16,12 @@ its real entry point to the resource action.
 - **Reads may filter or answer not-found.** Test non-disclosure under the policy's
   actual contract; do not demand Forbidden everywhere.
 - **For writes, prove the refused operation changed nothing.**
+- **Every write that other people's open pages hear about** (a message, a like, a vote,
+  a join) carries a per-account and per-address allowance through
+  `AshTemplate.Limits.LimitWrites`, so one script cannot multiply its writes by the
+  number of viewers. The allowance is checked in `Ash.Changeset.before_transaction/2`,
+  never `before_action`, so a refused write takes no database connection and opens no
+  transaction.
 
 ## References
 

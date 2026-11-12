@@ -10,8 +10,7 @@ defmodule AshTemplateWeb.RoomsLive do
   each open page of the room the same way: the message's PubSub notifier
   publishes it after the transaction commits, the shell holds the room's
   subscription and hands it on here as `send_update(RoomsLive, id: "rooms",
-  change: {event, message})`. The shell also tracks who is here
-  (`AshTemplateWeb.Presence`) and passes the list in as `people`.
+  change: {event, message})`.
 
   A room started or a topic changed anywhere arrives the same way, as
   `room_change: {event, Room.public(room)}`, and the list and the topic follow.
@@ -19,13 +18,22 @@ defmodule AshTemplateWeb.RoomsLive do
   A message on the page is `Message.public/1`, the same map the notifier
   publishes, so a message read and a message published are drawn alike. Which
   messages a reader sees is theirs alone (their mutes); what each one says is
-  the same for everyone.
+  the same for everyone. The room's read hands the page only what it draws:
+  those maps, the cursor of the oldest one and whether older ones are left
+  (`more?`). The messages go into a stream, which the server does not keep, and
+  older ones are read by that cursor, so the page holds no records and no more
+  than the maps of the last page each read returned.
 
-  A message someone likes shows a heart with its count; anyone signed in likes
-  a message from its menu or by pressing the heart, and presses it again to
-  take the like back. A like anywhere arrives as `change: {"like", %{id, room}}`,
-  and the page reads that message again, so its count is as it stands and its
-  heart shows whether this reader likes it (`liked`).
+  A message someone likes shows a heart with its count (`RoomsLive.Heart`);
+  anyone signed in likes a message from its menu or by pressing the heart, and
+  presses it again to take the like back. A like anywhere arrives as
+  `change: {"like", %{id, room, like_count, like_version}}`, and the heart takes
+  that count; nobody reads the message again. Whether the reader likes it
+  (`liked`) changes only from their own press.
+
+  A signed-in reader sees who is here (`AshTemplateWeb.Presence`): listed by
+  name when the room opens, then each arrival at the end and each departure
+  taken out, as the shell hands them on (`here: {arrived, left}`).
   """
 
   use AshTemplateWeb, :live_component
@@ -37,10 +45,11 @@ defmodule AshTemplateWeb.RoomsLive do
   alias AshTemplate.PublicIdentity
   alias AshTemplate.Rooms.{Like, Message, Mute, Room}
   alias AshTemplateWeb.Components.Shell
-  alias AshTemplateWeb.FormErrors
+  alias AshTemplateWeb.{FormErrors, Presence}
   alias AshTemplateWeb.Live.Session
   alias AshTemplateWeb.Read
-  alias Regent.{Discussion, Primitives}
+  alias AshTemplateWeb.RoomsLive.Heart
+  alias Regent.Primitives
 
   @preview_lines 6
   @preview_characters 280
@@ -64,10 +73,10 @@ defmodule AshTemplateWeb.RoomsLive do
        actor: nil,
        room: nil,
        rooms: [],
-       people: [],
        messages: %Read{},
        older: %Read{},
-       page: nil,
+       cursor: nil,
+       more?: false,
        mutes: [],
        muted: MapSet.new(),
        liked: MapSet.new(),
@@ -81,12 +90,28 @@ defmodule AshTemplateWeb.RoomsLive do
        reported?: false,
        author_key: :crypto.strong_rand_bytes(16)
      )
-     |> stream(:messages, [])}
+     |> stream(:messages, [])
+     |> stream_configure(:people, dom_id: &"room-person-#{&1.id}")
+     |> stream(:people, [])}
   end
 
   @impl true
   def update(%{change: {event, message}}, socket), do: {:ok, apply_change(socket, event, message)}
   def update(%{mutes_changed: true}, socket), do: {:ok, load(socket)}
+
+  # Who arrived and who left, worked out once on this machine
+  # (`AshTemplateWeb.Presence`). A person already listed keeps their place. A
+  # reader whose sign-in lapsed on this page no longer sees who is here.
+  def update(%{here: _here}, %{assigns: %{actor: nil}} = socket), do: {:ok, socket}
+
+  def update(%{here: {arrived, left}}, socket) do
+    socket =
+      arrived
+      |> Enum.reject(&muted_person?(socket, &1))
+      |> Enum.reduce(socket, &stream_insert(&2, :people, &1))
+
+    {:ok, Enum.reduce(left, socket, &stream_delete(&2, :people, %{id: &1}))}
+  end
 
   def update(%{room_change: {_event, changed}}, socket) do
     %{room: room, rooms: rooms} = socket.assigns
@@ -108,12 +133,9 @@ defmodule AshTemplateWeb.RoomsLive do
   # The shell renders this with every update of its own, so the room is read
   # again only when the room or the person reading it changes. The room's topic
   # here may be newer than the shell's, so only its slug is compared.
-  def update(
-        %{id: id, lease: lease, account: account, room: room, people: people, client_key: key},
-        socket
-      ) do
+  def update(%{id: id, lease: lease, account: account, room: room, client_key: key}, socket) do
     actor = account && Human.for_account(account)
-    socket = assign(socket, id: id, lease: lease, people: people, client_key: key)
+    socket = assign(socket, id: id, lease: lease, client_key: key)
 
     if {actor, room.slug} == {socket.assigns.actor, slug(socket.assigns.room)},
       do: {:ok, socket},
@@ -211,20 +233,26 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   # Likes the message, or takes back the reader's like when they already like it.
+  # Only this reader's page changes whether it shows the message liked; the
+  # count arrives with the like's notice, as on every page of the room.
   def handle_event("like", %{"id" => id}, socket) do
-    actor = socket.assigns.actor
+    %{actor: actor, client_key: key, liked: liked} = socket.assigns
+    likes? = not MapSet.member?(liked, id)
 
-    result =
-      if MapSet.member?(socket.assigns.liked, id),
-        do: unlike(id, actor),
-        else: Rooms.like_message(id, actor: actor)
+    case press_like(id, likes?, actor, key) do
+      :ok ->
+        send_update(Heart, id: heart_id(id), liked: likes?)
+        liked = if likes?, do: MapSet.put(liked, id), else: MapSet.delete(liked, id)
+        {:noreply, assign(socket, liked: liked, notice: nil)}
 
-    case result do
-      {:ok, _like} ->
-        {:noreply, assign(socket, :notice, nil)}
+      # Why it could not be saved, in the like's own words: the message is gone,
+      # or the reader is going too quickly.
+      {:error, %Ash.Error.Invalid{} = error} ->
+        [%{message: why} | _] = FormErrors.details(error)
+        {:noreply, assign(socket, :notice, why)}
 
-      failure ->
-        {:noreply, notice(socket, failure, @gone, "That like couldn’t be saved. Try again.")}
+      {:error, _failure} ->
+        {:noreply, assign(socket, :notice, "That like couldn’t be saved. Try again.")}
     end
   end
 
@@ -264,9 +292,13 @@ defmodule AshTemplateWeb.RoomsLive do
     end
   end
 
-  def handle_event("older", _params, %{assigns: %{page: %{more?: true} = page}} = socket) do
+  def handle_event("older", _params, %{assigns: %{more?: true} = assigns} = socket) do
+    %{room: room, actor: actor, cursor: cursor} = assigns
+
     {:noreply,
-     socket |> Read.now(:older, owner(socket), fn -> Ash.page(page, :next) end) |> show_older()}
+     socket
+     |> Read.now(:older, owner(socket), fn -> read_older(room, actor, cursor) end)
+     |> show_older()}
   end
 
   # The account as it reads now, before each event and each background result
@@ -310,7 +342,7 @@ defmodule AshTemplateWeb.RoomsLive do
         >
           <div class="rooms-scroller__inner">
             <Primitives.button
-              :if={@page && @page.more?}
+              :if={@more?}
               type="button"
               variant="secondary"
               class="rooms-older"
@@ -379,19 +411,21 @@ defmodule AshTemplateWeb.RoomsLive do
                   </p>
                   <.message_body id={dom_id} body={message.body} />
                   <p :if={message.edited_at} class="rooms-message__edited">Edited</p>
-                  <.likes
-                    :if={message.like_count > 0}
-                    message={message}
+                  <.live_component
+                    module={Heart}
+                    id={heart_id(message.id)}
+                    message_id={message.id}
+                    like_count={message.like_count}
+                    like_version={message.like_version}
                     liked={MapSet.member?(@liked, message.id)}
-                    actor={@actor}
-                    myself={@myself}
+                    signed_in?={@actor != nil}
+                    target={@myself}
                   />
                 </div>
                 <.message_menu
                   :if={@actor}
                   id={dom_id}
                   message={message}
-                  liked={MapSet.member?(@liked, message.id)}
                   actor={@actor}
                   myself={@myself}
                 />
@@ -465,14 +499,14 @@ defmodule AshTemplateWeb.RoomsLive do
       <div :if={@actor} class="rooms-side">
         <section class="account-panel" aria-labelledby="room-people-title">
           <h2 id="room-people-title">Here now</h2>
-          <ul :if={here(@people, @muted) != []} class="rooms-people">
-            <li :for={person <- here(@people, @muted)}>
-              <Shell.person_name id={"room-person-#{person.id}"} person={person} />
+          <ul id="room-people" class="rooms-people" phx-update="stream">
+            <li id="room-people-empty" class="rooms-people__empty rg-muted">
+              Nobody signed in has this room open.
+            </li>
+            <li :for={{dom_id, person} <- @streams.people} id={dom_id}>
+              <Shell.person_name id={"#{dom_id}-name"} person={person} />
             </li>
           </ul>
-          <p :if={here(@people, @muted) == []} class="rg-muted">
-            Nobody signed in has this room open.
-          </p>
         </section>
 
         <section :if={@mutes != []} class="account-panel" aria-labelledby="room-mutes-title">
@@ -482,7 +516,7 @@ defmodule AshTemplateWeb.RoomsLive do
           </p>
           <ul class="rooms-mutes">
             <li :for={mute <- @mutes}>
-              <Shell.person_name id={"room-muted-#{mute.id}"} person={Mute.muted(mute)} />
+              <Shell.person_name id={"room-muted-#{mute.id}"} person={mute.person} />
               <Primitives.button
                 type="button"
                 variant="quiet"
@@ -615,35 +649,13 @@ defmodule AshTemplateWeb.RoomsLive do
     """
   end
 
-  attr :message, :map, required: true
-  attr :liked, :boolean, required: true
-  attr :actor, Human, default: nil
-  attr :myself, :any, required: true
-
-  # The heart and its count. A visitor's press opens sign-in.
-  defp likes(%{actor: nil} = assigns) do
-    ~H"""
-    <Discussion.like count={@message.like_count} liked={false} data-account-target="sign-in" />
-    """
-  end
-
-  defp likes(assigns) do
-    ~H"""
-    <Discussion.like
-      count={@message.like_count}
-      liked={@liked}
-      phx-click={JS.push("like", value: %{id: @message.id}, target: @myself)}
-    />
-    """
-  end
-
   attr :id, :string, required: true
   attr :message, :map, required: true
-  attr :liked, :boolean, required: true
   attr :actor, Human, required: true
   attr :myself, :any, required: true
 
-  # Every message offers Like, or Remove like once the reader likes it. The
+  # Every message offers Like, or Remove like once the reader likes it (the
+  # message's heart holds which, `RoomsLive.Heart`). The
   # author's own message offers Edit and Delete; anyone else's, Mute, Report,
   # and Message when a person stands behind it. The
   # browser opens the choices above everything else (`popover`), hanging from
@@ -686,7 +698,8 @@ defmodule AshTemplateWeb.RoomsLive do
           popovertargetaction="hide"
           phx-click={JS.push("like", value: %{id: @message.id}, target: @myself)}
         >
-          {if @liked, do: "Remove like", else: "Like"}
+          <span class="rooms-menu__like">Like</span>
+          <span class="rooms-menu__unlike">Remove like</span>
         </button>
         <button
           :if={@own?}
@@ -769,6 +782,7 @@ defmodule AshTemplateWeb.RoomsLive do
     |> Read.clear(:older)
     |> Read.now(:messages, owner(socket), fn -> read_room(room, actor) end)
     |> show_messages()
+    |> show_people()
     |> new_form()
     |> room_form()
     |> topic_form()
@@ -779,15 +793,43 @@ defmodule AshTemplateWeb.RoomsLive do
   defp read_room(room, nil) do
     with {:ok, rooms} <- Rooms.list_rooms(),
          {:ok, page} <- Rooms.list_room_messages(room.slug),
-         do: {:ok, %{rooms: rooms, mutes: [], page: page}}
+         do: {:ok, Map.merge(%{rooms: Enum.map(rooms, &Room.public/1), mutes: []}, drawn(page))}
   end
 
   defp read_room(room, actor) do
     with {:ok, rooms} <- Rooms.list_rooms(),
          {:ok, mutes} <- Rooms.list_my_mutes(actor: actor),
-         {:ok, page} <- Rooms.list_room_messages(room.slug, actor: actor),
-         do: {:ok, %{rooms: rooms, mutes: mutes, page: page}}
+         {:ok, page} <- Rooms.list_room_messages(room.slug, actor: actor) do
+      {:ok,
+       Map.merge(
+         %{rooms: Enum.map(rooms, &Room.public/1), mutes: Enum.map(mutes, &drawn_mute/1)},
+         drawn(page)
+       )}
+    end
   end
+
+  # The page of messages before the oldest one shown.
+  defp read_older(room, actor, cursor) do
+    with {:ok, page} <- Rooms.list_room_messages(room.slug, actor: actor, page: [after: cursor]),
+         do: {:ok, drawn(page)}
+  end
+
+  # What the page draws of a page of messages, newest first: the messages as
+  # every page draws them, which of them the reader likes, the cursor of the
+  # oldest and whether older ones are left.
+  defp drawn(%Ash.Page.Keyset{results: messages, more?: more?}) do
+    %{
+      messages: Enum.map(messages, &Message.public/1),
+      liked: for(%Message{liked_by_me: true, id: id} <- messages, into: MapSet.new(), do: id),
+      cursor: oldest_cursor(messages),
+      more?: more?
+    }
+  end
+
+  defp oldest_cursor([]), do: nil
+  defp oldest_cursor(messages), do: List.last(messages).__metadata__.keyset
+
+  defp drawn_mute(mute), do: %{id: mute.id, person: Mute.muted(mute), author: muted_author(mute)}
 
   defp slug(nil), do: nil
   defp slug(room), do: room.slug
@@ -795,41 +837,54 @@ defmodule AshTemplateWeb.RoomsLive do
   # A failed read keeps the messages already on the page, so only a read that
   # landed replaces them.
   defp show_messages(%{assigns: %{messages: %Read{state: :ready, value: value}}} = socket) do
-    messages = Enum.map(value.page.results, &Message.public/1)
-
     socket
     |> assign(
-      rooms: Enum.map(value.rooms, &Room.public/1),
-      page: value.page,
+      rooms: value.rooms,
       mutes: value.mutes,
-      muted: MapSet.new(value.mutes, &muted_author/1),
-      liked: liked(value.page.results),
-      shown: edits(messages),
-      latest: with([newest | _] <- messages, do: newest.inserted_at)
+      muted: MapSet.new(value.mutes, & &1.author),
+      liked: value.liked,
+      cursor: value.cursor,
+      more?: value.more?,
+      shown: edits(value.messages),
+      latest: newest_at(value.messages)
     )
-    |> stream(:messages, Enum.reverse(messages), reset: true)
+    |> stream(:messages, Enum.reverse(value.messages), reset: true)
   end
 
   defp show_messages(socket), do: socket
 
+  defp newest_at([]), do: nil
+  defp newest_at([newest | _older]), do: newest.inserted_at
+
   # A page of older messages comes newest first, so putting each one at the top
   # in turn leaves them in order above the ones already shown.
-  defp show_older(%{assigns: %{older: %Read{state: :ready, value: page}}} = socket) do
-    messages = Enum.map(page.results, &Message.public/1)
-
+  defp show_older(%{assigns: %{older: %Read{state: :ready, value: value}}} = socket) do
     socket
     |> assign(
-      page: page,
-      liked: MapSet.union(socket.assigns.liked, liked(page.results)),
-      shown: Map.merge(socket.assigns.shown, edits(messages))
+      cursor: value.cursor,
+      more?: value.more?,
+      liked: MapSet.union(socket.assigns.liked, value.liked),
+      shown: Map.merge(socket.assigns.shown, edits(value.messages))
     )
-    |> stream(:messages, messages, at: 0)
+    |> stream(:messages, value.messages, at: 0)
   end
 
   defp show_older(socket), do: socket
 
-  defp liked(messages),
-    do: for(%Message{liked_by_me: true, id: id} <- messages, into: MapSet.new(), do: id)
+  # A signed-in reader sees who has the room open, by name, less anyone they
+  # muted; the shell then hands on each arrival and departure.
+  defp show_people(%{assigns: %{actor: nil}} = socket),
+    do: stream(socket, :people, [], reset: true)
+
+  defp show_people(%{assigns: %{room: room}} = socket) do
+    people = Enum.reject(Presence.people(room.slug), &muted_person?(socket, &1))
+    stream(socket, :people, people, reset: true)
+  end
+
+  defp muted_person?(%{assigns: %{muted: muted}}, person),
+    do: MapSet.member?(muted, "person-#{person.id}")
+
+  defp heart_id(message_id), do: "room-heart-#{message_id}"
 
   # Two notices about one message can arrive in either order, so the page keeps
   # the newer. `shown` holds, for each message the page has shown edited, the
@@ -842,23 +897,12 @@ defmodule AshTemplateWeb.RoomsLive do
     if socket.assigns.editing == id, do: new_form(socket), else: socket
   end
 
-  # A like or a like taken back: the message is read again, as this reader sees
-  # it. One deleted, muted or no longer here changes nothing.
-  defp apply_change(socket, "like", %{id: id, room: room}) do
-    with false <- match?(%{^id => :deleted}, socket.assigns.shown),
-         {:ok, %Message{} = read} <- Rooms.get_room_message(room, id, actor: socket.assigns.actor),
-         message = Message.public(read),
-         false <- muted?(socket, message) do
-      socket
-      |> update(
-        :liked,
-        &if(read.liked_by_me, do: MapSet.put(&1, id), else: MapSet.delete(&1, id))
-      )
-      |> stream_insert(:messages, message, update_only: true)
-      |> shown(message)
-    else
-      _unchanged -> socket
-    end
+  # A like or a like taken back anywhere: the message's heart takes the count it
+  # carries. A message the page does not show (deleted, muted, older than the
+  # page reaches) has no heart, and the notice changes nothing.
+  defp apply_change(socket, "like", %{id: id, like_count: count, like_version: version}) do
+    send_update(Heart, id: heart_id(id), like_count: count, like_version: version)
+    socket
   end
 
   defp apply_change(socket, event, message) do
@@ -962,10 +1006,16 @@ defmodule AshTemplateWeb.RoomsLive do
     |> Base.url_encode64()
   end
 
-  defp unlike(message_id, actor) do
+  defp press_like(message_id, true, actor, key) do
+    with {:ok, _like} <-
+           Rooms.like_message(message_id, actor: actor, context: %{client_key: key}),
+         do: :ok
+  end
+
+  defp press_like(message_id, false, actor, key) do
     case Rooms.get_my_like(message_id, actor: actor) do
-      {:ok, %Like{} = like} -> with :ok <- Rooms.unlike(like, actor: actor), do: {:ok, like}
-      {:ok, nil} -> {:ok, nil}
+      {:ok, %Like{} = like} -> Rooms.unlike(like, actor: actor, context: %{client_key: key})
+      {:ok, nil} -> :ok
       failure -> failure
     end
   end
@@ -982,8 +1032,6 @@ defmodule AshTemplateWeb.RoomsLive do
 
   defp muted_author(%Mute{muted_agent_id: nil, muted_account_id: id}), do: "person-#{id}"
   defp muted_author(%Mute{muted_agent_id: id}), do: "agent-#{id}"
-
-  defp here(people, muted), do: Enum.reject(people, &MapSet.member?(muted, "person-#{&1.id}"))
 
   defp new_form(%{assigns: %{actor: nil}} = socket), do: assign(socket, form: nil, editing: nil)
 

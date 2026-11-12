@@ -161,13 +161,18 @@ config :ash_template, :note_labels,
   person_daily_questions: 50
 
 # How often one person or agent may save each kind of writing, and how often one
-# client address may post or search, each window (AshTemplate.Limits). A guest
-# post is one no person stands behind: an unpaired agent's one post.
+# client address may post, like or search, each window (AshTemplate.Limits). A
+# guest post is one no person stands behind: an unpaired agent's one post. A like
+# and a like taken back share `like`: two a second for a whole minute is more than
+# anyone liking their way through a room, and every open page of the room hears
+# each one, so a script toggling a like many times a second is stopped.
 config :ash_template, :limits,
   room: [limit: 3, window_seconds: 86_400],
   poll: [limit: 3, window_seconds: 86_400],
   room_post: [limit: 10, window_seconds: 60],
   room_post_address: [limit: 30, window_seconds: 60],
+  like: [limit: 120, window_seconds: 60],
+  like_address: [limit: 300, window_seconds: 60],
   guest_post_address: [limit: 10, window_seconds: 3600],
   note: [limit: 30, window_seconds: 60],
   chat_message: [limit: 10, window_seconds: 60],

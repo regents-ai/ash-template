@@ -82,6 +82,10 @@ defmodule AshTemplate.Chat.Message do
 
     create :create do
       accept [:text]
+      # Whose conversation it is can only be checked once the message is
+      # written; the allowance is spent before the transaction (`LimitWrites`),
+      # so a send refused that way still uses one.
+      allow_post_action_authorization? true
 
       validate match(:text, ~r/\S/) do
         message "Write a message."

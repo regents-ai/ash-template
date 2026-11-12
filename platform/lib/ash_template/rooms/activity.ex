@@ -11,10 +11,14 @@ defmodule AshTemplate.Rooms.Activity do
   It holds nothing but which rooms are due a count: no queue, no copy of rows,
   and it never writes the database.
 
+  It counts only rooms the reading may hold: the first rooms in the list's
+  order, as many as the kind has keys (`SharedReading.keys/1`). A post in a
+  room the reading holds no key for, while every key is taken, is not counted.
+
   A notice is sent at most once and can be lost, so each minute
-  `AshTemplate.SharedReading.Heal` asks for every room to be counted again, the
-  rooms read afresh so a room started since is among them and a room that is
-  gone is forgotten, its key deleted so it never holds one of the kind's places.
+  `AshTemplate.SharedReading.Heal` asks for those rooms to be counted again,
+  read afresh so a room started since is among them and a room that is gone is
+  forgotten, its key deleted so it never holds one of the kind's places.
   That pass also keeps each key's age under the kind's `within`, so a quiet room
   never reads as a stopped producer.
 
@@ -57,8 +61,9 @@ defmodule AshTemplate.Rooms.Activity do
   end
 
   @impl true
-  def handle_info(%{event: event, payload: %{room: room}}, due) when event in ~w(post destroy),
-    do: {:noreply, due(due, room)}
+  def handle_info(%{event: event, payload: %{room: room}}, due) when event in ~w(post destroy) do
+    if may_hold?(room), do: {:noreply, due(due, room)}, else: {:noreply, due}
+  end
 
   # An event added to the topic later is ignored here, so one that changes a
   # figure needs a clause above.
@@ -86,15 +91,23 @@ defmodule AshTemplate.Rooms.Activity do
     MapSet.put(due, room)
   end
 
-  # Every room's slug, or `:error` while the database is not answering: then no
-  # room is counted, and no room's key is forgotten for want of a read.
+  # The slugs of the rooms the reading may hold, or `:error` while the database
+  # is not answering: then no room is counted, and no room's key is forgotten
+  # for want of a read.
   defp slugs do
-    case Rooms.list_rooms() do
+    case Rooms.list_rooms(query: [limit: SharedReading.keys(@kind)]) do
       {:ok, rooms} -> {:ok, Enum.map(rooms, & &1.slug)}
       {:error, _not_read} -> :error
     end
   rescue
     _error in [DBConnection.ConnectionError, Postgrex.Error] -> :error
+  end
+
+  # A room it holds a key for, or any room while a key is free; the next pass
+  # brings the held rooms back to the first in the list.
+  defp may_hold?(room) do
+    match?({:ok, _entry}, SharedReading.fetch(key(room))) or
+      length(SharedReading.ids(@kind)) < SharedReading.keys(@kind)
   end
 
   defp count(room) do
