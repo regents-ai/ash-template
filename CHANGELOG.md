@@ -8725,3 +8725,24 @@ later names and run after them: `20261112120000_note_decisions_outlive_notes` (w
 `20261110041012`) and `20261112120100_agent_last_seen_no_default` (was
 `20261110041045`), with their resource snapshots renamed to match. Their contents are
 unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow line.
+
+## 2026-11-12 — Released v214: the database tidy
+
+- `f5096fff` (`tpl/audit-migrations-1112` merged onto main) is v214 on
+  template.regents.sh, switched at about 14:47Z with `scripts/deploy.sh`. Production
+  data is protected: Sean's letter is morning decision 3a of 12 Nov, all three parts.
+- Migrations run on production: `20261112120000_note_decisions_outlive_notes`
+  (`note_decisions.note_id` nullable, foreign key ON DELETE SET NULL; no row changed;
+  not reversible once a note with questions has been deleted) and
+  `20261112120100_agent_last_seen_no_default` (no row changed; reversible). After the
+  switch `/api/v1/health` answers `migrations_applied: true`.
+- New daily job: `AshTemplate.Accounts.SessionPruner` at 04:43 UTC deletes
+  `session_authorities` rows untouched for 31 days. Its first run is 13 Nov 04:43 UTC
+  and clears the whole backlog; the count it removes is not yet known.
+- Rollback: v213 (`43727c47`), image only. v213's code runs on the migrated database;
+  the migrations are not reversed.
+- Full check on `f5096fff`, exit 0: 113 TypeScript, 570 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
+  with no errors. Not proven live: deleting a note that has label questions (signed in).
