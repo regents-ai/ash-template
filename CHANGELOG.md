@@ -7328,11 +7328,12 @@ sits on its own branches.
   registration keeps working for other apps, and an address and a registered id are
   never taken for each other.
 - Rebuilt on main from `claude/cimd-1029` through `agent-access/cimd-1111`. Every
-  elixir-utils package moves to `44c44202` (`eu/cimd-on-pin-1112`): the published-identity
-  commits merged onto `a12f71b6`, the pin before, so `RegentOAuth.ClientDocuments` uses
-  the site's repository (`RegentOAuth.repo()`, `log: false`) like the rest of the
-  provider. Only oauth, http and mcp_events change; mcp_events callbacks now use
-  `RegentHttp.Public`, the one checked outbound request. `44c44202` has no G1 code.
+  elixir-utils package moves to `240e9385` (`eu/cimd-on-pin-1112`, on elixir-utils main
+  through `e389dd6e`): the published-identity commits merged onto `a12f71b6`, the pin
+  before, so `RegentOAuth.ClientDocuments` uses the site's repository
+  (`RegentOAuth.repo()`, `log: false`) like the rest of the provider. Only oauth, http
+  and mcp_events change; mcp_events callbacks now use `RegentHttp.Public`, the one
+  checked outbound request. `240e9385` has no G1 code.
 - Migration `20261111060000_oauth_client_documents` adds one empty table
   (`RegentOAuth.Migration.V3`) and changes nothing existing.
 - Opening consent (`GET /oauth/authorize`) is limited to 30 requests a minute by
@@ -7345,6 +7346,15 @@ sits on its own branches.
   read again and refused ids, and says the site repository's query events carry
   parameters and rows, so the site's handlers read measurements only (the template's
   read only `queue_time`).
+- The fresh review of 12 Nov found one should-fix, now fixed in the library (`240e9385`):
+  every person's Claude connection is one client row, and token exchange, refresh and
+  disconnect locked that row, so all of the site's Claude sign-ins took turns and a
+  request with Claude's address and an unknown code, from anyone, joined the queue.
+  They now lock one person's connection to one app, and an unknown code takes no lock.
+  Also fixed: an address that does not answer just now shows an "Unavailable" page with
+  a 503 (before, raw JSON at consent and "no longer works" at Allow), and the read names
+  this site in its user-agent. One person's Claude accounts on one site are one
+  connected app, as a published identity means.
 - New check: `claude_connector_test.exs` connects Claude by its published identity
   through this site's endpoint, consent, token exchange, `/mcp` and refresh.
 - Protected (sign-in and a migration): Sean's 12 Nov "2. a" is the go.
