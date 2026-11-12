@@ -389,7 +389,8 @@ assets/                 TypeScript and CSS, built with esbuild; the hashed
 priv/                   Migrations, public and legal Markdown, static assets
 docs/                   Local setup guides
 scripts/                Release helpers
-rel/                    Release overlays, including the migrate command
+rel/                    Release overlays, including the migrate command, and
+                        the VM flags (vm.args.eex)
 ```
 
 ## Checks
