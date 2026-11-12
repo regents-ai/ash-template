@@ -308,7 +308,7 @@ defmodule AshTemplateWeb.Router do
     pipe_through :api
     get "/sites/:site/tools", SiteToolsController, :tools
     get "/siwa/help", SiteToolsController, :siwa_help
-    get "/notes", NotesController, :index
+    post "/notes/list", NotesController, :index
     post "/notes", NotesController, :create
     get "/notes/:id", NotesController, :show
     patch "/notes/:id", NotesController, :update

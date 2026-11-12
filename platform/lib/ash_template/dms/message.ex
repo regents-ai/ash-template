@@ -31,6 +31,9 @@ defmodule AshTemplate.Dms.Message do
 
     custom_indexes do
       index([:conversation_id, :inserted_at])
+      # An agent's feed catches up on its person's messages by recipient, in
+      # order (`AshTemplate.Feed`).
+      index([:to_id, :inserted_at], concurrently: true)
     end
   end
 
@@ -73,7 +76,7 @@ defmodule AshTemplate.Dms.Message do
       argument :conversation_id, :uuid, allow_nil?: false
       filter expr(conversation_id == ^arg(:conversation_id))
       prepare build(sort: [inserted_at: :desc, id: :desc], load: [:mine])
-      pagination keyset?: true, default_limit: 50
+      pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
     # The message the actor's person already sent with this id, so a retry

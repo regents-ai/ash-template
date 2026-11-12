@@ -9,7 +9,13 @@ defmodule AshTemplateWeb.DmsLive do
   Sending never touches the list directly. Each message and each block is
   published on both people's topic (`AshTemplate.Dms.topic/1`); the shell hands
   each on here as `send_update(DmsLive, id: "dms", change: {event, payload})`.
-  The shell holds the open conversation and reads it again after a block.
+  A message moves only its own conversation to the top of its list, read as
+  the reader; a block reads both lists again. The shell holds the open
+  conversation and reads it again after a block.
+
+  The conversations and messages live in streams; the page keeps only what it
+  renders of each and, for the open conversation, the cursor of its oldest
+  message shown and whether older ones are left.
   """
 
   use AshTemplateWeb, :live_component
@@ -39,7 +45,7 @@ defmodule AshTemplateWeb.DmsLive do
        blocked: %Read{},
        messages: %Read{},
        older: %Read{},
-       page: nil,
+       paging: nil,
        form: nil,
        notice: nil
      )
@@ -47,17 +53,17 @@ defmodule AshTemplateWeb.DmsLive do
      |> stream(:messages, [])}
   end
 
-  # A new message reaches the open conversation at its end; any change moves
-  # the reader's lists.
+  # A new message moves its conversation to the top of the reader's list, and
+  # reaches the open conversation at its end.
   @impl true
   def update(%{change: {"send", %{conversation_id: id, message_id: message_id}}}, socket) do
-    socket = load_conversations(socket)
+    socket = relist(socket, id)
 
     # Read as the reader, so a message they may not read never shows.
     with %{id: ^id} <- socket.assigns.conversation,
          {:ok, %Message{} = message} <-
            Dms.get_dm(message_id, actor: socket.assigns.actor, load: [:mine]) do
-      {:ok, stream_insert(socket, :messages, message, at: -1)}
+      {:ok, stream_insert(socket, :messages, shown_message(message), at: -1)}
     else
       _closed_or_gone -> {:ok, socket}
     end
@@ -105,9 +111,17 @@ defmodule AshTemplateWeb.DmsLive do
   def handle_event("unblock", _params, socket),
     do: change(socket, &Dms.unblock_conversation/2, "They couldn’t be unblocked. Try again.")
 
-  def handle_event("older", _params, %{assigns: %{page: %{more?: true} = page}} = socket) do
+  def handle_event(
+        "older",
+        _params,
+        %{assigns: %{paging: %{more?: true, cursor: cursor}}} = socket
+      ) do
+    %{conversation: conversation, actor: actor} = socket.assigns
+
     {:noreply,
-     socket |> Read.now(:older, owner(socket), fn -> Ash.page(page, :next) end) |> show_older()}
+     socket
+     |> Read.now(:older, owner(socket), fn -> messages(conversation.id, actor, after: cursor) end)
+     |> show_older()}
   end
 
   # The shell reads the conversation again when the block is published.
@@ -227,7 +241,7 @@ defmodule AshTemplateWeb.DmsLive do
         >
           <div class="rooms-scroller__inner">
             <Primitives.button
-              :if={@page && @page.more?}
+              :if={@paging && @paging.more?}
               type="button"
               variant="secondary"
               class="rooms-older"
@@ -377,26 +391,59 @@ defmodule AshTemplateWeb.DmsLive do
   defp load_conversations(%{assigns: %{actor: actor}} = socket) do
     socket
     |> Read.now(:conversations, actor.human_account_id, fn ->
-      Dms.list_conversations(false, actor: actor)
+      conversations(false, actor)
     end)
-    |> Read.now(:blocked, actor.human_account_id, fn ->
-      Dms.list_conversations(true, actor: actor)
-    end)
+    |> Read.now(:blocked, actor.human_account_id, fn -> conversations(true, actor) end)
     |> show_conversations()
   end
 
+  # The reader's conversations as the list shows them, or the one `id` names.
+  defp conversations(blocked?, actor, query \\ []) do
+    with {:ok, conversations} <- Dms.list_conversations(blocked?, actor: actor, query: query),
+         do: {:ok, Enum.map(conversations, &shown_conversation/1)}
+  end
+
+  defp shown_conversation(conversation),
+    do: Map.take(conversation, [:id, :other_person, :last_body])
+
+  # The stream keeps the list; the page keeps only whether it was read.
   defp show_conversations(%{assigns: %{conversations: %Read{state: state} = read}} = socket)
-       when state in [:ready, :empty],
-       do: stream(socket, :conversations, read.value, reset: true)
+       when state in [:ready, :empty] do
+    socket
+    |> stream(:conversations, read.value, reset: true)
+    |> assign(:conversations, %{read | value: nil})
+  end
 
   defp show_conversations(socket), do: socket
+
+  # The one conversation a message names, read as the reader through the list
+  # it is in, moves to the top of that list. Nothing else is read.
+  defp relist(%{assigns: %{actor: nil}} = socket, _id), do: socket
+
+  defp relist(%{assigns: %{actor: actor, blocked: blocked}} = socket, id) do
+    blocked? = Enum.any?(List.wrap(blocked.value), &(&1.id == id))
+
+    case conversations(blocked?, actor, filter: [id: id]) do
+      {:ok, [conversation]} when blocked? ->
+        others = Enum.reject(blocked.value, &(&1.id == id))
+        assign(socket, :blocked, %{blocked | value: [conversation | others]})
+
+      {:ok, [conversation]} ->
+        socket
+        |> stream_delete(:conversations, conversation)
+        |> stream_insert(:conversations, conversation, at: 0)
+
+      _gone ->
+        socket
+    end
+  end
 
   defp load_messages(%{assigns: %{actor: actor, conversation: conversation}} = socket)
        when is_nil(actor) or is_nil(conversation) do
     socket
     |> Read.clear(:messages)
     |> Read.clear(:older)
-    |> assign(page: nil, form: nil, notice: nil)
+    |> assign(paging: nil, form: nil, notice: nil)
     |> stream(:messages, [], reset: true)
   end
 
@@ -404,26 +451,43 @@ defmodule AshTemplateWeb.DmsLive do
     socket
     |> Read.clear(:older)
     |> assign(:notice, nil)
-    |> Read.now(:messages, owner(socket), fn ->
-      Dms.list_dms(conversation.id, actor: actor)
-    end)
+    |> Read.now(:messages, owner(socket), fn -> messages(conversation.id, actor, []) end)
     |> show_messages()
     |> new_form()
   end
 
-  # Each page comes newest first; the log reads oldest first.
-  defp show_messages(%{assigns: %{messages: %Read{state: :ready, value: page}}} = socket) do
-    socket
-    |> assign(:page, page)
-    |> stream(:messages, Enum.reverse(page.results), reset: true)
+  # A page of the conversation, newest first: what the log shows of each
+  # message, the oldest one's cursor and whether older ones are left.
+  defp messages(conversation_id, actor, page) do
+    with {:ok, page} <- Dms.list_dms(conversation_id, actor: actor, page: page) do
+      {:ok,
+       %{
+         shown: Enum.map(page.results, &shown_message/1),
+         paging: %{more?: page.more?, cursor: cursor(page.results)}
+       }}
+    end
   end
 
-  defp show_messages(socket), do: assign(socket, :page, nil)
+  defp cursor([]), do: nil
+  defp cursor(results), do: List.last(results).__metadata__.keyset
 
-  defp show_older(%{assigns: %{older: %Read{state: :ready, value: page}}} = socket) do
+  defp shown_message(message),
+    do: Map.take(message, [:id, :mine, :via_agent_id, :inserted_at, :body])
+
+  # The log reads oldest first. The stream keeps the messages; the page keeps
+  # only where the next older page starts.
+  defp show_messages(%{assigns: %{messages: %Read{state: :ready, value: value} = read}} = socket) do
     socket
-    |> assign(:page, page)
-    |> stream(:messages, page.results, at: 0)
+    |> assign(messages: %{read | value: nil}, paging: value.paging)
+    |> stream(:messages, Enum.reverse(value.shown), reset: true)
+  end
+
+  defp show_messages(socket), do: assign(socket, :paging, nil)
+
+  defp show_older(%{assigns: %{older: %Read{state: :ready, value: value} = read}} = socket) do
+    socket
+    |> assign(older: %{read | value: nil}, paging: value.paging)
+    |> stream(:messages, value.shown, at: 0)
   end
 
   defp show_older(socket), do: socket

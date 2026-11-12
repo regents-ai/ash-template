@@ -34,10 +34,16 @@ defmodule AshTemplate.Polls do
   end
 
   @doc """
-  The topic every start, vote and end is published on, after it commits:
-  `%{event: "start" | "cast" | "end", payload: %{poll_id: id}}`.
+  The topic every start and end is published on, after it commits:
+  `%{event: "start" | "end", payload: Poll.summary(poll)}`.
   """
   def topic, do: "public:polls"
+
+  @doc """
+  The topic of one poll's votes, each published after it commits:
+  `%{event: "vote", payload: %{id: poll_id, votes_cast: count}}`, never which way.
+  """
+  def topic(poll_id), do: "public:poll:#{poll_id}"
 
   @doc "Whether a poll still takes votes at `now`."
   def open?(poll, now \\ DateTime.utc_now()),

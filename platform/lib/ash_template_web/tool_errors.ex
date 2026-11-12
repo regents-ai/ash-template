@@ -80,6 +80,9 @@ defimpl AshAi.ToToolError, for: AshTemplate.Rooms.Refused do
   def to_tool_error(%{code: "message_removed", id: id}),
     do: AshTemplateWeb.ToolErrors.room("message_removed", %{id: id})
 
+  def to_tool_error(%{code: "too_many_requests", retry_after: seconds}),
+    do: AshTemplateWeb.ToolErrors.room("too_many_requests", %{retry_after: seconds})
+
   def to_tool_error(%{code: code}), do: AshTemplateWeb.ToolErrors.room(code)
 end
 

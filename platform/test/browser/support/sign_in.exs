@@ -3,7 +3,8 @@
 # their own, one direct message to someone who wrote in General, a room that friend wrote in, the longest unbroken Public Display Name the site takes (so every
 # signed-in page proves a long name fits the screen), three agents paired the way an
 # agent pairs, and the signed cookie the walk sends; the friend who writes in General
-# gets one too, and starts a quiet room for each width's busy room (busy_room.spec.ts).
+# gets one too, starts a quiet room for each width's busy room (busy_room.spec.ts) and
+# has a page and one more of notes (notes.spec.ts).
 # Run by playwright.config.ts
 # before the server starts; it refuses any database but a walk's own local one.
 alias AshTemplate.Accounts.{SessionAuthority, VerifiedSession}
@@ -108,6 +109,12 @@ end
 
 conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
 AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
+
+# Fifty-one notes the friend wrote, one more than a page, for Older notes to show
+# the last (notes.spec.ts).
+for n <- 1..51 do
+  Ash.Seed.seed!(AshTemplate.Notes.Note, %{title: "Walk note #{n}", human_account_id: friend.id})
+end
 
 # A poll the friend started, open for the whole walk, for the poll page to show.
 AshTemplate.Polls.start_poll!(%{question: "Tea or coffee?", choices: ["Tea", "Coffee"], minutes: 60},
