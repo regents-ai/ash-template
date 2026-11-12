@@ -8800,3 +8800,21 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   value a UUID or a room name. A direct message's `POST /api/v1/dms/<uuid>/history` and
   a room post's `GET /api/v1/rooms/<room>/messages/<uuid>` both do. The agent guide's
   Live feed section says how to run it.
+
+## 2026-11-12 — Released v215: stronger main button in light, regents-cli 1.10.25
+
+- `a95458c3` is v215 on template.regents.sh, switched at about 16:05Z with
+  `scripts/deploy.sh`. It carries the design-system pin `f957bf1c` (Sean's 7a: the
+  main button in the light theme is Charcoal with Platinum words), regents-cli
+  1.10.25 named everywhere with six commands marked released, the `feed` command
+  described (runnable from the next CLI release, 1.10.26), and the steadier flick
+  check. No migration.
+- Rollback: v214 (`f5096fff`), image only.
+- Full check on `a95458c3`, exit 0: 113 TypeScript, 570 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/`, `/showcase`,
+  `/showcase/wallet`, `/notes`, `/rooms/general`, `/animations` and `/account` answer
+  200 at 1280, 390 and 320 with no errors and no sideways scroll; the main button on
+  `/showcase/wallet` is dark with light words in the light theme and was pressed in
+  light and dark with no page error; `/agents.md` names 1.10.25 and commit `8b3240b6`.
+  Not proven live: signed-in pages.
