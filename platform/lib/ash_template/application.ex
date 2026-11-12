@@ -61,6 +61,8 @@ defmodule AshTemplate.Application do
          )},
         AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Live.OpenPages,
+        # Counts this machine's open agent feeds.
+        AshTemplateWeb.FeedController,
         AshTemplateWeb.Endpoint,
         # Metrics are served beside the site, never by a process that only runs a task.
         if(serving?, do: AshTemplateWeb.Metrics)

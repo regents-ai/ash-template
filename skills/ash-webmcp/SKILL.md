@@ -24,6 +24,8 @@ files first.
   limits.
 - [Patchbay walkthrough](../ash-stack/references/agent-readiness.md): an older worked
   example.
+- [Live feed](references/live-feed.md): the signed agent's event stream, and how a site
+  adds an event kind of its own.
 
 ## 1. Establish the real surface
 

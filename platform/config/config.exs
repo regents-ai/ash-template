@@ -228,6 +228,11 @@ config :ash_template, :session_options,
   http_only: true,
   max_age: 30 * 24 * 60 * 60
 
+# A signed agent's live feed (`GET /api/v1/feed`): how many one machine holds open
+# at once, and how often a quiet feed sends a keep-alive line. Fly's proxy closes a
+# connection that sends nothing for 60 seconds.
+config :ash_template, AshTemplateWeb.FeedController, max_open: 1000, keep_alive_ms: 25_000
+
 config :ash_template, AshTemplateWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
