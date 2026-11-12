@@ -9568,3 +9568,20 @@ No migration; design-system pin unchanged.
   out, with its whole document in the first answer, its Markdown twin, and the side
   menu's mark) and `platform/test/ash_template/site/launch_gate_test.exs` (each stays
   open, in the shell, with the site closed).
+
+## 2026-11-12 — Released v226: the reading pages open inside the site
+
+- `15ce5b94` (merge of `tpl/reading-pages-1112`, `edeaa49e`) is v226 on
+  template.regents.sh, switched at about 22:32Z with `scripts/deploy.sh`. Sean, 12 Nov,
+  of Keyfleet's footer: the links go "to a new page that looks nothing like the rest of
+  the site ... make a more native view for these links". No migration.
+- Rollback: v225 (`a8b9b355`), image only.
+- Full check exit 0 by the chief on the merge: 141 script tests, 638 browser walks with
+  5 skipped, 239 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/about`, `/docs`,
+  `/changelog`, `/agents`, `/privacy` and `/terms` answer 200 at 1280 light and 390
+  dark, connected, inside the shell with the site's footer, no bare page, no page
+  errors, no sideways scroll; the document text is in the first response. Each answers
+  `Accept: text/markdown` with the same document as before; `/agents.md`, `/llms.txt`
+  and `/api/v1/about` answer 200. `/` and `/rooms/general` unchanged.
+- Open: Sean's decision 35 (short headings); shipped with the documents' own titles.
