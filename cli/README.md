@@ -4,7 +4,7 @@
 `regents ash-template health`, and so on. The code that runs them lives in
 [regents-cli](https://github.com/regents-ai/regents-cli), which publishes the one
 `regents-cli` package for every Regent site and pins each site's file by commit. regents-cli
-1.10.24 carries this site; each Regent site copies the same pattern for its own commands.
+1.10.25 carries this site; each Regent site copies the same pattern for its own commands.
 
 Each command names the route it calls and the operation in this site's OpenAPI
 document that answers it, who may call it (`authority`) and what it changes
@@ -89,12 +89,22 @@ takes one word from a fixed list (`enum`); and `pagination` tells the command li
 answer says whether another page follows and which flag asks for it. `notes edit <id>` shows
 body flags, `--title` and `--body`, with `required_one_of` asking for at least one.
 
+## A command that stays open
+
+`feed` shows a command whose answer stays open: `"stream": true` says its operation answers
+server-sent events (`text/event-stream`) instead of one JSON answer, and the command line
+prints each event as it arrives and connects again after a drop. It is only for a signed
+`GET` with no body, stdin fields, pagination or browser tool. With `--wake`, the command line
+starts the agent for an event whose `read` route is one of this file's `read` commands,
+taking only UUIDs or room names in its path.
+
 ## Names
 
 A command is a noun, then a verb (`notes list`, `rooms post`, `account points`). Its
 browser tool is the same words joined by `_` (`notes_list`, `rooms_post`), and the site
 refuses to build when the two disagree. Every command answers a JSON object at an address
-under `/api/v1/`, apart from the shared agent sign-in under `/api/agents/v1/`. `agents pair`
-is the one command with no browser tool: an agent pairs once, where it keeps its key.
+under `/api/v1/`, apart from the shared agent sign-in under `/api/agents/v1/` and `feed`,
+which stays open. Two commands have no browser tool: `agents pair`, since an agent pairs
+once, where it keeps its key, and `feed`, since a tool call answers once.
 
 Set `base_url` to the site's own address; the template's is its demo, template.regents.sh.
