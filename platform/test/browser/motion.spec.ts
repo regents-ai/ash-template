@@ -54,7 +54,7 @@ test("a new item in a list, and a new note, settle with nothing left on them", a
 // content that was still settling in. On a page the server draws once, only an
 // alert set straight in the page's `main` shakes.
 test("a refusal shakes the page's own alert, never one inside content settling in", async ({page}) => {
-  await page.route("/terms", async route => {
+  await page.route("/too-many-pages", async route => {
     const response = await route.fetch()
     const alerts =
       '<p role="alert" id="own-alert">Not saved.</p>' +
@@ -68,7 +68,7 @@ test("a refusal shakes the page's own alert, never one inside content settling i
       .observe(document, {attributes: true, attributeFilter: ["style"], subtree: true})
   })
 
-  await page.goto("/terms")
+  await page.goto("/too-many-pages")
   const moved = () => page.evaluate(() => [...(window as unknown as {moved: Set<string>}).moved])
   await expect.poll(moved).toContain("own-alert")
   expect(await moved()).not.toContain("settling-alert")

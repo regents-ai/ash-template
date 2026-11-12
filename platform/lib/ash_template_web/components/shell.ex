@@ -744,12 +744,18 @@ defmodule AshTemplateWeb.Components.Shell do
     <.link
       patch={@live? && @target.path}
       href={!@live? && @target.path}
-      aria-current={@route_spec.destination == @target.path && "page"}
+      aria-current={current(@route_spec.destination, @target.path)}
     >
       {@target.label}
     </.link>
     """
   end
+
+  # The open page, or the listed page it sits under (an agent's page under /agents).
+  defp current(path, path), do: "page"
+
+  defp current(destination, path),
+    do: String.starts_with?(destination, path <> "/") && "location"
 
   # The browser opens and closes the panel itself (`popover`), so it closes on
   # Escape or a press anywhere else, and a page update never shuts it.

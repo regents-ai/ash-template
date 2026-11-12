@@ -87,8 +87,8 @@ test.describe("signed in", () => {
     })
   }
 
-  // On a plain page the Agent Message form is a live view of its own, inside a dialog
-  // the page's script opens.
+  // On the agents' reading page the Agent Message form sits inside a dialog the
+  // page's script opens.
   test("with websockets refused, the Agent Message form says it is not connected and Send is disabled", async ({page, hasTouch}) => {
     await refuseWebsockets(page)
     await page.goto("/agents")
