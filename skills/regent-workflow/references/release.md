@@ -76,6 +76,11 @@ again before a release.
     after-read request, and tell each lane that waits on the release. End the read with
     what has been open for more than an hour, or "none" (4 Nov).
 
+Every site ships `rel/vm.args.eex` with `+sbwt none +sbwtdcpu none +sbwtdio none`, so
+idle schedulers sleep instead of spinning; the built release carries it as
+`releases/<version>/vm.args`. On Fly's shared CPUs spinning spends the CPU allowance on
+no work and makes CPU charts overstate load.
+
 A guard that refuses (the worktree guard, a deploy safety check) ends the attempt: stop
 and report what blocked it. Never release from a `git archive` export or a fresh clone.
 

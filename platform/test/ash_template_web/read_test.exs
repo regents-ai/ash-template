@@ -38,5 +38,25 @@ defmodule AshTemplateWeb.ReadTest do
     assert late.assigns.notes == socket.assigns.notes
   end
 
+  # The shell's bottom bar learns from the page's own reads that something is not
+  # answering; the first, unconnected render has no page process to tell.
+  test "a read that fails on a connected page tells the page, and only then" do
+    refused = fn -> raise DBConnection.ConnectionError, "refused" end
+
+    connected =
+      Read.now(%{socket() | transport_pid: self()}, :notes, 1, fn -> {:ok, ["first note"]} end)
+
+    refute_received {Read, :failed}
+
+    Read.now(connected, :notes, 1, refused)
+    assert_received {Read, :failed}
+
+    Read.settle(connected, {Read, :notes, 1}, {:ok, {:error, :unreadable}})
+    assert_received {Read, :failed}
+
+    Read.now(socket(), :notes, 1, refused)
+    refute_received {Read, :failed}
+  end
+
   defp socket, do: %Phoenix.LiveView.Socket{assigns: %{__changed__: %{}, notes: %Read{}}}
 end

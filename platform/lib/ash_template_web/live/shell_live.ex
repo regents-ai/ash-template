@@ -74,7 +74,7 @@ defmodule AshTemplateWeb.ShellLive do
        verified_connections_notice: nil,
        notifications: %Read{},
        mark_read_failed?: false,
-       healthy: AshTemplate.Health.database_ready?(),
+       healthy: true,
        search: unsearched()
      )
      |> count_unread()}
@@ -287,6 +287,10 @@ defmodule AshTemplateWeb.ShellLive do
 
     {:noreply, socket}
   end
+
+  # A read of this page, or of one of its parts, that failed: the bottom bar says
+  # something is not answering for as long as the page stays open.
+  def handle_info({Read, :failed}, socket), do: {:noreply, assign(socket, :healthy, false)}
 
   @doc "The search box before anything is typed: every page and action, as suggestions."
   def unsearched, do: %{query: "", results: search("", nil)}
@@ -614,7 +618,7 @@ defmodule AshTemplateWeb.ShellLive do
       assign(socket, :unread, count)
     else
       nil -> assign(socket, :unread, nil)
-      {:error, _error} -> assign_new(socket, :unread, fn -> 0 end)
+      {:error, _error} -> socket |> assign_new(:unread, fn -> 0 end) |> assign(:healthy, false)
     end
   end
 

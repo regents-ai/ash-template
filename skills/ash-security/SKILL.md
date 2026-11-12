@@ -16,6 +16,13 @@ its real entry point to the resource action.
 - **Reads may filter or answer not-found.** Test non-disclosure under the policy's
   actual contract; do not demand Forbidden everywhere.
 - **For writes, prove the refused operation changed nothing.**
+- **Every way in that reaches the database before sign-in has a per-address
+  limit**, counted in `RequestRateLimiter` on `AshTemplateWeb.ClientAddress`:
+  page loads (600 a minute, so an office behind one address is never refused),
+  API and agent routes. The live socket's connect never reaches the endpoint's
+  plugs, and behind Fly its peer is Fly's proxy, so its pages are counted per
+  address as they join (`AshTemplateWeb.Live.OpenPages`). Fly's limit counts
+  connections, not requests.
 
 ## References
 

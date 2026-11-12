@@ -170,8 +170,14 @@ the workspace). This holds until the founder changes the database plan.
   never land at once. Everything a site runs shares this one pool: pages, Oban, the
   health check (`AshTemplate.Health.database_ready?/0`) and the shared libraries,
   which take the site's repository from its configuration and start none of their
-  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). The
-  template holds six connections at rest: five serving and one listening.
+  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). Only
+  `/healthz` runs the health query; a page takes whether the database answers from
+  its own reads (ash-frontend, public figures, "Quiet pages"). The health query
+  never waits for a connection (`queue: false`) and must not mark the machine down
+  because the pool is busy: none free within 30 seconds of a query that succeeded
+  is a busy, healthy site, and a machine marked down for that is restarted when it
+  is serving most. The template holds six connections at rest: five serving and
+  one listening.
 - **Listening: one connection per machine.** The template opens one
   `Postgrex.Notifications` connection with the serving login, outside the pool
   (`AshTemplate.DatabaseConfig.notifications_config!/2`), and `RegentAgents.Listener`
