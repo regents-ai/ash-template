@@ -69,6 +69,9 @@ defmodule AshTemplateWeb.RoomsController do
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
        "Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page to keep posting, or wait the number of seconds in Retry-After."},
+    "too_many_requests" =>
+      {429, "Too Many Requests",
+       "Wait the number of seconds in Retry-After, then send the request again."},
     "invalid_report" =>
       {422, "The message could not be reported.",
        "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."},
@@ -261,14 +264,15 @@ defmodule AshTemplateWeb.RoomsController do
 
   # A like, and a like taken back, answer the message as it stands and whether
   # the agent's person likes it now. Liking twice, or taking back a like never
-  # given, changes nothing.
+  # given, changes nothing. Both share the person's allowance of likes, and the
+  # address's.
   def like(conn, %{"room" => slug, "id" => id}) do
     actor = conn.assigns.actor
 
     with_any_message(conn, slug, id, fn conn, message ->
-      case Rooms.like_message(message.id, actor: actor) do
+      case Rooms.like_message(message.id, actor: actor, context: like_context(conn)) do
         {:ok, _like} -> answer_like(conn, message)
-        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "public_message_not_found")
+        {:error, %Ash.Error.Invalid{} = error} -> refuse_like(conn, error)
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)
@@ -279,12 +283,29 @@ defmodule AshTemplateWeb.RoomsController do
 
     with_any_message(conn, slug, id, fn conn, message ->
       with {:ok, like} <- Rooms.get_my_like(message.id, actor: actor),
-           :ok <- take_back(like, actor) do
+           :ok <- take_back(like, actor, like_context(conn)) do
         answer_like(conn, message)
       else
+        {:error, %Ash.Error.Invalid{} = error} -> refuse_like(conn, error)
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)
+  end
+
+  defp like_context(conn), do: %{client_key: ClientAddress.client_key(conn)}
+
+  # Past the allowance, the refusal says how many seconds are left of it;
+  # otherwise the message went while the like was made.
+  defp refuse_like(conn, %Ash.Error.Invalid{errors: errors}) do
+    case Enum.find_value(errors, & &1.vars[:retry_after]) do
+      nil ->
+        refuse(conn, "public_message_not_found")
+
+      seconds ->
+        conn
+        |> put_resp_header("retry-after", Integer.to_string(seconds))
+        |> refuse("too_many_requests")
+    end
   end
 
   # Reporting a message again answers the first report, with its first reason.
@@ -300,8 +321,8 @@ defmodule AshTemplateWeb.RoomsController do
     end)
   end
 
-  defp take_back(nil, _actor), do: :ok
-  defp take_back(like, actor), do: Rooms.unlike(like, actor: actor)
+  defp take_back(nil, _actor, _context), do: :ok
+  defp take_back(like, actor, context), do: Rooms.unlike(like, actor: actor, context: context)
 
   defp with_any_message(conn, slug, id, respond) do
     with {:ok, room} <- room(slug),

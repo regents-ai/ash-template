@@ -15,6 +15,12 @@ on Autolaunch, Patchbay and Keyfleet, with as many agents.
 | A public figure held in one saved row: an auction's raised total, a post's reply count | The row's own `pub_sub` publication carries the public fields. Pages apply the payload; nobody rereads. |
 | A public figure no saved row carries (a chain's newest block), or one built from many rows (the latest trades across a market) | `AshTemplate.SharedReading`: one producer reads it, every page fetches the one copy. |
 
+A notice that changes one row's public count carries the count: hold the count on
+the row, move it with `atomic_update` and a version in the action that changes it,
+and publish both, so pages keep the newer version and only the person who pressed
+changes their own state, from the press. Answered with a reread on every open page
+instead, one like cost 3 to 4 queries for each page open on its room.
+
 A figure is public only when a signed-out read answers it, with the same value
 for every visitor. If a policy, a filter on the actor or a field policy could
 change the answer for anyone, it is the first kind. When unsure, it is the first
@@ -91,6 +97,10 @@ The rules, each with its reason:
    once. A page showing a public row heals on its next navigation; a figure that
    must never be stale past a few seconds is a shared reading with a producer,
    below.
+8. **A notice carries what every viewer needs** (a count, a tally, a closed
+   state), set by the publication's `transform`, so viewers apply it without a
+   read. A notice that makes every open page read the database multiplies one
+   write by the number of viewers.
 
 `SharedReading` is not for a single public row. A site reaching for it there is a
 review finding: the row already has a save, and the save already has a
@@ -230,6 +240,10 @@ nobody is looking: it is keys times passes, every pass, with no visitor on the
 site. Bound it on purpose and say the bound beside the kind (`AshTemplate.ChainHead`
 makes one request for each chain it watches, on each tick).
 
+A producer reads only keys it may hold: it bounds its own pass to its kind's key
+limit (`SharedReading.keys/1`), so it never reads a key the table would refuse.
+The room counter once counted every room each minute and kept 16.
+
 Measure a producer at a production provider's pace, not at a local node's. At
 25 ms a request, Autolaunch's pass took longer than one two-second block; its
 check that the pass's block was still the newest then failed every pass, and
@@ -268,6 +282,12 @@ arrives, and a message about the page's own subject arrives right after it, in
 the same second. The page's own reading must still land. Write that case down
 and follow it through the code. A filter keyed on the subject's id is safe; one
 keyed on "I handled something a moment ago" is not.
+
+Presence uses `Phoenix.Presence` `init/1` and `handle_metas/4`: the presence
+process turns each change into who arrived and who left once on each machine,
+pages keep people in a stream, and a page that does not show presence does not
+subscribe to it. A page that listed the whole presence on each change paid
+n² log n per join, even for a hidden panel (`AshTemplateWeb.Presence`).
 
 ## Memory for each open page
 
@@ -338,7 +358,12 @@ What still holds for any page:
 - **Assign what the page renders.** An Ash record carries its metadata and every
   loaded relationship; assign the fields as a map, or one record with nothing
   loaded. A list the page only renders goes in a stream, which the server does
-  not keep.
+  not keep. This includes the value a `Read` holds and any `Ash.Page` assigned
+  for paging.
+- **A paged list keeps only its cursor and `more?`.** The read behind a stream
+  returns the rendered maps, so `Read` never holds records the stream already
+  sent, and every list a page reads has an Ash `limit` or keyset paging. Each
+  room page once held 50 full records and every room.
 - **The same figure on every page is held once**, in `SharedReading` or a
   publication's payload, and each page keeps only what it renders. A shared
   reading saves the reads, not the copy: a page that assigns what it fetched
@@ -379,3 +404,13 @@ section, not a setting to flip.
 - Which messages a reader sees is the first kind of thing (their mutes), and it
   stays a filter on the page: the payload is the same for everyone, and each
   page leaves out what its reader muted.
+- A message holds its `like_count` and `like_version`, moved by `:count_like` in
+  the like's own transaction, and the like's notice carries `%{id, room,
+  like_count, like_version}`. Each message's heart (`RoomsLive.Heart`) keeps the
+  newer version, and only the reader who pressed changes whether it shows the
+  like as theirs.
+- The page's read returns `Message.public/1` maps, the keyset cursor of the
+  oldest and `more?`; older messages are the next keyset page.
+- Who is here arrives from `AshTemplateWeb.Presence` as arrivals and departures
+  into a stream, on a topic only a signed-in reader's page, which shows the
+  panel, subscribes to.

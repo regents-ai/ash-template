@@ -126,8 +126,14 @@ with the same name as one of the record's attributes is filled in without being 
 ## Rules (ash-template, 14 October 2026)
 
 - Declare signals in one signal module per domain. The emitter and its listeners depend
-  on that module, never on each other. Keep payloads small: send ids, not records. The
+  on that module, never on each other. Keep payloads small: send ids, and a field a
+  listener decides on before reading (a post's words, for mentions), never records. The
   listener reads what it needs.
+- An inline listener runs inside the emitter's transaction and holds its connection and
+  row locks until commit, so it does only work of fixed size: reads of one row or one
+  bounded page through an index, never a scan of rows that grow with use, returning early
+  when the record cannot match. Work that cannot be bounded goes to a job delivery. Every
+  room post once scanned its room's whole history while holding one of 5 connections.
 - The listener owns its reaction: Activity writes the mention notifications and Points
   records points. The emitting resource names neither.
 - Inline listeners run with the emitter's actor and `authorize?`, so the listener's

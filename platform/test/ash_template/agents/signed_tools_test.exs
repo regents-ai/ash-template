@@ -532,7 +532,8 @@ defmodule AshTemplate.SignedToolsTest do
     assert %{"liked" => true, "message" => %{"like_count" => 1}} = Jason.decode!(liked.resp_body)
     assert %{"liked" => true, "message" => %{"like_count" => 1}} = Jason.decode!(request(:post, path, "{}").resp_body)
 
-    assert {:ok, _like} = Rooms.like_message(message.id, actor: other)
+    assert {:ok, _like} =
+             Rooms.like_message(message.id, actor: other, context: %{client_key: "other"})
     public = request(:get, "/api/v1/rooms/general/messages/#{message.id}", nil, false)
     assert %{"like_count" => 2} = Jason.decode!(public.resp_body)["message"]
     assert {:ok, %{liked_by_me: true, like_count: 2}} = Rooms.get_room_message("general", message.id, actor: human)

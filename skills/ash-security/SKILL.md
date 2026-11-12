@@ -23,6 +23,12 @@ its real entry point to the resource action.
   plugs, and behind Fly its peer is Fly's proxy, so its pages are counted per
   address as they join (`AshTemplateWeb.Live.OpenPages`). Fly's limit counts
   connections, not requests.
+- **Every write that other people's open pages hear about** (a message, a like, a vote,
+  a join) carries a per-account and per-address allowance through
+  `AshTemplate.Limits.LimitWrites`, so one script cannot multiply its writes by the
+  number of viewers. The allowance is checked in `Ash.Changeset.before_transaction/2`,
+  never `before_action`, so a refused write takes no database connection and opens no
+  transaction.
 
 ## References
 

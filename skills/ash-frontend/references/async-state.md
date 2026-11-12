@@ -81,6 +81,11 @@ socket
 |> show_notes()
 ```
 
+A read whose rows the page streams returns the public maps and the keyset cursor,
+never the records or the `Ash.Page`. `Read` keeps its value for the life of the
+page, so a value holding records keeps every streamed row in memory. Ask for older
+rows with Ash keyset pagination (`page: [after: cursor]`), as `AshTemplateWeb.RoomsLive` does.
+
 A controller action that reads the database likewise answers in one step, but it
 still needs its own error state instead of an empty list.
 
