@@ -8920,3 +8920,58 @@ template as one piece every site takes, and a Motion lab page that shows it.
   seen; the built stylesheet for it is byte-identical to v216's.
 - Known: at this pin the style check passes silently on a machine without ripgrep.
   Fixed in design-system `0ae2bffc`; the template takes it in its next release.
+
+## 2026-11-12 — The Credits schema leaves the shared database (branch, not on main)
+
+Sean, 12 November: Credits are removed from every Regent site and the shared database
+drops them. On `tpl/credits-drop-1112`; it runs on production only once every site has
+stopped reading the Credits tables, and only after the founder's lock comes off them.
+
+- `20261112130000_remove_credits_schema` removes the `regent_credits` schema: its 13
+  tables (the Credits ledger's own `schema_migrations` included), then the
+  `revoke_credit_grant` trigger the Credits package hung on
+  `regent_agents.paired_agents`, then its two functions (`refuse_change`,
+  `revoke_pairing_grant`), then the schema. Nothing cascades, so anything else still
+  depending on them fails the migration and the whole of it rolls back; it waits at
+  most 5 seconds for a lock. Every statement is `IF EXISTS`, so local and test
+  databases, which never had Credits, are unchanged. It cannot be rolled back.
+- Untouched: `regent_names.basenames_payment_credits` (not Credits), the
+  `public.money_with_currency` type and the Ash helper functions in `public` that
+  other sites use, and `regent_agents.paired_agents` itself and its rows.
+- Production order, outside this repository: copy the 13 tables to CSV
+  (`artifacts/prod-protected-tables/credits-copy.sql` in the workspace, read only),
+  take the ten Credits tables off the lock (`unprotect-credits.sql` beside it; every
+  other protected table keeps its lock), then release this migration.
+- Proved on a throwaway database built from the Credits package's own 15 migrations
+  with the lock applied by the production lock file: the migration is refused by the
+  ten guard views and changes nothing; the copy writes 13 files whose rows match its
+  counts; the unlock leaves the other protected tables locked; the migration then
+  removes everything above and nothing else. A new test database migrates through it
+  unchanged.
+
+## 2026-11-12 — The Credits lock comes off inside the removal migration (branch, not on main)
+
+Sean's 18 a, 12 November: the founder's lock comes off exactly the ten Credits tables
+inside `20261112130000_remove_credits_schema`, in its one transaction, instead of by
+hand beforehand. This replaces the unlock step in the entry above;
+`unprotect-credits.sql` was not used.
+
+- The migration now runs, in order: the ten tables' guard views (one
+  `DROP VIEW IF EXISTS`), their ten rows in `regent_guard.protected_tables` (by name,
+  and only where that list exists), the 13 tables (the lock's triggers on them go with
+  them), the `revoke_credit_grant` trigger, the two functions, the schema. Still
+  nothing cascades, one transaction, a 5 second lock wait, and it cannot be rolled
+  back. It checks nothing about other tables; every other protected table keeps its
+  lock.
+- Production order: copy the 13 tables to CSV (read only), then release this
+  migration.
+- Proved on PostgreSQL 16.15 (production's version) and 17.7, on a throwaway database
+  built from the Credits package's own 15 migrations with the production lock file
+  applied: with the lock on, the migration alone succeeds; the lock list loses exactly
+  ten rows and its deletable count exactly one; the other protected tables keep their
+  list rows, guard views and triggers (`paired_agents` loses only the Credits
+  trigger); a view on a Credits table planted in another schema stops it and leaves
+  everything, the lock included, exactly as before; it succeeds when run by a role
+  that is only a member of the owning role; a second run, and a run on a database
+  without the lock or Credits, change nothing. A new test database migrates through
+  it unchanged.
