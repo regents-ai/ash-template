@@ -8948,3 +8948,30 @@ stopped reading the Credits tables, and only after the founder's lock comes off 
   counts; the unlock leaves the other protected tables locked; the migration then
   removes everything above and nothing else. A new test database migrates through it
   unchanged.
+
+## 2026-11-12 — The Credits lock comes off inside the removal migration (branch, not on main)
+
+Sean's 18 a, 12 November: the founder's lock comes off exactly the ten Credits tables
+inside `20261112130000_remove_credits_schema`, in its one transaction, instead of by
+hand beforehand. This replaces the unlock step in the entry above;
+`unprotect-credits.sql` was not used.
+
+- The migration now runs, in order: the ten tables' guard views (one
+  `DROP VIEW IF EXISTS`), their ten rows in `regent_guard.protected_tables` (by name,
+  and only where that list exists), the 13 tables (the lock's triggers on them go with
+  them), the `revoke_credit_grant` trigger, the two functions, the schema. Still
+  nothing cascades, one transaction, a 5 second lock wait, and it cannot be rolled
+  back. It checks nothing about other tables; every other protected table keeps its
+  lock.
+- Production order: copy the 13 tables to CSV (read only), then release this
+  migration.
+- Proved on PostgreSQL 16.15 (production's version) and 17.7, on a throwaway database
+  built from the Credits package's own 15 migrations with the production lock file
+  applied: with the lock on, the migration alone succeeds; the lock list loses exactly
+  ten rows and its deletable count exactly one; the other protected tables keep their
+  list rows, guard views and triggers (`paired_agents` loses only the Credits
+  trigger); a view on a Credits table planted in another schema stops it and leaves
+  everything, the lock included, exactly as before; it succeeds when run by a role
+  that is only a member of the owning role; a second run, and a run on a database
+  without the lock or Credits, change nothing. A new test database migrates through
+  it unchanged.
