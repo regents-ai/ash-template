@@ -7308,3 +7308,11 @@ sits on its own branches.
 - Run it as it is, never inside `lockf`: it takes its own locks.
 - README "Deploy" says the same. Proximal's script has the same shape and moves with
   its next release, as each site's does (control coordination/ash-template.md, 00:37Z).
+
+## 2026-11-12 — Released v191: deploys never wait on another site's
+
+- Live: v191 at 00:55Z on template.regents.sh; /capabilities.json build.commit e09a8678.
+  Rollback: v190 (f70cfa1b). No migrations, no pin change, no app code.
+- The new `scripts/deploy.sh`'s first run: the build took no shared lock, the switch
+  found image `e09a867` already built and took place 1. Live read at 1280 and 390:
+  pages 200, odd addresses 404, no page errors, sign-in metadata 200.
