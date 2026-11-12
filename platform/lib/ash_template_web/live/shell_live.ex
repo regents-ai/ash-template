@@ -59,7 +59,6 @@ defmodule AshTemplateWeb.ShellLive do
      |> assign(
        shell_instance: System.unique_integer([:positive, :monotonic]),
        room: nil,
-       people: [],
        conversation: nil,
        dm: nil,
        poll_id: nil,
@@ -74,7 +73,7 @@ defmodule AshTemplateWeb.ShellLive do
        verified_connections_notice: nil,
        notifications: %Read{},
        mark_read_failed?: false,
-       healthy: AshTemplate.Health.database_ready?(),
+       healthy: true,
        search: unsearched()
      )
      |> count_unread()}
@@ -236,10 +235,12 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: "room_people:" <> room, event: "presence_diff"}, socket) do
+  # Who arrived and who left reach only the room on screen (`Presence`).
+  def handle_info({:here, room, arrived, left}, socket) do
     if on_room?(socket, room),
-      do: {:noreply, assign(socket, :people, Presence.people(room))},
-      else: {:noreply, socket}
+      do: send_update(RoomsLive, id: "rooms", here: {arrived, left})
+
+    {:noreply, socket}
   end
 
   # Muting or unmuting on any of the person's pages changes what each of their
@@ -249,8 +250,13 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
-  # Each piece of the assistant's reply, and the person's own message, reach only
-  # the conversation on screen.
+  # The person's own message, the assistant's reply as it starts and ends, and
+  # each piece of the reply in between reach only the conversation on screen.
+  def handle_info(%{topic: "chat:messages:" <> id, event: "piece", payload: piece}, socket) do
+    if on_conversation?(socket, id), do: send_update(ChatLive, id: "chat", piece: piece)
+    {:noreply, socket}
+  end
+
   def handle_info(%{topic: "chat:messages:" <> id, payload: message}, socket) do
     if on_conversation?(socket, id),
       do: send_update(ChatLive, id: "chat", change: message)
@@ -287,6 +293,10 @@ defmodule AshTemplateWeb.ShellLive do
 
     {:noreply, socket}
   end
+
+  # A read of this page, or of one of its parts, that failed: the bottom bar says
+  # something is not answering for as long as the page stays open.
+  def handle_info({Read, :failed}, socket), do: {:noreply, assign(socket, :healthy, false)}
 
   @doc "The search box before anything is typed: every page and action, as suggestions."
   def unsearched, do: %{query: "", results: search("", nil)}
@@ -349,7 +359,6 @@ defmodule AshTemplateWeb.ShellLive do
           lease={@session_lease}
           account={current_account(@access_context)}
           room={@room}
-          people={@people}
           client_key={@client_key}
         />
 
@@ -577,7 +586,8 @@ defmodule AshTemplateWeb.ShellLive do
   defp on_room?(_socket, _room), do: false
 
   # The page hears the room it shows, and a signed-in person is listed as here
-  # while it is open. Patching to another room, or away, leaves the last one.
+  # while it is open and hears who else arrives and leaves, which only they are
+  # shown. Patching to another room, or away, leaves the last one.
   defp enter_room(%{assigns: %{room: room}} = socket, room), do: socket
 
   defp enter_room(socket, room) do
@@ -586,7 +596,7 @@ defmodule AshTemplateWeb.ShellLive do
       join_room(room, human_actor(socket))
     end
 
-    assign(socket, room: room, people: people(room))
+    assign(socket, :room, room)
   end
 
   defp join_room(nil, _human), do: :ok
@@ -594,8 +604,11 @@ defmodule AshTemplateWeb.ShellLive do
   defp join_room(room, human) do
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Room.topic())
     Phoenix.PubSub.subscribe(AshTemplate.PubSub, Message.topic(room.slug))
-    Phoenix.PubSub.subscribe(AshTemplate.PubSub, Presence.topic(room.slug))
-    if human, do: Presence.join(room.slug, human)
+
+    if human do
+      Phoenix.PubSub.subscribe(AshTemplate.PubSub, Presence.here_topic(room.slug))
+      Presence.join(room.slug, human)
+    end
   end
 
   defp leave_room(nil, _human), do: :ok
@@ -603,12 +616,12 @@ defmodule AshTemplateWeb.ShellLive do
   defp leave_room(room, human) do
     Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Room.topic())
     Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Message.topic(room.slug))
-    Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Presence.topic(room.slug))
-    if human, do: Presence.leave(room.slug, human)
-  end
 
-  defp people(nil), do: []
-  defp people(room), do: Presence.people(room.slug)
+    if human do
+      Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Presence.here_topic(room.slug))
+      Presence.leave(room.slug, human)
+    end
+  end
 
   defp current_account(%{principal: {:human, account}}), do: account
   defp current_account(_access_context), do: nil
@@ -624,7 +637,7 @@ defmodule AshTemplateWeb.ShellLive do
       assign(socket, :unread, count)
     else
       nil -> assign(socket, :unread, nil)
-      {:error, _error} -> assign_new(socket, :unread, fn -> 0 end)
+      {:error, _error} -> socket |> assign_new(:unread, fn -> 0 end) |> assign(:healthy, false)
     end
   end
 

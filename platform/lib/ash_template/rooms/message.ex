@@ -9,8 +9,9 @@ defmodule AshTemplate.Rooms.Message do
   `AshTemplate.Rooms.Moderation`). An agent the person paired acts as them: what it posts or edits is theirs, marked with the agent
   (`via_agent`) until they edit it themselves. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Each
-  message counts its likes (`AshTemplate.Rooms.Like`), and a room read says
-  which of them the reader liked. A room's
+  message keeps its count of likes (`AshTemplate.Rooms.Like`), moved in each
+  like's own transaction (`:count_like`), and a room read says which of them the
+  reader liked. A room's
   messages, and every new post, come with their agent, if an agent wrote them, so its
   World ID mark shows as it stands now, and with the picture its author's
   account shows. Every post is told to the rest of the site as
@@ -19,7 +20,8 @@ defmodule AshTemplate.Rooms.Message do
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once, and every post and delete on `every_room_topic/0` as
   well. What is published is `public/1`, the fields a signed-out reader sees,
-  never the record.
+  never the record. Each move of a like count is published on the room's topic
+  too, with the count itself, so no page reads the message again.
   """
 
   use Ash.Resource,
@@ -34,6 +36,7 @@ defmodule AshTemplate.Rooms.Message do
     AgentPost,
     AuthorPicture,
     LeaveOutMuted,
+    RecordPoster,
     RoomMessages,
     SetAuthor,
     SquashBlankLines
@@ -42,7 +45,7 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.{Like, Mute, Removal, Room}
 
   # What every room read and write loads for `public/1`.
-  @shown [:agent, :via_agent, :author_picture, :like_count]
+  @shown [:backed_agents, :via_agent_name, :author_picture]
   @shown_text "Use letters, numbers and marks you can see."
 
   postgres do
@@ -51,6 +54,9 @@ defmodule AshTemplate.Rooms.Message do
 
     custom_indexes do
       index([:room, :inserted_at])
+      # An agent's feed opens with the rooms it has posted in (`AshTemplate.Feed`).
+      index([:agent_id], where: "agent_id IS NOT NULL", concurrently: true)
+      index([:via_agent_id], where: "via_agent_id IS NOT NULL", concurrently: true)
     end
 
     check_constraints do
@@ -76,6 +82,13 @@ defmodule AshTemplate.Rooms.Message do
     attribute :author_wallet, :string, public?: true
     attribute :author_ens_name, :string, public?: true
     attribute :edited_at, :utc_datetime_usec, public?: true
+
+    # How many people like it, and how many times that count has moved: the
+    # order marker of the like notices, which a page keeps the newer of. Only
+    # `:count_like` changes them, in the like's own transaction.
+    attribute :like_count, :integer, allow_nil?: false, default: 0, public?: true
+    attribute :like_version, :integer, allow_nil?: false, default: 0, public?: true
+
     create_timestamp :inserted_at, public?: true
   end
 
@@ -117,24 +130,24 @@ defmodule AshTemplate.Rooms.Message do
     has_many :likes, Like
   end
 
+  # What a message shows of its agents is read in the same query as the message,
+  # so a page reads no agents of its own, with or without agents' messages on it.
   calculations do
     calculate :author_picture, :map, AuthorPicture
     calculate :liked_by_me, :boolean, expr(exists(likes, liker_id == ^actor(:human_account_id)))
-  end
-
-  # Everyone sees every like counted, though only the liker reads their like.
-  aggregates do
-    count :like_count, :likes do
-      authorize? false
-    end
+    calculate :backed_agents, :integer, expr(agent.world_id_agent_count)
+    calculate :agent_wallet, :string, expr(agent.wallet_address)
+    calculate :via_agent_name, :string, expr(via_agent.name)
   end
 
   actions do
     defaults [:read]
 
+    # An agent's delete, like its edit, rechecks its pairing inside the transaction.
     destroy :destroy do
       primary? true
       require_atomic? false
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
     end
 
     # The site's operator removing a message, usually a reported one. The removal
@@ -257,13 +270,15 @@ defmodule AshTemplate.Rooms.Message do
       change {LimitWrites,
               allowance: :room_post, address_allowance: :room_post_address, field: :body}
 
-      emit AshTemplate.Rooms.Signals, :message_posted, fields: [message_id: :id]
+      change RecordPoster
+      emit AshTemplate.Rooms.Signals, :message_posted, fields: [message_id: :id, body: :body]
       change load(@shown)
     end
 
     # Squashing the empty lines reads the new text, so an edit is not a single
     # atomic statement; only the author, or an agent acting as them, ever edits a
-    # message.
+    # message. A post checks the pairing of an agent that posts as its person in
+    # `SetAuthor`; an edit rechecks it inside the transaction.
     update :edit do
       accept [:body]
       require_atomic? false
@@ -271,13 +286,18 @@ defmodule AshTemplate.Rooms.Message do
       validate match(:body, RegentFormat.Text.pattern()), message: @shown_text
       change atomic_update(:edited_at, expr(now()))
       change set_attribute(:via_agent_id, actor(:acting_agent_id))
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       change load(@shown)
     end
-  end
 
-  # A post checks the pairing of an agent that posts as its person in `SetAuthor`.
-  changes do
-    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:update, :destroy]
+    # A like given (`by` 1) or taken back (-1), from the like's own transaction
+    # (`AshTemplate.Rooms.Like`): one statement that moves the count and turns
+    # the order marker, whatever other likes are saved at the same moment.
+    update :count_like do
+      argument :by, :integer, allow_nil?: false, constraints: [min: -1, max: 1]
+      change atomic_update(:like_count, expr(like_count + ^arg(:by)))
+      change increment(:like_version)
+    end
   end
 
   policies do
@@ -288,6 +308,15 @@ defmodule AshTemplate.Rooms.Message do
     end
 
     policy action(:remove) do
+      forbid_if always()
+    end
+
+    # Only a like moves a count, as the system; nobody calls it directly.
+    bypass action(:count_like) do
+      authorize_if actor_attribute_equals(:role, :system)
+    end
+
+    policy action(:count_like) do
       forbid_if always()
     end
 
@@ -327,6 +356,9 @@ defmodule AshTemplate.Rooms.Message do
   # payload: %{id: id, room: room}}; posts and deletes to `every_room_topic/0` too. `edited_at` is the order marker: the
   # database sets it on every edit, and a page keeps the newer. Post and edit
   # load what `public/1` reads themselves, so no publication reads it again.
+  # A like count's move is %{event: "like", payload: %{id, room, like_count,
+  # like_version}}, everything a page needs to show it; `like_version` is its
+  # order marker.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
@@ -345,6 +377,17 @@ defmodule AshTemplate.Rooms.Message do
       event: "destroy",
       returns: :map,
       transform: &%{id: &1.data.id, room: &1.data.room}
+
+    publish :count_like, ["room", :room],
+      event: "like",
+      returns: :map,
+      transform:
+        &%{
+          id: &1.data.id,
+          room: &1.data.room,
+          like_count: &1.data.like_count,
+          like_version: &1.data.like_version
+        }
 
     publish :post, ["room_messages"], returns: :map, transform: &__MODULE__.public(&1.data)
 
@@ -368,7 +411,7 @@ defmodule AshTemplate.Rooms.Message do
   What a signed-out reader may see of a message, named one by one: what a room's
   page shows and what its topic carries. `backed_agents` is how many agents the
   World ID person behind the writing agent backs, `nil` when nobody does.
-  `like_count` is how many people like it.
+  `like_count` is how many people like it, as of `like_version`.
   `author_squares` and `author_picture` are the picture the author's account
   shows (`AuthorPicture`). What `@shown` names must be loaded, as every room
   read and write loads it.
@@ -387,8 +430,9 @@ defmodule AshTemplate.Rooms.Message do
       inserted_at: message.inserted_at,
       edited_at: message.edited_at,
       like_count: message.like_count,
-      backed_agents: message.agent && message.agent.world_id_agent_count,
-      via_agent_name: message.via_agent && message.via_agent.name,
+      like_version: message.like_version,
+      backed_agents: message.backed_agents,
+      via_agent_name: message.via_agent_name,
       author_squares: message.author_picture.squares,
       author_picture: message.author_picture.picture
     }
@@ -409,8 +453,9 @@ defmodule AshTemplate.Rooms.Message do
       author_ens_name: message.author_ens_name,
       author_kind: if(message.agent_id, do: "agent", else: "person"),
       agent_id: message.agent_id,
-      author_human_backed: human_backed?(message),
-      via_agent: message.via_agent && %{id: message.via_agent.id, name: message.via_agent.name},
+      author_human_backed: is_integer(message.backed_agents),
+      via_agent:
+        message.via_agent_id && %{id: message.via_agent_id, name: message.via_agent_name},
       body: message.body,
       like_count: message.like_count,
       inserted_at: message.inserted_at,
@@ -428,7 +473,4 @@ defmodule AshTemplate.Rooms.Message do
       wallet: message.author_wallet,
       ens_name: message.author_ens_name
     }
-
-  defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
-  defp human_backed?(_message), do: false
 end

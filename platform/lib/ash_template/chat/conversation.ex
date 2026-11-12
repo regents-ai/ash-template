@@ -50,7 +50,9 @@ defmodule AshTemplate.Chat.Conversation do
       change AshTemplate.Chat.Conversation.Changes.GenerateName
     end
 
+    # Newest first, a page at a time.
     read :my_conversations do
+      pagination keyset?: true, default_limit: 50, max_page_size: 100
       filter expr(human_account_id == ^actor(:human_account_id))
       prepare build(sort: [inserted_at: :desc])
     end
@@ -60,8 +62,10 @@ defmodule AshTemplate.Chat.Conversation do
     table "chat_conversations"
     repo(AshTemplate.Repo)
 
+    # A page of a person's chats reads only that page's rows; every read of a
+    # person's chats uses this index.
     custom_indexes do
-      index([:human_account_id])
+      index([:human_account_id, :inserted_at], concurrently: true)
     end
   end
 
@@ -105,7 +109,7 @@ defmodule AshTemplate.Chat.Conversation do
       # Queued by the assistant's reply (`Message.Changes.Respond`), so no
       # schedule searches for conversations to name.
       trigger :name_conversation do
-        actor_persister AshTemplate.Chat.ActorPersister
+        actor_persister AshTemplate.Actors.Persister
         action :generate_name
         # A job that gives up logs one safe line (RegentHttp.UnexpectedFailure), not raw text.
         log_errors? false

@@ -1,8 +1,9 @@
-defmodule AshTemplate.Chat.ActorPersister do
+defmodule AshTemplate.Actors.Persister do
   @moduledoc """
-  Carries the person who sent a chat message, or the agent they paired that
-  sent it for them, into the job that writes the assistant's reply, so the
-  reply reads only that person's conversation.
+  Carries a signed-in person, or the agent they paired acting for them, into a
+  job, so the job acts as them: the assistant's reply reads only that person's
+  conversation, and a note's label question counts against that person's share
+  of the day's questions.
   """
 
   use AshOban.ActorPersister

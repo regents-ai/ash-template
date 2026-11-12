@@ -16,6 +16,10 @@ Load `ash-stack` first. State the persistence invariant the change must keep, th
   Do not switch off atomic requirements to get past an error.
 - **A race test needs independent transactions**, not two processes sharing one
   sandbox connection.
+- **Every filter or sort on a growing table names the index that serves it**, declared
+  in `custom_indexes`: page reads, and also what runs per request, per event or per
+  minute (pruners, policies, budgets, listeners). The agent feed and its direct-message
+  catch-up read whole tables.
 - **An index on a busy table is built concurrently**, after measuring the read, and
   only by the schema's owner ([an index on a busy table](references/migrations-and-concurrency.md#an-index-on-a-busy-table)).
 - **One production database for every site.** Serve on the direct address with a

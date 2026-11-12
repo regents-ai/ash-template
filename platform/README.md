@@ -352,7 +352,11 @@ production (`:behind_fly_proxy`, set in `config/prod.exs`) that is the one
 the proxy's own connection over the machine's private IPv4 address. Another of the
 organisation's apps reaching the machine directly over 6PN (IPv6) is keyed by its
 own address, whatever header it sends. Everywhere else it is the direct peer. `X-Forwarded-For` is never read. A site
-that puts another proxy in front of Fly must change this first.
+that puts another proxy in front of Fly must change this first. Each address has 120
+requests a minute for `/healthz` and the API, 10 pairing tries, 600 page and
+document loads (`lib/ash_template_web/endpoint.ex` says why), and 40 open live pages
+on each machine (`AshTemplateWeb.Live.OpenPages`): the live socket's connect never
+reaches the endpoint's plugs, and behind Fly its peer is the proxy.
 
 Prometheus metrics are served only by `AshTemplateWeb.Metrics` on port 9091
 (`/metrics`), which `fly.toml` and `fly.staging.toml` declare under
@@ -385,7 +389,8 @@ assets/                 TypeScript and CSS, built with esbuild; the hashed
 priv/                   Migrations, public and legal Markdown, static assets
 docs/                   Local setup guides
 scripts/                Release helpers
-rel/                    Release overlays, including the migrate command
+rel/                    Release overlays, including the migrate command, and
+                        the VM flags (vm.args.eex)
 ```
 
 ## Checks

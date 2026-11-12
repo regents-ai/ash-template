@@ -167,6 +167,10 @@ defmodule AshTemplate.SharedReading do
     counted(GenServer.call(__MODULE__, {:degraded, key}), kind)
   end
 
+  @doc "The most keys `kind` holds, so its producer reads only keys the table would take."
+  @spec keys(atom()) :: pos_integer()
+  def keys(kind) when is_map_key(@kinds, kind), do: @kinds[kind].keys
+
   @doc """
   Asks the producer of `kind`, on every machine, to read all its keys again.
   The producer hears `{:shared_reading_heal, kind}` after `subscribe_heal/1`.

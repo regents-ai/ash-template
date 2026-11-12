@@ -3,8 +3,8 @@ defmodule AshTemplate.Rooms.Message.AuthorPicture do
   The picture the author's account shows (`AshTemplate.PublicIdentity`), as
   `%{squares: squares, picture: picture}`. A person's comes from their
   account's wallet and ENS picture, read by the site, since their account is
-  private and only the picture leaves it. An agent's comes from its own wallet,
-  with no ENS picture.
+  private and only the picture leaves it. An agent's comes from its own wallet
+  (`:agent_wallet`, read with the message), with no ENS picture.
   """
 
   use Ash.Resource.Calculation
@@ -16,7 +16,7 @@ defmodule AshTemplate.Rooms.Message.AuthorPicture do
   alias AshTemplate.PublicIdentity
 
   @impl true
-  def load(_query, _opts, _context), do: [:agent]
+  def load(_query, _opts, _context), do: [:agent_wallet]
 
   @impl true
   def calculate(messages, _opts, _context) do
@@ -24,7 +24,11 @@ defmodule AshTemplate.Rooms.Message.AuthorPicture do
       messages |> Enum.map(& &1.human_account_id) |> Enum.reject(&is_nil/1) |> accounts()
 
     Enum.map(messages, fn message ->
-      author = message.agent || Map.get(accounts, message.human_account_id, %{})
+      author =
+        if message.agent_id,
+          do: %{wallet_address: message.agent_wallet},
+          else: Map.get(accounts, message.human_account_id, %{})
+
       %{squares: PublicIdentity.squares(author), picture: PublicIdentity.picture(author)}
     end)
   end

@@ -93,6 +93,19 @@ for width <- ["Desktop", "Phone"] do
   AshTemplate.Rooms.create_room!(%{name: "Walk Busy #{width}", topic: "A busy room on the walk"}, as_friend)
 end
 
+# A room for each width where the friend likes the person's message and comes and
+# goes (likes.spec.ts), so who is here there is only those two. The friend has
+# started as many rooms as a day allows above, and the person starts one on each
+# width in the walk, so these are put in place as they would be saved.
+for width <- ["desktop", "phone"] do
+  Ash.Seed.seed!(AshTemplate.Rooms.Room, %{
+    slug: "walk-likes-#{width}",
+    name: "Walk Likes #{String.capitalize(width)}",
+    topic: "Likes on the walk",
+    created_by_id: friend.id
+  })
+end
+
 conversation = AshTemplate.Dms.open_conversation!(said.id, actor: person)
 AshTemplate.Dms.send_dm!(conversation.id, %{body: "Hello back."}, actor: person)
 

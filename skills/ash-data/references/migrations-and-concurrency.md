@@ -45,14 +45,22 @@ Autolaunch's move from its own runner to Oban (da6cbf58, then d5e7a4c5) did it t
 
 ### An index on a busy table
 
+Every filter or sort that runs on a growing table has an index declared in
+`custom_indexes`, including the filters of pruners, policies, budgets and listeners,
+not only page reads. A library's table in the site's own schema that the site's pruner
+filters (ErrorTracker's) gets its index in the site's own migration, and prunes use
+`return_records?: false`.
+
 A plain `CREATE INDEX` blocks every write to the table until it finishes. On the shared
 database that stalls the site, and the serving login's 5-second lock limit then fails
 its writes. Build the index concurrently:
 
-1. **Measure first.** Run the slow read with `EXPLAIN (ANALYZE, BUFFERS)` against rows
-   shaped like production's (`ANALYZE` runs the statement, so only ever a read). Add an
-   index only when the plan shows a `Seq Scan` that discards most rows or reads many
-   buffers, and run it again afterwards to see the index used.
+1. **Measure first.** Run the read with `EXPLAIN (ANALYZE, BUFFERS)` against rows
+   shaped like production's (`ANALYZE` runs the statement, so only ever a read) to
+   choose the index's columns, and run it again afterwards to see the index used. Ash's
+   keyset "older than" filter is an `OR` of the sort's columns, which no column order
+   turns into a range: an index on the first sort column serves it by skipping the rows
+   before the cursor, so a page costs what the reader has already scrolled past.
 2. **Declare it on the resource** with `concurrently: true` (AshPostgres
    `custom_indexes`). The template's unread-notifications index
    (`AshTemplate.Activity.Notification`) is the example:
@@ -170,8 +178,14 @@ the workspace). This holds until the founder changes the database plan.
   never land at once. Everything a site runs shares this one pool: pages, Oban, the
   health check (`AshTemplate.Health.database_ready?/0`) and the shared libraries,
   which take the site's repository from its configuration and start none of their
-  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). The
-  template holds six connections at rest: five serving and one listening.
+  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). Only
+  `/healthz` runs the health query; a page takes whether the database answers from
+  its own reads (ash-frontend, public figures, "Quiet pages"). The health query
+  never waits for a connection (`queue: false`) and must not mark the machine down
+  because the pool is busy: none free within 30 seconds of a query that succeeded
+  is a busy, healthy site, and a machine marked down for that is restarted when it
+  is serving most. The template holds six connections at rest: five serving and
+  one listening.
 - **Listening: one connection per machine.** The template opens one
   `Postgrex.Notifications` connection with the serving login, outside the pool
   (`AshTemplate.DatabaseConfig.notifications_config!/2`), and `RegentAgents.Listener`
