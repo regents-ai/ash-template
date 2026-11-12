@@ -7281,7 +7281,7 @@ sits on its own branches.
 
 ## 2026-11-12 — Released v190: a picture inside a panel that grows in is drawn sharp
 
-- Live: v190 at 00:52Z on template.regents.sh; /capabilities.json build.commit f70cfa1b.
+- Live: v190 at 00:46Z on template.regents.sh; /capabilities.json build.commit f70cfa1b.
   Rollback: v189 (43e7d7d3). No migrations, no pin change.
 - Carries "A picture inside a panel that grows in is drawn sharp" (regents.sh's patch) on
   top of 2cb068f8 (skills: sites never wait on each other).
