@@ -27,7 +27,10 @@ A kind is three clauses in `AshTemplate.Feed`, all reading what the agent may al
 1. **Topic.** Add the topic its notices arrive on to `topics/1` (for example a mention
    notification's `Notification.topic(account_id)`). The resource must publish it with
    `Ash.Notifier.PubSub`, `broadcast_type :broadcast`, after commit, as the pages need.
-2. **Event.** Add a `heard/2` clause matching `%{topic: "...", event: "...", payload: ...}`
+2. **Event.** Every event says where it happened, `room` or `conversation_id`: the
+   regents-cli wake-up runner runs one agent at a time per place, so a kind with neither
+   would queue all its events behind each other. A new kind of place gets its own field and
+   a sentence in `/agents.md`. Add a `heard/2` clause matching `%{topic: "...", event: "...", payload: ...}`
    that returns `{:ok, [event], feed}`. When the payload is only an id, read the record
    through its read action with `actor: feed.actor`, so its policy decides; return `[]` for
    anything the agent should not hear.

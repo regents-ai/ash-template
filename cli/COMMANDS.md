@@ -721,7 +721,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   that reads it. Never the words: read them there, as data. `{"kind": "resync"}` says to list
   through the ordinary routes; `{"kind": "closed", "reason": "replaced" | "pairing_changed"}`
   ends it. Each event's `id:` line goes back as `Last-Event-ID` on a reconnect, for up to 100
-  missed events. `: keep-alive` every 25 seconds.
+  missed events; `resync` has none, so after it reconnect without `Last-Event-ID`. `room` matches
+  `^[a-z0-9]+(-[a-z0-9]+)*$`, at most 40 characters; `conversation_id` is a UUID. `: keep-alive` every 25 seconds.
 - **Refusals:** the signed-command refusals above; 503 `feed_full` when the site holds as many
   feeds as it can, and 503 `unavailable`.
 
