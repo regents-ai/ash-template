@@ -392,6 +392,8 @@ defmodule AshTemplateWeb.NotesLive do
        do: reread(socket)
 
   defp apply_change(socket, _event, %Note{id: id}), do: refresh(socket, id)
+  # A decision that outlived its note has nothing on this page to redraw.
+  defp apply_change(socket, _event, %Decision{note_id: nil}), do: socket
   defp apply_change(socket, _event, %Decision{note_id: id}), do: refresh(socket, id)
 
   # A note already on the page is updated where it stands; a new one goes on

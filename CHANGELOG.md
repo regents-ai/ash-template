@@ -8694,3 +8694,34 @@ not ship; its findings are fixed here.
   "unreported" line shows.
 - Not proven live: any signed-in press, the reconnect recovery and the lost-answer lines
   (Sean tries the signed-in buttons himself; the walks and script tests cover the rest).
+
+## 2026-11-10 — Database changes from the audit (branch, not on main)
+
+Decision 4 of the audit (Sean, "a for all 8", 10 November): each change is written and
+shown to Sean with its exact effect, and runs on production only on his letter for the
+release that carries it. All three are on `tpl/audit-migrations-1110`, one commit each.
+
+- **Label questions outlive their note** (`20261110041012_note_decisions_outlive_notes`):
+  the `note_decisions.note_id` foreign key becomes ON DELETE SET NULL and `note_id` may
+  be null. No row changes. Deleting notes can no longer reset the daily limit on paid
+  label questions or lose what each cost. It cannot be rolled back once a note with
+  questions has been deleted.
+- **Agents' `last_seen_at` loses the database's own default**
+  (`20261110041045_agent_last_seen_no_default`). No row changes; the column stays
+  required. The default covered a two-release overlap that ended on 13 October.
+- **Old sign-in session rows are deleted once a day** (no migration; it deletes rows):
+  `AshTemplate.Accounts.SessionPruner`, at 04:43 UTC, removes every
+  `session_authorities` row untouched for a day longer than the cookie lives (31 days).
+  The first run deletes every such row made since the table began.
+- Not written, and why: dropping `linked_identities.metadata` needs two releases (stop
+  writing it, then drop it); the room-message search index needs the `pg_trgm` extension
+  on the shared database; one reply per chat message waits for the chat reply fix.
+
+## 2026-11-12 — Data fixes brought up to main, migrations renamed (branch, not on main)
+
+`tpl/audit-migrations-1112` is `tpl/audit-migrations-1110` merged with main. Main has
+released migrations dated 11 and 12 November, so the branch's two migrations now carry
+later names and run after them: `20261112120000_note_decisions_outlive_notes` (was
+`20261110041012`) and `20261112120100_agent_last_seen_no_default` (was
+`20261110041045`), with their resource snapshots renamed to match. Their contents are
+unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow line.

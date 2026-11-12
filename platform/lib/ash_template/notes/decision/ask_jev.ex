@@ -3,7 +3,8 @@ defmodule AshTemplate.Notes.Decision.AskJev do
   Asks Jev which label fits the decision's note, before the decision is
   written and outside any transaction.
 
-  An answer is recorded with its model, tokens and cost. An answer Jev was
+  A decision whose note was deleted before its turn asks nothing and is recorded
+  as failed. An answer is recorded with its model, tokens and cost. An answer Jev was
   billed for but that used no offered label is recorded as a failure with its
   cost, since asking again would ask the same thing. A request that did not
   get through fails the action, so the job retries with backoff.
@@ -34,8 +35,19 @@ defmodule AshTemplate.Notes.Decision.AskJev do
   defp ask(changeset) do
     # Runs in the background job with no person behind it; the decision names
     # its own note, so reading that note is not a choice made by anyone.
-    %{note: note} = Ash.load!(changeset.data, :note, authorize?: false)
+    case Ash.load!(changeset.data, :note, authorize?: false) do
+      %{note: nil} ->
+        Ash.Changeset.force_change_attributes(changeset, %{
+          state: :failed,
+          failure: "Note deleted"
+        })
 
+      %{note: note} ->
+        decide(changeset, note)
+    end
+  end
+
+  defp decide(changeset, note) do
     case RegentJev.decide(%{title: note.title, body: note.body}, Labels.questions(),
            model: Labels.model()
          ) do

@@ -88,6 +88,8 @@ config :ash_template, Oban,
   cron: [
     crontab: [
       {"17 4 * * *", AshTemplate.ErrorPruner},
+      # Sign-in session rows no browser can still hold.
+      {"43 4 * * *", AshTemplate.Accounts.SessionPruner},
       # This release's public pages, sent to IndexNow once per release. The hourly
       # job only queues the sending, which runs in `outside_calls`, so it is
       # database work.

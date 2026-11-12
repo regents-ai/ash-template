@@ -10,9 +10,10 @@ defmodule AshTemplate.Notes.Decision do
   can say once whether the label fits.
 
   Every decision counts against the site's daily number of questions and the
-  writer's share of it, checked by the create policy (`UnderDailyBudget`). Only
-  the note's writer reads its decisions; each change is published on the
-  writer's notes topic.
+  writer's share of it, checked by the create policy (`UnderDailyBudget`). A
+  decision outlives its note: deleting the note leaves the row, with no note, so
+  the day's count and what the question cost stay true. Only the note's writer
+  reads its decisions; each change is published on the writer's notes topic.
   """
 
   use Ash.Resource,
@@ -30,8 +31,10 @@ defmodule AshTemplate.Notes.Decision do
     table "note_decisions"
     repo(AshTemplate.Repo)
 
+    # A deleted note leaves its decisions behind: they are the day's budget count
+    # and the record of what each question cost.
     references do
-      reference(:note, on_delete: :delete)
+      reference(:note, on_delete: :nilify)
     end
 
     custom_indexes do
@@ -70,7 +73,7 @@ defmodule AshTemplate.Notes.Decision do
   end
 
   relationships do
-    belongs_to :note, AshTemplate.Notes.Note, allow_nil?: false
+    belongs_to :note, AshTemplate.Notes.Note
 
     belongs_to :human_account, AshTemplate.Accounts.HumanAccount do
       allow_nil? false
@@ -110,6 +113,7 @@ defmodule AshTemplate.Notes.Decision do
 
     create :ask do
       accept [:note_id]
+      validate present(:note_id)
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       change set_attribute(:pairing_id, actor(:pairing_id))
       change set_attribute(:human_account_id, actor(:human_account_id))
