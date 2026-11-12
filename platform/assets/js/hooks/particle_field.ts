@@ -19,6 +19,11 @@
  * as it comes, so the knob stays under the finger. The grains' own springs
  * smooth what is left.
  *
+ * Laying a new shape out takes longer than a frame, so it is done a few
+ * milliseconds a frame, between the frames the picture draws; the old shape
+ * holds still until it is ready, and a shape laid out once is kept for when it
+ * comes back.
+ *
  * Without WebGPU, with less motion asked for or in forced colours, the canvas
  * never starts and the real control below is the whole picture.
  */
@@ -27,7 +32,7 @@ import {createAnimatable} from "animejs"
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
 import {pictureOf} from "../particle_field/picture"
 import type {FieldScene, ParticleFieldRenderer} from "../particle_field/renderer"
-import {controlShape, isPicture, pictureShape, type Shape} from "../particle_field/shapes"
+import {controlShape, finish, inFlightOrder, isPicture, pictureShape, type Shape, type Steps} from "../particle_field/shapes"
 import {showingTheme, watchTheme} from "../theme"
 import {colourReader} from "../token_colour"
 import {EASE_IN_OUT, SLOW, lastInputByPointer, still} from "./motion/shared"
@@ -36,6 +41,36 @@ export type ParticleFieldController = Pick<CanvasIslandController, "mount" | "pa
 
 /** Values closer together than this are a drag, followed as they come. */
 const STREAM_MS = 120
+/** Milliseconds of layout work one frame may take, so the frame is never missed. */
+const SLICE_MS = 6
+/** Shapes kept once laid out, for when they come back; each is about 4 MB. */
+const KEPT = 6
+
+/** Work under way a slice a frame: it can be dropped, or done at once when it cannot wait. */
+type Slicing = {stop(): void; complete(): void}
+
+/** Runs `steps` a few milliseconds a frame, then hands what they made to `done`. */
+function slices<T>(steps: Steps<T>, done: (made: T) => void): Slicing {
+  let frame = requestAnimationFrame(function slice() {
+    const until = performance.now() + SLICE_MS
+    for (;;) {
+      const step = steps.next()
+      if (step.done) {
+        done(step.value)
+        return
+      }
+      if (performance.now() >= until) break
+    }
+    frame = requestAnimationFrame(slice)
+  })
+  return {
+    stop: () => cancelAnimationFrame(frame),
+    complete() {
+      cancelAnimationFrame(frame)
+      done(finish(steps))
+    },
+  }
+}
 
 export function createParticleField(root: HTMLElement): ParticleFieldController {
   const canvas = root.querySelector<HTMLCanvasElement>("[data-particle-canvas]")!
@@ -46,8 +81,15 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
   const shown = {value: valueNow()}
   let name = root.dataset.particleShape!
   let target = shown.value
+  // The shape the grains are on or flying to, the name and box it was laid out for, and its homes in flying order.
   let shape: Shape | undefined
+  let shapeName: string | undefined
   let aspect = 1
+  let homes: Float32Array<ArrayBuffer> | undefined
+  const layouts = new Map<string, Shape>()
+  let building: Slicing | undefined
+  // The picture is going to be drawn, so laying shapes out is worth it.
+  let started = false
   let box = {width: 1, height: 1}
   let view = {width: 1, height: 1}
   let light = showingTheme() === "light"
@@ -59,17 +101,46 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
 
   const motion = createAnimatable(shown, {value: 0, onUpdate: () => draw()})
 
-  /** The shape as it stands now, laid out at the value it shows. */
-  const build = (): Shape => {
-    aspect = Number(getComputedStyle(root).getPropertyValue("--particle-aspect"))
-    shape = isPicture(name)
-      ? pictureShape(
-          name,
-          pictureOf(root.querySelector<SVGSVGElement>(`svg[data-particle-source="${CSS.escape(name)}"]`)!, aspect),
-          shown.value,
-        )
-      : controlShape(name, aspect, shown.value)
-    return shape
+  /** A name's shape in a box `wide` units across: the one kept from before, or laid out now. */
+  function* layout(named: string, wide: number): Steps<Shape> {
+    const key = `${named} ${wide}`
+    const kept = layouts.get(key)
+    if (kept) {
+      // The most recently used last, so the one let go is the one used longest ago.
+      layouts.delete(key)
+      layouts.set(key, kept)
+      return kept
+    }
+    let made: Shape
+    if (isPicture(named)) {
+      const drawing = root.querySelector<SVGSVGElement>(`svg[data-particle-source="${CSS.escape(named)}"]`)!
+      made = yield* pictureShape(named, pictureOf(drawing, wide))
+    } else {
+      made = yield* controlShape(named, wide)
+    }
+    layouts.set(key, made)
+    if (layouts.size > KEPT) layouts.delete(layouts.keys().next().value!)
+    return made
+  }
+
+  /** Lays out the shape the root names now; once it is ready the grains fly to it, at the value the root holds by then. */
+  const change = () => {
+    building?.stop()
+    const named = name
+    const wide = Number(getComputedStyle(root).getPropertyValue("--particle-aspect"))
+    function* ready() {
+      const made = yield* layout(named, wide)
+      return {made, ordered: yield* inFlightOrder(made.homes, target)}
+    }
+    building = slices(ready(), ({made, ordered}) => {
+      building = undefined
+      shape = made
+      shapeName = named
+      aspect = wide
+      homes = ordered
+      jumpTo(target)
+      renderer()?.place(ordered)
+    })
   }
 
   const readColours = (): FieldScene["colours"] => {
@@ -80,11 +151,12 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
 
   const scene = (): FieldScene => {
     colours ??= readColours()
+    const scale = Math.min(box.width / aspect, box.height)
     return {
       width: view.width,
       height: view.height,
-      scale: Math.min(box.width / aspect, box.height),
-      half: box.width / 2,
+      scale,
+      half: (aspect * scale) / 2,
       value: shown.value,
       area: shape!.area,
       knob: shape!.knob,
@@ -111,12 +183,13 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
     if (nextName !== name) {
       name = nextName
       target = nextValue
-      jumpTo(nextValue)
-      renderer()?.place(build().homes)
+      if (started) change()
       return
     }
     if (nextValue === target) return
     target = nextValue
+    // A shape still being laid out takes the latest value when it is ready.
+    if (building) return
     const now = performance.now()
     const streaming = now - lastValueAt < STREAM_MS
     lastValueAt = now
@@ -135,6 +208,9 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
     // sharpness the specks smear into a haze.
     maxDevicePixelRatio: 2,
     browserLoad: async (view, size, lost) => {
+      // The shape is laid out while the GPU starts.
+      started = true
+      if (!building && shapeName !== name) change()
       const {createParticleFieldRenderer} = await import("../particle_field/renderer")
       return createParticleFieldRenderer(view, size, lost)
     },
@@ -142,9 +218,11 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
       renderer = island.renderer
       draw = island.nudge
       island.onReady(() => {
+        // The first picture cannot wait for the rest of the layout.
+        building?.complete()
         const current = island.renderer()!
         current.show(scene)
-        current.place(build().homes)
+        current.place(homes!)
       })
       return () => {
         renderer = () => undefined
@@ -193,6 +271,7 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
       syncMotion()
     },
     destroy() {
+      building?.stop()
       events.abort()
       stopWatchingTheme()
       calm.disconnect()

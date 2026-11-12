@@ -2,19 +2,22 @@
  * Draws the particle field with WebGPU through vgpu: 80,000 grains, each with a
  * home in the current shape (particle_field/shapes.ts).
  *
- * One compute pass moves every grain. A new shape gives every grain a new home:
- * each lets go of the old shape in turn, the left end first and the rest
- * unevenly after it, and is carried home on a loose spring through a swirling
- * flow that dies away as it nears, while the forming shape swings round to face
- * the page. A grain that has not let go yet keeps the old shape's look. A new
- * shape mid-flight starts from wherever the grains are. A value change only moves
- * the homes, so the grains follow on a stiff spring without flying again.
+ * One compute pass moves every grain. A new shape tears the old one loose: the
+ * release sweeps across it from the left, so one end streams away while the
+ * rest still stands. Each grain flies from where it let go to its new home
+ * while one slow field of wind bends the whole stream at once, and the new
+ * shape swings round to face the page as it forms, so the stream twists like a
+ * ribbon. Grains bound for the new shape's rim land first, its middle fills
+ * after, and a few strays blow loose as dust and land last. A grain keeps its
+ * colour and its light until it lands. A new shape mid-flight starts from
+ * wherever the grains are, at the speed they are going. A value change only
+ * moves the homes, so the grains follow on a stiff spring without flying again.
  *
  * The grains are drawn as soft points added together into a float picture. On a
- * dark page they give light, lit more on the side the light falls on, with a soft
- * halo drawn from a blurred quarter-size copy; on a light page they are ink,
- * denser on the side turned from the light, and no halo. Nothing glows outside
- * the canvas.
+ * dark page they give light, lit more on the side the light falls on, and the
+ * lit ones glow, from a blurred quarter-size copy of their light; on a light page
+ * they are ink, denser on the side turned from the light, and nothing glows.
+ * Nothing glows outside the canvas.
  *
  * Loaded only once the picture is really going to be drawn; the hook
  * (hooks/particle_field.ts) keeps the shape, the value and the colours.
@@ -33,7 +36,7 @@ export type FieldScene = {
   height: number
   /** CSS pixels per shape unit. */
   scale: number
-  /** Half the box's width in CSS pixels: the span the left-to-right release is measured along. */
+  /** Half the shape's width in CSS pixels: what the release sweeps across when the next shape comes. */
   half: number
   value: number
   /** Square units the shape covers, so the grains on a small shape can each be fainter. */
@@ -47,26 +50,59 @@ export type FieldScene = {
 export type ParticleFieldRenderer = IslandRenderer & {
   /** Where each frame's scene comes from. */
   show(read: () => FieldScene): void
-  /** A new shape: every grain's home, as `shapes.ts` lays them out. */
+  /** A new shape: every grain's home, in flying order (`inFlightOrder`). */
   place(homes: Float32Array<ArrayBuffer>): void
 }
 
 const WORKGROUP = 64
-const GRAIN_FLOATS = 12
+const GRAIN_FLOATS = 20
 const SCENE_FORMAT = "rgba16float"
-/** Seconds from a new shape until the last grain has let go and come to rest. */
-const SHAPE_SETTLES = 3.4
+/** Seconds the release takes to sweep across the shape the grains are leaving, and how unevenly grains let go about it. */
+const SWEEP = 0.55
+const SPREAD = 0.08
+/** Seconds a grain flies: to the new shape's rim, to its flat middle, and as a stray, at least and how much longer at most. */
+const RIM_FLIGHT = 0.55
+const MIDDLE_FLIGHT = 0.9
+const STRAY_FLIGHT = 1.45
+const STRAY_SPREAD = 0.5
+/** The share of grains that blow loose as strays. */
+const STRAYS = 0.04
+/** Seconds from a new shape until the last stray has landed and come to rest. */
+const SHAPE_SETTLES = SWEEP + SPREAD + STRAY_FLIGHT + STRAY_SPREAD + 0.4
 /** Seconds from a value or size change until the grains have followed it. */
 const VALUE_SETTLES = 1.2
+/** How far, in units, the wind bends the stream, and blows a stray out. */
+const BEND = 0.12
+const STRAY_BEND = 0.3
+/** How far a stray drifts as dust, in units across, down and in depth, and how far it rises like smoke. */
+const DUST = [1.2, 0.8, 0.6] as const
+const RISE = 0.25
+/**
+ * How much more a grain gives at the middle of its flight, where the stream has
+ * thinned, so the stream stays as bright as the shape it tore from; a stray, on
+ * its own out in the dark, gives more again.
+ */
+const FLIGHT_GLOW = 0.6
+const STRAY_GLOW = 3
+/** How far round the new shape has swung, in radians, as a grain lets go for it. */
+const SWING = 0.7
+/** The stiff spring a grain rests on at home (per second), and its damping. */
+const STIFF = 26
+const DAMPING = 0.95
 /** The longest step the grains take between two frames, so a pause never throws them. */
 const LONGEST_STEP = 1 / 30
 /** A spinner's arc: one turn in this many seconds. */
 const TURN_SECONDS = 1.1
 /** How bright one square device pixel of the shape's flat top is, all its grains together. */
-const DARK_GLOW = 0.42
+const DARK_GLOW = 0.9
 const LIGHT_INK = 1.1
-/** How far the viewer is from the page, in CSS pixels, when the forming shape swings in depth. */
-const VIEWER = 1100
+/** How far the viewer is from the page, in units, as the forming shape swings in depth. */
+const VIEWER = 7
+/** On a dark page: how far the glow round lit grains reaches, as a share of a unit, and how strong it is. */
+const HALO = 0.12
+const HALO_STRENGTH = 1.2
+/** How wide the blur's nine taps spread it, in taps, over its two rounds. */
+const BLUR_REACH = 2.4
 
 const homeWgsl = /* wgsl */ `
 // Where the grain lives in units: at value 0 (xy) and 1 (zw).
@@ -78,29 +114,41 @@ struct Home {
   light: vec4f,
 }
 
-// pos: where it is (xyz, CSS px from the box's centre, z away from the page); when it lets go (s).
+// pos: where it is (xyz, CSS px from the box's centre, z away from the page); when it lets go (s after the change).
 // vel: how fast it moves (px/s); the number of the shape it last noted.
 // look: how lit it is, its tone, the facing it shows (zw).
+// start: where it let go (xyz); how much of it shows, 0 behind the knob.
+// kick: how fast it was going as it let go (xyz); how much light or ink it gives.
 struct Grain {
   pos: vec4f,
   vel: vec4f,
   look: vec4f,
+  start: vec4f,
+  kick: vec4f,
 }
 `
 
 export const simulateWgsl = /* wgsl */ `${homeWgsl}
 struct Sim {
-  // CSS px per unit, half the box's width in px, this frame's seconds, the clock in seconds.
+  // CSS px per unit, half the width in CSS px of the shape the grains are leaving, this frame's seconds, the clock in seconds.
   frame: vec4f,
   // The value shown, how far a turning part has turned (radians), seconds since the shape changed, the shape's number.
   state: vec4f,
-  // 1 to put every grain home at once; the side the forming shape swings in from; unused; unused.
+  // 1 to put every grain home at once, the side the forming shape swings in from, the viewer's distance in CSS px, unused.
   flight: vec4f,
+  // The knob's centre at value 0 (xy) and at 1 (zw), in CSS px from the box's centre.
+  knob: vec4f,
+  // The knob's radius in CSS px (0 for none), unused, unused, unused.
+  ball: vec4f,
+  // How much one grain gives at home, and on or from the shape before, so a shape's flat top is as bright whatever its size; unused, unused.
+  energy: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> sim: Sim;
 @group(0) @binding(1) var<storage, read> homes: array<Home>;
 @group(0) @binding(2) var<storage, read_write> grains: array<Grain>;
+
+const PI = 3.14159265;
 
 fn hash(n: u32) -> f32 {
   var x = n * 747796405u + 2891336453u;
@@ -113,14 +161,24 @@ fn through(v: f32, stretch: vec2f) -> f32 {
   return clamp((v - stretch.x) / max(stretch.y - stretch.x, 1e-5), 0.0, 1.0);
 }
 
-// Smoke: each part of the flow varies only across the other two axes, so it neither gathers grains nor spreads them.
-fn flow(p: vec3f, t: f32) -> vec3f {
-  let q = p * 0.011;
+// Wind: one slow, smooth field in units, nearly the same for neighbours, so it bends the whole stream at once.
+fn wind(p: vec3f, t: f32) -> vec3f {
   return vec3f(
-    sin(q.y * 1.7 + t * 0.9) + sin(q.z * 2.3 - t * 0.6),
-    sin(q.z * 1.9 + t * 0.7) + sin(q.x * 2.1 + t * 0.8),
-    sin(q.x * 1.6 - t * 0.5) + sin(q.y * 2.4 + t * 1.1),
+    sin(p.y * 2.3 + t * 1.1) + sin(p.z * 1.7 - t * 0.7),
+    sin(p.x * 1.9 - t * 0.9) + sin(p.z * 2.1 + t * 0.6),
+    sin(p.x * 1.4 + t * 0.8) + sin(p.y * 2.6 - t * 1.2),
   );
+}
+
+// How much of a grain at p shows: a track grain is hidden behind the knob, as seen from the viewer.
+fn showing(p: vec3f, behind: bool) -> f32 {
+  if (!behind || sim.ball.x <= 0.0) {
+    return 1.0;
+  }
+  let eye = sim.flight.z;
+  let at = p.xy * eye / max(eye + p.z, 1.0);
+  let centre = mix(sim.knob.xy, sim.knob.zw, sim.state.x);
+  return smoothstep(sim.ball.x - 1.5, sim.ball.x + 1.0, distance(at, centre));
 }
 
 @compute @workgroup_size(${WORKGROUP})
@@ -130,6 +188,7 @@ fn cs_main(@builtin(global_invocation_id) id: vec3u) {
     return;
   }
   let h = homes[i];
+  let scale = sim.frame.x;
   let value = sim.state.x;
   var spot = mix(h.place.xy, h.place.zw, through(value, h.face.zw));
   if ((u32(h.light.w) & 2u) != 0u) {
@@ -137,45 +196,80 @@ fn cs_main(@builtin(global_invocation_id) id: vec3u) {
     let s = sin(sim.state.y);
     spot = vec2f(c * spot.x - s * spot.y, s * spot.x + c * spot.y);
   }
-  let home = spot * sim.frame.x;
+  let home = vec3f(spot * scale, 0.0);
   let look = vec4f(through(value, h.light.xy), h.light.z, h.face.xy);
+  let behind = (u32(h.light.w) & 1u) != 0u;
 
   if (sim.flight.x > 0.5) {
-    grains[i] = Grain(vec4f(home, 0.0, -100.0), vec4f(0.0, 0.0, 0.0, sim.state.w), look);
+    let shown = showing(home, behind);
+    grains[i] = Grain(vec4f(home, -100.0), vec4f(0.0, 0.0, 0.0, sim.state.w), look, vec4f(home, shown), vec4f(0.0, 0.0, 0.0, sim.energy.x * shown));
     return;
   }
 
   var g = grains[i];
   let dt = sim.frame.z;
-  // A new shape: the grain notes when it lets go of the old one, the left end first, the rest unevenly after.
   if (g.vel.w != sim.state.w) {
+    // A new shape. The grain lets go in its turn as the release sweeps across the
+    // shape it is leaving from the left, so one end streams away while the rest stands.
     let across = clamp(g.pos.x / (2.0 * sim.frame.y) + 0.5, 0.0, 1.0);
-    let r = hash(i);
-    g.pos.w = across * 0.5 + r * r * 0.35;
+    g.pos.w = across * ${SWEEP} + hash(i) * ${SPREAD};
     g.vel.w = sim.state.w;
+    g.start = vec4f(g.pos.xyz, g.start.w);
+    g.kick = vec4f(g.vel.xyz, g.kick.w);
   }
   let age = sim.state.z - g.pos.w;
   if (age < 0.0) {
-    // Not let go yet: it keeps the old shape's look and drifts to a stop where it is.
+    // Still holding on: it keeps its look and its light and, if it was moving, drifts to a stop where it is.
     let drift = g.vel.xyz * exp(-3.0 * dt);
-    grains[i] = Grain(vec4f(g.pos.xyz + drift * dt, g.pos.w), vec4f(drift, g.vel.w), g.look);
+    let p = g.pos.xyz + drift * dt;
+    grains[i] = Grain(vec4f(p, g.pos.w), vec4f(drift, g.vel.w), g.look, vec4f(p, g.start.w), vec4f(drift, sim.energy.y * g.start.w));
     return;
   }
 
-  // The forming shape swings round to face the page.
-  let swing = sim.flight.y * 0.95 * (1.0 - smoothstep(0.0, 1.4, age));
-  let goal = vec3f(home.x * cos(swing), home.y, home.x * sin(swing));
-  // Loose in flight, stiff once home, so a dragged knob keeps up with the finger.
-  let settle = smoothstep(0.5, 1.8, age);
-  let omega = mix(6.5, 26.0, settle);
-  let zeta = mix(0.6, 0.95, settle);
-  let jitter = vec3f(hash(i * 3u + 1u), hash(i * 3u + 2u), hash(i * 3u + 3u)) - 0.5;
-  let smoke = flow(g.pos.xyz + jitter * 120.0, sim.frame.w) * 1300.0 * exp(-2.0 * age);
-  let pull = (goal - g.pos.xyz) * omega * omega + smoke;
-  // Damping taken implicitly, so a long frame can never make the spring ring.
-  let vel = (g.vel.xyz + pull * dt) / (1.0 + 2.0 * zeta * omega * dt);
-  let follow = select(1.0 - exp(-7.0 * dt), 1.0, settle >= 1.0);
-  grains[i] = Grain(vec4f(g.pos.xyz + vel * dt, g.pos.w), vec4f(vel, g.vel.w), mix(g.look, look, follow));
+  let stray = hash(i * 5u + 1u) < ${STRAYS};
+  // A grain bound for the rim lands first, so the new outline shows before its middle fills.
+  let rim = smoothstep(0.3, 0.9, length(h.face.xy));
+  var flight = mix(${MIDDLE_FLIGHT}, ${RIM_FLIGHT}, rim) * (0.9 + 0.2 * hash(i * 5u + 2u));
+  if (stray) {
+    flight = ${STRAY_FLIGHT} + ${STRAY_SPREAD} * hash(i * 5u + 3u);
+  }
+  let u = age / flight;
+  if (u >= 1.0) {
+    // Home, on a stiff spring, so a dragged knob keeps up with the finger. Damping
+    // taken implicitly, so a long frame can never make the spring ring.
+    let vel = (g.vel.xyz + (home - g.pos.xyz) * ${STIFF * STIFF} * dt) / (1.0 + ${2 * DAMPING * STIFF} * dt);
+    let p = g.pos.xyz + vel * dt;
+    let shown = showing(p, behind);
+    grains[i] = Grain(vec4f(p, g.pos.w), vec4f(vel, g.vel.w), look, vec4f(g.start.xyz, shown), vec4f(g.kick.xyz, sim.energy.x * shown));
+    return;
+  }
+
+  // The new shape swings round to face the page as each grain reaches it, so the stream between twists.
+  let turn = sim.flight.y * ${SWING} * (1.0 - u) * (1.0 - u);
+  let goal = vec3f(home.x * cos(turn), home.y, home.x * sin(turn));
+  let u2 = u * u;
+  let u3 = u2 * u;
+  let eased = 3.0 * u2 - 2.0 * u3;
+  // From where it let go, at the speed it was going, to rest at its new home.
+  let path = g.start.xyz * (1.0 - eased) + g.kick.xyz * min(flight, 0.5) * (u3 - 2.0 * u2 + u) + goal * eased;
+  let lift = sin(PI * u);
+  let along = mix(g.start.xyz, goal, eased) / scale;
+  var bend = wind(along, sim.frame.w) * ${BEND} * lift * lift;
+  if (stray) {
+    // A stray blows loose beyond the shape as dust and rises a little, like smoke.
+    let dust = vec3f(hash(i * 5u + 4u), hash(i * 7u + 5u), hash(i * 11u + 6u)) - 0.5;
+    bend = (wind(along, sim.frame.w) * ${STRAY_BEND} + dust * vec3f(${DUST.join(", ")}) - vec3f(0.0, ${RISE}, 0.0)) * lift;
+  }
+  let p = path + bend * scale;
+  let vel = select(g.vel.xyz, (p - g.pos.xyz) / max(dt, 1e-4), dt > 0.0);
+  // It keeps its colour and its light while it flies, and takes the new shape's as it
+  // lands. Mid-flight it gives more, where the stream has thinned, so it does not fade.
+  let landing = smoothstep(0.6, 0.95, u);
+  let follow = 1.0 - exp(-30.0 * landing * dt);
+  let shown = mix(g.start.w, mix(1.0, showing(p, behind), landing), 1.0 - exp(-12.0 * dt));
+  let glow = 1.0 + select(f32(${FLIGHT_GLOW}), f32(${STRAY_GLOW}), stray) * lift;
+  let gives = mix(sim.energy.y, sim.energy.x, landing) * shown * glow;
+  grains[i] = Grain(vec4f(p, g.pos.w), vec4f(vel, g.vel.w), mix(g.look, look, follow), vec4f(g.start.xyz, shown), vec4f(g.kick.xyz, gives));
 }
 `
 
@@ -183,20 +277,15 @@ export const paintWgsl = /* wgsl */ `${homeWgsl}
 struct View {
   // The canvas's CSS width and height, device px per CSS px, a grain's radius in device px.
   canvas: vec4f,
-  // 1 on a light page, how much one grain gives, seconds since the shape changed, the viewer's distance in CSS px.
+  // 1 on a light page, unused, unused, the viewer's distance in CSS px.
   look: vec4f,
-  // The knob's centre at value 0 (xy) and at 1 (zw), in CSS px from the box's centre.
-  knob: vec4f,
-  // The knob's radius in CSS px (0 for none), how far the value has moved it, unused, unused.
-  ball: vec4f,
   muted: vec4f,
   lit: vec4f,
   far: vec4f,
 }
 
 @group(0) @binding(0) var<uniform> view: View;
-@group(0) @binding(1) var<storage, read> homes: array<Home>;
-@group(0) @binding(2) var<storage, read> grains: array<Grain>;
+@group(0) @binding(1) var<storage, read> grains: array<Grain>;
 
 struct Out {
   @builtin(position) position: vec4f,
@@ -210,15 +299,7 @@ struct Out {
   var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0));
   let g = grains[i];
   let eye = view.look.w;
-  let near = eye / max(eye + g.pos.z, 1.0);
-  let at = g.pos.xy * near;
-
-  // The knob is a ball in front of the track: a track grain under it is hidden.
-  var shown = 1.0;
-  if (view.ball.x > 0.0 && (u32(homes[i].light.w) & 1u) != 0u && view.look.z >= g.pos.w) {
-    let centre = mix(view.knob.xy, view.knob.zw, view.ball.y);
-    shown = smoothstep(view.ball.x - 1.5, view.ball.x + 1.0, distance(at, centre));
-  }
+  let at = g.pos.xy * eye / max(eye + g.pos.z, 1.0);
 
   let facing = g.look.zw;
   let normal = vec3f(facing, sqrt(max(1.0 - dot(facing, facing), 0.0)));
@@ -232,11 +313,12 @@ struct Out {
   var out: Out;
   out.position = vec4f(pixel.x / half.x, -pixel.y / half.y, 0.0, 1.0);
   out.offset = corners[vertex] * 2.0;
-  // Lit grains give more than unlit ones, so the lit part reads at a glance.
-  let amount = view.look.y * shown * near * near * mix(0.7, 1.3, g.look.x);
+  // What the grain gives, as the simulation worked it out; lit grains give more, so the lit part reads at a glance.
+  let amount = g.kick.w * mix(0.7, 1.3, g.look.x);
   if (view.look.x < 0.5) {
-    // A dark page: grains give light, more on the side the light falls on.
-    out.colour = vec4f(colour * (0.28 + 0.9 * light) * amount, amount);
+    // A dark page: grains give light, more on the side the light falls on. The lit
+    // ones also give glow (alpha), which the composite spreads round them.
+    out.colour = vec4f(colour * (0.28 + 0.9 * light) * amount, amount * g.look.x);
   } else {
     // A light page: grains are ink, denser on the side turned from the light.
     let ink = amount * (1.2 - 0.55 * light);
@@ -277,7 +359,7 @@ struct Down {
 
 export const blurWgsl = /* wgsl */ `
 struct Blur {
-  // One texel along the way the blur runs (xy).
+  // How far apart the taps are along the way the blur runs (xy), in texture coordinates.
   step: vec4f,
 }
 
@@ -287,10 +369,9 @@ struct Blur {
 
 @fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
   let weights = array<f32, 5>(0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-  let stride = blur.step.xy * 1.6;
   var sum = textureSampleLevel(source, samp, uv, 0.0) * weights[0];
   for (var k = 1; k < 5; k++) {
-    let offset = stride * f32(k);
+    let offset = blur.step.xy * f32(k);
     sum += (textureSampleLevel(source, samp, uv + offset, 0.0) + textureSampleLevel(source, samp, uv - offset, 0.0)) * weights[k];
   }
   return sum;
@@ -299,8 +380,10 @@ struct Blur {
 
 export const compositeWgsl = /* wgsl */ `
 struct Page {
-  // 1 on a light page, how strong the halo is, unused, unused.
+  // 1 on a light page, how strong the glow round lit grains is, unused, unused.
   look: vec4f,
+  // The colour lit grains glow in.
+  lit: vec4f,
 }
 
 @group(0) @binding(0) var scene: texture_2d<f32>;
@@ -311,8 +394,10 @@ struct Page {
 @fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
   let grains = textureSampleLevel(scene, samp, uv, 0.0);
   if (page.look.x < 0.5) {
-    // Light added up, with a soft shoulder so a dense rim brightens instead of clipping flat.
-    let light = vec3f(1.0) - exp(-(grains.rgb + textureSampleLevel(halo, samp, uv, 0.0).rgb * page.look.y));
+    // Light added up, with the lit grains' glow round them, and a soft shoulder so
+    // a dense rim brightens instead of clipping flat.
+    let glow = textureSampleLevel(halo, samp, uv, 0.0).a * page.look.y;
+    let light = vec3f(1.0) - exp(-(grains.rgb + page.lit.rgb * glow));
     return vec4f(light, max(light.r, max(light.g, light.b)));
   }
   // Ink: each pixel takes the grains' own colour, as much as they cover it.
@@ -352,7 +437,11 @@ export async function createParticleFieldRenderer(
 
     const simulate = compute(gpu, prepareShader(simulateWgsl, "particle_simulate.wgsl"), {
       label: "particle-field.simulate",
-      set: {sim: {frame: [1, 1, 0, 0], state: [0, 0, 0, 0], flight: [1, 1, 0, 0]}, homes, grains},
+      set: {
+        sim: {frame: [1, 1, 0, 0], state: [0, 0, 0, 0], flight: [1, 1, 1, 0], knob: [0, 0, 0, 0], ball: [0, 0, 0, 0], energy: [0, 0, 0, 0]},
+        homes,
+        grains,
+      },
     })
     const paint = draw(gpu, {
       shader: prepareShader(paintWgsl, "particle_paint.wgsl"),
@@ -363,16 +452,7 @@ export async function createParticleFieldRenderer(
       depth: false,
       label: "particle-field.paint",
       set: {
-        view: {
-          canvas: [1, 1, 1, 1],
-          look: [0, 0, 0, VIEWER],
-          knob: [0, 0, 0, 0],
-          ball: [0, 0, 0, 0],
-          muted: [1, 1, 1, 1],
-          lit: [1, 1, 1, 1],
-          far: [1, 1, 1, 1],
-        },
-        homes,
+        view: {canvas: [1, 1, 1, 1], look: [0, 0, 0, 1], muted: [1, 1, 1, 1], lit: [1, 1, 1, 1], far: [1, 1, 1, 1]},
         grains,
       },
     })
@@ -390,7 +470,7 @@ export async function createParticleFieldRenderer(
     })
     const composite = effect(gpu, prepareShader(compositeWgsl, "particle_composite.wgsl"), {
       label: "particle-field.composite",
-      set: {scene, halo: haloA, samp: linear, page: {look: [0, 0, 0, 0]}},
+      set: {scene, halo: haloA, samp: linear, page: {look: [0, 0, 0, 0], lit: [1, 1, 1, 1]}},
     })
     await Promise.all([
       simulate.compile(),
@@ -413,13 +493,16 @@ export async function createParticleFieldRenderer(
     let turn = 0
     let dt = 0
     let energy = 0
+    let energyBefore = 0
+    let sweep = 1
+    let lastHalf = 1
     let last: number | undefined
     let shown: {value: number; scale: number; width: number; height: number; light: boolean} | undefined
 
     const bind = () => {
       down.set({source: scene, down: {texel: [...scene.texelSize, 0, 0]}})
-      blurAcross.set({source: haloA, blur: {step: [haloA.texelSize[0], 0, 0, 0]}})
-      blurDown.set({source: haloB, blur: {step: [0, haloB.texelSize[1], 0, 0]}})
+      blurAcross.set({source: haloA})
+      blurDown.set({source: haloB})
       composite.set({scene, halo: haloA})
     }
 
@@ -472,46 +555,59 @@ export async function createParticleFieldRenderer(
       present() {
         const view = current ?? read?.()
         if (!view) return
+        const ratio = stage.size[0] / view.width
+        // Big enough that neighbouring grains overlap into a fine, even sand rather than salt and pepper.
+        const radius = Math.max(1.1, 0.85 * ratio)
+        const goal = energyFor(view, ratio, radius)
+        energy = fresh ? goal : energy + (goal - energy) * (1 - Math.exp(-5 * dt))
+        if (fresh) energyBefore = energy
         if (pending) {
           homes.write(pending)
           pending = undefined
           shapeNumber += 1
           since = 0
           swing = -swing
+          sweep = lastHalf
+          energyBefore = energy
         }
-        const ratio = stage.size[0] / view.width
-        // Big enough that neighbouring grains overlap into a fine, even sand rather than salt and pepper.
-        const radius = Math.max(1.1, 0.85 * ratio)
-        const goal = energyFor(view, ratio, radius)
-        energy = fresh ? goal : energy + (goal - energy) * (1 - Math.exp(-5 * dt))
+        lastHalf = view.half
+        const eye = VIEWER * view.scale
         const knob = view.knob
         simulate.set({
           sim: {
-            frame: [view.scale, view.half, dt, clock],
+            frame: [view.scale, sweep, dt, clock],
             state: [view.value, turn, since, shapeNumber],
-            flight: [fresh ? 1 : 0, swing, 0, 0],
+            flight: [fresh ? 1 : 0, swing, eye, 0],
+            knob: knob ? [knob.x0 * view.scale, knob.y0 * view.scale, knob.x1 * view.scale, knob.y1 * view.scale] : [0, 0, 0, 0],
+            ball: [knob ? knob.r * view.scale : 0, 0, 0, 0],
+            energy: [energy, energyBefore, 0, 0],
           },
         })
         paint.set({
           view: {
             canvas: [view.width, view.height, ratio, radius],
-            look: [view.light ? 1 : 0, energy, since, VIEWER],
-            knob: knob ? [knob.x0 * view.scale, knob.y0 * view.scale, knob.x1 * view.scale, knob.y1 * view.scale] : [0, 0, 0, 0],
-            ball: [knob ? knob.r * view.scale : 0, view.value, 0, 0],
+            look: [view.light ? 1 : 0, 0, 0, eye],
             muted: rgba(view.colours.muted),
             lit: rgba(view.colours.lit),
             far: rgba(view.colours.far),
           },
         })
-        composite.set({page: {look: [view.light ? 1 : 0, view.light ? 0 : 0.9, 0, 0]}})
+        // The glow reaches the same share of a unit whatever the size: taps spaced in quarter-size texels.
+        const spacing = Math.max(1, (HALO * view.scale * ratio) / 4 / BLUR_REACH)
+        blurAcross.set({blur: {step: [haloA.texelSize[0] * spacing, 0, 0, 0]}})
+        blurDown.set({blur: {step: [0, haloB.texelSize[1] * spacing, 0, 0]}})
+        composite.set({page: {look: [view.light ? 1 : 0, view.light ? 0 : HALO_STRENGTH, 0, 0], lit: rgba(view.colours.lit)}})
         fresh = false
         frame(gpu, f => {
           f.computePass(pass => pass.dispatch(simulate, Math.ceil(GRAINS / WORKGROUP)))
           f.pass({target: scene, clear: [0, 0, 0, 0]}, pass => pass.draw(paint, {instances: GRAINS}))
           if (!view.light) {
             f.pass({target: haloA, clear: [0, 0, 0, 0]}, down)
-            f.pass({target: haloB, clear: [0, 0, 0, 0]}, blurAcross)
-            f.pass({target: haloA, clear: [0, 0, 0, 0]}, blurDown)
+            // Two rounds, so the glow is smooth however far apart the taps are.
+            for (let round = 0; round < 2; round++) {
+              f.pass({target: haloB, clear: [0, 0, 0, 0]}, blurAcross)
+              f.pass({target: haloA, clear: [0, 0, 0, 0]}, blurDown)
+            }
           }
           f.pass({target: stage, clear: [0, 0, 0, 0]}, composite)
         })
