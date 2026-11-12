@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Points.** Points totals, the board and like counts now use the same even-width
+  digits as every other figure, so the columns line up.
 - **Looks.** On a phone the frosted glass's six looks stay on one row; on the
   narrowest screens the row slides sideways.
 - **Ask first.** Deleting a note or a message, unpairing an agent, muting, blocking and

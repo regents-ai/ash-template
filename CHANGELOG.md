@@ -8064,3 +8064,12 @@ sits on its own branches.
   `{"status":"ok","migrations_applied":true}`; `/healthz` 200; `/`, `/agents`, `/docs`
   and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
   errors (WebKit not run). The `false` answer is proven by test only.
+
+## 2026-11-12 — Design-system 3de1e43: Points and like counts are shared figures
+
+- `platform/mix.exs` and `platform/mix.lock` pin design-system `3de1e43` (was
+  `2e839171`). `Regent.Points` (the total, each board row and your own row) and the
+  heart's like count in `Regent.Discussion` are now `Regent.Primitives.figure`: they
+  carry `data-count` and equal-width digits. The template's Points page does not mark
+  them with `MotionCount`, so nothing new moves; the digits only line up.
+- `mix regent_ui.assets` copied no changed files. Nothing in the template needed a fix.
