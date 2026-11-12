@@ -52,7 +52,7 @@ each kind of movement, and the lab where every version that was tried sits side 
 | --- | --- |
 | `platform/assets/js/hooks/motion/shared.ts` | Timings, curves, `still(el)`, `byPointer(event)`, `lastInputByPointer()`, `play()`, `fadeIn()` |
 | `platform/assets/js/hooks/motion/press.ts` | `squish`, `nope`, `deny` |
-| `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `backdrop`, `MotionPanels` |
+| `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `list` / `unlist`, `backdrop`, `MotionPanels` |
 | `platform/assets/js/hooks/motion/reveals.ts` | `ShellViews`, `MotionTabs` / `tabsHook`, `MotionCascade`, `HEADLINES`, `GRIDS` |
 | `platform/assets/js/hooks/motion/moments.ts` | `MotionList` / `listHook`, `MotionCount` / `countHook`, `MotionRefusal`, `MotionActivity` |
 | `platform/assets/js/hooks/motion/travel.ts` | `MotionTravel`: the shared segmented control's indicator and link tabs' bar |
@@ -74,6 +74,10 @@ Pages take part through markup, never through their own motion code:
 - A button with `aria-expanded` and `aria-controls` pointing at `data-panel="drawer"`
   slides the drawer out, with its sibling `data-backdrop` fading in.
 - A `<details>` whose panel is `data-panel="menu"` pops open; a `<dialog>` rises as a sheet.
+- A `<details>` whose panel is `data-panel="list"` (the pairing window's agents) fades and
+  rises in, its items one after another, in about 160 ms, and leaves the reverse way in
+  100 ms, while a press on it lands on what is under it. A key or reduced motion opens and
+  closes it at once.
 - On a page the server draws once (not live), the `h1` rises word by word, the first 12
   children of each `data-cascade` settle in and a `role="alert"` set straight in `main`
   shakes once. A refusal shake belongs to its slot's own alert (`:scope > [role=alert]`),
