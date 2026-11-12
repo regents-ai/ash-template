@@ -9280,3 +9280,25 @@ too small next to the switch, and the branch was behind main.
 - Live read, signed out, headless Chromium (WebKit and real phones not run):
   `/animations/particles`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll.
+
+## 2026-11-12 — Released v222: gradients blend in oklch
+
+- `eb4959c3` (merge of `tpl/oklch-gradients-1112`, `2b544efa`) is v222 on
+  template.regents.sh, switched at about 21:17Z with `scripts/deploy.sh`. Sean's rule of
+  12 Nov ("use 'in oklch' for gradients"): design-system pin `5fbe2d40`, all 48 template
+  gradients converted in seven stylesheets (wonders 35, feedback_lab 5, code_cube 2,
+  world_cube 2, home 2, keyfleet_hero 1, site_buttons_lab 1); 31 clear stops written as
+  the same colour at zero opacity. Style check 48 breaks to none. No migration.
+- Rollback: v221 (`6f4e85fa`), image only.
+- Full check exit 0 by the chief on the merge: 137 script tests, 602 browser walks with
+  5 skipped, 217 Elixir (10 properties).
+- Before and after pictures by the worker, 13 views, light and dark, 390 and 1280:
+  within 6/255 everywhere except two places, both inherent to the rule (Tangerine to
+  Powder Blue takes the short way round the wheel, through gold and green): the home
+  page's Enter App ring and the Fractal still on `/animations/wonders`. Sean's
+  decision 33 is open; the design chief recommends a Platinum middle stop.
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/animations/wonders`,
+  `/animations/particles` and `/rooms/general` answer 200 at 1280, 390 and 320 with no
+  page errors and no sideways scroll.
+- Known, not changed here: the Feedback lab button's sheen has never drawn; the shared
+  button's own rule paints over it.
