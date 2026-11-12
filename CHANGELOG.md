@@ -8610,3 +8610,17 @@ and count, and a verification key that is present but unreadable still signed pe
 out. Both cases now answer 503 `sign_in_unavailable`, leave the session alone, log
 `Privy sign-in unavailable stage=… reason=…` as an error and count in
 `ash_template.privy.session_refused.total` with their stage and reason.
+
+## 2026-11-12 — Released v212: the sign-in fixes
+
+- `0f35bfb8` (`tpl/audit-signin-1112` merged onto main) is v212 on template.regents.sh,
+  switched at about 14:10Z with `scripts/deploy.sh`. No migrations. Rollback: v211
+  (`014dc363`). Sign-in is protected: Sean's letter is morning decision 1a of 12 Nov.
+- Full check on `0f35bfb8`, exit 0: 112 TypeScript, 568 browser walks with 5 skipped,
+  208 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `0f35bfb8`; `/`, `/agents`, `/account`, `/app` and `/notes` answer 200 at 1280 and 390
+  with no errors; health is ok with migrations applied. Pressed Sign in on `/notes` at
+  both widths: the sign-in bridge loads and Privy's window opens, no page error.
+- Not proven live: a completed sign-in and sign-out (Sean does that himself), and the
+  503 answer for a wrong setting (tests only; live settings are right).
