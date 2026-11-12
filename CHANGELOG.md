@@ -7952,3 +7952,15 @@ sits on its own branches.
   `platform/test/browser/pages.json`.
 - `platform/test/browser/motion.spec.ts`: grows by pointer, still by keyboard, Escape
   hands focus back, a press outside closes.
+
+## 2026-11-12 — Released v199: rolling figures, gestures and the menu lab page
+
+- `ec983824` (the merge of the design chief's `wt/tpl-bonus-1112`, `9b2bdb05`) is v199
+  on template.regents.sh, switched at about 06:25Z with `scripts/deploy.sh`. No
+  migrations. Rollback: v198 (`9dc7dd1c`).
+- Full check on `ec983824`, exit 0: 53 script tests, 480 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `ec983824`; `/`, `/animations`, `/animations/menu`, `/animations/frosted-glass`,
+  `/agents`, `/app`, `/polls` and `/notes` answer 200 at 1280 and 390 with no page or
+  console errors and no sideways scroll. The gestures themselves were not driven live.
