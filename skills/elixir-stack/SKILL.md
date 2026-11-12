@@ -84,7 +84,8 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 - Queue the job in the same transaction as the change it follows: inside
   `Ash.transact`, an action's `after_action`, an `Ecto.Multi` or the AshOban
   `run_oban_trigger` change. A rolled-back change then queues nothing, and a
-  committed change always has its job.
+  committed change always has its job. A unique job whose keys other saves share is
+  queued after the commit instead (references/oban.md, "Queue a job with the change").
 - Never make an HTTP or chain call inside a database transaction. A job reads, calls
   out, then writes.
 - A job can run twice: after a retry, or when Lifeline rescues it from a node that
@@ -96,11 +97,16 @@ Read [Oban recipes](references/oban.md) before adding or changing a job. The rul
 - Set `max_attempts` on purpose (AshOban triggers default to 1) and decide what
   running out of attempts means. With AshOban, the `on_error` update action
   records it.
-- One job at a time per key: `unique: [keys: [...], period: :infinity, states:
-  :incomplete]`, where `:incomplete` includes executing jobs. AshOban trigger workers
-  already do this for each record.
-- The queue `limit` bounds concurrency. Give slow outside calls their own queue so
-  they cannot hold up other work.
+- Every job that can be queued twice for the same thing names its uniqueness:
+  `unique: [keys: [...], period: :infinity, states: :incomplete]` for one at a time
+  (`:incomplete` includes executing jobs), waiting states only for a notice of change.
+  AshOban trigger workers already do this for each record. The effect still carries a
+  stable operation key, since a job can run twice
+  ([Oban recipes](references/oban.md#one-job-per-thing-and-effects-safe-to-repeat)).
+- Each queue holds one class of work: the database alone, chain reads, model calls,
+  or other calls to another website. The classes never share a queue, so a slow
+  service holds up only the jobs that wait on it. The queue `limit` bounds
+  concurrency; [Oban recipes](references/oban.md#queues) says how to choose it.
 - Tests: `testing: :manual` in `config/test.exs`, `use Oban.Testing, repo: ...`, then
   `perform_job/2` and `assert_enqueued/1`.
 - Oban never queues, retries, defers or deduplicates a person's on-chain action;

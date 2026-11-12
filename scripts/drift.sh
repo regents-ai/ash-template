@@ -3,7 +3,7 @@
 # and deploy files, differ from the template's own, so drift is seen rather than
 # guessed.
 #
-#   scripts/drift.sh [site ...]      # default: every site below
+#   scripts/drift.sh [site ...]      # default: every site in scripts/github.sh
 #
 # Reads each site's main branch on GitHub at one commit, and this checkout's files
 # as they are. A site's copy is compared after the template's names are renamed to
@@ -21,8 +21,6 @@
 # the panel, then the copyright), as visitors see them. Needs `gh auth login` and
 # curl.
 set -euo pipefail
-
-sites=(keyfleet regents autolaunch patchbay techtree)
 
 # The files every site takes from the template, at the template's paths.
 shared=(
@@ -132,19 +130,7 @@ compared() {
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 out="platform/_build/drift"
-
-# Prints a file from a site's repository at a commit; exits 44 when it is absent.
-site_file() {
-  local repo="$1" rev="$2" path="$3" body
-  if body="$(gh api -H "Accept: application/vnd.github.raw" "repos/$repo/contents/$path?ref=$rev" 2>&1)"; then
-    printf '%s\n' "$body"
-  elif [[ "$body" == *"HTTP 404"* ]]; then
-    return 44
-  else
-    echo "$repo $path: $body" >&2
-    exit 1
-  fi
-}
+source scripts/github.sh
 
 # Prints the git blob id of a file in a site's repository at a commit, so a picture is
 # compared without its bytes passing through the shell; exits 44 when it is absent.
@@ -162,7 +148,7 @@ site_blob() {
 
 # Compares the template's files named after the heading with the current site's copies.
 compare() {
-  local heading="$1" path site_path why theirs ours diff_file added removed
+  local heading="$1" path site_path why theirs ours diff_file added removed status
   local same=0 differ=0 missing=0 unused=0
   shift
   echo "  $heading"
@@ -173,11 +159,16 @@ compare() {
       unused=$((unused + 1))
       continue
     fi
+    # A file the site lacks (404) is missing; any other failure stops the run.
     if [[ "$path" == *.webp ]]; then
-      if ! theirs="$(site_blob "$repo" "$rev" "$site_path")"; then
+      theirs="$(site_blob "$repo" "$rev" "$site_path")" || {
+        status=$?
+        [[ "$status" == 44 ]] || exit "$status"
         printf '    missing  %s\n' "$site_path"
         missing=$((missing + 1))
-      elif [[ "$theirs" == "$(git hash-object "$path")" ]]; then
+        continue
+      }
+      if [[ "$theirs" == "$(git hash-object "$path")" ]]; then
         printf '    same     %s\n' "$site_path"
         same=$((same + 1))
       else
@@ -186,11 +177,13 @@ compare() {
       fi
       continue
     fi
-    if ! theirs="$(site_file "$repo" "$rev" "$site_path")"; then
+    theirs="$(site_file "$repo" "$rev" "$site_path")" || {
+      status=$?
+      [[ "$status" == 44 ]] || exit "$status"
       printf '    missing  %s\n' "$site_path"
       missing=$((missing + 1))
       continue
-    fi
+    }
     ours="$(perl -pe "s/ash_template/$app/g; s/AshTemplate/$module/g; s/ashTemplate/$camel/g; s/ASH_TEMPLATE/$upper/g; s/ash-template/$kebab/g" "$path" | compared "$path")"
     theirs="$(compared "$path" <<<"$theirs")"
     diff_file="$out/$site/$(tr / _ <<<"$site_path").diff"
@@ -247,8 +240,12 @@ compare_live_homepages() {
 
 for site in "${@:-${sites[@]}}"; do
   repo="regents-ai/$site"
-  rev="$(gh api "repos/$repo/commits/main" --jq .sha)"
-  mix_exs="$(site_file "$repo" "$rev" platform/mix.exs)"
+  rev="$(main_commit "$repo")"
+  mix_exs="$(site_file "$repo" "$rev" platform/mix.exs)" || {
+    status=$?
+    [[ "$status" != 44 ]] || echo "$repo has no platform/mix.exs at ${rev:0:7}" >&2
+    exit "$status"
+  }
   app="$(sed -nE 's/^[[:space:]]*app: :([a-z0-9_]+),.*/\1/p' <<<"$mix_exs" | head -1)"
   module="$(sed -nE 's/^defmodule ([A-Za-z0-9]+)\.MixProject do$/\1/p' <<<"$mix_exs")"
   camel="$(printf '%s' "${module:0:1}" | tr '[:upper:]' '[:lower:]')${module:1}"

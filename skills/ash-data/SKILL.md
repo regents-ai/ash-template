@@ -16,9 +16,11 @@ Load `ash-stack` first. State the persistence invariant the change must keep, th
   Do not switch off atomic requirements to get past an error.
 - **A race test needs independent transactions**, not two processes sharing one
   sandbox connection.
+- **An index on a busy table is built concurrently**, after measuring the read, and
+  only by the schema's owner ([an index on a busy table](references/migrations-and-concurrency.md#an-index-on-a-busy-table)).
 - **One production database for every site.** Serve on the direct address with a
   pool of 5, never through the pooler (Proximal still serves through it and moves next),
-  and releases take turns
+  and at most two releases switch over at once
   ([connections](references/migrations-and-concurrency.md#connections-to-the-shared-production-database)).
   The template's `template-runtime` login still stores the 15 s, 5 s and 15 s limits
   set on it on 27 October 2026, the same values its startup settings send; leave

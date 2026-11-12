@@ -15,6 +15,9 @@ defmodule AshTemplateWeb.Endpoint do
     "referrer-policy" => "no-referrer"
   }
 
+  @doc "The headers every file and public document is sent with; it is never a page."
+  def static_headers, do: @static_headers
+
   # The largest signed body is a note: 10,000 characters of text, as JSON.
   @signed_body_limit 65_536
 
@@ -52,7 +55,6 @@ defmodule AshTemplateWeb.Endpoint do
     ]
 
   plug AshTemplateWeb.Plugs.CanonicalHost
-  plug AshTemplateWeb.Plugs.ContractHeaders
 
   # esbuild names every file in assets/js/chunks after its contents, so a
   # changed file has a new name: a browser keeps them for a year without asking

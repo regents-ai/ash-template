@@ -225,8 +225,21 @@ uses one for the other's work.
 ## Public HTTP surface
 
 `contracts/api-contract.openapiv3.yaml` is the source of truth for the API and
-is served at `/api-contract.openapiv3.yaml` with `x-regents-contract-major` and
-`x-regents-contract-digest` headers. The table is a map, not the contract.
+is served at `/api-contract.openapiv3.yaml` (`PublicPagesController.api_contract/2`)
+with `x-regents-contract-major` and `x-regents-contract-digest` headers. The table is
+a map, not the contract.
+
+Every public document and agent file (the contract, `/openapi.json`, `/llms.txt`,
+`/agents.md`, each skill's `skill.md`, `/capabilities.json`, the sitemap and robots,
+the agent skill files, `/.well-known/security.txt`, the API catalog,
+`/indexnow-key.txt`, and `/api/v1/about` and `/api/v1/docs`) is sent by one helper,
+`send_cached/4` in `AshTemplateWeb.PublicPagesController`: a strong ETag, the sha256
+of the body, `cache-control: public, max-age=300`, the endpoint's static headers (no
+scripts, no framing, nosniff), and 304 with no body when `If-None-Match` names that
+ETag. A page or answer that shows the signed-in person is never sent this way. The
+Markdown of a public page (`Accept: text/markdown`) comes from `RegentAgentAccess.Plug`
+and the OAuth discovery documents from `RegentOAuth.Protocol`, which set no
+cache.
 
 | Route | Method | Purpose |
 | --- | --- | --- |
@@ -373,6 +386,11 @@ can do and the check that proves it. Among them:
   days unnoticed, and walks a new person from an email sign-in without a wallet,
   through the wallet Privy gives them, to the same account at every sign-in.
 - It checks that a paired agent's tools accept only signed proof, never a cookie.
+- It writes through a resource that names no schema while `public` holds a table of
+  the same name, and checks that a create, update, destroy, upsert, bulk upsert and
+  `Ash.update_many` change only the site's schema, because ash_postgres 2.10.0 through
+  2.15.2 sent `Ash.update_many` and upserts to `public`. Run it before moving the
+  ash_postgres pin.
 - `npm test` checks that after Disconnect, a Privy session the browser still
   remembers never signs the previous person back in.
 - A property test checks that each account shows the name its person set for this
@@ -419,6 +437,11 @@ database migrations. Every deployment names its venue in
 `ASH_TEMPLATE_DEPLOYMENT_ROLE`, and each role admits only its own database
 hosts. Production boot also fails unless `ASH_TEMPLATE_APP_SURFACES`,
 `ASH_TEMPLATE_SHOWCASE`, `PHX_HOST` and a 64-byte `SECRET_KEY_BASE` are set.
+An index on a table that is already in use is added with `concurrently: true` in
+the resource's `custom_indexes`, after `EXPLAIN (ANALYZE, BUFFERS)` shows the read
+needs it, so writes carry on while it builds; the site adds indexes only to its own
+schema. `skills/ash-data/references/migrations-and-concurrency.md` ("An index on a
+busy table") has the steps.
 `/app/bin/pending-migrations` reports what a deployed database and the release
 image disagree about, without applying anything: `pending:`,
 `applied-without-file:`, and `shared-pending:` for each shared Identity, Agents,

@@ -41,6 +41,22 @@ and read the installed version's docs before relying on an option.
    The migration takes the same schema the repo migrates into:
    `Oban.Migrations.up(prefix: prefix() || "public")`.
 
+   The top-level `pruner:`, `lifeline:` and `cron:` keys are what start Oban's
+   maintenance: `Oban.Config` turns each into its plugin (`Oban.Pruner`,
+   `Oban.Lifeline`, `Oban.Cron`), and `AshOban.config/2` keeps them and their leader
+   (checked in Oban 2.24.2 and AshOban 0.10.3). Never write the old
+   `plugins: [{Oban.Plugins.Pruner, ...}]`, and never `plugins: false`, which turns all
+   three off. The baseline every site keeps:
+
+   - `pruner: [max_age: {7, :days}]`. The pruner deletes completed, cancelled and
+     discarded jobs older than that, up to 10,000 every 30 seconds, from the leader.
+     Always give `max_age`: a bare `pruner: Oban.Pruner` keeps jobs 60 seconds. A job
+     that is unique with `states: :all` is unique only until it is pruned.
+   - `lifeline: [rescue_after: {10, :minutes}]`, longer than the slowest single run of
+     any job, or Lifeline takes a job still running for one whose machine stopped and
+     runs it again (Autolaunch keeps 20 minutes, above its 15-minute volume reads).
+   - `cron: [crontab: [...]]`, even empty, with AshOban.
+
 4. Supervision, after the repo. With AshOban, wrap the config so triggers and
    scheduled actions get their queues and cron entries:
 
@@ -48,6 +64,81 @@ and read the installed version's docs before relying on an option.
    {Oban, AshOban.config(Application.fetch_env!(:my_app, :ash_domains),
                          Application.fetch_env!(:my_app, Oban))}
    ```
+
+## Queues
+
+Every queue holds one class of work, so a slow or failing outside service holds up
+only the jobs that wait on it, never a person's other work:
+
+| Class | Holds | Template queues |
+| --- | --- | --- |
+| Database | Work on the site's own rows: sweeps, pruning, rereads, jobs that only queue other jobs | `default`, `points` |
+| Chain reads | Reads through a chain node | `ens`, `points_chain` |
+| Model calls | Questions to a model (OpenRouter, Anthropic) | `chat_responses`, `conversations`, `labels` |
+| Other outside calls | Every other request to another website: webhooks, IndexNow, an image or video service | `outside_calls` |
+
+- A chain read, a model call or another outside call never runs in `default`, and two
+  classes never share a queue. A job that only queues others (a cron dispatcher) is
+  database work, whatever the jobs it queues do; AshOban runs a trigger's sweep in the
+  trigger's own queue unless the trigger names a `scheduler_queue`.
+- Within a class, a kind gets its own queue when a burst of it must not hold up the
+  rest of its class: every sign-in looks up one ENS name, so `ens` is apart from the
+  other chain reads. Otherwise kinds share their class's queue.
+- Choose the limit by what the job waits on. A database job holds a connection for
+  most of its run, so the database queues' limits together stay below the Repo's pool
+  (5 on the shared database; ash-data, "Connections"), with room left for page
+  requests and Oban's own reads: the template's `default` 1 and `points` 2 take 3 of
+  the 5, and a full `default` and `points` still leave 2 for pages. An
+  outside-call job holds a connection only to read before and write after the call,
+  so its limit is what the other service and the budget allow: its rate limit, a
+  daily cap such as Jev's `daily_questions`, and how long one call takes. Start a
+  call to an outside website at 1 to 3; a model queue whose answers a person waits
+  for (`chat_responses`) can go higher, within the model's rate limit.
+- Raise a limit when `[:ash_template, :jobs, :oldest_unfinished]` stays high for that
+  queue: it is the age of the oldest job not yet finished, running ones included, so
+  read it with the queue's run times before deciding its jobs are waiting. Lower it
+  when the other service answers 429.
+- Moving a job to another queue needs no migration: a job already queued stays in
+  its old queue and runs there while that queue is still configured, so keep the old
+  queue in the list until it is empty.
+
+## One job per thing, and effects safe to repeat
+
+Every job that can be queued twice for the same thing (a refresh, a sync, a sweep, a
+notice) says what "the same" is, explicitly:
+
+- `keys:` the args that name the thing: an id, a kind, a release
+  (`unique: [keys: [:kind], ...]`). A job with no args names its worker:
+  `fields: [:worker]`.
+- `period: :infinity`: unique by state, not by a time window. A window lets a second
+  copy in once it passes, while the first may still be running.
+- `states:`, by what a second copy would add:
+  - `:incomplete` (available, scheduled, executing, retryable, suspended): one at a
+    time. Refreshes, syncs, sweeps, pruners (`AshTemplate.ErrorPruner`).
+  - `[:available, :scheduled, :retryable]`: one waiting at a time. A notice of change:
+    a copy queued while one waits adds nothing, but a change after sending began must
+    be sent again (`AshTemplate.IndexNow.submit/1`). Also a reread on a schedule,
+    whose run left on a stopped machine must not hold up the next
+    (`AshTemplate.SharedReading.Heal`).
+  - `:all`: once, for as long as the job's row is kept. The pruner deletes finished
+    jobs after `max_age`, and the same args can then be queued again: the template's
+    once-per-release sitemap goes to IndexNow again after a week on one release.
+- Oban 2.24 merges a worker's `unique:` with one passed to `new/2` key by key
+  (`Oban.Worker.merge_opts/2`; its docs still say the second replaces the first), so
+  a call that overrides names every key it means.
+- AshOban triggers are already one job per record while incomplete, unique over all
+  their args, so `extra_args` (a note's `revision`) gives each value its own job.
+- A cron entry is queued only by the leader, once per tick; it still needs uniqueness
+  when a slow run or a busy queue could leave the last tick's job waiting.
+
+Uniqueness stops a duplicate job, not a repeated effect: a job can still run twice
+(a retry, or Lifeline rescuing it from a stopped machine). Give each effect a stable
+operation key, the same args the uniqueness names, and let the receiver ignore a
+repeat of it: the event id in ordered delivery (below), a note webhook's `note_id` and
+`revision`. A request from outside does the same with a key the caller chooses:
+Patchbay's `client_request_id` on `post_reply` returns the first reply for a repeat and
+refuses the same key with different words (`Patchbay.Forum.Reply`, unique on the
+session and the key, with a digest of the body).
 
 ## A plain worker
 
@@ -83,6 +174,28 @@ end)
 Inside an Ash action, queue it from `after_action`, which runs inside the action's
 transaction. For a job on the same record, use the AshOban change:
 `change run_oban_trigger(:send_receipt)`.
+
+Oban's Basic engine holds a unique job's lock until the transaction that queued it
+ends, and a second save queuing the same job meanwhile is told it is a duplicate, so
+if the first rolls back, neither is queued. Inside a transaction, a unique job's keys
+name only what that transaction alone holds: the record it creates or has locked
+(`order_id` above). A unique job whose keys other saves share, such as
+`AshTemplate.IndexNow.submit/1`'s list of addresses, is queued once the change has
+committed, from `after_transaction` on an action that no outer transaction wraps:
+
+```elixir
+change after_transaction(fn
+  _changeset, {:ok, page}, _context ->
+    Oban.insert!(AshTemplate.IndexNow.submit([MyApp.page_url(page)]))
+    {:ok, page}
+
+  _changeset, error, _context ->
+    error
+end)
+```
+
+A save that stops between its commit and that insert queues nothing, so keep this
+for work that may be missed, such as telling search engines a page changed.
 
 ## AshOban trigger: work on every record that matches
 

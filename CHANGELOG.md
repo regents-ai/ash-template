@@ -7372,3 +7372,189 @@ sits on its own branches.
 - Not proven: a read of Claude's document from Fly's network (the browser walk and the
   tests cannot reach claude.ai). The first real Claude connection proves it; if consent
   shows "Unavailable", roll back to v191.
+
+## 2026-11-11 — A test holds every write to the site's own schema
+
+- `platform/test/ash_template/schema_prefix_test.exs` makes a table of the same name in
+  `ash_template_app` and in `public`, inside the test's own transaction, and writes
+  through a resource that names no schema, as the site's resources do. A create, read,
+  update and destroy, a single upsert, a bulk upsert and `Ash.update_many` (one MERGE on
+  PostgreSQL 17) change only the site's rows, and the rows planted in `public` stay as
+  they were. It checks the failure in ash_postgres 2.10.0 through 2.15.2, which sent
+  `Ash.update_many` and upserts to `public` (upserts through MERGE from 2.10.0 unless it
+  was turned off, and always from 2.13.1); it has not been run against those releases to
+  see it fail. `platform/mix.exs` names the test beside the ash_postgres pin
+  (`55db7d44`, #910), so the pin moves only after it runs clean. Test-only; nothing to
+  release.
+
+## 2026-11-11 — Adding an index to a busy table
+
+- `skills/ash-data/references/migrations-and-concurrency.md` gains "An index on a busy
+  table", in place of a paragraph that only said to look things up: measure the read
+  with `EXPLAIN (ANALYZE, BUFFERS)` first, declare the index with `concurrently: true` in
+  `custom_indexes` (the unread-notifications index is the example), keep the migration
+  `mix ash.codegen` writes for it as it is, and clear an invalid index left by a failed
+  build. Only a schema's owner indexes it: a site its own schema, a shared library
+  (`regent_identity`, `regent_agents`, `regent_points`, `regent_payments`) through
+  `/app/bin/migrate-shared` after Sean's go, Regents its `regent_names` table.
+- `skills/ash-data/SKILL.md` and `platform/README.md` point to it. Docs only.
+
+## 2026-11-11 — One class of background work per queue
+
+- Each Oban queue now holds one class of work, so a slow or failing service holds up
+  only the jobs that wait on it. Asking Jev to label a decision is a model call, so its
+  trigger (`AshTemplate.Notes.Decision`, `:ask_jev`) moves from `outside_calls`, which
+  it shared with the notes webhook and IndexNow, to a new `labels` queue (limit 3).
+  The queue list and its comment in `platform/config/config.exs` name each class:
+  `default` and `points` the database, `ens` and `points_chain` chain reads,
+  `chat_responses`, `conversations` and `labels` model calls, `outside_calls` every
+  other outside website.
+- `skills/elixir-stack/references/oban.md` gains "Queues": the four classes and the
+  template's queues for each, when a kind gets its own queue, how to choose a limit
+  by what the job waits on, when to raise or lower it, and that moving a job to
+  another queue needs no migration. `skills/elixir-stack/SKILL.md` says it in one
+  line.
+- A label job already waiting in `outside_calls` when this ships still runs there.
+
+## 2026-11-11 — Every repeatable template job names its uniqueness
+
+- `AshTemplate.ErrorPruner` runs or waits once at a time (`fields: [:worker]`,
+  `states: :incomplete`), so a slow prune never meets a second one.
+- `AshTemplate.SharedReading.Heal` keeps one reread of each kind waiting at a time
+  (`keys: [:kind]`, waiting states only), so a busy queue never piles up a minute's
+  worth each minute, and a reread left running on a stopped machine never holds up
+  the next.
+- `AshTemplate.IndexNow.submit/1` keeps one copy of the same list waiting
+  (`keys: [:urls]`, waiting states only); a list queued after its sending began is
+  sent again. Its check comes after an hour live (`docs/feature-map.md`, Gaps).
+- `skills/elixir-stack/references/oban.md` gains "One job per thing, and effects safe
+  to repeat": which keys, why `period: :infinity`, which states for which kind of job,
+  how Oban 2.24 merges a worker's `unique:` with one given to `new/2`, and that a job
+  can still run twice, so each effect carries a stable key. `skills/elixir-stack/SKILL.md`
+  says it in one line.
+
+## 2026-11-11 — Oban's pruning and rescue baseline written down
+
+- `skills/elixir-stack/references/oban.md` now says that the top-level `pruner:`,
+  `lifeline:` and `cron:` keys are what start Oban's maintenance, and sets the
+  baseline: an explicit `max_age` (a bare pruner keeps jobs 60 seconds),
+  `rescue_after` above the slowest single run, `cron:` even when empty, and never
+  `plugins: false`, which turns all three off. Checked in the template's own
+  configuration: with AshOban's wrapper, Oban starts `Oban.Cron`, `Oban.Pruner`
+  (7 days) and `Oban.Lifeline` (10 minutes) under the database leader. No
+  configuration changes. Docs only.
+
+## 2026-11-11 — Public documents answer 304, and the contract is a route
+
+- `send_cached/4` in `AshTemplateWeb.PublicPagesController`, which sends every public
+  document and agent file, now answers 304 with no body when `If-None-Match` names the
+  body's ETag (one tag, a list, a weak `W/` tag or `*`), and sends the endpoint's
+  static headers (`AshTemplateWeb.Endpoint.static_headers/0`: no scripts, no framing,
+  nosniff, no referrer), since none of them is a page. `/api/v1/about` and
+  `/api/v1/docs` go through it too, so they gain the ETag and cache.
+- `/api-contract.openapiv3.yaml` is a route (`api_contract/2`) that sends the contract
+  with `x-regents-contract-major` and `x-regents-contract-digest`, both read from the
+  file at compile time. The `ContractHeaders` plug that added them in front of
+  `Plug.Static` is deleted, the file leaves the static paths, and the
+  `application/yaml` MIME entry it needed is gone. The browser walk opens the
+  contract with the other documents (`platform/test/browser/pages.json`).
+- `platform/README.md` says how public documents are sent. The checks for the 304
+  answers and the contract's headers come after an hour live (`docs/feature-map.md`,
+  Gaps).
+
+## 2026-11-11 — `make pins`: every site's shared-library pins in one table
+
+- `scripts/pins.sh` (`make pins`, and `make drift` after its file comparison) reads
+  each site's `platform/mix.lock` and `Makefile` from its main branch on GitHub, and
+  this checkout's for the template, and prints one row per pin: every elixir-utils
+  commit a site locks, its design-system and ash_postgres commits, the SIWA library
+  it builds and the regents-cli its Makefile checks commands with. Each row says how
+  many commits the pin is behind the template's pin and the library's main, and how
+  many days. Commits are counted in a copy of each library's history (commits and
+  trees only) in `platform/_build/drift/libraries`; the table is also written to
+  `platform/_build/drift/pins.md`.
+- `scripts/github.sh` holds the site list and the two GitHub reads `scripts/drift.sh`
+  and `scripts/pins.sh` share. `scripts/init.sh` removes both, as it removes the drift
+  report, for a new product.
+- First run, 11 Nov: elixir-utils pins range from in step with the template to 13
+  commits behind it (Keyfleet, Autolaunch); every site is on ash_postgres `55db7d4`;
+  Regents checks commands with regents-cli v1.10.23, the rest with v1.10.24.
+
+## 2026-11-11 — The schema-prefix probe lives with the test helpers
+
+- The resource the schema-prefix test writes through (`AshTemplate.SchemaPrefixProbe`,
+  in its own `AshTemplate.SchemaPrefixProbes` domain) moves from inside
+  `platform/test/ash_template/schema_prefix_test.exs` to
+  `platform/test/support/schema_prefix_probe.ex`. A resource defined inside a test file
+  is compiled after the protocols are consolidated, and the test run warned about it.
+- `platform/mix.exs` compiles `test/support` with `lib` in the test environment
+  (`elixirc_paths(:test)`), so test-only resources are built before consolidation.
+  Test-only; nothing to release.
+
+## 2026-11-11 — Review fixes to the queues, pins and public documents
+
+- One range for the ash_postgres schema bug, read from ash_postgres's own history:
+  2.10.0 through 2.15.2 sent `Ash.update_many` and upserts to `public` (the hand-built
+  MERGE arrives in 2.10.0, and the hand-built upsert, with no setting to turn it off, in
+  2.13.1). The schema-prefix test, `platform/README.md`, the test's entry above and
+  `security/required-fixes.json` all say so.
+- `default` and `points`, the database queues, are now 1 and 2 (they were 5 each, so
+  together they could take all 5 of the serving pool's connections from page requests);
+  together they leave 2 for pages. `skills/elixir-stack/references/oban.md` says the
+  database queues together stay below the pool, with room left for requests.
+- The hourly IndexNow job runs in `default`, since it only queues the sitemap's sending,
+  which stays in `outside_calls`.
+- `oban.md` says that Oban's Basic engine holds a unique job's lock until the
+  transaction that queued it ends, so a second save queuing the same job meanwhile
+  queues nothing, and neither is queued if the first rolls back. A unique job whose keys
+  other saves share, such as `AshTemplate.IndexNow.submit/1`, is queued after the commit,
+  from `after_transaction`; `skills/elixir-stack/SKILL.md` and IndexNow's own docs say
+  the same.
+- `make pins` (`scripts/pins.sh`): a site's Makefile read lets only a 404 through, any
+  other failure stops the run, and a site with no `platform/mix.lock` says so. Each
+  library copy is read through its own `--git-dir`, so a damaged copy never reaches
+  the checkout around it, and the copies fetch pull requests' heads, so a pin on a pull
+  request's commit is counted instead of called "not on GitHub".
+- The send_cached comment says a public document changes with a release or with the
+  server settings read at boot. `oban.md` says `oldest_unfinished` counts running jobs
+  too. `skills/ash-data/references/migrations-and-concurrency.md` says a concurrent index
+  build waits for older transactions anywhere in the database, the other sites' included.
+- The new checks for the 304 answers, the contract's headers and IndexNow's
+  uniqueness are held until the change has worked live for an hour:
+  `static_cache_test.exs` and `index_now_test.exs` are as on main, and
+  `docs/feature-map.md` lists the three as Gaps. `skills/ash-webmcp/references/regents.md`
+  names the template's contract route in place of Regents' plug.
+- `make drift` (`scripts/drift.sh`) counts a file as missing only when GitHub answers
+  404; any other failure stops the run, and a site with no `platform/mix.exs` says so.
+- Serving, development and tests each hold 5 connections, one setting in
+  `AshTemplate.DatabaseConfig` (`@pool_size`): local development had 2 since the
+  template was cut from Regents on 21 September, with no reason given, so its jobs alone
+  could take every connection; development against the shared database had none set, so
+  Ecto's 10. With 5 everywhere, the database queues' 3 leave 2 for pages in development
+  as in production. The browser walk's server (`platform/playwright.config.ts`) no
+  longer sets `POOL_SIZE=3`, which nothing ever read; it runs on the same 5.
+- Checked: `mix format` (no change), a compile with warnings as errors, and the tests
+  for the changed files (16 of 16). `make pins` and `make drift` ran for every site.
+- The schema-prefix test, run once with ash_postgres pointed at Hex 2.15.2, failed where
+  it should: "an upsert, of one record or many, lands only in the site's schema" (the
+  site's table stayed empty: the upsert went to `public`) and "updating many records at
+  once changes only the site's rows" (the site's rows kept their old amounts). The
+  create, read, update and destroy test held. The pin went back to 55db7d4, with
+  `platform/mix.exs` and `platform/mix.lock` unchanged.
+- Full check on `b0a397ad`, clean tree, exit 0: `mix precommit` (hex.audit clean, Credo
+  clean, 31 script tests, 448 browser walks with 5 skipped), then 179 Elixir (9
+  properties), then the required-fixes check. The first full check, on `81b638c7`,
+  stopped in the walk: on the phone, Walk Agent's window did not say it had come to rest
+  within 5 seconds (`platform/test/browser/agents.spec.ts`). Run alone it failed once
+  more while the Mac was busy, then passed at both widths with the development pool at
+  2 and again at 5, so the wait is the busy Mac's, not the pool's.
+
+## 2026-11-12 — The ops quick wins land on main
+
+- `tpl/quick-wins-ops-1111` (the entries above from "A test holds every write to the
+  site's own schema" on) is merged onto main after v192. Where it met main's own
+  changes: `make drift` reads a picture's blob id as main does, and a picture, like
+  any other file, counts as missing only when GitHub answers 404; the ash-data skill
+  keeps main's line on the database (the direct address, a pool of 5, never the
+  pooler) and says at most two releases switch over at once, as the release checklist
+  does since 12 Nov, in place of "releases take turns".
