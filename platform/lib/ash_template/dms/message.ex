@@ -31,6 +31,9 @@ defmodule AshTemplate.Dms.Message do
 
     custom_indexes do
       index([:conversation_id, :inserted_at])
+      # An agent's feed catches up on its person's messages by recipient, in
+      # order (`AshTemplate.Feed`).
+      index([:to_id, :inserted_at], concurrently: true)
     end
   end
 
