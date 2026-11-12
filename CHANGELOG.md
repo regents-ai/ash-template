@@ -8475,3 +8475,13 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   500: `AskLabLive.handle_params/3` passed a list or a map to `String.trim/1`. A `q` that
   is not a binary is now no question, and the page shows the empty bar.
   `ask_bar.spec.ts` checks both shapes at both widths.
+
+## 2026-11-12 — Released v210: the Ask lab page fix
+
+- `683ddeeb` is v210 on template.regents.sh, switched at about 10:10Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v209 (`98ead9be`).
+- Full check on `683ddeeb`, exit 0: 108 TypeScript, 539 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read, signed out: `/capabilities.json` names `683ddeeb`; `/animations/ask` with
+  `q[]=a`, `q[a]=b`, a text question and no question each answer 200 (the first two
+  answered 500 on v208 and v209).
