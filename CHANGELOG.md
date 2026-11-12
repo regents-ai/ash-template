@@ -8901,3 +8901,22 @@ template as one piece every site takes, and a Motion lab page that shows it.
   `/animations/cards` at 1280 and 390, light and dark, with less motion: only the six
   dots' edge pixels differ, by at most 15 of 255. In forced colours the ring now shows
   where the dot showed nothing before.
+
+## 2026-11-12 — Released v217: the cube's approved exception, the style check in the full check
+
+- `f2695d5c` (`tpl/cube-exception-1112`) is v217 on template.regents.sh, switched at
+  about 16:37Z with `scripts/deploy.sh`. Sean's 4 b: the world cube keeps its glass as
+  the second approved exception, marked on its three glass lines and one shadow line;
+  `make check-style` (design-system pin `c6cbadd7`) is now the first step of
+  `make check`; the value cards' name dot draws its ring as an outline. No migration.
+- Rollback: v216 (`01568275`), image only.
+- Full check, exit 0, by the worker on `d75764b8`: 126 TypeScript, 579 browser walks
+  with 5 skipped, 210 Elixir (9 properties). `f2695d5c` differs from it only by
+  changelog lines, so the check was not run a third time.
+- Live read in headless Chromium, signed out (WebKit not run): `/`, `/animations/cube`,
+  `/animations/cards`, `/animations` and `/showcase/wallet` answer 200 at 1280, 390 and
+  320 with no errors and no sideways scroll; the cards page shows six cards in light
+  and dark at the three widths. The cube's in-room glass pane needs a GPU and was not
+  seen; the built stylesheet for it is byte-identical to v216's.
+- Known: at this pin the style check passes silently on a machine without ripgrep.
+  Fixed in design-system `0ae2bffc`; the template takes it in its next release.
