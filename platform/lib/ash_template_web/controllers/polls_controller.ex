@@ -48,7 +48,7 @@ defmodule AshTemplateWeb.PollsController do
     do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
 
   def index(conn, _params) do
-    case Polls.list_polls() do
+    case Polls.list_polls(load: [:open, :totals, :starter]) do
       {:ok, polls} -> json(conn, %{polls: Enum.map(polls, &present/1)})
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("polls_unavailable")
     end

@@ -5,11 +5,14 @@ defmodule AshTemplateWeb.PollsLive do
   form to start one. Anyone reads them; a signed-in person votes once in each
   and ends the polls they started.
 
-  Voting and starting never touch the page directly. Each start, vote and end
-  is published on `AshTemplate.Polls.topic/0`; the shell hands each on here as
-  `send_update(PollsLive, id: "polls", change: poll_id)`. While a poll on the
-  page is open, the page reads it again each minute and at its close, so its
-  time left and its counts follow the clock.
+  The page reads the list once and the poll on it once; after that the notices
+  carry the changes and the page reads nothing. Each start and end is published
+  on `AshTemplate.Polls.topic/0` with what the list shows, and each vote on the
+  poll's own `AshTemplate.Polls.topic/1` with how many have voted; the shell
+  hands them on here as `listed:` and `counted:`. A voter's own page sets its
+  choice from the press. One timer wakes the page when it changes on its own: a
+  poll it holds closes, or the minutes left on the open poll tick down. The
+  poll on the page is read once more when it closes or ends, for its counts.
   """
 
   use AshTemplateWeb, :live_component
@@ -27,7 +30,6 @@ defmodule AshTemplateWeb.PollsLive do
   alias Regent.Primitives
 
   @minutes [1, 5, 15, 30, 60]
-  @minute 60_000
 
   @impl true
   def mount(socket) do
@@ -48,18 +50,34 @@ defmodule AshTemplateWeb.PollsLive do
      )}
   end
 
-  # A start, vote or end anywhere moves the list, and the poll on the page when
-  # it is the one that changed.
+  # A start or an end anywhere: the list takes the poll as the notice has it,
+  # and the poll on the page, when it is the one that ended, is read once for
+  # its counts.
   @impl true
-  def update(%{change: poll_id}, socket) do
-    socket = load_polls(socket)
-
-    if poll_id == socket.assigns.poll_id,
-      do: {:ok, load_poll(socket)},
-      else: {:ok, socket}
+  def update(%{listed: listed}, socket) do
+    {:ok,
+     socket
+     |> change(:polls, &relist(&1, listed))
+     |> ended(listed)
+     |> clock()}
   end
 
-  def update(%{tick: true}, socket), do: {:ok, socket |> assign(:clock, nil) |> load_poll()}
+  # A vote on the poll on the page: how many have voted, never which way.
+  # Notices can arrive out of order, and the count only grows.
+  def update(%{counted: %{id: id, votes_cast: count}}, socket) do
+    counted = fn poll -> %{poll | votes_cast: max(poll.votes_cast, count)} end
+
+    {:ok,
+     socket
+     |> change(:poll, &if(&1.id == id, do: counted.(&1), else: &1))
+     |> change(
+       :polls,
+       &Enum.map(&1, fn poll -> if poll.id == id, do: counted.(poll), else: poll end)
+     )}
+  end
+
+  def update(%{tick: true}, socket),
+    do: {:ok, socket |> assign(:clock, nil) |> closed() |> clock()}
 
   # The shell renders this with every update of its own, so the list and the
   # form are made again only for a different person, and the poll read again
@@ -75,7 +93,10 @@ defmodule AshTemplateWeb.PollsLive do
 
       shown_actor == actor ->
         {:ok,
-         socket |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil) |> load_poll()}
+         socket
+         |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil)
+         |> load_poll()
+         |> clock()}
 
       true ->
         {:ok,
@@ -83,7 +104,8 @@ defmodule AshTemplateWeb.PollsLive do
          |> assign(shown: {actor, poll_id}, notice: nil, vote_error: nil)
          |> load_polls()
          |> new_form()
-         |> load_poll()}
+         |> load_poll()
+         |> clock()}
     end
   end
 
@@ -101,8 +123,14 @@ defmodule AshTemplateWeb.PollsLive do
   def handle_event("vote", %{"choice" => choice}, %{assigns: %{actor: actor}} = socket)
       when actor != nil do
     case Polls.vote(socket.assigns.poll_id, %{choice: choice}, actor: actor) do
-      {:ok, _vote} -> {:noreply, socket |> assign(notice: nil, vote_error: nil) |> load_poll()}
-      {:error, error} -> {:noreply, socket |> assign(:notice, refusal(error)) |> load_poll()}
+      {:ok, vote} ->
+        {:noreply,
+         socket
+         |> assign(notice: nil, vote_error: nil)
+         |> change(:poll, &%{&1 | my_choice: vote.choice})}
+
+      {:error, error} ->
+        {:noreply, socket |> assign(:notice, refusal(error)) |> load_poll() |> clock()}
     end
   end
 
@@ -113,8 +141,16 @@ defmodule AshTemplateWeb.PollsLive do
 
   def handle_event("end", _params, %{assigns: %{poll: %Read{value: %Poll{} = poll}}} = socket) do
     case Polls.end_poll(poll, actor: socket.assigns.actor) do
-      {:ok, _poll} -> {:noreply, socket |> assign(:notice, nil) |> load_poll()}
-      {:error, error} -> {:noreply, socket |> assign(:notice, refusal(error)) |> load_poll()}
+      {:ok, ended} ->
+        {:noreply,
+         socket
+         |> assign(:notice, nil)
+         |> change(:poll, fn _poll -> ended end)
+         |> change(:polls, &relist(&1, Poll.summary(ended)))
+         |> clock()}
+
+      {:error, error} ->
+        {:noreply, socket |> assign(:notice, refusal(error)) |> load_poll() |> clock()}
     end
   end
 
@@ -144,7 +180,7 @@ defmodule AshTemplateWeb.PollsLive do
             data-variant={Motion.standard("count")}
           >
             <li :if={@polls.value == []} class="shell-sidebar__empty">No polls yet.</li>
-            <li :for={poll <- sorted(@polls.value)} id={"polls-list-#{poll.id}"}>
+            <li :for={poll <- sorted(@polls.value, @now)} id={"polls-list-#{poll.id}"}>
               <.link
                 patch={~p"/polls/#{poll.id}"}
                 class="polls-list__item"
@@ -152,7 +188,8 @@ defmodule AshTemplateWeb.PollsLive do
               >
                 <span class="polls-list__question">{poll.question}</span>
                 <span class="polls-list__state rg-muted">
-                  {if poll.open, do: "Open", else: "Closed"} · <.votes count={poll.votes_cast} />
+                  {if Polls.open?(poll, @now), do: "Open", else: "Closed"} ·
+                  <.votes count={poll.votes_cast} />
                 </span>
               </.link>
             </li>
@@ -364,8 +401,8 @@ defmodule AshTemplateWeb.PollsLive do
   defp minutes_label(minutes), do: "#{minutes} minutes"
 
   # Open polls first, then the rest; newest first within each.
-  defp sorted(nil), do: []
-  defp sorted(polls), do: Enum.sort_by(polls, &(!&1.open))
+  defp sorted(nil, _now), do: []
+  defp sorted(polls, now), do: Enum.sort_by(polls, &(!Polls.open?(&1, now)))
 
   # Figures inside a sentence keep no spare room: a gap mid-sentence reads as a
   # fault, and only the figure's own word after it shifts when it gains a digit.
@@ -418,44 +455,97 @@ defmodule AshTemplateWeb.PollsLive do
   defp refusal(%Ash.Error.Forbidden{}), do: "Only the person who started this poll ends it."
   defp refusal(_error), do: "That couldn’t be done. Try again."
 
+  # The list is everyone's, read once for the page; notices keep it after that.
   defp load_polls(socket) do
-    Read.now(socket, :polls, actor_id(socket), fn ->
-      Polls.list_polls(actor: socket.assigns.actor)
+    Read.now(socket, :polls, :everyone, fn ->
+      with {:ok, polls} <- Polls.list_polls(), do: {:ok, Enum.map(polls, &Poll.summary/1)}
     end)
   end
 
-  defp load_poll(%{assigns: %{poll_id: nil}} = socket),
-    do: socket |> Read.clear(:poll) |> stop_clock()
+  defp load_poll(%{assigns: %{poll_id: nil}} = socket), do: Read.clear(socket, :poll)
 
   defp load_poll(%{assigns: %{poll_id: id, actor: actor}} = socket) do
-    socket
-    |> Read.now(:poll, {id, actor_id(socket)}, fn ->
+    Read.now(socket, :poll, {id, actor_id(socket)}, fn ->
       case Polls.get_poll(id, actor: actor) do
         {:ok, nil} -> {:error, :gone}
         result -> result
       end
     end)
-    |> start_clock()
   end
 
-  # While the poll on the page is open, it is read again in a minute, or at its
-  # close if that comes first.
-  defp start_clock(%{assigns: %{poll: %Read{value: %Poll{open: true} = poll}}} = socket) do
+  # Changes what the page shows as a notice or the person's own press says,
+  # without a read. A read with nothing on the page yet stays as it is.
+  defp change(socket, name, fun) do
+    update(socket, name, fn
+      %Read{value: nil} = read -> read
+      read -> %{read | value: fun.(read.value), state: shown_state(read)}
+    end)
+  end
+
+  defp shown_state(%Read{state: :empty}), do: :ready
+  defp shown_state(%Read{state: state}), do: state
+
+  # A poll the notice names takes its place in the list, or goes first as the
+  # newest; the list keeps the newest hundred, as `:list` reads them.
+  defp relist(polls, listed) do
+    if Enum.any?(polls, &(&1.id == listed.id)),
+      do: Enum.map(polls, &if(&1.id == listed.id, do: listed, else: &1)),
+      else: Enum.take([listed | polls], 100)
+  end
+
+  # The poll on the page has ended: read once, for its counts.
+  defp ended(
+         %{assigns: %{poll: %Read{value: %Poll{id: id, open: true}}}} = socket,
+         %{id: id, ended_at: %DateTime{}}
+       ),
+       do: load_poll(socket)
+
+  defp ended(socket, _listed), do: socket
+
+  # The poll on the page has run its course: read once, for its counts.
+  defp closed(%{assigns: %{poll: %Read{value: %Poll{open: true} = poll}}} = socket),
+    do: if(Polls.open?(poll), do: socket, else: load_poll(socket))
+
+  defp closed(socket), do: socket
+
+  # One timer, at the next moment the page changes on its own: a poll it holds
+  # closes, or the minutes left on the open poll on the page tick down. It
+  # wakes a second after, so the database's clock has passed it too.
+  defp clock(socket) do
     socket = stop_clock(socket)
-    wait = poll.closes_at |> DateTime.diff(DateTime.utc_now(), :millisecond) |> max(0)
+    now = DateTime.utc_now()
 
-    timer =
-      send_update_after(
-        self(),
-        __MODULE__,
-        [id: socket.assigns.id, tick: true],
-        min(wait + 50, @minute)
-      )
+    case next_change(socket.assigns, now) do
+      nil ->
+        socket
 
-    assign(socket, :clock, timer)
+      at ->
+        wait = max(DateTime.diff(at, now, :millisecond), 0) + 1_000
+        tick = [id: socket.assigns.id, tick: true]
+        assign(socket, :clock, send_update_after(self(), __MODULE__, tick, wait))
+    end
   end
 
-  defp start_clock(socket), do: stop_clock(socket)
+  defp next_change(%{polls: polls, poll: poll}, now) do
+    closes = for listed <- List.wrap(polls.value), Polls.open?(listed, now), do: listed.closes_at
+
+    shown =
+      case poll.value do
+        %Poll{open: true} = shown -> [next_minute(shown, now)]
+        _none -> []
+      end
+
+    Enum.min(closes ++ shown, DateTime, fn -> nil end)
+  end
+
+  # When "Closes in N minutes" next changes, or the close itself; a poll the
+  # database still reads as open past its close is read again a second later.
+  defp next_minute(poll, now) do
+    case div(DateTime.diff(poll.closes_at, now, :second) + 59, 60) do
+      minutes when minutes > 1 -> DateTime.add(poll.closes_at, -(minutes - 1) * 60, :second)
+      _last -> Enum.max([poll.closes_at, now], DateTime)
+    end
+  end
 
   defp stop_clock(%{assigns: %{clock: nil}} = socket), do: socket
 
