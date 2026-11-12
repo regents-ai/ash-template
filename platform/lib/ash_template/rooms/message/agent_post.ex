@@ -44,6 +44,8 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
 
   # The key is spent first, so a second call with it waits on this row and never
   # reaches the post's own checks (the allowance before pairing, the write limits).
+  # The write limits are meant to run before a transaction opens; here they run
+  # inside the key's, on purpose, so the post's context says so.
   defp post(slug, body, key, fingerprint, actor, context) do
     id = Ash.UUID.generate()
 
@@ -65,7 +67,10 @@ defmodule AshTemplate.Rooms.Message.AgentPost do
                Message
                |> Ash.Changeset.for_create(:post, %{room: room.slug, body: body},
                  actor: actor,
-                 context: %{client_key: Map.fetch!(context, :client_key)}
+                 context: %{
+                   client_key: Map.fetch!(context, :client_key),
+                   warn_on_transaction_hooks?: false
+                 }
                )
                |> Ash.Changeset.force_change_attribute(:id, id)
                |> Ash.create() do

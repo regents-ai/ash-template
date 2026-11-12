@@ -134,10 +134,26 @@
   margin: 0;
 }
 
-/* The heart sits under the words, its picture lined up with them. */
+/* The heart sits under the words, its picture lined up with them. What holds
+   it adds no box of its own. */
+.rooms-heart {
+  display: contents;
+}
+
 .rooms-message__main .rg-discussion__like {
   justify-self: start;
   margin-inline-start: calc(-1 * var(--space-1));
+}
+
+/* The menu offers Like, or Remove like once the reader likes the message, as
+   its heart holds. */
+.rooms-menu__unlike,
+.rooms-message:has(.rooms-heart[data-liked]) .rooms-menu__like {
+  display: none;
+}
+
+.rooms-message:has(.rooms-heart[data-liked]) .rooms-menu__unlike {
+  display: inline;
 }
 
 .rooms-body {
@@ -321,6 +337,15 @@
 
 .rooms-messages:is([data-state="idle"], [data-state="loading"], [data-state="error"]) .rooms-empty {
   display: none;
+}
+
+/* "Here now" says nobody is here only while it lists nobody. */
+.rooms-people__empty {
+  display: none;
+}
+
+.rooms-people__empty:only-child {
+  display: block;
 }
 }
 

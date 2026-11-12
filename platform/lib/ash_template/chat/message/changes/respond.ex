@@ -1,15 +1,29 @@
 defmodule AshTemplate.Chat.Message.Changes.Respond do
   @moduledoc """
-  Writes the assistant's reply to a person's message, saving and publishing it
-  as it streams in, then queues naming the conversation. Runs in the job the
-  message's `:respond` trigger queues. The model is the free stand-in
+  Writes the assistant's reply to a person's message, then queues naming the
+  conversation. Runs in the job the message's `:respond` trigger queues, with no
+  transaction open, so the job holds a database connection only for its reads
+  before the model answers and its write after. The model is the free stand-in
   (`AshTemplate.Chat.StandIn`).
+
+  The reply is saved twice through `:upsert_response`: empty and unfinished when
+  it starts, which every open page hears, and whole when it ends. Each piece in
+  between is only broadcast, as `"piece"` with `%{id: reply_id, text: piece}` on
+  the conversation's topic: a page that heard the reply start shows the pieces,
+  and the whole reply replaces them. Every attempt at a message, and its failure
+  line, writes the reply already started for it, so a message has one reply
+  however many attempts run.
   """
 
   use Ash.Resource.Change
   require Ash.Query
 
   alias ReqLLM.Context
+
+  # The newest messages the model reads, the person's new one included: one page
+  # of the chat, and at the longest message (4,000 characters) about 50,000
+  # tokens, well inside the context of the model the stand-in is replaced with.
+  @history 50
 
   @empty_reply %{text: "", tool_calls: [], tool_results: [], stream_error: nil}
 
@@ -19,7 +33,6 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
 
   defp respond(changeset, context) do
     message = changeset.data
-    reply_id = Ash.UUIDv7.generate()
 
     prompt = [
       Context.system("""
@@ -28,6 +41,8 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
       """)
       | message |> history(context) |> Enum.map(&prompt_message/1)
     ]
+
+    reply_id = start(message)
 
     prompt
     |> AshAi.ToolLoop.stream(
@@ -40,20 +55,22 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
       context: Map.new(Ash.Context.to_opts(context))
     )
     |> Enum.reduce(@empty_reply, &collect(&1, &2, message, reply_id))
-    |> save_reply(message, reply_id)
+    |> finish(message, reply_id)
 
     name_conversation(message, context)
     changeset
   end
 
+  # Replies that never finished hold no text, so they are left out.
   defp history(message, context) do
     AshTemplate.Chat.Message
     |> Ash.Query.filter(conversation_id == ^message.conversation_id)
-    |> Ash.Query.filter(id != ^message.id)
-    |> Ash.Query.select([:text, :source, :tool_calls, :tool_results])
-    |> Ash.Query.sort(inserted_at: :asc)
+    |> Ash.Query.filter(id != ^message.id and complete)
+    |> Ash.Query.select([:text, :source])
+    |> Ash.Query.sort(inserted_at: :desc)
+    |> Ash.Query.limit(@history - 1)
     |> Ash.read!(scope: context)
-    |> Enum.concat([%{source: :user, text: message.text}])
+    |> Enum.reverse([%{source: :user, text: message.text}])
   end
 
   # Historical tool call replay can break provider request validation for prior call IDs.
@@ -61,13 +78,31 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
   defp prompt_message(%{source: :agent, text: text}), do: Context.assistant(text)
   defp prompt_message(%{source: :user, text: text}), do: Context.user(text)
 
-  # Each piece of the reply is saved the moment it arrives, which publishes it to
-  # every page that has the conversation open: that is how the reply streams.
+  defp start(message) do
+    reply_id = reply_id(message)
+    save(message, reply_id, %{text: "", complete: false})
+    reply_id
+  end
+
+  # The reply an earlier attempt started, or a new one. The assistant reads it,
+  # as it writes it: the job's actor may be an agent unpaired since it sent the
+  # message.
+  defp reply_id(message) do
+    case Ash.load!(message, :response, actor: %AshAi{}) do
+      %{response: nil} -> Ash.UUIDv7.generate()
+      %{response: reply} -> reply.id
+    end
+  end
+
   defp collect({:content, content}, reply, _message, _reply_id) when content in [nil, ""],
     do: reply
 
   defp collect({:content, content}, reply, message, reply_id) do
-    save(message, reply_id, %{text: content})
+    AshTemplateWeb.Endpoint.broadcast("chat:messages:#{message.conversation_id}", "piece", %{
+      id: reply_id,
+      text: content
+    })
+
     %{reply | text: reply.text <> content}
   end
 
@@ -80,9 +115,7 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
   defp collect({:error, reason}, reply, _message, _reply_id), do: %{reply | stream_error: reason}
   defp collect(_event, reply, _message, _reply_id), do: reply
 
-  defp save_reply(@empty_reply, _message, _reply_id), do: :ok
-
-  defp save_reply(reply, message, reply_id) do
+  defp finish(reply, message, reply_id) do
     save(message, reply_id, %{
       complete: true,
       tool_calls: reply.tool_calls,
@@ -104,10 +137,13 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
     |> Ash.create!()
   end
 
+  # A reply already started must end with something to read.
   defp final_text(%{stream_error: nil, text: text} = reply) do
-    if String.trim(text) == "" and (reply.tool_calls != [] or reply.tool_results != []),
-      do: "Completed tool call.",
-      else: text
+    cond do
+      String.trim(text) != "" -> text
+      reply.tool_calls != [] or reply.tool_results != [] -> "Completed tool call."
+      true -> error_text(:empty)
+    end
   end
 
   defp final_text(%{stream_error: error, text: text}) do
@@ -117,12 +153,12 @@ defmodule AshTemplate.Chat.Message.Changes.Respond do
   end
 
   @doc """
-  Ends the reply `reply_id` to `message` with a line saying it failed, so every
-  open page stops waiting for it. The message's `:fail_response` action calls it
-  when the reply's job has failed for good.
+  Ends the reply to `message`, the one already started or a new one, with a line
+  saying it failed, so every open page stops waiting for it. The message's
+  `:fail_response` action calls it when the reply's job has failed for good.
   """
-  def save_failed(message, reply_id),
-    do: save(message, reply_id, %{complete: true, text: error_text(:failed)})
+  def save_failed(message),
+    do: save(message, reply_id(message), %{complete: true, text: error_text(:failed)})
 
   defp name_conversation(message, context) do
     conversation =

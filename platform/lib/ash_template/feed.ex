@@ -108,13 +108,15 @@ defmodule AshTemplate.Feed do
     end
   end
 
-  # Messages to the person from the other side, in conversations they have not
-  # blocked, read with the agent as the actor, so the messages' own read policy
-  # decides what it hears.
+  # Messages to the person, in conversations they have not blocked, read with
+  # the agent as the actor, so the messages' own read policy decides what it
+  # hears. A message goes from one side of its conversation to the other
+  # (`SendInConversation`), so those to the person are exactly the ones from the
+  # other side, and their recipient is what an index can find them by.
   defp dms(%Agent{pairing: :active, human_account_id: me} = actor, query) do
     query
     |> Ash.Query.filter(
-      from_id != ^me and
+      to_id == ^me and
         not ((conversation.person_a == ^me and conversation.blocked_by_a) or
                (conversation.person_b == ^me and conversation.blocked_by_b))
     )

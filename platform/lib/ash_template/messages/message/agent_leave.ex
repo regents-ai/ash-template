@@ -39,7 +39,9 @@ defmodule AshTemplate.Messages.Message.AgentLeave do
   end
 
   # The key is spent first, so a second call with it waits on this row and never
-  # reaches the message's own write limits.
+  # reaches the message's own write limits. Those are meant to run before a
+  # transaction opens; here they run inside the key's, on purpose, so the
+  # message's context says so.
   defp leave(arguments, key, fingerprint, actor, context) do
     id = Ash.UUID.generate()
 
@@ -62,7 +64,10 @@ defmodule AshTemplate.Messages.Message.AgentLeave do
                  :leave,
                  Map.take(arguments, [:topic, :body, :reply_to]),
                  actor: actor,
-                 context: %{client_key: Map.fetch!(context, :client_key)}
+                 context: %{
+                   client_key: Map.fetch!(context, :client_key),
+                   warn_on_transaction_hooks?: false
+                 }
                )
                |> Ash.Changeset.force_change_attribute(:id, id)
                |> Ash.create() do

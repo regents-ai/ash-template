@@ -11,6 +11,6 @@ defmodule AshTemplate.Accounts.SessionPruner do
 
   @impl Oban.Worker
   def perform(_job) do
-    with {:ok, _pruned} <- SessionAuthority.prune(), do: :ok
+    SessionAuthority.prune()
   end
 end

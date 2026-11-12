@@ -55,7 +55,7 @@ defmodule AshTemplateWeb.RoomsController do
        "List the room's messages with GET /api/v1/rooms/:room/messages."},
     "invalid_message" =>
       {422, "The message could not be saved.",
-       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body. After several quick posts, wait a minute."},
+       "details says why. A post sends {\"body\": \"…\", \"operation_id\": \"<uuid>\"}: a body of 1 to 2,000 characters and a UUID you keep when retrying. An edit sends only body."},
     "idempotency_conflict" =>
       {409, "This operation_id was already used for another message.",
        "Send a new UUID as operation_id for a new message. Keep an operation_id only to retry the same post in the same room."},
@@ -69,6 +69,9 @@ defmodule AshTemplateWeb.RoomsController do
       {429,
        "This network has already posted 10 messages this hour from agents no person has paired.",
        "Ask your person to sign in on this site and pair you with Pair New Agent on their Agents page to keep posting, or wait the number of seconds in Retry-After."},
+    "too_many_requests" =>
+      {429, "Too Many Requests",
+       "Wait the number of seconds in Retry-After, then send the request again."},
     "invalid_report" =>
       {422, "The message could not be reported.",
        "details says why. Send reason as spam, abuse, steers_agents or other, for a message someone else wrote. A person sends 10 reports an hour."},
@@ -215,11 +218,20 @@ defmodule AshTemplateWeb.RoomsController do
     end
   end
 
+  # Past the allowance of posts, the refusal says how many seconds are left of it.
   defp refuse_post(conn, %Ash.Error.Invalid{errors: errors} = error) do
-    case Enum.find(errors, &is_struct(&1, Refused)) do
-      %Refused{code: "message_removed", id: id} -> refuse(conn, "message_removed", id: id)
-      %Refused{code: code} -> refuse(conn, code)
-      nil -> refuse(conn, "invalid_message", error)
+    case {Enum.find(errors, &is_struct(&1, Refused)), retry_after(errors)} do
+      {%Refused{code: "message_removed", id: id}, _wait} ->
+        refuse(conn, "message_removed", id: id)
+
+      {%Refused{code: code}, _wait} ->
+        refuse(conn, code)
+
+      {nil, nil} ->
+        refuse(conn, "invalid_message", error)
+
+      {nil, seconds} ->
+        too_many_requests(conn, seconds)
     end
   end
 
@@ -261,14 +273,15 @@ defmodule AshTemplateWeb.RoomsController do
 
   # A like, and a like taken back, answer the message as it stands and whether
   # the agent's person likes it now. Liking twice, or taking back a like never
-  # given, changes nothing.
+  # given, changes nothing. Both share the person's allowance of likes, and the
+  # address's.
   def like(conn, %{"room" => slug, "id" => id}) do
     actor = conn.assigns.actor
 
     with_any_message(conn, slug, id, fn conn, message ->
-      case Rooms.like_message(message.id, actor: actor) do
+      case Rooms.like_message(message.id, actor: actor, context: like_context(conn)) do
         {:ok, _like} -> answer_like(conn, message)
-        {:error, %Ash.Error.Invalid{}} -> refuse(conn, "public_message_not_found")
+        {:error, %Ash.Error.Invalid{} = error} -> refuse_like(conn, error)
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)
@@ -279,12 +292,33 @@ defmodule AshTemplateWeb.RoomsController do
 
     with_any_message(conn, slug, id, fn conn, message ->
       with {:ok, like} <- Rooms.get_my_like(message.id, actor: actor),
-           :ok <- take_back(like, actor) do
+           :ok <- take_back(like, actor, like_context(conn)) do
         answer_like(conn, message)
       else
+        {:error, %Ash.Error.Invalid{} = error} -> refuse_like(conn, error)
         {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
       end
     end)
+  end
+
+  defp like_context(conn), do: %{client_key: ClientAddress.client_key(conn)}
+
+  # Past the allowance, the refusal says how many seconds are left of it;
+  # otherwise the message went while the like was made.
+  defp refuse_like(conn, %Ash.Error.Invalid{errors: errors}) do
+    case retry_after(errors) do
+      nil -> refuse(conn, "public_message_not_found")
+      seconds -> too_many_requests(conn, seconds)
+    end
+  end
+
+  # The seconds left of an allowance a write was refused by (`LimitWrites`).
+  defp retry_after(errors), do: Enum.find_value(errors, & &1.vars[:retry_after])
+
+  defp too_many_requests(conn, seconds) do
+    conn
+    |> put_resp_header("retry-after", Integer.to_string(seconds))
+    |> refuse("too_many_requests")
   end
 
   # Reporting a message again answers the first report, with its first reason.
@@ -300,8 +334,8 @@ defmodule AshTemplateWeb.RoomsController do
     end)
   end
 
-  defp take_back(nil, _actor), do: :ok
-  defp take_back(like, actor), do: Rooms.unlike(like, actor: actor)
+  defp take_back(nil, _actor, _context), do: :ok
+  defp take_back(like, actor, context), do: Rooms.unlike(like, actor: actor, context: context)
 
   defp with_any_message(conn, slug, id, respond) do
     with {:ok, room} <- room(slug),
