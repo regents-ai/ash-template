@@ -40,6 +40,7 @@ import {ProductsMenu} from "./hooks/products_menu"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
+import {installAgentMessage} from "./agent_message"
 import {installAgentTools} from "./agent_tools"
 import {installCopyButtons} from "./copy_buttons"
 import {installVisitLog} from "./visit_log"
@@ -391,6 +392,7 @@ liveSocket.connect()
 installAccountAuthLazyLoader()
 installCrossTabCsrf()
 installCopyButtons()
+installAgentMessage()
 installAgentTools()
 mountMotion(document)
 window.liveSocket = liveSocket

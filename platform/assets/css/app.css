@@ -30,6 +30,7 @@
 @import "./components/world_cube.css";
 @import "./components/code_cube.css";
 @import "./components/agent_tools.css";
+@import "./components/agent_message.css";
 @import "./components/twin_cube.css";
 @import "./pages/feedback_lab.css";
 @import "./pages/site_buttons_lab.css";
