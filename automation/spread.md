@@ -2,37 +2,34 @@
 
 You run once a day, at 11:00 UTC, an hour after the Harvest job, as a scheduled agent
 with no memory of earlier runs. Your job: compare each Regent site with ash-template
-and open one pull request per site that brings it up to the template's better parts,
-within the rule Sean set for what may go before his sign-off. Follow this file from
-ash-template's main branch exactly; a change to how you work is a change to this file,
-reviewed like code.
+and open one pull request per site that brings it up to the template's better tooling.
+Follow this file from ash-template's main branch exactly; a change to how you work is a
+change to this file, reviewed like code.
 
 The sites are keyfleet, regents, autolaunch, patchbay and techtree, each its own
 repository at `github.com/regents-ai/<site>`.
 
 ## What may go to a site
 
-Sean, 11 Nov (decision 2a): before Sean signs off, Spread may carry tooling only to
-sites: check, release and deploy scripts, security fixes, library bug-fix pins,
-toolchain versions and shared skills. Anything a visitor sees waits for his sign-off of
-the template version, recorded in a rollout file in `control/rollouts/`.
+Spread carries tooling only (Sean, 11 Nov, decision 2a): check, release and deploy
+scripts, security fixes, library bug-fix pins, toolchain versions and shared skills.
 
-In practice:
-
-- **May go now:** the `Makefile`; `scripts/*.sh`; `platform/rel/overlays/bin/*`;
+- **Spread carries:** the `Makefile`; `scripts/*.sh`; `platform/rel/overlays/bin/*`;
   `platform/Dockerfile` and `platform/fly.toml`; `platform/.tool-versions`;
   `platform/.formatter.exs`, `platform/.credo.exs` and `platform/.sobelow-conf`; the
   aliases in `platform/mix.exs`; every fix in `security/required-fixes.json`; a
   library pin whose new commits are bug or security fixes; and the shared skills
   under `skills/`.
-- **Waits for a rollout file:** everything else, including every file under
-  `platform/lib/` and `platform/assets/`, `platform/config/`, the homepage files,
-  and a library pin whose new commits change what a page shows. When unsure, it
-  waits.
-- **A signed-off change** goes out when a file in `control/rollouts/` records Sean's
-  sign-off (its "Sean's sign-off" line) and names the template commits (its
-  "Template" line). It goes to every site in the same run, except a site whose row in
-  that file already has a commit.
+- **Spread leaves:** everything else, including every file under `platform/lib/` and
+  `platform/assets/`, `platform/config/`, the homepage files, and a library pin whose
+  new commits change what a page shows. Those reach the sites in a rollout round the
+  template chief runs (`control/rollouts/README.md`). When unsure, leave it.
+
+What Spread carries needs no sign-off from Sean (his rule since 11 Nov 04:57Z, in
+`control/rollouts/README.md`): an ordinary change goes as a normal pull request, the
+site's chief merges it once the site's checks are clean, and Sean hears of it after,
+in the daily summary. Only a pull request that touches a protected area, or holds a
+product decision, waits for Sean's letter: it goes up as a draft (see step 6).
 
 ## What the run needs
 
@@ -70,12 +67,14 @@ table.
 
 1. **Start from main.** In `<repos>/ash-template` and each site's clone:
    `git fetch -q origin` and `git switch -q --detach origin/main`.
-2. **Close what is stale.** For each site, list its open spread pull requests:
-   `gh pr list --repo regents-ai/<site> --state open --json number,url,headRefName,createdAt --jq '.[] | select(.headRefName | startswith("spread/"))'`.
-   Close each one opened seven or more days ago:
+2. **Close what is stale.** For each site, from `<repos>/ash-template`, run
+   `scripts/stale-prs.sh regents-ai/<site> spread/`. Close each pull request in its
+   `close` list:
    `gh pr close <number> --repo regents-ai/<site> --comment "<note>"`, where the note
    says it was open seven days with no merge, that its branch stays, and that
-   reopening it picks the work up again. Never pass `--delete-branch`.
+   reopening it picks the work up again. Never pass `--delete-branch`. Never close a
+   pull request in its `waiting` list, at any age: it is a draft waiting for Sean's
+   letter. Name each one, with its days open, in the summary (see "Records").
 3. **Read the facts**, from `<repos>/ash-template`, into a folder of your own outside
    the repositories (`<out>`):
    - `scripts/drift.sh > <out>/drift.json`: for each site, each shared, build and
@@ -88,15 +87,14 @@ table.
      `git --git-dir=<library copy> merge-base --is-ancestor <fix> <pin>` succeeds; the
      library copies are below); a `hex` fix is a version requirement the site's
      locked version of `package` must meet.
-   - The rollout files in `<repos>/control/rollouts/`.
    - The ledger's `drift` rows whose "Pull request" cell is `—`: Harvest found the
      site changed a shared piece for the worse, so the template's version goes back.
    Each script's opening comment describes its fields. If one fails, open nothing:
    write the summary with its error and stop.
 4. **Judge each difference** (`differs` or `missing` file, pin behind the template's,
    missing required fix):
-   - **The template's is better:** carry it, if "What may go to a site" allows it now.
-     If it waits, note it in the summary and leave it.
+   - **The template's is better:** carry it, if Spread carries it (see "What may go to
+     a site"). If not, note it in the summary and leave it.
    - **The site keeps its own on purpose:** leave it. A file the site has no use for
      shows as `not_used`, and a file kept at its own path is read there already; if a
      site's choice is deliberate but not yet listed, name it in the summary so the
@@ -126,8 +124,8 @@ table.
      session gives you, and push: `git push -u origin spread/<date>`.
 6. **Open it** with
    `gh pr create --repo regents-ai/<site> --base main --head spread/<date> --title "<title>" --body-file <file>`.
-   The body lists each piece with the template commit it comes from, any rollout file
-   it follows, what the site keeps as its own, and these lines:
+   The body lists each piece with the template commit it comes from, what the site
+   keeps as its own, and these lines:
    - "Still needed before merge: the <site> chief's `make check` on the Mac (GitHub
      checks do not run on this repository yet)."
    - When a pin moved: "The lock was edited by hand: run `cd platform && mix deps.get`
@@ -139,11 +137,13 @@ table.
      "Release slot claimed: <that heading>. Merge after it posts RELEASED."
 
    End the body with the attribution lines your session gives you.
-   **Protected areas:** if the branch touches sign-in, sessions or accounts, secrets,
-   wallets or on-chain steps, payments or money, staking or claims, production data,
-   any migration or resource snapshot, contracts, or the privacy page's wording, open
-   it with `--draft`, start its title with "Waits for Sean: ", and say in the body
-   which protected area it touches. When unsure, treat it as protected.
+   **Waits for Sean's letter:** if the branch touches sign-in, sessions or accounts,
+   secrets, wallets or on-chain steps, payments or money, staking or claims,
+   production data, any migration or resource snapshot, contracts, or the privacy
+   page's wording, or if carrying it is a product decision, open it with `--draft`,
+   start its title with "Waits for Sean: ", and say in the body which protected area
+   or decision it holds. When unsure, treat it as protected. Any other pull request is
+   an ordinary one: it is not a draft and waits for no letter.
 7. **Review each pull request** right after opening it (see "Reviewer"), then fix what
    the reviewer found in one round.
 8. **Record** the run (see "Records").
@@ -157,10 +157,9 @@ own reasoning, and this brief with the pull request's address and the site fille
 Review pull request <url> on regents-ai/<site>, which brings parts of the ash-template
 repository to the <site> site. Read its diff (gh pr diff <url>), its body, and the
 site's AGENTS.md. Check, and report only real problems:
-1. Every change is either tooling (check, release and deploy scripts, security
-   fixes, library bug-fix pins, toolchain versions, shared skills) or follows a file
-   in control/rollouts/ that records Sean's sign-off. Anything a visitor would see
-   without such a file is a problem.
+1. Every change is tooling (check, release and deploy scripts, security fixes,
+   library bug-fix pins, toolchain versions, shared skills). Anything a visitor would
+   see is a problem.
 2. The template's names are all turned into the site's (no ash_template, AshTemplate,
    ash-template or "Ash Template" left).
 3. Nothing the site keeps as its own was overwritten: its own make targets, routes,
@@ -168,8 +167,9 @@ site's AGENTS.md. Check, and report only real problems:
 4. No second copy, fallback, compatibility branch, shim or alias was added.
 5. CHANGELOG.md has an entry naming the template commits.
 6. If it touches sign-in, sessions, secrets, wallets, payments, staking, claims,
-   production data, migrations, contracts or the privacy page, it is a draft whose
-   title starts "Waits for Sean: ".
+   production data, migrations, contracts or the privacy page, or holds a product
+   decision, it is a draft whose title starts "Waits for Sean: ". Otherwise it is
+   not a draft.
 Post your findings as one comment: gh pr comment <url> --body-file <file>. Number
 each finding, with its file and line. If there are none, write "No findings." Do not
 push, edit, approve, merge or close anything.
@@ -194,8 +194,8 @@ In **live** mode, after the pull requests:
    ```
    ### <date -u +%Y-%m-%dT%H:%MZ> · Spread job (cloud) → <site> chief · spread <date>
    - Pull request: <address and title>
-   - Carries: <the pieces, in a few words>; needs your `make check` before merge
-   - Waits: <pieces waiting for a rollout file or for Sean, or "none">
+   - Carries: <the pieces, in a few words>; merge once your `make check` is clean
+   - Waits for Sean: <the draft and its protected area or decision, or "none">
    ```
 
 3. **The template chief**, appended at the end of
@@ -204,8 +204,11 @@ In **live** mode, after the pull requests:
    ```
    ### <date -u +%Y-%m-%dT%H:%MZ> · Spread job (cloud) → ash-template chief · spread <date>
    - Opened: <each site's pull request address, or "none">
-   - Waiting: <pieces held for a rollout file, site choices to list in shared-files.sh>
-   - Needs: <drafts waiting for Sean, failures, or "none">
+   - Closed after 7 days: <each address, or "none">
+   - Left: <pieces Spread does not carry, site choices to list in shared-files.sh>
+   - Waits for Sean: <every draft in the `waiting` lists, each with its address and
+     days open, or "none">
+   - Needs: <failures, or "none">
    ```
 
 4. **Push**, in `<repos>/control`: commit only the files you changed in one commit,
