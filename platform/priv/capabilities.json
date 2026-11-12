@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.24",
+    "release": "1.10.25",
     "namespace": "ash-template"
   },
   "contract_revision": 2,
@@ -519,7 +519,7 @@
       "person_page": null,
       "may": "Leave private messages for this site's team",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.25",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": true,
@@ -784,12 +784,12 @@
       "person_page": "/dms",
       "may": "Hear at once when someone writes to you or replies in a room it posted in",
       "switch": "app_surfaces",
-      "cli_release": null,
+      "cli_pending": true,
       "surfaces": {
         "webmcp": "A browser tool answers once; an agent in a browser already sees the page change live.",
         "hosted_mcp": "An MCP tool call answers once and cannot stay open.",
         "http": true,
-        "cli": "The command list cannot say yet that a command's answer stays open; regents-cli's wake-up runner will hold it."
+        "cli": true
       },
       "auth_modes": [
         "siwa_request"
@@ -880,7 +880,7 @@
       "person_page": "/notes",
       "may": "Pin a note for 1 USDC from its own wallet",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.25",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",
@@ -1072,7 +1072,7 @@
       "person_page": "/app/activity",
       "may": "Mark your activity read",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.25",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",
@@ -1336,7 +1336,7 @@
       "person_page": "/chat",
       "may": "Chat with the assistant for you",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.25",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",
@@ -1360,7 +1360,7 @@
       "person_page": "/chat",
       "may": "Chat with the assistant for you",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.25",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",
@@ -1384,7 +1384,7 @@
       "person_page": "/chat",
       "may": "Chat with the assistant for you",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.25",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",

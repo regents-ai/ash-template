@@ -8746,3 +8746,32 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
 - Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
+
+## 2026-11-12 — regents-cli 1.10.25 and the `feed` command (branch `tpl/cli-1.10.25-1112`, not on main)
+
+- regents-cli moves from `fd325437` (1.10.24) to `8b3240b6` (1.10.25), which reached PyPI
+  on 12 Nov 15:03Z. The Makefile pin, the install lines, the agent guide (release, source
+  commit `8b3240b6402551aa29ef960418fd1d2ea4bf41c7` and wheel SHA256
+  `082329e29532ecc23fc474d6f8e2d32cf0dd900c3b3b72d6d1325dba505b312e`, which matches
+  PyPI), `capabilities.json`'s `cli.release`, `cli/README.md` and `cli/COMMANDS.md` move
+  together.
+- 1.10.25 pins this site's command list at `f5096fff`, the same list main has, so it
+  carries `messages leave`, `activity mark-read`, `chat list`, `chat read`, `chat send`
+  and the USDC-only `notes pin`: their `capabilities.json` rows move from `cli_pending`
+  to `cli_release` 1.10.25, and the "(next release)" marks go from `cli/COMMANDS.md` and
+  `docs/agent-parity.md`.
+- `cli/commands.json` gains `feed` (`getFeed`, `GET /api/v1/feed`, `signed_agent`,
+  `read`, `"stream": true`, no `webmcp`). The field and its rule (a signed GET with no
+  body, stdin fields, pagination or webmcp, whose operation answers only
+  `text/event-stream` on success) come from 1.10.25's `commands.v1.json` and
+  `regents_cli.check_commands`. The OpenAPI documents already answer that way, so they
+  are unchanged. 1.10.25 does not list `feed` for this site; the next regents-cli release
+  carries it once its ash-template pin moves to this commit. `getFeed`'s row is
+  `cli_pending` with its CLI surface on, and `docs/agent-parity.md` G12 and the feature
+  map say so.
+- `cli/COMMANDS.md` describes `feed` as a command, with `--wake` as 1.10.25's
+  `regents_cli/feed.py` runs it: an event wakes the agent when its `read` routes to a
+  described `read` command, not itself a feed, whose arguments all sit in the path, each
+  value a UUID or a room name. A direct message's `POST /api/v1/dms/<uuid>/history` and
+  a room post's `GET /api/v1/rooms/<room>/messages/<uuid>` both do. The agent guide's
+  Live feed section says how to run it.
