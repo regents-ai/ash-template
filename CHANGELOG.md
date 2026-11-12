@@ -9246,3 +9246,25 @@ sand, and a shape change should not miss a frame.
   four times: no frame missed through a shape change, the longest piece of script in
   a frame under 10 ms; the first time a shape is asked for, the grains let go after
   85 to 115 ms (up to a third of a second slowed), and a frame or so after that.
+
+## 2026-11-12 — Particles lab, third pass (branch, not on main)
+
+The design chief's review of the second pass: the glow had stripes, the ring was
+too small next to the switch, and the branch was behind main.
+
+- The glow round lit grains on a dark page falls off smoothly. It was blurred twice
+  with nine samples spread several pixels apart, so on a 2x screen it showed as
+  bands about 6 pixels apart; it is now one true Gaussian over every pixel it
+  reaches, in two passes instead of four, and reaches the same distance round every
+  shape in one box. Measured above the lit switch at 2x: the brightness going
+  outward rose again 17 times before and once after. The GPU's time a frame is
+  unchanged, about 3 ms.
+- The field's box is the same height for every shape and each shape stands its own
+  share of it (`--particle-fill` beside `--particle-aspect`): the switch, slider,
+  bar and steps 0.44, a ring, checkbox, radio, spinner, icon or mark all of it. In
+  the lab the box is 18rem tall, so at 1280 the switch stays 253 by 127 and the
+  ring, the icons and the crown stand 288 high, about 2.3 times the switch as in the
+  film; on a phone the ring is as wide as the box allows, about twice the switch.
+  Nothing below the stage moves when the shape changes; 320 and 390 wide still fit
+  without scrolling sideways.
+- Main merged in (v220), main's design-system pin kept.
