@@ -8318,3 +8318,13 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - The check is not part of `make check` yet: the last 8 lines need the design-system's
   check changed (glass and shadow inside an isolated artwork root; the blur rule; test
   files in the motion rule).
+
+## 2026-11-12 — Style check: four breaks left, all the world cube's panes
+
+- The button lab's words change by a fade and a 3px rise; the 2px blur is gone, since
+  STYLE.md allows no blur (`platform/assets/css/pages/site_buttons_lab.css`).
+- Design-system pin `c4244b38`: the style check's motion rule no longer reads test files.
+- The style check now prints four breaks, all in
+  `platform/assets/css/components/world_cube.css` (three glass panes and their shadow).
+  Whether the cube is redrawn flat or named as a second approved one-off is Sean's
+  decision, so the check is not part of `make check` yet.
