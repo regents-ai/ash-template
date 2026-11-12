@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
-.PHONY: help check check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
+.PHONY: help check check-style check-platform check-browser check-required-fixes check-cli check-siwa-latest check-contracts check-dependency-parity release live-check readiness
 help:
-	@echo "Run make check for every gate, or check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
+	@echo "Run make check for every gate, or check-style, check-platform, check-browser, check-required-fixes, check-cli, check-siwa-latest or check-contracts for one component."
 	@echo "Run make release to run every gate, then build the committed tree into an image and start it against a throwaway database."
 	@echo "Run SIWA_AGENT_HOME=<the agent's key folder> SIWA_CLIENT=<its siwa_agent.py> make live-check to check template.regents.sh the way a paired agent does: the CLI, then WebMCP and every public page in headless Chromium."
 # template-only
@@ -19,7 +19,13 @@ check: check-scripts
 check-scripts:
 	uv run --no-project python -B -m unittest discover -s scripts/tests -p 'test_reports.py'
 # /template-only
-check: check-platform check-required-fixes check-cli check-siwa-latest check-contracts
+check: check-style check-platform check-required-fixes check-cli check-siwa-latest check-contracts
+# The design system's style check (STYLE.md): every break of a style rule in the
+# site's own CSS, scripts and templates, by file and line. An exception Sean approved
+# carries its marker on the line. mix regent_ui.assets copies the script from the
+# pinned design system. Needs ripgrep.
+check-style:
+	cd platform && mix regent_ui.assets && bash assets/vendor/regent_ui/style-check.sh
 # mix precommit ends with the TypeScript typecheck, the script tests and the
 # browser walk.
 check-platform:

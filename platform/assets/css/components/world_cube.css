@@ -87,7 +87,7 @@
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--world-cube-ink) 26%, transparent);
   background: color-mix(in srgb, var(--world-cube-ink) 9%, transparent);
-  backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4); /* style-check: allow glass — Sean 12 Nov 2026 */
   transition: opacity 320ms ease-out, translate 320ms ease-out;
 }
 
@@ -148,7 +148,7 @@
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--world-cube-ink) 30%, transparent);
   background: color-mix(in srgb, var(--world-cube-night) 55%, transparent);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px); /* style-check: allow glass — Sean 12 Nov 2026 */
   color: var(--world-cube-ink);
   cursor: pointer;
 }
@@ -292,8 +292,8 @@
       color-mix(in srgb, var(--world-cube-ink) 10%, transparent)
     ),
     color-mix(in srgb, var(--world-cube-night) 38%, transparent);
-  backdrop-filter: blur(22px) saturate(1.5) brightness(0.78);
-  box-shadow:
+  backdrop-filter: blur(22px) saturate(1.5) brightness(0.78); /* style-check: allow glass — Sean 12 Nov 2026 */
+  box-shadow: /* style-check: allow shadow — Sean 12 Nov 2026 */
     0 1.5rem 3rem -1.25rem rgb(0 0 0 / 0.7),
     inset 0 1px 0 color-mix(in srgb, var(--world-cube-ink) 38%, transparent),
     inset 0 -1px 0 rgb(0 0 0 / 0.3);

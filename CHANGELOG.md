@@ -8819,6 +8819,108 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   light and dark with no page error; `/agents.md` names 1.10.25 and commit `8b3240b6`.
   Not proven live: signed-in pages.
 
+## 2026-11-12 — Value cards in the template: `/animations/cards` (branch, not on main)
+
+`tpl/value-cards-1112` brings the row of six value cards on regents.sh's `/app` into the
+template as one piece every site takes, and a Motion lab page that shows it.
+
+- The piece: `AshTemplateWeb.Components.ValueCards.value_cards/1` (cards as data: `:id`
+  names the panel and its still, `:name`, `:headline`, `:line`, `:tint`, `:action`, and
+  one of `:href` for another site, opened in a new tab, `:navigate` or `:patch`), the
+  `ValueCard` hook (`assets/js/hooks/value_card.ts`), `assets/js/value_cards/`
+  (`renderer.ts`, `panel.ts`, `shared_device.ts`, `stills.mjs`) and
+  `assets/css/components/value_cards.css`. Copied from regents' main with no change to
+  look, motion or behaviour, and still without `container-type` or `@container` (the
+  phone crash). Each site's own parts: `value_cards/index.ts`, `value_cards/panels/` and
+  the stills in `priv/static/images/value-cards/`; the module's "Your own cards" section
+  says how to add panels and draw stills (`npm run stills:value-cards`, on a machine
+  with a GPU).
+- The classes are now `value-cards__*` (regents uses `value-card*`): the Value lab's own
+  unscoped `.value-card` rules would otherwise style the new cards. The CSS variables
+  keep their names.
+- The page: `/animations/cards` (`AshTemplateWeb.CardsLabLive`, "Cards"), in the Motion
+  lab list, the Design page's sidebar, the route list (`cards_lab`), the sitemap and the
+  browser walk's page list. Six cards about the template (Rooms, Notes, Polls, Agents,
+  Points, Chat) on the template's own six panels from `91d68a70`, with stills redrawn.
+- The Value lab (`/animations/value`, `value_lab_live.ex`) is left as it is: it is a
+  different experiment (figure cards on one canvas behind the grid, lit round the
+  pointer), not the source of this piece. The piece began as template commits `91d68a70` and `d379d721`,
+  reverted for the phone crash, and was finished in regents.
+- Checks: `test/browser/value_cards.spec.ts` (new) passed on desktop at 1280 and phone at
+  390 and 320, 6 of 6: every panel draws and outlasts pointer sweeps under a 64 MB heap,
+  three columns on a desktop and one on a phone, no sideways scroll; with less motion no
+  panel draws and the stills stay; without WebGPU every card says it will not draw and
+  the stills stay. `pages.spec.ts` for `/animations/cards` passed at 1280, 390 and 320.
+  TypeScript check clean; script tests 126 of 126; `mix format --check-formatted`,
+  `mix compile --warnings-as-errors --force` and `mix ash_template.route_handoff --check`
+  pass; the router's pages match the walk's list. Light and dark at 1280, 390 and 320
+  compared by hand with live regents.sh/app in headless Chromium: same card, type,
+  spacing and columns.
+- Not run: the full `make check` (the release lead's was running), the Elixir test suite,
+  and WebKit.
+
+## 2026-11-12 — Released v216: the value cards page
+
+- `01568275` (`tpl/value-cards-1112` merged onto main) is v216 on template.regents.sh,
+  switched at about 16:27Z with `scripts/deploy.sh`. It adds the value cards as one
+  shared piece and the page `/animations/cards` (Sean, 12 Nov: sites take their cards
+  from the template). No migration.
+- Rollback: v215 (`a95458c3`), image only.
+- Full check on `01568275`, exit 0: 126 TypeScript, 579 browser walks with 5 skipped,
+  210 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit and a real phone not run):
+  `/animations/cards` answers 200 at 1280, 390 and 320 in light and dark with six cards,
+  six stills, no errors and no sideways scroll; all six panels draw at 1280 and the two
+  in view draw on the phone widths; `/`, `/animations`, `/design`, `/rooms/general` and
+  `/notes` clean at the three widths.
+
+## 2026-11-12 — The world cube's glass is an approved exception; the style check runs in `make check`
+
+- Sean's 4 b of 12 Nov: the world cube lab page (`/animations/cube`) keeps its glass and
+  its glass panes' shadow as the second approved exception to the flat style, after the
+  home page's glass panel. Nothing on any page changes.
+- Design-system pin `c6cbadd72a17995d8a2c96c58ca2e9d023c48368` (was `f957bf1c`). It
+  changes only the style check, its test, `STYLE.md` and the changelog: the flat rule
+  now skips a `box-shadow:` line carrying `style-check: allow shadow — <who and when>`,
+  and both markers need a word after the dash.
+- `platform/assets/css/components/world_cube.css` marks its four lines, each on the
+  property's own line: the three `backdrop-filter` lines (a world's row, the leave
+  button and the smoked glass pane) carry `/* style-check: allow glass — Sean 12 Nov
+  2026 */`, and the pane's `box-shadow:` line carries `/* style-check: allow shadow —
+  Sean 12 Nov 2026 */`. Before them the style check printed those four breaks and no
+  others; it now prints none.
+- `make check-style` runs the design system's style check, the copy
+  `mix regent_ui.assets` makes at `platform/assets/vendor/regent_ui/style-check.sh`,
+  from `platform/`, and `make check` runs it first: a new unmarked break fails the full
+  check by file, line and rule. It needs ripgrep; `README.md`, `AGENTS.md`,
+  `platform/README.md` and `regent-workflow` name it among the check's steps.
+- Main gained one break while this was built: the value cards' name dot drew its faint
+  3px ring as a `box-shadow` (`platform/assets/css/components/value_cards.css`, from
+  `315ee7d6`). It is now an `outline` of the same width and colour, the house form for a
+  ring (STYLE.md: a ring is a real border or outline, so forced colours still draws it).
+  `/animations/cards` at 1280 and 390, light and dark, with less motion: only the six
+  dots' edge pixels differ, by at most 15 of 255. In forced colours the ring now shows
+  where the dot showed nothing before.
+
+## 2026-11-12 — Released v217: the cube's approved exception, the style check in the full check
+
+- `f2695d5c` (`tpl/cube-exception-1112`) is v217 on template.regents.sh, switched at
+  about 16:37Z with `scripts/deploy.sh`. Sean's 4 b: the world cube keeps its glass as
+  the second approved exception, marked on its three glass lines and one shadow line;
+  `make check-style` (design-system pin `c6cbadd7`) is now the first step of
+  `make check`; the value cards' name dot draws its ring as an outline. No migration.
+- Rollback: v216 (`01568275`), image only.
+- Full check, exit 0, by the worker on `d75764b8`: 126 TypeScript, 579 browser walks
+  with 5 skipped, 210 Elixir (9 properties). `f2695d5c` differs from it only by
+  changelog lines, so the check was not run a third time.
+- Live read in headless Chromium, signed out (WebKit not run): `/`, `/animations/cube`,
+  `/animations/cards`, `/animations` and `/showcase/wallet` answer 200 at 1280, 390 and
+  320 with no errors and no sideways scroll; the cards page shows six cards in light
+  and dark at the three widths. The cube's in-room glass pane needs a GPU and was not
+  seen; the built stylesheet for it is byte-identical to v216's.
+- Known: at this pin the style check passes silently on a machine without ripgrep.
+  Fixed in design-system `0ae2bffc`; the template takes it in its next release.
+
 ## 2026-11-12 — The Credits schema leaves the shared database (branch, not on main)
 
 Sean, 12 November: Credits are removed from every Regent site and the shared database

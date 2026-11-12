@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Motion lab.** A new page, Cards: six cards, each with its own moving picture that
+  follows your pointer. Every Regent site can show a row like it on its home page.
 - **Buttons.** In the light theme the main button is now dark with light words, so the
   main action on a page is easy to find.
 
