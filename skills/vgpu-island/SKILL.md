@@ -90,10 +90,6 @@ clamp or `frameLoop` inside an island renderer.
    - The first `set()` of a uniform struct supplies every member with exact component counts.
    - A `Surface` is only ever a render destination, never a binding.
    - If construction throws after `init()`, call `gpu.dispose()` and rethrow.
-   - A page of many small islands (the value cards) opens one device for all of them
-     through `value_cards/shared_device.ts`: each renderer joins it, hears of its loss
-     through the callback it joined with, and on `dispose` gives back its own effect and
-     surface and leaves the device. The last to leave disposes the device.
 
 ## What the island already guarantees
 
@@ -122,8 +118,3 @@ exists. Without WebGPU the island never mounts and the server's picture remains.
 the lab page `/animations/datascape`),
 `hooks/code_cube.ts` + `code_cube/renderer.ts`, `hooks/holographic_card.ts` (its renderer
 is vendored from `regent_ui`), and the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`.
-
-Value cards (`hooks/value_card.ts` + `value_cards/`, the lab page `/animations/value-cards`)
-are the island to copy for a row of feature cards: many small panels on one device, each
-panel one file. [Value cards](references/value-cards.md) says how a site takes a card and
-how to write a new panel.

@@ -6,8 +6,7 @@
     "assets:build": "mix assets.build",
     "test": "vitest run",
     "typecheck": "tsc --project assets/tsconfig.json --noEmit && tsc --project test/browser/tsconfig.json --noEmit && tsc --project test/live/tsconfig.json --noEmit",
-    "test:browser": "sh test/browser/walk.sh",
-    "stills:value-cards": "node assets/js/value_cards/stills.mjs"
+    "test:browser": "sh test/browser/walk.sh"
   },
   "dependencies": {
     "@privy-io/react-auth": "3.51.1",

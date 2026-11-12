@@ -59,7 +59,6 @@
     {"route": "/animations/swarm-city", "purpose": "Watch the agents fly between the city's districts.", "check": "role=img[name=\"The swarm city\"]"},
     {"route": "/animations/swarm-city/:place", "paths": ["/animations/swarm-city/inn", "/animations/swarm-city/forge", "/animations/swarm-city/castle"], "purpose": "See one district of the city and who is there.", "check": "role=list[name=\"Districts\"]"},
     {"route": "/animations/datascape", "purpose": "Fly over the datascape.", "check": "role=img[name=\"The datascape\"]"},
-    {"route": "/animations/value-cards", "purpose": "See every value card and its moving panel.", "check": "#value-cards-autolaunch-row-level"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

@@ -7727,3 +7727,11 @@ sits on its own branches.
   primary button's focus ring is now cut to follow the button, on every page.
 - The style check (`sh assets/vendor/regent_ui/style-check.sh` from `platform/`) reports
   27 breaks in the template today, so it is not part of `make check` yet.
+
+## 2026-11-12 — Value cards taken back off main until they pass the browser walk
+
+- `/animations/value-cards` (`91d68a70`, `d379d721`, the two entries above) crashed the
+  browser every time at phone width (390 and 320) in the browser walk, on main before
+  anything else was merged; it had landed without the walk being run. Both commits are
+  reverted here so main can release. The work is whole in those two commits; it comes
+  back when the page opens at all three widths.

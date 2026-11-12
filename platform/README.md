@@ -286,7 +286,7 @@ A sign-in is tied to its source by the visit id alone (`docs/logging-replay-plan
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
-wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the ten wonders `/animations/wonders`, the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`, and the swarm city `/animations/swarm-city` and its district pages `/animations/swarm-city/inn`, `/animations/swarm-city/forge` and `/animations/swarm-city/castle`, each in fourteen looks chosen by `?look=`, four of which follow the light or dark theme, the datascape `/animations/datascape` and the value cards `/animations/value-cards`) and the build
+wallet page `/showcase/wallet`, the payment example `/showcase/payments`, the funds example `/showcase/funds`), the motion lab (`/animations` and its pages, such as the ten wonders `/animations/wonders`, the agent harbour `/animations/harbour` and its island pages `/animations/harbour/inn`, `/animations/harbour/forge` and `/animations/harbour/castle`, and the swarm city `/animations/swarm-city` and its district pages `/animations/swarm-city/inn`, `/animations/swarm-city/forge` and `/animations/swarm-city/castle`, each in fourteen looks chosen by `?look=`, four of which follow the light or dark theme, and the datascape `/animations/datascape`) and the build
 skills (`/skills`, the agent guide `/skill.md` and
 `/.well-known/agent-skills/`) follow one setting, `ASH_TEMPLATE_SHOWCASE`,
 which `config/runtime.exs` reads and `AshTemplateWeb.Showcase` enforces:

@@ -2,12 +2,6 @@
 
 Changes to Ash Template, newest first.
 
-## 12 November 2026
-
-- **Motion lab.** A new page, Value cards: one card for each thing the products do, each
-  with its own moving panel of small coloured shapes. With a mouse, the panel follows your
-  pointer. A still picture stands in where the panel cannot be drawn.
-
 ## 11 November 2026
 
 - **Home.** The homepage is now the Datascape, a field of moving panels you fly over by
