@@ -12,7 +12,7 @@ curl --fail -H 'Accept: text/markdown' '{{origin}}/docs'
 curl --fail '{{origin}}/openapi.json'
 ```
 
-`/healthz` answers `ok`; `GET /api/v1/health` answers `{"status": "ok"}`, or 503 with `unavailable`. It says the site is up, not that every outside service is.
+`/healthz` answers `ok`; `GET /api/v1/health` answers `{"status": "ok", "migrations_applied": true}`, or 503 with `unavailable`; `migrations_applied` is false while the running release waits on a database change. It says the site is up, not that every outside service is.
 
 The homepage, this page, About, Contact, Privacy and Terms answer `Accept: text/markdown` with Markdown. `GET /api/v1/about` and `GET /api/v1/docs` answer About and this page as JSON: `{"title", "markdown"}`.
 
