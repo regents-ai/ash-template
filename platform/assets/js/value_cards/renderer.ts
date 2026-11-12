@@ -28,10 +28,12 @@ export async function createValueCardRenderer(
   onDeviceLost: () => void,
   name: string,
 ): Promise<ValueCardRenderer> {
-  const panel = panels[name]!
+  const panel = panels[name]
+  if (!panel) throw new Error(`No value card panel is called ${name}.`)
   const shared = await device.join(onDeviceLost)
   const {gpu} = shared
   let stage: ReturnType<typeof surface> | undefined
+  let shader: ReturnType<typeof effect> | undefined
   try {
     stage = surface(gpu, canvas, {autoResize: false, alphaMode: "opaque", label: `value-card-${name}`})
     stage.resize([size[0], size[1]])
@@ -44,11 +46,12 @@ export async function createValueCardRenderer(
     let seconds = panel.stillAt
     const now = {x: 0.5, y: 0.5, z: 0}
     const target = {x: 0.5, y: 0.5, z: 0}
-    const shader = effect(gpu, prepareShader(shaderFor(panel), `value_card_${name}.wgsl`), {
+    const pass = effect(gpu, prepareShader(shaderFor(panel), `value_card_${name}.wgsl`), {
       label: `value-card-${name}.pass`,
       set: uniforms(panel, width, height, seconds),
     })
-    await shader.compile(output)
+    shader = pass
+    await pass.compile(output)
 
     return {
       point(at) {
@@ -75,8 +78,8 @@ export async function createValueCardRenderer(
         return true
       },
       present() {
-        shader.set(uniforms(panel, width, height, seconds, [now.x, now.y, now.z]))
-        frame(gpu, current => current.pass(output, shader))
+        pass.set(uniforms(panel, width, height, seconds, [now.x, now.y, now.z]))
+        frame(gpu, current => current.pass(output, pass))
       },
       settled() {
         return gpu.settled()
@@ -84,11 +87,14 @@ export async function createValueCardRenderer(
       dispose() {
         if (disposed) return
         disposed = true
+        // The device outlives this panel, so the panel gives back what it made on it.
+        pass.dispose()
         output.dispose()
         device.leave(shared, onDeviceLost)
       },
     }
   } catch (error) {
+    shader?.dispose()
     stage?.dispose()
     device.leave(shared, onDeviceLost)
     throw error

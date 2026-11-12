@@ -333,15 +333,15 @@ defmodule AshTemplateWeb.ValueCardsLive do
       product: "regent",
       name: "Staking",
       headline: "Stake $REGENT on Base.",
-      line: "Stakers receive a pro rata share of USDC from the products.",
+      line: "Your part of each deposit follows your part of the stake.",
       tint: "#6f9cff"
     },
     %{
       id: "streams",
       product: "regent",
-      name: "Revenue",
-      headline: "Products pay the stakers.",
-      line: "A part of what the Regents products earn goes to $REGENT staking.",
+      name: "Deposits",
+      headline: "USDC flows to staking.",
+      line: "Eligible USDC deposits are allocated by stake share.",
       tint: "#ff5fa2"
     },
     %{

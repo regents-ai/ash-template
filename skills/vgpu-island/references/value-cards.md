@@ -15,13 +15,15 @@ Copy, keeping the paths:
 | The row and its words | `lib/<site>_web/components/value_cards.ex` |
 | Styles | `assets/css/components/value_cards.css`, imported in `app.css` |
 | Hook | `assets/js/hooks/value_card.ts`, registered where the page's hooks are |
-| Drawing | `assets/js/value_cards/renderer.ts`, `shared_device.ts`, `panel.ts`, `stills.mjs` |
-| The panels wanted | `assets/js/value_cards/panels/<name>.ts`, and their lines in `index.ts` |
+| Drawing | `assets/js/value_cards/renderer.ts`, `shared_device.ts`, `panel.ts`, `index.ts`, `stills.mjs` |
+| The panels wanted | `assets/js/value_cards/panels/<name>.ts`, keeping only their lines in `index.ts` |
 | Their still frames | `priv/static/images/value-cards/<name>.webp` |
 | Script | `"stills:value-cards"` in `package.json` |
-| Tests | `assets/test/value_cards.test.ts` |
+| Tests | `assets/test/value_cards.test.ts`, `test/<site>_web/value_cards_live_test.exs` |
 
-`canvas_island.ts` is already in every site. Then give the row its cards:
+`canvas_island.ts` is already in every site, and so are `vgpu`, `@vgpu/wgsl` and
+`playwright`, which `stills.mjs` uses to draw and pack the still frames. Then give the
+row its cards:
 
 ```elixir
 <.value_cards
@@ -82,6 +84,9 @@ it) and run `npm test`.
 - The panel is square at every width and laid out as if 340 pixels across, so the still
   frame always matches the moving panel.
 - Every panel on a page draws on one GPU device (`shared_device.ts`).
+- The labels are in the mono face and the card's colours are its own in both themes.
+  That departs from the sites' usual type and colour rules on purpose: it is the look
+  the founder chose for these cards (12 Nov 2026), and it stops at the card's edge.
 - Reduced motion, no WebGPU and no JavaScript all show the still frame.
 - A name is one or two words, a headline one line of about 26 characters ending with a
   full stop, a sentence about 60 characters, an action two words.

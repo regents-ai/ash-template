@@ -47,11 +47,6 @@
   transition: transform 160ms var(--value-card-ease);
 }
 
-.value-card a.value-card__face:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 3px;
-}
-
 /* The panel is square at every size, so its still frame always fits it. */
 .value-card .value-card__panel {
   position: relative;

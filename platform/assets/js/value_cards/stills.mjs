@@ -40,7 +40,7 @@ for (const name of names) {
   })
   frame(gpu, current => current.pass(still, shader))
   const read = await still.color.read({mipLevel: 0, region: "all"})
-  const pixels = read.data ?? read
+  const pixels = read
   const webp = await page.evaluate(
     async ([base64, size]) => {
       const bytes = Uint8ClampedArray.from(atob(base64), character => character.charCodeAt(0))

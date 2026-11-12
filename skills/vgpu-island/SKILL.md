@@ -90,6 +90,10 @@ clamp or `frameLoop` inside an island renderer.
    - The first `set()` of a uniform struct supplies every member with exact component counts.
    - A `Surface` is only ever a render destination, never a binding.
    - If construction throws after `init()`, call `gpu.dispose()` and rethrow.
+   - A page of many small islands (the value cards) opens one device for all of them
+     through `value_cards/shared_device.ts`: each renderer joins it, hears of its loss
+     through the callback it joined with, and on `dispose` gives back its own effect and
+     surface and leaves the device. The last to leave disposes the device.
 
 ## What the island already guarantees
 

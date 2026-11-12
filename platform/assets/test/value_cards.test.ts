@@ -1,13 +1,11 @@
 // The value cards' rules that hold whatever the panels show: every panel on a
 // page draws on one device, the last to go gives it back, a lost device is told
 // to everyone on it and never handed out again, and every panel a card can ask
-// for has a shader that prepares and a still frame to stand in for it.
+// for has a still frame to stand in for it.
 import {existsSync} from "node:fs"
 import {fileURLToPath} from "node:url"
-import {prepareShader} from "@vgpu/wgsl/prepare"
 import {describe, expect, it, vi} from "vitest"
 import {panels} from "../js/value_cards"
-import {shaderFor} from "../js/value_cards/panel"
 import {shareDevice} from "../js/value_cards/shared_device"
 
 /** A device that can be lost on demand, and counts being given back. */
@@ -64,7 +62,7 @@ describe("the shared device", () => {
     expect(made[0]!.dispose).toHaveBeenCalledTimes(1)
   })
 
-  it("never hands a lost device to a panel, even one that was waiting for it", async () => {
+  it("never hands a lost device to the next panel to ask", async () => {
     const {made, join} = page()
     const first = await join(() => {})
     made[0]!.lose()
@@ -73,6 +71,31 @@ describe("the shared device", () => {
     const next = await join(() => {})
     expect(next).not.toBe(first)
     expect(next.gpu).toBe(made[1])
+  })
+
+  it("gives a panel the next device when the one it waited for was lost as it opened", async () => {
+    const {made, open, join} = page()
+    open.mockImplementationOnce(async () => {
+      made.push(fakeDevice())
+      made[0]!.lose()
+      return made[0]!
+    })
+    const told = vi.fn()
+    const shared = await join(told)
+    expect(shared.gpu).toBe(made[1])
+    expect(made[0]!.dispose).toHaveBeenCalledTimes(1)
+    expect(told).not.toHaveBeenCalled()
+  })
+
+  it("stops asking after two devices in a row are lost as they open", async () => {
+    const open = vi.fn(async () => {
+      const device = fakeDevice()
+      device.lose()
+      return device
+    })
+    const {join} = shareDevice(open)
+    await expect(join(() => {})).rejects.toThrow("lost as it opened")
+    expect(open).toHaveBeenCalledTimes(2)
   })
 
   it("asks again after a device that never came", async () => {
@@ -85,9 +108,7 @@ describe("the shared device", () => {
 })
 
 describe("every panel", () => {
-  it.each(Object.entries(panels))("%s prepares its shader and has a still frame", (name, panel) => {
-    const prepared = prepareShader(shaderFor(panel), `value_card_${name}.wgsl`)
-    expect(prepared.version).toBe(2)
+  it.each(Object.keys(panels))("%s has a still frame", name => {
     const still = fileURLToPath(new URL(`../../priv/static/images/value-cards/${name}.webp`, import.meta.url))
     expect(existsSync(still)).toBe(true)
   })

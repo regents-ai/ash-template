@@ -20,13 +20,16 @@ export const shareDevice = <Gpu extends Shareable>(open: () => Promise<Gpu>) => 
   let current: Promise<Shared<Gpu>> | undefined
 
   /** The page's one device, with this panel counted on it. */
-  const join = async (onLost: () => void): Promise<Shared<Gpu>> => {
+  const join = async (onLost: () => void, again = true): Promise<Shared<Gpu>> => {
     const asked: Promise<Shared<Gpu>> = (current ??= open().then(gpu => {
       const shared: Shared<Gpu> = {gpu, panels: new Set(), gone: false}
-      // Giving the device back resolves the same promise, by which time no panel is left to tell.
       void gpu.lost.then(() => {
+        // Giving the device back resolves the same promise: nothing is left to do then.
+        if (shared.gone) return
         shared.gone = true
         if (current === asked) current = undefined
+        // Taken before any panel drew on it: no panel will leave it, so it is given back here.
+        if (shared.panels.size === 0) gpu.dispose()
         for (const tell of [...shared.panels]) tell()
       })
       return shared
@@ -38,8 +41,11 @@ export const shareDevice = <Gpu extends Shareable>(open: () => Promise<Gpu>) => 
       if (current === asked) current = undefined
       throw error
     }
-    // A device that went while this panel waited for it is no use: ask for the next one.
-    if (shared.gone) return join(onLost)
+    // A device that went while this panel waited for it is no use: ask for the next one, once.
+    if (shared.gone) {
+      if (!again) throw new Error("The device was lost as it opened, twice over.")
+      return join(onLost, false)
+    }
     shared.panels.add(onLost)
     return shared
   }
