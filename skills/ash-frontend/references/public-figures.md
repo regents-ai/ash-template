@@ -256,6 +256,12 @@ bounds, and `.woken.total` counts the wake-ups sent to pages, by kind.
 A page does work only for what it shows. It subscribes to the topics of its own
 subject and ignores a message that changes nothing on screen.
 
+No page queries the database in mount for something every visitor sees alike,
+the site's own health included. Use what the page's own reads returned, or a
+`SharedReading` key: the shell's health line turns false when one of the page's
+reads fails (`Read` tells the page). A probe in mount runs twice per page view
+and waits in the queue it reports on.
+
 Any rule of the form "only when it concerns me" or "not again if I just
 updated" has one case to trace before it is cleared: a message about a sibling
 arrives, and a message about the page's own subject arrives right after it, in
