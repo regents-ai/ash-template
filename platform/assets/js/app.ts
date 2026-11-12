@@ -338,6 +338,15 @@ if (!browserCsrfToken()) throw new Error("Missing CSRF token")
 const liveSocket = new LiveSocket("/live", Socket, {
   params: () => ({_csrf_token: browserCsrfToken()}),
   hooks,
+  dom: {
+    // Every dialog is opened by the page's own script and the server never renders
+    // `open`, so a dialog open in the browser stays open through each patch. The
+    // first patch after joining counts too: a press made before the page joined
+    // keeps its dialog open.
+    onBeforeElUpdated(from: Element, to: Element) {
+      if (from instanceof HTMLDialogElement && from.open) to.setAttribute("open", "")
+    },
+  },
 })
 
 // Installed before the first connect, so even the page's opening attempt is

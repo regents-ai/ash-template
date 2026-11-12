@@ -8442,3 +8442,13 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   are disabled, and once back the edit, the vote and the topic go through. The walk's
   setup starts one poll per width for the person, so the check leaves the person's daily
   polls to `polls.spec.ts`.
+- A window opened before its page has joined its live connection stays open once the page
+  joins. The Agent Message window on `/app`, pressed while the page was still loading,
+  used to close again at the join: `JS.ignore_attributes(["open"])` in `phx-mounted`
+  only covers patches after the join, so the join's first patch took `open` away (the
+  trace of the failing walk shows the window open at 9427 ms with the page still
+  loading, and closed once it had joined). The page's LiveSocket now keeps `open` on an
+  open dialog through every patch (`dom.onBeforeElUpdated` in `assets/js/app.ts`), and
+  `"open"` leaves the search, pairing, agent tools and Agent Message windows'
+  `ignore_attributes`. Main's code fails the same way when the join is held until after
+  the press; `agent_message.spec.ts` now checks that at both widths.

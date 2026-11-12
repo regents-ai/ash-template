@@ -149,7 +149,6 @@ defmodule AshTemplateWeb.Components.AgentMessage do
       class="code-card agent-message"
       aria-labelledby={"#{@id}-title"}
       data-agent-message
-      phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["open"])}
     >
       <header class="code-card__head">
         <h2 id={"#{@id}-title"}>Agent Message</h2>

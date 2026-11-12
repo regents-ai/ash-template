@@ -7,6 +7,8 @@ Changes to Ash Template, newest first.
 - **Connection.** Notes, polls, a room's topic, new rooms and the Agent Message form now
   also say "Not connected. Trying again…" while a page has lost its connection, and
   wait until it is back.
+- **Windows.** A window you open while a page is still loading, such as Agent Message,
+  stays open once the page has finished.
 - **Motion lab.** A new page, Value: cards with one figure each whose surface lights
   where you point or touch, with a card loading, empty and failed.
 - **Motion lab.** A new page, Ask: type about points, offers, notes or agents and the
