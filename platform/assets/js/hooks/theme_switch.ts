@@ -350,14 +350,3 @@ export const ThemeSwitch = {
     this.controller = undefined
   },
 }
-
-/**
- * A switch the server draws outside every live view, as in the public pages'
- * footer, is never handed to a hook; it is mounted here once and lasts as long
- * as the page does.
- */
-export function mountStaticThemeSwitches(doc: Document): void {
-  for (const root of doc.querySelectorAll<HTMLElement>("[data-theme-switch]")) {
-    if (!root.closest("[data-phx-session]")) createThemeSwitch(root).mount()
-  }
-}

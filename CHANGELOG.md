@@ -8254,3 +8254,13 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   nothing to close and no waiting drafts on the six repositories; `harvest.sh`, on
   fresh clones in `/tmp` and control's ledger, exits 0 (keyfleet 76 commits, regents
   29, autolaunch 147, patchbay 49, techtree 44).
+
+## 2026-11-12 — The signed-out theme switch turns once a press
+
+- v203 was rolled back to v202's build within minutes (Fly's v204): on the live site
+  the bottom bar's theme switch did not turn. A press saved the theme already showing.
+- Cause: the switch outside a live view was started twice, once by LiveView, which
+  mounts hooks on a plain page's body itself, and once by `mountStaticThemeSwitches`,
+  so each press turned it and turned it back. `mountStaticThemeSwitches` is removed.
+- The browser walk pressed only the account menu's switch. It now also presses the
+  bottom bar's, signed out, on a plain page (`/agents`) and on a shell page (`/polls`).

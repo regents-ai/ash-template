@@ -78,3 +78,31 @@ test("the theme switch turns the page's theme by press and by key, and the choic
   await expectTheme(page, other)
   await problems.expect()
 })
+
+// Signed out there is no account menu, so the switch sits in the bottom bar: of a
+// public page, which no live view draws, and of the shell. Each press turns it once.
+test.describe("signed out", () => {
+  test.use({storageState: {cookies: [], origins: []}})
+
+  for (const path of ["/agents", "/polls"]) {
+    test(`the bottom bar's theme switch on ${path} turns the theme with each press`, async ({page}) => {
+      const problems = watch(page)
+      await page.goto(path)
+      const bar = page.getByRole("switch", {name: "Light theme"})
+      await expect(bar).toHaveCount(1)
+      const first = await showing(page)
+      const other = first === "light" ? "dark" : "light"
+      await expect(bar).toHaveAttribute("aria-checked", String(first === "light"))
+
+      await bar.click()
+      await expect.poll(() => showing(page)).toBe(other)
+      await expect(bar).toHaveAttribute("aria-checked", String(other === "light"))
+
+      await bar.focus()
+      await page.keyboard.press("Space")
+      await expect.poll(() => showing(page)).toBe(first)
+      await expect(bar).toHaveAttribute("aria-checked", String(first === "light"))
+      await problems.expect()
+    })
+  }
+})
