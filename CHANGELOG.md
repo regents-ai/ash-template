@@ -8452,3 +8452,19 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   `"open"` leaves the search, pairing, agent tools and Agent Message windows'
   `ignore_attributes`. Main's code fails the same way when the join is held until after
   the press; `agent_message.spec.ts` now checks that at both widths.
+
+## 2026-11-12 — Released v209: the other forms say Not connected, and a window opened early stays open
+
+- `98ead9be` (`tpl/offline-forms-1112`) is v209 on template.regents.sh, switched at about
+  09:53Z with `scripts/deploy.sh`. No migrations. Rollback: v208 (`e5afe7c2`).
+- Full check on `98ead9be`, exit 0: 108 TypeScript, 537 browser walks with 5 skipped,
+  207 Elixir (9 properties). An earlier candidate (`833a6547`) failed the Agent Message
+  walk on `/app` twice and was not released; the cause was a window closing at the page's
+  join, fixed at the root here.
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `98ead9be`; `/`, `/agents`, `/polls`, `/notes`, `/app`, `/account` and `/animations`
+  answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
+  Pressed on live with the page's join held back: Agent Message on `/app` opens before
+  the join and is still open, with its three texts, after it, at both widths.
+- Not shown live: the "Not connected" note itself. Every form that carries it is for a
+  signed-in person, and live reads never use a person's sign-in; the walks cover it.
