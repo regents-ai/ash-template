@@ -480,7 +480,6 @@
   margin-inline: auto calc(-1 * var(--shell-dialog-pad));
   padding: 0;
   border: 0;
-  border-radius: 0 calc(1.25rem - 1px) 0 0.75rem;
 }
 
 .shell-dialog-close svg {
@@ -533,12 +532,22 @@
   }
 }
 
-/* The current place: a raised row with a signal bar on its start edge. */
+/* The current place: a raised row with a signal bar on its start edge. The bar is
+   a border, so forced colours still draw it; the row gives the same width back at
+   its other edge or in its padding, so nothing in it moves. */
 .shell-rail__section[aria-current="page"],
 #shell-sidebar [aria-current="page"] {
+  border-inline-start: 2px solid var(--ash-signal);
   background: var(--ash-raised);
-  box-shadow: inset 2px 0 var(--ash-signal);
   color: var(--ash-ink);
+}
+
+.shell-rail__section[aria-current="page"] {
+  padding-inline-end: 2px;
+}
+
+#shell-sidebar li > [aria-current="page"] {
+  padding-inline-start: calc(var(--space-1) - 2px);
 }
 
 .shell-rail__you {
@@ -714,11 +723,13 @@
   text-decoration: none;
 }
 
-/* The current tab: a signal line under it. Its focus ring sits inside the tab,
-   clear of the rows around it. */
+/* The current tab: a signal line under it, a border so forced colours still draw
+   it, with the same room above so its word stays level with the others. Its focus
+   ring sits inside the tab, clear of the rows around it. */
 .shell-tabs a[aria-current="page"] {
+  padding-block-start: 2px;
+  border-block-end: 2px solid var(--ash-signal);
   color: var(--ash-ink);
-  box-shadow: inset 0 -2px var(--ash-signal);
 }
 
 #app-shell .shell-tabs a:focus-visible {

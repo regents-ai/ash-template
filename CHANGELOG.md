@@ -8231,3 +8231,178 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   "Archive old notes"; the field's hint reads "Points, offers, notes".
 - The public documents' line for Ask, `platform/test/browser/pages.json`,
   `ask_bar.spec.ts` and `value_card.spec.ts` follow.
+## 2026-11-11 — The daily jobs' facts: JSON reports and `scripts/harvest.sh`
+
+- `make drift` (`scripts/drift.sh`) and `make pins` (`scripts/pins.sh`) print one JSON
+  document each, in place of their prose and table, so the daily Harvest and Spread
+  jobs read facts rather than sentences. Each script's opening comment lists the
+  fields. drift gives each file's list (shared, build or homepage), its path at the
+  template and at the site, its status (same, differs, missing or not_used), the lines
+  added and removed and the file that holds the difference. pins gives each pin's
+  commit, release tag, Hex version, SIWA version and apps, and its distance from the
+  template's pin and from the library's main as counts of commits and days, null where
+  a commit is not on GitHub. pins no longer writes `platform/_build/drift/pins.md`.
+- drift writes each run's differences to a folder of the run's own,
+  `platform/_build/drift/<UTC time>-<4 characters>/<site>/`, and no longer removes
+  earlier runs' files. A live homepage that cannot be read now stops the run, as any
+  other failed read does, where it was compared as an empty page before.
+- The shared, build and homepage file lists, the not-used and moved files, and the
+  site's names read from its `platform/mix.exs` move to `scripts/shared-files.sh`, which
+  drift sources, so the next report reads the same lists.
+- `scripts/init.sh` keeps one list of the reports it leaves unrenamed and removes from a
+  new product, `scripts/shared-files.sh` among them.
+- New `scripts/harvest.sh <ledger> <repos> [site ...]` lists, for each site, every
+  commit on its main since the commit the harvest ledger (control's
+  `automation/harvest.md`, its "Last read" table) last read, oldest first, as JSON.
+  Each commit gives its date, subject and files, each file named as the template names
+  it (renamed back the way `scripts/init.sh` renames the template's files for the site,
+  and a shared file a site keeps at its own path by the template's path), with the
+  file list it is in, and `shared: true` when it touches a shared file. The sites are
+  clones in one folder, so a cloud run passes its own; each clone's main is fetched
+  first. A ledger with no full commit for a site, or a clone without that commit,
+  stops the run.
+
+## 2026-11-11 — The daily jobs' instructions, and tests for the reports
+
+- New `automation/harvest.md` and `automation/spread.md`: the instructions the two
+  daily cloud jobs follow from this repository's main branch. Harvest (10:00 UTC) reads
+  each site's new commits with `scripts/harvest.sh`, judges each candidate as move-up,
+  site-only or drift, and opens at most three pull requests a day on ash-template,
+  branch `harvest/<site>-<topic>-<date>`. Spread (11:00 UTC) reads `scripts/drift.sh`,
+  `scripts/pins.sh`, the required fixes and the rollout files, and opens at most one
+  pull request per site a day, branch `spread/<date>`. Before Sean signs off, Spread
+  carries tooling only (check, release and deploy scripts, security fixes, library
+  bug-fix pins, toolchain versions and shared skills); anything a visitor sees waits
+  for his sign-off, recorded in a rollout file in `control/rollouts/`. Each pull request
+  gets a fresh reviewer, names the `make check` still needed, and goes up as a draft
+  waiting for Sean when it touches a protected area. Pull requests open seven days are
+  closed with a note, and no branch is deleted. Both jobs record their runs in the
+  ledger, control's `automation/harvest.md`, whose Mode table starts both on a dry run
+  that writes only what each would open.
+- New `scripts/tests/test_reports.py` runs harvest.sh, drift.sh and pins.sh against git
+  repositories it builds in a temporary folder, with stand-ins for `gh` and `curl`:
+  renamed and moved files, Mix tasks, merges, the shared flag, the ledger's rows, each
+  file status, the live homepages, a failed read, and each pin's counts, days, tag, pull
+  request, Hex version and absence from GitHub. `make check-scripts` runs it with `uv`,
+  and `make check` runs it first.
+- The Makefile's drift, pins and check-scripts targets are fenced as the template's own.
+  `scripts/init.sh` drops them, so a new product has no targets for the scripts it
+  removed, and `scripts/drift.sh` compares the rest of the Makefile with each site's.
+  init.sh also removes the tests and the two job files with the reports.
+
+## 2026-11-12 — The daily jobs, brought up to date and fixed
+
+- `tpl/automation-1111` is merged onto current main as `tpl/automation-1112`. Where it
+  met main's changes, `make drift` keeps main's homepage files and compares the still
+  picture by its blob id, and the live homepages compare the glass panel's tabs and
+  links and the copyright, as main does, now in the JSON report. The panel is read
+  from the `home-glass` element to the end of its tabs whatever tags a site uses: the
+  template's homepage writes a `div` and a `footer` where regents.sh writes a
+  `section` and a `p`, so drift (main's included) could not find the panel on
+  template.regents.sh. A page with no panel is reported `missing`, with why.
+- Spread's instructions follow Sean's rule of 11 Nov 04:57Z: an ordinary tooling
+  change goes as a normal pull request, the site's chief merges it once the checks are
+  clean, and Sean hears of it after. Only a pull request that touches a protected
+  area or holds a product decision goes up as a draft titled "Waits for Sean: ".
+  Spread carries tooling only, so the path through a rollout file is gone from it.
+- The seven-day close never closes a draft waiting for Sean's letter. New
+  `scripts/stale-prs.sh <repo> <branch prefix>` lists the pull requests to close and
+  the drafts waiting for Sean; both jobs close from its list and name the waiting
+  drafts, with their days open, in the daily summary.
+- A new product's Makefile keeps `TEMPLATE := repos/regents-ai/ash-template`:
+  `scripts/init.sh` and drift's comparison leave `ash-template` in the Makefile as it
+  is, since there it names the template's repository. Before, a new product's
+  required-fixes check read its own repository, and drift reported the two lines as
+  different at every site.
+- `automation/harvest.md` says what is not built (the regents-cli version each site
+  serves; whether siwa-server lists the site) and what no cloud run has proven yet.
+- `make check-scripts` writes no Python cache, and `__pycache__/` is ignored.
+- Dry runs on the Mac: drift and pins exit 0 for all five sites; `stale-prs.sh` finds
+  nothing to close and no waiting drafts on the six repositories; `harvest.sh`, on
+  fresh clones in `/tmp` and control's ledger, exits 0 (keyfleet 76 commits, regents
+  29, autolaunch 147, patchbay 49, techtree 44).
+
+## 2026-11-12 — The signed-out theme switch turns once a press
+
+- v203 was rolled back to v202's build within minutes (Fly's v204): on the live site
+  the bottom bar's theme switch did not turn. A press saved the theme already showing.
+- Cause: the switch outside a live view was started twice, once by LiveView, which
+  mounts hooks on a plain page's body itself, and once by `mountStaticThemeSwitches`,
+  so each press turned it and turned it back. `mountStaticThemeSwitches` is removed.
+- The browser walk pressed only the account menu's switch. It now also presses the
+  bottom bar's, signed out, on a plain page (`/agents`) and on a shell page (`/polls`).
+
+## 2026-11-12 — Released v205: the light and dark theme switch, fixed
+
+- `abe3fc40` is v205 on template.regents.sh, switched at about 08:20Z with
+  `scripts/deploy.sh`. It carries the design chief's theme switch (`cedc0ba4`, merged as
+  `ef03aeaa`), the fix that mounts the signed-out switch once, and the Harvest and Spread
+  tooling (`d784471f`, nothing under `platform/`). No migrations. Rollback: v202's build
+  (`9331cd03`).
+- History: `ef03aeaa` went live as v203 at about 08:07Z and was rolled back at about
+  08:12Z (Fly's v204, v202's build) because the signed-out switch did not turn.
+- Full check on `abe3fc40`, exit 0: 13 script tests, 108 TypeScript, 501 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `abe3fc40`; the bottom bar's switch on `/agents` turns with each press and each Space,
+  from a light-set and a dark-set device, and the choice holds over a reload at 1280 and
+  390; `/`, `/agents`, `/app`, `/polls`, `/notes` and `/account` answer 200 at both
+  widths with no page or console errors and no sideways scroll. The account menu's
+  switch (signed in) and dragging the knob were not driven live.
+
+## 2026-11-12 — The design-system's style check: 29 breaks down to 8
+
+- `sh assets/vendor/regent_ui/style-check.sh` (design-system `dfd18f87`) found 29 breaks;
+  21 are fixed here, and the page looks the same: the shell's current-place bar and
+  current-tab line are borders, not inset shadows, with the room given back so no word
+  or icon moves; the pairing window's close button is square; the home page's outlined
+  buttons take their hover wash as a fill, not a shadow; the home glass carries STYLE.md's
+  one approved glass mark; the crown, the button lab and the twin cubes stack by page
+  order (the twin's names now come after both cubes); the world cube, the code cube's
+  faces, the Keyfleet field, the feedback lab's button and the home tabs' foil keep their
+  numbers nested inside their own isolated root; the account squares' drawing is marked
+  as hidden artwork, as Techtree's is.
+- 8 remain, each for the design-system's check, so it is not yet in `make check`: the
+  world cube's three glass panes and cards (`backdrop-filter`) and its panes' shadow (the
+  founder's chosen look, with no allowance in the check); the button lab's 2px word blur
+  (a motion, not glass); and three lines of `assets/test/parts_motion.test.ts`, whose
+  `left:` key is a test's expected value, not an animated property.
+- Checked by screenshots before and after at 1280 and 390 (pixel-identical apart from the
+  rail's 2px border corner and live artwork timing) and by forcing the twin cube's drawn
+  state: its room card, code cube and names stand on top.
+
+## 2026-11-12 — Released v206: style check from 29 breaks to 8
+
+- `fc4f8a6d` (`tpl/style-check-1112`) is v206 on template.regents.sh, switched at about
+  08:50Z with `scripts/deploy.sh`. No migrations. Rollback: v205 (`abe3fc40`).
+- Full check on `fc4f8a6d`, exit 0 (the worker's second run; the first failed one phone
+  window-drag walk, which passed 9 of 9 alone): 108 TypeScript, 501 browser walks with 5
+  skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `fc4f8a6d`; `/`, `/polls`, `/animations` and `/account` answer 200 at 1280 and 390 with
+  no page or console errors and no sideways scroll; by screenshot the home's glass panel
+  and the rail's signal bar look as before; the theme switch still turns with each press.
+- The check is not part of `make check` yet: the last 8 lines need the design-system's
+  check changed (glass and shadow inside an isolated artwork root; the blur rule; test
+  files in the motion rule).
+
+## 2026-11-12 — Style check: four breaks left, all the world cube's panes
+
+- The button lab's words change by a fade and a 3px rise; the 2px blur is gone, since
+  STYLE.md allows no blur (`platform/assets/css/pages/site_buttons_lab.css`).
+- Design-system pin `c4244b38`: the style check's motion rule no longer reads test files.
+- The style check now prints four breaks, all in
+  `platform/assets/css/components/world_cube.css` (three glass panes and their shadow).
+  Whether the cube is redrawn flat or named as a second approved one-off is Sean's
+  decision, so the check is not part of `make check` yet.
+
+## 2026-11-12 — Released v207: the lab's word swap without blur, design-system c4244b38
+
+- `c3b2ddf7` is v207 on template.regents.sh, switched at about 09:00Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v206 (`fc4f8a6d`).
+- Full check on `c3b2ddf7`, exit 0: 13 script tests, 108 TypeScript, 501 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `c3b2ddf7`; `/`, `/animations`, `/animations/buttons`, `/agents` and `/polls` answer 200
+  at 1280 and 390 with no page or console errors and no sideways scroll. The lab's word
+  swap itself was not watched live.

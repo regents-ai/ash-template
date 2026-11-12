@@ -69,6 +69,7 @@
     display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "buy" "give";
     gap: var(--space-5) var(--space-6);
     padding: clamp(2rem, 6svh, 4.5rem) var(--rg-panel-padding);
+    & > .kf-field { z-index: -1; }
   }
   .kf-hero__head { grid-area: head; display: grid; align-content: start; gap: var(--space-3); min-width: 0; }
   .kf-hero__title {
@@ -129,7 +130,7 @@
      centre, its radii, and where along them it starts and ends. The still
      drawing is masked with it; the GPU's picture reads the same numbers and
      fades itself the same way. */
-  .kf-field { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .kf-field { position: absolute; inset: 0; pointer-events: none; }
   .kf-field__still, .kf-field__canvas { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
   .kf-field__still {
     background: var(--kf-field-line); opacity: .16;
@@ -209,6 +210,7 @@
   .kf-club__map {
     position: relative; isolation: isolate; overflow: hidden; aspect-ratio: 16 / 10; min-width: 0;
     border: 1px solid var(--hairline-strong); background: var(--color-surface);
+    & > .kf-field { z-index: -1; }
   }
   .kf-club__field {
     --kf-fade-x: .5; --kf-fade-y: .5; --kf-fade-width: .75; --kf-fade-height: .75;

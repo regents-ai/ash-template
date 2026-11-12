@@ -39,7 +39,7 @@ import {OnchainSteps} from "./hooks/onchain_steps"
 import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
 import {ProductsMenu} from "./hooks/products_menu"
-import {ThemeSwitch, mountStaticThemeSwitches} from "./hooks/theme_switch"
+import {ThemeSwitch} from "./hooks/theme_switch"
 import {Conversation} from "./hooks/conversation"
 import {VerifiedConnections} from "./hooks/verified_connections"
 import {mountMotion} from "./motion"
@@ -355,5 +355,4 @@ installCopyButtons()
 installAgentMessage()
 installAgentTools()
 mountMotion(document)
-mountStaticThemeSwitches(document)
 window.liveSocket = liveSocket

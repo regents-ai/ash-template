@@ -46,8 +46,9 @@
   position: relative; isolation: isolate; display: grid; place-items: center; min-height: 13rem;
   padding: clamp(1rem, 4vw, 2.5rem); border: 1px solid var(--color-border); background: var(--color-bg); overflow: hidden;
 }
+/* The light comes first in the stage, so the context after it stands over it. */
 .sb-light-island {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  position: absolute; inset: 0; pointer-events: none;
   background-color: var(--color-bg); color: var(--sb-light);
   background-image: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--sb-light) 14%, transparent), transparent 62%);
 }
@@ -55,7 +56,7 @@
 .sb-light-island[data-light-ready="true"] canvas { opacity: 1; }
 
 .sb-context {
-  position: relative; z-index: 1; display: grid; gap: .75rem; width: min(100%, 26rem); min-width: 0;
+  position: relative; display: grid; gap: .75rem; width: min(100%, 26rem); min-width: 0;
   padding: 1rem 1.25rem; border: 1px solid var(--color-border); background: var(--color-surface);
 }
 .sb-context p { color: var(--color-fg-muted); font-size: .875rem; overflow-wrap: anywhere; }
@@ -143,16 +144,16 @@
 #site-buttons .sb-site:is([data-site="regents"], [data-site="keyfleet"]) .sb-motion .sb-button:not(:disabled)[data-state="done"]::before {
   --rg-button-edge-ink: var(--rg-p-text); --rg-button-cut-ink: var(--rg-p-text);
 }
-/* Words change by a short blur and fade, in place. Keyboard presses swap them at once. */
+/* Words change by a short fade and a small rise, in place. Keyboard presses swap them at once. */
 @media (prefers-reduced-motion: no-preference) {
   #site-buttons .sb-motion .sb-words > [data-word] {
-    transition: opacity 200ms cubic-bezier(.23, 1, .32, 1), filter 200ms cubic-bezier(.23, 1, .32, 1), visibility 0s linear 200ms;
+    transition: opacity 200ms cubic-bezier(.23, 1, .32, 1), translate 200ms cubic-bezier(.23, 1, .32, 1), visibility 0s linear 200ms;
   }
-  #site-buttons .sb-motion .sb-button .sb-words > [data-word] { opacity: 0; filter: blur(2px); }
+  #site-buttons .sb-motion .sb-button .sb-words > [data-word] { opacity: 0; translate: 0 3px; }
   #site-buttons .sb-motion .sb-button:is([data-state="idle"]) [data-word="idle"],
   #site-buttons .sb-motion .sb-button:is([data-state="wait0"]) [data-word="wait0"],
   #site-buttons .sb-motion .sb-button:is([data-state="wait1"]) [data-word="wait1"],
-  #site-buttons .sb-motion .sb-button:is([data-state="done"]) [data-word="done"] { opacity: 1; filter: none; transition-delay: 0s; }
+  #site-buttons .sb-motion .sb-button:is([data-state="done"]) [data-word="done"] { opacity: 1; translate: none; transition-delay: 0s; }
   #site-buttons[data-input="key"] .sb-motion .sb-words > [data-word] { transition: none; }
   #site-buttons .sb-motion :is(.sb-button[data-state="wait0"] [data-word="wait0"], .sb-button[data-state="wait1"] [data-word="wait1"]) .sb-spinner { animation: sb-spin .7s linear infinite; }
 }
@@ -161,7 +162,7 @@
 .motion-lab[data-motion="reduced"] #site-buttons :is(.sb-words > [data-word], .sb-light-island canvas),
 .motion-lab[data-motion="reduced"] #site-buttons .sb-button::before { transition: none !important; }
 .motion-lab[data-motion="reduced"] #site-buttons .sb-spinner { animation: none !important; }
-.motion-lab[data-motion="reduced"] #site-buttons .sb-motion .sb-words > [data-word] { opacity: 1; filter: none; }
+.motion-lab[data-motion="reduced"] #site-buttons .sb-motion .sb-words > [data-word] { opacity: 1; translate: none; }
 .motion-lab[data-motion="reduced"] #site-buttons .sb-motion .sb-button .sb-words > [data-word] { visibility: hidden; }
 .motion-lab[data-motion="reduced"] #site-buttons .sb-button:is([data-state="idle"]) [data-word="idle"],
 .motion-lab[data-motion="reduced"] #site-buttons .sb-button:is([data-state="wait0"]) [data-word="wait0"],

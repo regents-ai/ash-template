@@ -12,11 +12,32 @@
 # each library's history (its branches, tags and pull requests; commits and trees, no
 # file contents), kept in platform/_build/drift/libraries and fetched again on every
 # run. Each copy is read only through its own --git-dir, so a damaged copy stops the
-# run and never reaches the checkout around it. "Behind" is the
-# number of commits on the other side that the pin lacks, and the days from the pin's
-# own commit to the newest of them; for SIWA only the commits that changed its folder
-# count. The table is printed and written to platform/_build/drift/pins.md. Needs
-# `gh auth login` and git.
+# run and never reaches the checkout around it.
+#
+# Prints one JSON document:
+#
+#   {"read_at",
+#    "library_main": {"elixir-utils", "design-system", "ash_postgres", "regents-cli"},
+#    "pins": [{"site", "commit", "library", "pin", "tag", "hex", "version", "apps",
+#              "on_github", "behind_template", "behind_main"}]}
+#
+# site is "template" for this checkout's own pins, and commit is the commit read: the
+# site's main, or this checkout's HEAD. library is elixir-utils, design-system,
+# ash_postgres, siwa or regents-cli. pin is the commit locked (null for a Hex release,
+# whose version is in hex, or for a library the site does not use); tag is a release
+# tagged at the pin; version is the SIWA library's at the pin; apps are the apps the
+# lock pins there; on_github says the pin is in the library's history.
+# behind_template (null on the template's rows) and behind_main are
+#
+#   {"target", "on_github", "lacking", "ahead", "days"}
+#
+# for the template's pin (null when the template pins none of that library) and the
+# library's main: lacking is the number of the target's commits the pin lacks, ahead
+# the number of the pin's commits the target lacks, and days runs from the pin's own
+# commit to the newest commit it lacks. For siwa only the commits that changed its
+# folder count. The counts are null when the pin or the target is not on GitHub. A
+# library a site does not use has every field after apps null. Needs `gh auth login`,
+# git and jq.
 set -euo pipefail
 
 elixir_utils=https://github.com/regents-ai/elixir-utils.git
@@ -67,52 +88,45 @@ apps_at() {
   awk -v repo="$2" -v rev="$3" '$2 == repo && $3 == rev { print $1 }' <<<"$1"
 }
 
-days() {
-  case "$1" in
-    0) echo "under a day" ;;
-    1) echo "1 day" ;;
-    *) echo "$1 days" ;;
-  esac
+# Whether commit $2 is in the history of library $1.
+on_github() {
+  git --git-dir="$(history "$1")" cat-file -e "$2^{commit}" 2>/dev/null
 }
 
-# How far commit $2 is behind commit $3 in the history of library $1, and how many
-# commits it has that $3 lacks, named by $4 ("ahead", "not on main"), counting only
-# commits that changed path $5 when one is given.
+# How far commit $2 is behind commit $3 in the history of library $1, as a JSON
+# object, counting only commits that changed path $4 when one is given. An empty $3
+# is a target nobody pins.
 behind() {
-  local dir ref="$2" target="$3" extra="$4" lacking ahead newest since text
+  local dir ref="$2" target="$3" lacking ahead newest since days=0
   local -a only=()
   dir="$(history "$1")"
-  [[ -z "${5:-}" ]] || only=(-- "$5")
-  if ! git --git-dir="$dir" cat-file -e "$ref^{commit}" 2>/dev/null; then
-    echo "not on GitHub"
+  [[ -z "${4:-}" ]] || only=(-- "$4")
+  if [[ -z "$target" ]]; then
+    jq -nc '{target: null, on_github: null, lacking: null, ahead: null, days: null}'
     return
   fi
-  if ! git --git-dir="$dir" cat-file -e "$target^{commit}" 2>/dev/null; then
-    echo "${target:0:7} not on GitHub"
+  if ! on_github "$1" "$target"; then
+    jq -nc --arg target "$target" '{target: $target, on_github: false, lacking: null, ahead: null, days: null}'
+    return
+  fi
+  if ! on_github "$1" "$ref"; then
+    jq -nc --arg target "$target" '{target: $target, on_github: true, lacking: null, ahead: null, days: null}'
     return
   fi
   lacking="$(git --git-dir="$dir" rev-list --count "$ref..$target" ${only[@]+"${only[@]}"})"
   ahead="$(git --git-dir="$dir" rev-list --count "$target..$ref" ${only[@]+"${only[@]}"})"
-  if [[ "$lacking" == 0 && "$ahead" == 0 ]]; then
-    echo "same"
-    return
+  if [[ "$lacking" != 0 ]]; then
+    newest="$(git --git-dir="$dir" log -1 --format=%ct "$ref..$target" ${only[@]+"${only[@]}"})"
+    since="$(git --git-dir="$dir" log -1 --format=%ct "$ref")"
+    days=$(((newest > since ? newest - since : 0) / 86400))
   fi
-  if [[ "$lacking" == 0 ]]; then
-    echo "$ahead $extra"
-    return
-  fi
-  newest="$(git --git-dir="$dir" log -1 --format=%ct "$ref..$target" ${only[@]+"${only[@]}"})"
-  since="$(git --git-dir="$dir" log -1 --format=%ct "$ref")"
-  text="$lacking commit$([[ "$lacking" == 1 ]] || echo s), $(days $(((newest > since ? newest - since : 0) / 86400)))"
-  [[ "$ahead" == 0 ]] || text="$text; $ahead $extra"
-  echo "$text"
+  jq -nc --arg target "$target" --argjson lacking "$lacking" --argjson ahead "$ahead" --argjson days "$days" \
+    '{target: $target, on_github: true, lacking: $lacking, ahead: $ahead, days: $days}'
 }
 
-# A pin as the table shows it: the short commit, and its release when one is tagged there.
-shown() {
-  local tag
-  tag="$(git --git-dir="$(history "$1")" tag --points-at "$2" 2>/dev/null | head -1)"
-  printf '`%s`%s\n' "${2:0:7}" "${tag:+ ($tag)}"
+# A release tagged at a commit of a library, or nothing.
+tag_at() {
+  git --git-dir="$(history "$1")" tag --points-at "$2" 2>/dev/null | head -1
 }
 
 # The SIWA library's version at a commit of elixir-utils.
@@ -121,70 +135,78 @@ siwa_version() {
     sed -nE 's/^.*(@version|version:) "([^"]+)".*$/\2/p' | head -1
 }
 
-row() {
-  printf '| %s | %s | %s | %s | %s | %s |\n' "$@" >>"$table"
-}
-
-# Every row for one site: its mix.lock and Makefile, and the site's name as the table
-# shows it.
-site_rows() {
-  local raw="$1" makefile="$2" site="$3" lock url name rev pins count apps hex siwa cli
-  lock="$(git_pins <<<"$raw")"
-  for url in "$elixir_utils" "$design_system" "$ash_postgres"; do
-    name="$(basename "$url" .git)"
-    pins="$(repo_pins "$lock" "$url")"
-    if [[ -z "$pins" ]]; then
-      if [[ "$url" == "$ash_postgres" ]] &&
-        hex="$(sed -nE 's/^  "ash_postgres": \{:hex, :ash_postgres, "([^"]+)".*/\1/p' <<<"$raw")" &&
-        [[ -n "$hex" ]]; then
-        row "$site" "$name" "Hex $hex" "ash_postgres" "not a commit" "not a commit"
-      else
-        row "$site" "$name" "none" "" "" ""
-      fi
-      continue
-    fi
-    count="$(wc -l <<<"$pins" | tr -d ' ')"
-    for rev in $pins; do
-      apps="$(apps_at "$lock" "$url" "$rev")"
-      if [[ "$count" == 1 && "$(wc -l <<<"$apps" | tr -d ' ')" -gt 1 ]]; then
-        apps="$(wc -l <<<"$apps" | tr -d ' ') apps"
-      else
-        apps="$(tr '\n' ' ' <<<"$apps" | sed 's/ $//; s/ /, /g')"
-      fi
-      row "$site" "$name" "$(shown "$url" "$rev")" "$apps" \
-        "$(vs_template "$url" "$rev" "$(repo_pins "$template_lock" "$url" | head -1)")" \
-        "$(behind "$url" "$rev" "$(main_of "$url")" "not on main")"
-    done
-  done
-
-  siwa="$(app_pin "$lock" siwa)"
-  if [[ -n "$siwa" ]]; then
-    row "$site" "siwa" "$(shown "$elixir_utils" "$siwa") $(siwa_version "$siwa")" "siwa" \
-      "$(vs_template "$elixir_utils" "$siwa" "$(app_pin "$template_lock" siwa)" "$siwa_path")" \
-      "$(behind "$elixir_utils" "$siwa" "$(main_of "$elixir_utils")" "not on main" "$siwa_path")"
-  fi
-
-  cli="$(sed -nE 's/^REGENTS_CLI_REV := ([0-9a-f]{40})$/\1/p' <<<"$makefile")"
-  if [[ -n "$cli" ]]; then
-    row "$site" "regents-cli" "$(shown "$regents_cli" "$cli")" "Makefile" \
-      "$(vs_template "$regents_cli" "$cli" "$template_cli")" \
-      "$(behind "$regents_cli" "$cli" "$(main_of "$regents_cli")" "not on main")"
-  fi
-}
-
-# Behind the template's pin, or a dash on the template's own rows.
+# Behind the template's pin, or null on the template's own rows.
 vs_template() {
-  if [[ "$current" == template ]]; then
-    echo "-"
-  elif [[ -z "$3" ]]; then
-    echo "not pinned by the template"
+  if [[ "$site" == template ]]; then
+    echo null
   else
-    behind "$1" "$2" "$3" "ahead" "${4:-}"
+    behind "$@"
   fi
 }
 
 main_of() {
   git --git-dir="$(history "$1")" rev-parse refs/heads/main
+}
+
+# One row, from the library, pin, hex, version, apps (one per line), and then, for a
+# pin, the library's URL, the template's pin and the folder that counts.
+row() {
+  local library="$1" pin="$2" hex="$3" version="$4" apps="$5" url="${6:-}" theirs="${7:-}" path="${8:-}"
+  local tag="" found=null vs=null main=null library_main
+  if [[ -n "$pin" ]]; then
+    tag="$(tag_at "$url" "$pin")"
+    found=false
+    if on_github "$url" "$pin"; then
+      found=true
+    fi
+    vs="$(vs_template "$url" "$pin" "$theirs" "$path")"
+    library_main="$(main_of "$url")"
+    main="$(behind "$url" "$pin" "$library_main" "$path")"
+  fi
+  jq -nc --arg site "$site" --arg commit "$commit" --arg library "$library" --arg pin "$pin" \
+    --arg tag "$tag" --arg hex "$hex" --arg version "$version" --arg apps "$apps" \
+    --argjson on_github "$found" --argjson behind_template "$vs" --argjson behind_main "$main" '
+    def blank: if . == "" then null else . end;
+    {site: $site, commit: $commit, library: $library, pin: ($pin | blank), tag: ($tag | blank),
+     hex: ($hex | blank), version: ($version | blank),
+     apps: ($apps | split("\n") | map(select(. != ""))),
+     on_github: $on_github, behind_template: $behind_template, behind_main: $behind_main}'
+}
+
+# Every row for one site, from its mix.lock and Makefile.
+site_rows() {
+  local raw="$1" makefile="$2" lock url name rev pins hex siwa cli
+  lock="$(git_pins <<<"$raw")"
+  for url in "$elixir_utils" "$design_system" "$ash_postgres"; do
+    name="$(basename "$url" .git)"
+    pins="$(repo_pins "$lock" "$url")"
+    if [[ -z "$pins" ]]; then
+      hex=""
+      [[ "$url" != "$ash_postgres" ]] ||
+        hex="$(sed -nE 's/^  "ash_postgres": \{:hex, :ash_postgres, "([^"]+)".*/\1/p' <<<"$raw")"
+      if [[ -n "$hex" ]]; then
+        row "$name" "" "$hex" "" ash_postgres
+      else
+        row "$name" "" "" "" ""
+      fi
+      continue
+    fi
+    for rev in $pins; do
+      row "$name" "$rev" "" "" "$(apps_at "$lock" "$url" "$rev")" \
+        "$url" "$(repo_pins "$template_lock" "$url" | head -1)"
+    done
+  done
+
+  siwa="$(app_pin "$lock" siwa)"
+  if [[ -n "$siwa" ]]; then
+    row siwa "$siwa" "" "$(siwa_version "$siwa")" siwa \
+      "$elixir_utils" "$(app_pin "$template_lock" siwa)" "$siwa_path"
+  fi
+
+  cli="$(sed -nE 's/^REGENTS_CLI_REV := ([0-9a-f]{40})$/\1/p' <<<"$makefile")"
+  if [[ -n "$cli" ]]; then
+    row regents-cli "$cli" "" "" "" "$regents_cli" "$template_cli"
+  fi
 }
 
 mkdir -p "$out/libraries"
@@ -193,38 +215,31 @@ fetch_history "$elixir_utils" "$design_system" "$ash_postgres" "$regents_cli"
 template_lock="$(git_pins <platform/mix.lock)"
 template_cli="$(sed -nE 's/^REGENTS_CLI_REV := ([0-9a-f]{40})$/\1/p' Makefile)"
 
-table="$out/pins.md"
-{
-  echo "# Shared-library pins"
-  echo
-  echo "Read $(date -u +%Y-%m-%dT%H:%MZ) from each site's main branch on GitHub, and from this"
-  echo "checkout for the template. Library main: elixir-utils \`$(main_of "$elixir_utils" | cut -c1-7)\`,"
-  echo "design-system \`$(main_of "$design_system" | cut -c1-7)\`, ash_postgres \`$(main_of "$ash_postgres" | cut -c1-7)\`, regents-cli"
-  echo "\`$(main_of "$regents_cli" | cut -c1-7)\`. Behind: the commits the pin lacks, and the days from the pin's"
-  echo "commit to the newest of them; for siwa, only changes to \`$siwa_path\`."
-  echo
-  echo "| Site | Library | Pin | Apps | Behind template | Behind main |"
-  echo "| --- | --- | --- | --- | --- | --- |"
-} >"$table"
+site=template
+commit="$(git rev-parse HEAD)"
+rows="$(site_rows "$(cat platform/mix.lock)" "$(cat Makefile)")"
 
-current=template
-site_rows "$(cat platform/mix.lock)" "$(cat Makefile)" "template (this checkout)"
-
-for current in "${@:-${sites[@]}}"; do
-  repo="regents-ai/$current"
-  rev="$(main_commit "$repo")"
-  lock="$(site_file "$repo" "$rev" platform/mix.lock)" || {
+for site in "${@:-${sites[@]}}"; do
+  repo="regents-ai/$site"
+  commit="$(main_commit "$repo")"
+  lock="$(site_file "$repo" "$commit" platform/mix.lock)" || {
     status=$?
-    [[ "$status" != 44 ]] || echo "$repo has no platform/mix.lock at ${rev:0:7}" >&2
+    [[ "$status" != 44 ]] || echo "$repo has no platform/mix.lock at ${commit:0:7}" >&2
     exit "$status"
   }
   # A site with no Makefile has no regents-cli row; any other failure stops the run.
-  makefile="$(site_file "$repo" "$rev" Makefile)" || {
+  makefile="$(site_file "$repo" "$commit" Makefile)" || {
     status=$?
     [[ "$status" == 44 ]] || exit "$status"
     makefile=""
   }
-  site_rows "$lock" "$makefile" "$current \`${rev:0:7}\`"
+  rows+=$'\n'"$(site_rows "$lock" "$makefile")"
 done
 
-cat "$table"
+jq -s --arg read_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg elixir_utils "$(main_of "$elixir_utils")" --arg design_system "$(main_of "$design_system")" \
+  --arg ash_postgres "$(main_of "$ash_postgres")" --arg regents_cli "$(main_of "$regents_cli")" '
+  {read_at: $read_at,
+   library_main: {"elixir-utils": $elixir_utils, "design-system": $design_system,
+                  "ash_postgres": $ash_postgres, "regents-cli": $regents_cli},
+   pins: .}' <<<"$rows"

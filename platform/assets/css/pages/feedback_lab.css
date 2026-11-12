@@ -18,8 +18,10 @@
 .flair .flair-spec { margin-top: auto; padding-top: 1rem; font: .6875rem/1.6 var(--font-family-ui); color: var(--color-fg-muted); }
 .flair-touch { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; padding-block: 1.5rem; }
 .flair [data-flair-label] { display: inline-block; }
-.flair-button { position: relative; isolation: isolate; }
-.flair-button::after { position: absolute; content: ""; inset: -1px; z-index: -1; pointer-events: none; opacity: 0; background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--ash-ink) 16%, transparent)); transition: opacity 140ms cubic-bezier(.23, 1, .32, 1); }
+.flair-button {
+  position: relative; isolation: isolate;
+  &::after { position: absolute; content: ""; inset: -1px; z-index: -1; pointer-events: none; opacity: 0; background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--ash-ink) 16%, transparent)); transition: opacity 140ms cubic-bezier(.23, 1, .32, 1); }
+}
 .flair-arrow { display: inline-block; margin-inline-start: .75rem; transition: transform 140ms cubic-bezier(.23, 1, .32, 1); }
 .flair-link { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; text-underline-offset: .3em; text-decoration-color: var(--color-border); }
 .flair-link span { transition: transform 140ms cubic-bezier(.23, 1, .32, 1); }
