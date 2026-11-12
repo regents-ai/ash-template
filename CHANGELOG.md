@@ -9302,39 +9302,89 @@ too small next to the switch, and the branch was behind main.
   page errors and no sideways scroll.
 - Known, not changed here: the Feedback lab button's sheen has never drawn; the shared
   button's own rule paints over it.
-## 2026-11-12 — Chat replies and label questions off the shared log (branch, not on main)
 
-Branch `tpl/stampede-chat-1112`, the chat lane of the database load review
-(`/tmp/stampede-1112/build-chat.md`). Not released.
+## 2026-11-12 — Database load review, combined (branch, not on main)
 
-- **Chat replies.** A reply was saved once per piece, each save a commit on the database
-  every site shares, and each sent the whole text so far. Now the job saves it twice
-  through `:upsert_response` (empty and unfinished when it starts, whole when it ends) and
-  broadcasts each piece with `Phoenix.PubSub` as `"piece"` on the conversation's topic.
-  The shell hands pieces to the chat page, whose `.ChatReply` hook appends them. A page
-  opened partway through shows "The assistant is writing…" until the whole reply
-  arrives; reconnecting is the same. The append path of `:upsert_response` is deleted.
-  The job holds a connection only before and after the model call.
-- **History.** The model reads the newest 50 messages, one page of the chat; replies
-  that never finished are left out.
-- **Paging.** `:my_conversations` and `:for_conversation` are keyset paged, 50 a page, 100
-  at most. The chat page keeps what it shows plus a cursor, never the records, with Older
-  chats and Older messages buttons. Migration
-  `20261112192041_chat_conversations_by_person_and_time` adds one index,
-  `chat_conversations (human_account_id, inserted_at)`, built concurrently; it changes no
-  rows. The old one-column index stays (migrations here only add).
-- **Label questions.** `:note_saved` reaches `Notes.Decision` `:request_label` as a job in
-  the `default` queue (`AshOban.Signals`, `unique: false`), queued in the save's
-  transaction. The job takes the daily-question lock in its own short transaction, so a
-  save no longer waits on every other save. A note deleted first cancels the job. A save's
-  own answer usually shows the label from before it; the docs say so.
-- `AshTemplate.Chat.ActorPersister` is now `AshTemplate.Actors.Persister`, used by both.
-- Skill rules: chat pieces (elixir-stack), job-delivered listeners (ash-backend
-  integrations), streamed answers (Oban recipes, Queues), and the signals skill's table.
-- Tests: `test/ash_template/notes/label_request_test.exs` (the race test fails 3 of 3
-  with the job's transaction off), `test/ash_template/chat/reply_test.exs`,
-  `test/browser/chat.spec.ts`. Older chats and Older messages were driven once on a
-  local walk database with 53 chats and 51 messages.
-- Full check on the Mac, exit 0: style check clean, 13 script tests, credo clean, 126
-  TypeScript, 581 browser walks with 5 skipped, 221 Elixir (10 properties), required
-  fixes (main's registry), the command list and the newest-CLI check. WebKit not run.
+Branch `tpl/stampede-all-1112`, from `origin/main` (`c9c83a90`): the database load
+review's three lanes merged in order with plain merge commits, then the chief's four
+corrections (`/tmp/stampede-1112/build-integrate.md`). Not released. This entry replaces
+the chat lane's.
+
+- **Measurements and connections** (`tpl/stampede-platform-1112`, `91bb7ed7`). Measurements
+  that tell the site's limits apart: the wait for a connection and query time by table,
+  refused checkouts, scheduler use, the queues and memory of hot processes, open pages and
+  feeds, page and route times, and outside calls by service, every tag a value the site
+  chooses. `/healthz` never waits for a connection: none free soon after a query succeeded
+  is a busy, healthy site, and no answer since the machine started is down. Pages no
+  longer ask for health when they open; the bottom bar says "Some things aren't
+  answering" when one of the page's own reads fails. Saved errors are capped at 10 a
+  minute per fault on each machine, and refused checkouts are counted, not saved. Pages
+  and documents get a budget of 600 loads a minute per address. A stopping machine
+  closes pages 125 a second over at most 20 seconds, and they come back spread out. Idle
+  schedulers sleep (`rel/vm.args.eex`). Indexes for the daily prunes.
+- **Rooms** (`tpl/stampede-rooms-1112`, `455f0433`). A message keeps its like count and
+  version, moved in the like's own transaction, and the notice carries both, so open
+  pages read nothing. Likes get an allowance, 120 a minute per person and 300 per
+  address. Mentions stop early without an "@" and read the names people posted under in
+  each room (`Rooms.Poster`). The write allowance is spent before the transaction opens.
+  Presence works out arrivals and departures once; pages keep people in a stream and
+  listen only when they show the panel. The room page keeps public maps and a keyset
+  cursor, never records. The room counter counts only the rooms it may hold. Partial
+  indexes on `agent_id` and `via_agent_id`; the agent feed reads direct messages by
+  recipient.
+- **Chat and label questions** (`tpl/stampede-chat-1112`, `dfdfc892`). A reply is saved
+  twice, empty when it starts and whole when it ends, and its pieces are only broadcast;
+  a page opened partway through shows "The assistant is writing…" until the whole reply
+  arrives. The model reads the newest 50 messages. `:my_conversations` and
+  `:for_conversation` are keyset paged, with Older chats and Older messages on the chat
+  page. `:note_saved` reaches `Notes.Decision` `:request_label` as a job queued in the
+  save's transaction, so a save never waits on the daily-question lock, and a save's own
+  answer usually shows the label from before it. `AshTemplate.Chat.ActorPersister` is now
+  `AshTemplate.Actors.Persister`.
+- **Merging** (`20e53d4d`, `93914fd4`, `9ab23441`). Three text conflicts: the security
+  skill keeps both lanes' new rules; the ash-backend integrations reference makes the two
+  listener rules one paragraph; this file kept both sides. Design-system pin `5fbe2d40`
+  unchanged. The compile-connected limit is 47, one more for the rooms lane's new resource.
+- **Corrections.**
+  - A retried or cut-off reply job started a second reply, and because an unfinished
+    reply counted as an answer, the job never ran again and the failure line never came:
+    the page showed the assistant writing forever. A message now needs an answer until its
+    reply is complete, every attempt and the failure line write the reply already
+    started, and the job has a second attempt, so the next machine finishes a reply cut
+    off when its machine stopped. The failure line now comes about 17 seconds later,
+    after the second attempt (`e13229d6`).
+  - The one-column `chat_conversations (human_account_id)` index is dropped,
+    concurrently; the person-and-time index serves every read (`f4a5b007`).
+  - A room post past the allowance answers 429 `too_many_requests` with `Retry-After`
+    instead of 422 `invalid_message`, as a too-fast like does. The public OpenAPI document
+    gains the likes' 429, and both documents move to 13.0.0 (`9e16805b`).
+  - A room page read its agents in three more statements, even with no agent's message on
+    it, and the picture's read took only each agent's id, so an agent's own message showed
+    no squares (on main too). What a message shows of its agents is now read in the page's
+    own query: two statements a page instead of six, and the squares show (`c407dca3`).
+  - The Oban recipe no longer allows a checkpoint between a streamed answer's start and
+    end, which the code never writes (`fe505f3b`).
+- **Migrations, in order.** `20261112192041` adds `chat_conversations (human_account_id,
+  inserted_at)`. `20261112192414` adds `room_messages.like_count` and `like_version` (0
+  by default) and the `room_posters` table, and fills both from what is saved: a message
+  with likes gets its count, and each name a person posted under in a room becomes a
+  poster row; nothing is removed or rewritten. `20261112192415` adds partial indexes on
+  `room_messages.agent_id` and `via_agent_id`. `20261112192756` adds `session_authorities
+  (updated_at)` and `20261112192800` `error_tracker_occurrences (inserted_at)`.
+  `20261112213021` drops the one-column `chat_conversations` index. Every index is built
+  or dropped concurrently.
+- **For agents.** Room posts and likes past the allowance answer 429 `too_many_requests`
+  with `Retry-After`; `info.version` is 13.0.0; a reply has no text until it is whole; a
+  save's label is asked for a moment after the save; pages and documents have their own
+  budget of 600 a minute per address. The agent guide, the docs, the command list and the
+  feature map say so.
+- Tests: `health_busy_test.exs`, `saved_errors_test.exs`, `page_rate_limit_test.exs`,
+  `read_test.exs`, `reconnect.test.ts`, `rooms/likes_test.exs`, `presence_test.exs`,
+  `rooms/mentions_test.exs` (a room's history), `rooms/in_room_test.exs` (a message's
+  agents), `notes/label_request_test.exs`, `chat/reply_test.exs` (a reply cut off and run
+  again is one reply), `agents/signed_tools_test.exs` (posts and likes past the
+  allowance), and the chat and likes walks.
+- Full check on the Mac at `fe505f3b`, exit 0: 13 script tests, style check clean, credo
+  and Sobelow clean, compile-connected 47, codegen current, 141 TypeScript, 606 browser
+  walks with 5 skipped, 236 Elixir (10 properties), required fixes (main's registry), the
+  command list and the newest-CLI check. WebKit not run.
