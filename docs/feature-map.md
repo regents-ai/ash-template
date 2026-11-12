@@ -58,6 +58,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | A page reads the sign-in once for its first answer and once as it connects, then again at every navigation and press; a sign-in revoked before the page connects is refused as it connects, and one revoked while it is open is refused at the next navigation or press, which changes nothing and leaves the page signed out; a reader who never signed in is shown signed out | `platform/test/ash_template_web/session_checks_test.exs` (a connected shell page; the revocations send no disconnect) |
 | On a network that refuses websockets, Sign in still starts the sign-in bridge, and a signed-in page shows the account with Sign out in its menu. With no live connection, from the start or after it drops, the pairing box, a room's Send box, a new note, a new poll, a new room and the Agent Message form say "Not connected. Trying again…" and their buttons and Enter are disabled (with websockets refused the pairing box is checked on `/pair`, since the pairing window opens only once connected); after a drop, so do a note's Save changes and Cancel, a poll's Vote and End and a room's Save topic; once it is back they return, and Send, the note's edit, the vote and the topic go through | `platform/test/browser/blocked_websocket.spec.ts` |
 | Disconnect stays disconnected; a real return from the wallet signs in | `platform/assets/test/privy_bridge.test.ts` |
+| Sign-in reads Privy's identity token, then its access token, and hands over both in their own headers or nothing, stopping between reads once the attempt is stale; a Privy login failure is reported by its shared name, and nothing is said when the person closed the window (the shared `regent_privy` reader the bridge bundles) | `platform/assets/test/privy_sign_in.test.ts`; the bridge's own call into the reader is not run, since it needs Privy (see Gaps) |
 | Sign out lets go of every wallet Privy holds before Privy signs out, even one that refuses; signed in, a wallet app left from before, or a wallet picked in Privy's connect window that the account doesn't link, is never the account's wallet, and a pick made before the account's wallets have loaded is neither used nor forgotten | `platform/assets/test/privy_bridge.test.ts` (the sign-out order and the two rules, `accountActiveWallet` and `accountWalletSelection`); the effect that applies them on the page is not walked, since the walk's wallet app sets the active wallet itself |
 | After a refused sign-in the page reloads once: a page that has begun to leave never asks the server for a session behind the page replacing it | `platform/assets/test/session_leaving.test.ts` |
 | A wallet send goes out when the wallet answers its account in other letter case, and nothing is sent when it answers for another account | `platform/assets/test/send_step.test.ts` |
@@ -184,6 +185,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Only the site's admins read messages; a person, an agent and a non-admin get none | `platform/test/ash_template/messages/leave_test.exs` |
 | `/admin/messages` shows the team every message, newest first, and is the not-found page for anyone else, signed in or not | `platform/test/ash_template_web/messages_pages_test.exs` |
 | `/agents` (a reading page, topic `agents`) and the `/app` home (topic `app`), both in the live shell, each have the Agent Message button; its dialog's three texts are the CLI, MCP and WebMCP ways to leave a message under the page's topic, each copied exactly as shown and fitting the screen at both widths; Escape closes it; the form shows only to a signed-in person, refuses an empty message when the field is left, and leaves one with its receipt; on `/app`, the dialog pressed open before the page has joined stays open once it has | `platform/test/ash_template_web/messages_pages_test.exs`; `platform/test/browser/agent_message.spec.ts` |
+| `/admin/errors` and `/admin/messages` are for the site's admins only (`RegentPrivy.Owners` reading the session rows): signed out or signed in as anyone else finds the not-found page; an admin's errors page carries its own nonce; an open page acts as the admin until the sign-in ends, and its next press then sends it away | `platform/test/ash_template_web/errors_admin_test.exs` |
 
 ## Claude connector
 
@@ -286,7 +288,9 @@ the agent's own row on the site: when the agent was last seen, added the first t
   names the account. No check yet, as above.
 - Saving a name in a real browser, and the page's Privy bridge itself: the walk
   answers for Privy with a stand-in, so it proves the refusal; the server check
-  proves the save and `public_name.test.ts` the save path.
+  proves the save and `public_name.test.ts` the save path. So the bridge handing
+  Privy's pair to the server through the shared reader is proved by the typecheck
+  and `privy_sign_in.test.ts` (the reader), not by a run of the bridge.
 - Writing, pinning and deleting a note; posting in a room: the walk opens these pages
   but does not use them.
 - Older chats and Older messages on the chat page: the walk's person has fewer than a
