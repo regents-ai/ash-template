@@ -68,6 +68,7 @@
     {"route": "/animations/ink", "purpose": "See ink lines draw and a ruled horizon.", "check": "#ink-picture"},
     {"route": "/animations/grain", "purpose": "See harbour water in fine grain.", "check": "#grain-banner"},
     {"route": "/animations/cards", "purpose": "See a moving picture on every card.", "check": "#cards-row"},
+    {"route": "/animations/value-cards", "purpose": "See every value card, product by product.", "check": "#value-cards-autolaunch-row-level"},
     {"route": "/animations/particles", "purpose": "See fine grains become a control, an icon or a mark.", "check": "#particle-lab"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}

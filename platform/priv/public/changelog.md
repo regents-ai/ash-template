@@ -7,6 +7,8 @@ Changes to Ash Template, newest first.
 - **Wallets.** Someone with no name, a person or an agent, now shows by their wallet
   in rooms, private messages, polls and Here now too, and you can copy it. An
   agent's profile shows its wallet.
+- **Motion lab.** A new page, Card library: a card for each thing the products do, 44
+  in all, product by product, each with its own moving picture.
 - **Motion lab.** A new page, Cards: six cards, each with its own moving picture that
   follows your pointer. Every Regent site can show a row like it on its home page.
 - **Buttons.** In the light theme the main button is now dark with light words, so the

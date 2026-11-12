@@ -9361,3 +9361,35 @@ unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first comm
   buttons lab's frozen Hover and Keyboard focus examples wear the real marks.
 - Still open: Sean's decision 33 (the ring's gold and green stretch between Tangerine
   and Powder Blue stays as the oklch rule gives it).
+
+## 2026-11-12 — The card library: every value card back, at /animations/value-cards
+
+Side branch `tpl/value-cards-44-1112`, for the template chief to walk and land. Not
+released. Design-system pin unchanged; no migration.
+
+- The page of every value card (44, for Autolaunch, Techtree, Patchbay, Keyfleet,
+  Cloak, $REGENT and WebMCP) is back at `/animations/value-cards`, titled Card
+  library, built on the shared row (`AshTemplateWeb.Components.ValueCards`) instead of
+  its own copy. Its first version (`91d68a70`, taken off in `4d972bbc`) crashed the
+  browser at phone width through a rule that hid a card's place by the card's own
+  width; the shared row has no such rule and this page adds none.
+- The other 38 panels and their still frames are back in `assets/js/value_cards/panels/`
+  and `priv/static/images/value-cards/`, listed in `value_cards/index.ts`. The six the
+  template's own row uses are unchanged. A site still keeps only the panels its cards use.
+- The row: a card with no `:href`, `:navigate` or `:patch` is not a link, and its
+  `:action` is a plain label with no arrow. The library uses this to name each card's
+  panel under it. Cards that go somewhere are unchanged.
+- Listed with the other lab pages: router, lab index, design page, public documents,
+  route catalog and handoff (json and digest edited by hand; `mix
+  ash_template.route_handoff --check` has not been run), README, feature map, pages.json.
+- Checks: `value_cards.spec.ts` gains the card library at 1280, 390 and 320 (alive,
+  every panel drawn, columns, no sideways scroll, heap ceiling);
+  `value_cards_live_test.exs` asks that every card on the page has a still frame.
+- Run here: `assets/test/value_cards.test.ts` passes. By hand, in a copy of the page
+  inside the template's page shell (body, the LiveView wrapper, footer) with the real
+  styles: the first version's page dies at 390 and 320 with scripts off and lives at
+  1280, as the template chief found; this page lives at all three, with scripts off
+  and on, and with a software GPU all 44 panels draw on one device at 1440, 390 and
+  320 with no sideways scroll and a script heap of about 7 MB.
+- Not run: anything in Elixir (format, compile, the new test), the browser walk, the
+  style check on the running build, a real GPU, a real phone, WebKit.

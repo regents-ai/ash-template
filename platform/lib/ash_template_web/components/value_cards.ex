@@ -24,7 +24,9 @@ defmodule AshTemplateWeb.Components.ValueCards do
     * `:action` - two words for where the card goes
     * one of `:href`, another site's address, which opens in a new tab;
       `:navigate`, another page of this site; or `:patch`, another page of the
-      same LiveView, such as the app shell
+      same LiveView, such as the app shell. A card with none of the three goes
+      nowhere: it is not a link, and its `:action` is a plain label, as in the
+      card library at `/animations/value-cards`
 
   ## Your own cards
 
@@ -38,8 +40,10 @@ defmodule AshTemplateWeb.Components.ValueCards do
   For each card, write its panel as one file in `panels/` (colours deep, main
   and bright; the size of one glyph cell; the second its still frame shows; and
   the shader body, which colours only through `ramp` and ends with `emit`; the
-  template's six are the examples), list it in `index.ts`, and remove the
-  template's six you do not use, with their stills. Then draw the stills from
+  template's panels are the examples), list it in `index.ts`, and remove the
+  template's panels you do not use, with their stills. The card library at
+  `/animations/value-cards` shows every panel the template has, with the words
+  and tint of its card in `AshTemplateWeb.ValueCardsLive`. Then draw the stills from
   `platform/` on a machine with a GPU: `npm run stills:value-cards`, or
   `npm run stills:value-cards -- <name>` for one. They land in
   `priv/static/images/value-cards/`. Draw a panel's still again whenever it or
@@ -79,13 +83,16 @@ defmodule AshTemplateWeb.Components.ValueCards do
           <.face id={"#{@id}-#{card.id}"} card={card} place={place(number, @count)} away />
         </a>
         <.link
-          :if={!card[:href]}
+          :if={card[:navigate] || card[:patch]}
           navigate={card[:navigate]}
           patch={card[:patch]}
           class="value-cards__face"
         >
           <.face id={"#{@id}-#{card.id}"} card={card} place={place(number, @count)} />
         </.link>
+        <div :if={!(card[:href] || card[:navigate] || card[:patch])} class="value-cards__face">
+          <.face id={"#{@id}-#{card.id}"} card={card} place={place(number, @count)} plain />
+        </div>
       </li>
     </ul>
     """
@@ -95,6 +102,7 @@ defmodule AshTemplateWeb.Components.ValueCards do
   attr :card, :map, required: true
   attr :place, :string, required: true
   attr :away, :boolean, default: false
+  attr :plain, :boolean, default: false
 
   defp face(assigns) do
     ~H"""
@@ -122,6 +130,7 @@ defmodule AshTemplateWeb.Components.ValueCards do
       <p class="value-cards__action">
         {@card.action}<span :if={@away} class="visually-hidden">, opens in a new tab</span>
         <Regent.Icons.icon
+          :if={!@plain}
           name={if @away, do: "arrow-up-right", else: "arrow-right"}
           class="value-cards__arrow"
         />

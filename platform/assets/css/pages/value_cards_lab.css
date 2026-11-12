@@ -1,0 +1,23 @@
+@layer regents-product {
+/* The card library (/animations/value-cards): every value card, product by product.
+   The cards themselves are `components/value_cards.css`; this is only the page's
+   list of products and the heading over each product's row. */
+
+.value-cards-lab__products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  line-height: 1.6;
+}
+
+.value-cards-lab__shelf {
+  display: grid;
+  gap: var(--space-4);
+  scroll-margin-top: var(--space-5);
+}
+
+.value-cards-lab__shelf h2 {
+  font-size: var(--type-headline-size);
+  line-height: var(--type-headline-line);
+}
+}

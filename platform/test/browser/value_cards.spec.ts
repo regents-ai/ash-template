@@ -1,4 +1,4 @@
-import type {Page} from "@playwright/test"
+import type {Locator, Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 
 // The value cards row at /animations/cards (AshTemplateWeb.Components.ValueCards):
@@ -42,8 +42,8 @@ async function sweep(page: Page) {
 const sideways = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
 
-const columns = (page: Page) =>
-  cards(page).evaluateAll(items => new Set(items.map(item => Math.round(item.getBoundingClientRect().left))).size)
+const columns = (row: Locator) =>
+  row.evaluateAll(items => new Set(items.map(item => Math.round(item.getBoundingClientRect().left))).size)
 
 test("every card draws its panel, outlasts the pointer and fits the screen", async ({page, isMobile}) => {
   let crashed = false
@@ -63,7 +63,7 @@ test("every card draws its panel, outlasts the pointer and fits the screen", asy
 
     expect(crashed).toBe(false)
     await expect(cards(page).first()).toHaveAttribute("data-value-card-ready", "true")
-    expect(await columns(page)).toBe(wanted)
+    expect(await columns(cards(page))).toBe(wanted)
     expect(await sideways(page)).toBe(0)
     const cdp = await page.context().newCDPSession(page)
     const {usedSize} = await cdp.send("Runtime.getHeapUsage")
@@ -92,5 +92,42 @@ test.describe("without WebGPU", () => {
       await expect(card).toHaveAttribute("data-value-card-ready", "false")
     await stillsArrive(page)
     expect(await sideways(page)).toBe(0)
+  })
+})
+
+// The card library at /animations/value-cards: every card there is, product by
+// product, in the same row. It is the page whose first version crashed at phone
+// width, and it holds far more panels than a site's row, all on one device. So it
+// is opened at the same widths, every card is scrolled to, and the page must have
+// lived, drawn every panel over its still frame, kept its columns and stayed
+// inside the screen and under the same heap ceiling.
+test.describe("the card library", () => {
+  const library = (page: Page) => page.locator("#value-cards-lab .value-cards > li")
+
+  test("every card draws its panel and the page stays alive", async ({page, isMobile}) => {
+    test.slow()
+    let crashed = false
+    page.on("crash", () => { crashed = true })
+
+    for (const {width, wanted} of isMobile ? [{width: 390, wanted: 1}, {width: 320, wanted: 1}] : [{width: 1280, wanted: 3}]) {
+      await page.setViewportSize({width, height: 800})
+      await page.goto("/animations/value-cards")
+      await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+      await expect(library(page).first()).toBeVisible()
+
+      for (const card of await library(page).all()) {
+        await card.scrollIntoViewIfNeeded()
+        await expect(card).toHaveAttribute("data-value-card-ready", "true")
+        const still = card.locator(".value-cards__still")
+        await expect.poll(() => still.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
+      }
+
+      expect(crashed).toBe(false)
+      expect(await columns(page.locator("#value-cards-keyfleet-row > li"))).toBe(wanted)
+      expect(await sideways(page)).toBe(0)
+      const cdp = await page.context().newCDPSession(page)
+      const {usedSize} = await cdp.send("Runtime.getHeapUsage")
+      expect(usedSize).toBeLessThan(HEAP_CEILING)
+    }
   })
 })
