@@ -30,7 +30,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/parts" => "Shared parts in motion",
     "/animations/value" => "A figure lit where you point",
     "/animations/ask" => "An answer drawn from blocks",
-    "/animations/glow" => "A soft light that follows a status"
+    "/animations/glow" => "A soft light that follows a status",
+    "/animations/ink" => "Ink lines and a ruled horizon"
   }
 
   def page(assigns) do

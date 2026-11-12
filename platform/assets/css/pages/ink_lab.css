@@ -1,0 +1,94 @@
+@layer regents-product {
+/* The ink lab (`/animations/ink`, `AshTemplateWeb.InkLabLive`): one GPU picture
+   (the `InkLines` hook) in two views. The picture paints the page's own ground
+   and ink, so until it has drawn, and wherever it never does, the page shows
+   the same ground with its words: the Lines view keeps its frame and caption,
+   the Hero view its heading. */
+.motion-lab--ink {
+  width: 100%;
+  align-content: start;
+}
+
+.ink-lab {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: 48rem;
+  margin: 0;
+}
+
+.ink-lab[data-ink-view="hero"] {
+  max-inline-size: none;
+}
+
+/* The picture's box: a 3 by 2 frame for Lines, a tall ground for the Hero. */
+.ink-lab__stage {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border: var(--rg-rule-width) solid var(--hairline);
+}
+
+.ink-lab[data-ink-view="hero"] .ink-lab__stage {
+  aspect-ratio: 4 / 5;
+  border: 0;
+}
+
+.ink-lab__stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.ink-lab[data-ink-ready="true"] .ink-lab__stage canvas {
+  opacity: 1;
+}
+
+.ink-lab__caption {
+  color: var(--color-fg-muted);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+/* The Hero's words sit in its sky, above where the horizon settles. */
+.ink-lab__hero {
+  position: absolute;
+  inset: var(--space-5) var(--space-3) auto;
+  display: grid;
+  gap: var(--space-1);
+  justify-items: center;
+  text-align: center;
+}
+
+.motion-lab .ink-lab__title {
+  font-size: var(--type-display-size);
+  line-height: var(--type-display-line);
+}
+
+.ink-lab__line {
+  color: var(--color-fg-muted);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+}
+
+@media (min-width: 48rem) {
+  .ink-lab[data-ink-view="hero"] .ink-lab__stage {
+    aspect-ratio: 2 / 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-lab__stage canvas {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ink-lab__stage canvas {
+    display: none;
+  }
+}
+}

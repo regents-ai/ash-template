@@ -8435,3 +8435,30 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - `platform/test/browser/glow.spec.ts`: at 320 and 390 with the GPU on, each choice moves
   the light, pointer moves and a theme change leave the page alive, drawn, under a 64 MB
   script heap and with no sideways scroll; with less motion the picture never draws.
+
+## 2026-11-12 — Ink lab: ink lines that draw once, and a ruled horizon
+
+- A lab page only, `/animations/ink` (`AshTemplateWeb.InkLabLive`, titled Ink), built to
+  spec 8.2 and REGENTS_MAP, in two views chosen by the shared tabs as real links
+  (`?view=lines`, `?view=hero`), so a view survives a reload and can be shared. No real
+  page changes.
+- Lines: a small scene (horizon, two hills, a sun, a road into the valley, two birds) in
+  hairline strokes about 1.25 device pixels wide, their weight wobbling a little with a
+  fixed noise so nothing crawls. The strokes draw themselves one after another when the
+  view arrives (Anime.js, one staggered animation), then rest; a caption beside it.
+- Hero: a ground ruled in squares, first seen flat from far away through a long lens, then
+  widening once, keeping the width at the point it looks at, into a deep view whose rules
+  meet at the horizon (the spec's dolly trick, eased in log space, 3.4 s, Anime.js). The
+  heading is real text in the sky, kept clear of rules.
+- One vgpu island for both views (`hooks/ink_lines.ts`, `ink_lines/renderer.ts`, WGSL
+  through `canvas_island.ts`, capped at 2 device pixels per CSS pixel); ink is `--color-fg`
+  and ground `--color-bg`, read at start and on every theme change. With less motion, off
+  screen, in forced colours or without WebGPU the picture never draws and the words stand
+  on the plain ground.
+- Listed in the lab's index, the design page, the public documents, the route catalog
+  (`mix ash_template.route_handoff`), `platform/README.md`, `docs/feature-map.md` and
+  `platform/test/browser/pages.json`.
+- `platform/test/browser/ink.spec.ts`: at 320 and 390 with the GPU on, moving between the
+  views, pointer moves and a theme change leave the page alive, drawn, under a 64 MB
+  script heap and with no sideways scroll; the chosen view stays in the link over a
+  reload; with less motion the picture never draws.

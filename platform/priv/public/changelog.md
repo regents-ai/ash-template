@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Motion lab.** A new page, Ink: a small scene whose lines draw themselves once, and
+  a ruled ground that widens from flat to deep under a heading.
 - **Motion lab.** A new page, Glow: three agents, running, waiting and done, and a
   soft light in the chosen one's status colour that arrives, holds and fades.
 - **Motion lab.** A new page, Value: cards with one figure each whose surface lights
