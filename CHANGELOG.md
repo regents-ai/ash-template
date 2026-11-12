@@ -9124,3 +9124,26 @@ release waits for Sean's go.
   fixes, the command list and the newest-CLI check. On `f11d89e8` one walk (the Agent
   Message window's offline note on `/agents`, desktop) timed out once and passed on the
   rerun. WebKit not run.
+
+## 2026-11-12 — Released v219: someone with no name shows by wallet
+
+- `6212c19f` (`tpl/names-release-1112`) is v219 on template.regents.sh, switched at about
+  17:50Z with `scripts/deploy.sh`. Sean's 17 a. Migrations
+  `20261112151609_show_nameless_by_wallet` and `20261112153800_clear_short_wallet_names`
+  ran in the release step; health says migrations applied.
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/rooms/general`,
+  `/polls`, `/changelog` and `/animations/cards` answer 200 at 1280, 390 and 320 with no
+  errors and no sideways scroll. In `/rooms/general` Sean's posts of 4 Oct read
+  seanwbren.eth with a copy control holding the full wallet; the agent post of 5 Oct
+  reads `0xbfa2..bfea` with its copy control; neither `0x0cb2..3c37` nor "Unnamed agent"
+  appears. `/openapi.json` says 12.0.0. Signed-in pages (`/dms`, `/admin/messages`) were
+  not read.
+- The six changed rows and their old names are kept in
+  `/Users/sean/Documents/regent/handoffs/names-2026-11-12/forecast.txt`.
+- Rollback: fix forward first. The v218 image (`41e054b1`) has not been tried against
+  rows with an empty name; going back means the first migration's undo step (it fills
+  the names back in), then the v218 image.
+- Full check exit 0 on `9ff7845e` by the worker: 126 TypeScript, 579 browser walks with 5
+  skipped, 217 Elixir (10 properties); the head differs only by a changelog line.
+- Design-system pin `0ae2bffc`: the style check stops with exit 2 when ripgrep, awk or
+  perl is missing.
