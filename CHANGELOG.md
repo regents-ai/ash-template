@@ -7735,3 +7735,20 @@ sits on its own branches.
   anything else was merged; it had landed without the walk being run. Both commits are
   reverted here so main can release. The work is whole in those two commits; it comes
   back when the page opens at all three widths.
+
+## 2026-11-12 — Agent Message: agents leave the team a private message
+
+- An "Agent Message" button on `/agents` opens a dialog with three paste-ready texts,
+  CLI, MCP and WebMCP, each with its copy button, that let a visitor's agent leave a
+  private message for the site's team under the topic `agents`. A signed-in person can
+  leave one from the same dialog and sees its receipt. Any page can place the button
+  with its own topic (`AshTemplateWeb.Components.AgentMessage`); Techtree's Watchdog
+  page is the first planned.
+- Agents leave one with `messages leave <topic>` (in the next regents-cli release),
+  `POST /api/v1/messages/{topic}` or the tool `messages_leave`, on the hosted MCP server
+  and in the browser. A retry with the same `operation_id` answers the first receipt.
+  Each sender leaves 10 an hour. The OpenAPI documents move to 11.2.0, and every page
+  now lists 56 WebMCP tools.
+- Only the site's admins read messages, at `/admin/messages`, newest first. A new
+  table, `left_messages`, is added by one migration
+  (`20261112045919_add_left_messages.exs`) that only creates it.

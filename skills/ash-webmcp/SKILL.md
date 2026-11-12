@@ -88,6 +88,20 @@ package: check the registry before recommending an install command.
 
 Done: documentation and machine contracts agree with the live product.
 
+### Agent Message
+
+A page that wants word from agents, such as Techtree's Watchdog page, places
+`AshTemplateWeb.Components.AgentMessage.button/1` and `dialog/1` with a `topic` the
+site names (lower-case words joined by single dashes, at most 40). The dialog's three
+paste-ready texts (CLI, hosted MCP, WebMCP) come from `cli/commands.json` and the tool
+manifest, so they cannot name a command that is not there; `texts/1` gives the same
+text to a document. Every surface runs `AshTemplate.Messages`' `agent_leave` (the
+command `messages leave <topic>`, `POST /api/v1/messages/{topic}`, the tool
+`messages_leave`), and a signed-in person leaves one from the dialog's form. Messages
+are private: only the site's admins read them, at `/admin/messages`. The dialog needs
+the page's `conn`, so today it sits on controller-rendered pages; `/agents` uses the
+topic `agents`.
+
 ## 5. The shared head
 
 `Regent.AgentMetadata.head` from `design-system/regent_ui`, once in the root layout.
