@@ -8801,3 +8801,43 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   Its last step, the newest-CLI check, fails only because regents-cli 1.10.25 came out
   today; `tpl/cli-1.10.25-1112` moves the template to it. `mix ash.codegen --check`
   is clean. WebKit not run.
+
+## 2026-11-12 — Every short wallet saved as a person's name goes (branch, not on main)
+
+**This branch's migration rewrites existing rows** in `room_messages`, `room_mutes` and
+`left_messages`; it deletes none. It sits on `tpl/wallets-1112` and ships with it; its
+release waits for Sean's go.
+
+- Decision 11a of 12 November: rebuild Lane A's "names keep their wallet"
+  (`tickets/ui-1029`, `3d1fd390`, never landed) and show Sean the rows before anything
+  is rewritten. `tpl/wallets-1112` already does the rest of Lane A. The one part still
+  missing: Lane A emptied a saved short wallet by its shape, whichever wallet it came
+  from, while `20261112151609_show_nameless_by_wallet` empties it only when it is the
+  short form of the account's wallet today, in the same letters. An account moves wallet
+  at sign-in (`AshTemplate.Accounts.HumanAccount`'s `refresh_verified`), so a person who has since moved kept the
+  old wallet's short form as plain words, with no copy icon.
+- Migration `20261112153800_clear_short_wallet_names` empties every name shaped like a
+  short wallet (`0x`, four, `..`, four, in any letters) that came from a person's account:
+  a room post or mute with no agent, and a message left for the team by a person or by an
+  agent paired with one (`human_account_id` set), whose saved name was its person's. The
+  row then shows by the wallet saved beside it, with its copy icon. An agent's own name
+  stays, and so does a row with no wallet to show instead. It runs after
+  `20261112151609` in the same transaction pattern (`SET LOCAL lock_timeout = '5s'`). Its
+  down changes nothing: the emptied name was the short form of a wallet the row no longer
+  records, and `20261112151609`'s down gives every empty name its ENS name or short wallet
+  back.
+- The public changelog's Wallets line of 12 November already says what a visitor sees.
+- `platform/test/ash_template/short_wallet_names_test.exs` builds the rows, saves old
+  names into them and runs the migration's statements: every case above, and a property
+  over 25 random wallets in mixed letters. Both fail with the migration's statements
+  taken out.
+- Two read-only SQL files for Sean, handed to the release lead and not kept in the
+  repository, to be run on production only with his go: `rows.sql` (which names this migration empties, how many and why, up to 20 a table
+  beside the wallet shown instead) and `sweep-rows.sql` (the same for `20261112151609`,
+  by case). Each ran inside `BEGIN; SET TRANSACTION READ ONLY; … ROLLBACK;` on the local
+  test database, on seeded rows covering every case, and its forecast matched what the
+  two migrations' statements then did to the same rows.
+- Full check on the Mac: 13 script tests, credo clean, 113 TypeScript, 570 browser walks
+  with 5 skipped, 217 Elixir (10 properties), required fixes and the command list pass;
+  `mix ash.codegen --check` is clean. Its last step, the newest-CLI check, fails only
+  because regents-cli 1.10.25 came out today. WebKit not run.
