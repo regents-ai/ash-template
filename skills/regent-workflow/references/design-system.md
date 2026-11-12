@@ -70,6 +70,13 @@ current founder request overrides older rollout notes. Re-read the working tree:
   Circles remain appropriate for avatars and meaningful indicators.
 - Shared selects reserve a **24px right chevron inset** and **48px text padding**;
   forced colors restores native appearance.
+- Every page a person can reach from the site's own links opens inside the site's shell;
+  reading pages (about, docs, changelog, agent guide, privacy, terms) use the shared
+  reading view, never a separate bare layout. Machine reads at the same address
+  (Markdown, JSON) are answers, not pages. The template's reading view
+  (`AshTemplateWeb.Components.Reading`) is the reference: the document's title, then its
+  prose at about 70 characters a line, with the section's list of documents in the
+  shell's side menu (founder, 12 Nov 2026).
 
 ## Primary buttons and card imagery
 

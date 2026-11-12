@@ -179,7 +179,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     url_schemes: ~w(http https mailto),
     url_relative: :deny,
     link_rel: "noopener noreferrer",
-    # On a wide screen a code block or table too wide for its column scrolls
+    # A code block too wide for its column, or a table on a wide screen, scrolls
     # sideways, so a keyboard can focus it to scroll it. A table keeps its roles
     # when a phone shows its rows as cards, and the only spans are the cells'
     # column names (see `label_cells/1`), which a screen reader already has.
@@ -215,8 +215,8 @@ defmodule AshTemplateWeb.PublicDocuments do
   @doc "The agent guide served at `/skill.md`."
   def skill_guide, do: source("skill")
 
-  @doc "The build skills page for people at `/skills`."
-  def skills_page, do: %{title: title("/skills"), markdown: source("skills")}
+  @doc "The build skills page for people at `/skills`, which has no Markdown twin."
+  def skills, do: source("skills")
 
   # The HTML is MDEx-sanitized from the committed public markdown.
   # sobelow_skip ["XSS.Raw"]
@@ -228,7 +228,7 @@ defmodule AshTemplateWeb.PublicDocuments do
     |> Phoenix.HTML.raw()
   end
 
-  # Under 768px each table row stands as a card (legal.css), so every cell starts
+  # Under 768px each table row stands as a card (reading.css), so every cell starts
   # with its column's name, shown only there.
   defp label_cells(%MDEx.Table{nodes: [%MDEx.TableRow{nodes: heads} = head | rows]} = table) do
     labels = Enum.map(heads, &cell_label/1)

@@ -14,15 +14,6 @@ defmodule AshTemplateWeb.PublicPagesController do
   @contract_major contract_major
   @contract_digest "sha256:" <> Base.encode16(:crypto.hash(:sha256, @contract), case: :lower)
 
-  def show(conn, _params) do
-    case PublicDocuments.document(conn.request_path) do
-      nil -> raise AshTemplateWeb.NotFoundError
-      document -> show_document(conn, document)
-    end
-  end
-
-  def skills(conn, _params), do: show_document(conn, PublicDocuments.skills_page())
-
   @doc "A public page as JSON, `{title, markdown}`: the `about` and `docs` tools and commands."
   def document(conn, _params) do
     %{title: title, markdown: markdown} = PublicDocuments.document(conn.assigns.document)
@@ -100,9 +91,6 @@ defmodule AshTemplateWeb.PublicPagesController do
   # XML from fixed page paths; PublicDocuments.sitemap/0 escapes every location.
   def sitemap(conn, _params), do: send_cached(conn, "application/xml", PublicDocuments.sitemap())
 
-  defp show_document(conn, document),
-    do: render(conn, :show, [document: document] ++ PublicDocuments.page(conn.request_path))
-
   # Every public document and agent file is sent here. Each changes with a release
   # or with the server settings it reads at boot (llms.txt and agents.md name the
   # showcase and the Claude connector only while those are switched on), and is the
@@ -134,35 +122,5 @@ defmodule AshTemplateWeb.PublicPagesController do
     |> get_req_header("if-none-match")
     |> Enum.flat_map(&String.split(&1, ","))
     |> Enum.any?(&(String.trim(&1) in ["*", etag, "W/" <> etag]))
-  end
-end
-
-defmodule AshTemplateWeb.PublicPagesHTML do
-  @moduledoc false
-  use AshTemplateWeb, :html
-
-  alias AshTemplateWeb.Components.AgentMessage
-
-  def show(assigns) do
-    ~H"""
-    <div class="rl-root legal-root rg-sheet rg-frame public-document">
-      <AshTemplateWeb.Components.InformationNavigation.header current_path={@conn.request_path} />
-      <main class="legal-page">
-        {AshTemplateWeb.PublicDocuments.html(@document.markdown)}
-        <AgentMessage.button
-          :if={@conn.request_path == "/agents"}
-          id="agents-message-button"
-          dialog="agents-message"
-        />
-      </main>
-    </div>
-    <%!-- Outside the document, so its reading styles stay off the dialog. --%>
-    <AgentMessage.dialog
-      :if={@conn.request_path == "/agents"}
-      id="agents-message"
-      topic="agents"
-      conn={@conn}
-    />
-    """
   end
 end

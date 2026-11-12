@@ -146,10 +146,6 @@ defmodule AshTemplateWeb.Live.Session do
     end)
   end
 
-  # A view drawn inside a plain page (`live_render(@conn, …)`), such as the
-  # Agent Message form, is not mounted at the router and never navigates.
-  defp recheck_navigation(%{router: nil} = socket, _lease), do: socket
-
   defp recheck_navigation(socket, lease) do
     attach_hook(socket, :session_authority_params, :handle_params, fn _params, _uri, socket ->
       recheck(socket, lease, &redirect(&1, to: @public_root))

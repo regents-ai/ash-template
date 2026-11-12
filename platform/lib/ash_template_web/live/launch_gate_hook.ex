@@ -7,10 +7,16 @@ defmodule AshTemplateWeb.Live.LaunchGateHook do
   LiveView itself handles. A LiveComponent's events reach the component without
   passing here; the gate is read from the release's settings, so closing it
   restarts the site and no product page, nor any component in one, mounts again.
+
+  The reading pages (`AshTemplateWeb.Components.Reading.pages/0`) stay open in
+  either state, as `AshTemplateWeb.Plugs.LaunchGate` leaves them, and the Agent
+  Message form on `/agents` with them; while the gate is closed their own events
+  stop here like any other page's.
   """
 
   import Phoenix.LiveView, only: [attach_hook: 4, redirect: 2]
 
+  alias AshTemplateWeb.Components.Reading
   alias AshTemplateWeb.Plugs.LaunchGate
 
   def on_mount(:default, _params, _session, socket) do
@@ -25,7 +31,7 @@ defmodule AshTemplateWeb.Live.LaunchGateHook do
   end
 
   defp gate(socket) do
-    if LaunchGate.app_surfaces_enabled?(),
+    if socket.assigns.live_action in Reading.pages() or LaunchGate.app_surfaces_enabled?(),
       do: {:cont, socket},
       else: {:halt, redirect(socket, to: "/")}
   end
