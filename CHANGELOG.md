@@ -8675,3 +8675,22 @@ not ship; its findings are fixed here.
 - Owed in a skill another lane is editing:
   `skills/onchain-buttons/references/hook-pattern.md` has no row for `sign_unconfirmed`
   or the new line.
+
+## 2026-11-12 — Released v213: the wallet button fixes
+
+- `43727c47` (`tpl/audit-wallet-1112` merged onto main) is v213 on template.regents.sh,
+  switched at about 14:36Z with `scripts/deploy.sh`. No migrations. Rollback: v212
+  (`0f35bfb8`). Wallets are protected: Sean's letter is morning decision 2a of 12 Nov.
+- Full check on `43727c47`, exit 0 on the third run: 113 TypeScript, 570 browser walks
+  with 5 skipped, 208 Elixir (9 properties). The first two runs each failed
+  `motion.spec.ts:166` on desktop (a window flicked closed by its handle) with the Mac at
+  load 66 to 85 from other sessions; the check times a 120 ms flick, passes 12 of 12
+  alone on this commit, and the wallet change does not touch that window. The check
+  wants making steady under load.
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `43727c47`; `/`, `/showcase/wallet`, `/account` and `/app` answer 200 at 1280 and 390
+  with no errors. Pressed on live at both widths: the three wallet buttons are enabled
+  and marked as sign-in controls, a press opens Privy's sign-in window, and no "lost" or
+  "unreported" line shows.
+- Not proven live: any signed-in press, the reconnect recovery and the lost-answer lines
+  (Sean tries the signed-in buttons himself; the walks and script tests cover the rest).
