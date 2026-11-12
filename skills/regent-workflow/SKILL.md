@@ -357,7 +357,8 @@ suite is not a readiness claim.
   regression tests, health checks. Never tests of exact wording, source names, component
   structure or mock choreography. Tests come after the feature works, and test code
   stays out of site code.
-- **One `make check`** (and `mix precommit`): warnings as errors, format, Credo, the
+- **One `make check`** (and `mix precommit`): the design system's style check,
+  warnings as errors, format, Credo, the
   suite, typechecks and the browser walk. No check lives in a scratch script.
 - **The browser walk.** Headless Chromium at 390 and 1280 wide opens every page signed
   out and signed in and walks the paths a person takes on each changed page, on its own

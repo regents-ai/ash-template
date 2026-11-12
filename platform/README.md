@@ -403,7 +403,9 @@ typecheck`, `npm test` and the browser walk (`npm run test:browser`). `make
 check-browser` runs the walk alone. Start either with the site's settings loaded,
 as the walk's server needs them.
 
-`make check` also runs the required-fixes check (see
+`make check` also runs the design system's style check first (`make check-style`:
+each break of a STYLE.md rule in this site's CSS, scripts and templates, by file and
+line), the required-fixes check (see
 [Shared dependencies](#shared-dependencies)) and the command description check
 (see [cli/README.md](../cli/README.md)).
 

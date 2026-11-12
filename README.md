@@ -44,7 +44,8 @@ image; see [Release](platform/README.md#release).
 1. Follow the [platform quickstart](platform/README.md#quickstart) to create the
    local database, load Privy credentials and start the server.
 
-2. Run `gh auth login` once and install `uv`: `make check` fetches the
+2. Run `gh auth login` once and install `uv` and ripgrep (`rg`): `make check` runs
+   the design system's style check with ripgrep, fetches the
    required-fixes list from GitHub, runs regents-cli's command description
    checker with `uv`, and reads the newest regents-cli release from PyPI and the
    newest SIWA library change from elixir-utils.

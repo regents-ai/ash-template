@@ -8818,3 +8818,24 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
   `/showcase/wallet` is dark with light words in the light theme and was pressed in
   light and dark with no page error; `/agents.md` names 1.10.25 and commit `8b3240b6`.
   Not proven live: signed-in pages.
+
+## 2026-11-12 — The world cube's glass is an approved exception; the style check runs in `make check`
+
+- Sean's 4 b of 12 Nov: the world cube lab page (`/animations/cube`) keeps its glass and
+  its glass panes' shadow as the second approved exception to the flat style, after the
+  home page's glass panel. Nothing on any page changes.
+- Design-system pin `c6cbadd72a17995d8a2c96c58ca2e9d023c48368` (was `f957bf1c`). It
+  changes only the style check, its test, `STYLE.md` and the changelog: the flat rule
+  now skips a `box-shadow:` line carrying `style-check: allow shadow — <who and when>`,
+  and both markers need a word after the dash.
+- `platform/assets/css/components/world_cube.css` marks its four lines, each on the
+  property's own line: the three `backdrop-filter` lines (a world's row, the leave
+  button and the smoked glass pane) carry `/* style-check: allow glass — Sean 12 Nov
+  2026 */`, and the pane's `box-shadow:` line carries `/* style-check: allow shadow —
+  Sean 12 Nov 2026 */`. Before them the style check printed those four breaks and no
+  others; it now prints none.
+- `make check-style` runs the design system's style check, the copy
+  `mix regent_ui.assets` makes at `platform/assets/vendor/regent_ui/style-check.sh`,
+  from `platform/`, and `make check` runs it first: a new unmarked break fails the full
+  check by file, line and rule. It needs ripgrep; `README.md`, `AGENTS.md`,
+  `platform/README.md` and `regent-workflow` name it among the check's steps.
