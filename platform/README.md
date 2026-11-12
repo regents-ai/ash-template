@@ -455,11 +455,16 @@ scripts/deploy.sh template-regents-sh
 It refuses a working tree with any change, a commit that is not on
 `origin/main`, and a commit that does not contain the commit already live (the
 live image's label, read with `fly image show`), so two crossing releases never
-take live work back out. Then it runs `fly deploy . --config platform/fly.toml --app <app>
---ha=false --remote-only --image-label <short commit>`, so both folders reach
-the build and the image names the commit it came from. A release briefly adds the
-release command's connections to the shared database, so it takes its turn under the
-lock every site's deploy script takes on this Mac. Staging deploys with
+take live work back out. The whole run holds `/tmp/regent-release-<app>.lock`, so two
+deploys of one app take turns and the second reads the first's image; another site's
+deploy never waits on it, so run the script as it is, never inside `lockf`. It builds
+with `fly deploy . --config platform/fly.toml --app <app> --build-only --push
+--remote-only --image-label <short commit>`, so both folders reach the build and the
+image names the commit it came from, with no shared lock. Then it switches the app to
+`registry.fly.io/<app>:<short commit>` with `--ha=false`: the release command runs and a
+second machine briefly adds its connections to the database every site shares, so the
+switch takes one of two places, `/tmp/regent-shared-db-release.lock` or
+`/tmp/regent-shared-db-release-2.lock`. Staging deploys with
 `fly deploy . --config platform/fly.staging.toml`.
 
 A new staging database is empty and has no copy of the shared

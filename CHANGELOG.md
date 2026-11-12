@@ -7292,3 +7292,19 @@ sits on its own branches.
   at 1280 by 900 and device pixel ratio 2, every island's drawing buffer is its laid-out
   size times the capped ratio (the datascape 1460 by 1026 under the pixel budget, each
   card 177 by 75 for 118 by 50). App log from the release start: no error lines.
+
+## 2026-11-12 — Deploys never wait on another site's
+
+- Sean, 12 Nov: "I do not want to wait, I want it parallelized". `scripts/deploy.sh`
+  ran its whole build and release under `/tmp/regent-shared-db-release.lock`, the one
+  lock every site's deploy took, so each release waited for any other site's. It now
+  holds `/tmp/regent-release-<app>.lock` for its whole run (two deploys of one app take
+  turns; template-regents-sh and proximal each have their own), builds with
+  `--build-only --push` and no shared lock, then switches the app to
+  `registry.fly.io/<app>:<short commit>` under whichever of the two database places,
+  `/tmp/regent-shared-db-release.lock` or `-2.lock`, is free. The live-image check now
+  runs under the app's lock, so two deploys of one app can never cross. The shape is
+  regents.sh's (main 710bbc18), with the template's own refusals kept.
+- Run it as it is, never inside `lockf`: it takes its own locks.
+- README "Deploy" says the same. Proximal's script has the same shape and moves with
+  its next release, as each site's does (control coordination/ash-template.md, 00:37Z).
