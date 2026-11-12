@@ -58,6 +58,7 @@ each kind of movement, and the lab where every version that was tried sits side 
 | `platform/assets/js/hooks/motion/travel.ts` | `MotionTravel`: the shared segmented control's indicator and link tabs' bar |
 | `platform/assets/js/hooks/motion/crumbs.ts` | `MotionCrumbs`: the shared breadcrumb |
 | `platform/assets/js/hooks/motion/chart.ts` | `MotionChart`: the shared line chart's pointer rule, readout and line morph |
+| `platform/assets/js/hooks/theme_switch.ts` | `ThemeSwitch`: the light and dark switch's knob (an Animatable on a spring) and its swarm of blocks (one paused timeline the knob seeks), with `theme.ts` for reading and choosing the theme |
 | `platform/assets/js/motion.ts` | `mountMotion(document)`: presses, panels, headline and cards on every page |
 | `platform/assets/js/motion_lab.ts` | The lab's other versions; lazy-loaded on `/animations` only |
 | `platform/lib/ash_template_web/motion.ex` | `AshTemplateWeb.Motion.standard/1`: the version each part uses |
@@ -98,6 +99,10 @@ Pages take part through markup, never through their own motion code:
   breadcrumb's menus and card grow from their buttons through `motion.ts`.
   `/animations/parts` shows each with sample data and its loading, failed and empty
   states.
+- The theme switch is `AshTemplateWeb.Components.Shell.theme_toggle/1`, a
+  `role="switch"` button with `phx-hook="ThemeSwitch"`: a row of the account menu
+  signed in, the bottom bar signed out, and the public footer. A press, Space or Enter
+  turns it; keys turn it at once. The kit's press squish leaves `[role=switch]` alone.
 - `/animations` is the lab: public once the site opens, linked from nowhere. A site
   changes a standard version by comparing there first, then changing `motion.ex`, the
   kit and every site together.

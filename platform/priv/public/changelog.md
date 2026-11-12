@@ -4,6 +4,11 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Theme.** The light and dark switch is now in your account menu: slide it, press it
+  or use Space or Enter. A small moon and sun made of tiny blocks show which theme is
+  on. Signed out, it sits in the bar at the bottom of the page.
+- **Points.** Points totals, the board and like counts now use the same even-width
+  digits as every other figure, so the columns line up.
 - **Looks.** On a phone the frosted glass's six looks stay on one row; on the
   narrowest screens the row slides sideways.
 - **Ask first.** Deleting a note or a message, unpairing an agent, muting, blocking and

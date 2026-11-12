@@ -69,6 +69,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | A page with one panel gives it the whole width | `platform/test/browser/layout.spec.ts` |
 | The account menu hangs under its button inside the screen at desktop and phone width (320 too), closes on Escape before an open section behind it, and on a phone covers the bottom bar; Manage Account in it leads to the Account page and Pair New Agent opens the pairing window over the page, each closing it, and a closed window hands the keyboard back to the account button; Sign out closes it, so a note that sign out couldn't finish shows under the account button with nothing over it | `platform/test/browser/account_menu.spec.ts` |
 | On a 320px phone the header and the open account menu fit the screen, on the sample account and in a room | `platform/test/browser/account_menu.spec.ts` |
+| The light and dark switch in the account menu turns the page's theme by a press, Space and Enter, says which theme is on, keeps the menu's size either way, and the choice holds over a reload and a live page change; opening the menu moves nothing on the page; fits 320 | `platform/test/browser/theme_switch.spec.ts`; the knob, the blocks' flight, the light model and theme reading in `platform/assets/test/theme*.test.ts`; dragging the knob, the glass drawing, less motion, forced colours and both themes checked by hand in headless Chromium |
 | An address, ENS name or short address opens its full address on a click, tap or Enter and copies it from its icon; its arrow opens Basescan, Etherscan or Blockscout for Robinhood, and on a test network with no explorer (`chain="test"`), or for a long ID such as a pool ID, it copies with no arrow; any other chain raises (the components page shows Base, Ethereum, Robinhood, a test network and a pool ID) | design-system `regent_ui/test/regent/primitives_test.exs`; `/showcase` in `platform/test/browser/pages.json` |
 | Each agent on the Agents page names its own wallet beside its name: the short form opens the full address on a press, its icon copies it, and the row fits on one line, at both widths; the contact line says "Last check-in" | `platform/test/browser/agents.spec.ts`, on the agents `platform/test/browser/support/sign_in.exs` pairs; design-system `regent_ui/test/regent/account_test.exs` (a row without a wallet says "Address unavailable") |
 | An agent's window opens from the Agents page; its address opens the full address on a tap or click, Escape closes it and gives the press back to the address, its icon copies the full address, and on the phone both targets are at least 44 px tall once the window has risen into place | `platform/test/browser/agents.spec.ts`, on the agent `platform/test/browser/support/sign_in.exs` pairs |
@@ -260,8 +261,10 @@ the agent's own row on the site: when the agent was last seen, added the first t
 - Someone else's like arriving on an open room page: the walk likes alone.
 - Someone with no name shows by a short wallet address in rooms and messages; the walk's
   people all have names.
-- Connecting X on Connections, copying a wallet, searching and the theme switch: not
-  walked. The search window opens, and nothing is typed in it.
+- Connecting X on Connections, copying a wallet and searching: not walked. The search
+  window opens, and nothing is typed in it. The theme switch is walked in the account
+  menu only; the bottom bar's and the public footer's are the same component and are
+  not pressed.
 - An agent's signed pairing request: the walk's agent is paired with a code issued
   and taken through the same calls the pairing box and the pairing request make, but no
   agent signs a request, since the walk never leaves the machine.

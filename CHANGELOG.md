@@ -8065,6 +8065,62 @@ sits on its own branches.
   and `/polls` answer 200 at 1280 and 390 in headless Chromium with no page or console
   errors (WebKit not run). The `false` answer is proven by test only.
 
+## 2026-11-12 — Design-system 3de1e43: Points and like counts are shared figures
+
+- `platform/mix.exs` and `platform/mix.lock` pin design-system `3de1e43` (was
+  `2e839171`). `Regent.Points` (the total, each board row and your own row) and the
+  heart's like count in `Regent.Discussion` are now `Regent.Primitives.figure`: they
+  carry `data-count` and equal-width digits. The template's Points page does not mark
+  them with `MotionCount`, so nothing new moves; the digits only line up.
+- `mix regent_ui.assets` copied no changed files. Nothing in the template needed a fix.
+
+## 2026-11-12 — The light and dark switch lives in the account menu
+
+Sean, 8 Nov 2026: a light and dark switch in the account menu, drawn with vgpu, with a
+sun and moon made of tiny blocks, moved with Anime.js. Built on
+`glass-theme-switch-1109` (`f1b2623d`) and brought onto main here.
+
+- `Shell.theme_toggle/1` is a `role="switch"` button named "Light theme", on for
+  light, night on the left and day on the right. A press, Space or Enter turns it; the
+  knob can be dragged and settles on the nearer side. Signed in it is the row of
+  `Regent.Account.menu`'s `theme` slot; signed out it sits in the bottom bar, at its
+  smallest on a phone so the bar keeps one row at 390. The public footer, the showcase
+  pages and the buttons lab keep theirs.
+- The server draws a flat, square still face: a track and a knob holding the moon or
+  the sun as SVG blocks (`@theme_moon` and `@theme_sun` in `Shell`, checked when it
+  compiles). It is a whole working switch with no script past the hook and no canvas.
+  Over it the `ThemeSwitch` hook runs a vgpu canvas island
+  (`assets/js/hooks/theme_switch.ts`, `assets/js/theme_switch/`) that draws a square
+  glass knob, the blocks behind it and a light strip, all inside its own canvas,
+  `aria-hidden`, drawn only when the knob or theme moves, paused off screen, and kept
+  off under reduced motion, Less motion and forced colours. One Anime.js Animatable
+  settles the knob on a spring; one paused timeline flies the blocks, seeked by it.
+- Every value is a design-system token: sizes on `--space-*`, square on `--radius`,
+  the ring on `--rg-ring-*` and `--color-focus`, edges and fills on `--color-*`, and
+  the beam on `--rg-theme-laser-light`/`-dark` (Tangerine and Powder Blue unless the
+  brand sets them). The old branch's rounded track and knob, its drawn drop shadow
+  under the glass, its raw sizes and its hard-coded beam colours in the script are
+  gone.
+- One way to keep the theme: `assets/js/theme.ts` holds what `app.ts` held (the
+  `regent_theme` cookie, the device's setting until a choice, the dark-only home page)
+  and adds `chooseTheme` and `watchTheme`, so every switch follows a change made
+  anywhere. The old click handler on `[data-theme-toggle]` and every use of
+  `Regent.ThemeToggle` in the template are removed; the design-system component stays
+  for the other sites until each takes this switch.
+- `canvas_island.ts` takes an optional `maxDevicePixelRatio`, so a small island can
+  draw past the 1.5 ceiling within the same pixel budget.
+- The motion kit's press squish skips `[role=switch]` instead of the old prism's class.
+- Checks: `platform/test/browser/theme_switch.spec.ts` (press, Space and Enter, the
+  menu keeps its size, a reload and a live page change keep the choice, opening the
+  menu moves nothing, no sideways scroll at 320 on the phone run); unit tests for the
+  theme module, the knob, the blocks' pairing and flight, the light model and the
+  shader's block layout. Style check: 29 breaks before and after.
+
+## 2026-11-12 — Theme switch: block count Credo accepts
+
+- `Shell`'s compile-time check that the moon and the sun have as many blocks counts
+  them with `:binary.matches/2`; Credo's strict run in `make check` refused counting
+  graphemes. No change to what anyone sees.
 ## 2026-11-12 — Released v201: design-system 2e839171, the confirm window and the Parts lab
 
 - `1c18b763` (the design chief's `wt/tpl-bonus-1112`) is v201 on template.regents.sh,
