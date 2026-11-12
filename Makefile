@@ -17,7 +17,7 @@ help:
 check: check-scripts
 # The reports' tests, on fixture repositories (scripts/tests/test_reports.py).
 check-scripts:
-	uv run --no-project python -m unittest discover -s scripts/tests -p 'test_reports.py'
+	uv run --no-project python -B -m unittest discover -s scripts/tests -p 'test_reports.py'
 # /template-only
 check: check-platform check-required-fixes check-cli check-siwa-latest check-contracts
 # mix precommit ends with the TypeScript typecheck, the script tests and the
