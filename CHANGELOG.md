@@ -9361,3 +9361,31 @@ unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first comm
   buttons lab's frozen Hover and Keyboard focus examples wear the real marks.
 - Still open: Sean's decision 33 (the ring's gold and green stretch between Tangerine
   and Powder Blue stays as the oklch rule gives it).
+
+## 2026-11-12 — Cells lab (branch, not on main)
+
+On `wt/tpl-cells-1112`, for the design chief. Design-system pin unchanged (`5fbe2d40`);
+no migration.
+
+- New lab page `/animations/cells`: the shared Cells meter with its moving half drawn on
+  the GPU. Six Regent holders (Treasury, Liquidity, Team, Community, Rewards, Reserve)
+  out of 100M; Count and Stop, Add, Narrow and Wide, a slider and a Remove button for
+  each holder. Everything lives in the page's own state; nothing runs on a server timer.
+- The meter's cells twinkle slowly and now and then one glints. Cells a holder gains
+  come in white-hot and cool into its colour in under half a second; while counting,
+  the total's leading cell stays white-hot. Cells a holder loses break off as sparks
+  that drift up and fade, its cut edge flashes, and the runs after it close up. Every
+  move ends in under a second and a change part-way through starts from what is on
+  screen. A run that only moves along and rounds to a cell more or less does so
+  quietly, with no sparks and no heat.
+- The picture's first frame matches the still meter exactly: at 390 and 1280, light and
+  dark, no cell-edge pixel differs. It reads its colours from the page and follows a
+  theme change. With less motion, forced colours or no WebGPU the still meter stays and
+  nothing is drawn; it stops drawing off screen and in a hidden tab.
+- Frame times on a 2x screen, at 390 and 1280, with the processor at full speed and
+  slowed four times: no missed frames, the GPU's time a frame 0.7 to 1.6 ms (worst 3.6
+  ms while changing, slowed), no long tasks.
+- Sparks stay inside the bar: the meter's drawing surface is exactly the bar, so they
+  cannot rise over the status line as in Sean's film.
+- Checks: `platform/assets/test/cells_meter.test.ts` (columns, rounding, the moving
+  picture) and the walk `platform/test/browser/cells.spec.ts`.

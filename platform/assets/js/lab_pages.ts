@@ -3,6 +3,7 @@
  * Datascape is not here: the homepage uses it too, so app.ts registers it everywhere.
  */
 import {AskBar} from "./hooks/ask_bar"
+import {CellsMeter} from "./hooks/cells_meter"
 import {Crown} from "./hooks/crown"
 import {CodeCube} from "./hooks/code_cube"
 import {FrostedGlass} from "./hooks/frosted_glass"
@@ -20,4 +21,4 @@ import {ValueLight} from "./hooks/value_light"
 import {Wonder} from "./hooks/wonder"
 import {WorldCube} from "./hooks/world_cube"
 
-export const hooks = {AskBar, Crown, CodeCube, FrostedGlass, GlowLight, GrainWater, Harbour, InkLines, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, ParticleField, ParticleLab, SwarmCity, TwinCube, ValueCard, ValueLight, Wonder, WorldCube}
+export const hooks = {AskBar, CellsMeter, Crown, CodeCube, FrostedGlass, GlowLight, GrainWater, Harbour, InkLines, KeyfleetField, KeyfleetKeyCard, KeyfleetReplay, ParticleField, ParticleLab, SwarmCity, TwinCube, ValueCard, ValueLight, Wonder, WorldCube}

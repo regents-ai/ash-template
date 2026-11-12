@@ -69,6 +69,7 @@
     {"route": "/animations/grain", "purpose": "See harbour water in fine grain.", "check": "#grain-banner"},
     {"route": "/animations/cards", "purpose": "See a moving picture on every card.", "check": "#cards-row"},
     {"route": "/animations/particles", "purpose": "See fine grains become a control, an icon or a mark.", "check": "#particle-lab"},
+    {"route": "/animations/cells", "purpose": "See a meter of square cells twinkle, count and let a part go.", "check": "#cells-lab-meter"},
     {"route": "/animations/header-footer", "purpose": "See the header and footer on a short page.", "check": "h1"},
     {"route": "/animations/header-footer/long", "purpose": "See the header and footer on a long page.", "check": "#hf-world-0"}
   ],

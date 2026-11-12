@@ -1,0 +1,81 @@
+@layer regents-product {
+/* The cells lab (`/animations/cells`, `AshTemplateWeb.CellsLabLive`): the Cells
+   meter on its stage, narrow or wide, and the controls under it. The meter itself
+   is the design system's; nothing here touches its cells. */
+.motion-lab--cells {
+  width: 100%;
+  align-content: start;
+}
+
+.cells-lab__stage {
+  min-inline-size: 0;
+}
+
+.cells-lab__stage--narrow {
+  max-inline-size: 20rem;
+}
+
+.cells-lab__controls {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.cells-lab__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.cells-lab__widths {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.cells-lab__widths [aria-pressed="true"] {
+  --rg-local-fill: var(--color-fg);
+  --rg-local-ink: var(--color-bg);
+}
+
+.cells-lab__holders {
+  display: grid;
+  gap: var(--space-1);
+  max-inline-size: 36rem;
+}
+
+/* On a phone each holder takes two lines, its slider the whole second one. */
+.cells-lab__holder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "name figure remove" "size size size";
+  align-items: center;
+  gap: 0 var(--space-2);
+  color: var(--color-fg-muted);
+}
+
+.cells-lab__holder label { grid-area: name; }
+.cells-lab__holder input { grid-area: size; min-block-size: 2.75rem; }
+.cells-lab__holder .rg-figure { grid-area: figure; }
+.cells-lab__holder .rg-button { grid-area: remove; }
+
+@media (min-width: 40rem) {
+  .cells-lab__holder {
+    grid-template-columns: 6rem minmax(0, 1fr) 3rem auto;
+    grid-template-areas: "name size figure remove";
+  }
+}
+
+.cells-lab__holder input {
+  min-inline-size: 0;
+  margin: 0;
+  accent-color: var(--color-fg);
+}
+
+.cells-lab__holder .rg-figure {
+  text-align: end;
+}
+}
+@media (forced-colors: active) {
+  .cells-lab__widths [aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: -4px; }
+}
