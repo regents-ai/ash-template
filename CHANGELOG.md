@@ -7656,3 +7656,17 @@ sits on its own branches.
   jumps back under the first tab on the next one. The motion lab and the Grammar
   pages drop their per-page `phx-mounted` markers, which LiveView 1.2.13 skips for an
   element that arrives in a page update. Ported from regents.sh `f417ca09`.
+
+## 2026-11-12 — Released v194: the visit-log quick wins and three site fixes
+
+- `ce5503d3` (main `a80b2db0`, the merge of `tpl/quick-wins-log-1111` and the merge of
+  `tpl/site-fixes-1111`) is v194 on template.regents.sh, switched at 02:25Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v193 (`04c0d28e`).
+- Full check on `ce5503d3`, exit 0: 41 script tests, 458 browser walks with 5 skipped,
+  186 Elixir (9 properties). One run before it on the same commit failed one browser
+  walk (phone width, signed in, `/polls`: the live connection was not ready within 5 s
+  while the Mac's load was 58); the rerun passed.
+- Live read in headless Chromium (WebKit not run): `/capabilities.json` names
+  `ce5503d3`; `/`, `/about`, `/docs`, `/agents` and `/animations` answer 200 at 1280 and
+  390 with no page errors and no sideways scroll; the motion lab's tab fill carries its
+  own position. Fly logs: no errors after the switch.
