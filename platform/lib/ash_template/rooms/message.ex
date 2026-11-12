@@ -45,7 +45,7 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.{Like, Mute, Removal, Room}
 
   # What every room read and write loads for `public/1`.
-  @shown [:agent, :via_agent, :author_picture]
+  @shown [:backed_agents, :via_agent_name, :author_picture]
   @shown_text "Use letters, numbers and marks you can see."
 
   postgres do
@@ -130,9 +130,14 @@ defmodule AshTemplate.Rooms.Message do
     has_many :likes, Like
   end
 
+  # What a message shows of its agents is read in the same query as the message,
+  # so a page reads no agents of its own, with or without agents' messages on it.
   calculations do
     calculate :author_picture, :map, AuthorPicture
     calculate :liked_by_me, :boolean, expr(exists(likes, liker_id == ^actor(:human_account_id)))
+    calculate :backed_agents, :integer, expr(agent.world_id_agent_count)
+    calculate :agent_wallet, :string, expr(agent.wallet_address)
+    calculate :via_agent_name, :string, expr(via_agent.name)
   end
 
   actions do
@@ -426,8 +431,8 @@ defmodule AshTemplate.Rooms.Message do
       edited_at: message.edited_at,
       like_count: message.like_count,
       like_version: message.like_version,
-      backed_agents: message.agent && message.agent.world_id_agent_count,
-      via_agent_name: message.via_agent && message.via_agent.name,
+      backed_agents: message.backed_agents,
+      via_agent_name: message.via_agent_name,
       author_squares: message.author_picture.squares,
       author_picture: message.author_picture.picture
     }
@@ -448,8 +453,9 @@ defmodule AshTemplate.Rooms.Message do
       author_ens_name: message.author_ens_name,
       author_kind: if(message.agent_id, do: "agent", else: "person"),
       agent_id: message.agent_id,
-      author_human_backed: human_backed?(message),
-      via_agent: message.via_agent && %{id: message.via_agent.id, name: message.via_agent.name},
+      author_human_backed: is_integer(message.backed_agents),
+      via_agent:
+        message.via_agent_id && %{id: message.via_agent_id, name: message.via_agent_name},
       body: message.body,
       like_count: message.like_count,
       inserted_at: message.inserted_at,
@@ -467,7 +473,4 @@ defmodule AshTemplate.Rooms.Message do
       wallet: message.author_wallet,
       ens_name: message.author_ens_name
     }
-
-  defp human_backed?(%{agent: %{world_id_human_id: id}}), do: is_binary(id)
-  defp human_backed?(_message), do: false
 end
