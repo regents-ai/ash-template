@@ -8319,6 +8319,27 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   check changed (glass and shadow inside an isolated artwork root; the blur rule; test
   files in the motion rule).
 
+## 2026-11-12 — Style check: four breaks left, all the world cube's panes
+
+- The button lab's words change by a fade and a 3px rise; the 2px blur is gone, since
+  STYLE.md allows no blur (`platform/assets/css/pages/site_buttons_lab.css`).
+- Design-system pin `c4244b38`: the style check's motion rule no longer reads test files.
+- The style check now prints four breaks, all in
+  `platform/assets/css/components/world_cube.css` (three glass panes and their shadow).
+  Whether the cube is redrawn flat or named as a second approved one-off is Sean's
+  decision, so the check is not part of `make check` yet.
+
+## 2026-11-12 — Released v207: the lab's word swap without blur, design-system c4244b38
+
+- `c3b2ddf7` is v207 on template.regents.sh, switched at about 09:00Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v206 (`fc4f8a6d`).
+- Full check on `c3b2ddf7`, exit 0: 13 script tests, 108 TypeScript, 501 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `c3b2ddf7`; `/`, `/animations`, `/animations/buttons`, `/agents` and `/polls` answer 200
+  at 1280 and 390 with no page or console errors and no sideways scroll. The lab's word
+  swap itself was not watched live.
+
 ## 2026-11-12 — The other live forms say when they are not connected
 
 - A new note and editing a note, a new poll, a poll's Vote and End, a room's topic, a
