@@ -8975,3 +8975,29 @@ hand beforehand. This replaces the unlock step in the entry above;
   that is only a member of the owning role; a second run, and a run on a database
   without the lock or Credits, change nothing. A new test database migrates through
   it unchanged.
+
+## 2026-11-12 — Released v218: the Credits schema is gone from the shared database
+
+- `41e054b1` (main `4af45439` plus `tpl/credits-drop-1112` at `9a67a83f`) is v218 on
+  template.regents.sh, released with `scripts/deploy.sh`; the release step ran migration
+  `20261112130000_remove_credits_schema` at about 17:28Z. Sean's order of 12 Nov and his
+  letters 15 a and 18 a. No page or code change.
+- Before, read at 17:24:03Z in one read-only snapshot: 13 tables, 268 rows (accounts 175,
+  wallets 56, balances 10, purchases 5, transfers 5, agent_permissions 1,
+  deposit_cursors 1, schema_migrations 15, five empty); lock list 62 tables, 9 deletable,
+  10 Credits. The 268 rows are saved outside any repository in
+  `/Users/sean/Documents/regent/artifacts/prod-protected-tables/credits-copy-2026-11-12-final`.
+- After, read at 17:29:59Z: no `regent_credits` schema, tables or functions; no
+  `keep_regent_credits__*` guard views; `revoke_credit_grant` is off
+  `regent_agents.paired_agents`, whose 22 rows and two other triggers are untouched; lock
+  list 52 tables, 8 deletable, 0 Credits, every listed table exists.
+- Confirmed live without Credits beforehand: template, design-system, Techtree, Sentinel,
+  siwa-server, regents.sh v299, Patchbay v370, Keyfleet, Autolaunch v271.
+- Rollback: the site goes back to the v217 image (`f2695d5c`). The removal itself cannot
+  be undone; `down` raises. regents.sh cannot roll back to v298 or earlier, Patchbay not
+  to v369 or earlier.
+- Check: the branch's full check was green on `9a67a83f`, which already held v217; main
+  since added only a changelog record, so it was not run again. Rehearsed on Postgres
+  16.15 and 17.7 with the lock on.
+- Left: Patchbay's own `patchbay_app.credits_help_posts` and `credits_help_answers`
+  (its chief's), and the elixir-utils `credits/` package, deleted next.
