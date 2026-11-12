@@ -11,7 +11,7 @@ on Autolaunch, Patchbay and Keyfleet, with as many agents.
 
 | What the page shows | How it reaches the page |
 | --- | --- |
-| Anything that differs by viewer: balances, positions, drafts, what a person muted, anything a policy narrows | Reread under the viewer's scope when a notice arrives. The notice says "read again" and carries nothing (`forms-and-liveview.md`). This is the default and it does not change. |
+| Anything that differs by viewer: balances, positions, drafts, what a person muted, anything a policy narrows | Reread under the viewer's scope when a notice arrives. The notice says "read again" and carries nothing (`forms-and-liveview.md`). This is the default and it does not change. Read only the one row the notice names and insert it into the stream, never the whole list it sits in: rereading the list made each direct message read two lists of 100 conversations on every tab. |
 | A public figure held in one saved row: an auction's raised total, a post's reply count | The row's own `pub_sub` publication carries the public fields. Pages apply the payload; nobody rereads. |
 | A public figure no saved row carries (a chain's newest block), or one built from many rows (the latest trades across a market) | `AshTemplate.SharedReading`: one producer reads it, every page fetches the one copy. |
 
@@ -255,6 +255,16 @@ bounds, and `.woken.total` counts the wake-ups sent to pages, by kind.
 
 A page does work only for what it shows. It subscribes to the topics of its own
 subject and ignores a message that changes nothing on screen.
+
+Publish on a topic per subject (one room, one poll), and keep a site-wide topic for
+what every listener acts on, such as a poll starting or ending. A page reads only
+for a notice about what it shows: one site-wide polls topic made every vote reread
+100 polls on every polls page.
+
+A page's timer fires once, at the next moment its state changes on its own (a
+poll's close), never as a repeating reread while notices already carry the
+changes. The time it holds changes the page without a read; it reads only what
+first exists at that moment (a closed poll's totals), once.
 
 Any rule of the form "only when it concerns me" or "not again if I just
 updated" has one case to trace before it is cleared: a message about a sibling

@@ -17,6 +17,10 @@ Load `ash-stack` first; its shared rules apply.
 - Durable, retried or scheduled work is Oban ([elixir-stack](../elixir-stack/SKILL.md)).
   One resource reacting to another's action is an Ash signal
   ([ash-signals](../ash-signals/SKILL.md)).
+- A bulk change a person makes with one press sends one notice: run the bulk update
+  without `notify?: true` and have its caller publish one notice on that audience's
+  topic once it succeeds (`AshTemplate.Activity.mark_all_read/1`). One notice per row
+  made every open tab recount once per notification.
 - Idempotency, outbox and locking patterns never apply to a person's wallet send: every
   press reaches the wallet. A wallet panel's signer is Privy's active wallet when the
   server finds it among the signed-in account's linked wallets, checked against the
