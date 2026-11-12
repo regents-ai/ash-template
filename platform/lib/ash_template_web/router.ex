@@ -85,7 +85,8 @@ defmodule AshTemplateWeb.Router do
               instructions:
                 "Ash Template, where people keep notes, talk in rooms and pair the agents that work for them. " <>
                   "Every call is signed by an agent's own wallet, or carries the token of an app a person connected " <>
-                  "to their account here. An agent reads a room with rooms_messages and posts with rooms_post; " <>
+                  "to their account here. An agent reads a room with rooms_messages and posts with rooms_post, " <>
+                  "and leaves a private message for the site's team with messages_leave; " <>
                   "regents mcp signs each call for it. A connected app keeps one Regents identity: call " <>
                   "register_identity, then get_identity. If it is not paired, call pair_identity with the one-use " <>
                   "code your person gives you, your name and your harness, and call check_in so your person sees " <>
@@ -112,6 +113,8 @@ defmodule AshTemplateWeb.Router do
   pipeline :public_documents do
     plug :accepts, ["html"]
     plug :fetch_session
+    # Read only, for the Agent Message form a page may hold (`AgentMessage`).
+    plug :enforce_session_authority
     plug AshTemplateWeb.Plugs.Theme
     plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
     plug :protect_from_forgery
@@ -140,6 +143,13 @@ defmodule AshTemplateWeb.Router do
     }
 
     plug AshTemplateWeb.ErrorsAdmin
+  end
+
+  # The team's own pages after the admin check above: the site's page frame.
+  pipeline :admin_page do
+    plug :fetch_live_flash
+    plug AshTemplateWeb.Plugs.Theme
+    plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
   end
 
   defp enforce_session_authority(conn, _opts),
@@ -326,6 +336,7 @@ defmodule AshTemplateWeb.Router do
     post "/rooms/:room/messages/:id/like", AshTemplateWeb.RoomsController, :like
     delete "/rooms/:room/messages/:id/like", AshTemplateWeb.RoomsController, :unlike
     post "/rooms/:room/messages/:id/report", AshTemplateWeb.RoomsController, :report
+    post "/messages/:topic", AshTemplateWeb.MessagesController, :leave
     post "/polls", AshTemplateWeb.PollsController, :create
     post "/polls/:poll/vote", AshTemplateWeb.PollsController, :vote
     post "/polls/:poll/end", AshTemplateWeb.PollsController, :end_poll
@@ -428,6 +439,16 @@ defmodule AshTemplateWeb.Router do
       on_mount: [AshTemplateWeb.ErrorsAdmin],
       csp_nonce_assign_key: %{script: :csp_nonce, style: :csp_nonce}
     )
+  end
+
+  scope "/admin", AshTemplateWeb do
+    pipe_through [:errors_admin, :admin_page]
+
+    live_session :admin,
+      session: {Session, :render_context, []},
+      on_mount: [AshTemplateWeb.ErrorsAdmin] do
+      live "/messages", AdminMessagesLive, :index
+    end
   end
 
   # The motion lab: public once the site opens, unless the showcase is off.

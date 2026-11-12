@@ -512,6 +512,31 @@
       "lifecycle": "immediate"
     },
     {
+      "operation": "leaveMessage",
+      "effect": "write",
+      "authority": "signed_agent",
+      "conditions": [],
+      "person_page": null,
+      "may": "Leave private messages for this site's team",
+      "switch": "app_surfaces",
+      "cli_pending": true,
+      "surfaces": {
+        "webmcp": true,
+        "hosted_mcp": true,
+        "http": true,
+        "cli": true
+      },
+      "auth_modes": [
+        "siwa_request",
+        "site_oauth"
+      ],
+      "fresh_proof": true,
+      "actor": "agent",
+      "context": "none",
+      "retry": "operation_key",
+      "lifecycle": "immediate"
+    },
+    {
       "operation": "pairAgent",
       "effect": "write",
       "authority": "signed_agent",
