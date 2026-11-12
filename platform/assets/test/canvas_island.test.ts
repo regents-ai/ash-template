@@ -1,8 +1,12 @@
 // R-20261019-failed-start-lets-go: an island whose GPU never started kept every
 // listener it had added, including whatever steered the picture, until the page
 // left (found by the design lane in Keyfleet, 19 Oct).
+// R-20261111-island-sizes-from-layout: an island that started inside a panel still
+// growing in (the regents.sh home page's glass) drew at the panel's shrunken size
+// and stayed blurred once it had grown, as a transform never reaches a
+// ResizeObserver (found by the product tiles lane, 11 Nov).
 import {afterEach, beforeEach, expect, it, vi} from "vitest"
-import {createCanvasIsland, type IslandRenderer} from "../js/canvas_island"
+import {createCanvasIsland, type IslandRenderer, type LoadRenderer} from "../js/canvas_island"
 
 const drawing: IslandRenderer = {
   resize() {},
@@ -36,12 +40,15 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals())
 
-// An island on screen in a showing tab, its first frame handed out at once. It
+// An island on screen in a showing tab, its first frame handed out at once. Its
+// canvas is laid out at 300 by 200 inside a panel shrunk to 30% on screen. It
 // answers how often what steered the picture was let go, and the root's flag.
-async function runIsland(load: () => Promise<IslandRenderer>) {
+async function runIsland(load: LoadRenderer<IslandRenderer>) {
   let released = 0
   const root = {dataset: {} as Record<string, string>, querySelector: () => ({
-    getBoundingClientRect: () => ({width: 300, height: 200}),
+    clientWidth: 300,
+    clientHeight: 200,
+    getBoundingClientRect: () => ({width: 90, height: 60}),
   })} as unknown as HTMLElement
 
   createCanvasIsland(root, {
@@ -70,6 +77,15 @@ it("lets go of everything it watches with, once, when its GPU does not start", a
   expect(released).toBe(1)
   expect(disconnected).toBe(2)
   expect(visibilityListeners).toBe(0)
+})
+
+it("draws at the canvas's laid-out size while a panel round it is shrunk", async () => {
+  let size: readonly [number, number] | undefined
+  await runIsland(async (_canvas, measured) => {
+    size = measured
+    return drawing
+  })
+  expect(size).toEqual([300, 200])
 })
 
 it("keeps hold of them while the picture draws", async () => {

@@ -7265,3 +7265,16 @@ sits on its own branches.
   so the sign-in service's locked read ran on the site's pool. App log from the release
   start: one health check failed while the new version started, then passed; no error
   lines.
+
+## 2026-11-12 — A picture inside a panel that grows in is drawn sharp
+
+- The canvas island (platform/assets/js/canvas_island.ts) sized its drawing buffer from
+  getBoundingClientRect, which includes any transform round it. An island that started
+  inside a panel still scaling in (regents.sh's home glass starts at scale .3) drew at
+  the shrunken size and stayed blurred once the panel had grown, because a transform never
+  reaches a ResizeObserver. It now measures the canvas's laid-out box (clientWidth and
+  clientHeight), the same size the ResizeObserver reports.
+- New test in platform/assets/test/canvas_island.test.ts: a canvas laid out at 300 by 200
+  inside a panel shown at 30% draws at 300 by 200. It fails on the old measure.
+- Found and built by the regents.sh product tiles lane (11 Nov), which needs it for the
+  home page's product tiles; shared, so it ships here first.
