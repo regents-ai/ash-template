@@ -143,11 +143,13 @@ compare() {
 # A live homepage's tabs, glass panel and copyright as visitors see them: each
 # tab's words and link, then every other link in the panel, then the copyright that
 # stands outside the panel, each on its own line, the page's markup dropped and a
-# link within the site written with the site's address.
+# link within the site written with the site's address. The panel runs from the
+# element whose id is home-glass to the end of the tabs (the home__foot nav), which
+# close it on both sites, whatever tags each uses.
 home_words() {
   curl -fsS --max-time 20 "$1/" | ORIGIN="$1" perl -0777 -ne '
-    my $glass = m{<section[^>]*id="home-glass".*?</section>}s ? $& : "";
-    my $copyright = m{<p class="home__copyright">.*?</p>}s ? $& : "";
+    my $glass = m{<\w+\s[^>]*id="home-glass".*?<nav[^>]*class="home__foot".*?</nav>}s ? $& : "";
+    my $copyright = m{<(\w+) class="home__copyright">.*?</\1>}s ? $& : "";
     my $nav = $glass =~ s{<nav[^>]*class="home__foot".*?</nav>}{}s ? $& : "";
     my @links = $glass =~ m{<a [^>]*?href="([^"]+)"}g;
     $_ = $nav . join("", map { "<a href=\"$_\">" } @links) . $copyright;

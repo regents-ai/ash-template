@@ -411,11 +411,17 @@ class Drift(Fixture):
     def test_regents_adds_the_homepage_files_and_the_live_homepages(self):
         picture = self.PICTURE
         self.serve_site("regents", "Regents", "b" * 40)
-        page = ('<section class="home__glass" id="home-glass"><!-- tabs -->'
+        # The two sites write the panel and the copyright with different tags.
+        page = ('<footer class="home__copyright">© Regents</footer>'
+                '<div class="home__glass" id="home-glass"><div><!-- tabs -->'
+                '<p>Words outside a link are not compared</p><a href="https://x.com/regents">X</a></div>'
                 '<nav class="home__foot"><a href="/autolaunch">Autolaunch</a></nav>'
-                '<p>Words outside a link are not compared</p><a href="https://x.com/regents">X</a>'
-                '</section><p class="home__copyright">© Regents</p>')
-        self.live_pages(page, page.replace("Autolaunch</a>", 'Autolaunch</a><a href="/techtree">Techtree</a>'))
+                '</div><a href="/after-the-panel">Not compared</a>')
+        regents = (page.replace("Autolaunch</a>", 'Autolaunch</a><a href="/techtree">Techtree</a>')
+                   .replace('<footer class="home__copyright">© Regents</footer>', '<p class="home__copyright">© Regents</p>')
+                   .replace('<div class="home__glass"', '<section class="home__glass"')
+                   .replace("</nav></div>", "</nav></section>"))
+        self.live_pages(page, regents)
 
         out = self.report(self.root, "drift.sh", "regents")
 
@@ -429,11 +435,13 @@ class Drift(Fixture):
         self.assertIn(" link https://x.com/regents", diff)
         self.assertIn(" © Regents", diff)
         self.assertNotIn("Words outside", diff)
+        self.assertNotIn("after-the-panel", diff)
 
     def test_a_picture_is_compared_by_its_blob_and_a_page_without_the_panel_is_missing(self):
         picture = self.PICTURE
         self.serve_site("regents", "Regents", "b" * 40, change={picture: "another picture\n"})
-        self.live_pages('<section id="home-glass"><a href="/">Home</a></section>', "<main>No panel</main>")
+        self.live_pages('<div id="home-glass"><nav class="home__foot"><a href="/">Home</a></nav></div>',
+                        "<main>No panel</main>")
 
         out = self.report(self.root, "drift.sh", "regents")
 
