@@ -9365,9 +9365,9 @@ unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first comm
 ## 2026-11-12 — Database load review, combined (branch, not on main)
 
 Branch `tpl/stampede-all-1112`, from `origin/main` (`c9c83a90`): the database load
-review's three lanes merged in order with plain merge commits, then the chief's four
-corrections (`/tmp/stampede-1112/build-integrate.md`). Not released. This entry replaces
-the chat lane's.
+review's four lanes merged with plain merge commits, main (v223) merged in before the
+fourth, and the chief's corrections (`/tmp/stampede-1112/build-integrate.md`). Not
+released. This entry replaces the chat and polls lanes' own.
 
 - **Measurements and connections** (`tpl/stampede-platform-1112`, `91bb7ed7`). Measurements
   that tell the site's limits apart: the wait for a connection and query time by table,
@@ -9400,10 +9400,29 @@ the chat lane's.
   save's transaction, so a save never waits on the daily-question lock, and a save's own
   answer usually shows the label from before it. `AshTemplate.Chat.ActorPersister` is now
   `AshTemplate.Actors.Persister`.
-- **Merging** (`20e53d4d`, `93914fd4`, `9ab23441`). Three text conflicts: the security
-  skill keeps both lanes' new rules; the ash-backend integrations reference makes the two
-  listener rules one paragraph; this file kept both sides. Design-system pin `5fbe2d40`
-  unchanged. The compile-connected limit is 47, one more for the rooms lane's new resource.
+- **Polls and lists** (`tpl/stampede-polls-1112`, `742697ad`). A poll keeps `votes_cast`
+  and `tally` on its own row, added to by `:count_vote` in the vote's transaction, which
+  also checks the poll is still open (`Poll.StillOpen`), so a vote racing a close is
+  counted before it or refused whole; each choice's count is handed out only once the
+  poll has closed. A vote is told on the poll's own topic (`AshTemplate.Polls.topic/1`)
+  as a count; the site-wide topic hears only a start or an end, so other polls' counts
+  in the sidebar move only then. The polls page reads its list and the shown poll once,
+  applies notices without reading, keeps one timer for the next close and reads a
+  closed poll's totals once at its close. Notes, direct messages and notifications are
+  always read a page at a time, and their pages and the admins' messages keep only what
+  they show; a new direct message rereads only its conversation; notes show 50 at a
+  time (Older notes) and the notes API moves to `POST /api/v1/notes/list`, since a
+  signed request takes no query string. Mark all read marks every notification in one
+  statement and sends one notice. Skills: topics per subject and one-row rereads
+  (ash-frontend), one notice a press, never optional keyset paging and the tally kept
+  on the row (ash-backend), a page's own clock (elixir-stack).
+- **Merging** (`20e53d4d`, `93914fd4`, `9ab23441`, main `e65eebc5`, polls `deb2ebf4`). Text
+  conflicts only: the security skill keeps both lanes' new rules; the ash-backend
+  integrations reference makes the two listener rules one paragraph; the public-figures
+  reference keeps the platform and polls rules; the docs and the command list carry one
+  13.0.0 entry with the notes list and the 429s; this file keeps both sides and this one
+  entry. Design-system pin `5fbe2d40` unchanged. The compile-connected limit is 47,
+  measured: one more than main for the rooms lane's new resource.
 - **Corrections.**
   - A retried or cut-off reply job started a second reply, and because an unfinished
     reply counted as an answer, the job never ran again and the failure line never came:
@@ -9423,26 +9442,40 @@ the chat lane's.
     own query: two statements a page instead of six, and the squares show (`c407dca3`).
   - The Oban recipe no longer allows a checkpoint between a streamed answer's start and
     end, which the code never writes (`fe505f3b`).
-- **Migrations, in order.** `20261112192041` adds `chat_conversations (human_account_id,
-  inserted_at)`. `20261112192414` adds `room_messages.like_count` and `like_version` (0
-  by default) and the `room_posters` table, and fills both from what is saved: a message
-  with likes gets its count, and each name a person posted under in a room becomes a
-  poster row; nothing is removed or rewritten. `20261112192415` adds partial indexes on
+  - Direct messages get an index on recipient and time, which the agent feed's catch-up
+    reads by; its plan scans it (`2e4ba78d`).
+  - A room's messages were already paged (Ash requires paging once a read has it) but took
+    up to 250 a page; paging is now stated as required and a page is 50 at most, which
+    every caller already asked for (`8d2a3509`).
+  - The hosted `rooms_post` answered a post past the allowance with the field's words. The
+    post action now names it `too_many_requests` with `retry_after`, which the tool
+    answers in the rooms API's words and the HTTP route as its 429 (`e5bbff48`).
+- **Migrations, in order.** `20261112191329` adds `polls.votes_cast` and `tally` with
+  defaults and fills each poll with votes from the votes it has; votes are untouched
+  (the polls lane rehearsed it on a local copy, rolled it back and ran it again).
+  `20261112192041` adds `chat_conversations (human_account_id, inserted_at)`.
+  `20261112192414` adds `room_messages.like_count` and `like_version` (0 by default) and
+  the `room_posters` table, and fills both from what is saved: a message with likes gets
+  its count, and each name a person posted under in a room becomes a poster row; nothing
+  is removed or rewritten. `20261112192415` adds partial indexes on
   `room_messages.agent_id` and `via_agent_id`. `20261112192756` adds `session_authorities
   (updated_at)` and `20261112192800` `error_tracker_occurrences (inserted_at)`.
-  `20261112213021` drops the one-column `chat_conversations` index. Every index is built
-  or dropped concurrently.
-- **For agents.** Room posts and likes past the allowance answer 429 `too_many_requests`
-  with `Retry-After`; `info.version` is 13.0.0; a reply has no text until it is whole; a
-  save's label is asked for a moment after the save; pages and documents have their own
-  budget of 600 a minute per address. The agent guide, the docs, the command list and the
-  feature map say so.
+  `20261112213021` drops the one-column `chat_conversations` index. `20261112220112`
+  adds `dm_messages (to_id, inserted_at)`. Every index is built or dropped concurrently.
+- **For agents.** `info.version` is 13.0.0. The notes list is `POST /api/v1/notes/list`,
+  50 a page with `after`, and `GET /api/v1/notes` is gone (regents-cli 1.10.25 still
+  calls it). Room posts and likes past the allowance answer 429 `too_many_requests` with
+  `Retry-After`, and the hosted `rooms_post` `too_many_requests` with `retry_after`. A
+  reply has no text until it is whole; a save's label is asked for a moment after the
+  save; pages and documents have their own budget of 600 a minute per address. The agent
+  guide, the docs, the command list and the feature map say so.
 - Tests: `health_busy_test.exs`, `saved_errors_test.exs`, `page_rate_limit_test.exs`,
   `read_test.exs`, `reconnect.test.ts`, `rooms/likes_test.exs`, `presence_test.exs`,
   `rooms/mentions_test.exs` (a room's history), `rooms/in_room_test.exs` (a message's
   agents), `notes/label_request_test.exs`, `chat/reply_test.exs` (a reply cut off and run
   again is one reply), `agents/signed_tools_test.exs` (posts and likes past the
-  allowance), and the chat and likes walks.
+  allowance; the notes list's pages), `mcp_agent_test.exs` (a post past the allowance),
+  `polls/vote_notices_test.exs`, and the chat, likes, polls, notes and messages walks.
 - Full check on the Mac at `fe505f3b`, exit 0: 13 script tests, style check clean, credo
   and Sobelow clean, compile-connected 47, codegen current, 141 TypeScript, 606 browser
   walks with 5 skipped, 236 Elixir (10 properties), required fixes (main's registry), the
