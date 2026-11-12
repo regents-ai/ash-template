@@ -255,6 +255,34 @@ cache.
 | `/.well-known/oauth-protected-resource`, `/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server`, `/oauth/register`, `/oauth/token`, `/oauth/revoke` | GET, POST | The connector's sign-in discovery, app registration, tokens and revocation (`RegentOAuth.Protocol`). Registration (30 a minute) and token and revocation requests (120 a minute) are limited by address and never logged. 404 while the connector is off. |
 | `/oauth/authorize`, `/oauth/connections`, `/oauth/connections/revoke` | GET, POST | The consent page under the signed-in browser session, and Connected apps, where a person sees and disconnects their apps (`RegentOAuth.Consent`). They refuse while the connector is off. Opening consent is limited to 30 requests a minute by address, as registering is, since it may read a connecting app's published identity and record the app; allowing or cancelling has 120. |
 
+## Visit lines
+
+Every request, press, Ash action, job and outside call writes one visit line in
+production's JSON (`AshTemplateWeb.VisitLog`, `docs/logging-replay-plan.md`), naming
+accounts and agents only by a one-way code. The `step` lines are the product-event
+vocabulary every site shares: `sign_in_opened`, `signed_in`, `pairing_code_shown`,
+`agent_paired`, and one value name for each site (`VisitLog.values/0`). The template's
+is `note_created`, written by `AshTemplateWeb.VisitLog.Events` from Ash's telemetry for
+the notes' `:note_committed` signal, which Ash emits only after a create has committed.
+A site maps its own value action's signal to its name in that list. Calls to `/api` and
+to `/mcp` (surface `mcp`) are `tool.call` lines, forwarded ones included.
+
+Weekly sign-in cohorts by source, activation (a first value step), D1 and D7 return and
+the median value steps of an activated account come from Sentinel's day export of the
+visit lines alone (`GET /api/ops/logs/:app/day`), never the database:
+
+```sh
+mix visit_log.cohorts day-export.ndjson
+cat day-exports/*.ndjson | mix visit_log.cohorts
+```
+
+It reads the export's rows, one JSON object a line. Sentinel keeps the visit lines 30
+days, but an export holds the last 24 hours, so D1 needs two exports saved a day apart
+and D7 eight, joined into one input; a row in two overlapping exports counts once. A
+30-day export would need no joining (`docs/logging-replay-plan.md`, "Sentinel's part").
+A sign-in is tied to its source by the visit id alone (`docs/logging-replay-plan.md`,
+"First touch" and "Cohort report").
+
 ## Showcase
 
 The showcase pages (`/showcase`, its catalog and preview, `/showcase/privy`, the
@@ -460,6 +488,16 @@ message the next time it loads.
 `/app/bin/migrate-shared` applies those shared changes, and only those. Every
 site carries the same command; after the founder's go, the site whose release
 first carries a shared change runs it from the new image before deploying.
+
+`/app/bin/top-queries [count]` (locally `mix db.top_queries [count]`) prints the
+statements on this site's schema that took the most database time, 20 unless a
+count from 1 to 100 is given, from `pg_stat_statements`, with calls, total and mean
+milliseconds and rows (`AshTemplate.TopQueries`). It counts a statement as the
+site's when it names a table in the site's schema, `"ash_template_app".` or
+`ash_template_app.`, never a bare mention of the name. It only reads: when the
+extension is missing it says so and stops, and it never creates it. On a
+deployment it connects on the serving login, so the login's statement timeout
+bounds it and it sees that login's own statements.
 
 The image is built from `Dockerfile` with the repository root as its context:
 the app is in `platform/`, and when it compiles it reads the build skills it

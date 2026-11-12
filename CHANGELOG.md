@@ -7573,3 +7573,68 @@ sits on its own branches.
   390 with no page errors, and the spelled-out addresses 404. Fly logs: one health
   check failed at 01:52:47Z while the new machine started and passed at 01:52:53Z; no
   errors from the site after that.
+
+## 2026-11-11 — Product events, the cohort report and top queries in the visit log
+
+- The visit log's `step` names are now the product-event vocabulary every site shares:
+  the journey's four (`sign_in_opened`, `signed_in`, `pairing_code_shown`,
+  `agent_paired`) and one value name for each site (`AshTemplateWeb.VisitLog.values/0`:
+  `note_created`, `contribution_made`, `fix_succeeded`, `eval_completed`,
+  `launch_confirmed`). They live only in the visit lines (Sean's 3a): no table, no
+  cookie beyond `_visit`, nothing stored. `docs/logging-replay-plan.md`, "Product
+  events", lists who writes each one.
+- The template's value step, `note_created`, comes from a new `:note_committed` signal
+  (`AshTemplate.Notes.Signals`) that `Notes.Note` `:create` emits in the
+  `:after_transaction` phase, so Ash emits it only for a create that committed and
+  answered `{:ok, record}`. Nothing listens to it: `AshTemplateWeb.VisitLog.Events`
+  writes the line from Ash's `[:ash, :signal, :emitted]` telemetry in the action's own
+  process, so it carries that request's or page's visit and surface. The line names the
+  note's account, whether the person or their agent acted, and says which in its
+  outcome. Like `VisitLog.step/2`, `VisitLog.value/2` takes only a name in `values/0`
+  and rescues nothing. `skills/ash-signals/SKILL.md` lists the signal and how each site
+  maps its own value action.
+- `signed_in` is written only when the sign-in exchange binds the browser to an account
+  (`x-ash-session-changed: true`); a refresh of the account it already has writes none.
+  The account is the next line of the same visit, joined by the visit id alone
+  (`docs/logging-replay-plan.md`, "First touch").
+- Calls to the hosted MCP server at `/mcp` have their own surface, `mcp`, and every
+  `/api` and `/mcp` call, forwarded ones included (`RegentAgents.HTTP` under
+  `/api/agents/v1`), is a `tool.call` line by its whole path (`VisitLog.call?/1`), with
+  the MCP caller as its actor.
+- `mix visit_log.cohorts [PATH]` prints weekly sign-in cohorts by source, activation (a
+  first value step), D1 and D7 return and the median value steps of an activated
+  account, from Sentinel's day export alone (`GET /api/ops/logs/:app/day`), from a file
+  or standard input (`AshTemplateWeb.VisitLog.Cohorts`). Sentinel is the only place
+  that keeps the visit lines past a few hours (30 days), but an export holds the last
+  24 hours, so D7 needs eight exports saved a day apart and joined; a row in two
+  overlapping exports counts once. A 30-day export would need no joining
+  (`docs/logging-replay-plan.md`, "Cohort report" and "Sentinel's part").
+- `mix db.top_queries [count]`, and `/app/bin/top-queries [count]` on a deployment,
+  print the statements on the site's own schema that took the most database time, from
+  `pg_stat_statements`, 20 unless a count from 1 to 100 is given
+  (`AshTemplate.TopQueries`, `AshTemplate.Release.top_queries/1`). It only reads: it
+  stops when the extension is missing and never creates it, and on a deployment it
+  connects on the serving login with one connection. `AshTemplate.TextTable` writes
+  both reports' tables.
+- `platform/README.md` ("Visit lines" and the release commands) describes both reports.
+  The checks for the value step, the cohort report, the top-queries report and the
+  sign-in step are added once the change has worked live; `docs/feature-map.md` lists
+  them as Gaps.
+- Ported from `claude/quick-wins-measure-log-1029` (`73c7dd54`), not from
+  `claude/quick-wins-measure-1029`, which stored measurements in a table.
+- Checked after main `8ae64187` was merged in and after the review's fixes: `mix
+  format`, a compile with warnings as errors, and the tests for the changed files'
+  areas, 76 of 76 (6 properties): the visit log and visit lines, notes, the agent-note
+  Points award, the hosted MCP server and the Claude connector, sign-in, the body limit
+  and the feature map. The cohort report was run by hand on made-up day-export rows:
+  two accounts from two sources, a value step by an agent, a warning line, a sign-in no
+  later line names, the same rows twice from overlapping exports (the same report), an
+  empty input, and a line in another shape (it stops with the error). The full check
+  comes next.
+
+## 2026-11-12 — The visit-log quick wins land on main
+
+- `tpl/quick-wins-log-1111` (the entry above, "Product events, the cohort report and
+  top queries in the visit log") is merged onto main after v193. Only the changelog and
+  the feature map's Gaps met main's own changes; both keep every entry, and the Gaps
+  list now holds the ops quick wins' three checks and the visit log's four.
