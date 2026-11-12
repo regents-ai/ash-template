@@ -97,76 +97,45 @@ for their logins. During a release a site's old and new machines are both connec
 its connections briefly double. On 27 October 2026 four releases swapped at once and
 every site lost the database for 20 seconds.
 
-Only the template serves through the database's pooler. The pooler runs two processes,
-and each keeps at least 5 real connections open for every login it serves, so a pooled
-site holds 10 at rest where it holds 5 to 7 on the direct address, and the five sites do
-not fit in 97 (read 30 October 2026: 10 real connections for the template's 7 clients,
-two sets of five; `control/rollouts/2026-10-29-db-pooler.md` in the workspace). Fly's
-dashboard changes only the pool mode, so this holds until the founder changes the
-database plan.
+Serve through the database's pooler (`pgbouncer.dzx6qo6xqzvojpv5.flympg.net`) nowhere;
+Proximal is the one site still on it, and moves to the direct address next.
+It keeps at least 5 real connections open for each login on every one of its processes
+that holds one of that login's clients (Min Pool Size, fixed in Fly's dashboard), so a
+pooled site costs 5 for every pooler process its clients reach, not its pool size. The
+template served through it until November 2026: 10 real connections for its 7 clients
+on 30 October (two processes), then 15 on 11 November (three), where the same seven
+clients on the direct address cost 7 (`control/rollouts/2026-10-29-db-pooler.md` in
+the workspace). This holds until the founder changes the database plan.
 
-- **Sites: the direct address.** A site's serving connection uses
-  `direct.dzx6qo6xqzvojpv5.flympg.net` with a pool of 5 (never leave `pool_size` unset:
-  Ecto's default is 10), names itself with `application_name`, and sends the three limits
-  that keep one site from stalling the others as startup settings: `statement_timeout`
-  15000, `lock_timeout` 5000 and `idle_in_transaction_session_timeout` 15000 (Techtree's
-  `database_config.ex`). Its migrations run with the release login, which has none of
-  these limits.
-
-The template's pooled connection is set up this way:
-
-- **Serving: the pooler.** `DATABASE_POOLED_URL` names
-  `pgbouncer.dzx6qo6xqzvojpv5.flympg.net`, the cluster's PgBouncer in transaction mode.
-  The pooler's certificate comes from the cluster's own authority
-  (`postgres-operator-ca`, valid to July 2036) and names the cluster's internal address,
-  not the public one. The template keeps it in
-  `platform/priv/certs/regents-platform-prod-pooler-ca.pem`, and the pooler clause of
-  `AshTemplate.DatabaseConfig.fly_mpg_options/1` verifies the peer against that one
-  authority and accepts only
-  `pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc`. Never turn the check
-  off. If Fly replaces the authority, pooler connections fail until the new certificate
-  is copied in.
-  The pooler has run in transaction mode since 29 October 2026 16:27Z. It opens at most
-  45 real connections (plus a reserve of 10) for up to 200 client connections, so a
-  release's second machine waits a moment for a connection instead of taking one from
-  the database. It closes a client connection idle for 60 seconds and replaces its own
-  database connections every 300 seconds; it has no other limit on how long a client
-  connection lasts. It keeps at least 5 database connections open for each login it
-  serves (Min Pool Size) on each of its two processes. Fly's dashboard lets the founder
-  change only the pool mode; these limits are fixed.
-  `AshTemplate.DatabaseConfig.serving/1` sets a pool of 5,
-  `prepare: :unnamed` (named prepared statements do not survive a transaction pooler),
-  and `max_lifetime: 540_000..600_000`: when Fly's proxy in front of the database
+- **Serving: the direct address.** The serving connection uses
+  `direct.dzx6qo6xqzvojpv5.flympg.net` (from `DATABASE_POOLED_URL` in the template,
+  Keyfleet, Patchbay, Regents and Techtree; Autolaunch reads `DATABASE_URL`; Proximal's
+  `DATABASE_POOLED_URL` still names the pooler)
+  with a pool of 5 (never leave `pool_size` unset: Ecto's default is 10), names itself
+  with `application_name`, and sends the three limits that keep one site from stalling
+  the others as startup settings: `statement_timeout` 15000, `lock_timeout` 5000 and
+  `idle_in_transaction_session_timeout` 15000 (`AshTemplate.DatabaseConfig.serving/1`).
+  It replaces each connection after nine to ten minutes
+  (`max_lifetime: 540_000..600_000`): when Fly's proxy in front of the database
   restarts it closes any connection still open ten minutes later, and Fly's guide for
-  Ecto recycles every nine to ten minutes to stay ahead of it
+  Ecto recycles on this schedule to stay ahead of it
   (docs.fly.io/mpg/client-configuration); the range spreads the reconnects so they
-  never land at once. The pool's idle pings (every second) keep each connection well
-  inside the pooler's 60-second idle limit. The health check reads through the same
-  pool (`AshTemplate.Health.database_ready?/0`).
-- **Limits live on the serving login.** The pooler closes any connection whose startup
-  settings name more than `application_name` (template v115 failed on
-  `statement_timeout`), so the template's connection sends only its name. The limits
-  the sites send as startup settings are set once on the serving login itself, by
-  that login on the direct address (an ordinary login may set its own defaults), and
-  apply to every connection the pooler opens for it:
-  `ALTER ROLE CURRENT_USER SET statement_timeout = '15s'`, then `lock_timeout = '5s'`
-  and `idle_in_transaction_session_timeout = '15s'`. It is a production database
-  change: it needs the founder's go naming it.
-- **Listening: one direct connection per machine.** The pooler drops `LISTEN`, so the
-  template opens one `Postgrex.Notifications` connection on `direct.<cluster>` with the
-  serving login (`AshTemplate.DatabaseConfig.notifications_config!/2`), and
-  `RegentAgents.Listener` and any listener of its own
-  share it under one `:rest_for_one` supervisor (`AshTemplate.SharedChanges`). Never
-  open a second listening connection, and never listen through the pooled repository.
-- **Release commands: the direct address.** Migrations take session locks, so they run
-  with the release login on `DATABASE_DIRECT_URL`, `direct.dzx6qo6xqzvojpv5.flympg.net`.
-- **Everything else works through the pooler.** Oban's notices go over Erlang
-  (`Oban.Notifiers.PG`); a lock held for one transaction
-  (`pg_advisory_xact_lock`) is fine, and so is sending a notice through the repository
-  (`pg_notify`, as `RegentAgents` does): only listening needs the
-  direct connection. A session lock (`pg_advisory_lock`), `SET` outside
-  a transaction or a temporary table kept between transactions is not: use the
-  transaction form.
+  never land at once. Everything a site runs shares this one pool: pages, Oban, the
+  health check (`AshTemplate.Health.database_ready?/0`) and the shared libraries,
+  which take the site's repository from its configuration and start none of their
+  own (the Claude connector's sign-in, `RegentOAuth`, since November 2026). The
+  template holds six connections at rest: five serving and one listening.
+- **Listening: one connection per machine.** The template opens one
+  `Postgrex.Notifications` connection with the serving login, outside the pool
+  (`AshTemplate.DatabaseConfig.notifications_config!/2`), and `RegentAgents.Listener`
+  and any listener of its own share it under one `:rest_for_one` supervisor
+  (`AshTemplate.SharedChanges`). Never open a second listening connection, and never
+  listen through the repository.
+- **Release commands: the release login.** Migrations run with the release login on
+  `DATABASE_DIRECT_URL`, which has none of the serving limits, two connections for as
+  long as the command runs (`Ecto.Migrator.with_repo/2`).
+- Oban's notices go over Erlang (`Oban.Notifiers.PG`), so Oban needs no listening
+  connection of its own.
 - `keyfleet-code` runs the Twigpine git node (Rust, sqlx), not an Ash site. It holds at
   most 10 connections (since its v5, c9a59ea) on the direct address: it takes session
   advisory locks and keeps sqlx's named statement cache.

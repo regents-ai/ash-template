@@ -7210,3 +7210,38 @@ sits on its own branches.
   /privacy, /terms and /healthz 200; /%70rivacy and /%61pp 404 (500 before); no page
   errors. App log from the release start: one health check failed while the new version
   started, then passed; no error lines.
+
+## 2026-11-11 — The site serves on the database's direct address
+
+- The running site connects to the shared database's direct address,
+  `direct.dzx6qo6xqzvojpv5.flympg.net`, as every site but Proximal does, and no longer
+  through its pooler (Sean, 4a). The pooler keeps at least five real connections open for each login
+  on every one of its processes that holds one of the login's clients, so the site's
+  seven clients held 10 real connections on 30 October and 15 on 11 November.
+- The Claude connector's sign-in keeps its rows through the site's own repository and
+  pool, and the site no longer starts a second repository with two connections for it
+  (Sean, 6a). Every elixir-utils package moves to a12f71b6 (on library main through
+  e2f8332b): the SIWA pin dd2d3c6e with that change (ff5051e), and nothing else. The
+  provider refuses a repository that puts no schema on its queries, and its own queries
+  are not logged; the OAuth library's own queries (Boruta's) are logged like the site's at
+  the debug level, which production does not print. A machine holds six
+  connections: five `ash-template-web` and one `ash-template-listen`.
+- Production admits only the direct address for `DATABASE_POOLED_URL`; the secret keeps
+  its name. The serving connection sends the limits the sites send as startup settings:
+  `statement_timeout` 15000, `lock_timeout` 5000 and
+  `idle_in_transaction_session_timeout` 15000, and no longer turns off named prepared
+  statements. The listening connection uses the same login and address.
+- Removed the pooler's certificate (`platform/priv/certs/regents-platform-prod-pooler-ca.pem`)
+  and the code that checked it.
+- The connector test counts the sign-in's queries from the site repository's own
+  query events.
+- README and the ash-data skill: nobody serves through the pooler, and why; the
+  connector's sign-in shares the pool; the variable each site reads for its serving
+  login; the `template-runtime` login keeps the limits stored on it on 27 October.
+- Review fixes (12 Nov): the docs no longer say every site is off the pooler (Proximal is
+  still on it), and `database_config_test.exs` shows production refusing any other host,
+  port, query option or a trailing dot, for both the serving and the release login.
+- Releasing it needs the secret changed with it: `DATABASE_POOLED_URL` keeps its login
+  and moves to the direct host, staged so it takes effect with the new image. A plain
+  deploy, or a plain secret change, stops the site at boot (each version admits only its
+  own host). Rollback is the previous image and the old secret, together.

@@ -193,7 +193,7 @@ production.
 | `PORT` | No | HTTP port. Defaults to `4000`. |
 | `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the site's admins (`config :ash_template, :admins`). Only they can open the saved errors at `/admin/errors` or remove an agent's picture; anyone else gets the not-found page. |
 | `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. There is no default; each role admits only its own database hosts. |
-| `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's pooler, `pgbouncer.dzx6qo6xqzvojpv5.flympg.net`. |
+| `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's direct address, `direct.dzx6qo6xqzvojpv5.flympg.net`. |
 | `DATABASE_DIRECT_URL` | Only when migrating | Direct PostgreSQL connection string used by the migration release command. |
 | `ASH_TEMPLATE_DATABASE_TARGET_MODE` | Only when migrating | Must be `production` for the production migration command. |
 | `ASH_TEMPLATE_DATABASE_CLUSTER_ID` | For a remote target | Must match the approved cluster. Set neither this nor the name to stay on the loopback database. |
@@ -207,15 +207,17 @@ uses one for the other's work.
 
 - **The serving login** (`DATABASE_POOLED_URL`) is what the running site uses. It
   is a Fly Managed Postgres user with the `writer` role: it reads and changes
-  records, but cannot create, change or drop tables. It serves through the
-  database's pooler in transaction mode, which many sites share for a few real
-  connections, so a release's second machine adds no load on the database's own
-  limit. It holds five connections through the pooler, shows up as
-  `ash-template-web`, and gives up on a statement after 15 seconds, a lock wait
-  after 5 seconds and an idle open transaction after 15 seconds
-  (`AshTemplate.DatabaseConfig`). The same login also holds one connection on the
-  direct address, `ash-template-listen`, on which agent changes from
-  every site arrive (`AshTemplate.SharedChanges`): the pooler drops listening.
+  records, but cannot create, change or drop tables. It connects on the
+  database's direct address and holds five connections,
+  shared by pages, jobs and the Claude connector's sign-in. They show up as
+  `ash-template-web`, and give up on a
+  statement after 15 seconds, a lock wait after 5 seconds and an idle open
+  transaction after 15 seconds
+  (`AshTemplate.DatabaseConfig`). The same login holds one more connection,
+  `ash-template-listen`, on which agent changes from every site arrive
+  (`AshTemplate.SharedChanges`). The database's pooler is not used: it keeps at
+  least five real connections open for each login on each of its processes, more
+  than the site's own pool.
 - **The release login** (`DATABASE_DIRECT_URL`) is a user with the `schema_admin`
   role, used only while a release goes out: the release command runs the
   migrations with it and then exits. The running site never reads it.
@@ -455,8 +457,9 @@ It refuses a working tree with any change, a commit that is not on
 live image's label, read with `fly image show`), so two crossing releases never
 take live work back out. Then it runs `fly deploy . --config platform/fly.toml --app <app>
 --ha=false --remote-only --image-label <short commit>`, so both folders reach
-the build and the image names the commit it came from. The site serves through the
-shared database's pooler, so its release needs no turn on the database. Staging deploys with
+the build and the image names the commit it came from. A release briefly adds the
+release command's connections to the shared database, so it takes its turn under the
+lock every site's deploy script takes on this Mac. Staging deploys with
 `fly deploy . --config platform/fly.staging.toml`.
 
 A new staging database is empty and has no copy of the shared

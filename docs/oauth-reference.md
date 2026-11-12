@@ -25,8 +25,8 @@ change to Account's existing social-connections page.
 `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED=true` turns on everything at once, read at
 boot by `config/runtime.exs`; anything else leaves all of it off:
 
-- the sign-in above (`AshTemplate.OAuth`, `RegentOAuth.enabled?/0`), with
-  `RegentOAuth.Repo` supervised;
+- the sign-in above (`AshTemplate.OAuth`, `RegentOAuth.enabled?/0`), whose rows go
+  through the site's `AshTemplate.Repo` and its pool of five;
 - the identity tools at `/mcp` and a Bearer token there (below);
 - Claude in the pairing box and the signed pair request
   (`config :regent_agents, hosted_pairing: [:claude]`; empty while off);

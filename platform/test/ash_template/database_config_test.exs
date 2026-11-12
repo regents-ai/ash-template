@@ -3,22 +3,27 @@ defmodule AshTemplate.DatabaseConfigTest do
 
   alias AshTemplate.DatabaseConfig
 
-  @serving "postgres://serving:secret@pgbouncer.dzx6qo6xqzvojpv5.flympg.net/regents_prod"
+  @serving "postgres://serving:secret@direct.dzx6qo6xqzvojpv5.flympg.net/regents_prod"
   @env %{"ASH_TEMPLATE_DEPLOYMENT_ROLE" => "production", "DATABASE_POOLED_URL" => @serving}
 
   defp getenv(name), do: Map.get(@env, name)
 
-  test "production serves through the pooler and listens on the direct address with the same login" do
+  test "production serves and listens on the direct address with the same login" do
     serving = DatabaseConfig.runtime_config!(:prod, &getenv/1)
     listening = DatabaseConfig.notifications_config!(:prod, &getenv/1)
 
     assert serving[:url] == @serving
-    assert serving[:prepare] == :unnamed
     assert serving[:pool_size] == 5
     assert serving[:max_lifetime] == 540_000..600_000
-    assert serving[:ssl][:server_name_indication] == ~c"pgbouncer.dzx6qo6xqzvojpv5.flympg.net"
-    # The pooler closes a connection that sends any other startup setting (v115).
-    assert serving[:parameters] == [application_name: "ash-template-web"]
+    assert serving[:ssl][:verify] == :verify_peer
+    assert serving[:ssl][:server_name_indication] == ~c"direct.dzx6qo6xqzvojpv5.flympg.net"
+
+    assert serving[:parameters] == [
+             application_name: "ash-template-web",
+             statement_timeout: "15000",
+             lock_timeout: "5000",
+             idle_in_transaction_session_timeout: "15000"
+           ]
 
     # Postgrex.Notifications reads connection keys, never a URL.
     refute Keyword.has_key?(listening, :url)
@@ -27,27 +32,39 @@ defmodule AshTemplate.DatabaseConfigTest do
     assert listening[:username] == "serving"
     assert listening[:password] == "secret"
     assert listening[:port] == 5432
+    assert listening[:ssl][:verify] == :verify_peer
     assert listening[:ssl][:server_name_indication] == ~c"direct.dzx6qo6xqzvojpv5.flympg.net"
     assert listening[:auto_reconnect]
     assert listening[:parameters] == [application_name: "ash-template-listen"]
 
-    for pooled_only <- [:prepare, :pool_size, :max_lifetime],
-        do: refute(Keyword.has_key?(listening, pooled_only))
+    for pool_only <- [:pool_size, :max_lifetime],
+        do: refute(Keyword.has_key?(listening, pool_only))
   end
 
-  test "the pooler is trusted through the cluster's own authority under its internal name only" do
-    ssl = DatabaseConfig.runtime_config!(:prod, &getenv/1)[:ssl]
-    accepts = ssl[:customize_hostname_check][:match_fun]
+  test "production admits the direct address alone, for serving and for release commands" do
+    release_target = %{
+      "ASH_TEMPLATE_DEPLOYMENT_ROLE" => "production",
+      "ASH_TEMPLATE_DATABASE_TARGET_MODE" => "production",
+      "ASH_TEMPLATE_DATABASE_CLUSTER_ID" => "dzx6qo6xqzvojpv5",
+      "ASH_TEMPLATE_DATABASE_CLUSTER_NAME" => "regents-platform-prod"
+    }
 
-    assert ssl[:verify] == :verify_peer
-    assert [{:Certificate, authority, :not_encrypted}] =
-             ssl[:cacertfile] |> File.read!() |> :public_key.pem_decode()
+    for url <- [
+          "postgres://serving:secret@other.flympg.net/regents_prod",
+          "postgres://serving:secret@direct.dzx6qo6xqzvojpv5.flympg.net:6543/regents_prod",
+          "postgres://serving:secret@direct.dzx6qo6xqzvojpv5.flympg.net/regents_prod?ssl=false",
+          "postgres://serving:secret@direct.dzx6qo6xqzvojpv5.flympg.net./regents_prod"
+        ] do
+      serving = Map.put(release_target, "DATABASE_POOLED_URL", url)
+      release = Map.put(release_target, "DATABASE_DIRECT_URL", url)
 
-    assert :public_key.pkix_is_self_signed(authority)
+      assert_raise RuntimeError, ~r/approved target/, fn ->
+        DatabaseConfig.runtime_config!(:prod, &Map.get(serving, &1))
+      end
 
-    reference = {:dns_id, ~c"pgbouncer.dzx6qo6xqzvojpv5.flympg.net"}
-    assert accepts.(reference, {:dNSName, ~c"pgdb-dzx6qo6xqzvojpv5-pgbouncer.pgdb-dzx6qo6xqzvojpv5.svc"})
-    refute accepts.(reference, {:dNSName, ~c"pgbouncer.dzx6qo6xqzvojpv5.flympg.net"})
-    refute accepts.(reference, {:dNSName, ~c"pgdb-other-pgbouncer.pgdb-other.svc"})
+      assert_raise RuntimeError, ~r/approved target/, fn ->
+        DatabaseConfig.release_config!(&Map.get(release, &1))
+      end
+    end
   end
 end
