@@ -3,15 +3,16 @@
 
 .polls-new {
   display: block;
-  padding: 0.5rem 0.75rem;
-  color: var(--color-fg);
+  padding: var(--space-1);
+  color: var(--ash-ink);
 }
 
 /* Each poll in the sidebar: its question, then whether it is open and how many
    voted, one line each, so every row keeps the same height. */
-.polls-list__item {
+/* The sidebar's own row rule lays its links out in a line; these two stack. */
+#shell-sidebar .polls-list__item {
   display: grid;
-  gap: 0.1rem;
+  gap: 0;
   min-width: 0;
 }
 
@@ -23,30 +24,35 @@
 }
 
 .polls-list__state {
-  font-size: 0.8rem;
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
 }
 
 .polls-poll {
   display: grid;
   justify-items: start;
-  gap: 1rem;
+  gap: var(--space-2);
 }
 
 .polls-poll__meta {
   margin: 0;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
   overflow-wrap: anywhere;
 }
 
+/* The choices, then the button a step further down. */
 .polls-vote {
   display: grid;
   justify-items: start;
-  gap: 1rem;
+  gap: var(--space-2);
   width: 100%;
 }
 
 .polls-vote fieldset {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-1);
   width: 100%;
   margin: 0;
   padding: 0;
@@ -56,7 +62,7 @@
 .polls-choices,
 .polls-counts {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-1);
   width: 100%;
   margin: 0;
   padding: 0;
@@ -66,34 +72,52 @@
 .polls-choice {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-border);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--ash-raised);
   overflow-wrap: anywhere;
 }
 
+/* A choice to vote for is a control, so it has a control's edge. */
 label.polls-choice {
+  border-color: var(--ash-quiet);
   cursor: pointer;
 }
 
 .polls-choice[data-mine="true"],
 .polls-count[data-mine="true"] {
-  border-color: var(--color-fg);
+  border-color: var(--ash-ink);
 }
 
-/* A closed poll's counts: each choice's share drawn behind it. */
+/* A closed poll's counts: along the foot of each choice a raised track, filled
+   in ink as far as its share of the votes. The words stay on the ground. */
 .polls-count {
+  position: relative;
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-border);
-  background: linear-gradient(
-    to right,
-    var(--color-surface) var(--share),
-    transparent var(--share)
-  );
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  border: 1px solid var(--ash-raised);
   overflow-wrap: anywhere;
+}
+
+.polls-count::before,
+.polls-count::after {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  block-size: 4px;
+  content: "";
+}
+
+.polls-count::before {
+  inset-inline-end: 0;
+  background: var(--ash-raised);
+}
+
+.polls-count::after {
+  inline-size: var(--share);
+  background: var(--ash-ink);
 }
 
 .polls-count__votes {
@@ -103,4 +127,23 @@ label.polls-choice {
 
 .polls-poll__mine {
   margin: 0;
+}
+
+/* On touch screens the new poll link and each choice are at least 44px tall. */
+@media (hover: none), (pointer: coarse) {
+  .polls-new,
+  label.polls-choice {
+    min-block-size: 2.75rem;
+  }
+
+  .polls-new {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (forced-colors: active) {
+  .polls-count::after {
+    background: CanvasText;
+  }
 }

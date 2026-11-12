@@ -77,9 +77,9 @@ defmodule AshTemplateWeb.HomeLive do
       <div id="home-stage" class="home__stage" phx-update="ignore">
         <canvas id="home-canvas" data-datascape-canvas aria-hidden="true"></canvas>
       </div>
-      <p class="home__copyright">© 2026 Regents Labs</p>
+      <footer class="home__copyright">© 2026 Regents Labs</footer>
 
-      <section
+      <div
         id="home-glass"
         class="home__glass"
         data-datascape-glass
@@ -110,7 +110,7 @@ defmodule AshTemplateWeb.HomeLive do
         </main>
 
         <.products />
-      </section>
+      </div>
 
       <AgentTools.dialog id="home-agent-tools" />
     </div>

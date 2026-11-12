@@ -7687,3 +7687,34 @@ sits on its own branches.
   `platform/priv/static/images/value-cards/`. The still is the picture until the panel has
   drawn, and stays for a visitor without WebGPU or who asked for less motion.
 - `skills/vgpu-island/references/value-cards.md` says how a site takes a card.
+
+## 2026-11-12 — Forms and routes: one scale, five colours, forms checked on leaving a field
+
+- Every page draws from the design system's spacing scale (0 to 64px in 8px steps) and
+  type scale (40/48, 24/32, 18/26, 16/24, 14/20, 13/18, one weight), and from five
+  colours in `platform/assets/css/tokens/root.css`: ground, raised, ink, quiet and
+  signal, each at 4.5:1 or more for text where it meets another. No gradients on the
+  forms and app pages; the homepage's ringed Start button, the two cube pictures and
+  the showcase labs keep their own art. The second accent, the products' tones, the
+  derived panel and line colours and the colour mixes are gone (`--ash-accent`,
+  `--ash-accent-warm`, `--ash-line-strong`, `--ash-panel-strong`), and a chosen sidebar
+  row has one mark.
+- Forms: one column, labels above the field, each field checked when the visitor leaves
+  it (`phx-debounce="blur"`), never while typing. Error words say what to do
+  (`AshTemplateWeb.FormErrors`: "Fill this in.", "Add at least 2.", "Use 120 characters
+  or fewer."; chat's empty message: "Write a message."), and each field's error line
+  keeps its room, so nothing below it moves. The room, direct-message and chat boxes say
+  why a message cannot be sent beside Send; a vote with no choice says "Choose one, then
+  vote." under the choices and clears once one is picked. Field order and every request
+  are unchanged.
+- Field states (focus, disabled, loading, error) come from design-system `a2431378`
+  (branch `ds/field-states-1112`), which also gives the account card the page's
+  spacing and drops the profile form's "The name people see for you." line (its tip
+  moves beside the Profile heading), so every site's Account page moves with that pin.
+- Phones and tablets: every press is at least 44px on touch screens, and the desktop
+  keeps its sizes (its small links pass WCAG 2.5.8 by their spacing). The account tabs
+  wrap instead of scrolling sideways. The docs tables stand as cards under 768px, keeping
+  their table roles and naming each cell's column (`PublicDocuments.html/1`, with
+  `AshTemplate.Markdown.parse!/2`); code wraps below 1024px; the grammar showcase's
+  layers table stacks the same way.
+- Accessibility: the homepage's header and copyright now sit in page landmarks.

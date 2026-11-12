@@ -12,7 +12,7 @@
       color-mix(in oklab, var(--color-bg) 78%, var(--palette-charcoal)),
       color-mix(in oklab, var(--palette-charcoal) 45%, #000)
     );
-    --kf-field-light: var(--ash-accent-warm);
+    --kf-field-light: var(--ash-signal);
     --kf-ease: cubic-bezier(.23, 1, .32, 1);
     min-block-size: 100vh;
     padding-block-end: var(--space-8);
@@ -75,7 +75,7 @@
     max-inline-size: 13ch; font-size: clamp(2.5rem, 1.1rem + 4.6vw, 5.25rem);
     line-height: 1.02; letter-spacing: -.035em; text-wrap: balance; overflow-wrap: anywhere;
   }
-  .kf-hero__accent { color: var(--ash-accent-warm); }
+  .kf-hero__accent { color: var(--ash-signal); }
 
   /* The next Key's card. */
   .kf-buy { grid-area: buy; display: grid; gap: var(--space-4); justify-self: center; inline-size: min(100%, 22rem); }
@@ -198,7 +198,7 @@
   }
   .kf-charter__box p::before {
     content: ""; display: block; inline-size: .625rem; block-size: .625rem; margin-block-end: var(--space-3);
-    background: var(--ash-accent-warm);
+    background: var(--ash-signal);
   }
 
   /* The Regents Club: its hex field beside what it is and when it opens. */

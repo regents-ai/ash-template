@@ -146,15 +146,27 @@ defmodule AshTemplateWeb.PublicDocuments do
   # each last changed.
   @released_at DateTime.utc_now() |> DateTime.truncate(:second)
   @sanitize [
-    tags: ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote table thead tbody tr th td),
+    tags:
+      ~w(h1 h2 h3 p ul ol li strong em a code pre br blockquote table thead tbody tr th td span),
     tag_attributes: %{"a" => ["href"]},
     generic_attributes: [],
     url_schemes: ~w(http https mailto),
     url_relative: :deny,
     link_rel: "noopener noreferrer",
-    # A code block or table too wide for the screen scrolls sideways, so a
-    # keyboard can focus it to scroll it.
-    set_tag_attribute_values: %{"pre" => %{"tabindex" => "0"}, "table" => %{"tabindex" => "0"}}
+    # On a wide screen a code block or table too wide for its column scrolls
+    # sideways, so a keyboard can focus it to scroll it. A table keeps its roles
+    # when a phone shows its rows as cards, and the only spans are the cells'
+    # column names (see `label_cells/1`), which a screen reader already has.
+    set_tag_attribute_values: %{
+      "pre" => %{"tabindex" => "0"},
+      "table" => %{"tabindex" => "0", "role" => "table"},
+      "thead" => %{"role" => "rowgroup"},
+      "tbody" => %{"role" => "rowgroup"},
+      "tr" => %{"role" => "row"},
+      "th" => %{"role" => "columnheader"},
+      "td" => %{"role" => "cell"},
+      "span" => %{"aria-hidden" => "true"}
+    }
   ]
 
   def url(path), do: AshTemplateWeb.Endpoint.url() <> path
@@ -184,8 +196,31 @@ defmodule AshTemplateWeb.PublicDocuments do
   # sobelow_skip ["XSS.Raw"]
   def html(markdown) do
     markdown
+    |> AshTemplate.Markdown.parse!(extension: [table: true])
+    |> MDEx.traverse_and_update(&label_cells/1)
     |> AshTemplate.Markdown.to_html!(extension: [table: true], sanitize: @sanitize)
     |> Phoenix.HTML.raw()
+  end
+
+  # Under 768px each table row stands as a card (legal.css), so every cell starts
+  # with its column's name, shown only there.
+  defp label_cells(%MDEx.Table{nodes: [%MDEx.TableRow{nodes: heads} = head | rows]} = table) do
+    labels = Enum.map(heads, &cell_label/1)
+    %{table | nodes: [head | Enum.map(rows, &label_row(&1, labels))]}
+  end
+
+  defp label_cells(node), do: node
+
+  defp label_row(%MDEx.TableRow{nodes: cells} = row, labels) do
+    %{row | nodes: Enum.zip_with(cells, labels, &%{&1 | nodes: [&2 | &1.nodes]})}
+  end
+
+  defp cell_label(%MDEx.TableCell{nodes: nodes}) do
+    text = Enum.map_join(nodes, &Map.get(&1, :literal, ""))
+
+    %MDEx.Raw{
+      literal: "<span>#{Phoenix.HTML.html_escape(text) |> Phoenix.HTML.safe_to_string()}</span>"
+    }
   end
 
   @doc "The `page_title` and `page_description` assigns the root layout reads from every page."
