@@ -258,6 +258,7 @@ defmodule AshTemplateWeb.AnimationsLive do
           / <.link navigate={~p"/animations/wonders"}>Ten wonders</.link>
           / <.link navigate={~p"/animations/swarm-city"}>Swarm city</.link>
           / <.link navigate={~p"/animations/datascape"}>Datascape</.link>
+          / <.link navigate={~p"/animations/frosted-glass"}>Frosted Glass</.link>
         </nav>
         <div class="motion-lab__row">
           <P.button

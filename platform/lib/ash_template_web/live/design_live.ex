@@ -24,7 +24,8 @@ defmodule AshTemplateWeb.DesignLive do
     "/animations/harbour" => "Ships that sail to their last action",
     "/animations/wonders" => "Ten pictures that answer your hand",
     "/animations/swarm-city" => "Agents flying over a city of thin lines",
-    "/animations/datascape" => "An endless plane you fly over"
+    "/animations/datascape" => "An endless plane you fly over",
+    "/animations/frosted-glass" => "A tree through frosted glass"
   }
 
   def page(assigns) do

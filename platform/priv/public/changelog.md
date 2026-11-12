@@ -2,6 +2,13 @@
 
 Changes to Ash Template, newest first.
 
+## 12 November 2026
+
+- **Motion lab.** A new page, Frosted Glass: a large tree seen through frosted glass with
+  a lamp in front. Scroll down to step back from its branches to the whole tree, and on
+  into a forest. Six looks: Lifelike, Reeded, Blocks, Mist, Night and Ember. On Mist,
+  wipe the glass with the pointer or a finger; it fogs over again.
+
 ## 11 November 2026
 
 - **Home.** The homepage is now the Datascape, a field of moving panels you fly over by
