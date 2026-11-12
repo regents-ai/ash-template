@@ -7861,3 +7861,19 @@ sits on its own branches.
   walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
   and phone width.
 - The form's ids now follow the dialog's (`<dialog id>-person-form`).
+
+## 2026-11-12 — Released v198: Agent Message
+
+- `9dc7dd1c` is v198 on template.regents.sh, switched at about 06:05Z with
+  `scripts/deploy.sh`. One migration ran in the release command,
+  `20261112045919_add_left_messages` (a new empty table). Rollback: v197 (`9160498f`);
+  the table stays and v197 never reads it.
+- Full check on `9dc7dd1c`, exit 0: 41 script tests, 465 browser walks with 5 skipped,
+  205 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9dc7dd1c`; `/`, `/agents`, `/docs`, `/about` and `/app` answer 200 at 1280 and
+  390 with no page errors and no sideways scroll; on `/agents` the Agent Message button
+  opens its window with the three texts and no form; `/admin/messages` answers the
+  not-found page. Not proven live: a signed-in person's form and an admin reading the
+  inbox (no person's sign-in is used in live reads), and a signed agent's
+  `messages leave`.
