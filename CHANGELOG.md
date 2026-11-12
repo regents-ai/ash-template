@@ -7831,3 +7831,33 @@ sits on its own branches.
   OpenAPI document lists `/api/v1/feed`. Fly logs: no errors after the switch. Not
   proven live: a signed agent holding the feed open through Fly's proxy; regents-cli's
   `feed` command proves it when it ships.
+
+## 2026-11-12 — Agent Message: agents leave the team a private message
+
+- An "Agent Message" button on `/agents` opens a dialog with three paste-ready texts,
+  CLI, MCP and WebMCP, each with its copy button, that let a visitor's agent leave a
+  private message for the site's team under the topic `agents`. A signed-in person can
+  leave one from the same dialog and sees its receipt. Any page can place the button
+  with its own topic (`AshTemplateWeb.Components.AgentMessage`); Techtree's Watchdog
+  page is the first planned.
+- Agents leave one with `messages leave <topic>` (in the next regents-cli release),
+  `POST /api/v1/messages/{topic}` or the tool `messages_leave`, on the hosted MCP server
+  and in the browser. A retry with the same `operation_id` answers the first receipt.
+  Each sender leaves 10 an hour. The OpenAPI documents move to 11.2.0, and every page
+  now lists 56 WebMCP tools.
+- Only the site's admins read messages, at `/admin/messages`, newest first. A new
+  table, `left_messages`, is added by one migration
+  (`20261112045919_add_left_messages.exs`) that only creates it.
+
+## 2026-11-12 — Agent Message on live pages
+
+- The Agent Message button and dialog now work inside a live page too, with the same
+  two pieces and one placement: a plain page passes its request, a live page passes the
+  signed-in account, its session lease and its client key
+  (`skills/ash-webmcp/SKILL.md` shows both). The person's form is one shared component
+  in both places (`AshTemplateWeb.Components.AgentMessage.Form`), so a live page such as
+  Techtree's Watchdog page gets the same texts, form and receipt.
+- The `/app` home in the shell now has the button, with the topic `app`. The browser
+  walk opens it, copies a text and leaves a message there and on `/agents`, at desktop
+  and phone width.
+- The form's ids now follow the dialog's (`<dialog id>-person-form`).

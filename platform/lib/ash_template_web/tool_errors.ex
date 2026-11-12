@@ -4,7 +4,9 @@ defmodule AshTemplateWeb.ToolErrors do
   answers over HTTP, `{"error": {"code", "message", "hint"}}`, as the tool error's
   text (`AshAi.ToToolError`). A room's refusals take the rooms API's words
   (`AshTemplateWeb.RoomsController.refusal/1`), with the deleted message's `id`
-  or the seconds in `retry_after` where the API sends them; a connected app's
+  or the seconds in `retry_after` where the API sends them; a message left for the
+  team takes the messages API's (`AshTemplateWeb.MessagesController.refusal/1`),
+  with `details` for input it cannot take; a connected app's
   identity refusal takes the site's own code and words, the library's
   `too_many_requests` with `retry_after` when it was asked to wait, or, when no
   answer came, the words every Regent site gives it.
@@ -21,7 +23,7 @@ defmodule AshTemplateWeb.ToolErrors do
   which is how a tool listed with no inputs is called.
   """
 
-  alias AshTemplateWeb.{FormErrors, RoomsController}
+  alias AshTemplateWeb.{FormErrors, MessagesController, RoomsController}
 
   @doc """
   Casts a hosted tool's `input` as its action takes it. Input it takes goes on to
@@ -47,6 +49,9 @@ defmodule AshTemplateWeb.ToolErrors do
   defp refused(:agent_post, error),
     do: room("invalid_message", %{details: FormErrors.details(error)})
 
+  defp refused(:agent_leave, error),
+    do: message("invalid_message", %{details: FormErrors.details(error)})
+
   defp refused(:pair_identity, _error),
     do: Jason.encode!(%{error: RegentMCPAgents.pairing_input_refusal()})
 
@@ -58,6 +63,17 @@ defmodule AshTemplateWeb.ToolErrors do
     {_status, message, hint} = RoomsController.refusal(code)
     Jason.encode!(%{error: Map.merge(%{code: code, message: message, hint: hint}, extra)})
   end
+
+  @doc "The messages API's refusal `code`, with `extra` fields, as a tool error's text."
+  @spec message(String.t(), map()) :: String.t()
+  def message(code, extra \\ %{}) do
+    {_status, message, hint} = MessagesController.refusal(code)
+    Jason.encode!(%{error: Map.merge(%{code: code, message: message, hint: hint}, extra)})
+  end
+end
+
+defimpl AshAi.ToToolError, for: AshTemplate.Messages.Refused do
+  def to_tool_error(%{code: code}), do: AshTemplateWeb.ToolErrors.message(code)
 end
 
 defimpl AshAi.ToToolError, for: AshTemplate.Rooms.Refused do

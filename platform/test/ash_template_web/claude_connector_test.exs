@@ -458,12 +458,12 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
   describe "with the connector on and the agent permission" do
     setup :connector_on
 
-    test "a paired account's app lists the room tools and posts as its agent" do
+    test "a paired account's app lists the agent's tools and posts as its agent" do
       subject = "did:privy:agent-paired"
       sign_in!(subject)
       %{access: token} = connect!(subject, @agent_scopes)
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
-      assert "rooms_post" in tool_names(token)
+      assert ["messages_leave", "rooms_post"] -- tool_names(token) == []
       assert %{"isError" => false} = post_room(token)
     end
 
@@ -472,7 +472,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       sign_in!(subject)
       %{access: token} = connect!(subject)
       assert %{"isError" => false} = tool(token, "pair_identity", pair_args(code!(subject)))
-      refute "rooms_post" in tool_names(token)
+      assert ["messages_leave", "rooms_post"] -- tool_names(token) == ["messages_leave", "rooms_post"]
     end
 
     test "a second app of an account already paired through another app has its identity tools only" do

@@ -132,6 +132,19 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Manage beside "Your agents" opens this site's `/account/agents` and Manage Account opens `/account`, both in the same tab; with a mouse it shows on hover and on keyboard focus and the rows do not move, on the touch phone it always shows, at least 44 px tall | `platform/test/browser/account_menu.spec.ts` |
 | A signed browser tool takes only its own input; with no agent signer in the browser it sends nothing and answers `agent_auth_required`, naming `regents browser --site`; a signer's refusal is the tool's answer and nothing is sent; a signer that fails, or a call cancelled while it signs, answers `signer_unavailable` or `cancelled` and sends nothing (elixir-utils `agent_access/assets/signed_tools.test.mts`); otherwise the page sends exactly the request the signer signed, with its proof and no cookie, and an input the tool does not take is refused before the signer is asked, at both widths | `platform/test/browser/page_tools.spec.ts` |
 
+## Messages
+
+| What | Check |
+| --- | --- |
+| A person, an agent no person paired and a paired agent each leave a message for the site's team under a topic and get its receipt, recorded as themselves; no input names the sender | `platform/test/ash_template/messages/leave_test.exs` |
+| A message's topic, text and reply_to are bounded (a slug of at most 40, 1 to 2,000 characters, at most 200), and a refused one keeps nothing; each sender leaves 10 an hour | same |
+| An agent's `operation_id` answers its first message again and refuses other text or another topic with `idempotency_conflict` | same; `platform/test/ash_template_web/messages_api_test.exs` |
+| `POST /api/v1/messages/{topic}` and the hosted tool `messages_leave` leave a message as the signed agent, whatever the body says about the sender, answer a retry with the first receipt and refuse bad input with `invalid_message` and its details; an unsigned or forged request leaves nothing | `platform/test/ash_template_web/messages_api_test.exs` |
+| Claude's connector offers `messages_leave` once its app is paired with the agent permission, and not before | `platform/test/ash_template_web/claude_connector_test.exs` |
+| Only the site's admins read messages; a person, an agent and a non-admin get none | `platform/test/ash_template/messages/leave_test.exs` |
+| `/admin/messages` shows the team every message, newest first, and is the not-found page for anyone else, signed in or not | `platform/test/ash_template_web/messages_pages_test.exs` |
+| `/agents` (a plain page, topic `agents`) and the `/app` home in the live shell (topic `app`) each have the Agent Message button; its dialog's three texts are the CLI, MCP and WebMCP ways to leave a message under the page's topic, each copied exactly as shown and fitting the screen at both widths; Escape closes it; the form shows only to a signed-in person, refuses an empty message when the field is left, and leaves one with its receipt | `platform/test/ash_template_web/messages_pages_test.exs`; `platform/test/browser/agent_message.spec.ts` |
+
 ## Claude connector
 
 Off unless `ASH_TEMPLATE_CLAUDE_CONNECTOR_ENABLED` is `true`
