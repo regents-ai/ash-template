@@ -72,15 +72,20 @@ defmodule AshTemplateWeb.AskLab do
   passes.
   """
   @spec check(term()) :: {:ok, plan()} | {:error, String.t()}
-  def check(%{title: title, blocks: [_ | _] = blocks} = plan)
-      when is_binary(title) and length(blocks) <= 3 do
-    case Enum.reject(blocks, &block?/1) do
+  def check(%{title: title, blocks: blocks} = plan) when is_binary(title) do
+    case one_to_three?(blocks) && Enum.reject(blocks, &block?/1) do
+      false -> {:error, "a plan is a title and one to three blocks"}
       [] -> {:ok, plan}
       [bad | _] -> {:error, "unknown or incomplete block #{inspect(bad[:block])}"}
     end
   end
 
   def check(_plan), do: {:error, "a plan is a title and one to three blocks"}
+
+  defp one_to_three?([_]), do: true
+  defp one_to_three?([_, _]), do: true
+  defp one_to_three?([_, _, _]), do: true
+  defp one_to_three?(_blocks), do: false
 
   defp block?(%{block: :figure, props: %{label: l, value: v, unit: u, line: line}}),
     do: text?([l, v, line]) and (is_nil(u) or is_binary(u))
