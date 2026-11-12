@@ -8746,3 +8746,31 @@ unchanged. The daily session pruner keeps its 04:43 line beside main's IndexNow 
 - Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
   `f5096fff`; `/`, `/notes`, `/agents`, `/account` and `/app` answer 200 at 1280 and 390
   with no errors. Not proven live: deleting a note that has label questions (signed in).
+
+## 2026-11-12 — The Credits schema leaves the shared database (branch, not on main)
+
+Sean, 12 November: Credits are removed from every Regent site and the shared database
+drops them. On `tpl/credits-drop-1112`; it runs on production only once every site has
+stopped reading the Credits tables, and only after the founder's lock comes off them.
+
+- `20261112130000_remove_credits_schema` removes the `regent_credits` schema: its 13
+  tables (the Credits ledger's own `schema_migrations` included), then the
+  `revoke_credit_grant` trigger the Credits package hung on
+  `regent_agents.paired_agents`, then its two functions (`refuse_change`,
+  `revoke_pairing_grant`), then the schema. Nothing cascades, so anything else still
+  depending on them fails the migration and the whole of it rolls back; it waits at
+  most 5 seconds for a lock. Every statement is `IF EXISTS`, so local and test
+  databases, which never had Credits, are unchanged. It cannot be rolled back.
+- Untouched: `regent_names.basenames_payment_credits` (not Credits), the
+  `public.money_with_currency` type and the Ash helper functions in `public` that
+  other sites use, and `regent_agents.paired_agents` itself and its rows.
+- Production order, outside this repository: copy the 13 tables to CSV
+  (`artifacts/prod-protected-tables/credits-copy.sql` in the workspace, read only),
+  take the ten Credits tables off the lock (`unprotect-credits.sql` beside it; every
+  other protected table keeps its lock), then release this migration.
+- Proved on a throwaway database built from the Credits package's own 15 migrations
+  with the lock applied by the production lock file: the migration is refused by the
+  ten guard views and changes nothing; the copy writes 13 files whose rows match its
+  counts; the unlock leaves the other protected tables locked; the migration then
+  removes everything above and nothing else. A new test database migrates through it
+  unchanged.
