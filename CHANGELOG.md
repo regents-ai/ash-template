@@ -8115,3 +8115,9 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   menu moves nothing, no sideways scroll at 320 on the phone run); unit tests for the
   theme module, the knob, the blocks' pairing and flight, the light model and the
   shader's block layout. Style check: 29 breaks before and after.
+
+## 2026-11-12 — Theme switch: block count Credo accepts
+
+- `Shell`'s compile-time check that the moon and the sun have as many blocks counts
+  them with `:binary.matches/2`; Credo's strict run in `make check` refused counting
+  graphemes. No change to what anyone sees.

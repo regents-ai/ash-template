@@ -605,7 +605,7 @@ defmodule AshTemplateWeb.Components.Shell do
   ]
 
   block_count = fn rows ->
-    rows |> Enum.join() |> String.graphemes() |> Enum.count(&(&1 == "#"))
+    rows |> Enum.join() |> :binary.matches("#") |> length()
   end
 
   if block_count.(@theme_moon) != block_count.(@theme_sun) do
