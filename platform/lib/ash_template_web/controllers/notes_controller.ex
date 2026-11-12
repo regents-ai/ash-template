@@ -29,7 +29,10 @@ defmodule AshTemplateWeb.NotesController do
       {403, "This sign-in hasn't been used on this site yet.",
        "Sign in on this site once, then retry."},
     "note_not_found" =>
-      {404, "You have no note with that id.", "List your notes with GET /api/v1/notes."},
+      {404, "You have no note with that id.", "List your notes with POST /api/v1/notes/list."},
+    "invalid_cursor" =>
+      {422, "That cursor is invalid.",
+       "Send {} for the first page of notes, or {\"after\": \"<next_cursor>\"} with the previous page's pagination.next_cursor, unchanged."},
     "invalid_note" =>
       {422, "The note could not be saved.",
        "details says why. Send a title of 1 to 120 characters and an optional body of up to 10,000 characters. Agent creates also require operation_id, a UUID retained when retrying with fresh proof; omit it for updates."},
@@ -41,12 +44,34 @@ defmodule AshTemplateWeb.NotesController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
+  # A page of the person's notes, 50 at a time: `{}` for the first, or the
+  # previous page's cursor as `{"after": ...}`, since a signed request carries it
+  # in its body and takes no query string.
   def index(conn, _params) do
-    case Notes.list_my_notes(actor: conn.assigns.actor) do
-      {:ok, notes} -> json(conn, %{notes: Enum.map(notes, &NotesJSON.note/1)})
+    with {:ok, page} <- page(conn.body_params),
+         {:ok, page} <- Notes.list_my_notes(actor: conn.assigns.actor, page: page) do
+      json(conn, %{
+        notes: Enum.map(page.results, &NotesJSON.note/1),
+        pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
+      })
+    else
+      {:error, :invalid_cursor} -> refuse(conn, "invalid_cursor")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("notes_unavailable")
     end
   end
+
+  defp page(body) when map_size(body) == 0, do: {:ok, limit: 50}
+
+  defp page(%{"after" => cursor} = body) when map_size(body) == 1 and is_binary(cursor),
+    do: {:ok, after: cursor, limit: 50}
+
+  defp page(_body), do: {:error, :invalid_cursor}
+
+  defp next_cursor(%{more?: true, results: results}),
+    do: List.last(results).__metadata__.keyset
+
+  defp next_cursor(_page), do: nil
 
   def show(conn, %{"id" => id}), do: with_note(conn, id, &json(&1, %{note: NotesJSON.note(&2)}))
 

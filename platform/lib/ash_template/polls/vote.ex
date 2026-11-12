@@ -5,14 +5,14 @@ defmodule AshTemplate.Polls.Vote do
 
   Sending the same choice again answers the vote already there, and a
   different choice is refused (`CastVote`). Votes are never changed or removed.
-  Each person reads only their own; the poll counts everyone's.
+  Each person reads only their own; the poll counts everyone's as each is saved,
+  and its count is what pages hear.
   """
 
   use Ash.Resource,
     domain: AshTemplate.Polls,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer],
-    notifiers: [Ash.Notifier.PubSub]
+    authorizers: [Ash.Policy.Authorizer]
 
   alias AshTemplate.Polls.Vote.CastVote
 
@@ -84,17 +84,5 @@ defmodule AshTemplate.Polls.Vote do
       authorize_if actor_attribute_equals(:role, :system)
       authorize_if expr(voter_id == ^actor(:human_account_id))
     end
-  end
-
-  # Delivered after the transaction commits to `AshTemplate.Polls.topic/0`:
-  # %{event: "cast", payload: %{poll_id: id}}.
-  pub_sub do
-    module Phoenix.PubSub
-    name AshTemplate.PubSub
-    prefix "public"
-    broadcast_type :broadcast
-    transform &%{poll_id: &1.data.poll_id}
-
-    publish :cast, ["polls"]
   end
 end

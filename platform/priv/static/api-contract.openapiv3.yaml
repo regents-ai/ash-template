@@ -69,16 +69,34 @@ paths:
         "409": {$ref: "#/components/responses/ProfileEvidenceConflict"}
         "503": {$ref: "#/components/responses/ProfileUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
-  /api/v1/notes:
-    get:
+  /api/v1/notes/list:
+    post:
       operationId: listMyNotes
+      summary: Read the verified account's notes, 50 a page.
+      description: Pinned first and archived last, newest first within each. Send {} for the
+        first page, or after set to the previous page's pagination.next_cursor, unchanged.
+        The cursor travels in the body because a signed request takes no query string.
       security: [{privyAccessToken: [], privyIdentityToken: []}, {siwaProof: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                after:
+                  type: string
+                  maxLength: 2048
+                  description: The previous page's next_cursor, unchanged.
       responses:
         "200": {$ref: "#/components/responses/Notes"}
         "401": {$ref: "#/components/responses/NotesAuthenticationRequired"}
         "403": {$ref: "#/components/responses/NotesAccountRequired"}
+        "422": {$ref: "#/components/responses/NotesInvalidCursor"}
         "503": {$ref: "#/components/responses/NotesUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/v1/notes:
     post:
       operationId: createNote
       security: [{privyAccessToken: [], privyIdentityToken: []}, {siwaProof: []}]
@@ -4341,7 +4359,7 @@ components:
             unavailable:
               value: {error: {code: profile_unavailable, message: "Your profile could not be reached right now.", hint: "Try again in a moment."}}
     Notes:
-      description: The verified account's notes, newest first
+      description: A page of the verified account's notes
       content:
         application/json:
           schema: {$ref: "#/components/schemas/NotesEnvelope"}
@@ -4382,7 +4400,15 @@ components:
           schema: {$ref: "#/components/schemas/NoteError"}
           examples:
             notFound:
-              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes with GET /api/v1/notes."}}
+              value: {error: {code: note_not_found, message: "You have no note with that id.", hint: "List your notes with POST /api/v1/notes/list."}}
+    NotesInvalidCursor:
+      description: after is not the next_cursor of a page, or the body holds anything else (invalid_cursor)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/NoteError"}
+          examples:
+            invalidCursor:
+              value: {error: {code: invalid_cursor, message: "That cursor is invalid.", hint: "Send {} for the first page of notes, or {\"after\": \"<next_cursor>\"} with the previous page's pagination.next_cursor, unchanged."}}
     NoteInvalid:
       description: The note is invalid
       content:
@@ -5197,11 +5223,19 @@ components:
     NotesEnvelope:
       type: object
       additionalProperties: false
-      required: [notes]
+      required: [notes, pagination]
       properties:
         notes:
           type: array
+          maxItems: 50
           items: {$ref: "#/components/schemas/Note"}
+        pagination:
+          type: object
+          additionalProperties: false
+          required: [has_more, next_cursor]
+          properties:
+            has_more: {type: boolean, description: "True when more notes follow."}
+            next_cursor: {type: [string, "null"], description: "Send as after for the next page; null when there is none."}
     NoteEnvelope:
       type: object
       additionalProperties: false
@@ -5413,7 +5447,7 @@ components:
           properties:
             code:
               type: string
-              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_note, pin_being_paid, notes_unavailable]
+              enum: [authentication_required, account_required, agent_not_paired, person_not_here, note_not_found, invalid_cursor, invalid_note, pin_being_paid, notes_unavailable]
             message: {type: string}
             hint: {type: string}
     Session:

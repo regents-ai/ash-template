@@ -100,14 +100,18 @@ defmodule AshTemplate.Notes.Note do
       change PinBeingPaid
     end
 
+    # Pinned first and archived last, newest first within each, a page at a time.
     read :mine do
       prepare build(
                 sort: [
                   archived_at: :desc_nils_first,
                   pinned_at: :desc_nils_last,
-                  inserted_at: :desc
+                  inserted_at: :desc,
+                  id: :desc
                 ]
               )
+
+      pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
     # The person's notes whose title or text holds `text`, in any case.

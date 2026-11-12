@@ -73,7 +73,7 @@ defmodule AshTemplate.Dms.Message do
       argument :conversation_id, :uuid, allow_nil?: false
       filter expr(conversation_id == ^arg(:conversation_id))
       prepare build(sort: [inserted_at: :desc, id: :desc], load: [:mine])
-      pagination keyset?: true, default_limit: 50
+      pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
     # The message the actor's person already sent with this id, so a retry

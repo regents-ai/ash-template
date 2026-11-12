@@ -53,6 +53,11 @@ page (ash-frontend, [public figures](../ash-frontend/references/public-figures.m
   lost notice is healed by an Oban schedule line, once a minute for each kind
   (`AshTemplate.SharedReading.Heal`); the producer never schedules that itself.
 
+A page's own clock never reads the database for what notices already carry: a time
+the page holds, such as a poll's close, changes the page without a read, and one
+timer waits for the next such moment instead of ticking. It reads only a figure that
+first exists at that moment, such as a closed poll's totals, and only once.
+
 The watcher that records chain events keeps its own rules in `chain-events`. Anything
 else that loops, polls or schedules itself is Oban's, and a third shape needs the lane
 owner's agreement before it is built.

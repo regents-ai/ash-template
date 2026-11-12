@@ -62,7 +62,7 @@ defmodule AshTemplateWeb.ShellLive do
        conversation: nil,
        dm: nil,
        poll_id: nil,
-       hearing_polls?: false,
+       heard_polls: [],
        hearing_board?: false,
        pair_start: nil,
        verified_connections: %Read{},
@@ -102,7 +102,7 @@ defmodule AshTemplateWeb.ShellLive do
      |> enter_room(room)
      |> open_conversation(conversation)
      |> assign(:dm, dm)
-     |> hear_polls(route_spec)
+     |> hear_polls(route_spec, poll_id)
      |> assign(:poll_id, poll_id)}
   end
 
@@ -286,10 +286,18 @@ defmodule AshTemplateWeb.ShellLive do
       else: {:noreply, socket}
   end
 
-  # A start, vote or end anywhere reaches the polls page on screen.
-  def handle_info(%{topic: "public:polls", payload: %{poll_id: id}}, socket) do
+  # A start or end anywhere reaches the polls page's list, and a vote the page
+  # of its poll.
+  def handle_info(%{topic: "public:polls", payload: listed}, socket) do
     if socket.assigns.route_spec.route_id == :polls,
-      do: send_update(PollsLive, id: "polls", change: id)
+      do: send_update(PollsLive, id: "polls", listed: listed)
+
+    {:noreply, socket}
+  end
+
+  def handle_info(%{topic: "public:poll:" <> _id, payload: counted}, socket) do
+    if socket.assigns.route_spec.route_id == :polls,
+      do: send_update(PollsLive, id: "polls", counted: counted)
 
     {:noreply, socket}
   end
@@ -518,17 +526,22 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  # The page hears every poll while the polls page is open, and none elsewhere.
-  defp hear_polls(socket, %{route_id: route}) do
-    hearing? = socket.assigns.hearing_polls?
-    wanted? = route == :polls
+  # While the polls page is open the page hears every start and end, and the
+  # votes of the one poll on it; elsewhere, none.
+  defp hear_polls(socket, %{route_id: route}, poll_id) do
+    heard = socket.assigns.heard_polls
 
-    if connected?(socket) and hearing? != wanted? do
-      if wanted?,
-        do: Phoenix.PubSub.subscribe(AshTemplate.PubSub, Polls.topic()),
-        else: Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, Polls.topic())
+    wanted =
+      cond do
+        route != :polls -> []
+        poll_id -> [Polls.topic(), Polls.topic(poll_id)]
+        true -> [Polls.topic()]
+      end
 
-      assign(socket, :hearing_polls?, wanted?)
+    if connected?(socket) and heard != wanted do
+      Enum.each(heard -- wanted, &Phoenix.PubSub.unsubscribe(AshTemplate.PubSub, &1))
+      Enum.each(wanted -- heard, &Phoenix.PubSub.subscribe(AshTemplate.PubSub, &1))
+      assign(socket, :heard_polls, wanted)
     else
       socket
     end

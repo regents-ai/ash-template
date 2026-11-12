@@ -11,8 +11,12 @@ defmodule AshTemplateWeb.NotesLive do
   commits, the shell holds the subscription, and hands it on here as
   `send_update(NotesLive, id: "notes", change: {event, note_or_decision})`.
   Any change but a delete reads the note again with its latest label; a pin,
-  unpin, archive or unarchive reads the list again, since pinned notes come
-  first and archived ones last. Archived notes stay out of the sidebar.
+  unpin, archive or unarchive reads the list's first page again, since pinned
+  notes come first and archived ones last. Archived notes stay out of the
+  sidebar.
+
+  The list comes a page at a time ("Older notes"). The notes live in
+  streams; the page keeps only where the next page starts.
   """
 
   use AshTemplateWeb, :live_component
@@ -32,7 +36,15 @@ defmodule AshTemplateWeb.NotesLive do
     {:ok,
      socket
      |> Session.check_component_lease(&take_account/2)
-     |> assign(actor: nil, notes: %Read{}, form: nil, editing: nil, notice: nil)
+     |> assign(
+       actor: nil,
+       notes: %Read{},
+       older: %Read{},
+       paging: nil,
+       form: nil,
+       editing: nil,
+       notice: nil
+     )
      |> stream(:notes, [])
      |> stream(:note_links, [], dom_id: &"note-link-#{&1.id}")}
   end
@@ -74,6 +86,19 @@ defmodule AshTemplateWeb.NotesLive do
   end
 
   def handle_event("cancel", _params, socket), do: {:noreply, new_form(socket)}
+
+  def handle_event(
+        "older",
+        _params,
+        %{assigns: %{paging: %{more?: true, cursor: cursor}}} = socket
+      ) do
+    actor = socket.assigns.actor
+
+    {:noreply,
+     socket
+     |> Read.now(:older, actor.human_account_id, fn -> notes(actor, after: cursor) end)
+     |> show_older()}
+  end
 
   def handle_event("rate", %{"id" => id, "report" => report}, socket) do
     actor = socket.assigns.actor
@@ -255,14 +280,11 @@ defmodule AshTemplateWeb.NotesLive do
               <Primitives.status :if={note.archived_at}>Archived</Primitives.status>
               <h3>{note.title}</h3>
               <p :if={note.body}>{note.body}</p>
-              <p :if={note.changed_by_agent} class="rg-muted">
+              <p :if={note.agent_wallet} class="rg-muted">
                 Saved by your agent
-                <Primitives.address
-                  id={"#{dom_id}-agent"}
-                  address={note.changed_by_agent.wallet_address}
-                />
+                <Primitives.address id={"#{dom_id}-agent"} address={note.agent_wallet} />
               </p>
-              <.label decision={note.label_decision} target={@myself} />
+              <.label decision={note.label} target={@myself} />
               <div class="notes-item__actions">
                 <Primitives.button
                   type="button"
@@ -306,30 +328,45 @@ defmodule AshTemplateWeb.NotesLive do
               </div>
             </li>
           </ul>
+          <Primitives.button
+            :if={@paging && @paging.more?}
+            type="button"
+            variant="secondary"
+            class="notes-older"
+            phx-click="older"
+            phx-target={@myself}
+            phx-disable-with="Loading…"
+          >
+            Older notes
+          </Primitives.button>
+          <Primitives.notice :if={@older.state in [:error, :stale]} tone="error">
+            Older notes couldn’t be loaded. Try again.
+          </Primitives.notice>
         </section>
       </div>
     </article>
     """
   end
 
-  attr :decision, Decision, default: nil
+  # A note's label as the list shows it: `%{id, state, choice, report}`.
+  attr :decision, :map, default: nil
   attr :target, :any, required: true
 
   defp label(%{decision: nil} = assigns), do: ~H""
 
-  defp label(%{decision: %Decision{state: :pending}} = assigns) do
+  defp label(%{decision: %{state: :pending}} = assigns) do
     ~H"""
     <p class="notes-label rg-muted" data-label-state="pending">Choosing a label…</p>
     """
   end
 
-  defp label(%{decision: %Decision{state: :failed}} = assigns) do
+  defp label(%{decision: %{state: :failed}} = assigns) do
     ~H"""
     <p class="notes-label rg-muted" data-label-state="failed">No label this time.</p>
     """
   end
 
-  defp label(%{decision: %Decision{state: :answered}} = assigns) do
+  defp label(%{decision: %{state: :answered}} = assigns) do
     ~H"""
     <div class="notes-label" data-label-state="answered">
       <Primitives.status tone="info">{String.capitalize(@decision.choice)}</Primitives.status>
@@ -358,6 +395,8 @@ defmodule AshTemplateWeb.NotesLive do
   defp load(%{assigns: %{actor: nil}} = socket) do
     socket
     |> Read.clear(:notes)
+    |> Read.clear(:older)
+    |> assign(:paging, nil)
     |> stream(:notes, [], reset: true)
     |> stream(:note_links, [], reset: true)
     |> assign(form: nil, editing: nil, notice: nil)
@@ -367,20 +406,58 @@ defmodule AshTemplateWeb.NotesLive do
 
   defp reread(%{assigns: %{actor: actor}} = socket) do
     socket
-    |> Read.now(:notes, actor.human_account_id, fn -> Notes.list_my_notes(actor: actor) end)
+    |> Read.clear(:older)
+    |> Read.now(:notes, actor.human_account_id, fn -> notes(actor, []) end)
     |> show_notes()
   end
 
+  # A page of the person's notes: what the list shows of each, the last one's
+  # cursor and whether more are left.
+  defp notes(actor, page) do
+    with {:ok, page} <- Notes.list_my_notes(actor: actor, page: page) do
+      {:ok,
+       %{
+         shown: Enum.map(page.results, &shown/1),
+         paging: %{more?: page.more?, cursor: cursor(page.results)}
+       }}
+    end
+  end
+
+  defp cursor([]), do: nil
+  defp cursor(results), do: List.last(results).__metadata__.keyset
+
+  defp shown(note) do
+    %{
+      id: note.id,
+      title: note.title,
+      body: note.body,
+      pinned_at: note.pinned_at,
+      archived_at: note.archived_at,
+      agent_wallet: note.changed_by_agent && note.changed_by_agent.wallet_address,
+      label: note.label_decision && Map.take(note.label_decision, [:id, :state, :choice, :report])
+    }
+  end
+
   # A failed read keeps the notes already on the page, so only a read that
-  # landed replaces them.
-  defp show_notes(%{assigns: %{notes: %Read{state: state, value: notes}}} = socket)
-       when state in [:ready, :empty] do
+  # landed replaces them. The streams keep the notes; the page keeps only where
+  # the next page starts.
+  defp show_notes(%{assigns: %{notes: %Read{state: :ready, value: value} = read}} = socket) do
     socket
-    |> stream(:notes, notes, reset: true)
-    |> stream(:note_links, Enum.reject(notes, & &1.archived_at), reset: true)
+    |> assign(notes: %{read | value: nil}, paging: value.paging)
+    |> stream(:notes, value.shown, reset: true)
+    |> stream(:note_links, Enum.reject(value.shown, & &1.archived_at), reset: true)
   end
 
   defp show_notes(socket), do: socket
+
+  defp show_older(%{assigns: %{older: %Read{state: :ready, value: value} = read}} = socket) do
+    socket
+    |> assign(older: %{read | value: nil}, paging: value.paging)
+    |> stream(:notes, value.shown)
+    |> stream(:note_links, Enum.reject(value.shown, & &1.archived_at))
+  end
+
+  defp show_older(socket), do: socket
 
   defp apply_change(socket, "destroy", %Note{} = note) do
     socket = socket |> stream_delete(:notes, note) |> stream_delete(:note_links, note)
@@ -402,12 +479,12 @@ defmodule AshTemplateWeb.NotesLive do
     case Notes.get_my_note(id, actor: socket.assigns.actor) do
       {:ok, %Note{archived_at: nil} = note} ->
         socket
-        |> stream_insert(:notes, note, at: 0)
-        |> stream_insert(:note_links, note, at: 0)
+        |> stream_insert(:notes, shown(note), at: 0)
+        |> stream_insert(:note_links, shown(note), at: 0)
 
       {:ok, %Note{} = note} ->
         socket
-        |> stream_insert(:notes, note)
+        |> stream_insert(:notes, shown(note))
         |> stream_delete(:note_links, note)
 
       {:ok, nil} ->

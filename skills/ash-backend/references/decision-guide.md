@@ -84,6 +84,13 @@ end
 The page keeps the rows in a stream and asks for the next page with the last page's
 `after` cursor.
 
+Page every read of a list that grows this way, including the list a page loads on
+mount and the one a tool or API reads, and never set `required?: false`, since an
+unpaged read costs more with every row the site gains. Never load a `list` aggregate
+to count it: use a `count` aggregate, or keep the tally on the row with
+`atomic_update` in the change's own transaction (`AshTemplate.Polls.Poll`
+`:count_vote`).
+
 ## Debug an unfamiliar DSL/compiler error
 
 Reduce it to the resource, action, extension, or generated interface that fails. Check

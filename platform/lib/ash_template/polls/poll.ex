@@ -8,8 +8,10 @@ defmodule AshTemplate.Polls.Poll do
   poll's id, so a retry answers the poll it already started
   (`:started_by_actor`). Only its starter ends it early.
 
-  Anyone reads every poll. Each choice's count is read once the poll has closed
-  (`Totals`); until then only how many have voted.
+  Anyone reads every poll. Each vote is counted on the poll's own row as it is
+  saved (`:count_vote`), so reading a poll never counts its votes. Each choice's
+  count is read once the poll has closed (`Totals`); until then only how many
+  have voted.
   """
 
   use Ash.Resource,
@@ -22,7 +24,7 @@ defmodule AshTemplate.Polls.Poll do
 
   alias AshTemplate.Limits.LimitWrites
   alias AshTemplate.Polls
-  alias AshTemplate.Polls.Poll.{Starter, Totals}
+  alias AshTemplate.Polls.Poll.{Starter, StillOpen, Totals}
 
   @shown [:open, :votes_cast, :totals, :starter, :mine, :my_choice]
   @shown_text "Use letters, numbers and marks you can see."
@@ -54,6 +56,12 @@ defmodule AshTemplate.Polls.Poll do
     attribute :closes_at, :utc_datetime_usec, allow_nil?: false, public?: true
     # When its starter ended it early; nil when it ran its course.
     attribute :ended_at, :utc_datetime_usec, public?: true
+    # How many have voted, counted by each vote as it is saved (`:count_vote`).
+    attribute :votes_cast, :integer, allow_nil?: false, default: 0, public?: true
+
+    # Each choice's votes, `%{choice => votes}`, counted the same way. Only
+    # `totals` selects it, and hands it out once the poll has closed.
+    attribute :tally, :map, allow_nil?: false, default: %{}, select_by_default?: false
     create_timestamp :inserted_at, public?: true
   end
 
@@ -67,18 +75,6 @@ defmodule AshTemplate.Polls.Poll do
     belongs_to :via_agent, AshTemplate.Agents.Agent, public?: true
 
     has_many :votes, AshTemplate.Polls.Vote
-  end
-
-  aggregates do
-    count :votes_cast, :votes do
-      authorize? false
-      public? true
-    end
-
-    # Every vote's choice, for the totals once the poll has closed.
-    list :vote_choices, :votes, :choice do
-      authorize? false
-    end
   end
 
   calculations do
@@ -106,9 +102,9 @@ defmodule AshTemplate.Polls.Poll do
       primary? true
     end
 
-    # The newest hundred, newest first.
+    # The newest hundred, newest first, as stored; a caller loads what it shows.
     read :list do
-      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 100, load: @shown)
+      prepare build(sort: [inserted_at: :desc, id: :desc], limit: 100)
     end
 
     read :one do
@@ -176,6 +172,8 @@ defmodule AshTemplate.Polls.Poll do
               message: "You've started as many polls as you can today. Start another tomorrow."}
 
       change load(@shown)
+      # An agent's start rechecks its pairing inside the transaction.
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
     end
 
     update :end do
@@ -204,12 +202,38 @@ defmodule AshTemplate.Polls.Poll do
              end)
 
       change load(@shown)
+      # An agent's end rechecks its pairing inside the transaction.
+      change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
     end
-  end
 
-  # An agent's start or end rechecks its pairing inside the transaction.
-  changes do
-    change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}, on: [:create, :update]
+    # One vote counted, inside the vote's own transaction and only once the vote
+    # is saved (`AshTemplate.Polls.Vote.CastVote`). The update checks the poll is
+    # still open, so a vote racing the poll's close or its end is either counted
+    # before it or turned away with the whole vote.
+    update :count_vote do
+      accept []
+      argument :choice, :string, allow_nil?: false
+
+      validate StillOpen
+
+      change atomic_update(:votes_cast, expr(votes_cast + 1))
+
+      # The map type takes no expression, so the SQL hands back the stored shape
+      # itself (`{:atomic, ...}`): the same map with one more vote for the choice.
+      change atomic_update(
+               :tally,
+               {:atomic,
+                expr(
+                  fragment(
+                    "jsonb_set(?, ARRAY[?::text], to_jsonb(COALESCE((? ->> ?::text)::integer, 0) + 1))",
+                    tally,
+                    ^arg(:choice),
+                    tally,
+                    ^arg(:choice)
+                  )
+                )}
+             )
+    end
   end
 
   policies do
@@ -217,7 +241,7 @@ defmodule AshTemplate.Polls.Poll do
       authorize_if always()
     end
 
-    policy action_type([:create, :update]) do
+    policy action([:start, :end]) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}
     end
@@ -225,18 +249,31 @@ defmodule AshTemplate.Polls.Poll do
     policy action(:end) do
       authorize_if expr(started_by_id == ^actor(:human_account_id))
     end
+
+    # Reached only from a vote, after the vote itself was allowed.
+    policy action(:count_vote) do
+      authorize_if actor_attribute_equals(:role, :system)
+    end
   end
 
-  # Delivered after the transaction commits to `AshTemplate.Polls.topic/0`:
-  # %{event: "start" | "end", payload: %{poll_id: id}}.
+  # Delivered after the transaction commits. A start or an end goes to
+  # `AshTemplate.Polls.topic/0` with the poll's `summary/1`; a vote counted goes
+  # to that poll's own `AshTemplate.Polls.topic/1` with how many have voted, and
+  # never which way.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
     prefix "public"
     broadcast_type :broadcast
-    transform &%{poll_id: &1.data.id}
 
-    publish :start, ["polls"]
-    publish :end, ["polls"]
+    publish :start, ["polls"], transform: &__MODULE__.summary(&1.data)
+    publish :end, ["polls"], transform: &__MODULE__.summary(&1.data)
+
+    publish :count_vote, ["poll", :id],
+      event: "vote",
+      transform: &%{id: &1.data.id, votes_cast: &1.data.votes_cast}
   end
+
+  @doc "What the polls list shows of a poll, and what its start and end publish."
+  def summary(poll), do: Map.take(poll, [:id, :question, :closes_at, :ended_at, :votes_cast])
 end
