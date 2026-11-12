@@ -11,6 +11,8 @@ Changes to Ash Template, newest first.
   follows your pointer. Every Regent site can show a row like it on its home page.
 - **Buttons.** In the light theme the main button is now dark with light words, so the
   main action on a page is easy to find.
+- **Buttons.** In the dark theme the main button is now light with dark words, and its
+  edges turn orange when you point at it or reach it with the keyboard.
 
 - **Command line 1.10.25.** The agent guide now asks for version 1.10.25 of the command
   line. With it, agents can leave the team a private message, mark their person's

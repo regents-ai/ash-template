@@ -9147,3 +9147,34 @@ release waits for Sean's go.
   skipped, 217 Elixir (10 properties); the head differs only by a changelog line.
 - Design-system pin `0ae2bffc`: the style check stops with exit 2 when ripgrep, awk or
   perl is missing.
+
+## 2026-11-12 — Platinum main button in dark; Credits leftovers removed
+
+Branch `tpl/dark-button-1112`, on main `7dcf9aa5` (v219). Not released.
+
+- `2edcb597` Design-system pin `b57f8d919b7774fd3d09d303a580200e0692df06` (was
+  `0ae2bffc`), Sean's 151 a: in the Regents colour set, dark only, the main button is a
+  Platinum `#E5E3D2` plate with Charcoal words, and its hover and focus marks are
+  Tangerine through the new setting `--color-button-mark`. Rollout:
+  control `rollouts/2026-11-12-main-button-dark.md`.
+- `bf999815` The buttons lab (`/animations/buttons`) drew its Done outline in the
+  words' colour, Charcoal on the new plate in dark, and on Regents and Keyfleet in the
+  page's text colour, which did not show on the plate in either theme. In dark it now
+  takes `--color-button-mark` (Tangerine), chosen with the shared button's own dark
+  selectors; in light it is the words' colour on every site. Every other main-button
+  mark in the template already used the design system's settings.
+- Measured in headless Chromium on a local server (WebKit not run). `/showcase/wallet`
+  in dark: plate 15.23:1 against the page, words 14:1 on it, Tangerine marks 2.4:1 on
+  the plate and 6.34:1 against the page, focus ring 11.37:1. Light unchanged: plate
+  16.41:1, words 14:1. The lab's Regents column in dark: plate 14.26:1 against its
+  panel. No sideways scroll at 1280, 390 or 320.
+- `792c9c6d` Credits leftovers: `security/required-fixes.json` loses the
+  `regent_credits` library and the fixes `2026-10-26-ash-required-v7` and
+  `2026-10-07-credits-report-chain-first`; no site's main uses the package. The
+  required-fixes checker passes on the edited file. `docs/signed-agent-access-release.md`
+  loses the Credits migrations, spending grants and the grant setting. The setting name
+  `REGENT_CREDITS_ADMINS` stays.
+- The public changelog says the dark main button is now light with dark words.
+- Full check exit 0 in 322 s: style check clean, 13 script tests, credo clean, 126
+  TypeScript, 579 browser walks with 5 skipped, 217 Elixir (10 properties), required
+  fixes (main's registry), the command list and the newest-CLI check.
