@@ -8094,3 +8094,16 @@ sits on its own branches.
 - `pairing.spec.ts` and `pair_link.spec.ts` check the band at both widths, that nothing
   under it moves, a press half way through each move (the page's clock held), and the
   instant list with reduced motion. The animejs skill names the list.
+
+## 2026-11-12 — Released v202: the Pair New Agent window
+
+- `9331cd03` (the merge of `tpl/pairing-window-1112` onto v201, design-system pin
+  `dfd18f87`) is v202 on template.regents.sh, switched at about 07:36Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v201 (`1c18b763`).
+- Full check on `9331cd03`, exit 0: 57 script tests, 495 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json`
+  names `9331cd03`; `/`, `/agents`, `/agents/hermes`, `/account`, `/app` and `/polls`
+  answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
+  The pairing window opens only for a signed-in person, so it was not opened live; the
+  browser walks open it locally at every width.
