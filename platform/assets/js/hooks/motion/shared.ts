@@ -10,6 +10,8 @@ export const SLOW = 280
 
 export const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1)
 export const EASE_IN_OUT = cubicBezier(0.77, 0, 0.175, 1)
+// For things leaving.
+export const EASE_IN = cubicBezier(0.11, 0, 0.5, 0)
 
 // Words and digits that rise into view each sit inside a box that clips them,
 // `.split-clip` in components/motion.css. The box is named by a class because a

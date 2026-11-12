@@ -7968,3 +7968,36 @@ sits on its own branches.
   Cancel and Escape close it with focus back on Delete, Delete removes that note once
   and leaves the others, and it still works after a live navigation away and back and
   after the LiveSocket reconnects. The browser's own box never showed.
+
+## 2026-11-12 — Motion kit for the shared parts, and the Parts lab
+
+- New kit hooks in `platform/assets/js/hooks/motion/`, each reading only the marks in
+  design-system's `CONSUMERS.md`, joined through `phx-hook` on the shared component:
+  - `travel.ts`, `MotionTravel`: the segmented control's indicator springs with its
+    leading edge first (`spring({bounce: 0.15, duration: 300})`, the trailing edge half
+    a fast step later), follows a press dragged across the cells and chooses the cell it
+    is let go over, then removes its values and `data-travel="kit"`. Link tabs slide
+    their bar from the tab before (`--rg-travel-x`, `--rg-travel-scale`, 280ms) after a
+    patch or a live navigation, and scroll the new tab into view inside the row.
+  - `crumbs.ts`, `MotionCrumbs`: after a level is pressed, the new page showing rises
+    half a space step over 280ms and the levels that left fade where they stood
+    (140ms, `--ease-in`), through a patch or a live navigation. Its menus and card grow
+    from their buttons through the kit's menu motion (`motion.ts`).
+  - `moments.ts`, `MotionActivity`: a step that arrives fades in and its line grows down
+    from the mark above. The component renders no layout ids, so this is its own small
+    hook rather than `MotionList`.
+  - `chart.ts`, `MotionChart`: the rule, figure and time follow the pointer, or Left,
+    Right, Home and End on the plot, and the latest figure comes back when the pointer
+    leaves or focus goes. A new period morphs the line (`svg.morphTo`, 280ms) when the
+    point count holds and fades it in otherwise.
+  - `shared.ts` gains `EASE_IN` (the `--ease-in` token).
+- Nothing moves for a key press or with less motion; nothing runs on a timer. The chart
+  and the breadcrumb decide from the press inside them, because the browser's own
+  pointer-move after a redraw makes "last input was the pointer" unreliable there.
+- New lab page `/animations/parts` (`AshTemplateWeb.PartsLabLive`, titled Parts): tabs,
+  a breadcrumb, a price chart with its period, an agent's activity with Next step, and
+  the chart's and activity's loading, failed and empty states. Listed in the lab index,
+  the design page, the public documents, the route catalog and handoff, the README and
+  `pages.json`. No real page changes.
+- Tests: `platform/assets/test/parts_motion.test.ts` and a `motion.spec.ts` check.
+  `skills/animejs/references/liveview-islands.md` and `AGENTS.md` name the hooks.

@@ -89,7 +89,7 @@ export function press(event: MouseEvent) {
 }
 
 // A dialog rises as a sheet, whether it opens as a modal or as a popover over
-// another window, and a header menu pops open. A page that redraws
+// another window, and a header menu or a breadcrumb's menu pops open. A page that redraws
 // an open one closes and reopens it within one moment, which reports it as
 // having been open all along, so it does not move again. Once it rests where it
 // opens, moved or not, it carries `data-settled`, so whatever measures it, such
@@ -108,6 +108,8 @@ function toggle(event: Event) {
 
 function open(target: HTMLElement) {
   if (target instanceof HTMLDialogElement) return sheet(target)
+  // A breadcrumb's menus and card grow from the button that opened them.
+  if (target.matches(".rg-crumbs [popover]")) return menu(target)
   const panel = target instanceof HTMLDetailsElement && target.querySelector(":scope > [data-panel='menu']")
   if (panel) return menu(panel)
 }

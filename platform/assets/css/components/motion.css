@@ -12,5 +12,15 @@
 [data-sheet-handle] { touch-action: none; }
 [data-panel="drawer"], [data-toast] { touch-action: pan-y; }
 
+/* A press dragged across a segmented control carries its indicator
+   (hooks/motion/travel.ts), so a finger moving sideways stays with it. */
+.rg-segmented[data-travel] { touch-action: pan-y; }
+
+/* A new step's line grows down from the mark above (MotionActivity), and a
+   breadcrumb's menus and card grow from the button that opened them. */
+[data-activity] .rg-activity__rail { transform-origin: top; }
+.rg-crumbs [popover] { transform-origin: top left; }
+.rg-crumbs [popover]:dir(rtl) { transform-origin: top right; }
+
 /* While something is dragged, the pointer moves it rather than selecting text. */
 :root[data-dragging] { user-select: none; }

@@ -29,9 +29,12 @@ import {AccountPicture} from "./hooks/account_picture"
 import {Datascape} from "./hooks/datascape"
 import {HolographicCard} from "./hooks/holographic_card"
 import {InfoDialog} from "./hooks/info_dialog"
-import {MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
+import {MotionChart} from "./hooks/motion/chart"
+import {MotionCrumbs} from "./hooks/motion/crumbs"
+import {MotionActivity, MotionCount, MotionList, MotionRefusal} from "./hooks/motion/moments"
 import {MotionCascade, MotionTabs, ShellViews} from "./hooks/motion/reveals"
 import {MotionPanels} from "./hooks/motion/slides"
+import {MotionTravel} from "./hooks/motion/travel"
 import {OnchainSteps} from "./hooks/onchain_steps"
 import {MenuAgents} from "./hooks/menu_agents"
 import {PublicName} from "./hooks/public_name"
@@ -356,13 +359,17 @@ const hooks = {
   Datascape,
   HolographicCard,
   InfoDialog,
+  MotionActivity,
   MotionCascade,
+  MotionChart,
   MotionCount,
+  MotionCrumbs,
   MotionList,
   MotionPanels,
   ProductsMenu,
   MotionRefusal,
   MotionTabs,
+  MotionTravel,
   OnchainSteps,
   MenuAgents,
   PublicName,

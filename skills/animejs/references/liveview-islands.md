@@ -54,7 +54,10 @@ each kind of movement, and the lab where every version that was tried sits side 
 | `platform/assets/js/hooks/motion/press.ts` | `squish`, `nope`, `deny` |
 | `platform/assets/js/hooks/motion/slides.ts` | `drawer`, `sheet`, `menu`, `backdrop`, `MotionPanels` |
 | `platform/assets/js/hooks/motion/reveals.ts` | `ShellViews`, `MotionTabs` / `tabsHook`, `MotionCascade`, `HEADLINES`, `GRIDS` |
-| `platform/assets/js/hooks/motion/moments.ts` | `MotionList` / `listHook`, `MotionCount` / `countHook`, `MotionRefusal` |
+| `platform/assets/js/hooks/motion/moments.ts` | `MotionList` / `listHook`, `MotionCount` / `countHook`, `MotionRefusal`, `MotionActivity` |
+| `platform/assets/js/hooks/motion/travel.ts` | `MotionTravel`: the shared segmented control's indicator and link tabs' bar |
+| `platform/assets/js/hooks/motion/crumbs.ts` | `MotionCrumbs`: the shared breadcrumb |
+| `platform/assets/js/hooks/motion/chart.ts` | `MotionChart`: the shared line chart's pointer rule, readout and line morph |
 | `platform/assets/js/motion.ts` | `mountMotion(document)`: presses, panels, headline and cards on every page |
 | `platform/assets/js/motion_lab.ts` | The lab's other versions; lazy-loaded on `/animations` only |
 | `platform/lib/ash_template_web/motion.ex` | `AshTemplateWeb.Motion.standard/1`: the version each part uses |
@@ -84,6 +87,13 @@ Pages take part through markup, never through their own motion code:
   while `data-refused` is on it; an island whose `data-panel` drawers, sheets or menus
   open by LiveView commands (`JS.show`) takes `phx-hook="MotionPanels"`. Don't put
   `MotionPanels` around the shell's own drawer, which already moves on its press.
+- The design system's own parts take their hook through `phx-hook` and need nothing
+  else: `MotionTravel` on `Regent.Primitives.segmented` and `tabs`, `MotionCrumbs` on
+  `breadcrumb`, `MotionActivity` on `Regent.Agents.activity` and `MotionChart` on
+  `Regent.Charts.line`. They read the marks in design-system's `CONSUMERS.md`; a
+  breadcrumb's menus and card grow from their buttons through `motion.ts`.
+  `/animations/parts` shows each with sample data and its loading, failed and empty
+  states.
 - `/animations` is the lab: public once the site opens, linked from nowhere. A site
   changes a standard version by comparing there first, then changing `motion.ex`, the
   kit and every site together.

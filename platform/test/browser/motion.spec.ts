@@ -257,3 +257,62 @@ test("a menu grows from its button by pointer, and is simply there by keyboard",
   await expect(sort).not.toHaveAttribute("open")
   await expect(sort.locator("summary")).toBeFocused()
 })
+
+// The parts lab, built with the design-system 2e839171 parts: a period chosen by pointer slides the segmented indicator, morphs the
+// line when the point count holds, and hands both back with nothing written on
+// them; chosen by key, both are simply there. The chart's rule and readout follow
+// the arrow keys and the latest figure comes back when focus goes.
+test("a segmented choice travels by pointer and is simply there by keyboard; the chart reads out by key", async ({page}) => {
+  await page.goto("/animations/parts")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  const period = page.locator("#parts-period")
+  const indicator = period.locator("[data-travel-indicator]")
+  const line = page.locator("#parts-chart path[data-chart-line='0']")
+  await page.evaluate(() => {
+    const w = window as unknown as {kit: number; shapes: Set<string>}
+    w.kit = 0
+    w.shapes = new Set()
+    new MutationObserver(records => {
+      for (const r of records) {
+        const el = r.target as Element
+        if (r.attributeName === "data-travel" && el.getAttribute("data-travel") === "kit") w.kit++
+        if (r.attributeName === "d" && el.matches("[data-chart-line='0']")) w.shapes.add(el.getAttribute("d")!)
+      }
+    }).observe(document.querySelector("#parts-chart")!, {subtree: true, attributes: true, attributeFilter: ["data-travel", "d"]})
+  })
+  const seen = () => page.evaluate(() => {
+    const w = window as unknown as {kit: number; shapes: Set<string>}
+    const out = {kit: w.kit, shapes: w.shapes.size}
+    w.kit = 0
+    w.shapes = new Set()
+    return out
+  })
+
+  await period.locator("label", {hasText: "1D"}).click()
+  await expect(period.locator("input[value='1d']")).toBeChecked()
+  await expect(indicator).not.toHaveAttribute("style", /./)
+  await expect(period).toHaveAttribute("data-travel", "")
+  await expect(line).not.toHaveAttribute("style", /./)
+  const byPointer = await seen()
+  expect(byPointer.kit).toBeGreaterThan(0)
+  expect(byPointer.shapes).toBeGreaterThan(2)
+
+  await period.locator("input[value='1d']").focus()
+  await page.keyboard.press("ArrowRight")
+  await expect(period.locator("input[value='1w']")).toBeChecked()
+  await page.waitForTimeout(400)
+  const byKey = await seen()
+  expect(byKey.kit).toBe(0)
+  expect(byKey.shapes).toBeLessThanOrEqual(1)
+
+  const chart = page.locator("#parts-chart")
+  const figure = chart.locator("[data-chart-readout='figure']")
+  const latest = (await figure.textContent())!.trim()
+  await chart.locator("[data-chart-plot]").focus()
+  await page.keyboard.press("Home")
+  await expect(chart).toHaveAttribute("data-chart-at", "0")
+  await expect(figure).toHaveText((await chart.locator("tr[data-chart-point] td").first().textContent())!.trim())
+  await page.keyboard.press("Tab")
+  await expect(chart).not.toHaveAttribute("data-chart-at")
+  await expect(figure).toHaveText(latest)
+})
