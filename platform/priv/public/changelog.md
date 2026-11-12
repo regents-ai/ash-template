@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Looks.** On a phone the frosted glass's six looks stay on one row; on the
+  narrowest screens the row slides sideways.
 - **Ask first.** Deleting a note or a message, unpairing an agent, muting, blocking and
   ending a poll now ask in the site's own window, with Cancel ready first.
 - **Fewer labels.** Error pages and the account card drop their small labels.

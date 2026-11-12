@@ -8001,3 +8001,14 @@ sits on its own branches.
   `pages.json`. No real page changes.
 - Tests: `platform/assets/test/parts_motion.test.ts` and a `motion.spec.ts` check.
   `skills/animejs/references/liveview-islands.md` and `AGENTS.md` name the hooks.
+
+## 2026-11-12 — Frosted glass looks keep to one row
+
+- `/animations/frosted-glass`: the six looks no longer wrap (at 390 wide Ember sat
+  alone on a second row). The row never wraps; at 30rem and under the gap is
+  `--space-1`, which fits all six from about 380 wide, and narrower the row scrolls
+  sideways on its own while the page does not. Inside that row a focused look draws
+  its ring inset so the row does not cut it off. Only
+  `platform/assets/css/pages/frosted_glass.css` changes.
+- `platform/test/browser/layout.spec.ts` checks the six share one row with no sideways
+  page scroll, on desktop and phone.
