@@ -396,8 +396,11 @@ is reported after with its rollback. Follow [the release
 checklist](references/release.md) every time. Always:
 
 - push and release only on a passing check, chained so a failure stops the push;
+- sites never wait on each other (12 Nov): one deployer per site, two production
+  switches and three full checks at once on the Mac, as the checklist's step 3 says;
 - right before the push, read the site's coordination file on control's `origin/main`
-  for a release-slot CLAIM newer than your instructions, and wait for its owner (8 Nov);
+  for a CLAIM on this site's release newer than your instructions, and wait for its
+  owner (8 Nov);
 - name the rollback before the release goes out;
 - when `worktrees.py` refuses a checkout or a safety check refuses a deploy, stop and
   report what blocked it; never release from an export or a clone (8 Nov);

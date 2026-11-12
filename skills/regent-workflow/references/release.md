@@ -11,13 +11,42 @@ again before a release.
 2. **Suite against live.** Run the suite and report pass and fail counts beside the live
    commit's counts. A failure live already has gets a named owner before the release
    goes out.
-3. **The release slot** (8 Nov). Right before pushing a site's main or running
-   `scripts/deploy.sh production`: `git fetch origin main` in
-   `/Users/sean/Documents/regent/control`, then read
-   `git show origin/main:coordination/<site>.md | tail -40`. A CLAIM newer than your
-   instructions means the slot is taken: say so and wait for its owner. Full checks
-   queue on `lockf /tmp/regent-cmcp-check.lock`; releases that share the database take
-   `/tmp/regent-shared-db-release.lock`.
+3. **Sites never wait on each other** (Sean, 12 Nov: "I do not want to wait, I want it
+   parallelized"). Each site deploys to its own Fly app. The only turns left are these,
+   each for something that really is shared:
+   - **One deployer per site.** A site's `scripts/deploy.sh` holds
+     `/tmp/regent-release-<fly app>.lock` for its whole run, so two deploys of one site
+     take turns. Right before pushing a site's main or deploying it, `git fetch origin
+     main` in `/Users/sean/Documents/regent/control` and read
+     `git show origin/main:coordination/<site>.md | tail -40`: a CLAIM newer than your
+     instructions means another thread owns this site's next release; say so and wait
+     for its owner. Another site's release or CLAIM never holds yours.
+   - **Two production switches at once.** The image build takes no shared lock. The
+     switch (`fly deploy --image`: migrations, then a second machine with its own
+     connections until the first stops) takes a place on the production database every
+     site shares, `/tmp/regent-shared-db-release.lock` if it is free, otherwise
+     `/tmp/regent-shared-db-release-2.lock`. The database takes 97 connections, about 64
+     to 76 are in use and one switch adds up to 8, so two fit and a third could fill it.
+     A hand-run `fly deploy`, rollback, `fly machine restart` or `fly secrets set`
+     without `--stage` takes a place the same way.
+   - **Three full checks at once.** `make check`, `mix precommit` and whole test or
+     Playwright suites share the Mac's 48 GB, so each takes one of three places:
+
+     ```bash
+     for place in /tmp/regent-cmcp-check.lock /tmp/regent-cmcp-check-2.lock /tmp/regent-cmcp-check-3.lock; do
+       lockf -k -s -t 0 "$place" true && break
+     done
+     MIX_TEST_PARTITION="_$(basename "$PWD" | tr -c 'a-z0-9\n' _)" lockf -k "$place" make check
+     ```
+
+     Each run keeps its own worktree, `_build`, `node_modules` and test databases (the
+     partition above), and its own browser port: on regents and keyfleet set `PORT`, on
+     techtree `TECHTREE_BROWSER_PORT` and `TECHTREE_BROWSER_COPY`, to a free port and the
+     partition name; the other sites pick theirs. So checks of different sites, or of
+     one site in two worktrees, never meet.
+
+   Always pass `-k` to `lockf`. Never wrap `scripts/deploy.sh` in `lockf`: it takes its
+   own locks, and a wrapper on its site lock waits on itself forever.
 4. **Push and release only on a passing check**, chained so a failure stops the push:
    `make check && git push origin HEAD:main`. Run the check again when main moved under
    you, on the exact commit the release builds. A failure you believe is old still stops

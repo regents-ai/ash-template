@@ -139,13 +139,14 @@ the workspace). This holds until the founder changes the database plan.
 - `keyfleet-code` runs the Twigpine git node (Rust, sqlx), not an Ash site. It holds at
   most 10 connections (since its v5, c9a59ea) on the direct address: it takes session
   advisory locks and keeps sqlx's named statement cache.
-- Releases take turns, because a release doubles its site's direct connections; one at
-  a time has held since 27 October. Every site's deploy, and the
-  template's `scripts/deploy.sh`, runs under `lockf -k /tmp/regent-shared-db-release.lock`.
-  The lock is one file on the founder's Mac, so releases started there take turns across
-  sites. It does not hold back a deploy started anywhere else or a restart from a secret
-  set without `--stage`: production releases start from that Mac, and secrets are
-  staged.
+- A release's switch to its new image runs migrations on the release login and then a
+  second machine with its own connections until the first stops, so at most two
+  switches run at once across all sites (12 Nov). The image build takes no shared
+  lock; the switch takes `/tmp/regent-shared-db-release.lock` if it is free, otherwise
+  `/tmp/regent-shared-db-release-2.lock` (regent-workflow's release checklist, step 3).
+  The places are files on the founder's Mac, so they do not hold back a deploy started
+  anywhere else or a restart from a secret set without `--stage`: production releases
+  start from that Mac, and secrets are staged.
 - More connections for one site, or a larger database plan, is the founder's decision.
 
 ## Snapshots are generator state
