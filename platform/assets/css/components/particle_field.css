@@ -12,15 +12,15 @@
    Until the grains have drawn, and wherever they never do, the control is its
    flat, square still face. Once they have, the still face gives its colours to
    the grains and only its focus ring stays. The grains are lit in the site's own
-   light: Tangerine by day and Powder Blue at night, a brand's own beam where it
-   sets one (Techtree), and Patchbay's cobalt. */
+   light, the same by day and at night: Tangerine, a brand's own beam where it
+   sets one (Techtree's green), and Patchbay's accent. */
 .particle-field {
   --particle-aspect: 1;
   /* CSS pixels per unit of the shape, read inside the box. */
   --particle-unit: min(100cqi / var(--particle-aspect), 100cqb);
   --particle-spill: var(--space-5);
   --particle-muted: var(--color-fg-muted);
-  --particle-lit: var(--rg-theme-laser-dark, var(--palette-powder-blue));
+  --particle-lit: var(--rg-theme-laser-light, var(--palette-tangerine-tango));
   /* The far end of what is lit: a ring's last stretch, a spinner's tail. */
   --particle-far: color-mix(in srgb, var(--particle-lit) 55%, var(--color-fg));
   --particle-face-line: var(--color-fg-muted);
@@ -31,16 +31,6 @@
   display: grid;
   place-items: center;
   container-type: size;
-}
-
-:root[data-theme="light"] .particle-field {
-  --particle-lit: var(--rg-theme-laser-light, var(--palette-tangerine-tango));
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .particle-field {
-    --particle-lit: var(--rg-theme-laser-light, var(--palette-tangerine-tango));
-  }
 }
 
 :root[data-brand="patchbay"] .particle-field {

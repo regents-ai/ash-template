@@ -2,14 +2,17 @@
 /* The particles lab (`/animations/particles`, `AshTemplateWeb.ParticlesLabLive`):
    one stage with the particle field and its real controls, the bar below it,
    and the grid of shapes. The stage is padded by exactly the field's spill, so
-   the canvas reaches the stage's edges and never past the column. */
+   the canvas reaches the stage's edges and never past the column.
+
+   The field keeps one size on every screen, so its grains lie as fine on a wide
+   one as on a phone; a wide screen gives it more room round it to fly in. */
 .motion-lab--particles {
   width: 100%;
   align-content: start;
 }
 
 .particle-lab {
-  --particle-lab-spill: clamp(var(--space-4), 8vw, var(--space-8));
+  --particle-lab-spill: clamp(var(--space-4), 10vw, calc(2 * var(--space-8)));
   display: grid;
   gap: var(--space-3);
   min-width: 0;
@@ -21,7 +24,7 @@
 
 .particle-lab .particle-field {
   --particle-spill: var(--particle-lab-spill);
-  block-size: clamp(8rem, 26vw, 15rem);
+  block-size: 8rem;
 }
 
 .particle-lab__bar {
