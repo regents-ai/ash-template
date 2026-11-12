@@ -299,7 +299,7 @@ defmodule AshTemplateWeb.Components.Shell do
         id="shell-search"
         class="shell-search"
         aria-label="Search"
-        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
+        phx-mounted={JS.ignore_attributes(["data-settled"])}
       >
         <form id="shell-search-form" role="search" phx-change="search" phx-submit="search">
           <Regent.Icons.icon name="search" class="shell-icon shell-search__glass" />
@@ -382,7 +382,7 @@ defmodule AshTemplateWeb.Components.Shell do
         id="shell-pairing"
         class="shell-pairing-dialog"
         aria-labelledby="shell-pairing-title"
-        phx-mounted={JS.ignore_attributes(["open", "data-settled"])}
+        phx-mounted={JS.ignore_attributes(["data-settled"])}
       >
         <Regent.Primitives.button
           variant="quiet"

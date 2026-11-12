@@ -65,3 +65,30 @@ for (const {path, topic, dialogId} of [
     await problems.expect()
   })
 }
+
+// A press before /app has joined opens the dialog from the page's script; the join's
+// first patch, which brings the page the server renders, leaves it open. The server's
+// replies are held until after the press, as on a slow connection.
+test("on /app, a dialog opened before the page joins stays open once it has", async ({page, hasTouch}) => {
+  let held = true
+  const queued: (() => void)[] = []
+  await page.routeWebSocket(/\/live\/websocket/, socket => {
+    const server = socket.connectToServer()
+    server.onMessage(message => {
+      if (held) queued.push(() => socket.send(message))
+      else socket.send(message)
+    })
+  })
+  await page.goto("/app")
+  await expect(page.locator("[data-phx-main].phx-connected")).toHaveCount(0)
+  const open = page.getByRole("button", {name: "Agent Message"})
+  await (hasTouch ? open.tap() : open.click())
+  const dialog = page.getByRole("dialog", {name: "Agent Message"})
+  await expect(dialog).toBeVisible()
+
+  held = false
+  for (const send of queued.splice(0)) send()
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator(".agent-message__text")).toHaveCount(3)
+})

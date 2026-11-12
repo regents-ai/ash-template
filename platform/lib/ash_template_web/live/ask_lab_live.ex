@@ -25,10 +25,14 @@ defmodule AshTemplateWeb.AskLabLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    question = String.trim(params["q"] || "")
+    question = question(params)
     now = DateTime.utc_now(:second)
     {:noreply, assign(socket, question: question, now: now, answer: answer(question, now))}
   end
+
+  # A link can carry `q` as a list or a map (`?q[]=a`); only text is a question.
+  defp question(%{"q" => question}) when is_binary(question), do: String.trim(question)
+  defp question(_params), do: ""
 
   @impl true
   def handle_event("ask", %{"q" => question}, socket) do

@@ -101,6 +101,16 @@ AshTemplate.Polls.start_poll!(%{question: "Tea or coffee?", choices: ["Tea", "Co
   actor: Human.for_account(friend)
 )
 
+# A poll the person started for each width, open for the whole walk, for Vote and End
+# to wait while the connection is down (blocked_websocket.spec.ts). Started here, it
+# leaves the person's daily polls to polls.spec.ts.
+for width <- ["desktop", "phone"] do
+  AshTemplate.Polls.start_poll!(
+    %{question: "Walk offline, #{width}?", choices: ["Yes", "No"], minutes: 60},
+    actor: person
+  )
+end
+
 # A fourth agent, paired first, which the account menu's three leave out
 # (account_menu.spec.ts); the agent the walk opens on the Agents page, and one for
 # each width to rename (agents.spec.ts).

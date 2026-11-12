@@ -30,6 +30,16 @@ test("a question it does not know shows three it does, each one answering", asyn
   await expect(page.locator("#ask-plan [data-chart]")).toBeVisible()
 })
 
+test("a link whose question is not text shows the empty bar", async ({page}) => {
+  for (const query of ["q[]=a", "q[a]=b"]) {
+    const response = await page.goto(`/animations/ask?${query}`)
+    expect(response?.status(), query).toBe(200)
+    await page.locator("[data-phx-main].phx-connected").waitFor()
+    await expect(page.locator("#ask-q")).toHaveValue("")
+    await expect(page.locator("#ask-plan, #ask-none")).toHaveCount(0)
+  }
+})
+
 test("asking and following an example work from the keyboard alone", async ({page}) => {
   await page.goto("/animations/ask")
   await page.locator("[data-phx-main].phx-connected").waitFor()

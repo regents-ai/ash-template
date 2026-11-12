@@ -8487,3 +8487,81 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - `platform/test/browser/grain.spec.ts`: at 320 and 390 with the GPU on, the water runs,
   pointer moves and a theme change leave the page alive, drawn, under a 64 MB script heap
   and with no sideways scroll; with less motion the water never draws.
+## 2026-11-12 — Released v208: the Value and Ask lab pages
+
+- `e5afe7c2` (the design chief's `wt/tpl-bonus-1112`) is v208 on template.regents.sh,
+  switched at about 09:15Z with `scripts/deploy.sh`. No migrations. Rollback: v207
+  (`c3b2ddf7`).
+- Full check on `e5afe7c2`, exit 0: 13 script tests, 108 TypeScript, 521 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `e5afe7c2`; `/animations/value`, `/animations/ask`, `/animations/ask?q=Points this week`,
+  `/animations` and `/` answer 200 at 1280, 390 and 320 with no page or console errors,
+  no sideways scroll and no crash (the earlier value page crashed at 390 and 320). The
+  pointer was not swept over the cards live.
+
+## 2026-11-12 — The other live forms say when they are not connected
+
+- A new note and editing a note, a new poll, a poll's Vote and End, a room's topic, a
+  new room and the Agent Message form now show the same "Not connected. Trying again…"
+  note as Send, from half a second after the live connection drops (or when the page
+  could not connect) until it is back, and their buttons are disabled meanwhile; the
+  boxes can still be typed in. Each uses `AshTemplateWeb.LiveConnection.offline` beside a
+  fieldset around the form's own buttons (`note-form-offline`, `poll-start-offline`,
+  `poll-offline` for Vote and End together, `room-topic-offline`, `room-start-offline`,
+  `<dialog>-person-offline`), with no new words or script.
+- Left as they are: the header search (it only reads, and its one button, Close, works
+  without a connection); a note's own row buttons, a message's menu, Unmute, Mark all as
+  read, an agent's See Actions, Unpair and rename, and Connect on verified connections
+  (single buttons in a list, not a form); the public name on `/account` (saved from the
+  browser, not over the live connection); the admin inbox (nothing to send); and the
+  showcase and lab pages. None of these forms has a wallet or payment button.
+- `blocked_websocket.spec.ts` checks each at 390 and 1280: with websockets refused, a new
+  note, poll, room and Agent Message show the note with their button disabled; after a
+  drop, a note's Save changes and Cancel, a poll's Vote and End and a room's Save topic
+  are disabled, and once back the edit, the vote and the topic go through. The walk's
+  setup starts one poll per width for the person, so the check leaves the person's daily
+  polls to `polls.spec.ts`.
+- A window opened before its page has joined its live connection stays open once the page
+  joins. The Agent Message window on `/app`, pressed while the page was still loading,
+  used to close again at the join: `JS.ignore_attributes(["open"])` in `phx-mounted`
+  only covers patches after the join, so the join's first patch took `open` away (the
+  trace of the failing walk shows the window open at 9427 ms with the page still
+  loading, and closed once it had joined). The page's LiveSocket now keeps `open` on an
+  open dialog through every patch (`dom.onBeforeElUpdated` in `assets/js/app.ts`), and
+  `"open"` leaves the search, pairing, agent tools and Agent Message windows'
+  `ignore_attributes`. Main's code fails the same way when the join is held until after
+  the press; `agent_message.spec.ts` now checks that at both widths.
+
+## 2026-11-12 — Released v209: the other forms say Not connected, and a window opened early stays open
+
+- `98ead9be` (`tpl/offline-forms-1112`) is v209 on template.regents.sh, switched at about
+  09:53Z with `scripts/deploy.sh`. No migrations. Rollback: v208 (`e5afe7c2`).
+- Full check on `98ead9be`, exit 0: 108 TypeScript, 537 browser walks with 5 skipped,
+  207 Elixir (9 properties). An earlier candidate (`833a6547`) failed the Agent Message
+  walk on `/app` twice and was not released; the cause was a window closing at the page's
+  join, fixed at the root here.
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `98ead9be`; `/`, `/agents`, `/polls`, `/notes`, `/app`, `/account` and `/animations`
+  answer 200 at 1280 and 390 with no page or console errors and no sideways scroll.
+  Pressed on live with the page's join held back: Agent Message on `/app` opens before
+  the join and is still open, with its three texts, after it, at both widths.
+- Not shown live: the "Not connected" note itself. Every form that carries it is for a
+  signed-in person, and live reads never use a person's sign-in; the walks cover it.
+
+## 2026-11-12 — The Ask lab page no longer crashes on a question that is not text
+
+- Sentinel's after-read of v208 found `/animations/ask?q[]=a` (and `q[a]=b`) answering
+  500: `AskLabLive.handle_params/3` passed a list or a map to `String.trim/1`. A `q` that
+  is not a binary is now no question, and the page shows the empty bar.
+  `ask_bar.spec.ts` checks both shapes at both widths.
+
+## 2026-11-12 — Released v210: the Ask lab page fix
+
+- `683ddeeb` is v210 on template.regents.sh, switched at about 10:10Z with
+  `scripts/deploy.sh`. No migrations. Rollback: v209 (`98ead9be`).
+- Full check on `683ddeeb`, exit 0: 108 TypeScript, 539 browser walks with 5 skipped,
+  207 Elixir (9 properties).
+- Live read, signed out: `/capabilities.json` names `683ddeeb`; `/animations/ask` with
+  `q[]=a`, `q[a]=b`, a text question and no question each answer 200 (the first two
+  answered 500 on v208 and v209).

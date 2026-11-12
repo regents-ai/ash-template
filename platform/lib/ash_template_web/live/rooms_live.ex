@@ -504,9 +504,15 @@ defmodule AshTemplateWeb.RoomsLive do
             phx-target={@myself}
           >
             <.topic_field form={@topic_form} id="room-topic" />
-            <Primitives.button type="submit" variant="secondary" phx-disable-with="Saving…">
-              Save topic
-            </Primitives.button>
+            <AshTemplateWeb.LiveConnection.offline
+              id="room-topic-offline"
+              controls="#room-topic-actions"
+            />
+            <fieldset id="room-topic-actions" class="rooms-start__actions">
+              <Primitives.button type="submit" variant="secondary" phx-disable-with="Saving…">
+                Save topic
+              </Primitives.button>
+            </fieldset>
           </.form>
         </section>
 
@@ -538,9 +544,15 @@ defmodule AshTemplateWeb.RoomsLive do
               />
             </Primitives.field>
             <.topic_field form={@room_form} id="room-start-topic" />
-            <Primitives.button type="submit" phx-disable-with="Starting…">
-              Start room
-            </Primitives.button>
+            <AshTemplateWeb.LiveConnection.offline
+              id="room-start-offline"
+              controls="#room-start-actions"
+            />
+            <fieldset id="room-start-actions" class="rooms-start__actions">
+              <Primitives.button type="submit" phx-disable-with="Starting…">
+                Start room
+              </Primitives.button>
+            </fieldset>
           </.form>
         </section>
       </div>

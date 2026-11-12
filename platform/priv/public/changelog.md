@@ -10,6 +10,11 @@ Changes to Ash Template, newest first.
   a ruled ground that widens from flat to deep under a heading.
 - **Motion lab.** A new page, Glow: three agents, running, waiting and done, and a
   soft light in the chosen one's status colour that arrives, holds and fades.
+- **Connection.** Notes, polls, a room's topic, new rooms and the Agent Message form now
+  also say "Not connected. Trying again…" while a page has lost its connection, and
+  wait until it is back.
+- **Windows.** A window you open while a page is still loading, such as Agent Message,
+  stays open once the page has finished.
 - **Motion lab.** A new page, Value: cards with one figure each whose surface lights
   where you point or touch, with a card loading, empty and failed.
 - **Motion lab.** A new page, Ask: type about points, offers, notes or agents and the

@@ -220,7 +220,11 @@ defmodule AshTemplateWeb.NotesLive do
                 aria-describedby={field.described_by}
               >{Phoenix.HTML.Form.normalize_value("textarea", @form[:body].value)}</textarea>
             </Primitives.field>
-            <div class="notes-form__actions">
+            <AshTemplateWeb.LiveConnection.offline
+              id="note-form-offline"
+              controls="#note-form-actions"
+            />
+            <fieldset id="note-form-actions" class="notes-form__actions">
               <Primitives.button type="submit" phx-disable-with="Saving…">
                 {if @editing, do: "Save changes", else: "Add note"}
               </Primitives.button>
@@ -233,7 +237,7 @@ defmodule AshTemplateWeb.NotesLive do
               >
                 Cancel
               </Primitives.button>
-            </div>
+            </fieldset>
           </.form>
         </section>
 

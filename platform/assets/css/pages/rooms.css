@@ -280,8 +280,11 @@
   gap: var(--space-1);
 }
 
-.rooms-start > .rg-button {
-  margin-block-start: var(--space-1);
+.rooms-start__actions {
+  min-inline-size: 0;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  border: 0;
 }
 
 .rooms-start .rg-field,
