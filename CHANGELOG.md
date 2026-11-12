@@ -8406,3 +8406,16 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
   `c3b2ddf7`; `/`, `/animations`, `/animations/buttons`, `/agents` and `/polls` answer 200
   at 1280 and 390 with no page or console errors and no sideways scroll. The lab's word
   swap itself was not watched live.
+
+## 2026-11-12 — Released v208: the Value and Ask lab pages
+
+- `e5afe7c2` (the design chief's `wt/tpl-bonus-1112`) is v208 on template.regents.sh,
+  switched at about 09:15Z with `scripts/deploy.sh`. No migrations. Rollback: v207
+  (`c3b2ddf7`).
+- Full check on `e5afe7c2`, exit 0: 13 script tests, 108 TypeScript, 521 browser walks
+  with 5 skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `e5afe7c2`; `/animations/value`, `/animations/ask`, `/animations/ask?q=Points this week`,
+  `/animations` and `/` answer 200 at 1280, 390 and 320 with no page or console errors,
+  no sideways scroll and no crash (the earlier value page crashed at 390 and 320). The
+  pointer was not swept over the cards live.
