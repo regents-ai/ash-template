@@ -149,3 +149,43 @@ it("signed in, connecting a wallet keeps the visitor's own Privy session", async
   await request()
   expect(order).toEqual(["connect"])
 })
+
+// Invariant: the sign-in window's guard is released whenever the window closes,
+// also when the page ignores how it ended (it was answered for another moment of
+// the page, or for someone else). Otherwise Sign in does nothing until a reload.
+it("a completion or failure the page ignores still lets Sign in open the window again", () => {
+  for (const ending of ["complete", "error"] as const) {
+    for (const ignored of [{isCurrent: () => false}, {acceptsSubject: () => false}]) {
+      const loginOpen = {current: true}
+      const completeLogin = vi.fn(async () => undefined)
+      const showFailure = vi.fn()
+      const callbacks = createPrivyLoginCallbacks({
+        completeLogin,
+        loginOpen,
+        showFailure,
+        reportFailure: vi.fn(),
+        ...ignored,
+      })
+
+      if (ending === "complete") {
+        const done = callbacks.onComplete as NonNullable<PrivyEvents["login"]["onComplete"]>
+        done({
+          user: {id: "did:privy:someone-else"},
+          isNewUser: false,
+          wasAlreadyAuthenticated: false,
+          loginMethod: "google",
+          loginAccount: null,
+        } as unknown as Parameters<typeof done>[0])
+      } else if ("isCurrent" in ignored) {
+        const failed = callbacks.onError as NonNullable<PrivyEvents["login"]["onError"]>
+        failed("exited_auth_flow" as Parameters<typeof failed>[0])
+      } else {
+        continue
+      }
+
+      expect(loginOpen.current).toBe(false)
+      expect(completeLogin).not.toHaveBeenCalled()
+      expect(showFailure).not.toHaveBeenCalled()
+    }
+  }
+})

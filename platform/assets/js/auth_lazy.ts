@@ -686,8 +686,14 @@ export function createSessionMutationCoordinator(): SessionMutationCoordinator {
 
       const attempt = establishmentTail.then(clearSession)
       signOutAttempt = attempt
+      // A sign-out that did not happen leaves the person signed in, so the page
+      // goes on as before: it can link an account, refresh its sign-in, or try
+      // signing out again. Only a sign-out that worked ends establishing for
+      // good, and that page is replaced.
       void attempt.catch(() => {
-        if (signOutAttempt === attempt) signOutAttempt = null
+        if (signOutAttempt !== attempt) return
+        signOutAttempt = null
+        signingOut = false
       })
       return attempt
     },

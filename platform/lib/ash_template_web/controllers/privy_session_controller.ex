@@ -25,7 +25,8 @@ defmodule AshTemplateWeb.PrivySessionController do
       {409, "This browser's sign-in has ended.", "Reload the page, then sign in again."},
     "account_switch_required" =>
       {409, "This browser was signed in to another account.",
-       "Reload the page, then sign in again."}
+       "Reload the page, then sign in again."},
+    "sign_in_unavailable" => {503, "Sign-in isn't available right now.", "Try again in a moment."}
   }
 
   @doc """
@@ -60,8 +61,30 @@ defmodule AshTemplateWeb.PrivySessionController do
          {:ok, account, identity_conflicts} <- establish(verified) do
       bind(conn, account, verified, identity_conflicts)
     else
-      {:error, {stage, reason}} -> refuse(conn, stage, reason)
+      # The site's own settings are at fault, not this browser's proof: a Privy
+      # setting is missing, or the verification key cannot be read. Nothing was
+      # judged, so the sign-in the browser holds stays as it is. Revoking it here
+      # would sign out every person whose page refreshes while a setting is wrong.
+      {:error, {stage, reason}}
+      when stage == :configuration or reason == :invalid_verification_key ->
+        unavailable(conn, stage, reason)
+
+      {:error, {stage, reason}} ->
+        refuse(conn, stage, reason)
     end
+  end
+
+  # Logged as an error with its fixed stage and reason, and counted with the
+  # refusals, so an operator sees which setting is wrong.
+  defp unavailable(conn, stage, reason) do
+    Logger.error("Privy sign-in unavailable stage=#{stage} reason=#{reason}")
+
+    :telemetry.execute([:ash_template, :privy, :session_refused], %{count: 1}, %{
+      stage: stage,
+      reason: reason
+    })
+
+    conn |> put_resp_header("cache-control", "no-store") |> refuse("sign_in_unavailable")
   end
 
   def show(conn, _params) do
