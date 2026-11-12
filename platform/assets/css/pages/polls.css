@@ -50,10 +50,20 @@
   width: 100%;
 }
 
-.polls-vote fieldset {
+.polls-vote > .rg-field {
   display: grid;
   gap: var(--space-1);
   width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Vote and End sit in their own fieldsets, which the page disables while it has
+   no live connection (AshTemplateWeb.LiveConnection). */
+.polls-vote__actions,
+.polls-poll__actions {
+  min-inline-size: 0;
   margin: 0;
   padding: 0;
   border: 0;

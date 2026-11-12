@@ -121,7 +121,13 @@ defmodule AshTemplateWeb.Components.AgentMessage.Form do
             />
             <:hint>Optional. An email, a room or a profile where the team can answer you.</:hint>
           </Primitives.field>
-          <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
+          <AshTemplateWeb.LiveConnection.offline
+            id={"#{@id}-offline"}
+            controls={"##{@id}-actions"}
+          />
+          <fieldset id={"#{@id}-actions"} class="agent-message__actions">
+            <Primitives.button type="submit" phx-disable-with="Sending…">Send</Primitives.button>
+          </fieldset>
         </.form>
       </section>
     </div>

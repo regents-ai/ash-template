@@ -65,6 +65,16 @@
   width: 100%;
 }
 
+/* Send keeps the form's full width inside the fieldset the page disables while it
+   has no live connection (AshTemplateWeb.LiveConnection). */
+.agent-message__actions {
+  display: grid;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 /* The fields keep the page's light inputs; their labels wear the card's ink. */
 .agent-message__fields .rg-field > label {
   color: var(--code-card-ink);

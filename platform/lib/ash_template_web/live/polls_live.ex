@@ -235,7 +235,13 @@ defmodule AshTemplateWeb.PollsLive do
               </option>
             </select>
           </Primitives.field>
-          <Primitives.button type="submit" phx-disable-with="Starting…">Start poll</Primitives.button>
+          <AshTemplateWeb.LiveConnection.offline
+            id="poll-start-offline"
+            controls="#poll-start-actions"
+          />
+          <fieldset id="poll-start-actions" class="rooms-start__actions">
+            <Primitives.button type="submit" phx-disable-with="Starting…">Start poll</Primitives.button>
+          </fieldset>
         </.form>
       </section>
 
@@ -261,6 +267,12 @@ defmodule AshTemplateWeb.PollsLive do
           · <.time_state poll={@poll.value} now={@now} /> · <.votes count={@poll.value.votes_cast} />
         </p>
 
+        <AshTemplateWeb.LiveConnection.offline
+          :if={@poll.value.open && @actor && (is_nil(@poll.value.my_choice) or @poll.value.mine)}
+          id="poll-offline"
+          controls="#poll-vote-actions, #poll-end-actions"
+        />
+
         <.form
           :if={@poll.value.open && @actor && is_nil(@poll.value.my_choice)}
           for={%{}}
@@ -280,7 +292,9 @@ defmodule AshTemplateWeb.PollsLive do
               <p :if={@vote_error}>{@vote_error}</p>
             </div>
           </fieldset>
-          <Primitives.button type="submit" phx-disable-with="Voting…">Vote</Primitives.button>
+          <fieldset id="poll-vote-actions" class="polls-vote__actions">
+            <Primitives.button type="submit" phx-disable-with="Voting…">Vote</Primitives.button>
+          </fieldset>
         </.form>
 
         <ul
@@ -321,18 +335,23 @@ defmodule AshTemplateWeb.PollsLive do
 
         <Primitives.notice :if={@notice} tone="warning">{@notice}</Primitives.notice>
 
-        <Primitives.button
+        <fieldset
           :if={@poll.value.open && @poll.value.mine}
-          id="poll-end"
-          type="button"
-          variant="secondary"
-          phx-click="end"
-          phx-target={@myself}
-          data-confirm="End this poll now? Nobody can vote after, and the counts show to everyone."
-          data-confirm-action="End"
+          id="poll-end-actions"
+          class="polls-poll__actions"
         >
-          End poll
-        </Primitives.button>
+          <Primitives.button
+            id="poll-end"
+            type="button"
+            variant="secondary"
+            phx-click="end"
+            phx-target={@myself}
+            data-confirm="End this poll now? Nobody can vote after, and the counts show to everyone."
+            data-confirm-action="End"
+          >
+            End poll
+          </Primitives.button>
+        </fieldset>
       </section>
     </article>
     """

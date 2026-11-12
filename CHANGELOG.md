@@ -8318,3 +8318,26 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - The check is not part of `make check` yet: the last 8 lines need the design-system's
   check changed (glass and shadow inside an isolated artwork root; the blur rule; test
   files in the motion rule).
+
+## 2026-11-12 — The other live forms say when they are not connected
+
+- A new note and editing a note, a new poll, a poll's Vote and End, a room's topic, a
+  new room and the Agent Message form now show the same "Not connected. Trying again…"
+  note as Send, from half a second after the live connection drops (or when the page
+  could not connect) until it is back, and their buttons are disabled meanwhile; the
+  boxes can still be typed in. Each uses `AshTemplateWeb.LiveConnection.offline` beside a
+  fieldset around the form's own buttons (`note-form-offline`, `poll-start-offline`,
+  `poll-offline` for Vote and End together, `room-topic-offline`, `room-start-offline`,
+  `<dialog>-person-offline`), with no new words or script.
+- Left as they are: the header search (it only reads, and its one button, Close, works
+  without a connection); a note's own row buttons, a message's menu, Unmute, Mark all as
+  read, an agent's See Actions, Unpair and rename, and Connect on verified connections
+  (single buttons in a list, not a form); the public name on `/account` (saved from the
+  browser, not over the live connection); the admin inbox (nothing to send); and the
+  showcase and lab pages. None of these forms has a wallet or payment button.
+- `blocked_websocket.spec.ts` checks each at 390 and 1280: with websockets refused, a new
+  note, poll, room and Agent Message show the note with their button disabled; after a
+  drop, a note's Save changes and Cancel, a poll's Vote and End and a room's Save topic
+  are disabled, and once back the edit, the vote and the topic go through. The walk's
+  setup starts one poll per width for the person, so the check leaves the person's daily
+  polls to `polls.spec.ts`.

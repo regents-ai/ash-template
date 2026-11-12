@@ -27,7 +27,10 @@
 }
 
 .notes-form__actions {
-  margin-block-start: var(--space-1);
+  min-inline-size: 0;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  border: 0;
 }
 
 /* A note's buttons are quiet; their words line up with the note's title. */
