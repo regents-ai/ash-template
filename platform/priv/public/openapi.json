@@ -9449,7 +9449,7 @@
         "required": [
           "kind"
         ],
-        "description": "The JSON on one event's data line. dm and room_post carry id, at, author and read; resync says to list through the ordinary routes; closed ends the feed and says why.",
+        "description": "The JSON on one event's data line. dm and room_post carry id, at, author and read; resync says to list through the ordinary routes, and has no id, so the next reconnect sends no Last-Event-ID; closed ends the feed and says why.",
         "properties": {
           "kind": {
             "type": "string",
@@ -9477,7 +9477,9 @@
           },
           "room": {
             "type": "string",
-            "description": "room_post: the room's name."
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "maxLength": 40,
+            "description": "room_post: the room's address, as in its route."
           },
           "author": {
             "type": "object",
