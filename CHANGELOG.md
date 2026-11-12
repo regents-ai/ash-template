@@ -7782,3 +7782,19 @@ sits on its own branches.
   starting again; Mist clears under a pointer and under a finger at 390 and fogs back
   within ten seconds; with less motion the picture holds still and the scroll still moves
   it; without WebGPU the still shows; no console errors. WebKit not run on the Mac.
+
+## 2026-11-12 — Pair New Agent: a low picture band, and the agent list moves
+
+- Pins design-system `63afac93` (branch `ds/pairing-window-1112`, on top of main
+  `0b47de3`): the chosen agent's picture sits in a band a quarter as tall as it is wide,
+  at 48px, so the band is 104px tall at 1280 wide (was 234) and 81.5px at
+  390 (was 183); the window is about 130px and 100px shorter (Sean, 11 Nov: "the image
+  area can be much smaller"). Choosing still moves nothing under it.
+- The agent list (`data-panel="list"`) moves by the motion kit: `list` fades it in and
+  lifts it 4px, its agents following 5 ms apart, in about 160 ms; `unlist` lets it fade
+  and drop 4px in 100 ms while a press on it lands on what is under it. A key press or
+  reduced motion opens and closes it at once. `play()`'s reset is now `rest()` in
+  `hooks/motion/shared.ts`, so a still opening stops a list that is leaving.
+- `pairing.spec.ts` and `pair_link.spec.ts` check the band at both widths, that nothing
+  under it moves, a press half way through each move (the page's clock held), and the
+  instant list with reduced motion. The animejs skill names the list.
