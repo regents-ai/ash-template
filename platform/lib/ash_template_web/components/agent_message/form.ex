@@ -7,9 +7,7 @@ defmodule AshTemplateWeb.Components.AgentMessage.Form do
   checked when the person leaves it, never while they type.
 
   The page passes the signed-in `account` (or nil), its `session_lease` as
-  `lease`, and its `client_key`. A live page passes its own; a plain page's
-  dialog draws `AshTemplateWeb.AgentMessageLive`, which reads the sign-in and
-  passes them here. Every press re-reads the sign-in
+  `lease`, and its `client_key`. Every press re-reads the sign-in
   (`AshTemplateWeb.Live.Session.check_component_lease/2`), and the message is left
   as the account it names at that moment.
   """

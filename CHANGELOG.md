@@ -9512,6 +9512,62 @@ the chat and polls lanes' own.
 - Not in this release: polls and messages (`tpl/stampede-polls-1112`, being combined),
   Sean's decision 32 (ships as a: a person stays mentionable after deleting their
   messages).
+
+## 2026-11-12 — Released v225: the database load review's fourth lane (polls and messages)
+
+- `a8b9b355` (`tpl/stampede-all-1112`) is v225 on template.regents.sh, switched at about
+  22:22Z with `scripts/deploy.sh`. With v224 this completes Sean's request of 12 Nov
+  after the Stampede guides.
+- Migrations, applied (`/api/v1/health` answers `migrations_applied: true`): `polls`
+  gains `votes_cast` and `tally` (defaults, filled from the votes saved); a concurrent
+  index on `dm_messages` by recipient and time. Nothing existing removed or rewritten.
+- Rollback: fix forward; the v224 image (`bb96c274`) still runs on the new schema but
+  would not keep the poll counts current.
+- Full check exit 0 by the chief on this exact commit: 141 script tests, 622 browser
+  walks with 5 skipped, 239 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/polls`,
+  `/rooms/general`, `/notes` and `/dms` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll. `GET /api/v1/notes` answers 404 and
+  `POST /api/v1/notes/list` answers 401 signed out. No load generated; no vote cast on
+  live.
+- Agent-visible: `GET /api/v1/notes` removed, `POST /api/v1/notes/list` pages 50 with
+  a cursor (regents-cli 1.10.25's `notes list` fails on the template until the next
+  regents-cli; Sean's decision 34, shipped as a); the hosted `rooms_post` tool answers
+  `too_many_requests` with `retry_after`; room message reads cap a page at 50.
+- Left: the rooms list is still read unbounded (Sean's decision 26); leaving a message
+  for the team too fast answers a generic 422.
+## 2026-11-12 — The reading pages open inside the shell (branch, not on main)
+
+Branch `tpl/reading-pages-1112`, for the ash-template chief, after the founder found
+Keyfleet's footer links opening a page that looked nothing like the rest of the site.
+No migration; design-system pin unchanged.
+
+- `/about`, `/docs`, `/changelog`, `/agents`, `/agents/:agent`, `/privacy`, `/terms`
+  and the build skills at `/skills` open inside the site's shell for a browser, signed
+  out as well as signed in, as one shared reading view
+  (`AshTemplateWeb.Components.Reading`): the document's own title, then its prose at
+  about 70 characters a line, with code blocks and wide tables scrolling inside
+  themselves on a phone. The shell's side menu lists the six documents under Help and
+  marks the one open (an agent's guide marks Connect agent); the build skills sit in
+  the Design list. The documents' wording is unchanged.
+- The same addresses still answer `Accept: text/markdown` with Markdown, and
+  `/agents.md`, `/llms.txt`, `/skill.md`, `/api/v1/about`, `/api/v1/docs` and the other
+  machine reads are untouched. Titles, descriptions and canonical addresses still come
+  from `AshTemplateWeb.PublicDocuments`.
+- Closing the site leaves the reading pages and the build skills open, as it left
+  privacy and terms; their own events stop with the rest, and the Agent Message form on
+  `/agents` still takes a message.
+- The bare document page is gone: `PublicPagesHTML`, `LegalController`, `LegalHTML`,
+  `InformationNavigation`, `AgentMessageLive`, the `:public_documents` pipeline and the
+  `public-document`, `legal-header`, `legal-home` and `legal-nav` styles. The reading
+  pages now take the shell's own security headers and count as open live pages.
+- The rule is in `skills/ash-frontend/SKILL.md` and
+  `skills/regent-workflow/references/design-system.md`: every page a person can reach
+  from the site's own links opens inside the site's shell.
+- Checks: `platform/test/browser/reading.spec.ts` (each address in the shell signed
+  out, with its whole document in the first answer, its Markdown twin, and the side
+  menu's mark) and `platform/test/ash_template/site/launch_gate_test.exs` (each stays
+  open, in the shell, with the site closed).
 ## 2026-11-12 — Cells lab (branch, not on main)
 
 On `wt/tpl-cells-1112`, for the design chief. Design-system pin unchanged (`5fbe2d40`);

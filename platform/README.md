@@ -333,7 +333,7 @@ security policy; the router's pipelines choose one.
 
 | Profile | Pipelines | What it allows |
 | --- | --- | --- |
-| `reading` | `:public_documents` | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
+| `reading` | `:errors_admin`, every answer before its pipeline sets one, and the launch gate's closed page | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
 | `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
 | `showcase` | `:framed_preview` | `sign_in` that may frame its own preview page, for `/showcase` and `/showcase/preview`. |
 

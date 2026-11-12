@@ -115,24 +115,6 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
-  # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
-  # sobelow_skip ["Config.CSP"]
-  pipeline :public_documents do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    # Read only, for the Agent Message form a page may hold (`AgentMessage`).
-    plug :enforce_session_authority
-    plug AshTemplateWeb.Plugs.Theme
-    plug :put_root_layout, html: {AshTemplateWeb.Layouts, :root}
-    plug :protect_from_forgery
-
-    # Reading only: these pages never start sign-in, so they send no referrer.
-    plug :put_secure_browser_headers, %{
-      "content-security-policy" => ContentSecurityPolicy.reading(),
-      "referrer-policy" => "no-referrer"
-    }
-  end
-
   # The saved errors: the site's admins only. Anyone else gets the not-found page under
   # the reading policy; an admin's page replaces it with one carrying this
   # request's nonce (AshTemplateWeb.ErrorsAdmin).
@@ -283,20 +265,6 @@ defmodule AshTemplateWeb.Router do
     get "/.well-known/agent-skills/*path", PublicPagesController, :agent_skill
   end
 
-  scope "/", AshTemplateWeb do
-    pipe_through [:showcase, :public_documents]
-    get "/skills", PublicPagesController, :skills
-  end
-
-  scope "/", AshTemplateWeb do
-    pipe_through :public_documents
-    get "/docs", PublicPagesController, :show
-    get "/about", PublicPagesController, :show
-    get "/changelog", PublicPagesController, :show
-    get "/agents", PublicPagesController, :show
-    get "/agents/:agent", PublicPagesController, :show
-  end
-
   scope "/api/v1", AshTemplateWeb do
     pipe_through :open_api
     get "/health", HealthController, :status
@@ -411,8 +379,6 @@ defmodule AshTemplateWeb.Router do
     end
 
     get "/too-many-pages", TooManyPagesController, :show
-    get "/privacy", LegalController, :privacy
-    get "/terms", LegalController, :terms
 
     get "/auth/csrf", PrivySessionController, :csrf
     post "/auth/privy/failure", PrivySessionController, :failure
@@ -441,6 +407,19 @@ defmodule AshTemplateWeb.Router do
       live "/account/wallets", ShellLive, :wallets
       live "/account/connections", ShellLive, :connections
       live "/pair", ShellLive, :pair
+      # The reading pages (AshTemplateWeb.Components.Reading).
+      live "/agents", ShellLive, :agents
+      live "/agents/:agent", ShellLive, :agent
+      live "/docs", ShellLive, :docs
+      live "/changelog", ShellLive, :changelog
+      live "/about", ShellLive, :about
+      live "/privacy", ShellLive, :privacy
+      live "/terms", ShellLive, :terms
+
+      scope "/" do
+        pipe_through :showcase
+        live "/skills", ShellLive, :skills
+      end
     end
   end
 

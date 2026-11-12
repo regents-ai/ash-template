@@ -430,6 +430,14 @@ defmodule AshTemplateWeb.ShellLive do
           sign_in_wallets={@sign_in_wallets}
         />
 
+        <AshTemplateWeb.Components.Reading.page
+          :if={@live_action in AshTemplateWeb.Components.Reading.pages()}
+          path={@route_spec.destination}
+          account={current_account(@access_context)}
+          lease={@session_lease}
+          client_key={@client_key}
+        />
+
         <PairLive.page
           :if={@route_spec.route_id == :pair}
           account={current_account(@access_context)}
@@ -461,8 +469,10 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp subscribe_to_own_topics(_access_context), do: :ok
 
-  # The Design page exists while the design pages do.
-  defp open!(:design), do: Showcase.linked?() or raise(NotFoundError)
+  # The Design page and the build skills exist while the design pages do.
+  defp open!(action) when action in [:design, :skills],
+    do: Showcase.linked?() or raise(NotFoundError)
+
   defp open!(_action), do: true
 
   defp room_in(:room, %{"room" => slug}) do

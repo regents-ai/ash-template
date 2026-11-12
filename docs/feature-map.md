@@ -37,7 +37,8 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | The site started with its sign-in settings | `pages.spec.ts`, first test |
 | A page asked for JSON gets a refusal, a browser gets the page | `platform/test/ash_template_web/content_negotiation_test.exs` |
 | An address with a slash at the end, other than the homepage, is not found: the not-found page for a page, the API's not-found answer for an API address | `platform/test/ash_template_web/trailing_slash_test.exs` |
-| Closing the site leaves the agent pages open | `platform/test/ash_template/site/launch_gate_test.exs` |
+| Every reading page (the agent guides, docs, changelog, about, privacy, terms) opens inside the site's shell signed out, with header, footer and the whole document in the first answer, its title and sections drawn from the Markdown the same address still answers, and the side menu marks the open page; the build skills open there too, under Design | `platform/test/browser/reading.spec.ts` |
+| Closing the site leaves the reading pages and the build skills open, inside the shell, and closes the rest | `platform/test/ash_template/site/launch_gate_test.exs` |
 | A missing required value gets the site's own error, not a database failure, on a database built from every migration, the libraries' included | `platform/test/ash_template/required_value_test.exs` |
 | Every write lands in the site's own schema of the shared database, never in a same-named table in `public`: create, update, destroy, upsert, bulk upsert and `Ash.update_many` | `platform/test/ash_template/schema_prefix_test.exs` |
 | IndexNow hears of each release's pages once, however often the hourly job runs | `platform/test/ash_template/index_now_test.exs` |
@@ -181,7 +182,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | Claude's connector offers `messages_leave` once its app is paired with the agent permission, and not before | `platform/test/ash_template_web/claude_connector_test.exs` |
 | Only the site's admins read messages; a person, an agent and a non-admin get none | `platform/test/ash_template/messages/leave_test.exs` |
 | `/admin/messages` shows the team every message, newest first, and is the not-found page for anyone else, signed in or not | `platform/test/ash_template_web/messages_pages_test.exs` |
-| `/agents` (a plain page, topic `agents`) and the `/app` home in the live shell (topic `app`) each have the Agent Message button; its dialog's three texts are the CLI, MCP and WebMCP ways to leave a message under the page's topic, each copied exactly as shown and fitting the screen at both widths; Escape closes it; the form shows only to a signed-in person, refuses an empty message when the field is left, and leaves one with its receipt; on `/app`, the dialog pressed open before the page has joined stays open once it has | `platform/test/ash_template_web/messages_pages_test.exs`; `platform/test/browser/agent_message.spec.ts` |
+| `/agents` (a reading page, topic `agents`) and the `/app` home (topic `app`), both in the live shell, each have the Agent Message button; its dialog's three texts are the CLI, MCP and WebMCP ways to leave a message under the page's topic, each copied exactly as shown and fitting the screen at both widths; Escape closes it; the form shows only to a signed-in person, refuses an empty message when the field is left, and leaves one with its receipt; on `/app`, the dialog pressed open before the page has joined stays open once it has | `platform/test/ash_template_web/messages_pages_test.exs`; `platform/test/browser/agent_message.spec.ts` |
 
 ## Claude connector
 

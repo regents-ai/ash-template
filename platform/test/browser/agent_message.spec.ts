@@ -3,8 +3,8 @@ import {copiesShown, recordCopies} from "./support/copies"
 import {signedIn, watch} from "./support/person"
 import {expect, test} from "./support/test"
 
-// The Agent Message button opens its dialog at both widths, on a plain page
-// (/agents, topic agents) and inside the app's live shell (/app, topic app): each
+// The Agent Message button opens its dialog at both widths, on the agents' reading
+// page (/agents, topic agents) and on the app's home (/app, topic app): each
 // of its three texts fits the screen and copies exactly what it shows, and Escape
 // closes it. The walk's person, signed in by sign_in.exs, leaves a message from its
 // form and sees the receipt, after an empty message is refused when the field is left.

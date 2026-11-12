@@ -17,9 +17,7 @@ defmodule AshTemplateWeb.Live.OpenPages do
   counted.
 
   A live view drawn inside another (`live_render(@socket, …)`) is part of its
-  parent's page and is not counted. One drawn inside a plain page
-  (`live_render(@conn, …)`) is a page of its own: it is counted, and the plain
-  page passes it `session: AshTemplateWeb.Live.Session.render_context(@conn)`.
+  parent's page and is not counted.
 
   The count is this machine's: an address spread over several machines holds up
   to the limit on each. A page that moves to another page leaves and joins in

@@ -536,7 +536,7 @@
    a border, so forced colours still draw it; the row gives the same width back at
    its other edge or in its padding, so nothing in it moves. */
 .shell-rail__section[aria-current="page"],
-#shell-sidebar [aria-current="page"] {
+#shell-sidebar [aria-current] {
   border-inline-start: 2px solid var(--ash-signal);
   background: var(--ash-raised);
   color: var(--ash-ink);
@@ -546,7 +546,7 @@
   padding-inline-end: 2px;
 }
 
-#shell-sidebar li > [aria-current="page"] {
+#shell-sidebar li > [aria-current] {
   padding-inline-start: calc(var(--space-1) - 2px);
 }
 

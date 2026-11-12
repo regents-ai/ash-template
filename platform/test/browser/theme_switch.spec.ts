@@ -80,13 +80,14 @@ test("the theme switch turns the page's theme by press and by key, and the choic
 })
 
 // Signed out there is no account menu, so the switch sits in the bottom bar: of a
-// public page, which no live view draws, and of the shell. Each press turns it once.
+// plain page, which no live view draws (the limit page, sent with 429), and of the
+// shell. Each press turns it once.
 test.describe("signed out", () => {
   test.use({storageState: {cookies: [], origins: []}})
 
-  for (const path of ["/agents", "/polls"]) {
+  for (const [path, status] of [["/too-many-pages", 429], ["/polls", undefined]] as const) {
     test(`the bottom bar's theme switch on ${path} turns the theme with each press`, async ({page}) => {
-      const problems = watch(page)
+      const problems = watch(page, status)
       await page.goto(path)
       const bar = page.getByRole("switch", {name: "Light theme"})
       await expect(bar).toHaveCount(1)

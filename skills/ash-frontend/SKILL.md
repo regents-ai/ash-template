@@ -50,6 +50,12 @@ the installed version.
 - **The product shell.** Every page with the account menu is a `ShellLive` action in
   `live_session :product_shell`. A page never draws the shell itself, or its account
   menu has no agents when signed in.
+- **Reading pages.** Every page a person can reach from the site's own links opens
+  inside the site's shell; reading pages (about, docs, changelog, agent guide, privacy,
+  terms) use the shared reading view, never a separate bare layout. Machine reads at the
+  same address (Markdown, JSON) are answers, not pages. The template's view is
+  `AshTemplateWeb.Components.Reading`, a `ShellLive` action per address drawn from the
+  committed Markdown its twin serves (founder, 12 Nov 2026).
 - Reuse Regent UI primitives and keep each product's theme, navigation and layout.
   Components own no authentication, database or wallet admission decisions.
 - Keep the returned error form after a failed submission.

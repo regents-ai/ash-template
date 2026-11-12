@@ -3,9 +3,11 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
   Closes every non-marketing surface while the launch gate is closed.
 
   The setting is read on each request, so a deploy opens or closes surfaces
-  without rebuilding the release. The marketing page, the Privacy Policy, the
-  Terms of Use and signing out stay open in either state, as do the reading pages
-  (documentation and the agent pages), which never pass through this gate.
+  without rebuilding the release. The marketing page, the reading pages (the
+  documentation, the changelog, About, the agent pages, the Privacy Policy, the
+  Terms of Use and the build skills) and signing out stay open in either state.
+  `AshTemplateWeb.Live.LaunchGateHook` keeps the same reading pages open once
+  they are on screen.
   """
 
   import Phoenix.Controller, only: [get_format: 1, json: 2, put_secure_browser_headers: 2]
@@ -13,7 +15,16 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
 
   alias AshTemplateWeb.{ContentSecurityPolicy, HoldingController}
 
-  @open_pages [[], ["privacy"], ["terms"]]
+  @open_pages [
+    [],
+    ["agents"],
+    ["docs"],
+    ["changelog"],
+    ["about"],
+    ["privacy"],
+    ["terms"],
+    ["skills"]
+  ]
 
   @doc "True while the product surfaces are open."
   def app_surfaces_enabled?, do: Application.fetch_env!(:ash_template, :app_surfaces)
@@ -22,6 +33,8 @@ defmodule AshTemplateWeb.Plugs.LaunchGate do
 
   def call(%Plug.Conn{method: "GET", path_info: path} = conn, _opts) when path in @open_pages,
     do: conn
+
+  def call(%Plug.Conn{method: "GET", path_info: ["agents", _agent]} = conn, _opts), do: conn
 
   def call(%Plug.Conn{method: "DELETE", path_info: ["auth", "privy", "session"]} = conn, _opts),
     do: conn

@@ -23,8 +23,8 @@ defmodule AshTemplateWeb.MessagesPagesTest do
     :ok
   end
 
-  # A plain page (/agents) and a live page (the /app home in the shell) place it
-  # the same way, each under its own topic.
+  # The agents' reading page and the /app home, both in the shell, place it the same
+  # way, each under its own topic.
   for {path, topic, dialog} <- [{"/agents", "agents", "agents-message"}, {"/app", "app", "app-message"}] do
     test "#{path} offers the Agent Message texts to everyone, and the form only to a signed-in person" do
       signed_out = page(build_conn(), unquote(path))

@@ -2,7 +2,8 @@ defmodule AshTemplateWeb.DesignLive do
   @moduledoc """
   The Design page inside the shell: one card for each design page, in the order
   the Design sidebar lists them (`AshTemplateWeb.RouteCatalog.design_pages/0`).
-  The pages themselves stand outside the shell, so each card opens a full page.
+  Each card opens its page with a full load, since all but the build skills stand
+  outside the shell.
   """
 
   use Phoenix.Component
@@ -13,6 +14,7 @@ defmodule AshTemplateWeb.DesignLive do
 
   @lines %{
     "/showcase" => "Every shared piece, light and dark",
+    "/skills" => "The guides this site is built with",
     "/animations" => "Every motion, side by side",
     "/animations/cube" => "A room behind every side",
     "/animations/twin-cube" => "One for people, one for agents",

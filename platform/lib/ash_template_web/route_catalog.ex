@@ -17,6 +17,19 @@ defmodule AshTemplateWeb.RouteCatalog do
     %{id: :settings, label: "Account", path: "/account", icon: "settings"}
   ]
 
+  # The reading pages, listed beside every one of them and on the Account pages.
+  @help %{
+    title: "Help",
+    targets: [
+      %{route_id: :agents, label: "Connect agent", path: "/agents"},
+      %{route_id: :docs, label: "Documentation", path: "/docs"},
+      %{route_id: :changelog, label: "Changelog", path: "/changelog"},
+      %{route_id: :about, label: "About", path: "/about"},
+      %{route_id: :privacy, label: "Privacy", path: "/privacy"},
+      %{route_id: :terms, label: "Terms", path: "/terms"}
+    ]
+  }
+
   @sidebars %{
     home: %{
       id: :home,
@@ -45,6 +58,7 @@ defmodule AshTemplateWeb.RouteCatalog do
       title: "Design",
       targets: [
         %{route_id: :showcase, label: "Components", path: "/showcase"},
+        %{route_id: :skills, label: "Skills", path: "/skills"},
         %{route_id: :motion_lab, label: "Motion lab", path: "/animations"},
         %{route_id: :world_cube, label: "World cube", path: "/animations/cube"},
         %{route_id: :twin_cube, label: "Twin cubes", path: "/animations/twin-cube"},
@@ -78,17 +92,9 @@ defmodule AshTemplateWeb.RouteCatalog do
         %{route_id: :cells_lab, label: "Cells", path: "/animations/cells"}
       ]
     },
-    settings: %{
-      id: :settings,
-      title: "Help",
-      targets: [
-        %{route_id: :agents, label: "Connect agent", path: "/agents"},
-        %{route_id: :docs, label: "Documentation", path: "/docs"},
-        %{route_id: :about, label: "About", path: "/about"},
-        %{route_id: :privacy, label: "Privacy", path: "/privacy"},
-        %{route_id: :terms, label: "Terms", path: "/terms"}
-      ]
-    }
+    settings: Map.put(@help, :id, :settings),
+    # The reading pages have no place on the rail: each opens from a link.
+    help: Map.put(@help, :id, :help)
   }
 
   @tabs %{
@@ -169,7 +175,18 @@ defmodule AshTemplateWeb.RouteCatalog do
          page_display_label: "Connections"
        }},
     pair:
-      {:settings, %{route_id: :pair, destination: "/pair", page_display_label: "Pair New Agent"}}
+      {:settings, %{route_id: :pair, destination: "/pair", page_display_label: "Pair New Agent"}},
+    agents: {:help, %{route_id: :agents, destination: "/agents", page_display_label: "Agents"}},
+    agent:
+      {:help, %{route_id: :agent, destination: "/agents/:agent", page_display_label: "Agents"}},
+    docs: {:help, %{route_id: :docs, destination: "/docs", page_display_label: "Docs"}},
+    changelog:
+      {:help, %{route_id: :changelog, destination: "/changelog", page_display_label: "Changelog"}},
+    about: {:help, %{route_id: :about, destination: "/about", page_display_label: "About"}},
+    privacy:
+      {:help, %{route_id: :privacy, destination: "/privacy", page_display_label: "Privacy"}},
+    terms: {:help, %{route_id: :terms, destination: "/terms", page_display_label: "Terms"}},
+    skills: {:design, %{route_id: :skills, destination: "/skills", page_display_label: "Skills"}}
   ]
   @routes Enum.map(@routes, fn
             {action, {section, page}} ->
@@ -243,8 +260,8 @@ defmodule AshTemplateWeb.RouteCatalog do
   end
 
   @doc """
-  The spec of a live action; a room's or conversation's destination is the one
-  its `params` name.
+  The spec of a live action; a room's, conversation's, poll's or agent's
+  destination is the one its `params` name.
   """
   def fetch!(:room, %{"room" => room}), do: %{fetch!(:room) | destination: "/rooms/#{room}"}
 
@@ -253,6 +270,7 @@ defmodule AshTemplateWeb.RouteCatalog do
 
   def fetch!(:dm, %{"conversation_id" => id}), do: %{fetch!(:dm) | destination: "/dms/#{id}"}
   def fetch!(:poll, %{"poll_id" => id}), do: %{fetch!(:poll) | destination: "/polls/#{id}"}
+  def fetch!(:agent, %{"agent" => agent}), do: %{fetch!(:agent) | destination: "/agents/#{agent}"}
 
   def fetch!(action, _params), do: fetch!(action)
 
@@ -303,6 +321,9 @@ defmodule AshTemplateWeb.RouteCatalog do
     do: %{conversation_id: %{type: "string", format: "uuid"}}
 
   defp parameter_schema(:poll), do: %{poll_id: %{type: "string", format: "uuid"}}
+
+  defp parameter_schema(:agent),
+    do: %{agent: %{type: "string", pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"}}
 
   defp parameter_schema(_action), do: %{}
 
