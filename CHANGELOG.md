@@ -9347,3 +9347,17 @@ unchanged (`b57f8d91`); no migration. Enter App's ring is left as the first comm
   button really hovered by a mouse, light and dark; on the phone, where nothing hovers,
   the frozen hover still differs from the frozen rest for every main button. It fails on
   the old code.
+
+## 2026-11-12 — Released v223: three button flaws fixed
+
+- `7f1d8749` (`wt/tpl-button-flaws-1112`, the design chief's) is v223 on
+  template.regents.sh, switched at about 21:29Z with `scripts/deploy.sh`. No migration.
+- Rollback: v222 (`eb4959c3`), image only.
+- Full check exit 0 by the design chief on this exact commit: 137 script tests, 616
+  browser walks with 5 skipped, 217 Elixir.
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/animations/buttons`
+  and `/rooms/general` answer 200 at 1280, 390 and 320 with no page errors and no
+  sideways scroll. In dark the Enter App ring shows all round the button; in light the
+  buttons lab's frozen Hover and Keyboard focus examples wear the real marks.
+- Still open: Sean's decision 33 (the ring's gold and green stretch between Tangerine
+  and Powder Blue stays as the oklch rule gives it).
