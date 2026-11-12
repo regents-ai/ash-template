@@ -8303,3 +8303,18 @@ sun and moon made of tiny blocks, moved with Anime.js. Built on
 - Checked by screenshots before and after at 1280 and 390 (pixel-identical apart from the
   rail's 2px border corner and live artwork timing) and by forcing the twin cube's drawn
   state: its room card, code cube and names stand on top.
+
+## 2026-11-12 — Released v206: style check from 29 breaks to 8
+
+- `fc4f8a6d` (`tpl/style-check-1112`) is v206 on template.regents.sh, switched at about
+  08:50Z with `scripts/deploy.sh`. No migrations. Rollback: v205 (`abe3fc40`).
+- Full check on `fc4f8a6d`, exit 0 (the worker's second run; the first failed one phone
+  window-drag walk, which passed 9 of 9 alone): 108 TypeScript, 501 browser walks with 5
+  skipped, 207 Elixir (9 properties).
+- Live read in headless Chromium, signed out (WebKit not run): `/capabilities.json` names
+  `fc4f8a6d`; `/`, `/polls`, `/animations` and `/account` answer 200 at 1280 and 390 with
+  no page or console errors and no sideways scroll; by screenshot the home's glass panel
+  and the rail's signal bar look as before; the theme switch still turns with each press.
+- The check is not part of `make check` yet: the last 8 lines need the design-system's
+  check changed (glass and shadow inside an isolated artwork root; the blur rule; test
+  files in the motion rule).
