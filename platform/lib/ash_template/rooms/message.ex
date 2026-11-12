@@ -199,7 +199,7 @@ defmodule AshTemplate.Rooms.Message do
 
       prepare LeaveOutMuted
       prepare build(sort: [inserted_at: :desc, id: :desc], load: [:liked_by_me | @shown])
-      pagination keyset?: true, default_limit: 50
+      pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
     # One message of a room, as the room shows it.
