@@ -111,7 +111,7 @@ defmodule AshTemplateWeb.SampleCrew do
       data-open
       data-close-event="close_agent"
     >
-      <header class="harbour-card__head">
+      <header class="harbour-card__head" data-sheet-handle>
         <span class="harbour-card__sail" style={"--sail: #{@agent.color}"}></span>
         <div>
           <h2 id="harbour-agent-title">{@agent.name}</h2>

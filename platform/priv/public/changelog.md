@@ -7,6 +7,9 @@ Changes to Ash Template, newest first.
 - **Figures.** Vote counts, a poll's minutes left, room message counts, balances and
   other figures that change while you watch now roll just the digits that changed, and
   the words around them stay still.
+- **Gestures.** On a phone or with a pointer, pull a window down by its title to close
+  it, swipe the menu back to its edge, or swipe a note away. A quick flick is enough; a
+  short pull springs back. Escape and the close buttons still work as before.
 - **Motion lab.** A new page, Frosted Glass: a large tree seen through frosted glass with
   a lamp in front. Scroll down to step back from its branches to the whole tree, and on
   into a forest. Six looks: Lifelike, Reeded, Blocks, Mist, Night and Ember. On Mist,

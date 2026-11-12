@@ -1,6 +1,7 @@
 /**
  * The standard motion on every page: a squish when something is pressed, a
- * shake when the answer is no, panels that slide or pop open, and on pages the
+ * shake when the answer is no, panels that slide or pop open, windows, the phone
+ * menu and notes a finger can throw away, and on pages the
  * server draws once, the headline rising in word by word and the cards
  * settling into place the first time they scroll into view. The version of each is named in `AshTemplateWeb.Motion`
  * and every version that was tried is kept in the template's motion lab at
@@ -13,6 +14,7 @@
  * the wallet the moment it is pressed, and the motion plays alongside.
  */
 import {CTA, mountButtons} from "./hooks/motion/buttons"
+import {mountGestures} from "./hooks/motion/gestures"
 import {splitText} from "animejs"
 import {deny, nope, squish} from "./hooks/motion/press"
 import {CASCADE, GRIDS, HEADLINES, onFirstSight} from "./hooks/motion/reveals"
@@ -32,6 +34,7 @@ const live = (el: Element) => el.closest("[data-phx-session]") !== null
 export function mountMotion(doc: Document) {
   watchInput(doc)
   mountButtons(doc)
+  mountGestures(doc)
   doc.addEventListener("click", press)
   doc.addEventListener("toggle", toggle, true)
 

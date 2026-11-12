@@ -340,6 +340,7 @@ defmodule AshTemplateWeb.AnimationsLive do
                         phx-click="dismiss"
                         phx-value-id={toast.id}
                         aria-label="Dismiss"
+                        data-dismiss
                       >
                         <Regent.Icons.icon name="x" />
                       </button>

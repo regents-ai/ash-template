@@ -1,4 +1,4 @@
-import {type Page} from "@playwright/test"
+import {type Locator, type Page} from "@playwright/test"
 import {expect, test} from "./support/test"
 import {signedIn} from "./support/person"
 
@@ -128,4 +128,81 @@ test("with less motion asked for, a live figure changes without rolling", async 
   await page.getByRole("button", {name: "+37", exact: true}).click()
   await expect(figure).not.toHaveText(before!)
   expect(await seen()).toEqual({moved: 0, rolled: false})
+})
+
+// A finger drag from the middle of `from`, `dy` down and `dx` across over `ms`.
+async function drag(page: Page, from: Locator, {dx = 0, dy = 0, ms}: {dx?: number; dy?: number; ms: number}) {
+  const box = (await from.boundingBox())!
+  const x = box.x + Math.min(box.width / 2, 60)
+  const y = box.y + box.height / 2
+  const steps = Math.max(8, Math.round(ms / 20))
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  const start = Date.now()
+  for (let i = 1; i <= steps; i++) {
+    await page.mouse.move(x + (dx * i) / steps, y + (dy * i) / steps)
+    const wait = start + (ms * i) / steps - Date.now()
+    if (wait > 0) await page.waitForTimeout(wait)
+  }
+  await page.mouse.up()
+}
+
+const shiftY = (el: Locator) =>
+  el.evaluate(node => new DOMMatrix(getComputedStyle(node).transform).m42)
+
+async function openAgentTools(page: Page) {
+  await page.goto("/polls")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await page.locator("#shell-footer").getByRole("button", {name: /Agents see/}).click()
+  const sheet = page.locator("#shell-agent-tools")
+  await expect(sheet).toHaveAttribute("data-settled")
+  return sheet
+}
+
+// Gestures (November bonus, step 6): a window pulled down by its handle goes back
+// from a short slow pull (40px at about 0.03 px/ms, under both the 0.11 px/ms throw
+// and a quarter of its height) and closes on a quick 40px flick (about 0.3 px/ms).
+// Escape closes it with no drag at all.
+test("a window pulled by its handle goes back from a short pull and closes on a flick", async ({page}) => {
+  let sheet = await openAgentTools(page)
+  const handle = sheet.locator("[data-sheet-handle] h2")
+
+  await drag(page, handle, {dy: 40, ms: 1200})
+  await expect.poll(() => shiftY(sheet)).toBe(0)
+  await expect(sheet).toHaveJSProperty("open", true)
+  await expect(sheet).not.toHaveAttribute("style", /transform/)
+
+  await drag(page, handle, {dy: 40, ms: 120})
+  await expect(sheet).toHaveJSProperty("open", false)
+
+  sheet = await openAgentTools(page)
+  await page.keyboard.press("Escape")
+  await expect(sheet).toHaveJSProperty("open", false)
+})
+
+test("with less motion asked for, a pulled window goes straight back, or closes", async ({page}) => {
+  await page.emulateMedia({reducedMotion: "reduce"})
+  const sheet = await openAgentTools(page)
+  const handle = sheet.locator("[data-sheet-handle] h2")
+
+  await drag(page, handle, {dy: 30, ms: 1200})
+  await expect(sheet).not.toHaveAttribute("style", /transform/)
+  await expect.poll(() => shiftY(sheet), {intervals: [50], timeout: 200}).toBe(0)
+
+  const height = (await sheet.boundingBox())!.height
+  await drag(page, handle, {dy: height * 0.4, ms: 1200})
+  await expect(sheet).toHaveJSProperty("open", false)
+})
+
+// A note swiped sideways past 30px, or thrown, is dismissed as its own control does.
+test("a note thrown sideways is dismissed", async ({page}) => {
+  await page.goto("/animations")
+  await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
+  await page.locator("#lab-toasts").scrollIntoViewIfNeeded()
+  await page.getByRole("button", {name: "Send a note", exact: true}).click()
+  const note = page.locator("#lab-toasts [data-toast]:not([hidden])").last()
+  const id = await note.getAttribute("id")
+  await expect(note).not.toHaveAttribute("style", /./)
+  await drag(page, note.locator("span"), {dx: -25, ms: 120})
+  await expect(page.locator(`#${id}:not([hidden])`)).toHaveCount(0)
 })

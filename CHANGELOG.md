@@ -7886,3 +7886,33 @@ sits on its own branches.
   adds it. The Keyfleet hero's price tag never changes and keeps its own rule.
 - `platform/test/browser/motion.spec.ts`: the lab's counter rolls across a change of
   width with nothing beside or below it moving, and stays still with reduced motion.
+
+## 2026-11-12 — Gestures (November bonus, step 6)
+
+- `platform/assets/js/hooks/motion/gestures.ts`, mounted with the rest of the kit in
+  `motion.ts`: a window (`dialog`) pulled down by its `data-sheet-handle`, the phone menu
+  (`data-panel="drawer"`) swiped back to its edge, and a note (`data-toast`) swiped
+  either way. `GESTURE` holds the animation guide's §2 values in px and ms: a throw of
+  0.11 px/ms dismisses whatever the distance; speed counts only after 100ms down; a
+  window or menu goes at a quarter of its size, a note at 30px; the landing point is the
+  speed carried on for 200ms; edge friction 0.85 (0.5 for pans); a thrown thing leaves on
+  a spring (bounce 0.2, 500ms) seeded with its speed; anything not thrown goes back in
+  300ms on `cubic-bezier(0.32, 0.72, 0, 1)`, and a finger can catch it on the way.
+- While the finger is down the thing follows it 1:1 by `transform` on itself, the menu's
+  shade fades with it and a note fades as it goes. A drag stops text selection and the
+  click that ends it; a plain press, on-chain buttons included, is never held.
+- Every gesture does only what a plain control already does: a window closes as Escape
+  closes it (`requestClose()`), the menu and a note as their own `data-dismiss` control
+  when pressed. Keyboard and agents use those and nothing animates. With less motion a
+  release goes straight back or closes.
+- Built with a pointer tracker of its own and Anime's `spring` and `animate`, not Anime's
+  `createDraggable`: Draggable picks where a release lands itself (its own speed
+  measure, projection and durations), so the guide's px/ms throw, 200ms landing and
+  300ms return could not be set.
+- Markup: `data-sheet-handle` on the heads of the agent tools window, the code cube's
+  window, a harbour agent's card, the pairing window and the grammar window; `data-dismiss`
+  on the phone menu's close button, the grammar panel's Close and the lab notes' Dismiss.
+  `motion.css` leaves the drag axis to the page (`touch-action`).
+- Tests: `platform/assets/test/gestures.test.ts` (speed, resistance, throw or pull) and
+  `platform/test/browser/motion.spec.ts` (a short pull goes back, a flick closes, Escape
+  closes, less motion, a note thrown away).

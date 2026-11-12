@@ -3,7 +3,7 @@
  * dialog rises as a sheet and a header menu pops under its button. The page
  * opens and closes them itself; this only moves a panel from where it starts
  * to where it rests, then hands it back to its stylesheet. Closing is
- * immediate.
+ * immediate; a finger may also throw a drawer or a window away (gestures.ts).
  *
  * Moves in percent name both ends, so they stay a share of the panel's own
  * size instead of being converted to pixels.
