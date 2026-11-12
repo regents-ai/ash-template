@@ -9419,12 +9419,13 @@ the chat and polls lanes' own.
   (ash-frontend), one notice a press, never optional keyset paging and the tally kept
   on the row (ash-backend), a page's own clock (elixir-stack).
 - **Merging** (`20e53d4d`, `93914fd4`, `9ab23441`, main `e65eebc5`, polls `deb2ebf4`,
-  main's v224 note `6cbf082f`). Text conflicts only: the security skill keeps both lanes' new rules; the ash-backend
-  integrations reference makes the two listener rules one paragraph; the public-figures
-  reference keeps the platform and polls rules; the docs and the command list carry one
-  13.0.0 entry with the notes list and the 429s; this file keeps both sides and this one
-  entry. Design-system pin `5fbe2d40` unchanged. The compile-connected limit is 47,
-  measured: one more than main for the rooms lane's new resource.
+  main's v224 note `6cbf082f`). Text conflicts only: the security skill keeps both lanes'
+  new rules; the ash-backend integrations reference makes the two listener rules one
+  paragraph; the public-figures reference keeps the platform and polls rules; the docs
+  and the command list carry one 13.0.0 entry with the notes list and the 429s; this
+  file keeps both sides and this one entry. Design-system pin `5fbe2d40` unchanged. The
+  compile-connected limit is 47, measured: one more than `c9c83a90` for the rooms lane's
+  new resource; the polls lane adds none.
 - **Corrections.**
   - A retried or cut-off reply job started a second reply, and because an unfinished
     reply counted as an answer, the job never ran again and the failure line never came:
