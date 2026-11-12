@@ -8975,3 +8975,27 @@ hand beforehand. This replaces the unlock step in the entry above;
   that is only a member of the owning role; a second run, and a run on a database
   without the lock or Credits, change nothing. A new test database migrates through
   it unchanged.
+
+## 2026-11-12 — Particles lab (branch, not on main)
+
+Sean asked for the 80,000-grain reference film remade with vgpu, able to take 20 or
+more shapes useful across the products, the Regents crown included.
+
+- New: the particle field (`AshTemplateWeb.Components.ParticleField`, the
+  `ParticleField` hook), one element with `data-particle-shape` and
+  `data-particle-value`. 80,000 grains are moved and drawn on the GPU with vgpu; a
+  new shape flies every grain through a swirling flow, left end first, and can be
+  caught mid-flight; a new value moves only the knob or the lit part.
+- 28 shapes: switch, ring, slider, bar, checkbox, radio, spinner and steps; any
+  Lucide icon by name (17 shown); the Regents crown, Techtree and Autolaunch marks.
+  Each control shape sits over its real control. Lit grains take the site's own
+  light (Tangerine by day, Powder Blue at night, Techtree green, Patchbay cobalt);
+  a dark page adds a soft halo inside the canvas. Less motion, forced colours or no
+  WebGPU leave the flat control.
+- New page `/animations/particles`: a stage looping switch, ring, slider and back,
+  with Pause; the shapes grid; live controls. Any other `?shape=` plays the loop.
+- Measured in headless Chrome on this Mac at 1280 and 390 wide: 60 frames a second
+  held, the GPU busy about 2 to 4 ms a frame whatever the screen size, one frame
+  missed at each shape change (about 130 ms held with the processor slowed four
+  times). A mid-range phone may run below 60 frames a second and pause briefly at
+  each shape change.

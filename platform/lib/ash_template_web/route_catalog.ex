@@ -73,7 +73,8 @@ defmodule AshTemplateWeb.RouteCatalog do
         %{route_id: :glow_lab, label: "Glow", path: "/animations/glow"},
         %{route_id: :ink_lab, label: "Ink", path: "/animations/ink"},
         %{route_id: :grain_lab, label: "Grain", path: "/animations/grain"},
-        %{route_id: :cards_lab, label: "Cards", path: "/animations/cards"}
+        %{route_id: :cards_lab, label: "Cards", path: "/animations/cards"},
+        %{route_id: :particles_lab, label: "Particles", path: "/animations/particles"}
       ]
     },
     settings: %{
