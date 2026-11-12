@@ -7558,3 +7558,18 @@ sits on its own branches.
   keeps main's line on the database (the direct address, a pool of 5, never the
   pooler) and says at most two releases switch over at once, as the release checklist
   does since 12 Nov, in place of "releases take turns".
+
+## 2026-11-12 — Released v193: the ops quick wins
+
+- `04c0d28e` (the merge of `tpl/quick-wins-ops-1111`) is v193 on template.regents.sh,
+  switched at 01:52Z with `scripts/deploy.sh`. No migrations. Rollback: v192
+  (`cc4a83d3`).
+- Full check on `04c0d28e` with a clean tree, exit 0: 41 script tests, 458 browser walks
+  with 5 skipped, 186 Elixir (9 properties), then the required-fixes check.
+- Live read: `/capabilities.json` names `04c0d28e`; `/api-contract.openapiv3.yaml`,
+  `/llms.txt`, `/openapi.json`, `/agents.md` and `/api/v1/about` answer 304 to their
+  own ETag, plain or weak, and 200 to another; the contract carries major 11 and its
+  digest, `application/yaml` and the static headers; the pages answer 200 at 1280 and
+  390 with no page errors, and the spelled-out addresses 404. Fly logs: one health
+  check failed at 01:52:47Z while the new machine started and passed at 01:52:53Z; no
+  errors from the site after that.
