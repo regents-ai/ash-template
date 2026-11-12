@@ -8012,3 +8012,14 @@ sits on its own branches.
   `platform/assets/css/pages/frosted_glass.css` changes.
 - `platform/test/browser/layout.spec.ts` checks the six share one row with no sideways
   page scroll, on desktop and phone.
+
+## 2026-11-12 — Two more callers the design-system 2e839171 pin broke
+
+- The discussion's reply filters are now the shared tabs, a row that scrolls
+  sideways on its own. The public page's grid sized its one column from that row's
+  full width, so `/showcase/discussion` was 18px wider than a 320 screen. The column
+  is now `minmax(0, 1fr)` (`platform/assets/css/app.css`), the screen's width.
+- The agent window's name field drops its visible hint for the "About this name" tip
+  and shows a refused name as the field's own error, tied to the input, rather than an
+  alert. `platform/test/browser/agents.spec.ts` checks the tip and the input's
+  description.
