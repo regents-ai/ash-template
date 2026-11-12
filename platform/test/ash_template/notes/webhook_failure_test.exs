@@ -34,7 +34,10 @@ defmodule AshTemplate.Notes.WebhookFailureTest do
     assert Exception.message(error) =~ "The note's webhook was not delivered"
 
     refute AshTemplate.SavedErrors.ignore?(
-             %ErrorTracker.Error{kind: to_string(error.__struct__)},
+             %ErrorTracker.Error{
+               kind: to_string(error.__struct__),
+               reason: Exception.message(error)
+             },
              %{state: :discard}
            )
   end

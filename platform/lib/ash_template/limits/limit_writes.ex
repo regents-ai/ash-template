@@ -4,13 +4,18 @@ defmodule AshTemplate.Limits.LimitWrites do
   `:address_allowance`, the client address the write came from as well, which
   the caller passes as `context: %{client_key: key}` (`AshTemplateWeb.ClientAddress`).
   A write counts when it is saved, not while it is typed, so checking a draft
-  never uses the allowance. The count runs before the statement, so an update
-  that uses it sets `require_atomic? false`. `:message` replaces the words a
-  writer past the allowance sees, for an allowance counted over a day.
+  never uses the allowance. The count runs before the transaction opens, from the
+  actor and the context the caller gave, so a refused write never holds a
+  database connection; an update that uses it sets `require_atomic? false`.
+  `:message` replaces the words a writer past the allowance sees, for an
+  allowance counted over a day. The refusal carries the seconds left of the
+  window as `retry_after` among its `vars`, for an answer that says when to try
+  again.
   """
 
   use Ash.Resource.Change
 
+  alias Ash.Error.Changes.InvalidAttribute
   alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Limits
 
@@ -25,20 +30,27 @@ defmodule AshTemplate.Limits.LimitWrites do
 
   @impl true
   def change(changeset, opts, %{actor: actor}) do
-    Ash.Changeset.before_action(changeset, fn changeset ->
-      if admitted?(changeset, opts, actor),
-        do: changeset,
-        else:
-          Ash.Changeset.add_error(changeset,
-            field: opts[:field],
-            message: Keyword.get(opts, :message, @quickly)
+    Ash.Changeset.before_transaction(changeset, fn changeset ->
+      case spend(changeset, opts, actor) do
+        :ok ->
+          changeset
+
+        {:limited, seconds} ->
+          Ash.Changeset.add_error(
+            changeset,
+            InvalidAttribute.exception(
+              field: opts[:field],
+              message: Keyword.get(opts, :message, @quickly),
+              vars: [retry_after: seconds]
+            )
           )
+      end
     end)
   end
 
-  defp admitted?(changeset, opts, actor) do
-    Limits.spend(opts[:allowance], writer(actor)) == :ok and
-      address_admitted?(changeset, opts[:address_allowance])
+  defp spend(changeset, opts, actor) do
+    with :ok <- Limits.spend_until(opts[:allowance], writer(actor)),
+         do: spend_address(changeset, opts[:address_allowance])
   end
 
   # Who an actor's writing counts against: the person, or the agent.
@@ -46,8 +58,8 @@ defmodule AshTemplate.Limits.LimitWrites do
   defp writer(%Agent{pairing: :active, human_account_id: id}), do: {:human, id}
   defp writer(%Agent{agent_id: id}), do: {:agent, id}
 
-  defp address_admitted?(_changeset, nil), do: true
+  defp spend_address(_changeset, nil), do: :ok
 
-  defp address_admitted?(%{context: %{client_key: key}}, allowance),
-    do: Limits.spend(allowance, key) == :ok
+  defp spend_address(%{context: %{client_key: key}}, allowance),
+    do: Limits.spend_until(allowance, key)
 end

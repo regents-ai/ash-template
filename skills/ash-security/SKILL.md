@@ -16,6 +16,19 @@ its real entry point to the resource action.
 - **Reads may filter or answer not-found.** Test non-disclosure under the policy's
   actual contract; do not demand Forbidden everywhere.
 - **For writes, prove the refused operation changed nothing.**
+- **Every way in that reaches the database before sign-in has a per-address
+  limit**, counted in `RequestRateLimiter` on `AshTemplateWeb.ClientAddress`:
+  page loads (600 a minute, so an office behind one address is never refused),
+  API and agent routes. The live socket's connect never reaches the endpoint's
+  plugs, and behind Fly its peer is Fly's proxy, so its pages are counted per
+  address as they join (`AshTemplateWeb.Live.OpenPages`). Fly's limit counts
+  connections, not requests.
+- **Every write that other people's open pages hear about** (a message, a like, a vote,
+  a join) carries a per-account and per-address allowance through
+  `AshTemplate.Limits.LimitWrites`, so one script cannot multiply its writes by the
+  number of viewers. The allowance is checked in `Ash.Changeset.before_transaction/2`,
+  never `before_action`, so a refused write takes no database connection and opens no
+  transaction.
 
 ## References
 

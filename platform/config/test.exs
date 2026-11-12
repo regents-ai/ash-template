@@ -36,3 +36,7 @@ config :phoenix, :plug_init_mode, :runtime
 # Every write inside a transaction runs in one Ash started (`Ash.transact/2`), so
 # a notification left unsent fails the test instead of warning in production.
 config :ash, :missed_notifications, :raise
+
+# Each test holds a transaction, so every hook meant to run before one
+# (`AshTemplate.Limits.LimitWrites`) runs inside it.
+config :ash, :warn_on_transaction_hooks?, false

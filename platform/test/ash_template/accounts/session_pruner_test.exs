@@ -61,6 +61,7 @@ defmodule AshTemplate.Accounts.SessionPrunerTest do
     end
 
     # A second run finds nothing more to delete.
-    assert {:ok, 0} = SessionAuthority.prune()
+    assert :ok = SessionAuthority.prune()
+    assert SessionAuthority |> Ash.read!(actor: %System{}) |> MapSet.new(& &1.id) == left
   end
 end

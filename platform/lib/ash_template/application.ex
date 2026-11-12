@@ -18,6 +18,7 @@ defmodule AshTemplate.Application do
     :ok = RegentHttp.ErrorSaving.attach()
     :ok = AshTemplate.IdleDisconnects.attach()
     :ok = AshTemplateWeb.VisitLog.Events.attach()
+    :ok = AshTemplate.Health.attach()
     # Visit lines' own handler (config/runtime.exs), and the default handler leaves them to it.
     :ok = Logger.add_handlers(:ash_template)
     :ok = :logger.add_handler_filter(:default, :visits, AshTemplateWeb.VisitLog.default_filter())
@@ -59,10 +60,10 @@ defmodule AshTemplate.Application do
            Application.fetch_env!(:ash_template, :ash_domains),
            Application.fetch_env!(:ash_template, Oban)
          )},
-        AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Live.OpenPages,
         # Counts this machine's open agent feeds.
         AshTemplateWeb.FeedController,
+        AshTemplateWeb.Telemetry.site_poller(),
         AshTemplateWeb.Endpoint,
         # Metrics are served beside the site, never by a process that only runs a task.
         if(serving?, do: AshTemplateWeb.Metrics)

@@ -2,10 +2,12 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
   @moduledoc """
   Tells each person a new message mentions, on the rooms' `:message_posted`
   signal. A mention is `@` followed by the name a person has posted under in
-  that room, in any case. Nobody is told about their own message, or about one
-  from someone they muted. The notifications are written in the post's own
-  transaction, so a post that fails tells nobody, and they are published once
-  it commits.
+  that room, in any case (`AshTemplate.Rooms.Poster`). Nobody is told about
+  their own message, or about one from someone they muted. The notifications
+  are written in the post's own transaction, so a post that fails tells nobody,
+  and they are published once it commits. That transaction waits on this, so a
+  message without an `@` mentions nobody and reads nothing, and the rest read
+  the room's posters by its index, never its messages.
   """
 
   require Ash.Query
@@ -13,12 +15,16 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.System
   alias AshTemplate.PublicIdentity
-  alias AshTemplate.Rooms.{Message, Mute}
+  alias AshTemplate.Rooms.{Message, Mute, Poster}
 
   @excerpt 140
 
   @doc "Writes the notifications for the message `signal` names; `:ok` or `{:error, errors}`."
-  def notify(%{message_id: id}) do
+  def notify(%{message_id: id, body: body}) do
+    if String.contains?(body, "@"), do: notify_mentioned(id), else: :ok
+  end
+
+  defp notify_mentioned(id) do
     # The post's own bookkeeping: the message was just written in this transaction.
     message = Ash.get!(Message, id, authorize?: false, load: [:in_room])
 
@@ -45,24 +51,18 @@ defmodule AshTemplate.Activity.Notification.NotifyMentions do
 
   # Everyone else who has posted in the room under a name the message mentions,
   # less anyone who muted its author. The name is the one others saw them post
-  # under, in the plain words of `AshTemplate.PublicIdentity.words/1`. These reads
-  # are the post's own bookkeeping, so no reader's policies apply.
+  # under (`AshTemplate.Rooms.Poster`), compared in the database's own lower case
+  # as mentions always were. These reads are the post's own bookkeeping, so no
+  # reader's policies apply.
   defp mentioned(message) do
     named =
-      Message
+      Poster
       |> Ash.Query.filter(
-        room == ^message.room and not is_nil(human_account_id) and
-          fragment(
-            "strpos(lower(?), '@' || lower(coalesce(?, ?, '0x' || substr(?, 3, 4) || '..' || right(?, 4)))) > 0",
-            ^message.body,
-            author_name,
-            author_ens_name,
-            author_wallet,
-            author_wallet
-          )
+        room == ^message.room and
+          fragment("strpos(lower(?), '@' || lower(?)) > 0", ^message.body, name)
       )
       |> Ash.Query.select([:human_account_id])
-      |> Ash.read!(authorize?: false)
+      |> Ash.read!(actor: %System{})
       |> Enum.map(& &1.human_account_id)
       |> Enum.uniq()
       |> Enum.reject(&(&1 == message.human_account_id))
