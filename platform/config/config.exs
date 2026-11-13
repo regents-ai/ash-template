@@ -345,7 +345,7 @@ config :regent_mcp_agents, :config,
 
 config :phoenix, :filter_parameters, [
   "password",
-  "payment_signature",
+  "payment",
   "code",
   "code_verifier",
   "access_token",

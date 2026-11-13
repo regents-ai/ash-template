@@ -10369,3 +10369,11 @@ switches". The switch's sun and moon are now drawn by the particle field.
   so its refusal lists both budgets in `RateLimit-Policy`.
 - `AshTemplateWeb.Plugs.McpAgent.limit_address/1`; the OAuth reference and the feature
   map say so. Sites take the plug. No migration; the figures are unchanged.
+
+## 2026-11-13 — The signed payment is kept out of request logs
+
+- `config :phoenix, :filter_parameters` names `payment`, the field an agent's pin
+  request carries its signed payment in (`AshTemplateWeb.PairedAgentController`), in
+  place of `payment_signature`, which no request sends. Phoenix matches on part of a
+  name, so every field whose name holds `payment` is logged as `[FILTERED]`.
+- Sites take the same line. No migration, no API change.
