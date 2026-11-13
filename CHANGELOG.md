@@ -9702,3 +9702,36 @@ on the branch only; releasing it is the founder's decision.
 - Not proved: a real Privy sign-in. The bridge's own call into the shared reader is
   proved by the typecheck, not by a run (the browser walk replaces the bridge).
 - Docs: `docs/feature-map.md`, `platform/README.md` and `platform/AGENTS.md`.
+
+## 2026-11-12 — The shared Privy sign-in move, brought up to main (branch, not on main)
+
+Branch `tpl/privy-shared-main-1112`: `tpl/privy-shared-1112` (built on v219) merged
+into `tpl/signin-repeats-1112` (v227 plus one sign-in read per answer). Sign-in is
+protected; releasing it is the founder's decision.
+
+- Conflicts, all text: this file and `docs/feature-map.md` keep both sides, main's
+  first; `platform/README.md` keeps main's reading-profile row and the shared
+  sign-in row; the router keeps main's removal of the `:public_documents` pipeline
+  (the reading pages moved into the shell) and the admin comment naming
+  `RegentPrivy.Owners`; `mix.lock` takes elixir-utils `0eee6be3` and design-system
+  `5fbe2d40`.
+- Main's newer code needed nothing more: nothing still names the deleted reader;
+  the reading pages and the launch gate's open pages are served under the `sign_in`
+  policy, which now takes Privy's sources from the shared list; the route handoff
+  and the API documents are unchanged. No migration.
+- Every page group that loads a person (the shell, the showcase, its catalog and
+  the wallet lab) still reads the sign-in on the request before its first render, as
+  the one-read-per-answer change needs. The admin pages use the shared owners check,
+  which reads the sign-in on the request and again as the page connects.
+- Check: `make check` passes everything but `check-siwa-latest` (regents-cli 1.10.26
+  is out; fixed on its own branch): 13 report script tests, the style check, 154
+  script tests in 21 files, the browser walk (651 passed, 5 skipped for screen size),
+  247 server tests (237 tests, 10 properties), required fixes, `cli/commands.json`.
+- Local browser drive on a walk-mode server, the Privy bridge replaced by the walk's
+  stand-in: signed out, the shell and reading pages show no person and the admin
+  pages are not found; signed in, the person shows on first render, connected and
+  after moving inside the live page; the admin errors page opens under its nonce
+  and the team page connects; a signed-in non-admin finds neither; after signing
+  out from another tab, open shell pages reload signed out and the open team page
+  drops its messages and reloads to not found. Not run: a real Privy sign-in, and a
+  revocation with no disconnect in a browser (the server test covers it).
