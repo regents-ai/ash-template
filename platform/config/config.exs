@@ -283,7 +283,8 @@ config :error_tracker,
 
 config :phoenix, :json_library, Jason
 
-# Points launch is explicit: nothing earns until Sean sets the rules and start time.
+# Points launch is explicit: nothing earns until Sean sets the start time. The five
+# start actions are approved (Sean, 13 November), so the Points page lists them.
 # Every site reads the one shared regent_points schema; Regents owns its migrations.
 config :regent_points,
   repo: AshTemplate.Repo,
@@ -293,7 +294,7 @@ config :regent_points,
   ash_domains: [RegentPoints],
   program_id: "regents-points-v1",
   starts_at: nil,
-  approved_rules: [],
+  approved_rules: ~w(account.activated social.x social.github social.farcaster agent.activated),
   adapters: %{
     "account.activated" => AshTemplate.Points.AccountActivated,
     "agent.activated" => AshTemplate.Points.PairedAgent,

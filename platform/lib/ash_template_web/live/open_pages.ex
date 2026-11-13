@@ -33,13 +33,18 @@ defmodule AshTemplateWeb.Live.OpenPages do
 
   def on_mount(:default, _params, session, socket) do
     if connected?(socket) and is_nil(socket.parent_pid),
-      do: admit(socket, Map.fetch!(session, "client_key")),
+      do: admit(socket, session),
       else: {:cont, socket}
   end
 
+  defp admit(socket, %{"client_key" => key}), do: admit_under(socket, key)
+
+  defp admit(socket, session),
+    do: {:halt, AshTemplateWeb.Live.Session.render_again(socket, session)}
+
   # Registered first and counted after, so pages arriving together cannot all
   # read a count below the limit and pass.
-  defp admit(socket, key) do
+  defp admit_under(socket, key) do
     {:ok, _owner} = Registry.register(__MODULE__, key, nil)
 
     if Registry.count_match(__MODULE__, key, :_) > @limit do

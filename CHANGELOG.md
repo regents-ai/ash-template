@@ -10344,3 +10344,49 @@ Points library learns the number of seasons and stops by itself."
   size), 269 server tests (259 tests, 10 properties), required fixes,
   `cli/commands.json`, newest regents-cli. elixir-utils Points: 31 passed (1 property)
   and no missing generated migration on both library branches.
+## 2026-11-13 — The five start actions are approved; Points has no start yet
+
+- From Sean's decision of 13 Nov: the template approves the five start actions in
+  `platform/config/config.exs` (`account.activated`, `social.x`, `social.github`,
+  `social.farcaster`, `agent.activated`). The Points page and the agent's Points answer
+  now list them with their Points and mark what the account already has.
+- No start time is set, so nothing earns and no Points are recorded. Until a start, a
+  new sign-up, social link or pairing leaves one refusal note in the shared Points
+  records; it blocks nothing later.
+- `template.first_agent_note` stays unapproved. No migration, no sign-in change, no API
+  shape change, no pin change.
+
+## 2026-11-13 — Released v237: the five start actions approved
+
+- `8452b57b` is v237 on template.regents.sh, switched at about 06:09Z on 13 Nov with
+  `scripts/deploy.sh`, from Sean's decision of 13 Nov. No migration, no sign-in code, no
+  API shape change, no pin change. No start time is set; nothing earns.
+- Rollback: v236 (`7d6de3a6`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 268 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll. The signed-in list was read locally before the
+  release, not on live.
+
+## 2026-11-13 — An open page without its client key loads again instead of failing
+
+- A connected page whose signed token lacks the client key (a page drawn before the
+  site put the key in the token) now takes one full request for the same page, in
+  `AshTemplateWeb.Live.Session` and `AshTemplateWeb.Live.OpenPages`
+  (`Session.render_again/2`). Both read the key by matching, so the session is never
+  part of an error's text.
+- Sites that copied these two files take the same change. No migration, no API change,
+  no pin change; what a sign-in check decides is unchanged.
+
+## 2026-11-13 — Released v238: an open page without its client key loads again
+
+- `bfe0ba46` is v238 on template.regents.sh, switched on 13 Nov with
+  `scripts/deploy.sh`, a crash fix from the Sentinel chief's report of the same day. No
+  migration, no API change, no pin change; what a sign-in check decides is unchanged.
+- Rollback: v237 (`8452b57b`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 270 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
