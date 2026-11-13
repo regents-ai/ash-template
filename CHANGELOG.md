@@ -9847,6 +9847,26 @@ protected; releasing it is the founder's decision.
   drops its messages and reloads to not found. Not run: a real Privy sign-in, and a
   revocation with no disconnect in a browser (the server test covers it).
 
+## 2026-11-13 — Released v230: the template on the shared sign-in pieces
+
+- `9f90f648` (merge of `tpl/privy-shared-main-1112`, `cb4855c6`) is v230 on
+  template.regents.sh, switched at about 00:45Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "22 a" (12 Nov). No migration.
+- The template's own token reader is gone for `RegentPrivy.Proof`; `/admin/errors` and
+  `/admin/messages` are kept by `RegentPrivy.Owners` reading
+  `AshTemplateWeb.ErrorsAdmin`; the content security policy uses the shared sign-in
+  list. elixir-utils pin `240e938` to `0eee6be3` (the old pin plus only the shared
+  sign-in folder).
+- Rollback: v229 (`12ef221e`), image only.
+- Full check exit 0 by the chief on the exact commit: 154 script tests, 651 browser
+  walks with 5 skipped, 254 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/rooms/general`, `/notes` and `/docs` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll; `/admin/errors` and `/admin/messages` answer 404;
+  health 200; the content security policy header names the Privy and wallet hosts.
+- Not proven on live: a real Privy sign-in through the shared token reader, and the
+  admin pages as an admin. Sean opens both.
+
 
 
 ## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
@@ -9882,7 +9902,8 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   `platform/test/ash_template_web/messages_api_test.exs`.
 - Merged main at v228 (`05ed696a`, command line 1.10.26), then at `12ef221e` (the room
   list, 50 at a time): text conflicts only, in this file, the command list's Changes and
-  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229) and `9f90f648`
-  (the shared sign-in pieces), this file only. Both lanes moved the OpenAPI documents to
-  14.0.0; v229 carries the room list's 14.0.0, so the team message's 429 moves them to
-  15.0.0, its own entry in the docs and the command list.
+  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229), `9f90f648`
+  (the shared sign-in pieces) and `284ce1cb` (v230's note), this file only. Both lanes
+  moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
+  team message's 429 moves them to 15.0.0, its own entry in the docs and the command
+  list.
