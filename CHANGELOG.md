@@ -10646,3 +10646,21 @@ Tests only; no code changed.
 - Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
   `/rooms/general` answer 200. The Points page's own words need a sign-in and were not
   read by the chief.
+
+## 2026-11-13 — regents-cli 1.10.27 (branch `tpl/cli-1-10-27-1113`, not on main)
+
+- regents-cli moves from `2e4a571c` (1.10.26) to `2f7eee7e` (1.10.27), which reached PyPI
+  on 13 Nov 18:37Z, so the newest-SIWA gate refused main. `2f7eee7e` is the commit the
+  `v1.10.27` tag points at, which is what the gate compares against. The Makefile pin, the
+  install lines in `llms.md`, `agents.md` and `cli/COMMANDS.md`, the agent guide (release,
+  source commit `2f7eee7e6cb3c6926789c36fd7e3e23d383fc383` and wheel SHA256
+  `c9e28ef00528564f3153bc6d4ab5629d3a944a3c6ef1b486264b405bd992aa4c`, which the downloaded
+  wheel matches), `capabilities.json`'s `cli.release` and `cli/README.md` move together.
+- 1.10.27 pins this site at `5dfe953a`: its `commands.json`, `openapi.json` and
+  `api-contract.openapiv3.yaml`, in the source and in the published wheel, are byte for
+  byte main's. No command changes here. Against 1.10.26 it adds `--after` to `rooms list`,
+  so an agent reads past the first 50 rooms; `cli/COMMANDS.md` gains a dated line saying
+  so, and the earlier dated lines stay as written.
+- The per-action "and later" releases in `capabilities.json` stay as they are: notes
+  (`listMyNotes`) and the live feed (`getFeed`) still first arrive in 1.10.26, and
+  `rooms list` from 1.9.0 still reads the first page.

@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Command line 1.10.27.** The agent guide now asks for version 1.10.27 of the command
+  line. With it, agents can read the list of rooms past the 50 most recently active.
 - **Points.** Your Points page shows every action's Points, the seasons Points runs
   in with their dates, the one running and the days left in it, and what you earned
   in each, with the NFT bonus added at its end. Before Points starts, it shows which
