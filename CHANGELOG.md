@@ -10877,3 +10877,30 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   30-day sign-in.
 - Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
   with 5 skipped, 287 Elixir (10 properties).
+
+## 2026-11-13 — The rename leaves the template's own names as written
+
+- `scripts/init.sh` no longer renames text that means the template itself, which a new
+  site (Chainagent) had to undo by hand. Everything in `skills/` stays as written, names
+  and contents: they are the shared Regent skills, which every site carries as the
+  template's text. The dated plans, `docs/*-plan.md` (app shell, gap map, visit-log
+  replay, regents-cli, standardization and wallet funds), stay as written too, like the
+  changelog's history. `platform/scripts/check_required_fixes.exs` keeps `ash-template`,
+  as the `Makefile` does, since both read the template's required fixes; its other
+  names are renamed. The review rules between `AGENTS.md`'s rollout review markers stay
+  as `skills/rollout-guidance-check/scripts/sync_review.py` writes them, so its
+  `--check` still matches in a new product. Every other doc is renamed as before.
+- `scripts/init.sh` also removes `scripts/regent-ui-update`, which moves the five Regent
+  sites onto one design-system commit; the changelog line it writes says so.
+- `docs/regents-cli-plan.md` points at the `regents` command line without naming the
+  template's command group, so it stays true in a new product.
+- `scripts/harvest.sh` names a site's file in `skills/` or a dated plan by the template's
+  path unchanged, as `scripts/init.sh` now leaves it. No such file carries the
+  template's name today, so today's reports for the five sites are unchanged.
+  `scripts/drift.sh` compares none of these files and is unchanged.
+- `README.md` and the script's opening comment say what the rename leaves as written.
+- Tests: the rename test in `scripts/tests/test_reports.py` checks that a skills file
+  and folder, a dated plan, the changelog's history, `check_required_fixes.exs`'s
+  `ash-template` and the review rules keep the template's names, that an ordinary doc
+  is renamed, and that `scripts/regent-ui-update` is gone; the harvest test checks a
+  skills file and a dated plan keep their template paths. Both fail on the old scripts.

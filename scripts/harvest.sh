@@ -60,8 +60,8 @@ lines() {
 }
 
 # The JSON object of a site's path for every template file: each of the template's
-# files renamed the way scripts/init.sh renames it, and each shared file the site keeps
-# at its own path.
+# files renamed the way scripts/init.sh renames it (a file in skills/ or a dated plan,
+# docs/*-plan.md, keeps its name), and each shared file the site keeps at its own path.
 names() {
   local entry site_name path site_path moved_here=()
   for entry in "${moved_files[@]}"; do
@@ -74,7 +74,9 @@ names() {
     def renamed:
       if test("^ash_template\\.(" + $tasks + ")\\.ex$") then sub("^ash_template"; $prefix)
       else gsub("ash_template"; $app) | gsub("ash-template"; $kebab) end;
-    (split("\n") | map(select(. != "")) | map({key: (split("/") | map(renamed) | join("/")), value: .}))
+    def site_path:
+      if test("^skills/|^docs/.*-plan\\.md$") then . else split("/") | map(renamed) | join("/") end;
+    (split("\n") | map(select(. != "")) | map({key: site_path, value: .}))
     + ($moved | map(split(" ") | {key: .[0], value: .[1]}))
     | from_entries'
 }
