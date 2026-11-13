@@ -9970,8 +9970,6 @@ On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
   390 and 320 with no page errors and no sideways scroll. The look itself (the colours
   of the ring and the still, the sparks) is the design chief's read.
 
-
-
 ## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
 
 On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for all").
@@ -10443,3 +10441,41 @@ switches". The switch's sun and moon are now drawn by the particle field.
 - Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
   `/rooms/general` answer 200; a request to `/mcp` with no signature answers 401 with the
   hint carrying `regents mcp --site template`.
+## 2026-11-13 — The Points board, ten stored totals (branch, not on main)
+
+Branch `tpl/points-board-1112`, for the chief (`/tmp/stampede-1112/build-points-board.md`).
+Sean's decision "Rebuild the Points leaderboard": yes, on a side branch; applying it
+needs his own named go.
+
+- **Library.** elixir-utils pin `0eee6be3` to `f5452442` (branch
+  `eu/points-board-on-privy-pin-1113`: `0eee6be3` plus only the Points change; sites
+  still on `240e938` take the same change as `99a068bd`, `eu/points-board-on-pin-1112`).
+  Each Points account stores its total (`regent_points.accounts.balance_micro`), moved
+  by every entry and period bonus in the write's own transaction. The board reads the
+  ten highest from an index on it; a reader's place is `place` in their summary, one
+  count of the accounts above them. The board no longer carries every positive total,
+  and `RegentPoints.Leaderboard.place/2` is gone.
+- **The page and the agent's answer.** `PointsEntries.board/3` takes the reader's
+  summary: a listed reader's place is their own row's; below the ten it is the
+  summary's place and total. A place below the ten follows the reader's own reads
+  (opening the page, their own Points changing), not others passing them. The
+  `points_board` reading holds ten rows, about 48 KB at most, and its limit drops from
+  131,072 to 65,536 bytes. The agent answer's shape is unchanged.
+- **Shared migrations**, applied once by `/app/bin/migrate-shared` from the first
+  release that carries them, under Sean's go. `20261112234336_account_balance` adds the
+  column (default 0, no table rewrite) and fills it from the ledger in the same
+  transaction, holding the accounts table for the fill (3.8 s locally at 100,000
+  accounts and a million entries). `20261112234337_account_balance_1` builds
+  `(balance_micro DESC, id)` concurrently, outside the ledger's migration lock. No
+  ledger row changes; the way back drops the column and the index.
+- **Measured** locally: the old board read took 148 s at 100,000 accounts after one
+  period bonus (19.7 s at 20,000), past the 15-second limit; the new one 0.05 ms, and
+  the place of the lowest of 100,000 accounts 9 ms. The read-only
+  `/tmp/stampede-1112/points/totals.sql` printed the same accounts, sum and ten rows
+  (shared places included) before and after a rehearsal on 20,000 accounts through
+  `RegentPoints.Migrator`, with 0 accounts differing.
+- Check: `make check` exit 0 on `03ebf29e`: 13 report script tests, the style check,
+  155 script tests in 21 files, the browser walk (653 passed, 5 skipped for screen
+  size), 257 server tests (247 tests, 10 properties), required fixes,
+  `cli/commands.json`, newest regents-cli. elixir-utils Points: 25 passed (1 property)
+  and no missing generated migration on each of the three branches.

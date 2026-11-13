@@ -805,8 +805,8 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # The board every signed-in reader shares (AshTemplate.Points.Board). The
-  # reader's own row and place are found from it, and their own total, as the
-  # page renders.
+  # reader's own row is found in it as the page renders; a place below it comes
+  # with their own summary.
   defp read_points_board(socket) do
     case human_actor(socket) do
       %Human{} -> assign(socket, :points_board, board_read(SharedReading.fetch(Board.key())))

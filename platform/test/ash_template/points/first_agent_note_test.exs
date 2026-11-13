@@ -17,7 +17,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
 
   @rule "template.first_agent_note"
   # The agent's entries do not depend on the board every reader shares.
-  @no_board %{top: [], totals: []}
+  @no_board %{top: []}
 
   setup do
     AshTemplate.RealCommits.start()
