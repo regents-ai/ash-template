@@ -10805,3 +10805,8 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   paragraph in `platform/README.md`.
 - `skills/ash-data/references/migrations-and-concurrency.md` now says the Points tables
   are on the list, in place of how they would join it. No migration, no pin change.
+- The Credits removal migration (`20261112130000_remove_credits_schema.exs`) no longer
+  drops the Credits guard views or deletes their rows from the protected list: that ran
+  on production on 12 Nov, and under the list's coming guard such a delete is refused
+  even when it matches nothing, so a copied site that has not applied it could not
+  release.
