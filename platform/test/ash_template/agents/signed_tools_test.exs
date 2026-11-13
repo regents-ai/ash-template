@@ -1,5 +1,5 @@
 defmodule AshTemplate.SignedToolsTest do
-  # Invariant: neither a browser cookie nor an unpaired/revoked SIWA identity
+  # Invariant: neither Privy's browser cookie nor an unpaired/revoked SIWA identity
   # grants account access, and each accepted proof is checked exactly once.
   use ExUnit.Case, async: false
   import Plug.Test

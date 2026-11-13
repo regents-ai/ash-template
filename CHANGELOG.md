@@ -10646,3 +10646,35 @@ Tests only; no code changed.
 - Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
   `/rooms/general` answer 200. The Points page's own words need a sign-in and were not
   read by the chief.
+
+## 2026-11-13 — The notes API takes a session on this site or a paired agent (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, from main at `87efe70e`.
+
+- `/api/v1/notes` and its routes answer the person signed in on this site, with the
+  session cookie the site's own pages hold, or an agent the person paired, signing
+  its request with its own key. A change (create, list, edit, delete) from a session
+  also carries the session's forms token in `x-csrf-token`, as the site's pages send
+  it; without it the request counts as signed out. A read needs only the session.
+- A person's Privy access and identity tokens are no longer taken on these routes.
+  Without a session or an agent's signature the answer is 401
+  `authentication_required`, with a hint that names both ways in. The 403
+  `account_required` answer is gone: a session on this site always names an account.
+- `AshTemplateWeb.NotesController` reads the person through
+  `PrivySessionController.enforce_authority/1`, the same sign-in check every page
+  makes, behind `Plug.CSRFProtection` with `:clear_session`.
+  `AshTemplate.Accounts.VerifiedSession.account/1`, used only here, is gone.
+- The OpenAPI documents move to 18.0.0: the notes operations take `cookieSession`
+  (with `csrfToken` for a change) or `siwaProof`, the 403 points at the agent's
+  answers, and `account_required` leaves the error codes. Listed in the docs'
+  breaking changes, `cli/COMMANDS.md`, `/llms.txt` and the public changelog. Every
+  `regents ash-template notes` command is signed and works as before.
+- `GET /api/v1/profile` and its two writes (shared `RegentIdentity.HTTP`) still take
+  the Privy pair; they live in the shared library and are unchanged here.
+- Tests: `platform/test/ash_template_web/notes_sign_in_test.exs` signs in through
+  the site's own sign-in step, then creates, lists, reads, edits and deletes a note
+  with the session; every change without the forms token is refused and changes
+  nothing; Privy's tokens alone are refused even for that signed-in person. With the
+  forms check taken out, the test fails. The paired agent's notes stay covered by
+  `platform/test/ash_template/agents/signed_tools_test.exs`. The feature map gains a
+  row.

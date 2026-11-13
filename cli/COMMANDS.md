@@ -790,6 +790,9 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-13: The OpenAPI documents move to 18.0.0. The notes routes no longer take a
+  person's Privy tokens: they answer a person signed in on the site's own pages, or a paired
+  agent. Every `notes` command is signed and works as before.
 - 2026-11-13: The OpenAPI documents move to 17.0.0. `account points` answers `seasons` (each
   season's dates, state, days left, what was earned in it and its NFT bonus) in place of
   `period_bonuses`; each `to_do` item always carries its `points`, never `false`, and gains
