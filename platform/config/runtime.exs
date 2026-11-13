@@ -263,6 +263,21 @@ database_config =
 
 config :ash_template, AshTemplate.Repo, database_config
 
+# A developer's machine on the remote database (AshTemplate.DatabaseConfig.remote?/1)
+# runs no job queue and no Oban plugin, so the serving machines alone run the site's
+# jobs, and its server starts only when it listens on this machine alone.
+if config_env() == :dev and AshTemplate.DatabaseConfig.remote?() do
+  listeners =
+    :ash_template
+    |> Application.fetch_env!(AshTemplateWeb.Endpoint)
+    |> Keyword.take([:http, :https])
+
+  unless Enum.all?(listeners, fn {_scheme, options} -> options[:ip] == {127, 0, 0, 1} end),
+    do: raise("On the remote database the server listens on 127.0.0.1 alone (config/dev.exs)")
+
+  config :ash_template, Oban, queues: false, plugins: false
+end
+
 unless migrating? do
   config :ash_template,
          AshTemplate.Notifications,

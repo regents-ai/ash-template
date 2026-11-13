@@ -70,6 +70,9 @@ defmodule AshTemplate.DatabaseConfig do
     ]
   end
 
+  @doc "Whether a developer's machine is set to use the remote database instead of its own."
+  def remote?(getenv \\ &System.get_env/1), do: remote_target(getenv) == :remote
+
   @doc """
   The one connection the site's listeners share (`AshTemplate.SharedChanges`): the
   serving login and address, outside the pool.

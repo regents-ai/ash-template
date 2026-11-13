@@ -46,7 +46,10 @@ and read the installed version's docs before relying on an option.
    `Oban.Lifeline`, `Oban.Cron`), and `AshOban.config/2` keeps them and their leader
    (checked in Oban 2.24.2 and AshOban 0.10.3). Never write the old
    `plugins: [{Oban.Plugins.Pruner, ...}]`, and never `plugins: false`, which turns all
-   three off. The baseline every site keeps:
+   three off, on a machine that serves the site. A developer's machine on the remote
+   database is the one exception: `queues: false, plugins: false` (config/runtime.exs),
+   so the serving machines alone run the jobs, with AshOban's `require?: false`
+   (`AshTemplate.Application.oban/1`). The baseline every site keeps:
 
    - `pruner: [max_age: {7, :days}]`. The pruner deletes completed, cancelled and
      discarded jobs older than that, up to 10,000 every 30 seconds, from the leader.

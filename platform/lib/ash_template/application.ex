@@ -54,12 +54,7 @@ defmodule AshTemplate.Application do
         # After PubSub: a pairing made or ended on any Regent site reaches the
         # pages showing it.
         AshTemplate.SharedChanges,
-        # AshOban adds a sweep for every trigger in the site's domains.
-        {Oban,
-         AshOban.config(
-           Application.fetch_env!(:ash_template, :ash_domains),
-           Application.fetch_env!(:ash_template, Oban)
-         )},
+        {Oban, oban(Application.fetch_env!(:ash_template, Oban))},
         AshTemplateWeb.Live.OpenPages,
         # Counts this machine's open agent feeds.
         AshTemplateWeb.FeedController,
@@ -72,6 +67,17 @@ defmodule AshTemplate.Application do
       |> Enum.reject(&is_nil/1)
 
     Supervisor.start_link(children, strategy: :one_for_one, name: AshTemplate.Supervisor)
+  end
+
+  @doc """
+  Oban's settings with AshOban's sweep for every trigger in the site's domains. A
+  machine that runs no queue (`queues: false`, config/runtime.exs) runs none of the
+  triggers' jobs, so their queues need not be there.
+  """
+  def oban(settings) do
+    AshOban.config(Application.fetch_env!(:ash_template, :ash_domains), settings,
+      require?: settings[:queues] != false
+    )
   end
 
   @impl true

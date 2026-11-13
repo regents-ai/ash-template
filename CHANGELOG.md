@@ -10346,3 +10346,16 @@ switches". The switch's sun and moon are now drawn by the particle field.
 - The command list, the API documents (no version change: wording only), the README
   and the live-feed skill reference say so. Sites take the controller, the setting and
   the wording. No migration.
+
+## 2026-11-13 — A development server on the remote database runs no jobs and listens locally
+
+- With the remote database set (`ASH_TEMPLATE_DATABASE_CLUSTER_ID` and
+  `ASH_TEMPLATE_DATABASE_CLUSTER_NAME`), `config/runtime.exs` gives Oban
+  `queues: false, plugins: false`: the machine runs no job queue, no cron, no pruner and
+  no lifeline, and leads nothing, so the serving machines alone run the site's jobs. The
+  development server starts only while every listener is on 127.0.0.1.
+- `AshTemplate.Application.oban/1` builds Oban's settings with AshOban's sweeps and
+  asks AshOban for every trigger's queue except on a machine that runs none.
+  `AshTemplate.DatabaseConfig.remote?/1` says whether the remote database is set.
+- The README's settings table and the elixir-stack Oban reference say so. Sites take
+  the three files. No migration, no API change; serving machines are unchanged.
