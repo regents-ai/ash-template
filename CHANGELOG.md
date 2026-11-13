@@ -9627,6 +9627,54 @@ no migration.
   errors and no sideways scroll; `/animations` links the new page. The picture itself
   is the design chief's to read.
 
+## 2026-11-12 — regents-cli 1.10.26 (branch `tpl/cli-1-10-26-1112`, not on main)
+
+- regents-cli moves from `8b3240b6` (1.10.25) to `2e4a571c` (1.10.26), which reached PyPI
+  on 12 Nov 23:27Z, so the newest-SIWA gate refused main. The Makefile pin, the install
+  lines in `llms.md`, `agents.md` and `cli/COMMANDS.md`, the agent guide (release, source
+  commit `2e4a571c2d09d5d5a3503aaae551c84f6a152a3b` and wheel SHA256
+  `bc71dd5d8ddbba9eac00c5af453e19367623fdca217132e0b19f9907fd048253`, which the downloaded
+  wheel matches), `capabilities.json`'s `cli.release` and `cli/README.md` move together.
+- 1.10.26 pins this site at `1f84891a`: its `commands.json`, `openapi.json` and
+  `api-contract.openapiv3.yaml` are byte for byte main's. So it carries `feed` (with
+  `--wake`) and the paged `notes list` (`POST /api/v1/notes/list`, `--after`), which every
+  earlier release calls at the removed `GET /api/v1/notes`. `getFeed` moves from
+  `cli_pending` to `cli_release` 1.10.26 and `listMyNotes` from 1.10.16 to 1.10.26; the
+  "(next release)" marks leave `cli/COMMANDS.md` and `docs/agent-parity.md`, G12 is closed
+  on the CLI, and the feature map's G12 row keeps only hosted MCP and WebMCP.
+- The agent guide no longer says the next release brings `activity mark-read`, the `chat`
+  commands (both in 1.10.25) or `regents browser --site` (in 1.10.23), nor that `feed`
+  waits for one.
+- 1.10.26's own entry point, given this list, shows `feed` with `--wake` and without
+  `--phase`, `notes list` with `--after`, `activity mark-read`, `chat send` and
+  `regents browser --site`.
+## 2026-11-12 — A page reads the sign-in once per answer (branch, not on main)
+
+Branch `tpl/signin-repeats-1112`, for the ash-template chief, after the database load
+review found one page load checking the same sign-in twice at the same instant. It
+touches sign-in, so it waits for Sean's named go. No migration; no change to what a
+check decides, to cookies, session rows, lifetimes, the launch gate, Privy or the shared
+libraries.
+
+- The first render takes the account its own request's plug has just read
+  (`PrivySessionController.enforce_authority/1`) from the conn, through `assign_new`,
+  instead of reading the session row and account again.
+- The `handle_params` LiveView calls straight after the connected mount, for the address
+  the page opened on, takes the mount's read instead of reading again. Every later
+  navigation, every press, and every message or result once the sign-in's lifetime has
+  run out still reads the session again, as before, in the same order.
+- Queries counted for a signed-in visit to `/rooms/general`: the first answer 12 to 9
+  (sign-in checks 2 to 1), the connected page 12 to 9 (2 to 1), a navigation 4 and a
+  press 3, unchanged (1 check each). A reader who never signed in but holds a session
+  row: 5 to 4 on the first answer. Every page sent, signed in, signed out, never signed
+  in and revoked, is the same as before, first answer and connected.
+- The rule is in `skills/ash-security/references/component-session-check.md`.
+- Checks: `platform/test/ash_template_web/session_checks_test.exs` (a connected shell
+  page: each answer reads once, a sign-in revoked before connecting, or after, is
+  refused as the page connects, at the next navigation and at the next press, which
+  changes nothing). It fails on the old code (two reads), and with the navigation or
+  the press check removed.
+
 ## 2026-11-12 — Text search on trigram indexes
 
 On `tpl/text-search-1112`, for the template chief, after Sean's go "24 a" (pg_trgm on the
