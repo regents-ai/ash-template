@@ -1,7 +1,7 @@
 defmodule AshTemplateWeb.Live.Session do
   @moduledoc false
 
-  import Phoenix.Component, only: [assign: 2]
+  import Phoenix.Component, only: [assign: 2, assign_new: 3]
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1, get_connect_info: 2, redirect: 2]
 
   alias AshTemplate.AccessContext
@@ -50,11 +50,15 @@ defmodule AshTemplateWeb.Live.Session do
       |> assign(sign_in_wallets: sign_in_wallets(handshake))
       |> connected(session, handshake)
     else
-      {_lineage, account, _lapses_at} =
-        session |> SessionAuthority.claim() |> SessionAuthority.resolve()
+      # The first render belongs to the request whose plug has just read the
+      # claim (`PrivySessionController.enforce_authority/1`), so it takes that
+      # answer from the request rather than reading again.
+      socket = assign_new(socket, :current_human_account, fn -> nil end)
 
       {:cont,
-       socket |> assign(sign_in_wallets: sign_in_wallets(session)) |> assign_principal(account)}
+       socket
+       |> assign(sign_in_wallets: sign_in_wallets(session))
+       |> assign_principal(socket.assigns.current_human_account)}
     end
   end
 
@@ -146,9 +150,18 @@ defmodule AshTemplateWeb.Live.Session do
     end)
   end
 
+  # LiveView calls `handle_params` straight after the connected mount, for the
+  # address the page opened on. The mount has just read the lease, so that call
+  # takes the mount's answer; every navigation after it reads the lease again.
   defp recheck_navigation(socket, lease) do
-    attach_hook(socket, :session_authority_params, :handle_params, fn _params, _uri, socket ->
-      recheck(socket, lease, &redirect(&1, to: @public_root))
+    socket
+    |> assign(initial_params?: true)
+    |> attach_hook(:session_authority_params, :handle_params, fn
+      _params, _uri, %{assigns: %{initial_params?: true}} = socket ->
+        {:cont, assign(socket, initial_params?: false)}
+
+      _params, _uri, socket ->
+        recheck(socket, lease, &redirect(&1, to: @public_root))
     end)
   end
 
