@@ -10664,3 +10664,12 @@ Tests only; no code changed.
 - The per-action "and later" releases in `capabilities.json` stay as they are: notes
   (`listMyNotes`) and the live feed (`getFeed`) still first arrive in 1.10.26, and
   `rooms list` from 1.9.0 still reads the first page.
+
+## 2026-11-13 — Released v244: the template names regents-cli 1.10.27
+
+- `1acf62ec` is v244 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`.
+  It carries the move from regents-cli 1.10.26 to 1.10.27: version names only. No
+  migration, no library pin change; API 17.0.0 unchanged.
+- Rollback: v243 (`5dfe953a`) image.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 282 Elixir (10 properties).
