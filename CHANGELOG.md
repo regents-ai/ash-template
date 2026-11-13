@@ -10407,3 +10407,18 @@ switches". The switch's sun and moon are now drawn by the particle field.
   system-actor check.
 - The `ash-signals` skill teaches the same for every bookkeeping listener, Points'
   included. Sites take the change. No migration, no API change.
+
+## 2026-11-13 — Released v239: eight hardening changes
+
+- `f926345f` (`tpl/security-batch-1113` without its last commit, a fast-forward of main
+  `36686250`) is v239 on template.regents.sh, switched on 13 Nov with
+  `scripts/deploy.sh`. No migration, no sign-in decision changed, no pin change; API
+  17.0.0 unchanged.
+- The branch's last commit (`3e2571e5`, the production cluster read from a setting) is
+  not taken: the code keeps naming the one database it admits.
+- Rollback: v238 (`bfe0ba46`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 279 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
