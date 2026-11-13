@@ -35,10 +35,19 @@ defmodule AshTemplateWeb.Live.Session do
     })
   end
 
-  def on_mount(:load_human, _params, session, socket) do
+  @doc """
+  One full request for the page, for a connected page whose signed token lacks
+  what `render_context/1` puts in it: the request renders it again with a whole
+  token. The session is matched, never fetched with a raising call, so it can
+  never become the text of an exception and reach the log.
+  """
+  def render_again(socket, session),
+    do: redirect(socket, to: Map.get(session, "render_route", @public_root))
+
+  def on_mount(:load_human, _params, %{"client_key" => client_key} = session, socket) do
     socket =
       assign(socket,
-        client_key: Map.fetch!(session, "client_key"),
+        client_key: client_key,
         session_lease: nil,
         signed_out_reason: :signed_out
       )
@@ -61,6 +70,9 @@ defmodule AshTemplateWeb.Live.Session do
        |> assign_principal(socket.assigns.current_human_account)}
     end
   end
+
+  def on_mount(:load_human, _params, session, socket),
+    do: {:halt, render_again(socket, session)}
 
   # Which wallets the sign-in named the Regents wallet and the person's own
   # (`AshTemplate.Accounts.VerifiedSession.wallet_labels/1`), read from the same

@@ -10305,3 +10305,13 @@ switches". The switch's sun and moon are now drawn by the particle field.
   `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll. The signed-in list was read locally before the
   release, not on live.
+
+## 2026-11-13 — An open page without its client key loads again instead of failing
+
+- A connected page whose signed token lacks the client key (a page drawn before the
+  site put the key in the token) now takes one full request for the same page, in
+  `AshTemplateWeb.Live.Session` and `AshTemplateWeb.Live.OpenPages`
+  (`Session.render_again/2`). Both read the key by matching, so the session is never
+  part of an error's text.
+- Sites that copied these two files take the same change. No migration, no API change,
+  no pin change; what a sign-in check decides is unchanged.
