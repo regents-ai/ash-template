@@ -10227,3 +10227,25 @@ switches". The switch's sun and moon are now drawn by the particle field.
 - No migration, no change to the shared library or the design system. `starts_at`
   stays unset and `approved_rules` empty. The compile link limit in `mix precommit`
   moves to 48: the Points domain lists one more resource.
+
+## 2026-11-13 — Released v235: the Points page shows seasons and what is left
+
+- `f1da0078` (merge of `tpl/points-page-1113`, `ab3412d8`, on main `e1dad10f`) is v235
+  on template.regents.sh, switched at about 03:46Z on 13 Nov with `scripts/deploy.sh`.
+  The live build names commit `f1da007` and the live API document says 17.0.0. No
+  migration, no sign-in code.
+- Account Points lists every approved action with its Points, the three 30-day
+  seasons (dates once a start is set, the one running, days left, earned in each, the
+  NFT bonus at each end) and, before the start, what the start adds for what the
+  person already has. The agent's Points answer carries the same. The season count is
+  one setting, `:points_seasons`.
+- No rule is approved and no start is set (`approved_rules: []`, `starts_at: nil`), so
+  on live the page lists no action yet: it says Points has not started beside the
+  three seasons. Approving rules for display is Sean's decision.
+- Rollback: v234 (`9baea786`), image only.
+- Full check exit 0 by the chief on the exact commit: 122 script tests, 661 browser
+  walks with 5 skipped, 268 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll. The page signed in was read on a local run
+  only (pictures by the worker); Sean opens it on live.
