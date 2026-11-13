@@ -9743,6 +9743,29 @@ Branch `tpl/room-list-limit-1112`, from `origin/main` (`5375a9d3`), for the chie
   and every install line still names 1.10.25. In the first run the phone account-menu walk
   timed out once under load; alone it passed 6 of 6, and the second run passed it.
 
+## 2026-11-13 — Released v229: the room list shows 50, with More
+
+- `12ef221e` (merge of `tpl/room-list-limit-1112`, `6cd23f78`) is v229 on
+  template.regents.sh, switched at about 00:30Z on 13 Nov with `scripts/deploy.sh`.
+  Sean, 12 Nov: "Limit the room list to 50: yes." This was the one list left unbounded
+  after the database load review.
+- Migrations, applied (`/api/v1/health` answers `migrations_applied: true`):
+  `rooms.last_active_at` added with a default and each room's own row set once to the
+  later of its start and its newest message; a concurrent index on
+  `(last_active_at, slug)`. The template has two rooms. Messages untouched.
+- Rollback: fix forward; the v228 image (`21b8786a`) still runs on the new schema but
+  would not keep `last_active_at` current.
+- Full check exit 0 by the chief on the exact commit: 150 script tests, 651 browser
+  walks with 5 skipped, 251 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/rooms/general`,
+  `/rooms/help` and `/polls` answer 200 at 1280, 390 and 320 with no page errors and no
+  sideways scroll. `GET /api/v1/rooms` answers 200 with 2 rooms and
+  `pagination: {has_more: false, next_cursor: null}`; a bad cursor answers 422. More was
+  not exercised on live (fewer than 50 rooms); it is proven by tests.
+- Agent-visible: API documents 14.0.0; the rooms read is paged (`?after=`, `has_more`,
+  `next_cursor`, 422 `invalid_cursor`, 503 `rooms_unavailable`); regents-cli 1.10.26's
+  `rooms list` reads the first page only until it learns `--after`.
+
 
 ## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
 
@@ -9772,11 +9795,12 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   `retry_after` from the hosted tool `messages_leave`, instead of 422 `invalid_message`.
   The browser tool already passes any 429's wait on. A person past it is still told on
   the message box, in the room message box's words. Both OpenAPI documents move to
-  14.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
+  15.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
   `platform/test/ash_template/messages/leave_test.exs` and
   `platform/test/ash_template_web/messages_api_test.exs`.
 - Merged main at v228 (`05ed696a`, command line 1.10.26), then at `12ef221e` (the room
   list, 50 at a time): text conflicts only, in this file, the command list's Changes and
-  the docs' breaking changes, both sides kept. Both lanes moved the OpenAPI documents to
-  14.0.0, which no release carries yet, so the docs and the command list hold one 14.0.0
-  entry with the room list and the team message's 429.
+  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229). Both lanes
+  moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
+  team message's 429 moves them to 15.0.0, its own entry in the docs and the command
+  list.
