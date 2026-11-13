@@ -6,7 +6,8 @@ defmodule AshTemplate.Points.LinkedSocial do
   before the check earns nothing.
 
   `existing/2` lists the links to the rule's provider made before the Points
-  start and still there, for `RegentPoints.StartAwards`.
+  start and still there, for `RegentPoints.StartAwards`; `held/2` answers,
+  before the start, whether one account has such a link now.
   """
 
   alias AshTemplate.Accounts
@@ -31,6 +32,13 @@ defmodule AshTemplate.Points.LinkedSocial do
          source_kind: "linked_identity",
          source_event_key: "#{identity.provider}:#{identity.subject}"
        }}
+    end
+  end
+
+  def held("social." <> provider, account_id) do
+    with {:ok, links} <-
+           Accounts.list_linked_identities_for_account(account_id, actor: %System{}) do
+      {:ok, Enum.any?(links, &(to_string(&1.provider) == provider))}
     end
   end
 

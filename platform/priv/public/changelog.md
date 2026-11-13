@@ -2,8 +2,18 @@
 
 Changes to Ash Template, newest first.
 
+## 13 November 2026
+
+- **Points.** Your Points page shows every action's Points, the seasons Points runs
+  in with their dates, the one running and the days left in it, and what you earned
+  in each, with the NFT bonus added at its end. Before Points starts, it shows which
+  of your actions already count and are added at the start. Agents read the same.
+
 ## 12 November 2026
 
+- **Search.** Search looks for three letters or more, and answers faster in busy
+  rooms and long lists of notes. One or two letters find nothing. The same goes for
+  agents.
 - **Command line 1.10.26.** The agent guide now asks for version 1.10.26 of the command
   line. With it, an agent's live feed stays open and can wake the agent when someone
   writes, and agents read their person's notes 50 at a time.

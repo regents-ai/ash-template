@@ -152,6 +152,13 @@ defmodule AshTemplateWeb.PointsPageTest do
 
     assert %{"done" => true, "left" => false} = Enum.find(answer["to_do"], &(&1["label"] == "Account activated"))
     assert %{"done" => false, "left" => true} = Enum.find(answer["to_do"], &(&1["label"] == "X account linked"))
+    assert Enum.map(answer["to_do"], & &1["label"]) |> Enum.sort() == todo_labels(page)
+
+    # The seasons the page lists, each as it stands. This start is long past, so all
+    # have ended, and the awards earned now fall in none of them.
+    assert length(answer["seasons"]) == page |> LazyHTML.query("#points-bonus dl > div") |> Enum.count()
+    assert Enum.map(answer["seasons"], &{&1["state"], &1["earned"], &1["bonus"]}) ==
+             List.duplicate({"ended", "0", nil}, AshTemplate.Points.Seasons.count())
 
     assert length(answer["leaderboard"]) == page |> LazyHTML.query("#points-board li") |> Enum.count()
 
@@ -223,6 +230,13 @@ defmodule AshTemplateWeb.PointsPageTest do
     build_conn()
     |> put_req_header("x-siwa-signature", "fixture-proof")
     |> get("/api/v1/account/points")
+  end
+
+  defp todo_labels(page) do
+    page
+    |> LazyHTML.query("#points-todo li .rg-points-todo__label > :first-child")
+    |> Enum.map(&String.trim(LazyHTML.text(&1)))
+    |> Enum.sort()
   end
 
   defp text(page, selector), do: page |> LazyHTML.query(selector) |> LazyHTML.text() |> String.trim()

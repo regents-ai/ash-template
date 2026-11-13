@@ -147,10 +147,14 @@ See the package README for the adapter contract, actor policy and migration inst
   of activity. It says nothing about value.
 - **To do**: `RegentPoints.Rules.tracked/0`, only the catalog rules this site has an
   adapter for and that are approved, so it never offers an action nothing records.
-  One-time actions and daily ones are listed apart; the ones left come first with
-  their points and a link to where each is done, the ones done are ticked. A daily
-  action shows how much of today's count is used. Before earning opens it says
-  "Earning hasn’t opened yet." and shows no points.
+  One-time actions and daily ones are listed apart, each with its points; the ones
+  left come first with a link to where each is done, the ones done are ticked. A daily
+  action shows how much of today's count is used. Under the title, one line says where
+  Points stands: not started, its start date, the season running and its days left,
+  or the last season over. Before the start, each start rule
+  (`RegentPoints.Rules.start_rules/0`) the account already meets is ticked and marked
+  as added at the start. Each start adapter's `held/2` answers that for the one
+  account, from the same tables its `existing/2` reads for the start itself.
 - **Leaderboard**: the ten highest totals by the name and picture the site already
   shows the public, the reader's row marked. A reader below the ten gets their own
   place on a row under the list. Accounts level on points share a place: one more
@@ -181,14 +185,22 @@ See the package README for the adapter contract, actor policy and migration inst
   of the limit (`health.shared_reading.size.percent`, kind `points_board`). A
   larger board is refused and marked degraded; the last one stays shown as behind,
   and the agent's answer keeps giving it.
-- **Bonus**: the three NFT tiers with the one held marked, and each period's bonus.
+- **Bonus**: the three NFT tiers with the one held marked, then each season: its dates
+  (none until a start is set), what the account earned in it once it began, and the
+  bonus added at its end. Seasons are the library's 30-day periods, season n being
+  period n; the library counts periods without end, and the site shows as many as
+  `config :ash_template, :points_seasons` names (3), through
+  `AshTemplate.Points.Seasons`. The tip under Bonus says what a season is.
 - **Activity**: each entry with who earned it (you or the agent's name), when, and
   whether it was cut by a daily limit or is a correction.
 
 The agent tool `account_points` answers with the same figures: `points`,
 `earned_today`, `earned_yesterday`, `rank`, `to_do`, `daily_limits`, `leaderboard`,
-`entries` and `period_bonuses`. A site that adds an adapter shows its rule without
-changing the page.
+`entries` and `seasons`, each `to_do` item marking `at_start`. Both read
+`AshTemplate.Points.my_points/1`: the library's summary, each season with what was
+earned in it and its bonus, and before the start the start rules the account already
+meets. A site that adds an adapter shows its rule without changing the page; a start
+rule's adapter also needs `held/2`.
 
 ## Local development and launch
 

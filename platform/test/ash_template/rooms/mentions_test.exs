@@ -4,7 +4,8 @@ defmodule AshTemplate.Rooms.MentionsTest do
   # name shows by. Each name a person has posted under in a room is kept for it
   # (`AshTemplate.Rooms.Poster`), filled for the messages already posted when
   # posters began, so a mention reaches exactly the people the room's messages
-  # named before.
+  # named before. A person with no message left in a room, deleted or removed,
+  # is mentioned by nobody there until they post in it again.
   use ExUnit.Case, async: false
 
   require Ash.Query
@@ -12,7 +13,7 @@ defmodule AshTemplate.Rooms.MentionsTest do
   alias AshTemplate.{Accounts, Activity, Agents, Repo, Rooms}
   alias AshTemplate.Activity.Notification
   alias AshTemplate.Actors.{Human, System}
-  alias AshTemplate.Rooms.{Like, Message, Room}
+  alias AshTemplate.Rooms.{Like, Message, Moderation, Room}
 
   Code.require_file("priv/repo/migrations/20261112192414_rooms_like_counts_and_posters.exs")
   alias AshTemplate.Repo.Migrations.RoomsLikeCountsAndPosters
@@ -32,6 +33,41 @@ defmodule AshTemplate.Rooms.MentionsTest do
 
     assert [%{path: "/rooms/general"}] = notifications(nameless)
     assert [] = notifications(writer)
+  end
+
+  test "a person whose last message in a room is gone is mentioned by nobody there until they post again" do
+    n = :erlang.unique_integer([:positive])
+    room = seed_room("leaving-#{n}")
+    [leaver, removed, stayer, writer] = Enum.map(~w(leaver removed stayer writer), &person("leaving-#{&1}-#{n}"))
+    mention = fn account -> "@" <> RegentFormat.short_address(account.wallet_address) end
+
+    # The leaver deletes their only message here, and keeps one in general.
+    only = post!(leaver, "Only one", room)
+    post!(leaver, "Elsewhere")
+    :ok = Rooms.delete_message(only, actor: Human.for_account(leaver))
+
+    # The site's operator removes the other's only message here.
+    {:ok, _removed} = Moderation.remove(post!(removed, "Spam", room).id, "spam")
+
+    # The stayer deletes one of their two messages here.
+    first = post!(stayer, "First", room)
+    post!(stayer, "Second", room)
+    :ok = Rooms.delete_message(first, actor: Human.for_account(stayer))
+
+    post!(writer, "Hello #{mention.(leaver)} #{mention.(removed)} #{mention.(stayer)}", room)
+    assert [] = notifications(leaver)
+    assert [] = notifications(removed)
+    assert [%{path: path}] = notifications(stayer)
+    assert path == "/rooms/#{room}"
+
+    # In general the leaver still has a message, so a mention there reaches them.
+    post!(writer, "And #{mention.(leaver)}")
+    assert [%{path: "/rooms/general"}] = notifications(leaver)
+
+    # Posting here again makes them someone a mention here reaches once more.
+    post!(leaver, "Back again", room)
+    post!(writer, "Welcome back #{mention.(leaver)}", room)
+    assert [%{path: ^path}, %{path: "/rooms/general"}] = notifications(leaver)
   end
 
   test "over a room's history, a mention reaches exactly whom the room's messages named" do

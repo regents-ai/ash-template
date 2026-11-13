@@ -4,8 +4,8 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
   # award already earned records nothing more and queues no award. The agent's
   # Points answer names the agent that earned it.
   #
-  # The races need separate connections that really commit, so the rows these
-  # runs write stay in the test database; every run uses its own person.
+  # The races need separate connections that really commit; every run uses its
+  # own person.
   use ExUnit.Case, async: false
   use ExUnitProperties
 
@@ -20,7 +20,7 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
   @no_board %{top: []}
 
   setup do
-    Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
+    AshTemplate.RealCommits.start()
     starts_at = Application.get_env(:regent_points, :starts_at)
     rules = Application.get_env(:regent_points, :approved_rules)
     Application.put_env(:regent_points, :starts_at, ~U[2020-01-01 00:00:00Z])
@@ -29,7 +29,6 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
     on_exit(fn ->
       Application.put_env(:regent_points, :starts_at, starts_at)
       Application.put_env(:regent_points, :approved_rules, rules)
-      Ecto.Adapters.SQL.Sandbox.mode(Repo, :manual)
     end)
   end
 
@@ -69,10 +68,10 @@ defmodule AshTemplate.Points.FirstAgentNoteTest do
                  actor: Store.system()
                )
 
-      {:ok, summary} = RegentPoints.summary(actor: hd(actors))
+      {:ok, standing} = AshTemplate.Points.my_points(actor: hd(actors))
 
       assert [%{by: "agent", agent: name, status: :counted}] =
-               AshTemplateWeb.PointsEntries.answer(summary, @no_board, account_id, true).entries
+               AshTemplateWeb.PointsEntries.answer(standing, @no_board, account_id).entries
 
       assert name in names
     end

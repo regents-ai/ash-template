@@ -6,7 +6,7 @@ defmodule AshTemplate.MixProject do
   @elixir_utils "https://github.com/regents-ai/elixir-utils.git"
   @elixir_utils_ref "f5452442590c6e207bdff180e58ade65bd5c77a7"
   @design_system "https://github.com/regents-ai/design-system.git"
-  @design_system_ref "324d40ece657b78f3b3286c5617f58185e78235b"
+  @design_system_ref "9f20103e257e84e1bc9ff94380e6485d7fa81082"
 
   def project do
     [
@@ -226,7 +226,7 @@ defmodule AshTemplate.MixProject do
         # `authorize_if` check module at compile time).
         # The hosted MCP server's address budgets add one: McpAgent builds them at compile time
         # with ClientAddress's key.
-        "xref graph --label compile-connected --fail-above 47",
+        "xref graph --label compile-connected --fail-above 48",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",

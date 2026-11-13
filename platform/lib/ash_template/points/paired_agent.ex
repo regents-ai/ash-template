@@ -5,7 +5,9 @@ defmodule AshTemplate.Points.PairedAgent do
   pairing code.
 
   `existing/2` lists, for `RegentPoints.StartAwards`, each person's earliest
-  pairing made before the Points start that is still paired.
+  pairing made before the Points start that is still paired; `held/2`
+  answers, before the start, whether one account's person has a pairing still
+  paired now.
   """
 
   alias AshTemplate.Accounts
@@ -30,6 +32,13 @@ defmodule AshTemplate.Points.PairedAgent do
     for %{privy_user_id: did} = pairing <- pairings, Map.has_key?(accounts, did) do
       {accounts[did],
        %{source_app: AshTemplate.site(), source_kind: "pairing", source_event_key: pairing.id}}
+    end
+  end
+
+  def held("agent.activated", account_id) do
+    with {:ok, account} <- Accounts.points_account(account_id, actor: %System{}),
+         {:ok, pairings} <- RegentAgents.pairing_histories(account.privy_user_id) do
+      {:ok, Enum.any?(pairings, &is_nil(&1.revoked_at))}
     end
   end
 

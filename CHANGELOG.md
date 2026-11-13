@@ -9970,6 +9970,315 @@ On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
   390 and 320 with no page errors and no sideways scroll. The look itself (the colours
   of the ring and the still, the sparks) is the design chief's read.
 
+## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
+
+On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for all").
+
+- A person whose last message in a room goes is mentioned by nobody there until they
+  post in it again. A message goes two ways, and both take the person off the room's
+  posters inside the same delete, in one statement that runs only when no message of
+  theirs is left in the room (`AshTemplate.Rooms.Message.ForgetPoster` on `:destroy`, the
+  person's or their paired agent's own delete, and `:remove`, the operator's): every name
+  they posted under there goes. Nothing is hidden or deleted softly; an edit or a mute
+  keeps the message. Migration `20261112233734_room_messages_author_index.exs` adds one
+  index on `room_messages` (room and author, people only), built concurrently, for that
+  check: on 50,000 messages in one room it reads 6 pages instead of 863. Existing rows
+  are untouched, so someone who deleted every message in a room before this change
+  stays listed there until they next post there and delete it. Checks:
+  `platform/test/ash_template/rooms/mentions_test.exs` and
+  `platform/test/ash_template_web/room_delete_test.exs` (an open room page that hears the
+  delete reads nothing).
+- The developer documentation's page at `/docs` is headed Docs, as its menu link already
+  said, and its tab reads "Docs · Ash Template". Its Markdown, served at the same address,
+  keeps its own title, and every other reading page keeps its document's title. Check:
+  `platform/test/browser/reading.spec.ts`.
+- A message for the team past the allowance, 10 an hour for an agent (its person's, once
+  paired) or 30 from one address, answers like a too-fast room post: 429
+  `too_many_requests` with the seconds to wait in `Retry-After` over HTTP and as
+  `retry_after` from the hosted tool `messages_leave`, instead of 422 `invalid_message`.
+  The browser tool already passes any 429's wait on. A person past it is still told on
+  the message box, in the room message box's words. Both OpenAPI documents move to
+  15.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
+  `platform/test/ash_template/messages/leave_test.exs` and
+  `platform/test/ash_template_web/messages_api_test.exs`.
+- Merged main at v228 (`05ed696a`, command line 1.10.26), then at `12ef221e` (the room
+  list, 50 at a time): text conflicts only, in this file, the command list's Changes and
+  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229), `9f90f648`
+  (the shared sign-in pieces) and `284ce1cb` (v230's note), this file only. Both lanes
+  moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
+  team message's 429 moves them to 15.0.0, its own entry in the docs and the command
+  list.
+
+## 2026-11-13 — Released v232: the small follow-ups and Cells category colours
+
+- `4f1628f1` (merge of `tpl/followups-1112`, `8ef98a8f`, with the design-system pin
+  move) is v232 on template.regents.sh, switched at about 01:27Z on 13 Nov with
+  `scripts/deploy.sh`. The live build names commit `4f1628f` and the live API document
+  says 15.0.0.
+- A person leaves a room's mention list with their last message there, deleted or
+  removed; the reading pages' "Docs" heading; an agent leaving a team message past its
+  allowance is answered 429 `too_many_requests` with `Retry-After` instead of 422
+  `invalid_message`. Design-system pin `324d40ec` to `9f20103e` (Cells category
+  colours).
+- Migration: `20261112233734`, an index on `room_messages (room, human_account_id)`,
+  built concurrently with the lock off.
+- Rollback: v231 (`9b6eced2`), image only; the index may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 257 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: the 429 answer itself (it would take eleven real team messages)
+  and a mention after a last message is deleted; both are covered by tests.
+## 2026-11-12 — Text search on trigram indexes
+
+On `tpl/text-search-1112`, for the template chief, after Sean's go "24 a" (pg_trgm on the
+shared production database).
+
+- Room message search across every room, room search by name and a person's note search
+  run as `ILIKE '%…%'` on a trigram index instead of `lower(column) LIKE` over the whole
+  table. The words are a `:ci_string` argument, so Ash's `contains` escapes `%`, `_` and `\`.
+- Under three letters a search finds nothing and sends no query, the same on every surface:
+  the search box, `POST /api/v1/rooms/search` and `POST /api/v1/notes/search`, the
+  `rooms_search` and `notes_search` browser tools and `rooms search` and `notes search`.
+  One or two letters answer an empty list, and a single letter no longer answers 422. The
+  OpenAPI documents move to 16.0.0, after the room list's 14.0.0 and the follow-ups' 15.0.0.
+- Migrations: `20261112234817` runs `CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA
+  public`, which changes nothing where pg_trgm is already on; `20261113010509` builds four
+  GIN indexes concurrently, on `room_messages.body`, `rooms.name`, `notes.title` and
+  `notes.body`, each naming `public.gin_trgm_ops`. No row changes. Both sort after the
+  room list's and the follow-ups' migrations (`20261112230808` to `20261112233734`) and
+  touch none of their columns; the index migration and its snapshots were generated again
+  on top of theirs after merging `tpl/followups-1112` (`8ef98a8f`).
+- Production already has pg_trgm 1.6 in `public` (the chief read the add-on list on the
+  host, read only), so the first migration changes nothing there and nothing is switched on.
+- Local plans, 60,000 generated messages and 20,000 notes: a word in three messages 85 ms
+  to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
+  all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with
+  5,000 of them 18 ms to 0.07 ms; rooms 0.4 ms to 0.02 ms.
+- Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `45e9f394`
+  (merged with `tpl/followups-1112` at `8ef98a8f`) exit 0: 13 report tests, 154 script
+  tests, 651 browser walks with 5 skipped, 261 Elixir (10 properties).
+
+## 2026-11-13 — Released v233: text search with an index
+
+- `588ed4ef` (merge of `tpl/text-search-1112`, `013f6152`) is v233 on
+  template.regents.sh, switched at about 01:37Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "24 a" (12 Nov). The live build names commit `588ed4e` and the
+  live API document says 16.0.0.
+- Search over notes, room messages and room names runs as ILIKE on trigram indexes;
+  under three letters finds nothing and runs no query.
+- Migrations: `20261112234817` asks for pg_trgm in `public`, which production already
+  had (1.6), so it changed nothing; `20261113010509` builds four indexes on the
+  template's own tables, concurrently with the lock off. The release finished with
+  exit 0, which it does only when its database step succeeds; the indexes themselves
+  were not read back on production (that would be a production command).
+- Rollback: v232 (`4f1628f1`), image only; the indexes and the add-on may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 261 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: a search itself (it needs a sign-in). Sean tries one.
+
+## 2026-11-12 — Three unreliable tests (branch, not on main)
+
+Branch `tpl/test-health-1113`, from `origin/main` (`12ef221e`), for the ash-template chief
+(`/tmp/stampede-1112/build-test-health.md`). Tests and the `ash-testing` skill only, which
+the site publishes with its next release; nothing else the site does changes.
+
+- **Rows left in the test database.** Four race tests need separate connections that
+  really commit (`rooms/likes_test.exs`, `rooms/operation_key_test.exs`,
+  `notes/label_request_test.exs`, `points/first_agent_note_test.exs`) and kept what they
+  wrote: each full run added 30 accounts, 30 wallet snapshots, 20 agents and pairings,
+  27 notes, 37 jobs and 8 Points ledgers, among 15 tables; a full run without those four
+  files left nothing. Every run reuses the test database, and
+  `points/start_awards_test.exs` works through every account in it: with 2,317 accounts
+  it took 10.5 s here, 1.5 s on a clean database (one of those seconds is its own wait),
+  and ran out of its 60 s elsewhere.
+- **The cure.** `AshTemplate.RealCommits` (`platform/test/support/real_commits.ex`)
+  empties the test database, keeping only the rows migrations put there: every
+  `schema_migrations`, the two rooms a site opens with, the sign-in scopes,
+  ErrorTracker's version and when Points coverage starts. `test_helper.exs` empties it
+  before every run, so whatever an earlier run left, a stopped one included, is gone
+  first; the race tests call `start/0`, which turns the sandbox off for the test and
+  empties the database when it ends. Points keeps wallet snapshots final and pairings on
+  record, so the tables are truncated together, and the accounts, which a kept room
+  refers to, are deleted. It takes 51 ms on a clean database and 260 ms on one with
+  2,317 accounts. It runs only through the sandbox pool, which only the test
+  configuration sets, naming the local `ash_template*_test` database alone: with
+  `DATABASE_URL` pointed at another host the test configuration still names it, and
+  `mix test` in development stops at the sandbox before emptying anything. The likes
+  test's message deletion and the label test's job cancelling are gone. The Points test
+  still runs the real start-awards job, which reads every account by design; it now
+  finds only its own.
+- **The first cure, sent back.** It emptied only the tables that were empty when a race
+  test began. On a database already holding one cancelled job, the jobs table was left
+  alone, the race's five waiting jobs stayed, and the next run's drain of the default
+  queue ran six (the chief's check, seed 252026). Reproduced here the same way; on that
+  database seed 252026 now passes and leaves the fresh database's rows.
+- **A test that timed the machine.** `visit_lines_test.exs` asserted 1,500 visit lines
+  in under a second; with the machine loaded it took 5.5 s and failed. The second is
+  the visit handler's window (2,000 lines a second, 2,000 waiting). The crowd's writers
+  now all start and then write together, so the lines reach the handler as one burst,
+  and the test asserts every line written once and every writer done, not the time.
+  On Erlang's default limits it still fails (2 and 7 of 1,500 kept). It never touches
+  the database, so the leftover rows did not slow it.
+- **The phone account-menu walk.** "content 641px wider than the screen" came from
+  measuring the Agents page the instant Manage opened it, before its stylesheet had
+  arrived: the unstyled account button is 1,023 px wide. Holding the stylesheet back
+  1.5 s fails the old walk 3 of 3 with exactly 641 px. No person sees that state, since
+  the browser draws nothing until the stylesheet arrives: every drawn frame of the
+  Agents page and the agent guide, at 390 and 320 wide with the browser slowed six
+  times, fit the screen. `watch` in `platform/test/browser/support/person.ts` now
+  measures a page once it has loaded; the held-back walk passes 3 of 3.
+- **The room delete test, found on the way.** `room_delete_test.exs`, from main's
+  follow-ups, read the room page straight after the delete and failed about once in 27
+  runs, in a full check and alone: the page hands the notice on to its messages with
+  `send_update`, a second message to itself, and the test's read could be answered
+  first. The test now waits for the page (`:sys.get_state/1`) before it reads: 10 of 16
+  batches of 25 failed before, 416 runs in a row pass after.
+- `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
+  never times the machine, a browser walk or a LiveView test waits on a condition.
+- Checks on `1f716487` (main `4875b400` merged in), each on my own scratch test database,
+  each passing: style, 155 script tests, 653 browser walks with 5 skipped, 261 Elixir
+  (10 properties), required fixes and the command description. Twice in a row on a
+  database polluted first with 2,317 leftover accounts and their snapshots, five jobs
+  waiting in the default queue and one cancelled; once more after a run killed outright
+  in a race test, which left 8 accounts, agents and pairings, a room message and its
+  poster. Every one of the 54 tables matched a fresh database after each. Seed 252026
+  passes on a polluted database and leaves it fresh.
+## 2026-11-13 — The theme switch's sun and moon in grains (branch, not on main)
+
+Sean on the particles lab: "is good", and "make them look good for light - dark
+switches". The switch's sun and moon are now drawn by the particle field.
+
+- The switch is a flat, square track and knob. Over the knob's way the server draws
+  Lucide's moon, filled, and Lucide's sun with its disc filled and heavier rays; once
+  the browser can, the same pictures are drawn in grains in the same place, so nothing
+  moves when the grains take over. A press flies the grains from one to the other in
+  about 330 ms while the knob glides; a second press mid-flight turns them round; keys
+  turn it at once. The theme changes on the press and never waits for the grains.
+- The knob is the theme's ink, so the lit sun (Tangerine on Charcoal, 5.8:1) and the
+  moon (the page colour on Platinum, 15.2:1) stand clear in both themes; on the cream
+  page Tangerine alone is under 3:1. Flat ink, no glow; only the lab asks for glow.
+- The grain count follows the canvas, 0.7 grains a device pixel up to the lab's
+  80,000: the switch's 72 by 48 canvas holds 2,419 grains at 1x and 9,677 at 2x, each
+  grain 1.1 and 1.7 device pixels across. A small field flies faster and with fewer
+  strays, so the switch's flight stays short and clean.
+- Every field on a page shares one GPU device; each frees what it made when it goes.
+  Nothing is drawn while idle. Less motion, forced colours or no WebGPU keep the
+  server's drawing and the plain control.
+- Measured on /polls in headless Chrome on this Mac, 2x, the bottom bar's switch
+  (old switch in brackets): no frame in ten idle seconds (none); 29 to 35 frames a
+  flight (12 to 13); GPU time a frame in flight 0.4 ms median at full speed and up to
+  1.4 ms with the processor slowed four times (0.5 to 1.5 ms), its first frame up to
+  17 ms, 40 ms slowed (7.6 ms); script time added to the page's load 9 to 10 ms at
+  full speed, 36 to 55 ms slowed (4 to 10 ms).
+- Removed: the glass knob, its light strip, the swarm of square blocks, their
+  renderer, shader, pixel lists and tests, and dragging the knob (a press, Enter or
+  Space turns it). The knob travels three quarters of its width everywhere, so the
+  account menu's switch is 2 px narrower and the phone bar's 2 px wider.
+- The lab's field reads its colours on the page itself, so a theme colour written
+  with `light-dark()` now resolves to the theme showing.
+
+## 2026-11-13 — Released v234: the particle light and dark switch
+
+- `9baea786` (merge of the design chief's `wt/tpl-particle-switch-1112`, `ad0af68f`,
+  on main `2439879b`) is v234 on template.regents.sh, switched at about 02:35Z on
+  13 Nov with `scripts/deploy.sh`. The live build names commit `9baea78`. No
+  migration, no sign-in code, no API change, no pin change.
+- The switch's moon and sun are drawn by the particle field; a press flies the grains
+  across while the theme changes on the press; the old switch picture
+  (`platform/assets/js/theme_switch/`) and its five tests are deleted; the knob is no
+  longer dragged (press, Enter or Space).
+- Rollback: v233 (`588ed4ef`), image only.
+- Full check exit 0 by the chief on the exact commit: 122 script tests, 661 browser
+  walks with 5 skipped, 261 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll; `/docs` and `/rooms/general` carry the new
+  switch's moon and sun and no old canvas. The look and the flight are the design
+  chief's read.
+
+## 2026-11-13 — The Points page: what is earned, what is left, and the seasons
+
+- `/account/points` now shows every listed action's Points at all times, with one
+  line under To do saying where Points stands: "Points hasn’t started.", "Points
+  starts 1 Dec 2026.", "Season 2 of 3 · 18 days left" or "The last season has
+  ended." It replaces "Earning hasn’t opened yet."
+- Before the start, each start action the account already has (its account, a linked
+  X, GitHub or Farcaster account, a paired agent) is ticked as "Added at the start".
+  Each start adapter answers this for one account with `held/2`, from the same tables
+  its `existing/2` reads for the start.
+- The Bonus card lists every season: its dates (none before a start is set), what was
+  earned in it once it began, and the NFT bonus added at its end, in the words the
+  page used for each period's bonus. Its tip says Points runs in three seasons of 30
+  days. The number lives in `config :ash_template, :points_seasons` and is read by
+  `AshTemplate.Points.Seasons`; seasons are the library's 30-day periods.
+- The page and the agent read one action, `AshTemplate.Points.my_points/1`
+  (`AshTemplate.Points.Standing`, for the person or their paired agent).
+- `GET /api/v1/account/points` answers `seasons` in place of `period_bonuses`, each
+  `to_do` item gains `at_start` and always carries its `points`, and `note` is gone.
+  The OpenAPI documents move to 17.0.0; listed in the docs' breaking changes,
+  `cli/COMMANDS.md` and the public changelog.
+- No migration, no change to the shared library or the design system. `starts_at`
+  stays unset and `approved_rules` empty. The compile link limit in `mix precommit`
+  moves to 48: the Points domain lists one more resource.
+
+## 2026-11-13 — Released v235: the Points page shows seasons and what is left
+
+- `f1da0078` (merge of `tpl/points-page-1113`, `ab3412d8`, on main `e1dad10f`) is v235
+  on template.regents.sh, switched at about 03:46Z on 13 Nov with `scripts/deploy.sh`.
+  The live build names commit `f1da007` and the live API document says 17.0.0. No
+  migration, no sign-in code.
+- Account Points lists every approved action with its Points, the three 30-day
+  seasons (dates once a start is set, the one running, days left, earned in each, the
+  NFT bonus at each end) and, before the start, what the start adds for what the
+  person already has. The agent's Points answer carries the same. The season count is
+  one setting, `:points_seasons`.
+- No rule is approved and no start is set (`approved_rules: []`, `starts_at: nil`), so
+  on live the page lists no action yet: it says Points has not started beside the
+  three seasons. Approving rules for display is Sean's decision.
+- Rollback: v234 (`9baea786`), image only.
+- Full check exit 0 by the chief on the exact commit: 122 script tests, 661 browser
+  walks with 5 skipped, 268 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll. The page signed in was read on a local run
+  only (pictures by the worker); Sean opens it on live.
+
+## 2026-11-13 — The light and dark switch goes back to its earlier picture
+
+- Sean, 13 Nov, after seeing the grains switch on regents.sh: "revert this toggle
+  change". This reverts the merge `9baea786` (v234): the switch is again the one of v233,
+  with its knob, light strip and square blocks, and dragging the knob works again.
+- Back as they were: `platform/assets/js/theme_switch/` and its five tests,
+  `hooks/theme_switch.ts`, `components/theme_switch.css`, the switch rules in `shell.css`,
+  `theme_toggle` in `shell.ex`, `theme_switch.spec.ts`. The particle field
+  (`particle_field/`, its hook and component, the lab page) is also as it was at v233; the
+  lab at `/animations/particles` is unchanged on screen.
+- The rollout `2026-11-13-particle-theme-switch.md` is withdrawn; no site takes it.
+- No migration, no sign-in change, no API change, no design-system pin change.
+
+## 2026-11-13 — Released v236: the particle switch reverted
+
+- `7d6de3a6` (the design chief's `wt/tpl-switch-revert-1113`, a revert of merge
+  `9baea786`, fast-forward of main `819a519e`) is v236 on template.regents.sh, switched
+  at about 04:10Z on 13 Nov with `scripts/deploy.sh`, from Sean's words of 13 Nov to
+  the design chief ("revert this toggle change"). No migration, no sign-in code, no API
+  change, no pin change.
+- The light and dark switch, the particle field, its lab, their tests and three skills
+  documents are byte-identical to before v234 (`2439879b`), checked by the chief file
+  by file; dragging the knob is back. The Points page of v235 is untouched.
+- Rollback: v235 (`f1da0078`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 268 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll; `/docs` and `/rooms/general` carry the old
+  switch's canvas and no particle moon or sun.
+
 ## 2026-11-13 — The Points board, ten stored totals (branch, not on main)
 
 Branch `tpl/points-board-1112`, for the chief (`/tmp/stampede-1112/build-points-board.md`).

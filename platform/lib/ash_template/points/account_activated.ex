@@ -8,7 +8,8 @@ defmodule AshTemplate.Points.AccountActivated do
   then runs again later rather than turning the award down.
 
   `existing/2` lists the accounts made before the Points start, for
-  `RegentPoints.StartAwards`.
+  `RegentPoints.StartAwards`; `held/2` answers the same for one account
+  before the start, which every account that exists already has.
   """
 
   alias AshTemplate.Accounts
@@ -32,6 +33,8 @@ defmodule AshTemplate.Points.AccountActivated do
        %{source_app: "regents", source_kind: "account", source_event_key: to_string(account.id)}}
     end
   end
+
+  def held("account.activated", _account_id), do: {:ok, true}
 
   defp facts(account) do
     id = to_string(account.id)
