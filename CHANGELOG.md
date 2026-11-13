@@ -10395,3 +10395,15 @@ switches". The switch's sun and moon are now drawn by the particle field.
   failed on the note.
 - The README's settings table, the feature map and the generic features list say so.
   Sites take the change. No migration, no API change.
+
+## 2026-11-13 — The label job and the mention listener run as narrowly as they need
+
+- A label question's job reads the note it asks about as the system actor
+  (`AshTemplate.Notes.Decision.AskJev`), through a `Notes.Note` read policy that admits
+  the system actor alone.
+- `Activity.Notification` `:notify_mentions` admits only the rooms' `:message_posted`
+  signal (`signal_in`), so it runs as that signal's listener and nothing calls it
+  directly. A listener runs as whoever emitted the signal, which is why it is not a
+  system-actor check.
+- The `ash-signals` skill teaches the same for every bookkeeping listener, Points'
+  included. Sites take the change. No migration, no API change.

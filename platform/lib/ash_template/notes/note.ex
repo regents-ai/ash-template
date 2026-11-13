@@ -264,6 +264,12 @@ defmodule AshTemplate.Notes.Note do
       authorize_if always()
     end
 
+    # A label question's job reads the note it asks about as the system
+    # (`AshTemplate.Notes.Decision.AskJev`).
+    bypass action(:read) do
+      authorize_if actor_attribute_equals(:role, :system)
+    end
+
     policy action_type(:create) do
       authorize_if actor_attribute_equals(:role, :human)
       authorize_if {RegentAgents.Checks.Paired, repo: AshTemplate.Repo}

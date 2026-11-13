@@ -65,11 +65,15 @@ emits one such signal for its value action and maps it to its name in
    - put the work in a generic action, on the resource that owns the result, under
      `signals_in`;
    - delete the old change module.
-5. **Policies.** Give each listener action its own policy, with a comment saying it is
-   reached only through the signal, after the emitting action was allowed. Writes that
-   are the site's own bookkeeping use the system actor. A listener that acts for the
-   person passes the emitting context on, the way `Notes.Decision` `:request_label`
-   calls `Ash.Context.to_opts(context)`, so the person's own limits and policies still apply.
+5. **Policies.** Give each listener action its own policy, with a comment saying it runs
+   only as the signal's listener, after the emitting action was allowed. A listener that
+   does the site's own bookkeeping admits its signal alone,
+   `authorize_if signal_in(<Domain>.Signals, :<signal>)`, as `Activity.Notification`
+   `:notify_mentions` does, so nothing calls it directly; a check on the system actor
+   would refuse it, since it runs as whoever emitted the signal. Its writes use the
+   system actor. A listener that acts for the person passes the emitting context on, the
+   way `Notes.Decision` `:request_label` calls `Ash.Context.to_opts(context)`, so the
+   person's own limits and policies still apply.
 6. **Check.** Run the site's full gate. Then walk the flows in the local site:
    - a room post that mentions someone gives that person one notification, and a
      self-mention gives none;
@@ -112,10 +116,14 @@ defmodule AshTemplate.Points.Award do
   end
 
   policies do
-    # Reached only through the signals above, after the action that emitted
-    # them was allowed; each records as the system, never as the actor.
-    policy always() do
-      authorize_if always()
+    # Runs only as the listener of the signals above, after the action that
+    # emitted them was allowed; each records as the system, never as the actor.
+    policy action(:agent_paired) do
+      authorize_if signal_in(RegentAgents.Signals, :agent_paired)
+    end
+
+    policy action(:agent_note) do
+      authorize_if signal_in(AshTemplate.Notes.Signals, :note_created)
     end
   end
 end
@@ -139,8 +147,9 @@ with the same name as one of the record's attributes is filled in without being 
   room post once scanned its room's whole history while holding one of 5 connections.
 - The listener owns its reaction: Activity writes the mention notifications and Points
   records points. The emitting resource names neither.
-- Inline listeners run with the emitter's actor and `authorize?`, so the listener's
-  policy must allow that actor.
+- Inline listeners run with the emitter's actor and `authorize?`. A bookkeeping
+  listener's policy admits its signal (`signal_in`), never `always()`, so the action
+  cannot be called on its own.
 - A listener returns nothing the emitter needs. A bulk write inside a listener passes
   `notify?: true`, and Ash sends the notices once the outer transaction commits. Do not
   return notifications from the listener.

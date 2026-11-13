@@ -13,6 +13,7 @@ defmodule AshTemplate.Notes.Decision.AskJev do
   use Ash.Resource.Change
 
   alias Ash.Error.Unknown.UnknownError
+  alias AshTemplate.Actors.System
   alias AshTemplate.Notes.Labels
   alias RegentJev.Error
 
@@ -33,9 +34,9 @@ defmodule AshTemplate.Notes.Decision.AskJev do
   end
 
   defp ask(changeset) do
-    # Runs in the background job with no person behind it; the decision names
-    # its own note, so reading that note is not a choice made by anyone.
-    case Ash.load!(changeset.data, :note, authorize?: false) do
+    # Runs in the background job with no person behind it, so it reads the note
+    # the decision names as the system.
+    case Ash.load!(changeset.data, :note, actor: %System{}) do
       %{note: nil} ->
         Ash.Changeset.force_change_attributes(changeset, %{
           state: :failed,

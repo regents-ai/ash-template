@@ -35,6 +35,27 @@ defmodule AshTemplate.Rooms.MentionsTest do
     assert [] = notifications(writer)
   end
 
+  test "mentions are written only for a posted message; nobody, the system included, asks for them directly" do
+    named = person("mention-direct-named")
+    writer = person("mention-direct-writer")
+    post!(named, "Hello")
+    message = post!(writer, "Hi @#{RegentFormat.short_address(named.wallet_address)}")
+    signal = %AshTemplate.Rooms.Signals.MessagePosted{
+      signal_id: Ash.UUIDv7.generate(),
+      message_id: message.id,
+      body: message.body
+    }
+
+    for actor <- [Human.for_account(writer), %System{}] do
+      assert {:error, %Ash.Error.Forbidden{}} =
+               Notification
+               |> Ash.ActionInput.for_action(:notify_mentions, %{signal: signal}, actor: actor)
+               |> Ash.run_action()
+    end
+
+    assert [_one] = notifications(named)
+  end
+
   test "a person whose last message in a room is gone is mentioned by nobody there until they post again" do
     n = :erlang.unique_integer([:positive])
     room = seed_room("leaving-#{n}")

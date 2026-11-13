@@ -2,8 +2,8 @@ defmodule AshTemplate.Notes.LabelRequestTest do
   # Invariant: a note's save never waits on the site's daily-question lock. It
   # only queues the label request, which a job makes once the save has
   # committed, as the person who saved; a note deleted first gets no question;
-  # and however many requests run at once, the day's number of questions is
-  # never passed.
+  # the question's job reads the note as the system; and however many requests
+  # run at once, the day's number of questions is never passed.
   use ExUnit.Case, async: false
   use Oban.Testing, repo: AshTemplate.Repo, prefix: "ash_template_app"
 
@@ -13,6 +13,28 @@ defmodule AshTemplate.Notes.LabelRequestTest do
   alias AshTemplate.{Accounts, Notes, Repo}
   alias AshTemplate.Actors.{Human, System}
   alias AshTemplate.Notes.Decision
+
+  # Jev, answering every question with "task".
+  defmodule Jev do
+    @moduledoc false
+    @behaviour Plug
+
+    @impl true
+    def init(options), do: options
+
+    @impl true
+    def call(conn, _options) do
+      answer = %{
+        "model" => "jev-test",
+        "answers" => %{"label" => %{"choice" => "task"}},
+        "usage" => %{"input_tokens" => 1, "output_tokens" => 1, "cost" => 0.0001}
+      }
+
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(200, JSON.encode!(answer))
+    end
+  end
 
   setup do
     key = Application.get_env(:regent_jev, :api_key)
@@ -55,6 +77,27 @@ defmodule AshTemplate.Notes.LabelRequestTest do
       assert %{cancelled: 1} = Oban.drain_queue(queue: :default)
       assert decisions([note.id]) == []
       refute_enqueued queue: :labels
+    end
+
+    test "its question's job reads the note as the system, which no other person may", %{actor: actor} do
+      jev = start_supervised!({Bandit, plug: Jev, ip: :loopback, port: 0, startup_log: false})
+      {:ok, {_ip, port}} = ThousandIsland.listener_info(jev)
+      endpoint = Application.fetch_env(:regent_jev, :endpoint)
+      Application.put_env(:regent_jev, :endpoint, "http://127.0.0.1:#{port}/")
+
+      on_exit(fn ->
+        case endpoint do
+          {:ok, value} -> Application.put_env(:regent_jev, :endpoint, value)
+          :error -> Application.delete_env(:regent_jev, :endpoint)
+        end
+      end)
+
+      note = Notes.create_note!(%{title: "Seed list"}, actor: actor)
+      assert %{success: 1} = Oban.drain_queue(queue: :default)
+      assert %{success: 1} = Oban.drain_queue(queue: :labels)
+
+      assert [%{state: :answered, choice: "task"} = decision] = decisions([note.id])
+      assert %{note: nil} = Ash.load!(decision, :note, actor: person())
     end
   end
 

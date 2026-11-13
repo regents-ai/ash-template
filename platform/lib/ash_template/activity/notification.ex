@@ -85,10 +85,10 @@ defmodule AshTemplate.Activity.Notification do
   end
 
   policies do
-    # Reached only through the rooms' signal, after the post itself was allowed;
-    # it writes each notification as the system.
+    # Runs only as the listener of the rooms' signal, as whoever posted, after the
+    # post itself was allowed; it writes each notification as the system.
     policy action(:notify_mentions) do
-      authorize_if always()
+      authorize_if signal_in(AshTemplate.Rooms.Signals, :message_posted)
     end
 
     policy action(:notify) do
