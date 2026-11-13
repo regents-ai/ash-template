@@ -1,12 +1,14 @@
 defmodule AshTemplateWeb.PointsLive do
   @moduledoc """
-  Private Account Points presentation: the total, the actions left, the
-  leaderboard, the NFT bonus added at the end of each 30-day period, and the
-  activity. The pieces are `Regent.Points`; this page supplies their words.
+  Private Account Points presentation: the total, the actions left with where
+  Points stands, the leaderboard, the NFT bonus with each season and the bonus
+  added at its end, and the activity. The pieces are `Regent.Points`; this page
+  supplies their words.
   """
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   import AshTemplateWeb.Components.Shell, only: [account_picture: 1]
+  alias AshTemplate.Points.Seasons
   alias AshTemplateWeb.PointsEntries
   alias RegentPoints.{Amount, Rules}
 
@@ -27,7 +29,7 @@ defmodule AshTemplateWeb.PointsLive do
   def page(assigns) do
     open? = assigns.earning != []
     summary = assigns.points.value
-    groups = if summary, do: PointsEntries.todo(summary, open?), else: []
+    groups = if summary, do: PointsEntries.todo(summary), else: []
 
     board =
       assigns.board.value &&
@@ -42,7 +44,7 @@ defmodule AshTemplateWeb.PointsLive do
         open?: open?,
         summary: summary,
         groups: Enum.map(groups, &linked/1),
-        left: if(summary && open?, do: PointsEntries.left(groups)),
+        left: PointsEntries.left(groups),
         places: board,
         rows: if(summary, do: Enum.map(summary.entries, &row(&1, summary.agent_names)), else: [])
       )
@@ -77,7 +79,7 @@ defmodule AshTemplateWeb.PointsLive do
         </:total>
         <:main>
           <Regent.Points.todo :if={@summary} id="points-todo" left={@left} groups={@groups}>
-            <p :if={!@open?} role="status">Earning hasn’t opened yet.</p>
+            <p id="points-season" role="status">{PointsEntries.season_line(@summary.seasons)}</p>
           </Regent.Points.todo>
           <Regent.Points.activity
             :if={@summary}
@@ -115,13 +117,14 @@ defmodule AshTemplateWeb.PointsLive do
             percent={@bonus.value && @bonus.value.percent}
             message={"Your NFTs could not be checked. #{retry(@bonus.error)}"}
             tiers={tiers(@bonus.value)}
-            periods={if @summary, do: periods(@summary), else: []}
+            periods={if @summary, do: Enum.map(@summary.seasons, &season/1), else: []}
           >
             <:tip>
               <Regent.Primitives.tip id="points-bonus-about" label="About your points bonus">
+                Points runs in {Seasons.count()} seasons of 30 days.
                 Animata I, Animata II and Regents Club count across your verified linked wallets.
-                At the end of each 30-day period, the tier your wallets hold that day adds its
-                bonus to the points you earned in that period, one-time awards included.
+                At the end of each season, the tier your wallets hold that day adds its
+                bonus to the points you earned in that season, one-time awards included.
               </Regent.Primitives.tip>
             </:tip>
           </Regent.Points.bonus>
@@ -143,7 +146,7 @@ defmodule AshTemplateWeb.PointsLive do
     items =
       Enum.map(group.items, fn item ->
         item
-        |> Map.put(:points, item.points && "+" <> item.points)
+        |> Map.put(:points, "+" <> item.points)
         |> then(&if href = @links[item.id], do: Map.put(&1, :href, href), else: &1)
       end)
 
@@ -172,31 +175,26 @@ defmodule AshTemplateWeb.PointsLive do
   defp signed(micro) when micro < 0, do: "−" <> Amount.format(-micro)
   defp signed(micro), do: "+" <> Amount.format(micro)
 
-  # The period running now, then the bonuses already added, newest first.
-  defp periods(summary) do
-    current =
-      case summary.current_period do
-        %{number: number, ends_at: ends_at, earned_micro: earned} ->
+  # Each season in order: its dates, what was earned in it once it began, and the
+  # bonus added at its end.
+  defp season(%{starts_at: nil} = season),
+    do: %{label: "Season #{season.season}", value: "30 days"}
+
+  defp season(season) do
+    %{
+      label: "Season #{season.season}",
+      value:
+        Enum.join(
           [
-            %{
-              label: "Period #{number}",
-              value:
-                "#{Amount.format(earned)} earned, ends #{Calendar.strftime(ends_at, "%-d %b")}"
-            }
+            "#{Calendar.strftime(season.starts_at, "%-d %b")} – #{Calendar.strftime(season.ends_at, "%-d %b")}",
+            season.earned_micro && "#{Amount.format(season.earned_micro)} earned",
+            season.bonus &&
+              "+#{Amount.format(season.bonus.bonus_micro)} (#{season.bonus.nft_count} NFTs, +#{season.bonus.bonus_percent}%)"
           ]
-
-        nil ->
-          []
-      end
-
-    current ++
-      Enum.map(summary.period_bonuses, fn period ->
-        %{
-          label: "Period #{period.period}",
-          value:
-            "+#{Amount.format(period.bonus_micro)} (#{period.nft_count} NFTs, +#{period.bonus_percent}%)"
-        }
-      end)
+          |> Enum.reject(&is_nil/1),
+          " · "
+        )
+    }
   end
 
   # Ascending tiers, each running up to the next one's minimum.

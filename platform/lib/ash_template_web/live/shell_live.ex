@@ -796,7 +796,7 @@ defmodule AshTemplateWeb.ShellLive do
     case human_actor(socket) do
       %Human{} = actor ->
         Read.now(socket, :points, actor.human_account_id, fn ->
-          RegentPoints.summary(actor: actor)
+          AshTemplate.Points.my_points(actor: actor)
         end)
 
       nil ->

@@ -509,21 +509,28 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 ## account points
 
 - **Does:** your person's Points, today's and yesterday's totals, their place, the actions still
-  open, daily limits, the leaderboard by name or wallet and recent entries, each saying who earned
-  it and whether it counted. Signed; needs a pairing.
+  open with their Points (before Points starts, also the ones the start adds for what your person
+  already has), daily limits, the leaderboard by name or wallet, recent entries, each saying who
+  earned it and whether it counted, and every season: its dates, whether it is running, the days
+  left, what was earned in it and the NFT bonus added at its end. Signed; needs a pairing.
 - **Example:** `regents ash-template account points`
 - **Answer:** `{"points": "12.5", "earned_today", "earned_yesterday", "rank",
-  "activity_being_verified", "to_do": [{"label", "repeats", "points", "done", "left", "today"}],
-  "daily_limits": [{"name", "limit", "remaining"}], "leaderboard": [{"rank", "name", "wallet",
-  "ens_name", "points", "you"}], "entries": [{"label", "points", "status", "allowance_reduction", "by", "agent",
-  "earned_at"}], "period_bonuses": [{"period", "points", "nft_count", "bonus_percent"}],
+  "activity_being_verified", "to_do": [{"label", "repeats", "points", "done", "left", "at_start",
+  "today"}], "daily_limits": [{"name", "limit", "remaining"}], "leaderboard": [{"rank", "name",
+  "wallet", "ens_name", "points", "you"}], "entries": [{"label", "points", "status",
+  "allowance_reduction", "by", "agent", "earned_at"}], "seasons": [{"season", "starts_at",
+  "ends_at", "state", "days_left", "earned", "bonus": {"points", "nft_count", "bonus_percent"}}],
   "more"}`. Points are decimal text, and a whole number has no ".00". `rank` is your person's
   place, or null with no Points. `repeats` is `once` or `daily`; `left` is true while the action
-  can still earn; `today` is `{"done", "of"}` for an action that counts more than once a day.
-  `leaderboard` is the ten highest totals; `name` is null for a person shown by their `wallet`, under
-  its `ens_name` when it has one; `you` marks your person's row. `status` is `counted`
-  or `allowance_reached`; `by` is `agent` or `person`; `agent` is the agent's name, or null. A
-  `note` says when earning Points is off on this site.
+  can still earn; `at_start` is true, before Points starts, for an action your person already
+  has: the start adds it, and it counts as done; `today` is `{"done", "of"}` for an action that
+  counts more than once a day. `leaderboard` is the ten highest totals; `name` is null for a
+  person shown by their `wallet`, under its `ens_name` when it has one; `you` marks your person's
+  row. `status` is `counted` or `allowance_reached`; `by` is `agent` or `person`; `agent` is the
+  agent's name, or null. `seasons` run one after another from the start, 30 days each;
+  `starts_at` and `ends_at` are null until Points has a start; `state` is `upcoming`, `running`
+  or `ended`; `days_left` is the running season's, a part day counting as one, otherwise null;
+  `earned` is null until the season begins; `bonus` is null until the season's NFT bonus is added.
 - **Refusals:** as for `notes list`.
 
 ## activity list
@@ -781,6 +788,10 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-13: The OpenAPI documents move to 17.0.0. `account points` answers `seasons` (each
+  season's dates, state, days left, what was earned in it and its NFT bonus) in place of
+  `period_bonuses`; each `to_do` item always carries its `points`, never `false`, and gains
+  `at_start`; `note` is gone.
 - 2026-11-12: The OpenAPI documents move to 16.0.0. `rooms search` and `notes search` find
   matches from three letters on: one or two letters answer an empty list instead of matches,
   and a single letter no longer answers 422 `invalid_search`. Text over 100 characters, or

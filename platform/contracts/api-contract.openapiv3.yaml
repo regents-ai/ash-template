@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 16.0.0
+  version: 17.0.0
 paths:
   /api/v1/health:
     get:
@@ -1398,7 +1398,7 @@ paths:
   /api/v1/account/points:
     get:
       operationId: getAccountPoints
-      summary: Read the account's Points as decimal text, what it earned today and yesterday, its place, the actions still open, daily limits, the leaderboard by name or wallet, recent entries with who earned each and whether it counted, and period bonuses. note says when earning is off.
+      summary: Read the account's Points as decimal text, what it earned today and yesterday, its place, the actions it can still earn with their Points and, before Points starts, the ones the start adds for what the account already has, daily limits, the leaderboard by name or wallet, recent entries with who earned each and whether it counted, and every season with its dates, state, days left, what was earned in it and the NFT bonus added at its end.
       description: Signed; needs a pairing. A browser sign-in does not work here.
       security:
       - siwaProof: []
