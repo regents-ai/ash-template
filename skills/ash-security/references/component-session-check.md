@@ -18,6 +18,16 @@ A navigation or an event is a person acting, so each one re-reads the lease
   and says the sign-in ended. A navigation (`:handle_params`) goes to the public root
   instead. No timer, no polling.
 
+Read each sign-in once per answer, never twice in the same instant. The first render
+takes the account the request's own plug read, from the conn (`assign_new`), and the
+`handle_params` LiveView calls straight after the connected mount, for the address the
+page opened on, takes the mount's read: neither is a person acting, and a second read
+there would only repeat the first. Every navigation after that reads again. The
+template's `platform/test/ash_template_web/session_checks_test.exs` counts these reads
+and refuses a revoked sign-in at the next navigation and press on a connected shell
+page; LiveViewTest connects one once the conn's private `:live_view_connect_info` is a
+map, which hands the socket the conn's own session.
+
 A push or a result is held against `lapses_at` on the clock:
 
 - Before it: `{:cont, socket}` with no read. A page that receives twenty results and
