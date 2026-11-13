@@ -1,7 +1,9 @@
 defmodule AshTemplate.Rooms.Poster do
   @moduledoc """
   A name a person has posted under in a room: one row for each room, person and
-  name, written by the post itself (`AshTemplate.Rooms.Message.RecordPoster`).
+  name, written by the post itself (`AshTemplate.Rooms.Message.RecordPoster`)
+  and removed with the last of their messages there, deleted or removed
+  (`AshTemplate.Rooms.Message.ForgetPoster`).
   A mention is `@` and one of these names (`AshTemplate.Activity.Notification.NotifyMentions`),
   so finding who a post mentions reads the room's posters, never its history. A
   person who changed their name keeps a row for each name, as each of their
@@ -41,6 +43,9 @@ defmodule AshTemplate.Rooms.Poster do
       upsert_fields []
       upsert_condition expr(false)
     end
+
+    # A person whose last message in the room is gone (`ForgetPoster`).
+    destroy :forget
   end
 
   policies do

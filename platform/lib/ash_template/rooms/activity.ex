@@ -12,7 +12,8 @@ defmodule AshTemplate.Rooms.Activity do
   and it never writes the database.
 
   It counts only rooms the reading may hold: the first rooms in the list's
-  order, as many as the kind has keys (`SharedReading.keys/1`). A post in a
+  order, the most recently active, as many as the kind has keys
+  (`SharedReading.keys/1`). A post in a
   room the reading holds no key for, while every key is taken, is not counted.
 
   A notice is sent at most once and can be lost, so each minute
@@ -95,8 +96,8 @@ defmodule AshTemplate.Rooms.Activity do
   # is not answering: then no room is counted, and no room's key is forgotten
   # for want of a read.
   defp slugs do
-    case Rooms.list_rooms(query: [limit: SharedReading.keys(@kind)]) do
-      {:ok, rooms} -> {:ok, Enum.map(rooms, & &1.slug)}
+    case Rooms.list_rooms(page: [limit: SharedReading.keys(@kind)]) do
+      {:ok, %{results: rooms}} -> {:ok, Enum.map(rooms, & &1.slug)}
       {:error, _not_read} -> :error
     end
   rescue

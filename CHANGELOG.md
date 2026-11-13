@@ -9699,6 +9699,214 @@ libraries.
   sign-in when he next uses it.
 - Known flaky: the phone account-menu walk on the Agents page ("content 641px wider
   than the screen") failed then passed for three workers on 12 Nov; cause not found.
+## 2026-11-12 — The room list, 50 at a time (branch, not on main)
+
+Branch `tpl/room-list-limit-1112`, from `origin/main` (`5375a9d3`), for the chief
+(`/tmp/stampede-1112/build-roomlist.md`). Sean's decision: limit the room list to 50.
+
+- **The list.** Every reader of the rooms goes through `Room` `:list`: keyset pages of
+  50, always paged, the most recently active first (`last_active_at`, then `slug`). A
+  post moves its room in the post's own transaction (`Message.MarkRoomActive` runs
+  `Room` `:mark_active`, an atomic update that never moves the time back), and once it
+  commits the room is published as `"active"` with `Room.public/1`. Only a post moves
+  a room. The room counter and the live figures page now hold the most recently active
+  rooms, as many as the counter has keys.
+- **The page.** The sidebar reads the first page once, when the room page opens, into
+  a stream, and More reads the next; the page keeps only the cursor, `more?` and the
+  room on top. A room opened beyond the pages shown joins the end of the list, marked,
+  and moves to its place when More reaches it. A room started or posted in goes to the
+  top from the notice alone: no page that receives it reads anything. One new
+  sentence, when the list or More fails: "The rooms couldn’t be loaded. Refresh the
+  page to try again." The More row is a shared sidebar style (`.shell-sidebar__more`).
+- **Migrations.** `20261112230808_rooms_last_active` adds `rooms.last_active_at` (not
+  null, defaulting to now, so no row is rewritten) and then, in the same transaction
+  under a 5-second lock limit, sets each room once to the later of when it was started
+  and its newest saved message: one update of each room's own row, messages untouched.
+  `20261112230809_rooms_last_active_1` builds the `(last_active_at, slug)` index
+  concurrently.
+- **Agents.** The OpenAPI documents move to 14.0.0. `GET /api/v1/rooms` answers 50 a
+  page with `pagination` (`has_more`, `next_cursor`), takes `?after=`, and answers 422
+  `invalid_cursor` and 503 `rooms_unavailable`. `rooms list` gains `--after`
+  (`cli/commands.json`, `cli/COMMANDS.md`) and the `rooms_list` browser tool gains
+  `after`. The invalid-cursor hint now ends "or leave it out for the first page", for a
+  room's messages too.
+- **Measured** on a scratch database with 20,000 rooms: the first page 0.06 ms and the
+  second 0.04 ms through the new index; page 201 1.6 ms, since the keyset filter walks
+  past the rooms before the cursor; a post's move 0.1 ms by the room's key.
+- Checks: `platform/test/ash_template/rooms/room_list_test.exs` and
+  `platform/test/ash_template_web/room_list_page_test.exs`. Looked at by hand in headless
+  Chromium at 1280 light and dark and 390: 50 rooms plus the open one marked at the end,
+  More under them; after More, every room once, the open one in its place, More gone.
+- Full check on `af49f2ea`: style, 150 script tests, 651 browser walks with 5 skipped,
+  246 Elixir (10 properties), required fixes and the command description pass. The last
+  gate, `check-siwa-latest`, fails as it does on main today: regents-cli 1.10.26 came out
+  and every install line still names 1.10.25. In the first run the phone account-menu walk
+  timed out once under load; alone it passed 6 of 6, and the second run passed it.
+
+## 2026-11-13 — Released v229: the room list shows 50, with More
+
+- `12ef221e` (merge of `tpl/room-list-limit-1112`, `6cd23f78`) is v229 on
+  template.regents.sh, switched at about 00:30Z on 13 Nov with `scripts/deploy.sh`.
+  Sean, 12 Nov: "Limit the room list to 50: yes." This was the one list left unbounded
+  after the database load review.
+- Migrations, applied (`/api/v1/health` answers `migrations_applied: true`):
+  `rooms.last_active_at` added with a default and each room's own row set once to the
+  later of its start and its newest message; a concurrent index on
+  `(last_active_at, slug)`. The template has two rooms. Messages untouched.
+- Rollback: fix forward; the v228 image (`21b8786a`) still runs on the new schema but
+  would not keep `last_active_at` current.
+- Full check exit 0 by the chief on the exact commit: 150 script tests, 651 browser
+  walks with 5 skipped, 251 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/rooms/general`,
+  `/rooms/help` and `/polls` answer 200 at 1280, 390 and 320 with no page errors and no
+  sideways scroll. `GET /api/v1/rooms` answers 200 with 2 rooms and
+  `pagination: {has_more: false, next_cursor: null}`; a bad cursor answers 422. More was
+  not exercised on live (fewer than 50 rooms); it is proven by tests.
+- Agent-visible: API documents 14.0.0; the rooms read is paged (`?after=`, `has_more`,
+  `next_cursor`, 422 `invalid_cursor`, 503 `rooms_unavailable`); regents-cli 1.10.26's
+  `rooms list` reads the first page only until it learns `--after`.
+## 2026-11-12 — The template signs in through the shared Privy package (branch, not on main)
+
+Branch `tpl/privy-shared-1112`. The template stops carrying its own copies of the
+Privy sign-in pieces and uses elixir-utils' `regent_privy` instead, as a hard cutover:
+no alias modules, no second path. Sign-in is protected, so this is built and checked
+on the branch only; releasing it is the founder's decision.
+
+- Pin: `@elixir_utils_ref` moves from `240e938` to `0eee6be3` (elixir-utils branch
+  `eu/privy-on-pin-1112`), which is the old pin plus only the shared sign-in pieces
+  (no `RegentPrivy.Users`, no `req`, no G1). It is not on elixir-utils main. Only the
+  15 elixir-utils lines of `mix.lock` change.
+- The template's own token pair reader, `lib/ash_template_web/privy_proof.ex`, is
+  deleted. The sign-in step (`PrivySessionController`) and the notes routes read the
+  pair with `RegentPrivy.Proof.pair/1`.
+- Security policies: `sign_in` and `showcase` add the list every Regent site shares,
+  `RegentPrivy.ContentSecurityPolicy.sign_in/0`, in place of the template's own
+  `@sign_in`. All four served policies (reading, sign_in, showcase, errors) are
+  byte-for-byte the same before and after, in the test and dev builds.
+- `/admin/errors` and `/admin/messages`: `AshTemplateWeb.ErrorsAdmin` is now the
+  template's `RegentPrivy.Owners` module. `owners/0` reads `:admins`, and `signed_in/1`
+  and `still_signed_in/1` read the session rows through `SessionAuthority`. The router's
+  `:errors_admin` pipeline and both pages' `on_mount` go through `RegentPrivy.Owners`;
+  `ErrorsAdmin` keeps the nonce policy plug and an `:admin` hook that hands the
+  messages page its admin actor. Anyone but an admin still gets the not-found page.
+  Stricter than before: an open page now re-checks the sign-in and the admin list on
+  messages and background results too (the team page reads through `start_async`),
+  not only on navigation and presses. New: a refused, signed-in non-admin's Privy id
+  is logged at info level (accepted by the template's chief).
+- Browser: `privy_bridge.tsx` imports `readPrivyPair`, `privyPairHeaders` and
+  `privyLoginFailure` from the shared file and deletes its own copies; nothing else in
+  it or in `auth_lazy.ts` changes. `mix regent_privy.assets` copies that file in
+  `assets.build`, `assets.deploy` and `precommit`, and `/assets/vendor/regent_privy/`
+  is ignored. The release image makes it with `mix assets.deploy`; it never takes the
+  local copy.
+- Tests: `test/ash_template_web/errors_admin_test.exs` (an admin gets in; signed out
+  and a non-admin find no page on both pages; a sign-in that ends while a page is open
+  is sent away on the next press) and `assets/test/privy_sign_in.test.ts` (the shared
+  reader hands over both tokens or nothing, and stops once stale; the bridge names
+  Privy's failures through the shared helper).
+- Check, on this change replayed onto main at v219 (`7dcf9aa5`): `make check` from the
+  repository root is green: the style check, 13 report script tests, 130 script tests
+  in 18 files, the browser walk (579 passed, 5 skipped for screen size, 584 in all),
+  220 server tests (210 tests, 10 properties), required fixes (every shared library,
+  `regent_privy` included, carries its fixes; the pin need not be on elixir-utils
+  main), `cli/commands.json` and siwa-latest.
+- Not proved: a real Privy sign-in. The bridge's own call into the shared reader is
+  proved by the typecheck, not by a run (the browser walk replaces the bridge).
+- Docs: `docs/feature-map.md`, `platform/README.md` and `platform/AGENTS.md`.
+
+## 2026-11-12 — The shared Privy sign-in move, brought up to main (branch, not on main)
+
+Branch `tpl/privy-shared-main-1112`: `tpl/privy-shared-1112` (built on v219) merged
+into `tpl/signin-repeats-1112` (v227 plus one sign-in read per answer). Sign-in is
+protected; releasing it is the founder's decision.
+
+- Conflicts, all text: this file and `docs/feature-map.md` keep both sides, main's
+  first; `platform/README.md` keeps main's reading-profile row and the shared
+  sign-in row; the router keeps main's removal of the `:public_documents` pipeline
+  (the reading pages moved into the shell) and the admin comment naming
+  `RegentPrivy.Owners`; `mix.lock` takes elixir-utils `0eee6be3` and design-system
+  `5fbe2d40`.
+- Main's newer code needed nothing more: nothing still names the deleted reader;
+  the reading pages and the launch gate's open pages are served under the `sign_in`
+  policy, which now takes Privy's sources from the shared list; the route handoff
+  and the API documents are unchanged. No migration.
+- Every page group that loads a person (the shell, the showcase, its catalog and
+  the wallet lab) still reads the sign-in on the request before its first render, as
+  the one-read-per-answer change needs. The admin pages use the shared owners check,
+  which reads the sign-in on the request and again as the page connects.
+- Check: `make check` passes everything but `check-siwa-latest` (regents-cli 1.10.26
+  is out; fixed on its own branch): 13 report script tests, the style check, 154
+  script tests in 21 files, the browser walk (651 passed, 5 skipped for screen size),
+  247 server tests (237 tests, 10 properties), required fixes, `cli/commands.json`.
+- Local browser drive on a walk-mode server, the Privy bridge replaced by the walk's
+  stand-in: signed out, the shell and reading pages show no person and the admin
+  pages are not found; signed in, the person shows on first render, connected and
+  after moving inside the live page; the admin errors page opens under its nonce
+  and the team page connects; a signed-in non-admin finds neither; after signing
+  out from another tab, open shell pages reload signed out and the open team page
+  drops its messages and reloads to not found. Not run: a real Privy sign-in, and a
+  revocation with no disconnect in a browser (the server test covers it).
+
+## 2026-11-13 — Released v230: the template on the shared sign-in pieces
+
+- `9f90f648` (merge of `tpl/privy-shared-main-1112`, `cb4855c6`) is v230 on
+  template.regents.sh, switched at about 00:45Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "22 a" (12 Nov). No migration.
+- The template's own token reader is gone for `RegentPrivy.Proof`; `/admin/errors` and
+  `/admin/messages` are kept by `RegentPrivy.Owners` reading
+  `AshTemplateWeb.ErrorsAdmin`; the content security policy uses the shared sign-in
+  list. elixir-utils pin `240e938` to `0eee6be3` (the old pin plus only the shared
+  sign-in folder).
+- Rollback: v229 (`12ef221e`), image only.
+- Full check exit 0 by the chief on the exact commit: 154 script tests, 651 browser
+  walks with 5 skipped, 254 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/rooms/general`, `/notes` and `/docs` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll; `/admin/errors` and `/admin/messages` answer 404;
+  health 200; the content security policy header names the Privy and wallet hosts.
+- Not proven on live: a real Privy sign-in through the shared token reader, and the
+  admin pages as an admin. Sean opens both.
+
+
+
+## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
+
+On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for all").
+
+- A person whose last message in a room goes is mentioned by nobody there until they
+  post in it again. A message goes two ways, and both take the person off the room's
+  posters inside the same delete, in one statement that runs only when no message of
+  theirs is left in the room (`AshTemplate.Rooms.Message.ForgetPoster` on `:destroy`, the
+  person's or their paired agent's own delete, and `:remove`, the operator's): every name
+  they posted under there goes. Nothing is hidden or deleted softly; an edit or a mute
+  keeps the message. Migration `20261112233734_room_messages_author_index.exs` adds one
+  index on `room_messages` (room and author, people only), built concurrently, for that
+  check: on 50,000 messages in one room it reads 6 pages instead of 863. Existing rows
+  are untouched, so someone who deleted every message in a room before this change
+  stays listed there until they next post there and delete it. Checks:
+  `platform/test/ash_template/rooms/mentions_test.exs` and
+  `platform/test/ash_template_web/room_delete_test.exs` (an open room page that hears the
+  delete reads nothing).
+- The developer documentation's page at `/docs` is headed Docs, as its menu link already
+  said, and its tab reads "Docs · Ash Template". Its Markdown, served at the same address,
+  keeps its own title, and every other reading page keeps its document's title. Check:
+  `platform/test/browser/reading.spec.ts`.
+- A message for the team past the allowance, 10 an hour for an agent (its person's, once
+  paired) or 30 from one address, answers like a too-fast room post: 429
+  `too_many_requests` with the seconds to wait in `Retry-After` over HTTP and as
+  `retry_after` from the hosted tool `messages_leave`, instead of 422 `invalid_message`.
+  The browser tool already passes any 429's wait on. A person past it is still told on
+  the message box, in the room message box's words. Both OpenAPI documents move to
+  15.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
+  `platform/test/ash_template/messages/leave_test.exs` and
+  `platform/test/ash_template_web/messages_api_test.exs`.
+- Merged main at v228 (`05ed696a`, command line 1.10.26), then at `12ef221e` (the room
+  list, 50 at a time): text conflicts only, in this file, the command list's Changes and
+  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229), `9f90f648`
+  (the shared sign-in pieces) and `284ce1cb` (v230's note), this file only. Both lanes
+  moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
+  team message's 429 moves them to 15.0.0, its own entry in the docs and the command
+  list.
 
 ## 2026-11-12 — Text search on trigram indexes
 
@@ -9712,12 +9920,16 @@ shared production database).
   the search box, `POST /api/v1/rooms/search` and `POST /api/v1/notes/search`, the
   `rooms_search` and `notes_search` browser tools and `rooms search` and `notes search`.
   One or two letters answer an empty list, and a single letter no longer answers 422. The
-  OpenAPI documents move to 14.0.0.
+  OpenAPI documents move to 16.0.0, after the room list's 14.0.0 and the follow-ups' 15.0.0.
 - Migrations: `20261112234817` runs `CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA
-  public`, which changes nothing where pg_trgm is already on; `20261112234818` builds four
+  public`, which changes nothing where pg_trgm is already on; `20261113010509` builds four
   GIN indexes concurrently, on `room_messages.body`, `rooms.name`, `notes.title` and
-  `notes.body`, each naming `public.gin_trgm_ops`. No row changes.
-- Before the release: pg_trgm switched on for the production database, in `public`.
+  `notes.body`, each naming `public.gin_trgm_ops`. No row changes. Both sort after the
+  room list's and the follow-ups' migrations (`20261112230808` to `20261112233734`) and
+  touch none of their columns; the index migration and its snapshots were generated again
+  on top of theirs after merging `tpl/followups-1112` (`8ef98a8f`).
+- Production already has pg_trgm 1.6 in `public` (the chief read the add-on list on the
+  host, read only), so the first migration changes nothing there and nothing is switched on.
 - Local plans, 60,000 generated messages and 20,000 notes: a word in three messages 85 ms
   to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
   all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with

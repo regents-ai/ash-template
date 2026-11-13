@@ -331,28 +331,35 @@
     {
       "all_tenants?": false,
       "concurrently": true,
-      "error_fields": [],
+      "error_fields": [
+        "room",
+        "human_account_id"
+      ],
       "fields": [
         {
-          "type": "string",
-          "value": "body public.gin_trgm_ops"
+          "type": "atom",
+          "value": "room"
+        },
+        {
+          "type": "atom",
+          "value": "human_account_id"
         }
       ],
       "include": null,
       "include_base_filter?": true,
       "message": null,
-      "name": "room_messages_body_trgm_index",
+      "name": null,
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
       "unique": false,
-      "using": "GIN",
-      "where": null
+      "using": null,
+      "where": "human_account_id IS NOT NULL"
     }
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "DBF274EE750690894ECA657ECF78A2859B3598D94D2C6A19E203BAECA90C006A",
+  "hash": "08F43D4512489AB1636495EE7E2DAEE3F82AD313E8198F4CD65CE8D885A475BC",
   "identities": [],
   "multitenancy": {
     "attribute": null,

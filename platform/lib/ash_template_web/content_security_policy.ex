@@ -3,13 +3,13 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
   The content security policies the site's pages are served under. `reading/0` is
   the strict baseline: everything comes from this site, no page frames another site
   or is framed itself, and forms submit only here. `sign_in/0` adds exactly what
-  Privy's sign-in loads, from Privy's published policy and the bundled Privy
-  and WalletConnect code; Privy's sign-in window writes its own style elements, so
-  only that profile allows them. `showcase/0` is `sign_in/0` for the showcase
-  catalog, which frames its own preview page. `errors/1` is the baseline plus one
-  request's nonce, for the saved-errors page. A site that loads anything else adds
-  each origin to the one directive and the one profile that needs it; the only
-  wildcard is Privy's own `*.rpc.privy.systems`, from its published policy.
+  Privy's sign-in loads, the list every Regent site shares
+  (`RegentPrivy.ContentSecurityPolicy.sign_in/0`); Privy's sign-in window writes its
+  own style elements, so only that profile allows them. `showcase/0` is `sign_in/0`
+  for the showcase catalog, which frames its own preview page. `errors/1` is the
+  baseline plus one request's nonce, for the saved-errors page. A site that loads
+  anything else adds each origin to the one directive and the one profile that
+  needs it; the only wildcard is Privy's own `*.rpc.privy.systems`, in the shared list.
   """
 
   # The development code reloader runs in a frame from this site.
@@ -34,39 +34,16 @@ defmodule AshTemplateWeb.ContentSecurityPolicy do
     {"frame-ancestors", ["'none'"]}
   ]
 
-  @sign_in %{
-    "script-src" => ["https://challenges.cloudflare.com"],
-    "style-src" => ["'unsafe-inline'"],
-    "img-src" => ["blob:", "https://explorer-api.walletconnect.com"],
-    "frame-src" => [
-      "https://auth.privy.io",
-      "https://verify.walletconnect.com",
-      "https://verify.walletconnect.org",
-      "https://challenges.cloudflare.com"
-    ],
-    "connect-src" => [
-      "https://auth.privy.io",
-      "https://*.rpc.privy.systems",
-      "wss://relay.walletconnect.com",
-      "wss://relay.walletconnect.org",
-      "https://verify.walletconnect.org",
-      "https://explorer-api.walletconnect.com",
-      "https://rpc.walletconnect.org",
-      "https://pulse.walletconnect.org",
-      "wss://www.walletlink.org"
-    ]
-  }
-
   @doc "The strict baseline, for pages that never start sign-in."
   def reading, do: render(@baseline)
 
   @doc "The baseline plus Privy sign-in, for pages that can sign someone in."
-  def sign_in, do: @baseline |> add(@sign_in) |> render()
+  def sign_in, do: @baseline |> add(RegentPrivy.ContentSecurityPolicy.sign_in()) |> render()
 
   @doc "Sign-in plus framing its own pages, for the showcase catalog's preview."
   def showcase do
     @baseline
-    |> add(@sign_in)
+    |> add(RegentPrivy.ContentSecurityPolicy.sign_in())
     |> add(%{"frame-src" => ["'self'"]})
     |> List.keyreplace("frame-ancestors", 0, {"frame-ancestors", ["'self'"]})
     |> render()

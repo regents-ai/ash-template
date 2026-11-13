@@ -7,9 +7,14 @@ defmodule AshTemplate.Rooms.Room do
   the name in its address, comes from its name and never changes, so no two
   rooms share an address. Only the person who started a room changes its topic.
 
-  Every new room and every topic change is published on `topic/0`, so each open
-  room page shows the room list and the topic as they stand. What is published
-  is `public/1`, never the record.
+  The list of rooms comes 50 a page, the most recently active first: each room
+  keeps when it was last active (`last_active_at`), when it was started and
+  then at every post, moved in the post's own transaction (`:mark_active`).
+
+  Every new room, every topic change and every post's move of a room is
+  published on `topic/0`, so each open room page keeps its list and the topic
+  as they stand without a read. What is published is `public/1`, never the
+  record.
   """
 
   use Ash.Resource,
@@ -30,6 +35,9 @@ defmodule AshTemplate.Rooms.Room do
     unique_index_names([{[:name], "rooms_pkey", @name_taken}])
 
     custom_indexes do
+      # The list's order, newest first (`:list`).
+      index([:last_active_at, :slug], concurrently: true)
+
       # Search by name (`:search`). pg_trgm lives in public, beside
       # ash_required, so its operator class is named there.
       index(["name public.gin_trgm_ops"],
@@ -45,6 +53,13 @@ defmodule AshTemplate.Rooms.Room do
     attribute :name, :string, allow_nil?: false, public?: true, constraints: [max_length: 40]
     attribute :topic, :string, allow_nil?: false, public?: true, constraints: [max_length: 200]
     create_timestamp :inserted_at, public?: true
+
+    # When the room was started, then when its latest message was posted
+    # (`:mark_active`).
+    attribute :last_active_at, :utc_datetime_usec,
+      allow_nil?: false,
+      default: &DateTime.utc_now/0,
+      public?: true
   end
 
   relationships do
@@ -57,9 +72,10 @@ defmodule AshTemplate.Rooms.Room do
   actions do
     defaults [:read]
 
-    # The site's own rooms first, then the rest in the order they were started.
+    # The most recently active first, a page at a time.
     read :list do
-      prepare build(sort: [inserted_at: :asc, slug: :asc])
+      prepare build(sort: [last_active_at: :desc, slug: :desc])
+      pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
     # The room the actor's person started with this slug, so a retry answers it.
@@ -119,9 +135,32 @@ defmodule AshTemplate.Rooms.Room do
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
       validate match(:topic, RegentFormat.Name.pattern()), message: @shown_text
     end
+
+    # A post at `at`, from the post's own transaction
+    # (`AshTemplate.Rooms.Message.MarkRoomActive`): one statement that keeps the
+    # later of the two times, whichever of two posts at the same moment commits
+    # first.
+    update :mark_active do
+      accept []
+      argument :at, :utc_datetime_usec, allow_nil?: false
+
+      change atomic_update(
+               :last_active_at,
+               expr(if last_active_at > ^arg(:at), do: last_active_at, else: ^arg(:at))
+             )
+    end
   end
 
   policies do
+    # Only a post moves a room, as the system; nobody calls it directly.
+    bypass action(:mark_active) do
+      authorize_if actor_attribute_equals(:role, :system)
+    end
+
+    policy action(:mark_active) do
+      forbid_if always()
+    end
+
     policy action_type(:read) do
       authorize_if always()
     end
@@ -137,7 +176,8 @@ defmodule AshTemplate.Rooms.Room do
   end
 
   # Delivered after the transaction commits to `topic/0`: %{event: "create" |
-  # "set_topic", payload: public(room)}.
+  # "set_topic" | "active", payload: public(room)}. "active" is a post moving
+  # the room to the top of the list, and carries all the list draws of it.
   pub_sub do
     module Phoenix.PubSub
     name AshTemplate.PubSub
@@ -146,9 +186,14 @@ defmodule AshTemplate.Rooms.Room do
 
     publish :create, ["rooms"], returns: :map, transform: &__MODULE__.public(&1.data)
     publish :set_topic, ["rooms"], returns: :map, transform: &__MODULE__.public(&1.data)
+
+    publish :mark_active, ["rooms"],
+      event: "active",
+      returns: :map,
+      transform: &__MODULE__.public(&1.data)
   end
 
-  @doc "The topic every new room and topic change is published on."
+  @doc "The topic every new room, topic change and post's move of a room is published on."
   def topic, do: "public:rooms"
 
   @doc "What anyone may see of a room: its address, its name and its topic."

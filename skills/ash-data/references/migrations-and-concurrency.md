@@ -123,7 +123,8 @@ migrates into.
 
 An extension belongs to the whole database, so every site shares one copy, in `public`
 (as `public.ash_required` does). Installing one on production is the founder's decision
-(pg_trgm, 12 November 2026); the host switches it on from its dashboard before the release
+(pg_trgm, 12 November 2026, was already there: version 1.6 in `public`, read on 13
+November); one that is missing, the host switches on from its dashboard before the release
 that needs it. The site's migration still says it, from `installed_extensions`, as
 `CREATE EXTENSION IF NOT EXISTS "<name>" WITH SCHEMA public`: where the extension is
 already there it changes nothing, whatever the login's rights. Where it is not, the release

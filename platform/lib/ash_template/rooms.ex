@@ -17,6 +17,7 @@ defmodule AshTemplate.Rooms do
       define :search_rooms, action: :search, args: [:text]
       define :create_room, action: :create
       define :set_room_topic, action: :set_topic
+      define :mark_room_active, action: :mark_active, args: [:at]
     end
 
     resource AshTemplate.Rooms.Message do
@@ -40,6 +41,7 @@ defmodule AshTemplate.Rooms do
 
     resource AshTemplate.Rooms.Poster do
       define :record_poster, action: :record
+      define :forget_posters, action: :forget
     end
 
     resource AshTemplate.Rooms.Mute do

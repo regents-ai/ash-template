@@ -49,6 +49,18 @@
       "type": "utc_datetime_usec"
     },
     {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "last_active_at",
+      "type": "utc_datetime_usec"
+    },
+    {
       "allow_nil?": true,
       "default": "nil",
       "generated?": false,
@@ -89,28 +101,35 @@
     {
       "all_tenants?": false,
       "concurrently": true,
-      "error_fields": [],
+      "error_fields": [
+        "last_active_at",
+        "slug"
+      ],
       "fields": [
         {
-          "type": "string",
-          "value": "name public.gin_trgm_ops"
+          "type": "atom",
+          "value": "last_active_at"
+        },
+        {
+          "type": "atom",
+          "value": "slug"
         }
       ],
       "include": null,
       "include_base_filter?": true,
       "message": null,
-      "name": "rooms_name_trgm_index",
+      "name": null,
       "nulls_distinct": true,
       "prefix": null,
       "table": null,
       "unique": false,
-      "using": "GIN",
+      "using": null,
       "where": null
     }
   ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "033FEE8C83395F4A4B6D06F59781DBB19FC8B36272E3436A2690FC3B474EB6F7",
+  "hash": "3B31729AA5EABEA850E0CAE7E63C1B45519CFA0D582190364DC06E560523B231",
   "identities": [],
   "multitenancy": {
     "attribute": null,

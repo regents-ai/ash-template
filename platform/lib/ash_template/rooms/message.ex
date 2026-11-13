@@ -6,8 +6,10 @@ defmodule AshTemplate.Rooms.Message do
   An agent no person has paired here posts as itself, once (`SetAuthor`).
   Only a person can change or delete their own message; the site's operator can
   remove anyone's, with a reason that is kept (`:remove`,
-  `AshTemplate.Rooms.Moderation`). An agent the person paired acts as them: what it posts or edits is theirs, marked with the agent
-  (`via_agent`) until they edit it themselves. A signed-in reader never
+  `AshTemplate.Rooms.Moderation`). Either way, a person's last message in a room
+  takes them off its posters, so nobody mentions them there (`ForgetPoster`).
+  An agent the person paired acts as them: what it posts or edits is theirs,
+  marked with the agent (`via_agent`) until they edit it themselves. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Each
   message keeps its count of likes (`AshTemplate.Rooms.Like`), moved in each
   like's own transaction (`:count_like`), and a room read says which of them the
@@ -16,7 +18,8 @@ defmodule AshTemplate.Rooms.Message do
   World ID mark shows as it stands now, and with the picture its author's
   account shows. Every post is told to the rest of the site as
   `:message_posted` (`AshTemplate.Rooms.Signals`), so a post that mentions
-  someone by name tells them. Every post,
+  someone by name tells them, and moves its room to the top of the list of
+  rooms in its own transaction (`MarkRoomActive`). Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once, and every post and delete on `every_room_topic/0` as
   well. What is published is `public/1`, the fields a signed-out reader sees,
@@ -35,7 +38,9 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.Message.{
     AgentPost,
     AuthorPicture,
+    ForgetPoster,
     LeaveOutMuted,
+    MarkRoomActive,
     RecordPoster,
     RoomMessages,
     SetAuthor,
@@ -57,6 +62,12 @@ defmodule AshTemplate.Rooms.Message do
       # An agent's feed opens with the rooms it has posted in (`AshTemplate.Feed`).
       index([:agent_id], where: "agent_id IS NOT NULL", concurrently: true)
       index([:via_agent_id], where: "via_agent_id IS NOT NULL", concurrently: true)
+      # Whether a person has a message left in a room (`ForgetPoster`).
+      index([:room, :human_account_id],
+        where: "human_account_id IS NOT NULL",
+        concurrently: true
+      )
+
       # Search across every room (`:search`). pg_trgm lives in public, beside
       # ash_required, so its operator class is named there.
       index(["body public.gin_trgm_ops"],
@@ -155,6 +166,7 @@ defmodule AshTemplate.Rooms.Message do
       primary? true
       require_atomic? false
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change ForgetPoster
     end
 
     # The site's operator removing a message, usually a reported one. The removal
@@ -189,6 +201,8 @@ defmodule AshTemplate.Rooms.Message do
           end
         end)
       end
+
+      change ForgetPoster
     end
 
     # Newest first, a page at a time, of everyone or one kind of author: people's
@@ -282,6 +296,8 @@ defmodule AshTemplate.Rooms.Message do
 
       change RecordPoster
       emit AshTemplate.Rooms.Signals, :message_posted, fields: [message_id: :id, body: :body]
+      # Last, so the room's row is held for as little of the post as can be.
+      change MarkRoomActive
       change load(@shown)
     end
 

@@ -127,7 +127,7 @@ defmodule AshTemplateWeb.PublicDocuments do
       {"Cells",
        "A meter of small square cells that twinkle, grow with a bright edge while a total is counted, and break into sparks when a part is let go."},
     "/docs" =>
-      {"Developer documentation",
+      {"Docs",
        "Start reading Ash Template without an account: the agent guide, public reads and the service description."},
     "/about" => {"About", "Ash Template, the people who run it and how to reach them."},
     "/changelog" => {"Changelog", "Changes to Ash Template, newest first."},
