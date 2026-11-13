@@ -334,13 +334,14 @@ security policy; the router's pipelines choose one.
 | Profile | Pipelines | What it allows |
 | --- | --- | --- |
 | `reading` | `:errors_admin`, every answer before its pipeline sets one, and the launch gate's closed page | The strict baseline: scripts, styles, images and fonts from this site, requests and the live connection back to it, inline style attributes (the shared ratio card and Anime.js text splitting), no frames, never framed. |
-| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in: Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
+| `sign_in` | `:browser`, `:showcase_browser` | The baseline plus Privy sign-in, the list every Regent site shares (`RegentPrivy.ContentSecurityPolicy.sign_in/0`): Privy's API and frame, Cloudflare Turnstile, WalletConnect's relay, verify frame, wallet list and logos, RPC and event reporting, Coinbase Wallet's relay, and inline style elements for Privy's window. |
 | `showcase` | `:framed_preview` | `sign_in` that may frame its own preview page, for `/showcase` and `/showcase/preview`. |
 
 A site that loads something else (an RPC, an image host, an embedded wallet)
 adds each exact origin to the one directive in the one profile that needs it:
-`@sign_in` for anything the wallet or sign-in pages use, `@baseline` only for
-what every page loads. Never add `https:`, `*`, a whole-domain wildcard or
+`sign_in/0` for anything the wallet or sign-in pages use, `@baseline` only for
+what every page loads. A source Privy's own sign-in needs goes into the shared
+list in elixir-utils' `privy/`, so every site gets it. Never add `https:`, `*`, a whole-domain wildcard or
 `'unsafe-eval'`; the only wildcard is the one Privy publishes for its own
 hosts (`*.rpc.privy.systems`).
 After a change, load each affected page and the sign-in window
