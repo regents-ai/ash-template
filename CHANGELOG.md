@@ -9674,3 +9674,28 @@ libraries.
   refused as the page connects, at the next navigation and at the next press, which
   changes nothing). It fails on the old code (two reads), and with the navigation or
   the press check removed.
+
+## 2026-11-13 — Released v228: command line 1.10.26, and the sign-in read once per answer
+
+- `21b8786a` (merge of `tpl/signin-repeats-1112`, `daa14ec6`, onto
+  `tpl/cli-1-10-26-1112`, `99550484`) is v228 on template.regents.sh, switched at about
+  00:19Z on 13 Nov with `scripts/deploy.sh`. No migration.
+- Sign-in, under Sean's named go "23 a" (12 Nov): the two same-instant repeat checks on
+  a page load are gone; one file, `platform/lib/ash_template_web/live/session.ex`. What
+  a check decides is unchanged, and every later navigation and every press still checks.
+- regents-cli 1.10.26 was published on 12 Nov and the newest-release gate failed on main
+  until this landed.
+- Rollback: v227 (`1f84891a`), image only.
+- Full check by the chief on the exact commit: the first run failed one test,
+  `visit_lines_test.exs:14` (1,500 visit lines within one second took 4.7 s) while
+  several other full checks ran on the machine (suite 127 s against the usual 43 s); the
+  second run on the same commit exit 0: 150 script tests, 651 browser walks with 5
+  skipped, 244 Elixir (10 properties). Load was not proven as the cause; the test times
+  a machine-dependent thing and is to be rewritten.
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/rooms/general`, `/docs` and `/polls` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll; `/admin/errors` answers 404 signed out; `/agents.md`
+  names 1.10.26; health 200. The signed-in path is proven by tests, and by Sean's own
+  sign-in when he next uses it.
+- Known flaky: the phone account-menu walk on the Agents page ("content 641px wider
+  than the screen") failed then passed for three workers on 12 Nov; cause not found.
