@@ -10647,7 +10647,7 @@ Tests only; no code changed.
   `/rooms/general` answer 200. The Points page's own words need a sign-in and were not
   read by the chief.
 
-## 2026-11-13 — regents-cli 1.10.27 (branch `tpl/cli-1-10-27-1113`, not on main)
+## 2026-11-13 — regents-cli 1.10.27
 
 - regents-cli moves from `2e4a571c` (1.10.26) to `2f7eee7e` (1.10.27), which reached PyPI
   on 13 Nov 18:37Z, so the newest-SIWA gate refused main. `2f7eee7e` is the commit the
