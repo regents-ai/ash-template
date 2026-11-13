@@ -10032,3 +10032,32 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   no page errors and no sideways scroll.
 - Not proven on live: the 429 answer itself (it would take eleven real team messages)
   and a mention after a last message is deleted; both are covered by tests.
+## 2026-11-12 — Text search on trigram indexes
+
+On `tpl/text-search-1112`, for the template chief, after Sean's go "24 a" (pg_trgm on the
+shared production database).
+
+- Room message search across every room, room search by name and a person's note search
+  run as `ILIKE '%…%'` on a trigram index instead of `lower(column) LIKE` over the whole
+  table. The words are a `:ci_string` argument, so Ash's `contains` escapes `%`, `_` and `\`.
+- Under three letters a search finds nothing and sends no query, the same on every surface:
+  the search box, `POST /api/v1/rooms/search` and `POST /api/v1/notes/search`, the
+  `rooms_search` and `notes_search` browser tools and `rooms search` and `notes search`.
+  One or two letters answer an empty list, and a single letter no longer answers 422. The
+  OpenAPI documents move to 16.0.0, after the room list's 14.0.0 and the follow-ups' 15.0.0.
+- Migrations: `20261112234817` runs `CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA
+  public`, which changes nothing where pg_trgm is already on; `20261113010509` builds four
+  GIN indexes concurrently, on `room_messages.body`, `rooms.name`, `notes.title` and
+  `notes.body`, each naming `public.gin_trgm_ops`. No row changes. Both sort after the
+  room list's and the follow-ups' migrations (`20261112230808` to `20261112233734`) and
+  touch none of their columns; the index migration and its snapshots were generated again
+  on top of theirs after merging `tpl/followups-1112` (`8ef98a8f`).
+- Production already has pg_trgm 1.6 in `public` (the chief read the add-on list on the
+  host, read only), so the first migration changes nothing there and nothing is switched on.
+- Local plans, 60,000 generated messages and 20,000 notes: a word in three messages 85 ms
+  to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
+  all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with
+  5,000 of them 18 ms to 0.07 ms; rooms 0.4 ms to 0.02 ms.
+- Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `45e9f394`
+  (merged with `tpl/followups-1112` at `8ef98a8f`) exit 0: 13 report tests, 154 script
+  tests, 651 browser walks with 5 skipped, 261 Elixir (10 properties).
