@@ -308,12 +308,6 @@ config :regent_points,
     "template.first_agent_note" => AshTemplate.Points.AgentNote
   }
 
-# Points runs in this many seasons, one after the other from the start: the
-# library's 30-day periods (RegentPoints.Rules.period/1), which it counts without
-# end. The Points page and the agent's Points answer list this many
-# (AshTemplate.Points.Seasons).
-config :ash_template, :points_seasons, 3
-
 # The Claude connector's sign-in, through the person's verified account
 # (AshTemplate.OAuth). Its one permission lets the app pair with the account and
 # check in; nothing else. config/runtime.exs switches it on and sets its issuer

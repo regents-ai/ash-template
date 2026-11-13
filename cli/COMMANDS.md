@@ -527,10 +527,11 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
   counts more than once a day. `leaderboard` is the ten highest totals; `name` is null for a
   person shown by their `wallet`, under its `ens_name` when it has one; `you` marks your person's
   row. `status` is `counted` or `allowance_reached`; `by` is `agent` or `person`; `agent` is the
-  agent's name, or null. `seasons` run one after another from the start, 30 days each;
+  agent's name, or null. `seasons` are three, one after another from the start, 30 days each;
   `starts_at` and `ends_at` are null until Points has a start; `state` is `upcoming`, `running`
   or `ended`; `days_left` is the running season's, a part day counting as one, otherwise null;
   `earned` is null until the season begins; `bonus` is null until the season's NFT bonus is added.
+  After the last season nothing earns, and `to_do` is empty.
 - **Refusals:** as for `notes list`.
 
 ## activity list

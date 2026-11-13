@@ -95,13 +95,16 @@ Combine the verified linked wallets' holdings across these Base collections:
 
 1–2 NFTs add 20%; 3–6 add 45%; 7 or more add 75%. Awards save points only; the
 bonus is added once per program period, when the period ends (Sean, 9 October).
-Periods last 30 days, counted from the program start. The tier the account's wallets
+Periods last 30 days, counted from the program start, and there are three: the
+seasons (Sean, 13 November). Nothing done after the third's end earns; its bonus is
+still added after it, and no later period is tallied. The tier the account's wallets
 hold on the tally day applies once, without stacking, to the points earned in that
 period after limits, one-time awards included. Regents runs the tally; each account
-and period gets one saved bonus row. While earning is open, the Points page shows
-the tier the wallets hold now as "Bonus this period", read from Base when the page
-opens and never saved; while earning is off it reads no NFTs and says they are
-counted once earning opens. Account merging remains deferred.
+and period gets one saved bonus row. While a season runs, the Points page shows
+the tier the wallets hold now, read from Base when the page opens and never saved.
+Outside the seasons it reads no NFTs, and the shared Bonus card is in its state for
+before the first season (`:closed`) or after the last (`:ended`), from
+`RegentPoints.Seasons.phase/1`. Account merging remains deferred.
 
 ## Source integration
 
@@ -151,7 +154,8 @@ See the package README for the adapter contract, actor policy and migration inst
   left come first with a link to where each is done, the ones done are ticked. A daily
   action shows how much of today's count is used. Under the title, one line says where
   Points stands: not started, its start date, the season running and its days left,
-  or the last season over. Before the start, each start rule
+  or the last season over. After the last season nothing earns and no action is
+  listed. Before the start, each start rule
   (`RegentPoints.Rules.start_rules/0`) the account already meets is ticked and marked
   as added at the start. Each start adapter's `held/2` answers that for the one
   account, from the same tables its `existing/2` reads for the start itself.
@@ -187,10 +191,11 @@ See the package README for the adapter contract, actor policy and migration inst
   and the agent's answer keeps giving it.
 - **Bonus**: the three NFT tiers with the one held marked, then each season: its dates
   (none until a start is set), what the account earned in it once it began, and the
-  bonus added at its end. Seasons are the library's 30-day periods, season n being
-  period n; the library counts periods without end, and the site shows as many as
-  `config :ash_template, :points_seasons` names (3), through
-  `AshTemplate.Points.Seasons`. The tip under Bonus says what a season is.
+  bonus added at its end. Seasons are the library's: three 30-day periods from the
+  start, season n being period n (`RegentPoints.Seasons`, the number in
+  `RegentPoints.Rules.season_count/0`). After the last season's end nothing earns,
+  and the last season's bonus is still added after it. The tip under Bonus says what
+  a season is.
 - **Activity**: each entry with who earned it (you or the agent's name), when, and
   whether it was cut by a daily limit or is a correction.
 

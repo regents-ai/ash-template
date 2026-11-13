@@ -8,7 +8,6 @@ defmodule AshTemplateWeb.PointsLive do
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   import AshTemplateWeb.Components.Shell, only: [account_picture: 1]
-  alias AshTemplate.Points.Seasons
   alias AshTemplateWeb.PointsEntries
   alias RegentPoints.{Amount, Rules}
 
@@ -24,10 +23,12 @@ defmodule AshTemplateWeb.PointsLive do
     required: true,
     doc: "the NFT tier the account's wallets hold now"
 
-  attr :earning, :list, required: true, doc: "the catalog rules earning now"
+  attr :phase, :atom,
+    required: true,
+    values: [:before, :running, :ended],
+    doc: "where Points stands now (`RegentPoints.Seasons.phase/1`)"
 
   def page(assigns) do
-    open? = assigns.earning != []
     summary = assigns.points.value
     groups = if summary, do: PointsEntries.todo(summary), else: []
 
@@ -37,7 +38,6 @@ defmodule AshTemplateWeb.PointsLive do
 
     assigns =
       assign(assigns,
-        open?: open?,
         summary: summary,
         groups: Enum.map(groups, &linked/1),
         left: PointsEntries.left(groups),
@@ -108,7 +108,7 @@ defmodule AshTemplateWeb.PointsLive do
           </Regent.Points.board>
           <Regent.Points.bonus
             id="points-bonus"
-            state={bonus_state(@open?, @bonus)}
+            state={bonus_state(@phase, @bonus)}
             nfts={@bonus.value && @bonus.value.nft_count}
             percent={@bonus.value && @bonus.value.percent}
             message={"Your NFTs could not be checked. #{retry(@bonus.error)}"}
@@ -117,7 +117,7 @@ defmodule AshTemplateWeb.PointsLive do
           >
             <:tip>
               <Regent.Primitives.tip id="points-bonus-about" label="About your points bonus">
-                Points runs in {Seasons.count()} seasons of 30 days.
+                Points runs in {Rules.season_count()} seasons of 30 days.
                 Animata I, Animata II and Regents Club count across your verified linked wallets.
                 At the end of each season, the tier your wallets hold that day adds its
                 bonus to the points you earned in that season, one-time awards included.
@@ -216,8 +216,11 @@ defmodule AshTemplateWeb.PointsLive do
   defp state(%{state: state}) when state in [:ready, :empty], do: :ready
   defp state(%{state: state}), do: state
 
-  defp bonus_state(false, _bonus), do: :closed
-  defp bonus_state(true, bonus), do: state(bonus)
+  # Before the first season the card waits, after the last it has ended, and while a
+  # season runs it shows the NFTs read now.
+  defp bonus_state(:before, _bonus), do: :closed
+  defp bonus_state(:ended, _bonus), do: :ended
+  defp bonus_state(:running, bonus), do: state(bonus)
 
   # Reading again at once while limited would only be refused again.
   defp retry(:limited), do: "Try again in a minute."

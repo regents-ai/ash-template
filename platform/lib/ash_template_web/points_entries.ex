@@ -6,8 +6,7 @@ defmodule AshTemplateWeb.PointsEntries do
   entry, season and place.
   """
 
-  alias AshTemplate.Points.Seasons
-  alias RegentPoints.{Amount, Rules}
+  alias RegentPoints.{Amount, Rules, Seasons}
 
   @doc "What became of an entry: counted, cut to nothing by a daily limit, or a correction."
   def status(%{reversal_of_entry_id: id}) when not is_nil(id), do: :correction
@@ -28,9 +27,13 @@ defmodule AshTemplateWeb.PointsEntries do
   The actions this site lists, in two groups, with what the account has done of
   each and its points: `[%{title, limit, items}]`. Before the start, a one-time
   action the account already has (`standing.at_start`) is done and marked as
-  added at the start.
+  added at the start. After the last season nothing earns, so none is listed.
   """
   def todo(standing) do
+    if Seasons.phase(standing.seasons) == :ended, do: [], else: groups(standing)
+  end
+
+  defp groups(standing) do
     rules = Rules.tracked()
     room = Map.new(standing.allowances, &{&1.scope, &1})
 
@@ -80,10 +83,11 @@ defmodule AshTemplateWeb.PointsEntries do
   The shared board for one reader: `%{rows, you, rank}`. `reader` is the reader's
   account id and `standing` their own Points (`AshTemplate.Points.my_points/1`), or
   `nil` while it is not read. `you` is the reader's row when they sit below the
-  listed rows, with the place and total from their summary; `rank` is their place wherever they sit. The rows'
-  account ids stay here: none reaches a page or an agent. A row's `name` is `nil`
-  when the person shows by their `wallet`, under its `ens_name` when it has one. A
-  row's `line` is its position in the list: names and places repeat, lines do not.
+  listed rows, with the place and total from their summary; `rank` is their place
+  wherever they sit. The rows' account ids stay here: none reaches a page or an
+  agent. A row's `name` is `nil` when the person shows by their `wallet`, under its
+  `ens_name` when it has one. A row's `line` is its position in the list: names and
+  places repeat, lines do not.
   """
   def board(%{top: top}, reader, standing) do
     own = Enum.find(top, &(&1.account_id == reader))
