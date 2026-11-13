@@ -22,7 +22,6 @@ defmodule AshTemplateWeb.PairedAgentController do
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentHttp.UnexpectedFailure
   alias RegentPayments.{Purchase, USDC}
-  alias RegentPoints.Rules
 
   plug :paired_agent
 
@@ -78,7 +77,6 @@ defmodule AshTemplateWeb.PairedAgentController do
   }
   @errors Map.merge(@errors, AgentWallet.not_person_refusals())
 
-  @points_off "Earning Points is off on this site."
   @pay_hint ~s(Sign the payment terms with your own wallet and send the signed payment as "payment" in the body. Asking again the same way never pays twice.)
 
   defp cursor_error?(%Ash.Error.Action.InvalidArgument{field: :after}), do: true
@@ -94,11 +92,9 @@ defmodule AshTemplateWeb.PairedAgentController do
   def points(conn, _params) do
     actor = conn.assigns.actor
 
-    with {:ok, summary} <- RegentPoints.summary(actor: actor),
+    with {:ok, standing} <- AshTemplate.Points.my_points(actor: actor),
          {:ok, %{reading: %{} = board}} <- SharedReading.fetch(Board.key()) do
-      earning = Rules.active()
-      answer = PointsEntries.answer(summary, board, actor.human_account_id, earning != [])
-      json(conn, if(earning == [], do: Map.put(answer, :note, @points_off), else: answer))
+      json(conn, PointsEntries.answer(standing, board, actor.human_account_id))
     else
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("unavailable")
       _board_not_read -> refuse(conn, "unavailable")

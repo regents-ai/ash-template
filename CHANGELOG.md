@@ -10202,3 +10202,28 @@ switches". The switch's sun and moon are now drawn by the particle field.
   no page errors and no sideways scroll; `/docs` and `/rooms/general` carry the new
   switch's moon and sun and no old canvas. The look and the flight are the design
   chief's read.
+
+## 2026-11-13 — The Points page: what is earned, what is left, and the seasons
+
+- `/account/points` now shows every listed action's Points at all times, with one
+  line under To do saying where Points stands: "Points hasn’t started.", "Points
+  starts 1 Dec 2026.", "Season 2 of 3 · 18 days left" or "The last season has
+  ended." It replaces "Earning hasn’t opened yet."
+- Before the start, each start action the account already has (its account, a linked
+  X, GitHub or Farcaster account, a paired agent) is ticked as "Added at the start".
+  Each start adapter answers this for one account with `held/2`, from the same tables
+  its `existing/2` reads for the start.
+- The Bonus card lists every season: its dates (none before a start is set), what was
+  earned in it once it began, and the NFT bonus added at its end, in the words the
+  page used for each period's bonus. Its tip says Points runs in three seasons of 30
+  days. The number lives in `config :ash_template, :points_seasons` and is read by
+  `AshTemplate.Points.Seasons`; seasons are the library's 30-day periods.
+- The page and the agent read one action, `AshTemplate.Points.my_points/1`
+  (`AshTemplate.Points.Standing`, for the person or their paired agent).
+- `GET /api/v1/account/points` answers `seasons` in place of `period_bonuses`, each
+  `to_do` item gains `at_start` and always carries its `points`, and `note` is gone.
+  The OpenAPI documents move to 17.0.0; listed in the docs' breaking changes,
+  `cli/COMMANDS.md` and the public changelog.
+- No migration, no change to the shared library or the design system. `starts_at`
+  stays unset and `approved_rules` empty. The compile link limit in `mix precommit`
+  moves to 48: the Points domain lists one more resource.
