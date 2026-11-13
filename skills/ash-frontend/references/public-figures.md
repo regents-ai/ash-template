@@ -427,3 +427,8 @@ section, not a setting to flip.
 - Who is here arrives from `AshTemplateWeb.Presence` as arrivals and departures
   into a stream, on a topic only a signed-in reader's page, which shows the
   panel, subscribes to.
+- The list of rooms is ordered by a time on the room's own row
+  (`Room.last_active_at`), moved by `:mark_active` in the post's own transaction
+  and published as `"active"` with `Room.public/1`. The page reads the first 50
+  once into a stream and moves a room to the top from the notice alone; More
+  reads the next keyset page.

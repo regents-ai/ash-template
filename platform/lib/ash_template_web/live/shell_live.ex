@@ -226,8 +226,8 @@ defmodule AshTemplateWeb.ShellLive do
     {:noreply, socket}
   end
 
-  # A room started or a topic changed anywhere reaches the room page on screen,
-  # which keeps its list of rooms and its topic current.
+  # A room started, posted in or given a new topic anywhere reaches the room page
+  # on screen, which keeps its list of rooms and its topic current.
   def handle_info(%{topic: "public:rooms", event: event, payload: room}, socket) do
     if socket.assigns.room,
       do: send_update(RoomsLive, id: "rooms", room_change: {event, room})

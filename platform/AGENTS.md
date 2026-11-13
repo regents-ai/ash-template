@@ -17,7 +17,9 @@ git dependencies pinned to one commit each in `mix.exs`.
 
 Every page's content security policy lives in
 `lib/ash_template_web/content_security_policy.ex`; add an exact origin to the
-one profile that needs it, never a wildcard or `'unsafe-eval'`. Rate limits key
+one profile that needs it, never a wildcard or `'unsafe-eval'`. Privy's own
+sign-in sources come from the shared `RegentPrivy.ContentSecurityPolicy`; change
+them in elixir-utils. Rate limits key
 on `AshTemplateWeb.ClientAddress`, and metrics are served only on the private
 port. The README's "Security profiles" section explains all three.
 

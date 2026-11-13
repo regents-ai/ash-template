@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 13.0.0
+  version: 14.0.0
 paths:
   /api/v1/health:
     get:
@@ -209,8 +209,12 @@ paths:
   /api/v1/rooms:
     get:
       operationId: listRooms
+      parameters:
+        - {name: after, in: query, required: false, schema: {type: string}}
       responses:
         "200": {$ref: "#/components/responses/Rooms"}
+        "422": {$ref: "#/components/responses/RoomPageInvalid"}
+        "503": {$ref: "#/components/responses/RoomsUnavailable"}
         "429": {$ref: "#/components/responses/TooManyRequests"}
     post:
       operationId: createRoom
@@ -4447,7 +4451,7 @@ components:
             unavailable:
               value: {error: {code: unavailable, message: "The site is up but its database is not answering.", hint: "Try again in a minute."}}
     Rooms:
-      description: Every room, the site's own first, then the rest in the order they were started
+      description: One page of the rooms, the most recently active first
       content:
         application/json:
           schema: {$ref: "#/components/schemas/RoomsEnvelope"}
@@ -4510,7 +4514,7 @@ components:
           schema: {$ref: "#/components/schemas/RecoveryError"}
           examples:
             invalidCursor:
-              value: {error: {code: invalid_cursor, message: "That page could not be found.", hint: "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."}}
+              value: {error: {code: invalid_cursor, message: "That page could not be found.", hint: "Send after as the next_cursor of the previous page, unchanged, or leave it out for the first page."}}
             invalidLimit:
               value: {error: {code: invalid_limit, message: "limit must be a whole number from 1 to 50.", hint: "Leave it out for pages of 50."}}
             invalidAuthorKind:
@@ -5505,10 +5509,11 @@ components:
     RoomsEnvelope:
       type: object
       additionalProperties: false
-      required: [rooms]
+      required: [rooms, pagination]
       properties:
         rooms:
           type: array
+          maxItems: 50
           items:
             type: object
             additionalProperties: false
@@ -5517,6 +5522,13 @@ components:
               slug: {type: string}
               name: {type: string}
               topic: {type: string}
+        pagination:
+          type: object
+          additionalProperties: false
+          required: [has_more, next_cursor]
+          properties:
+            has_more: {type: boolean}
+            next_cursor: {type: [string, "null"]}
     RoomMessage:
       type: object
       additionalProperties: false

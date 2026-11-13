@@ -16,6 +16,12 @@ import {
 import React from "react"
 import {createRoot} from "react-dom/client"
 import {createProfileClient, type ProfileAction} from "../vendor/regent_identity/profile_client.mjs"
+import {
+  privyLoginFailure,
+  privyPairHeaders,
+  readPrivyPair,
+  type PrivyPair,
+} from "../vendor/regent_privy/privy_sign_in.mjs"
 
 import {
   AccountAuthFailure,
@@ -350,44 +356,32 @@ function createSignOutOnlyBridgeState({
 
 export {clearLocalSession, csrfToken}
 
-// Privy's two tokens have two different jobs: the access token proves this
-// browser's Privy session and the identity token carries the signed accounts
-// that session is entitled to. Regent needs both, so they travel together.
-type PrivyTokenPair = {accessToken: string; identityToken: string}
-
 type PrivyTokenSources = {
   getIdentityToken: () => Promise<string | null>
   getAccessToken: () => Promise<string | null>
   capture?: () => () => boolean
 }
 
-// The evidence is asked for first and the session proof second, so the proof is
-// never older than the evidence it is offered with. A half pair is never sent:
-// if either read fails or comes back empty, nothing is requested at all and any
-// local session this browser already holds is left exactly as it is.
+// The shared reader never returns half a pair: if either read fails or comes
+// back empty, nothing is requested at all and any local session this browser
+// already holds is left exactly as it is.
 function createPrivyTokenPairSource({
   getIdentityToken: identity,
   getAccessToken: access,
   capture = () => () => true,
-}: PrivyTokenSources): () => Promise<PrivyTokenPair> {
+}: PrivyTokenSources): () => Promise<PrivyPair> {
   return async () => {
     const current = capture()
-    requireCurrent(current)
-    const identityToken = await identity()
-    requireCurrent(current)
-    const accessToken = await access()
-    requireCurrent(current)
-
-    if (!identityToken?.trim() || !accessToken?.trim()) {
-      throw new Error("Sign in could not be completed.")
-    }
-
-    return {accessToken, identityToken}
+    return readPrivyPair({
+      getIdentityToken: identity,
+      getAccessToken: access,
+      requireCurrent: () => requireCurrent(current),
+    })
   }
 }
 
 async function createLocalSession(
-  tokens: PrivyTokenPair,
+  tokens: PrivyPair,
   fetcher: typeof fetch = fetch,
   sessionMutations: SessionMutationCoordinator = browserSessionMutations,
   current: () => boolean = () => true,
@@ -411,7 +405,7 @@ async function createLocalSession(
 }
 
 async function establishLocalSession(
-  {accessToken, identityToken}: PrivyTokenPair,
+  tokens: PrivyPair,
   fetcher: typeof fetch,
   signal: AbortSignal,
   commit: () => void,
@@ -424,15 +418,10 @@ async function establishLocalSession(
   // From here the response may renew the cookie, so it is never abandoned: an
   // abandoned renewal would leave this tab holding a retired token.
   commit()
-  // Each token travels in its own header and never in the URL or the body.
   const response = await fetcher("/auth/privy/session", {
     method: "POST",
     credentials: "same-origin",
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-      "privy-id-token": identityToken,
-      "x-csrf-token": csrf,
-    },
+    headers: {...privyPairHeaders(tokens), "x-csrf-token": csrf},
   })
   const lifecycle = await sessionLifecycleError(response).catch(unreadable => {
     // An account switch and a revoked lineage both drop the cookie at header
@@ -572,7 +561,7 @@ const accountWallet = () =>
   document.querySelector<HTMLElement>("#account-control")?.dataset.accountWallet?.toLowerCase() ?? null
 
 type PrivySessionCompletionOptions = {
-  acquireTokens: () => Promise<PrivyTokenPair>
+  acquireTokens: () => Promise<PrivyPair>
   fetcher?: typeof fetch
   localSessionNeeded: () => boolean
   reload: () => void
@@ -634,17 +623,6 @@ type PrivyLoginCallbackOptions = {
   loginOpen: {current: boolean}
   showFailure: (failure: SignInFailureKind) => void
   reportFailure?: (failure: SignInFailureDiagnostic) => void
-}
-
-const privyLoginFailureDiagnostics: Partial<Record<string, SignInFailureDiagnostic>> = {
-  exited_auth_flow: "flow_closed",
-  client_request_timeout: "request_timeout",
-  invalid_message: "invalid_message",
-  unable_to_sign: "unable_to_sign",
-}
-
-function privyLoginFailureDiagnostic(error: unknown): SignInFailureDiagnostic {
-  return privyLoginFailureDiagnostics[typeof error === "string" ? error : ""] ?? "provider_error"
 }
 
 type ProfileProof = {accessToken: string; identityToken: string; subject: string; isCurrent: () => boolean}
@@ -709,7 +687,7 @@ export function createPrivyLoginCallbacks({
       const opened = loginOpen.current
       loginOpen.current = false
       if (!isCurrent() || !opened) return
-      const diagnostic = privyLoginFailureDiagnostic(error)
+      const diagnostic = privyLoginFailure(error)
       reportFailure(diagnostic)
       // A person who closes the sign-in window chose to; nothing is said.
       if (diagnostic !== "flow_closed") showFailure("provider")
@@ -797,7 +775,7 @@ function AccountBridge({oauthReturn, mode, providerState, publishRequestHandler,
   // Acquisition depends on the provider hooks below, while the one in-flight
   // attempt these callbacks share must survive every rerender, so the stable
   // completion reads the latest pair source rather than closing over one.
-  const acquireTokensRef = React.useRef<() => Promise<PrivyTokenPair>>(() =>
+  const acquireTokensRef = React.useRef<() => Promise<PrivyPair>>(() =>
     Promise.reject(new Error("Sign in could not be completed.")),
   )
   const completeExplicitLogin = React.useMemo(
