@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.NotesController do
   alias AshTemplate.Actors.{Agent, Human}
   alias AshTemplate.Notes
   alias AshTemplate.Notes.Note
-  alias AshTemplateWeb.{FormErrors, NotesJSON, PrivyProof}
+  alias AshTemplateWeb.{FormErrors, NotesJSON}
   alias AshTemplateWeb.Plugs.AgentWallet
   alias RegentHttp.UnexpectedFailure
 
@@ -144,7 +144,7 @@ defmodule AshTemplateWeb.NotesController do
   end
 
   defp authenticate_person(conn) do
-    with {:ok, pair} <- PrivyProof.pair(conn),
+    with {:ok, pair} <- RegentPrivy.Proof.pair(conn),
          {:ok, verified} <-
            RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
          {:ok, account} <- VerifiedSession.account(verified) do
