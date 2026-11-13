@@ -1,6 +1,6 @@
 # Ash Template commands
 
-Released `regents ash-template` commands in CLI 1.10.26, against
+Released `regents ash-template` commands in CLI 1.10.27, against
 https://template.regents.sh. [commands.json](commands.json) is the same list in the form the
 command line reads; [README.md](README.md) says how a change travels. A command that is not
 described here does not exist.
@@ -12,7 +12,7 @@ stdin. Check the installed command's `--help` before use.
 ## Setup
 
 ```sh
-uv tool install --python 3.14 regents-cli==1.10.26
+uv tool install --python 3.14 regents-cli==1.10.27
 regents auth login --site ash-template
 regents ash-template doctor
 ```
@@ -790,6 +790,8 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-13: CLI 1.10.27 carries every command described here, and its `rooms list` reads
+  the next page with `--after`, which 1.10.26 lacks.
 - 2026-11-13: The OpenAPI documents move to 17.0.0. `account points` answers `seasons` (each
   season's dates, state, days left, what was earned in it and its NFT bonus) in place of
   `period_bonuses`; each `to_do` item always carries its `points`, never `false`, and gains
