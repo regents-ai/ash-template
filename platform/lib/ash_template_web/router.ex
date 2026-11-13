@@ -115,15 +115,17 @@ defmodule AshTemplateWeb.Router do
     plug AshTemplateWeb.Plugs.AgentWallet
   end
 
-  # The saved errors: the site's admins only (RegentPrivy.Owners). Anyone else gets the
-  # not-found page under the reading policy; an admin's page replaces it with one
-  # carrying this request's nonce (AshTemplateWeb.ErrorsAdmin).
+  # The saved errors: the site's admins only (RegentPrivy.Owners). The check runs
+  # before anything else answers, so anyone else gets exactly what a missing page
+  # gives the same request; an admin's page then gets its formats, its headers and a
+  # policy carrying this request's nonce (AshTemplateWeb.ErrorsAdmin).
   # The policy is built by ContentSecurityPolicy; Sobelow cannot evaluate its value.
   # sobelow_skip ["Config.CSP"]
   pipeline :errors_admin do
-    plug :accepts, ["html"]
     plug :fetch_session
     plug :enforce_session_authority
+    plug RegentPrivy.Owners, sign_in: AshTemplateWeb.ErrorsAdmin, router: __MODULE__
+    plug :accepts, ["html"]
     plug :protect_from_forgery
 
     plug :put_secure_browser_headers, %{
@@ -131,7 +133,6 @@ defmodule AshTemplateWeb.Router do
       "referrer-policy" => "no-referrer"
     }
 
-    plug RegentPrivy.Owners, sign_in: AshTemplateWeb.ErrorsAdmin, router: __MODULE__
     plug AshTemplateWeb.ErrorsAdmin
   end
 

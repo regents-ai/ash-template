@@ -33,6 +33,20 @@ defmodule AshTemplateWeb.ErrorsAdminTest do
     end
   end
 
+  test "anyone but an admin gets exactly what a missing page gives the same request" do
+    {person, _claim, _account} = signed_in()
+    put_admins(["did:privy:someone-else"])
+    # A signed-in browser sends its session as the cookie it was given.
+    browser = person |> get("/auth/session") |> recycle()
+
+    for conn <- [build_conn(), browser],
+        accept <- ["text/html", "application/json", "image/png"],
+        path <- @pages do
+      conn = Plug.Conn.put_req_header(conn, "accept", accept)
+      assert answer(conn, path) == answer(conn, "/admin/missing")
+    end
+  end
+
   test "an admin opens both pages, the errors page under its own nonce" do
     {conn, _claim, account} = signed_in()
     put_admins([account.privy_user_id])
@@ -62,6 +76,18 @@ defmodule AshTemplateWeb.ErrorsAdminTest do
     SessionAuthority.revoke(claim)
 
     assert {:halt, %Socket{redirected: {:redirect, %{to: "/"}}}} = press(socket)
+  end
+
+  # Status, headers and body, with the values made fresh for every request set aside.
+  defp answer(conn, path) do
+    sent = get(conn, path)
+
+    headers =
+      for {name, value} <- sent.resp_headers do
+        {name, if(name in ["x-request-id", "set-cookie", "ratelimit"], do: :fresh, else: value)}
+      end
+
+    {sent.status, Enum.sort(headers), sent.resp_body}
   end
 
   defp press(socket) do

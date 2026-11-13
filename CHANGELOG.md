@@ -10327,3 +10327,11 @@ switches". The switch's sun and moon are now drawn by the particle field.
 - Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
   `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll.
+
+## 2026-11-13 — The admin pages answer anyone else as a missing page does
+
+- For anyone but the site's admins, `/admin/errors` and `/admin/messages` now answer
+  exactly as a missing page does, in every format a request asks for: the router's
+  `:errors_admin` pipeline checks the admin first, then the page's formats, forgery
+  check and headers.
+- Sites take the same order in their router. No migration, no API change.
