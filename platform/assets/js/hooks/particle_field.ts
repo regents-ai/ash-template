@@ -1,13 +1,21 @@
 /**
  * The particle field (`AshTemplateWeb.Components.ParticleField.particle_field/1`):
- * 80,000 grains drawn over a real control, an icon or a brand mark.
+ * grains drawn over a real control, an icon, a brand mark or any drawing, as
+ * many as the canvas calls for (80,000 in the lab, a few thousand in the theme
+ * switch).
  *
  * Two attributes on the root are the whole of it. `data-particle-shape` names
  * the shape (a control such as `switch`, `ring`, `slider`, `bar`, `checkbox`,
- * `radio`, `spinner` or `steps:5`; `icon:<lucide name>`; or `mark:<name>`) and
- * `data-particle-value` holds its value from 0 to 1. Changing the shape flies
- * every grain to a new home; changing the value moves the knob or the lit part.
- * Whoever changes them, the server or a script, the field follows.
+ * `radio`, `spinner` or `steps:5`, or the name of a drawing in the field, an
+ * `svg` marked `data-particle-source`, as `icon:<lucide name>` and
+ * `mark:<name>` are) and `data-particle-value` holds its value from 0 to 1.
+ * Changing the shape flies every grain to a new home; changing the value moves
+ * the knob or the lit part. Whoever changes them, the server or a script, the
+ * field follows. A script that owns the field can also change both at once and
+ * say whether the grains fly (`show`): a key's change lands at once.
+ *
+ * `data-particle-glow` asks for the lab's lit grains and their glow; without it
+ * the grains are flat ink in the field's colours.
  *
  * The shape stands `--particle-fill` of the root box's height, as far as its
  * width allows, drawn `--particle-aspect` wide for each unit tall
@@ -33,18 +41,21 @@ import {createAnimatable} from "animejs"
 import {createCanvasIsland, type CanvasIslandController} from "../canvas_island"
 import {pictureOf} from "../particle_field/picture"
 import type {FieldScene, ParticleFieldRenderer} from "../particle_field/renderer"
-import {controlShape, finish, inFlightOrder, isPicture, pictureShape, type Shape, type Steps} from "../particle_field/shapes"
+import {controlShape, finish, grainsFor, inFlightOrder, pictureShape, type Shape, type Steps} from "../particle_field/shapes"
 import {showingTheme, watchTheme} from "../theme"
 import {colourReader} from "../token_colour"
 import {EASE_IN_OUT, SLOW, lastInputByPointer, still} from "./motion/shared"
 
-export type ParticleFieldController = Pick<CanvasIslandController, "mount" | "pause" | "resume" | "destroy">
+export type ParticleFieldController = Pick<CanvasIslandController, "mount" | "pause" | "resume" | "destroy"> & {
+  /** Shows a shape at a value, as the attributes would; the grains fly to it, or land at once. */
+  show(shape: string, value: number, animated: boolean): void
+}
 
 /** Values closer together than this are a drag, followed as they come. */
 const STREAM_MS = 120
 /** Milliseconds of layout work one frame may take, so the frame is never missed. */
 const SLICE_MS = 6
-/** Shapes kept once laid out, for when they come back; each is about 4 MB. */
+/** Shapes kept once laid out, for when they come back; at 80,000 grains each is about 4 MB. */
 const KEPT = 6
 
 /** Work under way a slice a frame: it can be dropped, or done at once when it cannot wait. */
@@ -89,6 +100,8 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
   let aspect = 1
   let fill = 1
   let homes: Float32Array<ArrayBuffer> | undefined
+  // How many grains the renderer draws, set by the canvas it starts on.
+  let grains = 0
   const layouts = new Map<string, Shape>()
   let building: Slicing | undefined
   // The picture is going to be drawn, so laying shapes out is worth it.
@@ -106,7 +119,7 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
 
   /** A name's shape in a box `wide` units across: the one kept from before, or laid out now. */
   function* layout(named: string, wide: number): Steps<Shape> {
-    const key = `${named} ${wide}`
+    const key = `${named} ${wide} ${grains}`
     const kept = layouts.get(key)
     if (kept) {
       // The most recently used last, so the one let go is the one used longest ago.
@@ -114,20 +127,18 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
       layouts.set(key, kept)
       return kept
     }
-    let made: Shape
-    if (isPicture(named)) {
-      const drawing = root.querySelector<SVGSVGElement>(`svg[data-particle-source="${CSS.escape(named)}"]`)!
-      made = yield* pictureShape(named, pictureOf(drawing, wide))
-    } else {
-      made = yield* controlShape(named, wide)
-    }
+    const drawing = root.querySelector<SVGSVGElement>(`svg[data-particle-source="${CSS.escape(named)}"]`)
+    const made = drawing ? yield* pictureShape(named, pictureOf(drawing, wide), grains) : yield* controlShape(named, wide, grains)
     layouts.set(key, made)
     if (layouts.size > KEPT) layouts.delete(layouts.keys().next().value!)
     return made
   }
 
-  /** Lays out the shape the root names now; once it is ready the grains fly to it, at the value the root holds by then. */
-  const change = () => {
+  /**
+   * Lays out the shape the root names now; once it is ready the grains fly to it,
+   * or land at once, at the value the root holds by then.
+   */
+  const change = (atOnce: boolean) => {
     building?.stop()
     const named = name
     const style = getComputedStyle(root)
@@ -145,14 +156,23 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
       fill = share
       homes = ordered
       jumpTo(target)
-      renderer()?.place(ordered)
+      renderer()?.place(ordered, atOnce)
     })
   }
 
+  // Each token is resolved on an element inside the field, so a colour that differs by theme
+  // (`light-dark()`) is the one the page shows, then read as red, green and blue.
   const readColours = (): FieldScene["colours"] => {
-    const style = getComputedStyle(root)
-    const token = (property: string) => readColour(style.getPropertyValue(property).trim())
-    return {muted: token("--particle-muted"), lit: token("--particle-lit"), far: token("--particle-far")}
+    const probe = document.createElement("span")
+    probe.hidden = true
+    root.append(probe)
+    const token = (property: string) => {
+      probe.style.color = `var(${property})`
+      return readColour(getComputedStyle(probe).color)
+    }
+    const colours = {muted: token("--particle-muted"), lit: token("--particle-lit"), far: token("--particle-far")}
+    probe.remove()
+    return colours
   }
 
   const scene = (): FieldScene => {
@@ -184,13 +204,12 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
     draw()
   }
 
-  const follow = () => {
-    const nextName = root.dataset.particleShape!
-    const nextValue = valueNow()
+  /** Shows a shape at a value: a new shape flies, or lands at once; a new value moves as `animated` says. */
+  const showing = (nextName: string, nextValue: number, animated: boolean) => {
     if (nextName !== name) {
       name = nextName
       target = nextValue
-      if (started) change()
+      if (started) change(!animated)
       return
     }
     if (nextValue === target) return
@@ -200,8 +219,14 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
     const now = performance.now()
     const streaming = now - lastValueAt < STREAM_MS
     lastValueAt = now
-    if (streaming || !lastInputByPointer()) jumpTo(nextValue)
+    if (streaming || !animated) jumpTo(nextValue)
     else motion.value(nextValue, SLOW, EASE_IN_OUT)
+  }
+
+  // The attributes changed: a new shape always flies; a new value moves as the last input asks.
+  const follow = () => {
+    const nextName = root.dataset.particleShape!
+    showing(nextName, valueNow(), nextName !== name || lastInputByPointer())
   }
 
   const island = createCanvasIsland<ParticleFieldRenderer>(root, {}, {
@@ -215,11 +240,18 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
     // sharpness the specks smear into a haze.
     maxDevicePixelRatio: 2,
     browserLoad: async (view, size, lost) => {
-      // The shape is laid out while the GPU starts.
+      // The shape is laid out while the GPU starts, for as many grains as this canvas draws.
       started = true
-      if (!building && shapeName !== name) change()
+      const count = grainsFor(size)
+      if (count !== grains) {
+        grains = count
+        building?.stop()
+        building = undefined
+        shapeName = undefined
+      }
+      if (!building && shapeName !== name) change(true)
       const {createParticleFieldRenderer} = await import("../particle_field/renderer")
-      return createParticleFieldRenderer(view, size, lost)
+      return createParticleFieldRenderer(view, size, lost, {grains: count, glow: root.dataset.particleGlow !== undefined})
     },
     interact: island => {
       renderer = island.renderer
@@ -229,7 +261,7 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
         building?.complete()
         const current = island.renderer()!
         current.show(scene)
-        current.place(homes!)
+        current.place(homes!, true)
       })
       return () => {
         renderer = () => undefined
@@ -255,6 +287,12 @@ export function createParticleField(root: HTMLElement): ParticleFieldController 
   let stopWatchingTheme = () => {}
 
   return {
+    show(nextName, nextValue, animated) {
+      showing(nextName, nextValue, animated)
+      // The attributes say what shows; the field already follows them.
+      root.dataset.particleShape = nextName
+      root.dataset.particleValue = String(nextValue)
+    },
     mount() {
       measure()
       changes.observe(root, {attributes: true, attributeFilter: ["data-particle-shape", "data-particle-value"]})

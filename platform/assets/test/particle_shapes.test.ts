@@ -1,18 +1,21 @@
-// Invariant: every shape of the particle field is exactly GRAINS homes, each
-// inside the shape's box at both ends of the value, facing no further over than
-// edge on, and laid out the same way every time; its flying order keeps every
-// home once and runs in columns from left to right, each from top to bottom,
-// where the grains sit at that value; the lit part of a fill follows the value;
-// and a drawing's grains lie only where it is drawn.
+// Invariant: every shape of the particle field is exactly one home for each of
+// the grains it is laid out for, the lab's 80,000 or a switch's few thousand,
+// each inside the shape's box at both ends of the value, facing no further over
+// than edge on, and laid out the same way every time; its flying order keeps
+// every home once and runs in columns from left to right, each from top to
+// bottom, where the grains sit at that value; the lit part of a fill follows the
+// value; a drawing's grains lie only where it is drawn; and the count follows
+// the canvas, up to the lab's.
 import {describe, expect, it} from "vitest"
 import {
   ACROSS_STEPS,
-  COLUMN,
+  columnOf,
   controlShape,
   DOWN_STEPS,
   finish,
-  GRAINS,
+  grainsFor,
   HOME_FLOATS,
+  MAX_GRAINS,
   inFlightOrder,
   pictureShape,
   through,
@@ -31,6 +34,11 @@ const CONTROLS = [
   ["steps:5", 4],
 ] as const
 
+/** The lab's grains, and the theme switch's at 1x (its 72 by 48 canvas). */
+const COUNTS = [MAX_GRAINS, grainsFor([72, 48])] as const
+
+const countOf = (homes: Float32Array) => homes.length / HOME_FLOATS
+
 const homeAt = (homes: Float32Array, g: number) => homes.subarray(g * HOME_FLOATS, (g + 1) * HOME_FLOATS)
 
 /** Where a grain sits at a value: between its two places as far as the value has moved it. */
@@ -44,7 +52,7 @@ function strays(homes: Float32Array, aspect: number) {
   // A little room: a grain lands anywhere in the cell it was drawn into.
   const slack = 0.01
   let count = 0
-  for (let g = 0; g < GRAINS; g++) {
+  for (let g = 0; g < countOf(homes); g++) {
     const home = homeAt(homes, g)
     const outside = [
       [home[0]!, home[1]!],
@@ -63,25 +71,27 @@ const spread = (values: number[]) => ({low: values.reduce((a, b) => Math.min(a, 
  * than the order tells places apart.
  */
 function outOfOrder(homes: Float32Array, value: number) {
-  const places = Array.from({length: GRAINS}, (_, g) => placeAt(homeAt(homes, g), value))
+  const grains = countOf(homes)
+  const column = columnOf(grains)
+  const places = Array.from({length: grains}, (_, g) => placeAt(homeAt(homes, g), value))
   const across = spread(places.map(place => place.x))
   const step = (across.high - across.low) / (ACROSS_STEPS - 1) + 1e-6
   let count = 0
   let lastRight = -Infinity
-  for (let start = 0; start < GRAINS; start += COLUMN) {
-    const column = places.slice(start, start + COLUMN)
-    const xs = spread(column.map(place => place.x))
+  for (let start = 0; start < grains; start += column) {
+    const run = places.slice(start, start + column)
+    const xs = spread(run.map(place => place.x))
     if (xs.low < lastRight - step) count++
     lastRight = xs.high
-    const ys = spread(column.map(place => place.y))
+    const ys = spread(run.map(place => place.y))
     const down = (ys.high - ys.low) / (DOWN_STEPS - 1) + 1e-6
-    for (let k = 1; k < column.length; k++) if (column[k]!.y < column[k - 1]!.y - down) count++
+    for (let k = 1; k < run.length; k++) if (run[k]!.y < run[k - 1]!.y - down) count++
   }
   return count
 }
 
 /** One of a home's floats for every grain, sorted, so two sets of homes can be compared whatever their order. */
-const sortedFloat = (homes: Float32Array, f: number) => Float32Array.from({length: GRAINS}, (_, g) => homes[g * HOME_FLOATS + f]!).sort()
+const sortedFloat = (homes: Float32Array, f: number) => Float32Array.from({length: countOf(homes)}, (_, g) => homes[g * HOME_FLOATS + f]!).sort()
 
 /** A picture of one filled block, as a cell grid fitted into a box `aspect` wide. */
 function blockPicture(aspect: number, cell: number, block: {left: number; top: number; right: number; bottom: number}): Picture {
@@ -99,19 +109,21 @@ function blockPicture(aspect: number, cell: number, block: {left: number; top: n
 }
 
 describe("control shapes", () => {
-  for (const [name, aspect] of CONTROLS) {
-    it(`${name}: every grain has one home inside the box, the same each time, and flies in columns`, () => {
-      const value = 0.4
-      const shape = finish(controlShape(name, aspect))
-      expect(shape.homes.length).toBe(GRAINS * HOME_FLOATS)
-      expect(shape.area).toBeGreaterThan(0)
-      expect(strays(shape.homes, aspect)).toBe(0)
-      expect(finish(controlShape(name, aspect)).homes).toEqual(shape.homes)
+  for (const grains of COUNTS) {
+    for (const [name, aspect] of CONTROLS) {
+      it(`${name} in ${grains} grains: every grain has one home inside the box, the same each time, and flies in columns`, () => {
+        const value = 0.4
+        const shape = finish(controlShape(name, aspect, grains))
+        expect(shape.homes.length).toBe(grains * HOME_FLOATS)
+        expect(shape.area).toBeGreaterThan(0)
+        expect(strays(shape.homes, aspect)).toBe(0)
+        expect(finish(controlShape(name, aspect, grains)).homes).toEqual(shape.homes)
 
-      const ordered = finish(inFlightOrder(shape.homes, value))
-      expect(outOfOrder(ordered, value)).toBe(0)
-      for (const f of [0, 1, 2, 3, 8]) expect(sortedFloat(ordered, f)).toEqual(sortedFloat(shape.homes, f))
-    })
+        const ordered = finish(inFlightOrder(shape.homes, value))
+        expect(outOfOrder(ordered, value)).toBe(0)
+        for (const f of [0, 1, 2, 3, 8]) expect(sortedFloat(ordered, f)).toEqual(sortedFloat(shape.homes, f))
+      })
+    }
   }
 
   it("a fill's lit part follows the value: none at 0, about half at a half, all at 1", () => {
@@ -119,14 +131,14 @@ describe("control shapes", () => {
       ["ring", 1],
       ["bar", 9],
     ] as const) {
-      const {homes} = finish(controlShape(name, aspect))
+      const {homes} = finish(controlShape(name, aspect, MAX_GRAINS))
       const litAt = (value: number) => {
         let lit = 0
-        for (let g = 0; g < GRAINS; g++) {
+        for (let g = 0; g < MAX_GRAINS; g++) {
           const home = homeAt(homes, g)
           if (through(value, [home[8]!, home[9]!]) >= 0.5) lit++
         }
-        return lit / GRAINS
+        return lit / MAX_GRAINS
       }
       expect(litAt(0)).toBe(0)
       expect(litAt(1)).toBe(1)
@@ -136,23 +148,35 @@ describe("control shapes", () => {
   })
 
   it("the switch's knob rolls from one end of the track to the other", () => {
-    expect(finish(controlShape("switch", 2)).knob).toEqual({x0: -0.5, y0: 0, x1: 0.5, y1: 0, r: 0.39})
+    expect(finish(controlShape("switch", 2, MAX_GRAINS)).knob).toEqual({x0: -0.5, y0: 0, x1: 0.5, y1: 0, r: 0.39})
   })
 })
 
 describe("picture shapes", () => {
-  it("lays every grain on the drawn block and nowhere else", () => {
-    const aspect = 1.4
-    const cell = aspect / 120
-    const block = {left: -0.3, top: -0.2, right: 0.1, bottom: 0.25}
-    const {homes} = finish(pictureShape("block", blockPicture(aspect, cell, block)))
-    expect(homes.length).toBe(GRAINS * HOME_FLOATS)
-    expect(strays(homes, aspect)).toBe(0)
-    let off = 0
-    for (let g = 0; g < GRAINS; g++) {
-      const {x, y} = placeAt(homeAt(homes, g), 0)
-      if (x < block.left - cell || x > block.right + cell || y < block.top - cell || y > block.bottom + cell) off++
-    }
-    expect(off).toBe(0)
+  for (const grains of COUNTS) {
+    it(`lays every one of ${grains} grains on the drawn block and nowhere else`, () => {
+      const aspect = 1.4
+      const cell = aspect / 120
+      const block = {left: -0.3, top: -0.2, right: 0.1, bottom: 0.25}
+      const {homes} = finish(pictureShape("block", blockPicture(aspect, cell, block), grains))
+      expect(homes.length).toBe(grains * HOME_FLOATS)
+      expect(strays(homes, aspect)).toBe(0)
+      let off = 0
+      for (let g = 0; g < grains; g++) {
+        const {x, y} = placeAt(homeAt(homes, g), 0)
+        if (x < block.left - cell || x > block.right + cell || y < block.top - cell || y > block.bottom + cell) off++
+      }
+      expect(off).toBe(0)
+    })
+  }
+})
+
+describe("grain count", () => {
+  it("follows the canvas, up to the lab's, and the columns follow the count", () => {
+    expect(grainsFor([72, 48])).toBe(2419)
+    expect(grainsFor([144, 96])).toBe(9677)
+    // The lab's smallest canvas, on a phone at 1x, already has them all.
+    expect(grainsFor([326, 366])).toBe(MAX_GRAINS)
+    expect(columnOf(MAX_GRAINS)).toBe(250)
   })
 })

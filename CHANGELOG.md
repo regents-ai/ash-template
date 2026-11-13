@@ -9866,3 +9866,37 @@ protected; releasing it is the founder's decision.
   health 200; the content security policy header names the Privy and wallet hosts.
 - Not proven on live: a real Privy sign-in through the shared token reader, and the
   admin pages as an admin. Sean opens both.
+
+## 2026-11-13 — The theme switch's sun and moon in grains (branch, not on main)
+
+Sean on the particles lab: "is good", and "make them look good for light - dark
+switches". The switch's sun and moon are now drawn by the particle field.
+
+- The switch is a flat, square track and knob. Over the knob's way the server draws
+  Lucide's moon, filled, and Lucide's sun with its disc filled and heavier rays; once
+  the browser can, the same pictures are drawn in grains in the same place, so nothing
+  moves when the grains take over. A press flies the grains from one to the other in
+  about 330 ms while the knob glides; a second press mid-flight turns them round; keys
+  turn it at once. The theme changes on the press and never waits for the grains.
+- The knob is the theme's ink, so the lit sun (Tangerine on Charcoal, 5.8:1) and the
+  moon (the page colour on Platinum, 15.2:1) stand clear in both themes; on the cream
+  page Tangerine alone is under 3:1. Flat ink, no glow; only the lab asks for glow.
+- The grain count follows the canvas, 0.7 grains a device pixel up to the lab's
+  80,000: the switch's 72 by 48 canvas holds 2,419 grains at 1x and 9,677 at 2x, each
+  grain 1.1 and 1.7 device pixels across. A small field flies faster and with fewer
+  strays, so the switch's flight stays short and clean.
+- Every field on a page shares one GPU device; each frees what it made when it goes.
+  Nothing is drawn while idle. Less motion, forced colours or no WebGPU keep the
+  server's drawing and the plain control.
+- Measured on /polls in headless Chrome on this Mac, 2x, the bottom bar's switch
+  (old switch in brackets): no frame in ten idle seconds (none); 29 to 35 frames a
+  flight (12 to 13); GPU time a frame in flight 0.4 ms median at full speed and up to
+  1.4 ms with the processor slowed four times (0.5 to 1.5 ms), its first frame up to
+  17 ms, 40 ms slowed (7.6 ms); script time added to the page's load 9 to 10 ms at
+  full speed, 36 to 55 ms slowed (4 to 10 ms).
+- Removed: the glass knob, its light strip, the swarm of square blocks, their
+  renderer, shader, pixel lists and tests, and dragging the knob (a press, Enter or
+  Space turns it). The knob travels three quarters of its width everywhere, so the
+  account menu's switch is 2 px narrower and the phone bar's 2 px wider.
+- The lab's field reads its colours on the page itself, so a theme colour written
+  with `light-dark()` now resolves to the theme showing.
