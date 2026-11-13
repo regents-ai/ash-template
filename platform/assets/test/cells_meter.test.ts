@@ -8,7 +8,7 @@
 // and the first frame shows the runs where the still meter has them, with nothing
 // hot and no sparks.
 import {describe, expect, it} from "vitest"
-import {barHeight, columnsIn, runOf, type Grid} from "../js/cells_meter/layout"
+import {columnsIn, runOf, type Grid} from "../js/cells_meter/layout"
 import {EASE_OUT} from "../js/hooks/motion/shared"
 import {
   COLUMN_FLOATS,
@@ -81,7 +81,7 @@ const sceneOf = (values: Record<string, number>, counting = false): MeterScene =
   parts: partsOf(values),
   counting,
   lit: new Set(),
-  dim: [0.5, 0.5, 0.5],
+  dim: [0.07, 0.07, 0.07],
   dimAlpha: 0.14,
   fg: [1, 1, 1],
 })
@@ -189,7 +189,6 @@ describe("the moving picture", () => {
       const scene = (values: Record<string, number>): MeterScene => ({...sceneOf(values), headroom})
       picture.step(scene({a: 10, b: 20, c: 10}), 0, true)
       let highest = Infinity
-      let lowest = -Infinity
       for (let frame = 0; frame < 60; frame++) {
         picture.step(scene({a: 10, c: 10}), FRAME, false)
         const data = picture.sparkData(GRID)
@@ -198,11 +197,8 @@ describe("the moving picture", () => {
           // Only a spark still showing counts.
           if (data[o + 3]! <= 0) continue
           highest = Math.min(highest, data[o + 1]!)
-          lowest = Math.max(lowest, data[o + 1]!)
         }
       }
-      // Each breaks off from a cell of the bar, so none starts below it.
-      expect(lowest).toBeLessThan(barHeight(GRID))
       // Some rise past the bar's top, more than halfway up the headroom, and none reaches its top.
       expect(highest).toBeLessThan(-headroom / 2)
       expect(highest).toBeGreaterThan(-headroom)

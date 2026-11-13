@@ -31,7 +31,7 @@ export type MeterScene = {
   counting: boolean
   /** The parts pointed at or focused, which the others dim for. */
   lit: ReadonlySet<string>
-  /** The dim cells' colour and opacity, from `--rg-cells-dim`. */
+  /** The dim cells' colour already multiplied by their opacity, and that opacity, from `--rg-cells-dim`. */
   dim: Rgb
   dimAlpha: number
   /** The theme's foreground, which hot cells and sparks are lifted toward. */
@@ -308,7 +308,7 @@ export function createCellsPicture(ease: (progress: number) => number) {
         sparkData[o + 1] = s.y
         // A spark breaks smaller as it goes.
         sparkData[o + 2] = t < 0.5 ? grid.cell : Math.max(1, grid.cell - 1)
-        sparkData[o + 3] = (1 - t) ** 1.5 * s.light
+        sparkData[o + 3] = (1 - t) * s.light
         sparkData[o + 4] = s.colour[0]
         sparkData[o + 5] = s.colour[1]
         sparkData[o + 6] = s.colour[2]

@@ -17,7 +17,7 @@ import {createCanvasIsland} from "../canvas_island"
 import type {CellsMeterRenderer} from "../cells_meter/renderer"
 import type {MeterScene, Part} from "../cells_meter/picture"
 import {watchTheme} from "../theme"
-import {colourReader, type Rgb} from "../token_colour"
+import {colourReader} from "../token_colour"
 import {still} from "./motion/shared"
 
 type Page = Omit<MeterScene, "width" | "headroom" | "lit">
@@ -42,12 +42,12 @@ export function createCellsMeter(root: HTMLElement) {
         colour: readColour(getComputedStyle(part).getPropertyValue("--rg-cells-color").trim()),
       }),
     )
-    // The dim cells are see-through: their colour over black and over white gives its opacity.
+    // The dim cells are see-through. The page multiplies their colour by their exact
+    // opacity before it lays them over what is under them, so the picture reads that
+    // product, and the opacity, as the page works them out.
     const dimCss = style.getPropertyValue("--rg-cells-dim").trim()
-    const overBlack = readColour(dimCss, [0, 0, 0])
-    const overWhite = readColour(dimCss, [1, 1, 1])
-    const dimAlpha = 1 - (overWhite[0] - overBlack[0] + overWhite[1] - overBlack[1] + overWhite[2] - overBlack[2]) / 3
-    const dim: Rgb = dimAlpha > 0 ? [overBlack[0] / dimAlpha, overBlack[1] / dimAlpha, overBlack[2] / dimAlpha] : [0, 0, 0]
+    const dim = readColour(`rgb(from ${dimCss} calc(r * alpha) calc(g * alpha) calc(b * alpha) / 1)`)
+    const dimAlpha = readColour(`rgb(from ${dimCss} calc(alpha * 255) 0 0 / 1)`)[0]
     return {
       grid: {cell: measure("--rg-cells-cell"), gap: measure("--rg-cells-gap"), rows: measure("--rg-cells-rows")},
       parts,

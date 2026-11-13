@@ -9642,3 +9642,28 @@ migration.
   out before its top, for rooms of 24, 48 and 96 px) and the walk
   `platform/test/browser/cells.spec.ts` (a removed holder's sparks show above the bar,
   and a second later the room is as it was).
+
+## 2026-11-12 — Cells: the dim cells match exactly, and brighter sparks (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
+
+- The first frame now matches the still meter over every pixel of the meter, dim empty
+  cells included: no pixel differs at 390 and 1280, light and dark. Before, in dark,
+  8,496 pixels of the bar at 390 and 28,674 at 1280 were one colour level off, and at
+  390 in light 36 pixels on a Tangerine edge. This replaces the "in dark the dim empty
+  cells differ by one colour level" line of the entry above.
+- The cause was how the moving meter worked out the dim colour. The page multiplies
+  the dim cells' colour by their exact opacity, 14%, and rounds once; the meter rounded
+  the opacity to 36/255 first, so one channel came out a level high. It now asks the
+  browser for the colour already multiplied by its opacity, and for that opacity, as
+  the page works them out (`platform/assets/js/hooks/cells_meter.ts`).
+- `barHeight` in `platform/assets/js/cells_meter/layout.ts`, used by nothing in the
+  app, is gone, with the one test line that used it.
+- Sparks read at a glance: each breaks off in the theme's own text colour, Platinum in
+  dark and near-black in light, as the white-hot specks in Sean's film do, cools into
+  its holder's colour and fades evenly instead of fast at first. No glow or blur. Each
+  still lasts 0.3 to 0.55 s; in frames 75 ms apart after a Remove press at 1280 in dark,
+  no spark shows from about 0.77 s.
+- Checks: `platform/assets/test/cells_meter.test.ts` and the walk
+  `platform/test/browser/cells.spec.ts`; the handover and the sparks pictured by hand in
+  headless Chromium with WebGPU.

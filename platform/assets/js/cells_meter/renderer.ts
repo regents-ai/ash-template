@@ -41,7 +41,7 @@ struct View {
   size: vec4f,
   // A cell's side and the gap between cells in CSS px, the rows, the clock in seconds.
   grid: vec4f,
-  // The dim cells' colour and opacity.
+  // The dim cells' colour already multiplied by their opacity, and that opacity.
   dim: vec4f,
   // The theme's foreground, and how much of a run's colour an unlit cell shows.
   fg: vec4f,
@@ -123,7 +123,7 @@ fn twinkle(seed: f32, index: f32, row: f32) -> vec2f {
   let r = floor(p.y / pitch);
   let inCell = dx < cell && p.y - r * pitch < cell;
   // The dim cells under everything, as the still meter's track.
-  let under = select(vec4f(0.0), vec4f(view.dim.rgb * view.dim.a, view.dim.a), inCell);
+  let under = select(vec4f(0.0), view.dim, inCell);
 
   let column = columns[u32(c)];
   let flags = u32(column.cell.w);
@@ -181,7 +181,8 @@ struct Out {
   let pixel = at + corners[vertex] * round(s.place.z * view.size.z);
   var out: Out;
   out.position = vec4f(pixel.x / view.size.x * 2.0 - 1.0, 1.0 - pixel.y / view.size.y * 2.0, 0.0, 1.0);
-  let colour = mix(s.colour.rgb, view.fg.rgb, s.colour.w * ${HOT});
+  // White-hot, the foreground itself, as it breaks off; its part's colour as it cools.
+  let colour = mix(s.colour.rgb, view.fg.rgb, s.colour.w);
   out.colour = vec4f(colour * s.place.w, s.place.w);
   return out;
 }

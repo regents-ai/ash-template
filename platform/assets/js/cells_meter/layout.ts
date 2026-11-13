@@ -24,6 +24,3 @@ export const runOf = (start: number, share: number, columns: number): Run => ({
   from: Math.round(start * columns),
   to: Math.round((start + share) * columns),
 })
-
-/** The bar's height in CSS pixels. */
-export const barHeight = (grid: Grid): number => grid.rows * (grid.cell + grid.gap) - grid.gap
