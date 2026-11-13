@@ -9699,6 +9699,72 @@ libraries.
   sign-in when he next uses it.
 - Known flaky: the phone account-menu walk on the Agents page ("content 641px wider
   than the screen") failed then passed for three workers on 12 Nov; cause not found.
+## 2026-11-12 — The room list, 50 at a time (branch, not on main)
+
+Branch `tpl/room-list-limit-1112`, from `origin/main` (`5375a9d3`), for the chief
+(`/tmp/stampede-1112/build-roomlist.md`). Sean's decision: limit the room list to 50.
+
+- **The list.** Every reader of the rooms goes through `Room` `:list`: keyset pages of
+  50, always paged, the most recently active first (`last_active_at`, then `slug`). A
+  post moves its room in the post's own transaction (`Message.MarkRoomActive` runs
+  `Room` `:mark_active`, an atomic update that never moves the time back), and once it
+  commits the room is published as `"active"` with `Room.public/1`. Only a post moves
+  a room. The room counter and the live figures page now hold the most recently active
+  rooms, as many as the counter has keys.
+- **The page.** The sidebar reads the first page once, when the room page opens, into
+  a stream, and More reads the next; the page keeps only the cursor, `more?` and the
+  room on top. A room opened beyond the pages shown joins the end of the list, marked,
+  and moves to its place when More reaches it. A room started or posted in goes to the
+  top from the notice alone: no page that receives it reads anything. One new
+  sentence, when the list or More fails: "The rooms couldn’t be loaded. Refresh the
+  page to try again." The More row is a shared sidebar style (`.shell-sidebar__more`).
+- **Migrations.** `20261112230808_rooms_last_active` adds `rooms.last_active_at` (not
+  null, defaulting to now, so no row is rewritten) and then, in the same transaction
+  under a 5-second lock limit, sets each room once to the later of when it was started
+  and its newest saved message: one update of each room's own row, messages untouched.
+  `20261112230809_rooms_last_active_1` builds the `(last_active_at, slug)` index
+  concurrently.
+- **Agents.** The OpenAPI documents move to 14.0.0. `GET /api/v1/rooms` answers 50 a
+  page with `pagination` (`has_more`, `next_cursor`), takes `?after=`, and answers 422
+  `invalid_cursor` and 503 `rooms_unavailable`. `rooms list` gains `--after`
+  (`cli/commands.json`, `cli/COMMANDS.md`) and the `rooms_list` browser tool gains
+  `after`. The invalid-cursor hint now ends "or leave it out for the first page", for a
+  room's messages too.
+- **Measured** on a scratch database with 20,000 rooms: the first page 0.06 ms and the
+  second 0.04 ms through the new index; page 201 1.6 ms, since the keyset filter walks
+  past the rooms before the cursor; a post's move 0.1 ms by the room's key.
+- Checks: `platform/test/ash_template/rooms/room_list_test.exs` and
+  `platform/test/ash_template_web/room_list_page_test.exs`. Looked at by hand in headless
+  Chromium at 1280 light and dark and 390: 50 rooms plus the open one marked at the end,
+  More under them; after More, every room once, the open one in its place, More gone.
+- Full check on `af49f2ea`: style, 150 script tests, 651 browser walks with 5 skipped,
+  246 Elixir (10 properties), required fixes and the command description pass. The last
+  gate, `check-siwa-latest`, fails as it does on main today: regents-cli 1.10.26 came out
+  and every install line still names 1.10.25. In the first run the phone account-menu walk
+  timed out once under load; alone it passed 6 of 6, and the second run passed it.
+
+## 2026-11-13 — Released v229: the room list shows 50, with More
+
+- `12ef221e` (merge of `tpl/room-list-limit-1112`, `6cd23f78`) is v229 on
+  template.regents.sh, switched at about 00:30Z on 13 Nov with `scripts/deploy.sh`.
+  Sean, 12 Nov: "Limit the room list to 50: yes." This was the one list left unbounded
+  after the database load review.
+- Migrations, applied (`/api/v1/health` answers `migrations_applied: true`):
+  `rooms.last_active_at` added with a default and each room's own row set once to the
+  later of its start and its newest message; a concurrent index on
+  `(last_active_at, slug)`. The template has two rooms. Messages untouched.
+- Rollback: fix forward; the v228 image (`21b8786a`) still runs on the new schema but
+  would not keep `last_active_at` current.
+- Full check exit 0 by the chief on the exact commit: 150 script tests, 651 browser
+  walks with 5 skipped, 251 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run): `/`, `/rooms/general`,
+  `/rooms/help` and `/polls` answer 200 at 1280, 390 and 320 with no page errors and no
+  sideways scroll. `GET /api/v1/rooms` answers 200 with 2 rooms and
+  `pagination: {has_more: false, next_cursor: null}`; a bad cursor answers 422. More was
+  not exercised on live (fewer than 50 rooms); it is proven by tests.
+- Agent-visible: API documents 14.0.0; the rooms read is paged (`?after=`, `has_more`,
+  `next_cursor`, 422 `invalid_cursor`, 503 `rooms_unavailable`); regents-cli 1.10.26's
+  `rooms list` reads the first page only until it learns `--after`.
 ## 2026-11-12 — Cells sparks rise above the bar (branch, not on main)
 
 On `wt/tpl-cells-sparks-1112`, from `wt/tpl-cells-1112`, for the design chief. No

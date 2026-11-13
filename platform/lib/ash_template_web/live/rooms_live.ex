@@ -4,16 +4,24 @@ defmodule AshTemplateWeb.RoomsLive do
   the message box, a form bound to the message's own Ash actions, and below it,
   for someone signed in, who is here now, the people the reader has muted, a
   form to start a room and, in a room they started, one to change its topic.
-  Every room is listed in the shell's sidebar.
 
-  Posting never touches the list directly. Every post, edit and delete reaches
-  each open page of the room the same way: the message's PubSub notifier
-  publishes it after the transaction commits, the shell holds the room's
-  subscription and hands it on here as `send_update(RoomsLive, id: "rooms",
-  change: {event, message})`.
+  The shell's sidebar lists the rooms, the most recently active first. Its first
+  page (`Rooms.list_rooms`, 50 rooms) is read once, when the page opens, and
+  More reads the next by the last one's cursor. The rooms go into a stream, so
+  the page keeps only where the next page starts and which room is on top. The
+  open room is always in the list and marked: a room beyond the pages shown
+  joins the end, and moves to its place if More reaches it.
 
-  A room started or a topic changed anywhere arrives the same way, as
-  `room_change: {event, Room.public(room)}`, and the list and the topic follow.
+  Posting never touches the list of messages directly. Every post, edit and
+  delete reaches each open page of the room the same way: the message's PubSub
+  notifier publishes it after the transaction commits, the shell holds the
+  room's subscription and hands it on here as `send_update(RoomsLive, id:
+  "rooms", change: {event, message})`.
+
+  A room started, posted in or given a new topic anywhere arrives the same way,
+  as `room_change: {event, Room.public(room)}`. A room started or posted in goes
+  to the top of the list from what the notice carries, with nothing read; a new
+  topic reaches the open room.
 
   A message on the page is `Message.public/1`, the same map the notifier
   publishes, so a message read and a message published are drawn alike. Which
@@ -72,7 +80,10 @@ defmodule AshTemplateWeb.RoomsLive do
      |> assign(
        actor: nil,
        room: nil,
-       rooms: [],
+       rooms: %Read{},
+       more_rooms: %Read{},
+       rooms_page: nil,
+       top: nil,
        messages: %Read{},
        older: %Read{},
        cursor: nil,
@@ -91,6 +102,8 @@ defmodule AshTemplateWeb.RoomsLive do
        author_key: :crypto.strong_rand_bytes(16)
      )
      |> stream(:messages, [])
+     |> stream_configure(:rooms, dom_id: &"room-link-#{&1.slug}")
+     |> stream(:rooms, [])
      |> stream_configure(:people, dom_id: &"room-person-#{&1.id}")
      |> stream(:people, [])}
   end
@@ -113,18 +126,10 @@ defmodule AshTemplateWeb.RoomsLive do
     {:ok, Enum.reduce(left, socket, &stream_delete(&2, :people, %{id: &1}))}
   end
 
-  def update(%{room_change: {_event, changed}}, socket) do
-    %{room: room, rooms: rooms} = socket.assigns
+  def update(%{room_change: {event, changed}}, socket) when event in ~w(create active),
+    do: {:ok, to_top(socket, changed)}
 
-    # A room started elsewhere joins the end of the list; a changed topic keeps
-    # its place.
-    rooms =
-      if Enum.any?(rooms, &(&1.slug == changed.slug)),
-        do: Enum.map(rooms, &if(&1.slug == changed.slug, do: changed, else: &1)),
-        else: rooms ++ [changed]
-
-    socket = assign(socket, :rooms, rooms)
-
+  def update(%{room_change: {"set_topic", changed}}, %{assigns: %{room: room}} = socket) do
     if changed.slug == room.slug,
       do: {:ok, socket |> assign(:room, %{room | topic: changed.topic}) |> topic_form()},
       else: {:ok, socket}
@@ -301,6 +306,20 @@ defmodule AshTemplateWeb.RoomsLive do
      |> show_older()}
   end
 
+  def handle_event(
+        "more_rooms",
+        _params,
+        %{assigns: %{rooms_page: %{more?: true} = page}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> Read.now(:more_rooms, :rooms, fn -> read_rooms(after: page.cursor) end)
+     |> show_more_rooms()}
+  end
+
+  # A second press that arrives after the last page landed has nothing to read.
+  def handle_event("more_rooms", _params, socket), do: {:noreply, socket}
+
   # The account as it reads now, before each event and each background result
   # (`Session.check_component_lease/2`).
   defp take_account(socket, account), do: assign(socket, :actor, Human.for_account(account))
@@ -310,16 +329,35 @@ defmodule AshTemplateWeb.RoomsLive do
     ~H"""
     <article id="rooms-page" class="account-page">
       <.portal id="rooms-sidebar" target="#shell-sidebar-page">
-        <ul id="rooms-list" class="shell-sidebar__list" data-state={@messages.state}>
-          <li :for={room <- @rooms}>
-            <.link
-              patch={~p"/rooms/#{room.slug}"}
-              aria-current={if room.slug == @room.slug, do: "page"}
-            >
-              {room.name}
-            </.link>
-          </li>
-        </ul>
+        <div class="shell-sidebar__page">
+          <ul
+            id="rooms-list"
+            class="shell-sidebar__list"
+            data-state={@rooms.state}
+            phx-update="stream"
+          >
+            <li :for={{dom_id, room} <- @streams.rooms} id={dom_id}>
+              <.link patch={~p"/rooms/#{room.slug}"} aria-current={room.slug == @room.slug && "page"}>
+                {room.name}
+              </.link>
+            </li>
+          </ul>
+          <button
+            :if={@rooms_page && @rooms_page.more?}
+            type="button"
+            class="shell-sidebar__more"
+            phx-click="more_rooms"
+            phx-target={@myself}
+          >
+            More
+          </button>
+          <Primitives.notice
+            :if={@rooms.state == :error or @more_rooms.state in [:error, :stale]}
+            tone="error"
+          >
+            The rooms couldn’t be loaded. Refresh the page to try again.
+          </Primitives.notice>
+        </div>
       </.portal>
       <.page_head title={@room.name}>
         <:tip>{@room.topic}</:tip>
@@ -782,6 +820,7 @@ defmodule AshTemplateWeb.RoomsLive do
     |> Read.clear(:older)
     |> Read.now(:messages, owner(socket), fn -> read_room(room, actor) end)
     |> show_messages()
+    |> list_rooms()
     |> show_people()
     |> new_form()
     |> room_form()
@@ -789,23 +828,79 @@ defmodule AshTemplateWeb.RoomsLive do
   end
 
   # A visitor has muted nobody. A signed-in reader's mutes are read with the
-  # messages, so the two always agree. The list of rooms is read alongside.
+  # messages, so the two always agree.
   defp read_room(room, nil) do
-    with {:ok, rooms} <- Rooms.list_rooms(),
-         {:ok, page} <- Rooms.list_room_messages(room.slug),
-         do: {:ok, Map.merge(%{rooms: Enum.map(rooms, &Room.public/1), mutes: []}, drawn(page))}
+    with {:ok, page} <- Rooms.list_room_messages(room.slug),
+         do: {:ok, Map.put(drawn(page), :mutes, [])}
   end
 
   defp read_room(room, actor) do
-    with {:ok, rooms} <- Rooms.list_rooms(),
-         {:ok, mutes} <- Rooms.list_my_mutes(actor: actor),
-         {:ok, page} <- Rooms.list_room_messages(room.slug, actor: actor) do
+    with {:ok, mutes} <- Rooms.list_my_mutes(actor: actor),
+         {:ok, page} <- Rooms.list_room_messages(room.slug, actor: actor),
+         do: {:ok, Map.put(drawn(page), :mutes, Enum.map(mutes, &drawn_mute/1))}
+  end
+
+  # The list's first page is read once, when the page opens. A room opened after
+  # that is put in the list: updated where it stands, or at the end when it is
+  # beyond the pages shown.
+  defp list_rooms(%{assigns: %{rooms_page: nil}} = socket) do
+    socket
+    |> Read.now(:rooms, :rooms, fn -> read_rooms([]) end)
+    |> show_rooms()
+  end
+
+  defp list_rooms(%{assigns: %{room: room}} = socket),
+    do: stream_insert(socket, :rooms, Room.public(room))
+
+  # A page of rooms as the list draws them, and where the next page starts.
+  defp read_rooms(page) do
+    with {:ok, page} <- Rooms.list_rooms(page: page) do
       {:ok,
-       Map.merge(
-         %{rooms: Enum.map(rooms, &Room.public/1), mutes: Enum.map(mutes, &drawn_mute/1)},
-         drawn(page)
-       )}
+       %{
+         rooms: Enum.map(page.results, &Room.public/1),
+         page: %{more?: page.more?, cursor: cursor(page.results)}
+       }}
     end
+  end
+
+  # The open room joins the end of the first page when it is not on it.
+  defp show_rooms(%{assigns: %{rooms: %Read{state: :ready, value: value} = read}} = socket) do
+    open = Room.public(socket.assigns.room)
+
+    rooms =
+      if Enum.any?(value.rooms, &(&1.slug == open.slug)),
+        do: value.rooms,
+        else: value.rooms ++ [open]
+
+    socket
+    |> assign(rooms: %{read | value: nil}, rooms_page: value.page, top: hd(rooms).slug)
+    |> stream(:rooms, rooms, reset: true)
+  end
+
+  defp show_rooms(socket), do: socket
+
+  # Each room is taken out first, so one already in the list beyond the pages
+  # shown (an open room put at the end) moves to its place.
+  defp show_more_rooms(
+         %{assigns: %{more_rooms: %Read{state: :ready, value: value} = read}} = socket
+       ) do
+    value.rooms
+    |> Enum.reduce(socket, &stream_delete(&2, :rooms, &1))
+    |> assign(more_rooms: %{read | value: nil}, rooms_page: value.page)
+    |> stream(:rooms, value.rooms)
+  end
+
+  defp show_more_rooms(socket), do: socket
+
+  # A room started or posted in goes to the top, from wherever it is in the list
+  # or from beyond the pages shown. The room already on top stays as it is.
+  defp to_top(%{assigns: %{top: slug}} = socket, %{slug: slug}), do: socket
+
+  defp to_top(socket, room) do
+    socket
+    |> stream_delete(:rooms, room)
+    |> stream_insert(:rooms, room, at: 0)
+    |> assign(:top, room.slug)
   end
 
   # The page of messages before the oldest one shown.
@@ -821,13 +916,15 @@ defmodule AshTemplateWeb.RoomsLive do
     %{
       messages: Enum.map(messages, &Message.public/1),
       liked: for(%Message{liked_by_me: true, id: id} <- messages, into: MapSet.new(), do: id),
-      cursor: oldest_cursor(messages),
+      cursor: cursor(messages),
       more?: more?
     }
   end
 
-  defp oldest_cursor([]), do: nil
-  defp oldest_cursor(messages), do: List.last(messages).__metadata__.keyset
+  # Where the page after this one starts: the oldest message, or the room least
+  # recently active.
+  defp cursor([]), do: nil
+  defp cursor(results), do: List.last(results).__metadata__.keyset
 
   defp drawn_mute(mute), do: %{id: mute.id, person: Mute.muted(mute), author: muted_author(mute)}
 
@@ -839,7 +936,6 @@ defmodule AshTemplateWeb.RoomsLive do
   defp show_messages(%{assigns: %{messages: %Read{state: :ready, value: value}}} = socket) do
     socket
     |> assign(
-      rooms: value.rooms,
       mutes: value.mutes,
       muted: MapSet.new(value.mutes, & &1.author),
       liked: value.liked,
