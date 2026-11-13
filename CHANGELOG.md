@@ -10694,3 +10694,22 @@ Tests only; no code changed.
 - Rollback: v244 (`1acf62ec`) image.
 - Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
   with 5 skipped, 284 Elixir (10 properties).
+
+## 2026-11-13 — regents-cli 1.10.28 (branch `tpl/cli-1-10-28-1113`, not on main)
+
+- regents-cli moves from `2f7eee7e` (1.10.27) to `1608c835` (1.10.28), which reached PyPI
+  on 13 Nov 22:56Z, so the newest-SIWA gate refused main. `1608c835` is the commit the
+  `v1.10.28` tag points at, which is what the gate compares against. The Makefile pin, the
+  install lines in `llms.md`, `agents.md` and `cli/COMMANDS.md`, the agent guide (release,
+  source commit `1608c83572425ff17dc535c01351b68ee5337e96` and wheel SHA256
+  `f071ef49d2911a810c1f744958fa1256270d5637d0b7480eeeb31ec4cb3920f8`, which the downloaded
+  wheel matches), `capabilities.json`'s `cli.release` and `cli/README.md` move together.
+- 1.10.28 pins this site at `eae88dc4`: its `commands.json`, `openapi.json`,
+  `api-contract.openapiv3.yaml` and `tool_manifest.json`, in the source and in the
+  published wheel, are byte for byte main's. No command changes here, and none against
+  1.10.27 either: 1.10.28 adds Patchbay's `threads search --needs-answer`, Keyfleet's
+  `atlas swarm` and `atlas things` with its money-waiting fields, and moves every site's
+  pin. `cli/COMMANDS.md` gains a dated line saying so, and the earlier dated lines stay as
+  written.
+- The per-action "and later" releases in `capabilities.json` stay as they are: no action
+  first arrives in 1.10.28.
