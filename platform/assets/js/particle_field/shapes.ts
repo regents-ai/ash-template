@@ -1,7 +1,6 @@
 /**
- * Where the particle field's grains live: every shape as one home for each
- * grain, worked out from geometry alone, with no page and no GPU, so it is the
- * same anywhere. How many grains there are follows the canvas (`grainsFor`).
+ * Where the particle field's grains live: every shape as 80,000 homes, worked
+ * out from geometry alone, with no page and no GPU, so it is the same anywhere.
  *
  * A shape is drawn in units one tall and `aspect` wide, centred on 0, with y
  * growing downwards as on the page. Each home says where its grain sits when the
@@ -22,25 +21,15 @@
  * order its grains fly in does, and `inFlightOrder` works it out afresh.
  */
 
-/** The most grains a field draws: a canvas of about 115,000 device pixels has them all, so the lab's always does. */
-export const MAX_GRAINS = 80_000
-/** Grains for each device pixel of the canvas, so a small field is as fine as a large one. */
-export const GRAINS_PER_PIXEL = 0.7
+export const GRAINS = 80_000
 /** Floats in one home: three vec4f, as the shaders read them. */
 export const HOME_FLOATS = 12
 /** A track grain the knob hides when it passes over it. */
 export const BEHIND_KNOB = 1
 /** A grain that turns round the centre with the clock, as a spinner's arc. */
 export const TURNS = 2
-/** How many grains a canvas of this many device pixels draws: the same rule for every field. */
-export const grainsFor = ([width, height]: readonly [number, number]) =>
-  Math.max(1, Math.min(MAX_GRAINS, Math.round(width * height * GRAINS_PER_PIXEL)))
-
-/**
- * Grains that fly together as one column, top to bottom: a little fewer than
- * there are columns, so 80,000 grains make 320 columns of 250.
- */
-export const columnOf = (grains: number) => Math.max(1, Math.round(Math.sqrt(grains / 1.28)))
+/** Grains that fly together as one column, top to bottom: GRAINS of them make 320 columns. */
+export const COLUMN = 250
 /** How finely the flight order tells places apart across the whole shape, and down one column. */
 export const ACROSS_STEPS = 4096
 export const DOWN_STEPS = 64
@@ -77,7 +66,7 @@ export function finish<T>(steps: Steps<T>): T {
 export type Knob = {x0: number; y0: number; x1: number; y1: number; r: number}
 
 export type Shape = {
-  /** One home of HOME_FLOATS floats for each grain, as they were laid; `inFlightOrder` puts them in flying order. */
+  /** GRAINS homes of HOME_FLOATS floats each, as they were laid; `inFlightOrder` puts them in flying order. */
   homes: Float32Array<ArrayBuffer>
   /** The ball that hides the track behind it, for a switch or a slider. */
   knob: Knob | undefined
@@ -291,14 +280,14 @@ type Part = {
 
 const shareOf = (part: Part) => part.share ?? part.surface.running[part.surface.running.length - 1]! * part.surface.solid.cell ** 2
 
-function* assemble(name: string, parts: readonly Part[], grains: number): Steps<Float32Array<ArrayBuffer>> {
+function* assemble(name: string, parts: readonly Part[]): Steps<Float32Array<ArrayBuffer>> {
   const rand = random(seedOf(name))
-  const homes = new Float32Array(grains * HOME_FLOATS)
+  const homes = new Float32Array(GRAINS * HOME_FLOATS)
   const total = parts.reduce((sum, part) => sum + shareOf(part), 0)
   const point: Point = {x: 0, y: 0, nx: 0, ny: 0}
   let at = 0
   for (const [index, part] of parts.entries()) {
-    const count = index === parts.length - 1 ? grains - at : Math.round((grains * shareOf(part)) / total)
+    const count = index === parts.length - 1 ? GRAINS - at : Math.round((GRAINS * shareOf(part)) / total)
     for (let k = 0; k < count; k++) {
       sample(part.surface, rand, point)
       const home = part.home(point, rand)
@@ -355,29 +344,27 @@ function sortRun(order: Uint32Array, key: Float32Array, steps: number, counts: U
  * crossing itself.
  */
 export function* inFlightOrder(homes: Float32Array<ArrayBuffer>, value: number): Steps<Float32Array<ArrayBuffer>> {
-  const grains = homes.length / HOME_FLOATS
-  const column = columnOf(grains)
-  const across = new Float32Array(grains)
-  const down = new Float32Array(grains)
-  for (let g = 0; g < grains; g++) {
+  const across = new Float32Array(GRAINS)
+  const down = new Float32Array(GRAINS)
+  for (let g = 0; g < GRAINS; g++) {
     const at = g * HOME_FLOATS
     const m = clamp((value - homes[at + 6]!) / Math.max(homes[at + 7]! - homes[at + 6]!, 1e-5), 0, 1)
     across[g] = homes[at]! + (homes[at + 2]! - homes[at]!) * m
     down[g] = homes[at + 1]! + (homes[at + 3]! - homes[at + 1]!) * m
   }
   yield
-  const order = new Uint32Array(grains)
-  for (let g = 0; g < grains; g++) order[g] = g
-  const scratch = new Uint32Array(grains)
+  const order = new Uint32Array(GRAINS)
+  for (let g = 0; g < GRAINS; g++) order[g] = g
+  const scratch = new Uint32Array(GRAINS)
   sortRun(order, across, ACROSS_STEPS, new Uint32Array(ACROSS_STEPS), scratch)
   yield
   const counts = new Uint32Array(DOWN_STEPS)
-  for (let start = 0; start < grains; start += column) {
-    sortRun(order.subarray(start, start + column), down, DOWN_STEPS, counts, scratch)
+  for (let start = 0; start < GRAINS; start += COLUMN) {
+    sortRun(order.subarray(start, start + COLUMN), down, DOWN_STEPS, counts, scratch)
   }
   yield
   const ordered = new Float32Array(homes.length)
-  for (let slot = 0; slot < grains; slot++) {
+  for (let slot = 0; slot < GRAINS; slot++) {
     const from = order[slot]! * HOME_FLOATS
     const to = slot * HOME_FLOATS
     for (let f = 0; f < HOME_FLOATS; f++) ordered[to + f] = homes[from + f]!
@@ -426,7 +413,7 @@ const still = (point: Point, lit: Stretch, tone: number, flags = 0): Home => ({
 })
 
 /** A track with a ball that rolls along it, lighting the track behind it (switch and slider). */
-function* rollingKnob(name: string, aspect: number, grains: number, track: number, knob: number, trackBevel: number): Steps<Shape> {
+function* rollingKnob(name: string, aspect: number, track: number, knob: number, trackBevel: number): Steps<Shape> {
   const ends = aspect / 2 - 0.5
   const across = (x: number) => (x + ends) / (2 * ends)
   const parts: Part[] = [
@@ -439,14 +426,14 @@ function* rollingKnob(name: string, aspect: number, grains: number, track: numbe
       home: point => ({x0: point.x - ends, y0: point.y, x1: point.x + ends, y1: point.y, move: WHOLE, lit: NEVER, tone: 0, flags: 0}),
     },
   ]
-  return {homes: yield* assemble(name, parts, grains), knob: {x0: -ends, y0: 0, x1: ends, y1: 0, r: knob}, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble(name, parts), knob: {x0: -ends, y0: 0, x1: ends, y1: 0, r: knob}, turns: false, area: areaOf(parts)}
 }
 
-const switchShape = (aspect: number, grains: number) => rollingKnob("switch", aspect, grains, 0.5, 0.39, 0.2)
+const switchShape = (aspect: number) => rollingKnob("switch", aspect, 0.5, 0.39, 0.2)
 
-const sliderShape = (aspect: number, grains: number) => rollingKnob("slider", aspect, grains, 0.1, 0.46, 0.1)
+const sliderShape = (aspect: number) => rollingKnob("slider", aspect, 0.1, 0.46, 0.1)
 
-function* barShape(aspect: number, grains: number): Steps<Shape> {
+function* barShape(aspect: number): Steps<Shape> {
   const ends = aspect / 2 - 0.5
   const parts: Part[] = [
     {
@@ -457,10 +444,10 @@ function* barShape(aspect: number, grains: number): Steps<Shape> {
       },
     },
   ]
-  return {homes: yield* assemble("bar", parts, grains), knob: undefined, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble("bar", parts), knob: undefined, turns: false, area: areaOf(parts)}
 }
 
-function* ringShape(grains: number): Steps<Shape> {
+function* ringShape(): Steps<Shape> {
   const parts: Part[] = [
     {
       surface: yield* surfaceOf(yield* solidOf(band(0.37, 0.1), -0.5, -0.5, 0.5, 0.5), 0.08),
@@ -470,11 +457,11 @@ function* ringShape(grains: number): Steps<Shape> {
       },
     },
   ]
-  return {homes: yield* assemble("ring", parts, grains), knob: undefined, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble("ring", parts), knob: undefined, turns: false, area: areaOf(parts)}
 }
 
 /** Three quarters of a ring with round ends, turning clockwise, brightest at its leading end. */
-function* spinnerShape(grains: number): Steps<Shape> {
+function* spinnerShape(): Steps<Shape> {
   const radius = 0.36
   const half = 0.085
   const span = 0.75
@@ -492,7 +479,7 @@ function* spinnerShape(grains: number): Steps<Shape> {
       home: point => still(point, ALWAYS, 1 - clamp(turnOf(point.x, point.y) / span, 0, 1), TURNS),
     },
   ]
-  return {homes: yield* assemble("spinner", parts, grains), knob: undefined, turns: true, area: areaOf(parts)}
+  return {homes: yield* assemble("spinner", parts), knob: undefined, turns: true, area: areaOf(parts)}
 }
 
 /** A pen's line through `points`: for any spot, how far it lies from the line and how far along it, from where the pen starts (0) to where it lifts (1). */
@@ -520,7 +507,7 @@ function penLine(points: readonly (readonly [number, number])[]) {
 }
 
 /** A box, and a tick its grains fly in to draw as the value rises, from the pen's start to its lift. */
-function* checkboxShape(grains: number): Steps<Shape> {
+function* checkboxShape(): Steps<Shape> {
   const frameHalf = 0.055
   const tick = penLine([[-0.2, 0.01], [-0.06, 0.15], [0.22, -0.15]])
   const tickHalf = 0.07
@@ -542,11 +529,11 @@ function* checkboxShape(grains: number): Steps<Shape> {
       },
     },
   ]
-  return {homes: yield* assemble("checkbox", parts, grains), knob: undefined, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble("checkbox", parts), knob: undefined, turns: false, area: areaOf(parts)}
 }
 
 /** Three rings in a row and one lit ball that rolls to the chosen one: 0, a half or 1. */
-function* radioShape(aspect: number, grains: number): Steps<Shape> {
+function* radioShape(aspect: number): Steps<Shape> {
   const gap = aspect / 3
   const ring = yield* surfaceOf(yield* solidOf(band(0.34, 0.06), -0.5, -0.5, 0.5, 0.5), 0.06)
   const dot = 0.19
@@ -558,11 +545,11 @@ function* radioShape(aspect: number, grains: number): Steps<Shape> {
     surface: yield* surfaceOf(yield* solidOf(circle(dot), -dot, -dot, dot, dot), dot),
     home: point => ({x0: point.x - gap, y0: point.y, x1: point.x + gap, y1: point.y, move: WHOLE, lit: ALWAYS, tone: 0.5, flags: 0}),
   })
-  return {homes: yield* assemble("radio", parts, grains), knob: undefined, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble("radio", parts), knob: undefined, turns: false, area: areaOf(parts)}
 }
 
 /** A row of `count` balls; the first n light when the value is n of `count`. */
-function* stepsShape(count: number, aspect: number, grains: number): Steps<Shape> {
+function* stepsShape(count: number, aspect: number): Steps<Shape> {
   const gap = aspect / count
   const r = Math.min(0.3, gap * 0.3)
   const ball = yield* surfaceOf(yield* solidOf(circle(r), -r, -r, r, r), r)
@@ -571,42 +558,44 @@ function* stepsShape(count: number, aspect: number, grains: number): Steps<Shape
     home: (point: Point) =>
       still({...point, x: point.x + (k - (count - 1) / 2) * gap}, [(k + 0.55) / count, (k + 0.95) / count], k / Math.max(count - 1, 1)),
   }))
-  return {homes: yield* assemble(`steps:${count}`, parts, grains), knob: undefined, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble(`steps:${count}`, parts), knob: undefined, turns: false, area: areaOf(parts)}
 }
 
 /**
  * The shape a control's name asks for, drawn to fill a box `aspect` wide and one
- * tall, in `grains` grains. A drawing the server put in the field is a picture;
- * see `pictureShape`.
+ * tall. Icons and marks are pictures the server drew; see `pictureShape`.
  */
-export function controlShape(name: string, aspect: number, grains: number): Steps<Shape> {
+export function controlShape(name: string, aspect: number): Steps<Shape> {
   const steps = /^steps:([2-8])$/.exec(name)
-  if (steps) return stepsShape(Number(steps[1]), aspect, grains)
+  if (steps) return stepsShape(Number(steps[1]), aspect)
   switch (name) {
     case "switch":
-      return switchShape(aspect, grains)
+      return switchShape(aspect)
     case "slider":
-      return sliderShape(aspect, grains)
+      return sliderShape(aspect)
     case "bar":
-      return barShape(aspect, grains)
+      return barShape(aspect)
     case "ring":
-      return ringShape(grains)
+      return ringShape()
     case "spinner":
-      return spinnerShape(grains)
+      return spinnerShape()
     case "checkbox":
-      return checkboxShape(grains)
+      return checkboxShape()
     case "radio":
-      return radioShape(aspect, grains)
+      return radioShape(aspect)
     default:
       throw new Error(`The particle field has no shape called ${name}`)
   }
 }
 
+/** Icons and marks are drawn by the server; the field samples its drawing. */
+export const isPicture = (name: string) => name.startsWith("icon:") || name.startsWith("mark:")
+
 /**
  * A picture the server drew, as grains on its surface: a stroke becomes a tube
  * and a filled block a tile with rounded edges. The value lights it from left to right.
  */
-export function* pictureShape(name: string, picture: Picture, grains: number): Steps<Shape> {
+export function* pictureShape(name: string, picture: Picture): Steps<Shape> {
   const solid = yield* solidOfPicture(picture)
   let thickest = 0
   let leftmost = Infinity
@@ -629,5 +618,5 @@ export function* pictureShape(name: string, picture: Picture, grains: number): S
       },
     },
   ]
-  return {homes: yield* assemble(name, parts, grains), knob: undefined, turns: false, area: areaOf(parts)}
+  return {homes: yield* assemble(name, parts), knob: undefined, turns: false, area: areaOf(parts)}
 }

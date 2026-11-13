@@ -97,12 +97,7 @@ defmodule AshTemplateWeb.ParticlesLabLive do
         aria-label="Stage"
       >
         <div class="particle-lab__stage">
-          <ParticleField.particle_field
-            id="particle-field"
-            shape={@current}
-            value={start(@current)}
-            glow
-          >
+          <ParticleField.particle_field id="particle-field" shape={@current} value={start(@current)}>
             <.control :for={shape <- @stage} shape={shape} hidden={shape != @current} />
           </ParticleField.particle_field>
         </div>

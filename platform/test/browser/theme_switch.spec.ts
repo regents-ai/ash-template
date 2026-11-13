@@ -5,10 +5,8 @@ import {ready, signedIn, watch} from "./support/person"
 // The light and dark switch, a row of the account menu (Shell.theme_toggle/1). It is a
 // real switch, on for the light theme: a press, Space or Enter turns the page's theme,
 // the choice holds over a reload and a live page change, and the menu keeps its size
-// whichever way it is turned. Opening the menu moves nothing on the page. The GPU is
-// on, as on a visitor's browser, so the grains over the switch draw.
+// whichever way it is turned. Opening the menu moves nothing on the page.
 test.use(signedIn)
-test.use({launchOptions: {args: ["--enable-unsafe-webgpu", "--enable-gpu"]}})
 
 const menu = (page: Page) => page.locator("#account-menu")
 const toggle = (page: Page) => menu(page).getByRole("switch", {name: "Light theme"})
@@ -108,119 +106,4 @@ test.describe("signed out", () => {
       await problems.expect()
     })
   }
-})
-
-// The grains over the bottom bar's switch on /polls, drawn on the GPU: they take
-// over from the server's drawing without moving anything, a second press while
-// they fly turns them round, and once they rest nothing is drawn. With less
-// motion they never draw and the server's switch is the whole of it.
-test.describe("the grains", () => {
-  test.use({storageState: {cookies: [], origins: []}})
-
-  const control = "#shell-footer-theme-control"
-  const field = (page: Page) => page.locator(`${control} .particle-field`)
-  const bar = (page: Page) => page.locator(`${control} [role='switch']`)
-
-  /** Where the switch's parts stand: the press, the knob, the grains' box and the drawing showing. */
-  const places = (page: Page) =>
-    page.evaluate(selector => {
-      const root = document.querySelector(selector)!
-      const box = (part: string) => {
-        const shown = [...root.querySelectorAll(part)].find(element => element.getClientRects().length > 0)!
-        const {x, y, width, height} = shown.getBoundingClientRect()
-        return {x, y, width, height}
-      }
-      return {
-        press: box("[role='switch']"),
-        knob: box(".theme-switch__knob"),
-        field: box(".particle-field"),
-        drawing: box("svg[data-particle-source]"),
-      }
-    }, control)
-
-  async function drawn(page: Page) {
-    await expect(field(page)).toHaveAttribute("data-particle-ready", "true")
-  }
-
-  test("take over from the drawing without moving the switch", async ({page}) => {
-    // The places as the page first lays the switch out, before any script has run.
-    await page.addInitScript(selector => {
-      document.addEventListener("DOMContentLoaded", () => {
-        const root = document.querySelector(selector)!
-        const box = (part: string) => {
-          const shown = [...root.querySelectorAll(part)].find(element => element.getClientRects().length > 0)!
-          const {x, y, width, height} = shown.getBoundingClientRect()
-          return {x, y, width, height}
-        }
-        ;(window as unknown as {firstPlaces: unknown}).firstPlaces = {
-          press: box("[role='switch']"),
-          knob: box(".theme-switch__knob"),
-          field: box(".particle-field"),
-          drawing: box("svg[data-particle-source]"),
-        }
-      })
-    }, control)
-    await page.goto("/polls")
-    await drawn(page)
-    const first = await page.evaluate(() => (window as unknown as {firstPlaces: unknown}).firstPlaces)
-    expect(await places(page)).toEqual(first)
-  })
-
-  test("a second press while the grains fly turns them round", async ({page}) => {
-    await page.goto("/polls")
-    await drawn(page)
-    const first = await showing(page)
-    const other = first === "light" ? "dark" : "light"
-    const shapeOf = (theme: string) => (theme === "light" ? "sun" : "moon")
-
-    await bar(page).click()
-    await expect.poll(() => showing(page)).toBe(other)
-    await expect(field(page)).toHaveAttribute("data-particle-shape", shapeOf(other))
-    // Well inside the half second the grains fly for.
-    await page.waitForTimeout(120)
-    await bar(page).click()
-    await expect.poll(() => showing(page)).toBe(first)
-    await expect(bar(page)).toHaveAttribute("aria-checked", String(first === "light"))
-    await expect(field(page)).toHaveAttribute("data-particle-shape", shapeOf(first))
-  })
-
-  test("draw nothing while they rest", async ({page}) => {
-    await page.addInitScript(() => {
-      const counted = window as unknown as {frames: number}
-      counted.frames = 0
-      const submit = GPUQueue.prototype.submit
-      GPUQueue.prototype.submit = function (buffers) {
-        counted.frames += 1
-        return submit.call(this, buffers)
-      }
-    })
-    await page.goto("/polls")
-    await drawn(page)
-    await bar(page).click()
-    // The flight is over in about half a second.
-    await page.waitForTimeout(1500)
-    await page.evaluate(() => ((window as unknown as {frames: number}).frames = 0))
-    await page.waitForTimeout(10_000)
-    expect(await page.evaluate(() => (window as unknown as {frames: number}).frames)).toBe(0)
-  })
-
-  test.describe("with less motion", () => {
-    test.use({reducedMotion: "reduce"})
-
-    test("never draw, and the server's switch still turns the theme", async ({page}) => {
-      await page.goto("/polls")
-      await expect(page.locator("[data-phx-main].phx-connected")).toBeAttached()
-      await page.waitForTimeout(1500)
-      await expect(field(page)).not.toHaveAttribute("data-particle-ready", "true")
-      await expect(page.locator(`${control} .particle-field__stage`)).toHaveCSS("visibility", "hidden")
-      const drawing = page.locator(`${control} svg[data-particle-source]:visible`)
-      await expect(drawing).toHaveCount(1)
-
-      const first = await showing(page)
-      await bar(page).click()
-      await expect.poll(() => showing(page)).not.toBe(first)
-      await expect(drawing).toHaveCount(1)
-      await expect(field(page)).not.toHaveAttribute("data-particle-ready", "true")
-    })
-  })
 })

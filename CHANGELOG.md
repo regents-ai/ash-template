@@ -10249,3 +10249,16 @@ switches". The switch's sun and moon are now drawn by the particle field.
   `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll. The page signed in was read on a local run
   only (pictures by the worker); Sean opens it on live.
+
+## 2026-11-13 — The light and dark switch goes back to its earlier picture
+
+- Sean, 13 Nov, after seeing the grains switch on regents.sh: "revert this toggle
+  change". This reverts the merge `9baea786` (v234): the switch is again the one of v233,
+  with its knob, light strip and square blocks, and dragging the knob works again.
+- Back as they were: `platform/assets/js/theme_switch/` and its five tests,
+  `hooks/theme_switch.ts`, `components/theme_switch.css`, the switch rules in `shell.css`,
+  `theme_toggle` in `shell.ex`, `theme_switch.spec.ts`. The particle field
+  (`particle_field/`, its hook and component, the lab page) is also as it was at v233; the
+  lab at `/animations/particles` is unchanged on screen.
+- The rollout `2026-11-13-particle-theme-switch.md` is withdrawn; no site takes it.
+- No migration, no sign-in change, no API change, no design-system pin change.

@@ -1,7 +1,6 @@
 /**
- * Draws the particle field with WebGPU through vgpu: as many grains as the
- * canvas calls for (`grainsFor`), each with a home in the current shape
- * (particle_field/shapes.ts).
+ * Draws the particle field with WebGPU through vgpu: 80,000 grains, each with a
+ * home in the current shape (particle_field/shapes.ts).
  *
  * One compute pass moves every grain. A new shape tears the old one loose: the
  * release sweeps across it from the left, so one end streams away while the
@@ -13,31 +12,22 @@
  * colour and its light until it lands. A new shape mid-flight starts from
  * wherever the grains are, at the speed they are going. A value change only
  * moves the homes, so the grains follow on a stiff spring without flying again.
- * A field smaller than the lab's flies faster and sends fewer strays, so a
- * switch's flight is over in about half a second.
  *
- * The grains are drawn as soft points added together into a float picture. A
- * field that asks for glow (the lab's) is lit: on a dark page the grains give
- * light, lit more on the side the light falls on, and the lit ones glow, from a
- * blurred quarter-size copy of their light; on a light page they are ink, denser
- * on the side turned from the light. Every other field is flat ink in its own
- * colours on either page, solid where the shape stands. Nothing glows outside
- * the canvas.
- *
- * Every field on a page draws on one GPU device (value_cards/shared_device.ts),
- * each through its own vgpu handle on it, so a field gives back all it made when
- * it goes and the device stays for the rest.
+ * The grains are drawn as soft points added together into a float picture. On a
+ * dark page they give light, lit more on the side the light falls on, and the
+ * lit ones glow, from a blurred quarter-size copy of their light; on a light page
+ * they are ink, denser on the side turned from the light, and nothing glows.
+ * Nothing glows outside the canvas.
  *
  * Loaded only once the picture is really going to be drawn; the hook
  * (hooks/particle_field.ts) keeps the shape, the value and the colours.
  */
 import {prepareShader} from "@vgpu/wgsl/prepare"
-import {compute, draw, effect, frame, init, initFromDevice, sampler, storage, surface, target, type Target} from "vgpu"
+import {compute, draw, effect, frame, init, sampler, storage, surface, target} from "vgpu"
 
 import type {IslandRenderer} from "../canvas_island"
 import type {Rgb} from "../token_colour"
-import {shareDevice} from "../value_cards/shared_device"
-import {HOME_FLOATS, type Knob} from "./shapes"
+import {GRAINS, HOME_FLOATS, type Knob} from "./shapes"
 
 /** What the field shows this frame, read afresh as each frame is drawn. */
 export type FieldScene = {
@@ -62,16 +52,8 @@ export type FieldScene = {
 export type ParticleFieldRenderer = IslandRenderer & {
   /** Where each frame's scene comes from. */
   show(read: () => FieldScene): void
-  /** A new shape: every grain's home, in flying order (`inFlightOrder`); the grains fly to it, or land at once. */
-  place(homes: Float32Array<ArrayBuffer>, atOnce: boolean): void
-}
-
-/** What a field is drawn with for as long as its renderer lasts. */
-export type FieldOptions = {
-  /** How many grains (`grainsFor` the canvas). */
-  grains: number
-  /** Lit grains and their glow, as the lab draws them, rather than flat ink. */
-  glow: boolean
+  /** A new shape: every grain's home, in flying order (`inFlightOrder`). */
+  place(homes: Float32Array<ArrayBuffer>): void
 }
 
 const WORKGROUP = 64
@@ -87,16 +69,10 @@ const STRAY_FLIGHT = 1.45
 const STRAY_SPREAD = 0.5
 /** The share of grains that blow loose as strays. */
 const STRAYS = 0.04
+/** Seconds from a new shape until the last stray has landed and come to rest. */
+const SHAPE_SETTLES = SWEEP + SPREAD + STRAY_FLIGHT + STRAY_SPREAD + 0.4
 /** Seconds from a value or size change until the grains have followed it. */
 const VALUE_SETTLES = 1.2
-/**
- * The lab's box height in CSS pixels (18rem). A smaller box flies faster: its
- * flight seconds are scaled by the square root of how much smaller it is (the
- * pace), the release's by the pace squared, and the wind bends it wider by one
- * over the pace. It sends fewer strays too: none under a quarter of this
- * height, all of them at it.
- */
-const PACE_BOX = 288
 /** How far, in units, the wind bends the stream, and blows a stray out. */
 const BEND = 0.12
 const STRAY_BEND = 0.3
@@ -122,8 +98,6 @@ const TURN_SECONDS = 1.1
 /** How bright one square device pixel of the shape's flat top is, all its grains together. */
 const DARK_GLOW = 0.9
 const LIGHT_INK = 1.1
-/** Flat ink is solid where the shape stands: the flat top is this many times covered, even where grains are fewest. */
-const FLAT_INK = 3
 /** How far the viewer is from the page, in units, as the forming shape swings in depth. */
 const VIEWER = 7
 /**
@@ -163,12 +137,11 @@ struct Sim {
   frame: vec4f,
   // The value shown, how far a turning part has turned (radians), seconds since the shape changed, the shape's number.
   state: vec4f,
-  // 1 to put every grain home at once, the side the forming shape swings in from, the viewer's distance in CSS px,
-  // how fast the flight runs (its seconds are multiplied by this).
+  // 1 to put every grain home at once, the side the forming shape swings in from, the viewer's distance in CSS px, unused.
   flight: vec4f,
   // The knob's centre at value 0 (xy) and at 1 (zw), in CSS px from the box's centre.
   knob: vec4f,
-  // The knob's radius in CSS px (0 for none), the share of grains that blow loose as strays, unused, unused.
+  // The knob's radius in CSS px (0 for none), unused, unused, unused.
   ball: vec4f,
   // How much one grain gives at home, and on or from the shape before, so a shape's flat top is as bright whatever its size; unused, unused.
   energy: vec4f,
@@ -242,8 +215,7 @@ fn cs_main(@builtin(global_invocation_id) id: vec3u) {
     // A new shape. The grain lets go in its turn as the release sweeps across the
     // shape it is leaving from the left, so one end streams away while the rest stands.
     let across = clamp(g.pos.x / (2.0 * sim.frame.y) + 0.5, 0.0, 1.0);
-    // A small field lets go almost at once, so its grains leave with the press.
-    g.pos.w = (across * ${SWEEP} + hash(i) * ${SPREAD}) * sim.flight.w * sim.flight.w;
+    g.pos.w = across * ${SWEEP} + hash(i) * ${SPREAD};
     g.vel.w = sim.state.w;
     g.start = vec4f(g.pos.xyz, g.start.w);
     g.kick = vec4f(g.vel.xyz, g.kick.w);
@@ -257,14 +229,13 @@ fn cs_main(@builtin(global_invocation_id) id: vec3u) {
     return;
   }
 
-  let stray = hash(i * 5u + 1u) < sim.ball.y;
+  let stray = hash(i * 5u + 1u) < ${STRAYS};
   // A grain bound for the rim lands first, so the new outline shows before its middle fills.
   let rim = smoothstep(0.3, 0.9, length(h.face.xy));
   var flight = mix(${MIDDLE_FLIGHT}, ${RIM_FLIGHT}, rim) * (0.9 + 0.2 * hash(i * 5u + 2u));
   if (stray) {
     flight = ${STRAY_FLIGHT} + ${STRAY_SPREAD} * hash(i * 5u + 3u);
   }
-  flight *= sim.flight.w;
   let u = age / flight;
   if (u >= 1.0) {
     // Home, on a stiff spring, so a dragged knob keeps up with the finger. Damping
@@ -286,8 +257,7 @@ fn cs_main(@builtin(global_invocation_id) id: vec3u) {
   let path = g.start.xyz * (1.0 - eased) + g.kick.xyz * min(flight, 0.5) * (u3 - 2.0 * u2 + u) + goal * eased;
   let lift = sin(PI * u);
   let along = mix(g.start.xyz, goal, eased) / scale;
-  // A small field bends its stream wider for its size, so the grains are seen to come loose.
-  var bend = wind(along, sim.frame.w) * ${BEND} / sim.flight.w * lift * lift;
+  var bend = wind(along, sim.frame.w) * ${BEND} * lift * lift;
   if (stray) {
     // A stray blows loose beyond the shape as dust and rises a little, like smoke.
     let dust = vec3f(hash(i * 5u + 4u), hash(i * 7u + 5u), hash(i * 11u + 6u)) - 0.5;
@@ -310,7 +280,7 @@ export const paintWgsl = /* wgsl */ `${homeWgsl}
 struct View {
   // The canvas's CSS width and height, device px per CSS px, a grain's radius in device px.
   canvas: vec4f,
-  // 1 on a light page, 1 for flat ink, unused, the viewer's distance in CSS px.
+  // 1 on a light page, unused, unused, the viewer's distance in CSS px.
   look: vec4f,
   muted: vec4f,
   lit: vec4f,
@@ -346,11 +316,6 @@ struct Out {
   var out: Out;
   out.position = vec4f(pixel.x / half.x, -pixel.y / half.y, 0.0, 1.0);
   out.offset = corners[vertex] * 2.0;
-  if (view.look.y > 0.5) {
-    // Flat ink: every grain the same, in its own colour, on either page.
-    out.colour = vec4f(colour * g.kick.w, g.kick.w);
-    return out;
-  }
   // What the grain gives, as the simulation worked it out; lit grains give more, so the lit part reads at a glance.
   let amount = g.kick.w * mix(0.7, 1.3, g.look.x);
   if (view.look.x < 0.5) {
@@ -425,7 +390,7 @@ struct Blur {
 
 export const compositeWgsl = /* wgsl */ `
 struct Page {
-  // 1 on a light page, how strong the glow round lit grains is, 1 for flat ink, unused.
+  // 1 on a light page, how strong the glow round lit grains is, unused, unused.
   look: vec4f,
   // The colour lit grains glow in.
   lit: vec4f,
@@ -438,11 +403,6 @@ struct Page {
 
 @fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
   let grains = textureSampleLevel(scene, samp, uv, 0.0);
-  if (page.look.z > 0.5) {
-    // Flat ink: solid wherever the grains together cover a pixel once, soft only at the edge.
-    let cover = min(grains.a, 1.0);
-    return vec4f(grains.rgb / max(grains.a, 1e-4) * cover, cover);
-  }
   if (page.look.x < 0.5) {
     // Light added up, with the lit grains' glow round them, and a soft shoulder so
     // a dense rim brightens instead of clipping flat.
@@ -463,102 +423,71 @@ const quarter = (size: readonly [number, number]): [number, number] => [
   Math.max(1, Math.round(size[1] / 4)),
 ]
 
-/** How fast a box this tall flies, as a multiple of the lab's seconds. */
-const paceOf = (box: number) => Math.min(1, Math.sqrt(box / PACE_BOX))
-
-/** The share of grains a box this tall sends loose as strays. */
-const straysOf = (box: number) => STRAYS * Math.min(1, Math.max(0, (box / PACE_BOX - 0.25) / 0.75))
-
-/** Seconds from a new shape in a box this tall until the last grain has landed and come to rest. */
-const settlesFor = (box: number) => {
-  const pace = paceOf(box)
-  const longest = straysOf(box) > 0 ? STRAY_FLIGHT + STRAY_SPREAD : MIDDLE_FLIGHT * 1.1
-  return (SWEEP + SPREAD) * pace * pace + (longest + 0.4) * pace
-}
-
-/** The page's one device: the first field asks for it, the last to go gives it back. */
-const device = shareDevice(() => init())
-
 export async function createParticleFieldRenderer(
   canvas: HTMLCanvasElement,
   size: readonly [number, number],
   onDeviceLost: () => void,
-  {grains: count, glow}: FieldOptions,
 ): Promise<ParticleFieldRenderer> {
-  const shared = await device.join(onDeviceLost)
-  let gpu: Awaited<ReturnType<typeof initFromDevice>> | undefined
-  // The offscreen pictures belong to the device rather than to this field's handle, so the field destroys them itself.
-  const targets: Target[] = []
-  const giveBack = () => {
-    gpu?.dispose()
-    for (const made of targets) for (const colour of made.colors) colour.destroy()
-    device.leave(shared, onDeviceLost)
-  }
+  const gpu = await init()
+  let disposed = false
+  // Disposing the device resolves the same promise, so only a picture still in use reports a loss.
+  void gpu.lost.then(() => {
+    if (!disposed) onDeviceLost()
+  })
 
   try {
-    const own = (gpu = await initFromDevice(shared.gpu.gpu))
-    const stage = surface(own, canvas, {autoResize: false, alphaMode: "premultiplied", label: "particle-field"})
+    const stage = surface(gpu, canvas, {autoResize: false, alphaMode: "premultiplied", label: "particle-field"})
     stage.resize([size[0], size[1]])
-    const homes = storage(own, count * HOME_FLOATS * 4, "read")
-    const grains = storage(own, count * GRAIN_FLOATS * 4, "read-write")
-    const scene = target(own, {size: [size[0], size[1]], format: SCENE_FORMAT, label: "particle-field.scene"})
-    targets.push(scene)
-    const linear = sampler(own, {minFilter: "linear", magFilter: "linear", addressModeU: "clamp-to-edge", addressModeV: "clamp-to-edge"})
+    const homes = storage(gpu, GRAINS * HOME_FLOATS * 4, "read")
+    const grains = storage(gpu, GRAINS * GRAIN_FLOATS * 4, "read-write")
+    const scene = target(gpu, {size: [size[0], size[1]], format: SCENE_FORMAT, label: "particle-field.scene"})
+    const haloA = target(gpu, {size: quarter(size), format: SCENE_FORMAT, label: "particle-field.halo-a"})
+    const haloB = target(gpu, {size: quarter(size), format: SCENE_FORMAT, label: "particle-field.halo-b"})
+    const linear = sampler(gpu, {minFilter: "linear", magFilter: "linear", addressModeU: "clamp-to-edge", addressModeV: "clamp-to-edge"})
 
-    const simulate = compute(own, prepareShader(simulateWgsl, "particle_simulate.wgsl"), {
+    const simulate = compute(gpu, prepareShader(simulateWgsl, "particle_simulate.wgsl"), {
       label: "particle-field.simulate",
       set: {
-        sim: {frame: [1, 1, 0, 0], state: [0, 0, 0, 0], flight: [1, 1, 1, 1], knob: [0, 0, 0, 0], ball: [0, 0, 0, 0], energy: [0, 0, 0, 0]},
+        sim: {frame: [1, 1, 0, 0], state: [0, 0, 0, 0], flight: [1, 1, 1, 0], knob: [0, 0, 0, 0], ball: [0, 0, 0, 0], energy: [0, 0, 0, 0]},
         homes,
         grains,
       },
     })
-    const paint = draw(own, {
+    const paint = draw(gpu, {
       shader: prepareShader(paintWgsl, "particle_paint.wgsl"),
       geometry: {topology: "triangle-strip"},
       vertices: 4,
-      instances: count,
+      instances: GRAINS,
       blend: "additive",
       depth: false,
       label: "particle-field.paint",
       set: {
-        view: {canvas: [1, 1, 1, 1], look: [0, glow ? 0 : 1, 0, 1], muted: [1, 1, 1, 1], lit: [1, 1, 1, 1], far: [1, 1, 1, 1]},
+        view: {canvas: [1, 1, 1, 1], look: [0, 0, 0, 1], muted: [1, 1, 1, 1], lit: [1, 1, 1, 1], far: [1, 1, 1, 1]},
         grains,
       },
     })
-    // The glow, only for a field that asks for it: a quarter-size copy of the light, blurred across and down.
-    const halo = glow
-      ? (() => {
-          const a = target(own, {size: quarter(size), format: SCENE_FORMAT, label: "particle-field.halo-a"})
-          const b = target(own, {size: quarter(size), format: SCENE_FORMAT, label: "particle-field.halo-b"})
-          targets.push(a, b)
-          return {
-            a,
-            b,
-            down: effect(own, prepareShader(downWgsl, "particle_down.wgsl"), {
-              label: "particle-field.down",
-              set: {source: scene, samp: linear, down: {texel: [...scene.texelSize, 0, 0]}},
-            }),
-            across: effect(own, prepareShader(blurWgsl, "particle_blur.wgsl"), {
-              label: "particle-field.blur-across",
-              set: {source: a, samp: linear, blur: {step: [a.texelSize[0], 0, 1, 0]}},
-            }),
-            along: effect(own, prepareShader(blurWgsl, "particle_blur.wgsl"), {
-              label: "particle-field.blur-down",
-              set: {source: b, samp: linear, blur: {step: [0, b.texelSize[1], 1, 0]}},
-            }),
-          }
-        })()
-      : undefined
-    const composite = effect(own, prepareShader(compositeWgsl, "particle_composite.wgsl"), {
+    const down = effect(gpu, prepareShader(downWgsl, "particle_down.wgsl"), {
+      label: "particle-field.down",
+      set: {source: scene, samp: linear, down: {texel: [...scene.texelSize, 0, 0]}},
+    })
+    const blurAcross = effect(gpu, prepareShader(blurWgsl, "particle_blur.wgsl"), {
+      label: "particle-field.blur-across",
+      set: {source: haloA, samp: linear, blur: {step: [haloA.texelSize[0], 0, 1, 0]}},
+    })
+    const blurDown = effect(gpu, prepareShader(blurWgsl, "particle_blur.wgsl"), {
+      label: "particle-field.blur-down",
+      set: {source: haloB, samp: linear, blur: {step: [0, haloB.texelSize[1], 1, 0]}},
+    })
+    const composite = effect(gpu, prepareShader(compositeWgsl, "particle_composite.wgsl"), {
       label: "particle-field.composite",
-      // Flat ink never reads the glow, so the scene stands in its place.
-      set: {scene, halo: halo?.a ?? scene, samp: linear, page: {look: [0, 0, glow ? 0 : 1, 0], lit: [1, 1, 1, 1]}},
+      set: {scene, halo: haloA, samp: linear, page: {look: [0, 0, 0, 0], lit: [1, 1, 1, 1]}},
     })
     await Promise.all([
       simulate.compile(),
       paint.compile(scene),
-      ...(halo ? [halo.down.compile(halo.a), halo.across.compile(halo.b), halo.along.compile(halo.a)] : []),
+      down.compile(haloA),
+      blurAcross.compile(haloB),
+      blurDown.compile(haloA),
       composite.compile(stage),
     ])
 
@@ -566,13 +495,11 @@ export async function createParticleFieldRenderer(
     let current: FieldScene | undefined
     let fresh = true
     let pending: Float32Array<ArrayBuffer> | undefined
-    let landing = false
     let shapeNumber = 0
     let swing = 1
     let clock = 0
     let since = 0
     let quietUntil = 0
-    let box = PACE_BOX
     let turn = 0
     let dt = 0
     let energy = 0
@@ -583,39 +510,34 @@ export async function createParticleFieldRenderer(
     let shown: {value: number; scale: number; box: number; width: number; height: number; light: boolean} | undefined
 
     const bind = () => {
-      if (halo) {
-        halo.down.set({source: scene, down: {texel: [...scene.texelSize, 0, 0]}})
-        halo.across.set({source: halo.a})
-        halo.along.set({source: halo.b})
-      }
-      composite.set({scene, halo: halo?.a ?? scene})
+      down.set({source: scene, down: {texel: [...scene.texelSize, 0, 0]}})
+      blurAcross.set({source: haloA})
+      blurDown.set({source: haloB})
+      composite.set({scene, halo: haloA})
     }
 
     /** How much one grain gives so the shape's flat top is as bright, or as inked, whatever its size. */
     const energyFor = (view: FieldScene, ratio: number, radius: number) => {
       const pixels = view.area * view.scale * view.scale * ratio * ratio
       const footprint = (Math.PI / 2) * radius * radius
-      const ink = glow ? (view.light ? LIGHT_INK : DARK_GLOW) : FLAT_INK
-      return Math.min(2, Math.max(0.01, (ink * pixels) / (count * footprint)))
+      return Math.min(2, Math.max(0.01, ((view.light ? LIGHT_INK : DARK_GLOW) * pixels) / (GRAINS * footprint)))
     }
 
     return {
       show(next) {
         read = next
       },
-      place(next, atOnce) {
+      place(next) {
         pending = next
-        landing = atOnce
-        if (!atOnce) quietUntil = clock + settlesFor(box)
+        quietUntil = clock + SHAPE_SETTLES
       },
       resize(width, height) {
         stage.resize([width, height])
         scene.resize([width, height])
-        halo?.a.resize(quarter([width, height]))
-        halo?.b.resize(quarter([width, height]))
+        haloA.resize(quarter([width, height]))
+        haloB.resize(quarter([width, height]))
         bind()
-        // The first frame puts every grain home at once; a later size moves them on their springs.
-        if (!fresh) quietUntil = Math.max(quietUntil, clock + VALUE_SETTLES * paceOf(box))
+        quietUntil = Math.max(quietUntil, clock + VALUE_SETTLES)
       },
       step() {
         if (!read) return false
@@ -625,17 +547,15 @@ export async function createParticleFieldRenderer(
         clock += dt
         since += dt
         current = read()
-        box = current.box
-        // The first frame puts every grain home at once, so it has nothing to settle.
         const changed =
-          shown !== undefined &&
-          (shown.value !== current.value ||
-            shown.scale !== current.scale ||
-            shown.box !== current.box ||
-            shown.width !== current.width ||
-            shown.height !== current.height ||
-            shown.light !== current.light)
-        if (changed) quietUntil = Math.max(quietUntil, clock + VALUE_SETTLES * paceOf(box))
+          !shown ||
+          shown.value !== current.value ||
+          shown.scale !== current.scale ||
+          shown.box !== current.box ||
+          shown.width !== current.width ||
+          shown.height !== current.height ||
+          shown.light !== current.light
+        if (changed) quietUntil = Math.max(quietUntil, clock + VALUE_SETTLES)
         shown = {value: current.value, scale: current.scale, box: current.box, width: current.width, height: current.height, light: current.light}
         if (current.turns) turn = (turn + (dt * 2 * Math.PI) / TURN_SECONDS) % (2 * Math.PI)
         const moving = clock < quietUntil || current.turns || pending !== undefined
@@ -652,12 +572,9 @@ export async function createParticleFieldRenderer(
         const goal = energyFor(view, ratio, radius)
         energy = fresh ? goal : energy + (goal - energy) * (1 - Math.exp(-5 * dt))
         if (fresh) energyBefore = energy
-        let atOnce = fresh
         if (pending) {
           homes.write(pending)
           pending = undefined
-          atOnce ||= landing
-          landing = false
           shapeNumber += 1
           since = 0
           swing = -swing
@@ -671,52 +588,50 @@ export async function createParticleFieldRenderer(
           sim: {
             frame: [view.scale, sweep, dt, clock],
             state: [view.value, turn, since, shapeNumber],
-            flight: [atOnce ? 1 : 0, swing, eye, paceOf(view.box)],
+            flight: [fresh ? 1 : 0, swing, eye, 0],
             knob: knob ? [knob.x0 * view.scale, knob.y0 * view.scale, knob.x1 * view.scale, knob.y1 * view.scale] : [0, 0, 0, 0],
-            ball: [knob ? knob.r * view.scale : 0, straysOf(view.box), 0, 0],
+            ball: [knob ? knob.r * view.scale : 0, 0, 0, 0],
             energy: [energy, energyBefore, 0, 0],
           },
         })
         paint.set({
           view: {
             canvas: [view.width, view.height, ratio, radius],
-            look: [view.light ? 1 : 0, glow ? 0 : 1, 0, eye],
+            look: [view.light ? 1 : 0, 0, 0, eye],
             muted: rgba(view.colours.muted),
             lit: rgba(view.colours.lit),
             far: rgba(view.colours.far),
           },
         })
-        const glowing = halo !== undefined && !view.light
-        if (halo) {
-          // The glow's spread in quarter-size texels.
-          const spread = Math.max(0.5, (HALO * view.box * ratio) / 4)
-          halo.across.set({blur: {step: [halo.a.texelSize[0], 0, spread, 0]}})
-          halo.along.set({blur: {step: [0, halo.b.texelSize[1], spread, 0]}})
-        }
-        composite.set({page: {look: [view.light ? 1 : 0, glowing ? HALO_STRENGTH : 0, glow ? 0 : 1, 0], lit: rgba(view.colours.lit)}})
+        // The glow's spread in quarter-size texels.
+        const spread = Math.max(0.5, (HALO * view.box * ratio) / 4)
+        blurAcross.set({blur: {step: [haloA.texelSize[0], 0, spread, 0]}})
+        blurDown.set({blur: {step: [0, haloB.texelSize[1], spread, 0]}})
+        composite.set({page: {look: [view.light ? 1 : 0, view.light ? 0 : HALO_STRENGTH, 0, 0], lit: rgba(view.colours.lit)}})
         fresh = false
-        frame(own, f => {
-          f.computePass(pass => pass.dispatch(simulate, Math.ceil(count / WORKGROUP)))
-          f.pass({target: scene, clear: [0, 0, 0, 0]}, pass => pass.draw(paint, {instances: count}))
-          if (glowing && halo) {
-            f.pass({target: halo.a, clear: [0, 0, 0, 0]}, halo.down)
-            f.pass({target: halo.b, clear: [0, 0, 0, 0]}, halo.across)
-            f.pass({target: halo.a, clear: [0, 0, 0, 0]}, halo.along)
+        frame(gpu, f => {
+          f.computePass(pass => pass.dispatch(simulate, Math.ceil(GRAINS / WORKGROUP)))
+          f.pass({target: scene, clear: [0, 0, 0, 0]}, pass => pass.draw(paint, {instances: GRAINS}))
+          if (!view.light) {
+            f.pass({target: haloA, clear: [0, 0, 0, 0]}, down)
+            f.pass({target: haloB, clear: [0, 0, 0, 0]}, blurAcross)
+            f.pass({target: haloA, clear: [0, 0, 0, 0]}, blurDown)
           }
           f.pass({target: stage, clear: [0, 0, 0, 0]}, composite)
         })
       },
       settled() {
-        return own.settled()
+        return gpu.settled()
       },
       dispose() {
-        if (own.disposed) return
+        if (disposed) return
+        disposed = true
         stage.dispose()
-        giveBack()
+        gpu.dispose()
       },
     }
   } catch (error) {
-    giveBack()
+    gpu.dispose()
     throw error
   }
 }

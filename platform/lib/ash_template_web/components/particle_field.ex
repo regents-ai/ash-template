@@ -1,16 +1,13 @@
 defmodule AshTemplateWeb.Components.ParticleField do
   @moduledoc """
-  The particle field: grains that take the shape of a control, a Lucide icon, a
-  brand mark or a drawing of the page's own, and fly from one shape to the next
-  (the `ParticleField` hook). How many grains follows the canvas: 80,000 in the
-  lab, a few thousand in the theme switch.
+  The particle field: 80,000 grains that take the shape of a control, a Lucide
+  icon or a brand mark, and fly from one shape to the next (the `ParticleField`
+  hook).
 
   The shape and the value are the whole of it. A shape is a control's name
   (`switch`, `ring`, `slider`, `bar`, `checkbox`, `radio`, `spinner`, or `steps:2`
-  to `steps:8`), `icon:` and any Lucide name the design system ships, `mark:`
-  and a mark in `priv/particle_marks`, or the name of a drawing in the slot, an
-  `svg` marked `data-particle-source` (the theme switch's sun and moon). The
-  value runs from 0 to 1: how far the
+  to `steps:8`), `icon:` and any Lucide name the design system ships, or `mark:`
+  and a mark in `priv/particle_marks`. The value runs from 0 to 1: how far the
   switch, the ring or the slider has come, which step is lit, which radio is
   chosen. Changing either on the element, from the server or a script, changes
   the field.
@@ -21,9 +18,6 @@ defmodule AshTemplateWeb.Components.ParticleField do
   out as a picture. Wherever the grains are not drawn (no WebGPU, less motion
   asked for, forced colours) the real control or the drawing is the whole
   picture, flat and square. The page gives the field its size.
-
-  The grains are flat ink in the field's colours unless `glow` asks for the
-  lab's lit grains and the glow round them.
   """
 
   use Phoenix.Component
@@ -59,12 +53,6 @@ defmodule AshTemplateWeb.Components.ParticleField do
     doc: "a control's name, `icon:<lucide name>` or `mark:<name>`"
 
   attr :value, :float, default: 0.0, doc: "from 0 to 1"
-  attr :glow, :boolean, default: false, doc: "lit grains and their glow, as the lab draws them"
-
-  attr :driven, :boolean,
-    default: false,
-    doc: "the hook of a control round the field drives it (the theme switch)"
-
   attr :class, :any, default: nil
   slot :inner_block, doc: "the real control under the grains"
 
@@ -73,11 +61,10 @@ defmodule AshTemplateWeb.Components.ParticleField do
     <div
       id={@id}
       class={["particle-field", @class]}
-      phx-hook={!@driven && "ParticleField"}
+      phx-hook="ParticleField"
       phx-mounted={JS.ignore_attributes(["data-particle-ready"])}
       data-particle-shape={@shape}
       data-particle-value={@value}
-      data-particle-glow={@glow}
     >
       <div id={"#{@id}-stage"} class="particle-field__stage" phx-update="ignore" aria-hidden="true">
         <canvas data-particle-canvas></canvas>

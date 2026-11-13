@@ -58,7 +58,7 @@ each kind of movement, and the lab where every version that was tried sits side 
 | `platform/assets/js/hooks/motion/travel.ts` | `MotionTravel`: the shared segmented control's indicator and link tabs' bar |
 | `platform/assets/js/hooks/motion/crumbs.ts` | `MotionCrumbs`: the shared breadcrumb |
 | `platform/assets/js/hooks/motion/chart.ts` | `MotionChart`: the shared line chart's pointer rule, readout and line morph |
-| `platform/assets/js/hooks/theme_switch.ts` | `ThemeSwitch`: the light and dark switch's knob (an Animatable on the on-screen curve) and the particle field it drives (the sun and moon in grains), with `theme.ts` for reading and choosing the theme |
+| `platform/assets/js/hooks/theme_switch.ts` | `ThemeSwitch`: the light and dark switch's knob (an Animatable on a spring) and its swarm of blocks (one paused timeline the knob seeks), with `theme.ts` for reading and choosing the theme |
 | `platform/assets/js/motion.ts` | `mountMotion(document)`: presses, panels, headline and cards on every page |
 | `platform/assets/js/motion_lab.ts` | The lab's other versions; lazy-loaded on `/animations` only |
 | `platform/lib/ash_template_web/motion.ex` | `AshTemplateWeb.Motion.standard/1`: the version each part uses |
