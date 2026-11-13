@@ -10405,3 +10405,7 @@ with v238 merged). Sean's answer to the seasons work's question: a, add the ende
   first season `:closed`, after the last `:ended`, while a season runs the NFT read's
   state. The NFTs are read only while a season runs. The page's `earning` input and its
   own open-or-closed branch are gone.
+- Check: `make check` exit 0 on `6babfcc8`: 13 report script tests, the style check,
+  155 script tests in 21 files, the browser walk (653 passed, 5 skipped for screen
+  size), 271 server tests (261 tests, 10 properties), required fixes,
+  `cli/commands.json`, newest regents-cli.
