@@ -10432,3 +10432,14 @@ switches". The switch's sun and moon are now drawn by the particle field.
   server's instructions in the router and the MCP tab of the agent message.
 - Sites take the same three lines; a site with its own wording for an unsigned request can
   drop it for this one. No refusal code, status or API version changes.
+
+## 2026-11-13 — Released v240: the sign-in hint names the site
+
+- `c16bfd15` is v240 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`.
+  No migration, no sign-in decision changed, no pin change; API 17.0.0 unchanged.
+- Rollback: v239 (`f926345f`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 279 Elixir (10 properties).
+- Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
+  `/rooms/general` answer 200; a request to `/mcp` with no signature answers 401 with the
+  hint carrying `regents mcp --site template`.
