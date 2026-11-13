@@ -9866,3 +9866,87 @@ protected; releasing it is the founder's decision.
   health 200; the content security policy header names the Privy and wallet hosts.
 - Not proven on live: a real Privy sign-in through the shared token reader, and the
   admin pages as an admin. Sean opens both.
+## 2026-11-12 — Cells sparks rise above the bar (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, from `wt/tpl-cells-1112`, for the design chief. No
+migration.
+
+- Design-system pin `5fbe2d40` to `a6d5af43` (`platform/mix.exs`, `platform/mix.lock`;
+  nothing else in the lock moves). With it the Cells meter's drawing surface reaches
+  `--rg-cells-headroom` (48px, one bar high) above the bar, over the note line; the
+  still meter is unchanged.
+- The moving meter draws its cells that far down, on the still cells' own pixels, and
+  leaves the room above the bar empty: at rest and while counting no pixel above the
+  bar changes (measured at 390 and 1280, light and dark).
+- A holder's lost cells now rise as sparks out of the bar and over the note line, as in
+  Sean's film, and each goes out before it has risen nineteen twentieths of the room,
+  so none reaches its top; each lasts about half a second and all are gone within a
+  second of the press. This replaces the
+  "Sparks stay inside the bar" line of the Cells lab entry.
+- The first frame still matches the still meter: no pixel differs in light at 390 and
+  1280; in dark the dim empty cells differ by one colour level, the same pixels and
+  count as before this change.
+- Frame times on a 2x screen at 390 and 1280: no missed frames at full speed; with the
+  processor slowed four times, about one run in four misses a single frame about a
+  tenth of a second after a Remove press, as often as before this change. Timed on the
+  GPU round the meter's own two drawing passes, a frame takes 0.03 to 0.06 ms
+  (0.19 ms at most).
+- Checks: `platform/assets/test/cells_meter.test.ts` (sparks rise into the room and go
+  out before its top, for rooms of 24, 48 and 96 px) and the walk
+  `platform/test/browser/cells.spec.ts` (a removed holder's sparks show above the bar,
+  and a second later the room is as it was).
+
+## 2026-11-12 — Cells: the dim cells match exactly, and brighter sparks (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
+
+- The first frame now matches the still meter over every pixel of the meter, dim empty
+  cells included: no pixel differs at 390 and 1280, light and dark. Before, in dark,
+  8,496 pixels of the bar at 390 and 28,674 at 1280 were one colour level off, and at
+  390 in light 36 pixels on a Tangerine edge. This replaces the "in dark the dim empty
+  cells differ by one colour level" line of the entry above.
+- The cause was how the moving meter worked out the dim colour. The page multiplies
+  the dim cells' colour by their exact opacity, 14%, and rounds once; the meter rounded
+  the opacity to 36/255 first, so one channel came out a level high. It now asks the
+  browser for the colour already multiplied by its opacity, and for that opacity, as
+  the page works them out (`platform/assets/js/hooks/cells_meter.ts`).
+- `barHeight` in `platform/assets/js/cells_meter/layout.ts`, used by nothing in the
+  app, is gone, with the one test line that used it.
+- Sparks read at a glance: each breaks off in the theme's own text colour, Platinum in
+  dark and near-black in light, as the white-hot specks in Sean's film do, cools into
+  its holder's colour and fades evenly instead of fast at first. No glow or blur. Each
+  still lasts 0.3 to 0.55 s; in frames 75 ms apart after a Remove press at 1280 in dark,
+  no spark shows from about 0.77 s.
+- Checks: `platform/assets/test/cells_meter.test.ts` and the walk
+  `platform/test/browser/cells.spec.ts`; the handover and the sparks pictured by hand in
+  headless Chromium with WebGPU.
+
+## 2026-11-12 — Tangerine and Powder Blue meet through a neutral (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
+
+- Sean's decision of 12 Nov: colours far apart on the wheel blend through a neutral,
+  not through gold and green. Design-system pin `a6d5af43` to `324d40ec`
+  (`platform/mix.exs`, `platform/mix.lock`; nothing else in the lock moves), which adds
+  the rule to STYLE.md "Gradients" and nothing else. This settles the gold and green
+  left by the oklch change in v222.
+- The Enter App ring on the home page (`platform/assets/css/pages/home.css`): a neutral
+  between each Tangerine and Powder Blue, at 12.5%, 37.5%, 62.5% and 87.5%, from
+  `--rl-cta-neutral`, set beside `--rl-cta-mid` the same way: Platinum in light, the
+  muted text colour in dark, where the button itself is Platinum. The middle stop is
+  unchanged.
+- The Fractal still on `/animations/wonders` (`platform/assets/css/pages/wonders.css`):
+  Platinum at 20% between Powder Blue, now to 16%, and Tangerine, now from 24%, a
+  little fainter than both, so it reads as a soft pale band and not a bright line.
+- Every template stylesheet searched: these were the only two blends straight between
+  Tangerine and Powder Blue. The Kaleidoscope still alternates the two in hard-edged
+  slices with no blend between them, and stays.
+- Pictures before and after, light and dark, 390 and 1280, the ring at rest, on hover
+  and with keyboard focus, and the Fractal. The ring sampled along its length, 514
+  pixels a view: in dark, which is all the home page shows, no pixel has a hue between
+  60 and 170 degrees (before, 300 did, gold and green). In light, seen only by forcing
+  the theme, the Tangerine to Platinum stretch passes light orange to cream: 50 pixels
+  in that range keep any colour, the strongest a light orange (244, 153, 68), and none
+  is gold or green to the eye. The Fractal's gold and green rings are gone.
+- Checks: the home page walk `platform/test/browser/homepage.spec.ts` (the ring never
+  takes the button's own colour) and `make check-style`.

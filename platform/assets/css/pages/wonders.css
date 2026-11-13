@@ -126,9 +126,10 @@
     radial-gradient(circle at 50% 50% in oklch, #0b1020, #030407 70%);
 }
 
+/* Platinum lies between the glow's Powder Blue and Tangerine, so it never blends through gold and green. */
 .wonder__still--fractal {
   background:
-    radial-gradient(circle at 46% 44% in oklch, rgb(229 227 210 / 0.9), rgb(174 202 205 / 0.8) 14%, rgb(255 91 25 / 0.75) 26%, rgb(255 91 25 / 0) 36%),
+    radial-gradient(circle at 46% 44% in oklch, rgb(229 227 210 / 0.9), rgb(174 202 205 / 0.8) 16%, rgb(229 227 210 / 0.7) 20%, rgb(255 91 25 / 0.75) 24%, rgb(255 91 25 / 0) 36%),
     radial-gradient(circle at 50% 50% in oklch, rgb(255 91 25 / 0.2), rgb(255 91 25 / 0) 55%),
     linear-gradient(in oklch, #09090b, #17120f);
 }

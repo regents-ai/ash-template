@@ -2,7 +2,8 @@
  * Draws the Cells meter's moving picture with WebGPU through vgpu, on the same grid
  * as the still cells: one pass paints every cell of the bar from a row of numbers
  * per column (cells_meter/picture.ts), and the sparks are drawn over it as small
- * squares.
+ * squares. The canvas reaches the headroom above the bar; the bar is drawn that far
+ * down, and only sparks rise into the room above it.
  *
  * A run's cells twinkle: each cell is lit in the part's colour for a while, then
  * rests at a dim tint of it, each on its own slow, uneven clock, with more of the
@@ -40,12 +41,12 @@ struct View {
   size: vec4f,
   // A cell's side and the gap between cells in CSS px, the rows, the clock in seconds.
   grid: vec4f,
-  // The dim cells' colour and opacity.
+  // The dim cells' colour already multiplied by their opacity, and that opacity.
   dim: vec4f,
   // The theme's foreground, and how much of a run's colour an unlit cell shows.
   fg: vec4f,
-  // Seconds since the picture took over from the still cells, unused, unused, unused.
-  settle: vec4f,
+  // Seconds since the picture took over from the still cells, the room above the bar in CSS px, unused, unused.
+  extra: vec4f,
 }
 
 // paint: the part's colour, how lit the part is (1, or less while another part is lit).
@@ -95,7 +96,7 @@ fn twinkle(seed: f32, index: f32, row: f32) -> vec2f {
   let on = mix(LIT_TOP, LIT_BOTTOM, smoothstep(view.grid.z * 0.5, view.grid.z - 1.0, row)) * period;
   var shine = smoothstep(0.0, FADE, u) * (1.0 - smoothstep(on, on + FADE, u));
   let delay = cellHash(seed, index, row, 3u) * SETTLE;
-  shine = mix(1.0, shine, smoothstep(delay, delay + 0.4, view.settle.x));
+  shine = mix(1.0, shine, smoothstep(delay, delay + 0.4, view.extra.x));
 
   let window = floor(clock / GLINT_WINDOW);
   var glint = 0.0;
@@ -108,20 +109,21 @@ fn twinkle(seed: f32, index: f32, row: f32) -> vec2f {
 }
 
 @fragment fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
-  // Where this pixel is in CSS px from the bar's top left.
-  let p = uv * view.size.xy / view.size.z;
+  // Where this pixel is in CSS px from the bar's top left, the room above it the headroom down.
+  let p = uv * view.size.xy / view.size.z - vec2f(0.0, view.extra.y);
   let cell = view.grid.x;
   let pitch = cell + view.grid.y;
   let bar = view.grid.z * pitch - view.grid.y;
   let c = floor(p.x / pitch);
-  if (c >= view.size.w || p.y >= bar) {
+  // The room above the bar is the sparks' alone.
+  if (c >= view.size.w || p.y < 0.0 || p.y >= bar) {
     return vec4f(0.0);
   }
   let dx = p.x - c * pitch;
   let r = floor(p.y / pitch);
   let inCell = dx < cell && p.y - r * pitch < cell;
   // The dim cells under everything, as the still meter's track.
-  let under = select(vec4f(0.0), vec4f(view.dim.rgb * view.dim.a, view.dim.a), inCell);
+  let under = select(vec4f(0.0), view.dim, inCell);
 
   let column = columns[u32(c)];
   let flags = u32(column.cell.w);
@@ -150,13 +152,13 @@ fn twinkle(seed: f32, index: f32, row: f32) -> vec2f {
 
 export const sparksWgsl = /* wgsl */ `
 struct View {
-  // The drawing's width and height in device px, device px per CSS px, unused.
+  // The drawing's width and height in device px, device px per CSS px, the room above the bar in CSS px.
   size: vec4f,
   // The theme's foreground, unused.
   fg: vec4f,
 }
 
-// place: where it is (xy, CSS px from the bar's top left), its side in CSS px, how much of it shows.
+// place: where it is (xy, CSS px from the bar's top left, above it when y is negative), its side in CSS px, how much of it shows.
 // colour: its part's colour, how hot it still is.
 struct Spark {
   place: vec4f,
@@ -174,12 +176,13 @@ struct Out {
 @vertex fn vs_main(@builtin(vertex_index) vertex: u32, @builtin(instance_index) i: u32) -> Out {
   var corners = array<vec2f, 4>(vec2f(0.0, 0.0), vec2f(1.0, 0.0), vec2f(0.0, 1.0), vec2f(1.0, 1.0));
   let s = sparks[i];
-  // A square on whole device pixels, so it stays as sharp as the cells.
-  let at = round(s.place.xy * view.size.z);
+  // A square on whole device pixels, so it stays as sharp as the cells; the bar is the headroom down.
+  let at = round((s.place.xy + vec2f(0.0, view.size.w)) * view.size.z);
   let pixel = at + corners[vertex] * round(s.place.z * view.size.z);
   var out: Out;
   out.position = vec4f(pixel.x / view.size.x * 2.0 - 1.0, 1.0 - pixel.y / view.size.y * 2.0, 0.0, 1.0);
-  let colour = mix(s.colour.rgb, view.fg.rgb, s.colour.w * ${HOT});
+  // White-hot, the foreground itself, as it breaks off; its part's colour as it cools.
+  let colour = mix(s.colour.rgb, view.fg.rgb, s.colour.w);
   out.colour = vec4f(colour * s.place.w, s.place.w);
   return out;
 }
@@ -220,7 +223,7 @@ export async function createCellsMeterRenderer(
     const cells = effect(gpu, prepareShader(cellsWgsl, "cells_meter.wgsl"), {
       label: "cells-meter.cells",
       set: {
-        view: {size: [1, 1, 1, 0], grid: [3, 2, 10, 0], dim: [0, 0, 0, 0], fg: [1, 1, 1, UNLIT], settle: [0, 0, 0, 0]},
+        view: {size: [1, 1, 1, 0], grid: [3, 2, 10, 0], dim: [0, 0, 0, 0], fg: [1, 1, 1, UNLIT], extra: [0, 0, 0, 0]},
         columns: columnStore,
       },
     })
@@ -281,10 +284,10 @@ export async function createCellsMeterRenderer(
             grid: [view.grid.cell, view.grid.gap, view.grid.rows, clock],
             dim: rgba(view.dim, view.dimAlpha),
             fg: rgba(fg, UNLIT),
-            settle: [clock - (settle ?? clock), 0, 0, 0],
+            extra: [clock - (settle ?? clock), view.headroom, 0, 0],
           },
         })
-        paintSparks.set({view: {size: [stage.size[0], stage.size[1], ratio, 0], fg: rgba(fg, 0)}})
+        paintSparks.set({view: {size: [stage.size[0], stage.size[1], ratio, view.headroom], fg: rgba(fg, 0)}})
         frame(gpu, f => {
           f.pass({target: stage, clear: [0, 0, 0, 0]}, pass => {
             pass.draw(cells)
