@@ -10142,3 +10142,11 @@ the site publishes with its next release; nothing else the site does changes.
   batches of 25 failed before, 416 runs in a row pass after.
 - `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
   never times the machine, a browser walk or a LiveView test waits on a condition.
+- Checks on `1f716487` (main `4875b400` merged in), each on my own scratch test database,
+  each passing: style, 155 script tests, 653 browser walks with 5 skipped, 261 Elixir
+  (10 properties), required fixes and the command description. Twice in a row on a
+  database polluted first with 2,317 leftover accounts and their snapshots, five jobs
+  waiting in the default queue and one cancelled; once more after a run killed outright
+  in a race test, which left 8 accounts, agents and pairings, a room message and its
+  poster. Every one of the 54 tables matched a fresh database after each. Seed 252026
+  passes on a polluted database and leaves it fresh.
