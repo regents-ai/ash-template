@@ -1,7 +1,7 @@
 {
   "cli": {
     "package": "regents-cli",
-    "release": "1.10.25",
+    "release": "1.10.26",
     "namespace": "ash-template"
   },
   "contract_revision": 2,
@@ -216,7 +216,7 @@
       "person_page": "/notes",
       "may": "Read and search your notes",
       "switch": "app_surfaces",
-      "cli_release": "1.10.16",
+      "cli_release": "1.10.26",
       "surfaces": {
         "webmcp": true,
         "hosted_mcp": "Not on the hosted MCP server yet.",
@@ -784,7 +784,7 @@
       "person_page": "/dms",
       "may": "Hear at once when someone writes to you or replies in a room it posted in",
       "switch": "app_surfaces",
-      "cli_pending": true,
+      "cli_release": "1.10.26",
       "surfaces": {
         "webmcp": "A browser tool answers once; an agent in a browser already sees the page change live.",
         "hosted_mcp": "An MCP tool call answers once and cannot stay open.",
