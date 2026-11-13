@@ -10292,3 +10292,16 @@ switches". The switch's sun and moon are now drawn by the particle field.
   records; it blocks nothing later.
 - `template.first_agent_note` stays unapproved. No migration, no sign-in change, no API
   shape change, no pin change.
+
+## 2026-11-13 — Released v237: the five start actions approved
+
+- `8452b57b` is v237 on template.regents.sh, switched at about 06:09Z on 13 Nov with
+  `scripts/deploy.sh`, from Sean's decision of 13 Nov. No migration, no sign-in code, no
+  API shape change, no pin change. No start time is set; nothing earns.
+- Rollback: v236 (`7d6de3a6`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 268 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll. The signed-in list was read locally before the
+  release, not on live.
