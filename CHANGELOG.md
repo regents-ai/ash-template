@@ -10093,17 +10093,32 @@ the site publishes with its next release; nothing else the site does changes.
   really commit (`rooms/likes_test.exs`, `rooms/operation_key_test.exs`,
   `notes/label_request_test.exs`, `points/first_agent_note_test.exs`) and kept what they
   wrote: each full run added 30 accounts, 30 wallet snapshots, 20 agents and pairings,
-  27 notes, 37 jobs and 8 Points ledgers, among 15 tables. A full run without those four files left nothing.
-  Every run reuses the test database, and `points/start_awards_test.exs` works through
-  every account in it: with 2,317 accounts it took 10.5 s here, 1.5 s on a clean
-  database (one of those seconds is its own wait), and ran out of its 60 s elsewhere. Points
-  keeps wallet snapshots final and pairings on record, so the rows could not be deleted
-  one by one. The race tests now call `AshTemplate.RealCommits.start/0`
-  (`platform/test/support/real_commits.ex`): it turns the sandbox off for the test, notes
-  every table that holds no rows, and when the test ends empties those tables again. The
-  likes test's message deletion and the label test's job cancelling, which it replaces,
-  are gone. The Points test still runs the real start-awards job, which reads every
-  account by design; it now finds only its own.
+  27 notes, 37 jobs and 8 Points ledgers, among 15 tables; a full run without those four
+  files left nothing. Every run reuses the test database, and
+  `points/start_awards_test.exs` works through every account in it: with 2,317 accounts
+  it took 10.5 s here, 1.5 s on a clean database (one of those seconds is its own wait),
+  and ran out of its 60 s elsewhere.
+- **The cure.** `AshTemplate.RealCommits` (`platform/test/support/real_commits.ex`)
+  empties the test database, keeping only the rows migrations put there: every
+  `schema_migrations`, the two rooms a site opens with, the sign-in scopes,
+  ErrorTracker's version and when Points coverage starts. `test_helper.exs` empties it
+  before every run, so whatever an earlier run left, a stopped one included, is gone
+  first; the race tests call `start/0`, which turns the sandbox off for the test and
+  empties the database when it ends. Points keeps wallet snapshots final and pairings on
+  record, so the tables are truncated together, and the accounts, which a kept room
+  refers to, are deleted. It takes 51 ms on a clean database and 260 ms on one with
+  2,317 accounts. It runs only through the sandbox pool, which only the test
+  configuration sets, naming the local `ash_template*_test` database alone: with
+  `DATABASE_URL` pointed at another host the test configuration still names it, and
+  `mix test` in development stops at the sandbox before emptying anything. The likes
+  test's message deletion and the label test's job cancelling are gone. The Points test
+  still runs the real start-awards job, which reads every account by design; it now
+  finds only its own.
+- **The first cure, sent back.** It emptied only the tables that were empty when a race
+  test began. On a database already holding one cancelled job, the jobs table was left
+  alone, the race's five waiting jobs stayed, and the next run's drain of the default
+  queue ran six (the chief's check, seed 252026). Reproduced here the same way; on that
+  database seed 252026 now passes and leaves the fresh database's rows.
 - **A test that timed the machine.** `visit_lines_test.exs` asserted 1,500 visit lines
   in under a second; with the machine loaded it took 5.5 s and failed. The second is
   the visit handler's window (2,000 lines a second, 2,000 waiting). The crowd's writers
@@ -10121,8 +10136,3 @@ the site publishes with its next release; nothing else the site does changes.
   measures a page once it has loaded; the held-back walk passes 3 of 3.
 - `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
   never times the machine, a browser walk waits on a condition.
-- Full check twice in a row on `e8fb1b09` (main `4f1628f1` merged in), both passing: style,
-  155 script tests, 653 browser walks with 5 skipped, 257 Elixir (10 properties), required
-  fixes and the command description. Every one of the test database's 54 tables held the
-  same rows before and after each run, accounts 0 both times; the only change was main's
-  new migration, recorded in the first run.

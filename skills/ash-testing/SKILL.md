@@ -19,11 +19,15 @@ them well.
 - **Inspect an alias before using it as a check**: some format files, unlock
   dependencies or set up databases. Check runner discovery when you change it.
 - **A test leaves no rows behind.** Every run reuses the test database, so a test
-  that keeps what it committed slows every later test that reads all the rows: the
-  template's Points start awards reached 2,317 leftover accounts and ran out of time.
-  Keep each test inside the sandbox; a race that needs connections that really commit
-  calls `AshTemplate.RealCommits.start/0`, which empties what the test wrote when it
-  ends.
+  that keeps what it committed slows every later test that reads all the rows (the
+  template's Points start awards reached 2,317 leftover accounts and ran out of time)
+  and hands its jobs to the next test that runs a queue. Keep each test inside the
+  sandbox; a race that needs connections that really commit calls
+  `AshTemplate.RealCommits.start/0`, which empties the database when the test ends.
+  `test_helper.exs` empties it before every run too, so a stopped run's rows go
+  first. Emptying keeps only the rows migrations put there: a migration that fills a
+  table adds it to `@kept` in `test/support/real_commits.ex`. Since a run's start
+  empties its database, two runs at once each take their own (`MIX_TEST_PARTITION`).
 - **A test never times the machine.** A wall-clock limit fails on a busy machine and
   says nothing about the code. Assert counts and outcomes; to send a burst, start
   every writer first and release them together.

@@ -1,14 +1,22 @@
 defmodule AshTemplate.RealCommits do
   @moduledoc """
-  For a test whose race needs separate connections that really commit. `start/0`
-  turns the sandbox off for the test and notes every table that holds no rows;
-  when the test ends it empties those tables again and turns the sandbox back on.
-  Every run reuses the test database, so a run that left its rows behind would
-  slow every later run that reads them all.
+  Rows a test really commits. Every test runs in a transaction that rolls back; a
+  race that needs separate connections that really commit calls `start/0`, which
+  turns that off for the test and empties the database when the test ends.
+  `test_helper.exs` empties it before every run as well, so rows an earlier run
+  left, a stopped one included, never reach a test.
 
-  The sandbox mode is global, and emptying a table waits for every open
-  transaction that used it, so only a test that runs alone (`async: false`)
-  calls it.
+  Emptying keeps only the rows migrations put there: every `schema_migrations`,
+  the rooms a site opens with (`rooms_people_start`), the sign-in scopes
+  (`RegentOAuth.Migration`), ErrorTracker's version (`ErrorTracker.Migration`) and
+  when Points coverage starts (Points' `period_end_snapshot`). A migration that
+  fills another table adds it to `@kept`.
+
+  It runs only through the sandbox pool, which only the test configuration sets
+  (`AshTemplate.DatabaseConfig`), naming the local `ash_template*_test` database
+  alone. The sandbox mode is global, and emptying a table waits for every open
+  transaction that used it, so only a test that runs alone (`async: false`) calls
+  `start/0`.
   """
 
   import ExUnit.Callbacks, only: [on_exit: 1]
@@ -16,43 +24,46 @@ defmodule AshTemplate.RealCommits do
   alias AshTemplate.Repo
   alias Ecto.Adapters.SQL.Sandbox
 
+  @kept ~w(schema_migrations rooms oauth_scopes error_tracker_meta wallet_coverage)
+
   def start do
     Sandbox.mode(Repo, :auto)
-    empty = Enum.reject(tables(), &rows?/1)
 
     on_exit(fn ->
-      empty!(empty)
+      empty!()
       Sandbox.mode(Repo, :manual)
     end)
   end
 
-  defp tables do
-    """
-    select c.oid::regclass::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
-    where c.relkind = 'r' and n.nspname <> 'information_schema' and n.nspname not like 'pg\\_%'
-    """
-    |> Repo.query!()
-    |> Map.fetch!(:rows)
-    |> List.flatten()
-  end
-
-  defp rows?(table), do: Repo.query!("select exists (select from #{table})").rows == [[true]]
-
   # Emptied together, which also takes the rows Points keeps final. Postgres
   # refuses to truncate a table that a kept table refers to (a room names the
   # account that opened it), so those rows are deleted instead.
-  defp empty!(tables) do
-    referred =
-      """
-      select distinct confrelid::regclass::text from pg_constraint
-      where contype = 'f' and confrelid::regclass::text = any($1)
-        and not conrelid::regclass::text = any($1)
-      """
-      |> Repo.query!([tables])
-      |> Map.fetch!(:rows)
-      |> List.flatten()
+  def empty! do
+    Sandbox.unboxed_run(Repo, fn ->
+      tables =
+        column!(
+          """
+          select c.oid::regclass::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
+          where c.relkind = 'r' and n.nspname <> 'information_schema' and n.nspname not like 'pg\\_%'
+            and not c.relname::text = any($1)
+          """,
+          [@kept]
+        )
 
-    Repo.query!("truncate " <> Enum.join(tables -- referred, ", "))
-    for table <- referred, do: Repo.query!("delete from #{table}")
+      referred =
+        column!(
+          """
+          select distinct confrelid::regclass::text from pg_constraint
+          where contype = 'f' and confrelid::regclass::text = any($1)
+            and not conrelid::regclass::text = any($1)
+          """,
+          [tables]
+        )
+
+      Repo.query!("truncate " <> Enum.join(tables -- referred, ", "))
+      for table <- referred, do: Repo.query!("delete from #{table}")
+    end)
   end
+
+  defp column!(sql, params), do: sql |> Repo.query!(params) |> Map.fetch!(:rows) |> List.flatten()
 end
