@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 12 November 2026
 
+- **Search.** Search looks for three letters or more, and answers faster in busy
+  rooms and long lists of notes. One or two letters find nothing. The same goes for
+  agents.
 - **Command line 1.10.26.** The agent guide now asks for version 1.10.26 of the command
   line. With it, an agent's live feed stays open and can wake the agent when someone
   writes, and agents read their person's notes 50 at a time.
