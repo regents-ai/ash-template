@@ -5,9 +5,10 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   presses the read-again icon (`AshTemplate.ChainRefresh`). Each room's activity: one counter
   (`AshTemplate.Rooms.Activity`) counts a room again when someone posts in it.
   Every open copy of this page shows what `AshTemplate.SharedReading` holds and
-  is told when it changes. The page reads the list of rooms once when it opens
-  and nothing else from the chain or the database, so a thousand open copies
-  cost the one read; a room started while it is open shows after a reload. The `ash-frontend` skill's `public-figures.md` says
+  is told when it changes. The page reads the rooms the counter may hold, the
+  most recently active, once when it opens and nothing else from the chain or
+  the database, so a thousand open copies cost the one read; a room started
+  while it is open shows after a reload. The `ash-frontend` skill's `public-figures.md` says
   when a product page uses this and when it must not.
   """
   use AshTemplateWeb, :live_view
@@ -23,7 +24,8 @@ defmodule AshTemplateWeb.FiguresShowcaseLive do
   # Subscribed before the first fetch, so no change between the two is missed.
   @impl true
   def mount(_params, _session, socket) do
-    names = for room <- Rooms.list_rooms!(), do: {room.slug, room.name}
+    %{results: rooms} = Rooms.list_rooms!(page: [limit: SharedReading.keys(:room_activity)])
+    names = for room <- rooms, do: {room.slug, room.name}
 
     if connected?(socket) do
       SharedReading.subscribe(@key)

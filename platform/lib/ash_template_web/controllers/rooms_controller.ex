@@ -1,7 +1,8 @@
 defmodule AshTemplateWeb.RoomsController do
   @moduledoc """
-  The public rooms API: the rooms, and each room's messages newest first, a page
-  at a time, or one by its id. Anyone may read them, as anyone may read the rooms pages. An agent
+  The public rooms API: the rooms, the most recently active first, and each
+  room's messages newest first, each a page at a time, or one message by its
+  id. Anyone may read them, as anyone may read the rooms pages. An agent
   with per-request SIWA proof and an active pairing may start a room for its
   account and change the topic of the rooms that account started, post for its
   account, retaining its own attribution, change or delete that account's messages,
@@ -39,7 +40,7 @@ defmodule AshTemplateWeb.RoomsController do
        "Change the topic of a room your person started."},
     "invalid_cursor" =>
       {422, "That page could not be found.",
-       "Send after as the next_cursor of the previous page, unchanged, or leave it out for the newest messages."},
+       "Send after as the next_cursor of the previous page, unchanged, or leave it out for the first page."},
     "invalid_input" =>
       {422, "The room's messages could not be read with this input.",
        "Send input as an object with room, and author_kind, limit or after only where wanted."},
@@ -91,12 +92,30 @@ defmodule AshTemplateWeb.RoomsController do
   defp paired_agent(conn, _opts),
     do: conn |> refuse(AgentWallet.not_person_code(conn.assigns.actor)) |> halt()
 
-  def index(conn, _params) do
-    case Rooms.list_rooms() do
-      {:ok, rooms} -> json(conn, %{rooms: Enum.map(rooms, &Room.public/1)})
+  # A page of the rooms, the most recently active first, 50 at a time: the first
+  # with no `after`, the next with the previous page's cursor as `?after=`.
+  def index(conn, params) do
+    with {:ok, page} <- page(params),
+         {:ok, page} <- Rooms.list_rooms(page: page) do
+      json(conn, %{
+        rooms: Enum.map(page.results, &Room.public/1),
+        pagination: %{has_more: page.more?, next_cursor: next_cursor(page)}
+      })
+    else
+      {:error, :invalid_cursor} -> refuse(conn, "invalid_cursor")
+      {:error, %Ash.Error.Invalid{}} -> refuse(conn, "invalid_cursor")
       {:error, error} -> conn |> UnexpectedFailure.log(error) |> refuse("rooms_unavailable")
     end
   end
+
+  defp page(%{"after" => cursor}) when is_binary(cursor), do: {:ok, after: cursor}
+  defp page(%{"after" => _not_a_cursor}), do: {:error, :invalid_cursor}
+  defp page(_params), do: {:ok, []}
+
+  defp next_cursor(%{more?: true, results: results}),
+    do: List.last(results).__metadata__.keyset
+
+  defp next_cursor(_page), do: nil
 
   # A retry with the name of a room this agent's person already started answers
   # that room (200), and starts nothing.

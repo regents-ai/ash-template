@@ -16,7 +16,8 @@ defmodule AshTemplate.Rooms.Message do
   World ID mark shows as it stands now, and with the picture its author's
   account shows. Every post is told to the rest of the site as
   `:message_posted` (`AshTemplate.Rooms.Signals`), so a post that mentions
-  someone by name tells them. Every post,
+  someone by name tells them, and moves its room to the top of the list of
+  rooms in its own transaction (`MarkRoomActive`). Every post,
   edit and delete is published on the room's topic, so each open page of that
   room shows it at once, and every post and delete on `every_room_topic/0` as
   well. What is published is `public/1`, the fields a signed-out reader sees,
@@ -36,6 +37,7 @@ defmodule AshTemplate.Rooms.Message do
     AgentPost,
     AuthorPicture,
     LeaveOutMuted,
+    MarkRoomActive,
     RecordPoster,
     RoomMessages,
     SetAuthor,
@@ -272,6 +274,8 @@ defmodule AshTemplate.Rooms.Message do
 
       change RecordPoster
       emit AshTemplate.Rooms.Signals, :message_posted, fields: [message_id: :id, body: :body]
+      # Last, so the room's row is held for as little of the post as can be.
+      change MarkRoomActive
       change load(@shown)
     end
 
