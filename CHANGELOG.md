@@ -10634,3 +10634,15 @@ Tests only; no code changed.
 - `platform/config/config.exs` still sets no start, so nothing earns in development or
   tests. A site copied from the template takes its own start by its own decision.
 - No migration, no pin change; API 17.0.0 unchanged.
+
+## 2026-11-13 — Released v243: the hosted template's Points start is set
+
+- `5dfe953a` is v243 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`.
+  It carries the start, 16 November 2026 17:00 UTC, in `platform/config/prod.exs`, and the
+  once-only Points tests. No migration, no pin change; API 17.0.0 unchanged.
+- Rollback: v242 (`f7d83404`) image, clean until the start moment.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 282 Elixir (10 properties).
+- Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
+  `/rooms/general` answer 200. The Points page's own words need a sign-in and were not
+  read by the chief.
