@@ -10262,3 +10262,21 @@ switches". The switch's sun and moon are now drawn by the particle field.
   lab at `/animations/particles` is unchanged on screen.
 - The rollout `2026-11-13-particle-theme-switch.md` is withdrawn; no site takes it.
 - No migration, no sign-in change, no API change, no design-system pin change.
+
+## 2026-11-13 — Released v236: the particle switch reverted
+
+- `7d6de3a6` (the design chief's `wt/tpl-switch-revert-1113`, a revert of merge
+  `9baea786`, fast-forward of main `819a519e`) is v236 on template.regents.sh, switched
+  at about 04:10Z on 13 Nov with `scripts/deploy.sh`, from Sean's words of 13 Nov to
+  the design chief ("revert this toggle change"). No migration, no sign-in code, no API
+  change, no pin change.
+- The light and dark switch, the particle field, its lab, their tests and three skills
+  documents are byte-identical to before v234 (`2439879b`), checked by the chief file
+  by file; dragging the knob is back. The Points page of v235 is untouched.
+- Rollback: v235 (`f1da0078`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 268 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll; `/docs` and `/rooms/general` carry the old
+  switch's canvas and no particle moon or sun.
