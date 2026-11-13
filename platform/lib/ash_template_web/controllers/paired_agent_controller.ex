@@ -53,7 +53,8 @@ defmodule AshTemplateWeb.PairedAgentController do
       {422, "That author could not be muted.",
        "details says why. Send message_id, the id of a room message by the author to mute, from rooms messages."},
     "invalid_search" =>
-      {422, "The search could not be run.", "Send text of 2 to 100 characters."},
+      {422, "The search could not be run.",
+       "Send text of up to 100 characters. Three letters or more find matches."},
     "invalid_pin" => {422, "The note could not be pinned.", "details says why."},
     "person_needs_sign_in" =>
       {403, "Your person needs to sign in on this site again before you can pay for them.",

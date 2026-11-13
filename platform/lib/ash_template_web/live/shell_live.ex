@@ -675,8 +675,8 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # Pages and actions match their names; rooms match their names, and the
-  # person's notes and the room messages they can read their text, from two
-  # characters on.
+  # person's notes and the room messages they can read their text, from three
+  # letters on (each search action finds nothing for fewer).
   defp search("", _actor), do: RouteCatalog.search_entries() |> Enum.map(&live_items/1)
 
   defp search(query, actor) do
@@ -698,7 +698,7 @@ defmodule AshTemplateWeb.ShellLive do
      Enum.map(entries, &Map.merge(&1, %{kind: kind, live?: RouteCatalog.live_path?(&1.path)}))}
   end
 
-  defp found_rooms(query) when byte_size(query) >= 2 do
+  defp found_rooms(query) do
     case Rooms.search_rooms(query) do
       {:ok, [_ | _] = rooms} ->
         items =
@@ -713,9 +713,7 @@ defmodule AshTemplateWeb.ShellLive do
     end
   end
 
-  defp found_rooms(_query), do: []
-
-  defp found_notes(query, %Human{} = actor) when byte_size(query) >= 2 do
+  defp found_notes(query, %Human{} = actor) do
     case Notes.search_my_notes(query, actor: actor) do
       {:ok, [_ | _] = notes} ->
         items =
@@ -738,7 +736,7 @@ defmodule AshTemplateWeb.ShellLive do
 
   defp found_notes(_query, _actor), do: []
 
-  defp found_messages(query, actor) when byte_size(query) >= 2 do
+  defp found_messages(query, actor) do
     case Rooms.search_messages(query, actor: actor) do
       {:ok, [_ | _] = messages} ->
         items =
@@ -759,8 +757,6 @@ defmodule AshTemplateWeb.ShellLive do
         []
     end
   end
-
-  defp found_messages(_query, _actor), do: []
 
   @excerpt_length 90
 

@@ -4,8 +4,9 @@ defmodule AshTemplateWeb.Components.Reading do
   each agent's page, `/docs`, `/changelog`, `/about`, `/privacy`, `/terms` and
   `/skills`), drawn from the same committed Markdown its twin serves to agents
   (`AshTemplateWeb.PublicDocuments`). The document's own title is the page's
-  title row, and the rest of it follows as prose. `/agents` also holds the Agent
-  Message button and its dialog.
+  title row, except on `/docs`, whose row says Docs, as its link in the menu
+  does; the rest of the document follows as prose. `/agents` also holds the
+  Agent Message button and its dialog.
   """
 
   use Phoenix.Component
@@ -28,7 +29,13 @@ defmodule AshTemplateWeb.Components.Reading do
   def page(assigns) do
     "# " <> document = markdown(assigns.path)
     [title, prose] = String.split(document, "\n", parts: 2)
-    assigns = assign(assigns, title: title, prose: prose, message?: assigns.path == "/agents")
+
+    assigns =
+      assign(assigns,
+        title: heading(assigns.path, title),
+        prose: prose,
+        message?: assigns.path == "/agents"
+      )
 
     ~H"""
     <article id="reading" class="reading" aria-labelledby="page-title">
@@ -49,6 +56,9 @@ defmodule AshTemplateWeb.Components.Reading do
     </article>
     """
   end
+
+  defp heading("/docs", _title), do: "Docs"
+  defp heading(_path, title), do: title
 
   defp markdown("/skills"), do: PublicDocuments.skills()
   defp markdown(path), do: PublicDocuments.document(path).markdown

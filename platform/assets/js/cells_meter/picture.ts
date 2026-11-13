@@ -8,8 +8,9 @@
  * screen and two runs never part or overlap. Shown edges always land on whole cells.
  * Cells a part gains when its share grows come in hot and cool into the part's
  * colour; while the total is being counted its last cell is held hot. Cells a part
- * loses when its share shrinks break off as sparks that drift up and fade, its cut
- * edge flashes, and the runs after it close up. A part that leaves shrinks to
+ * loses when its share shrinks break off as sparks that drift up out of the bar into
+ * the room above it and fade before they reach that room's top, its cut edge
+ * flashes, and the runs after it close up. A part that leaves shrinks to
  * nothing the same way. A run that only moves can round to a cell more or less; that
  * cell comes and goes quietly.
  */
@@ -23,12 +24,14 @@ export type Part = {key: string; start: number; share: number; colour: Rgb}
 export type MeterScene = {
   /** The bar's width in CSS pixels. */
   width: number
+  /** The room above the bar in CSS pixels, from `--rg-cells-headroom`, which only sparks rise into. */
+  headroom: number
   grid: Grid
   parts: Part[]
   counting: boolean
   /** The parts pointed at or focused, which the others dim for. */
   lit: ReadonlySet<string>
-  /** The dim cells' colour and opacity, from `--rg-cells-dim`. */
+  /** The dim cells' colour already multiplied by their opacity, and that opacity, from `--rg-cells-dim`. */
   dim: Rgb
   dimAlpha: number
   /** The theme's foreground, which hot cells and sparks are lifted toward. */
@@ -59,11 +62,16 @@ const DIMMED = 0.3
 const LIGHT_RATE = 21
 /** The share of a lost column's cells that break off as sparks. */
 const SPARKING = 0.6
-/** Seconds a spark lasts, at least and how much longer at most; how fast it rises and wanders, in CSS px a second. */
+/** Seconds a spark lasts, at least and how much longer at most. */
 const SPARK_LIFE = 0.3
 const SPARK_LIFE_SPREAD = 0.25
-const SPARK_RISE = 18
-const SPARK_RISE_SPREAD = 34
+/**
+ * How fast a spark rises, in headrooms a second, at least and how much faster at most:
+ * the fastest, from the top row, goes out before it has risen nineteen twentieths of the room.
+ */
+const SPARK_RISE = 1.1
+const SPARK_RISE_SPREAD = 1.5
+/** How fast a spark wanders sideways, in CSS px a second. */
 const SPARK_WANDER = 26
 /** How quickly a spark slows as it drifts, per second. */
 const SPARK_DRAG = 1.6
@@ -181,7 +189,9 @@ export function createCellsPicture(ease: (progress: number) => number) {
     return moved && !snap
   }
 
-  const spark = (part: Shown, column: number, grid: Grid) => {
+  /** A lost column's cells break off where they stand, in CSS px from the bar's top left. */
+  const spark = (part: Shown, column: number, scene: MeterScene) => {
+    const {grid, headroom} = scene
     const pitch = grid.cell + grid.gap
     for (let row = 0; row < grid.rows; row++) {
       if (sparks.length >= MOST_SPARKS || Math.random() > SPARKING) continue
@@ -189,7 +199,7 @@ export function createCellsPicture(ease: (progress: number) => number) {
         x: column * pitch,
         y: row * pitch,
         vx: (Math.random() - 0.5) * SPARK_WANDER,
-        vy: -(SPARK_RISE + Math.random() * SPARK_RISE_SPREAD),
+        vy: -headroom * (SPARK_RISE + Math.random() * SPARK_RISE_SPREAD),
         age: 0,
         life: SPARK_LIFE + Math.random() * SPARK_LIFE_SPREAD,
         colour: part.colour,
@@ -234,7 +244,7 @@ export function createCellsPicture(ease: (progress: number) => number) {
         if (count < part.count) {
           heat.fill(0, count, part.count)
           if (part.change < 0) {
-            for (let i = count; i < part.count; i++) spark(part, from + i, scene.grid)
+            for (let i = count; i < part.count; i++) spark(part, from + i, scene)
             if (count > 0) heat[count - 1] = Math.max(heat[count - 1]!, CUT_HEAT)
           }
         }
@@ -286,7 +296,10 @@ export function createCellsPicture(ease: (progress: number) => number) {
 
     sparkCount: () => sparks.length,
 
-    /** The sparks, for the GPU: each one's place, size and how much shows, then its colour. */
+    /**
+     * The sparks, for the GPU: each one's place (CSS px from the bar's top left, above
+     * it when negative), size and how much shows, then its colour.
+     */
     sparkData(grid: Grid): Float32Array<ArrayBuffer> {
       sparks.forEach((s, i) => {
         const t = s.age / s.life
@@ -295,7 +308,7 @@ export function createCellsPicture(ease: (progress: number) => number) {
         sparkData[o + 1] = s.y
         // A spark breaks smaller as it goes.
         sparkData[o + 2] = t < 0.5 ? grid.cell : Math.max(1, grid.cell - 1)
-        sparkData[o + 3] = (1 - t) ** 1.5 * s.light
+        sparkData[o + 3] = (1 - t) * s.light
         sparkData[o + 4] = s.colour[0]
         sparkData[o + 5] = s.colour[1]
         sparkData[o + 6] = s.colour[2]

@@ -9866,6 +9866,222 @@ protected; releasing it is the founder's decision.
   health 200; the content security policy header names the Privy and wallet hosts.
 - Not proven on live: a real Privy sign-in through the shared token reader, and the
   admin pages as an admin. Sean opens both.
+## 2026-11-12 — Cells sparks rise above the bar (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, from `wt/tpl-cells-1112`, for the design chief. No
+migration.
+
+- Design-system pin `5fbe2d40` to `a6d5af43` (`platform/mix.exs`, `platform/mix.lock`;
+  nothing else in the lock moves). With it the Cells meter's drawing surface reaches
+  `--rg-cells-headroom` (48px, one bar high) above the bar, over the note line; the
+  still meter is unchanged.
+- The moving meter draws its cells that far down, on the still cells' own pixels, and
+  leaves the room above the bar empty: at rest and while counting no pixel above the
+  bar changes (measured at 390 and 1280, light and dark).
+- A holder's lost cells now rise as sparks out of the bar and over the note line, as in
+  Sean's film, and each goes out before it has risen nineteen twentieths of the room,
+  so none reaches its top; each lasts about half a second and all are gone within a
+  second of the press. This replaces the
+  "Sparks stay inside the bar" line of the Cells lab entry.
+- The first frame still matches the still meter: no pixel differs in light at 390 and
+  1280; in dark the dim empty cells differ by one colour level, the same pixels and
+  count as before this change.
+- Frame times on a 2x screen at 390 and 1280: no missed frames at full speed; with the
+  processor slowed four times, about one run in four misses a single frame about a
+  tenth of a second after a Remove press, as often as before this change. Timed on the
+  GPU round the meter's own two drawing passes, a frame takes 0.03 to 0.06 ms
+  (0.19 ms at most).
+- Checks: `platform/assets/test/cells_meter.test.ts` (sparks rise into the room and go
+  out before its top, for rooms of 24, 48 and 96 px) and the walk
+  `platform/test/browser/cells.spec.ts` (a removed holder's sparks show above the bar,
+  and a second later the room is as it was).
+
+## 2026-11-12 — Cells: the dim cells match exactly, and brighter sparks (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
+
+- The first frame now matches the still meter over every pixel of the meter, dim empty
+  cells included: no pixel differs at 390 and 1280, light and dark. Before, in dark,
+  8,496 pixels of the bar at 390 and 28,674 at 1280 were one colour level off, and at
+  390 in light 36 pixels on a Tangerine edge. This replaces the "in dark the dim empty
+  cells differ by one colour level" line of the entry above.
+- The cause was how the moving meter worked out the dim colour. The page multiplies
+  the dim cells' colour by their exact opacity, 14%, and rounds once; the meter rounded
+  the opacity to 36/255 first, so one channel came out a level high. It now asks the
+  browser for the colour already multiplied by its opacity, and for that opacity, as
+  the page works them out (`platform/assets/js/hooks/cells_meter.ts`).
+- `barHeight` in `platform/assets/js/cells_meter/layout.ts`, used by nothing in the
+  app, is gone, with the one test line that used it.
+- Sparks read at a glance: each breaks off in the theme's own text colour, Platinum in
+  dark and near-black in light, as the white-hot specks in Sean's film do, cools into
+  its holder's colour and fades evenly instead of fast at first. No glow or blur. Each
+  still lasts 0.3 to 0.55 s; in frames 75 ms apart after a Remove press at 1280 in dark,
+  no spark shows from about 0.77 s.
+- Checks: `platform/assets/test/cells_meter.test.ts` and the walk
+  `platform/test/browser/cells.spec.ts`; the handover and the sparks pictured by hand in
+  headless Chromium with WebGPU.
+
+## 2026-11-12 — Tangerine and Powder Blue meet through a neutral (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
+
+- Sean's decision of 12 Nov: colours far apart on the wheel blend through a neutral,
+  not through gold and green. Design-system pin `a6d5af43` to `324d40ec`
+  (`platform/mix.exs`, `platform/mix.lock`; nothing else in the lock moves), which adds
+  the rule to STYLE.md "Gradients" and nothing else. This settles the gold and green
+  left by the oklch change in v222.
+- The Enter App ring on the home page (`platform/assets/css/pages/home.css`): a neutral
+  between each Tangerine and Powder Blue, at 12.5%, 37.5%, 62.5% and 87.5%, from
+  `--rl-cta-neutral`, set beside `--rl-cta-mid` the same way: Platinum in light, the
+  muted text colour in dark, where the button itself is Platinum. The middle stop is
+  unchanged.
+- The Fractal still on `/animations/wonders` (`platform/assets/css/pages/wonders.css`):
+  Platinum at 20% between Powder Blue, now to 16%, and Tangerine, now from 24%, a
+  little fainter than both, so it reads as a soft pale band and not a bright line.
+- Every template stylesheet searched: these were the only two blends straight between
+  Tangerine and Powder Blue. The Kaleidoscope still alternates the two in hard-edged
+  slices with no blend between them, and stays.
+- Pictures before and after, light and dark, 390 and 1280, the ring at rest, on hover
+  and with keyboard focus, and the Fractal. The ring sampled along its length, 514
+  pixels a view: in dark, which is all the home page shows, no pixel has a hue between
+  60 and 170 degrees (before, 300 did, gold and green). In light, seen only by forcing
+  the theme, the Tangerine to Platinum stretch passes light orange to cream: 50 pixels
+  in that range keep any colour, the strongest a light orange (244, 153, 68), and none
+  is gold or green to the eye. The Fractal's gold and green rings are gone.
+- Checks: the home page walk `platform/test/browser/homepage.spec.ts` (the ring never
+  takes the button's own colour) and `make check-style`.
+
+## 2026-11-13 — Released v231: the neutral blend and Cells sparks
+
+- `9b6eced2` (the design chief's branch `wt/tpl-cells-sparks-1112`, a fast-forward of
+  main from `284ce1cb`) is v231 on template.regents.sh, switched at about 01:14Z on
+  13 Nov with `scripts/deploy.sh`. No migration, no sign-in code, no Elixir beyond the
+  pin.
+- Sean's decision 33 b: the Enter App ring and the Fractal still pass through a brand
+  neutral between Tangerine and Powder Blue (Platinum in light, `--color-fg-muted` in
+  dark), with no gold or green on the way. Cells: sparks rise above the bar into the
+  taller canvas; the dim cells in dark are exact. Design-system pin `5fbe2d40` to
+  `324d40ec`.
+- Rollback: v230 (`9f90f648`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 254 Elixir.
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/animations/wonders`, `/animations/cells` and `/rooms/general` answer 200 at 1280,
+  390 and 320 with no page errors and no sideways scroll. The look itself (the colours
+  of the ring and the still, the sparks) is the design chief's read.
+
+
+
+## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
+
+On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for all").
+
+- A person whose last message in a room goes is mentioned by nobody there until they
+  post in it again. A message goes two ways, and both take the person off the room's
+  posters inside the same delete, in one statement that runs only when no message of
+  theirs is left in the room (`AshTemplate.Rooms.Message.ForgetPoster` on `:destroy`, the
+  person's or their paired agent's own delete, and `:remove`, the operator's): every name
+  they posted under there goes. Nothing is hidden or deleted softly; an edit or a mute
+  keeps the message. Migration `20261112233734_room_messages_author_index.exs` adds one
+  index on `room_messages` (room and author, people only), built concurrently, for that
+  check: on 50,000 messages in one room it reads 6 pages instead of 863. Existing rows
+  are untouched, so someone who deleted every message in a room before this change
+  stays listed there until they next post there and delete it. Checks:
+  `platform/test/ash_template/rooms/mentions_test.exs` and
+  `platform/test/ash_template_web/room_delete_test.exs` (an open room page that hears the
+  delete reads nothing).
+- The developer documentation's page at `/docs` is headed Docs, as its menu link already
+  said, and its tab reads "Docs · Ash Template". Its Markdown, served at the same address,
+  keeps its own title, and every other reading page keeps its document's title. Check:
+  `platform/test/browser/reading.spec.ts`.
+- A message for the team past the allowance, 10 an hour for an agent (its person's, once
+  paired) or 30 from one address, answers like a too-fast room post: 429
+  `too_many_requests` with the seconds to wait in `Retry-After` over HTTP and as
+  `retry_after` from the hosted tool `messages_leave`, instead of 422 `invalid_message`.
+  The browser tool already passes any 429's wait on. A person past it is still told on
+  the message box, in the room message box's words. Both OpenAPI documents move to
+  15.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
+  `platform/test/ash_template/messages/leave_test.exs` and
+  `platform/test/ash_template_web/messages_api_test.exs`.
+- Merged main at v228 (`05ed696a`, command line 1.10.26), then at `12ef221e` (the room
+  list, 50 at a time): text conflicts only, in this file, the command list's Changes and
+  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229), `9f90f648`
+  (the shared sign-in pieces) and `284ce1cb` (v230's note), this file only. Both lanes
+  moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
+  team message's 429 moves them to 15.0.0, its own entry in the docs and the command
+  list.
+
+## 2026-11-13 — Released v232: the small follow-ups and Cells category colours
+
+- `4f1628f1` (merge of `tpl/followups-1112`, `8ef98a8f`, with the design-system pin
+  move) is v232 on template.regents.sh, switched at about 01:27Z on 13 Nov with
+  `scripts/deploy.sh`. The live build names commit `4f1628f` and the live API document
+  says 15.0.0.
+- A person leaves a room's mention list with their last message there, deleted or
+  removed; the reading pages' "Docs" heading; an agent leaving a team message past its
+  allowance is answered 429 `too_many_requests` with `Retry-After` instead of 422
+  `invalid_message`. Design-system pin `324d40ec` to `9f20103e` (Cells category
+  colours).
+- Migration: `20261112233734`, an index on `room_messages (room, human_account_id)`,
+  built concurrently with the lock off.
+- Rollback: v231 (`9b6eced2`), image only; the index may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 257 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: the 429 answer itself (it would take eleven real team messages)
+  and a mention after a last message is deleted; both are covered by tests.
+## 2026-11-12 — Text search on trigram indexes
+
+On `tpl/text-search-1112`, for the template chief, after Sean's go "24 a" (pg_trgm on the
+shared production database).
+
+- Room message search across every room, room search by name and a person's note search
+  run as `ILIKE '%…%'` on a trigram index instead of `lower(column) LIKE` over the whole
+  table. The words are a `:ci_string` argument, so Ash's `contains` escapes `%`, `_` and `\`.
+- Under three letters a search finds nothing and sends no query, the same on every surface:
+  the search box, `POST /api/v1/rooms/search` and `POST /api/v1/notes/search`, the
+  `rooms_search` and `notes_search` browser tools and `rooms search` and `notes search`.
+  One or two letters answer an empty list, and a single letter no longer answers 422. The
+  OpenAPI documents move to 16.0.0, after the room list's 14.0.0 and the follow-ups' 15.0.0.
+- Migrations: `20261112234817` runs `CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA
+  public`, which changes nothing where pg_trgm is already on; `20261113010509` builds four
+  GIN indexes concurrently, on `room_messages.body`, `rooms.name`, `notes.title` and
+  `notes.body`, each naming `public.gin_trgm_ops`. No row changes. Both sort after the
+  room list's and the follow-ups' migrations (`20261112230808` to `20261112233734`) and
+  touch none of their columns; the index migration and its snapshots were generated again
+  on top of theirs after merging `tpl/followups-1112` (`8ef98a8f`).
+- Production already has pg_trgm 1.6 in `public` (the chief read the add-on list on the
+  host, read only), so the first migration changes nothing there and nothing is switched on.
+- Local plans, 60,000 generated messages and 20,000 notes: a word in three messages 85 ms
+  to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
+  all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with
+  5,000 of them 18 ms to 0.07 ms; rooms 0.4 ms to 0.02 ms.
+- Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `45e9f394`
+  (merged with `tpl/followups-1112` at `8ef98a8f`) exit 0: 13 report tests, 154 script
+  tests, 651 browser walks with 5 skipped, 261 Elixir (10 properties).
+
+## 2026-11-13 — Released v233: text search with an index
+
+- `588ed4ef` (merge of `tpl/text-search-1112`, `013f6152`) is v233 on
+  template.regents.sh, switched at about 01:37Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "24 a" (12 Nov). The live build names commit `588ed4e` and the
+  live API document says 16.0.0.
+- Search over notes, room messages and room names runs as ILIKE on trigram indexes;
+  under three letters finds nothing and runs no query.
+- Migrations: `20261112234817` asks for pg_trgm in `public`, which production already
+  had (1.6), so it changed nothing; `20261113010509` builds four indexes on the
+  template's own tables, concurrently with the lock off. The release finished with
+  exit 0, which it does only when its database step succeeds; the indexes themselves
+  were not read back on production (that would be a production command).
+- Rollback: v232 (`4f1628f1`), image only; the indexes and the add-on may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 261 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: a search itself (it needs a sign-in). Sean tries one.
 
 ## 2026-11-13 — The theme switch's sun and moon in grains (branch, not on main)
 

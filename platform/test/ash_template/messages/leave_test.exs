@@ -5,7 +5,8 @@ defmodule AshTemplate.Messages.LeaveTest do
   # - who left it comes from the actor alone: no input can name a sender;
   # - the topic, the text and reply_to are bounded, and nothing is kept when refused;
   # - an operation_id answers its first message again, and refuses any other use;
-  # - each sender leaves 10 an hour;
+  # - each sender leaves 10 an hour, and an agent past that is told the seconds
+  #   to wait;
   # - only the site's admins read messages.
   use ExUnit.Case, async: false
 
@@ -105,20 +106,27 @@ defmodule AshTemplate.Messages.LeaveTest do
     assert count_by(agent) == 1
   end
 
-  test "each sender leaves 10 messages an hour, then is refused until it passes" do
+  test "each sender leaves 10 messages an hour, then is told how long to wait" do
     agent = agent()
 
     for n <- 1..10 do
       assert {:ok, _} = leave(agent, "agents", %{body: "Message #{n}"}, Ecto.UUID.generate())
     end
 
-    assert {:error, %Ash.Error.Invalid{errors: [%{field: :body}]}} =
+    assert {:error, %Ash.Error.Invalid{errors: [%Refused{code: "too_many_requests", retry_after: seconds}]}} =
              leave(agent, "agents", %{body: "One more"}, Ecto.UUID.generate())
+
+    assert seconds in 1..3600
 
     assert count_by(agent) == 10
 
-    {person, _account} = person()
-    assert {:ok, _} = Messages.leave_message(%{topic: "agents", body: "Still free"}, actor: person, context: %{client_key: Ecto.UUID.generate()})
+    {person, account} = person()
+    left = fn body -> Messages.leave_message(%{topic: "agents", body: body}, actor: person, context: %{client_key: Ecto.UUID.generate()}) end
+    assert {:ok, _} = left.("Still free")
+
+    # A person past it is told on the message field itself, as in a room's message box.
+    for _ <- 2..10, do: :ok = AshTemplate.Limits.spend(:message, {:human, account.id})
+    assert {:error, %Ash.Error.Invalid{errors: [%{field: :body}]}} = left.("One more")
   end
 
   test "only the site's admins read messages", %{key: key} do
