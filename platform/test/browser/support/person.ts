@@ -33,6 +33,10 @@ export function watch(page: Page, allowedStatus?: number) {
   })
   return {
     expect: async () => {
+      // A page a link has just opened has no styles until its stylesheet arrives, and
+      // is far wider than the screen until then; a person never sees it, since the
+      // browser draws nothing before that. The page is measured once it has loaded.
+      await page.waitForLoadState("load")
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       )

@@ -59,11 +59,9 @@ defmodule AshTemplate.Notes.LabelRequestTest do
   end
 
   describe "requests at once" do
-    # The race needs separate connections that really commit, so the rows these
-    # runs write stay in the test database; every run uses its own people.
+    # The race needs separate connections that really commit.
     setup do
-      Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
-      on_exit(fn -> Ecto.Adapters.SQL.Sandbox.mode(Repo, :manual) end)
+      AshTemplate.RealCommits.start()
     end
 
     test "never ask more than the day's number of questions", %{limits: limits} do
@@ -72,7 +70,6 @@ defmodule AshTemplate.Notes.LabelRequestTest do
       Application.put_env(:ash_template, :note_labels, Keyword.put(limits, :daily_questions, asked + 2))
 
       note_ids = for _ <- 1..5, do: Notes.create_note!(%{title: "Race"}, actor: person()).id
-      on_exit(fn -> cancel_jobs(note_ids) end)
       jobs = label_jobs(note_ids)
       assert length(jobs) == 5
 
@@ -93,22 +90,6 @@ defmodule AshTemplate.Notes.LabelRequestTest do
         where:
           j.state == "available" and fragment("?->>'listener'", j.args) == "request_label" and
             fragment("?->'payload'->>'note_id'", j.args) in ^note_ids
-    )
-  end
-
-  # The committed jobs a race leaves, its label requests and the questions they
-  # asked, must never run in a later test.
-  defp cancel_jobs(note_ids) do
-    asked = note_ids |> decisions() |> Enum.map(& &1.id)
-
-    Repo.update_all(
-      from(j in Oban.Job,
-        where:
-          j.state == "available" and
-            (fragment("?->'payload'->>'note_id'", j.args) in ^note_ids or
-               fragment("?->'primary_key'->>'id'", j.args) in ^asked)
-      ),
-      set: [state: "cancelled", cancelled_at: DateTime.utc_now()]
     )
   end
 

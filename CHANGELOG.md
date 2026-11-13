@@ -10082,3 +10082,71 @@ shared production database).
   `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll.
 - Not proven on live: a search itself (it needs a sign-in). Sean tries one.
+
+## 2026-11-12 — Three unreliable tests (branch, not on main)
+
+Branch `tpl/test-health-1113`, from `origin/main` (`12ef221e`), for the ash-template chief
+(`/tmp/stampede-1112/build-test-health.md`). Tests and the `ash-testing` skill only, which
+the site publishes with its next release; nothing else the site does changes.
+
+- **Rows left in the test database.** Four race tests need separate connections that
+  really commit (`rooms/likes_test.exs`, `rooms/operation_key_test.exs`,
+  `notes/label_request_test.exs`, `points/first_agent_note_test.exs`) and kept what they
+  wrote: each full run added 30 accounts, 30 wallet snapshots, 20 agents and pairings,
+  27 notes, 37 jobs and 8 Points ledgers, among 15 tables; a full run without those four
+  files left nothing. Every run reuses the test database, and
+  `points/start_awards_test.exs` works through every account in it: with 2,317 accounts
+  it took 10.5 s here, 1.5 s on a clean database (one of those seconds is its own wait),
+  and ran out of its 60 s elsewhere.
+- **The cure.** `AshTemplate.RealCommits` (`platform/test/support/real_commits.ex`)
+  empties the test database, keeping only the rows migrations put there: every
+  `schema_migrations`, the two rooms a site opens with, the sign-in scopes,
+  ErrorTracker's version and when Points coverage starts. `test_helper.exs` empties it
+  before every run, so whatever an earlier run left, a stopped one included, is gone
+  first; the race tests call `start/0`, which turns the sandbox off for the test and
+  empties the database when it ends. Points keeps wallet snapshots final and pairings on
+  record, so the tables are truncated together, and the accounts, which a kept room
+  refers to, are deleted. It takes 51 ms on a clean database and 260 ms on one with
+  2,317 accounts. It runs only through the sandbox pool, which only the test
+  configuration sets, naming the local `ash_template*_test` database alone: with
+  `DATABASE_URL` pointed at another host the test configuration still names it, and
+  `mix test` in development stops at the sandbox before emptying anything. The likes
+  test's message deletion and the label test's job cancelling are gone. The Points test
+  still runs the real start-awards job, which reads every account by design; it now
+  finds only its own.
+- **The first cure, sent back.** It emptied only the tables that were empty when a race
+  test began. On a database already holding one cancelled job, the jobs table was left
+  alone, the race's five waiting jobs stayed, and the next run's drain of the default
+  queue ran six (the chief's check, seed 252026). Reproduced here the same way; on that
+  database seed 252026 now passes and leaves the fresh database's rows.
+- **A test that timed the machine.** `visit_lines_test.exs` asserted 1,500 visit lines
+  in under a second; with the machine loaded it took 5.5 s and failed. The second is
+  the visit handler's window (2,000 lines a second, 2,000 waiting). The crowd's writers
+  now all start and then write together, so the lines reach the handler as one burst,
+  and the test asserts every line written once and every writer done, not the time.
+  On Erlang's default limits it still fails (2 and 7 of 1,500 kept). It never touches
+  the database, so the leftover rows did not slow it.
+- **The phone account-menu walk.** "content 641px wider than the screen" came from
+  measuring the Agents page the instant Manage opened it, before its stylesheet had
+  arrived: the unstyled account button is 1,023 px wide. Holding the stylesheet back
+  1.5 s fails the old walk 3 of 3 with exactly 641 px. No person sees that state, since
+  the browser draws nothing until the stylesheet arrives: every drawn frame of the
+  Agents page and the agent guide, at 390 and 320 wide with the browser slowed six
+  times, fit the screen. `watch` in `platform/test/browser/support/person.ts` now
+  measures a page once it has loaded; the held-back walk passes 3 of 3.
+- **The room delete test, found on the way.** `room_delete_test.exs`, from main's
+  follow-ups, read the room page straight after the delete and failed about once in 27
+  runs, in a full check and alone: the page hands the notice on to its messages with
+  `send_update`, a second message to itself, and the test's read could be answered
+  first. The test now waits for the page (`:sys.get_state/1`) before it reads: 10 of 16
+  batches of 25 failed before, 416 runs in a row pass after.
+- `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
+  never times the machine, a browser walk or a LiveView test waits on a condition.
+- Checks on `1f716487` (main `4875b400` merged in), each on my own scratch test database,
+  each passing: style, 155 script tests, 653 browser walks with 5 skipped, 261 Elixir
+  (10 properties), required fixes and the command description. Twice in a row on a
+  database polluted first with 2,317 leftover accounts and their snapshots, five jobs
+  waiting in the default queue and one cancelled; once more after a run killed outright
+  in a race test, which left 8 accounts, agents and pairings, a room message and its
+  poster. Every one of the 54 tables matched a fresh database after each. Seed 252026
+  passes on a polluted database and leaves it fresh.

@@ -9,19 +9,18 @@ defmodule AshTemplate.Rooms.OperationKeyTest do
   # - the same key after that message was deleted is refused as message_removed,
   #   naming the message.
   #
-  # The race needs separate connections that really commit, so the rows these
-  # runs write stay in the test database; every run uses its own person and agent.
+  # The race needs separate connections that really commit; every run uses its
+  # own person and agent.
   use ExUnit.Case, async: false
   use ExUnitProperties
 
   require Ash.Query
-  alias AshTemplate.{Accounts, Agents, Repo, Rooms}
+  alias AshTemplate.{Accounts, Agents, Rooms}
   alias AshTemplate.Actors.{Agent, System}
   alias AshTemplate.Rooms.{Message, Refused}
 
   setup do
-    Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.mode(Repo, :manual) end)
+    AshTemplate.RealCommits.start()
   end
 
   property "one operation key posts one message, answers it again, and refuses any other use" do

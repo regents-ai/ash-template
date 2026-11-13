@@ -47,7 +47,10 @@ defmodule AshTemplateWeb.RoomDeleteTest do
 
     :ok = Rooms.delete_message(message, actor: author)
 
-    # The page has handled the notice once it answers this render.
+    # The page hands the notice on to its messages as a message to itself
+    # (`send_update`), so it answers this test only once that one is queued, ahead
+    # of the render below.
+    :sys.get_state(page)
     refute has_element?(view, "#messages-#{message.id}")
     refute_received {:read, _query}
   end
