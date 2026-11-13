@@ -10024,7 +10024,7 @@ the site publishes with its next release; nothing else the site does changes.
   27 notes, 37 jobs and 8 Points ledgers, among 15 tables. A full run without those four files left nothing.
   Every run reuses the test database, and `points/start_awards_test.exs` works through
   every account in it: with 2,317 accounts it took 10.5 s here, 1.5 s on a clean
-  database (one of those seconds is its own wait), and 60 s on a busier machine. Points
+  database (one of those seconds is its own wait), and ran out of its 60 s elsewhere. Points
   keeps wallet snapshots final and pairings on record, so the rows could not be deleted
   one by one. The race tests now call `AshTemplate.RealCommits.start/0`
   (`platform/test/support/real_commits.ex`): it turns the sandbox off for the test, notes
@@ -10049,3 +10049,8 @@ the site publishes with its next release; nothing else the site does changes.
   measures a page once it has loaded; the held-back walk passes 3 of 3.
 - `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
   never times the machine, a browser walk waits on a condition.
+- Full check twice in a row on `e8fb1b09` (main `4f1628f1` merged in), both passing: style,
+  155 script tests, 653 browser walks with 5 skipped, 257 Elixir (10 properties), required
+  fixes and the command description. Every one of the test database's 54 tables held the
+  same rows before and after each run, accounts 0 both times; the only change was main's
+  new migration, recorded in the first run.
