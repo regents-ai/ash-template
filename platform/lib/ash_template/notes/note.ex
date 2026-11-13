@@ -46,6 +46,19 @@ defmodule AshTemplate.Notes.Note do
 
     custom_indexes do
       index([:human_account_id, :inserted_at])
+      # Search by title or text (`:search`). pg_trgm lives in public, beside
+      # ash_required, so its operator class is named there.
+      index(["title public.gin_trgm_ops"],
+        name: "notes_title_trgm_index",
+        using: "GIN",
+        concurrently: true
+      )
+
+      index(["body public.gin_trgm_ops"],
+        name: "notes_body_trgm_index",
+        using: "GIN",
+        concurrently: true
+      )
     end
   end
 
@@ -114,15 +127,13 @@ defmodule AshTemplate.Notes.Note do
       pagination keyset?: true, required?: true, default_limit: 50, max_page_size: 50
     end
 
-    # The person's notes whose title or text holds `text`, in any case.
+    # The person's notes whose title or text holds `text`, in any case. Words
+    # under three letters find nothing, and no query runs: the trigram indexes
+    # cannot serve them.
     read :search do
-      argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
-
-      filter expr(
-               contains(string_downcase(title), string_downcase(^arg(:text))) or
-                 contains(string_downcase(body), string_downcase(^arg(:text)))
-             )
-
+      argument :text, :ci_string, allow_nil?: false, constraints: [max_length: 100]
+      filter expr(contains(title, ^arg(:text)) or contains(body, ^arg(:text)))
+      prepare build(filter: false), where: [string_length(:text, max: 2)]
       prepare build(sort: [inserted_at: :desc], limit: 5)
     end
 

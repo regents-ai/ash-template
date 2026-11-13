@@ -34,9 +34,17 @@ defmodule AshTemplate.Rooms.Room do
     # key, and the refusal is shown under the name.
     unique_index_names([{[:name], "rooms_pkey", @name_taken}])
 
-    # The list's order, newest first (`:list`).
     custom_indexes do
+      # The list's order, newest first (`:list`).
       index([:last_active_at, :slug], concurrently: true)
+
+      # Search by name (`:search`). pg_trgm lives in public, beside
+      # ash_required, so its operator class is named there.
+      index(["name public.gin_trgm_ops"],
+        name: "rooms_name_trgm_index",
+        using: "GIN",
+        concurrently: true
+      )
     end
   end
 
@@ -77,10 +85,12 @@ defmodule AshTemplate.Rooms.Room do
       filter expr(slug == ^arg(:slug) and created_by_id == ^actor(:human_account_id))
     end
 
-    # Rooms whose name holds `text`, in any case.
+    # Rooms whose name holds `text`, in any case. Words under three letters
+    # find nothing, and no query runs: the name's trigram index cannot serve them.
     read :search do
-      argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
-      filter expr(contains(string_downcase(name), string_downcase(^arg(:text))))
+      argument :text, :ci_string, allow_nil?: false, constraints: [max_length: 100]
+      filter expr(contains(name, ^arg(:text)))
+      prepare build(filter: false), where: [string_length(:text, max: 2)]
       prepare build(sort: [inserted_at: :asc], limit: 5)
     end
 

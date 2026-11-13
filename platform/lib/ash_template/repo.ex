@@ -8,7 +8,9 @@ defmodule AshTemplate.Repo do
 
   # The shared database runs PostgreSQL 17.
   def min_pg_version, do: %Version{major: 17, minor: 0, patch: 0}
-  def installed_extensions, do: ["ash-functions"]
+  # pg_trgm's trigram indexes serve text search (`contains` on a case-insensitive
+  # argument, which runs as ILIKE).
+  def installed_extensions, do: ["ash-functions", "pg_trgm"]
   def default_prefix, do: @schema
 
   # Ash qualifies reads with `default_prefix/0`; writes, upserts, `Ash.update_many`

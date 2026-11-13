@@ -10011,6 +10011,78 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   team message's 429 moves them to 15.0.0, its own entry in the docs and the command
   list.
 
+## 2026-11-13 — Released v232: the small follow-ups and Cells category colours
+
+- `4f1628f1` (merge of `tpl/followups-1112`, `8ef98a8f`, with the design-system pin
+  move) is v232 on template.regents.sh, switched at about 01:27Z on 13 Nov with
+  `scripts/deploy.sh`. The live build names commit `4f1628f` and the live API document
+  says 15.0.0.
+- A person leaves a room's mention list with their last message there, deleted or
+  removed; the reading pages' "Docs" heading; an agent leaving a team message past its
+  allowance is answered 429 `too_many_requests` with `Retry-After` instead of 422
+  `invalid_message`. Design-system pin `324d40ec` to `9f20103e` (Cells category
+  colours).
+- Migration: `20261112233734`, an index on `room_messages (room, human_account_id)`,
+  built concurrently with the lock off.
+- Rollback: v231 (`9b6eced2`), image only; the index may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 257 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: the 429 answer itself (it would take eleven real team messages)
+  and a mention after a last message is deleted; both are covered by tests.
+## 2026-11-12 — Text search on trigram indexes
+
+On `tpl/text-search-1112`, for the template chief, after Sean's go "24 a" (pg_trgm on the
+shared production database).
+
+- Room message search across every room, room search by name and a person's note search
+  run as `ILIKE '%…%'` on a trigram index instead of `lower(column) LIKE` over the whole
+  table. The words are a `:ci_string` argument, so Ash's `contains` escapes `%`, `_` and `\`.
+- Under three letters a search finds nothing and sends no query, the same on every surface:
+  the search box, `POST /api/v1/rooms/search` and `POST /api/v1/notes/search`, the
+  `rooms_search` and `notes_search` browser tools and `rooms search` and `notes search`.
+  One or two letters answer an empty list, and a single letter no longer answers 422. The
+  OpenAPI documents move to 16.0.0, after the room list's 14.0.0 and the follow-ups' 15.0.0.
+- Migrations: `20261112234817` runs `CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA
+  public`, which changes nothing where pg_trgm is already on; `20261113010509` builds four
+  GIN indexes concurrently, on `room_messages.body`, `rooms.name`, `notes.title` and
+  `notes.body`, each naming `public.gin_trgm_ops`. No row changes. Both sort after the
+  room list's and the follow-ups' migrations (`20261112230808` to `20261112233734`) and
+  touch none of their columns; the index migration and its snapshots were generated again
+  on top of theirs after merging `tpl/followups-1112` (`8ef98a8f`).
+- Production already has pg_trgm 1.6 in `public` (the chief read the add-on list on the
+  host, read only), so the first migration changes nothing there and nothing is switched on.
+- Local plans, 60,000 generated messages and 20,000 notes: a word in three messages 85 ms
+  to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
+  all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with
+  5,000 of them 18 ms to 0.07 ms; rooms 0.4 ms to 0.02 ms.
+- Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `45e9f394`
+  (merged with `tpl/followups-1112` at `8ef98a8f`) exit 0: 13 report tests, 154 script
+  tests, 651 browser walks with 5 skipped, 261 Elixir (10 properties).
+
+## 2026-11-13 — Released v233: text search with an index
+
+- `588ed4ef` (merge of `tpl/text-search-1112`, `013f6152`) is v233 on
+  template.regents.sh, switched at about 01:37Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "24 a" (12 Nov). The live build names commit `588ed4e` and the
+  live API document says 16.0.0.
+- Search over notes, room messages and room names runs as ILIKE on trigram indexes;
+  under three letters finds nothing and runs no query.
+- Migrations: `20261112234817` asks for pg_trgm in `public`, which production already
+  had (1.6), so it changed nothing; `20261113010509` builds four indexes on the
+  template's own tables, concurrently with the lock off. The release finished with
+  exit 0, which it does only when its database step succeeds; the indexes themselves
+  were not read back on production (that would be a production command).
+- Rollback: v232 (`4f1628f1`), image only; the indexes and the add-on may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 261 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: a search itself (it needs a sign-in). Sean tries one.
+
 ## 2026-11-12 — Three unreliable tests (branch, not on main)
 
 Branch `tpl/test-health-1113`, from `origin/main` (`12ef221e`), for the ash-template chief

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Ash Template API
-  version: 15.0.0
+  version: 16.0.0
 paths:
   /api/v1/health:
     get:
@@ -684,7 +684,7 @@ paths:
         '503':
           description: Request refused; JSON error contains code, message and hint.
         '422':
-          description: text is missing or not 2 to 100 characters (invalid_search).
+          description: text is missing or over 100 characters (invalid_search).
         default:
           description: Request refused; JSON error contains code, message and hint.
       requestBody:
@@ -696,9 +696,9 @@ paths:
               properties:
                 text:
                   type: string
-                  minLength: 2
+                  minLength: 1
                   maxLength: 100
-                  description: Words to look for, in any case.
+                  description: Words to look for, in any case. Three letters or more find matches.
               required:
               - text
               additionalProperties: false
@@ -1377,7 +1377,7 @@ paths:
         '503':
           description: Request refused; JSON error contains code, message and hint.
         '422':
-          description: text is missing or not 2 to 100 characters (invalid_search).
+          description: text is missing or over 100 characters (invalid_search).
         default:
           description: Request refused; JSON error contains code, message and hint.
       requestBody:
@@ -1389,9 +1389,9 @@ paths:
               properties:
                 text:
                   type: string
-                  minLength: 2
+                  minLength: 1
                   maxLength: 100
-                  description: Words to look for, in any case.
+                  description: Words to look for, in any case. Three letters or more find matches.
               required:
               - text
               additionalProperties: false
