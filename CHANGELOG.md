@@ -10010,3 +10010,25 @@ On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for al
   moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
   team message's 429 moves them to 15.0.0, its own entry in the docs and the command
   list.
+
+## 2026-11-13 — Released v232: the small follow-ups and Cells category colours
+
+- `4f1628f1` (merge of `tpl/followups-1112`, `8ef98a8f`, with the design-system pin
+  move) is v232 on template.regents.sh, switched at about 01:27Z on 13 Nov with
+  `scripts/deploy.sh`. The live build names commit `4f1628f` and the live API document
+  says 15.0.0.
+- A person leaves a room's mention list with their last message there, deleted or
+  removed; the reading pages' "Docs" heading; an agent leaving a team message past its
+  allowance is answered 429 `too_many_requests` with `Retry-After` instead of 422
+  `invalid_message`. Design-system pin `324d40ec` to `9f20103e` (Cells category
+  colours).
+- Migration: `20261112233734`, an index on `room_messages (room, human_account_id)`,
+  built concurrently with the lock off.
+- Rollback: v231 (`9b6eced2`), image only; the index may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 257 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: the 429 answer itself (it would take eleven real team messages)
+  and a mention after a last message is deleted; both are covered by tests.
