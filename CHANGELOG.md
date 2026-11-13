@@ -10685,3 +10685,12 @@ Tests only; no code changed.
   once, on the founder's go; nothing runs it on a deployment.
 - `platform/test/ash_template/protect_points_test.exs` checks it against a stand-in list.
   No migration, no pin change; API 17.0.0 unchanged.
+
+## 2026-11-13 — Released v245: the Points protection command is in the image
+
+- `eae88dc4` is v245 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`.
+  It carries `/app/bin/protect-points` with its tests and docs. Shipping it ran nothing:
+  the run waits on the founder's go. No migration, no pin change; API 17.0.0 unchanged.
+- Rollback: v244 (`1acf62ec`) image.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 284 Elixir (10 properties).
