@@ -10134,5 +10134,11 @@ the site publishes with its next release; nothing else the site does changes.
   Agents page and the agent guide, at 390 and 320 wide with the browser slowed six
   times, fit the screen. `watch` in `platform/test/browser/support/person.ts` now
   measures a page once it has loaded; the held-back walk passes 3 of 3.
+- **The room delete test, found on the way.** `room_delete_test.exs`, from main's
+  follow-ups, read the room page straight after the delete and failed about once in 27
+  runs, in a full check and alone: the page hands the notice on to its messages with
+  `send_update`, a second message to itself, and the test's read could be answered
+  first. The test now waits for the page (`:sys.get_state/1`) before it reads: 10 of 16
+  batches of 25 failed before, 416 runs in a row pass after.
 - `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
-  never times the machine, a browser walk waits on a condition.
+  never times the machine, a browser walk or a LiveView test waits on a condition.

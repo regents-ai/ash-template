@@ -34,7 +34,10 @@ them well.
 - **A browser walk waits on a condition, never a fixed time.** Measure a page once
   it has loaded, a window once it rests (`data-settled`) and a menu once its
   animations end: a page measured before its stylesheet arrives is far wider than
-  the screen, a state no person ever sees.
+  the screen, a state no person ever sees. A LiveView test reads a page the same
+  way: a page that hands a notice on to a component (`send_update`) shows it only
+  after a second message to itself, so the test waits for the page
+  (`:sys.get_state(view.pid)`) before it reads.
 - **Rerun what a fix affects**; broaden only for a changed risk or an unresolved
   failure.
 - **Report executed checks apart from missing ones** (database, browser, provider).
