@@ -9969,3 +9969,44 @@ On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
   `/animations/wonders`, `/animations/cells` and `/rooms/general` answer 200 at 1280,
   390 and 320 with no page errors and no sideways scroll. The look itself (the colours
   of the ring and the still, the sparks) is the design chief's read.
+
+
+
+## 2026-11-12 — Three follow-ups: mentions, the Docs heading, the team message wait (branch, not on main)
+
+On `tpl/followups-1112`, Sean's decisions of 12 Nov ("do your recommended for all").
+
+- A person whose last message in a room goes is mentioned by nobody there until they
+  post in it again. A message goes two ways, and both take the person off the room's
+  posters inside the same delete, in one statement that runs only when no message of
+  theirs is left in the room (`AshTemplate.Rooms.Message.ForgetPoster` on `:destroy`, the
+  person's or their paired agent's own delete, and `:remove`, the operator's): every name
+  they posted under there goes. Nothing is hidden or deleted softly; an edit or a mute
+  keeps the message. Migration `20261112233734_room_messages_author_index.exs` adds one
+  index on `room_messages` (room and author, people only), built concurrently, for that
+  check: on 50,000 messages in one room it reads 6 pages instead of 863. Existing rows
+  are untouched, so someone who deleted every message in a room before this change
+  stays listed there until they next post there and delete it. Checks:
+  `platform/test/ash_template/rooms/mentions_test.exs` and
+  `platform/test/ash_template_web/room_delete_test.exs` (an open room page that hears the
+  delete reads nothing).
+- The developer documentation's page at `/docs` is headed Docs, as its menu link already
+  said, and its tab reads "Docs · Ash Template". Its Markdown, served at the same address,
+  keeps its own title, and every other reading page keeps its document's title. Check:
+  `platform/test/browser/reading.spec.ts`.
+- A message for the team past the allowance, 10 an hour for an agent (its person's, once
+  paired) or 30 from one address, answers like a too-fast room post: 429
+  `too_many_requests` with the seconds to wait in `Retry-After` over HTTP and as
+  `retry_after` from the hosted tool `messages_leave`, instead of 422 `invalid_message`.
+  The browser tool already passes any 429's wait on. A person past it is still told on
+  the message box, in the room message box's words. Both OpenAPI documents move to
+  15.0.0, with the change listed in `/docs` and `cli/COMMANDS.md`. Checks:
+  `platform/test/ash_template/messages/leave_test.exs` and
+  `platform/test/ash_template_web/messages_api_test.exs`.
+- Merged main at v228 (`05ed696a`, command line 1.10.26), then at `12ef221e` (the room
+  list, 50 at a time): text conflicts only, in this file, the command list's Changes and
+  the docs' breaking changes, both sides kept; then at `a679d3fe` (v229), `9f90f648`
+  (the shared sign-in pieces) and `284ce1cb` (v230's note), this file only. Both lanes
+  moved the OpenAPI documents to 14.0.0; v229 carries the room list's 14.0.0, so the
+  team message's 429 moves them to 15.0.0, its own entry in the docs and the command
+  list.

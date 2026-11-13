@@ -7,8 +7,10 @@ defmodule AshTemplate.Messages.Message.AgentLeave do
   the `message_leave` capability), in the same transaction as the message, and
   before it. A reuse with the same topic, text and reply_to answers the receipt
   of the message it left (`replayed: true`) and leaves nothing; a reuse with any
-  other is refused as `idempotency_conflict`. Of two calls with one key at once,
-  the second waits on the first's row, finds it spent, and answers as a reuse.
+  other is refused as `idempotency_conflict`. A message past the allowance is
+  refused as `too_many_requests` with the seconds left of it, and leaves the key
+  unspent. Of two calls with one key at once, the second waits on the first's
+  row, finds it spent, and answers as a reuse.
   The message's id is made here, so the row can name it before it is written.
 
   Every caller passes the client address as `context: %{client_key: key}`,
@@ -76,10 +78,22 @@ defmodule AshTemplate.Messages.Message.AgentLeave do
       end)
 
     case result do
-      {:ok, message} -> {:ok, %{receipt: Message.receipt(message), replayed: false}}
-      {:error, error} -> answer_spent(error, actor, key, fingerprint)
+      {:ok, message} ->
+        {:ok, %{receipt: Message.receipt(message), replayed: false}}
+
+      {:error, error} ->
+        case retry_after(error) do
+          nil -> answer_spent(error, actor, key, fingerprint)
+          seconds -> {:error, Refused.exception(code: "too_many_requests", retry_after: seconds)}
+        end
     end
   end
+
+  # The seconds left of the allowance the message was refused by (`LimitWrites`).
+  defp retry_after(%Ash.Error.Invalid{errors: errors}),
+    do: Enum.find_value(errors, & &1.vars[:retry_after])
+
+  defp retry_after(_error), do: nil
 
   # The key was spent by a call that committed while this one waited.
   defp answer_spent(error, actor, key, fingerprint) do
