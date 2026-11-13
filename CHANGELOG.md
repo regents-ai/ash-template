@@ -10385,3 +10385,13 @@ switches". The switch's sun and moon are now drawn by the particle field.
   The asset build, the type check, the script tests and the browser walk need none of
   them.
 - Sites take the same alias in `platform/mix.exs`. No migration, no API change.
+
+## 2026-11-13 — A note's webhook pauses for an hour at most
+
+- When the notes webhook's address answers 429, the job still pauses for the seconds
+  `Retry-After` names, now an hour at most (`AshTemplate.Notes.Webhook`, in the
+  `:send_webhook` action's change). A longer pause fails that try like any other failed
+  post, so the job retries on its own schedule and, after its five tries, is recorded as
+  failed on the note.
+- The README's settings table, the feature map and the generic features list say so.
+  Sites take the change. No migration, no API change.

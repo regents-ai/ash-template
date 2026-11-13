@@ -48,8 +48,9 @@ To do:
       still at that save. No minute sweep: no save can lose its job.
 - [x] The call to another website (`AshTemplate.Notes.Webhook`) uses Req in a
       `before_action` of a `transaction? false` action, so it runs outside any
-      transaction. A 2xx answer is `:ok`, 429 snoozes for Retry-After, a removed address
-      cancels, anything else fails and retries. The `webhook-id` header is the same on
+      transaction. A 2xx answer is `:ok`, 429 snoozes for Retry-After up to an hour (a
+      longer pause fails the try), a removed address cancels, anything else fails and
+      retries. The `webhook-id` header is the same on
       every attempt at one save, so running twice is harmless at the receiving end.
 - [x] A slow-calls queue (`outside_calls`) separate from the default queue; job
       outcomes and run times in the Prometheus metrics.

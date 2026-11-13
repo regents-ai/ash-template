@@ -14,7 +14,8 @@ defmodule AshTemplate.Notes.Webhook do
 
   The call to the other side happens before the note is written and outside any
   transaction. A failed call fails the action, so the job retries with backoff;
-  a 429 snoozes the job for as long as the other side asked; an address taken
+  a 429 snoozes the job for as long as the other side asked, up to an hour, and a
+  longer pause fails the attempt like any other failed call; an address taken
   away since the save cancels it.
   """
 
@@ -23,6 +24,9 @@ defmodule AshTemplate.Notes.Webhook do
   alias Ash.Error.Unknown.UnknownError
   alias AshOban.Errors.{CancelJob, SnoozeJob}
   alias AshTemplate.Notes.Note
+
+  # The longest pause the other side may ask for with 429, in seconds.
+  @longest_pause 3_600
 
   @doc "The address saved notes are posted to, or nil when none is set."
   @spec address() :: String.t() | nil
@@ -66,7 +70,7 @@ defmodule AshTemplate.Notes.Webhook do
   end
 
   # `:ok` for any 2xx answer, `{:snooze, seconds}` when the other side asks for a
-  # pause with 429, and `{:error, reason}` for anything else.
+  # pause of an hour at most with 429, and `{:error, reason}` for anything else.
   defp post(url, note_id, revision) do
     case Req.post(url,
            json: %{event: "note.saved", note_id: note_id, revision: revision},
@@ -76,11 +80,14 @@ defmodule AshTemplate.Notes.Webhook do
            receive_timeout: 10_000
          ) do
       {:ok, %{status: status}} when status in 200..299 -> :ok
-      {:ok, %{status: 429} = response} -> {:snooze, retry_after(response)}
+      {:ok, %{status: 429} = response} -> pause(retry_after(response))
       {:ok, %{status: status}} -> {:error, "the address answered #{status}"}
       {:error, error} -> {:error, Exception.message(error)}
     end
   end
+
+  defp pause(seconds) when seconds <= @longest_pause, do: {:snooze, seconds}
+  defp pause(seconds), do: {:error, "the address asked for a pause of #{seconds} seconds"}
 
   defp retry_after(response) do
     with [value | _] <- Req.Response.get_header(response, "retry-after"),
