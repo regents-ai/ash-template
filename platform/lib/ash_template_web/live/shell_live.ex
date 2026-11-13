@@ -69,7 +69,7 @@ defmodule AshTemplateWeb.ShellLive do
        points: %Read{},
        points_bonus: %Read{},
        points_board: %Read{},
-       points_earning: [],
+       points_phase: :before,
        verified_connections_notice: nil,
        notifications: %Read{},
        mark_read_failed?: false,
@@ -420,7 +420,7 @@ defmodule AshTemplateWeb.ShellLive do
           points={@points}
           board={@points_board}
           bonus={@points_bonus}
-          earning={@points_earning}
+          phase={@points_phase}
         />
 
         <AccountLive.wallets
@@ -780,10 +780,13 @@ defmodule AshTemplateWeb.ShellLive do
   end
 
   # The NFT tier is read from Base once per page open, never on each award
-  # notice, and not at all while nothing earns.
+  # notice, and only while a season runs.
   defp load_points(socket, %{route_id: :points}) do
     socket
-    |> assign(:points_earning, RegentPoints.Rules.active())
+    |> assign(
+      :points_phase,
+      RegentPoints.Seasons.phase(RegentPoints.Seasons.at(DateTime.utc_now()))
+    )
     |> read_points()
     |> read_points_board()
     |> read_points_bonus()
@@ -825,7 +828,7 @@ defmodule AshTemplateWeb.ShellLive do
   defp board_read({:ok, %{reading: board, at: at}}),
     do: %Read{state: :ready, value: board, read_at: at}
 
-  defp read_points_bonus(%{assigns: %{points_earning: []}} = socket),
+  defp read_points_bonus(%{assigns: %{points_phase: phase}} = socket) when phase != :running,
     do: Read.clear(socket, :points_bonus)
 
   defp read_points_bonus(socket) do

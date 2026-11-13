@@ -7,6 +7,7 @@ defmodule AshTemplateWeb.PointsPageTest do
   use ExUnit.Case, async: false
 
   import Phoenix.ConnTest
+  import Phoenix.LiveViewTest, only: [render_component: 2]
   import Plug.Conn, only: [put_req_header: 3]
 
   alias AshTemplate.{Accounts, SharedReading}
@@ -20,7 +21,10 @@ defmodule AshTemplateWeb.PointsPageTest do
 
   setup do
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
-    previous = Map.new([:starts_at, :approved_rules], &{&1, Application.get_env(:regent_points, &1)})
+
+    previous =
+      Map.new([:starts_at, :approved_rules], &{&1, Application.get_env(:regent_points, &1)})
+
     Application.put_env(:regent_points, :starts_at, DateTime.add(DateTime.utc_now(), -1, :day))
     Application.put_env(:regent_points, :approved_rules, ~w(account.activated social.x))
 
@@ -30,7 +34,10 @@ defmodule AshTemplateWeb.PointsPageTest do
       Ecto.Adapters.SQL.Sandbox.stop_owner(owner)
     end)
 
-    other = Accounts.register_verified!("did:privy:points-page-other", @other, [@other], actor: %System{})
+    other =
+      Accounts.register_verified!("did:privy:points-page-other", @other, [@other],
+        actor: %System{}
+      )
 
     {:ok, account, []} =
       VerifiedSession.establish(%RegentPrivy.Session{
@@ -70,12 +77,20 @@ defmodule AshTemplateWeb.PointsPageTest do
 
     # The account's own award is ticked; the social link is open and says where to go.
     assert text(page, ~s(#points-todo li[data-done="true"])) =~ "Account activated"
-    assert LazyHTML.attribute(LazyHTML.query(page, ~s(#points-todo li[data-done="false"] a)), "href") ==
+
+    assert LazyHTML.attribute(
+             LazyHTML.query(page, ~s(#points-todo li[data-done="false"] a)),
+             "href"
+           ) ==
              ["/account/connections"]
 
     # Two accounts level on points share first place; only the reader's row is marked.
     # Other tests' awards commit on purpose and sit below them.
-    ranks = page |> LazyHTML.query("#points-board li .rg-points-board__rank") |> Enum.map(&LazyHTML.text/1)
+    ranks =
+      page
+      |> LazyHTML.query("#points-board li .rg-points-board__rank")
+      |> Enum.map(&LazyHTML.text/1)
+
     assert Enum.take(ranks, 2) == ["1", "1"]
     assert Enum.count(ranks, &(&1 == "1")) == 2
     assert page |> LazyHTML.query(~s(#points-board li[data-you="true"])) |> Enum.count() == 1
@@ -126,13 +141,18 @@ defmodule AshTemplateWeb.PointsPageTest do
 
   # Every wallet is public: another person with no name shows by their wallet, whose
   # copy icon copies it in full. Nothing else about the account leaves it.
-  test "a person with no name shows by their wallet, with its copy icon", %{conn: conn, other: other} do
+  test "a person with no name shows by their wallet, with its copy icon", %{
+    conn: conn,
+    other: other
+  } do
     html = conn |> get("/account/points") |> html_response(200)
     page = LazyHTML.from_document(html)
 
     copies =
       page
-      |> LazyHTML.query(~s(#points-board li[data-you="false"] [id^="points-board-wallet-"][id$="-copy"]))
+      |> LazyHTML.query(
+        ~s(#points-board li[data-you="false"] [id^="points-board-wallet-"][id$="-copy"])
+      )
       |> LazyHTML.attribute("data-copy-text")
 
     assert @other in copies
@@ -150,18 +170,27 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert "#" <> to_string(answer["rank"]) == "#1"
     assert answer["earned_today"] == "25"
 
-    assert %{"done" => true, "left" => false} = Enum.find(answer["to_do"], &(&1["label"] == "Account activated"))
-    assert %{"done" => false, "left" => true} = Enum.find(answer["to_do"], &(&1["label"] == "X account linked"))
+    assert %{"done" => true, "left" => false} =
+             Enum.find(answer["to_do"], &(&1["label"] == "Account activated"))
+
+    assert %{"done" => false, "left" => true} =
+             Enum.find(answer["to_do"], &(&1["label"] == "X account linked"))
+
     assert Enum.map(answer["to_do"], & &1["label"]) |> Enum.sort() == todo_labels(page)
 
     # The seasons the page lists, each as it stands. Points started yesterday: the
     # first season runs and holds today's awards; the others have not begun.
-    assert length(answer["seasons"]) == page |> LazyHTML.query("#points-bonus dl > div") |> Enum.count()
-    assert [{"running", "25", nil} | later] = Enum.map(answer["seasons"], &{&1["state"], &1["earned"], &1["bonus"]})
+    assert length(answer["seasons"]) ==
+             page |> LazyHTML.query("#points-bonus dl > div") |> Enum.count()
+
+    assert [{"running", "25", nil} | later] =
+             Enum.map(answer["seasons"], &{&1["state"], &1["earned"], &1["bonus"]})
+
     assert length(later) == RegentPoints.Rules.season_count() - 1
     assert Enum.all?(later, &(&1 == {"upcoming", nil, nil}))
 
-    assert length(answer["leaderboard"]) == page |> LazyHTML.query("#points-board li") |> Enum.count()
+    assert length(answer["leaderboard"]) ==
+             page |> LazyHTML.query("#points-board li") |> Enum.count()
 
     for row <- answer["leaderboard"] do
       assert row |> Map.keys() |> Enum.sort() == ~w(ens_name name points rank wallet you)
@@ -173,7 +202,10 @@ defmodule AshTemplateWeb.PointsPageTest do
 
   # After the last season nothing earns: the page and the agent list no action to
   # do, and every season shows as over. The account's figures stay.
-  test "after the last season, no action is listed as available", %{conn: conn, person: person} do
+  test "after the last season, no action is listed and the Bonus card has ended", %{
+    conn: conn,
+    person: person
+  } do
     days = RegentPoints.Rules.season_count() * 30 + 1
     Application.put_env(:regent_points, :starts_at, DateTime.add(DateTime.utc_now(), -days, :day))
 
@@ -186,6 +218,12 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert Enum.all?(answer["seasons"], &(&1["state"] == "ended"))
     assert answer["points"] == text(page, "#points-total .rg-points-total__figure")
     assert answer["points"] == "25"
+
+    # The Bonus card is in the shared card's ended state, which reads apart from its
+    # not-yet-open one, and marks no tier as held.
+    refute bonus_line(:ended) == bonus_line(:closed)
+    assert text(page, "#points-bonus .rg-points-bonus__held") == bonus_line(:ended)
+    assert Enum.empty?(LazyHTML.query(page, ~s(#points-bonus li[data-held="true"])))
   end
 
   # While the board is held for signed-in readers, a signed-out visitor gets none of it.
@@ -237,13 +275,24 @@ defmodule AshTemplateWeb.PointsPageTest do
           walletAddress: @wallet,
           agentBook: nil,
           agentRegistration: nil,
-          principal: %{kind: "wallet", wallet_address: @wallet, chain_id: 8453, audience: "ash-template"}
+          principal: %{
+            kind: "wallet",
+            wallet_address: @wallet,
+            chain_id: 8453,
+            audience: "ash-template"
+          }
         }
       })
     end)
 
-    code = RegentAgents.issue_pairing_code!(actor: %RegentAgents.Person{privy_user_id: person.privy_user_id})
-    RegentAgents.pair_agent!(code.code, "Fixture", :codex, actor: %RegentAgents.Agent{wallet: @wallet})
+    code =
+      RegentAgents.issue_pairing_code!(
+        actor: %RegentAgents.Person{privy_user_id: person.privy_user_id}
+      )
+
+    RegentAgents.pair_agent!(code.code, "Fixture", :codex,
+      actor: %RegentAgents.Agent{wallet: @wallet}
+    )
 
     build_conn()
     |> put_req_header("x-siwa-signature", "fixture-proof")
@@ -257,5 +306,15 @@ defmodule AshTemplateWeb.PointsPageTest do
     |> Enum.sort()
   end
 
-  defp text(page, selector), do: page |> LazyHTML.query(selector) |> LazyHTML.text() |> String.trim()
+  # The status line of the shared Bonus card drawn in one state.
+  defp bonus_line(state) do
+    assigns = [id: "bonus", state: state, tiers: [], periods: [], tip: []]
+
+    render_component(&Regent.Points.bonus/1, assigns)
+    |> LazyHTML.from_fragment()
+    |> text(".rg-points-bonus__held")
+  end
+
+  defp text(page, selector),
+    do: page |> LazyHTML.query(selector) |> LazyHTML.text() |> String.trim()
 end

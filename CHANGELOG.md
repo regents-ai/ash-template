@@ -10390,3 +10390,18 @@ Points library learns the number of seasons and stops by itself."
 - Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
   `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll.
+
+## 2026-11-13 — The Points Bonus card says when Points has ended (branch, not on main)
+
+Branch `tpl/points-seasons-1113`, on the chief's `tpl/chief-seasons-check-1113` (main
+with v238 merged). Sean's answer to the seasons work's question: a, add the ended wording.
+
+- **Design system.** Pin `9f20103e` to `c9071e2c`: `Regent.Points.bonus` takes
+  `state={:ended}`. The pin also brings the Cornflower drawing swatch, a token nothing
+  here uses yet, and words in the design system's own style guide, which the template
+  does not load. Nothing else on screen changes.
+- **The page.** The shell reads where Points stands (`RegentPoints.Seasons.phase/1`) in
+  place of the rules earning now, and the Bonus card takes its state from it: before the
+  first season `:closed`, after the last `:ended`, while a season runs the NFT read's
+  state. The NFTs are read only while a season runs. The page's `earning` input and its
+  own open-or-closed branch are gone.

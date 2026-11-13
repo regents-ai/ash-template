@@ -100,10 +100,11 @@ seasons (Sean, 13 November). Nothing done after the third's end earns; its bonus
 still added after it, and no later period is tallied. The tier the account's wallets
 hold on the tally day applies once, without stacking, to the points earned in that
 period after limits, one-time awards included. Regents runs the tally; each account
-and period gets one saved bonus row. While earning is open, the Points page shows
-the tier the wallets hold now as "Bonus this period", read from Base when the page
-opens and never saved; while earning is off it reads no NFTs and says they are
-counted once earning opens. Account merging remains deferred.
+and period gets one saved bonus row. While a season runs, the Points page shows
+the tier the wallets hold now, read from Base when the page opens and never saved.
+Outside the seasons it reads no NFTs, and the shared Bonus card is in its state for
+before the first season (`:closed`) or after the last (`:ended`), from
+`RegentPoints.Seasons.phase/1`. Account merging remains deferred.
 
 ## Source integration
 
