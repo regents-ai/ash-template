@@ -3,9 +3,10 @@ import {expect, onThisMachine, test} from "./support/test"
 import {signedIn, watch} from "./support/person"
 
 // The walk's person likes a room message from its menu: a pressed heart with its
-// count shows under it, and pressing the heart takes the like back. A like from the
-// walk's friend shows its count on the person's open page, with the heart left as
-// the person last pressed it, and the friend is listed as here while their page is open.
+// count shows beside the menu, and pressing the heart takes the like back; the
+// message keeps its height as the heart comes and goes. A like from the walk's
+// friend shows its count on the person's open page, with the heart left as the
+// person last pressed it, and the friend is listed as here while their page is open.
 test.use(signedIn)
 
 test("A friend's like shows its count on the person's open page, and the friend is here while their page is open", async ({page, browser, baseURL, extraHTTPHeaders, hasTouch}, info) => {
@@ -33,13 +34,16 @@ test("A friend's like shows its count on the person's open page, and the friend 
     await expect(people).toContainText("Walk Friend")
 
     const liked = theirs.locator(".rooms-message", {hasText: words})
+    const height = (await said.boundingBox())!.height
     await liked.getByRole("button", {name: "Options for this message"}).click()
     await liked.getByRole("button", {name: "Like", exact: true}).click()
     await expect(liked.locator(".rg-discussion__heart")).toHaveAttribute("aria-pressed", "true")
 
+    // The first like arriving leaves the message as tall as it was.
     const heart = said.locator(".rg-discussion__heart")
     await expect(heart).toContainText("1")
     await expect(heart).toHaveAttribute("aria-pressed", "false")
+    expect((await said.boundingBox())!.height).toBe(height)
 
     // The person likes it too: their heart turns, and the friend's page counts both.
     await press(heart)
@@ -70,12 +74,14 @@ test("Like on a room message shows a pressed heart, and pressing it takes the li
   const said = page.locator(".rooms-message", {hasText: words})
   await expect(said).toBeVisible()
   await expect(said.locator(".rg-discussion__heart")).toHaveCount(0)
+  const height = (await said.boundingBox())!.height
 
   await press(said.getByRole("button", {name: "Options for this message"}))
   await press(said.getByRole("button", {name: "Like", exact: true}))
   const heart = said.locator(".rg-discussion__heart")
   await expect(heart).toHaveAttribute("aria-pressed", "true")
   await expect(heart).toContainText("1")
+  expect((await said.boundingBox())!.height).toBe(height)
 
   await press(said.getByRole("button", {name: "Options for this message"}))
   await expect(said.getByRole("button", {name: "Remove like"})).toBeVisible()
@@ -83,5 +89,6 @@ test("Like on a room message shows a pressed heart, and pressing it takes the li
 
   await press(heart)
   await expect(said.locator(".rg-discussion__heart")).toHaveCount(0)
+  expect((await said.boundingBox())!.height).toBe(height)
   await problems.expect()
 })

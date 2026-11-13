@@ -10694,3 +10694,32 @@ Tests only; no code changed.
 - Rollback: v244 (`1acf62ec`) image.
 - Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
   with 5 skipped, 284 Elixir (10 properties).
+
+## 2026-11-13 — Rooms: a like no longer changes a message's height
+
+- Before: `platform/lib/ash_template_web/live/rooms_live.ex` put a message's heart under
+  its words, and the shared heart shows only once the message has a like. The first like
+  made the message 44px taller on a phone (36px on a desktop follow-on message, 32px to
+  68px) and the last like taken back made it shorter again. The room rests on its newest
+  message, so every message above it moved.
+- Now the heart sits beside the message's menu, in a new end cell
+  (`rooms-message__end`), and `platform/assets/css/pages/rooms.css` holds its place
+  whether or not anyone likes the message: 44px wide and as tall as the menu's button
+  (32px, 44px on touch screens), the heart filling it. The shared
+  `Regent.Discussion.like/1` and its styles are unchanged.
+- Measured in a headless browser at 1280, 390 and 320 wide, light and dark, for the
+  person and for a signed-out reader: no message changes height when the first like
+  arrives or the last is taken back.
+- Cost: a message's words are 44px narrower on a phone, the heart's width, so long
+  messages wrap sooner; a signed-out reader's messages are at least 32px tall on a
+  desktop and 44px on touch screens.
+- `platform/test/browser/likes.spec.ts` checks the message keeps its height when the
+  friend's first like arrives, when the person likes it and when the person takes the
+  like back. `platform/test/browser/busy_room.spec.ts` makes its third message taller,
+  as it already did the second: the narrower words on a phone left that message short of
+  the height the test needs. The feature map's likes row says the count shows beside
+  the menu.
+- Check: `make check` exit 0 on this change with `c5657e83` under it, and again on the
+  released commit: the style check, 13 report script tests, 155 script tests in 21 files, the
+  browser walk (653 passed, 5 skipped for screen size), 282 server tests (272 tests, 10
+  properties), required fixes, `cli/commands.json`, newest SIWA.

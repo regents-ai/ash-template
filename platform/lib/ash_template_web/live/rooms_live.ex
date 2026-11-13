@@ -449,6 +449,8 @@ defmodule AshTemplateWeb.RoomsLive do
                   </p>
                   <.message_body id={dom_id} body={message.body} />
                   <p :if={message.edited_at} class="rooms-message__edited">Edited</p>
+                </div>
+                <div class="rooms-message__end">
                   <.live_component
                     module={Heart}
                     id={heart_id(message.id)}
@@ -459,14 +461,14 @@ defmodule AshTemplateWeb.RoomsLive do
                     signed_in?={@actor != nil}
                     target={@myself}
                   />
+                  <.message_menu
+                    :if={@actor}
+                    id={dom_id}
+                    message={message}
+                    actor={@actor}
+                    myself={@myself}
+                  />
                 </div>
-                <.message_menu
-                  :if={@actor}
-                  id={dom_id}
-                  message={message}
-                  actor={@actor}
-                  myself={@myself}
-                />
               </li>
             </ol>
           </div>

@@ -134,15 +134,20 @@
   margin: 0;
 }
 
-/* The heart sits under the words, its picture lined up with them. What holds
-   it adds no box of its own. */
-.rooms-heart {
-  display: contents;
+/* The message's end holds its heart, then its menu. The heart's place is held
+   whether or not anyone likes the message, wide enough for a heart and its count
+   and as tall as the menu's button, so the first like and the last one taken
+   back never change the message's height or the width of its words. */
+.rooms-message__end {
+  display: flex;
 }
 
-.rooms-message__main .rg-discussion__like {
-  justify-self: start;
-  margin-inline-start: calc(-1 * var(--space-1));
+.rooms-heart {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: none;
+  inline-size: 2.75rem;
+  block-size: 2rem;
 }
 
 /* The menu offers Like, or Remove like once the reader likes the message, as
@@ -372,6 +377,14 @@
   background: var(--ash-raised);
 }
 
+/* The heart fills the place held for it. The shared heart's own rule is outside
+   any layer, so this sits outside the product layer too. */
+.rooms-heart .rg-discussion__heart {
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
 /* The menu is a raised fill; its rows part with lines of the page's ground and
    take that ground when pointed at. */
 
@@ -411,9 +424,10 @@
   display: none;
 }
 
-/* On touch screens a message's menu button and "Show more" are 44px. */
+/* On touch screens a message's menu button, its heart and "Show more" are 44px. */
 @media (hover: none), (pointer: coarse) {
-  .rooms-menu .rooms-menu__button {
+  .rooms-menu .rooms-menu__button,
+  .rooms-heart {
     inline-size: 2.75rem;
     block-size: 2.75rem;
   }
