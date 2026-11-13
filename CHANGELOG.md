@@ -10317,3 +10317,30 @@ needs his own named go.
   size), 257 server tests (247 tests, 10 properties), required fixes,
   `cli/commands.json`, newest regents-cli. elixir-utils Points: 25 passed (1 property)
   and no missing generated migration on each of the three branches.
+
+## 2026-11-13 — Points runs in three seasons and stops by itself (branch, not on main)
+
+Branch `tpl/points-seasons-1113`, for the chief (`/tmp/stampede-1112/build-points-seasons.md`),
+from `tpl/points-board-1112` with `main` (v236) merged in. Sean's decision: "The shared
+Points library learns the number of seasons and stops by itself."
+
+- **Library.** elixir-utils pin `f5452442` to `2503f4fe` (branch
+  `eu/points-seasons-1113`; sites still on `240e938` take the same change as `6aaf3216`,
+  `eu/points-seasons-on-pin-1113`). The count is a constant of the program in
+  `RegentPoints.Rules` (`season_count/0`, 3), beside the 30-day period, so every site
+  stops at the same moment with nothing to set. After the last season's end
+  (`Rules.ends_at/0`) an action's check is refused with `rule_not_active`, as before the
+  start, and the start awards job cancels. An action done before the end still earns
+  when checked later. Corrections, reads, the board and the last season's NFT bonus
+  carry on; no fourth period is tallied. `RegentPoints.Seasons` (`at/1`, `phase/1`) is
+  every site's read of the seasons.
+- **Template.** `config :ash_template, :points_seasons` and `AshTemplate.Points.Seasons`
+  are gone; the page, the agent's answer and the tip read the library. After the last
+  season the To do list is empty on the page and in the agent's `to_do`. The answer's
+  shape is unchanged: no API version change.
+- No migration. `starts_at` stays unset and `approved_rules` empty.
+- Check: `make check` exit 0 on `9b1eb639`: 13 report script tests, the style check,
+  155 script tests in 21 files, the browser walk (653 passed, 5 skipped for screen
+  size), 269 server tests (259 tests, 10 properties), required fixes,
+  `cli/commands.json`, newest regents-cli. elixir-utils Points: 31 passed (1 property)
+  and no missing generated migration on both library branches.
