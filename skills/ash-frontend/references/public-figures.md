@@ -30,7 +30,10 @@ One more figure may be shared: one that is the same for every signed-in reader,
 such as the Points board. It is a `SharedReading` kind whose `audience` names those
 readers, and every page or answer that shows it admits only them. What differs by
 reader (their own row, their own place) is worked out from the shared reading and
-their own read, on the server; the reading itself never reaches a page.
+their own read, on the server; the reading itself never reaches a page. A shared
+reading holds a bounded figure, such as the board's ten rows, never a list that
+grows with the site's accounts; a reader's own place is their own read (an
+indexed count), not a search through the shared reading.
 
 ## A public row: publish its public fields
 

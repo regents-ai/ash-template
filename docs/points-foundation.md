@@ -163,23 +163,24 @@ See the package README for the adapter contract, actor policy and migration inst
   It reads `RegentPoints.leaderboard/1` under the system actor at most once a second
   after any award, correction or period bonus on this site (`points:board`), and
   each minute from the heal line, which also catches awards made on the other
-  sites. It holds the ten rows with their account ids and every positive total,
-  highest first. A reader's place is `RegentPoints.Leaderboard.place/2` over those
-  totals and their own total from their summary. The ids and the list of totals stay
-  on the server: a page or an agent gets the rows without ids, a mark on its own row
-  and its own place. While the board has never been read the page shows it as
-  loading or not read, and the agent's whole Points answer is "unavailable".
+  sites. Each account stores its total (`balance_micro` in the shared Points
+  schema), moved by every award, correction and period bonus in the same
+  transaction, and the board reads the ten highest from an index on it: the same
+  ten rows however many accounts have points. It holds those rows with their
+  account ids, highest first. A reader's place comes with their summary
+  (`place` in `RegentPoints.summary/1`): one count of the accounts above them on
+  the same index, read when the page opens and when their own Points change. The
+  ids stay on the server: a page or an agent gets the rows without ids, a mark on
+  its own row and its own place. While the board has never been read the page
+  shows it as loading or not read, and the agent's whole Points answer is
+  "unavailable".
 
-  Size: the kind accepts 131,072 bytes. Ten rows take at most about 36 KB (a name, a
-  2.3 KB square pattern and a picture address of up to 1 KB each) and each account
-  with points 8 bytes, so 10,000 accounts with points take about 116 KB: it holds
-  the board for 10,000 accounts with points. Each board read reports its size as a
-  percent of the limit (`health.shared_reading.size.percent`, kind `points_board`),
-  so its growth shows long before the limit; about 88 means 10,000 accounts. A larger
-  board is refused and marked degraded; the last one stays shown as behind, and the
-  agent's answer keeps giving it. The next step past 10,000 is a stored total on each account with an index, so a
-  reader's place is one indexed count. That is a new column in the shared Points
-  schema, a migration, and needs Sean's go.
+  Size: the kind accepts 65,536 bytes. With a 1 KB name, a 2.3 KB square pattern, a
+  1 KB picture address and an ENS name on every row, ten rows measure about 48 KB,
+  whatever the number of accounts. Each board read reports its size as a percent
+  of the limit (`health.shared_reading.size.percent`, kind `points_board`). A
+  larger board is refused and marked degraded; the last one stays shown as behind,
+  and the agent's answer keeps giving it.
 - **Bonus**: the three NFT tiers with the one held marked, and each period's bonus.
 - **Activity**: each entry with who earned it (you or the agent's name), when, and
   whether it was cut by a daily limit or is a correction.

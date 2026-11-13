@@ -31,11 +31,7 @@ defmodule AshTemplateWeb.PointsLive do
 
     board =
       assigns.board.value &&
-        PointsEntries.board(
-          assigns.board.value,
-          assigns.account.id,
-          summary && summary.balance_micro
-        )
+        PointsEntries.board(assigns.board.value, assigns.account.id, summary)
 
     assigns =
       assign(assigns,
