@@ -9846,3 +9846,23 @@ protected; releasing it is the founder's decision.
   out from another tab, open shell pages reload signed out and the open team page
   drops its messages and reloads to not found. Not run: a real Privy sign-in, and a
   revocation with no disconnect in a browser (the server test covers it).
+
+## 2026-11-13 — Released v230: the template on the shared sign-in pieces
+
+- `9f90f648` (merge of `tpl/privy-shared-main-1112`, `cb4855c6`) is v230 on
+  template.regents.sh, switched at about 00:45Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "22 a" (12 Nov). No migration.
+- The template's own token reader is gone for `RegentPrivy.Proof`; `/admin/errors` and
+  `/admin/messages` are kept by `RegentPrivy.Owners` reading
+  `AshTemplateWeb.ErrorsAdmin`; the content security policy uses the shared sign-in
+  list. elixir-utils pin `240e938` to `0eee6be3` (the old pin plus only the shared
+  sign-in folder).
+- Rollback: v229 (`12ef221e`), image only.
+- Full check exit 0 by the chief on the exact commit: 154 script tests, 651 browser
+  walks with 5 skipped, 254 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/rooms/general`, `/notes` and `/docs` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll; `/admin/errors` and `/admin/messages` answer 404;
+  health 200; the content security policy header names the Privy and wallet hosts.
+- Not proven on live: a real Privy sign-in through the shared token reader, and the
+  admin pages as an admin. Sean opens both.
