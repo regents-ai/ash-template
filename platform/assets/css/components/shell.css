@@ -615,7 +615,8 @@
 
 #shell-sidebar li > a,
 #shell-sidebar li > button,
-.shell-sidebar__new {
+.shell-sidebar__new,
+.shell-sidebar__more {
   display: flex;
   align-items: center;
   width: 100%;
@@ -635,7 +636,8 @@
 @media (hover: hover) {
   #shell-sidebar li > a:hover,
   #shell-sidebar li > button:hover,
-  .shell-sidebar__new:hover {
+  .shell-sidebar__new:hover,
+  .shell-sidebar__more:hover {
     background: var(--ash-raised);
     color: var(--ash-ink);
   }
@@ -650,6 +652,12 @@
   width: auto;
   border: 1px solid var(--ash-quiet);
   color: var(--ash-ink);
+}
+
+/* A list's next page: one more row under its last. */
+.shell-sidebar__more {
+  margin: 0 var(--space-1) var(--space-1);
+  width: auto;
 }
 
 .shell-sidebar__empty {

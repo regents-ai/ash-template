@@ -77,13 +77,27 @@
     },
     {
       "command": "rooms list",
-      "description": "List the chat rooms: each one's name in addresses, its name and its topic.",
+      "description": "List the chat rooms, 50 a page, the most recently active first: each one's name in addresses, its name and its topic; send after (the previous page's next_cursor) for more.",
       "operation_id": "listRooms",
       "webmcp": "rooms_list",
       "method": "GET",
       "path": "/api/v1/rooms",
       "authority": "public",
-      "effect": "read"
+      "effect": "read",
+      "flags": [
+        {
+          "name": "after",
+          "type": "string",
+          "in": "query",
+          "field": "after",
+          "description": "The previous page's next_cursor, unchanged."
+        }
+      ],
+      "pagination": {
+        "has_more": "pagination.has_more",
+        "cursor": "pagination.next_cursor",
+        "flag": "after"
+      }
     },
     {
       "command": "rooms create",

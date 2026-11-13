@@ -113,10 +113,16 @@
     {
       "name": "rooms_list",
       "title": "List the chat rooms",
-      "description": "List the chat rooms: each one's name in addresses, its name and its topic. No sign-in; changes nothing.",
+      "description": "List the chat rooms, 50 a page, the most recently active first: each one's name in addresses, its name and its topic; send after (the previous page's next_cursor) for more. No sign-in; changes nothing.",
       "input_schema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "after": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "The previous page's pagination.next_cursor, unchanged, for more rooms."
+          }
+        },
         "required": [],
         "additionalProperties": false
       },

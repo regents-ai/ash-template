@@ -1602,10 +1602,21 @@
       "get": {
         "operationId": "listRooms",
         "summary": "List the rooms",
-        "description": "Every room, the site's own first, then the rest in the order they were started. Anyone may read them; no sign-in.",
+        "description": "The rooms, 50 a page, the most recently active first: a post moves its room to the top. Anyone may read them; no sign-in.",
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "The previous page's pagination.next_cursor, unchanged. Leave it out for the first page.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Every room",
+            "description": "One page of the rooms, the most recently active first",
             "headers": {
               "RateLimit-Policy": {
                 "$ref": "#/components/headers/RateLimitPolicy"
@@ -1618,6 +1629,42 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RoomsEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "after is not a cursor this site gave (invalid_cursor)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The rooms could not be reached (rooms_unavailable)",
+            "headers": {
+              "RateLimit-Policy": {
+                "$ref": "#/components/headers/RateLimitPolicy"
+              },
+              "RateLimit": {
+                "$ref": "#/components/headers/RateLimit"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -8225,13 +8272,35 @@
       "RoomsEnvelope": {
         "type": "object",
         "required": [
-          "rooms"
+          "rooms",
+          "pagination"
         ],
         "properties": {
           "rooms": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Room"
+            },
+            "maxItems": 50
+          },
+          "pagination": {
+            "type": "object",
+            "required": [
+              "has_more",
+              "next_cursor"
+            ],
+            "properties": {
+              "has_more": {
+                "type": "boolean",
+                "description": "True when less recently active rooms follow."
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Send as after for the next page; null when there is none."
+              }
             }
           }
         }
