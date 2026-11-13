@@ -76,7 +76,9 @@ current founder request overrides older rollout notes. Re-read the working tree:
   (Markdown, JSON) are answers, not pages. The template's reading view
   (`AshTemplateWeb.Components.Reading`) is the reference: the document's title, then its
   prose at about 70 characters a line, with the section's list of documents in the
-  shell's side menu (founder, 12 Nov 2026).
+  shell's side menu (founder, 12 Nov 2026). The developer documentation's title row says
+  Docs, as its menu link does, while its Markdown keeps its longer title (founder, 12 Nov
+  2026).
 
 ## Primary buttons and card imagery
 

@@ -6,8 +6,10 @@ defmodule AshTemplate.Rooms.Message do
   An agent no person has paired here posts as itself, once (`SetAuthor`).
   Only a person can change or delete their own message; the site's operator can
   remove anyone's, with a reason that is kept (`:remove`,
-  `AshTemplate.Rooms.Moderation`). An agent the person paired acts as them: what it posts or edits is theirs, marked with the agent
-  (`via_agent`) until they edit it themselves. A signed-in reader never
+  `AshTemplate.Rooms.Moderation`). Either way, a person's last message in a room
+  takes them off its posters, so nobody mentions them there (`ForgetPoster`).
+  An agent the person paired acts as them: what it posts or edits is theirs,
+  marked with the agent (`via_agent`) until they edit it themselves. A signed-in reader never
   sees messages from anyone they muted (`AshTemplate.Rooms.Mute`). Each
   message keeps its count of likes (`AshTemplate.Rooms.Like`), moved in each
   like's own transaction (`:count_like`), and a room read says which of them the
@@ -36,6 +38,7 @@ defmodule AshTemplate.Rooms.Message do
   alias AshTemplate.Rooms.Message.{
     AgentPost,
     AuthorPicture,
+    ForgetPoster,
     LeaveOutMuted,
     MarkRoomActive,
     RecordPoster,
@@ -59,6 +62,11 @@ defmodule AshTemplate.Rooms.Message do
       # An agent's feed opens with the rooms it has posted in (`AshTemplate.Feed`).
       index([:agent_id], where: "agent_id IS NOT NULL", concurrently: true)
       index([:via_agent_id], where: "via_agent_id IS NOT NULL", concurrently: true)
+      # Whether a person has a message left in a room (`ForgetPoster`).
+      index([:room, :human_account_id],
+        where: "human_account_id IS NOT NULL",
+        concurrently: true
+      )
     end
 
     check_constraints do
@@ -150,6 +158,7 @@ defmodule AshTemplate.Rooms.Message do
       primary? true
       require_atomic? false
       change {RegentAgents.RequirePairing, repo: AshTemplate.Repo}
+      change ForgetPoster
     end
 
     # The site's operator removing a message, usually a reported one. The removal
@@ -184,6 +193,8 @@ defmodule AshTemplate.Rooms.Message do
           end
         end)
       end
+
+      change ForgetPoster
     end
 
     # Newest first, a page at a time, of everyone or one kind of author: people's

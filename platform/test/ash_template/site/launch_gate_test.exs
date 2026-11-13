@@ -28,11 +28,12 @@ defmodule AshTemplate.LaunchGateTest do
       assert Enum.count(LazyHTML.query(page, "#shell-footer")) == 1
     end
 
+    # Each is headed by its document's title; the developer documentation by Docs.
     for path <- @reading do
       "# " <> document = PublicDocuments.document(path).markdown
       [title | _prose] = String.split(document, "\n", parts: 2)
       heading = request(path).resp_body |> LazyHTML.from_document() |> LazyHTML.query("#route-content h1")
-      assert LazyHTML.text(heading) == title
+      assert LazyHTML.text(heading) == if(path == "/docs", do: "Docs", else: title)
     end
 
     # The gate really was closed for these requests.
