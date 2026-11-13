@@ -10741,3 +10741,12 @@ Tests only; no code changed.
   written.
 - The per-action "and later" releases in `capabilities.json` stay as they are: no action
   first arrives in 1.10.28.
+
+## 2026-11-13 — Released v246: Rooms like fix and regents-cli 1.10.28
+
+- `321215b0` is v246 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`.
+  It carries the Rooms like change (`46e369ee`) and the move to regents-cli 1.10.28. No
+  migration, no library pin change; API 17.0.0 unchanged.
+- Rollback: v245 (`eae88dc4`) image.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 284 Elixir (10 properties).
