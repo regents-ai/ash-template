@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Likes.** A message's like count rolls to its new number when it changes while
+  you are looking.
+- **Copy.** "Copied" fades in gently when you copy something with a click or a tap.
 - **Notifications.** The number on the bell rolls to its new count when something
   new comes in while you are looking.
 - **Messages.** When someone else's message arrives in a room, a private

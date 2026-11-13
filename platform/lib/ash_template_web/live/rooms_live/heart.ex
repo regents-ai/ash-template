@@ -11,7 +11,9 @@ defmodule AshTemplateWeb.RoomsLive.Heart do
   room page hands on. A visitor's press opens sign-in.
 
   Its root carries `data-liked` while the reader likes the message, so the
-  message's menu offers Remove like in place of Like.
+  message's menu offers Remove like in place of Like. A count that changes
+  while the reader watches rolls to its new figure (`MotionCount`); the first
+  like's count and the last one taken back simply come and go.
   """
 
   use AshTemplateWeb, :live_component
@@ -37,7 +39,12 @@ defmodule AshTemplateWeb.RoomsLive.Heart do
   @impl true
   def render(%{signed_in?: false} = assigns) do
     ~H"""
-    <div id={@id} class="rooms-heart">
+    <div
+      id={@id}
+      class="rooms-heart"
+      phx-hook="MotionCount"
+      data-variant={AshTemplateWeb.Motion.standard("count")}
+    >
       <Discussion.like
         :if={@like_count > 0}
         count={@like_count}
@@ -50,7 +57,13 @@ defmodule AshTemplateWeb.RoomsLive.Heart do
 
   def render(assigns) do
     ~H"""
-    <div id={@id} class="rooms-heart" data-liked={@liked}>
+    <div
+      id={@id}
+      class="rooms-heart"
+      data-liked={@liked}
+      phx-hook="MotionCount"
+      data-variant={AshTemplateWeb.Motion.standard("count")}
+    >
       <Discussion.like
         :if={@like_count > 0}
         count={@like_count}

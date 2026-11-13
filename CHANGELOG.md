@@ -10765,3 +10765,27 @@ Tests only; no code changed.
   reloading, reconnecting with no change, or under reduced motion.
 - Not measured: 9 to 10 and 99 to "99+" (the kit swaps a figure whose length
   changes; the badge sits above the bell, so it moves nothing).
+
+## 2026-11-13 — Rooms and copy buttons: the like count rolls, "Copied" fades in
+
+- Before: a message's like count in
+  `platform/lib/ash_template_web/live/rooms_live/heart.ex` swapped to its new number
+  at once, and a copy button's "Copied" or "Selected" in
+  `platform/assets/js/copy_buttons.ts` appeared at once.
+- Now the heart carries the kit's `MotionCount` in the standard count motion
+  ("roll"): a count that changes while the reader watches rolls to its new figure,
+  and the first like's count and the last one taken back simply come and go. The
+  heart's place stays 44px wide and as tall as the menu's button.
+- "Copied" and "Selected" fade in over 200ms with the house ease-out (the kit's
+  `fadeIn`) when a mouse or finger pressed the button. From a key, on a repeat press
+  while the word still shows, and under reduced motion, they are simply there. The
+  copy icon's tick and "Couldn't copy" with its shake are unchanged.
+- Measured in headless Chromium at 1280 and 390 wide, light and dark: each like and
+  like taken back rolled in 265 to 282ms; the heart's place (44 by 32, 44 by 44 on a
+  phone) and the message's height did not change; with the friend's likes, the heart
+  and its figure did not move at all; the person's own press moves them under 2px,
+  which is the existing press. No roll for the first like, on opening, reloading,
+  reconnecting or under reduced motion. "Copied" faded in over about 150ms of drawn
+  frames, and the button returned to its exact size.
+- Known limit: the heart's count also rolls when the person likes with a key; the
+  kit's `MotionCount` cannot tell what changed the count.
