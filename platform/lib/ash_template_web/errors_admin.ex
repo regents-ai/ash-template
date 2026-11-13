@@ -1,22 +1,23 @@
 defmodule AshTemplateWeb.ErrorsAdmin do
   @moduledoc """
-  Keeps the saved errors at /admin/errors, and the messages left for the team at
-  /admin/messages, for the site's admins: a signed-in account the site's
-  `:admins` setting names (config/config.exs). Anyone else gets the site's
-  ordinary not-found page, so the page's existence is not shown either.
+  The site's admins, for the saved errors at /admin/errors and the messages left
+  for the team at /admin/messages: a signed-in account the site's `:admins` setting
+  names (config/config.exs). `RegentPrivy.Owners` keeps both pages with this module
+  as the sign-in it reads, through the session rows (`SessionAuthority`): anyone
+  else gets the site's ordinary not-found page, and an open page checks the sign-in
+  again on every navigation, press, message and background result, so a sign-in
+  that ends or lapses cannot keep acting on the page.
 
-  As a plug it checks the request and sends the page's own content security
-  policy, with a nonce for the one style and one script element the error
-  dashboard writes into its page. As an `on_mount` hook it checks the socket the
-  page connects with, then re-reads the sign-in on every navigation and press,
-  the way the product shell does (`AshTemplateWeb.Live.Session`), so a sign-in
-  that ends or lapses cannot keep acting on the page. The page acts as `:admin`,
-  the team actor `RegentAgents.Checks.Admin` checks again in each policy.
+  As a plug, after that check, it sends the page's own content security policy,
+  with a nonce for the one style and one script element the error dashboard writes
+  into its page. As the `:admin` hook it gives the team page its actor, `:admin`,
+  from the Privy id the check put on the page; `RegentAgents.Checks.Admin` checks
+  that actor again in each policy.
   """
 
   @behaviour Plug
+  @behaviour RegentPrivy.Owners
 
-  import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1, get_connect_info: 2, redirect: 2]
   import Plug.Conn
 
   alias AshTemplate.Accounts.SessionAuthority
@@ -27,62 +28,40 @@ defmodule AshTemplateWeb.ErrorsAdmin do
 
   @impl Plug
   def call(conn, _opts) do
-    case conn |> get_session() |> admin() do
-      nil ->
-        raise Phoenix.Router.NoRouteError, conn: conn, router: AshTemplateWeb.Router
+    nonce = 18 |> :crypto.strong_rand_bytes() |> Base.encode64()
 
-      _admin ->
-        nonce = 18 |> :crypto.strong_rand_bytes() |> Base.encode64()
-
-        conn
-        |> assign(:csp_nonce, nonce)
-        |> put_resp_header("content-security-policy", ContentSecurityPolicy.errors(nonce))
-    end
+    conn
+    |> assign(:csp_nonce, nonce)
+    |> put_resp_header("content-security-policy", ContentSecurityPolicy.errors(nonce))
   end
 
-  def on_mount(:default, _params, session, socket) do
-    session = if connected?(socket), do: get_connect_info(socket, :session), else: session
-
-    case admin(session) do
-      nil ->
-        leave(socket)
-
-      {lineage, account} ->
-        recheck = fn socket -> recheck(socket, lineage, account.id) end
-
-        {:cont,
-         socket
-         |> Phoenix.Component.assign(:admin, %RegentAgents.Person{
-           privy_user_id: account.privy_user_id,
-           role: :admin
-         })
-         |> attach_hook(:errors_admin_params, :handle_params, fn _params, _uri, socket ->
-           recheck.(socket)
-         end)
-         |> attach_hook(:errors_admin_event, :handle_event, fn _event, _params, socket ->
-           recheck.(socket)
-         end)}
-    end
+  def on_mount(:admin, _params, _session, socket) do
+    {:cont,
+     Phoenix.Component.assign(socket, :admin, %RegentAgents.Person{
+       privy_user_id: socket.assigns.owner_privy_user_id,
+       role: :admin
+     })}
   end
 
-  defp admin(session) do
+  @impl RegentPrivy.Owners
+  def owners, do: Application.fetch_env!(:ash_template, :admins)
+
+  @impl RegentPrivy.Owners
+  def signed_in(session) do
     case session |> SessionAuthority.claim() |> SessionAuthority.resolve() do
       {lineage, %{privy_user_id: id} = account, _lapses_at} when is_binary(lineage) ->
-        if admin_id?(id), do: {lineage, account}
+        {:ok, id, {lineage, account.id}}
 
       _signed_out ->
-        nil
+        :signed_out
     end
   end
 
-  defp recheck(socket, lineage, account_id) do
+  @impl RegentPrivy.Owners
+  def still_signed_in({lineage, account_id}) do
     case SessionAuthority.leased_account(lineage, account_id) do
-      %{privy_user_id: id} -> if admin_id?(id), do: {:cont, socket}, else: leave(socket)
-      nil -> leave(socket)
+      %{privy_user_id: id} -> {:ok, id}
+      nil -> :signed_out
     end
   end
-
-  defp leave(socket), do: {:halt, redirect(socket, to: "/")}
-
-  defp admin_id?(id), do: id in Application.fetch_env!(:ash_template, :admins)
 end
