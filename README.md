@@ -17,11 +17,17 @@ scripts/init.sh night_owl NightOwl "Night Owl"
 OTP application `ash_template`, the Elixir modules `AshTemplate`, the
 camel-case name `ashTemplate`, the kebab-case name `ash-template`, the
 environment prefix `ASH_TEMPLATE_`, the display name "Ash Template" and its
-capitalised form "ASH TEMPLATE" everywhere they appear, including the CLI
-package and command names. It drops the passages that describe the template
-itself, records the rename in the changelog and removes itself, then prints
-the follow-up commands: format the renamed code, regenerate the route catalog
-digest, run the gate.
+capitalised form "ASH TEMPLATE" everywhere they name the product, including the
+CLI package and command names. Where they name the template itself they stay as
+written: the shared skills in `skills/` (every site carries the template's text),
+the dated plans `docs/*-plan.md` and the changelog's history, the review rules in
+`AGENTS.md`, and `ash-template` in the `Makefile` and
+`platform/scripts/check_required_fixes.exs`, which read the template's required
+fixes. It drops the passages that describe the template itself and removes the
+template's own scripts (its reports on Regent's sites, their daily jobs'
+instructions and `scripts/regent-ui-update`), records the rename in the
+changelog and removes itself, then prints the follow-up commands: format the
+renamed code, regenerate the route catalog digest, run the gate.
 <!-- /template-only -->
 
 ## Components

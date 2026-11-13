@@ -190,6 +190,9 @@ class Harvest(Fixture):
             "platform/Dockerfile": "FROM elixir\n",
             "platform/assets/css/pages/home.css": "body {}\n",
             "docs/ash-template-guide.md": "# Guide\n",
+            # A shared skill and a dated plan keep their names in every site.
+            "skills/ash-template-notes/SKILL.md": "# Notes\n",
+            "docs/ash-template-plan.md": "# Plan\n",
             "README.md": "# Ash Template\n",
         })
         self.repos = self.base / "repos"
@@ -233,6 +236,8 @@ class Harvest(Fixture):
         renamed = self.commit(work, "Guide renamed, task added", {
             "platform/lib/mix/tasks/keyfleet.route_handoff.ex": "task\n",
             "platform/Dockerfile": "FROM elixir:1.19\n",
+            "skills/ash-template-notes/SKILL.md": "# Notes\n",
+            "docs/ash-template-plan.md": "# Plan\n",
         })
         self.git(work, "checkout", "-q", "-b", "side", base)
         side = self.commit(work, "Side branch", {"side.md": "side\n"})
@@ -271,7 +276,9 @@ class Harvest(Fixture):
             {("D", "docs/keyfleet-guide.md"): ("docs/ash-template-guide.md", None),
              ("A", "docs/keyfleet-notes.md"): (None, None),
              ("A", "platform/lib/mix/tasks/keyfleet.route_handoff.ex"): ("platform/lib/mix/tasks/ash_template.route_handoff.ex", None),
-             ("A", "platform/Dockerfile"): ("platform/Dockerfile", "build")},
+             ("A", "platform/Dockerfile"): ("platform/Dockerfile", "build"),
+             ("A", "skills/ash-template-notes/SKILL.md"): ("skills/ash-template-notes/SKILL.md", None),
+             ("A", "docs/ash-template-plan.md"): ("docs/ash-template-plan.md", None)},
         )
 
         self.assertFalse(commits[side]["merge"])
@@ -463,15 +470,34 @@ class Drift(Fixture):
 
 
 class Init(Fixture):
-    def test_the_makefile_keeps_reading_the_template_repository(self):
+    # Text that names the template itself, in files the rename leaves as written.
+    AS_WRITTEN = {
+        "skills/ash-stack/SKILL.md": "Shared behavior starts in ash-template (AshTemplate, ash_template).\n",
+        "skills/ash-template-guide/ash_template.md": "Ash Template is the baseline.\n",
+        "docs/gap-map-plan.md": "Fix everything in the ash-template gap map (AshTemplateWeb.RouteCatalog).\n",
+        "CHANGELOG.md": "# Changelog\n\n- ash-template's AshTemplate.Repo.\n",
+    }
+    REVIEW = (
+        "<!-- BEGIN REGENT ROLLOUT REVIEW -->\n"
+        "Shared behavior starts in ash-template and its libraries.\n"
+        "<!-- END REGENT ROLLOUT REVIEW -->\n"
+    )
+
+    def test_names_that_mean_the_template_stay_and_its_own_scripts_go(self):
         root = self.repo(self.base / "ash-template")
         (root / "scripts").mkdir()
         shutil.copy2(SCRIPTS / "init.sh", root / "scripts" / "init.sh")
-        reports = ["scripts/drift.sh", "scripts/pins.sh", "scripts/github.sh", "scripts/shared-files.sh",
+        removed = ["scripts/drift.sh", "scripts/pins.sh", "scripts/github.sh", "scripts/shared-files.sh",
                    "scripts/harvest.sh", "scripts/stale-prs.sh", "scripts/tests/test_reports.py", "automation/harvest.md",
-                   "automation/spread.md"]
+                   "automation/spread.md", "scripts/regent-ui-update"]
         self.commit(root, "template", {
-            **{path: "report\n" for path in reports},
+            **{path: "report\n" for path in removed},
+            **self.AS_WRITTEN,
+            "AGENTS.md": "# Ash Template\n\n" + self.REVIEW,
+            "docs/feature-map.md": "`regents ash-template doctor` reads AshTemplateWeb.Health.\n",
+            "platform/scripts/check_required_fixes.exs": (
+                "# Reads ash-template's security/required-fixes.json; run from AshTemplate's platform folder.\n"
+            ),
             "Makefile": (
                 "# Every site checks ash-template's current main branch.\n"
                 f"{MAKEFILE_TEMPLATE}\n"
@@ -483,12 +509,18 @@ class Init(Fixture):
             ),
             "platform/lib/mix/tasks/ash_template.route_handoff.ex": "defmodule Mix.Tasks.AshTemplate.RouteHandoff do\nend\n",
             "platform/fly.staging.toml": "app = \"ash-template-staging\"\n",
-            "CHANGELOG.md": "# Changelog\n",
         })
 
         done = self.run_script(root, "init.sh", "night_owl", "NightOwl", "Night Owl")
 
         self.assertEqual(done.returncode, 0, done.stderr)
+        for path, body in self.AS_WRITTEN.items():
+            self.assertTrue((root / path).read_text().startswith(body), path)
+        self.assertEqual((root / "AGENTS.md").read_text(), "# Night Owl\n\n" + self.REVIEW)
+        self.assertEqual((root / "docs/feature-map.md").read_text(),
+                         "`regents night-owl doctor` reads NightOwlWeb.Health.\n")
+        self.assertEqual((root / "platform/scripts/check_required_fixes.exs").read_text(),
+                         "# Reads ash-template's security/required-fixes.json; run from NightOwl's platform folder.\n")
         self.assertEqual((root / "Makefile").read_text(), (
             "# Every site checks ash-template's current main branch.\n"
             f"{MAKEFILE_TEMPLATE}\n"
@@ -499,7 +531,7 @@ class Init(Fixture):
         ))
         self.assertEqual((root / "platform/fly.staging.toml").read_text(), "app = \"night-owl-staging\"\n")
         self.assertTrue((root / "platform/lib/mix/tasks/night_owl.route_handoff.ex").is_file())
-        self.assertFalse(any((root / path).exists() for path in reports))
+        self.assertEqual([path for path in removed if (root / path).exists()], [])
 
 
 class StalePrs(Fixture):
