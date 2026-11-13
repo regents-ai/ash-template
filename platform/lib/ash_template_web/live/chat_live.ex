@@ -47,6 +47,7 @@ defmodule AshTemplateWeb.ChatLive do
        writing?: false
      )
      |> stream(:conversations, [])
+     |> stream_configure(:messages, dom_id: &message_id/1)
      |> stream(:messages, [])}
   end
 
@@ -55,7 +56,8 @@ defmodule AshTemplateWeb.ChatLive do
     {:ok,
      socket
      |> stream_insert(:messages, message, at: -1)
-     |> assign(:writing?, writing?(message))}
+     |> assign(:writing?, writing?(message))
+     |> arrived(message)}
   end
 
   def update(%{piece: piece}, socket), do: {:ok, push_event(socket, "chat-piece", piece)}
@@ -405,6 +407,15 @@ defmodule AshTemplateWeb.ChatLive do
   defp writing?(nil), do: false
   defp writing?(%{source: :user}), do: true
   defp writing?(%{complete: complete}), do: !complete
+
+  defp message_id(%{id: id}), do: "messages-#{id}"
+
+  # A reply rises into place as it starts; the person's own message, and the
+  # reply made whole where it already stands, are simply there.
+  defp arrived(socket, %{source: :agent, complete: false} = message),
+    do: push_event(socket, "conversation:arrived", %{id: message_id(message)})
+
+  defp arrived(socket, _message), do: socket
 
   defp new_form(%{assigns: %{actor: nil}} = socket), do: assign(socket, :form, nil)
 

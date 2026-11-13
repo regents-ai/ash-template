@@ -1,4 +1,5 @@
 import type {Hook} from "../hook_composition"
+import {BASE, EASE_OUT, play, still} from "./motion/shared"
 
 type ConversationHook = Hook & {
   el: HTMLElement
@@ -60,6 +61,7 @@ const openMenu = ":popover-open:not([role=tooltip])"
  * button out of the list, the menu closes. When the reader has closed the menus,
  * with a key or a press whose click has landed, the list goes back to the newest
  * message if it rested there before; closed any other way, it stays where it is.
+ * Someone else's message that arrives while the reader watches rises into place.
  */
 export const Conversation: Hook = {
   mounted(this: ConversationHook) {
@@ -177,6 +179,18 @@ export const Conversation: Hook = {
       if (!box) return
       box.focus()
       box.setSelectionRange(box.value.length, box.value.length)
+    })
+
+    // The server names a message only when someone else's arrives while the page is
+    // open, so the reader's own, and every message shown on opening, after a lost
+    // connection or above the rest, is simply there. It rises from the next frame,
+    // once `group` has marked whether it continues the one before: measured sooner,
+    // with its name still showing, Chrome keeps a scrolled-up reader's place by the
+    // wrong height and moves the list under them.
+    this.handleEvent("conversation:arrived", payload => {
+      const message = document.getElementById((payload as {id: string}).id)
+      if (!message || !this.el.contains(message) || still(message)) return
+      requestAnimationFrame(() => play(message, {opacity: {from: 0}, y: {from: 6}, duration: BASE, ease: EASE_OUT}))
     })
   },
 

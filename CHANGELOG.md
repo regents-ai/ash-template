@@ -10723,3 +10723,28 @@ Tests only; no code changed.
   released commit: the style check, 13 report script tests, 155 script tests in 21 files, the
   browser walk (653 passed, 5 skipped for screen size), 282 server tests (272 tests, 10
   properties), required fixes, `cli/commands.json`, newest SIWA.
+
+## 2026-11-13 — Conversations: someone else's new message rises into place
+
+- Before: in rooms, private messages and the assistant chat, a message arriving while
+  the page was open appeared at once, like every message shown on opening.
+- Now `platform/lib/ash_template_web/live/rooms_live.ex`, `dms_live.ex` and
+  `chat_live.ex` name a message that someone else sends while the page is open (in
+  chat, the assistant's reply as it starts) with `conversation:arrived`, and
+  `platform/assets/js/hooks/conversation.ts` lets it rise 6px and fade in over 200ms
+  with the house ease-out, from the next frame. The person's own message, every
+  message shown on opening, after a lost connection or loaded above, and every
+  message under reduced motion are simply there. Each page names its messages'
+  places with the stream's own ids (`messages-<id>`).
+- The rise waits a frame for `group` to mark a message that continues the one before:
+  measured sooner, with its name still showing, Chrome kept a scrolled-up reader's
+  place by the message's full height and moved the list under them by 24px on a
+  desktop and 12px on a phone.
+- Measured in headless Chromium at 1280 and 390 wide, light and dark: the arriving
+  message starts at opacity 0 and 6px down and settles in about 150ms of drawn
+  frames; its neighbours do not move; a room resting on its newest message stays
+  there; a reader scrolled up keeps their place to the pixel, with motion on and off;
+  nothing moves on opening, reloading, reconnecting, the person's own message or
+  under reduced motion.
+- Not measured: older messages loaded above (the read that loads them names no
+  message, so none rises).

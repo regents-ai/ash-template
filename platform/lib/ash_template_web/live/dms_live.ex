@@ -50,11 +50,13 @@ defmodule AshTemplateWeb.DmsLive do
        notice: nil
      )
      |> stream(:conversations, [])
+     |> stream_configure(:messages, dom_id: &message_id/1)
      |> stream(:messages, [])}
   end
 
   # A new message moves its conversation to the top of the reader's list, and
-  # reaches the open conversation at its end.
+  # reaches the open conversation at its end; one the other person sent rises
+  # into place there (`Conversation`).
   @impl true
   def update(%{change: {"send", %{conversation_id: id, message_id: message_id}}}, socket) do
     socket = relist(socket, id)
@@ -63,7 +65,10 @@ defmodule AshTemplateWeb.DmsLive do
     with %{id: ^id} <- socket.assigns.conversation,
          {:ok, %Message{} = message} <-
            Dms.get_dm(message_id, actor: socket.assigns.actor, load: [:mine]) do
-      {:ok, stream_insert(socket, :messages, shown_message(message), at: -1)}
+      {:ok,
+       socket
+       |> stream_insert(:messages, shown_message(message), at: -1)
+       |> arrived(message)}
     else
       _closed_or_gone -> {:ok, socket}
     end
@@ -473,6 +478,14 @@ defmodule AshTemplateWeb.DmsLive do
 
   defp shown_message(message),
     do: Map.take(message, [:id, :mine, :via_agent_id, :inserted_at, :body])
+
+  defp message_id(%{id: id}), do: "messages-#{id}"
+
+  # The reader's own message is simply there; the other person's rises into place.
+  defp arrived(socket, %{mine: true}), do: socket
+
+  defp arrived(socket, message),
+    do: push_event(socket, "conversation:arrived", %{id: message_id(message)})
 
   # The log reads oldest first. The stream keeps the messages; the page keeps
   # only where the next older page starts.

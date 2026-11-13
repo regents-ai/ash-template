@@ -4,6 +4,9 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Messages.** When someone else's message arrives in a room, a private
+  conversation or the assistant chat, it rises gently into place. Your own messages
+  appear at once, and if you have scrolled up to read, nothing moves.
 - **Rooms.** Liking a message, or taking a like back, no longer moves the messages
   around it. The heart now sits beside the message's menu.
 - **Command line 1.10.27.** The agent guide now asks for version 1.10.27 of the command
