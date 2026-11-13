@@ -188,7 +188,8 @@ defmodule AshTemplate.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get", "cmd npm ci", "assets.setup", "assets.build"],
+      # Packages install without running their own install scripts, as the image does.
+      setup: ["deps.get", "cmd npm ci --ignore-scripts", "assets.setup", "assets.build"],
       test: ["ecto.create --quiet", "ash_template.setup_local_auth", "test"],
       "assets.setup": ["esbuild.install --if-missing"],
       "assets.build": [

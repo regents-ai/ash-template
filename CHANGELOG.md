@@ -10377,3 +10377,11 @@ switches". The switch's sun and moon are now drawn by the particle field.
   place of `payment_signature`, which no request sends. Phoenix matches on part of a
   name, so every field whose name holds `payment` is logged as `[FILTERED]`.
 - Sites take the same line. No migration, no API change.
+
+## 2026-11-13 — `mix setup` installs packages without their install scripts
+
+- `mix setup` runs `npm ci --ignore-scripts`, as the release image's install already
+  does (`platform/Dockerfile`), so no package's own script runs on a developer's machine.
+  The asset build, the type check, the script tests and the browser walk need none of
+  them.
+- Sites take the same alias in `platform/mix.exs`. No migration, no API change.
