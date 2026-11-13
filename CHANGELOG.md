@@ -10183,3 +10183,22 @@ switches". The switch's sun and moon are now drawn by the particle field.
   account menu's switch is 2 px narrower and the phone bar's 2 px wider.
 - The lab's field reads its colours on the page itself, so a theme colour written
   with `light-dark()` now resolves to the theme showing.
+
+## 2026-11-13 — Released v234: the particle light and dark switch
+
+- `9baea786` (merge of the design chief's `wt/tpl-particle-switch-1112`, `ad0af68f`,
+  on main `2439879b`) is v234 on template.regents.sh, switched at about 02:35Z on
+  13 Nov with `scripts/deploy.sh`. The live build names commit `9baea78`. No
+  migration, no sign-in code, no API change, no pin change.
+- The switch's moon and sun are drawn by the particle field; a press flies the grains
+  across while the theme changes on the press; the old switch picture
+  (`platform/assets/js/theme_switch/`) and its five tests are deleted; the knob is no
+  longer dragged (press, Enter or Space).
+- Rollback: v233 (`588ed4ef`), image only.
+- Full check exit 0 by the chief on the exact commit: 122 script tests, 661 browser
+  walks with 5 skipped, 261 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll; `/docs` and `/rooms/general` carry the new
+  switch's moon and sun and no old canvas. The look and the flight are the design
+  chief's read.
