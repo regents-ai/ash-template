@@ -10280,3 +10280,15 @@ switches". The switch's sun and moon are now drawn by the particle field.
   `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll; `/docs` and `/rooms/general` carry the old
   switch's canvas and no particle moon or sun.
+
+## 2026-11-13 — The five start actions are approved; Points has no start yet
+
+- From Sean's decision of 13 Nov: the template approves the five start actions in
+  `platform/config/config.exs` (`account.activated`, `social.x`, `social.github`,
+  `social.farcaster`, `agent.activated`). The Points page and the agent's Points answer
+  now list them with their Points and mark what the account already has.
+- No start time is set, so nothing earns and no Points are recorded. Until a start, a
+  new sign-up, social link or pairing leaves one refusal note in the shared Points
+  records; it blocks nothing later.
+- `template.first_agent_note` stays unapproved. No migration, no sign-in change, no API
+  shape change, no pin change.
