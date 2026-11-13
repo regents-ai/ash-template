@@ -9667,3 +9667,33 @@ On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
 - Checks: `platform/assets/test/cells_meter.test.ts` and the walk
   `platform/test/browser/cells.spec.ts`; the handover and the sparks pictured by hand in
   headless Chromium with WebGPU.
+
+## 2026-11-12 — Tangerine and Powder Blue meet through a neutral (branch, not on main)
+
+On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
+
+- Sean's decision of 12 Nov: colours far apart on the wheel blend through a neutral,
+  not through gold and green. Design-system pin `a6d5af43` to `324d40ec`
+  (`platform/mix.exs`, `platform/mix.lock`; nothing else in the lock moves), which adds
+  the rule to STYLE.md "Gradients" and nothing else. This settles the gold and green
+  left by the oklch change in v222.
+- The Enter App ring on the home page (`platform/assets/css/pages/home.css`): a neutral
+  between each Tangerine and Powder Blue, at 12.5%, 37.5%, 62.5% and 87.5%, from
+  `--rl-cta-neutral`, set beside `--rl-cta-mid` the same way: Platinum in light, the
+  muted text colour in dark, where the button itself is Platinum. The middle stop is
+  unchanged.
+- The Fractal still on `/animations/wonders` (`platform/assets/css/pages/wonders.css`):
+  Platinum at 20% between Powder Blue, now to 16%, and Tangerine, now from 24%, a
+  little fainter than both, so it reads as a soft pale band and not a bright line.
+- Every template stylesheet searched: these were the only two blends straight between
+  Tangerine and Powder Blue. The Kaleidoscope still alternates the two in hard-edged
+  slices with no blend between them, and stays.
+- Pictures before and after, light and dark, 390 and 1280, the ring at rest, on hover
+  and with keyboard focus, and the Fractal. The ring sampled along its length, 514
+  pixels a view: in dark, which is all the home page shows, no pixel has a hue between
+  60 and 170 degrees (before, 300 did, gold and green). In light, seen only by forcing
+  the theme, the Tangerine to Platinum stretch passes light orange to cream: 50 pixels
+  in that range keep any colour, the strongest a light orange (244, 153, 68), and none
+  is gold or green to the eye. The Fractal's gold and green rings are gone.
+- Checks: the home page walk `platform/test/browser/homepage.spec.ts` (the ring never
+  takes the button's own colour) and `make check-style`.
