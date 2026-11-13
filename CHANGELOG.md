@@ -10315,3 +10315,15 @@ switches". The switch's sun and moon are now drawn by the particle field.
   part of an error's text.
 - Sites that copied these two files take the same change. No migration, no API change,
   no pin change; what a sign-in check decides is unchanged.
+
+## 2026-11-13 — Released v238: an open page without its client key loads again
+
+- `bfe0ba46` is v238 on template.regents.sh, switched on 13 Nov with
+  `scripts/deploy.sh`, a crash fix from the Sentinel chief's report of the same day. No
+  migration, no API change, no pin change; what a sign-in check decides is unchanged.
+- Rollback: v237 (`8452b57b`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 270 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
