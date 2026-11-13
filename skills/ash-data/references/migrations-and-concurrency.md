@@ -119,6 +119,20 @@ release migration fails (Patchbay, 2026-09-30). Delete those `prefix:` options f
 generated migration before committing; references then follow the schema the release
 migrates into.
 
+## Extensions on the shared database
+
+An extension belongs to the whole database, so every site shares one copy, in `public`
+(as `public.ash_required` does). Installing one on production is the founder's decision
+(pg_trgm, 12 November 2026); the host switches it on from its dashboard before the release
+that needs it. The site's migration still says it, from `installed_extensions`, as
+`CREATE EXTENSION IF NOT EXISTS "<name>" WITH SCHEMA public`: where the extension is
+already there it changes nothing, whatever the login's rights. Where it is not, the release
+login needs `CREATE` on the database (pg_trgm is a trusted extension), and without it the
+release command fails before any later migration runs. Without `WITH SCHEMA` the
+extension lands in the first schema of the login's search path, which is the login's own
+schema when one exists. Name the extension's objects with their schema
+(`public.gin_trgm_ops`), since a site's search path need not include `public`.
+
 ## Protected production tables
 
 Since 28 September 2026 the shared production database keeps a founder list of

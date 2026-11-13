@@ -9626,3 +9626,27 @@ no migration.
   `/animations`, `/` and `/rooms/general` answer 200 at 1280, 390 and 320 with no page
   errors and no sideways scroll; `/animations` links the new page. The picture itself
   is the design chief's to read.
+
+## 2026-11-12 — Text search on trigram indexes
+
+On `tpl/text-search-1112`, for the template chief, after Sean's go "24 a" (pg_trgm on the
+shared production database).
+
+- Room message search across every room, room search by name and a person's note search
+  run as `ILIKE '%…%'` on a trigram index instead of `lower(column) LIKE` over the whole
+  table. The words are a `:ci_string` argument, so Ash's `contains` escapes `%`, `_` and `\`.
+- Under three letters a search finds nothing and sends no query, the same on every surface:
+  the search box, `POST /api/v1/rooms/search` and `POST /api/v1/notes/search`, the
+  `rooms_search` and `notes_search` browser tools and `rooms search` and `notes search`.
+  One or two letters answer an empty list, and a single letter no longer answers 422. The
+  OpenAPI documents move to 14.0.0.
+- Migrations: `20261112234817` runs `CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA
+  public`, which changes nothing where pg_trgm is already on; `20261112234818` builds four
+  GIN indexes concurrently, on `room_messages.body`, `rooms.name`, `notes.title` and
+  `notes.body`, each naming `public.gin_trgm_ops`. No row changes.
+- Before the release: pg_trgm switched on for the production database, in `public`.
+- Local plans, 60,000 generated messages and 20,000 notes: a word in three messages 85 ms
+  to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
+  all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with
+  5,000 of them 18 ms to 0.07 ms; rooms 0.4 ms to 0.02 ms.
+- Checks: `platform/test/ash_template/text_search_test.exs`.

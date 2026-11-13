@@ -127,6 +127,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | An account, its linked social account and its paired agent from before the Points start earn their one-time Points at the start, once, through this site's own checks, and a later run offers nothing more | `platform/test/ash_template/points/start_awards_test.exs` |
 | Words a person or agent writes (a room or direct message, a note's title and body, a message to the assistant) keep their line breaks, tabs and emoji and refuse hidden characters with a word under the box; an older message or note holding one can still be edited, and a note renamed, without it | `platform/test/ash_template/shown_text_test.exs`; elixir-utils `format/test/regent_format/text_test.exs` (property test) |
 | The longest note the boxes take, in characters 9 bytes each once sent, reaches the site in one message with the page's connection still open, and is saved; a hidden character is refused under its box, at both widths | `platform/test/browser/notes.spec.ts` |
+| Searching room messages, rooms and a person's notes, from the search box or an agent: words match in any case, `%`, `_` and `\` match as written, under three letters finds nothing and sends no query, messages and notes come newest first and rooms oldest first, five at most | `platform/test/ash_template/text_search_test.exs` |
 
 ## Agents
 

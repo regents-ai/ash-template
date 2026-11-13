@@ -57,6 +57,13 @@ defmodule AshTemplate.Rooms.Message do
       # An agent's feed opens with the rooms it has posted in (`AshTemplate.Feed`).
       index([:agent_id], where: "agent_id IS NOT NULL", concurrently: true)
       index([:via_agent_id], where: "via_agent_id IS NOT NULL", concurrently: true)
+      # Search across every room (`:search`). pg_trgm lives in public, beside
+      # ash_required, so its operator class is named there.
+      index(["body public.gin_trgm_ops"],
+        name: "room_messages_body_trgm_index",
+        using: "GIN",
+        concurrently: true
+      )
     end
 
     check_constraints do
@@ -211,10 +218,13 @@ defmodule AshTemplate.Rooms.Message do
       prepare build(load: [:liked_by_me | @shown])
     end
 
-    # Messages in any room that hold `text`, in any case, newest first.
+    # Messages in any room that hold `text`, in any case, newest first. Words
+    # under three letters find nothing, and no query runs: the body's trigram
+    # index cannot serve them.
     read :search do
-      argument :text, :string, allow_nil?: false, constraints: [min_length: 2, max_length: 100]
-      filter expr(contains(string_downcase(body), string_downcase(^arg(:text))))
+      argument :text, :ci_string, allow_nil?: false, constraints: [max_length: 100]
+      filter expr(contains(body, ^arg(:text)))
+      prepare build(filter: false), where: [string_length(:text, max: 2)]
       prepare LeaveOutMuted
       prepare build(sort: [inserted_at: :desc, id: :desc], limit: 5, load: [:in_room])
     end
