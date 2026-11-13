@@ -21,7 +21,7 @@ defmodule AshTemplateWeb.PointsPageTest do
   setup do
     owner = Ecto.Adapters.SQL.Sandbox.start_owner!(AshTemplate.Repo, shared: true)
     previous = Map.new([:starts_at, :approved_rules], &{&1, Application.get_env(:regent_points, &1)})
-    Application.put_env(:regent_points, :starts_at, ~U[2020-01-01 00:00:00Z])
+    Application.put_env(:regent_points, :starts_at, DateTime.add(DateTime.utc_now(), -1, :day))
     Application.put_env(:regent_points, :approved_rules, ~w(account.activated social.x))
 
     on_exit(fn ->
@@ -154,11 +154,12 @@ defmodule AshTemplateWeb.PointsPageTest do
     assert %{"done" => false, "left" => true} = Enum.find(answer["to_do"], &(&1["label"] == "X account linked"))
     assert Enum.map(answer["to_do"], & &1["label"]) |> Enum.sort() == todo_labels(page)
 
-    # The seasons the page lists, each as it stands. This start is long past, so all
-    # have ended, and the awards earned now fall in none of them.
+    # The seasons the page lists, each as it stands. Points started yesterday: the
+    # first season runs and holds today's awards; the others have not begun.
     assert length(answer["seasons"]) == page |> LazyHTML.query("#points-bonus dl > div") |> Enum.count()
-    assert Enum.map(answer["seasons"], &{&1["state"], &1["earned"], &1["bonus"]}) ==
-             List.duplicate({"ended", "0", nil}, AshTemplate.Points.Seasons.count())
+    assert [{"running", "25", nil} | later] = Enum.map(answer["seasons"], &{&1["state"], &1["earned"], &1["bonus"]})
+    assert length(later) == RegentPoints.Rules.season_count() - 1
+    assert Enum.all?(later, &(&1 == {"upcoming", nil, nil}))
 
     assert length(answer["leaderboard"]) == page |> LazyHTML.query("#points-board li") |> Enum.count()
 
@@ -168,6 +169,23 @@ defmodule AshTemplateWeb.PointsPageTest do
 
     assert %{"name" => nil, "ens_name" => nil, "you" => false} =
              Enum.find(answer["leaderboard"], &(&1["wallet"] == @other))
+  end
+
+  # After the last season nothing earns: the page and the agent list no action to
+  # do, and every season shows as over. The account's figures stay.
+  test "after the last season, no action is listed as available", %{conn: conn, person: person} do
+    days = RegentPoints.Rules.season_count() * 30 + 1
+    Application.put_env(:regent_points, :starts_at, DateTime.add(DateTime.utc_now(), -days, :day))
+
+    page = conn |> get("/account/points") |> html_response(200) |> LazyHTML.from_document()
+    answer = agent_answer(person)
+
+    assert Enum.empty?(LazyHTML.query(page, "#points-todo li"))
+    assert Enum.empty?(LazyHTML.query(page, "#points-todo .rg-points-todo__left"))
+    assert answer["to_do"] == []
+    assert Enum.all?(answer["seasons"], &(&1["state"] == "ended"))
+    assert answer["points"] == text(page, "#points-total .rg-points-total__figure")
+    assert answer["points"] == "25"
   end
 
   # While the board is held for signed-in readers, a signed-out visitor gets none of it.

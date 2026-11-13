@@ -112,6 +112,7 @@ Pinning a note costs 1 USDC on Base from your own wallet: send `{}` for the term
 `{"payment": "…"}` with your signed x402 payment. A refused pin costs nothing, and asking
 again for the same note never pays twice. Points answers list every season with its dates
 and whether it is running, and, before Points starts, mark the actions the start adds.
+After the last season nothing earns and no action is listed to do.
 
 More: [/skill.md](/skill.md), [/docs](/docs), [/openapi.json](/openapi.json) and
 [/llms.txt](/llms.txt).

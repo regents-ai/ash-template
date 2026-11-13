@@ -3,7 +3,7 @@ defmodule AshTemplate.Points.Standing do
   One account's Points as its page and its paired agent show them: the shared
   library's summary (`RegentPoints.summary/1`) with two things this site adds.
 
-    * `seasons`: each season (`AshTemplate.Points.Seasons`) with what the
+    * `seasons`: each season (`RegentPoints.Seasons`) with what the
       account earned in it once it has begun (`earned_micro`, its entries in the
       season summed under the account's own read) and the NFT bonus added at its
       end (`bonus`, the library's period bonus, nil until the tally).
@@ -18,8 +18,7 @@ defmodule AshTemplate.Points.Standing do
     authorizers: [Ash.Policy.Authorizer]
 
   require Ash.Query
-  alias AshTemplate.Points.Seasons
-  alias RegentPoints.{Entry, Rules}
+  alias RegentPoints.{Entry, Rules, Seasons}
 
   actions do
     action :mine, :map do

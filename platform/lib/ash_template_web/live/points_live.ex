@@ -8,7 +8,6 @@ defmodule AshTemplateWeb.PointsLive do
   use AshTemplateWeb, :html
   import AshTemplateWeb.Components.PageHead, only: [page_head: 1]
   import AshTemplateWeb.Components.Shell, only: [account_picture: 1]
-  alias AshTemplate.Points.Seasons
   alias AshTemplateWeb.PointsEntries
   alias RegentPoints.{Amount, Rules}
 
@@ -117,7 +116,7 @@ defmodule AshTemplateWeb.PointsLive do
           >
             <:tip>
               <Regent.Primitives.tip id="points-bonus-about" label="About your points bonus">
-                Points runs in {Seasons.count()} seasons of 30 days.
+                Points runs in {Rules.season_count()} seasons of 30 days.
                 Animata I, Animata II and Regents Club count across your verified linked wallets.
                 At the end of each season, the tier your wallets hold that day adds its
                 bonus to the points you earned in that season, one-time awards included.
