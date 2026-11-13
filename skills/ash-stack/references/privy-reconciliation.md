@@ -19,10 +19,16 @@ website state from verified chain evidence instead of restoring transaction queu
 1. `usePrivy().ready/authenticated` is Privy's browser authentication state.
 2. `useWallets().ready/wallets` is connected-wallet hydration for wallet actions.
 3. Regent's server session and `SessionAuthority` exist only after server-side
-   verification and product authorization. A sign-in ends 30 days after the bind
-   that made it, and a refresh never extends it (founder, 2026-10-15, 2a): the bind
-   records `signed_in_at`, and `SessionAuthority` treats a bound row past
-   `signed_in_at` plus the session cookie's `max_age` (30 days) as reset.
+   verification and product authorization. A sign-in ends a day after the bind
+   that made it, and a refresh never extends it (founder, 2026-10-15, 2a, then
+   for 30 days): the bind records `signed_in_at`, and `SessionAuthority` treats a
+   bound row past `signed_in_at` plus the session cookie's `max_age` (a day) as
+   reset. That is how Privy is asked again: the next page the person opens signs
+   them back in with fresh tokens, which Privy issues only while its own session
+   in that browser lasts, so a person whose Privy session has ended is signed out
+   within a day. The server never calls Privy, so Privy being down signs out only
+   those whose day ends meanwhile, until it answers again. The session cookie is
+   `__Host-` prefixed: secure, for this host only, path `/`.
 
 Never use a missing token, an empty wallet list, `walletsReady: false`, bridge
 import failure, a timeout, or a rejected sync as evidence that Privy logged the

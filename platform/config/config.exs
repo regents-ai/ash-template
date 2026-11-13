@@ -227,16 +227,20 @@ config :ash_template, :chain_nodes, %{
   8453 => "https://mainnet.base.org"
 }
 
-# A sign-in lasts 30 days: the cookie expires then, and
-# `AshTemplate.Accounts.SessionAuthority` reads this same limit.
+# A sign-in lasts a day: the cookie expires then, and
+# `AshTemplate.Accounts.SessionAuthority` reads this same limit. After it, the
+# next page the person opens signs them back in with fresh tokens, which Privy
+# gives only while its own sign-in in that browser lasts; once that has ended,
+# the person signs in again. The `__Host-` name keeps the cookie to this one
+# host and to secure connections, which browsers count localhost as.
 config :ash_template, :session_options,
   store: :cookie,
-  key: "_ash_template_key",
+  key: "__Host-ash_template_key",
   signing_salt: "OLoeAaio",
   same_site: "Lax",
-  secure: false,
+  secure: true,
   http_only: true,
-  max_age: 30 * 24 * 60 * 60
+  max_age: 24 * 60 * 60
 
 # A signed agent's live feed (`GET /api/v1/feed`): how many one machine holds open
 # at once, how many of those may be agents not paired with a person, and how often a

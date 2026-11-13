@@ -4206,7 +4206,7 @@ components:
       scheme: bearer
       bearerFormat: Privy access token
     privyIdentityToken: {type: apiKey, in: header, name: privy-id-token}
-    cookieSession: {type: apiKey, in: cookie, name: _ash_template_key}
+    cookieSession: {type: apiKey, in: cookie, name: __Host-ash_template_key}
     csrfToken: {type: apiKey, in: header, name: x-csrf-token}
     siwaProof: {type: apiKey, in: header, name: x-siwa-receipt}
   headers:

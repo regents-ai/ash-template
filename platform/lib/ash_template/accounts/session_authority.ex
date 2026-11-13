@@ -8,7 +8,7 @@ defmodule AshTemplate.Accounts.SessionAuthority do
   a cookie. `/auth/csrf` commits an unbound generation-zero row; first bind and
   every same-account refresh advance the generation once, so the previous cookie
   is stale everywhere. Revocation is terminal, and a sign-in lapses the cookie's
-  `max_age` (30 days) after it was made: refreshes keep it current until then,
+  `max_age` (a day) after it was made: refreshes keep it current until then,
   never beyond. Every transition inserts the row when
   absent, locks it `FOR UPDATE` and applies at most one change in one
   transaction, so the absent-row and present-row races serialize identically.

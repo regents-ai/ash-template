@@ -7807,7 +7807,7 @@
       "cookieSession": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "_ash_template_key",
+        "name": "__Host-ash_template_key",
         "description": "The browser session the person's sign-in on this site holds. Only this site's own pages carry it."
       },
       "csrfToken": {

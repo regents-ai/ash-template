@@ -285,8 +285,6 @@ unless migrating? do
 end
 
 if config_env() == :prod do
-  config :ash_template, :session_options, secure: true, http_only: true
-
   # One JSON object a line, which Fly Sentinel reads, carrying only the visit
   # fields (AshTemplateWeb.VisitLog), from both handlers. Release commands write the
   # same shape.
