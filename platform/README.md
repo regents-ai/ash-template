@@ -195,11 +195,10 @@ production.
 | `PORT` | No | HTTP port. Defaults to `4000`. |
 | `REGENT_CREDITS_ADMINS` | No | Comma-separated Privy user ids of the site's admins (`config :ash_template, :admins`). Only they can open the saved errors at `/admin/errors` or remove an agent's picture; anyone else gets the not-found page. |
 | `ASH_TEMPLATE_DEPLOYMENT_ROLE` | Yes in production | `production` or `staging`. There is no default; each role admits only its own database hosts. |
-| `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the database's direct address, `direct.dzx6qo6xqzvojpv5.flympg.net`. |
+| `DATABASE_POOLED_URL` | Yes in production | PostgreSQL connection string the running site uses, for an approved host. Production admits only the direct address of the cluster `ASH_TEMPLATE_DATABASE_CLUSTER_ID` names, `direct.<cluster id>.flympg.net`. |
 | `DATABASE_DIRECT_URL` | Only when migrating | Direct PostgreSQL connection string used by the migration release command. |
 | `ASH_TEMPLATE_DATABASE_TARGET_MODE` | Only when migrating | Must be `production` for the production migration command. |
-| `ASH_TEMPLATE_DATABASE_CLUSTER_ID` | For a remote target | Must match the approved cluster. Set neither this nor the name to stay on the loopback database. On the remote database a development server runs no job queue and no Oban plugin, so the serving machines alone run the site's jobs, and starts only while it listens on 127.0.0.1 alone. |
-| `ASH_TEMPLATE_DATABASE_CLUSTER_NAME` | For a remote target | Must match the approved cluster name. |
+| `ASH_TEMPLATE_DATABASE_CLUSTER_ID` | Yes in production; for a remote target | The id of the managed database cluster production serves and migrates on; without it production does not start. On a developer's machine, setting it uses the remote database (`DATABASE_POOLED_URL`) instead of the loopback one. There a development server runs no job queue and no Oban plugin, so the serving machines alone run the site's jobs, and starts only while it listens on 127.0.0.1 alone. |
 | `ASH_TEMPLATE_RELEASE_COMMAND` | Set by the release | `migrate` switches the boot into migration mode. |
 
 ### Two database logins

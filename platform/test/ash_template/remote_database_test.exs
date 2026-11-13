@@ -7,11 +7,10 @@ defmodule AshTemplate.RemoteDatabaseTest do
   import ExUnit.CaptureLog
 
   @remote %{
-    "ASH_TEMPLATE_DATABASE_CLUSTER_ID" => "dzx6qo6xqzvojpv5",
-    "ASH_TEMPLATE_DATABASE_CLUSTER_NAME" => "regents-platform-prod",
+    "ASH_TEMPLATE_DATABASE_CLUSTER_ID" => "standin0cluster",
     "DATABASE_POOLED_URL" => "postgres://developer:stand-in@db.example.test/ash_template"
   }
-  @local %{"ASH_TEMPLATE_DATABASE_CLUSTER_ID" => nil, "ASH_TEMPLATE_DATABASE_CLUSTER_NAME" => nil}
+  @local %{"ASH_TEMPLATE_DATABASE_CLUSTER_ID" => nil}
 
   test "on the remote database the server starts no queue and no Oban plugin and leads nothing" do
     remote = jobs(@remote)

@@ -10407,3 +10407,17 @@ switches". The switch's sun and moon are now drawn by the particle field.
   system-actor check.
 - The `ash-signals` skill teaches the same for every bookkeeping listener, Points'
   included. Sites take the change. No migration, no API change.
+
+## 2026-11-13 — Production's database cluster is a setting, not code
+
+- `AshTemplate.DatabaseConfig` reads the production cluster from
+  `ASH_TEMPLATE_DATABASE_CLUSTER_ID` when the app starts. Production serves and migrates
+  only on `direct.<cluster id>.flympg.net`, and without the setting it does not start.
+  The migration command still needs `ASH_TEMPLATE_DATABASE_TARGET_MODE=production`.
+- `ASH_TEMPLATE_DATABASE_CLUSTER_NAME` is gone. On a developer's machine, setting the
+  cluster id alone uses the remote database. Staging refuses any managed cluster's
+  address anywhere in its URL.
+- The README's settings table, `platform/.env.example`, `AGENTS.md` (what a new site
+  replaces by hand) and the `ash-data` skill's database notes say so. Sites take the
+  change; production needs `ASH_TEMPLATE_DATABASE_CLUSTER_ID` among its secrets before
+  the release that carries it. No migration, no API change.

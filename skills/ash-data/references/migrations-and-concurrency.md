@@ -162,12 +162,12 @@ guard's settings or ask it to allow a command.
 ## Connections to the shared production database
 
 The template, the five sites, `keyfleet-code` and Sentinel share one production database
-(`regents-platform-prod`, Fly Managed Postgres on the Starter plan) with 97 connections
+(Fly Managed Postgres on the Starter plan) with 97 connections
 for their logins. During a release a site's old and new machines are both connected, so
 its connections briefly double. On 27 October 2026 four releases swapped at once and
 every site lost the database for 20 seconds.
 
-Serve through the database's pooler (`pgbouncer.dzx6qo6xqzvojpv5.flympg.net`) nowhere;
+Serve through the database's pooler (`pgbouncer.<cluster id>.flympg.net`) nowhere;
 Proximal is the one site still on it, and moves to the direct address next.
 It keeps at least 5 real connections open for each login on every one of its processes
 that holds one of that login's clients (Min Pool Size, fixed in Fly's dashboard), so a
@@ -178,7 +178,8 @@ clients on the direct address cost 7 (`control/rollouts/2026-10-29-db-pooler.md`
 the workspace). This holds until the founder changes the database plan.
 
 - **Serving: the direct address.** The serving connection uses
-  `direct.dzx6qo6xqzvojpv5.flympg.net` (from `DATABASE_POOLED_URL` in the template,
+  `direct.<cluster id>.flympg.net`, the cluster `ASH_TEMPLATE_DATABASE_CLUSTER_ID` names
+  (from `DATABASE_POOLED_URL` in the template,
   Keyfleet, Patchbay, Regents and Techtree; Autolaunch reads `DATABASE_URL`; Proximal's
   `DATABASE_POOLED_URL` still names the pooler)
   with a pool of 5 (never leave `pool_size` unset: Ecto's default is 10), names itself

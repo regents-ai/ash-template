@@ -1,24 +1,21 @@
 defmodule AshTemplate.DatabaseConfig do
   @moduledoc false
 
-  @cluster_id "dzx6qo6xqzvojpv5"
-  @cluster_name "regents-platform-prod"
-  @production_database_host "direct.dzx6qo6xqzvojpv5.flympg.net"
+  # The managed database cluster production serves and migrates on, read when the
+  # app starts; on a developer's machine, setting it uses the remote database.
+  @cluster_id "ASH_TEMPLATE_DATABASE_CLUSTER_ID"
   # Superseded identities refused in production configuration: the legacy
   # platform application and the retired rehearsal cluster.
   @production_identities ["platform-phx", "regents-pg-test", "nvwq9ozp9ye03kl1"]
   @staging_hosts ["regents-staging-db.flycast", "regents-staging-db.internal"]
-  # Staging can never reach production, so it refuses production's cluster, database
-  # host and web application anywhere in a URL (host, database or credentials). These
-  # terms are staging's alone: production runs as the Fly application regents-sh-web,
-  # so refusing that name on the production role would refuse its own release commands.
-  @staging_refusals [
-    @cluster_id,
-    @production_database_host,
-    "regents-sh-web" | @production_identities
-  ]
+  # Staging can never reach production, so it refuses any managed cluster's address
+  # and production's web application anywhere in a URL (host, database or
+  # credentials). These terms are staging's alone: production runs as the Fly
+  # application regents-sh-web, so refusing that name on the production role would
+  # refuse its own release commands.
+  @staging_refusals ["flympg.net", "regents-sh-web" | @production_identities]
   @deployment_role_error ~s(ASH_TEMPLATE_DEPLOYMENT_ROLE must be set to "production" or "staging")
-  @remote_target_error "remote database access requires cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
+  @remote_target_error "remote database access is refused on a superseded application"
   # Serving, development and tests each hold 5 connections: the database queues
   # (`default` and `points`, config/config.exs) take 3 at most, which leaves 2 for
   # pages in development as in production.
@@ -133,13 +130,21 @@ defmodule AshTemplate.DatabaseConfig do
 
   # The hosts a venue admits (any, for a developer's remote target) and the terms
   # its URL may not name anywhere. Production serves and runs its release commands
-  # on the database's direct address.
-  defp venue(:production), do: {[@production_database_host], @production_identities}
-  defp venue(:staging), do: {@staging_hosts, @staging_refusals}
-  defp venue(:remote), do: {nil, @production_identities}
+  # on the direct address of the cluster it names.
+  defp venue(:production, getenv), do: {[production_host!(getenv)], @production_identities}
+  defp venue(:staging, _getenv), do: {@staging_hosts, @staging_refusals}
+  defp venue(:remote, _getenv), do: {nil, @production_identities}
+
+  defp production_host!(getenv) do
+    cluster_id = getenv.(@cluster_id)
+
+    if is_binary(cluster_id) and Regex.match?(~r/\A[a-z0-9]+\z/, cluster_id),
+      do: "direct.#{cluster_id}.flympg.net",
+      else: raise("#{@cluster_id} must name the production database cluster")
+  end
 
   defp database_url!(getenv, variable, venue) do
-    {admitted_hosts, refused_terms} = venue(venue)
+    {admitted_hosts, refused_terms} = venue(venue, getenv)
 
     with value when is_binary(value) and value != "" <- getenv.(variable),
          {:ok, %URI{scheme: scheme, host: host, path: "/" <> database, userinfo: userinfo} = uri}
@@ -208,25 +213,20 @@ defmodule AshTemplate.DatabaseConfig do
   end
 
   defp remote_target(getenv) do
-    cluster_id = getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_ID")
-    cluster_name = getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_NAME")
-
     cond do
       production_identity?(getenv.("FLY_APP_NAME")) -> raise @remote_target_error
-      is_nil(cluster_id) and is_nil(cluster_name) -> :local
-      cluster_id == @cluster_id and cluster_name == @cluster_name -> :remote
-      true -> raise @remote_target_error
+      is_nil(getenv.(@cluster_id)) -> :local
+      true -> :remote
     end
   end
 
+  # The production venue then admits only the direct address of the cluster named.
   defp require_production_target!(getenv) do
     if getenv.("ASH_TEMPLATE_DATABASE_TARGET_MODE") == "production" and
-         getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_ID") == @cluster_id and
-         getenv.("ASH_TEMPLATE_DATABASE_CLUSTER_NAME") == @cluster_name and
          not production_identity?(getenv.("FLY_APP_NAME")) do
       :ok
     else
-      raise "database migration requires production mode for cluster dzx6qo6xqzvojpv5 named regents-platform-prod"
+      raise "database migration requires production mode"
     end
   end
 

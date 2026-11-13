@@ -31,8 +31,9 @@ After renaming, a new site must still replace, by hand:
    the Regents accounts; keep them unless the product has its own.
 5. The Fly app names: `app` in `platform/fly.staging.toml`, and the production
    app, which `platform/fly.toml` leaves to the deploy command.
-6. The database cluster, hosts and refused identities in
-   `platform/lib/ash_template/database_config.ex`.
+6. The staging hosts and refused identities in
+   `platform/lib/ash_template/database_config.ex`. The production database
+   cluster is the `ASH_TEMPLATE_DATABASE_CLUSTER_ID` setting, never the code.
 <!-- /template-only -->
 
 - `platform/`: Phoenix/Ash application. Read its instructions for web changes.
