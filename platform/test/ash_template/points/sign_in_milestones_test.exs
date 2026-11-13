@@ -1,6 +1,7 @@
 defmodule AshTemplate.Points.SignInMilestonesTest do
   # Invariant: a new account, each social account a person links, and a
-  # person's paired agents each earn their one-time award once, in one entry.
+  # person's paired agents each earn their one-time award once, in one entry,
+  # whichever site records it and however often the agent pairs again.
   # The offer is made inside the save that earns it, so a save that rolls back
   # offers nothing, and a sign-in that changes nothing offers nothing more.
   use ExUnit.Case, async: false
@@ -125,6 +126,113 @@ defmodule AshTemplate.Points.SignInMilestonesTest do
 
     assert %{name: name} = Enum.find(agents, &(&1.wallet == wallet))
     assert {:ok, %{^wallet => ^name}} = AshTemplate.Points.Accounts.agent_names(account.id, [wallet])
+  end
+
+  test "unpairing the agent and pairing it again earns the first-agent award once" do
+    did = "did:privy:repaired-" <> Ecto.UUID.generate()
+    wallet = wallet()
+    account = Accounts.register_verified!(did, wallet, [wallet], actor: %System{})
+    person = %RegentAgents.Person{privy_user_id: did}
+    agent = %RegentAgents.Agent{wallet: wallet()}
+
+    first = pair(person, agent)
+    award("agent.activated", account.id)
+    assert [25_000_000] = points(account.id, "agent.activated")
+
+    :ok = RegentAgents.unpair_agent(first, actor: person)
+    pair(person, agent)
+    assert [_offer] = offers("agent.activated")
+    award("agent.activated", account.id)
+
+    # The new pairing is offered and checked, and records nothing more.
+    assert [25_000_000] = points(account.id, "agent.activated")
+    assert [{"template", :confirmed}] = events(account.id, "agent.activated")
+  end
+
+  test "a social account another site already rewarded earns nothing more here" do
+    [mine, theirs] =
+      for _ <- 1..2,
+          do: %{provider: :x, subject: "x-" <> Ecto.UUID.generate(), username: "linked"}
+
+    [person, someone, newcomer] =
+      for name <- ~w(person someone newcomer), do: "did:privy:#{name}-" <> Ecto.UUID.generate()
+
+    [person_id, someone_id] =
+      for did <- [person, someone] do
+        assert {:ok, account, []} = did |> session([]) |> VerifiedSession.establish()
+        account.id
+      end
+
+    # Another site, under its own name, rewarded the person's X account at the
+    # start, and someone else's X account too.
+    rewarded_elsewhere(person_id, "x:" <> mine.subject)
+    rewarded_elsewhere(someone_id, "x:" <> theirs.subject)
+
+    # Here the person links the same X account, and a newcomer links the other.
+    assert {:ok, _account, []} = person |> session([mine]) |> VerifiedSession.establish()
+    assert {:ok, %{id: newcomer_id}, []} =
+             newcomer |> session([theirs]) |> VerifiedSession.establish()
+
+    assert length(offers("social.x")) == 2
+    award("social.x", person_id)
+    award("social.x", newcomer_id)
+
+    # The person: nothing more is recorded; their one award is the other site's.
+    assert [10_000_000] = points(person_id, "social.x")
+    assert [{"regents", :confirmed}] = events(person_id, "social.x")
+
+    # The newcomer: recorded here, and held to nothing, because that X account
+    # has had its award.
+    assert [] = points(newcomer_id, "social.x")
+    assert [{"template", :capped}] = events(newcomer_id, "social.x")
+  end
+
+  defp pair(person, agent) do
+    code = RegentAgents.issue_pairing_code!(actor: person)
+    RegentAgents.pair_agent!(code.code, "Agent", :codex, actor: agent)
+  end
+
+  # What another site's award of a linked X account leaves in the shared ledger:
+  # its event and its entry, under that site's name, earned at the start.
+  defp rewarded_elsewhere(account_id, key) do
+    start = Application.get_env(:regent_points, :starts_at)
+    {:ok, rule} = RegentPoints.Rules.snapshot("social.x", start)
+
+    facts = %{
+      source_app: "regents",
+      source_kind: "linked_identity",
+      source_event_key: key,
+      account_id: account_id,
+      actor_kind: "human",
+      actor_id: to_string(account_id),
+      source_action_at: start,
+      qualified_at: start,
+      evidence_ref: "linked_identity:" <> Ecto.UUID.generate(),
+      evidence: %{"subject_key" => key}
+    }
+
+    RegentPoints.open_account!(%{id: account_id}, actor: Store.system())
+
+    event =
+      RegentPoints.create_event!(
+        Map.merge(facts, %{
+          program_id: RegentPoints.Rules.program(),
+          rule_id: "social.x",
+          rule_snapshot: rule,
+          award_key: Store.digest({"regents", "linked_identity", key, "social.x"}),
+          payload_digest: Store.digest(facts)
+        }),
+        actor: Store.system()
+      )
+
+    assert {:ok, %{status: :confirmed}} =
+             RegentPoints.process_event(event.id, actor: Store.system())
+  end
+
+  defp events(account_id, rule) do
+    Ash.Query.filter(Event, account_id == ^account_id and rule_id == ^rule)
+    |> Ash.read!(actor: Store.system())
+    |> Enum.map(&{&1.source_app, &1.processing_status})
   end
 
   defp offers(rule) do

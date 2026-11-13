@@ -10594,3 +10594,32 @@ with v238 merged). Sean's answer to the seasons work's question: a, add the ende
   with 5 skipped, 280 Elixir (10 properties).
 - Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
   `/rooms/general` answer 200.
+## 2026-11-13 — A one-time Points award earns once, whichever site records it (branch, not on main)
+
+Branch `tpl/points-twice-1113`, from main at `f7d83404` (elixir-utils pin `2503f4fe`).
+Tests only; no code changed.
+
+- A linked social account earns once, whichever site records it, and the first-agent
+  award earns once however often a person unpairs and pairs again or pairs another
+  agent. Tests now show both. The template records its social and pairing awards under
+  its own site name, and Regents under "regents"; no check reads that name. When an
+  action is recorded, the account's one-time check finds the rule already earned and
+  records nothing. Behind it, the account's lifetime count for the rule, and for a social
+  account the lifetime count for that provider and subject, hold any further award to
+  nothing.
+- Two tests in `platform/test/ash_template/points/sign_in_milestones_test.exs`: an agent
+  unpaired and paired again earns nothing more; an X account another site rewarded at
+  its start, under its own name, earns nothing more when the same person links it here,
+  and nothing for a newcomer who links it here.
+- The shared tests are elixir-utils `points/test/regent_points/once_only_test.exs` on
+  `eu/points-twice-1113` (`92d86b5`): each case live, at the start, and at one site's
+  start followed by a live record on another. Switching each of those checks off in turn
+  makes the matching tests fail.
+- The feature map's sign-in row names the two new cases, and a new row names the shared
+  test.
+- Check: `make check` exit 0 on these changes: the style check, 155 script tests in 21
+  files, the browser walk (653 passed, 5 skipped for screen size), 282 server tests (272
+  tests, 10 properties), required fixes, `cli/commands.json`, newest SIWA. A first run
+  had one walk test time out under load (the agent tools window reopened at phone
+  width); that file alone then passed three times over (54 runs), and the full rerun
+  passed.
