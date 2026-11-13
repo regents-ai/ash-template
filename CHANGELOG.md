@@ -10646,3 +10646,16 @@ Tests only; no code changed.
 - Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
   `/rooms/general` answer 200. The Points page's own words need a sign-in and were not
   read by the chief.
+
+## 2026-11-13 — The Points tables can join the protected list
+
+- `/app/bin/protect-points` (`AshTemplate.Release.protect_points/0`) puts the shared Points
+  ledger's nine tables on the shared database's protected list, none of them allowing row
+  deletes, and prints each listed table. Emptying, deleting from or dropping one is then
+  refused; new rows, changed rows and new columns carry on as before. The library's
+  migration ledger, `regent_points.schema_migrations`, stays off the list.
+- It runs on the release login in one transaction that gives up after waiting five seconds
+  for a table, and when one of the tables is already listed it changes nothing. It runs
+  once, on the founder's go; nothing runs it on a deployment.
+- `platform/test/ash_template/protect_points_test.exs` checks it against a stand-in list.
+  No migration, no pin change; API 17.0.0 unchanged.
