@@ -9934,6 +9934,6 @@ shared production database).
   to 0.03 ms (1,290 pages read to 25); a word in none 95 ms to 0.01 ms; a word in a third of
   all messages 42 ms to 17 ms, still reading every matching row; the notes of a person with
   5,000 of them 18 ms to 0.07 ms; rooms 0.4 ms to 0.02 ms.
-- Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `55c7d636`
-  (merged with main at `21b8786a`) exit 0: 13 report tests, 150 script tests, 651 browser
-  walks with 5 skipped, 248 Elixir (10 properties).
+- Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `45e9f394`
+  (merged with `tpl/followups-1112` at `8ef98a8f`) exit 0: 13 report tests, 154 script
+  tests, 651 browser walks with 5 skipped, 261 Elixir (10 properties).
