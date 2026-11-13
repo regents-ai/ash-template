@@ -10723,7 +10723,7 @@ Tests only; no code changed.
   released commit: the style check, 13 report script tests, 155 script tests in 21 files, the
   browser walk (653 passed, 5 skipped for screen size), 282 server tests (272 tests, 10
   properties), required fixes, `cli/commands.json`, newest SIWA.
-## 2026-11-13 — regents-cli 1.10.28 (branch `tpl/cli-1-10-28-1113`, not on main)
+## 2026-11-13 — regents-cli 1.10.28
 
 - regents-cli moves from `2f7eee7e` (1.10.27) to `1608c835` (1.10.28), which reached PyPI
   on 13 Nov 22:56Z, so the newest-SIWA gate refused main. `1608c835` is the commit the
