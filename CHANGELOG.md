@@ -10623,3 +10623,14 @@ Tests only; no code changed.
   had one walk test time out under load (the agent tools window reopened at phone
   width); that file alone then passed three times over (54 runs), and the full rerun
   passed.
+
+## 2026-11-13 — Points starts on the hosted template on 16 November 2026, 17:00 UTC
+
+- `platform/config/prod.exs` sets the Points start for template.regents.sh. Until then the
+  Points page says when Points starts and dates the three seasons (ending 16 December,
+  15 January and 14 February, each 17:00 UTC); at the start the hourly
+  `RegentPoints.StartAwards` job records what each account already had, and from then the
+  five approved actions earn.
+- `platform/config/config.exs` still sets no start, so nothing earns in development or
+  tests. A site copied from the template takes its own start by its own decision.
+- No migration, no pin change; API 17.0.0 unchanged.

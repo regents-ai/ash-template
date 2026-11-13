@@ -220,7 +220,8 @@ The package ships one generated initial migration. Under Sean’s POINTS-8 appro
 the old local Points fixture schema was backed up and rebuilt successfully.
 Canonical users, Credits, legacy queued jobs and other schemas were left intact.
 
-Earning remains disabled: no start time or approved rules are configured. Before
-launch, implement trusted sources and complete live acceptance. The NFT reads use the latest Base block through the site's chain client
+The five start rules are approved in `platform/config/config.exs`, which sets no start,
+so nothing earns in development or tests. The hosted template's start is in
+`platform/config/prod.exs`: 16 November 2026 17:00 UTC. The NFT reads use the latest Base block through the site's chain client
 (`chain_nodes[8453]`).
 Full Account filters/detail navigation remain separate work.

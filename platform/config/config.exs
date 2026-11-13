@@ -287,7 +287,8 @@ config :error_tracker,
 
 config :phoenix, :json_library, Jason
 
-# Points launch is explicit: nothing earns until Sean sets the start time. The five
+# Points launch is explicit: nothing earns until a start time is set, and the hosted
+# template's is in config/prod.exs. The five
 # start actions are approved (Sean, 13 November), so the Points page lists them.
 # Every site reads the one shared regent_points schema; Regents owns its migrations.
 config :regent_points,

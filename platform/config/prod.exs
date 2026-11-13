@@ -17,6 +17,11 @@ config :ash_template, :behind_fly_proxy, true
 # The private port fly.toml names under [metrics]; Fly routes no public traffic to it.
 config :ash_template, :metrics_listener, ip: {0, 0, 0, 0, 0, 0, 0, 0}, port: 9091
 
+# Points starts on the hosted template at this moment (Sean, 13 November). It is set
+# once and never moved: seasons, bonuses and corrections count from it. A site copied
+# from the template takes its own start by its own decision.
+config :regent_points, starts_at: ~U[2026-11-16 17:00:00Z]
+
 # Requests and outcomes are logged; database queries and debug detail are not.
 config :logger, level: :info
 
