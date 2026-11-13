@@ -10479,3 +10479,23 @@ needs his own named go.
   size), 257 server tests (247 tests, 10 properties), required fixes,
   `cli/commands.json`, newest regents-cli. elixir-utils Points: 25 passed (1 property)
   and no missing generated migration on each of the three branches.
+
+## 2026-11-13 — Released v241: the Points board reads ten stored totals
+
+- `a38fd362` (the Points board branch joined with main) is v241 on template.regents.sh,
+  switched on 13 Nov with `scripts/deploy.sh`. elixir-utils pin `0eee6be3` to `f5452442`;
+  API 17.0.0 unchanged.
+- Two shared changes, applied at 16:42:09Z with `/app/bin/migrate-shared` from the new
+  image on a one-off machine that removed itself, before the switch (the founder's go for
+  this item): `regent_points 20261112234336` (`accounts.balance_micro`, added and filled)
+  and `regent_points 20261112234337` (`accounts_balance_micro_id_index`, built
+  concurrently). `/app/bin/pending-migrations` from the same image named exactly these two
+  first.
+- Totals, read-only, before (16:30Z) and after (16:43Z): 0 accounts, 0 entries, 0 period
+  bonuses both times; ledger sum 0 and stored sum 0; 0 accounts differing; the new index
+  valid.
+- Rollback: v240 (`c16bfd15`) image. The column and index stay; older code ignores them.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 282 Elixir (10 properties).
+- Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
+  `/rooms/general` answer 200.
