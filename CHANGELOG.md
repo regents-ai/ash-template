@@ -9950,3 +9950,22 @@ On `wt/tpl-cells-sparks-1112`, for the design chief. No migration.
   is gold or green to the eye. The Fractal's gold and green rings are gone.
 - Checks: the home page walk `platform/test/browser/homepage.spec.ts` (the ring never
   takes the button's own colour) and `make check-style`.
+
+## 2026-11-13 — Released v231: the neutral blend and Cells sparks
+
+- `9b6eced2` (the design chief's branch `wt/tpl-cells-sparks-1112`, a fast-forward of
+  main from `284ce1cb`) is v231 on template.regents.sh, switched at about 01:14Z on
+  13 Nov with `scripts/deploy.sh`. No migration, no sign-in code, no Elixir beyond the
+  pin.
+- Sean's decision 33 b: the Enter App ring and the Fractal still pass through a brand
+  neutral between Tangerine and Powder Blue (Platinum in light, `--color-fg-muted` in
+  dark), with no gold or green on the way. Cells: sparks rise above the bar into the
+  taller canvas; the dim cells in dark are exact. Design-system pin `5fbe2d40` to
+  `324d40ec`.
+- Rollback: v230 (`9f90f648`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 254 Elixir.
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/animations/wonders`, `/animations/cells` and `/rooms/general` answer 200 at 1280,
+  390 and 320 with no page errors and no sideways scroll. The look itself (the colours
+  of the ring and the still, the sparks) is the design chief's read.
