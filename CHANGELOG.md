@@ -10061,3 +10061,24 @@ shared production database).
 - Checks: `platform/test/ash_template/text_search_test.exs`. Full check on `45e9f394`
   (merged with `tpl/followups-1112` at `8ef98a8f`) exit 0: 13 report tests, 154 script
   tests, 651 browser walks with 5 skipped, 261 Elixir (10 properties).
+
+## 2026-11-13 — Released v233: text search with an index
+
+- `588ed4ef` (merge of `tpl/text-search-1112`, `013f6152`) is v233 on
+  template.regents.sh, switched at about 01:37Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "24 a" (12 Nov). The live build names commit `588ed4e` and the
+  live API document says 16.0.0.
+- Search over notes, room messages and room names runs as ILIKE on trigram indexes;
+  under three letters finds nothing and runs no query.
+- Migrations: `20261112234817` asks for pg_trgm in `public`, which production already
+  had (1.6), so it changed nothing; `20261113010509` builds four indexes on the
+  template's own tables, concurrently with the lock off. The release finished with
+  exit 0, which it does only when its database step succeeds; the indexes themselves
+  were not read back on production (that would be a production command).
+- Rollback: v232 (`4f1628f1`), image only; the indexes and the add-on may stay.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser
+  walks with 5 skipped, 261 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/docs`, `/animations/cells` and `/rooms/general` answer 200 at 1280, 390 and 320 with
+  no page errors and no sideways scroll.
+- Not proven on live: a search itself (it needs a sign-in). Sean tries one.
