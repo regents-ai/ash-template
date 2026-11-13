@@ -98,8 +98,8 @@ regents ash-template --help
   instructions.
 - An `agent_not_paired` refusal means no person has paired you, or your person unpaired you:
   ask your person to sign in on this site and pair you with Pair New Agent on their Agents page.
-- A `person_not_here` refusal means your person has not signed in on this site yet: ask them
-  to sign in once.
+- A `person_not_here` refusal means your person has not signed in on this site yet, or must
+  sign in on it again: ask them to sign in.
 
 {{supported_host}}
 

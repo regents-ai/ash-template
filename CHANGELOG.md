@@ -10694,3 +10694,98 @@ Tests only; no code changed.
 - Rollback: v244 (`1acf62ec`) image.
 - Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
   with 5 skipped, 284 Elixir (10 properties).
+
+## 2026-11-13 — The notes API takes a session on this site or a paired agent (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, from main at `87efe70e`.
+
+- `/api/v1/notes` and its routes answer the person signed in on this site, with the
+  session cookie the site's own pages hold, or an agent the person paired, signing
+  its request with its own key. A change (create, list, edit, delete) from a session
+  also carries the session's forms token in `x-csrf-token`, as the site's pages send
+  it; without it the request counts as signed out. A read needs only the session.
+- A person's Privy access and identity tokens are no longer taken on these routes.
+  Without a session or an agent's signature the answer is 401
+  `authentication_required`, with a hint that names both ways in. The 403
+  `account_required` answer is gone: a session on this site always names an account.
+- `AshTemplateWeb.NotesController` reads the person through
+  `PrivySessionController.enforce_authority/1`, the same sign-in check every page
+  makes, behind `Plug.CSRFProtection` with `:clear_session`.
+  `AshTemplate.Accounts.VerifiedSession.account/1`, used only here, is gone.
+- The OpenAPI documents move to 18.0.0: the notes operations take `cookieSession`
+  (with `csrfToken` for a change) or `siwaProof`, the 403 points at the agent's
+  answers, and `account_required` leaves the error codes. Listed in the docs'
+  breaking changes, `cli/COMMANDS.md`, `/llms.txt` and the public changelog. Every
+  `regents ash-template notes` command is signed and works as before.
+- `GET /api/v1/profile` and its two writes (shared `RegentIdentity.HTTP`) still take
+  the Privy pair; they live in the shared library and are unchanged here.
+- Tests: `platform/test/ash_template_web/notes_sign_in_test.exs` signs in through
+  the site's own sign-in step, then creates, lists, reads, edits and deletes a note
+  with the session; every change without the forms token is refused and changes
+  nothing; Privy's tokens alone are refused even for that signed-in person. With the
+  forms check taken out, the test fails. The paired agent's notes stay covered by
+  `platform/test/ash_template/agents/signed_tools_test.exs`. The feature map gains a
+  row.
+
+## 2026-11-13 — A paired agent acts for its person while their sign-in names a wallet (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, after the notes API change.
+
+- A sign-in on this site with no linked wallet withdraws the account's wallet evidence
+  (`VerifiedSession.establish/1` clears `wallet_address` and `wallet_addresses`), and
+  the person's own session then counts as signed out. A paired agent now follows the
+  same rule: `AshTemplateWeb.Plugs.AgentWallet` makes it act for its person only while
+  `VerifiedSession.current?/1` holds, as the person's session and the Claude connector
+  already do. Otherwise it acts as itself with `person_not_here`, the status it has
+  before its person's first sign-in here.
+- `AshTemplate.Agents.PairedAccount.account/1` follows the same rule, so `GET
+  /api/agents/v1/whoami` answers `person_not_here` and `GET /api/agents/v1/me` is
+  refused with it. Every agent door reads the agent through `AgentWallet.actor_for/2`,
+  so signed requests, the hosted MCP server and check-in agree.
+- The person's next sign-in with a wallet restores the evidence, and the agent acts for
+  them again from its next request. The pairing itself is never touched.
+- `AgentWallet.recheck_before_send/2` still re-reads only the pairing: it keeps one
+  person's answer from reaching an agent that has changed hands during the request.
+  A withdrawal never changes whose agent it is. An open live feed keeps running until
+  it closes, as an open page does until its next press.
+- No answer changes shape and the OpenAPI documents stay at 18.0.0. The status
+  descriptions (OpenAPI, `cli/COMMANDS.md`, `/agents.md` and the status list the agent
+  guides share) now say the person may need to sign in again. The shared library's own
+  `person_not_here` words ("hasn't signed in on this site yet") are unchanged.
+- Test: in `platform/test/ash_template/agents/signed_tools_test.exs`, a paired agent
+  works, its person signs in with no wallet, its notes and check-in are refused with
+  `person_not_here` and whoami says so, and after the person signs in with a wallet
+  the agent works again. Taking either new check out fails the test. The feature map
+  gains a row.
+
+## 2026-11-13 — A sign-in lasts a day, in a host-only secure cookie (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, after the paired agent change.
+
+- A sign-in on this site lasts a day from the sign-in that made it, in place of 30
+  days. `config :ash_template, :session_options` sets `max_age: 24 * 60 * 60`, which
+  `AshTemplate.Accounts.SessionAuthority` reads as the sign-in's lifetime; a refresh
+  still never extends it, and the daily prune deletes rows untouched for two days.
+- That is how Privy is asked again, with nothing new running: after the day, the next
+  page the person opens is signed out, and the browser's existing sign-back-in (Privy
+  still holds a session there) sends fresh tokens through `/auth/privy/session`.
+  Privy gives fresh tokens only while its own session in that browser lasts, so a
+  person whose Privy session has ended is signed out within a day and signs in again.
+  The server never calls Privy: when Privy is down, only people whose day ends
+  meanwhile show signed out, and the next page after Privy answers signs them back in.
+  A page left open across the end says the sign-in ended at its next press, which
+  changes nothing.
+- The session cookie is `__Host-ash_template_key`, `secure: true` everywhere (browsers
+  count localhost as secure), path `/`, no domain. The production-only `secure`
+  override in `platform/config/runtime.exs` is gone. At release every browser's old
+  cookie is no longer read, so everyone is signed out once; those whose Privy session
+  is alive are signed back in on their next page.
+- The OpenAPI documents' `cookieSession` names the new cookie. The browser walk plants
+  its signed-in cookie as secure.
+- `skills/ash-stack/references/privy-reconciliation.md` says the sign-in lasts a day
+  and how that asks Privy again.
+- Test: `platform/test/ash_template_web/sign_in_lifetime_test.exs` signs in through the
+  site's own step; a minute before the day the person is signed in, at the day they are
+  signed out; after it, tokens from a Privy sign-in that has since ended are refused,
+  and fresh ones sign the person back in. With sign-ins that never end, both tests
+  fail. The feature map gains a row.

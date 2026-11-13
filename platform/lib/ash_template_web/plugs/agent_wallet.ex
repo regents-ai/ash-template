@@ -20,6 +20,7 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   require Logger
 
   alias AshTemplate.{Accounts, Agents}
+  alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.{Agent, System}
   alias RegentHttp.UnexpectedFailure
 
@@ -128,20 +129,24 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     end
   end
 
+  # The agent acts for its person while the person's account names a signed-in
+  # wallet, as the person's own sign-in on this site does
+  # (`VerifiedSession.current?/1`). Before their first sign-in here, and after a
+  # sign-in with no linked wallet, the person is not here; their next sign-in
+  # with a wallet lets the agent act for them again.
   defp paired(agent, pairing) do
-    case Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
-      {:ok, %{} = account} ->
-        app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
-
-        with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
-             do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
-
-      {:ok, nil} ->
-        {:ok, Agent.for_agent(agent, :person_not_here)}
-
-      {:error, error} ->
-        {:error, error}
+    with {:ok, account} <- Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
+      if VerifiedSession.current?(account),
+        do: for_person(agent, account, pairing),
+        else: {:ok, Agent.for_agent(agent, :person_not_here)}
     end
+  end
+
+  defp for_person(agent, account, pairing) do
+    app_id = :ash_template |> Application.fetch_env!(:privy) |> Keyword.fetch!(:app_id)
+
+    with {:ok, profile_id} <- RegentIdentity.profile_id(app_id, pairing.privy_user_id),
+         do: {:ok, Agent.paired(agent, account, pairing, profile_id)}
   end
 
   @doc """

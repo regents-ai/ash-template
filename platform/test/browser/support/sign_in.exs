@@ -184,7 +184,7 @@ save_sign_in = fn account, verified, file ->
           path: "/",
           expires: -1,
           httpOnly: true,
-          secure: false,
+          secure: true,
           sameSite: "Lax"
         }
       ],

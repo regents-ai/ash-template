@@ -6,21 +6,22 @@ defmodule AshTemplate.Agents.PairedAccount do
   """
 
   alias AshTemplate.Accounts
+  alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.System
 
-  # Nil until the person first signs in here; the check-in then asks for that sign-in.
+  # Nil until the person first signs in here, and after a sign-in with no linked
+  # wallet, as for the agent's signed requests (`AshTemplateWeb.Plugs.AgentWallet`);
+  # the check-in then asks for that sign-in.
   def account(privy_user_id) do
-    case Accounts.get_by_privy_did(privy_user_id, actor: %System{}) do
-      {:ok, %{} = account} ->
-        %{
-          display_name: account.display_name,
-          ens_name: account.ens_name,
-          wallet_address: account.wallet_address,
-          wallet_addresses: account.wallet_addresses || []
-        }
+    {:ok, account} = Accounts.get_by_privy_did(privy_user_id, actor: %System{})
 
-      {:ok, nil} ->
-        nil
+    if VerifiedSession.current?(account) do
+      %{
+        display_name: account.display_name,
+        ens_name: account.ens_name,
+        wallet_address: account.wallet_address,
+        wallet_addresses: account.wallet_addresses
+      }
     end
   end
 end
