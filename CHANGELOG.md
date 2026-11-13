@@ -10678,3 +10678,34 @@ Branch `tpl/sign-in-three-1113`, from main at `87efe70e`.
   forms check taken out, the test fails. The paired agent's notes stay covered by
   `platform/test/ash_template/agents/signed_tools_test.exs`. The feature map gains a
   row.
+
+## 2026-11-13 — A paired agent acts for its person while their sign-in names a wallet (branch, not on main)
+
+Branch `tpl/sign-in-three-1113`, after the notes API change.
+
+- A sign-in on this site with no linked wallet withdraws the account's wallet evidence
+  (`VerifiedSession.establish/1` clears `wallet_address` and `wallet_addresses`), and
+  the person's own session then counts as signed out. A paired agent now follows the
+  same rule: `AshTemplateWeb.Plugs.AgentWallet` makes it act for its person only while
+  `VerifiedSession.current?/1` holds, as the person's session and the Claude connector
+  already do. Otherwise it acts as itself with `person_not_here`, the status it has
+  before its person's first sign-in here.
+- `AshTemplate.Agents.PairedAccount.account/1` follows the same rule, so `GET
+  /api/agents/v1/whoami` answers `person_not_here` and `GET /api/agents/v1/me` is
+  refused with it. Every agent door reads the agent through `AgentWallet.actor_for/2`,
+  so signed requests, the hosted MCP server and check-in agree.
+- The person's next sign-in with a wallet restores the evidence, and the agent acts for
+  them again from its next request. The pairing itself is never touched.
+- `AgentWallet.recheck_before_send/2` still re-reads only the pairing: it keeps one
+  person's answer from reaching an agent that has changed hands during the request.
+  A withdrawal never changes whose agent it is. An open live feed keeps running until
+  it closes, as an open page does until its next press.
+- No answer changes shape and the OpenAPI documents stay at 18.0.0. The status
+  descriptions (OpenAPI, `cli/COMMANDS.md`, `/agents.md` and the status list the agent
+  guides share) now say the person may need to sign in again. The shared library's own
+  `person_not_here` words ("hasn't signed in on this site yet") are unchanged.
+- Test: in `platform/test/ash_template/agents/signed_tools_test.exs`, a paired agent
+  works, its person signs in with no wallet, its notes and check-in are refused with
+  `person_not_here` and whoami says so, and after the person signs in with a wallet
+  the agent works again. Taking either new check out fails the test. The feature map
+  gains a row.

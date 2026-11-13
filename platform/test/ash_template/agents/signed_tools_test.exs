@@ -190,6 +190,59 @@ defmodule AshTemplate.SignedToolsTest do
     assert_status("paired")
   end
 
+  test "an agent stops acting for its person after a sign-in with no wallet, and acts again after one with a wallet" do
+    session = %RegentPrivy.Session{
+      app_id: "test-app",
+      session_id: "test-session",
+      privy_user_id: "did:privy:wallet-withdrawn",
+      wallet_address: @other,
+      wallet_addresses: [@other],
+      linked_socials: [],
+      issued_at: System.system_time(:second),
+      expires_at: System.system_time(:second) + 3600
+    }
+
+    assert {:ok, _account, []} = VerifiedSession.establish(session)
+    person = %RegentAgents.Person{privy_user_id: session.privy_user_id}
+    code = RegentAgents.issue_pairing_code!(actor: person)
+
+    RegentAgents.pair_agent!(code.code, "Fixture", :codex,
+      actor: %RegentAgents.Agent{wallet: @wallet}
+    )
+
+    id = Ecto.UUID.generate()
+    body = Jason.encode!(%{title: "Kept", operation_id: id})
+    assert request(:post, "/api/v1/notes", body).status == 201
+    assert_acting(id)
+
+    # The person signs in with no wallet linked: the account's wallet evidence is withdrawn.
+    assert {:error, :missing_linked_wallet} =
+             VerifiedSession.establish(%{session | wallet_address: nil, wallet_addresses: []})
+
+    for {method, path, body} <- [
+          {:post, "/api/v1/notes/list", "{}"},
+          {:get, "/api/v1/notes/" <> id, nil},
+          {:get, "/api/agents/v1/me", nil}
+        ] do
+      refused = request(method, path, body)
+      assert refused.status == 403
+      assert Jason.decode!(refused.resp_body)["error"]["code"] == "person_not_here"
+    end
+
+    assert_status("person_not_here")
+
+    assert {:ok, _account, []} = VerifiedSession.establish(session)
+    assert_acting(id)
+  end
+
+  defp assert_acting(note_id) do
+    assert [%{"id" => ^note_id}] =
+             Jason.decode!(request(:post, "/api/v1/notes/list", "{}").resp_body)["notes"]
+
+    assert request(:get, "/api/agents/v1/me").status == 200
+    assert_status("paired")
+  end
+
   defp assert_status(status) do
     whoami = request(:get, "/api/agents/v1/whoami")
     assert whoami.status == 200, whoami.resp_body

@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Agents.** Your agent works for you while your last sign-in here had a wallet linked.
+  If you sign in with none, your agent waits until you sign in again with one.
 - **Notes API.** The notes API answers you from this site's own pages while you are
   signed in, or through an agent you paired. It no longer takes your Privy sign-in
   tokens. Agents' notes commands work as before.

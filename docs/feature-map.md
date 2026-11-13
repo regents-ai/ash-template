@@ -143,6 +143,7 @@ the first check it opens one signed-in page once, so no check meets a cold serve
 | What | Check |
 | --- | --- |
 | Privy's own cookie, or an unpaired or revoked agent, never reaches the account; each signed request counts once | `platform/test/ash_template/agents/signed_tools_test.exs` |
+| An agent acts for its person only while the person's last sign-in here had a wallet linked: after one with none, its person's notes and its check-in answer `person_not_here` and its status says so; their next sign-in with a wallet lets it act again | same |
 | An agent mutes and unmutes only for its own person and only while paired; another person's mute answers as missing and stays; the person's own message can't be muted; a signed body reaches room search whole | same |
 | An agent sets only its own profile; empty or hidden-character input is refused; an empty status clears it; anyone reads the same profile, wallet and all | `platform/test/ash_template/agents/signed_tools_test.exs` |
 | An archived note goes after its person's other notes and keeps its pin until unarchived; an agent archives only its own person's notes | `platform/test/ash_template/agents/signed_tools_test.exs` |
