@@ -3,13 +3,21 @@
 // each run from the nearest cell edge to the nearest cell edge, a half rounding up,
 // every run ending where the next begins. Its runs then move only by whole cells:
 // a change lands in well under a second, a change part-way through starts from the
-// cells on screen, lost cells break off as sparks that are gone within a second,
+// cells on screen, lost cells break off as sparks that rise out of the bar into the
+// headroom above it, go out before they reach its top and are gone within a second,
 // and the first frame shows the runs where the still meter has them, with nothing
 // hot and no sparks.
 import {describe, expect, it} from "vitest"
 import {columnsIn, runOf, type Grid} from "../js/cells_meter/layout"
 import {EASE_OUT} from "../js/hooks/motion/shared"
-import {COLUMN_FLOATS, IN_RUN, createCellsPicture, type MeterScene, type Part} from "../js/cells_meter/picture"
+import {
+  COLUMN_FLOATS,
+  IN_RUN,
+  SPARK_FLOATS,
+  createCellsPicture,
+  type MeterScene,
+  type Part,
+} from "../js/cells_meter/picture"
 
 const GRID: Grid = {cell: 3, gap: 2, rows: 10}
 const FRAME = 1 / 60
@@ -68,11 +76,12 @@ const partsOf = (values: Record<string, number>): Part[] => {
 
 const sceneOf = (values: Record<string, number>, counting = false): MeterScene => ({
   width: 1000 * 5 - 2,
+  headroom: 48,
   grid: GRID,
   parts: partsOf(values),
   counting,
   lit: new Set(),
-  dim: [0.5, 0.5, 0.5],
+  dim: [0.07, 0.07, 0.07],
   dimAlpha: 0.14,
   fg: [1, 1, 1],
 })
@@ -171,6 +180,29 @@ describe("the moving picture", () => {
     const {runs} = shownColumns(picture)
     expect(runs.slice(100, 200).every(run => run === c)).toBe(true)
     expect(runs.slice(200).every(run => run === 0)).toBe(true)
+  })
+
+  it("sends sparks up out of the bar into the headroom, and puts each out before the headroom's top", () => {
+    // The design system's headroom (48px, one bar high), and rooms half and twice that.
+    for (const headroom of [24, 48, 96]) {
+      const picture = createCellsPicture(EASE_OUT)
+      const scene = (values: Record<string, number>): MeterScene => ({...sceneOf(values), headroom})
+      picture.step(scene({a: 10, b: 20, c: 10}), 0, true)
+      let highest = Infinity
+      for (let frame = 0; frame < 60; frame++) {
+        picture.step(scene({a: 10, c: 10}), FRAME, false)
+        const data = picture.sparkData(GRID)
+        for (let i = 0; i < picture.sparkCount(); i++) {
+          const o = i * SPARK_FLOATS
+          // Only a spark still showing counts.
+          if (data[o + 3]! <= 0) continue
+          highest = Math.min(highest, data[o + 1]!)
+        }
+      }
+      // Some rise past the bar's top, more than halfway up the headroom, and none reaches its top.
+      expect(highest).toBeLessThan(-headroom / 2)
+      expect(highest).toBeGreaterThan(-headroom)
+    }
   })
 
   it("takes a change part-way through from the cells on screen", () => {

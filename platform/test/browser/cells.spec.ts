@@ -5,9 +5,10 @@ import {watch} from "./support/person"
 // The cells lab (/animations/cells): the design system's Cells meter with its moving
 // picture drawn on the GPU. These checks open it with the GPU on and see the picture
 // take over from the still cells, add, resize and remove a holder and see the meter's
-// parts follow while the picture keeps drawing, start and stop counting, and fit the
-// page at 320 and 390 wide. With less motion the picture never starts and the still
-// cells stay.
+// parts follow while the picture keeps drawing, see a holder let go rise as sparks
+// into the room above the bar and leave it empty again, start and stop counting, and
+// fit the page at 320 and 390 wide. With less motion the picture never starts and the
+// still cells stay.
 test.use({launchOptions: {args: ["--enable-unsafe-webgpu", "--enable-gpu"]}})
 
 const meter = (page: Page) => page.locator("#cells-lab-meter")
@@ -30,6 +31,13 @@ async function drawn(page: Page) {
   await expect(meter(page)).toHaveAttribute("data-cells-ready", "true")
   // The still cells give way to the picture.
   await expect(meter(page).locator(".rg-cells__track")).toHaveCSS("visibility", "hidden")
+}
+
+/** The canvas above the bar, short of the bar's own top edge, in page pixels. */
+async function room(page: Page) {
+  const canvas = (await meter(page).locator("[data-cells-canvas]").boundingBox())!
+  const bar = (await meter(page).locator(".rg-cells__track").boundingBox())!
+  return {x: canvas.x, y: canvas.y, width: canvas.width, height: bar.y - canvas.y - 2}
 }
 
 for (const width of [320, 390]) {
@@ -70,6 +78,25 @@ test("a holder is added, resized and removed, and the picture follows", async ({
   await expect.poll(async () => (await parts(page)).map(([key]) => key)).toEqual(["treasury", "liquidity", "team", "community", "rewards"])
 
   await drawn(page)
+  await problems.expect()
+})
+
+test("a holder let go rises as sparks above the bar, gone a second later", async ({page}) => {
+  const problems = watch(page)
+  await open(page)
+  await drawn(page)
+  // The words under the room above the bar are hidden, so only the picture can draw there.
+  await page.addStyleTag({content: "#cells-lab-meter :is(.rg-cells__total, .rg-cells__status) { visibility: hidden }"})
+  await expect(meter(page).locator(".rg-cells__status")).toHaveCSS("visibility", "hidden")
+  const above = await room(page)
+  const empty = await page.screenshot({clip: above})
+
+  await page.getByRole("button", {name: "Remove Treasury"}).click()
+  await expect
+    .poll(async () => (await page.screenshot({clip: above})).equals(empty), {intervals: [0], timeout: 1500})
+    .toBe(false)
+  await page.waitForTimeout(1000)
+  expect((await page.screenshot({clip: above})).equals(empty)).toBe(true)
   await problems.expect()
 })
 

@@ -1,6 +1,8 @@
 /**
  * The Cells meter's moving picture (`Regent.Cells.meter/1` from the design system),
- * drawn on the meter's own canvas behind its runs. Put on the meter's root, it reads
+ * drawn on the meter's own canvas behind its runs. The canvas is the bar and, above
+ * it, `--rg-cells-headroom` of room that only the sparks rise into; the hook reads
+ * that room once and draws the cells that far down. Put on the meter's root, it reads
  * everything from the page the meter draws: each part's key, start, share and
  * colour, whether the total is being counted, the measures of the cells and the
  * theme's colours. When the page changes them the picture moves from what it shows
@@ -15,13 +17,14 @@ import {createCanvasIsland} from "../canvas_island"
 import type {CellsMeterRenderer} from "../cells_meter/renderer"
 import type {MeterScene, Part} from "../cells_meter/picture"
 import {watchTheme} from "../theme"
-import {colourReader, type Rgb} from "../token_colour"
+import {colourReader} from "../token_colour"
 import {still} from "./motion/shared"
 
-type Page = Omit<MeterScene, "width" | "lit">
+type Page = Omit<MeterScene, "width" | "headroom" | "lit">
 
 export function createCellsMeter(root: HTMLElement) {
   const canvas = root.querySelector<HTMLCanvasElement>("[data-cells-canvas]")!
+  const headroom = parseFloat(getComputedStyle(root).getPropertyValue("--rg-cells-headroom"))
   const readColour = colourReader()
   let page: Page | undefined
   let width = canvas.getBoundingClientRect().width
@@ -39,12 +42,12 @@ export function createCellsMeter(root: HTMLElement) {
         colour: readColour(getComputedStyle(part).getPropertyValue("--rg-cells-color").trim()),
       }),
     )
-    // The dim cells are see-through: their colour over black and over white gives its opacity.
+    // The dim cells are see-through. The page multiplies their colour by their exact
+    // opacity before it lays them over what is under them, so the picture reads that
+    // product, and the opacity, as the page works them out.
     const dimCss = style.getPropertyValue("--rg-cells-dim").trim()
-    const overBlack = readColour(dimCss, [0, 0, 0])
-    const overWhite = readColour(dimCss, [1, 1, 1])
-    const dimAlpha = 1 - (overWhite[0] - overBlack[0] + overWhite[1] - overBlack[1] + overWhite[2] - overBlack[2]) / 3
-    const dim: Rgb = dimAlpha > 0 ? [overBlack[0] / dimAlpha, overBlack[1] / dimAlpha, overBlack[2] / dimAlpha] : [0, 0, 0]
+    const dim = readColour(`rgb(from ${dimCss} calc(r * alpha) calc(g * alpha) calc(b * alpha) / 1)`)
+    const dimAlpha = readColour(`rgb(from ${dimCss} calc(alpha * 255) 0 0 / 1)`)[0]
     return {
       grid: {cell: measure("--rg-cells-cell"), gap: measure("--rg-cells-gap"), rows: measure("--rg-cells-rows")},
       parts,
@@ -57,7 +60,7 @@ export function createCellsMeter(root: HTMLElement) {
 
   const scene = (): MeterScene => {
     page ??= readPage()
-    return {...page, width, lit}
+    return {...page, width, headroom, lit}
   }
 
   const changed = () => {
