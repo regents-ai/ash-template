@@ -59,19 +59,15 @@ defmodule AshTemplate.Rooms.LikesTest do
   end
 
   describe "with real commits" do
-    # The race needs separate connections that really commit, so the people
-    # these runs make stay in the test database, each run its own; the message
-    # goes at the end, with its likes, so other tests find the room as it was.
+    # The race needs separate connections that really commit.
     setup do
-      Ecto.Adapters.SQL.Sandbox.mode(Repo, :auto)
-      on_exit(fn -> Ecto.Adapters.SQL.Sandbox.mode(Repo, :manual) end)
+      AshTemplate.RealCommits.start()
     end
 
     test "likes given and taken back at the same moment are each counted" do
       author = person()
       likers = Enum.map(1..8, fn _ -> person() end)
       message = post!(author, "Everyone at once")
-      on_exit(fn -> Rooms.delete_message!(message, actor: Human.for_account(author)) end)
 
       at_once(likers, &like!(&1, message.id))
       assert %{like_count: 8, like_version: 8} = Ash.get!(Message, message.id, authorize?: false)

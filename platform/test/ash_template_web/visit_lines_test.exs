@@ -2,6 +2,11 @@ defmodule AshTemplateWeb.VisitLinesTest do
   # Invariant: a crowd's second of visit lines, 1,500 written at once, reaches the
   # site's output whole, each line once; and an ordinary line is written once, by
   # the default handler.
+  #
+  # The visit handler keeps 2,000 lines a second and 2,000 waiting (VisitLog's
+  # limits). The crowd's writers all start, then write together, so their lines
+  # reach the handler as one burst; how long a busy machine takes to write them
+  # is not the claim.
   use ExUnit.Case, async: false
 
   require Logger
@@ -11,20 +16,24 @@ defmodule AshTemplateWeb.VisitLinesTest do
   @crowd 1_500
 
   @tag :tmp_dir
-  test "1,500 visit lines in one second are all written, once each", %{tmp_dir: dir} do
+  test "1,500 visit lines written at once are all written, once each", %{tmp_dir: dir} do
     files = write_to_files(dir)
 
-    {microseconds, _lines} =
-      :timer.tc(fn ->
-        1..@crowd
-        |> Enum.map(fn _ -> Task.async(fn -> VisitLog.record("press", "Crowd:press", "ok") end) end)
-        |> Task.await_many()
-      end)
+    writers =
+      for _ <- 1..@crowd do
+        Task.async(fn ->
+          receive do
+            :write -> VisitLog.record("press", "Crowd:press", "ok")
+          end
+        end)
+      end
+
+    Enum.each(writers, &send(&1.pid, :write))
+    assert Task.await_many(writers, :infinity) == List.duplicate(:ok, @crowd)
 
     Logger.info("an ordinary line")
     lines = read(files)
 
-    assert microseconds < 1_000_000
     assert Enum.count(lines.all, &(&1["message"] == "press Crowd:press ok")) == @crowd
     assert Enum.count(lines.all, &(&1["message"] == "an ordinary line")) == 1
     assert Enum.count(lines.default, &(&1["message"] == "an ordinary line")) == 1

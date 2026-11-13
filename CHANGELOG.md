@@ -9742,3 +9742,42 @@ Branch `tpl/room-list-limit-1112`, from `origin/main` (`5375a9d3`), for the chie
   gate, `check-siwa-latest`, fails as it does on main today: regents-cli 1.10.26 came out
   and every install line still names 1.10.25. In the first run the phone account-menu walk
   timed out once under load; alone it passed 6 of 6, and the second run passed it.
+
+## 2026-11-12 — Three unreliable tests (branch, not on main)
+
+Branch `tpl/test-health-1113`, from `origin/main` (`12ef221e`), for the ash-template chief
+(`/tmp/stampede-1112/build-test-health.md`). Tests and the `ash-testing` skill only, which
+the site publishes with its next release; nothing else the site does changes.
+
+- **Rows left in the test database.** Four race tests need separate connections that
+  really commit (`rooms/likes_test.exs`, `rooms/operation_key_test.exs`,
+  `notes/label_request_test.exs`, `points/first_agent_note_test.exs`) and kept what they
+  wrote: each full run added 30 accounts, 30 wallet snapshots, 20 agents and pairings,
+  27 notes, 37 jobs and 8 Points ledgers, among 15 tables. A full run without those four files left nothing.
+  Every run reuses the test database, and `points/start_awards_test.exs` works through
+  every account in it: with 2,317 accounts it took 10.5 s here, 1.5 s on a clean
+  database (one of those seconds is its own wait), and 60 s on a busier machine. Points
+  keeps wallet snapshots final and pairings on record, so the rows could not be deleted
+  one by one. The race tests now call `AshTemplate.RealCommits.start/0`
+  (`platform/test/support/real_commits.ex`): it turns the sandbox off for the test, notes
+  every table that holds no rows, and when the test ends empties those tables again. The
+  likes test's message deletion and the label test's job cancelling, which it replaces,
+  are gone. The Points test still runs the real start-awards job, which reads every
+  account by design; it now finds only its own.
+- **A test that timed the machine.** `visit_lines_test.exs` asserted 1,500 visit lines
+  in under a second; with the machine loaded it took 5.5 s and failed. The second is
+  the visit handler's window (2,000 lines a second, 2,000 waiting). The crowd's writers
+  now all start and then write together, so the lines reach the handler as one burst,
+  and the test asserts every line written once and every writer done, not the time.
+  On Erlang's default limits it still fails (2 and 7 of 1,500 kept). It never touches
+  the database, so the leftover rows did not slow it.
+- **The phone account-menu walk.** "content 641px wider than the screen" came from
+  measuring the Agents page the instant Manage opened it, before its stylesheet had
+  arrived: the unstyled account button is 1,023 px wide. Holding the stylesheet back
+  1.5 s fails the old walk 3 of 3 with exactly 641 px. No person sees that state, since
+  the browser draws nothing until the stylesheet arrives: every drawn frame of the
+  Agents page and the agent guide, at 390 and 320 wide with the browser slowed six
+  times, fit the screen. `watch` in `platform/test/browser/support/person.ts` now
+  measures a page once it has loaded; the held-back walk passes 3 of 3.
+- `skills/ash-testing/SKILL.md` gains three rules: a test leaves no rows behind, a test
+  never times the machine, a browser walk waits on a condition.
