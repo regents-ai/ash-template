@@ -4,6 +4,8 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
+- **Notifications.** The number on the bell rolls to its new count when something
+  new comes in while you are looking.
 - **Messages.** When someone else's message arrives in a room, a private
   conversation or the assistant chat, it rises gently into place. Your own messages
   appear at once, and if you have scrolled up to read, nothing moves.

@@ -132,11 +132,16 @@ defmodule AshTemplateWeb.Components.Shell do
             class="shell-tool"
             patch={~p"/app/activity"}
             aria-label={bell_label(@unread)}
+            phx-hook="MotionCount"
+            data-variant={AshTemplateWeb.Motion.standard("count")}
           >
             <Regent.Icons.icon name="bell" class="shell-icon" />
-            <span :if={@unread > 0} class="shell-tool__count" aria-hidden="true">
-              {if @unread > 99, do: "99+", else: @unread}
-            </span>
+            <Regent.Primitives.figure
+              :if={@unread > 0}
+              class="shell-tool__count"
+              value={if @unread > 99, do: "99+", else: Integer.to_string(@unread)}
+              aria-hidden="true"
+            />
             <span class="shell-tool__tip" aria-hidden="true">Activity</span>
           </.link>
         </div>

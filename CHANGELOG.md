@@ -10748,3 +10748,20 @@ Tests only; no code changed.
   under reduced motion.
 - Not measured: older messages loaded above (the read that loads them names no
   message, so none rises).
+
+## 2026-11-13 — Shell: the bell's unread count rolls
+
+- Before: `platform/lib/ash_template_web/components/shell.ex` swapped the bell's
+  unread count to its new number at once.
+- Now the bell carries the kit's `MotionCount` in the site's standard count motion
+  ("roll"), and the count is a `Regent.Primitives.figure` (tabular numerals). A
+  count that changes while the person watches rolls to its new number; from nothing
+  to 1 the badge simply appears, and a change in the number of figures (9 to 10, 99
+  to "99+") simply swaps. The bell's label still carries the true count, and the
+  figure stays hidden from screen readers.
+- Measured in headless Chromium at 1280 and 390 wide, light and dark: nothing to 1
+  appears with no roll; 1 to 2 through 6 to 7 each roll in 264 to 279ms; the bell,
+  its badge and the button beside it do not move by a pixel; no roll on opening,
+  reloading, reconnecting with no change, or under reduced motion.
+- Not measured: 9 to 10 and 99 to "99+" (the kit swaps a figure whose length
+  changes; the badge sits above the bell, so it moves nothing).
