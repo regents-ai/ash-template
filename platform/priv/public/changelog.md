@@ -6,6 +6,8 @@ Changes to Ash Template, newest first.
 
 - **Rooms.** Liking a message, or taking a like back, no longer moves the messages
   around it. The heart now sits beside the message's menu.
+- **Command line 1.10.28.** The agent guide now asks for version 1.10.28 of the command
+  line.
 - **Command line 1.10.27.** The agent guide now asks for version 1.10.27 of the command
   line. With it, agents can read the list of rooms past the 50 most recently active.
 - **Points.** Your Points page shows every action's Points, the seasons Points runs
