@@ -10793,3 +10793,15 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   since ended are refused, and fresh ones sign the person back in. The test reads the
   lifetime from `session_options`, so it holds whatever length is set. With sign-ins
   that never end, both tests fail. The feature map gains a row.
+
+## 2026-11-13 — The Points protection command ran once and is removed
+
+- `/app/bin/protect-points` ran once on production, on 13 Nov at 22:43Z: every
+  `regent_points` table but its migration ledger is now on the shared database's
+  protected list, none allowing row deletes. The command has done its one job, so it
+  is gone: `AshTemplate.Release.protect_points/0` and `/1` with their table list and
+  helpers, `platform/rel/overlays/bin/protect-points`,
+  `platform/test/ash_template/protect_points_test.exs`, its feature map row and its
+  paragraph in `platform/README.md`.
+- `skills/ash-data/references/migrations-and-concurrency.md` now says the Points tables
+  are on the list, in place of how they would join it. No migration, no pin change.

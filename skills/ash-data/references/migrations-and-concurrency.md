@@ -141,9 +141,8 @@ protected tables: accounts and identity, money, what people wrote or uploaded, a
 records that stop a bot sending twice. The list includes the shared
 `regent_identity.profiles` and `regent_names.platform_human_users`, which the template
 and the sites read. The list lives in the database as `regent_guard.protected_tables`.
-The shared Points ledger's tables, every `regent_points` table but its migration
-ledger, join the list on the founder's go, through the template's
-`/app/bin/protect-points`, none of them allowing row deletes.
+Since 13 November 2026 every `regent_points` table but its migration ledger is on the
+list, none of them allowing row deletes.
 On a listed table:
 
 - `TRUNCATE` is refused;
