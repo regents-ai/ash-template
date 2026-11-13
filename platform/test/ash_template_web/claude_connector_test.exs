@@ -580,7 +580,7 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       from = {10, 9, 8, 7}
       first = post_mcp(rpc("ping"), "not-this-sites", from)
       assert first.status == 401
-      assert policies(first) == ["mcp_address"]
+      assert policies(first) == ["mcp_connected_address", "mcp_address"]
       assert oauth_calls(fn -> post_mcp(rpc("ping"), "not-this-sites", from) end) > 0
 
       for _ <- 3..120, do: assert(post_mcp(rpc("ping"), "not-this-sites", from).status == 401)
@@ -599,6 +599,17 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
       answered = post_mcp(rpc("ping"), token, {10, 9, 8, 6})
       assert answered.status == 200
       assert policies(answered) == ["mcp_connected_address", "mcp"]
+    end
+
+    test "a request with a token spends its address's 600 before its body is read, and one past them is refused unread" do
+      from = {10, 9, 8, 5}
+
+      for _ <- 1..600,
+          do: Phoenix.ConnTest.assert_error_sent(400, fn -> post_unreadable("any-token", from) end)
+
+      refused = post_unreadable("any-token", from)
+      assert refused.status == 429
+      assert policies(refused) == ["mcp_connected_address"]
     end
 
     test "every answer is private and never kept, a tool's, a stream's and a refusal" do
@@ -799,6 +810,15 @@ defmodule AshTemplateWeb.ClaudeConnectorTest do
 
     conn = if token, do: put_req_header(conn, "authorization", "Bearer " <> token), else: conn
     @endpoint.call(conn, [])
+  end
+
+  # A body that is not JSON, which the endpoint refuses once it reads it.
+  defp post_unreadable(token, from) do
+    conn(:post, "/mcp", "{")
+    |> Map.put(:remote_ip, from)
+    |> put_req_header("content-type", "application/json")
+    |> put_req_header("authorization", "Bearer " <> token)
+    |> @endpoint.call([])
   end
 
   defp rpc(method, params \\ %{}),

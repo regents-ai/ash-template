@@ -10359,3 +10359,13 @@ switches". The switch's sun and moon are now drawn by the particle field.
   `AshTemplate.DatabaseConfig.remote?/1` says whether the remote database is set.
 - The README's settings table and the elixir-stack Oban reference say so. Sites take
   the three files. No migration, no API change; serving machines are unchanged.
+
+## 2026-11-13 — Every request with a token spends its address's 600 before its body is read
+
+- `/mcp`: the endpoint now counts a request that carries a token against its address's
+  ceiling of 600 a minute (`mcp_connected_address`) before reading its body, as it counts
+  one with no token against the address's 120 (`mcp_address`). A checked token then spends
+  its account's 120 (`mcp`); one that isn't this site's spends the address's 120 as well,
+  so its refusal lists both budgets in `RateLimit-Policy`.
+- `AshTemplateWeb.Plugs.McpAgent.limit_address/1`; the OAuth reference and the feature
+  map say so. Sites take the plug. No migration; the figures are unchanged.

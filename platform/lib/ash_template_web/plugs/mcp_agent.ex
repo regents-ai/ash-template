@@ -18,12 +18,11 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   Before any of this, while the body is still unread, the endpoint counts each
   address (`limit_address/1`): 120 requests a minute (`mcp_address`, the API's
-  figure) for every request that carries no checked token. A connected app's
-  token joins its address's ceiling of 600 a minute (`mcp_connected_address`) only
-  once `RegentOAuth` has checked it, since Claude's connector calls from
-  Anthropic's shared servers and one address carries many accounts. A token that
-  isn't this site's spends the 120, and once an address has spent them its next
-  token is refused before it is looked up.
+  figure) for a request with no token, and a ceiling of 600 a minute
+  (`mcp_connected_address`) for one with a token, since Claude's connector calls
+  from Anthropic's shared servers and one address carries many accounts. A token
+  that isn't this site's spends the 120 as well, and once an address has spent
+  them its next token is refused before it is looked up.
 
   Then every request carries exactly one credential:
 
@@ -105,13 +104,14 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   def init(opts), do: opts
 
   @doc """
-  Counts the request against its address before the body is read. One with a
-  token waits for the token's check, unless its address has spent its 120.
+  Counts the request against its address before the body is read: one with no
+  token against its 120, one with a token against the 600 its address's tokens
+  share, unless its address has spent its 120.
   """
   def limit_address(conn) do
     if get_req_header(conn, "authorization") == [] or spent?(conn, @address),
       do: RateLimit.call(conn, @address),
-      else: conn
+      else: RateLimit.call(conn, @connected_address)
   end
 
   defp spent?(conn, %{policy: policy, limit: limit, window: window, key: key}),
@@ -195,8 +195,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
            RegentOAuth.verify(bearer, RegentOAuth.resource(), RegentMCPAgents.identity_scope()) do
       conn
       |> Ash.PlugHelpers.set_actor(%ConnectedApp{principal: principal})
-      |> spend(@connected_address)
-      |> spend(@budget)
+      |> RateLimit.call(@budget)
       |> as_paired_agent(principal)
       |> counted(:site_oauth)
     else
@@ -204,9 +203,6 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
       _not_this_sites -> refuse(conn, :site_oauth, &challenge/1)
     end
   end
-
-  defp spend(%{halted: true} = conn, _budget), do: conn
-  defp spend(conn, budget), do: RateLimit.call(conn, budget)
 
   # Within its account's budget, the app calls as its paired identity when the
   # person allowed it to work here as that agent; as itself otherwise. Only the
