@@ -10582,3 +10582,15 @@ with v238 merged). Sean's answer to the seasons work's question: a, add the ende
   155 script tests in 21 files, the browser walk (653 passed, 5 skipped for screen
   size), 271 server tests (261 tests, 10 properties), required fixes,
   `cli/commands.json`, newest regents-cli.
+
+## 2026-11-13 — Released v242: Points runs in the library's three seasons
+
+- `f7d83404` (the seasons branch joined with main) is v242 on template.regents.sh, switched
+  on 13 Nov with `scripts/deploy.sh`. elixir-utils pin `f5452442` to `2503f4fe`,
+  design-system pin `9f20103e` to `c9071e2c`. No migration, no start set, nothing earns;
+  API 17.0.0 unchanged.
+- Rollback: v241 (`a38fd362`), image only.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 280 Elixir (10 properties).
+- Live read, signed out, nobody's sign-in used: `/`, `/docs`, `/account/points` and
+  `/rooms/general` answer 200.
