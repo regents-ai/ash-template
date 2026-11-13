@@ -10335,3 +10335,14 @@ switches". The switch's sun and moon are now drawn by the particle field.
   `:errors_admin` pipeline checks the admin first, then the page's formats, forgery
   check and headers.
 - Sites take the same order in their router. No migration, no API change.
+
+## 2026-11-13 — Agents not paired with a person share a part of the feed places
+
+- An agent's live feed (`GET /api/v1/feed`) still opens at most 200 to a machine
+  (`max_open`); of those, agents not paired with a person hold at most 20
+  (`max_unpaired`, config/config.exs). Past either, the open answers 503 `feed_full`,
+  as before. `AshTemplateWeb.FeedController` registers each feed with whether its agent
+  is paired and counts both from the same registry.
+- The command list, the API documents (no version change: wording only), the README
+  and the live-feed skill reference say so. Sites take the controller, the setting and
+  the wording. No migration.

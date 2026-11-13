@@ -15,7 +15,8 @@ defmodule AshTemplateWeb.AgentFeedTest do
   # Each proof the stand-in sign-in service accepts, and the wallet it vouches for.
   @wallets %{
     "proof-paired" => "0x2222222222222222222222222222222222222222",
-    "proof-other-agent" => "0x6666666666666666666666666666666666666666"
+    "proof-other-agent" => "0x6666666666666666666666666666666666666666",
+    "proof-third-agent" => "0x5555555555555555555555555555555555555555"
   }
 
   # The first of `people/1`'s accounts, who chose no name, so an event names them by it.
@@ -227,6 +228,30 @@ defmodule AshTemplateWeb.AgentFeedTest do
     full = Req.get!(url, headers: [{"x-siwa-signature", "proof-other-agent"}], retry: false)
     assert full.status == 503
     assert full.body["error"]["code"] == "feed_full"
+  end
+
+  test "a paired agent gets a feed while unpaired ones hold their whole share", %{url: url} do
+    paired_person("did:privy:feed-share")
+    setting = Application.fetch_env!(:ash_template, AshTemplateWeb.FeedController)
+    on_exit(fn -> Application.put_env(:ash_template, AshTemplateWeb.FeedController, setting) end)
+
+    Application.put_env(
+      :ash_template,
+      AshTemplateWeb.FeedController,
+      Keyword.merge(setting, max_open: 3, max_unpaired: 1)
+    )
+
+    unpaired = open_feed(url, "proof-other-agent")
+    assert next_frame(unpaired) == ": keep-alive"
+
+    turned_away =
+      Req.get!(url, headers: [{"x-siwa-signature", "proof-third-agent"}], retry: false)
+
+    assert turned_away.status == 503
+    assert turned_away.body["error"]["code"] == "feed_full"
+
+    paired = open_feed(url, "proof-paired")
+    assert next_frame(paired) == ": keep-alive"
   end
 
   # Reads the feed in its own process and sends each whole frame here.

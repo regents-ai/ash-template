@@ -239,9 +239,13 @@ config :ash_template, :session_options,
   max_age: 30 * 24 * 60 * 60
 
 # A signed agent's live feed (`GET /api/v1/feed`): how many one machine holds open
-# at once, and how often a quiet feed sends a keep-alive line. Fly's proxy closes a
-# connection that sends nothing for 60 seconds.
-config :ash_template, AshTemplateWeb.FeedController, max_open: 200, keep_alive_ms: 25_000
+# at once, how many of those may be agents not paired with a person, and how often a
+# quiet feed sends a keep-alive line. Fly's proxy closes a connection that sends
+# nothing for 60 seconds.
+config :ash_template, AshTemplateWeb.FeedController,
+  max_open: 200,
+  max_unpaired: 20,
+  keep_alive_ms: 25_000
 
 config :ash_template, AshTemplateWeb.Endpoint,
   url: [host: "localhost"],

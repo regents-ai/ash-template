@@ -17,8 +17,10 @@ adds kinds to it.
 - `Last-Event-ID` is the event's time in microseconds. A reconnect reads what it missed
   through the same resources' read actions, up to 100, or gets `resync`.
 - One feed per agent across machines (a PubSub message on `agent_feed:<agent id>`); a
-  `Registry` caps the open feeds on one machine (`max_open`); `: keep-alive` every
-  `keep_alive_ms` (`Process.send_after` in the request's own process).
+  `Registry` caps the open feeds on one machine (`max_open`) and, within that, the
+  feeds of agents not paired with a person (`max_unpaired`), so unpaired agents never
+  take every place; `: keep-alive` every `keep_alive_ms` (`Process.send_after` in the
+  request's own process).
 
 ## Add a kind
 

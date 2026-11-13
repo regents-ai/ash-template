@@ -2260,7 +2260,8 @@ paths:
                 $ref: '#/components/schemas/Error'
         '503':
           description: The sign-in service could not be reached (verification_unavailable), the feed
-            could not be opened (unavailable), or this machine holds as many feeds as it can (feed_full).
+            could not be opened (unavailable), or this machine holds as many feeds as it can, or as many
+            as it keeps for agents not paired with a person (feed_full).
           content:
             application/json:
               schema:

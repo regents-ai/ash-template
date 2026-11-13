@@ -15,7 +15,8 @@ defmodule AshTemplateWeb.FeedController do
     `{"kind": "closed", "reason": "replaced"}`. A pairing that ends or changes
     closes it with `"reason": "pairing_changed"`, so the agent reconnects as it
     now is.
-  - At most `max_open` feeds on one machine; past that the open is refused.
+  - At most `max_open` feeds on one machine, of which at most `max_unpaired`
+    are agents not paired with a person; past either the open is refused.
 
   The feed is this request's own process waiting for messages. It holds no
   database connection while it waits: each read takes one and gives it back.
@@ -66,17 +67,23 @@ defmodule AshTemplateWeb.FeedController do
   end
 
   # Registered first and counted after, so feeds opening together cannot all
-  # read a count below the limit and pass.
-  defp admit(%Agent{agent_id: id}) do
-    {:ok, _owner} = Registry.register(@feeds, id, nil)
+  # read a count below the limit and pass. Each feed is registered with whether
+  # its agent is paired, and unpaired agents share only `max_unpaired` of the
+  # places, so they never take every place.
+  defp admit(%Agent{agent_id: id, pairing: pairing}) do
+    paired? = pairing == :active
+    {:ok, _owner} = Registry.register(@feeds, id, paired?)
 
-    if Registry.count(@feeds) > setting(:max_open) do
+    if Registry.count(@feeds) > setting(:max_open) or
+         (not paired? and unpaired() > setting(:max_unpaired)) do
       Registry.unregister(@feeds, id)
       :full
     else
       :ok
     end
   end
+
+  defp unpaired, do: Registry.count_select(@feeds, [{{:_, :_, false}, [], [true]}])
 
   # Subscribed to its own topic first, then told, so of two feeds opening
   # together at least the older one hears the newer.
