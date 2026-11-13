@@ -22,27 +22,6 @@ defmodule AshTemplate.Release do
     {:regent_payments, "regent_payments", RegentPayments.Migrator}
   ]
 
-  # Every table of the shared Points ledger; its migration ledger,
-  # regent_points.schema_migrations, stays off the protected list.
-  @points_tables ~w(
-    regent_points.accounts
-    regent_points.period_bonuses
-    regent_points.period_snapshots
-    regent_points.point_cap_usage
-    regent_points.point_entries
-    regent_points.point_events
-    regent_points.source_rejections
-    regent_points.wallet_coverage
-    regent_points.wallet_snapshots
-  )
-
-  @points_listed """
-  SELECT name, rows_deletable FROM regent_guard.protected_tables
-  WHERE relid::regclass = ANY ($1::text[]::regclass[])
-  ORDER BY name
-  """
-  @protect "SELECT regent_guard.protect($1, false)"
-
   def migrate do
     with_release_repo(fn repo ->
       # Read-only release prerequisites; shared migrations require separate
@@ -86,44 +65,6 @@ defmodule AshTemplate.Release do
       [] -> IO.puts("none")
       applied -> IO.puts("applied: #{Enum.join(applied, ", ")}")
     end
-  end
-
-  @doc """
-  Puts the shared Points ledger's tables on the shared database's protected
-  list, none of them allowing row deletes, and prints each listed table. Run
-  once, as `/app/bin/protect-points`, on the founder's go.
-  """
-  def protect_points do
-    for [name, rows_deletable] <- with_release_repo(&protect_points/1),
-        do: IO.puts("#{name}  rows deletable: #{rows_deletable}")
-  end
-
-  @doc """
-  Lists every Points table but the migration ledger on `repo`'s protected list,
-  in one transaction that gives up after waiting five seconds for a table, and
-  returns their rows from the list. It changes nothing when one of them is
-  already listed.
-  """
-  def protect_points(repo) do
-    {:ok, listed} =
-      repo.transaction(fn ->
-        Ecto.Adapters.SQL.query!(repo, "SET LOCAL lock_timeout = '5s'", [])
-        repo |> points_listed() |> none_listed!()
-        Enum.each(@points_tables, &Ecto.Adapters.SQL.query!(repo, @protect, [&1]))
-        points_listed(repo)
-      end)
-
-    listed
-  end
-
-  defp points_listed(repo),
-    do: Ecto.Adapters.SQL.query!(repo, @points_listed, [@points_tables]).rows
-
-  defp none_listed!([]), do: :ok
-
-  defp none_listed!(listed) do
-    raise "Already on the protected list, so nothing changed: " <>
-            Enum.map_join(listed, ", ", &hd/1)
   end
 
   defp unapplied_shared_migrations(repo) do

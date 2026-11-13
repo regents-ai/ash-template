@@ -502,14 +502,6 @@ message the next time it loads.
 site carries the same command; after the founder's go, the site whose release
 first carries a shared change runs it from the new image before deploying.
 
-`/app/bin/protect-points` puts every table of the shared Points ledger but its
-migration ledger on the shared database's protected list
-(`skills/ash-data/references/migrations-and-concurrency.md`), none of them
-allowing row deletes, and prints each listed table. It runs on the release login,
-in one transaction that gives up after waiting five seconds for a table, and when
-one of them is already listed it changes nothing. It runs once, on the founder's
-go.
-
 `/app/bin/top-queries [count]` (locally `mix db.top_queries [count]`) prints the
 statements on this site's schema that took the most database time, 20 unless a
 count from 1 to 100 is given, from `pg_stat_statements`, with calls, total and mean
