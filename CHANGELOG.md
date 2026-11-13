@@ -10865,3 +10865,15 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   on production on 12 Nov, and under the list's coming guard such a delete is refused
   even when it matches nothing, so a copied site that has not applied it could not
   release.
+
+## 2026-11-13 — Released v247: seven-day sign-in, notes API and paired agents
+
+- `d621804e` is v247 on template.regents.sh, switched on 13 Nov with `scripts/deploy.sh`,
+  on the founder's letters for sign-in. It carries the notes API change (API 18.0.0), the
+  paired-agent rule, the host-only secure sign-in cookie with a seven-day sign-in, the
+  removal of the one-off Points protection command, and the Credits removal migration
+  without its protected-list steps. No new migration, no library pin change.
+- Rollback: v246 (`321215b0`) image; it signs everyone out once more and brings back the
+  30-day sign-in.
+- Full check exit 0 by the chief on the exact commit: 155 script tests, 653 browser walks
+  with 5 skipped, 287 Elixir (10 properties).
