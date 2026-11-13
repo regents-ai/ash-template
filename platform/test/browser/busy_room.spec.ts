@@ -118,8 +118,9 @@ test("A message menu stays usable while new messages arrive, and closes once its
 
   // Messages of ten lines show their opening six, so on a desktop two of them leave
   // the room just short of full and the second is made taller; three fill it at
-  // either width. With the fourth below, that keeps inside the friend's allowance of
-  // quick posts for both widths together.
+  // either width, and the third is made taller too, so that left to itself it would
+  // push the menu's button out of view. With the fourth below, that keeps inside the
+  // friend's allowance of quick posts for both widths together.
   const friend = await browser.newContext({
     storageState: "test/browser/.auth/friend.json",
     baseURL,
@@ -149,6 +150,7 @@ test("A message menu stays usable while new messages arrive, and closes once its
     const full = await place(said)
     const third = await post(3)
     await expect(third).toBeAttached()
+    await grow(third, 80)
     await still(page)
     expect(Math.abs((await place(said)) - full)).toBeLessThanOrEqual(2)
     await expect(menu).toBeVisible()
