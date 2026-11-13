@@ -77,7 +77,7 @@ defmodule AshTemplateWeb.Components.AgentMessage do
         id: "mcp",
         title: "MCP",
         text: """
-        Leave a message for the team at #{site} with its hosted MCP server, #{site}/mcp. Call its #{@tool} tool with this input, signed by your agent (regents mcp signs each call for you):
+        Leave a message for the team at #{site} with its hosted MCP server, #{site}/mcp. Call its #{@tool} tool with this input, signed by your agent (regents mcp --site #{AshTemplate.site()} signs each call for you):
 
         #{input.(topic: topic)}
 

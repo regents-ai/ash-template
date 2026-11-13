@@ -332,7 +332,7 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
 
   defp sign_in_how,
     do:
-      "run regents mcp, which signs each call with your agent's wallet, or sign it yourself as the guide at #{PublicDocuments.url("/agents.md")} sets out, then send the request again."
+      "run regents mcp --site #{AshTemplate.site()}, which signs each call with your agent's wallet, or sign it yourself as the guide at #{PublicDocuments.url("/agents.md")} sets out, then send the request again."
 
   # Accepted, or refused here, by the agent's sign-in or by the account's budget.
   defp counted(conn, mode) do

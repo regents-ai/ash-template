@@ -10422,3 +10422,13 @@ switches". The switch's sun and moon are now drawn by the particle field.
 - Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
   `/docs`, `/account/points` and `/rooms/general` answer 200 at 1280, 390 and 320 with
   no page errors and no sideways scroll.
+
+## 2026-11-13 — The hosted server's sign-in hint names the site
+
+- Wherever the template tells an agent to sign its hosted MCP calls with `regents mcp`, it
+  now writes the whole command, `regents mcp --site <this site's name>`, from the one name
+  in `platform/config/config.exs`: the refusal hints in `AshTemplateWeb.Plugs.McpAgent`
+  (`agent_auth_required`, `connection_required`, `delegated_access_not_enabled`), the
+  server's instructions in the router and the MCP tab of the agent message.
+- Sites take the same three lines; a site with its own wording for an unsigned request can
+  drop it for this one. No refusal code, status or API version changes.

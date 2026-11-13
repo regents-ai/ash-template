@@ -88,7 +88,7 @@ connector: it must be live, for this site's `/mcp` resource and carry
 and `WWW-Authenticate: Bearer resource_metadata=…`, which starts Claude's sign-in.
 A request with no credential at all gets the same: 401 `connection_required` with
 the challenge, so Claude's first request starts the sign-in, and the hint also
-tells an agent to sign its calls with `regents mcp`. While the switch is off a
+tells an agent to sign its calls with `regents mcp --site <this site>`. While the switch is off a
 token is refused with 401 `delegated_access_not_enabled`, a request with no
 credential with 401 `agent_auth_required`, neither with a challenge, and the
 connector's tools are not listed. A token beside an agent's signature is refused
