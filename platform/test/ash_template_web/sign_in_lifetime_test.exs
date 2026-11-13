@@ -1,9 +1,9 @@
 defmodule AshTemplateWeb.SignInLifetimeTest do
-  # A sign-in here lasts a day from the sign-in that made it. After that the
-  # person is signed out until fresh tokens from Privy sign them in again, which
-  # Privy gives only while its own sign-in in that browser lasts. This signs in
-  # through the site's own sign-in step, as the browser does, with tokens signed
-  # as Privy signs them.
+  # A sign-in here lasts seven days, the session cookie's `max_age`, from the
+  # sign-in that made it. After that the person is signed out until fresh tokens
+  # from Privy sign them in again, which Privy gives only while its own sign-in in
+  # that browser lasts. This signs in through the site's own sign-in step, as the
+  # browser does, with tokens signed as Privy signs them.
   use ExUnit.Case, async: false
 
   import Ecto.Query, only: [from: 2]
@@ -13,7 +13,7 @@ defmodule AshTemplateWeb.SignInLifetimeTest do
   alias AshTemplate.Accounts.SessionAuthority
 
   @endpoint AshTemplateWeb.Endpoint
-  @day 24 * 60 * 60
+  @lifetime Application.compile_env!(:ash_template, [:session_options, :max_age])
   @did "did:privy:sign-in-lifetime"
   @wallet "0x" <> String.duplicate("8", 40)
 
@@ -37,21 +37,21 @@ defmodule AshTemplateWeb.SignInLifetimeTest do
     %{key: key}
   end
 
-  test "a sign-in lasts a day: just before, the person is signed in; from then, signed out",
+  test "a sign-in lasts its lifetime: just before, the person is signed in; from then, signed out",
        %{key: key} do
     signed_in = key |> fresh_proof() |> sign_in(fresh_session())
     assert signed_in.status == 200
 
-    signed_in_ago(@day - 60)
+    signed_in_ago(@lifetime - 60)
     assert signed_in?(signed_in)
 
-    signed_in_ago(@day)
+    signed_in_ago(@lifetime)
     refute signed_in?(signed_in)
   end
 
-  test "after the day, only fresh tokens from Privy sign the person back in", %{key: key} do
+  test "after its lifetime, only fresh tokens from Privy sign the person back in", %{key: key} do
     signed_in = key |> fresh_proof() |> sign_in(fresh_session())
-    signed_in_ago(@day + 1)
+    signed_in_ago(@lifetime + 1)
     refute signed_in?(signed_in)
 
     # The ended sign-in's cookie is retired, and the browser starts a fresh session.

@@ -10758,23 +10758,26 @@ Branch `tpl/sign-in-three-1113`, after the notes API change.
   the agent works again. Taking either new check out fails the test. The feature map
   gains a row.
 
-## 2026-11-13 — A sign-in lasts a day, in a host-only secure cookie (branch, not on main)
+## 2026-11-13 — A sign-in lasts seven days, in a host-only secure cookie (branch, not on main)
 
-Branch `tpl/sign-in-three-1113`, after the paired agent change.
+Branch `tpl/sign-in-three-1113`, after the paired agent change, made a sign-in last a
+day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
 
-- A sign-in on this site lasts a day from the sign-in that made it, in place of 30
-  days. `config :ash_template, :session_options` sets `max_age: 24 * 60 * 60`, which
-  `AshTemplate.Accounts.SessionAuthority` reads as the sign-in's lifetime; a refresh
-  still never extends it, and the daily prune deletes rows untouched for two days.
-- That is how Privy is asked again, with nothing new running: after the day, the next
-  page the person opens is signed out, and the browser's existing sign-back-in (Privy
-  still holds a session there) sends fresh tokens through `/auth/privy/session`.
-  Privy gives fresh tokens only while its own session in that browser lasts, so a
-  person whose Privy session has ended is signed out within a day and signs in again.
-  The server never calls Privy: when Privy is down, only people whose day ends
-  meanwhile show signed out, and the next page after Privy answers signs them back in.
-  A page left open across the end says the sign-in ended at its next press, which
-  changes nothing.
+- A sign-in on this site lasts seven days from the sign-in that made it, in place of
+  30 days. `config :ash_template, :session_options` sets `max_age: 7 * 24 * 60 * 60`,
+  which `AshTemplate.Accounts.SessionAuthority` reads as the sign-in's lifetime; a
+  refresh still never extends it, and the daily prune deletes rows untouched for a day
+  longer than that, eight days. Oban's own `pruner` (finished jobs after seven days) is
+  a different thing and is unchanged.
+- That is how Privy is asked again, with nothing new running: after the seven days,
+  the next page the person opens is signed out, and the browser's existing
+  sign-back-in (Privy still holds a session there) sends fresh tokens through
+  `/auth/privy/session`. Privy gives fresh tokens only while its own session in that
+  browser lasts, so a person whose Privy session has ended is signed out within seven
+  days and signs in again. The server never calls Privy: when Privy is down, only
+  people whose seven days end meanwhile show signed out, and the next page after Privy
+  answers signs them back in. A page left open across the end says the sign-in ended
+  at its next press, which changes nothing.
 - The session cookie is `__Host-ash_template_key`, `secure: true` everywhere (browsers
   count localhost as secure), path `/`, no domain. The production-only `secure`
   override in `platform/config/runtime.exs` is gone. At release every browser's old
@@ -10782,10 +10785,11 @@ Branch `tpl/sign-in-three-1113`, after the paired agent change.
   is alive are signed back in on their next page.
 - The OpenAPI documents' `cookieSession` names the new cookie. The browser walk plants
   its signed-in cookie as secure.
-- `skills/ash-stack/references/privy-reconciliation.md` says the sign-in lasts a day
-  and how that asks Privy again.
+- `skills/ash-stack/references/privy-reconciliation.md` says the sign-in lasts seven
+  days and how that asks Privy again.
 - Test: `platform/test/ash_template_web/sign_in_lifetime_test.exs` signs in through the
-  site's own step; a minute before the day the person is signed in, at the day they are
-  signed out; after it, tokens from a Privy sign-in that has since ended are refused,
-  and fresh ones sign the person back in. With sign-ins that never end, both tests
-  fail. The feature map gains a row.
+  site's own step; a minute before the configured lifetime ends the person is signed
+  in, at its end they are signed out; after it, tokens from a Privy sign-in that has
+  since ended are refused, and fresh ones sign the person back in. The test reads the
+  lifetime from `session_options`, so it holds whatever length is set. With sign-ins
+  that never end, both tests fail. The feature map gains a row.

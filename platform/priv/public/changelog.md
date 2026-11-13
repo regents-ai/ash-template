@@ -4,7 +4,7 @@ Changes to Ash Template, newest first.
 
 ## 13 November 2026
 
-- **Sign-in.** A sign-in here now lasts a day. After that, the next page you open
+- **Sign-in.** A sign-in here now lasts seven days. After that, the next page you open
   signs you back in by itself while that browser's sign-in is still active; otherwise,
   press Sign in. Everyone is signed out once when this change arrives, and most
   people are signed back in on their next page.
