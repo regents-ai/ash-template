@@ -4,7 +4,7 @@ defmodule AshTemplateWeb.PrivySessionController do
 
   alias AshTemplate.AccessContext
   alias AshTemplate.Accounts.{RequestRateLimiter, SessionAuthority, VerifiedSession}
-  alias AshTemplateWeb.{ClientAddress, PrivyProof}
+  alias AshTemplateWeb.ClientAddress
 
   require Logger
 
@@ -55,7 +55,7 @@ defmodule AshTemplateWeb.PrivySessionController do
   def failure(conn, _untrusted_params), do: diagnostic_accepted(conn)
 
   def create(conn, _untrusted_params) do
-    with {:ok, pair} <- PrivyProof.pair(conn),
+    with {:ok, pair} <- RegentPrivy.Proof.pair(conn),
          {:ok, verified} <-
            RegentPrivy.Session.verify(pair, Application.get_env(:ash_template, :privy, [])),
          {:ok, account, identity_conflicts} <- establish(verified) do

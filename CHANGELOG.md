@@ -9765,6 +9765,107 @@ Branch `tpl/room-list-limit-1112`, from `origin/main` (`5375a9d3`), for the chie
 - Agent-visible: API documents 14.0.0; the rooms read is paged (`?after=`, `has_more`,
   `next_cursor`, 422 `invalid_cursor`, 503 `rooms_unavailable`); regents-cli 1.10.26's
   `rooms list` reads the first page only until it learns `--after`.
+## 2026-11-12 — The template signs in through the shared Privy package (branch, not on main)
+
+Branch `tpl/privy-shared-1112`. The template stops carrying its own copies of the
+Privy sign-in pieces and uses elixir-utils' `regent_privy` instead, as a hard cutover:
+no alias modules, no second path. Sign-in is protected, so this is built and checked
+on the branch only; releasing it is the founder's decision.
+
+- Pin: `@elixir_utils_ref` moves from `240e938` to `0eee6be3` (elixir-utils branch
+  `eu/privy-on-pin-1112`), which is the old pin plus only the shared sign-in pieces
+  (no `RegentPrivy.Users`, no `req`, no G1). It is not on elixir-utils main. Only the
+  15 elixir-utils lines of `mix.lock` change.
+- The template's own token pair reader, `lib/ash_template_web/privy_proof.ex`, is
+  deleted. The sign-in step (`PrivySessionController`) and the notes routes read the
+  pair with `RegentPrivy.Proof.pair/1`.
+- Security policies: `sign_in` and `showcase` add the list every Regent site shares,
+  `RegentPrivy.ContentSecurityPolicy.sign_in/0`, in place of the template's own
+  `@sign_in`. All four served policies (reading, sign_in, showcase, errors) are
+  byte-for-byte the same before and after, in the test and dev builds.
+- `/admin/errors` and `/admin/messages`: `AshTemplateWeb.ErrorsAdmin` is now the
+  template's `RegentPrivy.Owners` module. `owners/0` reads `:admins`, and `signed_in/1`
+  and `still_signed_in/1` read the session rows through `SessionAuthority`. The router's
+  `:errors_admin` pipeline and both pages' `on_mount` go through `RegentPrivy.Owners`;
+  `ErrorsAdmin` keeps the nonce policy plug and an `:admin` hook that hands the
+  messages page its admin actor. Anyone but an admin still gets the not-found page.
+  Stricter than before: an open page now re-checks the sign-in and the admin list on
+  messages and background results too (the team page reads through `start_async`),
+  not only on navigation and presses. New: a refused, signed-in non-admin's Privy id
+  is logged at info level (accepted by the template's chief).
+- Browser: `privy_bridge.tsx` imports `readPrivyPair`, `privyPairHeaders` and
+  `privyLoginFailure` from the shared file and deletes its own copies; nothing else in
+  it or in `auth_lazy.ts` changes. `mix regent_privy.assets` copies that file in
+  `assets.build`, `assets.deploy` and `precommit`, and `/assets/vendor/regent_privy/`
+  is ignored. The release image makes it with `mix assets.deploy`; it never takes the
+  local copy.
+- Tests: `test/ash_template_web/errors_admin_test.exs` (an admin gets in; signed out
+  and a non-admin find no page on both pages; a sign-in that ends while a page is open
+  is sent away on the next press) and `assets/test/privy_sign_in.test.ts` (the shared
+  reader hands over both tokens or nothing, and stops once stale; the bridge names
+  Privy's failures through the shared helper).
+- Check, on this change replayed onto main at v219 (`7dcf9aa5`): `make check` from the
+  repository root is green: the style check, 13 report script tests, 130 script tests
+  in 18 files, the browser walk (579 passed, 5 skipped for screen size, 584 in all),
+  220 server tests (210 tests, 10 properties), required fixes (every shared library,
+  `regent_privy` included, carries its fixes; the pin need not be on elixir-utils
+  main), `cli/commands.json` and siwa-latest.
+- Not proved: a real Privy sign-in. The bridge's own call into the shared reader is
+  proved by the typecheck, not by a run (the browser walk replaces the bridge).
+- Docs: `docs/feature-map.md`, `platform/README.md` and `platform/AGENTS.md`.
+
+## 2026-11-12 — The shared Privy sign-in move, brought up to main (branch, not on main)
+
+Branch `tpl/privy-shared-main-1112`: `tpl/privy-shared-1112` (built on v219) merged
+into `tpl/signin-repeats-1112` (v227 plus one sign-in read per answer). Sign-in is
+protected; releasing it is the founder's decision.
+
+- Conflicts, all text: this file and `docs/feature-map.md` keep both sides, main's
+  first; `platform/README.md` keeps main's reading-profile row and the shared
+  sign-in row; the router keeps main's removal of the `:public_documents` pipeline
+  (the reading pages moved into the shell) and the admin comment naming
+  `RegentPrivy.Owners`; `mix.lock` takes elixir-utils `0eee6be3` and design-system
+  `5fbe2d40`.
+- Main's newer code needed nothing more: nothing still names the deleted reader;
+  the reading pages and the launch gate's open pages are served under the `sign_in`
+  policy, which now takes Privy's sources from the shared list; the route handoff
+  and the API documents are unchanged. No migration.
+- Every page group that loads a person (the shell, the showcase, its catalog and
+  the wallet lab) still reads the sign-in on the request before its first render, as
+  the one-read-per-answer change needs. The admin pages use the shared owners check,
+  which reads the sign-in on the request and again as the page connects.
+- Check: `make check` passes everything but `check-siwa-latest` (regents-cli 1.10.26
+  is out; fixed on its own branch): 13 report script tests, the style check, 154
+  script tests in 21 files, the browser walk (651 passed, 5 skipped for screen size),
+  247 server tests (237 tests, 10 properties), required fixes, `cli/commands.json`.
+- Local browser drive on a walk-mode server, the Privy bridge replaced by the walk's
+  stand-in: signed out, the shell and reading pages show no person and the admin
+  pages are not found; signed in, the person shows on first render, connected and
+  after moving inside the live page; the admin errors page opens under its nonce
+  and the team page connects; a signed-in non-admin finds neither; after signing
+  out from another tab, open shell pages reload signed out and the open team page
+  drops its messages and reloads to not found. Not run: a real Privy sign-in, and a
+  revocation with no disconnect in a browser (the server test covers it).
+
+## 2026-11-13 — Released v230: the template on the shared sign-in pieces
+
+- `9f90f648` (merge of `tpl/privy-shared-main-1112`, `cb4855c6`) is v230 on
+  template.regents.sh, switched at about 00:45Z on 13 Nov with `scripts/deploy.sh`,
+  under Sean's named go "22 a" (12 Nov). No migration.
+- The template's own token reader is gone for `RegentPrivy.Proof`; `/admin/errors` and
+  `/admin/messages` are kept by `RegentPrivy.Owners` reading
+  `AshTemplateWeb.ErrorsAdmin`; the content security policy uses the shared sign-in
+  list. elixir-utils pin `240e938` to `0eee6be3` (the old pin plus only the shared
+  sign-in folder).
+- Rollback: v229 (`12ef221e`), image only.
+- Full check exit 0 by the chief on the exact commit: 154 script tests, 651 browser
+  walks with 5 skipped, 254 Elixir (10 properties).
+- Live read, signed out, headless Chromium (WebKit not run; nobody's sign-in used): `/`,
+  `/rooms/general`, `/notes` and `/docs` answer 200 at 1280, 390 and 320 with no page
+  errors and no sideways scroll; `/admin/errors` and `/admin/messages` answer 404;
+  health 200; the content security policy header names the Privy and wallet hosts.
+- Not proven on live: a real Privy sign-in through the shared token reader, and the
+  admin pages as an admin. Sean opens both.
 ## 2026-11-12 — Cells sparks rise above the bar (branch, not on main)
 
 On `wt/tpl-cells-sparks-1112`, from `wt/tpl-cells-1112`, for the design chief. No
