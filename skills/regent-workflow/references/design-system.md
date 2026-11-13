@@ -44,23 +44,20 @@ current founder request overrides older rollout notes. Re-read the working tree:
   the left and day (light) on the right. Signed in it is a row of the account menu
   (`Regent.Account.menu`'s `theme` slot, words at the start, switch at the end); signed
   out, with no account menu, it is in the app shell's bottom bar; the public footer has
-  its own. Never put it in the top bar. A press, Enter or Space turns it; the knob can
-  be dragged and settles on the nearer side, and the theme changes once, on release. The
-  moon and the sun are pictures of tiny square blocks held once, in `Shell`'s
-  `@theme_moon` and `@theme_sun` (equal block counts, square, outer ring clear); the
-  server's still face draws them as SVG squares and the browser reads the blocks from
-  there, so a new picture is an edit to those two lists alone. The still face is flat
-  and square, with no shadow, glow or rounded corner, and is a whole working switch.
-  Over it a vgpu island draws the square glass knob: bevel refraction with a little
-  colour fringing and frost, a light strip that circles the glass from below at night to
-  above by day and spills a little past the button inside its own canvas, and the blocks
-  behind the glass, crisp on whole pixels at rest, tumbling from moon to sun as the knob
-  moves and catching the strip's light on the edge that faces it. Its motion is
-  Anime.js: the knob's settle and one paused timeline for the swarm, seeked by the knob.
-  The strip's colours are `--rg-theme-laser-light`/`--rg-theme-laser-dark` (Tangerine
-  and Powder Blue unless the brand sets them, as Techtree does), set a fixed distance
-  from the page (`theme_switch/light.ts`) so the light reads as boldly on either theme.
-  Less motion, forced colours and no WebGPU keep the still face.
+  its own. Never put it in the top bar. A press, Enter or Space turns it, and the theme
+  changes on the press, never waiting for anything drawn. The control is a flat, square
+  track and knob, with no shadow, glow or rounded corner; the knob is the theme's ink
+  (`--color-fg`), so the lit sun and the moon stand at least 3:1 on it. Over the knob's
+  way lies the particle field (`ParticleField.particle_field ... driven`, Sean, 12 Nov
+  2026: "make them look good for light - dark switches"): the server draws the moon
+  (Lucide's, filled, in the page colour) and the sun (Lucide's, its disc filled, in
+  `--particle-lit`) as SVG, and the browser draws the same pictures in grains in the
+  same place, so a new picture is an edit to those two SVGs in `Shell.theme_toggle/1`.
+  A pointer press flies the grains between them in about 330 ms while the knob glides on
+  the system's on-screen curve; a second press mid-flight turns them round; keys turn it
+  at once. The grain count follows the canvas (`grainsFor`, 0.7 grains a device pixel),
+  flat ink with no glow (only the lab asks for glow), and nothing is drawn while idle.
+  Less motion, forced colours and no WebGPU keep the server's drawing.
 - Canonical identities: Tangerine `#FF5B19`, Powder Blue `#AECACD`, Platinum
   `#E5E3D2`, Charcoal `#161616`. Typography/background/semantic roles still come from
   the tokens, not scattered literals. Do not replace real project images or site

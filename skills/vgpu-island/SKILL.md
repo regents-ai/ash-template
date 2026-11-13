@@ -124,6 +124,8 @@ the lab page `/animations/datascape`),
 is vendored from `regent_ui`), the lab's state-driven material `feedback_lab.ts` (`LabGradient`) + `feedback_gradient.ts`,
 the value cards `hooks/value_card.ts` + `value_cards/` (`/animations/cards`, the row
 every site takes; `AshTemplateWeb.Components.ValueCards` says how a site adds its own
-panels and draws their stills), and the theme switch `hooks/theme_switch.ts` + `theme_switch/renderer.ts`: a small island
-that draws on demand, asks for `maxDevicePixelRatio: 3` so its blocks stay sharp, and
-keeps every glassy effect inside its canvas over a flat, square still face.
+panels and draws their stills), and the particle field `hooks/particle_field.ts` +
+`particle_field/` (`/animations/particles`, and the theme switch's sun and moon through
+`hooks/theme_switch.ts`): every field shares one device (`value_cards/shared_device.ts`)
+and wraps it with `initFromDevice`, sizes its grain count to its canvas, draws only in
+flight, and frees everything it made, its target textures included, when it goes.
