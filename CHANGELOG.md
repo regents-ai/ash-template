@@ -11269,3 +11269,11 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   `hooks/theme_switch.ts` is exported for the light.
 - `AGENTS.md`'s "New site" gains item 2: a new site replaces the demo steps.
   `skills/ash-frontend` says how to write a step list.
+
+## 2026-11-14 — Released v253: guided tour, third-party Skills
+
+- v253 on template.regents.sh carries the entries above: the guided tour with its home
+  page demo, and other authors' Skills under `skills/third-party/`. No migration, no pin
+  change; API 20.0.0 unchanged.
+- Rollback: v252 (`ba0f4f5f`) image.
+- Full check exit 0 by the chief on the exact commit.
