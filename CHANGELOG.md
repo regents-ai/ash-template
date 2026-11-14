@@ -11683,3 +11683,10 @@ no migration.
   no migration; API 21.0.0.
 - Rollback: v257 (`39042629`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-15 — Points: an award is confirmed again as it is written
+
+- Library pin `5f662718` → `e2989ae7` (elixir-utils `eu/points-catalog-1114`, the next commit on
+  the same line; only the points folder differs). The site's own record of an action is read
+  again under the account's lock just before its award is written; an action that no longer
+  stands is recorded as refused and awards nothing. No migration; no page change; API 21.0.0.
