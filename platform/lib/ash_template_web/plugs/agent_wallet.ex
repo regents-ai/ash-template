@@ -5,9 +5,10 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   signs every request after that over its exact method, path and body. The service
   checks the signature and the sign-in (`Siwa.AgentAuthPlug`), so only a wallet
   it vouches for becomes the actor, as itself (`AshTemplate.Actors.Agent`).
-  Cookies grant nothing here. A paired agent's pairing is checked again just
-  before the answer leaves, so an unpairing during the request never sends the
-  person's data. Every refusal answers
+  Cookies grant nothing here. Whether a paired agent still acts for its person
+  (`AshTemplate.Agents.ForPerson`) is checked again just before the answer
+  leaves, so a change during the request never sends the person's data. Every
+  refusal answers
   `{"error": {"code", "message", "hint"}}`, with the service's own words when it
   refused.
   """
@@ -19,9 +20,9 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   require Logger
 
-  alias AshTemplate.{Accounts, Agents}
-  alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.{Agent, System}
+  alias AshTemplate.Agents
+  alias AshTemplate.Agents.ForPerson
   alias RegentHttp.UnexpectedFailure
 
   @hint "Sign in with regents auth login --site ash-template (how: https://template.regents.sh/agents.md), then send the request again."
@@ -120,33 +121,22 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   @doc """
   The actor a wallet the sign-in service vouches for acts as here: the agent as
-  itself, or acting for its person while it is paired. `book` is the service's
-  World ID reading, or nil. The hosted MCP server uses it too, for the wallet of
-  a connected app's own identity (`AshTemplateWeb.Plugs.McpAgent`).
+  itself, or acting for its person while it may (`ForPerson.resolve/1`). `book`
+  is the service's World ID reading, or nil. The hosted MCP server uses it too,
+  for the wallet of a connected app's own identity
+  (`AshTemplateWeb.Plugs.McpAgent`).
   """
   @spec actor_for(String.t(), map() | nil) :: {:ok, Agent.t()} | {:error, term()}
   def actor_for(address, book \\ nil) do
     with {:ok, agent} <- Agents.sign_in_agent(address, actor: %System{}) do
       agent = with_backing(agent, book)
 
-      case RegentAgents.Authority.resolve(AshTemplate.Repo, agent.wallet_address) do
-        {:ok, pairing} -> paired(agent, pairing)
+      case ForPerson.resolve(agent.wallet_address) do
+        {:ok, pairing, account} -> for_person(agent, account, pairing)
         {:error, :not_paired} -> {:ok, Agent.for_agent(agent)}
+        {:error, :person_not_here} -> {:ok, Agent.for_agent(agent, :person_not_here)}
         {:error, error} -> {:error, error}
       end
-    end
-  end
-
-  # The agent acts for its person while the person's account names a signed-in
-  # wallet, as the person's own sign-in on this site does
-  # (`VerifiedSession.current?/1`). Before their first sign-in here, and after a
-  # sign-in with no linked wallet, the person is not here; their next sign-in
-  # with a wallet lets the agent act for them again.
-  defp paired(agent, pairing) do
-    with {:ok, account} <- Accounts.get_by_privy_did(pairing.privy_user_id, actor: %System{}) do
-      if VerifiedSession.current?(account),
-        do: for_person(agent, account, pairing),
-        else: {:ok, Agent.for_agent(agent, :person_not_here)}
     end
   end
 
@@ -158,8 +148,8 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
   end
 
   @doc """
-  Checks a paired agent's pairing again just before the answer leaves, and
-  replaces the answer when it has ended or changed hands meanwhile: with
+  Checks again, just before the answer leaves, that a paired agent still acts
+  for its person, and replaces the answer when it no longer does: with
   `replace`, given the conn, the refusal's status and its
   `{code, message, hint}`, or in this site's `{"error": ...}` shape.
   """
@@ -175,21 +165,21 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
 
   def recheck_before_send(conn, _actor, _replace), do: conn
 
-  # The request ran after the pairing was read. Before anything is sent, the
-  # wallet's current pairing must still be this one, with the same person;
-  # otherwise the answer is replaced, so an unpairing or a new pairing during
-  # the request never sends the former person's data.
+  # The request ran after the agent was read as acting for its person. Before
+  # anything is sent it must still act for that person under that pairing
+  # (`ForPerson.still/1`); otherwise the answer is replaced, so an unpairing, a
+  # new pairing or the person's sign-in with no wallet during the request never
+  # sends the person's data.
   defp recheck(conn, %Agent{} = actor, replace) do
-    case RegentAgents.Authority.resolve(AshTemplate.Repo, actor.wallet_address) do
-      {:ok, %{id: id, privy_user_id: person}}
-      when id == actor.pairing_id and person == actor.privy_user_id ->
+    case ForPerson.still(actor) do
+      :ok ->
         conn
 
       {:error, :not_paired} ->
-        not_paired(conn, replace)
+        not_person(conn, "agent_not_paired", replace)
 
-      {:ok, _other_pairing} ->
-        not_paired(conn, replace)
+      {:error, :person_not_here} ->
+        not_person(conn, "person_not_here", replace)
 
       {:error, error} when conn.status in 200..299 ->
         conn |> UnexpectedFailure.log(error) |> replace.(503, @unavailable)
@@ -199,9 +189,9 @@ defmodule AshTemplateWeb.Plugs.AgentWallet do
     end
   end
 
-  defp not_paired(conn, replace) do
-    {status, message, hint} = Map.fetch!(@not_person, "agent_not_paired")
-    replace.(conn, status, %{code: "agent_not_paired", message: message, hint: hint})
+  defp not_person(conn, code, replace) do
+    {status, message, hint} = Map.fetch!(@not_person, code)
+    replace.(conn, status, %{code: code, message: message, hint: hint})
   end
 
   defp replace(conn, status, body) do

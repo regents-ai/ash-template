@@ -69,6 +69,18 @@ defmodule AshTemplateWeb.SignInLifetimeTest do
     assert signed_in?(back)
   end
 
+  test "a refresh keeps the sign-in's lifetime from when it was made", %{key: key} do
+    signed_in = key |> fresh_proof() |> sign_in(fresh_session())
+    signed_in_earlier(@lifetime - 60)
+
+    refreshed = key |> fresh_proof() |> sign_in(fresh_session(signed_in))
+    assert json_response(refreshed, 200)["authenticated"] == true
+    assert signed_in?(refreshed)
+
+    signed_in_earlier(120)
+    refute signed_in?(refreshed)
+  end
+
   defp signed_in?(conn),
     do:
       conn
@@ -84,6 +96,17 @@ defmodule AshTemplateWeb.SignInLifetimeTest do
     AshTemplate.Repo.update_all(
       from(row in SessionAuthority, where: not is_nil(row.human_account_id)),
       set: [signed_in_at: at]
+    )
+  end
+
+  # Moves every sign-in `seconds` further back in time, wherever it now stands.
+  defp signed_in_earlier(seconds) do
+    AshTemplate.Repo.update_all(
+      from(row in SessionAuthority,
+        where: not is_nil(row.human_account_id),
+        update: [set: [signed_in_at: datetime_add(row.signed_in_at, ^-seconds, "second")]]
+      ),
+      []
     )
   end
 

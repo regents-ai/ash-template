@@ -11277,3 +11277,30 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   change; API 20.0.0 unchanged.
 - Rollback: v252 (`ba0f4f5f`) image.
 - Full check exit 0 by the chief on the exact commit.
+## 2026-11-14 — Paired agents: one rule, checked in the feed, jobs and wallet sends
+
+- `AshTemplate.Agents.ForPerson` holds the one rule for whether a paired agent acts
+  for its person right now: its wallet's pairing is active and the person's latest
+  sign-in here named a wallet. The signed request (`AgentWallet.actor_for/2`), the
+  check before its answer leaves, the live feed, the job actor
+  (`AshTemplate.Actors.Persister`) and the check-in account
+  (`AshTemplate.Agents.PairedAccount`) all ask it. At `/mcp` the answer the check
+  replaces is the JSON-RPC refusal (`AshTemplateWeb.McpRefusal`): a tool call's
+  becomes a tool result with `isError: true`, naming `person_not_here` when the
+  person's latest sign-in had no wallet.
+- The live feed listens for its person's sign-ins as well as pairing changes, and
+  closes with `pairing_changed` once the agent no longer acts for its person. The
+  guide and the API document say so; API 20.0.0 unchanged.
+- A job that carried an agent acting for its person runs as the agent itself when
+  the rule no longer holds, so it ends as for an agent never paired: the reply ends
+  with a line saying it failed, the label question is not asked and the chat is not
+  named. The naming job reads its chat through its own read, which finds only the
+  chats of the person it acts for, so it ends at once.
+- The check-in callback answers as for a person not here when the account cannot
+  be read.
+- A profile change larger than 8 KB is refused with 413 before it is read, as the
+  API document says, from a person or an agent signing for them.
+- The endpoint's comment on the session options reads true.
+- Tests: the feed, the three jobs, the check before an answer leaves, the hosted MCP
+  address, a refresh keeping a sign-in's lifetime, a note under another person's
+  note id, and the profile body limit.

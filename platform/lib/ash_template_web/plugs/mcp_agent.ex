@@ -39,7 +39,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
     agent signing its own requests would be (`AgentWallet.actor_for/2`, with
     the token's principal as its `connection`), so AshAi lists and runs the
     agent's tools under the same policies and its identity tools besides;
-    its pairing is checked again before the answer leaves. Otherwise the app
+    whether it still acts for its person (`AshTemplate.Agents.ForPerson`) is
+    checked again before the answer leaves. Otherwise the app
     is the actor (`AshTemplate.Actors.ConnectedApp`) and has its identity
     tools only. Each app has its own identity, so an app pairs only with a
     code its person gives it and never takes another app's pairing. The budget
@@ -62,8 +63,8 @@ defmodule AshTemplateWeb.Plugs.McpAgent do
   status and headers and answers in JSON-RPC, with the request's id and the
   site's `{code, message, hint}` as the error's `data`; past a budget, `data`
   carries the seconds to wait as `retry_after`. A notification gets the status
-  alone. When a paired agent's pairing has ended by the time its answer leaves,
-  a tool call's answer becomes a tool result with `isError: true`
+  alone. When a paired agent no longer acts for its person by the time its
+  answer leaves, a tool call's answer becomes a tool result with `isError: true`
   (`AshTemplateWeb.McpRefusal`). What the tool itself refuses comes back as the
   tool's error, `{"error": {code, message, hint}}` (`AshTemplateWeb.ToolErrors`).
   Which way each request came in is counted as `[:ash_template, :mcp, :auth]`.

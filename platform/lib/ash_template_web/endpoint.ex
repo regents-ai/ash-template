@@ -20,6 +20,9 @@ defmodule AshTemplateWeb.Endpoint do
 
   # The largest signed body is a note: 10,000 characters of text, as JSON.
   @signed_body_limit 65_536
+  # A profile change, from its person or an agent signing for them, as
+  # `RegentIdentity.BodyReader` caps it.
+  @profile_body_limit 8192
 
   # Chrome's WebMCP origin trial, issued to the template's own address and valid
   # until 30 Mar 2027. The token is public; Chrome ignores it on any other host, so a
@@ -137,9 +140,9 @@ defmodule AshTemplateWeb.Endpoint do
   # address that names nothing.
   plug AshTemplateWeb.Plugs.NoTrailingSlash
 
-  # A body an agent signs stops at 64 KB (`read_body/2`). The rest, a connected
-  # app's registration or token, a sign-in, a visit report, are a few KB; anything
-  # past 256 KB is refused before it is read.
+  # A body an agent signs stops at 64 KB, a profile change at 8 KB (`read_body/2`).
+  # The rest, a connected app's registration or token, a sign-in, a visit report,
+  # are a few KB; anything past 256 KB is refused before it is read.
   plug AshTemplateWeb.Plugs.Parsers,
     body_reader: {__MODULE__, :read_body, []},
     parsers: [Plug.Parsers.URLENCODED, Plug.Parsers.JSON],
@@ -186,7 +189,8 @@ defmodule AshTemplateWeb.Endpoint do
 
   defp limit_rate(conn, _opts), do: conn
 
-  # Production sets the cookie's `secure` flag in runtime.exs, after this module compiles.
+  # The same options the socket's handshake reads (`@session_options`), read as
+  # each request runs.
   defp runtime_session(conn, _opts) do
     options = Application.fetch_env!(:ash_template, :session_options)
     Plug.Session.call(conn, Plug.Session.init(options))
@@ -196,6 +200,10 @@ defmodule AshTemplateWeb.Endpoint do
   # the sign-in service can check them against the request's signature
   # (AshTemplateWeb.Plugs.AgentWallet, RegentAgents.HTTP): any of them may come
   # from an agent. The pages' own form bodies are read as before.
+  def read_body(%Plug.Conn{method: method, path_info: ["api", "v1", "profile"]} = conn, opts)
+      when method in ["POST", "PATCH"],
+      do: Siwa.AgentAuthPlug.read_body(conn, opts, @profile_body_limit)
+
   def read_body(%Plug.Conn{method: method, path_info: ["api" | _rest]} = conn, opts)
       when method in ["POST", "PATCH"],
       do: Siwa.AgentAuthPlug.read_body(conn, opts, @signed_body_limit)

@@ -9776,7 +9776,7 @@
               "replaced",
               "pairing_changed"
             ],
-            "description": "closed: another feed opened for this agent, or its pairing ended or changed. Reconnect only after pairing_changed."
+            "description": "closed: another feed opened for this agent, or its pairing ended or changed, or it no longer acts for its person. Reconnect only after pairing_changed."
           }
         }
       },
