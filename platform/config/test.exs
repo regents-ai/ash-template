@@ -32,6 +32,9 @@ config :ash_template, AshTemplateWeb.FeedController,
 # IndexNow is answered by the test itself (AshTemplate.IndexNow).
 config :ash_template, :indexnow_req, plug: {Req.Test, AshTemplate.IndexNow}
 
+# The sign-in service's control API is answered by the test itself (AshTemplate.SiwaControl).
+config :ash_template, :siwa_control_req, plug: {Req.Test, AshTemplate.SiwaControl}
+
 config :logger, level: :warning
 
 config :phoenix, :plug_init_mode, :runtime

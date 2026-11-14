@@ -58,6 +58,13 @@ config :ash_template, AshTemplate.Agents.HostedAddress,
   gc_interval: :timer.hours(12),
   max_size: 100_000
 
+# Each signed-in browser's SIWA control token, which the sign-in service ends
+# fifteen minutes after it gives it. One that leaves sooner with a collected
+# generation is traded for again by the page.
+config :ash_template, AshTemplate.SiwaControl.Tokens,
+  gc_interval: :timer.minutes(15),
+  max_size: 100_000
+
 # Background jobs live in the site's own schema, beside its tables. Queues hear
 # about new jobs through Erlang process groups. Each queue holds one class of work
 # (skills/elixir-stack/references/oban.md, "Queues"), so a slow or failing service

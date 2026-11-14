@@ -1,0 +1,398 @@
+@layer regents-product {
+/* SIWA (AshTemplateWeb.SiwaLive) stands on the Account page's panels and type;
+   its forms, its lists, a new key and the setup example are its own. Phone
+   first: every row stacks, and the sites list takes columns once there is room. */
+
+/* The box a page's first read stands in, about the height of what lands. */
+.siwa-waiting {
+  min-block-size: 16rem;
+}
+
+.siwa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Each field ends in its own error line, so the fields sit a small step apart
+   and the buttons a step further. */
+.siwa-form {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: 40rem;
+}
+
+.siwa-form textarea {
+  resize: vertical;
+  font-family: var(--font-family-mono);
+}
+
+.siwa-form .siwa-actions {
+  margin-block-start: var(--space-1);
+}
+
+.siwa-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+}
+
+.siwa-page code {
+  font-family: var(--font-family-mono);
+  overflow-wrap: anywhere;
+}
+
+/* Sites: one row a site, the whole row a link to it. */
+.siwa-sites {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siwa-sites > li + li {
+  border-block-start: 1px solid var(--ash-raised);
+}
+
+.siwa-sites__head {
+  display: none;
+}
+
+.siwa-sites__row {
+  display: grid;
+  gap: var(--space-1);
+  min-block-size: 44px;
+  padding-block: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .siwa-sites__row:hover .siwa-sites__name {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.siwa-sites__name {
+  overflow-wrap: anywhere;
+}
+
+.siwa-sites__cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.siwa-sites__label {
+  min-inline-size: 7rem;
+  color: var(--ash-quiet);
+  font-family: var(--font-family-ui);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+@media (min-width: 48rem) {
+  .siwa-sites__head,
+  .siwa-sites__row {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .siwa-sites__head {
+    display: grid;
+    padding-block-end: var(--space-1);
+    color: var(--ash-quiet);
+    font-family: var(--font-family-ui);
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line);
+  }
+
+  /* The column heads name each cell; the words stay for screen readers. */
+  .siwa-sites__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* A value and its copy button on one line. */
+.siwa-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* A section's heading with its one button beside it. */
+.siwa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Keys: the prefix, its dates, whether it is in use and Revoke. */
+.siwa-keys {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siwa-keys__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  min-block-size: 44px;
+  padding-block: var(--space-1);
+}
+
+.siwa-keys__row + .siwa-keys__row {
+  border-block-start: 1px solid var(--ash-raised);
+}
+
+.siwa-keys__dates {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* A new key, shown once: the whole key wraps rather than running off the screen. */
+.siwa-reveal {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--container-padding);
+  border: 1px solid var(--ash-raised);
+}
+
+.siwa-reveal__key {
+  display: block;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* The setup example keeps its lines and scrolls inside its own box. */
+.siwa-code {
+  margin: 0;
+  padding: var(--container-padding);
+  max-inline-size: 100%;
+  overflow: auto;
+  border: 1px solid var(--ash-raised);
+  font-family: var(--font-family-mono);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+  white-space: pre;
+}
+
+.siwa-code code {
+  overflow-wrap: normal;
+}
+
+/* Overview: a card for billing before it starts and for each figure of a period. */
+.siwa-card {
+  padding: var(--space-3);
+  border: 1px solid var(--ash-raised);
+  background: var(--ash-ground);
+}
+
+/* Usage: the period's dates, then its agents, the fee and the cap, one card a
+   row on the narrowest phones. With room for two, the agents and their meter
+   take the whole row and the fee and the cap share the next; all three share
+   one once the panel is wide enough. */
+.siwa-usage {
+  container-type: inline-size;
+}
+
+.siwa-period {
+  color: var(--ash-ink);
+}
+
+.siwa-stats {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+@container (min-width: 19rem) {
+  .siwa-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .siwa-stat--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (min-width: 36rem) {
+  .siwa-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .siwa-stat--wide {
+    grid-column: auto;
+  }
+}
+
+.siwa-stat {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  min-width: 0;
+}
+
+.siwa-stat dt {
+  color: var(--ash-quiet);
+  font-family: var(--font-family-ui);
+  font-size: var(--type-label-size);
+  line-height: var(--type-label-line);
+}
+
+.siwa-stat dd {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.siwa-stat__value {
+  font-family: var(--font-family-title);
+  font-size: var(--type-headline-size);
+  line-height: var(--type-headline-line);
+  overflow-wrap: anywhere;
+}
+
+.siwa-stat__note {
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+/* The agents counted against the ones a period includes. */
+.siwa-meter {
+  display: block;
+  block-size: 4px;
+  margin-block-start: var(--space-1);
+  background: var(--ash-raised);
+}
+
+.siwa-meter > span {
+  display: block;
+  inline-size: var(--siwa-used);
+  block-size: 100%;
+  background: var(--ash-ink);
+}
+
+/* A cap in dollars: the sign sits inside the field, before the amount. */
+.siwa-money {
+  position: relative;
+  display: block;
+  max-inline-size: 16rem;
+}
+
+.siwa-money__sign {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--space-2);
+  display: flex;
+  align-items: center;
+  color: var(--ash-quiet);
+  pointer-events: none;
+}
+
+/* Agents: on a phone, the wallet on its line and its chain, site and first day
+   on a quieter one below, a dot between each; columns once there is room. Each
+   cell keeps its name for screen readers. The box keeps a list's height while
+   the first page is on its way. */
+.siwa-agents-box:not([data-state="ready"]) {
+  min-block-size: 12rem;
+}
+
+.siwa-agents {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siwa-agents__head {
+  display: none;
+}
+
+.siwa-agents__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 44px;
+  padding-block: var(--space-2);
+}
+
+.siwa-agents__row + .siwa-agents__row {
+  border-block-start: 1px solid var(--ash-raised);
+}
+
+.siwa-agents__agent {
+  flex-basis: 100%;
+}
+
+.siwa-agents__cell {
+  min-width: 0;
+  color: var(--ash-quiet);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+}
+
+.siwa-agents__cell + .siwa-agents__cell::before {
+  content: "·" / "";
+  margin-inline-end: var(--space-1);
+}
+
+@media (min-width: 48rem) {
+  .siwa-agents__head,
+  .siwa-agents__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 1.3fr) minmax(0, 0.8fr);
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .siwa-agents__head {
+    padding-block-end: var(--space-1);
+    border-block-end: 1px solid var(--ash-raised);
+    color: var(--ash-quiet);
+    font-family: var(--font-family-ui);
+    font-size: var(--type-label-size);
+    line-height: var(--type-label-line);
+  }
+
+  .siwa-agents__cell {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .siwa-agents__cell + .siwa-agents__cell::before {
+    content: none;
+  }
+}
+}
+
+/* The amount clears the dollar sign. Unlayered, like the shared field it adjusts. */
+.siwa-money input {
+  padding-inline-start: calc(var(--space-2) + 1.5ch);
+  font-variant-numeric: tabular-nums;
+}

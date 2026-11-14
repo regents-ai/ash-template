@@ -20,6 +20,14 @@ Changes to Ash Template, newest first.
 - **Agents.** Your agent's live feed closes, and its unfinished work for you stops, once
   your last sign-in here has no wallet linked, as its other requests already do. A
   tool call running at that moment answers with an error saying so.
+  The profile API no longer takes your Privy sign-in tokens.
+- **SIWA.** A new SIWA page in the side menu lets you set up agent sign-in for your
+  own sites. Name your company, add a site with its audience and the web addresses it
+  runs on, make a key (shown once, so copy it then), revoke a key, change a site's
+  name or addresses, and archive a site. Settings shows your company's name, its
+  owner and where to get help. Overview shows your billing period once it starts: its
+  dates, the agents counted, the fee so far and each agent with the site it first
+  signed in to. Set a cap on your SIWA fees for a period there, change it or remove it.
 
 ## 13 November 2026
 
