@@ -2,17 +2,40 @@ import Config
 
 require Logger
 
-# Tests sign in to their own app id (config/test.exs), whatever the shell sets.
-if config_env() != :test do
+# The browser walk (test/browser/walk.sh) runs its mix commands and its development
+# server with ASH_TEMPLATE_WALK set.
+walk? = config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true"
+
+# Tests sign in to their own app id (config/test.exs) and the walk makes its own
+# Privy settings (below), whatever the shell sets.
+if config_env() != :test and not walk? do
   config :ash_template, :privy,
     app_id: System.get_env("PRIVY_APP_ID"),
     verification_key: System.get_env("PRIVY_VERIFICATION_KEY")
 end
 
+# The walk never talks to Privy: its person is signed in before its server starts
+# (test/browser/support/sign_in.exs), and its browser's Privy is a stand-in
+# (test/browser/support/test.ts). Its settings are a fixed app id and a verification
+# key made as each command starts, whose private half is thrown away, so no Privy
+# sign-in can pass.
+if walk? do
+  {:ECPrivateKey, _version, _private_key, curve, public_key, _attributes} =
+    :public_key.generate_key({:namedCurve, :secp256r1})
+
+  key = :public_key.pem_entry_encode(:SubjectPublicKeyInfo, {{:ECPoint, public_key}, curve})
+
+  config :ash_template, :privy,
+    app_id: "browser-walk",
+    verification_key: :public_key.pem_encode([key])
+end
+
 # Without its Privy settings a local server answers every page while nobody can
 # sign in, so it refuses to start. A worktree holds no settings files of its own.
-# Other mix tasks, such as migrations and code generation, run without them.
-if config_env() == :dev and Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint) do
+# Other mix tasks, such as migrations and code generation, run without them, and
+# the walk's server makes its own.
+if config_env() == :dev and not walk? and
+     Phoenix.Endpoint.server?(:ash_template, AshTemplateWeb.Endpoint) do
   for name <- ~w(PRIVY_APP_ID PRIVY_VERIFICATION_KEY), System.get_env(name, "") == "" do
     raise """
     #{name} is not set, so nobody could sign in. Start the site with its settings loaded:
@@ -29,11 +52,8 @@ config :ash_template, :logger, [
   AshTemplateWeb.VisitLog.handler(%{type: :standard_io}, Logger.default_formatter())
 ]
 
-# The browser walk's server (test/browser/walk.sh) writes its visit lines in
-# production's shape to a file, which test/browser/visits.spec.ts reads to replay a
-# visit.
-walk? = config_env() == :dev and System.get_env("ASH_TEMPLATE_WALK") == "true"
-
+# The browser walk's server writes its visit lines in production's shape to a file,
+# which test/browser/visits.spec.ts reads to replay a visit.
 if walk? do
   config :ash_template, :logger, [
     AshTemplateWeb.VisitLog.handler(

@@ -10912,3 +10912,20 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   API 18.0.0 unchanged.
 - Rollback: v247 (`d621804e`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — The browser walk makes its own Privy settings
+
+- The browser walk (`make check-browser`, and the end of `mix precommit`) now starts on
+  a machine with no Privy settings, such as a fresh worktree. Its server never talked to
+  Privy: its person is signed in by `platform/test/browser/support/sign_in.exs` and the
+  browser's Privy bridge is a stand-in. In walk mode `platform/config/runtime.exs` sets
+  a fixed app id and a verification key made as each command starts, with Erlang's own
+  key library, and throws the key's private half away, so no Privy sign-in can pass on
+  that server. The shell's `PRIVY_APP_ID` and `PRIVY_VERIFICATION_KEY` are ignored there.
+- Outside the walk nothing changes: a development server still refuses to start without
+  both settings, production reads them as before, tests keep `config/test.exs`, and
+  `make release` still needs the real settings for its image check.
+- `platform/README.md`, `platform/docs/local-privy-auth.md`, `platform/docs/showcase.md`
+  and the `Makefile`'s note on `check-browser` say so. No migration, no pin change, no
+  new dependency; nothing served changes. The walk itself is the check: it passes with
+  both settings unset.

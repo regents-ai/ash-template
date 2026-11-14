@@ -32,7 +32,8 @@ check-style:
 check-platform:
 	cd platform && mix precommit && mix test
 # The browser walk alone (platform/test/browser): every page at phone and desktop
-# width, and the paths a person takes. It starts its own server on its own database.
+# width, and the paths a person takes. It starts its own server on its own database,
+# with Privy settings the server makes for itself, so it needs none of the site's.
 check-browser:
 	cd platform && npm run test:browser
 # Every site runs the same check against ash-template's current main branch, so a
