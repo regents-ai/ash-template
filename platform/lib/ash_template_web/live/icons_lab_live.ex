@@ -74,8 +74,7 @@ defmodule AshTemplateWeb.IconsLabLive do
             data-icons-canvas
             role="img"
             aria-label="A small moving diagram above each word in the lists below."
-          >
-          </canvas>
+          ></canvas>
         </div>
 
         <p class="icons-lab__note">The drawings need a newer browser.</p>
