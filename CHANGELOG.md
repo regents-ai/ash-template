@@ -11482,3 +11482,24 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   pin `48a40c56` unchanged; no migration; API 20.0.0 unchanged.
 - Rollback: v254 (`5cde3605`) image.
 - Full check exit 0 by the chief on the exact commit.
+
+## 2026-11-14 — Points page lists every action, by site
+
+- Sean's decisions 68 b and 69 a. `/account/points` lists every action a Points page shows
+  (`RegentPoints.Rules.groups/0`) under the name of the site it belongs to: Account,
+  Autolaunch, Keyfleet, Patchbay, Cloak. It lists them whether or not this site records them
+  and whether or not they can earn yet. A one-time action shows done once it was earned on any
+  site; a daily one shows today's times against its daily count. The first-note action stays
+  hidden and still earns. The list no longer reads `Rules.tracked/0`; earning is unchanged.
+- The shared to-do component draws the site groups as it drew Once and Daily; the design
+  system is unchanged. The daily limit every daily action shares moves from the old Daily
+  group to one line under the season line, shown while a daily action earns on this site.
+- Library pin `48a40c56` → `5f662718` (elixir-utils `eu/points-catalog-1114`): the 14 Nov
+  catalog (new Autolaunch, Keyfleet and Cloak actions; three gone), `Rules.listed/0` and
+  `groups/0`, and the summary's `done` as `%{times, here}` for every listed rule. None of the
+  removed actions was in the template's settings or documents.
+- API 21.0.0: `GET /api/v1/account/points` (the `account points` command and its agent tools)
+  answers `to_do` as one group per site, `{site, actions}`, each action with the fields a
+  `to_do` item had. `platform/priv/public/docs.md`, the OpenAPI documents,
+  `cli/COMMANDS.md`, `cli/commands.json`, `docs/points-foundation.md`, the agent guide and
+  the feature map say so.

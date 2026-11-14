@@ -1,14 +1,14 @@
 defmodule AshTemplate.Points.StandingTest do
   # Invariant: before the start, an account's Points read names, of the start
   # actions this site counts, the ones the account already has, so its page and its
-  # agent show what the start will add; what it does not have yet is still to do.
-  # From the start on nothing is foretold. No action this site does not count is
-  # ever listed.
+  # agent show what the start will add; every other listed action, this site's or
+  # another's, is still to do. From the start on nothing is foretold.
   use ExUnit.Case, async: false
 
   alias AshTemplate.Accounts.VerifiedSession
   alias AshTemplate.Actors.Human
   alias AshTemplateWeb.PointsEntries
+  alias RegentPoints.Rules
 
   @counted ~w(account.activated social.x social.github agent.activated)
 
@@ -28,10 +28,10 @@ defmodule AshTemplate.Points.StandingTest do
     standing = standing(account([]))
 
     assert standing.at_start == ["account.activated"]
-    assert left(standing) == ~w(social.x social.github agent.activated)
+    assert left(standing) == listed() -- standing.at_start
   end
 
-  test "a linked X and a paired agent are added at the start; an uncounted link is never listed" do
+  test "a linked X and a paired agent are added at the start; an uncounted link is still to do" do
     did = "did:privy:standing-" <> Ecto.UUID.generate()
     x = %{provider: :x, subject: "x-" <> Ecto.UUID.generate(), username: "early"}
     farcaster = %{provider: :farcaster, subject: "fc-" <> Ecto.UUID.generate(), username: "early"}
@@ -41,10 +41,11 @@ defmodule AshTemplate.Points.StandingTest do
     standing = standing(person)
 
     assert standing.at_start == ~w(account.activated social.x agent.activated)
-    assert left(standing) == ["social.github"]
+    assert "social.farcaster" in left(standing)
+    assert left(standing) == listed() -- standing.at_start
 
-    listed = for group <- PointsEntries.todo(standing), item <- group.items, do: item.id
-    assert Enum.sort(listed) == Enum.sort(@counted)
+    shown = for group <- PointsEntries.todo(standing), item <- group.items, do: item.id
+    assert shown == listed()
   end
 
   test "from the start on, nothing is foretold" do
@@ -65,6 +66,8 @@ defmodule AshTemplate.Points.StandingTest do
     {:ok, standing} = AshTemplate.Points.my_points(actor: Human.for_account(account))
     standing
   end
+
+  defp listed, do: for(group <- Rules.groups(), rule <- group.rules, do: rule["id"])
 
   defp left(standing) do
     for group <- PointsEntries.todo(standing), item <- group.items, item.left, do: item.id

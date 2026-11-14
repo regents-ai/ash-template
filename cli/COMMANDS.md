@@ -508,20 +508,23 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## account points
 
-- **Does:** your person's Points, today's and yesterday's totals, their place, the actions still
-  open with their Points (before Points starts, also the ones the start adds for what your person
-  already has), daily limits, the leaderboard by name or wallet, recent entries, each saying who
+- **Does:** your person's Points, today's and yesterday's totals, their place, every action by
+  the site it belongs to with its Points, done or still open (before Points starts, also the ones
+  the start adds for what your person already has), daily limits, the leaderboard by name or wallet, recent entries, each saying who
   earned it and whether it counted, and every season: its dates, whether it is running, the days
   left, what was earned in it and the NFT bonus added at its end. Signed; needs a pairing.
 - **Example:** `regents ash-template account points`
 - **Answer:** `{"points": "12.5", "earned_today", "earned_yesterday", "rank",
-  "activity_being_verified", "to_do": [{"label", "repeats", "points", "done", "left", "at_start",
-  "today"}], "daily_limits": [{"name", "limit", "remaining"}], "leaderboard": [{"rank", "name",
+  "activity_being_verified", "to_do": [{"site", "actions": [{"label", "repeats", "points", "done",
+  "left", "at_start", "today"}]}], "daily_limits": [{"name", "limit", "remaining"}], "leaderboard": [{"rank", "name",
   "wallet", "ens_name", "points", "you"}], "entries": [{"label", "points", "status",
   "allowance_reduction", "by", "agent", "earned_at"}], "seasons": [{"season", "starts_at",
   "ends_at", "state", "days_left", "earned", "bonus": {"points", "nft_count", "bonus_percent"}}],
   "more"}`. Points are decimal text, and a whole number has no ".00". `rank` is your person's
-  place, or null with no Points. `repeats` is `once` or `daily`; `left` is true while the action
+  place, or null with no Points. `to_do` is one group per site, in order: `site` is `Account`,
+  `Autolaunch`, `Keyfleet`, `Patchbay` or `Cloak`, and `actions` lists every action of that site,
+  whichever site records it. `repeats` is `once` or `daily`; a one-time action is `done` once
+  earned on any site, a daily one once today's count is used; `left` is true while the action
   can still earn; `at_start` is true, before Points starts, for an action your person already
   has: the start adds it, and it counts as done; `today` is `{"done", "of"}` for an action that
   counts more than once a day. `leaderboard` is the ten highest totals; `name` is null for a
@@ -790,6 +793,9 @@ address, and `agents pair` after 10 tries a minute; wait the seconds in `Retry-A
 
 ## Changes
 
+- 2026-11-14: The OpenAPI documents move to 21.0.0. `account points` answers `to_do` as one
+  group per site, each `{"site", "actions"}`, with every action a Points page shows, whichever
+  site records it; each action keeps its fields. No command changes.
 - 2026-11-14: The OpenAPI documents move to 20.0.0. The hosted MCP server at `/mcp` answers
   each refusal as a JSON-RPC error with the request's id, its HTTP status and headers kept,
   and the site's `code`, `message` and `hint` as the error's `data`, so an MCP client, `regents
