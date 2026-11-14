@@ -99,6 +99,10 @@ defmodule AshTemplateWeb.RouteCatalog do
     help: Map.put(@help, :id, :help)
   }
 
+  # Account is the same on every Regent site: its tabs, routes and titles come
+  # from one list (AshTemplateWeb.AccountRoutes).
+  @account AshTemplateWeb.AccountRoutes.pages()
+
   @tabs %{
     home: [
       %{route_id: :app, label: "Overview", path: "/app"},
@@ -109,13 +113,8 @@ defmodule AshTemplateWeb.RouteCatalog do
       %{route_id: :siwa_sites, label: "Sites", path: "/siwa/sites"},
       %{route_id: :siwa_settings, label: "Settings", path: "/siwa/settings"}
     ],
-    settings: [
-      %{route_id: :account, label: "Account", path: "/account"},
-      %{route_id: :account_agents, label: "Agents", path: "/account/agents"},
-      %{route_id: :points, label: "Points", path: "/account/points"},
-      %{route_id: :wallets, label: "Wallets", path: "/account/wallets"},
-      %{route_id: :connections, label: "Connections", path: "/account/connections"}
-    ]
+    settings:
+      for(page <- @account, do: %{route_id: page.action, label: page.label, path: page.path})
   }
 
   # The product pages share one shell: rail, header controls and background.
@@ -173,24 +172,6 @@ defmodule AshTemplateWeb.RouteCatalog do
     siwa_settings:
       {:siwa,
        %{route_id: :siwa_settings, destination: "/siwa/settings", page_display_label: "Settings"}},
-    account:
-      {:settings, %{route_id: :account, destination: "/account", page_display_label: "Account"}},
-    account_agents:
-      {:settings,
-       %{route_id: :account_agents, destination: "/account/agents", page_display_label: "Agents"}},
-    points:
-      {:settings,
-       %{route_id: :points, destination: "/account/points", page_display_label: "Points"}},
-    wallets:
-      {:settings,
-       %{route_id: :wallets, destination: "/account/wallets", page_display_label: "Wallets"}},
-    connections:
-      {:settings,
-       %{
-         route_id: :connections,
-         destination: "/account/connections",
-         page_display_label: "Connections"
-       }},
     pair:
       {:settings, %{route_id: :pair, destination: "/pair", page_display_label: "Pair New Agent"}},
     agents: {:help, %{route_id: :agents, destination: "/agents", page_display_label: "Agents"}},
@@ -205,6 +186,15 @@ defmodule AshTemplateWeb.RouteCatalog do
     terms: {:help, %{route_id: :terms, destination: "/terms", page_display_label: "Terms"}},
     skills: {:design, %{route_id: :skills, destination: "/skills", page_display_label: "Skills"}}
   ]
+  # Account's pages, after the rest.
+  @routes @routes ++
+            for(
+              page <- @account,
+              do:
+                {page.action,
+                 {:settings,
+                  %{route_id: page.action, destination: page.path, page_display_label: page.label}}}
+            )
   @routes Enum.map(@routes, fn
             {action, {section, page}} ->
               {action,

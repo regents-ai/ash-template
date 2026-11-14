@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Lists where each site's copies of the template's shared files, and of its build
-# and deploy files, differ from the template's own, so drift is seen rather than
-# guessed.
+# Lists where each site's copies of the template's shared files, of its build and
+# deploy files, and of its Account files, differ from the template's own, so drift
+# is seen rather than guessed.
 #
 #   scripts/drift.sh [site ...]      # default: every site in scripts/github.sh
 #
@@ -30,7 +30,7 @@
 #                          "added", "removed", "diff", "why"}],
 #               "live_homepage": null or {"status", "added", "removed", "diff", "why"}}]}
 #
-# list is shared, build or homepage; status is same, differs, missing (GitHub
+# list is shared, build, account or homepage; status is same, differs, missing (GitHub
 # answers 404) or not_used; a live homepage is missing, with why, when a page has no
 # glass panel. A difference's added and removed lines are counted, and the
 # difference itself is written to the file diff names, in a folder of this run's own
@@ -200,6 +200,7 @@ for site in "${@:-${sites[@]}}"; do
 
   files="$(compare shared "${shared[@]}")"
   files+=$'\n'"$(compare build "${build[@]}")"
+  files+=$'\n'"$(compare account "${account[@]}")"
   live_homepage=null
   if [[ "$site" == regents ]]; then
     files+=$'\n'"$(compare homepage "${homepage[@]}")"

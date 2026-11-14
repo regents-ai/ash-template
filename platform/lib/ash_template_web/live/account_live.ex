@@ -4,7 +4,9 @@ defmodule AshTemplateWeb.AccountLive do
   layout every Regent site shares, `Regent.Account.layout`),
   Agents (the agents they paired, whose Pair New Agent opens the pairing window),
   Wallets (the wallets their sign-in verified) and Connections (the accounts they
-  have connected). Points has its own tab (`AshTemplateWeb.PointsLive`).
+  have connected), then Settings when the site has a Settings page
+  (`AshTemplateWeb.AccountSite.settings/0`). Points has its own tab
+  (`AshTemplateWeb.PointsLive`).
 
   Everything here is read from the sign-in the shell already holds; nothing on
   the page asks the visitor to sign in again.
@@ -155,6 +157,28 @@ defmodule AshTemplateWeb.AccountLive do
     </.settings_page>
     """
   end
+
+  attr :page, :any, required: true, doc: "the site's Settings page (`AccountSite.settings/0`)"
+  attr :lease, :map, required: true
+  attr :account, :map, default: nil
+  attr :signed_out_reason, :atom, default: :signed_out
+
+  def settings(assigns) do
+    ~H"""
+    <.settings_page
+      id="account-settings-page"
+      title="Settings"
+      account={@account}
+      signed_out_reason={@signed_out_reason}
+    >
+      <:tip>Your settings for this site.</:tip>
+      <.site_settings page={@page} account={@account} lease={@lease} />
+    </.settings_page>
+    """
+  end
+
+  # The site's own function component, given its account and lease.
+  defp site_settings(%{page: page} = assigns), do: page.(assigns)
 
   attr :id, :string, required: true
   attr :title, :string, required: true

@@ -227,7 +227,9 @@ defmodule AshTemplate.MixProject do
         # `authorize_if` check module at compile time).
         # The hosted MCP server's address budgets add one: McpAgent builds them at compile time
         # with ClientAddress's key.
-        "xref graph --label compile-connected --fail-above 48",
+        # Account's one list of pages (AccountRoutes) adds three: the router routes them, the
+        # route catalog builds its tabs and PublicDocuments its page titles from it at compile time.
+        "xref graph --label compile-connected --fail-above 51",
         "ash.codegen --check",
         "usage_rules.sync --check",
         "ash_template.route_handoff --check",
