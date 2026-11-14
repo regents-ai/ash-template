@@ -41,6 +41,9 @@ shared=(
 build=(
   Makefile
   scripts/deploy.sh
+  scripts/rollback.sh
+  scripts/release-lib.sh
+  scripts/tests/test_release.py
   platform/Dockerfile
   platform/fly.toml
   platform/repo.yaml

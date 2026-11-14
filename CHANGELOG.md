@@ -11042,3 +11042,48 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
 - Tests: `scripts/tests/test_reports.py` renames a fixture with the new address and
   checks the address is written in the site's files and kept in the skills, and that
   the real `AGENTS.md`'s "New site" survives the rename whole, under the new names.
+
+## 2026-11-14 — Rollback script, deploy dry run, gates side by side
+
+Brought up from Autolaunch (the rollback script and the deploy dry run) and Regents
+(the side-by-side check).
+
+- **Rollback (from Autolaunch).** `scripts/rollback.sh <fly-app> <release>` puts an
+  app back on an earlier release's image. It refuses a release Fly does not list as
+  complete, one whose image label names no commit the checkout holds, and one whose
+  commit holds other migrations in `platform/priv/repo/migrations` than the live
+  commit: that rollback needs a person. Otherwise it switches to the image with that
+  commit's own `platform/fly.toml`, under the app's lock and a place on the shared
+  database as a deploy does, then reads `https://<app>.fly.dev/capabilities.json`
+  until `build.commit` names the commit, and fails when it never does. The shared
+  libraries' migrations are not compared: no release applies them. Autolaunch's own
+  parts (its deployment descriptions, their compaction, its app names) stay there.
+- **Deploy dry run (from Autolaunch).** `scripts/deploy.sh --dry-run <fly-app>` and
+  `scripts/rollback.sh --dry-run <fly-app> <release>` make every check and read what
+  is live, then print the commands they would run and run none that change anything,
+  taking no lock. Both scripts share `scripts/release-lib.sh`: the dry run, the switch
+  and the live commit.
+- **One way to read the live commit.** Both read the label of the image the app runs,
+  from `fly image show`, as the deploy already did, rather than Autolaunch's read of
+  the site's health answer. Fly answers even when the site does not, which is when a
+  rollback is needed, and the app's name is all it takes: no table of each app's
+  address. `/capabilities.json` is read only after a rollback's switch, to confirm the
+  site runs the release's commit.
+- **Gates side by side (from Regents).** `make check` runs its gates at once, each
+  writing `platform/_build/check/<gate>.log`, then prints every gate's log, the failed
+  ones last, and one line per gate with its time, and fails when any gate failed. The
+  style check, `mix precommit` and `mix test` still run in turn: the first two compile
+  `_build/dev` and copy the design system's files into `assets/vendor` afresh, which
+  `mix test`'s script build reads, and that build writes the scripts the browser walk
+  serves. On this Mac, under other agents' load, the old check took 303 seconds and
+  the new one 253 (the platform's three gates, 2 + 205 + 46 seconds, are the whole
+  run). A site with contracts runs them under `nice` (`contracts/README.md`).
+- `make check-scripts` runs every test in `scripts/tests`: the reports' tests and
+  the new `scripts/tests/test_release.py`, which runs both scripts on a fixture
+  repository with stand-ins for Fly, the site and the locks. It is no longer a
+  template-only target, so a new site keeps the release tests.
+- `scripts/drift.sh` lists `scripts/rollback.sh`, `scripts/release-lib.sh` and
+  `scripts/tests/test_release.py` among the files that deploy every site. The
+  committed permissions ask before `scripts/rollback.sh` runs and allow
+  `make check-scripts`. The release checklist in
+  `skills/regent-workflow/references/release.md` names the rollback script.

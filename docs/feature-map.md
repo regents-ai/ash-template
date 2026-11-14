@@ -5,7 +5,8 @@ it. A row without a check is a gap, listed as one. Grow this file as features ar
 touched: a change to a feature adds or updates its row in the same commit. Sites
 copy this file's shape.
 
-`make check` runs every check below. The browser walk (`make check-browser`) runs
+`make check` runs every check below, its gates side by side, each logging to
+`platform/_build/check/<gate>.log`. The browser walk (`make check-browser`) runs
 headless Chromium as a desktop 1280 wide and as a touch phone 390 wide (Playwright's
 Pixel 7 at that width), and opens every page again on a touch phone 320 wide; WebKit is
 not run on the Mac. The walk never
@@ -241,6 +242,19 @@ on a first request with no credential, so `/mcp` serves no anonymous call.
 | Unpairing on the Agents page holds: the connection's check-in is refused and pairs nothing again | `platform/test/ash_template_web/claude_connector_test.exs`; elixir-utils `hosted_identity_test.exs` |
 | A check-in from a scheduled Claude task | gap: not tried |
 | Claude is offered in the pairing box and accepted by the pair request only while the switch is on; with it off an agent's sign-in and pairing work as before | `platform/test/ash_template_web/claude_connector_test.exs` (off: no Claude in the box, a signed Claude pairing refused, a Codex pairing accepted); elixir-utils `ash_components/agents/test/regent_agents/hosted_pairing_test.exs`; gap: the box is not drawn with the switch on |
+
+## Releases
+
+The deploy and rollback scripts run against stand-ins for Fly, the site and the
+locks on a fixture repository; no check reaches a real app.
+
+| What | Check |
+| --- | --- |
+| A deploy refuses a working tree with a change, a commit not on `origin/main`, a commit that lacks the live one, and a live image whose label names no commit; otherwise it builds the image labelled with the commit and switches to it under the app's own lock and a place on the shared database, the second place when the first is taken | `scripts/tests/test_release.py` (`make check-scripts`) |
+| `scripts/deploy.sh --dry-run` makes the same checks, prints the build and the switch, and runs neither | same |
+| A rollback refuses a release that did not complete, one the app never had, one whose image names no known commit, and one whose migrations differ from the live commit's (added or changed); otherwise it switches to that release's image with that commit's own `fly.toml`, even when the site does not answer, then reads `/capabilities.json` until `build.commit` names the release, and fails when it never does | same |
+| `scripts/rollback.sh --dry-run` makes the same checks, prints the switch, and neither switches nor reads the site | same |
+| `make check` fails when any gate fails and prints that gate's log last | checked by hand by making one gate fail (14 Nov) |
 
 ## Live site
 
