@@ -11542,3 +11542,10 @@ Back and Next and a dot for each step. The homepage carries a five-step demo.
   agree; no Settings in the template; a stand-in site with Settings gets its tab and route, and
   its body only once signed in) and two report tests in `scripts/tests/test_reports.py`.
   `AGENTS.md`, `docs/feature-map.md` and `automation/spread.md` say so.
+
+## 2026-11-14 — Released v257: shared Account area
+
+- v257 on template.regents.sh carries the entry above (Sean's letter 72 a of 14 Nov). Pins
+  unchanged (library `5f662718`, design system `d4075655`); no migration; API 21.0.0.
+- Rollback: v256 (`d7a00eed`) image.
+- Full check exit 0 by the chief on the exact commit.
