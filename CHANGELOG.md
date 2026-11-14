@@ -10988,3 +10988,13 @@ day; `tpl/sign-in-seven-1113` makes it seven days, the founder's choice (52 b).
   saves a name in a real browser at both widths. The lifted rule's notes callers stay
   covered by `notes_sign_in_test.exs` and `signed_tools_test.exs`. The feature map's
   rows say so.
+
+## 2026-11-14 — Released v250: the profile API takes the site's own sign-in
+
+- v250 on template.regents.sh carries the profile API change above (founder's letters
+  55 a, 56 a, 57 a, 58 a). Pin: elixir-utils `f2138718` (profile contract 2.0.0);
+  template API 19.0.0. No migration; nobody is signed out.
+- Read signed out after the release: a profile read and a change both answer
+  `authentication_required`; the home, docs, rooms, account and agent guide pages answer.
+- Rollback: v249 (`846a7bb5`) image.
+- Full check exit 0 by the chief on the same tree (`d2202cdb`).
